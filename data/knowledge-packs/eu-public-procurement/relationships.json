@@ -1,0 +1,569 @@
+[
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-open",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.27 — open procedure"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-restricted",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.28 — restricted procedure"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-comp-negotiation",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.29 — competitive procedure with negotiation"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-competitive-dialogue",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.30 — competitive dialogue"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-innovation-partnership",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.31 — innovation partnership"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "proc-negotiated-without-publication",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.32 — negotiated procedure without prior publication"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-selection-criteria",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.58 — selection criteria"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-exclusion-mandatory",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.57(1) — mandatory exclusion grounds"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-exclusion-discretionary",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.57(4) — discretionary exclusion grounds"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-award-criteria-meat",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.67 — MEAT award criteria"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-framework-agreement",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.33 — framework agreements"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-dps",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.34 — dynamic purchasing systems"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-e-auction",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.35 — electronic auctions"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-contract-modification",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.72 — contract modification rules"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-abnormally-low",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.69 — abnormally low tenders"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-espd",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.59 — European Single Procurement Document"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-lots-division",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.46 — division into lots"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-in-house",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.12 — in-house exception"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-conflict-of-interest",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.24 — conflict of interest"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-technical-specifications",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.42 — technical specifications"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-subcontracting",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.71 — subcontracting rules"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-life-cycle-costing",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.68 — life-cycle costing"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-self-cleaning",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.57(6) — self-cleaning mechanism"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-reserved-contracts",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Public Contracts Directive contains Art.20 and Art.77 — reserved contracts"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "concept-thresholds",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Public Contracts Directive defines thresholds triggering full directive application"
+  },
+  {
+    "from_ref": "dir-2014-25",
+    "to_ref": "concept-thresholds",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Utilities Directive defines higher thresholds for utilities sector procurement"
+  },
+  {
+    "from_ref": "dir-2014-23",
+    "to_ref": "concept-thresholds",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Concessions Directive defines threshold for concession contracts (EUR 5,538,000)"
+  },
+  {
+    "from_ref": "concept-thresholds",
+    "to_ref": "concept-below-threshold",
+    "relationship_type": "determines_boundary_of",
+    "strength": 1,
+    "description": "EU thresholds determine the boundary between full directive application and below-threshold regime"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "dir-2014-25",
+    "relationship_type": "parallels",
+    "strength": 0.8,
+    "description": "Public Contracts Directive parallels Utilities Directive — same legislative package, similar structure, different scope"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "dir-2014-23",
+    "relationship_type": "parallels",
+    "strength": 0.7,
+    "description": "Public Contracts Directive parallels Concessions Directive — same legislative package, lighter-touch regime for concessions"
+  },
+  {
+    "from_ref": "dir-2014-24",
+    "to_ref": "dir-2009-81",
+    "relationship_type": "defers_to",
+    "strength": 0.8,
+    "description": "Public Contracts Directive defers to Defence Procurement Directive for defence and security contracts (lex specialis)"
+  },
+  {
+    "from_ref": "dir-89-665",
+    "to_ref": "dir-2014-24",
+    "relationship_type": "provides_remedies_for",
+    "strength": 1,
+    "description": "Remedies Directive (classic) provides review procedures for contracts under the Public Contracts Directive"
+  },
+  {
+    "from_ref": "dir-92-13",
+    "to_ref": "dir-2014-25",
+    "relationship_type": "provides_remedies_for",
+    "strength": 1,
+    "description": "Remedies Directive (utilities) provides review procedures for contracts under the Utilities Directive"
+  },
+  {
+    "from_ref": "dir-2007-66",
+    "to_ref": "dir-89-665",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "Directive 2007/66/EC amends the classic sector Remedies Directive"
+  },
+  {
+    "from_ref": "dir-2007-66",
+    "to_ref": "dir-92-13",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "Directive 2007/66/EC amends the utilities sector Remedies Directive"
+  },
+  {
+    "from_ref": "dir-2007-66",
+    "to_ref": "concept-standstill-period",
+    "relationship_type": "introduces",
+    "strength": 1,
+    "description": "Directive 2007/66/EC introduced the mandatory standstill period into the Remedies Directives"
+  },
+  {
+    "from_ref": "dir-2007-66",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "introduces",
+    "strength": 1,
+    "description": "Directive 2007/66/EC introduced contract ineffectiveness as a remedy"
+  },
+  {
+    "from_ref": "dir-2007-66",
+    "to_ref": "remedy-alternative-penalties",
+    "relationship_type": "introduces",
+    "strength": 1,
+    "description": "Directive 2007/66/EC introduced alternative penalties where ineffectiveness cannot be declared"
+  },
+  {
+    "from_ref": "concept-standstill-period",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "triggers_if_breached",
+    "strength": 0.9,
+    "description": "Breach of standstill period may trigger contract ineffectiveness remedy"
+  },
+  {
+    "from_ref": "concept-standstill-period",
+    "to_ref": "remedy-interim-measures",
+    "relationship_type": "enables",
+    "strength": 0.9,
+    "description": "Standstill period enables aggrieved tenderers to seek interim measures before contract conclusion"
+  },
+  {
+    "from_ref": "remedy-ineffectiveness",
+    "to_ref": "remedy-alternative-penalties",
+    "relationship_type": "replaced_by_when_unavailable",
+    "strength": 0.9,
+    "description": "Where ineffectiveness cannot be declared due to overriding general interest, alternative penalties are imposed instead"
+  },
+  {
+    "from_ref": "remedy-interim-measures",
+    "to_ref": "remedy-set-aside",
+    "relationship_type": "precedes",
+    "strength": 0.8,
+    "description": "Interim measures (suspension) typically precede the set-aside decision on the merits"
+  },
+  {
+    "from_ref": "concept-voluntary-transparency",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "shields_against",
+    "strength": 0.9,
+    "description": "Voluntary ex ante transparency notice provides safe harbour against contract ineffectiveness"
+  },
+  {
+    "from_ref": "concept-exclusion-mandatory",
+    "to_ref": "concept-self-cleaning",
+    "relationship_type": "mitigated_by",
+    "strength": 0.8,
+    "description": "Mandatory exclusion may be overcome through self-cleaning measures under Art.57(6)"
+  },
+  {
+    "from_ref": "concept-exclusion-discretionary",
+    "to_ref": "concept-self-cleaning",
+    "relationship_type": "mitigated_by",
+    "strength": 0.8,
+    "description": "Discretionary exclusion may be overcome through self-cleaning measures under Art.57(6)"
+  },
+  {
+    "from_ref": "concept-selection-criteria",
+    "to_ref": "concept-espd",
+    "relationship_type": "evidenced_by",
+    "strength": 0.9,
+    "description": "Selection criteria compliance is self-declared through the ESPD at tender stage"
+  },
+  {
+    "from_ref": "concept-exclusion-mandatory",
+    "to_ref": "concept-espd",
+    "relationship_type": "evidenced_by",
+    "strength": 0.9,
+    "description": "Non-application of exclusion grounds is self-declared through the ESPD at tender stage"
+  },
+  {
+    "from_ref": "concept-award-criteria-meat",
+    "to_ref": "concept-life-cycle-costing",
+    "relationship_type": "may_include",
+    "strength": 0.8,
+    "description": "MEAT award criteria may include life-cycle costing as a cost-effectiveness approach"
+  },
+  {
+    "from_ref": "concept-award-criteria-meat",
+    "to_ref": "concept-green-procurement",
+    "relationship_type": "enables",
+    "strength": 0.8,
+    "description": "MEAT framework enables environmental award criteria as part of green public procurement"
+  },
+  {
+    "from_ref": "concept-award-criteria-meat",
+    "to_ref": "concept-social-procurement",
+    "relationship_type": "enables",
+    "strength": 0.8,
+    "description": "MEAT framework enables social award criteria as part of socially responsible procurement"
+  },
+  {
+    "from_ref": "concept-technical-specifications",
+    "to_ref": "concept-green-procurement",
+    "relationship_type": "supports",
+    "strength": 0.7,
+    "description": "Technical specifications may include environmental characteristics supporting GPP"
+  },
+  {
+    "from_ref": "concept-technical-specifications",
+    "to_ref": "concept-equal-treatment",
+    "relationship_type": "must_comply_with",
+    "strength": 0.9,
+    "description": "Technical specifications must be non-discriminatory and comply with equal treatment principle"
+  },
+  {
+    "from_ref": "proc-open",
+    "to_ref": "concept-award-criteria-meat",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "Open procedure requires award based on MEAT criteria disclosed in contract notice/documents"
+  },
+  {
+    "from_ref": "proc-restricted",
+    "to_ref": "concept-selection-criteria",
+    "relationship_type": "uses_for_shortlisting",
+    "strength": 1,
+    "description": "Restricted procedure uses selection criteria to shortlist candidates for invitation to tender"
+  },
+  {
+    "from_ref": "proc-comp-negotiation",
+    "to_ref": "proc-restricted",
+    "relationship_type": "builds_upon",
+    "strength": 0.7,
+    "description": "Competitive procedure with negotiation builds upon the restricted procedure structure with added negotiation phase"
+  },
+  {
+    "from_ref": "proc-competitive-dialogue",
+    "to_ref": "proc-comp-negotiation",
+    "relationship_type": "alternative_to",
+    "strength": 0.7,
+    "description": "Competitive dialogue is an alternative to competitive procedure with negotiation for complex procurements"
+  },
+  {
+    "from_ref": "proc-innovation-partnership",
+    "to_ref": "proc-comp-negotiation",
+    "relationship_type": "differs_from",
+    "strength": 0.6,
+    "description": "Innovation partnership differs from negotiated procedures by combining R&D and commercial phases"
+  },
+  {
+    "from_ref": "proc-negotiated-without-publication",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "may_trigger",
+    "strength": 0.9,
+    "description": "Illegal use of negotiated procedure without publication (direct award) may trigger contract ineffectiveness"
+  },
+  {
+    "from_ref": "concept-framework-agreement",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "breach_may_trigger",
+    "strength": 0.8,
+    "description": "Breach of framework agreement call-off rules above specified values may trigger contract ineffectiveness"
+  },
+  {
+    "from_ref": "concept-dps",
+    "to_ref": "concept-e-procurement",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "Dynamic purchasing systems must be operated as a completely electronic process"
+  },
+  {
+    "from_ref": "concept-e-auction",
+    "to_ref": "concept-e-procurement",
+    "relationship_type": "part_of",
+    "strength": 0.8,
+    "description": "Electronic auctions are part of the broader e-procurement framework"
+  },
+  {
+    "from_ref": "reg-2019-1780",
+    "to_ref": "concept-ted",
+    "relationship_type": "defines_format_for",
+    "strength": 1,
+    "description": "eForms Regulation defines the standard notice formats published on TED"
+  },
+  {
+    "from_ref": "concept-ted",
+    "to_ref": "concept-transparency",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "TED implements the transparency principle through centralised publication of procurement notices"
+  },
+  {
+    "from_ref": "concept-e-procurement",
+    "to_ref": "concept-transparency",
+    "relationship_type": "supports",
+    "strength": 0.8,
+    "description": "E-procurement supports transparency through electronic access to documents and audit trails"
+  },
+  {
+    "from_ref": "concept-equal-treatment",
+    "to_ref": "concept-transparency",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "Equal treatment principle requires transparency — all operators must have equal access to information"
+  },
+  {
+    "from_ref": "concept-equal-treatment",
+    "to_ref": "concept-conflict-of-interest",
+    "relationship_type": "threatened_by",
+    "strength": 0.9,
+    "description": "Equal treatment is threatened by conflicts of interest — hence Art.24 obligation to prevent and identify them"
+  },
+  {
+    "from_ref": "concept-contracting-authority",
+    "to_ref": "dir-2014-24",
+    "relationship_type": "subject_to",
+    "strength": 1,
+    "description": "Contracting authorities are subject to the Public Contracts Directive"
+  },
+  {
+    "from_ref": "concept-economic-operator",
+    "to_ref": "concept-espd",
+    "relationship_type": "submits",
+    "strength": 0.9,
+    "description": "Economic operators submit the ESPD as self-declaration with their tenders/requests to participate"
+  },
+  {
+    "from_ref": "concept-abnormally-low",
+    "to_ref": "concept-social-procurement",
+    "relationship_type": "linked_to",
+    "strength": 0.7,
+    "description": "Abnormally low tenders must be rejected if low price results from non-compliance with social/labour law (Art.18(2))"
+  },
+  {
+    "from_ref": "concept-lots-division",
+    "to_ref": "concept-economic-operator",
+    "relationship_type": "facilitates_access_for",
+    "strength": 0.8,
+    "description": "Division into lots facilitates SME access to procurement opportunities"
+  },
+  {
+    "from_ref": "concept-contract-modification",
+    "to_ref": "concept-transparency",
+    "relationship_type": "constrained_by",
+    "strength": 0.8,
+    "description": "Contract modifications are constrained by transparency — substantial modifications must be published"
+  },
+  {
+    "from_ref": "concept-in-house",
+    "to_ref": "concept-contracting-authority",
+    "relationship_type": "exception_available_to",
+    "strength": 0.9,
+    "description": "In-house exception allows contracting authorities to award to controlled entities without procurement procedure"
+  },
+  {
+    "from_ref": "cross-procurement-competition",
+    "to_ref": "concept-exclusion-discretionary",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "Anti-competitive agreements (bid-rigging) constitute a discretionary exclusion ground under Art.57(4)(d)"
+  },
+  {
+    "from_ref": "cross-procurement-state-aid",
+    "to_ref": "concept-transparency",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "Competitive, transparent procurement generally excludes State aid — improper procurement may indicate illegal State aid"
+  },
+  {
+    "from_ref": "authority-european-commission",
+    "to_ref": "dir-2014-24",
+    "relationship_type": "enforces_transposition_of",
+    "strength": 0.9,
+    "description": "European Commission monitors and enforces correct transposition of the Public Contracts Directive by Member States"
+  },
+  {
+    "from_ref": "authority-cjeu",
+    "to_ref": "dir-2014-24",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU interprets the Public Contracts Directive through preliminary rulings"
+  },
+  {
+    "from_ref": "authority-cjeu",
+    "to_ref": "dir-89-665",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU interprets the Remedies Directive through preliminary rulings"
+  },
+  {
+    "from_ref": "authority-national-review-body",
+    "to_ref": "dir-89-665",
+    "relationship_type": "empowered_by",
+    "strength": 1,
+    "description": "National review bodies derive their procurement review powers from the Remedies Directives"
+  },
+  {
+    "from_ref": "authority-national-review-body",
+    "to_ref": "remedy-interim-measures",
+    "relationship_type": "grants",
+    "strength": 1,
+    "description": "National review bodies grant interim measures in procurement disputes"
+  },
+  {
+    "from_ref": "authority-national-review-body",
+    "to_ref": "remedy-ineffectiveness",
+    "relationship_type": "declares",
+    "strength": 1,
+    "description": "National review bodies declare contract ineffectiveness in the most serious infringements"
+  },
+  {
+    "from_ref": "authority-national-review-body",
+    "to_ref": "remedy-damages",
+    "relationship_type": "awards",
+    "strength": 1,
+    "description": "National review bodies award damages to persons harmed by procurement infringements"
+  }
+]

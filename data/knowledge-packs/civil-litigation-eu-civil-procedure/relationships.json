@@ -1,0 +1,527 @@
+[
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a2-scope",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.1 defining material scope — civil and commercial matters"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a4-domicile",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.4 — general jurisdiction based on defendant's domicile"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a7-special",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.7 — special jurisdiction for contracts and torts"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a8-related",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.8 — jurisdiction over co-defendants and counterclaims"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a10-insurance",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Arts.10-16 — protective jurisdiction for insurance matters"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a17-consumer",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Arts.17-19 — protective jurisdiction for consumer contracts"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a20-employment",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Arts.20-23 — protective jurisdiction for employment contracts"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a24-exclusive",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.24 — exclusive jurisdiction for immovable property, companies, IP"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a25-prorogation",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.25 — prorogation of jurisdiction by choice of court agreement"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a29-lis-pendens",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.29 — lis pendens rules for parallel proceedings"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a30-related-actions",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.30 — rules for related actions in different Member States"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a31-choice-priority",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.31(2) — anti-torpedo rule giving priority to chosen court"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a35-provisional",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.35 — provisional and protective measures"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a36-recognition",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Arts.36-38 — automatic recognition of judgments"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a39-enforcement",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Arts.39-44 — enforcement without exequatur"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "brussels-a45-refusal",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Brussels I Recast contains Art.45 — grounds for refusal of recognition or enforcement"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "rome-i-a3-party-autonomy",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome I contains Art.3 — party autonomy as primary choice of law rule"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "rome-i-a4-absence",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome I contains Art.4 — default applicable law rules in absence of choice"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "rome-i-a6-consumer",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome I contains Art.6 — special choice of law rules for consumer contracts"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "rome-i-a8-employment",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome I contains Art.8 — special choice of law rules for employment contracts"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "rome-i-a9-overriding",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome I contains Art.9 — overriding mandatory provisions"
+  },
+  {
+    "from_ref": "rome-ii",
+    "to_ref": "rome-ii-a4-general",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome II contains Art.4 — general tort rule (lex loci damni)"
+  },
+  {
+    "from_ref": "rome-ii",
+    "to_ref": "rome-ii-a5-product-liability",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome II contains Art.5 — special rules for product liability"
+  },
+  {
+    "from_ref": "rome-ii",
+    "to_ref": "rome-ii-a6-unfair-competition",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Rome II contains Art.6 — special rules for unfair competition and antitrust"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "concept-jurisdiction",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Brussels I Recast is the primary instrument governing jurisdiction in EU civil and commercial matters"
+  },
+  {
+    "from_ref": "brussels-a29-lis-pendens",
+    "to_ref": "concept-lis-pendens",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Art.29 Brussels I Recast implements the lis pendens rule for EU cross-border litigation"
+  },
+  {
+    "from_ref": "brussels-a31-choice-priority",
+    "to_ref": "concept-lis-pendens",
+    "relationship_type": "modifies",
+    "strength": 0.9,
+    "description": "Art.31(2) modifies the lis pendens rule by giving priority to chosen court to counter torpedo tactics"
+  },
+  {
+    "from_ref": "concept-forum-non-conveniens",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "excluded_by",
+    "strength": 1,
+    "description": "Forum non conveniens is excluded within the Brussels I Recast system per CJEU Owusu v Jackson"
+  },
+  {
+    "from_ref": "brussels-a39-enforcement",
+    "to_ref": "concept-exequatur-abolition",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Arts.39-44 implement the abolition of exequatur for judgments in civil and commercial matters"
+  },
+  {
+    "from_ref": "eeo-regulation",
+    "to_ref": "concept-exequatur-abolition",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "EEO Regulation was an early instrument abolishing exequatur for uncontested claims"
+  },
+  {
+    "from_ref": "brussels-a35-provisional",
+    "to_ref": "concept-interim-measures",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Art.35 Brussels I Recast governs provisional and protective measures in cross-border disputes"
+  },
+  {
+    "from_ref": "concept-anti-suit-injunction",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "restricted_by",
+    "strength": 1,
+    "description": "Anti-suit injunctions are incompatible with the Brussels I Recast system per CJEU Turner v Grovit"
+  },
+  {
+    "from_ref": "concept-interim-measures",
+    "to_ref": "eapo-regulation",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "EAPO is a specialised interim/protective measure for cross-border account preservation"
+  },
+  {
+    "from_ref": "rome-i",
+    "to_ref": "concept-applicable-law",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Rome I determines the applicable law for contractual obligations in cross-border disputes"
+  },
+  {
+    "from_ref": "rome-ii",
+    "to_ref": "concept-applicable-law",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Rome II determines the applicable law for non-contractual obligations in cross-border disputes"
+  },
+  {
+    "from_ref": "concept-limitation-periods",
+    "to_ref": "rome-i",
+    "relationship_type": "governed_by",
+    "strength": 0.9,
+    "description": "Limitation periods for contractual claims governed by the applicable law under Rome I Art.12(1)(d)"
+  },
+  {
+    "from_ref": "concept-limitation-periods",
+    "to_ref": "rome-ii",
+    "relationship_type": "governed_by",
+    "strength": 0.9,
+    "description": "Limitation periods for tort claims governed by the applicable law under Rome II Art.15(h)"
+  },
+  {
+    "from_ref": "concept-limitation-periods",
+    "to_ref": "mediation-directive",
+    "relationship_type": "modified_by",
+    "strength": 0.7,
+    "description": "Mediation Directive suspends limitation periods during mediation process"
+  },
+  {
+    "from_ref": "brussels-a25-prorogation",
+    "to_ref": "hague-choice-court",
+    "relationship_type": "complements",
+    "strength": 0.8,
+    "description": "Brussels I Recast Art.25 (intra-EU) and Hague Convention (international) both enforce choice of court agreements"
+  },
+  {
+    "from_ref": "hague-choice-court",
+    "to_ref": "concept-jurisdiction",
+    "relationship_type": "governs",
+    "strength": 0.8,
+    "description": "Hague Convention governs jurisdiction for exclusive choice of court agreements internationally"
+  },
+  {
+    "from_ref": "brussels-a17-consumer",
+    "to_ref": "rome-i-a6-consumer",
+    "relationship_type": "aligns_with",
+    "strength": 0.9,
+    "description": "Consumer jurisdiction rules in Brussels I Recast align with consumer choice of law rules in Rome I"
+  },
+  {
+    "from_ref": "brussels-a20-employment",
+    "to_ref": "rome-i-a8-employment",
+    "relationship_type": "aligns_with",
+    "strength": 0.9,
+    "description": "Employment jurisdiction rules in Brussels I Recast align with employment choice of law rules in Rome I"
+  },
+  {
+    "from_ref": "service-of-documents-regulation",
+    "to_ref": "concept-service-of-documents",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Regulation 2020/1784 implements the EU framework for cross-border service of documents"
+  },
+  {
+    "from_ref": "concept-service-of-documents",
+    "to_ref": "brussels-a45-refusal",
+    "relationship_type": "prerequisite_for",
+    "strength": 0.9,
+    "description": "Proper service is prerequisite for enforcement — defective service is ground for refusal under Art.45(1)(b)"
+  },
+  {
+    "from_ref": "representative-actions-directive",
+    "to_ref": "concept-collective-redress",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Directive 2020/1828 establishes the EU framework for collective consumer redress"
+  },
+  {
+    "from_ref": "escp-regulation",
+    "to_ref": "concept-exequatur-abolition",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "ESCP judgments are directly enforceable across EU without exequatur"
+  },
+  {
+    "from_ref": "epo-regulation",
+    "to_ref": "concept-exequatur-abolition",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "Enforceable European Orders for Payment circulate freely without exequatur"
+  },
+  {
+    "from_ref": "brussels-i-recast",
+    "to_ref": "process-cross-border-enforcement",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Brussels I Recast provides the framework for cross-border enforcement of judgments"
+  },
+  {
+    "from_ref": "escp-regulation",
+    "to_ref": "process-escp-procedure",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "ESCP Regulation establishes the small claims procedure steps"
+  },
+  {
+    "from_ref": "eapo-regulation",
+    "to_ref": "process-eapo-procedure",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "EAPO Regulation establishes the account preservation order procedure steps"
+  },
+  {
+    "from_ref": "epo-regulation",
+    "to_ref": "process-eop-procedure",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "EOP Regulation establishes the European Order for Payment procedure steps"
+  },
+  {
+    "from_ref": "authority-cjeu",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU is the ultimate interpreter of Brussels I Recast via preliminary references"
+  },
+  {
+    "from_ref": "authority-cjeu",
+    "to_ref": "rome-i",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU is the ultimate interpreter of Rome I via preliminary references"
+  },
+  {
+    "from_ref": "authority-cjeu",
+    "to_ref": "rome-ii",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU is the ultimate interpreter of Rome II via preliminary references"
+  },
+  {
+    "from_ref": "authority-ejn",
+    "to_ref": "service-of-documents-regulation",
+    "relationship_type": "facilitates",
+    "strength": 0.8,
+    "description": "EJN-civil facilitates practical cooperation in service of documents between Member States"
+  },
+  {
+    "from_ref": "authority-ejn",
+    "to_ref": "evidence-regulation",
+    "relationship_type": "facilitates",
+    "strength": 0.8,
+    "description": "EJN-civil facilitates practical cooperation in cross-border evidence taking"
+  },
+  {
+    "from_ref": "evidence-regulation",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "supports",
+    "strength": 0.8,
+    "description": "Evidence Regulation supports the Brussels I Recast system by enabling cross-border evidence taking"
+  },
+  {
+    "from_ref": "mediation-directive",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "Mediation Directive offers an alternative dispute resolution path complementing the Brussels I litigation framework"
+  },
+  {
+    "from_ref": "legal-aid-directive",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "supports",
+    "strength": 0.7,
+    "description": "Legal Aid Directive ensures access to justice in cross-border disputes under the Brussels I framework"
+  },
+  {
+    "from_ref": "insolvency-regulation",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "excluded_from",
+    "strength": 0.9,
+    "description": "Insolvency proceedings excluded from Brussels I Recast scope (Art.1(2)(b)) — governed by Insolvency Regulation"
+  },
+  {
+    "from_ref": "brussels-a7-special",
+    "to_ref": "rome-i",
+    "relationship_type": "interacts_with",
+    "strength": 0.8,
+    "description": "Art.7(1) special jurisdiction for contracts interacts with Rome I determination of applicable law for the contract"
+  },
+  {
+    "from_ref": "brussels-a7-special",
+    "to_ref": "rome-ii",
+    "relationship_type": "interacts_with",
+    "strength": 0.8,
+    "description": "Art.7(2) special jurisdiction for torts interacts with Rome II determination of applicable law for the tort"
+  },
+  {
+    "from_ref": "rome-i-a9-overriding",
+    "to_ref": "concept-applicable-law",
+    "relationship_type": "limits",
+    "strength": 0.9,
+    "description": "Overriding mandatory provisions can override the otherwise applicable law identified under Rome I"
+  },
+  {
+    "from_ref": "rome-ii-a5-product-liability",
+    "to_ref": "rome-ii-a4-general",
+    "relationship_type": "overrides",
+    "strength": 0.9,
+    "description": "Product liability special rule in Art.5 overrides the general lex loci damni rule in Art.4"
+  },
+  {
+    "from_ref": "rome-ii-a6-unfair-competition",
+    "to_ref": "rome-ii-a4-general",
+    "relationship_type": "overrides",
+    "strength": 0.9,
+    "description": "Unfair competition special rule in Art.6 overrides the general tort rule in Art.4"
+  },
+  {
+    "from_ref": "brussels-a24-exclusive",
+    "to_ref": "brussels-a4-domicile",
+    "relationship_type": "overrides",
+    "strength": 1,
+    "description": "Exclusive jurisdiction under Art.24 overrides the general domicile-based jurisdiction rule"
+  },
+  {
+    "from_ref": "brussels-a25-prorogation",
+    "to_ref": "brussels-a4-domicile",
+    "relationship_type": "overrides",
+    "strength": 0.9,
+    "description": "Choice of court agreement under Art.25 generally overrides the default domicile rule"
+  },
+  {
+    "from_ref": "brussels-a17-consumer",
+    "to_ref": "brussels-a25-prorogation",
+    "relationship_type": "restricts",
+    "strength": 0.9,
+    "description": "Consumer protective jurisdiction restricts the validity of pre-dispute choice of court agreements"
+  },
+  {
+    "from_ref": "brussels-a20-employment",
+    "to_ref": "brussels-a25-prorogation",
+    "relationship_type": "restricts",
+    "strength": 0.9,
+    "description": "Employment protective jurisdiction restricts the validity of pre-dispute choice of court agreements"
+  },
+  {
+    "from_ref": "brussels-a10-insurance",
+    "to_ref": "brussels-a25-prorogation",
+    "relationship_type": "restricts",
+    "strength": 0.9,
+    "description": "Insurance protective jurisdiction restricts the validity of choice of court agreements against policyholders"
+  },
+  {
+    "from_ref": "eapo-regulation",
+    "to_ref": "process-cross-border-enforcement",
+    "relationship_type": "complements",
+    "strength": 0.8,
+    "description": "EAPO provides a pre-enforcement preservation mechanism complementing the enforcement process"
+  },
+  {
+    "from_ref": "eeo-regulation",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "complements",
+    "strength": 0.8,
+    "description": "EEO Regulation provides an alternative enforcement pathway for uncontested claims alongside Brussels I Recast"
+  },
+  {
+    "from_ref": "escp-regulation",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "complements",
+    "strength": 0.8,
+    "description": "ESCP provides a simplified procedure for small cross-border claims within the Brussels I framework"
+  },
+  {
+    "from_ref": "epo-regulation",
+    "to_ref": "brussels-i-recast",
+    "relationship_type": "complements",
+    "strength": 0.8,
+    "description": "European Order for Payment provides a uniform payment order procedure within the Brussels I framework"
+  },
+  {
+    "from_ref": "legal-aid-directive",
+    "to_ref": "concept-collective-redress",
+    "relationship_type": "supports",
+    "strength": 0.6,
+    "description": "Legal Aid Directive supports access to justice for consumers participating in cross-border collective redress"
+  }
+]

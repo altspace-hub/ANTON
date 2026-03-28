@@ -1,0 +1,645 @@
+[
+  {
+    "ref_id": "brussels-i-recast",
+    "description": "Regulation (EU) No 1215/2012 on jurisdiction and the recognition and enforcement of judgments in civil and commercial matters (Brussels I Recast). Replaced Regulation 44/2001. Abolishes exequatur for most judgments from 10 January 2015. Establishes uniform jurisdiction rules across EU Member States. Does not apply to revenue, customs, administrative matters, or status/capacity of natural persons.",
+    "metadata": {
+      "full_title": "Regulation (EU) No 1215/2012",
+      "short_name": "Brussels I Recast",
+      "applies_from": "2015-01-10",
+      "replaces": "Regulation (EC) No 44/2001",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "brussels-i-recast",
+    "canonical_name": "Brussels I Recast (Regulation 1215/2012)"
+  },
+  {
+    "ref_id": "rome-i",
+    "description": "Regulation (EC) No 593/2008 on the law applicable to contractual obligations (Rome I). Applies to contractual obligations in civil and commercial matters involving a conflict of laws. Party autonomy is the primary rule (Art.3). In the absence of choice, applicable law determined by characteristic performance (Art.4). Special rules for consumer contracts, employment contracts, insurance contracts, and carriage contracts.",
+    "metadata": {
+      "full_title": "Regulation (EC) No 593/2008",
+      "short_name": "Rome I",
+      "applies_from": "2009-12-17",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "rome-i",
+    "canonical_name": "Rome I (Regulation 593/2008)"
+  },
+  {
+    "ref_id": "rome-ii",
+    "description": "Regulation (EC) No 864/2007 on the law applicable to non-contractual obligations (Rome II). General rule: law of the country where the damage occurs (lex loci damni, Art.4). Special rules for product liability (Art.5), unfair competition (Art.6), environmental damage (Art.7), industrial action (Art.9). Parties may agree on applicable law after the event giving rise to the damage (Art.14).",
+    "metadata": {
+      "full_title": "Regulation (EC) No 864/2007",
+      "short_name": "Rome II",
+      "applies_from": "2009-01-11",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "rome-ii",
+    "canonical_name": "Rome II (Regulation 864/2007)"
+  },
+  {
+    "ref_id": "hague-choice-court",
+    "description": "Hague Convention of 30 June 2005 on Choice of Court Agreements. Ensures exclusive choice of court agreements in international civil or commercial matters are respected. The chosen court must hear the case; courts of other contracting states must decline jurisdiction. Judgments given by the chosen court are recognised and enforced in other contracting states. EU acceded on 1 October 2015.",
+    "metadata": {
+      "full_title": "Hague Convention on Choice of Court Agreements (2005)",
+      "short_name": "Hague Choice of Court Convention",
+      "eu_accession": "2015-10-01",
+      "jurisdiction": "International (EU party)"
+    },
+    "entity_type": "regulation",
+    "entity_id": "hague-choice-court",
+    "canonical_name": "Hague Convention on Choice of Court Agreements"
+  },
+  {
+    "ref_id": "eeo-regulation",
+    "description": "Regulation (EC) No 805/2004 creating a European Enforcement Order for uncontested claims. Allows a judgment, court settlement, or authentic instrument on an uncontested claim certified as a European Enforcement Order in the Member State of origin to be enforced in any other Member State without exequatur and without the possibility of opposing recognition. Minimum standards for service of documents must be met.",
+    "metadata": {
+      "full_title": "Regulation (EC) No 805/2004",
+      "short_name": "EEO Regulation",
+      "applies_from": "2005-10-21",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "eeo-regulation",
+    "canonical_name": "European Enforcement Order (Regulation 805/2004)"
+  },
+  {
+    "ref_id": "escp-regulation",
+    "description": "Regulation (EC) No 861/2007, as amended by Regulation 2015/2421, establishing a European Small Claims Procedure for cross-border claims not exceeding EUR 5,000 (threshold raised from EUR 2,000 by the 2015 amendment). Written procedure by default with optional oral hearing. Judgment enforceable in all Member States without exequatur. Applies since 1 January 2009, amendments from 14 July 2017.",
+    "metadata": {
+      "full_title": "Regulation (EC) No 861/2007",
+      "short_name": "ESCP Regulation",
+      "applies_from": "2009-01-01",
+      "amended_by": "Regulation (EU) 2015/2421",
+      "threshold": "EUR 5,000",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "escp-regulation",
+    "canonical_name": "European Small Claims Procedure (Regulation 861/2007)"
+  },
+  {
+    "ref_id": "eapo-regulation",
+    "description": "Regulation (EU) No 655/2014 establishing a European Account Preservation Order procedure to facilitate cross-border debt recovery in civil and commercial matters by freezing funds held in bank accounts in other Member States. Ex parte procedure: debtor not notified before order is made. Creditor must demonstrate good arguable case and real risk of enforcement becoming impossible or considerably more difficult. Applies since 18 January 2017.",
+    "metadata": {
+      "full_title": "Regulation (EU) No 655/2014",
+      "short_name": "EAPO Regulation",
+      "applies_from": "2017-01-18",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "eapo-regulation",
+    "canonical_name": "European Account Preservation Order (Regulation 655/2014)"
+  },
+  {
+    "ref_id": "representative-actions-directive",
+    "description": "Directive (EU) 2020/1828 on representative actions for the protection of collective interests of consumers. Replaces Directive 2009/22/EC. Requires Member States to establish procedures for qualified entities to bring representative actions for injunctive and redressive measures on behalf of consumers. Minimum criteria for qualified entities. Cross-border representative actions. Transposition deadline: 25 December 2022, application from 25 June 2023.",
+    "metadata": {
+      "full_title": "Directive (EU) 2020/1828",
+      "short_name": "Representative Actions Directive",
+      "transposition_deadline": "2022-12-25",
+      "applies_from": "2023-06-25",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "representative-actions-directive",
+    "canonical_name": "Representative Actions Directive (2020/1828)"
+  },
+  {
+    "ref_id": "service-of-documents-regulation",
+    "description": "Regulation (EU) 2020/1784 on the service in the Member States of judicial and extrajudicial documents in civil or commercial matters (recast). Replaces Regulation 1393/2007. Transmitting and receiving agencies in each Member State. Electronic transmission via decentralised IT system required from 1 May 2025. Service by post permitted. Minimum standards to protect addressee rights.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2020/1784",
+      "short_name": "Service of Documents Regulation (Recast)",
+      "applies_from": "2022-07-01",
+      "replaces": "Regulation (EC) No 1393/2007",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "service-of-documents-regulation",
+    "canonical_name": "Service of Documents Regulation (2020/1784)"
+  },
+  {
+    "ref_id": "evidence-regulation",
+    "description": "Regulation (EU) 2020/1783 on cooperation between the courts of the Member States in the taking of evidence in civil or commercial matters (recast). Replaces Regulation 1206/2001. Direct transmission of requests between courts. Use of videoconferencing encouraged. Decentralised IT system for transmission from 1 May 2025. Applies to requests for examination of witnesses, production of documents, expert reports.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2020/1783",
+      "short_name": "Evidence Regulation (Recast)",
+      "applies_from": "2022-07-01",
+      "replaces": "Regulation (EC) No 1206/2001",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "evidence-regulation",
+    "canonical_name": "Evidence Regulation (2020/1783)"
+  },
+  {
+    "ref_id": "epo-regulation",
+    "description": "Regulation (EC) No 1896/2006 creating a European Order for Payment procedure for uncontested cross-border pecuniary claims. Claimant files standard form (Form A). If requirements met, court issues EOP (Form E). Defendant has 30 days to lodge opposition via Form F. If no opposition, EOP becomes enforceable in all Member States without exequatur. If opposed, case transfers to ordinary civil proceedings unless claimant requests termination.",
+    "metadata": {
+      "full_title": "Regulation (EC) No 1896/2006",
+      "short_name": "EOP Regulation",
+      "applies_from": "2008-12-12",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "epo-regulation",
+    "canonical_name": "European Order for Payment (Regulation 1896/2006)"
+  },
+  {
+    "ref_id": "insolvency-regulation",
+    "description": "Regulation (EU) 2015/848 on insolvency proceedings (recast). Determines jurisdiction for opening insolvency proceedings (centre of main interests — COMI). Provides automatic recognition of insolvency proceedings across Member States. Covers group insolvency coordination. Interconnection of insolvency registers. Replaces Regulation 1346/2000.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2015/848",
+      "short_name": "Insolvency Regulation (Recast)",
+      "applies_from": "2017-06-26",
+      "replaces": "Regulation (EC) No 1346/2000",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "insolvency-regulation",
+    "canonical_name": "Insolvency Regulation (Recast, 2015/848)"
+  },
+  {
+    "ref_id": "mediation-directive",
+    "description": "Directive 2008/52/EC on certain aspects of mediation in civil and commercial matters. Applies to cross-border disputes. Encourages voluntary use of mediation. Courts may invite parties to mediate. Mediation agreements can be made enforceable by court or public authority. Confidentiality of mediation protected. Limitation and prescription periods suspended during mediation.",
+    "metadata": {
+      "full_title": "Directive 2008/52/EC",
+      "short_name": "Mediation Directive",
+      "applies_from": "2008-06-13",
+      "transposition_deadline": "2011-05-21",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "mediation-directive",
+    "canonical_name": "Mediation Directive (2008/52/EC)"
+  },
+  {
+    "ref_id": "legal-aid-directive",
+    "description": "Directive 2003/8/EC to improve access to justice in cross-border disputes by establishing minimum common rules relating to legal aid. Applies where a person domiciled in one Member State requires legal aid in proceedings in another. Full or partial legal aid must be available. Applications may be submitted in the Member State of domicile for forwarding.",
+    "metadata": {
+      "full_title": "Directive 2003/8/EC",
+      "short_name": "Legal Aid Directive",
+      "applies_from": "2004-01-31",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "legal-aid-directive",
+    "canonical_name": "Legal Aid Directive (2003/8/EC)"
+  },
+  {
+    "ref_id": "brussels-a2-scope",
+    "description": "Brussels I Recast Article 1 — Scope. Applies to civil and commercial matters regardless of the nature of the court or tribunal. Does not apply to: revenue, customs, or administrative matters; status/capacity of natural persons; matrimonial property; wills/succession; bankruptcy/insolvency; social security; arbitration.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 1,
+      "topic": "material-scope"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a2-scope",
+    "canonical_name": "Brussels I Recast Article 1 — Material Scope"
+  },
+  {
+    "ref_id": "brussels-a4-domicile",
+    "description": "Brussels I Recast Article 4 — General jurisdiction. Persons domiciled in a Member State shall be sued in the courts of that Member State regardless of nationality. This is the default rule, subject to special jurisdiction rules in Sections 2-7. Domicile of companies determined by statutory seat, central administration, or principal place of business (Art.63).",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 4,
+      "topic": "general-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a4-domicile",
+    "canonical_name": "Brussels I Recast Article 4 — General Jurisdiction (Domicile)"
+  },
+  {
+    "ref_id": "brussels-a7-special",
+    "description": "Brussels I Recast Article 7 — Special jurisdiction. In matters relating to a contract: courts of the place of performance of the obligation (Art.7(1)). In tort: courts of the place where the harmful event occurred or may occur (Art.7(2)). Civil claim for damages in criminal proceedings (Art.7(3)). Recovery of cultural objects (Art.7(4)).",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 7,
+      "topic": "special-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a7-special",
+    "canonical_name": "Brussels I Recast Article 7 — Special Jurisdiction"
+  },
+  {
+    "ref_id": "brussels-a8-related",
+    "description": "Brussels I Recast Article 8 — Jurisdiction over co-defendants, third-party claims, counterclaims. A person domiciled in a Member State may also be sued: (1) where any co-defendant is domiciled (if claims closely connected); (2) as a third party in the court seised of the original proceedings; (3) on a counterclaim arising from the same contract or facts.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 8,
+      "topic": "related-actions-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a8-related",
+    "canonical_name": "Brussels I Recast Article 8 — Related Actions"
+  },
+  {
+    "ref_id": "brussels-a10-insurance",
+    "description": "Brussels I Recast Articles 10-16 — Jurisdiction in matters relating to insurance. Insurer may be sued in the courts of the Member State where it is domiciled or where the policyholder is domiciled. Injured party may bring direct action against insurer. Restrictive rules on jurisdiction agreements in insurance matters to protect weaker party.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_range": "10-16",
+      "topic": "insurance-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a10-insurance",
+    "canonical_name": "Brussels I Recast Articles 10-16 — Insurance Jurisdiction"
+  },
+  {
+    "ref_id": "brussels-a17-consumer",
+    "description": "Brussels I Recast Articles 17-19 — Jurisdiction over consumer contracts. Consumer may sue in the courts of their own domicile. Professional may only sue the consumer in the courts of the consumer's domicile. Applies where the professional directs activities to the consumer's Member State. Jurisdiction agreements only valid if concluded after the dispute has arisen.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_range": "17-19",
+      "topic": "consumer-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a17-consumer",
+    "canonical_name": "Brussels I Recast Articles 17-19 — Consumer Jurisdiction"
+  },
+  {
+    "ref_id": "brussels-a20-employment",
+    "description": "Brussels I Recast Articles 20-23 — Jurisdiction over individual contracts of employment. Employee may sue employer in the courts where the employee habitually carries out work or in the courts of the last place of habitual work. Employer may only sue employee in the courts of the employee's domicile. Protective jurisdiction cannot be derogated by agreement before the dispute arises.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_range": "20-23",
+      "topic": "employment-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a20-employment",
+    "canonical_name": "Brussels I Recast Articles 20-23 — Employment Jurisdiction"
+  },
+  {
+    "ref_id": "brussels-a24-exclusive",
+    "description": "Brussels I Recast Article 24 — Exclusive jurisdiction. Regardless of domicile: (1) rights in rem in immovable property — courts of the situs; (2) validity of constitution of companies — courts of the seat; (3) validity of public register entries — courts of the register; (4) IP registration — courts of the registration state; (5) enforcement of judgments — courts of enforcement.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 24,
+      "topic": "exclusive-jurisdiction"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a24-exclusive",
+    "canonical_name": "Brussels I Recast Article 24 — Exclusive Jurisdiction"
+  },
+  {
+    "ref_id": "brussels-a25-prorogation",
+    "description": "Brussels I Recast Article 25 — Prorogation of jurisdiction (choice of court agreements). Parties may agree on the court of a Member State to settle disputes. Agreement must be in writing or evidenced in writing, or in a form which accords with practices established between the parties, or in international trade in accordance with usage. The chosen court has exclusive jurisdiction unless otherwise agreed.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 25,
+      "topic": "choice-of-court"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a25-prorogation",
+    "canonical_name": "Brussels I Recast Article 25 — Choice of Court Agreements"
+  },
+  {
+    "ref_id": "brussels-a29-lis-pendens",
+    "description": "Brussels I Recast Article 29 — Lis pendens. Where proceedings involving the same cause of action and between the same parties are brought in courts of different Member States, the court second seised shall stay proceedings until jurisdiction of the court first seised is established, then decline jurisdiction. Prevents parallel proceedings and irreconcilable judgments.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 29,
+      "topic": "lis-pendens"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a29-lis-pendens",
+    "canonical_name": "Brussels I Recast Article 29 — Lis Pendens"
+  },
+  {
+    "ref_id": "brussels-a30-related-actions",
+    "description": "Brussels I Recast Article 30 — Related actions. Where related actions (so closely connected that hearing them together is expedient to avoid irreconcilable judgments) are pending in different Member States, the court second seised may stay proceedings. If the action in the court first seised is pending at first instance, the other court may also decline jurisdiction on application.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 30,
+      "topic": "related-actions"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a30-related-actions",
+    "canonical_name": "Brussels I Recast Article 30 — Related Actions"
+  },
+  {
+    "ref_id": "brussels-a31-choice-priority",
+    "description": "Brussels I Recast Article 31(2)-(3) — Priority for exclusive choice of court agreements. Where a court designated in an exclusive choice of court agreement is seised, any other court must stay proceedings until the designated court declines jurisdiction. This overrides the general first-seised rule in Art.29 to combat 'torpedo' litigation tactics.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 31,
+      "topic": "choice-court-priority"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a31-choice-priority",
+    "canonical_name": "Brussels I Recast Article 31(2) — Anti-Torpedo Rule"
+  },
+  {
+    "ref_id": "brussels-a35-provisional",
+    "description": "Brussels I Recast Article 35 — Provisional and protective measures. Application may be made to the courts of a Member State for provisional or protective measures even if the courts of another Member State have jurisdiction over the substance. Must have a real connecting link between the subject of the measures and the territorial jurisdiction of the court (Van Uden/Deco-Line, C-391/95).",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 35,
+      "topic": "provisional-measures"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a35-provisional",
+    "canonical_name": "Brussels I Recast Article 35 — Provisional Measures"
+  },
+  {
+    "ref_id": "brussels-a36-recognition",
+    "description": "Brussels I Recast Articles 36-38 — Recognition of judgments. A judgment given in a Member State shall be recognised in the other Member States without any special procedure being required (automatic recognition). No exequatur needed. Any interested party may apply for a decision that there are no grounds for refusal of recognition.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_range": "36-38",
+      "topic": "recognition"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a36-recognition",
+    "canonical_name": "Brussels I Recast Articles 36-38 — Recognition of Judgments"
+  },
+  {
+    "ref_id": "brussels-a39-enforcement",
+    "description": "Brussels I Recast Articles 39-44 — Enforcement. A judgment given in a Member State which is enforceable there shall be enforceable in the other Member States without a declaration of enforceability (abolition of exequatur). The creditor must provide a copy of the judgment and a certificate (Art.53 certificate). Enforcement may be refused only on the grounds in Art.45.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_range": "39-44",
+      "topic": "enforcement"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a39-enforcement",
+    "canonical_name": "Brussels I Recast Articles 39-44 — Enforcement Without Exequatur"
+  },
+  {
+    "ref_id": "brussels-a45-refusal",
+    "description": "Brussels I Recast Article 45 — Grounds for refusal of recognition/enforcement. (1)(a) Manifestly contrary to public policy; (1)(b) Default judgment where defendant not served in time to arrange defence; (1)(c) Irreconcilable with a judgment between the same parties in the addressed state; (1)(d) Irreconcilable with an earlier judgment from another state; (1)(e) Conflict with Sections 3, 4, 5 (insurance, consumer, employment) protective jurisdiction.",
+    "metadata": {
+      "regulation": "Brussels I Recast",
+      "article_number": 45,
+      "topic": "refusal-grounds"
+    },
+    "entity_type": "obligation",
+    "entity_id": "brussels-a45-refusal",
+    "canonical_name": "Brussels I Recast Article 45 — Grounds for Refusal"
+  },
+  {
+    "ref_id": "rome-i-a3-party-autonomy",
+    "description": "Rome I Article 3 — Freedom of choice. Parties may choose the law applicable to their contract. Choice must be expressed or clearly demonstrated by the terms of the contract or the circumstances. Parties may select the law applicable to the whole or part only of the contract. Choice may be changed at any time. Where all elements relevant to the situation are located in one country, the choice of foreign law cannot prejudice mandatory rules of that country.",
+    "metadata": {
+      "regulation": "Rome I",
+      "article_number": 3,
+      "topic": "party-autonomy"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-i-a3-party-autonomy",
+    "canonical_name": "Rome I Article 3 — Party Autonomy"
+  },
+  {
+    "ref_id": "rome-i-a4-absence",
+    "description": "Rome I Article 4 — Applicable law in the absence of choice. (1)(a) Sale of goods: law of seller's habitual residence; (1)(b) Services: law of service provider's habitual residence; (1)(c) Rights in rem in immovable: lex situs; (1)(d) Tenancy: lex situs (short-term exception); (1)(e) Franchise: franchisee's habitual residence; (1)(f) Distribution: distributor's habitual residence. (2) Characteristic performance as fallback. (3) Manifestly more closely connected escape clause.",
+    "metadata": {
+      "regulation": "Rome I",
+      "article_number": 4,
+      "topic": "applicable-law-default"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-i-a4-absence",
+    "canonical_name": "Rome I Article 4 — Applicable Law Without Choice"
+  },
+  {
+    "ref_id": "rome-i-a6-consumer",
+    "description": "Rome I Article 6 — Consumer contracts. Governed by the law of the country of the consumer's habitual residence, provided the professional directs activities to that country. Parties may choose another law, but consumer retains mandatory protection of their habitual residence. Aligns with Brussels I Recast consumer jurisdiction rules.",
+    "metadata": {
+      "regulation": "Rome I",
+      "article_number": 6,
+      "topic": "consumer-contracts"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-i-a6-consumer",
+    "canonical_name": "Rome I Article 6 — Consumer Contracts"
+  },
+  {
+    "ref_id": "rome-i-a8-employment",
+    "description": "Rome I Article 8 — Individual employment contracts. In the absence of choice, governed by the law of the country where the employee habitually carries out work. If no habitual place, the law of the engaging place of business. Mandatory escape clause for manifestly closer connection. A choice of law shall not deprive the employee of the protection of mandatory rules of the otherwise applicable law.",
+    "metadata": {
+      "regulation": "Rome I",
+      "article_number": 8,
+      "topic": "employment-contracts"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-i-a8-employment",
+    "canonical_name": "Rome I Article 8 — Employment Contracts"
+  },
+  {
+    "ref_id": "rome-i-a9-overriding",
+    "description": "Rome I Article 9 — Overriding mandatory provisions. Member States may apply their own overriding mandatory provisions regardless of the law otherwise applicable. These are provisions regarded as crucial for safeguarding public interests (political, social, economic organisation). Effect may also be given to overriding mandatory provisions of the country of performance, but this is discretionary.",
+    "metadata": {
+      "regulation": "Rome I",
+      "article_number": 9,
+      "topic": "overriding-mandatory"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-i-a9-overriding",
+    "canonical_name": "Rome I Article 9 — Overriding Mandatory Provisions"
+  },
+  {
+    "ref_id": "rome-ii-a4-general",
+    "description": "Rome II Article 4 — General rule for torts. The law applicable to a non-contractual obligation arising out of a tort is the law of the country in which the damage occurs (lex loci damni), irrespective of the country in which the event giving rise to the damage occurred. Common habitual residence exception. Manifestly more closely connected escape clause.",
+    "metadata": {
+      "regulation": "Rome II",
+      "article_number": 4,
+      "topic": "general-tort-rule"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-ii-a4-general",
+    "canonical_name": "Rome II Article 4 — General Tort Rule (Lex Loci Damni)"
+  },
+  {
+    "ref_id": "rome-ii-a5-product-liability",
+    "description": "Rome II Article 5 — Product liability. Cascading rule: (1)(a) law of the injured person's habitual residence if the product was marketed there; (1)(b) otherwise, law of the country of acquisition if marketed there; (1)(c) otherwise, law of the country where the damage occurred if the product was marketed there. Foreseeability defence for the person claimed to be liable.",
+    "metadata": {
+      "regulation": "Rome II",
+      "article_number": 5,
+      "topic": "product-liability"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-ii-a5-product-liability",
+    "canonical_name": "Rome II Article 5 — Product Liability"
+  },
+  {
+    "ref_id": "rome-ii-a6-unfair-competition",
+    "description": "Rome II Article 6 — Unfair competition and acts restricting free competition. Unfair competition: law of the country where competitive relations or collective interests of consumers are affected. Restriction of competition: law of the country where the market is affected. Art.101/102 TFEU overrides where EU competition law applies.",
+    "metadata": {
+      "regulation": "Rome II",
+      "article_number": 6,
+      "topic": "unfair-competition"
+    },
+    "entity_type": "obligation",
+    "entity_id": "rome-ii-a6-unfair-competition",
+    "canonical_name": "Rome II Article 6 — Unfair Competition"
+  },
+  {
+    "ref_id": "concept-jurisdiction",
+    "description": "Jurisdiction in EU civil procedure determines which Member State's courts have the power to hear and decide a dispute. Key principles: actor sequitur forum rei (defendant's domicile as default), special jurisdiction for contracts and torts, exclusive jurisdiction for immovable property and IP, protective jurisdiction for consumers, employees, and policyholders. Prorogation of jurisdiction by agreement. Brussels I Recast is the primary instrument.",
+    "metadata": {
+      "topic": "jurisdiction-overview"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-jurisdiction",
+    "canonical_name": "Jurisdiction in EU Civil Procedure"
+  },
+  {
+    "ref_id": "concept-lis-pendens",
+    "description": "Lis pendens (Art.29-30 Brussels I Recast). Mechanism to prevent parallel proceedings in different Member States between the same parties on the same cause of action. Court second seised must stay proceedings and, once jurisdiction of court first seised is established, decline jurisdiction. Historically susceptible to 'Italian torpedo' abuse — addressed by Art.31(2) giving priority to chosen court.",
+    "metadata": {
+      "topic": "lis-pendens"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-lis-pendens",
+    "canonical_name": "Lis Pendens"
+  },
+  {
+    "ref_id": "concept-forum-non-conveniens",
+    "description": "Forum non conveniens — the common law doctrine permitting a court to decline jurisdiction if another forum is clearly more appropriate. NOT available under the Brussels I Recast system (CJEU in Owusu v Jackson, C-281/02: a court in a Member State cannot decline jurisdiction under Brussels Convention/Regulation on the basis that a non-Member State court would be more appropriate). Remains relevant for disputes involving non-EU parties outside the Regulation's scope.",
+    "metadata": {
+      "topic": "forum-non-conveniens",
+      "cjeu_case": "C-281/02 Owusu v Jackson"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-forum-non-conveniens",
+    "canonical_name": "Forum Non Conveniens"
+  },
+  {
+    "ref_id": "concept-exequatur-abolition",
+    "description": "Abolition of exequatur — the removal of the intermediate procedure previously required for a foreign judgment to be declared enforceable in the addressed Member State. Under Brussels I Recast (from 2015), judgments are directly enforceable in other Member States subject to limited refusal grounds (Art.45). Previously, Brussels I (Regulation 44/2001) and the 1968 Brussels Convention required a declaration of enforceability.",
+    "metadata": {
+      "topic": "exequatur-abolition"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-exequatur-abolition",
+    "canonical_name": "Abolition of Exequatur"
+  },
+  {
+    "ref_id": "concept-anti-suit-injunction",
+    "description": "Anti-suit injunctions — court orders restraining a party from commencing or continuing proceedings in another jurisdiction. CJEU held in Turner v Grovit (C-159/02) that anti-suit injunctions are incompatible with the Brussels system because each court must determine its own jurisdiction under the Regulation. However, anti-suit injunctions remain possible in support of arbitration agreements (Gazprom, C-536/13, left to national law).",
+    "metadata": {
+      "topic": "anti-suit-injunction",
+      "cjeu_cases": ["C-159/02 Turner v Grovit", "C-536/13 Gazprom"]
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-anti-suit-injunction",
+    "canonical_name": "Anti-Suit Injunctions in EU Civil Procedure"
+  },
+  {
+    "ref_id": "concept-interim-measures",
+    "description": "Interim and protective measures in cross-border litigation. Under Art.35 Brussels I Recast, provisional measures may be sought from courts of any Member State even if another court has substantive jurisdiction. Must have a real connecting link to the territory (Van Uden test). Measures under Art.35 do not circulate freely — only measures from the court with substantive jurisdiction are enforceable across the EU under Arts.36/39.",
+    "metadata": {
+      "topic": "interim-measures"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-interim-measures",
+    "canonical_name": "Interim and Protective Measures"
+  },
+  {
+    "ref_id": "concept-limitation-periods",
+    "description": "Limitation and prescription periods in EU cross-border litigation. EU law does not harmonise limitation periods for civil claims — these are governed by the applicable substantive law (determined via Rome I for contracts, Rome II for torts). The Mediation Directive suspends limitation periods during mediation. Limitation is classified as substantive (not procedural) under Rome I Art.12(1)(d) and Rome II Art.15(h), ensuring the applicable law governs prescription.",
+    "metadata": {
+      "topic": "limitation-periods"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-limitation-periods",
+    "canonical_name": "Limitation Periods in Cross-Border Litigation"
+  },
+  {
+    "ref_id": "concept-service-of-documents",
+    "description": "Service of documents in cross-border EU litigation. Regulation 2020/1784 governs transmission and service of judicial and extrajudicial documents between Member States. Transmitting agency in the originating state sends to the receiving agency in the addressed state. Methods include formal service, postal service, and electronic transmission. Proper service is a prerequisite for recognition/enforcement under Brussels I Recast (Art.45(1)(b)).",
+    "metadata": {
+      "topic": "service-of-documents"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-service-of-documents",
+    "canonical_name": "Service of Documents in Cross-Border Litigation"
+  },
+  {
+    "ref_id": "concept-collective-redress",
+    "description": "Collective redress and representative actions in EU civil procedure. Directive 2020/1828 mandates representative actions for consumers. Qualified entities (consumer organisations, public bodies) may bring actions for injunctive and redressive measures. Opt-in model for cross-border actions. Loser-pays principle applies. Safeguards against abusive litigation. No US-style class actions — punitive damages excluded.",
+    "metadata": {
+      "topic": "collective-redress"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-collective-redress",
+    "canonical_name": "Collective Redress in the EU"
+  },
+  {
+    "ref_id": "concept-applicable-law",
+    "description": "Applicable law (choice of law) in EU cross-border disputes. Rome I governs contractual obligations (party autonomy primary rule). Rome II governs non-contractual obligations (lex loci damni general rule). Both Regulations apply universally — the designated law applies even if it is the law of a non-Member State. Overriding mandatory provisions and public policy exceptions exist.",
+    "metadata": {
+      "topic": "applicable-law-overview"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-applicable-law",
+    "canonical_name": "Applicable Law in EU Cross-Border Disputes"
+  },
+  {
+    "ref_id": "process-cross-border-enforcement",
+    "description": "Process for enforcing a judgment across EU Member States under Brussels I Recast. Steps: (1) Obtain enforceable judgment in Member State of origin; (2) Obtain Art.53 certificate from the court of origin; (3) Present judgment and certificate to enforcement authority in addressed Member State; (4) Enforcement proceeds under the law of the addressed Member State. Debtor may apply for refusal of enforcement on Art.45 grounds.",
+    "metadata": {
+      "topic": "enforcement-process"
+    },
+    "entity_type": "process",
+    "entity_id": "process-cross-border-enforcement",
+    "canonical_name": "Cross-Border Enforcement Process (Brussels I Recast)"
+  },
+  {
+    "ref_id": "process-escp-procedure",
+    "description": "European Small Claims Procedure process. (1) Claimant completes Form A and submits to the competent court; (2) Court examines claim — if outside scope or unfounded, informs claimant; (3) If within scope, court serves Form C (response form) on defendant within 14 days; (4) Defendant responds within 30 days; (5) Court gives judgment within 30 days of response or hearing; (6) Judgment directly enforceable across EU. No separate enforcement declaration needed.",
+    "metadata": {
+      "topic": "escp-process"
+    },
+    "entity_type": "process",
+    "entity_id": "process-escp-procedure",
+    "canonical_name": "European Small Claims Procedure — Steps"
+  },
+  {
+    "ref_id": "process-eapo-procedure",
+    "description": "European Account Preservation Order process. (1) Creditor submits application (ex parte) to competent court with evidence of good arguable case and real risk; (2) Court decides within 5/10 working days; (3) If granted, order transmitted to bank via information authority; (4) Bank implements preservation and notifies creditor; (5) Debtor notified after implementation; (6) Debtor may challenge the order; (7) Creditor must initiate substantive proceedings within 30 days if no judgment yet obtained.",
+    "metadata": {
+      "topic": "eapo-process"
+    },
+    "entity_type": "process",
+    "entity_id": "process-eapo-procedure",
+    "canonical_name": "European Account Preservation Order — Steps"
+  },
+  {
+    "ref_id": "process-eop-procedure",
+    "description": "European Order for Payment process. (1) Claimant submits application Form A; (2) Court reviews — if requirements met, issues EOP (Form E); (3) EOP served on defendant; (4) Defendant has 30 days to lodge statement of opposition (Form F); (5) If no opposition, court declares EOP enforceable (Form G); (6) Enforceable across EU without exequatur; (7) If opposition lodged, case may transfer to ordinary proceedings.",
+    "metadata": {
+      "topic": "eop-process"
+    },
+    "entity_type": "process",
+    "entity_id": "process-eop-procedure",
+    "canonical_name": "European Order for Payment — Steps"
+  },
+  {
+    "ref_id": "authority-cjeu",
+    "description": "Court of Justice of the European Union (CJEU). Ultimate arbiter of interpretation of EU civil procedure regulations. Receives preliminary references from national courts under Art.267 TFEU on questions of interpretation of Brussels I Recast, Rome I, Rome II, and other civil justice instruments. Key decisions include Owusu v Jackson, Turner v Grovit, CDC Hydrogen Peroxide, Achmea.",
+    "metadata": {
+      "full_name": "Court of Justice of the European Union",
+      "short_name": "CJEU",
+      "location": "Luxembourg"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-cjeu",
+    "canonical_name": "Court of Justice of the European Union (CJEU)"
+  },
+  {
+    "ref_id": "authority-ejn",
+    "description": "European Judicial Network in civil and commercial matters (EJN-civil). Network of national contact points facilitating judicial cooperation. Provides practical information on applicable EU instruments, national procedural law, and assists with cross-border service of documents, evidence taking, and enforcement. Maintains the European e-Justice Portal.",
+    "metadata": {
+      "full_name": "European Judicial Network in Civil and Commercial Matters",
+      "short_name": "EJN-civil"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-ejn",
+    "canonical_name": "European Judicial Network (EJN-Civil)"
+  }
+]

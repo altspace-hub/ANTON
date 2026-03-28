@@ -1,0 +1,33 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "eu-competition-merger-control",
+  "display_name": "EU Competition Law & Merger Control",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU competition law and merger control. Covers Articles 101 and 102 TFEU (anticompetitive agreements and abuse of dominance), EU Merger Regulation 139/2004 (notification, SIEC test, remedies), block exemption regulations (VBER 2022/720, HBER 2023), the Digital Markets Act (Regulation 2022/1925 — gatekeepers, core platform services), EU State Aid framework (Articles 107-109 TFEU, GBER), enforcement procedures (dawn raids, leniency, settlement, commitment decisions), fines methodology, and the Foreign Subsidies Regulation. Includes key concepts such as relevant market definition, SSNIP test, hardcore restrictions, vertical restraints, and private enforcement under the Damages Directive.",
+  "author": "ANTON Legal Team",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Corporate & Business Law",
+  "regulation_ids": [
+    "Article 101 TFEU",
+    "Article 102 TFEU",
+    "EU Merger Regulation (EC) No 139/2004",
+    "Regulation (EC) No 1/2003",
+    "VBER (EU) 2022/720",
+    "HBER (EU) 2023/1066",
+    "HBER (EU) 2023/1067",
+    "Digital Markets Act (EU) 2022/1925",
+    "Articles 107-109 TFEU",
+    "GBER (EU) No 651/2014",
+    "ECN+ Directive (EU) 2019/1",
+    "Damages Directive 2014/104/EU",
+    "Foreign Subsidies Regulation (EU) 2022/2560"
+  ],
+  "tier": 1,
+  "entity_count": 63,
+  "relationship_count": 89,
+  "alias_entry_count": 63,
+  "source_url": "https://competition-policy.ec.europa.eu/",
+  "validated_by": "ANTON Legal Team",
+  "content_confirmed": true
+}

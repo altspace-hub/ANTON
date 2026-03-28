@@ -1,0 +1,813 @@
+[
+  {
+    "ref_id": "tfeu-art101",
+    "entity_type": "regulation",
+    "entity_id": "tfeu-art101",
+    "canonical_name": "Article 101 TFEU — Anticompetitive Agreements",
+    "description": "Prohibits agreements, decisions by associations of undertakings, and concerted practices that may affect trade between Member States and have as their object or effect the prevention, restriction, or distortion of competition within the internal market. Covers price-fixing, market sharing, output limitation, bid rigging, and information exchange. Agreements caught by Art.101(1) may be exempted under Art.101(3) if they produce efficiencies benefiting consumers.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": 101,
+      "topic": "anticompetitive-agreements",
+      "jurisdiction": "EU",
+      "max_fine": "10% of worldwide annual turnover"
+    }
+  },
+  {
+    "ref_id": "tfeu-art101-1",
+    "entity_type": "obligation",
+    "entity_id": "tfeu-art101-1",
+    "canonical_name": "Article 101(1) TFEU — Prohibition of Anticompetitive Agreements",
+    "description": "Sets out the core prohibition against agreements and concerted practices that restrict competition. Includes a non-exhaustive list of prohibited conduct: price-fixing, limiting production, market sharing, discriminatory conditions, and tying. Applies to both horizontal (competitor) and vertical (supplier-distributor) agreements.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": "101(1)",
+      "topic": "prohibition-scope"
+    }
+  },
+  {
+    "ref_id": "tfeu-art101-3",
+    "entity_type": "obligation",
+    "entity_id": "tfeu-art101-3",
+    "canonical_name": "Article 101(3) TFEU — Individual Exemption",
+    "description": "Provides that the prohibition in Art.101(1) may be declared inapplicable to agreements that: (1) improve production/distribution or promote technical/economic progress; (2) allow consumers a fair share of the resulting benefit; (3) do not impose indispensable restrictions; (4) do not eliminate competition for a substantial part of the products. Since Regulation 1/2003, undertakings self-assess exemption without prior Commission approval.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": "101(3)",
+      "topic": "exemption-criteria",
+      "four_conditions": true
+    }
+  },
+  {
+    "ref_id": "tfeu-art102",
+    "entity_type": "regulation",
+    "entity_id": "tfeu-art102",
+    "canonical_name": "Article 102 TFEU — Abuse of Dominant Position",
+    "description": "Prohibits undertakings holding a dominant position within the internal market (or a substantial part of it) from abusing that position. Abuse may consist of imposing unfair prices, limiting production, applying dissimilar conditions to equivalent transactions, or making contracts subject to unrelated supplementary obligations. Unlike Art.101, there is no exemption mechanism — dominance itself is not prohibited, only its abuse.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": 102,
+      "topic": "abuse-of-dominance",
+      "jurisdiction": "EU",
+      "no_exemption": true
+    }
+  },
+  {
+    "ref_id": "eu-merger-reg",
+    "entity_type": "regulation",
+    "entity_id": "eu-merger-reg",
+    "canonical_name": "EU Merger Regulation (EC) No 139/2004",
+    "description": "The principal EU regulation on merger control. Establishes a mandatory pre-notification system for concentrations with an EU dimension. The Commission has exclusive competence to assess concentrations meeting the turnover thresholds. Transactions may be cleared unconditionally, cleared with commitments (remedies), or prohibited if they would significantly impede effective competition (SIEC test), in particular by creating or strengthening a dominant position.",
+    "metadata": {
+      "full_title": "Council Regulation (EC) No 139/2004",
+      "short_name": "EUMR",
+      "applies_from": "2004-05-01",
+      "jurisdiction": "EU",
+      "notification": "mandatory pre-closing"
+    }
+  },
+  {
+    "ref_id": "reg-1-2003",
+    "entity_type": "regulation",
+    "entity_id": "reg-1-2003",
+    "canonical_name": "Regulation (EC) No 1/2003 — Modernisation Regulation",
+    "description": "Replaced the prior centralised notification system with a decentralised enforcement regime for Articles 101 and 102 TFEU. National competition authorities and national courts can now directly apply Articles 101 and 102 in full, including Art.101(3) exemption assessment. Introduced self-assessment by undertakings and established the European Competition Network (ECN) for coordination between the Commission and NCAs.",
+    "metadata": {
+      "full_title": "Council Regulation (EC) No 1/2003",
+      "short_name": "Modernisation Regulation",
+      "applies_from": "2004-05-01",
+      "topic": "decentralised-enforcement"
+    }
+  },
+  {
+    "ref_id": "vber-2022",
+    "entity_type": "regulation",
+    "entity_id": "vber-2022",
+    "canonical_name": "Vertical Block Exemption Regulation (EU) 2022/720",
+    "description": "Provides a safe harbour for vertical agreements (between non-competitors at different levels of the supply chain) where both the supplier's and buyer's market share does not exceed 30%. Exempts vertical agreements from Art.101(1) provided they do not contain hardcore restrictions such as resale price maintenance, territorial/customer restrictions (with exceptions for selective distribution), or certain online sales restrictions. Replaces the prior VBER 330/2010.",
+    "metadata": {
+      "full_title": "Commission Regulation (EU) 2022/720",
+      "short_name": "VBER",
+      "applies_from": "2022-06-01",
+      "expires": "2034-05-31",
+      "market_share_threshold": "30%"
+    }
+  },
+  {
+    "ref_id": "hber-2023",
+    "entity_type": "regulation",
+    "entity_id": "hber-2023",
+    "canonical_name": "Horizontal Block Exemption Regulations (EU) 2023/1066 & 2023/1067",
+    "description": "Two regulations providing safe harbours for horizontal cooperation agreements between competitors. The R&D BER (2023/1066) exempts joint R&D with combined market share up to 25%. The Specialisation BER (2023/1067) exempts specialisation/joint production agreements with combined share up to 20%. Both require that the agreements do not contain hardcore restrictions and that the parties share benefits with consumers.",
+    "metadata": {
+      "short_name": "HBER",
+      "rd_ber": "Regulation (EU) 2023/1066",
+      "specialisation_ber": "Regulation (EU) 2023/1067",
+      "applies_from": "2023-07-01",
+      "rd_threshold": "25%",
+      "specialisation_threshold": "20%"
+    }
+  },
+  {
+    "ref_id": "dma-2022",
+    "entity_type": "regulation",
+    "entity_id": "dma-2022",
+    "canonical_name": "Digital Markets Act (DMA) — Regulation (EU) 2022/1925",
+    "description": "Establishes ex-ante obligations for large digital platforms designated as 'gatekeepers' of core platform services. Aims to ensure contestability and fairness in digital markets. Covers obligations on interoperability, data portability, self-preferencing bans, anti-steering prohibitions, and requirements for fair access conditions. Fines up to 10% of worldwide turnover (20% for repeat infringements), with structural remedies available as last resort.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2022/1925",
+      "short_name": "DMA",
+      "applies_from": "2023-05-02",
+      "gatekeeper_obligations_from": "2024-03-06",
+      "max_fine": "10% turnover (20% repeat)",
+      "jurisdiction": "EU"
+    }
+  },
+  {
+    "ref_id": "tfeu-art107",
+    "entity_type": "regulation",
+    "entity_id": "tfeu-art107",
+    "canonical_name": "Article 107 TFEU — State Aid Prohibition",
+    "description": "Declares that any aid granted by a Member State or through State resources which distorts or threatens to distort competition by favouring certain undertakings or the production of certain goods is incompatible with the internal market, insofar as it affects trade between Member States. Art.107(2) lists aid that is automatically compatible; Art.107(3) lists aid that may be declared compatible by the Commission (e.g., regional aid, important projects of common European interest).",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": 107,
+      "topic": "state-aid-prohibition",
+      "jurisdiction": "EU"
+    }
+  },
+  {
+    "ref_id": "tfeu-art108",
+    "entity_type": "regulation",
+    "entity_id": "tfeu-art108",
+    "canonical_name": "Article 108 TFEU — State Aid Notification & Review",
+    "description": "Requires Member States to notify the Commission of plans to grant or alter aid (standstill obligation). The Commission reviews notified aid and may approve, impose conditions, or order recovery of unlawful aid. Establishes the preliminary examination and formal investigation procedures. Aid granted without Commission approval is unlawful and must be recovered with interest.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": 108,
+      "topic": "state-aid-procedure",
+      "standstill_obligation": true
+    }
+  },
+  {
+    "ref_id": "tfeu-art109",
+    "entity_type": "regulation",
+    "entity_id": "tfeu-art109",
+    "canonical_name": "Article 109 TFEU — State Aid Implementing Regulations",
+    "description": "Empowers the Council, acting on a proposal from the Commission, to adopt regulations for the application of Articles 107 and 108 TFEU. This is the legal basis for the General Block Exemption Regulation (GBER) and other implementing measures that exempt certain categories of state aid from the notification requirement.",
+    "metadata": {
+      "regulation": "TFEU",
+      "article_number": 109,
+      "topic": "state-aid-delegated-powers"
+    }
+  },
+  {
+    "ref_id": "ecn-plus-directive",
+    "entity_type": "regulation",
+    "entity_id": "ecn-plus-directive",
+    "canonical_name": "ECN+ Directive (EU) 2019/1",
+    "description": "Empowers national competition authorities (NCAs) to be more effective enforcers of Articles 101 and 102 TFEU. Ensures NCAs have adequate guarantees of independence, resources, and enforcement powers including the ability to impose effective fines and leniency programmes. Harmonises key procedural rules across all EU Member States for competition enforcement.",
+    "metadata": {
+      "full_title": "Directive (EU) 2019/1",
+      "short_name": "ECN+ Directive",
+      "transposition_deadline": "2021-02-04",
+      "topic": "nca-empowerment"
+    }
+  },
+  {
+    "ref_id": "damages-directive",
+    "entity_type": "regulation",
+    "entity_id": "damages-directive",
+    "canonical_name": "Antitrust Damages Directive 2014/104/EU",
+    "description": "Harmonises rules governing actions for damages under national law for infringements of EU and national competition law. Establishes a rebuttable presumption that cartel infringements cause harm. Provides for disclosure of evidence, limitation periods, joint and several liability, and the passing-on defence. Enables effective private enforcement alongside public enforcement by the Commission and NCAs.",
+    "metadata": {
+      "full_title": "Directive 2014/104/EU",
+      "short_name": "Damages Directive",
+      "applies_from": "2014-12-26",
+      "topic": "private-enforcement"
+    }
+  },
+  {
+    "ref_id": "fsr-2022",
+    "entity_type": "regulation",
+    "entity_id": "fsr-2022",
+    "canonical_name": "Foreign Subsidies Regulation (EU) 2022/2560",
+    "description": "Addresses distortions in the EU internal market caused by subsidies granted by non-EU countries. Introduces three tools: notification-based review of concentrations involving foreign subsidies (>€500M turnover + >€50M subsidy), notification-based review of public procurement bids (>€250M contract + >€4M subsidy), and a general ex-officio review power. The Commission can impose redressive measures or prohibit transactions.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2022/2560",
+      "short_name": "FSR",
+      "applies_from": "2023-07-12",
+      "notification_from": "2023-10-12",
+      "topic": "foreign-subsidies"
+    }
+  },
+  {
+    "ref_id": "concept-relevant-market",
+    "entity_type": "concept",
+    "entity_id": "concept-relevant-market",
+    "canonical_name": "Relevant Market Definition",
+    "description": "The foundational step in virtually all competition assessments. Comprises the relevant product market (all products/services regarded as interchangeable by consumers based on characteristics, prices, and intended use) and the relevant geographic market (the area in which conditions of competition are sufficiently homogeneous). Market definition is determined using demand-side substitutability, supply-side substitutability, and the hypothetical monopolist test (SSNIP test).",
+    "metadata": {
+      "topic": "market-definition",
+      "key_test": "SSNIP (5-10% price increase)",
+      "commission_notice": "2024 Market Definition Notice"
+    }
+  },
+  {
+    "ref_id": "concept-market-power",
+    "entity_type": "concept",
+    "entity_id": "concept-market-power",
+    "canonical_name": "Market Power & Dominance",
+    "description": "The ability of a firm to profitably raise prices above competitive levels for a sustained period. Under Art.102, a dominant position is generally presumed at market shares above 50% (Akzo presumption). Factors assessed include market share, barriers to entry, buyer power, and countervailing competitive constraints. Collective dominance (oligopolistic dominance) can also be established where firms adopt parallel behaviour without explicit agreement.",
+    "metadata": {
+      "topic": "dominance-assessment",
+      "akzo_presumption": "50% market share",
+      "factors": ["market share", "barriers to entry", "buyer power", "economies of scale"]
+    }
+  },
+  {
+    "ref_id": "concept-siec-test",
+    "entity_type": "concept",
+    "entity_id": "concept-siec-test",
+    "canonical_name": "SIEC Test (Significant Impediment to Effective Competition)",
+    "description": "The substantive test applied under the EU Merger Regulation to assess whether a concentration should be prohibited. A merger is blocked if it would significantly impede effective competition in the common market or a substantial part of it, in particular as a result of creating or strengthening a dominant position. Broader than the old 'dominance test' as it also captures non-coordinated effects in oligopolistic markets (gap cases).",
+    "metadata": {
+      "topic": "merger-substantive-test",
+      "replaced": "dominance test (pre-2004)",
+      "applies_to": "all concentrations with EU dimension"
+    }
+  },
+  {
+    "ref_id": "concept-concentration",
+    "entity_type": "concept",
+    "entity_id": "concept-concentration",
+    "canonical_name": "Concentration (Merger Control)",
+    "description": "A lasting change in control arising from: (a) a merger of two or more previously independent undertakings; (b) acquisition of sole or joint control over the whole or parts of one or more undertakings (by purchase of shares/assets, contract, or other means); or (c) creation of a full-function joint venture. Only concentrations with an EU dimension (meeting turnover thresholds) must be notified to the Commission under the EUMR.",
+    "metadata": {
+      "topic": "concentration-definition",
+      "article": "EUMR Art.3",
+      "types": ["merger", "acquisition of control", "full-function JV"]
+    }
+  },
+  {
+    "ref_id": "threshold-eu-dimension",
+    "entity_type": "threshold",
+    "entity_id": "threshold-eu-dimension",
+    "canonical_name": "EU Dimension Turnover Thresholds",
+    "description": "A concentration has an EU dimension if: (Primary) combined worldwide turnover exceeds €5 billion AND at least two undertakings each have EU-wide turnover exceeding €250 million — unless each achieves more than 2/3 of EU-wide turnover in one Member State. (Alternative) combined worldwide turnover exceeds €2.5 billion AND in at least three Member States the combined turnover exceeds €100 million and each of at least two parties has turnover exceeding €25 million, with EU-wide turnover of each of at least two parties exceeding €100 million.",
+    "metadata": {
+      "topic": "notification-thresholds",
+      "primary_worldwide": "€5 billion",
+      "primary_eu_each": "€250 million",
+      "alternative_worldwide": "€2.5 billion",
+      "two_thirds_rule": true
+    }
+  },
+  {
+    "ref_id": "concept-efficiencies-defence",
+    "entity_type": "concept",
+    "entity_id": "concept-efficiencies-defence",
+    "canonical_name": "Efficiencies Defence (Merger Control)",
+    "description": "Parties to a merger may argue that merger-specific efficiencies (cost savings, innovation, quality improvements) offset the competitive harm identified by the Commission. The efficiencies must be: (1) verifiable and quantifiable; (2) merger-specific (not achievable by less anticompetitive means); (3) passed on to consumers in a timely manner; and (4) sufficient to prevent any significant impediment to effective competition. In practice, the Commission has never accepted an efficiencies defence as the sole basis for clearance.",
+    "metadata": {
+      "topic": "efficiencies",
+      "guideline": "Horizontal Merger Guidelines paras 76-88",
+      "conditions": ["verifiable", "merger-specific", "consumer benefit", "timely"]
+    }
+  },
+  {
+    "ref_id": "concept-failing-firm",
+    "entity_type": "concept",
+    "entity_id": "concept-failing-firm",
+    "canonical_name": "Failing Firm Defence",
+    "description": "A counterfactual argument that the competitive harm would occur regardless of the merger because the target firm would exit the market in any event. Three cumulative conditions must be met: (1) the target would exit the market in the near future absent the merger; (2) there is no less anticompetitive alternative purchaser; (3) the target's assets would inevitably exit the market absent the merger. Successfully invoked in very few cases (e.g., Aegean/Olympic II).",
+    "metadata": {
+      "topic": "failing-firm",
+      "guideline": "Horizontal Merger Guidelines paras 89-91",
+      "conditions": ["imminent exit", "no alternative purchaser", "assets would exit"]
+    }
+  },
+  {
+    "ref_id": "concept-hardcore-restriction",
+    "entity_type": "concept",
+    "entity_id": "concept-hardcore-restriction",
+    "canonical_name": "Hardcore Restrictions",
+    "description": "Competition restrictions considered so serious that they are presumed to infringe Art.101(1) and are very unlikely to satisfy Art.101(3). In vertical agreements: resale price maintenance (RPM), absolute territorial protection, restrictions on online sales. In horizontal agreements: price-fixing, output limitation, market allocation, bid rigging. Presence of a hardcore restriction removes the entire agreement from block exemption protection.",
+    "metadata": {
+      "topic": "hardcore-restrictions",
+      "vertical_examples": ["RPM", "absolute territorial protection", "online sales ban"],
+      "horizontal_examples": ["price-fixing", "output limitation", "market sharing", "bid rigging"]
+    }
+  },
+  {
+    "ref_id": "concept-by-object",
+    "entity_type": "concept",
+    "entity_id": "concept-by-object",
+    "canonical_name": "Restriction by Object vs by Effect",
+    "description": "Art.101(1) distinguishes between restrictions by object and restrictions by effect. Restrictions by object (e.g., price-fixing, market sharing) are considered inherently harmful to competition and do not require proof of actual anticompetitive effects. Restrictions by effect require a counterfactual analysis demonstrating that the agreement appreciably restricts competition compared to the situation without it. The classification has significant implications for the burden and standard of proof.",
+    "metadata": {
+      "topic": "object-vs-effect",
+      "key_case": "Cartes Bancaires (C-67/13 P)",
+      "by_object_examples": ["price-fixing", "market allocation", "bid rigging"]
+    }
+  },
+  {
+    "ref_id": "concept-de-minimis",
+    "entity_type": "concept",
+    "entity_id": "concept-de-minimis",
+    "canonical_name": "De Minimis Doctrine (Appreciability)",
+    "description": "Agreements that do not appreciably restrict competition fall outside Art.101(1). The Commission's De Minimis Notice (2014) provides safe harbours: agreements between competitors with combined market share below 10%, and between non-competitors with individual market share below 15%. However, restrictions by object are excluded from the de minimis safe harbour regardless of market share (Expedia case, C-226/11).",
+    "metadata": {
+      "topic": "appreciability",
+      "horizontal_threshold": "10% combined",
+      "vertical_threshold": "15% individual",
+      "notice": "2014 De Minimis Notice",
+      "object_exclusion": true
+    }
+  },
+  {
+    "ref_id": "concept-gatekeeper",
+    "entity_type": "concept",
+    "entity_id": "concept-gatekeeper",
+    "canonical_name": "Gatekeeper (DMA)",
+    "description": "A provider of core platform services designated by the Commission under the DMA based on three criteria: (1) significant impact on the internal market (presumed if annual EEA turnover >=€7.5 billion or market capitalisation >=€75 billion and active in at least 3 Member States); (2) provides a core platform service that is an important gateway for business users to reach end users; (3) holds an entrenched and durable position (presumed if thresholds met in each of the last 3 financial years). Designated gatekeepers include Alphabet, Amazon, Apple, ByteDance, Meta, and Microsoft.",
+    "metadata": {
+      "topic": "gatekeeper-designation",
+      "turnover_threshold": "€7.5 billion EEA",
+      "market_cap_threshold": "€75 billion",
+      "user_thresholds": "45M monthly end users + 10K annual business users in EU"
+    }
+  },
+  {
+    "ref_id": "concept-core-platform-service",
+    "entity_type": "concept",
+    "entity_id": "concept-core-platform-service",
+    "canonical_name": "Core Platform Service (DMA)",
+    "description": "Services listed in DMA Art.2(2) that can be designated for gatekeeper obligations. Includes: online intermediation services, online search engines, online social networking, video-sharing platform services, number-independent interpersonal communication services, operating systems, web browsers, virtual assistants, cloud computing services, and online advertising services. Each designated gatekeeper receives obligations specific to its designated core platform services.",
+    "metadata": {
+      "topic": "core-platform-services",
+      "article": "DMA Art.2(2)",
+      "count": 10,
+      "examples": ["app stores", "search engines", "social networks", "OS", "browsers", "cloud"]
+    }
+  },
+  {
+    "ref_id": "dg-competition",
+    "entity_type": "authority",
+    "entity_id": "dg-competition",
+    "canonical_name": "European Commission — DG Competition",
+    "description": "The Directorate-General for Competition of the European Commission is the principal EU-level competition authority. Responsible for enforcing Articles 101 and 102 TFEU, reviewing mergers under the EU Merger Regulation, controlling state aid under Articles 107-109 TFEU, and enforcing the DMA gatekeeper obligations. Has powers to conduct sector inquiries, impose fines, accept commitments, and order structural remedies.",
+    "metadata": {
+      "topic": "eu-competition-authority",
+      "head": "Commissioner for Competition",
+      "powers": ["fines", "commitments", "structural remedies", "dawn raids", "sector inquiries"]
+    }
+  },
+  {
+    "ref_id": "ecn",
+    "entity_type": "authority",
+    "entity_id": "ecn",
+    "canonical_name": "European Competition Network (ECN)",
+    "description": "A network of the European Commission and the national competition authorities of the EU Member States established by Regulation 1/2003. Provides a forum for case allocation, information sharing, and coordination of enforcement actions. Ensures consistent application of Articles 101 and 102 TFEU across the EU. The ECN+ Directive further harmonised NCA powers and procedures within the network.",
+    "metadata": {
+      "topic": "enforcement-cooperation",
+      "established_by": "Regulation 1/2003",
+      "members": "Commission + 27 NCAs"
+    }
+  },
+  {
+    "ref_id": "nca",
+    "entity_type": "authority",
+    "entity_id": "nca",
+    "canonical_name": "National Competition Authorities (NCAs)",
+    "description": "Each EU Member State has one or more national competition authorities empowered to apply Articles 101 and 102 TFEU alongside national competition law. Under Regulation 1/2003, NCAs have full power to apply the prohibition and exemption provisions. The ECN+ Directive ensures NCAs have independence, adequate resources, and effective enforcement tools including the power to impose deterrent fines and operate leniency programmes.",
+    "metadata": {
+      "topic": "national-enforcement",
+      "examples": ["Bundeskartellamt (DE)", "Autorité de la concurrence (FR)", "CMA (post-Brexit observer)", "AGCM (IT)", "CNMC (ES)"],
+      "ecn_plus": true
+    }
+  },
+  {
+    "ref_id": "eu-general-court",
+    "entity_type": "authority",
+    "entity_id": "eu-general-court",
+    "canonical_name": "General Court (EU) — Competition Appeals",
+    "description": "The General Court of the European Union (formerly Court of First Instance) has jurisdiction to hear actions for annulment of Commission competition decisions under Articles 101, 102, merger control, and state aid. Conducts full review of the facts and law, including review of complex economic assessments. Its decisions may be appealed on points of law to the Court of Justice of the European Union (CJEU).",
+    "metadata": {
+      "topic": "judicial-review",
+      "jurisdiction": "EU",
+      "appeal_to": "CJEU"
+    }
+  },
+  {
+    "ref_id": "cjeu",
+    "entity_type": "authority",
+    "entity_id": "cjeu",
+    "canonical_name": "Court of Justice of the European Union (CJEU)",
+    "description": "The highest court for EU competition law. Hears appeals on points of law from the General Court and preliminary references from national courts on interpretation of Articles 101, 102, and related regulations. Key competition law judgments include Consten & Grundig, Hoffmann-La Roche, Intel, Cartes Bancaires, and Google Shopping. Its rulings establish binding precedent across all Member States.",
+    "metadata": {
+      "topic": "supreme-competition-court",
+      "jurisdiction": "EU",
+      "key_cases": ["Intel", "Cartes Bancaires", "Google Shopping", "Coty"]
+    }
+  },
+  {
+    "ref_id": "process-merger-notification",
+    "entity_type": "process",
+    "entity_id": "process-merger-notification",
+    "canonical_name": "Merger Notification & Review Process",
+    "description": "Concentrations with an EU dimension must be notified to the Commission using Form CO (or Short Form CO for straightforward cases) prior to implementation. The review follows a two-phase structure: Phase I (25 working days, extendable to 35 if commitments offered) for initial assessment, and Phase II (90 working days, extendable to 105 with commitments or 125 at parties' request) for in-depth investigation. Transactions must not be implemented before clearance (standstill obligation).",
+    "metadata": {
+      "topic": "merger-procedure",
+      "phase1_days": 25,
+      "phase2_days": 90,
+      "form": "Form CO / Short Form CO",
+      "standstill": true
+    }
+  },
+  {
+    "ref_id": "process-phase1",
+    "entity_type": "process",
+    "entity_id": "process-phase1",
+    "canonical_name": "Phase I Merger Review",
+    "description": "The initial review period of 25 working days following notification. The Commission assesses whether the concentration raises serious doubts as to its compatibility with the common market. Three possible outcomes: unconditional clearance (Art.6(1)(b) decision); clearance with Phase I commitments (Art.6(1)(b) with conditions); or opening of Phase II in-depth investigation (Art.6(1)(c) decision). The deadline extends to 35 working days if the parties offer commitments.",
+    "metadata": {
+      "topic": "phase1-review",
+      "duration": "25 working days (35 with commitments)",
+      "outcomes": ["unconditional clearance", "clearance with commitments", "Phase II opening"]
+    }
+  },
+  {
+    "ref_id": "process-phase2",
+    "entity_type": "process",
+    "entity_id": "process-phase2",
+    "canonical_name": "Phase II In-Depth Merger Investigation",
+    "description": "An in-depth investigation lasting 90 working days (extendable to 105 with commitments, 125 at parties' request) following a Phase I serious doubts finding. The Commission conducts a detailed competitive assessment including market testing of remedies, economic analysis, internal document review, and third-party consultations. Outcomes: unconditional clearance, clearance with conditions (commitments), or prohibition. The Statement of Objections is issued if the Commission intends to prohibit.",
+    "metadata": {
+      "topic": "phase2-review",
+      "duration": "90 working days (105/125 extended)",
+      "outcomes": ["unconditional clearance", "clearance with commitments", "prohibition"],
+      "statement_of_objections": true
+    }
+  },
+  {
+    "ref_id": "process-dawn-raid",
+    "entity_type": "process",
+    "entity_id": "process-dawn-raid",
+    "canonical_name": "Dawn Raids (Inspections)",
+    "description": "Unannounced inspections conducted by the Commission (and/or NCAs) at the premises of undertakings suspected of infringing Articles 101 or 102 TFEU. Inspectors may enter premises, examine and copy business records (including electronic data), seal premises, and ask for explanations. Obstruction may result in fines up to 1% of turnover. Undertakings have the right to legal representation but cannot refuse or delay entry. Digital forensics and imaging of IT systems are standard practice.",
+    "metadata": {
+      "topic": "inspections",
+      "legal_basis": "Regulation 1/2003 Art.20-21",
+      "obstruction_fine": "up to 1% turnover",
+      "powers": ["enter premises", "examine records", "seal premises", "copy data"]
+    }
+  },
+  {
+    "ref_id": "process-leniency",
+    "entity_type": "process",
+    "entity_id": "process-leniency",
+    "canonical_name": "Leniency Programme",
+    "description": "The Commission's programme offering immunity from or reduction of fines for undertakings that report their participation in a cartel and cooperate with the investigation. The first applicant to provide sufficient evidence enabling a dawn raid or finding of infringement receives full immunity from fines. Subsequent applicants may receive reductions of 30-50% (second), 20-30% (third), or up to 20% (subsequent). The programme is the Commission's most effective tool for detecting secret cartels.",
+    "metadata": {
+      "topic": "leniency",
+      "notice": "2006 Leniency Notice",
+      "first_applicant": "full immunity",
+      "second_applicant": "30-50% reduction",
+      "third_applicant": "20-30% reduction"
+    }
+  },
+  {
+    "ref_id": "process-settlement",
+    "entity_type": "process",
+    "entity_id": "process-settlement",
+    "canonical_name": "Cartel Settlement Procedure",
+    "description": "A streamlined procedure available in cartel cases where parties acknowledge their participation in the infringement and liability. In exchange, the Commission grants a 10% reduction in fines. The procedure saves Commission resources and enables faster case resolution. Parties receive a settlement submission summarising the Commission's case, agree on a fine range, and submit a formal settlement submission. The Commission may reject settlement if it considers the procedure inappropriate.",
+    "metadata": {
+      "topic": "settlement",
+      "fine_reduction": "10%",
+      "legal_basis": "Regulation 773/2004 Art.10a",
+      "cumulative_with_leniency": true
+    }
+  },
+  {
+    "ref_id": "process-commitments",
+    "entity_type": "process",
+    "entity_id": "process-commitments",
+    "canonical_name": "Commitment Decisions (Art.9 Reg.1/2003)",
+    "description": "Where the Commission intends to adopt a prohibition decision under Art.101 or 102, undertakings may offer commitments to address the competition concerns. If accepted, the Commission makes the commitments binding without finding an infringement. Breach of commitments may result in fines up to 10% of turnover. The procedure avoids lengthy litigation but does not establish precedent. Widely used in abuse of dominance cases and increasingly in digital markets.",
+    "metadata": {
+      "topic": "commitment-decisions",
+      "legal_basis": "Regulation 1/2003 Art.9",
+      "no_infringement_finding": true,
+      "breach_fine": "up to 10% turnover"
+    }
+  },
+  {
+    "ref_id": "remedy-structural",
+    "entity_type": "concept",
+    "entity_id": "remedy-structural",
+    "canonical_name": "Structural Remedies (Divestiture)",
+    "description": "Remedies requiring a change in market structure, typically the divestiture (sale) of a business unit, assets, or shares to an approved purchaser. Considered the gold standard in merger remedies as they provide a permanent, self-executing solution. The divested business must be viable, standalone, and capable of competing effectively. A monitoring trustee oversees implementation, and a divestiture trustee may be appointed if the parties fail to divest within the agreed timeline.",
+    "metadata": {
+      "topic": "structural-remedies",
+      "preference": "preferred by Commission in mergers",
+      "types": ["full business divestiture", "carve-out divestiture", "mix-and-match"],
+      "monitoring": "trustee-supervised"
+    }
+  },
+  {
+    "ref_id": "remedy-behavioural",
+    "entity_type": "concept",
+    "entity_id": "remedy-behavioural",
+    "canonical_name": "Behavioural Remedies",
+    "description": "Remedies requiring the merged entity to act or refrain from acting in a specified manner, without altering market structure. Examples include access commitments (granting competitors access to key infrastructure, technology, or data), non-discrimination obligations, licensing of IP, interoperability requirements, and firewalls/ring-fencing. Generally considered less effective than structural remedies in merger cases due to monitoring costs and risks of circumvention, but more common in Art.102 cases.",
+    "metadata": {
+      "topic": "behavioural-remedies",
+      "examples": ["access commitments", "licensing", "non-discrimination", "interoperability", "firewalls"],
+      "monitoring": "ongoing compliance required"
+    }
+  },
+  {
+    "ref_id": "concept-gun-jumping",
+    "entity_type": "concept",
+    "entity_id": "concept-gun-jumping",
+    "canonical_name": "Gun-Jumping (Premature Implementation)",
+    "description": "The implementation of a notifiable concentration before receiving Commission clearance, in violation of the standstill obligation under EUMR Art.7. Also covers premature coordination of competitive behaviour between the merging parties during the review period. Can result in fines of up to 10% of worldwide turnover. Notable cases include Electrabel/CNR (€20M fine), Marine Harvest/Morpol (€20M), and Altice/PT Portugal (€124.5M).",
+    "metadata": {
+      "topic": "gun-jumping",
+      "legal_basis": "EUMR Art.7 and Art.14(2)",
+      "max_fine": "10% worldwide turnover",
+      "notable_fines": ["Altice €124.5M", "Marine Harvest €20M", "Electrabel €20M"]
+    }
+  },
+  {
+    "ref_id": "concept-referral-art22",
+    "entity_type": "concept",
+    "entity_id": "concept-referral-art22",
+    "canonical_name": "Article 22 EUMR Referral (Killer Acquisitions)",
+    "description": "Allows one or more Member States to request the Commission to examine a concentration that does not have an EU dimension but affects trade between Member States and threatens to significantly affect competition. Since 2021, the Commission encourages referrals for transactions below national thresholds, particularly in digital and pharma sectors where targets have high competitive value but low turnover (so-called 'killer acquisitions'). The Illumina/GRAIL case established the Commission's jurisdiction under this mechanism.",
+    "metadata": {
+      "topic": "article22-referral",
+      "purpose": "catch below-threshold acquisitions",
+      "key_case": "Illumina/GRAIL",
+      "sectors": ["digital", "pharma", "biotech"]
+    }
+  },
+  {
+    "ref_id": "concept-cartel",
+    "entity_type": "concept",
+    "entity_id": "concept-cartel",
+    "canonical_name": "Cartel",
+    "description": "A secret agreement between two or more competing undertakings to restrict competition, typically involving price-fixing, output restriction, market sharing, or bid rigging. Cartels are considered the most serious infringement of competition law and are treated as restrictions by object under Art.101(1). The Commission imposes substantial fines (up to 10% of worldwide turnover) and cartel participants may face criminal prosecution in certain Member States. Detection relies heavily on the leniency programme and dawn raids.",
+    "metadata": {
+      "topic": "cartel-enforcement",
+      "types": ["price-fixing", "output limitation", "market sharing", "bid rigging"],
+      "max_fine": "10% worldwide turnover",
+      "detection": ["leniency", "dawn raids", "whistleblowers"]
+    }
+  },
+  {
+    "ref_id": "concept-concerted-practice",
+    "entity_type": "concept",
+    "entity_id": "concept-concerted-practice",
+    "canonical_name": "Concerted Practice",
+    "description": "A form of coordination between undertakings that falls short of a formal agreement but substitutes practical cooperation for the risks of competition. Established in the ICI/Dyestuffs case (48/69). Requires: (1) direct or indirect contact between competitors; (2) disclosing future conduct or reducing uncertainty about it; (3) subsequent market conduct consistent with the coordination. Distinguished from lawful parallel behaviour which can be explained by independent market responses to the same conditions.",
+    "metadata": {
+      "topic": "concerted-practice",
+      "key_case": "ICI/Dyestuffs (48/69)",
+      "elements": ["contact", "disclosure of intentions", "subsequent market conduct"]
+    }
+  },
+  {
+    "ref_id": "concept-hub-and-spoke",
+    "entity_type": "concept",
+    "entity_id": "concept-hub-and-spoke",
+    "canonical_name": "Hub-and-Spoke Conspiracy",
+    "description": "An indirect form of horizontal collusion where competing undertakings (spokes) exchange competitively sensitive information through a common trading partner (hub), typically a supplier or retailer. The hub facilitates coordination without direct contact between competitors. The Commission and NCAs have increasingly pursued hub-and-spoke cases, particularly in the context of algorithmic pricing and platform-mediated information exchange. Liability attaches to both the hub and the spokes.",
+    "metadata": {
+      "topic": "hub-and-spoke",
+      "structure": "hub (common partner) + spokes (competitors)",
+      "modern_relevance": "algorithmic pricing, platform markets"
+    }
+  },
+  {
+    "ref_id": "concept-information-exchange",
+    "entity_type": "concept",
+    "entity_id": "concept-information-exchange",
+    "canonical_name": "Information Exchange Between Competitors",
+    "description": "The sharing of competitively sensitive information between competitors may constitute a concerted practice or form part of a broader anticompetitive agreement. Strategic information (prices, quantities, costs, customer lists, future plans) exchanged between competitors is most likely to raise concerns. Assessment depends on the nature of information, its age, frequency of exchange, market structure, and whether exchange is public or private. The 2023 Horizontal Guidelines provide detailed guidance on information exchange assessment.",
+    "metadata": {
+      "topic": "information-exchange",
+      "guideline": "2023 Horizontal Cooperation Guidelines Ch.6",
+      "risk_factors": ["strategic data", "individualised", "recent", "frequent", "private", "concentrated market"]
+    }
+  },
+  {
+    "ref_id": "concept-vertical-restraint",
+    "entity_type": "concept",
+    "entity_id": "concept-vertical-restraint",
+    "canonical_name": "Vertical Restraints",
+    "description": "Restrictions in agreements between undertakings at different levels of the supply chain (e.g., manufacturer-distributor). Common types include exclusive distribution, selective distribution, exclusive supply, single branding (non-compete), resale price maintenance (RPM — hardcore restriction), and online sales restrictions. Assessed under the VBER safe harbour (if market shares below 30% and no hardcore restrictions) or individually under Art.101(1) and (3).",
+    "metadata": {
+      "topic": "vertical-restraints",
+      "types": ["exclusive distribution", "selective distribution", "exclusive supply", "single branding", "RPM", "online restrictions"],
+      "safe_harbour": "VBER below 30% market share"
+    }
+  },
+  {
+    "ref_id": "concept-rpm",
+    "entity_type": "concept",
+    "entity_id": "concept-rpm",
+    "canonical_name": "Resale Price Maintenance (RPM)",
+    "description": "A vertical restraint where a supplier sets or establishes a minimum resale price for its products. Treated as a hardcore restriction under the VBER and as a restriction by object under Art.101(1). Maximum and recommended resale prices are generally permissible unless they function as fixed or minimum prices in practice. RPM prevents intra-brand price competition and may facilitate collusion at supplier or distributor level. One of the most commonly enforced vertical restrictions by NCAs.",
+    "metadata": {
+      "topic": "resale-price-maintenance",
+      "classification": "hardcore restriction / by object",
+      "permissible_alternatives": ["maximum prices", "recommended prices (if genuine)"],
+      "vber_status": "excluded from block exemption"
+    }
+  },
+  {
+    "ref_id": "concept-selective-distribution",
+    "entity_type": "concept",
+    "entity_id": "concept-selective-distribution",
+    "canonical_name": "Selective Distribution Systems",
+    "description": "A distribution system where the supplier selects resellers based on specified qualitative or quantitative criteria and resellers agree not to sell to non-authorised distributors. Qualitative selective distribution (based on objective quality criteria applied uniformly) generally falls outside Art.101(1) under the Metro criteria. Quantitative selective distribution (limiting the number of resellers) requires exemption under the VBER or Art.101(3). Online marketplace bans in selective distribution assessed under Coty (C-230/16).",
+    "metadata": {
+      "topic": "selective-distribution",
+      "key_cases": ["Metro", "Coty (C-230/16)"],
+      "types": ["qualitative (usually lawful)", "quantitative (needs exemption)"]
+    }
+  },
+  {
+    "ref_id": "concept-self-preferencing",
+    "entity_type": "concept",
+    "entity_id": "concept-self-preferencing",
+    "canonical_name": "Self-Preferencing",
+    "description": "Conduct by a vertically integrated dominant platform that favours its own downstream products or services over those of competitors using the platform. Established as a potential abuse of dominance in Google Shopping (Case AT.39740), where Google favoured its own comparison shopping service in search results. Under the DMA, self-preferencing is explicitly prohibited for gatekeepers in ranking (Art.6(5)) and in the use of business user data for competition (Art.6(2)).",
+    "metadata": {
+      "topic": "self-preferencing",
+      "key_case": "Google Shopping (AT.39740)",
+      "dma_articles": ["Art.6(5) ranking", "Art.6(2) data use"],
+      "applies_to": "dominant platforms / gatekeepers"
+    }
+  },
+  {
+    "ref_id": "concept-tying-bundling",
+    "entity_type": "concept",
+    "entity_id": "concept-tying-bundling",
+    "canonical_name": "Tying and Bundling",
+    "description": "Tying occurs when a dominant undertaking makes the sale of one product (tying product) conditional on the purchase of another distinct product (tied product). Bundling involves offering products together as a package, potentially at a discount. Both may constitute abuse of dominance under Art.102(d) TFEU if they foreclose competition in the tied/bundled product market. Assessment considers dominance in the tying market, distinct products, coercion, and foreclosure effects. Key cases: Microsoft (T-201/04), Google Android.",
+    "metadata": {
+      "topic": "tying-bundling",
+      "legal_basis": "Art.102(d) TFEU",
+      "key_cases": ["Microsoft (T-201/04)", "Google Android (AT.40099)"],
+      "elements": ["dominance", "distinct products", "coercion", "foreclosure"]
+    }
+  },
+  {
+    "ref_id": "concept-predatory-pricing",
+    "entity_type": "concept",
+    "entity_id": "concept-predatory-pricing",
+    "canonical_name": "Predatory Pricing",
+    "description": "A pricing strategy by a dominant undertaking involving setting prices below cost to eliminate competitors, with the intention of recouping losses once competitors have exited. Under the AKZO test: prices below average variable cost (AVC) are presumed predatory; prices between AVC and average total cost (ATC) are abusive if part of a plan to eliminate a competitor. Recoupment is not required under EU law (unlike US law). Applied in cases such as AKZO (C-62/86), France Télécom, and Post Danmark.",
+    "metadata": {
+      "topic": "predatory-pricing",
+      "test": "AKZO two-tier cost test",
+      "key_cases": ["AKZO (C-62/86)", "France Télécom", "Post Danmark"],
+      "recoupment_required": false
+    }
+  },
+  {
+    "ref_id": "concept-margin-squeeze",
+    "entity_type": "concept",
+    "entity_id": "concept-margin-squeeze",
+    "canonical_name": "Margin Squeeze",
+    "description": "An abuse of dominance where a vertically integrated dominant undertaking sets the price of an upstream input (wholesale) and its own downstream retail price such that an equally efficient competitor cannot operate profitably at the retail level. The spread between wholesale and retail prices is insufficient to cover the costs of an efficient competitor. The 'as-efficient competitor' test applies. Key cases: Deutsche Telekom (C-280/08P), TeliaSonera (C-52/09).",
+    "metadata": {
+      "topic": "margin-squeeze",
+      "test": "as-efficient competitor test",
+      "key_cases": ["Deutsche Telekom (C-280/08P)", "TeliaSonera (C-52/09)"],
+      "requires": "vertical integration + dominance upstream"
+    }
+  },
+  {
+    "ref_id": "concept-fines-methodology",
+    "entity_type": "concept",
+    "entity_id": "concept-fines-methodology",
+    "canonical_name": "Fines Calculation Methodology",
+    "description": "The Commission calculates fines for infringements of Articles 101 and 102 using the 2006 Fining Guidelines methodology: (1) determine the basic amount based on up to 30% of relevant turnover in the affected market multiplied by the number of years of infringement, plus an 'entry fee' of 15-25% for cartel cases; (2) adjust for aggravating factors (repeat offender, obstruction, ringleader) or mitigating factors (limited involvement, cooperation outside leniency); (3) apply the 10% of worldwide turnover cap. The final amount must be deterrent and proportionate.",
+    "metadata": {
+      "topic": "fines-calculation",
+      "guideline": "2006 Guidelines on Fines",
+      "basic_amount": "up to 30% of relevant turnover x duration",
+      "entry_fee": "15-25% for cartels",
+      "cap": "10% worldwide annual turnover"
+    }
+  },
+  {
+    "ref_id": "concept-art22-referral-state",
+    "entity_type": "process",
+    "entity_id": "concept-art22-referral-state",
+    "canonical_name": "Article 4(5) EUMR — Referral to Commission by Parties",
+    "description": "Allows the merging parties to request a pre-notification referral of a concentration to the Commission if the transaction is capable of being reviewed under the national competition laws of at least three Member States. This avoids multiple parallel national filings. If no Member State objects within 15 working days, the Commission acquires exclusive jurisdiction. Provides a one-stop-shop alternative for multi-jurisdictional transactions that do not meet EU dimension thresholds.",
+    "metadata": {
+      "topic": "pre-notification-referral",
+      "direction": "Member States to Commission",
+      "condition": "reviewable in 3+ Member States",
+      "objection_period": "15 working days"
+    }
+  },
+  {
+    "ref_id": "process-art9-referral",
+    "entity_type": "process",
+    "entity_id": "process-art9-referral",
+    "canonical_name": "Article 9 EUMR — Referral to Member State",
+    "description": "Allows a Member State to request the Commission to refer a notified concentration (or part of it) to that Member State's NCA if the concentration threatens to significantly affect competition in a distinct market within that Member State. The Commission may grant or refuse the referral. If granted, the NCA applies national competition law (but may not apply standards less strict than EU law). Ensures local market issues are addressed by the authority with the most appropriate expertise.",
+    "metadata": {
+      "topic": "referral-to-member-state",
+      "direction": "Commission to Member State NCA",
+      "condition": "distinct market within a Member State affected"
+    }
+  },
+  {
+    "ref_id": "concept-gber",
+    "entity_type": "regulation",
+    "entity_id": "concept-gber",
+    "canonical_name": "General Block Exemption Regulation (GBER)",
+    "description": "Commission Regulation (EU) No 651/2014 (as amended, most recently in 2023) declaring certain categories of state aid compatible with the internal market, thus exempting them from the notification requirement under Art.108(3) TFEU. Covers regional aid, SME aid, R&D&I aid, training aid, environmental and energy aid, and other categories. Establishes notification thresholds, transparency requirements, and reporting obligations. Member States must still report measures under GBER to the Commission.",
+    "metadata": {
+      "full_title": "Commission Regulation (EU) No 651/2014",
+      "short_name": "GBER",
+      "latest_amendment": "2023",
+      "categories": ["regional", "SME", "R&D&I", "training", "environmental", "energy"]
+    }
+  },
+  {
+    "ref_id": "concept-state-aid-recovery",
+    "entity_type": "concept",
+    "entity_id": "concept-state-aid-recovery",
+    "canonical_name": "State Aid Recovery",
+    "description": "When the Commission finds that unlawful and incompatible state aid was granted, it orders the Member State to recover the aid from the beneficiary with interest (calculated from the date the aid was granted). Recovery restores the competitive situation prior to the aid. The Member State must execute recovery immediately and effectively under national procedures. Landmark cases include Apple/Ireland (€13 billion recovery order, upheld on appeal in 2024) and Fiat/Luxembourg.",
+    "metadata": {
+      "topic": "state-aid-recovery",
+      "legal_basis": "Regulation 2015/1589 Art.16",
+      "key_cases": ["Apple/Ireland (€13B)", "Fiat/Luxembourg"],
+      "interest": "compound interest from grant date"
+    }
+  },
+  {
+    "ref_id": "concept-ssnip",
+    "entity_type": "concept",
+    "entity_id": "concept-ssnip",
+    "canonical_name": "SSNIP Test (Hypothetical Monopolist Test)",
+    "description": "The standard economic test for defining relevant markets. Asks whether a hypothetical monopolist could profitably impose a Small but Significant Non-transitory Increase in Price (typically 5-10%) above competitive levels. If consumers would switch to substitutes in sufficient numbers to make the price increase unprofitable, the market is broadened to include those substitutes. The test is iterative until a group of products is found where the SSNIP would be profitable. Also known as the hypothetical monopolist test (HMT).",
+    "metadata": {
+      "topic": "market-definition-test",
+      "price_increase": "5-10%",
+      "alternative_name": "Hypothetical Monopolist Test (HMT)",
+      "limitation": "cellophane fallacy in dominance cases"
+    }
+  },
+  {
+    "ref_id": "dma-art5",
+    "entity_type": "obligation",
+    "entity_id": "dma-art5",
+    "canonical_name": "DMA Article 5 — Self-Executing Gatekeeper Obligations",
+    "description": "Sets out obligations that apply to gatekeepers automatically without further specification by the Commission. Includes: prohibition on combining personal data across core platform services without consent (Art.5(2)); obligation to allow business users to promote offers outside the platform (Art.5(4)); prohibition on requiring business users to use the gatekeeper's identification or payment service (Art.5(7)); prohibition on anti-steering (Art.5(4)); and obligation to provide ad performance data (Art.5(9)).",
+    "metadata": {
+      "regulation": "DMA",
+      "article_number": 5,
+      "topic": "self-executing-obligations",
+      "count": 10
+    }
+  },
+  {
+    "ref_id": "dma-art6",
+    "entity_type": "obligation",
+    "entity_id": "dma-art6",
+    "canonical_name": "DMA Article 6 — Susceptible-to-Specification Gatekeeper Obligations",
+    "description": "Sets out obligations that may be further specified by the Commission through a regulatory dialogue with the gatekeeper. Includes: allowing third-party app stores and sideloading (Art.6(4)); prohibition on self-preferencing in ranking (Art.6(5)); allowing users to uninstall pre-installed apps (Art.6(3)); prohibition on using non-public business user data for competition (Art.6(2)); data portability for end users (Art.6(9)); and FRAND access to app stores (Art.6(12)).",
+    "metadata": {
+      "regulation": "DMA",
+      "article_number": 6,
+      "topic": "specification-obligations",
+      "key_provisions": ["sideloading", "ranking neutrality", "data portability", "interoperability"]
+    }
+  },
+  {
+    "ref_id": "dma-art7",
+    "entity_type": "obligation",
+    "entity_id": "dma-art7",
+    "canonical_name": "DMA Article 7 — Interoperability of Messaging Services",
+    "description": "Requires gatekeepers providing number-independent interpersonal communication services (messaging) to make basic functionalities interoperable with third-party providers upon request. Text messaging and image sharing interoperability was required from March 2024; group messaging and voice/video calls follow in later phases. Applies primarily to Meta (WhatsApp, Messenger). End-to-end encryption must be maintained where technically feasible.",
+    "metadata": {
+      "regulation": "DMA",
+      "article_number": 7,
+      "topic": "messaging-interoperability",
+      "phase1": "text + images (March 2024)",
+      "phase2": "group messaging + voice/video (later)"
+    }
+  }
+]

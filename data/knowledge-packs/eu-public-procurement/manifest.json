@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "eu-public-procurement",
+  "display_name": "EU Public Procurement & Remedies",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU public procurement law. Covers the Public Contracts Directive (2014/24/EU), Utilities Directive (2014/25/EU), Concessions Directive (2014/23/EU), Defence & Security Procurement Directive (2009/81/EC), and the Remedies Directives (89/665/EEC, 92/13/EEC, as amended by 2007/66/EC). Includes eForms Regulation (2019/1780), procurement procedures (open, restricted, competitive dialogue, innovation partnership, negotiated), thresholds, selection and exclusion criteria, MEAT award criteria, framework agreements, dynamic purchasing systems, standstill period, contract modifications, remedies (interim measures, set-aside, contract ineffectiveness, damages, alternative penalties), green and social procurement, reserved contracts, in-house exception, and cross-references to competition law and State aid.",
+  "author": "ANTON Legal Team",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Public & International",
+  "regulation_ids": [
+    "Directive 2014/24/EU",
+    "Directive 2014/25/EU",
+    "Directive 2014/23/EU",
+    "Directive 2009/81/EC",
+    "Directive 89/665/EEC",
+    "Directive 92/13/EEC",
+    "Directive 2007/66/EC",
+    "Regulation (EU) 2019/1780"
+  ],
+  "tier": 1,
+  "entity_count": 54,
+  "relationship_count": 81,
+  "alias_entry_count": 54,
+  "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0024",
+  "validated_by": "ANTON Legal Team",
+  "content_confirmed": true
+}

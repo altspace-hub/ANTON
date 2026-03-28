@@ -1,0 +1,548 @@
+[
+  {
+    "from_ref": "eutmr",
+    "to_ref": "eutmr-a7-absolute-grounds",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EUTMR contains Art.7 — absolute grounds for refusal of trade mark registration"
+  },
+  {
+    "from_ref": "eutmr",
+    "to_ref": "eutmr-a8-relative-grounds",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EUTMR contains Art.8 — relative grounds for refusal (opposition proceedings)"
+  },
+  {
+    "from_ref": "eutmr",
+    "to_ref": "concept-distinctiveness",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EUTMR defines the requirement of distinctive character for trade mark protection"
+  },
+  {
+    "from_ref": "eutmr",
+    "to_ref": "concept-likelihood-confusion",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EUTMR establishes likelihood of confusion as the central infringement/opposition test"
+  },
+  {
+    "from_ref": "eutmr",
+    "to_ref": "concept-bad-faith",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "EUTMR provides bad faith as an absolute ground for invalidity of a registered mark"
+  },
+  {
+    "from_ref": "eutmr",
+    "to_ref": "authority-euipo",
+    "relationship_type": "administered_by",
+    "strength": 1,
+    "description": "EUIPO administers the EU trade mark registration and opposition system"
+  },
+  {
+    "from_ref": "tm-directive",
+    "to_ref": "eutmr",
+    "relationship_type": "complements",
+    "strength": 0.9,
+    "description": "Trade Marks Directive harmonises national laws alongside the EU-wide EUTMR system"
+  },
+  {
+    "from_ref": "tm-directive",
+    "to_ref": "concept-distinctiveness",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Trade Marks Directive sets harmonised standards for distinctiveness at national level"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "dsm-a3-tdm",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DSM Directive contains Art.3 — mandatory TDM exception for scientific research"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "dsm-a4-tdm-general",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DSM Directive contains Art.4 — general TDM exception with rightholder opt-out"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "dsm-a15-press-publishers",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DSM Directive contains Art.15 — press publishers' neighbouring right"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "dsm-a17-platforms",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DSM Directive contains Art.17 — platform liability for content sharing"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "concept-copyright-licensing",
+    "relationship_type": "regulates",
+    "strength": 0.8,
+    "description": "DSM Directive Art.18-23 introduce fair remuneration and transparency for authors in licensing"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "infosoc-directive",
+    "relationship_type": "amends",
+    "strength": 0.9,
+    "description": "DSM Directive modernises and supplements the InfoSoc Directive's framework"
+  },
+  {
+    "from_ref": "dsm-directive",
+    "to_ref": "concept-ai-generated-ip",
+    "relationship_type": "relevant_to",
+    "strength": 0.8,
+    "description": "DSM Directive TDM exceptions directly affect AI training data copyright questions"
+  },
+  {
+    "from_ref": "infosoc-directive",
+    "to_ref": "concept-originality",
+    "relationship_type": "defines",
+    "strength": 0.8,
+    "description": "InfoSoc Directive framework underpins the EU originality standard for copyright"
+  },
+  {
+    "from_ref": "infosoc-directive",
+    "to_ref": "concept-copyright-exceptions",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "InfoSoc Directive Art.5 establishes the exhaustive list of copyright exceptions"
+  },
+  {
+    "from_ref": "infosoc-directive",
+    "to_ref": "concept-digital-exhaustion",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "InfoSoc Directive governs exhaustion of distribution right, including digital context"
+  },
+  {
+    "from_ref": "infosoc-directive",
+    "to_ref": "concept-moral-rights",
+    "relationship_type": "relevant_to",
+    "strength": 0.6,
+    "description": "InfoSoc Directive does not harmonise moral rights but operates alongside national moral rights provisions"
+  },
+  {
+    "from_ref": "database-directive",
+    "to_ref": "concept-originality",
+    "relationship_type": "defines",
+    "strength": 0.8,
+    "description": "Database Directive establishes originality standard for database copyright (author's own intellectual creation)"
+  },
+  {
+    "from_ref": "database-directive",
+    "to_ref": "dsm-a3-tdm",
+    "relationship_type": "relevant_to",
+    "strength": 0.7,
+    "description": "Database sui generis right interacts with TDM exception for research purposes"
+  },
+  {
+    "from_ref": "trade-secrets-directive",
+    "to_ref": "concept-trade-secret-reasonable-steps",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Trade Secrets Directive defines the reasonable steps requirement for trade secret protection"
+  },
+  {
+    "from_ref": "trade-secrets-directive",
+    "to_ref": "concept-misappropriation",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Trade Secrets Directive defines unlawful acquisition, use, and disclosure of trade secrets"
+  },
+  {
+    "from_ref": "trade-secrets-directive",
+    "to_ref": "concept-injunctive-relief",
+    "relationship_type": "provides",
+    "strength": 0.9,
+    "description": "Trade Secrets Directive provides injunctive and other relief measures against misappropriation"
+  },
+  {
+    "from_ref": "unitary-patent-reg",
+    "to_ref": "upc-agreement",
+    "relationship_type": "complements",
+    "strength": 1,
+    "description": "Unitary Patent Regulation and UPC Agreement form an integrated system for EU patent protection and enforcement"
+  },
+  {
+    "from_ref": "unitary-patent-reg",
+    "to_ref": "authority-epo",
+    "relationship_type": "administered_by",
+    "strength": 1,
+    "description": "EPO administers the unitary patent registration process"
+  },
+  {
+    "from_ref": "unitary-patent-reg",
+    "to_ref": "concept-patentability",
+    "relationship_type": "relevant_to",
+    "strength": 0.9,
+    "description": "Unitary patent follows EPC patentability requirements (novelty, inventive step, industrial application)"
+  },
+  {
+    "from_ref": "upc-agreement",
+    "to_ref": "concept-scope-of-protection",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "UPC applies Art.69 EPC and Protocol on Interpretation for determining patent scope"
+  },
+  {
+    "from_ref": "upc-agreement",
+    "to_ref": "process-upc-litigation",
+    "relationship_type": "establishes",
+    "strength": 1,
+    "description": "UPC Agreement establishes the litigation procedure for the Unified Patent Court"
+  },
+  {
+    "from_ref": "upc-agreement",
+    "to_ref": "concept-injunctive-relief",
+    "relationship_type": "provides",
+    "strength": 0.8,
+    "description": "UPC provides injunctive relief, provisional measures, and damages for patent infringement"
+  },
+  {
+    "from_ref": "spc-regulation",
+    "to_ref": "unitary-patent-reg",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "SPCs extend protection period beyond the base patent term for regulated products"
+  },
+  {
+    "from_ref": "spc-regulation",
+    "to_ref": "authority-epo",
+    "relationship_type": "relevant_to",
+    "strength": 0.6,
+    "description": "SPC applications are filed at national patent offices but based on EPO-granted patents"
+  },
+  {
+    "from_ref": "design-directive",
+    "to_ref": "community-design-reg",
+    "relationship_type": "complements",
+    "strength": 0.9,
+    "description": "Design Directive harmonises national design laws alongside the EU-wide Community Design system"
+  },
+  {
+    "from_ref": "community-design-reg",
+    "to_ref": "authority-euipo",
+    "relationship_type": "administered_by",
+    "strength": 1,
+    "description": "EUIPO administers the registered Community design system"
+  },
+  {
+    "from_ref": "concept-patentability",
+    "to_ref": "concept-novelty",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Novelty is a core requirement of patentability"
+  },
+  {
+    "from_ref": "concept-patentability",
+    "to_ref": "concept-inventive-step",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Inventive step (non-obviousness) is a core requirement of patentability"
+  },
+  {
+    "from_ref": "concept-patentability",
+    "to_ref": "concept-software-patent",
+    "relationship_type": "relevant_to",
+    "strength": 0.9,
+    "description": "Software patentability applies the general patentability requirements with the 'further technical effect' test"
+  },
+  {
+    "from_ref": "concept-patentability",
+    "to_ref": "concept-ai-generated-ip",
+    "relationship_type": "relevant_to",
+    "strength": 0.8,
+    "description": "AI inventorship question directly challenges patentability requirements (inventor must be natural person)"
+  },
+  {
+    "from_ref": "concept-novelty",
+    "to_ref": "process-patent-prosecution",
+    "relationship_type": "assessed_during",
+    "strength": 1,
+    "description": "Novelty is assessed during patent prosecution examination"
+  },
+  {
+    "from_ref": "concept-inventive-step",
+    "to_ref": "process-patent-prosecution",
+    "relationship_type": "assessed_during",
+    "strength": 1,
+    "description": "Inventive step is assessed during patent prosecution using the problem-solution approach"
+  },
+  {
+    "from_ref": "concept-scope-of-protection",
+    "to_ref": "concept-frand",
+    "relationship_type": "relevant_to",
+    "strength": 0.7,
+    "description": "Scope of SEP protection determines extent of FRAND licensing obligations"
+  },
+  {
+    "from_ref": "concept-distinctiveness",
+    "to_ref": "eutmr-a7-absolute-grounds",
+    "relationship_type": "assessed_under",
+    "strength": 1,
+    "description": "Distinctiveness is examined as part of Art.7 absolute grounds assessment"
+  },
+  {
+    "from_ref": "concept-distinctiveness",
+    "to_ref": "process-tm-registration",
+    "relationship_type": "assessed_during",
+    "strength": 1,
+    "description": "Distinctiveness is assessed during the EUIPO examination phase of TM registration"
+  },
+  {
+    "from_ref": "concept-likelihood-confusion",
+    "to_ref": "eutmr-a8-relative-grounds",
+    "relationship_type": "assessed_under",
+    "strength": 1,
+    "description": "Likelihood of confusion is the primary test under Art.8(1)(b) opposition proceedings"
+  },
+  {
+    "from_ref": "concept-copyright-exceptions",
+    "to_ref": "dsm-a3-tdm",
+    "relationship_type": "includes",
+    "strength": 1,
+    "description": "TDM research exception is part of the EU copyright exceptions framework"
+  },
+  {
+    "from_ref": "concept-copyright-exceptions",
+    "to_ref": "dsm-a4-tdm-general",
+    "relationship_type": "includes",
+    "strength": 1,
+    "description": "General TDM exception is part of the EU copyright exceptions framework"
+  },
+  {
+    "from_ref": "concept-copyright-licensing",
+    "to_ref": "concept-moral-rights",
+    "relationship_type": "constrained_by",
+    "strength": 0.7,
+    "description": "Copyright licensing must respect inalienable moral rights of the author"
+  },
+  {
+    "from_ref": "concept-copyright-licensing",
+    "to_ref": "concept-ip-assignment",
+    "relationship_type": "alternative_to",
+    "strength": 0.8,
+    "description": "Licensing grants usage rights while assignment transfers ownership — key structural choice"
+  },
+  {
+    "from_ref": "concept-trade-secret-reasonable-steps",
+    "to_ref": "concept-misappropriation",
+    "relationship_type": "prerequisite_for",
+    "strength": 1,
+    "description": "Reasonable steps must be established before a misappropriation claim can succeed"
+  },
+  {
+    "from_ref": "concept-misappropriation",
+    "to_ref": "concept-injunctive-relief",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Established misappropriation triggers availability of injunctive relief and damages"
+  },
+  {
+    "from_ref": "concept-saas-service-levels",
+    "to_ref": "concept-liability-caps",
+    "relationship_type": "interacts_with",
+    "strength": 0.8,
+    "description": "SLA breach consequences are typically subject to the liability framework in the contract"
+  },
+  {
+    "from_ref": "concept-saas-service-levels",
+    "to_ref": "concept-data-portability-cloud",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "SLAs and data portability together protect the customer in cloud contracts"
+  },
+  {
+    "from_ref": "concept-data-portability-cloud",
+    "to_ref": "concept-source-code-escrow",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "Data portability and source code escrow both serve business continuity in technology relationships"
+  },
+  {
+    "from_ref": "concept-source-code-escrow",
+    "to_ref": "process-tech-licence-negotiation",
+    "relationship_type": "part_of",
+    "strength": 0.8,
+    "description": "Source code escrow is a standard negotiation point in technology licence agreements"
+  },
+  {
+    "from_ref": "concept-liability-caps",
+    "to_ref": "process-tech-licence-negotiation",
+    "relationship_type": "part_of",
+    "strength": 0.9,
+    "description": "Liability cap structure is a critical element in technology licence negotiation"
+  },
+  {
+    "from_ref": "concept-open-source-gpl",
+    "to_ref": "concept-copyleft-vs-permissive",
+    "relationship_type": "example_of",
+    "strength": 1,
+    "description": "GPL is the primary example of a strong copyleft licence"
+  },
+  {
+    "from_ref": "concept-open-source-mit",
+    "to_ref": "concept-copyleft-vs-permissive",
+    "relationship_type": "example_of",
+    "strength": 1,
+    "description": "MIT is a leading example of a permissive open source licence"
+  },
+  {
+    "from_ref": "concept-open-source-apache",
+    "to_ref": "concept-copyleft-vs-permissive",
+    "relationship_type": "example_of",
+    "strength": 1,
+    "description": "Apache 2.0 is a permissive licence with notable patent grant provisions"
+  },
+  {
+    "from_ref": "concept-copyleft-vs-permissive",
+    "to_ref": "process-open-source-compliance",
+    "relationship_type": "informs",
+    "strength": 1,
+    "description": "Understanding copyleft vs permissive distinctions is fundamental to OSS compliance"
+  },
+  {
+    "from_ref": "concept-open-source-gpl",
+    "to_ref": "process-open-source-compliance",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "GPL's copyleft obligations require careful compliance processes to avoid unintended disclosure"
+  },
+  {
+    "from_ref": "process-open-source-compliance",
+    "to_ref": "concept-ip-due-diligence",
+    "relationship_type": "part_of",
+    "strength": 0.8,
+    "description": "OSS compliance review is a critical component of IP due diligence in tech transactions"
+  },
+  {
+    "from_ref": "concept-frand",
+    "to_ref": "process-tech-licence-negotiation",
+    "relationship_type": "constrains",
+    "strength": 0.8,
+    "description": "FRAND commitments constrain SEP licensing terms and negotiation framework"
+  },
+  {
+    "from_ref": "concept-frand",
+    "to_ref": "concept-injunctive-relief",
+    "relationship_type": "limits",
+    "strength": 0.8,
+    "description": "Huawei v ZTE framework limits injunctive relief availability for SEPs under FRAND"
+  },
+  {
+    "from_ref": "concept-ip-due-diligence",
+    "to_ref": "concept-ip-assignment",
+    "relationship_type": "examines",
+    "strength": 0.9,
+    "description": "IP due diligence critically examines chain of title and assignment completeness"
+  },
+  {
+    "from_ref": "concept-ip-due-diligence",
+    "to_ref": "concept-trade-secret-reasonable-steps",
+    "relationship_type": "examines",
+    "strength": 0.7,
+    "description": "IP due diligence assesses whether trade secret protection measures are adequate"
+  },
+  {
+    "from_ref": "concept-ip-assignment",
+    "to_ref": "concept-moral-rights",
+    "relationship_type": "constrained_by",
+    "strength": 0.8,
+    "description": "IP assignment cannot transfer inalienable moral rights in most EU jurisdictions"
+  },
+  {
+    "from_ref": "concept-technology-transfer",
+    "to_ref": "process-tech-licence-negotiation",
+    "relationship_type": "governs",
+    "strength": 0.9,
+    "description": "TTBER provides competition law safe harbour for technology licence agreements"
+  },
+  {
+    "from_ref": "concept-technology-transfer",
+    "to_ref": "concept-frand",
+    "relationship_type": "relevant_to",
+    "strength": 0.7,
+    "description": "TTBER framework interacts with FRAND licensing of standard-essential patents"
+  },
+  {
+    "from_ref": "concept-software-patent",
+    "to_ref": "process-patent-prosecution",
+    "relationship_type": "assessed_during",
+    "strength": 0.9,
+    "description": "Software patentability (further technical effect) is assessed during EPO examination"
+  },
+  {
+    "from_ref": "concept-software-patent",
+    "to_ref": "concept-open-source-gpl",
+    "relationship_type": "interacts_with",
+    "strength": 0.6,
+    "description": "Software patents may interact with open source licence obligations (GPL patent provisions)"
+  },
+  {
+    "from_ref": "concept-ai-generated-ip",
+    "to_ref": "dsm-a4-tdm-general",
+    "relationship_type": "depends_on",
+    "strength": 0.8,
+    "description": "AI training legality depends on TDM exceptions and rightholder opt-out mechanisms"
+  },
+  {
+    "from_ref": "enforcement-directive",
+    "to_ref": "concept-injunctive-relief",
+    "relationship_type": "provides",
+    "strength": 1,
+    "description": "Enforcement Directive harmonises injunctive and other relief measures across all IP rights"
+  },
+  {
+    "from_ref": "enforcement-directive",
+    "to_ref": "eutmr",
+    "relationship_type": "supplements",
+    "strength": 0.8,
+    "description": "Enforcement Directive supplements EUTMR enforcement provisions"
+  },
+  {
+    "from_ref": "enforcement-directive",
+    "to_ref": "trade-secrets-directive",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "Enforcement Directive and Trade Secrets Directive provide complementary enforcement frameworks"
+  },
+  {
+    "from_ref": "authority-epo",
+    "to_ref": "process-patent-prosecution",
+    "relationship_type": "administers",
+    "strength": 1,
+    "description": "EPO administers the European patent prosecution and examination process"
+  },
+  {
+    "from_ref": "authority-euipo",
+    "to_ref": "process-tm-registration",
+    "relationship_type": "administers",
+    "strength": 1,
+    "description": "EUIPO administers the EU trade mark registration and opposition process"
+  },
+  {
+    "from_ref": "authority-wipo",
+    "to_ref": "authority-epo",
+    "relationship_type": "cooperates_with",
+    "strength": 0.8,
+    "description": "WIPO administers the PCT system through which applications enter the EPO as Euro-PCT"
+  },
+  {
+    "from_ref": "authority-wipo",
+    "to_ref": "authority-euipo",
+    "relationship_type": "cooperates_with",
+    "strength": 0.8,
+    "description": "WIPO administers the Madrid System used for international trade mark registrations designating the EU"
+  }
+]

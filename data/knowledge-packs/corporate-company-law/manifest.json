@@ -1,0 +1,32 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "corporate-company-law",
+  "display_name": "Corporate & Company Law — EU Directives, Governance & Shareholder Rights",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU corporate and company law covering the Codified Company Law Directive (2017/1132), Cross-Border Mobility Directive (2019/2121), Shareholder Rights Directive II (2017/828), Takeover Directive (2004/25/EC), SE Statute, and the EU corporate governance framework. Includes board duties, fiduciary obligations, capital maintenance, shareholder protection, related-party transactions, group structures, and cross-border operations.",
+  "author": "ANTON Legal Team",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Corporate & Business Law",
+  "regulation_ids": [
+    "Codified Company Law Directive (EU) 2017/1132",
+    "Cross-Border Mobility Directive (EU) 2019/2121",
+    "Shareholder Rights Directive II (EU) 2017/828",
+    "Shareholder Rights Directive I (2007/36/EC)",
+    "Takeover Bids Directive (2004/25/EC)",
+    "Digitalisation Directive (EU) 2019/1151",
+    "SE Statute — Regulation (EC) 2157/2001",
+    "SCE Statute — Regulation (EC) 1435/2003",
+    "Accounting Directive (2013/34/EU)",
+    "Gender Balance Directive (EU) 2022/2381",
+    "Single-Member Company Directive (2009/102/EC)"
+  ],
+  "tier": 1,
+  "entity_count": 54,
+  "relationship_count": 79,
+  "alias_entry_count": 54,
+  "effective_date": "2024-01-01",
+  "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32017L1132",
+  "validated_by": "ANTON Legal Team",
+  "content_confirmed": true
+}

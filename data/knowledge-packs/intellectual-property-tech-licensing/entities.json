@@ -1,0 +1,705 @@
+[
+  {
+    "ref_id": "eutmr",
+    "description": "EU Trade Mark Regulation (Regulation (EU) 2017/1001). Establishes the European Union trade mark system administered by EUIPO. Provides unitary protection across all EU Member States through a single registration. Covers registration, opposition, cancellation, and enforcement of EU trade marks. Replaced the earlier Community Trade Mark Regulation (207/2009).",
+    "metadata": {
+      "full_title": "Regulation (EU) 2017/1001 on the European Union trade mark",
+      "short_name": "EUTMR",
+      "applies_from": "2017-10-01",
+      "administering_body": "EUIPO",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "eutmr",
+    "canonical_name": "EU Trade Mark Regulation (2017/1001)"
+  },
+  {
+    "ref_id": "tm-directive",
+    "description": "Trade Marks Directive (Directive (EU) 2015/2436). Approximates the laws of Member States relating to trade marks. Harmonises national trade mark registration requirements, grounds for refusal, rights conferred, and revocation/invalidity. Works alongside the EUTMR to create a dual system of national and EU-wide marks.",
+    "metadata": {
+      "full_title": "Directive (EU) 2015/2436 to approximate the laws of the Member States relating to trade marks",
+      "short_name": "Trade Marks Directive",
+      "transposition_deadline": "2019-01-14",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "tm-directive",
+    "canonical_name": "Trade Marks Directive (2015/2436)"
+  },
+  {
+    "ref_id": "dsm-directive",
+    "description": "Directive on Copyright in the Digital Single Market (Directive (EU) 2019/790). Modernises EU copyright law for the digital age. Introduces press publishers' right (Art.15), obligation for online content-sharing platforms (Art.17), text and data mining exceptions (Art.3-4), mandatory fair remuneration, and extended collective licensing. Controversial for its impact on internet platforms and user-generated content.",
+    "metadata": {
+      "full_title": "Directive (EU) 2019/790 on copyright and related rights in the Digital Single Market",
+      "short_name": "DSM Directive",
+      "transposition_deadline": "2021-06-07",
+      "key_articles": "Art.3-4 TDM, Art.15 press publishers, Art.17 platforms",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dsm-directive",
+    "canonical_name": "Copyright in the Digital Single Market Directive (2019/790)"
+  },
+  {
+    "ref_id": "infosoc-directive",
+    "description": "Information Society Directive (Directive 2001/29/EC). Harmonises copyright and related rights in the information society. Implements WIPO Copyright Treaty and WIPO Performances and Phonograms Treaty. Establishes the reproduction right (Art.2), communication to the public right (Art.3), distribution right (Art.4), and an exhaustive list of exceptions and limitations (Art.5). Fundamental pillar of EU copyright law.",
+    "metadata": {
+      "full_title": "Directive 2001/29/EC on the harmonisation of certain aspects of copyright and related rights in the information society",
+      "short_name": "InfoSoc Directive",
+      "applies_from": "2001-06-22",
+      "transposition_deadline": "2002-12-22",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "infosoc-directive",
+    "canonical_name": "Information Society Directive (2001/29/EC)"
+  },
+  {
+    "ref_id": "database-directive",
+    "description": "Database Directive (Directive 96/9/EC). Provides dual protection for databases: (1) copyright protection for databases that constitute the author's own intellectual creation by reason of selection or arrangement (Art.3); (2) sui generis right for databases where there has been substantial investment in obtaining, verifying, or presenting the contents (Art.7). Sui generis right lasts 15 years from completion.",
+    "metadata": {
+      "full_title": "Directive 96/9/EC on the legal protection of databases",
+      "short_name": "Database Directive",
+      "applies_from": "1996-03-11",
+      "sui_generis_duration": "15 years",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "database-directive",
+    "canonical_name": "Database Directive (96/9/EC)"
+  },
+  {
+    "ref_id": "trade-secrets-directive",
+    "description": "Trade Secrets Directive (Directive (EU) 2016/943). Harmonises protection against unlawful acquisition, use, and disclosure of trade secrets across the EU. Defines trade secret as information that is secret, has commercial value because it is secret, and has been subject to reasonable steps to keep it secret. Provides for injunctive relief, corrective measures, damages, and preservation of confidentiality during legal proceedings.",
+    "metadata": {
+      "full_title": "Directive (EU) 2016/943 on the protection of undisclosed know-how and business information (trade secrets) against their unlawful acquisition, use and disclosure",
+      "short_name": "Trade Secrets Directive",
+      "transposition_deadline": "2018-06-09",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "trade-secrets-directive",
+    "canonical_name": "Trade Secrets Directive (2016/943)"
+  },
+  {
+    "ref_id": "unitary-patent-reg",
+    "description": "Regulation (EU) No 1257/2012 implementing enhanced cooperation in the area of the creation of unitary patent protection. Enables a European patent granted by the EPO to have unitary effect in participating EU Member States through a single request. Reduces costs and complexity of patent protection across Europe. Entered into force with the UPC Agreement on 1 June 2023.",
+    "metadata": {
+      "full_title": "Regulation (EU) No 1257/2012 — Unitary Patent",
+      "short_name": "Unitary Patent Regulation",
+      "applies_from": "2023-06-01",
+      "administering_body": "EPO",
+      "jurisdiction": "EU (participating states)"
+    },
+    "entity_type": "regulation",
+    "entity_id": "unitary-patent-reg",
+    "canonical_name": "Unitary Patent Regulation (1257/2012)"
+  },
+  {
+    "ref_id": "upc-agreement",
+    "description": "Agreement on a Unified Patent Court (UPC). Establishes a specialised court with exclusive jurisdiction for European patents with unitary effect and classical European patents. Three-instance structure: local/regional divisions, central division, Court of Appeal. Transitional period allows opt-out for classical European patents. Entered into force 1 June 2023.",
+    "metadata": {
+      "full_title": "Agreement on a Unified Patent Court (2013/C 175/01)",
+      "short_name": "UPC Agreement",
+      "applies_from": "2023-06-01",
+      "court_seat": "Paris (central division), Luxembourg (Court of Appeal)",
+      "transitional_period": "7 years (extendable)",
+      "jurisdiction": "EU (participating states)"
+    },
+    "entity_type": "regulation",
+    "entity_id": "upc-agreement",
+    "canonical_name": "Unified Patent Court Agreement"
+  },
+  {
+    "ref_id": "spc-regulation",
+    "description": "Supplementary Protection Certificates (SPC) extend patent protection for medicinal products and plant protection products beyond the 20-year patent term. Compensates for the time between patent filing and marketing authorisation. Maximum 5 years extension (plus 6-month paediatric extension for medicinal products). Governed by Regulation (EC) No 469/2009 (medicinal) and Regulation (EC) No 1610/96 (plant protection).",
+    "metadata": {
+      "full_title": "Regulation (EC) No 469/2009 — SPC for medicinal products",
+      "short_name": "SPC Regulation",
+      "max_extension": "5 years (+6 months paediatric)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "spc-regulation",
+    "canonical_name": "Supplementary Protection Certificates Regulation"
+  },
+  {
+    "ref_id": "design-directive",
+    "description": "Design Directive (Directive 98/71/EC). Approximates the laws of Member States on the legal protection of designs. A design must be new and have individual character. Protection term up to 25 years (5-year periods, renewable). Covers the appearance of the whole or a part of a product resulting from its features (lines, contours, colours, shape, texture, materials).",
+    "metadata": {
+      "full_title": "Directive 98/71/EC on the legal protection of designs",
+      "short_name": "Design Directive",
+      "max_term": "25 years (5x5-year renewals)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "design-directive",
+    "canonical_name": "Design Directive (98/71/EC)"
+  },
+  {
+    "ref_id": "community-design-reg",
+    "description": "Community Design Regulation (Council Regulation (EC) No 6/2002). Creates a unitary Community design right (registered and unregistered) with uniform protection across the EU, administered by EUIPO. Registered Community Design (RCD): up to 25 years. Unregistered Community Design (UCD): 3 years from first disclosure, protects against copying only.",
+    "metadata": {
+      "full_title": "Council Regulation (EC) No 6/2002 on Community designs",
+      "short_name": "Community Design Regulation",
+      "rcd_max_term": "25 years",
+      "ucd_term": "3 years from first disclosure",
+      "administering_body": "EUIPO",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "community-design-reg",
+    "canonical_name": "Community Design Regulation (6/2002)"
+  },
+  {
+    "ref_id": "concept-patentability",
+    "description": "Patentability is the quality that makes an invention eligible for patent protection. Under the European Patent Convention (Art.52), a European patent shall be granted for inventions in all fields of technology, provided they are new, involve an inventive step, and are susceptible of industrial application. Excluded subject-matter includes discoveries, scientific theories, mathematical methods, aesthetic creations, schemes/rules/methods for mental acts, computer programs 'as such', and presentations of information.",
+    "metadata": {
+      "legal_basis": "EPC Art.52-57",
+      "requirements": "novelty, inventive step, industrial application",
+      "exclusions": "discoveries, scientific theories, mathematical methods, programs as such"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-patentability",
+    "canonical_name": "Patentability Requirements"
+  },
+  {
+    "ref_id": "concept-novelty",
+    "description": "Novelty (Art.54 EPC) requires that an invention does not form part of the state of the art. The state of the art comprises everything made available to the public by means of a written or oral description, by use, or in any other way, before the date of filing (or priority date). Absolute novelty standard in Europe: worldwide prior art. Grace period does not exist under EPC (unlike US patent law).",
+    "metadata": {
+      "legal_basis": "EPC Art.54",
+      "standard": "absolute novelty",
+      "prior_art_scope": "worldwide, any form of disclosure"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-novelty",
+    "canonical_name": "Novelty (Patent Law)"
+  },
+  {
+    "ref_id": "concept-inventive-step",
+    "description": "Inventive step (Art.56 EPC) requires that an invention, having regard to the state of the art, is not obvious to a person skilled in the art. EPO uses the 'problem-solution approach': (1) identify closest prior art, (2) determine the objective technical problem, (3) assess whether the claimed solution would have been obvious. This is the most frequently litigated patent validity criterion.",
+    "metadata": {
+      "legal_basis": "EPC Art.56",
+      "epo_test": "problem-solution approach",
+      "comparison": "US: 'non-obviousness' under 35 USC 103"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-inventive-step",
+    "canonical_name": "Inventive Step (Non-Obviousness)"
+  },
+  {
+    "ref_id": "concept-scope-of-protection",
+    "description": "Scope of patent protection is determined by the claims (Art.69 EPC and its Protocol on Interpretation). The description and drawings are used to interpret the claims. The Protocol steers between strict literal interpretation and using claims merely as a guideline, seeking a fair balance. Equivalents doctrine varies by jurisdiction. Under the UPC, Art.69 EPC and its Protocol apply directly.",
+    "metadata": {
+      "legal_basis": "EPC Art.69, Protocol on Interpretation",
+      "key_issues": "claim construction, equivalents, file wrapper estoppel"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-scope-of-protection",
+    "canonical_name": "Scope of Patent Protection"
+  },
+  {
+    "ref_id": "concept-distinctiveness",
+    "description": "Distinctiveness is the essential function of a trade mark: the ability to distinguish the goods or services of one undertaking from those of another (Art.4 EUTMR). Absolute grounds for refusal include marks devoid of distinctive character, marks that are descriptive, and marks that are customary in trade. Distinctiveness can be acquired through use (secondary meaning). Assessed from the perspective of the average consumer.",
+    "metadata": {
+      "legal_basis": "EUTMR Art.4, Art.7(1)(b)-(d)",
+      "test": "perception of average consumer, reasonably well-informed, observant and circumspect",
+      "acquired_distinctiveness": "Art.7(3) EUTMR"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-distinctiveness",
+    "canonical_name": "Trade Mark Distinctiveness"
+  },
+  {
+    "ref_id": "concept-likelihood-confusion",
+    "description": "Likelihood of confusion is the central test for trade mark infringement and opposition proceedings. Assessed globally taking into account: (1) similarity of the marks (visual, phonetic, conceptual), (2) similarity/identity of the goods/services, (3) distinctiveness of the earlier mark, (4) relevant public's attention level. Interdependency principle: a lesser degree of similarity between goods can be offset by a greater degree of similarity between marks.",
+    "metadata": {
+      "legal_basis": "EUTMR Art.8(1)(b), Art.9(2)(b)",
+      "cjeu_case_law": "Sabel v Puma (C-251/95), Canon v MGM (C-39/97), Lloyd v Klijsen (C-342/97)",
+      "key_factors": "global appreciation, interdependency, imperfect recollection"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-likelihood-confusion",
+    "canonical_name": "Likelihood of Confusion"
+  },
+  {
+    "ref_id": "concept-bad-faith",
+    "description": "Bad faith filing (Art.59(1)(b) EUTMR) is an absolute ground for invalidity of an EU trade mark. Covers situations where the applicant filed the mark with dishonest intentions, such as: blocking competitors, hijacking a known mark, stockpiling marks without intent to use, or filing to extract licence fees. Assessed at the time of filing, considering all relevant circumstances including the applicant's intention.",
+    "metadata": {
+      "legal_basis": "EUTMR Art.59(1)(b)",
+      "cjeu_case_law": "Chocoladefabriken Lindt (C-529/07), Koton (C-104/18 P)",
+      "assessment_date": "date of application"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-bad-faith",
+    "canonical_name": "Bad Faith Trade Mark Filing"
+  },
+  {
+    "ref_id": "concept-originality",
+    "description": "Originality is the threshold requirement for copyright protection in the EU. Following CJEU case law (Infopaq, Painer, Football Dataco), the EU standard is the 'author's own intellectual creation' reflecting free and creative choices. This is a harmonised standard across the EU, replacing national tests (e.g., 'sweat of the brow' in the UK). Applies to all categories of works.",
+    "metadata": {
+      "cjeu_case_law": "Infopaq (C-5/08), Painer (C-145/10), Football Dataco (C-604/10)",
+      "standard": "author's own intellectual creation",
+      "key_elements": "free creative choices, personal stamp of the author"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-originality",
+    "canonical_name": "Originality (Copyright)"
+  },
+  {
+    "ref_id": "concept-copyright-exceptions",
+    "description": "Copyright exceptions and limitations under EU law. The InfoSoc Directive (Art.5) provides one mandatory exception (transient copies) and 20 optional exceptions including: private copying, quotation, parody, teaching, research, disability access, press review. The DSM Directive added text and data mining (Art.3-4) and cross-border teaching (Art.5). Exceptions must satisfy the three-step test (Berne Convention Art.9(2)).",
+    "metadata": {
+      "legal_basis": "InfoSoc Directive Art.5, DSM Directive Art.3-5",
+      "three_step_test": "certain special cases, no conflict with normal exploitation, no unreasonable prejudice",
+      "key_exceptions": "TDM, quotation, parody, private copying, teaching"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-copyright-exceptions",
+    "canonical_name": "Copyright Exceptions & Limitations"
+  },
+  {
+    "ref_id": "concept-moral-rights",
+    "description": "Moral rights protect the non-economic interests of the author, including the right of attribution (paternity right) and the right of integrity (right to object to derogatory treatment). Recognised under the Berne Convention (Art.6bis) and implemented in national laws of EU Member States. Generally inalienable and perpetual (or at least lasting as long as economic rights). Not harmonised at EU level, leading to divergence between Member States.",
+    "metadata": {
+      "legal_basis": "Berne Convention Art.6bis, national implementations",
+      "key_rights": "attribution, integrity",
+      "eu_harmonisation": "not harmonised at EU level",
+      "transferability": "generally inalienable"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-moral-rights",
+    "canonical_name": "Moral Rights"
+  },
+  {
+    "ref_id": "concept-copyright-licensing",
+    "description": "Copyright licensing is the grant of permission by the rightholder to use a copyright-protected work under specified conditions. Types include exclusive licence (sole right, licensee can sue), non-exclusive licence, sole licence. Key terms: scope (territory, duration, media), sub-licensing rights, royalty structure, audit rights, reversion clauses. DSM Directive Art.18-23 introduced fair remuneration, transparency, and contract adjustment mechanisms for authors.",
+    "metadata": {
+      "legal_basis": "National contract law, DSM Directive Art.18-23",
+      "licence_types": "exclusive, non-exclusive, sole, compulsory",
+      "key_terms": "scope, territory, royalty, sub-licensing, reversion"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-copyright-licensing",
+    "canonical_name": "Copyright Licensing"
+  },
+  {
+    "ref_id": "concept-trade-secret-reasonable-steps",
+    "description": "Reasonable steps to maintain secrecy is a definitional requirement for trade secret protection (Art.2(1)(c) Trade Secrets Directive). Information only qualifies as a trade secret if the holder has taken reasonable steps under the circumstances to keep it secret. Measures include: NDAs/confidentiality agreements, access controls, marking documents as confidential, employee training, technical security measures, compartmentalisation of information.",
+    "metadata": {
+      "legal_basis": "Trade Secrets Directive Art.2(1)(c)",
+      "examples": "NDAs, access controls, confidential markings, security policies, employee onboarding",
+      "assessment": "proportionality to nature and value of the secret"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-trade-secret-reasonable-steps",
+    "canonical_name": "Reasonable Steps to Maintain Secrecy"
+  },
+  {
+    "ref_id": "concept-misappropriation",
+    "description": "Misappropriation of trade secrets encompasses unlawful acquisition (Art.4(2)), use, and disclosure (Art.4(3)) of trade secrets. Unlawful acquisition includes: unauthorised access, theft, bribery, breach of confidentiality agreement, or any conduct contrary to honest commercial practices. Reverse engineering and independent discovery are lawful (Art.3). Knowledge that the information was obtained unlawfully taints subsequent use.",
+    "metadata": {
+      "legal_basis": "Trade Secrets Directive Art.4",
+      "lawful_means": "independent discovery, reverse engineering, employee experience/skills",
+      "unlawful_means": "theft, bribery, breach of NDA, unauthorised access, espionage"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-misappropriation",
+    "canonical_name": "Trade Secret Misappropriation"
+  },
+  {
+    "ref_id": "concept-injunctive-relief",
+    "description": "Injunctive relief in IP and trade secret cases. Enforcement Directive (2004/48/EC) requires Member States to provide interlocutory injunctions, final injunctions, corrective measures (recall, destruction), and damages. Trade Secrets Directive adds preservation of confidentiality during proceedings, provisional and precautionary measures (Art.10-11), and limitation period of max 6 years. Key considerations: proportionality, balance of interests, avoiding abuse.",
+    "metadata": {
+      "legal_basis": "Enforcement Directive 2004/48/EC, Trade Secrets Directive Art.10-13",
+      "remedy_types": "interlocutory injunction, permanent injunction, damages, account of profits, corrective measures",
+      "limitation": "max 6 years (trade secrets)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-injunctive-relief",
+    "canonical_name": "Injunctive Relief (IP Enforcement)"
+  },
+  {
+    "ref_id": "concept-saas-service-levels",
+    "description": "Service Level Agreements (SLAs) in SaaS and cloud computing contracts. Define measurable performance commitments: uptime/availability (e.g., 99.9%), response time, resolution time, support tiers. Include service credits or termination rights for breaches. Key metrics: MTBF (mean time between failures), MTTR (mean time to repair), RTO (recovery time objective), RPO (recovery point objective). Should specify measurement methodology and reporting frequency.",
+    "metadata": {
+      "typical_metrics": "uptime %, latency, response time, throughput",
+      "remedies": "service credits, escalation, termination right",
+      "standards": "ISO 20000, ITIL, SOC 2"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-saas-service-levels",
+    "canonical_name": "SaaS Service Level Agreements"
+  },
+  {
+    "ref_id": "concept-data-portability-cloud",
+    "description": "Data portability in cloud and SaaS contexts. Ensures the customer can extract and migrate their data at the end of the contract or during the term. EU Data Act (Regulation (EU) 2023/2854) introduces cloud switching rights (Chapter VI): providers must remove commercial/technical barriers, support data export in standard formats, ensure functional equivalence where possible, and limit switching charges. Transition period and assistance obligations apply.",
+    "metadata": {
+      "legal_basis": "EU Data Act Chapter VI (Art.23-31), GDPR Art.20 (personal data)",
+      "requirements": "standard formats, APIs, reasonable transition period, no lock-in",
+      "standards": "SWIPO codes of conduct, ISO 19941"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-data-portability-cloud",
+    "canonical_name": "Data Portability & Cloud Switching"
+  },
+  {
+    "ref_id": "concept-source-code-escrow",
+    "description": "Source code escrow arrangements for technology licensing. A trusted third party (escrow agent) holds a copy of source code, documentation, and build tools. Release triggers (typically): licensor insolvency, material breach, cessation of maintenance, change of control. Protects the licensee's business continuity while respecting the licensor's IP. Key terms: deposit frequency, verification (compilation testing), release conditions, permitted use after release, multi-party escrow.",
+    "metadata": {
+      "key_providers": "NCC Group (formerly Iron Mountain), Escrow London, EscrowTech",
+      "release_triggers": "insolvency, material breach, maintenance cessation",
+      "verification_types": "deposit verification, full build verification, functionality verification"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-source-code-escrow",
+    "canonical_name": "Source Code Escrow"
+  },
+  {
+    "ref_id": "concept-liability-caps",
+    "description": "Liability caps and limitations in technology contracts. Typically structured in three tiers: (1) uncapped liability for death/injury, wilful misconduct, and IP indemnities; (2) enhanced cap for data breach, confidentiality breach; (3) general cap (often 12-24 months' fees) for other claims. Consequential/indirect damages often excluded. Must consider applicable law — some jurisdictions restrict exclusion of certain liabilities. Insurance requirements often linked to cap levels.",
+    "metadata": {
+      "typical_structure": "super cap, enhanced cap, general cap, exclusions",
+      "common_general_cap": "12-24 months of fees paid/payable",
+      "uncapped_items": "IP indemnity, wilful misconduct, death/personal injury, confidentiality"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-liability-caps",
+    "canonical_name": "Liability Caps in Technology Contracts"
+  },
+  {
+    "ref_id": "concept-open-source-gpl",
+    "description": "GNU General Public License (GPL). The most prominent copyleft open source licence. GPL v2 (1991) and GPL v3 (2007). Key obligation: derivative works must be distributed under the same GPL terms (copyleft/share-alike). Source code must be made available. The 'viral' nature means GPL code linked or combined with proprietary software may require the proprietary code to be released under GPL. AGPL extends copyleft to network use (SaaS).",
+    "metadata": {
+      "versions": "GPL v2 (1991), GPL v3 (2007), AGPL v3 (2007)",
+      "licence_type": "copyleft / strong copyleft",
+      "key_obligation": "derivative works must be GPL-licensed, source code disclosure",
+      "spdx_id": "GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-open-source-gpl",
+    "canonical_name": "GNU General Public License (GPL)"
+  },
+  {
+    "ref_id": "concept-open-source-mit",
+    "description": "MIT License. One of the most permissive and widely used open source licences. Permits use, copy, modify, merge, publish, distribute, sublicense, and sell, subject only to including the copyright notice and licence text. No copyleft obligation — derivative works can be proprietary. Compatible with virtually all other licences. Preferred by many commercial and open source projects for its simplicity.",
+    "metadata": {
+      "licence_type": "permissive",
+      "key_obligation": "include copyright notice and licence text",
+      "copyleft": "none",
+      "spdx_id": "MIT"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-open-source-mit",
+    "canonical_name": "MIT License"
+  },
+  {
+    "ref_id": "concept-open-source-apache",
+    "description": "Apache License 2.0. A permissive open source licence with an express patent grant. Permits use, reproduction, modification, distribution. Key features: explicit grant of patent rights from contributors, patent retaliation clause (patent licence terminated if you initiate patent litigation), requirement to state changes made, include NOTICE file. More legally comprehensive than MIT. Widely used by Apache Software Foundation projects.",
+    "metadata": {
+      "licence_type": "permissive (with patent grant)",
+      "key_features": "explicit patent grant, patent retaliation, NOTICE file",
+      "copyleft": "none",
+      "spdx_id": "Apache-2.0"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-open-source-apache",
+    "canonical_name": "Apache License 2.0"
+  },
+  {
+    "ref_id": "concept-copyleft-vs-permissive",
+    "description": "The fundamental distinction in open source licensing. Copyleft licences (GPL, LGPL, MPL, EUPL) require derivative works to be distributed under the same or compatible terms, preserving the 'freedom' of the code. Permissive licences (MIT, BSD, Apache) allow derivative works to be proprietary. Key business implications: copyleft may force disclosure of proprietary code; permissive allows commercial incorporation. Dual licensing strategy often used (open source + commercial licence).",
+    "metadata": {
+      "copyleft_examples": "GPL, LGPL, AGPL, MPL 2.0, EUPL 1.2",
+      "permissive_examples": "MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, ISC",
+      "weak_copyleft": "LGPL (libraries), MPL (file-level)",
+      "business_models": "dual licensing, open core, SaaS (AGPL consideration)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-copyleft-vs-permissive",
+    "canonical_name": "Copyleft vs Permissive Licensing"
+  },
+  {
+    "ref_id": "dsm-a3-tdm",
+    "description": "DSM Directive Article 3 — Text and Data Mining (TDM) exception for scientific research. Permits reproductions and extractions of lawfully accessible works for TDM by research organisations and cultural heritage institutions for scientific research purposes. Mandatory exception — cannot be overridden by contract. Copies must be stored securely and may be retained for verification.",
+    "metadata": {
+      "regulation": "DSM Directive",
+      "article_number": 3,
+      "topic": "text-data-mining-research",
+      "beneficiaries": "research organisations, cultural heritage institutions"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dsm-a3-tdm",
+    "canonical_name": "DSM Art.3 — TDM for Research"
+  },
+  {
+    "ref_id": "dsm-a4-tdm-general",
+    "description": "DSM Directive Article 4 — General TDM exception. Permits reproductions and extractions of lawfully accessible works for TDM by anyone (including commercial entities). However, rightholders may opt out by expressly reserving their rights in a machine-readable manner (e.g., robots.txt for online content). Crucial for AI training: determines whether copyright works can be used as training data.",
+    "metadata": {
+      "regulation": "DSM Directive",
+      "article_number": 4,
+      "topic": "text-data-mining-general",
+      "opt_out": "rightholders may reserve rights in machine-readable form"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dsm-a4-tdm-general",
+    "canonical_name": "DSM Art.4 — General TDM Exception"
+  },
+  {
+    "ref_id": "dsm-a15-press-publishers",
+    "description": "DSM Directive Article 15 — Press publishers' right. Grants press publishers a two-year neighbouring right over online use of their press publications by information society service providers. Does not apply to private or non-commercial use, hyperlinking, or use of individual words or very short extracts. Platforms must negotiate licences for displaying press content beyond mere hyperlinks.",
+    "metadata": {
+      "regulation": "DSM Directive",
+      "article_number": 15,
+      "topic": "press-publishers-right",
+      "duration": "2 years from publication"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dsm-a15-press-publishers",
+    "canonical_name": "DSM Art.15 — Press Publishers' Right"
+  },
+  {
+    "ref_id": "dsm-a17-platforms",
+    "description": "DSM Directive Article 17 — Online content-sharing service providers. Establishes that platforms performing an act of communication to the public must obtain authorisation from rightholders or demonstrate they made best efforts to obtain it, made best efforts to ensure unavailability of notified works (filtering), and acted expeditiously to remove notified content. Includes safeguards for user rights (quotation, parody, pastiche). Controversial 'upload filter' provision.",
+    "metadata": {
+      "regulation": "DSM Directive",
+      "article_number": 17,
+      "topic": "platform-liability-content-sharing",
+      "safeguards": "quotation, criticism, review, parody, pastiche, complaint mechanism"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dsm-a17-platforms",
+    "canonical_name": "DSM Art.17 — Platform Content Sharing Obligations"
+  },
+  {
+    "ref_id": "eutmr-a7-absolute-grounds",
+    "description": "EUTMR Article 7 — Absolute grounds for refusal. A trade mark shall not be registered if it: (a) does not comply with Art.4; (b) is devoid of distinctive character; (c) is descriptive of characteristics; (d) is customary in trade; (e) is dictated by nature of goods/technical function/substantial value; (f) is contrary to public policy or morality; (g) is deceptive; (h)-(l) various specific grounds including flags, official emblems, geographical indications, and traditional terms.",
+    "metadata": {
+      "regulation": "EUTMR",
+      "article_number": 7,
+      "topic": "absolute-grounds-refusal",
+      "key_grounds": "non-distinctive, descriptive, customary, functional, deceptive"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eutmr-a7-absolute-grounds",
+    "canonical_name": "EUTMR Art.7 — Absolute Grounds for Refusal"
+  },
+  {
+    "ref_id": "eutmr-a8-relative-grounds",
+    "description": "EUTMR Article 8 — Relative grounds for refusal (opposition). A mark shall not be registered where: (1)(a) identical to earlier mark for identical goods; (1)(b) similar to earlier mark creating likelihood of confusion; (4) earlier non-registered mark/sign used in trade; (5) earlier mark with reputation — use without due cause taking unfair advantage or detrimental to distinctive character/repute. Basis for opposition proceedings before EUIPO.",
+    "metadata": {
+      "regulation": "EUTMR",
+      "article_number": 8,
+      "topic": "relative-grounds-opposition",
+      "key_tests": "double identity, likelihood of confusion, reputation/dilution"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eutmr-a8-relative-grounds",
+    "canonical_name": "EUTMR Art.8 — Relative Grounds for Refusal"
+  },
+  {
+    "ref_id": "process-patent-prosecution",
+    "description": "European patent prosecution process before the EPO. Steps: (1) filing application with claims, description, drawings; (2) formalities examination; (3) search and written opinion (Rule 62 EPC); (4) publication at 18 months; (5) substantive examination (communication, response cycles); (6) decision to grant or refuse; (7) opposition period (9 months from grant). Timeline typically 3-5 years. Direct filing or via PCT national phase entry.",
+    "metadata": {
+      "authority": "European Patent Office (EPO)",
+      "typical_timeline": "3-5 years to grant",
+      "opposition_period": "9 months from publication of grant",
+      "routes": "direct EP filing, PCT national phase (Euro-PCT)"
+    },
+    "entity_type": "process",
+    "entity_id": "process-patent-prosecution",
+    "canonical_name": "European Patent Prosecution Process"
+  },
+  {
+    "ref_id": "process-tm-registration",
+    "description": "EU trade mark registration process before EUIPO. Steps: (1) filing (electronic via e-filing); (2) formalities examination; (3) examination of absolute grounds (Art.7); (4) search report (optional EU TM search, national office searches); (5) publication for opposition (3-month opposition period); (6) registration if no opposition or opposition fails. Timeline: approximately 5-6 months if unopposed. Cooling-off period available in opposition.",
+    "metadata": {
+      "authority": "EUIPO (Alicante)",
+      "typical_timeline": "5-6 months if unopposed",
+      "opposition_period": "3 months from publication",
+      "fees": "EUR 850 (1 class e-filing), EUR 50 per additional class"
+    },
+    "entity_type": "process",
+    "entity_id": "process-tm-registration",
+    "canonical_name": "EU Trade Mark Registration Process"
+  },
+  {
+    "ref_id": "process-upc-litigation",
+    "description": "Unified Patent Court litigation procedure. Written procedure: statement of claim, counterclaim/defence, reply, rejoinder. Interim conference. Oral hearing. Decision. Optional: provisional measures, preservation of evidence. Opt-out available during transitional period for classical European patents. Bifurcation possible (infringement in local/regional division, validity in central division). Language: language of the patent or local division language.",
+    "metadata": {
+      "court": "Unified Patent Court",
+      "structure": "local/regional divisions, central division, Court of Appeal",
+      "expected_duration": "12-14 months to first instance decision",
+      "bifurcation": "infringement locally, validity centrally"
+    },
+    "entity_type": "process",
+    "entity_id": "process-upc-litigation",
+    "canonical_name": "UPC Patent Litigation Process"
+  },
+  {
+    "ref_id": "process-tech-licence-negotiation",
+    "description": "Technology licence negotiation process. Key phases: (1) due diligence — IP audit, freedom-to-operate, validity assessment; (2) term sheet — scope, exclusivity, territory, field of use, royalties; (3) drafting — definitions, grant clause, restrictions, improvements, warranties, indemnities; (4) negotiation — liability caps, termination triggers, dispute resolution, escrow; (5) execution and ongoing management — royalty reporting, audit rights, compliance monitoring. FRAND terms may apply for standard-essential patents.",
+    "metadata": {
+      "key_terms": "scope, exclusivity, royalties, territory, field of use, sub-licensing",
+      "commercial_models": "lump sum, running royalty, milestone payments, hybrid",
+      "standards": "FRAND for SEPs, ETSI IPR Policy"
+    },
+    "entity_type": "process",
+    "entity_id": "process-tech-licence-negotiation",
+    "canonical_name": "Technology Licence Negotiation Process"
+  },
+  {
+    "ref_id": "process-open-source-compliance",
+    "description": "Open source compliance process for organisations. Steps: (1) policy — establish open source usage, contribution, and release policies; (2) inventory — software composition analysis (SCA) tools to identify OSS components; (3) classification — categorise licences (permissive, weak copyleft, strong copyleft); (4) risk assessment — evaluate copyleft interaction, patent risks, security vulnerabilities; (5) approval workflow — legal review for new components; (6) compliance — fulfil notice, attribution, and source code obligations. OpenChain (ISO 5230) provides the industry standard for OSS compliance programs.",
+    "metadata": {
+      "standards": "OpenChain ISO 5230, ISO 18974 (security assurance)",
+      "tools": "Black Duck, FOSSA, Snyk, Scancode, FOSSology",
+      "key_risks": "copyleft contamination, licence incompatibility, undisclosed components"
+    },
+    "entity_type": "process",
+    "entity_id": "process-open-source-compliance",
+    "canonical_name": "Open Source Compliance Process"
+  },
+  {
+    "ref_id": "authority-euipo",
+    "description": "European Union Intellectual Property Office (EUIPO). Administers EU trade marks and registered Community designs. Located in Alicante, Spain. Also manages the EU Observatory on Infringements of Intellectual Property Rights. Boards of Appeal handle appeals from first-instance decisions. Key databases: TMView, DesignView, eSearch plus.",
+    "metadata": {
+      "full_name": "European Union Intellectual Property Office",
+      "location": "Alicante, Spain",
+      "established": "1994 (as OHIM), renamed EUIPO 2016",
+      "manages": "EU trade marks, registered Community designs, Observatory"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-euipo",
+    "canonical_name": "EUIPO"
+  },
+  {
+    "ref_id": "authority-epo",
+    "description": "European Patent Office (EPO). Grants European patents under the European Patent Convention (EPC). Located in Munich (headquarters), The Hague, Berlin, Vienna, Brussels. Not an EU body — the European Patent Organisation has 39 member states. Also serves as International Searching Authority and International Preliminary Examining Authority under the PCT. Administers the unitary patent in cooperation with participating EU states.",
+    "metadata": {
+      "full_name": "European Patent Office",
+      "location": "Munich (HQ), The Hague, Berlin, Vienna",
+      "member_states": 39,
+      "legal_basis": "European Patent Convention (EPC)",
+      "not_eu_body": true
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-epo",
+    "canonical_name": "European Patent Office (EPO)"
+  },
+  {
+    "ref_id": "authority-wipo",
+    "description": "World Intellectual Property Organization (WIPO). UN specialised agency administering international IP treaties. Key systems: PCT (patents), Madrid System (trade marks), Hague System (designs), Lisbon System (geographical indications). Also administers WIPO Arbitration and Mediation Center (domain name disputes under UDRP). Located in Geneva.",
+    "metadata": {
+      "full_name": "World Intellectual Property Organization",
+      "location": "Geneva, Switzerland",
+      "type": "UN specialised agency",
+      "key_treaties": "PCT, Madrid Protocol, Hague Agreement, Berne Convention, Paris Convention"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-wipo",
+    "canonical_name": "World Intellectual Property Organization (WIPO)"
+  },
+  {
+    "ref_id": "concept-frand",
+    "description": "Fair, Reasonable and Non-Discriminatory (FRAND) licensing terms. Applies to standard-essential patents (SEPs) declared to standards development organisations (SDOs). Patent holders who participate in standard-setting commit to licence their SEPs on FRAND terms. Key issues: determination of FRAND royalty rate, injunctive relief availability (Huawei v ZTE framework), licensing at different levels of the supply chain, aggregate royalty burden. EU proposed SEP Regulation (COM/2023/232) to introduce FRAND determination mechanism.",
+    "metadata": {
+      "cjeu_case_law": "Huawei v ZTE (C-170/13)",
+      "eu_proposal": "COM/2023/232 — SEP Regulation",
+      "key_issues": "royalty determination, willing licensee, hold-up vs hold-out",
+      "sdo_examples": "ETSI, IEEE, ITU"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-frand",
+    "canonical_name": "FRAND Licensing (Standard-Essential Patents)"
+  },
+  {
+    "ref_id": "concept-ip-due-diligence",
+    "description": "Intellectual property due diligence in technology transactions (M&A, licensing, investment). Covers: (1) IP ownership audit — chain of title, employee/contractor assignments, joint ownership; (2) IP portfolio review — patents, marks, copyrights, trade secrets, domains; (3) freedom-to-operate analysis; (4) third-party IP risks — licences in, open source exposure; (5) IP-related litigation and disputes; (6) valuation and commercialisation assessment. Critical for technology companies where IP is the primary asset.",
+    "metadata": {
+      "key_areas": "ownership, validity, encumbrances, litigation, OSS exposure, freedom-to-operate",
+      "typical_triggers": "M&A, investment, IPO, licensing deal, joint venture",
+      "red_flags": "missing assignments, lapsed registrations, undisclosed OSS, pending claims"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ip-due-diligence",
+    "canonical_name": "IP Due Diligence"
+  },
+  {
+    "ref_id": "concept-software-patent",
+    "description": "Software patentability in Europe. Computer programs 'as such' are excluded from patentability (Art.52(2)(c) EPC). However, computer-implemented inventions (CII) are patentable if they produce a 'further technical effect' beyond the normal physical interaction between program and computer. EPO case law (T 1173/97 Computer program product, G 3/08 Programs for computers) establishes that claims to a computer program are allowed if the program has technical character. The test focuses on whether the invention makes a technical contribution.",
+    "metadata": {
+      "legal_basis": "EPC Art.52(2)(c), Art.52(3)",
+      "epo_case_law": "T 1173/97 (Computer program product), T 641/00 (Comvik)",
+      "key_test": "further technical effect, technical contribution",
+      "comparison": "US: broader patentability under Alice/Mayo framework"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-software-patent",
+    "canonical_name": "Software Patentability (Computer-Implemented Inventions)"
+  },
+  {
+    "ref_id": "concept-ip-assignment",
+    "description": "IP assignment and employee inventions. Assignment is the transfer of ownership of IP rights. Key issues: (1) employee inventions — default rules vary by jurisdiction (e.g., German Employee Inventions Act requires formal claiming process); (2) contractor works — copyright may not automatically vest in the commissioning party under EU law; (3) assignment formalities — some jurisdictions require written form, recording at IP offices; (4) moral rights cannot be assigned in most EU jurisdictions. Technology companies must ensure robust assignment clauses in employment and contractor agreements.",
+    "metadata": {
+      "key_issues": "employee inventions, contractor IP, moral rights, recording requirements",
+      "risk_areas": "university spin-offs, joint development, pre-existing IP carve-outs",
+      "best_practices": "written assignment, IP schedules in contracts, invention disclosure policies"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ip-assignment",
+    "canonical_name": "IP Assignment & Employee Inventions"
+  },
+  {
+    "ref_id": "enforcement-directive",
+    "description": "IP Enforcement Directive (Directive 2004/48/EC). Harmonises civil enforcement measures for all IP rights across the EU. Provides for: evidence preservation (saisie-contrefacon), right of information, provisional and precautionary measures, corrective measures (recall, removal, destruction), injunctions, damages (actual loss, unfair profits, or lump sum at minimum hypothetical royalty), legal costs. Applies to patent, trade mark, copyright, design, trade secret enforcement.",
+    "metadata": {
+      "full_title": "Directive 2004/48/EC on the enforcement of intellectual property rights",
+      "short_name": "Enforcement Directive / IPRED",
+      "applies_from": "2004-04-29",
+      "transposition_deadline": "2006-04-29",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "enforcement-directive",
+    "canonical_name": "IP Enforcement Directive (2004/48/EC)"
+  },
+  {
+    "ref_id": "concept-technology-transfer",
+    "description": "Technology Transfer Block Exemption Regulation (TTBER) (Regulation (EU) No 316/2014). Provides safe harbour for technology licensing agreements that might otherwise infringe Art.101 TFEU (anti-competitive agreements). Covers patent, know-how, software copyright, and mixed licensing. Market share thresholds: 20% for competitors, 30% for non-competitors. Hardcore restrictions (per se void): price-fixing, output limitation, market allocation (competitors), territorial restrictions beyond passive sales (non-competitors). Guidelines on application provide extensive guidance.",
+    "metadata": {
+      "full_title": "Regulation (EU) No 316/2014 — Technology Transfer Block Exemption",
+      "short_name": "TTBER",
+      "market_share_competitors": "20%",
+      "market_share_non_competitors": "30%",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "concept-technology-transfer",
+    "canonical_name": "Technology Transfer Block Exemption (TTBER)"
+  },
+  {
+    "ref_id": "concept-ai-generated-ip",
+    "description": "IP protection for AI-generated works and inventions. Currently unresolved in EU law. Key questions: (1) Can AI be an inventor? EPO: No (J 8/20, DABUS decision — inventor must be a natural person); (2) Can AI-generated text/images be copyrighted? Most EU jurisdictions require a human author; (3) Who owns AI-assisted inventions? Depends on degree of human contribution; (4) Training data and copyright — see DSM Directive Art.3-4 TDM exceptions. EU AI Act does not directly address AI-generated IP but requires GPAI providers to disclose training data policies.",
+    "metadata": {
+      "epo_decision": "J 8/20 (DABUS — AI cannot be named inventor)",
+      "open_questions": "AI authorship, ownership of AI outputs, training data rights",
+      "related_legislation": "DSM Directive Art.3-4, EU AI Act Art.53"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ai-generated-ip",
+    "canonical_name": "AI-Generated IP & Ownership"
+  },
+  {
+    "ref_id": "concept-digital-exhaustion",
+    "description": "Exhaustion of IP rights in the digital context. Physical goods: first sale within the EEA exhausts distribution right (Art.4(2) InfoSoc Directive). Digital goods: CJEU held in UsedSoft (C-128/11) that exhaustion applies to software sold via download under certain conditions. However, Tom Kabinet (C-263/18) held exhaustion does not apply to e-books. Key distinction: software (Computer Programs Directive) vs other works (InfoSoc Directive). Implications for resale of digital licences, NFTs, and digital content markets.",
+    "metadata": {
+      "cjeu_case_law": "UsedSoft (C-128/11), Tom Kabinet (C-263/18)",
+      "principle": "EEA-wide exhaustion for physical goods, limited for digital",
+      "exceptions": "software under Computer Programs Directive may exhaust"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-digital-exhaustion",
+    "canonical_name": "Digital Exhaustion of IP Rights"
+  }
+]

@@ -1,0 +1,583 @@
+[
+  {
+    "from_ref": "wtd-2003-88",
+    "to_ref": "wtd-max-weekly-hours",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Working Time Directive contains the maximum 48-hour average working week requirement"
+  },
+  {
+    "from_ref": "wtd-2003-88",
+    "to_ref": "wtd-daily-rest",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Working Time Directive contains the minimum 11-hour daily rest obligation"
+  },
+  {
+    "from_ref": "wtd-2003-88",
+    "to_ref": "wtd-annual-leave",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Working Time Directive contains the minimum 4 weeks paid annual leave entitlement"
+  },
+  {
+    "from_ref": "wtd-2003-88",
+    "to_ref": "wtd-night-work",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Working Time Directive contains night work limits and health assessment obligations"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "etd-equal-pay",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Gender Equal Treatment Directive contains the equal pay for equal work principle"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "etd-burden-of-proof",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Gender Equal Treatment Directive contains the reversal of burden of proof rule"
+  },
+  {
+    "from_ref": "eefd-2000-78",
+    "to_ref": "eefd-reasonable-accommodation",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Employment Equality Framework Directive contains the duty of reasonable accommodation for disability"
+  },
+  {
+    "from_ref": "eefd-2000-78",
+    "to_ref": "eefd-age-justification",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Employment Equality Framework Directive contains provisions allowing justification of age-based differential treatment"
+  },
+  {
+    "from_ref": "tupe-2001-23",
+    "to_ref": "tupe-auto-transfer",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Transfer of Undertakings Directive contains the automatic transfer of employment rights on business transfer"
+  },
+  {
+    "from_ref": "tupe-2001-23",
+    "to_ref": "tupe-dismissal-protection",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Transfer of Undertakings Directive contains the protection against dismissal on transfer (ETO defence)"
+  },
+  {
+    "from_ref": "crd-98-59",
+    "to_ref": "crd-consultation-obligation",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Collective Redundancies Directive contains the duty to consult worker representatives"
+  },
+  {
+    "from_ref": "crd-98-59",
+    "to_ref": "crd-notification-authority",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Collective Redundancies Directive contains the obligation to notify the competent public authority"
+  },
+  {
+    "from_ref": "crd-98-59",
+    "to_ref": "threshold-collective-redundancy",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Collective Redundancies Directive defines the numerical thresholds triggering obligations"
+  },
+  {
+    "from_ref": "pwd-96-71",
+    "to_ref": "pwd-core-terms",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Posted Workers Directive contains the core employment terms guaranteed to posted workers"
+  },
+  {
+    "from_ref": "pwd-revised-2018-957",
+    "to_ref": "pwd-core-terms",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "Revised Posted Workers Directive amends core terms from minimum rates of pay to full remuneration"
+  },
+  {
+    "from_ref": "pwd-revised-2018-957",
+    "to_ref": "pwd-long-term-posting",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Revised Posted Workers Directive introduces full host state conditions after 12 months"
+  },
+  {
+    "from_ref": "pwd-revised-2018-957",
+    "to_ref": "pwd-96-71",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "Directive 2018/957 amends and strengthens the original Posted Workers Directive 96/71/EC"
+  },
+  {
+    "from_ref": "tpwcd-2019-1152",
+    "to_ref": "tpwcd-information-duty",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Transparent & Predictable Working Conditions Directive contains the employer's duty to inform workers"
+  },
+  {
+    "from_ref": "tpwcd-2019-1152",
+    "to_ref": "tpwcd-probation-limit",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Transparent & Predictable Working Conditions Directive contains the 6-month probation limit"
+  },
+  {
+    "from_ref": "tpwcd-2019-1152",
+    "to_ref": "tpwcd-parallel-employment",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Transparent & Predictable Working Conditions Directive establishes the right to parallel employment"
+  },
+  {
+    "from_ref": "wlbd-2019-1158",
+    "to_ref": "wlbd-paternity-leave",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Work-Life Balance Directive contains the minimum 10 days paternity leave entitlement"
+  },
+  {
+    "from_ref": "wlbd-2019-1158",
+    "to_ref": "wlbd-parental-leave",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Work-Life Balance Directive contains the 4 months parental leave entitlement"
+  },
+  {
+    "from_ref": "wlbd-2019-1158",
+    "to_ref": "wlbd-carers-leave",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Work-Life Balance Directive contains the 5 days carers' leave entitlement"
+  },
+  {
+    "from_ref": "wlbd-2019-1158",
+    "to_ref": "wlbd-flexible-working",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Work-Life Balance Directive establishes the right to request flexible working arrangements"
+  },
+  {
+    "from_ref": "ewcd-2009-38",
+    "to_ref": "ewcd-information-consultation",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "European Works Councils Directive contains the EWC information and consultation rights"
+  },
+  {
+    "from_ref": "ewcd-2009-38",
+    "to_ref": "threshold-ewc",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "European Works Councils Directive defines the establishment thresholds (1,000+/150+)"
+  },
+  {
+    "from_ref": "pltwd-2024-2831",
+    "to_ref": "pltwd-employment-presumption",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Platform Workers Directive contains the legal presumption of employment relationship"
+  },
+  {
+    "from_ref": "pltwd-2024-2831",
+    "to_ref": "pltwd-algorithmic-management",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "Platform Workers Directive contains algorithmic management transparency and data processing limits"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "concept-direct-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Gender Equal Treatment Directive defines direct discrimination on grounds of sex"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "concept-indirect-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Gender Equal Treatment Directive defines indirect discrimination on grounds of sex"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "concept-harassment",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Gender Equal Treatment Directive defines harassment and sexual harassment as forms of discrimination"
+  },
+  {
+    "from_ref": "red-2000-43",
+    "to_ref": "concept-direct-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Racial Equality Directive defines direct discrimination on grounds of racial or ethnic origin"
+  },
+  {
+    "from_ref": "red-2000-43",
+    "to_ref": "concept-indirect-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Racial Equality Directive defines indirect discrimination on grounds of racial or ethnic origin"
+  },
+  {
+    "from_ref": "eefd-2000-78",
+    "to_ref": "concept-direct-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Employment Equality Framework Directive defines direct discrimination on grounds of religion, disability, age, and sexual orientation"
+  },
+  {
+    "from_ref": "eefd-2000-78",
+    "to_ref": "concept-indirect-discrimination",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Employment Equality Framework Directive defines indirect discrimination on four protected grounds"
+  },
+  {
+    "from_ref": "red-2000-43",
+    "to_ref": "org-equality-bodies",
+    "relationship_type": "requires_establishment_of",
+    "strength": 1,
+    "description": "Racial Equality Directive requires Member States to designate equality bodies (Art.13)"
+  },
+  {
+    "from_ref": "etd-gender-2006-54",
+    "to_ref": "org-equality-bodies",
+    "relationship_type": "requires_establishment_of",
+    "strength": 1,
+    "description": "Gender Equal Treatment Directive requires Member States to designate equality bodies (Art.20)"
+  },
+  {
+    "from_ref": "etd-burden-of-proof",
+    "to_ref": "process-discrimination-claim",
+    "relationship_type": "governs",
+    "strength": 0.9,
+    "description": "Burden of proof reversal governs the evidential stage of discrimination claim proceedings"
+  },
+  {
+    "from_ref": "concept-direct-discrimination",
+    "to_ref": "process-discrimination-claim",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Finding of direct discrimination triggers the right to bring a discrimination claim"
+  },
+  {
+    "from_ref": "concept-indirect-discrimination",
+    "to_ref": "process-discrimination-claim",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Finding of indirect discrimination triggers the right to bring a discrimination claim"
+  },
+  {
+    "from_ref": "concept-harassment",
+    "to_ref": "process-discrimination-claim",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Harassment is a form of discrimination triggering the right to bring a claim"
+  },
+  {
+    "from_ref": "tpwcd-2019-1152",
+    "to_ref": "concept-employment-contract",
+    "relationship_type": "governs",
+    "strength": 0.9,
+    "description": "Transparent & Predictable Working Conditions Directive governs information duties for all employment contracts"
+  },
+  {
+    "from_ref": "tpwcd-probation-limit",
+    "to_ref": "concept-probationary-period",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "The 6-month probation limit sets the maximum for probationary periods across the EU"
+  },
+  {
+    "from_ref": "concept-employment-contract",
+    "to_ref": "concept-fixed-term-contract",
+    "relationship_type": "type_of",
+    "strength": 0.9,
+    "description": "Fixed-term contract is a type of employment contract"
+  },
+  {
+    "from_ref": "concept-employment-contract",
+    "to_ref": "concept-indefinite-contract",
+    "relationship_type": "type_of",
+    "strength": 0.9,
+    "description": "Indefinite (permanent) contract is a type of employment contract — the standard form"
+  },
+  {
+    "from_ref": "concept-fixed-term-contract",
+    "to_ref": "concept-indefinite-contract",
+    "relationship_type": "may_convert_to",
+    "strength": 0.8,
+    "description": "Successive fixed-term contracts may be converted to indefinite contracts as an anti-abuse measure"
+  },
+  {
+    "from_ref": "concept-employment-contract",
+    "to_ref": "concept-probationary-period",
+    "relationship_type": "may_contain",
+    "strength": 0.7,
+    "description": "Employment contracts may include a probationary period subject to the 6-month limit"
+  },
+  {
+    "from_ref": "concept-employment-contract",
+    "to_ref": "concept-termination-notice",
+    "relationship_type": "requires",
+    "strength": 0.8,
+    "description": "Termination of an employment contract requires observance of notice periods"
+  },
+  {
+    "from_ref": "concept-unfair-dismissal",
+    "to_ref": "concept-termination-notice",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "Failure to observe proper notice may constitute or accompany unfair dismissal"
+  },
+  {
+    "from_ref": "concept-unfair-dismissal",
+    "to_ref": "concept-severance-pay",
+    "relationship_type": "may_trigger",
+    "strength": 0.8,
+    "description": "Unfair dismissal may trigger enhanced severance or compensation awards"
+  },
+  {
+    "from_ref": "tupe-dismissal-protection",
+    "to_ref": "concept-unfair-dismissal",
+    "relationship_type": "establishes",
+    "strength": 0.9,
+    "description": "Dismissal solely by reason of transfer constitutes unfair dismissal"
+  },
+  {
+    "from_ref": "tupe-2001-23",
+    "to_ref": "concept-transfer-of-undertaking",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Transfer of Undertakings Directive defines what constitutes a transfer of undertaking"
+  },
+  {
+    "from_ref": "concept-transfer-of-undertaking",
+    "to_ref": "process-tupe-transfer",
+    "relationship_type": "triggers",
+    "strength": 1,
+    "description": "Identification of a transfer of undertaking triggers the TUPE transfer process"
+  },
+  {
+    "from_ref": "tupe-auto-transfer",
+    "to_ref": "process-tupe-transfer",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Automatic transfer of rights governs the core mechanic of the TUPE process"
+  },
+  {
+    "from_ref": "threshold-collective-redundancy",
+    "to_ref": "process-collective-redundancy",
+    "relationship_type": "triggers",
+    "strength": 1,
+    "description": "Meeting the collective redundancy thresholds triggers the mandatory redundancy process"
+  },
+  {
+    "from_ref": "crd-consultation-obligation",
+    "to_ref": "process-collective-redundancy",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "Consultation obligation governs the worker representative engagement step of the collective redundancy process"
+  },
+  {
+    "from_ref": "crd-notification-authority",
+    "to_ref": "process-collective-redundancy",
+    "relationship_type": "governs",
+    "strength": 0.9,
+    "description": "Public authority notification governs the regulatory notification step of the redundancy process"
+  },
+  {
+    "from_ref": "threshold-ewc",
+    "to_ref": "process-ewc-establishment",
+    "relationship_type": "triggers",
+    "strength": 1,
+    "description": "Meeting the EWC employee thresholds is a prerequisite for the EWC establishment process"
+  },
+  {
+    "from_ref": "ewcd-information-consultation",
+    "to_ref": "process-ewc-establishment",
+    "relationship_type": "outcome_of",
+    "strength": 0.9,
+    "description": "EWC information and consultation rights are the outcome of successfully completing the establishment process"
+  },
+  {
+    "from_ref": "concept-worker-eu",
+    "to_ref": "concept-employment-contract",
+    "relationship_type": "defined_by",
+    "strength": 0.9,
+    "description": "The EU autonomous concept of worker is typically evidenced by an employment contract or relationship"
+  },
+  {
+    "from_ref": "pltwd-employment-presumption",
+    "to_ref": "concept-worker-eu",
+    "relationship_type": "extends",
+    "strength": 0.9,
+    "description": "Platform Workers Directive extends the worker concept through legal presumption of employment"
+  },
+  {
+    "from_ref": "pltwd-employment-presumption",
+    "to_ref": "concept-employment-contract",
+    "relationship_type": "presumes",
+    "strength": 0.9,
+    "description": "Legal presumption creates a presumed employment contract between platform and worker"
+  },
+  {
+    "from_ref": "tawd-2008-104",
+    "to_ref": "etd-equal-pay",
+    "relationship_type": "parallels",
+    "strength": 0.7,
+    "description": "Temporary Agency Workers Directive's equal treatment principle parallels equal pay obligations — agency workers must receive comparable pay"
+  },
+  {
+    "from_ref": "wtd-max-weekly-hours",
+    "to_ref": "pwd-core-terms",
+    "relationship_type": "referenced_in",
+    "strength": 0.8,
+    "description": "Maximum working time is one of the core terms guaranteed to posted workers"
+  },
+  {
+    "from_ref": "wtd-annual-leave",
+    "to_ref": "pwd-core-terms",
+    "relationship_type": "referenced_in",
+    "strength": 0.8,
+    "description": "Minimum paid annual leave is one of the core terms guaranteed to posted workers"
+  },
+  {
+    "from_ref": "crd-98-59",
+    "to_ref": "ewcd-information-consultation",
+    "relationship_type": "triggers_consultation_under",
+    "strength": 0.8,
+    "description": "Collective redundancies in a Community-scale undertaking trigger EWC consultation if transnational"
+  },
+  {
+    "from_ref": "tupe-2001-23",
+    "to_ref": "ewcd-information-consultation",
+    "relationship_type": "triggers_consultation_under",
+    "strength": 0.8,
+    "description": "Business transfers in a Community-scale undertaking trigger EWC consultation if transnational"
+  },
+  {
+    "from_ref": "concept-collective-bargaining",
+    "to_ref": "concept-trade-union",
+    "relationship_type": "conducted_by",
+    "strength": 1,
+    "description": "Collective bargaining is primarily conducted by trade unions on behalf of workers"
+  },
+  {
+    "from_ref": "concept-collective-bargaining",
+    "to_ref": "concept-industrial-action",
+    "relationship_type": "may_lead_to",
+    "strength": 0.7,
+    "description": "Failure to reach agreement through collective bargaining may lead to industrial action"
+  },
+  {
+    "from_ref": "concept-trade-union",
+    "to_ref": "concept-industrial-action",
+    "relationship_type": "organises",
+    "strength": 0.8,
+    "description": "Trade unions organise and coordinate industrial action on behalf of workers"
+  },
+  {
+    "from_ref": "concept-collective-bargaining",
+    "to_ref": "wtd-max-weekly-hours",
+    "relationship_type": "may_derogate_from",
+    "strength": 0.7,
+    "description": "Collective agreements may extend the reference period for calculating maximum weekly working time"
+  },
+  {
+    "from_ref": "wlbd-flexible-working",
+    "to_ref": "wtd-2003-88",
+    "relationship_type": "interacts_with",
+    "strength": 0.6,
+    "description": "Right to flexible working arrangements interacts with Working Time Directive requirements on rest periods and maximum hours"
+  },
+  {
+    "from_ref": "wlbd-2019-1158",
+    "to_ref": "etd-gender-2006-54",
+    "relationship_type": "reinforces",
+    "strength": 0.8,
+    "description": "Work-Life Balance Directive reinforces gender equality by encouraging equal sharing of care responsibilities"
+  },
+  {
+    "from_ref": "tpwcd-2019-1152",
+    "to_ref": "pltwd-2024-2831",
+    "relationship_type": "applies_to_workers_covered_by",
+    "strength": 0.8,
+    "description": "Transparent & Predictable Working Conditions information duties apply to platform workers once employment relationship is established"
+  },
+  {
+    "from_ref": "org-cjeu",
+    "to_ref": "concept-worker-eu",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "CJEU defines the autonomous EU concept of worker through case law (Lawrie-Blum)"
+  },
+  {
+    "from_ref": "org-cjeu",
+    "to_ref": "concept-transfer-of-undertaking",
+    "relationship_type": "interprets",
+    "strength": 1,
+    "description": "CJEU interprets the definition of transfer of undertaking through case law (Spijkers test)"
+  },
+  {
+    "from_ref": "org-cjeu",
+    "to_ref": "concept-industrial-action",
+    "relationship_type": "balances_with_internal_market",
+    "strength": 0.8,
+    "description": "CJEU balances the right to industrial action with EU internal market freedoms (Viking, Laval)"
+  },
+  {
+    "from_ref": "org-european-commission-dg-empl",
+    "to_ref": "wtd-2003-88",
+    "relationship_type": "monitors_transposition_of",
+    "strength": 0.8,
+    "description": "DG EMPL monitors Member State transposition and application of the Working Time Directive"
+  },
+  {
+    "from_ref": "org-european-commission-dg-empl",
+    "to_ref": "pltwd-2024-2831",
+    "relationship_type": "monitors_transposition_of",
+    "strength": 0.8,
+    "description": "DG EMPL monitors Member State transposition of the Platform Workers Directive"
+  },
+  {
+    "from_ref": "org-european-labour-authority",
+    "to_ref": "pwd-96-71",
+    "relationship_type": "enforces",
+    "strength": 0.9,
+    "description": "European Labour Authority supports enforcement of the Posted Workers Directive through cross-border inspections"
+  },
+  {
+    "from_ref": "org-european-labour-authority",
+    "to_ref": "pwd-revised-2018-957",
+    "relationship_type": "enforces",
+    "strength": 0.9,
+    "description": "European Labour Authority supports enforcement of the Revised Posted Workers Directive"
+  },
+  {
+    "from_ref": "org-equality-bodies",
+    "to_ref": "process-discrimination-claim",
+    "relationship_type": "assists_in",
+    "strength": 0.9,
+    "description": "National equality bodies provide independent assistance to victims pursuing discrimination claims"
+  },
+  {
+    "from_ref": "eefd-reasonable-accommodation",
+    "to_ref": "concept-direct-discrimination",
+    "relationship_type": "failure_constitutes",
+    "strength": 0.9,
+    "description": "Failure to provide reasonable accommodation constitutes direct disability discrimination"
+  }
+]

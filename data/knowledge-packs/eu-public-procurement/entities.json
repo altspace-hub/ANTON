@@ -1,0 +1,685 @@
+[
+  {
+    "ref_id": "dir-2014-24",
+    "description": "Directive 2014/24/EU on public procurement. Replaced Directive 2004/18/EC. Governs procurement by contracting authorities (central government, regional/local authorities, bodies governed by public law) for works, supplies and services above EU thresholds. Establishes five procurement procedures: open, restricted, competitive procedure with negotiation, competitive dialogue, and innovation partnership. Transposes into national law in all EU Member States. Key principles: equal treatment, non-discrimination, transparency, proportionality, mutual recognition.",
+    "metadata": {
+      "full_title": "Directive 2014/24/EU of the European Parliament and of the Council of 26 February 2014 on public procurement",
+      "short_name": "Public Contracts Directive",
+      "applies_from": "2016-04-18",
+      "replaces": "Directive 2004/18/EC",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-2014-24",
+    "canonical_name": "Public Contracts Directive (2014/24/EU)"
+  },
+  {
+    "ref_id": "dir-2014-25",
+    "description": "Directive 2014/25/EU on procurement by entities operating in the water, energy, transport and postal services sectors. Replaced Directive 2004/17/EC. Applies to contracting entities (public undertakings and entities with special or exclusive rights) in utilities sectors. More flexible than the general directive — allows negotiated procedure with prior call for competition as a standard procedure. Includes sector-specific exemptions (directly exposed to competition, Art.34-35).",
+    "metadata": {
+      "full_title": "Directive 2014/25/EU of the European Parliament and of the Council of 26 February 2014 on procurement by entities operating in the water, energy, transport and postal services sectors",
+      "short_name": "Utilities Directive",
+      "applies_from": "2016-04-18",
+      "replaces": "Directive 2004/17/EC",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-2014-25",
+    "canonical_name": "Utilities Directive (2014/25/EU)"
+  },
+  {
+    "ref_id": "dir-2014-23",
+    "description": "Directive 2014/23/EU on the award of concession contracts. First EU-level legislation specifically regulating concessions. Covers both works concessions and services concessions where the operating risk is transferred to the concessionaire. Threshold: EUR 5,538,000 (2024 values). Lighter-touch regime compared to 2014/24/EU — greater flexibility in procedure design. Key distinction from public contracts: concessionaire bears significant operating risk.",
+    "metadata": {
+      "full_title": "Directive 2014/23/EU of the European Parliament and of the Council of 26 February 2014 on the award of concession contracts",
+      "short_name": "Concessions Directive",
+      "applies_from": "2016-04-18",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-2014-23",
+    "canonical_name": "Concessions Directive (2014/23/EU)"
+  },
+  {
+    "ref_id": "dir-2009-81",
+    "description": "Directive 2009/81/EC on procurement in defence and security. Lex specialis for contracts involving military equipment, sensitive equipment, works/services for specifically military purposes, and sensitive works/services requiring security measures. Allows negotiated procedure with publication as standard. Includes specific security provisions: security of information (Art.22), security of supply (Art.23), subcontracting obligations (Art.21). Member States retain Art.346 TFEU exemption for essential security interests.",
+    "metadata": {
+      "full_title": "Directive 2009/81/EC on the coordination of procedures for the award of certain works contracts, supply contracts and service contracts by contracting authorities or entities in the fields of defence and security",
+      "short_name": "Defence Procurement Directive",
+      "applies_from": "2011-08-21",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-2009-81",
+    "canonical_name": "Defence & Security Procurement Directive (2009/81/EC)"
+  },
+  {
+    "ref_id": "dir-89-665",
+    "description": "Council Directive 89/665/EEC on the coordination of review procedures for the award of public supply and public works contracts (classic sector remedies). As amended by Directive 2007/66/EC. Requires Member States to ensure rapid and effective review procedures. Key requirements: interim measures (suspension of procedure), set-aside of unlawful decisions, damages. Introduced mandatory standstill period and contract ineffectiveness remedy through 2007/66/EC amendments.",
+    "metadata": {
+      "full_title": "Council Directive 89/665/EEC on the application of review procedures to the award of public supply and public works contracts",
+      "short_name": "Remedies Directive (Classic)",
+      "applies_from": "1991-12-21",
+      "amended_by": "Directive 2007/66/EC",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-89-665",
+    "canonical_name": "Remedies Directive — Classic Sectors (89/665/EEC)"
+  },
+  {
+    "ref_id": "dir-92-13",
+    "description": "Council Directive 92/13/EEC coordinating review procedures for the award of contracts by entities operating in the water, energy, transport and telecommunications sectors (utilities remedies). As amended by Directive 2007/66/EC. Parallel to 89/665/EEC but for utilities. Provides same remedies framework: interim measures, set-aside, damages, standstill period, contract ineffectiveness. Originally included attestation and conciliation mechanisms (now largely superseded).",
+    "metadata": {
+      "full_title": "Council Directive 92/13/EEC coordinating review procedures for entities operating in the water, energy, transport and telecommunications sectors",
+      "short_name": "Remedies Directive (Utilities)",
+      "applies_from": "1993-01-01",
+      "amended_by": "Directive 2007/66/EC",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-92-13",
+    "canonical_name": "Remedies Directive — Utilities Sectors (92/13/EEC)"
+  },
+  {
+    "ref_id": "dir-2007-66",
+    "description": "Directive 2007/66/EC amending the Remedies Directives (89/665/EEC and 92/13/EEC). Key innovations: (1) mandatory standstill period of at least 10 calendar days (15 if notice sent by post) between contract award decision and conclusion of contract; (2) contract ineffectiveness as a remedy for the most serious infringements (illegal direct award, breach of standstill period, breach of suspension obligation); (3) alternative penalties (fines, shortening of contract duration) where ineffectiveness is not declared.",
+    "metadata": {
+      "full_title": "Directive 2007/66/EC amending Directives 89/665/EEC and 92/13/EEC with regard to improving the effectiveness of review procedures concerning the award of public contracts",
+      "short_name": "Remedies Amendment Directive",
+      "applies_from": "2009-12-20",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "dir-2007-66",
+    "canonical_name": "Remedies Amendment Directive (2007/66/EC)"
+  },
+  {
+    "ref_id": "reg-2019-1780",
+    "description": "Commission Implementing Regulation (EU) 2019/1780 establishing standard forms for the publication of notices in public procurement (eForms). Replaces previous standard forms. Mandatory for above-threshold procurement from 25 October 2023. Defines structured data fields for contract notices, contract award notices, prior information notices, and other procurement notices published in the Official Journal (TED). Supports electronic procurement and data-driven analysis of procurement markets.",
+    "metadata": {
+      "full_title": "Commission Implementing Regulation (EU) 2019/1780 establishing standard forms for the publication of notices in the field of public procurement",
+      "short_name": "eForms Regulation",
+      "mandatory_from": "2023-10-25",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "reg-2019-1780",
+    "canonical_name": "eForms Regulation (2019/1780)"
+  },
+  {
+    "ref_id": "proc-open",
+    "description": "Open procedure (Art.27 of 2014/24/EU). Any interested economic operator may submit a tender in response to a contract notice. No pre-qualification or shortlisting stage. Minimum time limit: 35 days from dispatch of contract notice (reducible to 15 days with prior information notice or in cases of urgency). Most commonly used procedure in the EU. Suitable for straightforward, well-defined procurements where specifications can be precisely stated in advance.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 27,
+      "minimum_time_limit": "35 days (reducible to 15)",
+      "shortlisting": false
+    },
+    "entity_type": "process",
+    "entity_id": "proc-open",
+    "canonical_name": "Open Procedure"
+  },
+  {
+    "ref_id": "proc-restricted",
+    "description": "Restricted procedure (Art.28 of 2014/24/EU). Two-stage process: (1) any economic operator may request to participate based on a contract notice; (2) only candidates satisfying selection criteria are invited to tender (minimum 5 candidates). Minimum time limits: 30 days for request to participate, 30 days for tender submission. Suitable when contracting authority wishes to limit the number of tenderers to ensure quality competition.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 28,
+      "minimum_candidates": 5,
+      "minimum_time_request": "30 days",
+      "minimum_time_tender": "30 days"
+    },
+    "entity_type": "process",
+    "entity_id": "proc-restricted",
+    "canonical_name": "Restricted Procedure"
+  },
+  {
+    "ref_id": "proc-comp-negotiation",
+    "description": "Competitive procedure with negotiation (Art.29 of 2014/24/EU). Permitted only when specified conditions are met (e.g. needs cannot be met without adaptation of available solutions, involves design/innovative solutions, complex nature, technical specifications cannot be precisely established). Three stages: request to participate, initial tender, negotiation rounds. Minimum 3 candidates invited. Contracting authority may award on basis of initial tender without negotiation if stated in contract notice.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 29,
+      "minimum_candidates": 3,
+      "conditions": "Art.26(4)(a)-(d)"
+    },
+    "entity_type": "process",
+    "entity_id": "proc-comp-negotiation",
+    "canonical_name": "Competitive Procedure with Negotiation"
+  },
+  {
+    "ref_id": "proc-competitive-dialogue",
+    "description": "Competitive dialogue (Art.30 of 2014/24/EU). Used for particularly complex contracts where the contracting authority is unable to define the technical or financial means to satisfy its needs. Same conditions as competitive procedure with negotiation (Art.26(4)). Stages: request to participate, dialogue phase with shortlisted candidates (minimum 3), final tender submission. Dialogue continues until authority identifies solution(s) meeting its needs. May provide prizes/payments to participants.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 30,
+      "minimum_candidates": 3,
+      "conditions": "Art.26(4)(a)-(d)"
+    },
+    "entity_type": "process",
+    "entity_id": "proc-competitive-dialogue",
+    "canonical_name": "Competitive Dialogue"
+  },
+  {
+    "ref_id": "proc-innovation-partnership",
+    "description": "Innovation partnership (Art.31 of 2014/24/EU). Procedure for developing innovative products, services or works not available on the market and subsequently purchasing them. Structured in phases: R&D phase(s) followed by commercial phase. Selection based on R&D capacity and innovation capability. Contracting authority may reduce partners at each phase. Intellectual property rights allocation must be specified upfront. Minimum 3 candidates.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 31,
+      "minimum_candidates": 3,
+      "purpose": "development and purchase of innovative solutions"
+    },
+    "entity_type": "process",
+    "entity_id": "proc-innovation-partnership",
+    "canonical_name": "Innovation Partnership"
+  },
+  {
+    "ref_id": "proc-negotiated-without-publication",
+    "description": "Negotiated procedure without prior publication (Art.32 of 2014/24/EU). Exceptional procedure permitted only in strictly defined circumstances: (1) no suitable tenders/requests in prior open/restricted procedure; (2) only one economic operator for technical/artistic reasons or exclusive rights; (3) extreme urgency caused by unforeseeable events; (4) supplies quoted on commodity market; (5) purchase on particularly advantageous terms from supplier in liquidation. Must be strictly interpreted. Subject to CJEU scrutiny.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 32,
+      "exceptional": true,
+      "conditions": "strictly limited"
+    },
+    "entity_type": "process",
+    "entity_id": "proc-negotiated-without-publication",
+    "canonical_name": "Negotiated Procedure Without Prior Publication"
+  },
+  {
+    "ref_id": "concept-thresholds",
+    "description": "EU procurement thresholds determine whether the full procurement directives apply. Revised every two years by European Commission delegated regulation. Current thresholds (2024-2025): central government supplies/services EUR 143,000; sub-central authorities supplies/services EUR 221,000; works EUR 5,538,000; utilities supplies/services EUR 443,000; concessions EUR 5,538,000; defence/security supplies/services EUR 443,000. Below-threshold procurement governed by Treaty principles and national rules.",
+    "metadata": {
+      "revision_period": "every two years",
+      "current_period": "2024-2025",
+      "central_govt_supplies": "EUR 143,000",
+      "sub_central_supplies": "EUR 221,000",
+      "works": "EUR 5,538,000",
+      "utilities": "EUR 443,000",
+      "concessions": "EUR 5,538,000"
+    },
+    "entity_type": "threshold",
+    "entity_id": "concept-thresholds",
+    "canonical_name": "EU Procurement Thresholds"
+  },
+  {
+    "ref_id": "concept-below-threshold",
+    "description": "Below-threshold procurement is not subject to the full procedural requirements of the procurement directives but must still comply with Treaty on the Functioning of the EU (TFEU) principles: equal treatment, non-discrimination, transparency, proportionality, mutual recognition. Cross-border interest test (CJEU case law): if a contract may attract cross-border interest, basic transparency obligations apply even below thresholds. National procurement laws typically impose additional rules for below-threshold contracts.",
+    "metadata": {
+      "legal_basis": "TFEU Arts.18, 49, 56",
+      "cjeu_key_case": "C-324/98 Telaustria",
+      "cross_border_interest": "triggers transparency obligations"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-below-threshold",
+    "canonical_name": "Below-Threshold Procurement"
+  },
+  {
+    "ref_id": "concept-contracting-authority",
+    "description": "Contracting authority (Art.2(1) of 2014/24/EU): the State, regional or local authorities, bodies governed by public law, or associations of such authorities/bodies. Bodies governed by public law are defined by three cumulative criteria: (1) established for the specific purpose of meeting needs in the general interest, not having an industrial or commercial character; (2) having legal personality; (3) financed for the most part by the State/regional/local authorities or other bodies governed by public law, or subject to management supervision by them, or having administrative/managerial/supervisory board with more than half members appointed by them.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "2(1)",
+      "includes": "State, regional/local authorities, bodies governed by public law"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-contracting-authority",
+    "canonical_name": "Contracting Authority"
+  },
+  {
+    "ref_id": "concept-economic-operator",
+    "description": "Economic operator (Art.2(1)(10) of 2014/24/EU): any natural or legal person, or public entity, or group of such persons and/or entities, including any temporary association of undertakings, which offers the execution of works and/or a work, the supply of products or the provision of services on the market. Encompasses contractors, suppliers, service providers. Groups may submit joint tenders without being required to form a specific legal entity, though the contracting authority may require such formation after award if necessary for contract performance.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "2(1)(10)",
+      "includes": "contractors, suppliers, service providers, consortia"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-economic-operator",
+    "canonical_name": "Economic Operator"
+  },
+  {
+    "ref_id": "concept-selection-criteria",
+    "description": "Selection criteria (Art.58 of 2014/24/EU) assess the suitability and capacity of economic operators. Three categories: (a) suitability to pursue the professional activity; (b) economic and financial standing (minimum annual turnover requirements limited to max 2x estimated contract value, Art.58(3)); (c) technical and professional ability (relevant experience, staffing, equipment, quality assurance, environmental management). Selection criteria must be related and proportionate to the subject matter. Listed in the contract notice. Separate from award criteria.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 58,
+      "turnover_cap": "maximum 2x contract value",
+      "categories": "suitability, economic standing, technical ability"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-selection-criteria",
+    "canonical_name": "Selection Criteria"
+  },
+  {
+    "ref_id": "concept-exclusion-mandatory",
+    "description": "Mandatory exclusion grounds (Art.57(1) of 2014/24/EU). Contracting authorities must exclude economic operators convicted by final judgment of: (a) participation in a criminal organisation; (b) corruption; (c) fraud; (d) terrorist offences; (e) money laundering or terrorist financing; (f) child labour and trafficking. Exclusion based on final court judgment. Verification through criminal records, ECRIS system. Self-cleaning possible (Art.57(6)): evidence of remedial measures, compensation, organisational changes.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "57(1)",
+      "grounds": "criminal organisation, corruption, fraud, terrorism, money laundering, child labour/trafficking",
+      "self_cleaning": "Art.57(6)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-exclusion-mandatory",
+    "canonical_name": "Mandatory Exclusion Grounds"
+  },
+  {
+    "ref_id": "concept-exclusion-discretionary",
+    "description": "Discretionary exclusion grounds (Art.57(4) of 2014/24/EU). Contracting authorities may exclude economic operators for: (a) breach of environmental, social or labour law obligations; (b) bankruptcy or insolvency; (c) grave professional misconduct; (d) anti-competitive agreements; (e) conflict of interest that cannot be remedied; (f) significant or persistent deficiencies in prior public contract; (g) misrepresentation; (h) undue influence on decision-making process; (i) non-payment of taxes or social security. Self-cleaning also available.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "57(4)",
+      "self_cleaning": "Art.57(6)",
+      "national_discretion": "Member States may make some grounds mandatory"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-exclusion-discretionary",
+    "canonical_name": "Discretionary Exclusion Grounds"
+  },
+  {
+    "ref_id": "concept-espd",
+    "description": "European Single Procurement Document (Art.59 of 2014/24/EU and Implementing Regulation 2016/7). Standardised self-declaration form replacing individual certificates and documents at tender stage. Economic operators declare on their honour that they meet selection criteria and are not subject to exclusion grounds. Full documentary evidence required only from winning tenderer before award. Available in electronic format (eESPD). Reduces administrative burden for both contracting authorities and tenderers, especially for cross-border procurement.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 59,
+      "implementing_regulation": "2016/7",
+      "format": "electronic (eESPD) or paper"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-espd",
+    "canonical_name": "European Single Procurement Document (ESPD)"
+  },
+  {
+    "ref_id": "concept-award-criteria-meat",
+    "description": "Award criteria — Most Economically Advantageous Tender (MEAT) (Art.67 of 2014/24/EU). Contracts awarded on the basis of MEAT identified on the basis of price or cost, using a cost-effectiveness approach (life-cycle costing). May include best price-quality ratio assessed on criteria linked to the subject matter: quality, technical merit, aesthetic characteristics, functional characteristics, environmental characteristics, social characteristics, innovation, organisation, qualifications and experience of staff, after-sales service, delivery conditions. Criteria must be linked to the subject matter, transparent, non-discriminatory.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 67,
+      "approaches": "lowest price, lowest cost, best price-quality ratio"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-award-criteria-meat",
+    "canonical_name": "Award Criteria — MEAT (Most Economically Advantageous Tender)"
+  },
+  {
+    "ref_id": "concept-life-cycle-costing",
+    "description": "Life-cycle costing (Art.68 of 2014/24/EU). Permits contracting authorities to use total cost of ownership as award criterion, including: (a) acquisition costs; (b) costs of use (energy, other resources); (c) maintenance costs; (d) end-of-life costs (collection, recycling, disposal); (e) costs imputed to environmental externalities (CO2 emissions, pollution) linked to the product/service during its life cycle, if monetisable and verifiable. Methodologies must be objective, verifiable, non-discriminatory, and accessible to all interested parties.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 68,
+      "includes_externalities": true
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-life-cycle-costing",
+    "canonical_name": "Life-Cycle Costing"
+  },
+  {
+    "ref_id": "concept-framework-agreement",
+    "description": "Framework agreement (Art.33 of 2014/24/EU). Agreement between one or more contracting authorities and one or more economic operators establishing the terms governing contracts to be awarded during a given period (maximum 4 years, exceptionally longer in duly justified cases). Two types: (1) single-supplier framework — call-offs without reopening competition; (2) multi-supplier framework — call-offs with or without mini-competition (cascade or reopening). Must include at least 3 operators in multi-supplier framework. Cannot be used to prevent, restrict or distort competition.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 33,
+      "maximum_duration": "4 years (except duly justified)",
+      "minimum_operators_multi": 3
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-framework-agreement",
+    "canonical_name": "Framework Agreement"
+  },
+  {
+    "ref_id": "concept-dps",
+    "description": "Dynamic purchasing system (Art.34 of 2014/24/EU). Completely electronic process for commonly used purchases. Open throughout its validity to any economic operator that satisfies the selection criteria. Contracting authority publishes a contract notice, receives indicative tenders, evaluates them within 10 working days. For each specific procurement, all admitted participants are invited to submit a tender. No maximum duration in 2014/24/EU (unlike 4-year limit in previous directive). Particularly suitable for commodity purchases.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 34,
+      "format": "fully electronic",
+      "evaluation_deadline": "10 working days for admission"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-dps",
+    "canonical_name": "Dynamic Purchasing System (DPS)"
+  },
+  {
+    "ref_id": "concept-e-auction",
+    "description": "Electronic auction (Art.35 of 2014/24/EU). Iterative electronic process after initial full evaluation of tenders, for presenting new prices and/or new values for quantifiable elements of tenders. Used for contract award or for reopening competition under framework agreements. Based on: prices alone, or prices and/or new values for tender elements. Cannot be used for works or services involving intellectual performance (e.g. design). Must specify mathematical formula for automatic ranking.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 35,
+      "exclusions": "works/services with intellectual performance"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-e-auction",
+    "canonical_name": "Electronic Auction"
+  },
+  {
+    "ref_id": "concept-standstill-period",
+    "description": "Standstill period (Art.2a of 89/665/EEC as amended by 2007/66/EC). Mandatory waiting period between the contract award decision notification and the conclusion (signing) of the contract. Minimum 10 calendar days when award decision sent electronically; 15 calendar days when sent by other means. Purpose: allow unsuccessful tenderers time to challenge the award decision before the contract becomes binding. Breach of standstill period may trigger contract ineffectiveness. Also known as 'Alcatel period' after CJEU case C-81/98.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2a",
+      "electronic_notice": "10 calendar days",
+      "other_notice": "15 calendar days",
+      "cjeu_origin": "C-81/98 Alcatel Austria"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-standstill-period",
+    "canonical_name": "Standstill Period (Alcatel Period)"
+  },
+  {
+    "ref_id": "concept-transparency",
+    "description": "Transparency principle in EU public procurement. Treaty-based general principle (TFEU Arts.18, 49, 56). In the directives: publication of contract notices in OJEU/TED (Art.48-52 of 2014/24/EU), disclosure of award criteria and weightings in advance, equal access to information for all tenderers, reasons for rejection communicated to unsuccessful tenderers (Art.55), publication of contract award notices. Transparency extends to contract modifications (Art.72) — substantial modifications must be published. Linked to e-procurement and eForms for standardised disclosure.",
+    "metadata": {
+      "legal_basis": "TFEU + Directive 2014/24/EU",
+      "key_articles": "Arts.48-52, 55, 72",
+      "publication_platform": "TED (Tenders Electronic Daily)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-transparency",
+    "canonical_name": "Transparency Principle"
+  },
+  {
+    "ref_id": "concept-equal-treatment",
+    "description": "Equal treatment and non-discrimination (Art.18(1) of 2014/24/EU). Contracting authorities must treat economic operators equally and without discrimination and must act in a transparent and proportionate manner. Procurement must not be designed with the effect of artificially narrowing competition (Art.18(1) second subparagraph). Practical implications: identical information to all candidates, same deadlines, objective criteria, no tailor-made specifications for a specific operator, no conflicts of interest (Art.24). CJEU enforces strictly.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "18(1)",
+      "treaty_basis": "Art.18 TFEU (non-discrimination)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-equal-treatment",
+    "canonical_name": "Equal Treatment & Non-Discrimination"
+  },
+  {
+    "ref_id": "concept-contract-modification",
+    "description": "Contract modification rules (Art.72 of 2014/24/EU). Contracts may be modified without a new procurement procedure in defined cases: (1) review clauses provided in the original procurement documents; (2) additional works/services/supplies up to 50% of original contract value; (3) change of contractor due to corporate restructuring; (4) non-substantial modifications; (5) modifications below both de minimis thresholds (10% for supplies/services, 15% for works) AND the EU thresholds. A modification is substantial if it changes the economic balance, extends scope considerably, or would have attracted additional participants.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 72,
+      "de_minimis_services": "10%",
+      "de_minimis_works": "15%",
+      "additional_cap": "50%"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-contract-modification",
+    "canonical_name": "Contract Modification Rules (Art.72)"
+  },
+  {
+    "ref_id": "concept-abnormally-low",
+    "description": "Abnormally low tenders (Art.69 of 2014/24/EU). Where tenders appear abnormally low, contracting authorities must request explanations before rejecting. Explanations may relate to: economics of manufacturing/construction, technical solutions, exceptionally favourable conditions, originality, compliance with environmental/social/labour law, subcontracting arrangements, state aid. Authority must reject if the low price results from non-compliance with mandatory environmental, social or labour law (Art.18(2)). Rejection must be communicated with reasons.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 69,
+      "mandatory_rejection": "if due to breach of Art.18(2) obligations"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-abnormally-low",
+    "canonical_name": "Abnormally Low Tenders"
+  },
+  {
+    "ref_id": "concept-subcontracting",
+    "description": "Subcontracting in EU procurement (Art.71 of 2014/24/EU). Contracting authorities may require tenderers to indicate in their tender any share they intend to subcontract and proposed subcontractors. May require information on subcontractors for works contracts and services performed at the contracting authority's facilities. May verify subcontractors against exclusion grounds (Art.57). Member States may require direct payment to subcontractors. Main contractor remains liable for contract performance.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 71,
+      "direct_payment": "optional, at Member State discretion"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-subcontracting",
+    "canonical_name": "Subcontracting"
+  },
+  {
+    "ref_id": "concept-in-house",
+    "description": "In-house exception (Teckal doctrine) (Art.12 of 2014/24/EU). Contracts awarded to a controlled legal entity are excluded from the directive if: (1) the contracting authority exercises over the entity a control similar to that which it exercises over its own departments (decisive influence on strategic objectives and significant decisions); (2) more than 80% of the activities of the controlled entity are carried out for the controlling authority; (3) no direct private capital participation. Codifies CJEU case law from C-107/98 Teckal.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 12,
+      "cjeu_origin": "C-107/98 Teckal",
+      "activity_threshold": "80%",
+      "private_capital": "excluded"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-in-house",
+    "canonical_name": "In-House Exception (Teckal Doctrine)"
+  },
+  {
+    "ref_id": "concept-lots-division",
+    "description": "Division into lots (Art.46 of 2014/24/EU). Contracting authorities should consider dividing contracts into lots to facilitate SME access. If they choose not to, they must provide an explanation in the procurement documents or the individual report (Art.46(1)). May limit the number of lots a single tenderer may be awarded. May award combined lots if overall assessment criteria met. 'Divide or explain' principle. Linked to EU policy objectives of increasing SME participation in public procurement.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 46,
+      "sme_objective": true,
+      "principle": "divide or explain"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-lots-division",
+    "canonical_name": "Division into Lots"
+  },
+  {
+    "ref_id": "concept-green-procurement",
+    "description": "Green public procurement (GPP). Using procurement to achieve environmental objectives. Legal basis in 2014/24/EU: environmental characteristics as technical specifications (Art.42), labels as means of proof (Art.43), environmental award criteria under MEAT (Art.67), life-cycle costing including environmental externalities (Art.68), environmental management systems as selection criteria (Art.62). European Commission GPP criteria available for 21 product groups. National GPP action plans in most Member States. Voluntary at EU level but increasingly mandatory at national level.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "articles": "42, 43, 62, 67, 68",
+      "ec_criteria_groups": 21,
+      "status": "voluntary at EU level"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-green-procurement",
+    "canonical_name": "Green Public Procurement (GPP)"
+  },
+  {
+    "ref_id": "concept-social-procurement",
+    "description": "Socially responsible public procurement (SRPP). Using procurement to achieve social objectives: employment opportunities, decent work, social inclusion, accessibility, design for all, ethical trade, corporate social responsibility. Legal basis in 2014/24/EU: social and labour law compliance as mandatory obligation (Art.18(2)), social characteristics in technical specifications (Art.42), reserved contracts for sheltered workshops/social enterprises (Art.20), social award criteria (Art.67), contract performance conditions (Art.70). Specific light-touch regime for social and health services (Art.74-77).",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "articles": "18(2), 20, 42, 67, 70, 74-77",
+      "light_touch_threshold": "EUR 750,000"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-social-procurement",
+    "canonical_name": "Socially Responsible Public Procurement (SRPP)"
+  },
+  {
+    "ref_id": "concept-reserved-contracts",
+    "description": "Reserved contracts (Art.20 of 2014/24/EU). Member States may reserve the right to participate in procurement procedures to: (1) sheltered workshops where at least 30% of employees are disabled or disadvantaged workers; (2) economic operators whose main aim is social and professional integration of disabled or disadvantaged persons. Art.77 allows Member States to reserve certain health, social and cultural services contracts to organisations meeting specified conditions (employee-owned, profit reinvestment, participatory governance). Maximum contract duration under Art.77: 3 years.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "articles": "20, 77",
+      "disability_threshold": "30% of employees",
+      "art77_max_duration": "3 years"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-reserved-contracts",
+    "canonical_name": "Reserved Contracts"
+  },
+  {
+    "ref_id": "concept-conflict-of-interest",
+    "description": "Conflict of interest (Art.24 of 2014/24/EU). Contracting authorities must take appropriate measures to effectively prevent, identify and remedy conflicts of interest arising in the conduct of procurement procedures. A conflict exists where staff of the contracting authority (or procurement service provider) involved in the procedure have, directly or indirectly, a financial, economic or other personal interest that might be perceived to compromise their impartiality and independence. Covers family members and close associates.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": 24,
+      "scope": "staff, procurement service providers, family, associates"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-conflict-of-interest",
+    "canonical_name": "Conflict of Interest"
+  },
+  {
+    "ref_id": "concept-ted",
+    "description": "Tenders Electronic Daily (TED) — the online version of the Supplement to the Official Journal of the EU. Central EU procurement publication platform. All above-threshold contract notices, contract award notices, prior information notices, and other procurement notices must be published on TED. Free access for all economic operators. eForms (Regulation 2019/1780) provides the standardised format for submissions. TED data used for procurement market analysis, transparency monitoring, and competition assessment.",
+    "metadata": {
+      "url": "https://ted.europa.eu",
+      "managed_by": "Publications Office of the EU",
+      "format": "eForms (since October 2023)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ted",
+    "canonical_name": "TED (Tenders Electronic Daily)"
+  },
+  {
+    "ref_id": "concept-e-procurement",
+    "description": "Electronic procurement (e-procurement) under EU directives. Directive 2014/24/EU mandates electronic communication in all stages of procurement (Art.22): electronic availability of procurement documents, electronic submission of tenders and requests to participate. Mandatory since 18 October 2018 (central purchasing bodies since April 2017). Includes: e-notification (TED/eForms), e-access to documents, e-submission, e-invoicing (Directive 2014/55/EU). Central purchasing bodies and Member States operate national e-procurement platforms.",
+    "metadata": {
+      "directive": "2014/24/EU Art.22",
+      "mandatory_from": "2018-10-18",
+      "e_invoicing": "Directive 2014/55/EU"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-e-procurement",
+    "canonical_name": "Electronic Procurement (e-Procurement)"
+  },
+  {
+    "ref_id": "remedy-interim-measures",
+    "description": "Interim measures under the Remedies Directives (Art.2(1)(a) of 89/665/EEC). Review bodies must have the power to take interim measures to correct an alleged infringement or prevent further damage to interests concerned. Includes: suspension of the procurement procedure, suspension of implementation of any decision taken by the contracting authority. Automatic suspension: where a challenge is brought during the standstill period, the contract cannot be concluded until the review body has decided on the application for interim measures or on the merits.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2(1)(a)",
+      "purpose": "suspend procedure, prevent further damage",
+      "automatic_suspension": "during standstill period challenge"
+    },
+    "entity_type": "concept",
+    "entity_id": "remedy-interim-measures",
+    "canonical_name": "Interim Measures (Remedies)"
+  },
+  {
+    "ref_id": "remedy-set-aside",
+    "description": "Set-aside of unlawful decisions (Art.2(1)(b) of 89/665/EEC). Review bodies must have the power to set aside or ensure the setting aside of decisions taken unlawfully, including the removal of discriminatory technical, economic or financial specifications in the call for competition, contract documents, or any other document relating to the contract award procedure. Pre-contractual remedy — most effective before contract is signed.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2(1)(b)",
+      "timing": "pre-contractual"
+    },
+    "entity_type": "concept",
+    "entity_id": "remedy-set-aside",
+    "canonical_name": "Set-Aside of Unlawful Decisions"
+  },
+  {
+    "ref_id": "remedy-ineffectiveness",
+    "description": "Contract ineffectiveness (Art.2d of 89/665/EEC as amended by 2007/66/EC). Most powerful post-contractual remedy. A contract is rendered ineffective by a review body in three situations: (1) illegal direct award without prior publication of a contract notice in OJEU; (2) contract concluded in breach of the standstill period or automatic suspension, depriving the applicant of pre-contractual remedies that would have changed the outcome; (3) breach of call-off rules under framework agreements or dynamic purchasing systems above specified values. Consequences: contract obligations cease to be enforceable (retroactive or prospective). Member States determine specific consequences.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2d (as amended by 2007/66/EC)",
+      "grounds": "illegal direct award, standstill breach, framework/DPS breach",
+      "effect": "contract obligations cease to be enforceable"
+    },
+    "entity_type": "concept",
+    "entity_id": "remedy-ineffectiveness",
+    "canonical_name": "Contract Ineffectiveness"
+  },
+  {
+    "ref_id": "remedy-damages",
+    "description": "Damages (Art.2(1)(c) of 89/665/EEC). Review bodies must have the power to award damages to persons harmed by an infringement of EU procurement law. Member States may provide that damages are the only remedy available after contract conclusion (alternative to ineffectiveness). Damages may cover: bid preparation costs (reliance interest), lost profits (expectation interest if claimant would have won), loss of chance (proportionate). Burden of proof on the claimant. National procedural rules apply subject to equivalence and effectiveness principles.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2(1)(c)",
+      "types": "bid costs, lost profits, loss of chance",
+      "timing": "pre- or post-contractual"
+    },
+    "entity_type": "concept",
+    "entity_id": "remedy-damages",
+    "canonical_name": "Damages"
+  },
+  {
+    "ref_id": "remedy-alternative-penalties",
+    "description": "Alternative penalties (Art.2e of 89/665/EEC as amended by 2007/66/EC). Where a contract should be declared ineffective but overriding reasons of general interest (e.g. defence, public health) require contract maintenance, the review body must impose alternative penalties instead: (1) fines on the contracting authority; and/or (2) shortening of the contract duration. Penalties must be effective, proportionate and dissuasive. Member States determine the details. May also be applied alongside ineffectiveness for non-affected parts of the contract.",
+    "metadata": {
+      "directive": "89/665/EEC Art.2e (as amended by 2007/66/EC)",
+      "types": "fines, contract duration shortening",
+      "trigger": "overriding general interest prevents ineffectiveness"
+    },
+    "entity_type": "concept",
+    "entity_id": "remedy-alternative-penalties",
+    "canonical_name": "Alternative Penalties"
+  },
+  {
+    "ref_id": "concept-voluntary-transparency",
+    "description": "Voluntary ex ante transparency notice (Art.3a of 89/665/EEC as amended by 2007/66/EC). A contracting authority that considers it may lawfully award a contract without prior publication of a contract notice in OJEU may publish a voluntary transparency notice in TED. If the authority then waits at least 10 calendar days after publication before concluding the contract, the contract cannot subsequently be declared ineffective (safe harbour). Provides legal certainty for direct awards where the authority acts in good faith.",
+    "metadata": {
+      "directive": "89/665/EEC Art.3a",
+      "waiting_period": "10 calendar days",
+      "effect": "shields against ineffectiveness"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-voluntary-transparency",
+    "canonical_name": "Voluntary Ex Ante Transparency Notice"
+  },
+  {
+    "ref_id": "concept-self-cleaning",
+    "description": "Self-cleaning (Art.57(6) of 2014/24/EU). An economic operator subject to exclusion grounds (mandatory or discretionary) may provide evidence that measures taken are sufficient to demonstrate its reliability. Measures include: payment of compensation for damage, active cooperation with investigating authorities, concrete technical, organisational and personnel measures to prevent further criminal offences or misconduct. Contracting authority assesses whether measures are sufficient, considering gravity and circumstances. If insufficient, authority provides reasons for exclusion. CJEU has clarified limits in C-124/17 Vossloh.",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "article": "57(6)",
+      "cjeu_case": "C-124/17 Vossloh Laeis",
+      "measures": "compensation, cooperation, organisational reform"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-self-cleaning",
+    "canonical_name": "Self-Cleaning"
+  },
+  {
+    "ref_id": "concept-technical-specifications",
+    "description": "Technical specifications (Art.42 of 2014/24/EU). Define the characteristics required of works, services or supplies. May be formulated by: performance or functional requirements, reference to standards (European standards, European technical assessments), or a combination. Must not refer to specific make/source/process/trademark unless justified and accompanied by 'or equivalent'. May include environmental/social/accessibility characteristics. Labels may be required as means of proof (Art.43) provided they meet specified conditions (open, transparent, set by independent body).",
+    "metadata": {
+      "directive": "2014/24/EU",
+      "articles": "42, 43",
+      "prohibition": "specific make/trademark unless justified"
+    },
+    "entity_type": "obligation",
+    "entity_id": "concept-technical-specifications",
+    "canonical_name": "Technical Specifications"
+  },
+  {
+    "ref_id": "authority-european-commission",
+    "description": "European Commission role in EU procurement. Issues procurement directives proposals and delegated acts (threshold revisions). Publishes Green Public Procurement criteria, guidance documents. Operates TED platform. Monitors transposition and compliance by Member States. May bring infringement proceedings (Art.258 TFEU) against Member States for incorrect transposition or systemic violations. Issues interpretive communications on procurement topics.",
+    "metadata": {
+      "role": "legislative initiative, guidance, monitoring, enforcement against Member States",
+      "platform": "TED"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-european-commission",
+    "canonical_name": "European Commission"
+  },
+  {
+    "ref_id": "authority-cjeu",
+    "description": "Court of Justice of the European Union (CJEU) role in procurement. Interprets EU procurement directives through preliminary rulings (Art.267 TFEU) referred by national courts/review bodies. Extensive case law on: contracting authority definition (C-44/96 Mannesmann), in-house exception (C-107/98 Teckal), below-threshold obligations (C-324/98 Telaustria), standstill period (C-81/98 Alcatel Austria), abnormally low tenders (C-599/20), self-cleaning (C-124/17 Vossloh), contract modifications (C-454/06 Pressetext). Enforcement actions against Member States under Art.258 TFEU.",
+    "metadata": {
+      "role": "interpretation, preliminary rulings, enforcement actions",
+      "key_cases": "Teckal, Telaustria, Alcatel Austria, Pressetext, Vossloh"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-cjeu",
+    "canonical_name": "Court of Justice of the EU (CJEU)"
+  },
+  {
+    "ref_id": "authority-national-review-body",
+    "description": "National review bodies under the Remedies Directives. Member States must designate independent review bodies (judicial or administrative) with power to grant interim measures, set aside decisions, award damages, and declare contract ineffectiveness. May be courts (e.g. Administrative Court in France, Verwaltungsgericht in Germany) or specialised tribunals (e.g. Public Procurement Tribunal in some Member States). Review body decisions must be effectively enforceable. Time limits for bringing review proceedings set by national law (subject to effectiveness principle).",
+    "metadata": {
+      "directive": "89/665/EEC Art.2, 92/13/EEC Art.2",
+      "types": "courts, administrative tribunals, specialised procurement tribunals",
+      "powers": "interim measures, set-aside, damages, ineffectiveness"
+    },
+    "entity_type": "authority",
+    "entity_id": "authority-national-review-body",
+    "canonical_name": "National Review Bodies"
+  },
+  {
+    "ref_id": "cross-procurement-competition",
+    "description": "Public procurement and EU competition law cross-reference. Anti-competitive behaviour in procurement (bid-rigging, cover bidding, market allocation) violates Art.101 TFEU and constitutes a discretionary exclusion ground (Art.57(4)(d) of 2014/24/EU). Contracting authorities should be alert to signs of collusion (identical tenders, rotation patterns, subcontracting between competitors). European Commission and national competition authorities actively pursue procurement cartels. Leniency programmes incentivise disclosure. Damages actions by contracting authorities under Directive 2014/104/EU.",
+    "metadata": {
+      "regulations": ["2014/24/EU", "TFEU Art.101"],
+      "cross_area": true,
+      "exclusion_basis": "Art.57(4)(d)"
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-procurement-competition",
+    "canonical_name": "Procurement and Competition Law"
+  },
+  {
+    "ref_id": "cross-procurement-state-aid",
+    "description": "Public procurement and EU State aid law cross-reference. A properly conducted, competitive, transparent and non-discriminatory procurement procedure is generally considered to exclude State aid (market price obtained). Conversely, failure to follow procurement rules may constitute evidence of State aid (Art.107 TFEU) if the public authority overpays. Key CJEU case: overcompensation in services of general economic interest (SGEI) — Altmark criteria (C-280/00). Relevant for public-private partnerships, concessions, and public service obligations.",
+    "metadata": {
+      "regulations": ["2014/24/EU", "TFEU Art.107"],
+      "cross_area": true,
+      "cjeu_case": "C-280/00 Altmark Trans"
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-procurement-state-aid",
+    "canonical_name": "Procurement and State Aid"
+  }
+]

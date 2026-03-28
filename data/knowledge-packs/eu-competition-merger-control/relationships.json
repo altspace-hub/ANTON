@@ -1,0 +1,625 @@
+[
+  {
+    "from_ref": "tfeu-art101",
+    "to_ref": "tfeu-art101-1",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Article 101 TFEU contains the prohibition in paragraph (1) against anticompetitive agreements"
+  },
+  {
+    "from_ref": "tfeu-art101",
+    "to_ref": "tfeu-art101-3",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Article 101 TFEU contains the exemption mechanism in paragraph (3)"
+  },
+  {
+    "from_ref": "tfeu-art101-1",
+    "to_ref": "tfeu-art101-3",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Agreements caught by Art.101(1) may be exempted under Art.101(3) if four cumulative conditions are met"
+  },
+  {
+    "from_ref": "tfeu-art101",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Articles 101 and 102 are the twin pillars of EU competition law — agreements vs unilateral conduct"
+  },
+  {
+    "from_ref": "reg-1-2003",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Regulation 1/2003 implements the enforcement regime for Article 101 TFEU"
+  },
+  {
+    "from_ref": "reg-1-2003",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Regulation 1/2003 implements the enforcement regime for Article 102 TFEU"
+  },
+  {
+    "from_ref": "reg-1-2003",
+    "to_ref": "ecn",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Regulation 1/2003 established the European Competition Network for decentralised enforcement"
+  },
+  {
+    "from_ref": "reg-1-2003",
+    "to_ref": "nca",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Regulation 1/2003 empowers NCAs to directly apply Articles 101 and 102 in full"
+  },
+  {
+    "from_ref": "reg-1-2003",
+    "to_ref": "process-commitments",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "Regulation 1/2003 Art.9 establishes the commitment decision procedure"
+  },
+  {
+    "from_ref": "vber-2022",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "VBER provides a block exemption from Art.101(1) for qualifying vertical agreements"
+  },
+  {
+    "from_ref": "vber-2022",
+    "to_ref": "concept-vertical-restraint",
+    "relationship_type": "clarifies",
+    "strength": 0.9,
+    "description": "VBER defines the safe harbour framework for assessing vertical restraints"
+  },
+  {
+    "from_ref": "vber-2022",
+    "to_ref": "concept-hardcore-restriction",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "VBER Art.4 lists hardcore restrictions that remove the entire agreement from block exemption"
+  },
+  {
+    "from_ref": "vber-2022",
+    "to_ref": "concept-rpm",
+    "relationship_type": "references",
+    "strength": 0.9,
+    "description": "VBER treats resale price maintenance as a hardcore restriction excluded from the block exemption"
+  },
+  {
+    "from_ref": "vber-2022",
+    "to_ref": "concept-selective-distribution",
+    "relationship_type": "clarifies",
+    "strength": 0.8,
+    "description": "VBER provides specific rules for selective distribution systems including online sales restrictions"
+  },
+  {
+    "from_ref": "hber-2023",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "HBER provides block exemptions from Art.101(1) for qualifying horizontal cooperation agreements"
+  },
+  {
+    "from_ref": "hber-2023",
+    "to_ref": "concept-information-exchange",
+    "relationship_type": "clarifies",
+    "strength": 0.7,
+    "description": "Horizontal cooperation guidelines accompanying HBER provide detailed guidance on information exchange"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "concept-concentration",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EUMR Art.3 defines the concept of concentration (merger, acquisition of control, full-function JV)"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "threshold-eu-dimension",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EUMR Art.1 sets out the turnover thresholds defining EU dimension"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "concept-siec-test",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EUMR Art.2 establishes the SIEC test as the substantive standard for merger assessment"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "process-merger-notification",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "EUMR requires mandatory pre-notification and clearance for concentrations with EU dimension"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "concept-gun-jumping",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "EUMR Art.7 establishes the standstill obligation; breach constitutes gun-jumping"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "concept-referral-art22",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "EUMR Art.22 allows Member States to refer below-threshold concentrations to the Commission"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "concept-art22-referral-state",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "EUMR Art.4(5) allows parties to request pre-notification referral to the Commission"
+  },
+  {
+    "from_ref": "eu-merger-reg",
+    "to_ref": "process-art9-referral",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "EUMR Art.9 allows referral of concentrations from the Commission to a Member State NCA"
+  },
+  {
+    "from_ref": "process-merger-notification",
+    "to_ref": "process-phase1",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "Phase I review is the first stage of the merger notification process"
+  },
+  {
+    "from_ref": "process-merger-notification",
+    "to_ref": "process-phase2",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "Phase II in-depth investigation follows if Phase I raises serious doubts"
+  },
+  {
+    "from_ref": "process-phase1",
+    "to_ref": "process-phase2",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Phase II is opened when Phase I review identifies serious doubts about compatibility"
+  },
+  {
+    "from_ref": "concept-siec-test",
+    "to_ref": "concept-relevant-market",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "The SIEC test requires prior definition of the relevant product and geographic markets"
+  },
+  {
+    "from_ref": "concept-siec-test",
+    "to_ref": "concept-efficiencies-defence",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Efficiencies may be considered in the SIEC assessment to offset competitive harm"
+  },
+  {
+    "from_ref": "concept-siec-test",
+    "to_ref": "concept-failing-firm",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "The failing firm defence provides a counterfactual argument within the SIEC assessment"
+  },
+  {
+    "from_ref": "concept-siec-test",
+    "to_ref": "concept-market-power",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "The SIEC test assesses whether the merger creates or strengthens market power"
+  },
+  {
+    "from_ref": "concept-relevant-market",
+    "to_ref": "concept-ssnip",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "The SSNIP test is the standard methodology for defining the relevant market"
+  },
+  {
+    "from_ref": "concept-relevant-market",
+    "to_ref": "concept-market-power",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Market power assessment depends on prior definition of the relevant market"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-market-power",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "Art.102 requires a finding of dominance (significant market power) as a prerequisite"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-self-preferencing",
+    "relationship_type": "applies_to",
+    "strength": 0.8,
+    "description": "Self-preferencing by dominant platforms may constitute abuse under Art.102"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-tying-bundling",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Tying and bundling by dominant undertakings may constitute abuse under Art.102(d)"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-predatory-pricing",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Predatory pricing by dominant undertakings constitutes abuse under Art.102"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-margin-squeeze",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Margin squeeze by vertically integrated dominant firms constitutes abuse under Art.102"
+  },
+  {
+    "from_ref": "tfeu-art102",
+    "to_ref": "concept-relevant-market",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "Art.102 analysis requires definition of the relevant market to assess dominance"
+  },
+  {
+    "from_ref": "tfeu-art101-1",
+    "to_ref": "concept-by-object",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Art.101(1) distinguishes between restrictions by object and by effect"
+  },
+  {
+    "from_ref": "tfeu-art101-1",
+    "to_ref": "concept-de-minimis",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "De minimis doctrine limits Art.101(1) to agreements that appreciably restrict competition"
+  },
+  {
+    "from_ref": "tfeu-art101-1",
+    "to_ref": "concept-cartel",
+    "relationship_type": "applies_to",
+    "strength": 1,
+    "description": "Cartels are the most serious infringement of the Art.101(1) prohibition"
+  },
+  {
+    "from_ref": "tfeu-art101-1",
+    "to_ref": "concept-concerted-practice",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Art.101(1) covers concerted practices as well as formal agreements"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "concept-hardcore-restriction",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Cartel conduct (price-fixing, market sharing) constitutes hardcore restrictions"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "process-leniency",
+    "relationship_type": "related_to",
+    "strength": 1,
+    "description": "The leniency programme is the primary tool for detecting and prosecuting cartels"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "process-dawn-raid",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Dawn raids are a key investigative tool for gathering evidence of cartel conduct"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "process-settlement",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "The settlement procedure offers a streamlined resolution pathway for cartel cases"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "concept-fines-methodology",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Fines for cartel infringements are calculated using the 2006 Guidelines methodology"
+  },
+  {
+    "from_ref": "concept-cartel",
+    "to_ref": "concept-by-object",
+    "relationship_type": "related_to",
+    "strength": 1,
+    "description": "Cartels are treated as restrictions by object — no proof of anticompetitive effects required"
+  },
+  {
+    "from_ref": "concept-concerted-practice",
+    "to_ref": "concept-information-exchange",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Exchange of competitively sensitive information may constitute or evidence a concerted practice"
+  },
+  {
+    "from_ref": "concept-hub-and-spoke",
+    "to_ref": "concept-concerted-practice",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Hub-and-spoke arrangements are a form of indirect concerted practice between competitors"
+  },
+  {
+    "from_ref": "concept-hub-and-spoke",
+    "to_ref": "concept-information-exchange",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Hub-and-spoke conspiracies involve indirect information exchange through a common trading partner"
+  },
+  {
+    "from_ref": "process-leniency",
+    "to_ref": "process-dawn-raid",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Leniency applicant evidence often triggers or supports dawn raid inspections"
+  },
+  {
+    "from_ref": "process-leniency",
+    "to_ref": "process-settlement",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "Leniency and settlement reductions are cumulative — first leniency applicant can also settle"
+  },
+  {
+    "from_ref": "process-leniency",
+    "to_ref": "concept-fines-methodology",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Leniency reductions are applied to the fine calculated under the fining guidelines methodology"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "DG Competition enforces Article 101 TFEU on anticompetitive agreements"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "DG Competition enforces Article 102 TFEU on abuse of dominant position"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "eu-merger-reg",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "DG Competition reviews and decides on mergers under the EU Merger Regulation"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "tfeu-art107",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "DG Competition enforces state aid rules under Articles 107-109 TFEU"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "dma-2022",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "DG Competition enforces the Digital Markets Act gatekeeper obligations"
+  },
+  {
+    "from_ref": "dg-competition",
+    "to_ref": "process-dawn-raid",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "DG Competition conducts dawn raid inspections as part of its investigative powers"
+  },
+  {
+    "from_ref": "ecn",
+    "to_ref": "nca",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "NCAs are members of the European Competition Network alongside the Commission"
+  },
+  {
+    "from_ref": "ecn",
+    "to_ref": "dg-competition",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "The Commission (DG Competition) coordinates the ECN"
+  },
+  {
+    "from_ref": "ecn-plus-directive",
+    "to_ref": "nca",
+    "relationship_type": "applies_to",
+    "strength": 1,
+    "description": "ECN+ Directive empowers NCAs with harmonised enforcement tools and independence guarantees"
+  },
+  {
+    "from_ref": "ecn-plus-directive",
+    "to_ref": "ecn",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "ECN+ Directive strengthens the effectiveness of the European Competition Network"
+  },
+  {
+    "from_ref": "damages-directive",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "Damages Directive enables private enforcement of Art.101 through damages actions"
+  },
+  {
+    "from_ref": "damages-directive",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "Damages Directive enables private enforcement of Art.102 through damages actions"
+  },
+  {
+    "from_ref": "eu-general-court",
+    "to_ref": "dg-competition",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "The General Court reviews Commission competition decisions on appeal"
+  },
+  {
+    "from_ref": "cjeu",
+    "to_ref": "eu-general-court",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "The CJEU hears appeals on points of law from the General Court"
+  },
+  {
+    "from_ref": "process-phase2",
+    "to_ref": "remedy-structural",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Structural remedies (divestitures) are typically offered during Phase II to address competition concerns"
+  },
+  {
+    "from_ref": "process-phase2",
+    "to_ref": "remedy-behavioural",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "Behavioural remedies may be accepted in Phase II alongside or instead of structural measures"
+  },
+  {
+    "from_ref": "process-phase1",
+    "to_ref": "remedy-structural",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "Parties may offer structural commitments in Phase I to obtain clearance without Phase II"
+  },
+  {
+    "from_ref": "remedy-structural",
+    "to_ref": "remedy-behavioural",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "Structural remedies are generally preferred over behavioural remedies in merger cases"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "concept-gatekeeper",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "The DMA defines the gatekeeper designation criteria and process"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "concept-core-platform-service",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "The DMA defines the 10 categories of core platform services subject to regulation"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "dma-art5",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "DMA Art.5 sets out the self-executing obligations for designated gatekeepers"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "dma-art6",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "DMA Art.6 sets out obligations susceptible to further specification"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "dma-art7",
+    "relationship_type": "part_of",
+    "strength": 1,
+    "description": "DMA Art.7 establishes interoperability obligations for messaging services"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "concept-self-preferencing",
+    "relationship_type": "references",
+    "strength": 0.9,
+    "description": "The DMA explicitly prohibits self-preferencing by gatekeepers in ranking and data use"
+  },
+  {
+    "from_ref": "dma-2022",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "The DMA complements Art.102 with ex-ante regulation of gatekeeper platforms"
+  },
+  {
+    "from_ref": "tfeu-art107",
+    "to_ref": "tfeu-art108",
+    "relationship_type": "related_to",
+    "strength": 1,
+    "description": "Art.108 establishes the notification and review procedures for state aid under Art.107"
+  },
+  {
+    "from_ref": "tfeu-art108",
+    "to_ref": "tfeu-art109",
+    "relationship_type": "related_to",
+    "strength": 0.9,
+    "description": "Art.109 empowers the Council to adopt implementing regulations for Arts.107-108"
+  },
+  {
+    "from_ref": "tfeu-art109",
+    "to_ref": "concept-gber",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Art.109 TFEU is the legal basis for GBER, the general block exemption for state aid"
+  },
+  {
+    "from_ref": "concept-gber",
+    "to_ref": "tfeu-art107",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "GBER declares certain categories of state aid compatible with Art.107, exempting from notification"
+  },
+  {
+    "from_ref": "tfeu-art108",
+    "to_ref": "concept-state-aid-recovery",
+    "relationship_type": "defines",
+    "strength": 0.9,
+    "description": "Art.108 empowers the Commission to order recovery of unlawful and incompatible state aid"
+  },
+  {
+    "from_ref": "fsr-2022",
+    "to_ref": "eu-merger-reg",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "FSR notification obligations apply alongside EUMR for concentrations involving foreign subsidies"
+  },
+  {
+    "from_ref": "fsr-2022",
+    "to_ref": "tfeu-art107",
+    "relationship_type": "related_to",
+    "strength": 0.7,
+    "description": "FSR extends state aid-like scrutiny to subsidies granted by non-EU countries"
+  },
+  {
+    "from_ref": "concept-fines-methodology",
+    "to_ref": "tfeu-art101",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Fining guidelines methodology applies to infringements of Art.101"
+  },
+  {
+    "from_ref": "concept-fines-methodology",
+    "to_ref": "tfeu-art102",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Fining guidelines methodology applies to infringements of Art.102"
+  }
+]

@@ -1,0 +1,784 @@
+[
+  {
+    "ref_id": "wtd-2003-88",
+    "description": "Working Time Directive (Directive 2003/88/EC). Consolidates and replaces earlier Directive 93/104/EC. Sets minimum EU-wide standards for working time: maximum 48-hour average working week (including overtime), minimum 11 consecutive hours daily rest, minimum 24-hour weekly rest period (or 48 hours per 14 days), minimum 4 weeks paid annual leave, maximum 8-hour average for night workers. Member States may allow individual opt-out from 48-hour limit (Art.22). Sector-specific derogations for transport, offshore, fishing, doctors in training.",
+    "metadata": {
+      "full_title": "Directive 2003/88/EC of the European Parliament and of the Council concerning certain aspects of the organisation of working time",
+      "short_name": "Working Time Directive",
+      "adopted": "2003-11-04",
+      "replaces": "Directive 93/104/EC",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "wtd-2003-88",
+    "canonical_name": "Working Time Directive (2003/88/EC)"
+  },
+  {
+    "ref_id": "etd-gender-2006-54",
+    "description": "Recast Equal Treatment Directive on gender (Directive 2006/54/EC). Consolidates earlier directives on equal pay (75/117/EEC), equal treatment in employment (76/207/EEC), occupational social security (86/378/EEC), and burden of proof (97/80/EC). Prohibits direct and indirect discrimination on grounds of sex in access to employment, vocational training, promotion, working conditions, pay, and occupational social security. Requires equal pay for equal work or work of equal value (Art.4). Establishes right to return after maternity leave to same or equivalent post. Requires Member States to designate equality bodies.",
+    "metadata": {
+      "full_title": "Directive 2006/54/EC on equal opportunities and equal treatment of men and women in matters of employment and occupation (recast)",
+      "short_name": "Gender Equal Treatment Directive (Recast)",
+      "adopted": "2006-07-05",
+      "consolidates": ["75/117/EEC", "76/207/EEC", "86/378/EEC", "97/80/EC"],
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "etd-gender-2006-54",
+    "canonical_name": "Equal Treatment Directive — Gender (2006/54/EC)"
+  },
+  {
+    "ref_id": "red-2000-43",
+    "description": "Racial Equality Directive (Directive 2000/43/EC). Prohibits direct and indirect discrimination on grounds of racial or ethnic origin in employment, education, social protection, healthcare, access to goods and services, and housing. Broader scope than employment-only directives. Requires Member States to establish equality bodies to provide independent assistance to victims, conduct surveys, and publish reports. Burden of proof shifts to respondent once prima facie case established.",
+    "metadata": {
+      "full_title": "Directive 2000/43/EC implementing the principle of equal treatment between persons irrespective of racial or ethnic origin",
+      "short_name": "Racial Equality Directive",
+      "adopted": "2000-06-29",
+      "legal_basis": "Article 13 TEC (now Art.19 TFEU)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "red-2000-43",
+    "canonical_name": "Racial Equality Directive (2000/43/EC)"
+  },
+  {
+    "ref_id": "eefd-2000-78",
+    "description": "Employment Equality Framework Directive (Directive 2000/78/EC). Establishes general framework for combating discrimination on grounds of religion or belief, disability, age, and sexual orientation in employment and occupation. Covers access to employment, vocational training, promotion, working conditions, and membership of employer/worker organisations. Permits justifiable differences of treatment based on genuine occupational requirement. Age discrimination may be justified where objectively and reasonably justified by a legitimate aim. Requires reasonable accommodation for persons with disabilities.",
+    "metadata": {
+      "full_title": "Directive 2000/78/EC establishing a general framework for equal treatment in employment and occupation",
+      "short_name": "Employment Equality Framework Directive",
+      "adopted": "2000-11-27",
+      "grounds_covered": ["religion/belief", "disability", "age", "sexual orientation"],
+      "legal_basis": "Article 13 TEC (now Art.19 TFEU)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "eefd-2000-78",
+    "canonical_name": "Employment Equality Framework Directive (2000/78/EC)"
+  },
+  {
+    "ref_id": "tawd-2008-104",
+    "description": "Temporary Agency Workers Directive (Directive 2008/104/EC). Ensures equal treatment of temporary agency workers with comparable directly-employed workers from day one of assignment, covering basic working and employment conditions (pay, working time, overtime, breaks, rest periods, night work, holidays, public holidays, access to collective facilities). Member States may derogate through social partner agreements or allow qualifying period. Requires access to information about vacancies in user undertaking. Member States must review restrictions on use of temporary agency work.",
+    "metadata": {
+      "full_title": "Directive 2008/104/EC on temporary agency work",
+      "short_name": "Temporary Agency Workers Directive",
+      "adopted": "2008-11-19",
+      "transposition_deadline": "2011-12-05",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "tawd-2008-104",
+    "canonical_name": "Temporary Agency Workers Directive (2008/104/EC)"
+  },
+  {
+    "ref_id": "tupe-2001-23",
+    "description": "Transfer of Undertakings Directive (Directive 2001/23/EC, the 'Acquired Rights Directive'). Protects employees' rights when business or undertaking (or part thereof) is transferred to a new employer. Automatic transfer of employment contracts and rights/obligations to transferee. Dismissal solely by reason of transfer is prohibited (unless for economic, technical or organisational reasons entailing changes in workforce — the 'ETO defence'). Requires information and consultation of worker representatives before transfer. Applies to transfers by legal merger, contractual transfer, or public/private body reorganisation.",
+    "metadata": {
+      "full_title": "Directive 2001/23/EC on the approximation of the laws of the Member States relating to the safeguarding of employees' rights in the event of transfers of undertakings",
+      "short_name": "Transfer of Undertakings Directive (TUPE)",
+      "adopted": "2001-03-12",
+      "replaces": "Directive 77/187/EEC (as amended by 98/50/EC)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "tupe-2001-23",
+    "canonical_name": "Transfer of Undertakings Directive (2001/23/EC)"
+  },
+  {
+    "ref_id": "crd-98-59",
+    "description": "Collective Redundancies Directive (Directive 98/59/EC). Requires employers planning collective redundancies to consult worker representatives in good time with a view to reaching agreement. Information to include: reasons, number and categories of workers, period, selection criteria, calculation of severance. Must notify competent public authority. Redundancies take effect no earlier than 30 days after notification (60 days in some Member States). Thresholds: 10+ workers (establishments with 20-99 employees), 10% (100-299 employees), or 30+ workers (300+ employees) over 30 days. Alternative threshold: 20+ workers over 90 days regardless of establishment size.",
+    "metadata": {
+      "full_title": "Directive 98/59/EC on the approximation of the laws of the Member States relating to collective redundancies",
+      "short_name": "Collective Redundancies Directive",
+      "adopted": "1998-07-20",
+      "consolidates": "Directive 75/129/EEC (as amended by 92/56/EEC)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "crd-98-59",
+    "canonical_name": "Collective Redundancies Directive (98/59/EC)"
+  },
+  {
+    "ref_id": "pwd-96-71",
+    "description": "Posted Workers Directive (Directive 96/71/EC). Establishes a core set of mandatory terms and conditions that host Member States must apply to workers temporarily posted to their territory. Core terms include: maximum work periods and minimum rest, minimum paid annual holidays, minimum rates of pay (including overtime), conditions of hiring-out of workers (temporary agency), health and safety, protective measures for pregnant workers and young people, and equal treatment between men and women. Applies to posting in the context of provision of services, intra-group transfers, and supply through temporary agencies.",
+    "metadata": {
+      "full_title": "Directive 96/71/EC concerning the posting of workers in the framework of the provision of services",
+      "short_name": "Posted Workers Directive",
+      "adopted": "1996-12-16",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "pwd-96-71",
+    "canonical_name": "Posted Workers Directive (96/71/EC)"
+  },
+  {
+    "ref_id": "pwd-revised-2018-957",
+    "description": "Revised Posted Workers Directive (Directive 2018/957). Amends Directive 96/71/EC to strengthen the principle of 'equal pay for equal work in the same place'. Key changes: posted workers entitled to all elements of remuneration (not just minimum rates of pay) applicable in the host Member State by law or universally applicable collective agreements. After 12 months (extendable to 18), posted workers entitled to virtually all host state employment conditions except procedures for conclusion/termination of contracts and supplementary occupational pension schemes. Reimbursement of travel, board, and accommodation cannot be deducted from remuneration.",
+    "metadata": {
+      "full_title": "Directive (EU) 2018/957 amending Directive 96/71/EC concerning the posting of workers in the framework of the provision of services",
+      "short_name": "Revised Posted Workers Directive",
+      "adopted": "2018-06-28",
+      "amends": "96/71/EC",
+      "transposition_deadline": "2020-07-30",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "pwd-revised-2018-957",
+    "canonical_name": "Revised Posted Workers Directive (2018/957)"
+  },
+  {
+    "ref_id": "tpwcd-2019-1152",
+    "description": "Transparent and Predictable Working Conditions Directive (Directive 2019/1152). Replaces the Written Statement Directive (91/533/EEC). Requires employers to provide workers with essential information about their employment relationship by the first day of work (or within 7 days for certain items). New material rights: right to parallel employment (non-exclusivity), limits on probationary periods (max 6 months), right to request more predictable working conditions after 6 months, mandatory training to be provided at no cost and counted as working time. Applies to all workers including domestic workers, on-demand workers, platform workers, and trainees.",
+    "metadata": {
+      "full_title": "Directive (EU) 2019/1152 on transparent and predictable working conditions in the European Union",
+      "short_name": "Transparent & Predictable Working Conditions Directive",
+      "adopted": "2019-06-20",
+      "replaces": "Directive 91/533/EEC",
+      "transposition_deadline": "2022-08-01",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "tpwcd-2019-1152",
+    "canonical_name": "Transparent & Predictable Working Conditions Directive (2019/1152)"
+  },
+  {
+    "ref_id": "wlbd-2019-1158",
+    "description": "Work-Life Balance Directive (Directive 2019/1158). Replaces Parental Leave Directive (2010/18/EU). Establishes minimum standards for: paternity leave (10 working days around birth), parental leave (4 months per parent, 2 months non-transferable and compensated at adequate level set by Member State), carers' leave (5 working days per year), and right to request flexible working arrangements for carers and parents of children up to age 8. Aims to encourage equal sharing of care responsibilities and increase women's labour market participation.",
+    "metadata": {
+      "full_title": "Directive (EU) 2019/1158 on work-life balance for parents and carers",
+      "short_name": "Work-Life Balance Directive",
+      "adopted": "2019-06-20",
+      "replaces": "Directive 2010/18/EU",
+      "transposition_deadline": "2022-08-02",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "wlbd-2019-1158",
+    "canonical_name": "Work-Life Balance Directive (2019/1158)"
+  },
+  {
+    "ref_id": "ewcd-2009-38",
+    "description": "European Works Councils Directive (Directive 2009/38/EC, recast). Requires establishment of a European Works Council (EWC) or information and consultation procedure in Community-scale undertakings (1,000+ employees in the EU/EEA with 150+ in at least two Member States). EWC has right to be informed and consulted on transnational matters affecting workers. Central management must provide EWC with information on business structure, economic and financial situation, probable development of business, production and sales, employment situation and forecast, investments, substantial changes in organisation, introduction of new working methods or production processes, transfers, mergers, closures, and collective redundancies.",
+    "metadata": {
+      "full_title": "Directive 2009/38/EC on the establishment of a European Works Council or a procedure in Community-scale undertakings for the purposes of informing and consulting employees (recast)",
+      "short_name": "European Works Councils Directive",
+      "adopted": "2009-05-06",
+      "replaces": "Directive 94/45/EC",
+      "threshold": "1,000+ employees EU-wide, 150+ in at least 2 Member States",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "ewcd-2009-38",
+    "canonical_name": "European Works Councils Directive (2009/38/EC)"
+  },
+  {
+    "ref_id": "pltwd-2024-2831",
+    "description": "Platform Workers Directive (Directive 2024/2831). First EU legislation specifically addressing digital labour platform work. Establishes a legal presumption of employment relationship where indicators of control by the platform are present (platform determines pay level, restricts ability to refuse work, supervises performance, restricts building client base, etc.). Reversal of burden of proof: platform must demonstrate no employment relationship exists. Regulates algorithmic management: transparency of automated monitoring and decision-making systems, right to human review of significant automated decisions, prohibition of processing certain personal data (emotional state, private conversations, predicting trade union activity). Requires Member States to establish effective enforcement mechanisms.",
+    "metadata": {
+      "full_title": "Directive (EU) 2024/2831 on improving working conditions in platform work",
+      "short_name": "Platform Workers Directive",
+      "adopted": "2024-10-14",
+      "transposition_deadline": "2026-12-02",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "directive",
+    "entity_id": "pltwd-2024-2831",
+    "canonical_name": "Platform Workers Directive (2024/2831)"
+  },
+  {
+    "ref_id": "wtd-max-weekly-hours",
+    "description": "Maximum average weekly working time of 48 hours including overtime, calculated over a reference period of up to 4 months (extendable to 6 or 12 months by collective agreement or legislation). Member States may allow individual opt-out where the worker agrees in writing (Art.22(1)), subject to safeguards: worker must not suffer detriment for refusing, employer must keep records, and the competent authority must be informed. The opt-out is notably used by the UK (pre-Brexit), and is available in several other Member States including Bulgaria, Cyprus, Malta, and Poland.",
+    "metadata": {
+      "directive": "2003/88/EC",
+      "articles": "6, 16, 22",
+      "topic": "maximum-working-time",
+      "threshold": "48 hours average per week"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wtd-max-weekly-hours",
+    "canonical_name": "Maximum 48-Hour Average Working Week"
+  },
+  {
+    "ref_id": "wtd-daily-rest",
+    "description": "Every worker is entitled to a minimum rest period of 11 consecutive hours per 24-hour period (Art.3). Derogations possible under Art.17 for managing executives, family workers, workers in liturgical ceremonies, and under Art.18 by collective agreement, provided equivalent compensatory rest is granted.",
+    "metadata": {
+      "directive": "2003/88/EC",
+      "article_number": 3,
+      "topic": "daily-rest",
+      "minimum": "11 consecutive hours"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wtd-daily-rest",
+    "canonical_name": "Minimum 11-Hour Daily Rest Period"
+  },
+  {
+    "ref_id": "wtd-annual-leave",
+    "description": "Every worker is entitled to paid annual leave of at least 4 weeks (20 working days based on 5-day week) in accordance with conditions for entitlement and granting laid down by national legislation and/or practice (Art.7). Annual leave may not be replaced by an allowance in lieu, except where the employment relationship is terminated. CJEU case law (Schultz-Hoff, C-350/06): right to carry over leave not taken due to sickness; right does not lapse at end of carry-over period if worker was unable to exercise it.",
+    "metadata": {
+      "directive": "2003/88/EC",
+      "article_number": 7,
+      "topic": "paid-annual-leave",
+      "minimum": "4 weeks (20 working days)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wtd-annual-leave",
+    "canonical_name": "Minimum 4 Weeks Paid Annual Leave"
+  },
+  {
+    "ref_id": "wtd-night-work",
+    "description": "Normal hours of night workers must not exceed an average of 8 hours in any 24-hour period (Art.8). Night workers whose work involves special hazards or heavy physical/mental strain may not work more than 8 hours in any 24-hour period (absolute limit, no averaging). Night work defined as at least 7 hours including the period between midnight and 05:00. Employers must provide free health assessments for night workers.",
+    "metadata": {
+      "directive": "2003/88/EC",
+      "articles": "8, 9, 12",
+      "topic": "night-work-limits"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wtd-night-work",
+    "canonical_name": "Night Work Limits and Health Assessments"
+  },
+  {
+    "ref_id": "etd-equal-pay",
+    "description": "Principle of equal pay for male and female workers for equal work or work of equal value (Art.4, Directive 2006/54/EC, reflecting Art.157 TFEU). Pay includes all elements: basic salary, variable pay, bonuses, benefits in kind, occupational pension contributions. Direct and indirect pay discrimination prohibited. Member States must ensure effective remedies. Reinforced by the EU Pay Transparency Directive (2023/970) requiring pay transparency reporting for employers with 100+ employees.",
+    "metadata": {
+      "directive": "2006/54/EC",
+      "article_number": 4,
+      "topic": "equal-pay",
+      "tfeu_basis": "Article 157 TFEU",
+      "reinforced_by": "Directive 2023/970 (Pay Transparency)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "etd-equal-pay",
+    "canonical_name": "Equal Pay for Equal Work (Gender)"
+  },
+  {
+    "ref_id": "etd-burden-of-proof",
+    "description": "In discrimination cases, once the complainant establishes facts from which discrimination may be presumed, the burden of proof shifts to the respondent to prove no breach of the equal treatment principle (Art.19, Directive 2006/54/EC). This reversal applies to proceedings under all EU anti-discrimination directives (2006/54/EC, 2000/43/EC, 2000/78/EC). Does not apply to criminal proceedings. Member States must ensure adequate compensation with no prior upper limit.",
+    "metadata": {
+      "directives": ["2006/54/EC", "2000/43/EC", "2000/78/EC"],
+      "article_number": 19,
+      "topic": "burden-of-proof-reversal"
+    },
+    "entity_type": "obligation",
+    "entity_id": "etd-burden-of-proof",
+    "canonical_name": "Reversal of Burden of Proof in Discrimination Claims"
+  },
+  {
+    "ref_id": "eefd-reasonable-accommodation",
+    "description": "Employers must provide reasonable accommodation for persons with disabilities (Art.5, Directive 2000/78/EC). Employers must take appropriate measures to enable a person with a disability to access, participate in, or advance in employment, or to undergo training, unless such measures would impose a disproportionate burden. Disproportionate burden assessed considering financial and other costs, size and resources of the organisation, and availability of public funding or other assistance. Failure to provide reasonable accommodation constitutes discrimination.",
+    "metadata": {
+      "directive": "2000/78/EC",
+      "article_number": 5,
+      "topic": "reasonable-accommodation",
+      "ground": "disability"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eefd-reasonable-accommodation",
+    "canonical_name": "Reasonable Accommodation for Disability"
+  },
+  {
+    "ref_id": "eefd-age-justification",
+    "description": "Differences of treatment on grounds of age shall not constitute discrimination if they are objectively and reasonably justified by a legitimate aim (Art.6, Directive 2000/78/EC). Legitimate aims include employment policy, labour market, and vocational training objectives. Examples: setting minimum conditions of age, professional experience, or seniority; fixing minimum age for access to occupational benefits; setting maximum recruitment age based on training requirements or reasonable period before retirement. National courts apply proportionality test.",
+    "metadata": {
+      "directive": "2000/78/EC",
+      "article_number": 6,
+      "topic": "age-discrimination-justification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eefd-age-justification",
+    "canonical_name": "Justification of Age-Based Differential Treatment"
+  },
+  {
+    "ref_id": "tupe-auto-transfer",
+    "description": "Transferor's rights and obligations arising from a contract of employment or employment relationship existing on the date of transfer shall, by reason of such transfer, be transferred to the transferee (Art.3(1), Directive 2001/23/EC). The transferee must continue to observe the terms and conditions of any applicable collective agreement until its expiry, replacement, or for at least one year. Member States may limit transferee's obligation to observe collective agreement terms to one year.",
+    "metadata": {
+      "directive": "2001/23/EC",
+      "article_number": 3,
+      "topic": "automatic-transfer-rights"
+    },
+    "entity_type": "obligation",
+    "entity_id": "tupe-auto-transfer",
+    "canonical_name": "Automatic Transfer of Employment Rights on Business Transfer"
+  },
+  {
+    "ref_id": "tupe-dismissal-protection",
+    "description": "Transfer of an undertaking shall not in itself constitute grounds for dismissal by the transferor or the transferee (Art.4(1), Directive 2001/23/EC). Dismissals that occur shall be regarded as unfair. Exception: dismissals for economic, technical, or organisational (ETO) reasons entailing changes in the workforce are permitted. The ETO defence is interpreted restrictively by CJEU. The directive does not restrict the right to terminate employment for other lawful reasons.",
+    "metadata": {
+      "directive": "2001/23/EC",
+      "article_number": 4,
+      "topic": "dismissal-protection-on-transfer",
+      "exception": "ETO reasons (economic, technical, organisational)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "tupe-dismissal-protection",
+    "canonical_name": "Protection Against Dismissal on Transfer (ETO Defence)"
+  },
+  {
+    "ref_id": "crd-consultation-obligation",
+    "description": "Where an employer is contemplating collective redundancies, it must begin consultations with worker representatives in good time with a view to reaching an agreement (Art.2, Directive 98/59/EC). Consultations must cover ways to avoid or reduce redundancies and mitigate consequences (redeployment, retraining). Employer must provide in writing: reasons for redundancies, number and categories of workers normally employed, number and categories to be made redundant, period over which redundancies will take place, proposed selection criteria, and method of calculating severance.",
+    "metadata": {
+      "directive": "98/59/EC",
+      "article_number": 2,
+      "topic": "collective-redundancy-consultation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd-consultation-obligation",
+    "canonical_name": "Duty to Consult on Collective Redundancies"
+  },
+  {
+    "ref_id": "crd-notification-authority",
+    "description": "Employer must notify the competent public authority in writing of any projected collective redundancy (Art.3, Directive 98/59/EC). Notification must contain all information provided to worker representatives plus particulars on the consultation. Projected collective redundancies shall take effect not earlier than 30 days after the notification (Art.4). Member States may extend this to 60 days. During this period, the public authority seeks solutions to the problems raised by the projected redundancies.",
+    "metadata": {
+      "directive": "98/59/EC",
+      "articles": "3, 4",
+      "topic": "redundancy-notification",
+      "minimum_waiting_period": "30 days"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd-notification-authority",
+    "canonical_name": "Notification to Public Authority on Collective Redundancies"
+  },
+  {
+    "ref_id": "pwd-core-terms",
+    "description": "Host Member State must guarantee posted workers the terms and conditions of employment established by law, regulation, or universally applicable collective agreement covering: maximum work periods and minimum rest periods, minimum paid annual holidays, remuneration (as amended by 2018/957 — all mandatory elements, not just minimum rates), conditions for hiring-out by temporary agencies, health and safety, protective measures for pregnant workers and young workers, equal treatment and non-discrimination (Art.3, Directive 96/71/EC as amended).",
+    "metadata": {
+      "directive": "96/71/EC (as amended by 2018/957)",
+      "article_number": 3,
+      "topic": "posted-worker-core-terms"
+    },
+    "entity_type": "obligation",
+    "entity_id": "pwd-core-terms",
+    "canonical_name": "Core Employment Terms for Posted Workers"
+  },
+  {
+    "ref_id": "pwd-long-term-posting",
+    "description": "After 12 months of posting (extendable to 18 months by motivated notification), posted workers are entitled to virtually all employment conditions of the host Member State, except: rules on procedures, formalities and conditions of conclusion and termination of employment contracts, and supplementary occupational retirement pension schemes (Art.3(1a), Directive 2018/957). Calculation considers replacement of posted workers performing same task at same place.",
+    "metadata": {
+      "directive": "2018/957",
+      "topic": "long-term-posting-12-months",
+      "threshold": "12 months (extendable to 18)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "pwd-long-term-posting",
+    "canonical_name": "Long-Term Posting — Full Host State Conditions After 12 Months"
+  },
+  {
+    "ref_id": "tpwcd-information-duty",
+    "description": "Employers must provide workers with essential information about the employment relationship (Art.3-7, Directive 2019/1152). Core information to be provided on or before the first day: identity of parties, place of work, job title/description/category, start date, end date (if fixed-term), duration and conditions of probation, remuneration (base amount, other components, frequency, method of payment), normal working hours/patterns, social security institution receiving contributions. Additional information within one month: training entitlement, paid leave, notice periods, applicable collective agreements.",
+    "metadata": {
+      "directive": "2019/1152",
+      "articles": "3, 4, 5, 6, 7",
+      "topic": "employment-information-obligation",
+      "deadline": "first working day (core) / 1 month (supplementary)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "tpwcd-information-duty",
+    "canonical_name": "Duty to Inform Workers of Employment Conditions"
+  },
+  {
+    "ref_id": "tpwcd-probation-limit",
+    "description": "Probationary periods may not exceed 6 months (Art.8, Directive 2019/1152). For fixed-term contracts, probation must be proportionate to the expected duration and nature of the work. Member States may provide for longer probation where justified by the nature of the employment or in the interest of the worker. Any suspension of probation due to absence (e.g. illness, leave) must extend the probationary period correspondingly.",
+    "metadata": {
+      "directive": "2019/1152",
+      "article_number": 8,
+      "topic": "maximum-probation-period",
+      "maximum": "6 months"
+    },
+    "entity_type": "obligation",
+    "entity_id": "tpwcd-probation-limit",
+    "canonical_name": "Maximum 6-Month Probationary Period"
+  },
+  {
+    "ref_id": "tpwcd-parallel-employment",
+    "description": "Workers have the right to take up employment with other employers outside the work schedule established with their current employer (Art.9, Directive 2019/1152). Employers may not prohibit or subject to detriment workers who take parallel employment. Restrictions permitted only where justified on legitimate grounds such as health and safety, protection of business confidentiality, integrity of the public service, or avoidance of conflicts of interest.",
+    "metadata": {
+      "directive": "2019/1152",
+      "article_number": 9,
+      "topic": "right-to-parallel-employment"
+    },
+    "entity_type": "obligation",
+    "entity_id": "tpwcd-parallel-employment",
+    "canonical_name": "Right to Parallel Employment"
+  },
+  {
+    "ref_id": "wlbd-paternity-leave",
+    "description": "Fathers or equivalent second parents are entitled to at least 10 working days of paternity leave around the birth of the child (Art.4, Directive 2019/1158). Leave must be compensated at least at the level of sick pay in the Member State. Member States may condition the right on prior periods of work or service qualification not exceeding 6 months. Leave may be taken flexibly (not necessarily in consecutive days) subject to national law.",
+    "metadata": {
+      "directive": "2019/1158",
+      "article_number": 4,
+      "topic": "paternity-leave",
+      "minimum": "10 working days"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wlbd-paternity-leave",
+    "canonical_name": "Minimum 10 Days Paternity Leave"
+  },
+  {
+    "ref_id": "wlbd-parental-leave",
+    "description": "Each parent is entitled to 4 months of parental leave, to be taken before the child reaches a specified age up to 8 years (Art.5, Directive 2019/1158). At least 2 months must be non-transferable between parents, and these 2 months must be compensated at an adequate level. Member States set the level of compensation. Leave may be taken in a flexible manner (full-time, part-time, or in blocks). Member States may require 1 year of work qualification and 6 months with the current employer.",
+    "metadata": {
+      "directive": "2019/1158",
+      "article_number": 5,
+      "topic": "parental-leave",
+      "minimum": "4 months (2 non-transferable)",
+      "compensation": "at least 2 months adequately compensated"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wlbd-parental-leave",
+    "canonical_name": "4 Months Parental Leave (2 Non-Transferable)"
+  },
+  {
+    "ref_id": "wlbd-carers-leave",
+    "description": "Each worker is entitled to at least 5 working days of carers' leave per year to provide personal care or support to a relative or person in the same household who needs significant care or support for a serious medical reason (Art.6, Directive 2019/1158). Member States may allocate carers' leave on a different reference period, per person in need of care, or per case. Compensation and qualifying conditions set by Member States.",
+    "metadata": {
+      "directive": "2019/1158",
+      "article_number": 6,
+      "topic": "carers-leave",
+      "minimum": "5 working days per year"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wlbd-carers-leave",
+    "canonical_name": "Minimum 5 Days Carers' Leave Per Year"
+  },
+  {
+    "ref_id": "wlbd-flexible-working",
+    "description": "Workers with caring responsibilities (parents of children up to age 8 and carers) have the right to request flexible working arrangements (Art.9, Directive 2019/1158). Flexible working includes remote work, flexible schedules, and reduced working hours. Employers must consider and respond to requests within a reasonable period. Refusals must be justified. Workers must not suffer detriment for making such requests.",
+    "metadata": {
+      "directive": "2019/1158",
+      "article_number": 9,
+      "topic": "right-to-request-flexible-working"
+    },
+    "entity_type": "obligation",
+    "entity_id": "wlbd-flexible-working",
+    "canonical_name": "Right to Request Flexible Working Arrangements"
+  },
+  {
+    "ref_id": "pltwd-employment-presumption",
+    "description": "Legal presumption of an employment relationship between a digital labour platform and a person performing platform work where facts indicating direction and control are found (Art.5, Directive 2024/2831). Indicators of control include: upper limits on remuneration, supervision of work performance via electronic means, restriction on freedom to organise work, restriction on building client base or working for third parties, and control over appearance/conduct. Platforms may rebut the presumption by proving no employment relationship exists. Member States must ensure effective enforcement, including by labour inspectorates.",
+    "metadata": {
+      "directive": "2024/2831",
+      "article_number": 5,
+      "topic": "employment-status-presumption"
+    },
+    "entity_type": "obligation",
+    "entity_id": "pltwd-employment-presumption",
+    "canonical_name": "Legal Presumption of Employment for Platform Workers"
+  },
+  {
+    "ref_id": "pltwd-algorithmic-management",
+    "description": "Digital labour platforms must not process certain categories of personal data through automated monitoring or decision-making systems (Art.7, Directive 2024/2831): emotional or psychological state, private conversations, data to predict trade union activity, data to infer racial/ethnic origin, migration status, political opinions, religious beliefs, disability, or health status (unless justified for health and safety). Platforms must provide transparency on automated systems: inform workers of parameters used, grounds for decisions, and provide right to human review of significant decisions (Art.8-11).",
+    "metadata": {
+      "directive": "2024/2831",
+      "articles": "7, 8, 9, 10, 11",
+      "topic": "algorithmic-management-transparency"
+    },
+    "entity_type": "obligation",
+    "entity_id": "pltwd-algorithmic-management",
+    "canonical_name": "Algorithmic Management Transparency and Data Processing Limits"
+  },
+  {
+    "ref_id": "ewcd-information-consultation",
+    "description": "EWC has the right to be informed and consulted on transnational matters significantly affecting workers' interests (Art.1(3), Directive 2009/38/EC). Transnational matters include those affecting the Community-scale undertaking as a whole or at least two establishments in different Member States. Information must be given at a time, in a fashion, and with content allowing worker representatives to undertake an in-depth assessment and prepare for consultation. Consultation means the exchange of views and establishment of dialogue between worker representatives and central management.",
+    "metadata": {
+      "directive": "2009/38/EC",
+      "articles": "1, 2",
+      "topic": "ewc-information-consultation-rights"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ewcd-information-consultation",
+    "canonical_name": "EWC Information and Consultation Rights"
+  },
+  {
+    "ref_id": "concept-employment-contract",
+    "description": "A contract between an employer and a worker establishing an employment relationship. EU law does not define the employment contract uniformly; definition depends on national law, subject to CJEU case law on the concept of 'worker' (Lawrie-Blum, C-66/85: person who performs services for and under the direction of another person in return for remuneration). Key elements: subordination (direction and control), remuneration, personal performance of work. May be written or oral (but Directive 2019/1152 requires written essential terms). Distinguished from self-employment and commercial contracts for services.",
+    "metadata": {
+      "topic": "employment-contract-definition",
+      "cjeu_case": "Lawrie-Blum C-66/85"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-employment-contract",
+    "canonical_name": "Employment Contract"
+  },
+  {
+    "ref_id": "concept-fixed-term-contract",
+    "description": "Employment contract with a predetermined end date or linked to completion of a specific task or occurrence of a specific event. Governed by the Fixed-Term Work Directive (1999/70/EC, implementing the ETUC-UNICE-CEEP framework agreement). Prohibits less favourable treatment of fixed-term workers compared to comparable permanent workers unless justified on objective grounds (Clause 4). Member States must implement measures to prevent abuse of successive fixed-term contracts: objective reasons justifying renewal, maximum total duration, and/or maximum number of renewals (Clause 5).",
+    "metadata": {
+      "directive": "1999/70/EC",
+      "topic": "fixed-term-contract",
+      "anti_abuse_measures": "objective reasons, max duration, max renewals"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-fixed-term-contract",
+    "canonical_name": "Fixed-Term Employment Contract"
+  },
+  {
+    "ref_id": "concept-indefinite-contract",
+    "description": "Employment contract with no predetermined end date — the standard form of employment relationship in EU law. The Fixed-Term Work Directive (1999/70/EC) preamble and CJEU case law confirm that contracts of indefinite duration are the 'general form of employment relationship'. Conversion of successive fixed-term contracts to indefinite contracts is a common national remedy for abuse. Termination requires notice (national law) and, in most Member States, a justified reason.",
+    "metadata": {
+      "topic": "indefinite-contract",
+      "status": "standard form of employment"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-indefinite-contract",
+    "canonical_name": "Indefinite (Permanent) Employment Contract"
+  },
+  {
+    "ref_id": "concept-probationary-period",
+    "description": "Initial period of an employment relationship during which the employer assesses the worker's aptitude and the worker assesses whether the role is suitable. Limited to maximum 6 months by Directive 2019/1152 (Art.8). During probation, reduced notice periods and simplified dismissal procedures typically apply under national law. For fixed-term contracts, probation must be proportionate to expected contract duration. Suspension events (illness, leave) extend the probation period.",
+    "metadata": {
+      "directive": "2019/1152",
+      "article_number": 8,
+      "topic": "probation-period",
+      "maximum": "6 months (general)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-probationary-period",
+    "canonical_name": "Probationary Period"
+  },
+  {
+    "ref_id": "concept-termination-notice",
+    "description": "The period between notification of termination and the effective end of the employment relationship. Not harmonised at EU level; set by national law, collective agreements, or individual contracts. Directive 2019/1152 requires employers to inform workers of applicable notice periods (Art.4(2)(i)). Typically varies by length of service (e.g. 1-3 months). Some Member States require written notice and statement of reasons. Special protections apply during maternity leave, parental leave, and after whistleblowing.",
+    "metadata": {
+      "topic": "notice-periods",
+      "harmonisation": "not EU-harmonised; national law applies"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-termination-notice",
+    "canonical_name": "Notice Periods for Termination"
+  },
+  {
+    "ref_id": "concept-unfair-dismissal",
+    "description": "Termination of employment that is unjustified, disproportionate, or in breach of procedural requirements under national law. Not directly harmonised by EU directive, but EU law prohibits dismissal on specific discriminatory grounds (2006/54/EC, 2000/43/EC, 2000/78/EC), in connection with a transfer of undertaking (2001/23/EC), due to pregnancy/maternity leave (92/85/EEC), for exercising parental/paternity/carers' leave rights (2019/1158), or for whistleblowing (2019/1937). ILO Convention 158 and the European Social Charter (Art.24) provide international framework. Remedies typically include reinstatement and/or compensation.",
+    "metadata": {
+      "topic": "unfair-dismissal",
+      "eu_protections": "dismissal prohibited on discriminatory grounds, during leave, on transfer, for whistleblowing",
+      "international": "ILO C158, ESC Art.24"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-unfair-dismissal",
+    "canonical_name": "Unfair Dismissal"
+  },
+  {
+    "ref_id": "concept-severance-pay",
+    "description": "Compensation paid to a worker upon termination of employment. Not harmonised at EU level. National laws vary significantly: some Member States mandate statutory severance (e.g. France: indemnite de licenciement; Germany: Abfindung common in practice via settlement; Austria: Abfertigung Neu system). Directive 98/59/EC requires information on severance calculation method during collective redundancy consultation. CJEU has held that severance pay constitutes 'pay' within Art.157 TFEU, so gender discrimination in severance is prohibited.",
+    "metadata": {
+      "topic": "severance-pay",
+      "harmonisation": "not EU-harmonised; national law applies",
+      "cjeu_relevance": "classified as 'pay' under Art.157 TFEU"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-severance-pay",
+    "canonical_name": "Severance Pay"
+  },
+  {
+    "ref_id": "concept-direct-discrimination",
+    "description": "Occurs where one person is treated less favourably than another is, has been, or would be treated in a comparable situation, on grounds of a protected characteristic (sex, race/ethnicity, religion/belief, disability, age, sexual orientation). Defined identically across EU anti-discrimination directives (2006/54/EC Art.2(1)(a), 2000/43/EC Art.2(2)(a), 2000/78/EC Art.2(2)(a)). Generally cannot be justified except for age (Art.6, 2000/78/EC) and genuine occupational requirements. Includes less favourable treatment on grounds of pregnancy and maternity.",
+    "metadata": {
+      "directives": ["2006/54/EC", "2000/43/EC", "2000/78/EC"],
+      "topic": "direct-discrimination-definition"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-direct-discrimination",
+    "canonical_name": "Direct Discrimination"
+  },
+  {
+    "ref_id": "concept-indirect-discrimination",
+    "description": "Occurs where an apparently neutral provision, criterion, or practice would put persons with a protected characteristic at a particular disadvantage compared with other persons, unless that provision, criterion, or practice is objectively justified by a legitimate aim and the means of achieving that aim are appropriate and necessary. Defined in 2006/54/EC Art.2(1)(b), 2000/43/EC Art.2(2)(b), 2000/78/EC Art.2(2)(b). Requires statistical or evidential showing of group disadvantage. Unlike direct discrimination, indirect discrimination can be justified.",
+    "metadata": {
+      "directives": ["2006/54/EC", "2000/43/EC", "2000/78/EC"],
+      "topic": "indirect-discrimination-definition"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-indirect-discrimination",
+    "canonical_name": "Indirect Discrimination"
+  },
+  {
+    "ref_id": "concept-harassment",
+    "description": "Unwanted conduct related to a protected ground (sex, race/ethnicity, religion/belief, disability, age, sexual orientation) with the purpose or effect of violating the dignity of a person and of creating an intimidating, hostile, degrading, humiliating, or offensive environment. Defined as a form of discrimination in EU directives: 2006/54/EC Art.2(1)(c), 2000/43/EC Art.2(3), 2000/78/EC Art.2(3). Sexual harassment is specifically defined as any form of unwanted verbal, non-verbal, or physical conduct of a sexual nature (2006/54/EC Art.2(1)(d)). An instruction to discriminate also constitutes discrimination.",
+    "metadata": {
+      "directives": ["2006/54/EC", "2000/43/EC", "2000/78/EC"],
+      "topic": "harassment-definition"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-harassment",
+    "canonical_name": "Harassment and Sexual Harassment"
+  },
+  {
+    "ref_id": "concept-collective-bargaining",
+    "description": "Process of negotiation between employers (or employer organisations) and trade unions (or worker representatives) to establish terms and conditions of employment, pay, working time, and other workplace matters through collective agreements. Recognised as a fundamental right under Art.28 of the EU Charter of Fundamental Rights and Art.11 ECHR. EU Directive 2022/2041 on adequate minimum wages requires Member States to promote collective bargaining, and where bargaining coverage is below 80%, to establish an action plan to promote it. Collective agreements may derogate from certain directive provisions (e.g. Working Time Directive reference periods).",
+    "metadata": {
+      "topic": "collective-bargaining",
+      "charter_basis": "Art.28 EU Charter of Fundamental Rights",
+      "minimum_wage_directive": "2022/2041"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-collective-bargaining",
+    "canonical_name": "Collective Bargaining"
+  },
+  {
+    "ref_id": "concept-trade-union",
+    "description": "Worker organisation formed for the purpose of furthering and defending workers' interests through collective bargaining, consultation, and industrial action. Freedom of association and right to join a trade union protected by Art.12 EU Charter of Fundamental Rights, Art.11 ECHR, and ILO Conventions 87 and 98. Directive 2000/78/EC (Art.2(1)) protects against discrimination on grounds of trade union membership as part of 'belief'. Worker representatives (including trade union representatives) have special protections against dismissal under national laws transposing EU directives.",
+    "metadata": {
+      "topic": "trade-unions",
+      "charter_basis": "Art.12 EU Charter (freedom of association)",
+      "ilo_conventions": "87, 98"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-trade-union",
+    "canonical_name": "Trade Unions"
+  },
+  {
+    "ref_id": "concept-industrial-action",
+    "description": "Collective action by workers (strikes, work-to-rule, go-slows, blockades) or employers (lockouts) to exert pressure in labour disputes. Right to take collective action, including strikes, is recognised in Art.28 EU Charter of Fundamental Rights and Art.6(4) European Social Charter (revised). Not harmonised at EU level; regulation is primarily national. CJEU case law (Viking, C-438/05; Laval, C-341/05) established that industrial action is a fundamental right but must be proportionate and may be restricted where it impedes EU internal market freedoms (freedom of establishment, free movement of services).",
+    "metadata": {
+      "topic": "industrial-action-strikes",
+      "charter_basis": "Art.28 EU Charter",
+      "key_cjeu": "Viking C-438/05, Laval C-341/05"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-industrial-action",
+    "canonical_name": "Industrial Action (Strikes)"
+  },
+  {
+    "ref_id": "concept-worker-eu",
+    "description": "Autonomous EU concept defined by CJEU case law. A 'worker' is any person who performs services for and under the direction of another person in return for remuneration (Lawrie-Blum, C-66/85). The concept is broad: part-time, fixed-term, agency, on-demand, and platform workers are included where the three criteria (subordination, remuneration, personal performance) are met. Directive 2019/1152 explicitly extends coverage to domestic workers, on-demand workers, intermittent workers, voucher-based workers, platform workers, trainees, and apprentices.",
+    "metadata": {
+      "topic": "worker-definition-eu",
+      "cjeu_case": "Lawrie-Blum C-66/85",
+      "directive_scope": "2019/1152 broadest personal scope"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-worker-eu",
+    "canonical_name": "Worker (EU Autonomous Concept)"
+  },
+  {
+    "ref_id": "concept-transfer-of-undertaking",
+    "description": "Transfer of an economic entity which retains its identity, meaning an organised grouping of resources which has the objective of pursuing an economic activity (Spijkers, C-24/86; Directive 2001/23/EC Art.1). Includes transfers by legal merger, asset sale, outsourcing, and insourcing. Key factors (Spijkers test): type of undertaking, whether tangible assets transferred, value of intangible assets, whether majority of employees taken on, whether customers transferred, degree of similarity of activities, and period of suspension. Service provision changes may or may not constitute a transfer depending on national transposition.",
+    "metadata": {
+      "directive": "2001/23/EC",
+      "article_number": 1,
+      "topic": "transfer-of-undertaking-definition",
+      "cjeu_case": "Spijkers C-24/86"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-transfer-of-undertaking",
+    "canonical_name": "Transfer of Undertaking (TUPE)"
+  },
+  {
+    "ref_id": "process-collective-redundancy",
+    "description": "Multi-step process required by Directive 98/59/EC when employer plans collective redundancies meeting the threshold. Steps: (1) Identify that thresholds are met; (2) Notify worker representatives and provide written information; (3) Consult in good time with a view to reaching agreement on avoidance, reduction, and mitigation; (4) Notify competent public authority; (5) Observe 30-day (or longer) waiting period; (6) Implement redundancies applying fair selection criteria; (7) Calculate and pay severance per national law. Worker representatives have right to involve experts. Failure to consult may render dismissals void in some jurisdictions.",
+    "metadata": {
+      "directive": "98/59/EC",
+      "topic": "collective-redundancy-process",
+      "process_type": "termination"
+    },
+    "entity_type": "process",
+    "entity_id": "process-collective-redundancy",
+    "canonical_name": "Collective Redundancy Process"
+  },
+  {
+    "ref_id": "process-tupe-transfer",
+    "description": "Multi-step process required by Directive 2001/23/EC when a business transfer occurs. Steps: (1) Identify that a transfer of undertaking will take place; (2) Identify all affected employees; (3) Transferor informs and consults worker representatives on date, reasons, legal/economic/social implications, and measures envisaged; (4) Transfer of employment contracts and collective agreement terms automatically on transfer date; (5) Transferee assumes all rights and obligations; (6) No dismissal solely by reason of transfer (ETO exception applies); (7) Post-transfer: harmonise terms and conditions respecting acquired rights. Joint and several liability may apply in some Member States.",
+    "metadata": {
+      "directive": "2001/23/EC",
+      "topic": "tupe-transfer-process",
+      "process_type": "business-reorganisation"
+    },
+    "entity_type": "process",
+    "entity_id": "process-tupe-transfer",
+    "canonical_name": "Transfer of Undertakings (TUPE) Process"
+  },
+  {
+    "ref_id": "process-discrimination-claim",
+    "description": "Process for bringing a discrimination claim under EU anti-discrimination directives. Steps: (1) Worker identifies alleged discriminatory treatment or practice; (2) Internal grievance (optional but recommended in most Member States); (3) Complaint to national equality body (Art.13, 2000/43/EC; Art.20, 2006/54/EC) for independent assistance; (4) Claim before competent court or tribunal; (5) Claimant establishes prima facie case (facts from which discrimination may be presumed); (6) Burden of proof shifts to respondent; (7) Court assesses objective justification (indirect discrimination) or genuine occupational requirement; (8) Effective, proportionate, and dissuasive remedies (compensation with no prior upper limit). Victimisation protection: worker must not suffer retaliation for bringing a claim.",
+    "metadata": {
+      "directives": ["2006/54/EC", "2000/43/EC", "2000/78/EC"],
+      "topic": "discrimination-claim-process",
+      "process_type": "dispute-resolution"
+    },
+    "entity_type": "process",
+    "entity_id": "process-discrimination-claim",
+    "canonical_name": "Discrimination Claim Process"
+  },
+  {
+    "ref_id": "process-ewc-establishment",
+    "description": "Process for establishing a European Works Council under Directive 2009/38/EC. Steps: (1) Central management or at least 100 workers (or their representatives) in at least 2 Member States make a written request; (2) Central management establishes a Special Negotiating Body (SNB) with worker representatives from each Member State; (3) SNB and central management negotiate an agreement on EWC composition, competence, procedure, resources, and duration (minimum 3 years); (4) If no agreement within 3 years, or if both parties agree, subsidiary requirements (Annex I) apply: EWC of 3-30 members, annual information/consultation meeting, extraordinary meetings for exceptional circumstances. SNB may decide by 2/3 majority not to establish an EWC.",
+    "metadata": {
+      "directive": "2009/38/EC",
+      "topic": "ewc-establishment-process",
+      "process_type": "worker-representation"
+    },
+    "entity_type": "process",
+    "entity_id": "process-ewc-establishment",
+    "canonical_name": "European Works Council Establishment Process"
+  },
+  {
+    "ref_id": "threshold-collective-redundancy",
+    "description": "Collective redundancy thresholds triggering consultation and notification obligations under Directive 98/59/EC. Member States must adopt at least one of two methods: (a) Over 30 days: at least 10 redundancies in establishments with 20-99 workers, at least 10% in 100-299, or at least 30 in 300+; or (b) Over 90 days: at least 20 redundancies regardless of establishment size. 'Redundancy' means dismissal for reasons not related to the individual worker. Terminations at employer's initiative on similar grounds (e.g. mutually agreed departures) may also count per CJEU case law (AGET Iraklis, C-201/15).",
+    "metadata": {
+      "directive": "98/59/EC",
+      "article_number": 1,
+      "topic": "redundancy-thresholds"
+    },
+    "entity_type": "threshold",
+    "entity_id": "threshold-collective-redundancy",
+    "canonical_name": "Collective Redundancy Numerical Thresholds"
+  },
+  {
+    "ref_id": "threshold-ewc",
+    "description": "European Works Council establishment thresholds under Directive 2009/38/EC: the undertaking or group must employ at least 1,000 workers within the EU/EEA Member States, and at least 150 workers in each of at least two Member States. Worker numbers typically calculated as average over preceding 2 years. Thresholds must be met at the time the request to establish the EWC is made.",
+    "metadata": {
+      "directive": "2009/38/EC",
+      "article_number": 2,
+      "topic": "ewc-thresholds",
+      "group_threshold": "1,000 EU employees, 150 in 2+ Member States"
+    },
+    "entity_type": "threshold",
+    "entity_id": "threshold-ewc",
+    "canonical_name": "European Works Council Establishment Thresholds"
+  },
+  {
+    "ref_id": "org-european-commission-dg-empl",
+    "description": "Directorate-General for Employment, Social Affairs & Inclusion (DG EMPL) of the European Commission. Responsible for EU policy on employment, social affairs, skills, labour mobility, and working conditions. Drafts proposals for EU employment and labour directives. Monitors transposition and application of employment directives by Member States. Issues guidance, reports, and recommendations. Coordinates the European Semester employment policies and the European Pillar of Social Rights.",
+    "metadata": {
+      "role": "EU employment and labour policy, directive proposals and monitoring",
+      "website": "https://ec.europa.eu/social/home.jsp"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-european-commission-dg-empl",
+    "canonical_name": "European Commission — DG Employment (DG EMPL)"
+  },
+  {
+    "ref_id": "org-cjeu",
+    "description": "Court of Justice of the European Union (CJEU). Interprets EU law to ensure uniform application across Member States. Landmark employment law rulings include: Lawrie-Blum (C-66/85, worker definition), Spijkers (C-24/86, transfer of undertaking), Schultz-Hoff (C-350/06, annual leave carry-over), Viking (C-438/05, industrial action vs. freedom of establishment), Laval (C-341/05, posted workers and collective action), AGET Iraklis (C-201/15, collective redundancies), Mangold (C-144/04, age discrimination as general principle). Preliminary ruling procedure (Art.267 TFEU) allows national courts to refer questions of EU law interpretation.",
+    "metadata": {
+      "role": "Interpretation and enforcement of EU law, including employment directives",
+      "key_employment_cases": ["Lawrie-Blum C-66/85", "Spijkers C-24/86", "Viking C-438/05", "Laval C-341/05"]
+    },
+    "entity_type": "authority",
+    "entity_id": "org-cjeu",
+    "canonical_name": "Court of Justice of the European Union (CJEU)"
+  },
+  {
+    "ref_id": "org-equality-bodies",
+    "description": "National equality bodies required by Directives 2000/43/EC (Art.13) and 2006/54/EC (Art.20). Must be designated by each Member State to: provide independent assistance to victims of discrimination in pursuing complaints, conduct independent surveys, and publish independent reports and recommendations. Examples: Equality and Human Rights Commission (UK, pre-Brexit), Defender of Rights (France), Federal Anti-Discrimination Agency (Germany), Equality Authority (Ireland). Some Member States have a single body covering all grounds; others have separate bodies.",
+    "metadata": {
+      "directives": ["2000/43/EC Art.13", "2006/54/EC Art.20"],
+      "role": "Independent assistance to discrimination victims, surveys, reports"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-equality-bodies",
+    "canonical_name": "National Equality Bodies"
+  },
+  {
+    "ref_id": "org-european-labour-authority",
+    "description": "European Labour Authority (ELA), established by Regulation (EU) 2019/1149. Supports fair labour mobility in the EU by: providing information to individuals and employers on their rights and obligations, supporting cooperation between Member States on enforcement of EU labour mobility and social security law, mediating disputes between Member States, and organising concerted and joint inspections. Key role in enforcement of Posted Workers Directive and free movement of workers. Headquartered in Bratislava, Slovakia.",
+    "metadata": {
+      "regulation": "Regulation (EU) 2019/1149",
+      "role": "Labour mobility enforcement, cross-border inspections, mediation",
+      "headquarters": "Bratislava"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-european-labour-authority",
+    "canonical_name": "European Labour Authority (ELA)"
+  }
+]
