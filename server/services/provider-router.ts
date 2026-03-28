@@ -330,7 +330,7 @@ async function streamChatAnthropic(
 
   const apiParams: Record<string, unknown> = {
     model: modelId,
-    max_tokens: thinkingConfig?.maxTokens || maxTokens,
+    max_tokens: Math.max(thinkingConfig?.maxTokens || 0, maxTokens),
     system: config.system,
     messages: config.messages.map(m => ({ role: m.role, content: m.content })),
   };

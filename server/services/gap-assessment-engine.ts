@@ -201,33 +201,36 @@ function repairJson(raw: string, type: 'array' | 'object'): string {
     }
   }
 
-  // For objects: close all open braces/brackets
+  // For objects: find last valid truncation point and close brackets
   if (type === 'object') {
-    let depth = 0;
-    let inString = false;
-    let escape = false;
-    let lastGoodPos = 0;
-
-    for (let i = 0; i < raw.length; i++) {
-      const ch = raw[i];
-      if (escape) { escape = false; continue; }
-      if (ch === '\\' && inString) { escape = true; continue; }
-      if (ch === '"') { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === '{' || ch === '[') depth++;
-      if (ch === '}' || ch === ']') { depth--; if (depth === 0) lastGoodPos = i; }
+    // Strategy 1: Backward scan — find last } that yields valid JSON when brackets are closed
+    for (let i = raw.length - 1; i > 100; i--) {
+      if (raw[i] === '}') {
+        const candidate = raw.slice(0, i + 1);
+        // Count open brackets/braces to close them
+        let ob = 0, oq = 0, ins = false, esc = false;
+        for (const ch of candidate) {
+          if (esc) { esc = false; continue; }
+          if (ch === '\\' && ins) { esc = true; continue; }
+          if (ch === '"') { ins = !ins; continue; }
+          if (ins) continue;
+          if (ch === '{') ob++; if (ch === '}') ob--;
+          if (ch === '[') oq++; if (ch === ']') oq--;
+        }
+        const closed = candidate + '}'.repeat(Math.max(0, ob)) + ']'.repeat(Math.max(0, oq));
+        try {
+          JSON.parse(closed);
+          console.log(`[gap-engine] JSON object repair (backward): recovered ${closed.length} chars (truncated at ${raw.length})`);
+          return closed;
+        } catch { /* try next } */ }
+      }
     }
 
-    if (lastGoodPos > 0) {
-      const repaired = raw.slice(0, lastGoodPos + 1);
-      try { JSON.parse(repaired); return repaired; } catch { /* fall through */ }
-    }
-
-    // Brute force: trim trailing incomplete value, close open brackets
+    // Strategy 2: Brute force — trim trailing incomplete value, close open brackets
     let trimmed = raw.replace(/,\s*"[^"]*":\s*"[^"]*$/, ''); // remove last incomplete key-value
     trimmed = trimmed.replace(/,\s*$/, ''); // trailing comma
     let openBraces = 0, openBrackets = 0;
-    inString = false; escape = false;
+    let inString = false, escape = false;
     for (const ch of trimmed) {
       if (escape) { escape = false; continue; }
       if (ch === '\\' && inString) { escape = true; continue; }
