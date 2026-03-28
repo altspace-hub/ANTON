@@ -106,7 +106,34 @@ function extractJson(text: string, type: 'array' | 'object'): string {
   // Try parsing as-is first
   try { JSON.parse(raw); return raw; } catch { /* needs repair */ }
 
+  // Strategy 1: Claude may add text after the JSON — find the matching closer
+  const closerIdx = findMatchingCloser(raw, opener, closer);
+  if (closerIdx > 0) {
+    const exact = raw.slice(0, closerIdx + 1);
+    try { JSON.parse(exact); return exact; } catch { /* fall through */ }
+  }
+
   return repairJson(raw, type);
+}
+
+/** Find the position of the bracket/brace that closes the opening one at position 0 */
+function findMatchingCloser(raw: string, opener: string, closer: string): number {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === opener) depth++;
+    if (ch === closer) {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1; // No matching closer found (truncated)
 }
 
 /** Attempt to repair truncated JSON by finding the last complete element */
@@ -187,6 +214,9 @@ function repairJson(raw: string, type: 'array' | 'object'): string {
     } catch { /* give up */ }
   }
 
+  // Last resort: log first and last 200 chars for debugging
+  console.error(`[gap-engine] JSON repair failed. First 200: ${raw.slice(0, 200)}`);
+  console.error(`[gap-engine] Last 200: ${raw.slice(-200)}`);
   throw new Error(`Failed to parse or repair JSON ${type} from Claude response (${raw.length} chars)`);
 }
 
