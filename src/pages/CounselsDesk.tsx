@@ -76,13 +76,45 @@ const MODES: LegalMode[] = [
   { id: 'rapid-risk', label: 'Legal Risk Rapid', icon: Zap, description: 'Quick scenario → traffic-light risk + obligations + mitigations', thinking: 'quick' },
 ];
 
-const EXPERT_ROLES: ExpertRole[] = [
-  { id: 'eu-regulatory-lawyer', label: 'EU Regulatory Lawyer', focus: 'AMLR, AMLD6, AMLA, DORA, MiFID II, MAR' },
-  { id: 'sanctions-lawyer', label: 'Sanctions Lawyer', focus: 'EU, OFAC, OFSI sanctions frameworks' },
-  { id: 'abc-counsel', label: 'Anti-Bribery Counsel', focus: 'FCPA, UK Bribery Act, OECD Convention' },
-  { id: 'nordic-compliance', label: 'Nordic Compliance Counsel', focus: 'SE, FI, DK, NO, IS AML/CFT legislation' },
-  { id: 'financial-crime-barrister', label: 'Financial Crime Barrister', focus: 'Criminal law, POCA, LPP, court proceedings' },
-  { id: 'regulatory-affairs', label: 'Regulatory Affairs Advisor', focus: 'EBA/ESMA RTS, ITS, Guidelines, Q&As' },
+const ROLE_CATEGORIES = [
+  { id: 'compliance', label: 'Financial Crime & Compliance' },
+  { id: 'corporate', label: 'Corporate & Business Law' },
+  { id: 'civil', label: 'Civil & Dispute Resolution' },
+  { id: 'tech', label: 'Technology, Data & IP' },
+  { id: 'finance', label: 'Banking, Finance & Insurance' },
+  { id: 'public', label: 'Public & International' },
+] as const;
+
+const EXPERT_ROLES: (ExpertRole & { category?: string })[] = [
+  // ── Financial Crime & Compliance ──
+  { id: 'eu-regulatory-lawyer', label: 'EU Regulatory Lawyer', focus: 'AMLR, AMLD6, AMLA, DORA, MiFID II, MAR', category: 'compliance' },
+  { id: 'sanctions-lawyer', label: 'Sanctions Lawyer', focus: 'EU, OFAC, OFSI sanctions frameworks', category: 'compliance' },
+  { id: 'abc-counsel', label: 'Anti-Bribery Counsel', focus: 'FCPA, UK Bribery Act, OECD Convention', category: 'compliance' },
+  { id: 'nordic-compliance', label: 'Nordic Compliance Counsel', focus: 'SE, FI, DK, NO, IS AML/CFT legislation', category: 'compliance' },
+  { id: 'financial-crime-barrister', label: 'Financial Crime Barrister', focus: 'Criminal law, POCA, LPP, court proceedings', category: 'compliance' },
+  { id: 'regulatory-affairs', label: 'Regulatory Affairs Advisor', focus: 'EBA/ESMA RTS, ITS, Guidelines, Q&As', category: 'compliance' },
+  // ── Corporate & Business Law ──
+  { id: 'corporate-counsel', label: 'Corporate Counsel', focus: 'Company law, governance, M&A, restructuring', category: 'corporate' },
+  { id: 'commercial-contracts', label: 'Commercial Contracts Counsel', focus: 'Drafting, interpretation, breach, remedies', category: 'corporate' },
+  { id: 'ma-counsel', label: 'M&A Counsel', focus: 'Due diligence, SPA/APA, warranties, earn-outs', category: 'corporate' },
+  { id: 'competition-lawyer', label: 'Competition & Antitrust Lawyer', focus: 'Art 101/102 TFEU, merger control, state aid', category: 'corporate' },
+  // ── Civil & Dispute Resolution ──
+  { id: 'civil-litigation', label: 'Civil Litigation Counsel', focus: 'Tort, damages, injunctions, enforcement', category: 'civil' },
+  { id: 'arbitration-counsel', label: 'Arbitration & ADR Counsel', focus: 'ICC, LCIA, SCC, mediation, investor-state', category: 'civil' },
+  { id: 'employment-lawyer', label: 'Employment Law Counsel', focus: 'Labor law, discrimination, termination, TUPE', category: 'civil' },
+  { id: 'real-estate-counsel', label: 'Real Estate Counsel', focus: 'Property, leases, planning, construction', category: 'civil' },
+  // ── Technology, Data & IP ──
+  { id: 'data-privacy-counsel', label: 'Data Protection Counsel', focus: 'GDPR, ePrivacy, DPIAs, AI Act', category: 'tech' },
+  { id: 'tech-ip-counsel', label: 'Technology & IP Counsel', focus: 'Patents, trademarks, licensing, SaaS/cloud', category: 'tech' },
+  { id: 'ai-regulation-counsel', label: 'AI & Digital Regulation Counsel', focus: 'EU AI Act, DSA, DMA, algorithmic accountability', category: 'tech' },
+  // ── Banking, Finance & Insurance ──
+  { id: 'banking-finance-counsel', label: 'Banking & Finance Counsel', focus: 'CRD/CRR, PSD2, securitisation, payments', category: 'finance' },
+  { id: 'capital-markets-counsel', label: 'Capital Markets Counsel', focus: 'Prospectus regulation, MAR, MiFID II, listings', category: 'finance' },
+  { id: 'insurance-counsel', label: 'Insurance Law Counsel', focus: 'Solvency II, IDD, claims, reinsurance', category: 'finance' },
+  // ── Public & International ──
+  { id: 'public-procurement', label: 'Public Procurement Counsel', focus: 'EU procurement directives, tenders, remedies', category: 'public' },
+  { id: 'international-trade', label: 'International Trade Counsel', focus: 'Export controls, dual-use, customs, WTO', category: 'public' },
+  { id: 'environmental-counsel', label: 'Environmental & ESG Counsel', focus: 'CSRD, EU Taxonomy, emissions, green bonds', category: 'public' },
 ];
 
 const MODE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -526,7 +558,7 @@ export default function CounselsDesk() {
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-adv-off-white">Counsel's Desk</h1>
-                <p className="text-xs text-adv-gray">Legal research workspace for FCP counsel</p>
+                <p className="text-xs text-adv-gray">Legal research workspace for counsel across all practice areas</p>
               </div>
             </div>
             <button
@@ -563,16 +595,28 @@ export default function CounselsDesk() {
             </div>
             <div className="mb-4">
               <label className="mb-2 block text-xs font-medium text-adv-gray">Expert role</label>
-              <div className="flex flex-wrap gap-2">
-                {EXPERT_ROLES.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => setSelectedRole(r.id)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-all ${selectedRole === r.id ? 'border-adv-teal bg-adv-teal-dim text-adv-teal' : 'border-border bg-adv-card text-adv-gray hover:border-adv-teal/40'}`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
+              <div className="space-y-3">
+                {ROLE_CATEGORIES.map(cat => {
+                  const rolesInCat = EXPERT_ROLES.filter(r => r.category === cat.id);
+                  if (rolesInCat.length === 0) return null;
+                  return (
+                    <div key={cat.id}>
+                      <p className="mb-1.5 text-[10px] font-medium text-adv-gray/60 uppercase tracking-wider">{cat.label}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {rolesInCat.map(r => (
+                          <button
+                            key={r.id}
+                            onClick={() => setSelectedRole(r.id)}
+                            title={r.focus}
+                            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-all ${selectedRole === r.id ? 'border-adv-teal bg-adv-teal-dim text-adv-teal' : 'border-border bg-adv-card text-adv-gray hover:border-adv-teal/40'}`}
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="flex gap-2">
@@ -707,25 +751,34 @@ export default function CounselsDesk() {
               <ChevronDown className="h-3 w-3 text-adv-gray" />
             </button>
             {showRoleDropdown && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-xl border border-border bg-adv-dark-2 p-2 shadow-xl">
-                {EXPERT_ROLES.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={async () => {
-                      setShowRoleDropdown(false);
-                      setActiveSession(prev => prev ? { ...prev, expert_role: r.id } : prev);
-                      await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ expert_role: r.id }),
-                      });
-                    }}
-                    className={`block w-full text-left rounded-lg px-3 py-2 text-xs transition-colors ${activeSession.expert_role === r.id ? 'bg-adv-teal-dim text-adv-teal' : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'}`}
-                  >
-                    <div className="font-medium">{r.label}</div>
-                    <div className="text-xs opacity-70 mt-0.5">{r.focus}</div>
-                  </button>
-                ))}
+              <div className="absolute right-0 top-full z-50 mt-1 w-72 max-h-96 overflow-y-auto rounded-xl border border-border bg-adv-dark-2 p-2 shadow-xl">
+                {ROLE_CATEGORIES.map(cat => {
+                  const rolesInCat = EXPERT_ROLES.filter(r => r.category === cat.id);
+                  if (rolesInCat.length === 0) return null;
+                  return (
+                    <div key={cat.id} className="mb-1">
+                      <p className="px-2 py-1 text-[9px] font-semibold text-adv-gray/50 uppercase tracking-wider">{cat.label}</p>
+                      {rolesInCat.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={async () => {
+                            setShowRoleDropdown(false);
+                            setActiveSession(prev => prev ? { ...prev, expert_role: r.id } : prev);
+                            await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ expert_role: r.id }),
+                            });
+                          }}
+                          className={`block w-full text-left rounded-lg px-3 py-1.5 text-xs transition-colors ${activeSession.expert_role === r.id ? 'bg-adv-teal-dim text-adv-teal' : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'}`}
+                        >
+                          <div className="font-medium">{r.label}</div>
+                          <div className="text-[10px] opacity-60">{r.focus}</div>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

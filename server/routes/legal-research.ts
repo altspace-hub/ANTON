@@ -44,12 +44,40 @@ export const LEGAL_MODES = [
 ] as const;
 
 export const EXPERT_ROLES = [
-  { id: 'eu-regulatory-lawyer', label: 'EU Regulatory Lawyer', focus: 'AMLR, AMLD6, AMLA, DORA, MiFID II, MAR — EU primary law and technical standards' },
-  { id: 'sanctions-lawyer', label: 'Sanctions Lawyer', focus: 'EU, OFAC, OFSI sanctions frameworks — designation, screening, licensing, enforcement' },
-  { id: 'abc-counsel', label: 'Anti-Bribery Counsel', focus: 'FCPA, UK Bribery Act, OECD Convention, UNCAC — corporate liability, adequate procedures' },
-  { id: 'nordic-compliance', label: 'Nordic Compliance Counsel', focus: 'SE, FI, DK, NO, IS AML/CFT legislation, Finansinspektionen, Finanstilsynet practice' },
-  { id: 'financial-crime-barrister', label: 'Financial Crime Barrister', focus: 'Criminal law, POCA, tipping-off, legal professional privilege, court proceedings' },
-  { id: 'regulatory-affairs', label: 'Regulatory Affairs Advisor', focus: 'EBA/ESMA RTS, ITS, Guidelines, Q&As — technical standards development and application' },
+  // ── Financial Crime & Compliance ──
+  { id: 'eu-regulatory-lawyer', label: 'EU Regulatory Lawyer', focus: 'AMLR, AMLD6, AMLA, DORA, MiFID II, MAR — EU primary law and technical standards', category: 'compliance' },
+  { id: 'sanctions-lawyer', label: 'Sanctions Lawyer', focus: 'EU, OFAC, OFSI sanctions frameworks — designation, screening, licensing, enforcement', category: 'compliance' },
+  { id: 'abc-counsel', label: 'Anti-Bribery Counsel', focus: 'FCPA, UK Bribery Act, OECD Convention, UNCAC — corporate liability, adequate procedures', category: 'compliance' },
+  { id: 'nordic-compliance', label: 'Nordic Compliance Counsel', focus: 'SE, FI, DK, NO, IS AML/CFT legislation, Finansinspektionen, Finanstilsynet practice', category: 'compliance' },
+  { id: 'financial-crime-barrister', label: 'Financial Crime Barrister', focus: 'Criminal law, POCA, tipping-off, legal professional privilege, court proceedings', category: 'compliance' },
+  { id: 'regulatory-affairs', label: 'Regulatory Affairs Advisor', focus: 'EBA/ESMA RTS, ITS, Guidelines, Q&As — technical standards development and application', category: 'compliance' },
+
+  // ── Corporate & Business Law ──
+  { id: 'corporate-counsel', label: 'Corporate Counsel', focus: 'Company law, board duties, governance, shareholder rights, M&A, restructuring, joint ventures', category: 'corporate' },
+  { id: 'commercial-contracts', label: 'Commercial Contracts Counsel', focus: 'Contract drafting, interpretation, breach, remedies, limitation, force majeure, indemnities', category: 'corporate' },
+  { id: 'ma-counsel', label: 'M&A Counsel', focus: 'Due diligence, SPA/APA drafting, warranties, earn-outs, competition clearance, post-completion', category: 'corporate' },
+  { id: 'competition-lawyer', label: 'Competition & Antitrust Lawyer', focus: 'EU competition law, Art 101/102 TFEU, merger control, state aid, cartel investigations, dawn raids', category: 'corporate' },
+
+  // ── Civil & Dispute Resolution ──
+  { id: 'civil-litigation', label: 'Civil Litigation Counsel', focus: 'Tort, damages, injunctions, enforcement, cross-border disputes, limitation periods, appeals', category: 'civil' },
+  { id: 'arbitration-counsel', label: 'Arbitration & ADR Counsel', focus: 'ICC, LCIA, SCC arbitration, mediation, investor-state disputes, enforcement of awards', category: 'civil' },
+  { id: 'employment-lawyer', label: 'Employment Law Counsel', focus: 'Labor law, discrimination, termination, collective agreements, works councils, TUPE/transfers', category: 'civil' },
+  { id: 'real-estate-counsel', label: 'Real Estate Counsel', focus: 'Property transactions, leases, planning, construction law, landlord-tenant disputes', category: 'civil' },
+
+  // ── Technology, Data & IP ──
+  { id: 'data-privacy-counsel', label: 'Data Protection Counsel', focus: 'GDPR, ePrivacy, cross-border transfers, DPIAs, breach notification, AI Act, data governance', category: 'tech' },
+  { id: 'tech-ip-counsel', label: 'Technology & IP Counsel', focus: 'Patents, trademarks, copyright, trade secrets, licensing, SaaS/cloud contracts, open source', category: 'tech' },
+  { id: 'ai-regulation-counsel', label: 'AI & Digital Regulation Counsel', focus: 'EU AI Act, DSA, DMA, algorithmic accountability, AI liability, emerging tech regulation', category: 'tech' },
+
+  // ── Banking, Finance & Insurance ──
+  { id: 'banking-finance-counsel', label: 'Banking & Finance Counsel', focus: 'CRD/CRR, PSD2/PSR, prudential regulation, securitisation, loan documentation, payment services', category: 'finance' },
+  { id: 'capital-markets-counsel', label: 'Capital Markets Counsel', focus: 'Prospectus regulation, MAR, short selling, MiFID II, listing rules, securities offerings', category: 'finance' },
+  { id: 'insurance-counsel', label: 'Insurance Law Counsel', focus: 'Solvency II, IDD, claims handling, reinsurance, policy interpretation, Lloyd\'s market', category: 'finance' },
+
+  // ── Public & International ──
+  { id: 'public-procurement', label: 'Public Procurement Counsel', focus: 'EU procurement directives, tender procedures, concessions, remedies, framework agreements', category: 'public' },
+  { id: 'international-trade', label: 'International Trade Counsel', focus: 'Export controls, dual-use goods, customs law, WTO, trade agreements, trade sanctions', category: 'public' },
+  { id: 'environmental-counsel', label: 'Environmental & ESG Counsel', focus: 'CSRD, EU Taxonomy, emissions trading, environmental liability, green bonds, greenwashing', category: 'public' },
 ] as const;
 
 function getUserId(req: Request): string {
