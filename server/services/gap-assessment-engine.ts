@@ -32,7 +32,7 @@ function getModelConfig(tier: GapModelTier) {
       model: 'claude-sonnet-4-6' as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 40000,
-      maxTokensSynthesis: 64000,
+      maxTokensSynthesis: 128_000,
     };
   }
   // Custom model ID (Azure, Mistral, OpenAI, etc.)
@@ -40,7 +40,7 @@ function getModelConfig(tier: GapModelTier) {
     model: tier,
     thinkingLevel: 'think_hard' as string,
     maxTokensBatch: 16384,
-    maxTokensSynthesis: 32768,
+    maxTokensSynthesis: 64000,
   };
 }
 
