@@ -263,6 +263,124 @@ export async function createMarketPatternService(db: DatabaseAdapter) {
 
   // ── Run All Detectors ────────────────────────────────────────────────────
 
+  /** Detect prediction accuracy patterns — directional bias, confidence miscalibration, symbol failures */
+  async function detectPredictionAccuracyPatterns(): Promise<DetectorResult[]> {
+    const results: DetectorResult[] = [];
+
+    // Need at least 5 validated predictions to detect patterns
+    const validatedCount = await db.get<{ count: number }>(
+      "SELECT COUNT(*) as count FROM market_predictions WHERE status = 'validated'"
+    );
+    if (!validatedCount || validatedCount.count < 5) return results;
+
+    // 1. Directional bias: consistently wrong in one direction
+    const directionStats = await db.all<{ dir: string; total: number; correct: number }>(`
+      SELECT predicted_direction as dir, COUNT(*) as total,
+             SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct
+      FROM market_predictions
+      WHERE status = 'validated' AND predicted_direction IS NOT NULL AND predicted_direction != ''
+      GROUP BY predicted_direction HAVING COUNT(*) >= 3
+    `);
+
+    for (const stat of directionStats) {
+      const accuracy = stat.correct / stat.total;
+      if (accuracy <= 0.25 && stat.total >= 3) {
+        results.push({
+          type: 'directional_bias',
+          title: `Systematic failure on "${stat.dir}" predictions`,
+          description: `Only ${stat.correct}/${stat.total} (${Math.round(accuracy * 100)}%) of "${stat.dir}" predictions were correct. Consider reducing confidence or avoiding this direction.`,
+          severity: 'high',
+          confidence: Math.min(0.9, 0.5 + stat.total * 0.05),
+          symbols: [],
+          metadata: { direction: stat.dir, total: stat.total, correct: stat.correct, accuracy },
+        });
+      }
+    }
+
+    // 2. Confidence miscalibration: predictions at X% confidence hitting much lower
+    const calibrationBuckets = await db.all<{ bucket: string; total: number; correct: number; avg_conf: number }>(`
+      SELECT
+        CASE WHEN confidence >= 0.7 THEN 'high' WHEN confidence >= 0.5 THEN 'medium' ELSE 'low' END as bucket,
+        COUNT(*) as total,
+        SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct,
+        ROUND(AVG(confidence)::numeric, 2) as avg_conf
+      FROM market_predictions
+      WHERE status = 'validated'
+      GROUP BY bucket HAVING COUNT(*) >= 3
+    `);
+
+    for (const b of calibrationBuckets) {
+      const accuracy = b.correct / b.total;
+      const gap = b.avg_conf - accuracy;
+      if (gap > 0.25) {
+        results.push({
+          type: 'confidence_miscalibration',
+          title: `Over-confident on ${b.bucket}-confidence predictions`,
+          description: `${b.bucket} confidence predictions (avg ${(b.avg_conf * 100).toFixed(0)}%) only hit ${Math.round(accuracy * 100)}%. Calibration gap: ${Math.round(gap * 100)}pp.`,
+          severity: gap > 0.4 ? 'high' : 'medium',
+          confidence: 0.8,
+          symbols: [],
+          metadata: { bucket: b.bucket, avgConfidence: b.avg_conf, actualAccuracy: accuracy, gap, total: b.total },
+        });
+      }
+    }
+
+    // 3. Symbol-specific failure: a symbol with 3+ wrong predictions
+    const symbolStats = await db.all<{ sym: string; total: number; wrong: number }>(`
+      SELECT target_symbol as sym, COUNT(*) as total,
+             SUM(CASE WHEN was_correct = 0 THEN 1 ELSE 0 END) as wrong
+      FROM market_predictions
+      WHERE status = 'validated' AND target_symbol IS NOT NULL AND target_symbol != ''
+      GROUP BY target_symbol HAVING SUM(CASE WHEN was_correct = 0 THEN 1 ELSE 0 END) >= 3
+    `);
+
+    for (const s of symbolStats) {
+      results.push({
+        type: 'symbol_failure_cluster',
+        title: `Repeated failures on ${s.sym}`,
+        description: `${s.wrong}/${s.total} predictions on ${s.sym} were wrong. Consider avoiding or reducing confidence on this symbol.`,
+        severity: 'high',
+        confidence: 0.85,
+        symbols: [s.sym],
+        metadata: { symbol: s.sym, total: s.total, wrong: s.wrong, accuracy: (s.total - s.wrong) / s.total },
+      });
+    }
+
+    // 4. Pulse vs thesis accuracy: compare weekly_pulse predictions to thesis-derived
+    const sourceStats = await db.all<{ source: string; total: number; correct: number }>(`
+      SELECT
+        CASE WHEN key_assumptions::text LIKE '%weekly_pulse%' THEN 'pulse' ELSE 'thesis' END as source,
+        COUNT(*) as total,
+        SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct
+      FROM market_predictions
+      WHERE status = 'validated'
+      GROUP BY source HAVING COUNT(*) >= 3
+    `);
+
+    if (sourceStats.length >= 2) {
+      const pulse = sourceStats.find(s => s.source === 'pulse');
+      const thesis = sourceStats.find(s => s.source === 'thesis');
+      if (pulse && thesis) {
+        const pulseAcc = pulse.correct / pulse.total;
+        const thesisAcc = thesis.correct / thesis.total;
+        if (Math.abs(pulseAcc - thesisAcc) > 0.2) {
+          const better = pulseAcc > thesisAcc ? 'pulse' : 'thesis';
+          results.push({
+            type: 'source_performance_gap',
+            title: `${better === 'pulse' ? 'Weekly pulse' : 'Thesis-derived'} predictions significantly outperform`,
+            description: `Pulse accuracy: ${Math.round(pulseAcc * 100)}% (${pulse.total}), Thesis accuracy: ${Math.round(thesisAcc * 100)}% (${thesis.total}). Gap: ${Math.round(Math.abs(pulseAcc - thesisAcc) * 100)}pp.`,
+            severity: 'medium',
+            confidence: 0.7,
+            symbols: [],
+            metadata: { pulseAccuracy: pulseAcc, thesisAccuracy: thesisAcc, pulseTotal: pulse.total, thesisTotal: thesis.total },
+          });
+        }
+      }
+    }
+
+    return results;
+  }
+
   async function runAllDetectors() {
     const allResults: DetectorResult[] = [];
     let patternsDetected = 0;
@@ -286,6 +404,13 @@ export async function createMarketPatternService(db: DatabaseAdapter) {
       allResults.push(...regimePatterns);
     } catch (err) {
       console.error('[market-patterns] Regime detector error:', err);
+    }
+
+    try {
+      const predictionPatterns = await detectPredictionAccuracyPatterns();
+      allResults.push(...predictionPatterns);
+    } catch (err) {
+      console.error('[market-patterns] Prediction accuracy detector error:', err);
     }
 
     // Record all detected patterns
@@ -343,6 +468,7 @@ export async function createMarketPatternService(db: DatabaseAdapter) {
     detectMomentumDivergence,
     detectCorrelationBreak,
     detectRegimeChange,
+    detectPredictionAccuracyPatterns,
     runAllDetectors,
     getCurrentRegime,
     recordRegimeChange,
