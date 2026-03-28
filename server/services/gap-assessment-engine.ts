@@ -334,7 +334,7 @@ export async function runAssessmentBatch(
 
   const findings = JSON.parse(extractJson(result.text, 'array')) as ArticleFinding[];
 
-  return { framework: frameworkId, findings, batchIndex, totalBatches };
+  return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: result.thinking || '' };
 }
 
 export async function synthesiseCapabilityView(

@@ -394,12 +394,23 @@ Generate the complete framework JSON now.`;
             engine.saveFindings(req.params.id as string, frameworkId, result.findings);
             engine.updateArticleScores(req.params.id as string, frameworkId, result.findings);
 
+            // Append batch reasoning
+            if (result.thinking) {
+              const existingReasoning = await db.get<{ batch_reasoning: string | null }>(
+                'SELECT batch_reasoning FROM gap_assessments WHERE id = ?', req.params.id as string
+              );
+              const combined = [existingReasoning?.batch_reasoning, `--- Batch ${batchIdx + 1}/${batches.length} ---\n${result.thinking}`]
+                .filter(Boolean).join('\n\n');
+              await db.run('UPDATE gap_assessments SET batch_reasoning = ? WHERE id = ?', combined, req.params.id as string);
+            }
+
             sendEvent({
               type: 'batch_complete',
               framework: frameworkId,
               batchIndex: batchIdx,
               totalBatches: batches.length,
               findings: result.findings,
+              thinking: result.thinking || undefined,
               message: `Batch ${batchIdx + 1}/${batches.length} complete`,
             });
           } catch (batchErr) {
@@ -451,7 +462,7 @@ Generate the complete framework JSON now.`;
       const result = await synthesiseCapabilityView(anthropic, allFindings, contextConfig, modelTier, db);
       console.log(`[gap-assessments] synthesise: Claude returned ${result.json.length} chars JSON, ${result.reasoning.length} chars reasoning`);
 
-      await db.run('UPDATE gap_assessments SET capability_view = ?, current_step = 6, status = ?, updated_at = ? WHERE id = ?', result.json, 'scoring', new Date().toISOString(), req.params.id as string);
+      await db.run('UPDATE gap_assessments SET capability_view = ?, synthesis_reasoning = ?, current_step = 6, status = ?, updated_at = ? WHERE id = ?', result.json, result.reasoning || null, 'scoring', new Date().toISOString(), req.params.id as string);
 
       const capabilities = JSON.parse(result.json);
       res.json({ capabilities, reasoning: result.reasoning });
@@ -480,7 +491,7 @@ Generate the complete framework JSON now.`;
       const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
       const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
-      await db.run('UPDATE gap_assessments SET board_summary = ?, current_step = 7, updated_at = ? WHERE id = ?', result.summary, new Date().toISOString(), req.params.id as string);
+      await db.run('UPDATE gap_assessments SET board_summary = ?, board_reasoning = ?, current_step = 7, updated_at = ? WHERE id = ?', result.summary, result.reasoning || null, new Date().toISOString(), req.params.id as string);
 
       res.json({ boardSummary: result.summary, reasoning: result.reasoning });
     } catch (err) {
@@ -505,7 +516,7 @@ Generate the complete framework JSON now.`;
       const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
       const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
-      await db.run('UPDATE gap_assessments SET roadmap = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?', result.json, 'complete', new Date().toISOString(), req.params.id as string);
+      await db.run('UPDATE gap_assessments SET roadmap = ?, roadmap_reasoning = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?', result.json, result.reasoning || null, 'complete', new Date().toISOString(), req.params.id as string);
 
       const roadmap = JSON.parse(result.json);
       res.json({ roadmap, reasoning: result.reasoning });

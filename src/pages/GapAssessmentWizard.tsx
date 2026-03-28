@@ -347,6 +347,7 @@ function GapAssessmentWizardInner() {
   const [capabilities, setCapabilities] = useState<CapabilityTheme[]>([]);
   const [boardSummary, setBoardSummary] = useState('');
   const [roadmap, setRoadmap] = useState<{ phases?: Array<{ id: string; name: string; timeframe: string; objective: string; items: Array<{ id: string; title: string; owner: string; effort: string; priority: string; description: string; rationale?: string; regulatoryDeadline?: string; riskIfDelayed?: string; resourceRequirements?: string; successMetrics?: string }> }>; estimatedFTE?: string; estimatedBudget?: string; keyRisks?: string[]; governanceModel?: string; reportingCadence?: string; criticalPath?: string[]; totalItems?: number } | null>(null);
+  const [batchReasoning, setBatchReasoning] = useState('');
   const [synthesisReasoning, setSynthesisReasoning] = useState('');
   const [boardReasoning, setBoardReasoning] = useState('');
   const [roadmapReasoning, setRoadmapReasoning] = useState('');
@@ -428,6 +429,12 @@ function GapAssessmentWizardInner() {
       if (a.roadmap) {
         try { setRoadmap(JSON.parse(a.roadmap)); } catch { /* ignore */ }
       }
+
+      // Restore reasoning from database (persists across page refreshes)
+      if (a.batch_reasoning) setBatchReasoning(a.batch_reasoning);
+      if (a.synthesis_reasoning) setSynthesisReasoning(a.synthesis_reasoning);
+      if (a.board_reasoning) setBoardReasoning(a.board_reasoning);
+      if (a.roadmap_reasoning) setRoadmapReasoning(a.roadmap_reasoning);
 
       // Load framework details
       let fwIds: string[] = [];
@@ -577,6 +584,10 @@ function GapAssessmentWizardInner() {
               return next.length > 200 ? next.slice(next.length - 200) : next;
             });
             if (event.type === 'batch_complete' && event.findings) {
+              // Capture batch thinking/reasoning
+              if ((event as Record<string, unknown>).thinking) {
+                setBatchReasoning(prev => prev + (prev ? '\n\n' : '') + `--- Batch ${(event as Record<string, unknown>).batchIndex as number + 1} ---\n` + String((event as Record<string, unknown>).thinking));
+              }
               const framework = event.framework || '';
               setFindings(prev => {
                 const newFindings = event.findings!.map((f: ArticleFinding) => ({ ...f, framework }));
@@ -1399,6 +1410,16 @@ function GapAssessmentWizardInner() {
                 <div className="text-xs text-adv-gray">High</div>
               </div>
             </div>
+
+            {/* AI reasoning from assessment analysis */}
+            {batchReasoning && (
+              <details className="rounded-xl border border-adv-teal/20 bg-[#0F2A2A]">
+                <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-adv-teal">AI Reasoning — Assessment analysis thinking</summary>
+                <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+                  {batchReasoning}
+                </div>
+              </details>
+            )}
 
             {/* Average compliance score */}
             {findings.length > 0 && (
