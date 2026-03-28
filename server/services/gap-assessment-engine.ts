@@ -138,9 +138,9 @@ function findMatchingCloser(raw: string, opener: string, closer: string): number
 
 /** Attempt to repair truncated JSON by finding the last complete element */
 function repairJson(raw: string, type: 'array' | 'object'): string {
-  // For arrays: find the last complete object (ends with }) and close the array
+  // For arrays: find the last complete top-level object and close the array
   if (type === 'array') {
-    // Walk backwards to find last complete object boundary
+    // Strategy 1: Walk forward tracking depth precisely
     let depth = 0;
     let lastCompleteObj = -1;
     let inString = false;
@@ -155,7 +155,7 @@ function repairJson(raw: string, type: 'array' | 'object'): string {
       if (ch === '{') depth++;
       if (ch === '}') {
         depth--;
-        if (depth === 1) lastCompleteObj = i; // depth 1 = inside the top-level array
+        if (depth === 1) lastCompleteObj = i; // depth 1 = just closed an object inside the array
       }
     }
 
@@ -163,9 +163,25 @@ function repairJson(raw: string, type: 'array' | 'object'): string {
       const repaired = raw.slice(0, lastCompleteObj + 1) + '\n]';
       try {
         JSON.parse(repaired);
-        console.log(`[gap-engine] JSON repair: recovered ${repaired.length} chars (truncated at ${raw.length})`);
+        console.log(`[gap-engine] JSON repair (forward): recovered ${repaired.length} chars (truncated at ${raw.length})`);
         return repaired;
       } catch { /* fall through */ }
+    }
+
+    // Strategy 2: Walk BACKWARDS from the end to find last "},\n" or "}\n" pattern
+    // This is simpler and handles cases where forward scanning gets confused by string content
+    for (let i = raw.length - 1; i > 100; i--) {
+      if (raw[i] === '}') {
+        // Check if adding ] makes valid JSON
+        const candidate = raw.slice(0, i + 1);
+        // Remove any trailing comma
+        const cleaned = candidate.replace(/,\s*$/, '') + '\n]';
+        try {
+          JSON.parse(cleaned);
+          console.log(`[gap-engine] JSON repair (backward): recovered ${cleaned.length} chars (truncated at ${raw.length})`);
+          return cleaned;
+        } catch { /* try next } */ }
+      }
     }
   }
 
