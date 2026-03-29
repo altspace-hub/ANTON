@@ -1324,7 +1324,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   // ── Conversation Turn ────────────────────────────────────────────────
 
   async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
 
@@ -1422,7 +1422,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   // ── Generate Insights ────────────────────────────────────────────────
 
   async function generateInsights(sessionId: string): Promise<Record<string, unknown>> {
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
     if (!anthropic) return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
 
@@ -1444,7 +1444,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   // ── Generate Output ──────────────────────────────────────────────────
 
   async function generateOutput(sessionId: string): Promise<{ outputId: string; contentMd: string; moduleMatches: ModuleMatch[]; actionPlan: unknown[]; metrics: unknown; nonAiFindings: NonAiFinding[]; executiveBriefing: string }> {
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
 

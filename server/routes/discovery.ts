@@ -287,7 +287,7 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         result.state.conversationHistory = result.state.conversationHistory.filter(
           (m: any) => m.content !== '__START_DISCOVERY__'
         );
-        engine.updateSessionState(req.params.id, result.state);
+        await engine.updateSessionState(req.params.id, result.state);
 
         res.json({ response: result.response, state: result.state });
       } else {
