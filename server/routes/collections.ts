@@ -11,14 +11,17 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
    */
   router.get('/collections', async (req, res) => {
     try {
-      const collections = collectionManager.listCollections(db);
-      const enriched = collections.map(c => ({
-        ...c,
-        documentCount: collectionManager.getCollectionDocumentCount(db, c.id),
-        chunkCount: collectionManager.getCollectionChunkCount(db, c.id),
-        watchDirectories: JSON.parse(c.watch_directories),
-        metadataSchema: JSON.parse(c.metadata_schema),
-      }));
+      const collections = await collectionManager.listCollections(db);
+      const enriched = [];
+      for (const c of collections) {
+        enriched.push({
+          ...c,
+          documentCount: await collectionManager.getCollectionDocumentCount(db, c.id),
+          chunkCount: await collectionManager.getCollectionChunkCount(db, c.id),
+          watchDirectories: JSON.parse(c.watch_directories || '[]'),
+          metadataSchema: JSON.parse(c.metadata_schema || '{}'),
+        });
+      }
       res.json({ collections: enriched });
     } catch (error) {
       console.error('Error listing collections:', error);
