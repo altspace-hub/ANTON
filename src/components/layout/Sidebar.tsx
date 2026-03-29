@@ -2392,7 +2392,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </button>
         {!sidebarCollapsed && (
           <div className="px-4 pb-3 text-xs text-adv-gray">
-            Anton v0.5.0
+            Anton v0.7.5
           </div>
         )}
       </div>
