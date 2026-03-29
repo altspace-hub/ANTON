@@ -61,7 +61,7 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       }
       const { state } = req.body;
       if (state) {
-        engine.updateSessionState(req.params.id, state);
+        await engine.updateSessionState(req.params.id, state);
       }
       res.json({ ok: true });
     } catch (err: any) {
