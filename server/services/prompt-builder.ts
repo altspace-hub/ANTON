@@ -397,7 +397,7 @@ export async function buildAtomLayer(
           minSimilarity: 0.25,
         });
 
-        if (results.length === 0) return buildAtomLayerFallback(db, areaId);
+        if (!Array.isArray(results) || results.length === 0) return buildAtomLayerFallback(db, areaId);
 
         // Enrich results with metadata from knowledge_atoms table.
         // Hybrid search metadata may be sparse (old embeddings), so we

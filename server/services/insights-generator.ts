@@ -195,7 +195,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
       SELECT
         entity_type,
         entity_id,
-        entity_name,
+        MAX(entity_name) as entity_name,
         COUNT(DISTINCT atom_id) as atom_count
       FROM knowledge_entity_refs
       GROUP BY entity_type, entity_id

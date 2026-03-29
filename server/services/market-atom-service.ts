@@ -359,6 +359,7 @@ Return ONLY the JSON array, no other text.`;
       const createdIds: string[] = [];
 
       for (const raw of atoms) {
+        if (!raw.content) continue; // Skip atoms with null/empty content
         const id = await createAtom({
           content: raw.content,
           atomType: raw.atom_type,
@@ -438,6 +439,7 @@ Return ONLY the JSON array.`;
       const createdIds: string[] = [];
 
       for (const raw of atoms) {
+        if (!raw.content) continue; // Skip atoms with null/empty content
         const id = await createAtom({
           content: raw.content,
           atomType: raw.atom_type,
