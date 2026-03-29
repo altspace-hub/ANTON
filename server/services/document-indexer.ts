@@ -46,7 +46,7 @@ export async function indexDocument(
 
     // 3. Create document record in SQLite (status: indexing)
     // Capture the id returned by createRAGDocument (it generates its own id internally)
-    documentId = createRAGDocument(db, {
+    documentId = await createRAGDocument(db, {
       collection_id: collectionId,
       filename,
       file_path: filePath,
@@ -70,7 +70,7 @@ export async function indexDocument(
     });
 
     if (chunks.length === 0) {
-      updateRAGDocument(db, documentId, { index_status: 'failed' });
+      await updateRAGDocument(db, documentId, { index_status: 'failed' });
       return { success: false, error: 'No chunks created from document' };
     }
 
@@ -91,7 +91,7 @@ export async function indexDocument(
 
     // 6. Store chunk records in SQLite (always — this is the primary storage)
     for (const chunk of chunks) {
-      createRAGChunk(db, {
+      await createRAGChunk(db, {
         document_id: documentId,
         chunk_index: chunk.metadata.chunkIndex,
         content: chunk.content,
@@ -101,7 +101,7 @@ export async function indexDocument(
     }
 
     // 7. Update document status to indexed
-    updateRAGDocument(db, documentId, {
+    await updateRAGDocument(db, documentId, {
       chunk_count: chunks.length,
       index_status: 'indexed',
       indexed_at: new Date().toISOString(),
@@ -113,7 +113,7 @@ export async function indexDocument(
     // Mark document as failed if we have its id
     if (documentId) {
       try {
-        updateRAGDocument(db, documentId, { index_status: 'failed' });
+        await updateRAGDocument(db, documentId, { index_status: 'failed' });
       } catch {}
     }
     return { success: false, error: String(error) };
@@ -186,7 +186,7 @@ export async function reindexDocument(
 
     // 6. Store new chunk records in SQLite
     for (const chunk of chunks) {
-      createRAGChunk(db, {
+      await createRAGChunk(db, {
         document_id: documentId,
         chunk_index: chunk.metadata.chunkIndex,
         content: chunk.content,
@@ -196,7 +196,7 @@ export async function reindexDocument(
     }
 
     // 7. Update document
-    updateRAGDocument(db, documentId, {
+    await updateRAGDocument(db, documentId, {
       chunk_count: chunks.length,
       indexed_at: new Date().toISOString(),
     });
