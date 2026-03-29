@@ -92,22 +92,21 @@ export async function createOutputStore(db: DatabaseAdapter) {
       (id, execution_id, workflow_id, step_index, step_type, area_id, module_id, connection_id,
        output_data, created_by, workflow_name, step_name)
     VALUES
-      (@id, @execution_id, @workflow_id, @step_index, @step_type, @area_id, @module_id, @connection_id,
-       @output_data, @created_by, @workflow_name, @step_name)
-  `, {
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
       id,
-      execution_id: params.executionId,
-      workflow_id: params.workflowId,
-      step_index: params.stepIndex,
-      step_type: params.stepType,
-      area_id: params.areaId ?? null,
-      module_id: params.moduleId ?? null,
-      connection_id: params.connectionId ?? null,
-      output_data: JSON.stringify(params.outputData),
-      created_by: params.userId,
-      workflow_name: params.workflowName,
-      step_name: params.stepName,
-    });
+      params.executionId,
+      params.workflowId,
+      params.stepIndex,
+      params.stepType,
+      params.areaId ?? null,
+      params.moduleId ?? null,
+      params.connectionId ?? null,
+      JSON.stringify(params.outputData),
+      params.userId,
+      params.workflowName,
+      params.stepName,
+    );
 
     // Queue background summary generation — do not block the caller
     queueSummaryGeneration(id, params.outputData);
