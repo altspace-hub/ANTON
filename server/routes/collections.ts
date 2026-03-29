@@ -34,7 +34,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
    */
   router.get('/collections/:id', async (req, res) => {
     try {
-      const collection = collectionManager.getCollection(db, req.params.id);
+      const collection = await collectionManager.getCollection(db, req.params.id);
       if (!collection) {
         return res.status(404).json({ error: 'Collection not found' });
       }
@@ -43,8 +43,8 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({
         collection: {
           ...collection,
-          documentCount: collectionManager.getCollectionDocumentCount(db, req.params.id),
-          chunkCount: collectionManager.getCollectionChunkCount(db, req.params.id),
+          documentCount: await collectionManager.getCollectionDocumentCount(db, req.params.id),
+          chunkCount: await collectionManager.getCollectionChunkCount(db, req.params.id),
           vectorCount: stats.count,
           watchDirectories: JSON.parse(collection.watch_directories),
           metadataSchema: JSON.parse(collection.metadata_schema),
@@ -68,7 +68,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'Name and displayName are required' });
       }
 
-      const id = collectionManager.createCollection(db, {
+      const id = await collectionManager.createCollection(db, {
         name,
         display_name: displayName,
         description: description || '',
@@ -103,7 +103,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       if (autoIndex !== undefined) updates.auto_index = autoIndex ? 1 : 0;
       if (metadataSchema !== undefined) updates.metadata_schema = JSON.stringify(metadataSchema);
 
-      const success = collectionManager.updateCollection(db, req.params.id, updates);
+      const success = await collectionManager.updateCollection(db, req.params.id, updates);
       res.json({ success });
     } catch (error) {
       console.error('Error updating collection:', error);
@@ -126,7 +126,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       await chromaClient.deleteCollection(req.params.id);
 
       // Delete metadata from SQLite (CASCADE will delete documents and chunks)
-      collectionManager.deleteCollectionMetadata(db, req.params.id);
+      await collectionManager.deleteCollectionMetadata(db, req.params.id);
 
       res.json({ success: true });
     } catch (error) {
@@ -140,8 +140,8 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
    */
   router.get('/collections/:id/documents', async (req, res) => {
     try {
-      const documents = collectionManager.getCollectionDocuments(db, req.params.id);
-      const enriched = documents.map(doc => ({
+      const documents = await collectionManager.getCollectionDocuments(db, req.params.id);
+      const enriched = (documents || []).map(doc => ({
         ...doc,
         metadata: JSON.parse(doc.metadata || '{}'),
       }));

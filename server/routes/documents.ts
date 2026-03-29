@@ -161,7 +161,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/collection/:collectionId', async (req, res) => {
     try {
       const { collectionId } = req.params;
-      const documents = getCollectionDocuments(db, collectionId);
+      const documents = await getCollectionDocuments(db, collectionId);
       res.json({ documents });
     } catch (error) {
       console.error('[documents] List error:', error);
