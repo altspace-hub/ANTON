@@ -88,7 +88,7 @@ export function OrgContextPanel() {
     }));
   }
 
-  const hasContent = context.org_name || context.jurisdiction || context.current_priorities.length > 0;
+  const hasContent = context.org_name || context.jurisdiction || (context.current_priorities?.length ?? 0) > 0;
 
   return (
     <div className="bg-adv-card border border-white/10 rounded-lg overflow-hidden">
@@ -184,7 +184,7 @@ export function OrgContextPanel() {
               {/* Current Priorities */}
               <ArrayField
                 label="Current Strategic Priorities"
-                values={context.current_priorities}
+                values={context.current_priorities || []}
                 newValue={newPriority}
                 placeholder="e.g. AMLR compliance programme by Q4 2026"
                 onAdd={() => addToArray('current_priorities', newPriority, setNewPriority)}
