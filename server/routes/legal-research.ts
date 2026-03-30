@@ -252,7 +252,9 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         ? '\n\n## PLAIN LANGUAGE MODE — ACTIVE\nBefore your full legal analysis, first provide a short "PLAIN LANGUAGE SUMMARY" section (max 150 words). Write it for a non-lawyer board member: no Latin, no statute numbers, just clear plain English explaining what the issue is, what it means for the organisation, and what the recommended action is. Then proceed with the full legal analysis as normal.'
         : '';
 
-      const systemPrompt = basePrompt + modeInstruction + roleInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction;
+      const toneInstruction = '\n\n## TONE & STYLE\nUse strict professional legal language throughout. No emojis. No colloquialisms. Structure responses with clear headings, numbered points, and precise legal references. Maintain the register expected by a senior legal practitioner reviewing the analysis.';
+
+      const systemPrompt = basePrompt + modeInstruction + roleInstruction + toneInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction;
 
       const tools = webSearchEnabled
         ? [{ type: 'web_search_20250305', name: 'web_search' }]

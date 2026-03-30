@@ -34,7 +34,7 @@ interface ExpertRole {
 interface ResearchQuestion {
   id: string;
   title: string;
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  messages: Array<{ role: 'user' | 'assistant'; content: string; thinking?: string }>;
   status: 'idle' | 'streaming' | 'done';
 }
 
@@ -365,12 +365,13 @@ export default function CounselsDesk() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
+      let thinkingContent = '';
 
       // Add placeholder assistant message
       const withPlaceholder = [...newQs];
       withPlaceholder[qIdx] = {
         ...updatedQuestion,
-        messages: [...updatedQuestion.messages, { role: 'assistant', content: '' }],
+        messages: [...updatedQuestion.messages, { role: 'assistant', content: '', thinking: '' }],
       };
       setQuestions(withPlaceholder);
 
@@ -383,6 +384,24 @@ export default function CounselsDesk() {
           if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
           try {
             const event = JSON.parse(line.slice(6));
+
+            // Capture thinking/reasoning content
+            const thinkingChunk = event.type === 'thinking_delta' ? event.content
+              : (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta') ? (event.delta.thinking || event.delta.text)
+              : null;
+            if (thinkingChunk) {
+              thinkingContent += thinkingChunk;
+              setQuestions(prev => {
+                const updated = [...prev];
+                const idx = updated.findIndex(q => q.id === activeTabId);
+                if (idx === -1) return prev;
+                const msgs = [...updated[idx].messages];
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], thinking: thinkingContent };
+                updated[idx] = { ...updated[idx], messages: msgs };
+                return updated;
+              });
+            }
+
             // Handle both provider-router format and raw Anthropic format
             const textChunk = event.type === 'text_delta' ? event.content
               : (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') ? event.delta.text
@@ -394,7 +413,7 @@ export default function CounselsDesk() {
                 const idx = updated.findIndex(q => q.id === activeTabId);
                 if (idx === -1) return prev;
                 const msgs = [...updated[idx].messages];
-                msgs[msgs.length - 1] = { role: 'assistant', content: assistantContent };
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: assistantContent };
                 updated[idx] = { ...updated[idx], messages: msgs };
                 return updated;
               });
@@ -845,8 +864,28 @@ export default function CounselsDesk() {
                 )}
                 <div className={`max-w-[85%] rounded-xl px-4 py-3 ${msg.role === 'user' ? 'bg-adv-teal text-adv-dark' : 'bg-adv-card border border-border'}`}>
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm prose-invert max-w-none text-adv-off-white text-[13px] leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content || '▋'}</ReactMarkdown>
+                    <div>
+                      {/* Expert context bar */}
+                      {idx === 1 && activeRole && (
+                        <div className="mb-3 pb-2 border-b border-border/50 text-[10px] text-adv-gray/70 space-y-0.5">
+                          <div>Expert: <span className="text-adv-off-white/80 font-medium">{activeRole.label}</span> | Mode: <span className="text-adv-off-white/80 font-medium">{activeMode?.label}</span></div>
+                          <div>Focus: {activeRole.focus}</div>
+                        </div>
+                      )}
+                      {/* Thinking/reasoning collapsible */}
+                      {msg.thinking && msg.thinking.length > 0 && (
+                        <details className="mb-3 rounded-lg border border-adv-teal/20 bg-[#0F2A2A]">
+                          <summary className="cursor-pointer px-3 py-1.5 text-[10px] font-medium text-adv-teal/80 select-none">
+                            Legal reasoning and analytical approach ({Math.round(msg.thinking.length / 4)} tokens)
+                          </summary>
+                          <div className="border-t border-adv-teal/20 px-3 py-2 text-[11px] text-adv-gray/80 leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto font-mono">
+                            {msg.thinking}
+                          </div>
+                        </details>
+                      )}
+                      <div className="prose prose-sm prose-invert max-w-none text-adv-off-white text-[13px] leading-relaxed">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content || '▋'}</ReactMarkdown>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm">{msg.content}</p>
