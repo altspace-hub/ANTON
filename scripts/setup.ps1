@@ -41,11 +41,11 @@ function Find-Psql {
 
 Clear-Host
 Write-Host ""
-Write-Host "  +-----------------------------------------+" -ForegroundColor DarkCyan
-Write-Host "  |                                         |" -ForegroundColor DarkCyan
-Write-Host "  |   ANTON  --  First-Time Setup           |" -ForegroundColor Cyan
-Write-Host "  |                                         |" -ForegroundColor DarkCyan
-Write-Host "  +-----------------------------------------+" -ForegroundColor DarkCyan
+Write-Host '  +-----------------------------------------+' -ForegroundColor DarkCyan
+Write-Host '  |                                         |' -ForegroundColor DarkCyan
+Write-Host '  |   ANTON  --  First-Time Setup           |' -ForegroundColor Cyan
+Write-Host '  |                                         |' -ForegroundColor DarkCyan
+Write-Host '  +-----------------------------------------+' -ForegroundColor DarkCyan
 Write-Host ""
 Write-Host "  This takes about 2-3 minutes." -ForegroundColor DarkGray
 Write-Host "  You only need to do this once per computer." -ForegroundColor DarkGray
@@ -257,7 +257,7 @@ if ($LASTEXITCODE -eq 0) {
     & ollama pull nomic-embed-text 2>&1 | Out-Null
     Write-OK "Embedding model ready"
 } else {
-    Write-Host "    >>  Ollama not found (optional — knowledge memory will not work)" -ForegroundColor Yellow
+    Write-Host "    >>  Ollama not found (optional - knowledge memory will not work)" -ForegroundColor Yellow
     Write-Info "Install from https://ollama.com then run: ollama pull nomic-embed-text"
 }
 
@@ -278,16 +278,16 @@ Write-OK "Database schema ready"
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 Write-Blank
-Write-Host "  +-----------------------------------------+" -ForegroundColor Green
-Write-Host "  |                                         |" -ForegroundColor Green
-Write-Host "  |   Setup complete! ANTON is ready.       |" -ForegroundColor Green
-Write-Host "  |                                         |" -ForegroundColor Green
-Write-Host "  +-----------------------------------------+" -ForegroundColor Green
+Write-Host '  +-----------------------------------------+' -ForegroundColor Green
+Write-Host '  |                                         |' -ForegroundColor Green
+Write-Host '  |   Setup complete! ANTON is ready.       |' -ForegroundColor Green
+Write-Host '  |                                         |' -ForegroundColor Green
+Write-Host '  +-----------------------------------------+' -ForegroundColor Green
 Write-Blank
-Write-Host "  To start ANTON:" -ForegroundColor White
-Write-Host "    pnpm run dev            (development)" -ForegroundColor DarkCyan
-Write-Host "    start-anton.bat         (production)" -ForegroundColor DarkCyan
+Write-Host '  To start ANTON:' -ForegroundColor White
+Write-Host '    pnpm run dev            (development)' -ForegroundColor DarkCyan
+Write-Host '    start-anton.bat         (production)' -ForegroundColor DarkCyan
 Write-Blank
-Write-Host "  Then open:  http://localhost:3001" -ForegroundColor DarkCyan
+Write-Host '  Then open:  http://localhost:3001' -ForegroundColor DarkCyan
 Write-Blank
-Read-Host "  Press Enter to close"
+Read-Host '  Press Enter to close'
