@@ -383,8 +383,12 @@ export default function CounselsDesk() {
           if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
           try {
             const event = JSON.parse(line.slice(6));
-            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-              assistantContent += event.delta.text;
+            // Handle both provider-router format and raw Anthropic format
+            const textChunk = event.type === 'text_delta' ? event.content
+              : (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') ? event.delta.text
+              : null;
+            if (textChunk) {
+              assistantContent += textChunk;
               setQuestions(prev => {
                 const updated = [...prev];
                 const idx = updated.findIndex(q => q.id === activeTabId);
