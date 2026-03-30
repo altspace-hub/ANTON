@@ -381,7 +381,6 @@ export async function streamToHandler(
         return true;
       },
       end: () => { console.log(`[streamToHandler] mock end, ${mockEventCount} events forwarded`); },
-      end: () => {},
       on: () => mockRes,
       once: () => mockRes,
       emit: () => false,

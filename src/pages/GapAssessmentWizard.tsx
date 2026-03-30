@@ -585,8 +585,9 @@ function GapAssessmentWizardInner() {
             });
             if (event.type === 'batch_complete' && event.findings) {
               // Capture batch thinking/reasoning
-              if ((event as Record<string, unknown>).thinking) {
-                setBatchReasoning(prev => prev + (prev ? '\n\n' : '') + `--- Batch ${(event as Record<string, unknown>).batchIndex as number + 1} ---\n` + String((event as Record<string, unknown>).thinking));
+              if ((event as unknown as Record<string, unknown>).thinking) {
+                const ev = event as unknown as Record<string, unknown>;
+                setBatchReasoning(prev => prev + (prev ? '\n\n' : '') + `--- Batch ${(ev.batchIndex as number) + 1} ---\n` + String(ev.thinking));
               }
               const framework = event.framework || '';
               setFindings(prev => {

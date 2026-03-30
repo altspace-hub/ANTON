@@ -9,7 +9,7 @@
     "dev:client": "vite",
     "dev:app": "vite --config vite.config.app.ts",
     "dev:server": "tsx watch server/index.ts",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.app.json && vite build",
     "build:app": "vite build --config vite.config.app.ts",
     "cap:sync": "pnpm build:app && npx cap sync android",
     "cap:open": "npx cap open android",

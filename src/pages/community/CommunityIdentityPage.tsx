@@ -96,7 +96,7 @@ function PaymentInfoSection({ identity, paymentQrUrl }: { identity: CommunityIde
 
   const humanWallet = wallets.find(w => w.wallet_type === 'human');
   const agentWallet = wallets.find(w => w.wallet_type === 'agent');
-  const hasKyc = kyc && (kyc.full_legal_name_enc || kyc.country);
+  const hasKyc = !!(kyc && (kyc.full_legal_name_enc || kyc.country));
   const hasWallets = wallets.length > 0;
 
   return (
@@ -540,7 +540,7 @@ export default function CommunityIdentityPage() {
       </section>
 
       {/* ── Payment Info Card (from KYC + Wallets) ───────────────── */}
-      <PaymentInfoSection identity={identity} paymentQrUrl={paymentQrUrl} />
+      <PaymentInfoSection identity={identity} paymentQrUrl={paymentQrUrl ?? ''} />
 
       {/* ── Profile Visibility Card ─────────────────────────────── */}
       <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">

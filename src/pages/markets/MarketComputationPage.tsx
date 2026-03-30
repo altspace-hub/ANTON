@@ -132,7 +132,7 @@ export default function MarketComputationPage() {
             <span className={`text-sm font-medium ${runResult.success ? 'text-adv-green' : 'text-adv-red'}`}>
               {runResult.success ? 'Success' : 'Error'}
             </span>
-            {runResult.durationMs && (
+            {runResult.durationMs != null && (
               <span className="text-xs text-adv-gray">{Number(runResult.durationMs).toFixed(0)}ms</span>
             )}
           </div>

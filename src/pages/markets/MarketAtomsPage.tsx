@@ -15,7 +15,7 @@ interface Atom {
   confidence: number;
   sentiment: string;
   category: string | null;
-  source: string | null;
+  source?: string | undefined;
   tags: string | null;
   is_active: number;
   created_at: string;

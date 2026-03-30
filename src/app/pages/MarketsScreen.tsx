@@ -19,7 +19,7 @@ export default function MarketsScreen({ orgId }: Props) {
     Promise.all([
       fetch('/api/markets/dashboard', { headers: getAuthHeader() })
         .then(r => r.ok ? r.json() : {})
-        .then(d => { if (d.benchmarks) setBenchmarks(d.benchmarks); }),
+        .then((d: Record<string, unknown>) => { if (d.benchmarks) setBenchmarks(d.benchmarks as typeof benchmarks); }),
       fetch('/api/markets/indexes?status=active', { headers: getAuthHeader() })
         .then(r => r.ok ? r.json() : [])
         .then(d => setIndexes(Array.isArray(d) ? d : [])),

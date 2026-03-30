@@ -388,7 +388,7 @@ export default function MarketIndexDetailPage() {
                 contentStyle={{ backgroundColor: '#152238', border: '1px solid #2DD4A8', borderRadius: 8 }}
                 labelStyle={{ color: '#E0E0E0' }}
                 itemStyle={{ color: '#2DD4A8' }}
-                formatter={(value: number) => [value.toFixed(2), 'NAV']}
+                formatter={(value) => [(value as number).toFixed(2), 'NAV']}
               />
               <Line type="monotone" dataKey="nav" stroke="#2DD4A8" strokeWidth={2} dot={false} />
             </LineChart>
@@ -410,7 +410,7 @@ export default function MarketIndexDetailPage() {
                 </Pie>
                 <Tooltip
                   contentStyle={{ backgroundColor: '#152238', border: '1px solid #2DD4A8', borderRadius: 8 }}
-                  formatter={(value: number) => [(value * 100).toFixed(1) + '%', 'Weight']}
+                  formatter={(value) => [((value as number) * 100).toFixed(1) + '%', 'Weight']}
                 />
               </PieChart>
             </ResponsiveContainer>
