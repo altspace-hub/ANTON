@@ -1,4 +1,4 @@
-# CLAUDE.md — ANTON by openEXPERT v0.7.0
+# CLAUDE.md — ANTON by openEXPERT v0.7.5
 
 Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that reads `CLAUDE.md`.
 
@@ -7,39 +7,75 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 ## Project Identity
 
 **Name:** ANTON by openEXPERT
-**Package:** `openexpert` v0.7.0
+**Package:** `openexpert` v0.7.5
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
-**Primary AI:** Anthropic Claude (`claude-opus-4-6` default). Multi-LLM support for OpenAI, Gemini, Mistral, and Ollama.
+**Primary AI:** Anthropic Claude (`claude-opus-4-6` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
 ---
 
 ## Quick Start
 
+### Prerequisites
+
+1. **Node.js v22+** — [Download](https://nodejs.org) or `winget install OpenJS.NodeJS.LTS`
+2. **pnpm** — `npm install -g pnpm`
+3. **PostgreSQL 16+** — [Download](https://www.postgresql.org/download/)
+4. **Ollama** (optional, for knowledge memory) — [Download](https://ollama.com)
+
+### Automatic Setup (Recommended)
+
+```bash
+# Clone and run setup wizard — handles everything automatically
+git clone <repo> && cd openexpert
+setup-anton.bat          # Windows (double-click or run from terminal)
+# OR
+powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+```
+
+The setup wizard will:
+- Check Node.js and pnpm
+- Ask for your Anthropic API key
+- Auto-detect PostgreSQL, create the `anton` user and database
+- Install dependencies
+- Check Ollama and pull the embedding model
+- Initialize the database schema
+
+### Manual Setup
+
 ```bash
 # 1. Clone and install
 git clone <repo> && cd openexpert
 pnpm install
 
-# 2. Install Ollama (required for knowledge memory)
-# Download from https://ollama.com and install, then pull the embedding model:
+# 2. Install PostgreSQL and create the database
+# After installing PostgreSQL, open psql as the postgres superuser:
+psql -U postgres
+CREATE USER anton WITH PASSWORD 'anton';
+CREATE DATABASE anton OWNER anton;
+\q
+
+# 3. Install Ollama (optional — for knowledge memory / vector search)
+# Download from https://ollama.com and install, then:
 ollama pull nomic-embed-text
 
-# 3. Configure environment
+# 4. Configure environment
 cp .env.example .env
-# Edit .env — add at minimum: ANTHROPIC_API_KEY=sk-ant-...
-# Optional: add OPENAI_API_KEY, GOOGLE_API_KEY, MISTRAL_API_KEY for multi-LLM
+# Edit .env — add at minimum:
+#   ANTHROPIC_API_KEY=sk-ant-...
+#   DATABASE_URL=postgresql://anton:anton@localhost:5432/anton
+# Optional: OPENAI_API_KEY, GOOGLE_API_KEY, MISTRAL_API_KEY for multi-LLM
 
-# 4. Initialize database
+# 5. Initialize database (auto-detects PostgreSQL from DATABASE_URL)
 pnpm run db:init
 
-# 5. Start development
-pnpm run dev          # Frontend (Vite :5173) + Backend (Express :3001)
+# 6. Start development
+pnpm run dev          # Frontend (Vite) + Backend (Express)
 
-# 6. Production build
-pnpm run build && pnpm run start   # Serves at http://localhost:3001
+# 7. Production build
+pnpm run build && pnpm run start
 ```
 
 ---
@@ -54,9 +90,9 @@ pnpm run build && pnpm run start   # Serves at http://localhost:3001
 | State | Zustand | 5 |
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
-| Database | SQLite (better-sqlite3) | 11 |
+| Database | PostgreSQL | 16+ |
 | Primary AI | Anthropic Claude | claude-opus-4-6 |
-| Multi-LLM | OpenAI, Gemini, Mistral, Ollama | — |
+| Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
 | Testing | Vitest + Playwright | — |
@@ -311,13 +347,13 @@ See `.env.example` for the complete list. Key variables:
 | Variable | Required | Description |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | Claude API key from console.anthropic.com |
+| `DATABASE_URL` | Yes | PostgreSQL connection (e.g. `postgresql://anton:anton@localhost:5432/anton`) |
 | `PORT` | No | Express port (default: 3001) |
 | `DEPLOYMENT_MODE` | No | `solo` (default) or `team` (JWT auth) |
 | `OPENAI_API_KEY` | No | Enables GPT models |
 | `GOOGLE_API_KEY` | No | Enables Gemini models |
 | `MISTRAL_API_KEY` | No | Enables Mistral models |
 | `OLLAMA_BASE_URL` | No | Local Ollama endpoint (default: localhost:11434) |
-| `DB_PATH` | No | SQLite path (default: ./data/workbench.sqlite) |
 | `MAX_CONTEXT_TOKENS` | No | Max context window (default: 900000) |
 
 ---
