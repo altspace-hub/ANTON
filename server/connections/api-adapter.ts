@@ -143,7 +143,7 @@ export async function callEndpoint(
       responseTimeMs,
     };
 
-    manager.logAction(
+    await manager.logAction(
       connection.id,
       null,
       'api_call',
@@ -157,7 +157,7 @@ export async function callEndpoint(
     const responseTimeMs = Date.now() - startMs;
     const errorMsg = err instanceof Error ? err.message : String(err);
 
-    manager.logAction(
+    await manager.logAction(
       connection.id,
       null,
       'api_call_error',

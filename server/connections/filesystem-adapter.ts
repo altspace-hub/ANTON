@@ -91,7 +91,7 @@ export async function listFiles(
     });
   }
 
-  manager.logAction(
+  await manager.logAction(
     connection.id,
     null,
     'list_files',
@@ -143,7 +143,7 @@ export async function readFile(
 
   const text = await extractTextFromFile(absolutePath);
 
-  manager.logAction(
+  await manager.logAction(
     connection.id,
     null,
     'read_file',
@@ -187,7 +187,7 @@ export async function writeFile(
   await fs.ensureDir(path.dirname(absolutePath));
   await fs.writeFile(absolutePath, content, 'utf-8');
 
-  manager.logAction(
+  await manager.logAction(
     connection.id,
     null,
     'write_file',

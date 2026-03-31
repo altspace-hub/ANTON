@@ -78,7 +78,7 @@ export async function executeQuery(
       throw new Error(`Unsupported database driver: ${driver}`);
     }
   } catch (err) {
-    manager.logAction(
+    await manager.logAction(
       connection.id,
       null,
       'query_error',

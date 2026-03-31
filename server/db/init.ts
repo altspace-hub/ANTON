@@ -3028,7 +3028,7 @@ export function initDatabase(): Database.Database {
   // FRAME-01/02: Auto-seed bundled knowledge packs from data/knowledge-packs/
   // Scans for *.anton bundles, importing any not already registered in the DB.
   try {
-    const kpService = createKnowledgePackService(new SqliteAdapter(db));
+    const kpService = await createKnowledgePackService(new SqliteAdapter(db));
     const packsDir = path.resolve(__dirname, '../../data/knowledge-packs');
     if (fs.existsSync(packsDir)) {
       const packDirs = fs.readdirSync(packsDir).filter((entry: string) => {
