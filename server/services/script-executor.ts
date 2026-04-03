@@ -44,7 +44,7 @@ export async function executeScript(config: ScriptExecutionConfig): Promise<Scri
   const command = language === 'node' ? 'node' : language === 'python' ? 'python3' : 'bash';
   const startTime = Date.now();
 
-  return new Promise<ScriptExecutionResult>async ((resolve) => {
+  return new Promise<ScriptExecutionResult>((resolve) => {
     let stdout = '';
     let stderr = '';
     let killed = false;
