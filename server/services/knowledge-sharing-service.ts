@@ -130,6 +130,18 @@ export async function createKnowledgeSharingService(db: DatabaseAdapter) {
       extractionMethod: 'community_share',
     });
 
+    // Set provenance metadata on the imported atom
+    const sourceInstanceId = payload.source_instance_id || atomData.source_instance_id || null;
+    const connectionTrust = await db.get<{ status: string }>(
+      "SELECT status FROM community_connections WHERE contact_hash = ?", mail.from_hash
+    );
+    const trustLevel = connectionTrust?.status === 'accepted' ? 'trusted_peer' : 'known_peer';
+
+    await db.run(
+      "UPDATE market_atoms SET source_instance_id = ?, source_peer_hash = ?, trust_level = ? WHERE id = ?",
+      sourceInstanceId, mail.from_hash, trustLevel, newAtomId
+    );
+
     const csaId = `csa_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     await db.run(`
       INSERT INTO community_shared_atoms (id, atom_id, original_atom_id, direction, contact_hash, mail_id, status)

@@ -85,6 +85,13 @@ export async function applyAntonBoosts(
         boost *= 0.1;
       }
 
+      // ── Provenance boost: local atoms preferred over external ──
+      const trustLevel = (meta.trust_level as string) || 'local';
+      if (trustLevel === 'trusted_peer') boost *= 0.8;
+      else if (trustLevel === 'known_peer') boost *= 0.6;
+      else if (trustLevel === 'external') boost *= 0.4;
+      // 'local' → 1.0 (no change)
+
       // ── Relevance history boost/penalty from past feedback ──────────
       const fb = feedbackMap.get(r.content_id);
       if (fb) {

@@ -51,7 +51,8 @@ export type AntonBundleType =
   | 'market-investigation'
   | 'market-data-source-config'
   | 'market-atom-collection'
-  | 'market-strategy-pack';
+  | 'market-strategy-pack'
+  | 'contact-bundle';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -91,6 +92,7 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'market-data-source-config':   { label: 'Market Data Source Config',  description: 'Data source configurations (API keys stripped)',           contentsKey: 'market_data_source_configs',   primaryContentDir: 'market-data-source-configs' },
   'market-atom-collection':      { label: 'Market Atom Collection',     description: 'Curated atoms with relationships and tags',               contentsKey: 'market_atom_collections',      primaryContentDir: 'market-atom-collections' },
   'market-strategy-pack':        { label: 'Market Strategy Pack',       description: 'Composite bundle: index templates, thesis frameworks, signal weights', contentsKey: 'market_strategy_packs', primaryContentDir: 'market-strategy-packs' },
+  'contact-bundle':              { label: 'Contact Bundle',             description: 'ANTON identity card: public key, display name, and bio for P2P connection', contentsKey: 'contact_bundles', primaryContentDir: 'contact-bundles' },
 };
 
 interface ModuleExportData {
