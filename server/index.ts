@@ -924,9 +924,10 @@ httpServer.listen(PORT, async () => {
       console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
         await marketDataService.fetchAllSources();
+        await marketDataService.syncPricesToHistorical();
         await navEngine.updateAllActiveIndexes();
         await navEngine.updateLeaderboard();
-        console.log('[markets-schedule] Phase 5 complete — NAV calculated');
+        console.log('[markets-schedule] Phase 5 complete — NAV calculated + prices synced');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
     }, MARKET_TZ);
 
@@ -1086,6 +1087,11 @@ httpServer.listen(PORT, async () => {
           console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
           catchUpActions++;
         }
+
+        // 1b. Sync prices to historical table
+        try {
+          await marketDataService.syncPricesToHistorical();
+        } catch { /* non-fatal */ }
 
         // 2. Check if daily intelligence ran today (weekdays only)
         if (isWeekday) {

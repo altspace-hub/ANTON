@@ -217,18 +217,23 @@ export async function createMarketWorkflowOrchestrator(
         stepResults.push({ step: 'Extract Atoms', status: 'warning', output: { error: errMsg } });
       }
 
-      // Step 3: Refresh correlation map — using actual price series from DB
+      // Step 3: Refresh correlation map — convert prices to returns, format as entities
       try {
-        const corrSymbols = ['SPY', 'QQQ', 'XLE', 'GLD', 'TLT', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA'];
-        const corrSeries: Record<string, number[]> = {};
+        const corrSymbols = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'JPM', 'KO'];
+        const entities: Array<{ id: string; returns: number[] }> = [];
         for (const sym of corrSymbols) {
           const rows = await db.all<{ close: number }>(
             "SELECT close FROM market_historical_prices WHERE symbol = ? ORDER BY price_date DESC LIMIT 60", sym
           );
-          if (rows.length >= 10) corrSeries[sym] = rows.map(r => Number(r.close)).reverse();
+          if (rows.length >= 10) {
+            const prices = rows.map(r => Number(r.close)).reverse();
+            // Convert prices to daily returns
+            const returns = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
+            entities.push({ id: sym, returns });
+          }
         }
         const result = await withTimeout(
-          computationService.runTemplate('correlation_map_refresh', { series: corrSeries, window: 30, method: 'pearson' }, 'daily-intelligence'),
+          computationService.runTemplate('correlation_map_refresh', { entities }, 'daily-intelligence'),
           COMPUTATION_TIMEOUT, 'Refresh Correlation Map'
         );
         stepResults.push({ step: 'Refresh Correlation Map', status: result.success ? 'success' : 'warning', output: result.output });
@@ -409,12 +414,18 @@ export async function createMarketWorkflowOrchestrator(
           } catch { /* non-fatal — goals context is optional enrichment */ }
         }
 
+        // Include quant indicators in consul context
+        const indicatorOutput = stepResults.find(s => s.step === 'Compute Indicators')?.output;
+        const correlationOutput = stepResults.find(s => s.step === 'Refresh Correlation Map')?.output;
+
         const consulContext = JSON.stringify({
           signals: signalScanOutput,
           macroBrief: macroBriefOutput,
+          quantIndicators: indicatorOutput,
+          correlations: correlationOutput,
           date: new Date().toISOString().slice(0, 10),
           goalsAndValues: goalsContext || undefined,
-        }).slice(0, 4000);
+        }).slice(0, 6000);
 
         const consulResults: Array<{ consul: string; status: string; summary?: string }> = [];
 
@@ -1307,7 +1318,7 @@ Return ONLY the JSON array, no other text.`;
       const recentAtoms = await db.all(`
         SELECT content, atom_type, category, sentiment, confidence
         FROM market_atoms
-        WHERE created_at >= NOW() - INTERVAL '3 days' AND status = 'active'
+        WHERE created_at >= NOW() - INTERVAL '3 days' AND is_active = 1
         ORDER BY importance_score DESC NULLS LAST
         LIMIT 30
       `) as Array<{ content: string; atom_type: string; category: string; sentiment: string; confidence: number }>;

@@ -1022,9 +1022,37 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     fetchFromSource,
     fetchAllSources,
     fetchHistoricalRange,
+    // Price sync
+    syncPricesToHistorical,
     // Dashboard
     getDashboardStats,
   };
+
+  /**
+   * Sync recent prices from market_price_normalized to market_historical_prices.
+   * This keeps the historical table current for computation templates.
+   */
+  async function syncPricesToHistorical(): Promise<number> {
+    try {
+      const result = await db.run(`
+        INSERT INTO market_historical_prices (symbol, price_date, open, high, low, close, volume)
+        SELECT symbol, price_date::date, open, high, low, close, volume
+        FROM market_price_normalized
+        WHERE price_date::date > (
+          SELECT COALESCE(MAX(price_date), '2020-01-01'::date) FROM market_historical_prices
+        )
+        ON CONFLICT (symbol, price_date) DO UPDATE SET
+          close = EXCLUDED.close, high = EXCLUDED.high, low = EXCLUDED.low,
+          open = EXCLUDED.open, volume = EXCLUDED.volume
+      `);
+      const synced = (result as { rowCount?: number })?.rowCount ?? 0;
+      if (synced > 0) console.log(`[market-data] Synced ${synced} prices to historical table`);
+      return synced;
+    } catch (err) {
+      console.warn('[market-data] Price sync failed:', err instanceof Error ? err.message : err);
+      return 0;
+    }
+  }
 }
 
 export type MarketDataService = Awaited<ReturnType<typeof createMarketDataService>>;
