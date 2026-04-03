@@ -41,7 +41,9 @@ export async function executeScript(config: ScriptExecutionConfig): Promise<Scri
   const scriptPath = path.join(outputDir, `_temp_script_${scriptId}${ext}`);
   await writeFile(scriptPath, scriptContent, 'utf-8');
 
-  const command = language === 'node' ? 'node' : language === 'python' ? 'python3' : 'bash';
+  // On Windows, Python is 'python' not 'python3'. Try 'python3' first, fall back to 'python'.
+  const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+  const command = language === 'node' ? 'node' : language === 'python' ? pythonCmd : 'bash';
   const startTime = Date.now();
 
   return new Promise<ScriptExecutionResult>((resolve) => {
