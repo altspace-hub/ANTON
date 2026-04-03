@@ -511,6 +511,12 @@ app.use('/api', await createP2PRoutes(db));
 // Collaborative Project Workspace
 const { createCommunityProjectRoutes } = await import('./routes/community-projects.js');
 app.use('/api', await createCommunityProjectRoutes(db));
+// Relay server (store-and-forward for offline peers)
+const { createRelayRoutes } = await import('./routes/relay.js');
+app.use('/api', await createRelayRoutes(db));
+// Bundle marketplace (discovery, ratings, reviews)
+const { createMarketplaceRoutes } = await import('./routes/marketplace.js');
+app.use('/api', await createMarketplaceRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton

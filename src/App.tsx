@@ -191,6 +191,8 @@ const CommunityForumPage = lazy(() => import('./pages/community/CommunityForumPa
 const CommunityIdentityPage = lazy(() => import('./pages/community/CommunityIdentityPage'));
 const CommunityGroupsPage = lazy(() => import('./pages/community/CommunityGroupsPage'));
 const CommunityGroupPage = lazy(() => import('./pages/community/CommunityGroupPage'));
+const CommunityGroupForumPage = lazy(() => import('./pages/community/CommunityGroupForumPage'));
+const CommunityGroupModerationPage = lazy(() => import('./pages/community/CommunityGroupModerationPage'));
 const CommunityJoinPage = lazy(() => import('./pages/community/CommunityJoinPage'));
 const CommunityMailPage = lazy(() => import('./pages/community/CommunityMailPage'));
 const CommunityCalendarPage = lazy(() => import('./pages/community/CommunityCalendarPage'));
@@ -498,6 +500,8 @@ export default function App() {
           <Route path="/community/identity" element={<CommunityIdentityPage />} />
           <Route path="/community/groups" element={<CommunityGroupsPage />} />
           <Route path="/community/groups/:id" element={<CommunityGroupPage />} />
+          <Route path="/community/groups/:id/forum" element={<CommunityGroupForumPage />} />
+          <Route path="/community/groups/:id/moderation" element={<CommunityGroupModerationPage />} />
           <Route path="/community/join" element={<CommunityJoinPage />} />
           <Route path="/community/mail" element={<CommunityMailPage />} />
           <Route path="/community/calendar" element={<CommunityCalendarPage />} />

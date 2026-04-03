@@ -225,15 +225,25 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       , id, 'default', contact_hash, display_name, public_key);
 
       // Generate Ed25519 keypair for signing — store encrypted private key
+      let realPubKey: string | undefined;
       try {
         const { createSigningService } = await import('../services/community-signing-service.js');
         const signingService = await createSigningService(db);
-        const realPubKey = await signingService.generateAndStoreKeypair(id);
-        return res.json({ ok: true, id, contact_hash, publicKey: realPubKey });
+        realPubKey = await signingService.generateAndStoreKeypair(id);
       } catch (keyErr) {
         console.error('[community] Ed25519 keypair generation failed (identity still created):', keyErr);
-        return res.json({ ok: true, id, contact_hash });
       }
+
+      // Generate X25519 keypair for E2E message encryption
+      let x25519PubKey: string | undefined;
+      try {
+        const { generateAndStoreX25519Keypair } = await import('../services/community-e2e.js');
+        x25519PubKey = await generateAndStoreX25519Keypair(db, id);
+      } catch (x25519Err) {
+        console.error('[community] X25519 keypair generation failed (identity still created):', x25519Err);
+      }
+
+      return res.json({ ok: true, id, contact_hash, publicKey: realPubKey, x25519PublicKey: x25519PubKey });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
