@@ -1034,5 +1034,191 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Group Leave ──────────────────────────────────────────────────────────────
+  router.post('/community/groups/:id/leave', async (req, res) => {
+    try {
+      const contactHash = getContactHash(req);
+      if (!contactHash) return res.status(401).json({ error: 'Not activated' });
+      // Prevent last admin from leaving
+      const admins = await db.all('SELECT contact_hash FROM community_group_members WHERE group_id = ? AND role = ?', req.params.id, 'admin') as unknown[];
+      if (admins.length <= 1) {
+        const isAdmin = await db.get('SELECT 1 FROM community_group_members WHERE group_id = ? AND contact_hash = ? AND role = ?', req.params.id, contactHash, 'admin');
+        if (isAdmin) return res.status(400).json({ error: 'Cannot leave as the last admin. Transfer ownership first.' });
+      }
+      await db.run('DELETE FROM community_group_members WHERE group_id = ? AND contact_hash = ?', req.params.id, contactHash);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[community] Group leave error:', err);
+      res.status(500).json({ error: 'Failed to leave group' });
+    }
+  });
+
+  // ── Group Forum: Topics ────────────────────────────────────────────────────
+  router.get('/community/groups/:id/topics', async (req, res) => {
+    try {
+      const topics = await db.all(
+        'SELECT * FROM community_group_topics WHERE group_id = ? ORDER BY pinned DESC, last_post_at DESC NULLS LAST LIMIT 50',
+        req.params.id
+      );
+      res.json({ topics });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.post('/community/groups/:id/topics', async (req, res) => {
+    try {
+      const contactHash = getContactHash(req);
+      if (!contactHash) return res.status(401).json({ error: 'Not activated' });
+      const identity = await db.get<{ display_name: string }>('SELECT display_name FROM community_identity WHERE contact_hash = ?', contactHash);
+      const { title, description } = req.body;
+      if (!title?.trim()) return res.status(400).json({ error: 'Title required' });
+      // Check mute status
+      const member = await db.get<{ muted_until: string | null }>('SELECT muted_until FROM community_group_members WHERE group_id = ? AND contact_hash = ?', req.params.id, contactHash);
+      if (member?.muted_until && new Date(member.muted_until) > new Date()) return res.status(403).json({ error: 'You are muted in this group' });
+      const id = `gtopic_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      await db.run(
+        'INSERT INTO community_group_topics (id, group_id, title, description, author_hash, author_name) VALUES (?, ?, ?, ?, ?, ?)',
+        id, req.params.id, title.trim(), description?.trim() || null, contactHash, identity?.display_name || 'Anonymous'
+      );
+      const topic = await db.get('SELECT * FROM community_group_topics WHERE id = ?', id);
+      res.status(201).json({ topic });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.get('/community/groups/:id/topics/:topicId', async (req, res) => {
+    try {
+      const topic = await db.get('SELECT * FROM community_group_topics WHERE id = ? AND group_id = ?', req.params.topicId, req.params.id);
+      if (!topic) return res.status(404).json({ error: 'Topic not found' });
+      const posts = await db.all('SELECT * FROM community_group_posts WHERE topic_id = ? ORDER BY posted_at ASC', req.params.topicId);
+      res.json({ topic, posts });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.post('/community/groups/:id/topics/:topicId/posts', async (req, res) => {
+    try {
+      const contactHash = getContactHash(req);
+      if (!contactHash) return res.status(401).json({ error: 'Not activated' });
+      const identity = await db.get<{ display_name: string }>('SELECT display_name FROM community_identity WHERE contact_hash = ?', contactHash);
+      const { content, parent_id } = req.body;
+      if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
+      // Check mute
+      const member = await db.get<{ muted_until: string | null }>('SELECT muted_until FROM community_group_members WHERE group_id = ? AND contact_hash = ?', req.params.id, contactHash);
+      if (member?.muted_until && new Date(member.muted_until) > new Date()) return res.status(403).json({ error: 'You are muted in this group' });
+      // Check topic not locked
+      const topic = await db.get<{ locked: number }>('SELECT locked FROM community_group_topics WHERE id = ?', req.params.topicId);
+      if (topic?.locked) return res.status(403).json({ error: 'Topic is locked' });
+      const id = `gpost_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      await db.run(
+        'INSERT INTO community_group_posts (id, topic_id, group_id, parent_id, author_hash, author_name, content) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        id, req.params.topicId, req.params.id, parent_id || null, contactHash, identity?.display_name || 'Anonymous', content.trim()
+      );
+      await db.run('UPDATE community_group_topics SET post_count = post_count + 1, last_post_at = NOW() WHERE id = ?', req.params.topicId);
+      const post = await db.get('SELECT * FROM community_group_posts WHERE id = ?', id);
+      res.status(201).json({ post });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // Admin: pin/lock topic
+  router.patch('/community/groups/:id/topics/:topicId', async (req, res) => {
+    try {
+      const { pinned, locked, title } = req.body;
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      if (pinned !== undefined) { sets.push('pinned = ?'); vals.push(pinned ? 1 : 0); }
+      if (locked !== undefined) { sets.push('locked = ?'); vals.push(locked ? 1 : 0); }
+      if (title !== undefined) { sets.push('title = ?'); vals.push(title); }
+      if (sets.length === 0) return res.json({ ok: true });
+      vals.push(req.params.topicId, req.params.id);
+      await db.run(`UPDATE community_group_topics SET ${sets.join(', ')} WHERE id = ? AND group_id = ?`, ...vals);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.delete('/community/groups/:id/topics/:topicId', async (req, res) => {
+    try {
+      await db.run('DELETE FROM community_group_topics WHERE id = ? AND group_id = ?', req.params.topicId, req.params.id);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Moderation: Content Flags ──────────────────────────────────────────────
+  router.post('/community/flags', async (req, res) => {
+    try {
+      const contactHash = getContactHash(req);
+      if (!contactHash) return res.status(401).json({ error: 'Not activated' });
+      const { content_type, content_id, group_id, reason, description } = req.body;
+      if (!content_type || !content_id || !reason) return res.status(400).json({ error: 'content_type, content_id, and reason required' });
+      const id = `flag_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      await db.run(
+        'INSERT INTO community_content_flags (id, content_type, content_id, group_id, reporter_hash, reason, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        id, content_type, content_id, group_id || null, contactHash, reason, description || null
+      );
+      res.status(201).json({ id });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.get('/community/groups/:id/flags', async (req, res) => {
+    try {
+      const flags = await db.all('SELECT * FROM community_content_flags WHERE group_id = ? ORDER BY created_at DESC LIMIT 50', req.params.id);
+      res.json({ flags });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.patch('/community/flags/:flagId', async (req, res) => {
+    try {
+      const contactHash = getContactHash(req);
+      const { status, action_taken } = req.body;
+      await db.run(
+        'UPDATE community_content_flags SET status = ?, action_taken = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?',
+        status, action_taken || null, contactHash, req.params.flagId
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // Mute/unmute member
+  router.post('/community/groups/:id/members/:contactHash/mute', async (req, res) => {
+    try {
+      const { duration_hours, reason } = req.body;
+      const hours = Math.min(Number(duration_hours) || 24, 720); // max 30 days
+      await db.run(
+        `UPDATE community_group_members SET muted_until = NOW() + MAKE_INTERVAL(hours => ?), mute_reason = ? WHERE group_id = ? AND contact_hash = ?`,
+        hours, reason || null, req.params.id, req.params.contactHash
+      );
+      res.json({ ok: true, muted_until: new Date(Date.now() + hours * 3600000).toISOString() });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  router.post('/community/groups/:id/members/:contactHash/unmute', async (req, res) => {
+    try {
+      await db.run(
+        'UPDATE community_group_members SET muted_until = NULL, mute_reason = NULL WHERE group_id = ? AND contact_hash = ?',
+        req.params.id, req.params.contactHash
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   return router;
 }
