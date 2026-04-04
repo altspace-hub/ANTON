@@ -173,6 +173,18 @@ export async function createMarketWorkflowOrchestrator(
   // ── Daily Intelligence Cycle ─────────────────────────────────────────────
 
   async function runDailyIntelligence(): Promise<WorkflowRunResult> {
+    // ── Dedup guard: max 1 successful run per calendar day ─────────────
+    const lastRun = await db.get<{ started_at: string }>(
+      "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success' AND started_at::date = CURRENT_DATE ORDER BY started_at DESC LIMIT 1"
+    );
+    if (lastRun) {
+      console.log(`[daily-intelligence] Already ran successfully today at ${lastRun.started_at} — skipping`);
+      return {
+        runId: 'skipped', status: 'completed', stepsCompleted: 0,
+        stepResults: [{ step: 'Dedup Guard', status: 'skipped', output: { reason: 'Already ran today', lastRun: lastRun.started_at } }],
+      };
+    }
+
     const runId = randomUUID();
     const stepResults: WorkflowRunResult['stepResults'] = [];
     let stepsCompleted = 0;
@@ -549,12 +561,15 @@ Also for each thesis, include a "predictions" array with 1-2 testable prediction
 - time_horizon_days (number): days until testable
 - deadline (string): ISO date YYYY-MM-DD when this should be checked
 
-TIME HORIZON RULES (important for learning speed):
-- For "macro" or "sector" theses: PREFER short horizons (7-30 days) with near-term predictions
-- For "investment" (company-specific): use natural horizons (30-180 days, aligned to earnings)
+TIME HORIZON RULES (CRITICAL — we need fast learning feedback):
+- DEFAULT to 7-14 day horizons. We are in a learning phase and need rapid validation cycles.
+- For "macro" or "sector" theses: 7-14 days with specific price-level predictions
+- For "investment" (company-specific): 7-21 days, NOT 30-180 days
 - For "event" theses: deadline must match the event date
-- For "contrarian" theses: medium horizon (30-90 days) to allow the thesis to play out
-- PREFER predictions with time_horizon_days <= 30 when evidence supports short-term resolution
+- For "contrarian" theses: 14-30 days maximum
+- EVERY prediction MUST have time_horizon_days <= 21 unless tied to a specific future event
+- Include a specific price target or percentage move where possible (e.g., "SPY above 550 by date")
+- Predictions must be testable with daily price data — vague directional calls are not useful
 - Today is ${new Date().toISOString().split('T')[0]}
 
 Return ONLY the JSON array, no other text.`;
@@ -596,7 +611,7 @@ Return ONLY the JSON array, no other text.`;
           // Create predictions linked to this thesis
           for (const p of (t.predictions ?? []).slice(0, 2)) {
             // Determine horizon from time_horizon_days
-            const horizonDays = p.time_horizon_days ?? 30;
+            const horizonDays = p.time_horizon_days ?? 14;
             const horizon = horizonDays <= 7 ? 'this_week'
               : horizonDays <= 30 ? 'this_month'
               : horizonDays <= 365 ? 'this_year'
@@ -632,7 +647,7 @@ Return ONLY the JSON array, no other text.`;
               predictedOutcome: p.predicted_outcome,
               predictedDirection: p.predicted_direction,
               confidence: effectiveConfidence,
-              timeHorizonDays: p.time_horizon_days ?? 30,
+              timeHorizonDays: p.time_horizon_days ?? 14,
               deadline: p.deadline,
               keyAssumptions: [...(p.key_assumptions ?? []), ...(validationFlags.length ? [`[Validation: ${validationFlags.join('; ')}]`] : [])],
               horizon,
@@ -1439,8 +1454,10 @@ ${trackContext}
 ${pulseInsights.promptContext}
 ${quantContext}
 
-Generate 10-15 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
+Generate 5-8 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
+FEWER predictions with HIGHER conviction. Only predict when evidence is strong.
 All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.
+Include a specific price target or percentage move where possible (e.g., "SPY above 550").
 
 Return ONLY a JSON array.`;
 
@@ -1538,11 +1555,84 @@ Return ONLY a JSON array.`;
     }
   }
 
+  // ── Mid-flight prediction checkpoints ─────────────────────────────────
+  // Checks active predictions daily against current prices.
+  // Logs whether the price is moving in the predicted direction.
+  // Creates learning atoms from interim observations before deadline.
+
+  async function runPredictionCheckpoints(): Promise<{ checked: number; onTrack: number; offTrack: number; atomsCreated: number }> {
+    const activePredictions = await db.all<{
+      id: string; title: string; target_symbol: string; predicted_direction: string;
+      confidence: number; predicted_value: number | null; created_at: string;
+      deadline: string | null; thesis_id: string | null;
+    }>(`
+      SELECT id, title, target_symbol, predicted_direction, confidence, predicted_value,
+             created_at, deadline, thesis_id
+      FROM market_predictions
+      WHERE status = 'active' AND target_symbol IS NOT NULL AND target_symbol != ''
+      ORDER BY created_at DESC LIMIT 50
+    `);
+
+    let checked = 0, onTrack = 0, offTrack = 0, atomsCreated = 0;
+
+    for (const pred of activePredictions) {
+      try {
+        // Get current price and price at prediction creation
+        const currentPrice = await db.get<{ close: number }>(
+          'SELECT close FROM market_historical_prices WHERE symbol = ? ORDER BY price_date DESC LIMIT 1',
+          pred.target_symbol
+        );
+        const startPrice = await db.get<{ close: number }>(
+          'SELECT close FROM market_historical_prices WHERE symbol = ? AND price_date <= ?::date ORDER BY price_date DESC LIMIT 1',
+          pred.target_symbol, pred.created_at
+        );
+
+        if (!currentPrice || !startPrice) continue;
+
+        const pctChange = ((currentPrice.close - startPrice.close) / startPrice.close) * 100;
+        const directionCorrect = (pred.predicted_direction === 'up' && pctChange > 0) ||
+                                  (pred.predicted_direction === 'down' && pctChange < 0);
+
+        checked++;
+        if (directionCorrect) onTrack++; else offTrack++;
+
+        // Create an interim observation atom (cheap — no LLM call)
+        const observation = `[Checkpoint] ${pred.target_symbol} ${pred.predicted_direction}: ${pctChange > 0 ? '+' : ''}${pctChange.toFixed(2)}% since prediction. ${directionCorrect ? 'ON TRACK' : 'OFF TRACK'}. Confidence: ${pred.confidence}`;
+
+        await db.run(`
+          INSERT INTO market_prediction_feedback (prediction_id, feedback_type, predicted_value, actual_value,
+                                                   accuracy_score, explanation)
+          VALUES (?, 'checkpoint', ?, ?, ?, ?)
+        `, pred.id, startPrice.close, currentPrice.close,
+           directionCorrect ? 0.7 : 0.3,
+           `Mid-flight check: ${pctChange > 0 ? '+' : ''}${pctChange.toFixed(2)}% move. ${directionCorrect ? 'Direction correct so far.' : 'Moving against prediction.'}`);
+
+        atomsCreated++;
+
+        // If significantly off track (>3% wrong direction), reduce thesis confidence early
+        if (!directionCorrect && Math.abs(pctChange) > 3 && pred.thesis_id) {
+          const thesis = await db.get<{ confidence: number }>('SELECT confidence FROM market_theses WHERE id = ?', pred.thesis_id);
+          if (thesis) {
+            const newConf = Math.max(0.1, thesis.confidence * 0.9); // 10% confidence reduction
+            await db.run('UPDATE market_theses SET confidence = ?, updated_at = NOW() WHERE id = ?', newConf, pred.thesis_id);
+          }
+        }
+      } catch { /* skip individual failures */ }
+    }
+
+    if (checked > 0) {
+      console.log(`[prediction-checkpoints] Checked ${checked}: ${onTrack} on track, ${offTrack} off track, ${atomsCreated} observations logged`);
+    }
+
+    return { checked, onTrack, offTrack, atomsCreated };
+  }
+
   return {
     runDailyIntelligence,
     runIndexRebalance,
     runPredictionValidation,
     runWeeklyPulse,
+    runPredictionCheckpoints,
   };
 }
 

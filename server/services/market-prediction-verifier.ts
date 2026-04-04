@@ -342,6 +342,32 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       if (result.wasCorrect) correct++;
       else incorrect++;
 
+      // Update parent thesis confidence based on prediction outcome
+      if (pred.thesis_id) {
+        try {
+          const thesis = await db.get<{ confidence: number }>(
+            'SELECT confidence FROM market_theses WHERE id = ?', pred.thesis_id
+          );
+          if (thesis) {
+            // Blend: correct predictions boost confidence, wrong ones reduce it
+            const factor = result.wasCorrect ? 1.1 : 0.8;
+            const newConf = Math.max(0.05, Math.min(0.95, thesis.confidence * factor));
+            await db.run(
+              'UPDATE market_theses SET confidence = ?, updated_at = NOW() WHERE id = ?',
+              newConf, pred.thesis_id
+            );
+            // Auto-invalidate thesis if confidence drops below 0.15
+            if (newConf < 0.15) {
+              await db.run(
+                "UPDATE market_theses SET status = 'invalidated', updated_at = NOW() WHERE id = ? AND status IN ('active', 'monitoring')",
+                pred.thesis_id
+              );
+              console.log(`[verifier] Thesis ${pred.thesis_id} auto-invalidated (confidence dropped to ${newConf.toFixed(2)})`);
+            }
+          }
+        } catch { /* non-fatal */ }
+      }
+
       console.log(`[verifier] ${pred.target_symbol || '?'} "${pred.title}" → ${result.wasCorrect ? 'CORRECT' : 'WRONG'} (${result.method})`);
 
       // Brief pause between verifications

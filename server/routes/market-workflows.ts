@@ -29,6 +29,17 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
     }
   });
 
+  // POST /markets/workflows/prediction-checkpoints — Mid-flight prediction checks (no LLM cost)
+  router.post('/markets/workflows/prediction-checkpoints', async (_req, res) => {
+    try {
+      const result = await orchestrator.runPredictionCheckpoints();
+      res.json({ success: true, ...result });
+    } catch (err) {
+      const { status, message } = safeError(err);
+      res.status(status).json({ error: message });
+    }
+  });
+
   // POST /markets/workflows/rebalance/:indexId — Trigger rebalance for specific index
   router.post('/markets/workflows/rebalance/:indexId', async (req, res) => {
     try {

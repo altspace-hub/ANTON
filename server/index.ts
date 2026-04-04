@@ -932,6 +932,11 @@ httpServer.listen(PORT, async () => {
         await marketDataService.syncPricesToHistorical();
         await navEngine.updateAllActiveIndexes();
         await navEngine.updateLeaderboard();
+        // Run mid-flight prediction checkpoints (no LLM cost — just price comparison)
+        try {
+          const checkpoints = await workflowOrchestrator.runPredictionCheckpoints();
+          console.log(`[markets-schedule] Prediction checkpoints: ${checkpoints.onTrack}/${checkpoints.checked} on track`);
+        } catch { /* non-fatal */ }
         console.log('[markets-schedule] Phase 5 complete — NAV calculated + prices synced');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
     }, MARKET_TZ);
