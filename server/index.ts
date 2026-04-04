@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import { initDatabaseAdapter } from './db/init-database.js';
 import type { DatabaseAdapter } from './db/database.js';
 import { listTablesQuery, tableExistsQuery } from './db/dialect-helpers.js';
-import { authLimiter, userLimiter, claudeLimiter, webhookLimiter } from './middleware/rate-limit.js';
+import { authLimiter, userLimiter, claudeLimiter, webhookLimiter, p2pLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import filesRouter from './routes/files.js';
@@ -147,6 +147,7 @@ import { createAzureOpenAIRoutes } from './routes/azure-openai.js';
 import { createProcureRoutes } from './routes/procure.js';
 import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
+import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
 import { setupCompanionNamespace } from './services/app-websocket.js';
 import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
@@ -505,8 +506,9 @@ const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js')
 app.use('/api', await createFCMarketplaceRoutes(db));
 // FutureChain Payment Gateway — admin routes (session-protected)
 app.use('/api', gwAdmin);
-// P2P message transport — public endpoint for ANTON-to-ANTON delivery
+// P2P message transport — public endpoint for ANTON-to-ANTON delivery (rate-limited)
 const { createP2PRoutes } = await import('./routes/p2p.js');
+app.use('/api/p2p', p2pLimiter);
 app.use('/api', await createP2PRoutes(db));
 // Collaborative Project Workspace
 const { createCommunityProjectRoutes } = await import('./routes/community-projects.js');
@@ -604,6 +606,9 @@ app.use('/api', await createCivicRoutes(db));
 
 // Grow Pillar — CRM & business development intelligence
 app.use('/api', await createGrowRoutes(db));
+
+// Talent — Discovery-driven recruitment with EU AI Act compliance
+app.use('/api', await createTalentRoutes(db));
 
 // Companion App Gateway — admin routes (session-protected)
 if (APP_GATEWAY_ENABLED) {
@@ -1093,6 +1098,15 @@ httpServer.listen(PORT, async () => {
           await marketDataService.syncPricesToHistorical();
         } catch { /* non-fatal */ }
 
+        // 1c. Ensure sector ETF data exists for rotation analysis
+        try {
+          const { backfilled } = await marketDataService.ensureSectorETFData();
+          if (backfilled.length > 0) {
+            console.log(`[markets-catchup] Backfilled sector ETFs: ${backfilled.join(', ')}`);
+            catchUpActions++;
+          }
+        } catch { /* non-fatal */ }
+
         // 2. Check if daily intelligence ran today (weekdays only)
         if (isWeekday) {
           const lastIntel = await db.get<{ started_at: string }>(
@@ -1235,6 +1249,13 @@ setInterval(async () => {
     }
   } catch { /* silent */ }
 }, 30_000);
+
+// P2P replay protection — purge expired nonces every 5 minutes
+setInterval(async () => {
+  try {
+    await db.run("DELETE FROM p2p_message_nonces WHERE created_at < NOW() - INTERVAL '10 minutes'");
+  } catch { /* silent */ }
+}, 5 * 60_000);
 
 // OBS-05: Graceful shutdown — drain in-flight requests (30s), then close
 const DRAIN_TIMEOUT_MS = 30_000;

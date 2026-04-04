@@ -252,6 +252,10 @@ const ProcureCyclePage = lazy(() => import('./pages/procure/ProcureCyclePage'));
 const CivicPage = lazy(() => import('./pages/civic/CivicPage'));
 const CivicEngagementPage = lazy(() => import('./pages/civic/CivicEngagementPage'));
 
+// Talent Discovery & Recruitment pages
+const TalentPage = lazy(() => import('./pages/talent/TalentPage'));
+const TalentCampaignPage = lazy(() => import('./pages/talent/TalentCampaignPage'));
+
 // Grow Pillar pages
 const GrowPage = lazy(() => import('./pages/grow/GrowPage'));
 const GrowContactsPage = lazy(() => import('./pages/grow/GrowContactsPage'));
@@ -581,6 +585,10 @@ export default function App() {
           {/* Civic Pillar — government & public institution navigator */}
           <Route path="/civic" element={<CivicPage />} />
           <Route path="/civic/engagement/:engagementId" element={<CivicEngagementPage />} />
+
+          {/* Talent Discovery & Recruitment */}
+          <Route path="/talent" element={<TalentPage />} />
+          <Route path="/talent/campaign/:campaignId" element={<TalentCampaignPage />} />
 
           {/* Grow Pillar — CRM & business development intelligence */}
           <Route path="/grow" element={<GrowPage />} />

@@ -328,6 +328,7 @@ export async function createMarketWorkflowOrchestrator(
         const outputs = results.map((r, i) => ({
           template: templateNames[i],
           success: r.status === 'fulfilled' ? (r.value as { success: boolean }).success : false,
+          data: r.status === 'fulfilled' ? (r.value as { output?: unknown }).output : undefined,
         }));
         stepResults.push({ step: 'Compute Indicators', status: 'success', output: outputs });
         stepsCompleted++;
@@ -500,6 +501,14 @@ export async function createMarketWorkflowOrchestrator(
         const insightsAggregator = await createWhyChainInsightsAggregator(db);
         const insights = await insightsAggregator.getInsights(30);
 
+        // Inject quant indicators (RSI, MACD, MAs, sector rotation) into thesis context
+        const indicatorStep = stepResults.find(s => s.step === 'Compute Indicators')?.output as Array<{ template: string; success: boolean; data?: unknown }> | undefined;
+        const quantData = indicatorStep?.filter(o => o.success && o.data).map(o => `[${o.template}]: ${JSON.stringify(o.data).slice(0, 600)}`).join('\n') ?? '';
+
+        // Inject correlation map data
+        const correlationStep = stepResults.find(s => s.step === 'Refresh Correlation Map')?.output;
+        const corrData = correlationStep ? JSON.stringify(correlationStep).slice(0, 800) : '';
+
         const thesisPrompt = `You are ANTON's thesis generation engine. Based on the market intelligence below, generate 2-4 investment theses.
 
 CONSUL ANALYSIS:
@@ -508,6 +517,12 @@ ${consulSummaries.slice(0, 3000)}
 SIGNAL SUMMARY:
 ${JSON.stringify(signalOutput).slice(0, 1500)}
 ${insights.promptContext}
+
+QUANTITATIVE INDICATORS:
+${quantData || 'No quant data available'}
+
+CORRELATION DATA:
+${corrData || 'No correlation data available'}
 
 HIGH-CONFIDENCE ATOMS:
 ${atomContext.slice(0, 2000)}
@@ -1050,22 +1065,76 @@ Return ONLY the JSON array, no other text.`;
         await insertDeadLetter(runId, '5-Whys Analysis', errMsg);
       }
 
-      // Step 5: Signal weight optimizer — query atoms + predictions for signal/outcome pairs
+      // Step 5: Signal weight optimizer — build per-signal-type outcomes from predictions + linked atoms
       // Now enhanced with why-chain root cause awareness
       try {
-        const atomSignals = await db.all<{ id: string; content: string; atom_type: string; confidence: number }>(
-          "SELECT id, content, atom_type, confidence FROM market_atoms WHERE is_active = 1 LIMIT 500"
+        // Get existing signal weights
+        const existingWeights = await db.all<{ signal_type: string; weight: number }>(
+          "SELECT signal_type, weight FROM market_signal_weights"
         );
-        const signalData = atomSignals.map(a => ({
-          id: a.id, type: a.atom_type, confidence: a.confidence,
+        const weightMap = new Map(existingWeights.map(w => [w.signal_type, w.weight]));
+
+        // For each validated prediction, find which atom types (signals) were linked via thesis
+        const predWithSignals = await db.all<{
+          prediction_id: string; confidence: number; was_correct: number; atom_type: string;
+        }>(`
+          SELECT mp.id as prediction_id, mp.confidence, mp.was_correct, ma.atom_type
+          FROM market_predictions mp
+          JOIN market_thesis_atoms mta ON mta.thesis_id = mp.thesis_id
+          JOIN market_atoms ma ON ma.id = mta.atom_id
+          WHERE mp.status = 'validated' AND mp.was_correct IS NOT NULL
+          LIMIT 2000
+        `);
+
+        // Group by atom_type → build signal outcomes
+        const signalMap = new Map<string, Array<{ predicted: number; actual: number }>>();
+        for (const row of predWithSignals) {
+          if (!signalMap.has(row.atom_type)) signalMap.set(row.atom_type, []);
+          signalMap.get(row.atom_type)!.push({
+            predicted: row.confidence,
+            actual: row.was_correct === 1 ? 1 : 0,
+          });
+        }
+
+        // If no thesis-atom links exist, fall back to a simpler per-type grouping
+        if (signalMap.size === 0) {
+          for (const pred of validatedPredictions) {
+            const signalType = pred.prediction_type || 'directional';
+            if (!signalMap.has(signalType)) signalMap.set(signalType, []);
+            signalMap.get(signalType)!.push({
+              predicted: pred.confidence,
+              actual: pred.was_correct === 1 ? 1 : 0,
+            });
+          }
+        }
+
+        const signalData = Array.from(signalMap.entries()).map(([signalType, outcomes]) => ({
+          signal_type: signalType,
+          weight: weightMap.get(signalType) ?? 1.0,
+          outcomes,
         }));
-        const outcomeData = validatedPredictions.map(p => ({
-          id: p.id, was_correct: p.was_correct === 1, confidence: p.confidence,
-        }));
+
         const result = await withTimeout(
-          computationService.runTemplate('signal_weight_optimizer', { signals: signalData, outcomes: outcomeData, method: 'ridge' }, 'prediction-validation'),
+          computationService.runTemplate('signal_weight_optimizer', { signals: signalData }, 'prediction-validation'),
           COMPUTATION_TIMEOUT, 'Signal Weight Optimizer'
         );
+
+        // Persist optimized weights back to market_signal_weights table
+        if (result.success && result.output) {
+          try {
+            const output = result.output as { optimized_weights?: Record<string, number> };
+            if (output.optimized_weights) {
+              for (const [signalType, newWeight] of Object.entries(output.optimized_weights)) {
+                await db.run(`
+                  INSERT INTO market_signal_weights (signal_type, category, weight, last_calibrated_at, updated_at)
+                  VALUES (?, 'general', ?, NOW(), NOW())
+                  ON CONFLICT (signal_type, category) DO UPDATE SET
+                    weight = EXCLUDED.weight, last_calibrated_at = NOW(), updated_at = NOW()
+                `, signalType, newWeight);
+              }
+            }
+          } catch { /* non-fatal — weight persistence is best-effort */ }
+        }
 
         // Apply why-chain root cause adjustments on top of computed weights
         try {
@@ -1074,7 +1143,7 @@ Return ONLY the JSON array, no other text.`;
           for (const adj of whyInsights.signalAdjustments) {
             await db.run(`
               UPDATE market_signal_weights SET weight = GREATEST(0.3, weight * ?)
-              WHERE signal_source = ? AND updated_at < NOW() - INTERVAL '1 day'
+              WHERE signal_type = ? AND updated_at < NOW() - INTERVAL '1 day'
             `, adj.reliabilityMultiplier, adj.signalType);
           }
           if (whyInsights.signalAdjustments.length > 0) {
@@ -1328,7 +1397,7 @@ Return ONLY the JSON array, no other text.`;
                was_correct, brier_score, actual_outcome
         FROM market_predictions
         WHERE status = 'validated' AND validated_at IS NOT NULL
-        ORDER BY validated_at::timestamptz DESC
+        ORDER BY validated_at DESC
         LIMIT 20
       `) as Array<Record<string, unknown>>;
 
@@ -1343,6 +1412,22 @@ Return ONLY the JSON array, no other text.`;
       const insightsAggregator = await createWhyChainInsightsAggregator(db);
       const pulseInsights = await insightsAggregator.getInsights(30);
 
+      // Fetch latest quant indicators for pulse context
+      let quantContext = '';
+      try {
+        const spyPrices = await db.all<{ close: number }>(
+          "SELECT close FROM market_historical_prices WHERE symbol = 'SPY' ORDER BY price_date DESC LIMIT 30"
+        );
+        if (spyPrices.length >= 14) {
+          const closes = spyPrices.map(p => Number(p.close)).reverse();
+          const momResult = await computationService.runTemplate('momentum_indicators', { prices: closes }, 'weekly-pulse');
+          if (momResult.success && momResult.output) {
+            const mo = momResult.output as Record<string, unknown>;
+            quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n- RSI(14): ${(mo as { rsi?: number }).rsi?.toFixed(1) ?? 'N/A'}\n- MACD: ${JSON.stringify((mo as { macd?: unknown }).macd).slice(0, 200)}\n`;
+          }
+        }
+      } catch { /* non-fatal — quant context is enrichment */ }
+
       const today = new Date().toISOString().split('T')[0];
       const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
 
@@ -1352,6 +1437,7 @@ RECENT MARKET INTELLIGENCE (${recentAtoms.length} atoms):
 ${atomContext.slice(0, 3000)}
 ${trackContext}
 ${pulseInsights.promptContext}
+${quantContext}
 
 Generate 10-15 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
 All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.

@@ -551,7 +551,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       `SELECT mp.id, mp.title, mp.target_symbol, mp.predicted_direction, mp.confidence,
               mp.prediction_type, mp.thesis_id
        FROM market_predictions mp
-       WHERE mp.status = 'active' AND (mp.deadline IS NULL OR mp.deadline::timestamptz > NOW())`
+       WHERE mp.status = 'active' AND (mp.deadline IS NULL OR mp.deadline > NOW())`
     );
 
     // Get signal weight calibration

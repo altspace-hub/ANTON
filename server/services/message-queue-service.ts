@@ -1,5 +1,34 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
+/**
+ * Validate a peer endpoint URL to prevent SSRF attacks.
+ * Only allows http/https schemes, blocks localhost and private IP ranges
+ * (except when ALLOW_PRIVATE_P2P=true for local development).
+ */
+function validateEndpointUrl(endpoint: string): boolean {
+  try {
+    const parsed = new URL(endpoint);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+
+    // In production, block private networks. Allow for local dev.
+    if (process.env.ALLOW_PRIVATE_P2P === 'true') return true;
+
+    const hostname = parsed.hostname.toLowerCase();
+    // Block localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return false;
+    // Block private IPv4 ranges
+    if (/^10\./.test(hostname)) return false;
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return false;
+    if (/^192\.168\./.test(hostname)) return false;
+    // Block link-local
+    if (/^169\.254\./.test(hostname)) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function createMessageQueueService(db: DatabaseAdapter) {
 
   async function enqueueMessage(mailId: string, recipientHash: string, encryptedPayload?: string): Promise<string> {
@@ -33,6 +62,12 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     recipientHash: string,
     encryptedPayload: string | null,
   ): Promise<{ success: boolean; httpStatus: number }> {
+    // Validate endpoint URL to prevent SSRF
+    if (!validateEndpointUrl(endpoint)) {
+      console.warn(`[p2p] Blocked delivery to invalid/private endpoint: ${endpoint}`);
+      return { success: false, httpStatus: 0 };
+    }
+
     const url = `${endpoint.replace(/\/+$/, '')}/api/p2p/receive`;
     try {
       // Load the full mail record for delivery
@@ -42,6 +77,10 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
       );
       if (!mail) return { success: false, httpStatus: 0 };
 
+      // If we have an encrypted payload, send it as the primary content
+      // The receiver will decrypt using X25519 DH + AES-256-GCM
+      // Plaintext subject/body are sent as empty when encrypted (peer decrypts from encryptedPayload)
+      const hasEncryption = !!encryptedPayload;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,14 +88,14 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
           mailId: mail.id,
           fromHash: mail.from_hash,
           toHashes: mail.to_hashes,
-          subject: mail.subject,
-          body: mail.body,
+          subject: hasEncryption ? '[encrypted]' : mail.subject,
+          body: hasEncryption ? '[encrypted]' : mail.body,
           messageType: mail.message_type,
-          payload: mail.payload,
-          payloadMetadata: mail.payload_metadata,
+          payload: hasEncryption ? null : mail.payload,
+          payloadMetadata: hasEncryption ? null : mail.payload_metadata,
           threadId: mail.thread_id,
           parentId: mail.parent_id,
-          encryptedPayload,
+          encryptedPayload: encryptedPayload ?? undefined,
         }),
         signal: AbortSignal.timeout(15_000), // 15s timeout
       });

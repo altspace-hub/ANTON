@@ -49,6 +49,15 @@ export const webhookLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// P2P message receive — prevent flood attacks on public endpoint
+export const p2pLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 messages per minute per IP (1/sec sustained)
+  message: { error: 'P2P rate limit exceeded. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Claude API endpoints — prevent accidental loops and excessive usage
 export const claudeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

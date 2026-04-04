@@ -1024,9 +1024,52 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     fetchHistoricalRange,
     // Price sync
     syncPricesToHistorical,
+    ensureSectorETFData,
     // Dashboard
     getDashboardStats,
   };
+
+  /**
+   * Ensure sector ETFs + key instruments have historical price data.
+   * Checks if each symbol has ≥20 rows; if not, fetches 1 year of history.
+   */
+  async function ensureSectorETFData(): Promise<{ backfilled: string[]; skipped: string[] }> {
+    const REQUIRED_SYMBOLS = [
+      'SPY', 'XLE', 'XLF', 'XLK', 'XLV', 'XLI', 'XLC', 'XLY', 'XLP', 'XLB', 'XLRE', 'XLU',
+      'GLD', 'TLT', 'IWM', 'HYG', 'EEM', 'EFA', 'USO', 'SLV', 'AGG'
+    ];
+    const backfilled: string[] = [];
+    const skipped: string[] = [];
+
+    for (const symbol of REQUIRED_SYMBOLS) {
+      const row = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM market_historical_prices WHERE symbol = ?", symbol
+      );
+      if ((row?.n ?? 0) >= 20) {
+        skipped.push(symbol);
+        continue;
+      }
+      try {
+        const to = new Date().toISOString().split('T')[0];
+        const from = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const count = await fetchHistoricalRange([symbol], from, to);
+        if (count > 0) {
+          backfilled.push(symbol);
+          console.log(`[market-data] Backfilled ${count} rows for ${symbol}`);
+        } else {
+          skipped.push(symbol);
+        }
+      } catch (err) {
+        console.warn(`[market-data] Failed to backfill ${symbol}:`, err instanceof Error ? err.message : err);
+        skipped.push(symbol);
+      }
+    }
+
+    if (backfilled.length > 0) {
+      console.log(`[market-data] Sector ETF backfill complete: ${backfilled.join(', ')}`);
+    }
+    return { backfilled, skipped };
+  }
 
   /**
    * Sync recent prices from market_price_normalized to market_historical_prices.

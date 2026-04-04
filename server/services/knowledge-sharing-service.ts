@@ -187,7 +187,172 @@ export async function createKnowledgeSharingService(db: DatabaseAdapter) {
     );
   }
 
-  return { shareAtom, receiveSharedAtom, resolveSharedAtom, getSharedAtomHistory };
+  // ── Entity Graph Federation ───────────────────────────────────────────
+
+  /**
+   * Share entity nodes + relationships with a peer ANTON instance.
+   * Packages entities as a structured payload and sends via P2P mail.
+   */
+  async function shareEntities(recipientHash: string, entityIds: string[]): Promise<{ mailId: string; count: number }> {
+    const identity = await db.get<{ contact_hash: string; display_name: string }>(
+      'SELECT contact_hash, display_name FROM community_identity LIMIT 1'
+    );
+    if (!identity) throw new Error('Community identity not activated');
+
+    const conn = await db.get<{ id: string }>(
+      "SELECT id FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+      recipientHash
+    );
+    if (!conn) throw new Error(`No active connection with ${recipientHash}`);
+
+    // Load entities
+    const placeholders = entityIds.map(() => '?').join(',');
+    const entities = await db.all<Record<string, unknown>>(
+      `SELECT id, entity_type, entity_id, canonical_name, metadata, related_areas, source FROM entity_nodes WHERE id IN (${placeholders})`,
+      ...entityIds
+    );
+
+    // Load relationships between these entities
+    const relationships = await db.all<Record<string, unknown>>(
+      `SELECT id, source_type, source_id, target_type, target_id, relationship_type, strength, evidence, context
+       FROM entity_relationships
+       WHERE source_id IN (${placeholders}) OR target_id IN (${placeholders})`,
+      ...entityIds, ...entityIds
+    );
+
+    const payload = {
+      type: 'entity_sync',
+      entities: entities.map(e => ({
+        id: e.id, entity_type: e.entity_type, entity_id: e.entity_id,
+        canonical_name: e.canonical_name, metadata: e.metadata,
+        related_areas: e.related_areas, source: e.source,
+      })),
+      relationships: relationships.map(r => ({
+        source_type: r.source_type, source_id: r.source_id,
+        target_type: r.target_type, target_id: r.target_id,
+        relationship_type: r.relationship_type, strength: r.strength,
+        evidence: r.evidence, context: r.context,
+      })),
+      provenance: {
+        senderHash: identity.contact_hash,
+        senderName: identity.display_name,
+        sharedAt: new Date().toISOString(),
+      },
+    };
+
+    const mailId = `cm_efed_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await db.run(`
+      INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, folder, message_type, payload)
+      VALUES (?, ?, ?, ?, ?, 'sent', 'entity_sync', ?)
+    `, mailId, identity.contact_hash, JSON.stringify([recipientHash]),
+       `[Entity Sync] ${entities.length} entities shared`,
+       `Sharing ${entities.length} entities and ${relationships.length} relationships`,
+       JSON.stringify(payload));
+
+    return { mailId, count: entities.length };
+  }
+
+  /**
+   * Import federated entities from a peer.
+   * Entities are marked with is_federated=1, source_peer_hash, and are read-only.
+   * Local entities take precedence in case of conflict (same entity_type + entity_id).
+   */
+  async function receiveEntities(fromHash: string, payload: {
+    entities: Array<{
+      id: string; entity_type: string; entity_id: string; canonical_name: string;
+      metadata?: string; related_areas?: string; source?: string;
+    }>;
+    relationships: Array<{
+      source_type: string; source_id: string; target_type: string; target_id: string;
+      relationship_type: string; strength?: number; evidence?: string; context?: string;
+    }>;
+    provenance: { senderHash: string; senderName: string; sharedAt: string };
+  }): Promise<{ imported: number; skipped: number; relationships: number }> {
+    let imported = 0, skipped = 0, relCount = 0;
+    const idMapping = new Map<string, string>(); // old_id → new_id
+
+    for (const ent of payload.entities) {
+      // Skip if local entity with same type+id already exists
+      const existing = await db.get<{ id: string; is_federated: number }>(
+        'SELECT id, COALESCE(is_federated, 0) as is_federated FROM entity_nodes WHERE entity_type = ? AND entity_id = ?',
+        ent.entity_type, ent.entity_id
+      );
+
+      if (existing && !existing.is_federated) {
+        // Local entity takes precedence
+        idMapping.set(ent.id, existing.id);
+        skipped++;
+        continue;
+      }
+
+      if (existing && existing.is_federated) {
+        // Update existing federated entity
+        await db.run(`
+          UPDATE entity_nodes SET canonical_name = ?, metadata = ?, related_areas = ?,
+            source_peer_hash = ?, last_seen = NOW()
+          WHERE id = ?
+        `, ent.canonical_name, ent.metadata ?? null, ent.related_areas ?? '[]',
+           fromHash, existing.id);
+        idMapping.set(ent.id, existing.id);
+        imported++;
+        continue;
+      }
+
+      // Insert new federated entity
+      const newId = `efed_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await db.run(`
+        INSERT INTO entity_nodes (id, entity_type, entity_id, canonical_name, metadata, related_areas, source,
+                                   source_instance_id, source_peer_hash, is_federated)
+        VALUES (?, ?, ?, ?, ?, ?, 'manual', ?, ?, 1)
+      `, newId, ent.entity_type, ent.entity_id, ent.canonical_name,
+         ent.metadata ?? null, ent.related_areas ?? '[]',
+         payload.provenance.senderHash, fromHash);
+      idMapping.set(ent.id, newId);
+      imported++;
+    }
+
+    // Import relationships (map old IDs to new IDs)
+    for (const rel of payload.relationships) {
+      const sourceId = idMapping.get(rel.source_id) ?? rel.source_id;
+      const targetId = idMapping.get(rel.target_id) ?? rel.target_id;
+
+      // Check both nodes exist locally
+      const srcExists = await db.get<{ id: string }>('SELECT id FROM entity_nodes WHERE entity_id = ?', sourceId);
+      const tgtExists = await db.get<{ id: string }>('SELECT id FROM entity_nodes WHERE entity_id = ?', targetId);
+      if (!srcExists || !tgtExists) continue;
+
+      await db.run(`
+        INSERT INTO entity_relationships (source_type, source_id, target_type, target_id, relationship_type, strength, evidence, context, source_instance_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT DO NOTHING
+      `, rel.source_type, rel.source_id, rel.target_type, rel.target_id,
+         rel.relationship_type, rel.strength ?? 0.5, rel.evidence ?? null,
+         rel.context ?? null, fromHash);
+      relCount++;
+    }
+
+    return { imported, skipped, relationships: relCount };
+  }
+
+  /**
+   * List federated entities received from peers.
+   */
+  async function listFederatedEntities(peerHash?: string, limit = 50): Promise<Array<Record<string, unknown>>> {
+    if (peerHash) {
+      return await db.all(
+        'SELECT * FROM entity_nodes WHERE is_federated = 1 AND source_peer_hash = ? ORDER BY last_seen DESC LIMIT ?',
+        peerHash, limit
+      );
+    }
+    return await db.all(
+      'SELECT * FROM entity_nodes WHERE is_federated = 1 ORDER BY last_seen DESC LIMIT ?', limit
+    );
+  }
+
+  return {
+    shareAtom, receiveSharedAtom, resolveSharedAtom, getSharedAtomHistory,
+    shareEntities, receiveEntities, listFederatedEntities,
+  };
 }
 
 export type KnowledgeSharingService = Awaited<ReturnType<typeof createKnowledgeSharingService>>;

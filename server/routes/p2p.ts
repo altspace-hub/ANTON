@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import {
+  getMyX25519Keys, getPeerX25519PublicKey, deriveSharedSecret, decryptMessage,
+} from '../services/community-e2e.js';
 
 /**
  * P2P message receive endpoint — accepts inbound messages from peer ANTON instances.
@@ -8,16 +11,17 @@ import { safeError } from '../lib/error-response.js';
  *
  * This endpoint does NOT require authentication (it's a public P2P endpoint).
  * Messages are validated by checking the sender is a known, accepted contact.
+ * If an encryptedPayload is present, it is decrypted using X25519 DH + AES-256-GCM.
  */
 export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   router.post('/p2p/receive', async (req, res) => {
     try {
-      const {
+      let {
         mailId, fromHash, toHashes, subject, body,
         messageType, payload, payloadMetadata,
-        threadId, parentId,
+        threadId, parentId, encryptedPayload,
       } = req.body as {
         mailId: string; fromHash: string; toHashes: string;
         subject: string; body: string;
@@ -26,8 +30,8 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
         encryptedPayload?: string;
       };
 
-      if (!mailId || !fromHash || !body) {
-        return res.status(400).json({ error: 'mailId, fromHash, and body are required' });
+      if (!mailId || !fromHash) {
+        return res.status(400).json({ error: 'mailId and fromHash are required' });
       }
 
       // Verify sender is a known, accepted contact
@@ -44,20 +48,96 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
         return res.status(403).json({ error: 'Sender is blocked' });
       }
 
+      // ── E2E Decryption ──────────────────────────────────────────────
+      // If the message is encrypted, decrypt it using our X25519 private key
+      // and the sender's X25519 public key (Diffie-Hellman shared secret).
+      if (encryptedPayload) {
+        try {
+          const myKeys = await getMyX25519Keys(db);
+          const peerPubKey = await getPeerX25519PublicKey(db, fromHash);
+          if (myKeys && peerPubKey) {
+            const sharedSecret = deriveSharedSecret(myKeys.privateKeyHex, peerPubKey);
+            const encryptedData = JSON.parse(encryptedPayload) as {
+              ciphertext: string; iv: string; authTag: string; salt?: string; aadHash?: string; nonce?: string; timestamp?: number;
+            };
+            // Reconstruct AAD (sender:recipient) — must match what sender used
+            const myIdentity = await db.get<{ contact_hash: string }>(
+              "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+            );
+            const aad = myIdentity ? `${fromHash}:${myIdentity.contact_hash}` : undefined;
+            const decrypted = decryptMessage(encryptedData, sharedSecret, aad);
+            const parsed = JSON.parse(decrypted) as { subject?: string; body?: string; messageType?: string; nonce?: string; timestamp?: number };
+
+            // ── Replay Protection ──────────────────────────────────────
+            const messageNonce = parsed.nonce ?? encryptedData.nonce;
+            const messageTimestamp = parsed.timestamp ?? encryptedData.timestamp;
+            if (messageNonce) {
+              // Check for replay: same sender + nonce = duplicate
+              const existing = await db.get<{ nonce: string }>(
+                'SELECT nonce FROM p2p_message_nonces WHERE sender_hash = ? AND nonce = ?',
+                fromHash, messageNonce
+              );
+              if (existing) {
+                return res.status(409).json({ error: 'Replay detected: duplicate nonce' });
+              }
+              // Store nonce for deduplication
+              await db.run(
+                'INSERT INTO p2p_message_nonces (sender_hash, nonce) VALUES (?, ?) ON CONFLICT DO NOTHING',
+                fromHash, messageNonce
+              );
+            }
+            // Reject messages older than 10 minutes
+            if (messageTimestamp && (Date.now() - messageTimestamp) > 10 * 60 * 1000) {
+              return res.status(400).json({ error: 'Message too old (>10 minutes)' });
+            }
+
+            // Override plaintext fields with decrypted content
+            subject = parsed.subject ?? subject;
+            body = parsed.body ?? body;
+            if (parsed.messageType) messageType = parsed.messageType;
+          } else {
+            console.warn(`[p2p] Cannot decrypt: missing X25519 keys (myKeys: ${!!myKeys}, peerPubKey: ${!!peerPubKey})`);
+            return res.status(400).json({ error: 'Cannot decrypt: missing X25519 keys' });
+          }
+        } catch (decryptErr) {
+          console.error('[p2p] E2E decryption failed:', decryptErr instanceof Error ? decryptErr.message : decryptErr);
+          return res.status(400).json({ error: 'E2E decryption failed' });
+        }
+      }
+
+      if (!body && !encryptedPayload) {
+        return res.status(400).json({ error: 'body or encryptedPayload required' });
+      }
+
+      // ── Structured Message Routing ─────────────────────────────────
+      // Route special message types to dedicated handlers instead of inbox
+      if (messageType === 'entity_sync' && payload) {
+        try {
+          const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+          const service = await createKnowledgeSharingService(db);
+          const entityPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          const result = await service.receiveEntities(fromHash, entityPayload);
+          return res.json({ ok: true, type: 'entity_sync', ...result });
+        } catch (fedErr) {
+          console.error('[p2p] Entity federation import failed:', fedErr instanceof Error ? fedErr.message : fedErr);
+          // Fall through to store as regular mail
+        }
+      }
+
       // Store in local inbox
       const localId = `cm_p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`
         INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, folder, message_type, payload, payload_metadata, thread_id, parent_id, delivery_status, delivered_at)
         VALUES (?, ?, ?, ?, ?, 'inbox', ?, ?, ?, ?, ?, 'delivered', NOW())
       `, localId, fromHash,
-         typeof toHashes === 'string' ? toHashes : JSON.stringify(toHashes),
-         subject ?? '', body,
+         typeof toHashes === 'string' ? toHashes : JSON.stringify(toHashes ?? '[]'),
+         subject ?? '', body ?? '',
          messageType ?? 'text',
          payload ? (typeof payload === 'string' ? payload : JSON.stringify(payload)) : null,
          payloadMetadata ? (typeof payloadMetadata === 'string' ? payloadMetadata : JSON.stringify(payloadMetadata)) : null,
          threadId ?? null, parentId ?? null);
 
-      res.json({ ok: true, localId });
+      res.json({ ok: true, localId, encrypted: !!encryptedPayload });
     } catch (err) {
       const { status, message } = safeError(err);
       res.status(status).json({ error: message });

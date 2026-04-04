@@ -12,6 +12,7 @@ import { PE_VC_MODULES } from './area-patches/pe-vc-patch';
 import { BLOCKCHAIN_MODULES } from './area-patches/blockchain-patch';
 import { PAYMENTS_DORA_MODULES } from './area-patches/payments-dora-patch';
 import { INSURANCE_MODULES } from './area-patches/insurance-patch';
+import { TALENT_MODULES } from './area-patches/talent-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2845,6 +2846,8 @@ export const AREAS = [
       'cv-screener', 'interview-question-gen', 'performance-review-summarizer',
       'exit-interview-analyzer', 'job-posting-optimizer', 'onboarding-checklist-manager',
       'org-restructuring-advisor', 'compensation-benchmarking',
+      // Talent Discovery & Recruitment:
+      'talent-discovery', 'talent-ad-generator', 'talent-assessment', 'talent-aspiration',
     ],
   },
   {
@@ -3655,6 +3658,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...BLOCKCHAIN_MODULES,
     ...PAYMENTS_DORA_MODULES,
     ...INSURANCE_MODULES,
+    ...TALENT_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

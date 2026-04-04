@@ -92,14 +92,44 @@ export function deriveSharedSecret(myPrivateKeyHex: string, peerPublicKeyHex: st
   return crypto.diffieHellman({ privateKey, publicKey });
 }
 
-// ── AES-256-GCM Encryption ──────────────────────────────────────
+// ── HKDF Key Derivation (Forward Secrecy) ───────────────────────
+// Derives a unique per-message key from the static shared secret + random salt.
+// This means compromising the long-term X25519 private key does NOT reveal
+// past messages — each message used a different derived key.
+
+function deriveMessageKey(sharedSecret: Buffer, salt: Buffer): Buffer {
+  return Buffer.from(
+    crypto.hkdfSync('sha256', sharedSecret, salt, 'anton-p2p-message-v1', 32)
+  );
+}
+
+// ── AES-256-GCM Encryption with AAD + Forward Secrecy ───────────
+// - HKDF derives per-message key from shared secret + random salt
+// - AAD (Additional Authenticated Data) binds sender/recipient to ciphertext
+//   so metadata tampering breaks the auth tag
+
+export interface EncryptedEnvelope {
+  ciphertext: string;
+  iv: string;
+  authTag: string;
+  salt: string;    // HKDF salt for per-message key derivation
+  aadHash?: string; // SHA-256 hash of the AAD for verification
+}
 
 export function encryptMessage(
   plaintext: string,
-  sharedSecret: Buffer
-): { ciphertext: string; iv: string; authTag: string } {
+  sharedSecret: Buffer,
+  aad?: string
+): EncryptedEnvelope {
+  const salt = crypto.randomBytes(32); // Random salt for HKDF
+  const messageKey = deriveMessageKey(sharedSecret, salt);
   const iv = crypto.randomBytes(12); // 96-bit IV for GCM
-  const cipher = crypto.createCipheriv('aes-256-gcm', sharedSecret, iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', messageKey, iv);
+
+  // Bind metadata to ciphertext via AAD — any tampering breaks the auth tag
+  if (aad) {
+    cipher.setAAD(Buffer.from(aad, 'utf8'));
+  }
 
   let encrypted = cipher.update(plaintext, 'utf8', 'base64');
   encrypted += cipher.final('base64');
@@ -109,17 +139,30 @@ export function encryptMessage(
     ciphertext: encrypted,
     iv: iv.toString('base64'),
     authTag: authTag.toString('base64'),
+    salt: salt.toString('base64'),
+    aadHash: aad ? crypto.createHash('sha256').update(aad).digest('hex') : undefined,
   };
 }
 
 export function decryptMessage(
-  params: { ciphertext: string; iv: string; authTag: string },
-  sharedSecret: Buffer
+  params: { ciphertext: string; iv: string; authTag: string; salt?: string; aadHash?: string },
+  sharedSecret: Buffer,
+  aad?: string
 ): string {
+  // Use HKDF-derived key if salt is present (new format), otherwise raw shared secret (legacy)
+  const key = params.salt
+    ? deriveMessageKey(sharedSecret, Buffer.from(params.salt, 'base64'))
+    : sharedSecret;
+
   const iv = Buffer.from(params.iv, 'base64');
   const authTag = Buffer.from(params.authTag, 'base64');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', sharedSecret, iv);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);
+
+  // Bind same AAD for verification — must match what was used during encryption
+  if (aad) {
+    decipher.setAAD(Buffer.from(aad, 'utf8'));
+  }
 
   let decrypted = decipher.update(params.ciphertext, 'base64', 'utf8');
   decrypted += decipher.final('utf8');

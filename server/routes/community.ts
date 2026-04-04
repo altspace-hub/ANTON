@@ -57,6 +57,14 @@ export function setCommunitySocketNS(ns: typeof communitySocketNS) { communitySo
 export async function createCommunityRoutes(db: DatabaseAdapter) {
   const router = Router();
 
+  /** Resolve the local ANTON instance's contact hash from community_identity. */
+  async function getContactHash(_req: unknown): Promise<string | null> {
+    const identity = await db.get<{ contact_hash: string }>(
+      "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+    );
+    return identity?.contact_hash ?? null;
+  }
+
   // DB migrations
   const communityTables = [
     `CREATE TABLE IF NOT EXISTS community_identity (
@@ -330,7 +338,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   router.get('/community/identity/public-card', async (req, res) => {
     try {
       const identity = await db.get(
-        "SELECT contact_hash, display_name, profile_visibility, auto_accept_connections, payment_address FROM community_identity WHERE user_id = 'default'"
+        "SELECT contact_hash, display_name, public_key, x25519_public_key, profile_visibility, auto_accept_connections, payment_address FROM community_identity WHERE user_id = 'default'"
       );
       if (!identity || identity.profile_visibility === 'private') return res.status(404).json({ error: 'Profile is private' });
       res.json(identity);
@@ -346,21 +354,24 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
-  // POST /api/community/connections — add contact by hash + public key
+  // POST /api/community/connections — add contact by hash + public key + X25519 key
   router.post('/community/connections', async (req, res) => {
     try {
-      const { contact_hash, display_name, public_key } = req.body as {
+      const { contact_hash, display_name, public_key, x25519_public_key, endpoint } = req.body as {
         contact_hash: string;
         display_name: string;
         public_key: string;
+        x25519_public_key?: string;
+        endpoint?: string;
       };
       if (!contact_hash || !public_key) {
         return res.status(400).json({ error: 'contact_hash and public_key required' });
       }
       const id = `conn_${Date.now()}`;
       await db.run(
-        `INSERT INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, status) VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING`
-      , id, 'default', contact_hash, display_name || 'Anonymous', public_key, 'active');
+        `INSERT INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, x25519_public_key, endpoint, status) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`
+      , id, 'default', contact_hash, display_name || 'Anonymous', public_key,
+        x25519_public_key ?? null, endpoint ?? null, 'active');
       return res.json({ id, ok: true });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
@@ -610,21 +621,62 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
 
       // Also insert inbox copy for each recipient (non-draft only)
+      // and enqueue for encrypted P2P delivery to remote peers
       if (!isDraft) {
+        // Import E2E encryption + message queue lazily
+        const { getMyX25519Keys, getPeerX25519PublicKey, deriveSharedSecret, encryptMessage } = await import('../services/community-e2e.js');
+        const { createMessageQueueService } = await import('../services/message-queue-service.js');
+        const queueService = await createMessageQueueService(db);
+        const myKeys = await getMyX25519Keys(db);
+
         for (const recipHash of toHashes) {
           const inboxId = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
           await db.run(
             `INSERT INTO community_mail (id, group_id, from_hash, to_hashes, cc_hashes, subject, body, thread_id, parent_id, folder, draft, sent_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
-          , 
+          ,
             inboxId, groupId ?? null, identity.contact_hash,
             JSON.stringify(toHashes), JSON.stringify(ccHashes ?? []),
             subject ?? '(no subject)', body ?? '',
             threadId, parentId ?? null,
             'inbox', 0, sentAt
           );
-          // Emit real-time notification
+
+          // Emit real-time notification (local)
           if (communitySocketNS) {
             communitySocketNS.to(`user:${recipHash}`).emit('mail:new', { mailId: inboxId, fromHash: identity.contact_hash, subject: subject ?? '(no subject)' });
+          }
+
+          // Enqueue for encrypted P2P delivery to remote peers
+          const peerEndpoint = await db.get<{ endpoint: string | null }>(
+            "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status = 'accepted'", recipHash
+          );
+          if (peerEndpoint?.endpoint) {
+            let encryptedPayload: string | undefined;
+            // Encrypt the mail content if both parties have X25519 keys
+            if (myKeys) {
+              const peerPubKey = await getPeerX25519PublicKey(db, recipHash);
+              if (peerPubKey) {
+                try {
+                  const { randomUUID } = await import('crypto');
+                  const sharedSecret = deriveSharedSecret(myKeys.privateKeyHex, peerPubKey);
+                  const plaintext = JSON.stringify({
+                    subject: subject ?? '(no subject)',
+                    body: body ?? '',
+                    messageType: 'text',
+                    nonce: randomUUID(),
+                    timestamp: Date.now(),
+                  });
+                  // AAD binds sender + recipient to ciphertext — tampering metadata breaks auth tag
+                  const aad = `${identity.contact_hash}:${recipHash}`;
+                  const encrypted = encryptMessage(plaintext, sharedSecret, aad);
+                  encryptedPayload = JSON.stringify(encrypted);
+                } catch (encErr) {
+                  console.error('[community] E2E encryption failed — message NOT sent:', encErr instanceof Error ? encErr.message : encErr);
+                  // Do NOT fall back to plaintext — refuse to send unencrypted
+                }
+              }
+            }
+            await queueService.enqueueMessage(id, recipHash, encryptedPayload);
           }
         }
       }
@@ -1027,6 +1079,41 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[community] Shared knowledge error:', err);
       res.status(500).json({ error: 'Failed to get shared knowledge' });
+    }
+  });
+
+  // ── C3b: Entity Graph Federation ──────────────────────────────────────
+
+  // Share entities with a peer
+  router.post('/community/share/entities/:contactHash', async (req, res) => {
+    try {
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+      const entityIds = req.body.entityIds as string[];
+      if (!Array.isArray(entityIds) || entityIds.length === 0) {
+        return res.status(400).json({ error: 'entityIds array required' });
+      }
+      const result = await service.shareEntities(req.params.contactHash, entityIds);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      console.error('[community] Entity share error:', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to share entities' });
+    }
+  });
+
+  // List federated entities received from peers
+  router.get('/community/federated-entities', async (req, res) => {
+    try {
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+      const entities = await service.listFederatedEntities(
+        req.query.peerHash as string | undefined,
+        req.query.limit ? parseInt(req.query.limit as string, 10) : 50
+      );
+      res.json({ ok: true, entities });
+    } catch (err) {
+      console.error('[community] Federated entities error:', err);
+      res.status(500).json({ error: 'Failed to list federated entities' });
     }
   });
 
