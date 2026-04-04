@@ -503,8 +503,29 @@ export default function CommunityIdentityPage() {
         <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Activated since</p>
         <p className="mb-4 text-sm text-adv-off-white">{formatDate(identity.activated_at)}</p>
 
+        {/* Key regeneration warning + button */}
+        {(!identity.x25519_public_key || identity.public_key === 'stub_public_key_for_testing') && (
+          <div className="mb-4 rounded-lg border border-adv-gold/30 bg-adv-gold/5 p-4">
+            <p className="mb-2 text-sm text-adv-gold">Encryption keys need to be generated for secure peer-to-peer messaging.</p>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetchWithAuth('/api/community/identity/regenerate-keys', { method: 'POST' });
+                  if (res.ok) {
+                    window.location.reload();
+                  }
+                } catch {}
+              }}
+              className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark"
+            >
+              <Shield className="h-4 w-4" />
+              Generate Encryption Keys
+            </button>
+          </div>
+        )}
+
         {/* Public key (collapsible) */}
-        {identity.public_key && (
+        {identity.public_key && identity.public_key !== 'stub_public_key_for_testing' && (
           <div className="rounded-lg border border-border">
             <button
               onClick={() => setKeyExpanded(v => !v)}

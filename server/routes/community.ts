@@ -255,6 +255,46 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
+  // POST /api/community/identity/regenerate-keys — generate or regenerate encryption keys
+  router.post('/community/identity/regenerate-keys', async (req, res) => {
+    try {
+      const identity = await db.get<{ id: string; contact_hash: string }>(
+        "SELECT id, contact_hash FROM community_identity WHERE user_id = 'default'"
+      );
+      if (!identity) return res.status(404).json({ error: 'Identity not activated' });
+
+      // Generate Ed25519 signing keypair
+      let signingPubKey: string | undefined;
+      try {
+        const { createSigningService } = await import('../services/community-signing-service.js');
+        const signingService = await createSigningService(db);
+        signingPubKey = await signingService.generateAndStoreKeypair(identity.id);
+        // Update the public_key field with the real server-side key
+        if (signingPubKey) {
+          await db.run('UPDATE community_identity SET public_key = ? WHERE id = ?', signingPubKey, identity.id);
+        }
+      } catch (err) {
+        console.error('[community] Ed25519 keypair generation failed:', err);
+      }
+
+      // Generate X25519 encryption keypair
+      let x25519PubKey: string | undefined;
+      try {
+        const { generateAndStoreX25519Keypair } = await import('../services/community-e2e.js');
+        x25519PubKey = await generateAndStoreX25519Keypair(db, identity.id);
+      } catch (err) {
+        console.error('[community] X25519 keypair generation failed:', err);
+      }
+
+      res.json({
+        ok: true,
+        contactHash: identity.contact_hash,
+        signingPublicKey: signingPubKey ?? null,
+        encryptionPublicKey: x25519PubKey ?? null,
+      });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
   // PATCH /api/community/identity — update identity fields (Q1)
   router.patch('/community/identity', async (req, res) => {
     try {
