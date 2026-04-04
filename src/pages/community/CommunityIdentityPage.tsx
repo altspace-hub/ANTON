@@ -21,6 +21,7 @@ interface CommunityIdentity {
   display_name: string;
   activated_at: string;
   public_key?: string;
+  x25519_public_key?: string;
   payment_address?: string;
   payment_name?: string;
   payment_country?: string;
@@ -538,6 +539,37 @@ export default function CommunityIdentityPage() {
           </div>
         )}
       </section>
+
+      {/* Encryption key (X25519) — for E2E encrypted messaging */}
+      {identity.x25519_public_key && (
+        <div className="rounded-lg border border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-adv-teal" />
+              <span className="text-sm font-medium text-adv-off-white">Encryption Key (X25519)</span>
+            </div>
+          </div>
+          <div className="border-t border-border px-4 pb-4 pt-3">
+            <p className="mb-3 break-all rounded-lg bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-gray">
+              {identity.x25519_public_key}
+            </p>
+            <button
+              onClick={() => {
+                if (identity.x25519_public_key) {
+                  navigator.clipboard.writeText(identity.x25519_public_key);
+                }
+              }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-xs text-adv-off-white transition hover:text-adv-teal"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy encryption key
+            </button>
+            <p className="mt-3 text-xs text-adv-gray">
+              Share this key when adding a contact on the other ANTON. It enables end-to-end encrypted messaging between instances.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Payment Info Card (from KYC + Wallets) ───────────────── */}
       <PaymentInfoSection identity={identity} paymentQrUrl={paymentQrUrl ?? ''} />

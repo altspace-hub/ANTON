@@ -198,7 +198,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   router.get('/community/status', async (req, res) => {
     try {
       const identity = await db.get(
-        "SELECT contact_hash, display_name, activated_at FROM community_identity WHERE user_id = 'default'"
+        "SELECT contact_hash, display_name, public_key, x25519_public_key, activated_at FROM community_identity WHERE user_id = 'default'"
       );
       res.json({ activated: !!identity, identity: identity ?? null });
     } catch (e) { res.status(500).json({ error: String(e) }); }

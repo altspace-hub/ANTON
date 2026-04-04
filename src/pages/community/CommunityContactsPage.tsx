@@ -73,6 +73,8 @@ function AddContactForm({
   const [hash, setHash] = useState('');
   const [name, setName] = useState('');
   const [pubKey, setPubKey] = useState('');
+  const [x25519Key, setX25519Key] = useState('');
+  const [endpoint, setEndpoint] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hashError, setHashError] = useState<string | null>(null);
@@ -104,6 +106,8 @@ function AddContactForm({
           contact_hash: hash.toUpperCase(),
           display_name: name.trim(),
           public_key: pubKey.trim() || undefined,
+          x25519_public_key: x25519Key.trim() || undefined,
+          endpoint: endpoint.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -171,9 +175,9 @@ function AddContactForm({
       </div>
 
       {/* Public key */}
-      <div className="mb-4">
+      <div className="mb-3">
         <label className="mb-1 block text-sm text-adv-gray" htmlFor="contact-pubkey">
-          Public key <span className="text-xs text-adv-gray">(optional — required for encryption)</span>
+          Public key <span className="text-xs text-adv-gray">(Ed25519 — for signature verification)</span>
         </label>
         <textarea
           id="contact-pubkey"
@@ -183,6 +187,37 @@ function AddContactForm({
           rows={2}
           className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
+      </div>
+
+      {/* X25519 encryption key */}
+      <div className="mb-3">
+        <label className="mb-1 block text-sm text-adv-gray" htmlFor="contact-x25519">
+          Encryption key <span className="text-xs text-adv-gray">(X25519 — for E2E encrypted messaging)</span>
+        </label>
+        <textarea
+          id="contact-x25519"
+          value={x25519Key}
+          onChange={e => setX25519Key(e.target.value)}
+          placeholder="Hex-encoded X25519 public key (from peer's identity page)"
+          rows={2}
+          className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+        />
+      </div>
+
+      {/* P2P Endpoint */}
+      <div className="mb-4">
+        <label className="mb-1 block text-sm text-adv-gray" htmlFor="contact-endpoint">
+          P2P Endpoint <span className="text-xs text-adv-gray">(for direct message delivery)</span>
+        </label>
+        <input
+          id="contact-endpoint"
+          type="text"
+          value={endpoint}
+          onChange={e => setEndpoint(e.target.value)}
+          placeholder="http://192.168.1.50:3011"
+          className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+        />
+        <p className="mt-1 text-xs text-adv-gray">The other ANTON's address on your network. Messages are encrypted end-to-end.</p>
       </div>
 
       {error && <p className="mb-3 text-sm text-adv-red">{error}</p>}
