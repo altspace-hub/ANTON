@@ -59,6 +59,11 @@ const CSRF_EXEMPT_PREFIXES = [
   '/api/auth/exchange',
   '/api/webhooks/',
   '/api/bridge/',
+  '/api/p2p/',           // P2P inbound from peer ANTON instances (authenticated by contact list, not CSRF)
+  '/api/relay/',          // Relay store-and-forward (encrypted payloads only)
+  '/api/app/register',    // Companion app registration (Ed25519 auth, not browser)
+  '/api/app/auth/',       // Companion app challenge-response auth
+  '/api/app/join',        // Companion app org join
 ];
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
