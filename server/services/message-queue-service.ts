@@ -158,9 +158,39 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
         );
         sent++;
       } else {
-        // Delivery failed — retry with exponential backoff or mark as failed
+        // Delivery failed — retry with exponential backoff, then fall back to relay
         const newRetryCount = msg.retry_count + 1;
         if (newRetryCount >= msg.max_retries) {
+          // ── Relay Fallback: store encrypted message for later collection ──
+          if (msg.payload_encrypted) {
+            try {
+              const { createRelayService } = await import('./relay-service.js');
+              const relay = await createRelayService(db);
+              const identity = await db.get<{ contact_hash: string }>(
+                "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+              );
+              await relay.storeMessage({
+                recipientHash: msg.recipient_hash,
+                senderHash: identity?.contact_hash ?? 'unknown',
+                encryptedPayload: msg.payload_encrypted,
+                messageType: 'mail',
+              });
+              await db.run(
+                "UPDATE community_message_queue SET status = 'sent', delivery_method = 'relay', retry_count = ?, last_http_status = ?, updated_at = NOW() WHERE id = ?",
+                newRetryCount, result.httpStatus, msg.id
+              );
+              await db.run(
+                "UPDATE community_mail SET delivery_status = 'relayed', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW() WHERE id = ?",
+                msg.mail_id
+              );
+              console.log(`[p2p] Direct delivery failed → stored on relay for ${msg.recipient_hash}`);
+              sent++;
+              continue;
+            } catch (relayErr) {
+              console.error('[p2p] Relay fallback also failed:', relayErr instanceof Error ? relayErr.message : relayErr);
+            }
+          }
+
           await db.run(
             "UPDATE community_message_queue SET status = 'failed', retry_count = ?, last_http_status = ?, updated_at = NOW() WHERE id = ?",
             newRetryCount, result.httpStatus, msg.id
@@ -205,7 +235,75 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     );
   }
 
-  return { enqueueMessage, processQueue, getQueueStatus, retryFailed, resolveEndpoint };
+  /**
+   * Collect messages from peer relays.
+   * For each connected peer with an endpoint, check their relay for messages addressed to us.
+   * This enables delivery across different networks: sender stores on their relay,
+   * recipient collects from sender's relay when online.
+   */
+  async function collectFromPeerRelays(): Promise<{ collected: number; processed: number }> {
+    const identity = await db.get<{ contact_hash: string }>(
+      "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+    );
+    if (!identity) return { collected: 0, processed: 0 };
+
+    // Get all connected peers with endpoints
+    const peers = await db.all<{ contact_hash: string; endpoint: string }>(
+      "SELECT contact_hash, endpoint FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active')"
+    );
+
+    let collected = 0, processed = 0;
+
+    for (const peer of peers) {
+      try {
+        const collectUrl = `${peer.endpoint.replace(/\/+$/, '')}/api/relay/collect/${encodeURIComponent(identity.contact_hash)}`;
+        const res = await fetch(collectUrl, { signal: AbortSignal.timeout(10_000) });
+        if (!res.ok) continue;
+
+        const messages = await res.json() as Array<{
+          id: string; sender_hash: string; encrypted_payload: string;
+          message_type: string; stored_at: string;
+        }>;
+
+        if (!Array.isArray(messages) || messages.length === 0) continue;
+        collected += messages.length;
+
+        // Process each relayed message through the P2P receive pipeline
+        for (const msg of messages) {
+          try {
+            const receiveUrl = `http://localhost:${process.env.PORT || '3001'}/api/p2p/receive`;
+            const receiveRes = await fetch(receiveUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mailId: `relay_${msg.id}`,
+                fromHash: msg.sender_hash,
+                toHashes: JSON.stringify([identity.contact_hash]),
+                subject: '[Relayed]',
+                body: '',
+                encryptedPayload: msg.encrypted_payload,
+                messageType: msg.message_type,
+              }),
+              signal: AbortSignal.timeout(30_000),
+            });
+            if (receiveRes.ok) processed++;
+          } catch (procErr) {
+            console.error(`[relay-collect] Failed to process relayed message ${msg.id}:`, procErr instanceof Error ? procErr.message : procErr);
+          }
+        }
+
+        if (messages.length > 0) {
+          console.log(`[relay-collect] Collected ${messages.length} messages from ${peer.contact_hash}'s relay`);
+        }
+      } catch {
+        // Peer offline or relay not available — skip silently
+      }
+    }
+
+    return { collected, processed };
+  }
+
+  return { enqueueMessage, processQueue, getQueueStatus, retryFailed, resolveEndpoint, collectFromPeerRelays };
 }
 
 export type MessageQueueService = Awaited<ReturnType<typeof createMessageQueueService>>;

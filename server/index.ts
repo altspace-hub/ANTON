@@ -1262,6 +1262,18 @@ setInterval(async () => {
   } catch { /* silent */ }
 }, 5 * 60_000);
 
+// Relay collection — check peer relays for messages stored for us every 2 minutes
+setInterval(async () => {
+  try {
+    const { createMessageQueueService } = await import('./services/message-queue-service.js');
+    const queueService = await createMessageQueueService(db);
+    const { collected, processed } = await queueService.collectFromPeerRelays();
+    if (collected > 0) {
+      console.log(`[relay-collect] Collected ${collected} messages, processed ${processed}`);
+    }
+  } catch { /* silent */ }
+}, 2 * 60_000);
+
 // OBS-05: Graceful shutdown — drain in-flight requests (30s), then close
 const DRAIN_TIMEOUT_MS = 30_000;
 
