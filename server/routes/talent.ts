@@ -640,7 +640,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!employeeId) { res.status(400).json({ error: 'employeeId required' }); return; }
       const id = `tasp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`
-        INSERT INTO talent_aspiration_profiles (id, employee_id, current_role, current_department)
+        INSERT INTO talent_aspiration_profiles (id, employee_id, employee_current_role, current_department)
         VALUES (?, ?, ?, ?)
       `, id, employeeId, currentRole ?? null, currentDepartment ?? null);
       res.status(201).json({ success: true, id });
@@ -670,7 +670,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
         'current_skills', 'unused_skills', 'developing_skills', 'role_satisfaction',
         'energisers', 'aspirations', 'career_direction', 'dream_project',
         'working_style_preferences', 'location_preferences', 'change_readiness',
-        'profile_visibility', 'current_role', 'current_department',
+        'profile_visibility', 'employee_current_role', 'current_department',
       ];
       const fields: string[] = [];
       const args: unknown[] = [];
@@ -719,7 +719,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   router.get('/talent/campaigns/:id/internal-matches', async (req, res) => {
     try {
       const matches = await db.all(`
-        SELECT m.*, p.employee_id, p.current_role, p.current_department, p.change_readiness
+        SELECT m.*, p.employee_id, p.employee_current_role, p.current_department, p.change_readiness
         FROM talent_internal_matches m
         JOIN talent_aspiration_profiles p ON p.id = m.profile_id
         WHERE m.campaign_id = ? AND p.status = 'active'

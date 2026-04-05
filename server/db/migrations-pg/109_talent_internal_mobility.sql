@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS talent_aspiration_profiles (
     CHECK (change_readiness IN ('actively_looking', 'open_to_opportunities', 'curious', 'happy_staying')),
   profile_visibility TEXT NOT NULL DEFAULT 'private'
     CHECK (profile_visibility IN ('private', 'matched')),
-  current_role TEXT,
+  employee_current_role TEXT,
   current_department TEXT,
   last_conversation_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
