@@ -708,10 +708,11 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   // GET /api/community/mail
   router.get('/community/mail', async (req, res) => {
     try {
-      const { folder = 'inbox', groupId, limit = '50', offset = '0' } = req.query as Record<string, string>;
+      const { folder = 'inbox', groupId, from, limit = '50', offset = '0' } = req.query as Record<string, string>;
       let query = 'SELECT * FROM community_mail WHERE folder = ? AND draft = 0';
       const params: unknown[] = [folder];
       if (groupId) { query += ' AND group_id = ?'; params.push(groupId); }
+      if (from) { query += ' AND from_hash = ?'; params.push(from); }
       query += ' ORDER BY COALESCE(sent_at, created_at) DESC LIMIT ? OFFSET ?';
       params.push(parseInt(limit), parseInt(offset));
       const mails = await db.all(query, ...params);

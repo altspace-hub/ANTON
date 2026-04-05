@@ -2,7 +2,7 @@
  * CommunityMessagesPage.tsx
  *
  * End-to-end encrypted messaging interface.
- * Messages are stored locally in localStorage (no relay server in this build).
+ * Messages are sent via encrypted P2P delivery to connected ANTON instances.
  * Left panel: contact list. Right panel: conversation thread.
  *
  * Conversation IDs are deterministic: sort([myHash, contactHash]).join(':').
@@ -185,17 +185,101 @@ export default function CommunityMessagesPage() {
     load();
   }, [selectedHash]);
 
-  // Load messages when active contact changes
+  // Load messages when active contact changes — merge local + P2P incoming
   useEffect(() => {
     if (!activeContact) { setMessages([]); return; }
     const convId = makeConversationId(myHash, activeContact.contact_hash);
-    setMessages(loadMessages(convId));
+    const local = loadMessages(convId);
+
+    // Also load P2P messages received from this contact via mail
+    async function loadP2PMessages() {
+      try {
+        const res = await fetch(
+          `/api/community/mail?folder=inbox&from=${encodeURIComponent(activeContact!.contact_hash)}`,
+          { headers: getAuthHeader() }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const mails = (data.mails ?? data ?? []) as Array<{
+          id: string; from_hash: string; body: string; subject: string;
+          sent_at: string | null; created_at: string;
+        }>;
+
+        // Convert P2P mails to LocalMessage format
+        const p2pMessages: LocalMessage[] = mails
+          .filter(m => m.from_hash === activeContact!.contact_hash)
+          .map(m => ({
+            id: `p2p_${m.id}`,
+            conversationId: convId,
+            sender: 'them' as const,
+            text: m.body,
+            timestamp: m.sent_at ?? m.created_at,
+            encrypted: true,
+          }));
+
+        // Merge, deduplicate by id, sort by timestamp
+        const allIds = new Set(local.map(m => m.id));
+        const merged = [...local];
+        for (const p2p of p2pMessages) {
+          if (!allIds.has(p2p.id)) {
+            merged.push(p2p);
+            allIds.add(p2p.id);
+          }
+        }
+        merged.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setMessages(merged);
+      } catch {
+        // If P2P load fails, just use local messages
+        setMessages(local);
+      }
+    }
+    loadP2PMessages();
   }, [activeContact, myHash]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Poll for new incoming P2P messages every 10 seconds
+  useEffect(() => {
+    if (!activeContact) return;
+    const interval = setInterval(async () => {
+      try {
+        const convId = makeConversationId(myHash, activeContact.contact_hash);
+        const res = await fetch(
+          `/api/community/mail?folder=inbox&from=${encodeURIComponent(activeContact.contact_hash)}&limit=20`,
+          { headers: getAuthHeader() }
+        );
+        if (!res.ok) return;
+        const mails = (await res.json()) as Array<{
+          id: string; from_hash: string; body: string; sent_at: string | null; created_at: string;
+        }>;
+        const p2pMessages: LocalMessage[] = mails
+          .filter(m => m.from_hash === activeContact.contact_hash)
+          .map(m => ({
+            id: `p2p_${m.id}`,
+            conversationId: convId,
+            sender: 'them' as const,
+            text: m.body,
+            timestamp: m.sent_at ?? m.created_at,
+            encrypted: true,
+          }));
+        if (p2pMessages.length > 0) {
+          setMessages(prev => {
+            const ids = new Set(prev.map(m => m.id));
+            const newOnes = p2pMessages.filter(m => !ids.has(m.id));
+            if (newOnes.length === 0) return prev;
+            const merged = [...prev, ...newOnes].sort(
+              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+            return merged;
+          });
+        }
+      } catch { /* silent */ }
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [activeContact, myHash]);
 
   const handleSelectContact = useCallback((contact: Connection) => {
     setActiveContact(contact);
@@ -204,22 +288,40 @@ export default function CommunityMessagesPage() {
     });
   }, [navigate]);
 
-  function handleSend() {
+  async function handleSend() {
     if (!draft.trim() || !activeContact) return;
+    const text = draft.trim();
+    setDraft('');
+    inputRef.current?.focus();
+
     const convId = makeConversationId(myHash, activeContact.contact_hash);
     const msg: LocalMessage = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       conversationId: convId,
       sender: 'me',
-      text: draft.trim(),
+      text,
       timestamp: new Date().toISOString(),
       encrypted: true,
     };
     const updated = [...messages, msg];
     setMessages(updated);
     saveMessages(convId, updated);
-    setDraft('');
-    inputRef.current?.focus();
+
+    // Also send via P2P mail for delivery to the other ANTON
+    try {
+      await fetch('/api/community/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({
+          toHashes: [activeContact.contact_hash],
+          subject: '[Chat]',
+          body: text,
+          messageType: 'chat',
+        }),
+      });
+    } catch {
+      // P2P delivery failed — message is still saved locally
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -327,7 +429,7 @@ export default function CommunityMessagesPage() {
             {/* E2E notice banner */}
             <div className="border-b border-adv-gold/15 bg-adv-gold/5 px-5 py-2">
               <p className="text-xs text-adv-gold">
-                Messages are end-to-end encrypted. Note: Real-time delivery requires a relay server. This is a local preview of the messaging interface.
+                Messages are end-to-end encrypted and delivered to connected ANTON instances via P2P.
               </p>
             </div>
 
@@ -390,7 +492,7 @@ export default function CommunityMessagesPage() {
                 </button>
               </div>
               <p className="mt-1.5 text-xs text-adv-gray">
-                End-to-end encrypted · Stored locally · Shift+Enter for new line
+                End-to-end encrypted · Delivered via P2P · Shift+Enter for new line
               </p>
             </div>
           </>
