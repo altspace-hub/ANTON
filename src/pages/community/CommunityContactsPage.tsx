@@ -22,6 +22,8 @@ interface Connection {
   public_key?: string;
   x25519_public_key?: string;
   endpoint?: string;
+  delegation_trust_level?: string;
+  import_policy?: string;
   status: 'active' | 'pending' | 'blocked';
   connected_at: string;
 }
@@ -337,6 +339,8 @@ function ContactRow({
   const [editName, setEditName] = useState(contact.display_name);
   const [editEndpoint, setEditEndpoint] = useState(contact.endpoint ?? '');
   const [editX25519, setEditX25519] = useState(contact.x25519_public_key ?? '');
+  const [editTrustLevel, setEditTrustLevel] = useState(contact.delegation_trust_level ?? 'manual');
+  const [editImportPolicy, setEditImportPolicy] = useState(contact.import_policy ?? 'auto_accept');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -347,14 +351,28 @@ function ContactRow({
       if (editName !== contact.display_name) updates.display_name = editName;
       if (editEndpoint !== (contact.endpoint ?? '')) updates.endpoint = editEndpoint || null;
       if (editX25519 !== (contact.x25519_public_key ?? '')) updates.x25519_public_key = editX25519 || null;
+
+      // Trust & policy updates go through delegation endpoint
+      if (editTrustLevel !== (contact.delegation_trust_level ?? 'manual') ||
+          editImportPolicy !== (contact.import_policy ?? 'auto_accept')) {
+        await fetch(`/api/community/connections/${contact.id}/delegation`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({
+            delegation_trust_level: editTrustLevel,
+            import_policy: editImportPolicy,
+          }),
+        });
+      }
+
       if (Object.keys(updates).length > 0) {
         await fetch(`/api/community/connections/${contact.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
           body: JSON.stringify(updates),
         });
-        onUpdated();
       }
+      onUpdated();
       setExpanded(false);
     } finally { setSaving(false); }
   }
@@ -406,6 +424,37 @@ function ContactRow({
               placeholder="Hex-encoded X25519 public key"
               className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 font-mono text-xs text-adv-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none" />
           </div>
+
+          {/* ── Trust & Autonomy Settings ─────────────────────────── */}
+          <div className="border-t border-border pt-3 mt-1">
+            <p className="text-xs font-medium text-adv-off-white mb-2">Autonomy & Trust</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs text-adv-gray">Task Delegation Trust</label>
+                <select value={editTrustLevel} onChange={e => setEditTrustLevel(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-adv-dark-2 px-2 py-1.5 text-xs text-adv-white focus:border-adv-teal focus:outline-none">
+                  <option value="manual">Manual — review before processing</option>
+                  <option value="trusted">Trusted — auto-process tasks</option>
+                  <option value="auto">Full Auto — process + return results</option>
+                </select>
+                <p className="mt-0.5 text-xs text-adv-gray">
+                  {editTrustLevel === 'manual' ? 'Inbound tasks require your approval before ANTON processes them.' :
+                   editTrustLevel === 'trusted' ? 'ANTON will automatically accept and process tasks from this contact.' :
+                   'Full autonomy — ANTON processes tasks and returns results without any human review.'}
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-adv-gray">Knowledge Import Policy</label>
+                <select value={editImportPolicy} onChange={e => setEditImportPolicy(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-adv-dark-2 px-2 py-1.5 text-xs text-adv-white focus:border-adv-teal focus:outline-none">
+                  <option value="auto_accept">Auto-accept</option>
+                  <option value="ask_first">Ask first</option>
+                  <option value="block">Block all</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={handleSave} disabled={saving}
               className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">

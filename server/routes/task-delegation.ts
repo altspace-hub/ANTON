@@ -90,11 +90,14 @@ export async function createTaskDelegationRoutes(db: DatabaseAdapter): Promise<R
 
   router.patch('/community/connections/:id/delegation', async (req, res) => {
     try {
-      const { trustLevel, policy, endpoint } = req.body;
+      const { trustLevel, delegation_trust_level, policy, import_policy, endpoint } = req.body;
       const sets: string[] = [];
       const vals: unknown[] = [];
-      if (trustLevel) { sets.push('delegation_trust_level = ?'); vals.push(trustLevel); }
+      const trust = trustLevel ?? delegation_trust_level;
+      if (trust) { sets.push('delegation_trust_level = ?'); vals.push(trust); }
       if (policy) { sets.push('delegation_policy = ?'); vals.push(JSON.stringify(policy)); }
+      const importPol = import_policy;
+      if (importPol) { sets.push('import_policy = ?'); vals.push(importPol); }
       if (endpoint !== undefined) { sets.push('endpoint = ?'); vals.push(endpoint || null); }
       if (sets.length > 0) { vals.push(req.params.id); await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals); }
       res.json({ ok: true });
