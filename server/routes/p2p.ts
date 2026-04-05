@@ -95,6 +95,7 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
             subject = parsed.subject ?? subject;
             body = parsed.body ?? body;
             if (parsed.messageType) messageType = parsed.messageType;
+            if (parsed.payload) payload = parsed.payload;
           } else {
             console.warn(`[p2p] Cannot decrypt: missing X25519 keys (myKeys: ${!!myKeys}, peerPubKey: ${!!peerPubKey})`);
             return res.status(400).json({ error: 'Cannot decrypt: missing X25519 keys' });
@@ -111,6 +112,42 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
 
       // ── Structured Message Routing ─────────────────────────────────
       // Route special message types to dedicated handlers instead of inbox
+
+      // Task request — another ANTON wants us to do work
+      if (messageType === 'task_request' && payload) {
+        try {
+          const { createTaskAutoProcessor } = await import('../services/task-auto-processor.js');
+          const processor = await createTaskAutoProcessor(db);
+          const taskPayload = typeof payload === 'string' ? JSON.parse(payload as string) : payload;
+          const result = await processor.processInboundTask(fromHash, taskPayload);
+          // Also store in inbox for visibility
+          const localId = `cm_p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          await db.run(`
+            INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, folder, message_type, payload, delivery_status, delivered_at)
+            VALUES (?, ?, ?, ?, ?, 'inbox', 'task_request', ?, 'delivered', NOW())
+          `, localId, fromHash, typeof toHashes === 'string' ? toHashes : JSON.stringify(toHashes ?? '[]'),
+             subject ?? `[Task] ${taskPayload.title}`, body ?? taskPayload.description,
+             typeof payload === 'string' ? payload : JSON.stringify(payload));
+          return res.json({ ok: true, type: 'task_request', ...result });
+        } catch (taskErr) {
+          console.error('[p2p] Task processing failed:', taskErr instanceof Error ? taskErr.message : taskErr);
+          // Fall through to store as regular mail
+        }
+      }
+
+      // Task result — another ANTON completed our task and sent the result
+      if (messageType === 'task_result') {
+        try {
+          const { createTaskAutoProcessor } = await import('../services/task-auto-processor.js');
+          const processor = await createTaskAutoProcessor(db);
+          const resultPayload = typeof payload === 'string' ? JSON.parse(payload as string) : (payload ?? {});
+          await processor.processInboundResult(fromHash, resultPayload as { originalTaskId: string; localTaskId?: string; title: string }, body ?? '');
+        } catch (resultErr) {
+          console.error('[p2p] Task result processing failed:', resultErr instanceof Error ? resultErr.message : resultErr);
+        }
+        // Always store in inbox too
+      }
+
       if (messageType === 'entity_sync' && payload) {
         try {
           const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');

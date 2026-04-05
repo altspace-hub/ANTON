@@ -30,8 +30,8 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
     const senderHash = identity?.contact_hash ?? 'self';
 
     // Validate connection
-    const conn = await db.get<{ id: string }>(
-      "SELECT id FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+    const conn = await db.get<{ id: string; endpoint: string | null; x25519_public_key: string | null }>(
+      "SELECT id, endpoint, x25519_public_key FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
       params.providerHash
     );
     if (!conn) throw new Error(`No active connection with ${params.providerHash}`);
@@ -130,6 +130,41 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
          requiredModules: params.requiredModules, context: params.context,
          urgency: params.urgency, deadline: params.deadline,
          requesterCard: card }));
+
+    // Enqueue for encrypted P2P delivery to peer ANTON
+    if (conn.endpoint) {
+      try {
+        const { createMessageQueueService } = await import('./message-queue-service.js');
+        const queueService = await createMessageQueueService(db);
+        let encryptedPayload: string | undefined;
+
+        if (conn.x25519_public_key) {
+          const { getMyX25519Keys, deriveSharedSecret, encryptMessage } = await import('./community-e2e.js');
+          const { randomUUID } = await import('crypto');
+          const myKeys = await getMyX25519Keys(db);
+          if (myKeys) {
+            const sharedSecret = deriveSharedSecret(myKeys.privateKeyHex, conn.x25519_public_key);
+            const plaintext = JSON.stringify({
+              subject: `[Task] ${params.title}`,
+              body: params.description,
+              messageType: 'task_request',
+              nonce: randomUUID(),
+              timestamp: Date.now(),
+              payload: { taskId, title: params.title, description: params.description,
+                requiredModules: params.requiredModules, context: params.context,
+                urgency: params.urgency, deadline: params.deadline, requesterCard: card },
+            });
+            const aad = `${senderHash}:${params.providerHash}`;
+            const encrypted = encryptMessage(plaintext, sharedSecret, aad);
+            encryptedPayload = JSON.stringify(encrypted);
+          }
+        }
+        await queueService.enqueueMessage(mailId, params.providerHash, encryptedPayload);
+        console.log(`[task-delegation] Task ${taskId} enqueued for P2P delivery to ${params.providerHash}`);
+      } catch (p2pErr) {
+        console.error('[task-delegation] P2P delivery enqueue failed:', p2pErr instanceof Error ? p2pErr.message : p2pErr);
+      }
+    }
 
     // Increment counter
     await db.run("UPDATE community_connections SET tasks_delegated = COALESCE(tasks_delegated, 0) + 1 WHERE contact_hash = ?", params.providerHash);
