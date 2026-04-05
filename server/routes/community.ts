@@ -385,6 +385,88 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (err) { res.status(500).json({ error: 'Failed to get public card' }); }
   });
 
+  // POST /api/community/connections/:id/test — test P2P connectivity to a contact
+  router.post('/community/connections/:id/test', async (req, res) => {
+    try {
+      const conn = await db.get<{ contact_hash: string; endpoint: string | null; x25519_public_key: string | null; display_name: string }>(
+        'SELECT contact_hash, endpoint, x25519_public_key, display_name FROM community_connections WHERE id = ?',
+        req.params.id
+      );
+      if (!conn) return res.status(404).json({ error: 'Connection not found' });
+
+      const results: Array<{ check: string; status: 'pass' | 'fail' | 'skip'; detail: string }> = [];
+
+      // Check 1: Endpoint configured
+      if (!conn.endpoint) {
+        results.push({ check: 'Endpoint', status: 'fail', detail: 'No P2P endpoint URL configured. Set it in contact settings.' });
+        return res.json({ ok: false, results, summary: 'No endpoint configured' });
+      }
+      results.push({ check: 'Endpoint', status: 'pass', detail: conn.endpoint });
+
+      // Check 2: Can reach the endpoint (ping)
+      try {
+        const pingUrl = `${conn.endpoint.replace(/\/+$/, '')}/api/p2p/ping`;
+        const pingRes = await fetch(pingUrl, { signal: AbortSignal.timeout(5000) });
+        if (pingRes.ok) {
+          const pingData = await pingRes.json() as { ok?: boolean; timestamp?: string };
+          results.push({ check: 'Network', status: 'pass', detail: `Peer is online (responded at ${pingData.timestamp ?? 'unknown'})` });
+        } else {
+          results.push({ check: 'Network', status: 'fail', detail: `Peer returned HTTP ${pingRes.status}` });
+          return res.json({ ok: false, results, summary: 'Peer not responding correctly' });
+        }
+      } catch (pingErr) {
+        results.push({ check: 'Network', status: 'fail', detail: `Cannot reach peer: ${pingErr instanceof Error ? pingErr.message : 'connection failed'}` });
+        return res.json({ ok: false, results, summary: 'Cannot reach peer — check IP, port, and firewall' });
+      }
+
+      // Check 3: Peer knows us (try sending a test — check if 403 or 200)
+      try {
+        const identity = await db.get<{ contact_hash: string }>(
+          "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+        );
+        const testUrl = `${conn.endpoint.replace(/\/+$/, '')}/api/p2p/receive`;
+        const testRes = await fetch(testUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mailId: `test_${Date.now()}`,
+            fromHash: identity?.contact_hash ?? 'unknown',
+            toHashes: JSON.stringify([conn.contact_hash]),
+            subject: '[Connection Test]',
+            body: 'This is a connectivity test — you can ignore this message.',
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (testRes.ok) {
+          results.push({ check: 'Mutual Trust', status: 'pass', detail: 'Peer accepts messages from us' });
+        } else if (testRes.status === 403) {
+          const errBody = await testRes.json().catch(() => ({})) as { error?: string };
+          results.push({ check: 'Mutual Trust', status: 'fail', detail: `Peer rejected us (403): ${errBody.error ?? 'Unknown or unaccepted sender'}. The other ANTON needs to add YOUR contact hash as a contact.` });
+          return res.json({ ok: false, results, summary: 'Peer does not have you as a contact — add yourself on the other machine' });
+        } else {
+          results.push({ check: 'Mutual Trust', status: 'fail', detail: `Peer returned HTTP ${testRes.status}` });
+        }
+      } catch (testErr) {
+        results.push({ check: 'Mutual Trust', status: 'fail', detail: `Test delivery failed: ${testErr instanceof Error ? testErr.message : 'unknown'}` });
+      }
+
+      // Check 4: Encryption keys
+      if (conn.x25519_public_key) {
+        results.push({ check: 'Encryption', status: 'pass', detail: 'X25519 encryption key configured — messages will be encrypted end-to-end' });
+      } else {
+        results.push({ check: 'Encryption', status: 'fail', detail: 'No encryption key. Messages will fail to send. Add the peer\'s X25519 key.' });
+      }
+
+      const allPassed = results.every(r => r.status === 'pass');
+      res.json({
+        ok: allPassed,
+        results,
+        summary: allPassed ? 'Connection is fully operational — encrypted P2P messaging ready' : 'Some checks failed — see details',
+      });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
   // PATCH /api/community/connections/:id — update contact settings (name, endpoint, keys)
   router.patch('/community/connections/:id', async (req, res) => {
     try {

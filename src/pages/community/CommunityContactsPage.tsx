@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, ChevronLeft, MessageCircle, Plus, Check, X,
-  Clock, CheckCircle, XCircle,
+  Clock, CheckCircle, XCircle, Wifi, WifiOff, Loader2, Shield,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
@@ -245,6 +245,83 @@ function AddContactForm({
   );
 }
 
+// ── Connection Test Button ────────────────────────────────────────────
+
+interface TestResult {
+  check: string;
+  status: 'pass' | 'fail' | 'skip';
+  detail: string;
+}
+
+function TestConnectionButton({ contactId }: { contactId: number }) {
+  const [testing, setTesting] = useState(false);
+  const [results, setResults] = useState<TestResult[] | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [allPassed, setAllPassed] = useState(false);
+
+  async function runTest() {
+    setTesting(true);
+    setResults(null);
+    setSummary(null);
+    try {
+      const res = await fetchWithAuth(`/api/community/connections/${contactId}/test`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setResults(data.results ?? []);
+        setSummary(data.summary ?? null);
+        setAllPassed(data.ok === true);
+      } else {
+        setSummary('Test failed — server error');
+      }
+    } catch {
+      setSummary('Test failed — could not reach server');
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        onClick={runTest}
+        disabled={testing}
+        className="flex items-center gap-1.5 rounded-lg border border-adv-blue/30 bg-adv-blue/10 px-3 py-1.5 text-xs font-medium text-adv-blue hover:bg-adv-blue/20 disabled:opacity-50"
+      >
+        {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}
+        {testing ? 'Testing...' : 'Test Connection'}
+      </button>
+
+      {results && (
+        <div className="mt-3 rounded-lg border border-border bg-adv-dark-2 p-3 space-y-2">
+          {results.map((r, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              {r.status === 'pass' ? (
+                <CheckCircle className="h-3.5 w-3.5 text-adv-green shrink-0 mt-0.5" />
+              ) : r.status === 'fail' ? (
+                <XCircle className="h-3.5 w-3.5 text-adv-red shrink-0 mt-0.5" />
+              ) : (
+                <Clock className="h-3.5 w-3.5 text-adv-gray shrink-0 mt-0.5" />
+              )}
+              <div>
+                <span className="font-medium text-adv-off-white">{r.check}: </span>
+                <span className={r.status === 'pass' ? 'text-adv-green' : r.status === 'fail' ? 'text-adv-red' : 'text-adv-gray'}>
+                  {r.detail}
+                </span>
+              </div>
+            </div>
+          ))}
+          {summary && (
+            <div className={`mt-2 pt-2 border-t border-border text-xs font-medium ${allPassed ? 'text-adv-green' : 'text-adv-gold'}`}>
+              {allPassed ? <CheckCircle className="inline h-3.5 w-3.5 mr-1" /> : <WifiOff className="inline h-3.5 w-3.5 mr-1" />}
+              {summary}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Contact row ──────────────────────────────────────────────────────
 
 function ContactRow({
@@ -329,7 +406,7 @@ function ContactRow({
               placeholder="Hex-encoded X25519 public key"
               className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 font-mono text-xs text-adv-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button onClick={handleSave} disabled={saving}
               className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">
               <Check className="h-3.5 w-3.5" />
@@ -337,6 +414,7 @@ function ContactRow({
             </button>
             <button onClick={() => setExpanded(false)}
               className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-white">Cancel</button>
+            <TestConnectionButton contactId={contact.id} />
             <span className="ml-auto text-xs text-adv-gray">{formatDate(contact.connected_at)}</span>
           </div>
         </div>
