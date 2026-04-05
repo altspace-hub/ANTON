@@ -46,7 +46,7 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
    */
   async function resolveEndpoint(recipientHash: string): Promise<string | null> {
     const conn = await db.get<{ endpoint: string | null }>(
-      "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+      "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
       recipientHash
     );
     return conn?.endpoint ?? null;

@@ -36,7 +36,7 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
 
       // Verify sender is a known, accepted contact
       const contact = await db.get<{ id: string; import_policy: string; auto_accept_types: string | null }>(
-        "SELECT id, import_policy, auto_accept_types FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+        "SELECT id, import_policy, auto_accept_types FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
         fromHash
       );
       if (!contact) {

@@ -16,7 +16,7 @@ export async function createKnowledgeSharingService(db: DatabaseAdapter) {
 
     // Validate connection
     const conn = await db.get<{ id: string }>(
-      "SELECT id FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+      "SELECT id FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
       recipientHash
     );
     if (!conn) throw new Error(`No active connection with ${recipientHash}`);
@@ -200,7 +200,7 @@ export async function createKnowledgeSharingService(db: DatabaseAdapter) {
     if (!identity) throw new Error('Community identity not activated');
 
     const conn = await db.get<{ id: string }>(
-      "SELECT id FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+      "SELECT id FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
       recipientHash
     );
     if (!conn) throw new Error(`No active connection with ${recipientHash}`);

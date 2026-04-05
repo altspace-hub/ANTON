@@ -704,7 +704,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
 
           // Enqueue for encrypted P2P delivery to remote peers
           const peerEndpoint = await db.get<{ endpoint: string | null }>(
-            "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status = 'accepted'", recipHash
+            "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')", recipHash
           );
           if (peerEndpoint?.endpoint) {
             let encryptedPayload: string | undefined;
