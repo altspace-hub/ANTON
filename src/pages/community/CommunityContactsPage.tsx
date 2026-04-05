@@ -20,6 +20,8 @@ interface Connection {
   contact_hash: string;
   display_name: string;
   public_key?: string;
+  x25519_public_key?: string;
+  endpoint?: string;
   status: 'active' | 'pending' | 'blocked';
   connected_at: string;
 }
@@ -248,33 +250,97 @@ function AddContactForm({
 function ContactRow({
   contact,
   onMessage,
+  onUpdated,
 }: {
   contact: Connection;
   onMessage: (hash: string) => void;
+  onUpdated: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [editName, setEditName] = useState(contact.display_name);
+  const [editEndpoint, setEditEndpoint] = useState(contact.endpoint ?? '');
+  const [editX25519, setEditX25519] = useState(contact.x25519_public_key ?? '');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      // Use PATCH endpoint for connection updates
+      const updates: Record<string, unknown> = {};
+      if (editName !== contact.display_name) updates.display_name = editName;
+      if (editEndpoint !== (contact.endpoint ?? '')) updates.endpoint = editEndpoint || null;
+      if (editX25519 !== (contact.x25519_public_key ?? '')) updates.x25519_public_key = editX25519 || null;
+      if (Object.keys(updates).length > 0) {
+        await fetch(`/api/community/connections/${contact.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify(updates),
+        });
+        onUpdated();
+      }
+      setExpanded(false);
+    } finally { setSaving(false); }
+  }
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 transition hover:border-adv-teal/30">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-adv-teal-dim text-sm font-bold text-adv-teal">
-          {contact.display_name.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <p className="font-medium text-adv-white">{contact.display_name}</p>
-          <p className="font-mono text-xs text-adv-gray">{truncateHash(contact.contact_hash)}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <StatusBadge status={contact.status} />
-        <span className="hidden text-xs text-adv-gray sm:inline">{formatDate(contact.connected_at)}</span>
-        <button
-          onClick={() => onMessage(contact.contact_hash)}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-off-white transition hover:border-adv-teal/40 hover:text-adv-teal"
-          title="Message this contact"
-        >
-          <MessageCircle className="h-3.5 w-3.5" />
-          Message
+    <div className="rounded-xl border border-border bg-adv-card transition hover:border-adv-teal/30">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <button onClick={() => setExpanded(v => !v)} className="flex items-center gap-3 text-left flex-1 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-adv-teal-dim text-sm font-bold text-adv-teal">
+            {contact.display_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-adv-white truncate">{contact.display_name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-xs text-adv-gray">{truncateHash(contact.contact_hash)}</p>
+              {contact.endpoint && <span className="text-xs text-adv-teal">P2P</span>}
+              {contact.x25519_public_key && <span className="text-xs text-adv-green">E2E</span>}
+            </div>
+          </div>
         </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <StatusBadge status={contact.status} />
+          <button
+            onClick={() => onMessage(contact.contact_hash)}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-off-white transition hover:border-adv-teal/40 hover:text-adv-teal"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Message
+          </button>
+        </div>
       </div>
+
+      {expanded && (
+        <div className="border-t border-border px-4 py-3 space-y-3">
+          <div>
+            <label className="mb-1 block text-xs text-adv-gray">Display Name</label>
+            <input value={editName} onChange={e => setEditName(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-adv-gray">P2P Endpoint</label>
+            <input value={editEndpoint} onChange={e => setEditEndpoint(e.target.value)}
+              placeholder="http://192.168.1.50:3011"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-adv-gray">Encryption Key (X25519)</label>
+            <input value={editX25519} onChange={e => setEditX25519(e.target.value)}
+              placeholder="Hex-encoded X25519 public key"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 font-mono text-xs text-adv-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleSave} disabled={saving}
+              className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">
+              <Check className="h-3.5 w-3.5" />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button onClick={() => setExpanded(false)}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-white">Cancel</button>
+            <span className="ml-auto text-xs text-adv-gray">{formatDate(contact.connected_at)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -501,7 +567,7 @@ export default function CommunityContactsPage() {
       {!loading && !error && contacts.length > 0 && (
         <div className="flex flex-col gap-2">
           {contacts.map(c => (
-            <ContactRow key={c.id ?? c.contact_hash} contact={c} onMessage={handleMessage} />
+            <ContactRow key={c.id ?? c.contact_hash} contact={c} onMessage={handleMessage} onUpdated={loadContacts} />
           ))}
         </div>
       )}

@@ -385,6 +385,22 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (err) { res.status(500).json({ error: 'Failed to get public card' }); }
   });
 
+  // PATCH /api/community/connections/:id — update contact settings (name, endpoint, keys)
+  router.patch('/community/connections/:id', async (req, res) => {
+    try {
+      const allowed = ['display_name', 'endpoint', 'x25519_public_key', 'public_key', 'status'];
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      for (const [k, v] of Object.entries(req.body)) {
+        if (allowed.includes(k)) { sets.push(`${k} = ?`); vals.push(v); }
+      }
+      if (sets.length === 0) return res.json({ ok: true });
+      vals.push(req.params.id);
+      await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
   // GET /api/community/connections
   router.get('/community/connections', async (req, res) => {
     try {

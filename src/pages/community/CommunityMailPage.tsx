@@ -68,6 +68,13 @@ function isUnread(mail: MailItem): boolean {
 
 // ── Compose Modal ─────────────────────────────────────────────────────────
 
+interface ContactOption {
+  contact_hash: string;
+  display_name: string;
+  endpoint?: string;
+  x25519_public_key?: string;
+}
+
 function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: MailItem }) {
   const [to, setTo] = useState(replyTo ? JSON.parse(replyTo.to_hashes ?? '[]').join(', ') : '');
   const [cc, setCc] = useState('');
@@ -76,6 +83,30 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+
+  useEffect(() => {
+    async function loadContacts() {
+      try {
+        const res = await fetch('/api/community/connections', { headers: getAuthHeader() });
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : data.connections ?? [];
+          setContacts(list.filter((c: ContactOption & { status?: string }) => c.status === 'active' || c.status === 'accepted'));
+        }
+      } catch { /* ignore */ }
+    }
+    loadContacts();
+  }, []);
+
+  function addContact(hash: string) {
+    const current = to.split(',').map(s => s.trim()).filter(Boolean);
+    if (!current.includes(hash)) {
+      setTo(current.length > 0 ? `${to}, ${hash}` : hash);
+    }
+    setShowContactPicker(false);
+  }
 
   function parseTo() { return to.split(',').map((s: string) => s.trim()).filter(Boolean); }
   function parseCc() { return cc.split(',').map((s: string) => s.trim()).filter(Boolean); }
@@ -116,13 +147,43 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
           <button onClick={onClose} className="text-adv-gray hover:text-adv-white"><X className="h-4 w-4" /></button>
         </div>
 
-        <label className="mb-1 block text-xs text-adv-gray">To (contact hashes, comma-separated)</label>
-        <input
-          value={to}
-          onChange={e => setTo(e.target.value)}
-          placeholder="ANTON-XXXX-XXXX-XXXX-XXXX, …"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
-        />
+        <label className="mb-1 block text-xs text-adv-gray">To</label>
+        <div className="relative mb-3">
+          <input
+            value={to}
+            onChange={e => setTo(e.target.value)}
+            placeholder="Select a contact or type ANTON-XXXX-XXXX-XXXX-XXXX"
+            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 pr-24 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+          />
+          <button
+            type="button"
+            onClick={() => setShowContactPicker(v => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-gray hover:text-adv-teal hover:border-adv-teal/40"
+          >
+            <Plus className="h-3 w-3" />
+            Contacts
+          </button>
+          {showContactPicker && contacts.length > 0 && (
+            <div className="absolute right-0 top-full z-10 mt-1 w-72 rounded-lg border border-border bg-adv-dark-2 shadow-xl max-h-48 overflow-y-auto">
+              {contacts.map(c => (
+                <button
+                  key={c.contact_hash}
+                  onClick={() => addContact(c.contact_hash)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-adv-card transition"
+                >
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-adv-teal-dim text-xs font-bold text-adv-teal">
+                    {c.display_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-adv-white truncate">{c.display_name}</p>
+                    <p className="font-mono text-xs text-adv-gray truncate">{c.contact_hash}</p>
+                  </div>
+                  {c.endpoint && <span className="text-xs text-adv-teal shrink-0">P2P</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <label className="mb-1 block text-xs text-adv-gray">CC (optional)</label>
         <input
