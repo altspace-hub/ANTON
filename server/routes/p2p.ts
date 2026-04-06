@@ -186,5 +186,77 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
     res.json({ ok: true, timestamp: new Date().toISOString() });
   });
 
+  // POST /p2p/knowledge-query — peer asks "what do you know about X?"
+  // Returns matching knowledge atoms from local knowledge base.
+  // Only responds to known, accepted contacts.
+  router.post('/p2p/knowledge-query', async (req, res) => {
+    try {
+      const { fromHash, query, limit = 10 } = req.body as {
+        fromHash: string; query: string; limit?: number;
+      };
+      if (!fromHash || !query) {
+        return res.status(400).json({ error: 'fromHash and query required' });
+      }
+
+      // Verify sender is a known contact
+      const contact = await db.get<{ id: string; import_policy: string }>(
+        "SELECT id, import_policy FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
+        fromHash
+      );
+      if (!contact) return res.status(403).json({ error: 'Unknown sender' });
+      if (contact.import_policy === 'block') return res.status(403).json({ error: 'Blocked' });
+
+      const maxResults = Math.min(Number(limit) || 10, 20);
+      const searchTerms = query.split(/\s+/).slice(0, 5);
+      const likePattern = `%${searchTerms.join('%')}%`;
+
+      // Search knowledge atoms
+      const knowledgeAtoms = await db.all<{
+        id: string; content: string; atom_type: string; category: string;
+        confidence: number; created_at: string;
+      }>(`
+        SELECT id, content, atom_type, category, confidence, created_at
+        FROM knowledge_atoms
+        WHERE content ILIKE ? AND confidence >= 0.5
+        ORDER BY confidence DESC
+        LIMIT ?
+      `, likePattern, maxResults);
+
+      // Search market atoms
+      const marketAtoms = await db.all<{
+        id: string; content: string; atom_type: string; category: string;
+        confidence: number; sentiment: string;
+      }>(`
+        SELECT id, content, atom_type, category, confidence, sentiment
+        FROM market_atoms
+        WHERE is_active = 1 AND content ILIKE ?
+        ORDER BY importance_score DESC NULLS LAST
+        LIMIT ?
+      `, likePattern, maxResults);
+
+      const identity = await db.get<{ contact_hash: string; display_name: string }>(
+        "SELECT contact_hash, display_name FROM community_identity WHERE user_id = 'default'"
+      );
+
+      res.json({
+        ok: true,
+        source: identity?.contact_hash ?? 'unknown',
+        sourceName: identity?.display_name ?? 'ANTON',
+        query,
+        knowledgeAtoms: knowledgeAtoms.map(a => ({
+          content: a.content, type: a.atom_type, category: a.category, confidence: a.confidence,
+        })),
+        marketAtoms: marketAtoms.map(a => ({
+          content: a.content, type: a.atom_type, category: a.category,
+          confidence: a.confidence, sentiment: a.sentiment,
+        })),
+        totalResults: knowledgeAtoms.length + marketAtoms.length,
+      });
+    } catch (err) {
+      const { status, message } = safeError(err);
+      res.status(status).json({ error: message });
+    }
+  });
+
   return router;
 }

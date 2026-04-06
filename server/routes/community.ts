@@ -1256,6 +1256,54 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── C3c: Query Peer Knowledge ─────────────────────────────────────────
+
+  // Ask connected peers "what do you know about X?"
+  router.post('/community/knowledge-query', async (req, res) => {
+    try {
+      const { query, limit = 10 } = req.body as { query: string; limit?: number };
+      if (!query) return res.status(400).json({ error: 'query required' });
+
+      const identity = await db.get<{ contact_hash: string }>(
+        "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
+      );
+      if (!identity) return res.status(403).json({ error: 'Identity not activated' });
+
+      const peers = await db.all<{ contact_hash: string; endpoint: string; display_name: string }>(
+        "SELECT contact_hash, endpoint, display_name FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active')"
+      );
+
+      const results: Array<{ peer: string; peerName: string; atoms: Array<{ content: string; type: string; confidence: number }> }> = [];
+
+      for (const peer of peers) {
+        try {
+          const queryUrl = `${peer.endpoint.replace(/\/+$/, '')}/api/p2p/knowledge-query`;
+          const qRes = await fetch(queryUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fromHash: identity.contact_hash, query, limit }),
+            signal: AbortSignal.timeout(8_000),
+          });
+          if (qRes.ok) {
+            const data = await qRes.json() as {
+              sourceName?: string;
+              knowledgeAtoms?: Array<{ content: string; type: string; confidence: number }>;
+              marketAtoms?: Array<{ content: string; type: string; confidence: number }>;
+            };
+            const atoms = [...(data.knowledgeAtoms ?? []), ...(data.marketAtoms ?? [])];
+            if (atoms.length > 0) {
+              results.push({ peer: peer.contact_hash, peerName: data.sourceName ?? peer.display_name, atoms });
+            }
+          }
+        } catch { /* peer offline — skip */ }
+      }
+
+      res.json({ ok: true, query, peersQueried: peers.length, results });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   // ── C4: Message Queue Retry ───────────────────────────────────────────
 
   router.post('/community/mail/queue/:queueId/retry', async (req, res) => {

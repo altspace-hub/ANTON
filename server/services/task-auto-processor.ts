@@ -75,47 +75,95 @@ export async function createTaskAutoProcessor(db: DatabaseAdapter) {
     );
 
     try {
-      // Build context from local knowledge — search for relevant atoms
+      // ── Gather knowledge from local DB + connected peers ──────────
       let localKnowledge = '';
+      let peerKnowledge = '';
+      const keywords = `${payload.title} ${payload.description}`.slice(0, 200);
+      const searchPattern = `%${keywords.split(/\s+/).slice(0, 3).join('%')}%`;
+
+      // Local knowledge atoms
       try {
-        // Search knowledge atoms for content relevant to the task
-        const keywords = `${payload.title} ${payload.description}`.slice(0, 200);
         const relevantAtoms = await db.all<{ content: string; atom_type: string; confidence: number }>(
           `SELECT content, atom_type, confidence FROM knowledge_atoms
            WHERE content ILIKE ? AND confidence >= 0.5
            ORDER BY confidence DESC LIMIT 10`,
-          `%${keywords.split(' ').slice(0, 3).join('%')}%`
+          searchPattern
         );
         if (relevantAtoms.length > 0) {
           localKnowledge = `\n\nLOCAL KNOWLEDGE (from this ANTON's knowledge base):\n` +
             relevantAtoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
         }
 
-        // Also check market atoms if relevant
         const marketAtoms = await db.all<{ content: string; atom_type: string; confidence: number }>(
           `SELECT content, atom_type, confidence FROM market_atoms
            WHERE is_active = 1 AND content ILIKE ?
            ORDER BY importance_score DESC NULLS LAST LIMIT 5`,
-          `%${keywords.split(' ').slice(0, 3).join('%')}%`
+          searchPattern
         );
         if (marketAtoms.length > 0) {
           localKnowledge += `\n\nMARKET INTELLIGENCE:\n` +
             marketAtoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
         }
-      } catch { /* knowledge lookup is best-effort */ }
+      } catch { /* local knowledge lookup is best-effort */ }
+
+      // Query connected peers for relevant knowledge
+      try {
+        const peers = await db.all<{ contact_hash: string; endpoint: string; display_name: string }>(
+          "SELECT contact_hash, endpoint, display_name FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active') AND contact_hash != ?",
+          fromHash // Don't query the requester — they already gave us context
+        );
+
+        for (const peer of peers.slice(0, 3)) { // Max 3 peer queries to limit latency
+          try {
+            const queryUrl = `${peer.endpoint.replace(/\/+$/, '')}/api/p2p/knowledge-query`;
+            const qRes = await fetch(queryUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fromHash: identity.contact_hash,
+                query: `${payload.title} ${payload.description}`.slice(0, 300),
+                limit: 5,
+              }),
+              signal: AbortSignal.timeout(8_000),
+            });
+            if (qRes.ok) {
+              const peerData = await qRes.json() as {
+                sourceName?: string;
+                knowledgeAtoms?: Array<{ content: string; type: string; confidence: number }>;
+                marketAtoms?: Array<{ content: string; type: string; confidence: number; sentiment?: string }>;
+                totalResults?: number;
+              };
+              if ((peerData.totalResults ?? 0) > 0) {
+                const atoms = [
+                  ...(peerData.knowledgeAtoms ?? []).map(a => `[${a.type}|${a.confidence}] ${a.content}`),
+                  ...(peerData.marketAtoms ?? []).map(a => `[${a.type}|${a.confidence}|${a.sentiment ?? ''}] ${a.content}`),
+                ];
+                if (atoms.length > 0) {
+                  peerKnowledge += `\n\nKNOWLEDGE FROM PEER "${peerData.sourceName ?? peer.display_name}":\n` +
+                    atoms.join('\n');
+                }
+              }
+            }
+          } catch { /* peer query is best-effort — skip if offline */ }
+        }
+      } catch { /* peer knowledge query is best-effort */ }
 
       // Build system prompt based on required modules + local knowledge
       const moduleContext = (payload.requiredModules ?? []).length > 0
         ? `The requester specifically needs help with: ${payload.requiredModules!.join(', ')}.`
         : '';
 
+      const hasNetworkKnowledge = localKnowledge.length > 0 || peerKnowledge.length > 0;
+
       const systemPrompt = `You are ANTON, an AI expert assistant. Another ANTON instance has delegated a task to you.
 Process this task thoroughly and provide a complete, actionable response.
 
 ${moduleContext}
 
-You have access to this ANTON instance's accumulated knowledge and intelligence.
-Use any relevant local knowledge provided below to enrich your response.
+${hasNetworkKnowledge ? `You have access to knowledge from this ANTON instance AND from connected peer ANTON instances.
+Use all available knowledge to provide the most comprehensive, informed response possible.
+When using peer knowledge, note the source so the requester knows where insights came from.` :
+'Your response should be based on your general knowledge and training.'}
 
 Your response should be structured, professional, and directly actionable.
 If the task requires analysis, provide detailed findings.
@@ -132,6 +180,7 @@ ${payload.description}
 
 ${payload.context ? `ADDITIONAL CONTEXT:\n${payload.context}` : ''}
 ${localKnowledge}
+${peerKnowledge}
 
 ${payload.urgency === 'critical' || payload.urgency === 'high' ? 'NOTE: This is marked as ' + payload.urgency + ' urgency.' : ''}
 
