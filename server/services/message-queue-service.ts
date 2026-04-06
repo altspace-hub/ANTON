@@ -164,17 +164,34 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
           // ── Relay Fallback: store encrypted message for later collection ──
           if (msg.payload_encrypted) {
             try {
-              const { createRelayService } = await import('./relay-service.js');
-              const relay = await createRelayService(db);
               const identity = await db.get<{ contact_hash: string }>(
                 "SELECT contact_hash FROM community_identity WHERE user_id = 'default'"
               );
-              await relay.storeMessage({
-                recipientHash: msg.recipient_hash,
-                senderHash: identity?.contact_hash ?? 'unknown',
-                encryptedPayload: msg.payload_encrypted,
-                messageType: 'mail',
-              });
+              const senderHash = identity?.contact_hash ?? 'unknown';
+
+              // Try public relay first (works across networks)
+              let relayed = false;
+              const { isPublicRelayConfigured, storeOnPublicRelay } = await import('./public-relay-client.js');
+              if (isPublicRelayConfigured()) {
+                const stored = await storeOnPublicRelay({
+                  recipientHash: msg.recipient_hash,
+                  senderHash,
+                  encryptedPayload: msg.payload_encrypted,
+                });
+                if (stored) relayed = true;
+              }
+
+              // Fall back to local relay (works when peer polls our relay)
+              if (!relayed) {
+                const { createRelayService } = await import('./relay-service.js');
+                const relay = await createRelayService(db);
+                await relay.storeMessage({
+                  recipientHash: msg.recipient_hash,
+                  senderHash,
+                  encryptedPayload: msg.payload_encrypted,
+                  messageType: 'mail',
+                });
+              }
               await db.run(
                 "UPDATE community_message_queue SET status = 'sent', delivery_method = 'relay', retry_count = ?, last_http_status = ?, updated_at = NOW() WHERE id = ?",
                 newRetryCount, result.httpStatus, msg.id
@@ -247,12 +264,42 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     );
     if (!identity) return { collected: 0, processed: 0 };
 
+    let collected = 0, processed = 0;
+
+    // ── Collect from public relay first (cross-network messages) ──
+    try {
+      const { isPublicRelayConfigured, collectFromPublicRelay } = await import('./public-relay-client.js');
+      if (isPublicRelayConfigured()) {
+        const relayMessages = await collectFromPublicRelay(identity.contact_hash);
+        for (const msg of relayMessages) {
+          try {
+            const receiveUrl = `http://localhost:${process.env.PORT || '3001'}/api/p2p/receive`;
+            const receiveRes = await fetch(receiveUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mailId: `relay_pub_${msg.id}`,
+                fromHash: msg.sender_hash,
+                toHashes: JSON.stringify([identity.contact_hash]),
+                subject: '[Relayed]',
+                body: '',
+                encryptedPayload: msg.encrypted_payload,
+                messageType: msg.message_type,
+              }),
+              signal: AbortSignal.timeout(30_000),
+            });
+            if (receiveRes.ok) { collected++; processed++; }
+          } catch { /* skip individual failures */ }
+        }
+      }
+    } catch { /* public relay not available */ }
+
+    // ── Collect from peer relays (same-network fallback) ──
+
     // Get all connected peers with endpoints
     const peers = await db.all<{ contact_hash: string; endpoint: string }>(
       "SELECT contact_hash, endpoint FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active')"
     );
-
-    let collected = 0, processed = 0;
 
     for (const peer of peers) {
       try {

@@ -3,15 +3,27 @@
  *
  * Store-and-forward for offline ANTON peers.
  * All payloads are E2E encrypted — relay cannot read content.
+ *
+ * Security (when RELAY_PUBLIC=true):
+ * - API key auth (RELAY_API_KEYS)
+ * - IP allowlist (RELAY_ALLOWED_IPS)
+ * - HMAC request signing (RELAY_HMAC_SECRET)
+ * - Rate limiting via p2pLimiter
+ *
+ * When RELAY_PUBLIC is not set (default), only localhost can access.
  */
 
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createRelayService } from '../services/relay-service.js';
+import { relayAuth } from '../middleware/relay-auth.js';
 
 export async function createRelayRoutes(db: DatabaseAdapter) {
   const router = Router();
   const relay = await createRelayService(db);
+
+  // Apply relay auth to all relay endpoints
+  router.use('/relay', relayAuth);
 
   // POST /relay/store — Store an encrypted message for an offline recipient
   router.post('/relay/store', async (req, res) => {
@@ -19,6 +31,10 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
       const { recipientHash, senderHash, encryptedPayload, messageType, ttlDays } = req.body;
       if (!recipientHash || !senderHash || !encryptedPayload) {
         return res.status(400).json({ error: 'recipientHash, senderHash, and encryptedPayload are required' });
+      }
+      // Limit payload size (1MB max)
+      if (typeof encryptedPayload === 'string' && encryptedPayload.length > 1_048_576) {
+        return res.status(413).json({ error: 'Payload too large (max 1MB)' });
       }
       const id = await relay.storeMessage({ recipientHash, senderHash, encryptedPayload, messageType, ttlDays });
       res.status(201).json({ id });
@@ -31,7 +47,7 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
   router.get('/relay/collect/:contactHash', async (req, res) => {
     try {
       const messages = await relay.collectMessages(req.params.contactHash);
-      res.json({ messages, count: messages.length });
+      res.json(messages);
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
