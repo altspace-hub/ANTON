@@ -182,7 +182,7 @@ if (!process.env.DEPLOYMENT_MODE) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3011;
+const PORT = process.env.PORT || 3001;
 
 // ── Allowed origins for CORS ──────────────────────────────────
 // Defaults to localhost only. Override with CORS_ORIGINS env var (comma-separated).
