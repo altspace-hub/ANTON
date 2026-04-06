@@ -75,7 +75,36 @@ export async function createTaskAutoProcessor(db: DatabaseAdapter) {
     );
 
     try {
-      // Build system prompt based on required modules
+      // Build context from local knowledge — search for relevant atoms
+      let localKnowledge = '';
+      try {
+        // Search knowledge atoms for content relevant to the task
+        const keywords = `${payload.title} ${payload.description}`.slice(0, 200);
+        const relevantAtoms = await db.all<{ content: string; atom_type: string; confidence: number }>(
+          `SELECT content, atom_type, confidence FROM knowledge_atoms
+           WHERE content ILIKE ? AND confidence >= 0.5
+           ORDER BY confidence DESC LIMIT 10`,
+          `%${keywords.split(' ').slice(0, 3).join('%')}%`
+        );
+        if (relevantAtoms.length > 0) {
+          localKnowledge = `\n\nLOCAL KNOWLEDGE (from this ANTON's knowledge base):\n` +
+            relevantAtoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
+        }
+
+        // Also check market atoms if relevant
+        const marketAtoms = await db.all<{ content: string; atom_type: string; confidence: number }>(
+          `SELECT content, atom_type, confidence FROM market_atoms
+           WHERE is_active = 1 AND content ILIKE ?
+           ORDER BY importance_score DESC NULLS LAST LIMIT 5`,
+          `%${keywords.split(' ').slice(0, 3).join('%')}%`
+        );
+        if (marketAtoms.length > 0) {
+          localKnowledge += `\n\nMARKET INTELLIGENCE:\n` +
+            marketAtoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
+        }
+      } catch { /* knowledge lookup is best-effort */ }
+
+      // Build system prompt based on required modules + local knowledge
       const moduleContext = (payload.requiredModules ?? []).length > 0
         ? `The requester specifically needs help with: ${payload.requiredModules!.join(', ')}.`
         : '';
@@ -85,10 +114,14 @@ Process this task thoroughly and provide a complete, actionable response.
 
 ${moduleContext}
 
+You have access to this ANTON instance's accumulated knowledge and intelligence.
+Use any relevant local knowledge provided below to enrich your response.
+
 Your response should be structured, professional, and directly actionable.
 If the task requires analysis, provide detailed findings.
 If it requires content creation, produce the full content.
 If it requires research, provide comprehensive results with sources.
+Use markdown formatting for readability.
 
 Respond with your complete output — this will be sent directly back to the requesting ANTON.`;
 
@@ -98,6 +131,7 @@ DESCRIPTION:
 ${payload.description}
 
 ${payload.context ? `ADDITIONAL CONTEXT:\n${payload.context}` : ''}
+${localKnowledge}
 
 ${payload.urgency === 'critical' || payload.urgency === 'high' ? 'NOTE: This is marked as ' + payload.urgency + ' urgency.' : ''}
 
@@ -122,7 +156,7 @@ Process this task and provide your complete response.`;
       // Add task message
       await db.run(`
         INSERT INTO community_task_messages (id, task_id, sender_hash, message_type, content, metadata)
-        VALUES (?, ?, ?, 'completion', ?, '{}')
+        VALUES (?, ?, ?, 'status_change', ?, '{}')
       `, `tmsg_${Date.now()}`, localTaskId, identity.contact_hash,
          `Task completed. Result length: ${result.text.length} chars`);
 
@@ -201,7 +235,7 @@ Process this task and provide your complete response.`;
       );
       await db.run(`
         INSERT INTO community_task_messages (id, task_id, sender_hash, message_type, content, metadata)
-        VALUES (?, ?, ?, 'error', ?, '{}')
+        VALUES (?, ?, ?, 'status_change', ?, '{}')
       `, `tmsg_${Date.now()}`, localTaskId, identity.contact_hash,
          `Task processing failed: ${aiErr instanceof Error ? aiErr.message : String(aiErr)}`);
 
@@ -235,7 +269,7 @@ Process this task and provide your complete response.`;
 
       await db.run(`
         INSERT INTO community_task_messages (id, task_id, sender_hash, message_type, content, metadata)
-        VALUES (?, ?, ?, 'completion', ?, '{}')
+        VALUES (?, ?, ?, 'status_change', ?, '{}')
       `, `tmsg_${Date.now()}`, task.id, fromHash,
          `Result received from peer (${resultContent.length} chars)`);
 
