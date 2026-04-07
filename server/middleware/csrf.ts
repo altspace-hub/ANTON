@@ -64,6 +64,7 @@ const CSRF_EXEMPT_PREFIXES = [
   '/api/app/register',    // Companion app registration (Ed25519 auth, not browser)
   '/api/app/auth/',       // Companion app challenge-response auth
   '/api/app/join',        // Companion app org join
+  '/api/agents/public/',   // Public agent storefront (external ANTON queries)
 ];
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

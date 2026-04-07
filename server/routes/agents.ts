@@ -141,6 +141,41 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
   });
 
+  // ── Remote Agent Discovery & Query ──────────────────────────────────
+
+  // Discover agents available on connected peers
+  router.get('/agents/remote/discover', async (req, res) => {
+    try {
+      const { createRemoteAgentClient } = await import('../services/remote-agent-client.js');
+      const client = await createRemoteAgentClient(db);
+      const agents = await client.discoverRemoteAgents();
+      res.json({ success: true, agents, count: agents.length });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  // Smart query: find best remote agent and query it
+  router.post('/agents/remote/query', async (req, res) => {
+    try {
+      const { query, endpoint, agentSlug, conversationId } = req.body as {
+        query: string; endpoint?: string; agentSlug?: string; conversationId?: string;
+      };
+      if (!query) { res.status(400).json({ error: 'query required' }); return; }
+
+      const { createRemoteAgentClient } = await import('../services/remote-agent-client.js');
+      const client = await createRemoteAgentClient(db);
+
+      if (endpoint && agentSlug) {
+        // Direct query to a specific remote agent
+        const result = await client.queryRemoteAgent(endpoint, agentSlug, query, conversationId);
+        res.json({ success: true, result });
+      } else {
+        // Smart routing: find the best agent across all peers
+        const result = await client.smartQuery(query);
+        res.json({ success: true, result });
+      }
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
   // ── Agent Builder ──────────────────────────────────────────────────
 
   router.post('/agents/builder/generate', async (req, res) => {
@@ -167,6 +202,85 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!role) { res.status(400).json({ error: 'role required' }); return; }
       const keywords = await builder.suggestKeywords(role, description ?? role);
       res.json({ success: true, keywords });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  // ── Public Storefront (no auth required — for external ANTONs) ──
+
+  // GET /agents/public/directory — list all active agents that are publicly queryable
+  router.get('/agents/public/directory', async (req, res) => {
+    try {
+      const agents = await service.listAgents({ status: 'active' });
+      // Only expose public-safe fields
+      const directory = agents
+        .filter(a => a.auto_response_enabled)
+        .map(a => ({
+          slug: a.slug,
+          name: a.name,
+          role: a.role_description,
+          avatar: a.avatar,
+          greeting: a.greeting_message,
+          keywords: typeof a.routing_keywords === 'string' ? JSON.parse(a.routing_keywords) : a.routing_keywords,
+        }));
+      res.json({ agents: directory, count: directory.length });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  // POST /agents/public/query — external ANTON queries an agent (no mutual contact needed)
+  // Secured by: agent must be active + auto_response_enabled, optional API key
+  router.post('/agents/public/query', async (req, res) => {
+    try {
+      const { agentSlug, message, conversationId, requesterHash, requesterName } = req.body as {
+        agentSlug: string; message: string; conversationId?: string;
+        requesterHash?: string; requesterName?: string;
+      };
+      if (!agentSlug || !message) {
+        res.status(400).json({ error: 'agentSlug and message required' });
+        return;
+      }
+
+      const agent = await service.getAgentBySlug(agentSlug);
+      if (!agent) { res.status(404).json({ error: `Agent "${agentSlug}" not found` }); return; }
+      if (agent.status !== 'active') { res.status(404).json({ error: 'Agent is not active' }); return; }
+      if (!agent.auto_response_enabled) { res.status(403).json({ error: 'Agent does not accept public queries' }); return; }
+
+      const result = await processor.processQuery(agent.id, message, {
+        conversationId,
+        source: 'p2p',
+        requesterHash: requesterHash ?? req.ip ?? 'anonymous',
+        requesterName: requesterName ?? 'External ANTON',
+      });
+
+      res.json({
+        success: true,
+        agent: { name: agent.name, role: agent.role_description, avatar: agent.avatar },
+        response: result.response,
+        conversationId: result.conversationId,
+        escalated: result.escalated,
+      });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  // POST /agents/public/route — external ANTON asks "who can help with X?"
+  router.post('/agents/public/route', async (req, res) => {
+    try {
+      const { query } = req.body as { query: string };
+      if (!query) { res.status(400).json({ error: 'query required' }); return; }
+      const match = await processor.routeQuery(query);
+      if (match) {
+        const agent = await service.getAgent(match.agentId);
+        res.json({
+          success: true,
+          match: {
+            slug: agent?.slug,
+            name: match.agentName,
+            role: agent?.role_description,
+            confidence: match.confidence,
+          },
+        });
+      } else {
+        res.json({ success: true, match: null });
+      }
     } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
   });
 
