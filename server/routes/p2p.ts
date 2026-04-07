@@ -113,6 +113,38 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
       // ── Structured Message Routing ─────────────────────────────────
       // Route special message types to dedicated handlers instead of inbox
 
+      // Agent query — another ANTON wants to query a specific agent
+      if (messageType === 'agent_query' && payload) {
+        try {
+          const { createAgentProcessor } = await import('../services/agent-processor.js');
+          const proc = await createAgentProcessor(db);
+          const agentPayload = typeof payload === 'string' ? JSON.parse(payload as string) : payload;
+          const { agentSlug, agentId, message: agentMessage, conversationId: agentConvId } = agentPayload as {
+            agentSlug?: string; agentId?: string; message: string; conversationId?: string;
+          };
+
+          // Resolve agent
+          let resolvedAgentId = agentId;
+          if (!resolvedAgentId && agentSlug) {
+            const { createAgentService } = await import('../services/agent-service.js');
+            const svc = await createAgentService(db);
+            const agent = await svc.getAgentBySlug(agentSlug);
+            if (agent) resolvedAgentId = agent.id;
+          }
+
+          if (resolvedAgentId) {
+            const result = await proc.processQuery(resolvedAgentId, agentMessage, {
+              conversationId: agentConvId,
+              source: 'p2p',
+              requesterHash: fromHash,
+            });
+            return res.json({ ok: true, type: 'agent_query', ...result });
+          }
+        } catch (agentErr) {
+          console.error('[p2p] Agent query failed:', agentErr instanceof Error ? agentErr.message : agentErr);
+        }
+      }
+
       // Task request — another ANTON wants us to do work
       if (messageType === 'task_request' && payload) {
         try {

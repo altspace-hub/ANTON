@@ -610,6 +610,10 @@ app.use('/api', await createGrowRoutes(db));
 // Talent — Discovery-driven recruitment with EU AI Act compliance
 app.use('/api', await createTalentRoutes(db));
 
+// Specialized Agents — autonomous AI personas for business functions
+const { createAgentRoutes } = await import('./routes/agents.js');
+app.use('/api', await createAgentRoutes(db));
+
 // Companion App Gateway — admin routes (session-protected)
 if (APP_GATEWAY_ENABLED) {
   const appAdminRouter = (app as unknown as Record<string, unknown>)._appAdminRouter as import('express').Router;

@@ -16,6 +16,61 @@ import { callChat } from './provider-router.js';
 
 export async function createTaskAutoProcessor(db: DatabaseAdapter) {
 
+  /** Send a task result back to the requester via encrypted P2P */
+  async function sendResultBack(
+    localTaskId: string,
+    payload: { taskId: string; title: string },
+    fromHash: string,
+    identity: { contact_hash: string },
+    resultText: string
+  ): Promise<boolean> {
+    try {
+      const requesterConn = await db.get<{ endpoint: string | null; x25519_public_key: string | null }>(
+        "SELECT endpoint, x25519_public_key FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
+        fromHash
+      );
+      if (!requesterConn?.endpoint) return false;
+
+      const resultMailId = `cm_result_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await db.run(`
+        INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, folder, message_type, payload)
+        VALUES (?, ?, ?, ?, ?, 'sent', 'task_result', ?)
+      `, resultMailId, identity.contact_hash, JSON.stringify([fromHash]),
+         `[Result] ${payload.title}`, resultText,
+         JSON.stringify({ originalTaskId: payload.taskId, localTaskId, title: payload.title }));
+
+      const { createMessageQueueService } = await import('./message-queue-service.js');
+      const queueService = await createMessageQueueService(db);
+
+      let encryptedPayload: string | undefined;
+      if (requesterConn.x25519_public_key) {
+        try {
+          const { getMyX25519Keys, deriveSharedSecret, encryptMessage } = await import('./community-e2e.js');
+          const { randomUUID } = await import('crypto');
+          const myKeys = await getMyX25519Keys(db);
+          if (myKeys) {
+            const sharedSecret = deriveSharedSecret(myKeys.privateKeyHex, requesterConn.x25519_public_key);
+            const plaintext = JSON.stringify({
+              subject: `[Result] ${payload.title}`, body: resultText,
+              messageType: 'task_result', nonce: randomUUID(), timestamp: Date.now(),
+              payload: { originalTaskId: payload.taskId, localTaskId, title: payload.title },
+            });
+            const aad = `${identity.contact_hash}:${fromHash}`;
+            const encrypted = encryptMessage(plaintext, sharedSecret, aad);
+            encryptedPayload = JSON.stringify(encrypted);
+          }
+        } catch { /* encryption failed — send unencrypted via queue */ }
+      }
+
+      await queueService.enqueueMessage(resultMailId, fromHash, encryptedPayload);
+      console.log(`[task-processor] Result for "${payload.title}" enqueued for P2P delivery to ${fromHash}`);
+      return true;
+    } catch (sendErr) {
+      console.error('[task-processor] Failed to send result back:', sendErr instanceof Error ? sendErr.message : sendErr);
+      return false;
+    }
+  }
+
   /**
    * Process an inbound task request from a peer ANTON.
    * Called by the P2P receive handler when message_type === 'task_request'.
@@ -66,7 +121,36 @@ export async function createTaskAutoProcessor(db: DatabaseAdapter) {
       return { status: 'submitted', taskId: localTaskId, resultSent: false };
     }
 
-    // ── Auto-process with AI ────────────────────────────────────────
+    // ── Check if a specialized agent should handle this task ────────
+    try {
+      const { createAgentProcessor } = await import('./agent-processor.js');
+      const agentProc = await createAgentProcessor(db);
+      const agentMatch = await agentProc.routeQuery(`${payload.title} ${payload.description}`);
+      if (agentMatch && agentMatch.confidence > 0.6) {
+        console.log(`[task-processor] Routing to agent "${agentMatch.agentName}" (confidence: ${agentMatch.confidence.toFixed(2)})`);
+        await db.run(
+          "UPDATE community_delegated_tasks SET status = 'in_progress', accepted_at = NOW(), started_at = NOW(), updated_at = NOW() WHERE id = ?",
+          localTaskId
+        );
+        const agentResult = await agentProc.processAgentTask(agentMatch.agentId, payload, fromHash);
+
+        // Save result to task
+        await db.run(`
+          UPDATE community_delegated_tasks SET status = 'completed', result_content = ?, progress_percent = 100,
+            completed_at = NOW(), updated_at = NOW() WHERE id = ?
+        `, agentResult.result, localTaskId);
+
+        // Send result back (reuse the existing P2P return flow below)
+        const resultText = agentResult.result;
+        await sendResultBack(localTaskId, payload, fromHash, identity, resultText);
+
+        return { status: 'completed', taskId: localTaskId, resultSent: true };
+      }
+    } catch (agentErr) {
+      console.log('[task-processor] Agent routing check failed (using generic processor):', agentErr instanceof Error ? agentErr.message : agentErr);
+    }
+
+    // ── Auto-process with generic AI ──────────────────────────────────
 
     // Update status to in_progress
     await db.run(

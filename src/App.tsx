@@ -252,6 +252,9 @@ const ProcureCyclePage = lazy(() => import('./pages/procure/ProcureCyclePage'));
 const CivicPage = lazy(() => import('./pages/civic/CivicPage'));
 const CivicEngagementPage = lazy(() => import('./pages/civic/CivicEngagementPage'));
 
+// Specialized Agents
+const AgentHubPage = lazy(() => import('./pages/agents/AgentHubPage'));
+
 // Talent Discovery & Recruitment pages
 const TalentPage = lazy(() => import('./pages/talent/TalentPage'));
 const TalentCampaignPage = lazy(() => import('./pages/talent/TalentCampaignPage'));
@@ -585,6 +588,9 @@ export default function App() {
           {/* Civic Pillar — government & public institution navigator */}
           <Route path="/civic" element={<CivicPage />} />
           <Route path="/civic/engagement/:engagementId" element={<CivicEngagementPage />} />
+
+          {/* Specialized Agents */}
+          <Route path="/agents" element={<AgentHubPage />} />
 
           {/* Talent Discovery & Recruitment */}
           <Route path="/talent" element={<TalentPage />} />
