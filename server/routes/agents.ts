@@ -102,6 +102,71 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
   });
 
+  // ── Connectors ─────────────────────────────────────────────────────
+
+  router.get('/agents/:id/connectors', async (req, res) => {
+    try {
+      const connectors = await db.all(
+        'SELECT id, name, connector_type, description, is_active, last_used_at, last_error, created_at FROM agent_connectors WHERE agent_id = ? ORDER BY created_at',
+        req.params.id
+      );
+      res.json({ success: true, connectors });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  router.post('/agents/:id/connectors', async (req, res) => {
+    try {
+      const { name, connectorType, description, config, authConfig } = req.body as {
+        name: string; connectorType: string; description?: string;
+        config: Record<string, unknown>; authConfig?: Record<string, unknown>;
+      };
+      if (!name || !connectorType) { res.status(400).json({ error: 'name and connectorType required' }); return; }
+
+      // Encrypt auth credentials before storage
+      let encryptedAuth = '{}';
+      if (authConfig && Object.keys(authConfig).length > 0) {
+        const { encryptConfig } = await import('../services/credential-vault.js');
+        encryptedAuth = JSON.stringify(encryptConfig(authConfig));
+      }
+
+      const id = `aconn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await db.run(`
+        INSERT INTO agent_connectors (id, agent_id, name, connector_type, description, config, auth_config)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, id, req.params.id, name, connectorType, description ?? null,
+         JSON.stringify(config), encryptedAuth);
+
+      res.status(201).json({ success: true, id });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  router.delete('/agents/:id/connectors/:connectorId', async (req, res) => {
+    try {
+      await db.run('DELETE FROM agent_connectors WHERE id = ? AND agent_id = ?', req.params.connectorId, req.params.id);
+      res.json({ success: true });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
+  // Test a connector
+  router.post('/agents/:id/connectors/:connectorId/test', async (req, res) => {
+    try {
+      const { createConnectorExecutor } = await import('../services/agent-connector-executor.js');
+      const executor = await createConnectorExecutor(db);
+      const connector = await db.get<{ name: string }>(
+        'SELECT name FROM agent_connectors WHERE id = ? AND agent_id = ?',
+        req.params.connectorId, req.params.id
+      );
+      if (!connector) { res.status(404).json({ error: 'Connector not found' }); return; }
+
+      const result = await executor.executeCall(req.params.id, {
+        tool: connector.name,
+        action: req.body.action ?? 'GET',
+        params: req.body.params ?? {},
+      });
+      res.json({ success: true, result });
+    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+  });
+
   // ── Conversations ──────────────────────────────────────────────────
 
   router.get('/agents/:id/conversations', async (req, res) => {

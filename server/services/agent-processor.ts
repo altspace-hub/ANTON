@@ -12,6 +12,8 @@ import { createAgentService } from './agent-service.js';
 
 export async function createAgentProcessor(db: DatabaseAdapter) {
   const agentService = await createAgentService(db);
+  const { createConnectorExecutor } = await import('./agent-connector-executor.js');
+  const connectorExec = await createConnectorExecutor(db);
 
   /**
    * Process a query through a specialized agent.
@@ -119,6 +121,10 @@ export async function createAgentProcessor(db: DatabaseAdapter) {
       }
     } catch { /* atom search is best-effort */ }
 
+    // ── Build tool descriptions from connectors ───────────────────────
+    const connectors = await connectorExec.getAgentConnectors(agent.id);
+    const toolDescriptions = connectorExec.buildToolDescriptions(connectors);
+
     // ── Build system prompt with agent identity ──────────────────────
     const systemPrompt = `${agent.system_prompt}
 
@@ -131,7 +137,8 @@ IMPORTANT BEHAVIOR RULES:
 - Use markdown formatting for readability
 - Be professional, helpful, and concise
 ${agent.escalation_policy === 'human_only' ? '- For anything requiring professional advice (legal, medical, financial), always recommend consulting a qualified professional' : ''}
-${knowledgeContext}`;
+${knowledgeContext}
+${toolDescriptions}`;
 
     // ── Build messages ───────────────────────────────────────────────
     const messages = [
@@ -149,20 +156,62 @@ ${knowledgeContext}`;
       db,
     });
 
+    let finalResponse = result.text;
+    let totalInputTokens = result.inputTokens;
+    let totalOutputTokens = result.outputTokens;
+
+    // ── Tool Call Execution Loop ─────────────────────────────────────
+    // If the AI response contains tool_call blocks, execute them and re-prompt
+    if (connectors.length > 0) {
+      const toolCalls = connectorExec.parseToolCalls(result.text);
+      if (toolCalls.length > 0) {
+        // Execute each tool call
+        const toolResults: string[] = [];
+        for (const tc of toolCalls.slice(0, 5)) { // Max 5 tool calls per turn
+          const callResult = await connectorExec.executeCall(agent.id, tc);
+          toolResults.push(`TOOL RESULT [${callResult.connectorName}]: ${callResult.success ? JSON.stringify(callResult.data) : `ERROR: ${callResult.error}`}`);
+
+          // Log tool call
+          await agentService.addMessage(conversationId, 'tool', JSON.stringify({
+            tool: tc.tool, action: tc.action, params: tc.params,
+            success: callResult.success, durationMs: callResult.durationMs,
+          }));
+        }
+
+        // Re-prompt with tool results so AI can incorporate them
+        const followUp = await callChat({
+          model: agent.default_model ?? undefined,
+          tier: agent.default_model ? undefined : 'medium',
+          system: systemPrompt,
+          messages: [
+            ...messages,
+            { role: 'assistant', content: result.text },
+            { role: 'user', content: `Here are the results from the tools you called:\n\n${toolResults.join('\n\n')}\n\nNow provide your final response to the user incorporating these results. Do NOT include tool_call blocks — just give the final answer.` },
+          ],
+          maxTokens: agent.max_tokens,
+          db,
+        });
+
+        finalResponse = followUp.text;
+        totalInputTokens += followUp.inputTokens;
+        totalOutputTokens += followUp.outputTokens;
+      }
+    }
+
     // Save assistant response
-    await agentService.addMessage(conversationId, 'assistant', result.text, result.thinking,
-      result.inputTokens, result.outputTokens);
+    await agentService.addMessage(conversationId, 'assistant', finalResponse, result.thinking,
+      totalInputTokens, totalOutputTokens);
 
     // Update agent stats
     await db.run('UPDATE agent_profiles SET total_messages_handled = total_messages_handled + 1, updated_at = NOW() WHERE id = ?', agentId);
 
     return {
-      response: result.text,
+      response: finalResponse,
       thinking: result.thinking || undefined,
       conversationId,
       escalated: false,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
+      inputTokens: totalInputTokens,
+      outputTokens: totalOutputTokens,
     };
   }
 
