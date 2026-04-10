@@ -12,6 +12,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
 **Primary AI:** Anthropic Claude (`claude-opus-4-6` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
+**Companion App:** PWA + Capacitor Android wrapper at `src/app/` — separate Vite build (`dist/app/`) for end-users on phones.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
 ---
@@ -181,9 +182,12 @@ Claude is the default and most deeply integrated. Other providers work through a
 |---|---|---|---|
 | Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-6` | Built-in (`claude-client.ts`) |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
+| Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
 | Mistral | `MISTRAL_API_KEY` | `mistral-large-latest` | `server/services/model-adapter.ts` |
 | Ollama | `OLLAMA_BASE_URL` | User-selected | `server/services/model-adapter.ts` |
+
+Azure OpenAI supports reasoning models (o3, o4-mini) with effort mapping, multi-deployment config (stored in `azure_openai_config` / `azure_openai_deployments` tables), and SSE streaming.
 
 Set the API key in `.env` to enable each provider. Users switch models in the UI per session.
 
@@ -303,15 +307,19 @@ No class components. No `this`. Use hooks.
 
 ## Design System
 
-Dark theme by default. Professional, calm, trustworthy — for senior professionals.
+**Light theme by default** (as of v0.7.5). Three themes: `light`, `dark`, `corporate`. Theme variables live in `src/index.css` as OKLCH CSS custom properties and switch via `html.light` / `html.corporate` classes. The dark theme is the original ANTON look; light is for daytime professionals; corporate is a blue-tinted variant for enterprise deployments.
+
+The brand green (`#0D7D6C` — light-mode deep teal) is **locked** in the logo SVG (`public/anton-logo.svg`), the Sidebar logo box, and the LoginPage logo so the brand mark stays consistent across themes.
+
+Reference palette (dark-mode hex values, light/corporate use OKLCH equivalents in `src/index.css`):
 
 ```typescript
 const antonTheme = {
   'adv-dark':      '#0B1426',   // Main background
   'adv-dark-2':    '#0F1B2D',   // Secondary background
   'adv-card':      '#152238',   // Card/panel backgrounds
-  'adv-teal':      '#2DD4A8',   // Primary accent — CTAs, active states
-  'adv-teal-dark': '#1BA882',   // Hover states
+  'adv-teal':      '#2DD4A8',   // Primary accent (dark mode); #0D7D6C in light mode
+  'adv-teal-dark': '#1BA882',   // Hover states (dark); #06655A in light
   'adv-off-white': '#E0E0E0',   // Primary body text
   'adv-gray':      '#B0B0B0',   // Secondary text
   'adv-gold':      '#F5A623',   // Warning
@@ -322,6 +330,73 @@ const antonTheme = {
 ```
 
 Rules: Teal = action. 14px+ minimum font. Large readable text. Clear labels. Progressive disclosure. Keyboard navigable. Full ARIA labels.
+
+---
+
+## Pillars
+
+ANTON is organised into **top-level pillars**, each representing a different mode of intelligence the user can switch into. Pillars are selected via the App Mode toggle (`useSettingsStore.appMode`).
+
+| Pillar | Purpose | Key Files |
+|---|---|---|
+| **Work** | Default — 150+ expert modules for professional domains | `src/lib/constants.ts` (modules), `src/pages/ModulePage.tsx` |
+| **School** | Educational interface with teacher oversight | `src/pages/school/`, `school-pages` chunk |
+| **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) | `src/pages/life/` |
+| **Pathfinder** | Mode-aware research assistant ("smart action bar") | `src/pages/pathfinder/`, `server/services/pathfinder-engine.ts` |
+| **Markets** | Self-learning financial intelligence — 14 migrations, 21 services, 39 Python computation templates, ANTON 100 indexes, predictions, calibration | `server/services/market-*.ts`, `server/db/migrations-pg/049–062`, `src/pages/markets/` |
+| **Community** | E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring | `server/services/community-*.ts`, `src/pages/community/` |
+| **Procure** | Procurement cycles, vendor evaluation, criteria scoring, contract tracking | `server/services/procure-service.ts`, migration `091_procure_pillar.sql` |
+| **Civic** | Civic engagements, eligibility checks, document submissions, knowledge packs | `server/services/civic-service.ts`, migration `092_civic_pillar.sql` |
+| **Grow** | CRM-style: contacts, pipeline stages, opportunities, signals, briefings | `server/services/grow-service.ts`, migration `093_grow_pillar.sql` |
+| **Payments** | FutureChain wallet & marketplace integration | `src/pages/payments/`, `server/routes/fc-marketplace.ts` |
+
+The Markets Pillar is ANTON's **proof of self-learning intelligence** — daily market feedback validates predictions and reasoning quality. Markets is the canonical example for any new "intelligent pillar."
+
+---
+
+## Specialized Agents (Layer 4 — Collaborative Intelligence)
+
+Autonomous AI personas with their own system prompts, knowledge packs, routing rules, and escalation policies. Used for support, sales, HR, travel, and any business function.
+
+| File | Purpose |
+|---|---|
+| `server/services/agent-service.ts` | CRUD for agent profiles |
+| `server/services/agent-processor.ts` | Conversation processing + tool routing |
+| `server/services/agent-builder.ts` | AI-generated agent config from a description |
+| `server/services/agent-connector-executor.ts` | Live API calls + read-only DB queries from tool calls (encrypted creds via `credential-vault.ts`) |
+| `server/services/remote-agent-client.ts` | Discover agents on peer ANTON instances; route queries to best-matching remote agent |
+| `server/routes/agents.ts` | REST API: `GET/POST /agents`, `/agents/:id`, `/agents/public/directory`, `/agents/public/query` |
+| `src/pages/agents/AgentHubPage.tsx` | Agent management UI |
+
+DB tables (migration `111_specialized_agents.sql`): `agent_profiles`, `agent_conversations`, `agent_messages`, `agent_connectors`, `agent_templates`, `agent_audit_log`. Connector types: `rest_api`, `webhook`, `database`, `email`, `calendar`, `crm`, `erp`.
+
+---
+
+## Companion App (PWA + Android)
+
+Separate React app for end-users on phones/tablets. Lives at `src/app/`. Built with its own Vite config (`vite.config.app.ts` → `dist/app/`). Wrapped as Android APK/AAB via Capacitor (`android/`).
+
+- **Talks to the main server** via REST query-sync at `/api/app/*` (gateway: `server/routes/app-gateway.ts`, migration `094_app_gateway.sql`)
+- **Identity:** Ed25519 keypair stored in Capacitor secure storage
+- **15 screens:** Welcome → Join (QR) → Connections → Home / Chat / Schedule / Tasks / Search / Markets / Radar / History / Profile / Settings
+- **3 themes** (dark/light/corporate), 30 languages, offline cache + message queue
+- **Connection flow:** admin generates an invitation QR in the main app's `/app-gateway` page; user scans → app extracts `anton://join?server=<url>&token=<code>` → registers → joins
+- **Default theme is light** (matches main app default)
+
+---
+
+## Knowledge Layers & Vision
+
+ANTON has a **6-layer vision** — each layer independently valuable, each makes the next more powerful:
+
+1. **Individual ANTON** — pillars, modules, 7-layer prompts (DONE)
+2. **Intelligent ANTON** — knowledge atoms, pattern detection, predictions, calibration (Markets is the proof) (MOSTLY DONE)
+3. **Network** — Community tab, E2E messaging, contact hashes, trust (BUILT)
+4. **Collaborative Intelligence** — ANTON-to-ANTON via the Agent Protocol (Specialized Agents are the foundation) (IN PROGRESS)
+5. **Marketplace** — `.anton` bundle trading, rating, discovery (NOT STARTED)
+6. **Economy** — FutureChain payments, expertise as income (NOT STARTED — integration spec exists)
+
+When adding features, ask: *which layer does this serve, and does it make the next layer more powerful?*
 
 ---
 
@@ -351,10 +426,13 @@ See `.env.example` for the complete list. Key variables:
 | `PORT` | No | Express port (default: 3001) |
 | `DEPLOYMENT_MODE` | No | `solo` (default) or `team` (JWT auth) |
 | `OPENAI_API_KEY` | No | Enables GPT models |
+| `AZURE_OPENAI_ENDPOINT` | No | Azure OpenAI base URL (e.g. `https://my-resource.openai.azure.com`) |
+| `AZURE_OPENAI_API_KEY` | No | Azure OpenAI API key |
 | `GOOGLE_API_KEY` | No | Enables Gemini models |
 | `MISTRAL_API_KEY` | No | Enables Mistral models |
 | `OLLAMA_BASE_URL` | No | Local Ollama endpoint (default: localhost:11434) |
 | `MAX_CONTEXT_TOKENS` | No | Max context window (default: 900000) |
+| `ALLOWED_FOLDER_PATHS` | No | Comma-separated whitelist for filesystem-connector access |
 
 ---
 
@@ -365,7 +443,8 @@ pnpm install            # Install dependencies
 pnpm run dev            # Start dev (Vite :5173 + Express :3001)
 pnpm run build          # Production build
 pnpm run start          # Serve production build
-pnpm run db:init        # Initialize SQLite schema
+pnpm run db:init        # Initialize PostgreSQL schema
+pnpm run db:migrate:pg  # Run pending migrations against PostgreSQL
 pnpm run typecheck      # TypeScript type check
 pnpm run test           # Vitest unit tests
 pnpm run test:e2e       # Playwright E2E tests
