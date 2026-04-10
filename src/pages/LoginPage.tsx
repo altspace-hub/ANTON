@@ -160,7 +160,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
         {/* Top bar */}
         <div className="flex items-center justify-between px-10 pt-7">
-          <span className="lg:hidden text-[11px] font-bold tracking-[0.2em] uppercase text-adv-teal">
+          <span className="lg:hidden text-[11px] font-bold tracking-[0.2em] uppercase text-[#0D7D6C]">
             openEXPERT
           </span>
           <div className="flex-1" />
@@ -175,8 +175,8 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
             <div className="flex flex-col items-center mb-8">
               {/* "A" badge */}
               <div
-                className="w-[72px] h-[72px] rounded-2xl bg-adv-teal flex items-center justify-center mb-5"
-                style={{ boxShadow: '0 8px 32px rgba(45,212,168,0.35)' }}
+                className="w-[72px] h-[72px] rounded-2xl bg-[#0D7D6C] flex items-center justify-center mb-5"
+                style={{ boxShadow: '0 8px 32px rgba(13,125,108,0.35)' }}
               >
                 <span className="text-[40px] font-black text-white leading-none select-none">
                   A
@@ -185,7 +185,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
               <h1 className="text-[40px] font-bold text-gray-900 tracking-tight leading-none">
                 Anton
               </h1>
-              <p className="mt-2 text-[12px] font-bold tracking-[0.22em] uppercase text-adv-teal">
+              <p className="mt-2 text-[12px] font-bold tracking-[0.22em] uppercase text-[#0D7D6C]">
                 by openEXPERT
               </p>
             </div>
@@ -207,7 +207,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                 <button
                   onClick={onEnterWithoutLogin}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-adv-teal-dark active:scale-[0.98]"
-                  style={{ boxShadow: '0 4px 20px rgba(45,212,168,0.30)' }}
+                  style={{ boxShadow: '0 4px 20px rgba(13,125,108,0.30)' }}
                 >
                   <span>Enter Anton</span>
                   <ArrowRight className="w-4 h-4" />
@@ -238,7 +238,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     required
                     disabled={isSubmitting}
                     placeholder="Enter your username"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                   />
                 </div>
 
@@ -275,7 +275,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                       required
                       disabled={isSubmitting}
                       placeholder="Enter your password"
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                     />
                     <button
                       type="button"
@@ -312,7 +312,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                           required
                           disabled={forgotStatus === 'sending'}
                           placeholder="you@example.com"
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                         />
                         {forgotError && (
                           <p className="text-xs text-red-500">{forgotError}</p>
@@ -349,7 +349,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   disabled={isSubmitting || !username || !password}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                   style={{
-                    boxShadow: username && password ? '0 4px 20px rgba(45,212,168,0.30)' : 'none',
+                    boxShadow: username && password ? '0 4px 20px rgba(13,125,108,0.30)' : 'none',
                   }}
                 >
                   {isSubmitting ? (

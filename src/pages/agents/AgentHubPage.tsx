@@ -15,6 +15,13 @@ interface Agent {
 
 interface Template {
   id: string; name: string; category: string; description: string; icon: string;
+  default_config?: string | Record<string, unknown> | null;
+}
+
+interface TemplateDefaults {
+  routing_keywords?: string[];
+  escalation_policy?: string;
+  default_thinking?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -76,9 +83,9 @@ export default function AgentHubPage() {
 
   async function handleCreateFromTemplate(template: Template) {
     try {
-      const defaults = typeof (template as Record<string, unknown>).default_config === 'string'
-        ? JSON.parse((template as Record<string, unknown>).default_config as string)
-        : (template as Record<string, unknown>).default_config ?? {};
+      const defaults: TemplateDefaults = typeof template.default_config === 'string'
+        ? JSON.parse(template.default_config) as TemplateDefaults
+        : (template.default_config as TemplateDefaults | null | undefined) ?? {};
 
       const res = await fetchWithAuth('/api/agents', {
         method: 'POST',

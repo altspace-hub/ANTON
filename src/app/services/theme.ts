@@ -10,9 +10,9 @@ const STORAGE_KEY = 'anton-companion-theme';
 export function getTheme(): AppTheme {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'light' || saved === 'corporate') return saved;
+    if (saved === 'light' || saved === 'dark' || saved === 'corporate') return saved;
   } catch {}
-  return 'dark';
+  return 'light';
 }
 
 export function setTheme(theme: AppTheme): void {

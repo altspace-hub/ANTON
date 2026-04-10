@@ -12,7 +12,7 @@ function getInitialTheme(): Theme {
       return saved;
     }
   }
-  return 'dark';
+  return 'light';
 }
 
 function getInitialSidebarCollapsed(): boolean {

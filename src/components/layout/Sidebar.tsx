@@ -372,8 +372,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     >
       {/* Logo */}
       <div className={`flex h-16 items-center border-b border-border ${mini ? 'justify-center px-2' : 'gap-3 px-6'}`}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-adv-teal">
-          <span className="text-sm font-bold text-adv-dark">A</span>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0D7D6C]">
+          <span className="text-sm font-bold text-white">A</span>
         </div>
         {!sidebarCollapsed && (
           <div className="flex-1">

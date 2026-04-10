@@ -101,7 +101,7 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
   }, []);
 
   function addContact(hash: string) {
-    const current = to.split(',').map(s => s.trim()).filter(Boolean);
+    const current = to.split(',').map((s: string) => s.trim()).filter(Boolean);
     if (!current.includes(hash)) {
       setTo(current.length > 0 ? `${to}, ${hash}` : hash);
     }

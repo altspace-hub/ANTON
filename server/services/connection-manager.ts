@@ -384,4 +384,4 @@ export async function createConnectionManager(db: DatabaseAdapter) {
   };
 }
 
-export type ConnectionManager = ReturnType<typeof createConnectionManager>;
+export type ConnectionManager = Awaited<ReturnType<typeof createConnectionManager>>;
