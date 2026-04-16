@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Sorot outlier",
       "exampleShowDistribution": "Tampilkan distribusi",
       "exampleTimelineView": "Tampilan timeline",
-      "modelNote": "Anton akan menganalisis data Anda dan menghasilkan grafik interaktif menggunakan Claude Opus 4.6.",
+      "modelNote": "Anton akan menganalisis data Anda dan menghasilkan grafik interaktif menggunakan Claude Opus 4.7.",
       "errorMessage": "Tempel atau unggah data terlebih dahulu.",
       "errorQuestion": "Jelaskan apa yang ingin Anda lihat."
     },

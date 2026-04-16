@@ -13,7 +13,7 @@ services:
       - OUTPUT_DIR=/app/outputs
       - MAX_FILE_SIZE_MB=50
       - MAX_CONTEXT_TOKENS=180000
-      - DEFAULT_MODEL=claude-opus-4-6
+      - DEFAULT_MODEL=claude-opus-4-7
       # Optional: restrict CORS if you add network access
       # - CORS_ORIGINS=http://localhost:3001
     volumes:
@@ -65,7 +65,7 @@ services:
       - OUTPUT_DIR=/app/outputs
       - MAX_FILE_SIZE_MB=50
       - MAX_CONTEXT_TOKENS=180000
-      - DEFAULT_MODEL=claude-opus-4-6
+      - DEFAULT_MODEL=claude-opus-4-7
     volumes:
       - openexpert_uploads:/app/uploads
       - openexpert_outputs:/app/outputs

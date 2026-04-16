@@ -43,7 +43,7 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     label: 'Think',
     description: 'Standard deep reasoning with Opus. Good for most engagement types.',
     icon: Lightbulb,
-    model: 'Opus 4.6',
+    model: 'Opus 4.7',
     badge: 'Default',
   },
   {
@@ -51,14 +51,14 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     label: 'Think Hard',
     description: 'Extended reasoning mode. Best for complex regulatory analysis.',
     icon: Brain,
-    model: 'Opus 4.6',
+    model: 'Opus 4.7',
   },
   {
     id: 'investigate',
     label: 'Investigate',
     description: 'Maximum reasoning depth. Use for high-stakes deliverables and difficult gap analyses.',
     icon: Microscope,
-    model: 'Opus 4.6',
+    model: 'Opus 4.7',
     badge: 'Recommended',
   },
   {
@@ -66,14 +66,14 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     label: 'Plan First',
     description: 'Creates an explicit plan before execution. Best when structure and approach matter.',
     icon: ListChecks,
-    model: 'Opus 4.6',
+    model: 'Opus 4.7',
   },
   {
     id: 'deep_investigate',
     label: 'Deep',
     description: 'Iterative reasoning engine. Maximum depth with explicit reasoning trail for audit.',
     icon: Flame,
-    model: 'Opus 4.6',
+    model: 'Opus 4.7',
     badge: 'IRE',
   },
 ];

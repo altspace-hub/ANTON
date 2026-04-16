@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Fremhæv outliers",
       "exampleShowDistribution": "Vis fordeling",
       "exampleTimelineView": "Tidslinjevisning",
-      "modelNote": "Anton vil analysere dine data og generere interaktive diagrammer ved hjælp af Claude Opus 4.6.",
+      "modelNote": "Anton vil analysere dine data og generere interaktive diagrammer ved hjælp af Claude Opus 4.7.",
       "errorMessage": "Indsæt eller upload venligst data først.",
       "errorQuestion": "Beskriv venligst, hvad du vil se."
     },

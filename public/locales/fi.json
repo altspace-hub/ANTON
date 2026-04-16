@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Korosta poikkeamat",
       "exampleShowDistribution": "Näytä jakauma",
       "exampleTimelineView": "Aikajananäkymä",
-      "modelNote": "Anton analysoi datanne ja luo interaktiivisia kaavioita Claude Opus 4.6:lla.",
+      "modelNote": "Anton analysoi datanne ja luo interaktiivisia kaavioita Claude Opus 4.7:lla.",
       "errorMessage": "Liitä tai lataa data ensin.",
       "errorQuestion": "Kuvaile, mitä haluaisitte nähdä."
     },

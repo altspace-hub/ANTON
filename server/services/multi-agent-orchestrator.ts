@@ -360,7 +360,7 @@ export async function runMultiAgent(
 
   try {
     const synthesisResult = await callChat({
-      model: mapModelToProvider('claude-opus-4-6'),
+      model: mapModelToProvider('claude-opus-4-7'),
       system: synthesizerPrompt,
       messages: [{ role: 'user', content: request.userMessage }],
       maxTokens: 24192,

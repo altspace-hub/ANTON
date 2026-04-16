@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Accuracy critical for financial analysis. Opus 4.6 default."
+    "notes": "Accuracy critical for financial analysis. Opus 4.7 default."
   },
   "defaults": {
     "thinking": "think_hard",

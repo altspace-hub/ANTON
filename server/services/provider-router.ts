@@ -64,7 +64,7 @@ export interface ChatResult {
 /** Default tier-to-model mapping per provider */
 const TIER_MAP: Record<string, Record<ModelTier, string>> = {
   anthropic: {
-    large: 'claude-opus-4-6',
+    large: 'claude-opus-4-7',
     medium: 'claude-sonnet-4-6',
     small: 'claude-haiku-4-5-20251001',
   },
@@ -121,7 +121,7 @@ export function mapModelToProvider(claudeModelId: string): string {
 
   // Map Claude model to tier, then resolve for active provider
   const claudeToTier: Record<string, ModelTier> = {
-    'claude-opus-4-6': 'large',
+    'claude-opus-4-7': 'large',
     'claude-sonnet-4-6': 'medium',
     'claude-sonnet-4-5-20250929': 'medium',
     'claude-haiku-4-5-20251001': 'small',

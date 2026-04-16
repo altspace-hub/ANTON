@@ -114,12 +114,12 @@ const TOOLS: Tool[] = [
         model: {
           type: 'string',
           enum: [
-            'claude-opus-4-6',
+            'claude-opus-4-7',
             'claude-sonnet-4-5-20250929',
             'claude-haiku-4-5-20251001',
           ],
           description:
-            'Model to use. Default: claude-sonnet-4-5-20250929 for speed. Use claude-opus-4-6 for highest quality.',
+            'Model to use. Default: claude-sonnet-4-5-20250929 for speed. Use claude-opus-4-7 for highest quality.',
         },
       },
       required: ['module_id', 'message'],

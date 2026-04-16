@@ -280,7 +280,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       const thinkingLevel = EFFORT_MAP[session.mode] ?? 'think_hard';
 
       await streamChat({
-        model: mapModelToProvider('claude-opus-4-6'),
+        model: mapModelToProvider('claude-opus-4-7'),
         system: systemPrompt,
         messages: messages as Array<{ role: string; content: string }>,
         maxTokens: 16000,

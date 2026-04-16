@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Kiugró értékek kiemelése",
       "exampleShowDistribution": "Eloszlás megjelenítése",
       "exampleTimelineView": "Idővonal nézet",
-      "modelNote": "Anton elemzi az adatokat és interaktív grafikonokat generál a Claude Opus 4.6 használatával.",
+      "modelNote": "Anton elemzi az adatokat és interaktív grafikonokat generál a Claude Opus 4.7 használatával.",
       "errorMessage": "Kérjük, először illesszen be vagy töltsön fel adatokat.",
       "errorQuestion": "Kérjük, írja le, mit szeretne látni."
     },

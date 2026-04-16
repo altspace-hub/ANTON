@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Làm nổi bật các giá trị ngoại lai",
       "exampleShowDistribution": "Hiển thị phân phối",
       "exampleTimelineView": "Chế độ xem dòng thời gian",
-      "modelNote": "Anton sẽ phân tích dữ liệu của bạn và tạo biểu đồ tương tác bằng Claude Opus 4.6.",
+      "modelNote": "Anton sẽ phân tích dữ liệu của bạn và tạo biểu đồ tương tác bằng Claude Opus 4.7.",
       "errorMessage": "Vui lòng dán hoặc tải lên dữ liệu trước.",
       "errorQuestion": "Vui lòng mô tả những gì bạn muốn xem."
     },

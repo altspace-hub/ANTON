@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Investigation quality directly affects SAR quality and law enforcement outcomes. Opus 4.6 recommended."
+    "notes": "Investigation quality directly affects SAR quality and law enforcement outcomes. Opus 4.7 recommended."
   },
   "defaults": {
     "thinking": "think_hard",

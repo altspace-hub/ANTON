@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "تسليط الضوء على القيم الشاذة",
       "exampleShowDistribution": "إظهار التوزيع",
       "exampleTimelineView": "عرض الخط الزمني",
-      "modelNote": "سيقوم Anton بتحليل بياناتك وإنشاء مخططات تفاعلية باستخدام Claude Opus 4.6.",
+      "modelNote": "سيقوم Anton بتحليل بياناتك وإنشاء مخططات تفاعلية باستخدام Claude Opus 4.7.",
       "errorMessage": "يرجى لصق أو رفع البيانات أولاً.",
       "errorQuestion": "يرجى وصف ما تريد رؤيته."
     },

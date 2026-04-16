@@ -219,7 +219,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
   }
 
   function evaluateLookup(config: any, context: any): { result: 'pass' | 'fail' | 'warning'; findings: any[]; autoRemediated: boolean } {
-    // Example: { field: 'model', allowedValues: ['claude-opus-4-6', 'claude-sonnet-4-5'] }
+    // Example: { field: 'model', allowedValues: ['claude-opus-4-7', 'claude-sonnet-4-5'] }
     const value = getNestedValue(context, config.field);
     if (value === undefined) return { result: 'pass', findings: [], autoRemediated: false };
 

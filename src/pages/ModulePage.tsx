@@ -624,7 +624,7 @@ export default function ModulePage() {
   const estimatedInputTokens = Math.round(
     (systemPrompt.length + messages.reduce((sum, m) => sum + m.content.length, 0) + userInput.length) / 4
   );
-  const estimatedOutputTokens = model === 'claude-opus-4-6' ? 8000 : 4000;
+  const estimatedOutputTokens = model === 'claude-opus-4-7' ? 8000 : 4000;
   const estimatedCostUsd = modelInfo
     ? (estimatedInputTokens / 1_000_000) * modelInfo.inputCostPer1M +
       (estimatedOutputTokens / 1_000_000) * modelInfo.outputCostPer1M

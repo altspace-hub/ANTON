@@ -875,7 +875,7 @@ const COUNCIL_ROLES: { id: string; label: string; icon: string; description: str
     icon: '⚖️',
     description: 'Checks regulatory accuracy and robustness',
     prompt: 'Review the draft for regulatory accuracy. Flag any statements that could be challenged by a regulator, areas where regulatory citations are missing or weak, and recommendations that may be insufficient under applicable standards.',
-    defaultModel: 'claude-opus-4-6',
+    defaultModel: 'claude-opus-4-7',
   },
   {
     id: 'red-team',
@@ -995,7 +995,7 @@ Provide a structured review in 3-5 paragraphs with clear headings. Be specific a
 
       let chairText = '';
       const chairStream = streamMessage({
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
         thinking: 'think_hard',
         creativity: 'balanced',
         systemPrompt: `You are the Chair of an AI Council reviewing a consulting engagement draft. Synthesise the council's reviews into a final assessment.
@@ -1118,7 +1118,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                         className="w-full rounded border border-adv-teal/20 bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
                       >
                         <optgroup label="Claude">
-                          <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                          <option value="claude-opus-4-7">Claude Opus 4.7</option>
                           <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                           <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
                         </optgroup>
@@ -1192,7 +1192,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
             <div className={`border rounded-xl overflow-hidden ${activeRole === 'chair' ? 'border-adv-teal bg-adv-teal-soft' : 'border-adv-teal/30 bg-adv-teal-soft/50'}`}>
               <div className="flex items-center gap-2 px-4 py-3 border-b border-adv-teal/20">
                 <Users2 className="h-3.5 w-3.5 text-adv-teal" />
-                <span className="text-xs font-semibold text-adv-teal">Chair Synthesis (Claude Opus 4.6)</span>
+                <span className="text-xs font-semibold text-adv-teal">Chair Synthesis (Claude Opus 4.7)</span>
                 {activeRole === 'chair' && <Loader2 className="h-3 w-3 text-adv-teal animate-spin ml-1" />}
               </div>
               <div className="p-4 max-h-72 overflow-y-auto">

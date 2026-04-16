@@ -81,7 +81,7 @@ Get a Mistral API key at https://console.mistral.ai
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | **PostgreSQL** (`pg` ^8.18) | **16+** |
-| Primary AI | Anthropic Claude | claude-opus-4-6 |
+| Primary AI | Anthropic Claude | claude-opus-4-7 |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, **Mistral**, Ollama | — |
 | Companion App wrapper | Capacitor (Android) | — |
 | Package manager | pnpm | 10 |

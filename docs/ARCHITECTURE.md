@@ -407,7 +407,7 @@ Copy `.env.example` to `.env` and populate the values before starting the server
 
 | Variable | Required | Default | What it controls |
 |---|---|---|---|
-| `DEFAULT_MODEL` | No | `claude-opus-4-6` | Default model applied when a user has not overridden it for their session |
+| `DEFAULT_MODEL` | No | `claude-opus-4-7` | Default model applied when a user has not overridden it for their session |
 | `DEFAULT_THINKING` | No | `think_hard` | Default thinking level (`quick`, `think`, `think_hard`, `investigate`, `plan_first`) |
 | `DEFAULT_CREATIVITY` | No | `balanced` | Default creativity level (`strict`, `balanced`, `creative`) |
 | `MAX_CONTEXT_TOKENS` | No | `180000` | Maximum tokens included in a single request; a warning is shown in the UI at 80% (144,000 tokens) |

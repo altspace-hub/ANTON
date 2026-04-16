@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Markeer uitschieters",
       "exampleShowDistribution": "Toon distributie",
       "exampleTimelineView": "Tijdlijnweergave",
-      "modelNote": "Anton zal uw data analyseren en interactieve grafieken genereren met Claude Opus 4.6.",
+      "modelNote": "Anton zal uw data analyseren en interactieve grafieken genereren met Claude Opus 4.7.",
       "errorMessage": "Plak of upload eerst data.",
       "errorQuestion": "Beschrijf wat u wilt zien."
     },

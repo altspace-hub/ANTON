@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Fremhev avvik",
       "exampleShowDistribution": "Vis fordeling",
       "exampleTimelineView": "Tidslinjevisning",
-      "modelNote": "Anton vil analysere dataene dine og generere interaktive diagrammer ved hjelp av Claude Opus 4.6.",
+      "modelNote": "Anton vil analysere dataene dine og generere interaktive diagrammer ved hjelp av Claude Opus 4.7.",
       "errorMessage": "Vennligst lim inn eller last opp data først.",
       "errorQuestion": "Vennligst beskriv hva du vil se."
     },

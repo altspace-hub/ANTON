@@ -4,8 +4,8 @@
  * Single source of truth for context window sizes, output limits,
  * pricing, and feature support per model.
  *
- * Updated 2026-03-14 to reflect 1M GA for Opus 4.6 / Sonnet 4.6.
- * Opus 4.6 & Sonnet 4.6: 1M context at flat-rate pricing (no beta header, no premium).
+ * Updated 2026-04-16: Opus upgraded 4.6 → 4.7.
+ * Opus 4.7 & Sonnet 4.6: 1M context at flat-rate pricing (no beta header, no premium).
  * Haiku 4.5: 200k context (unchanged).
  */
 
@@ -62,13 +62,13 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
-  'claude-opus-4-6': {
+  'claude-opus-4-7': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
-    requires1MBetaHeader: false,       // GA as of 2026-03-13
+    requires1MBetaHeader: false,
     supportsCompaction: true,
     supportsAdaptiveThinking: true,
-    supportsExtendedThinking: false,   // Opus 4.6 uses adaptive only (budget_tokens DEPRECATED)
+    supportsExtendedThinking: false,   // Opus 4.7 uses adaptive only (budget_tokens DEPRECATED)
     pricing: {
       inputPerMillion: 5,
       outputPerMillion: 25,
@@ -451,7 +451,7 @@ export function formatContextInfo(modelId: string): string {
 /**
  * Get the thinking configuration for a model + ANTON thinking level.
  *
- * Opus 4.6: Adaptive thinking (effort parameter). budget_tokens is DEPRECATED.
+ * Opus 4.7: Adaptive thinking (effort parameter). budget_tokens is DEPRECATED.
  * Sonnet 4.6: Adaptive thinking (preferred). Also supports manual extended thinking.
  * Sonnet 4.5 / Haiku 4.5: Manual extended thinking (budget_tokens).
  * Non-Claude: No native thinking.
@@ -465,8 +465,8 @@ export function getThinkingConfig(
     return { thinkingType: 'none', maxTokens: 4096, requiresInterleavedThinkingBeta: false };
   }
 
-  // ─── Opus 4.6: Adaptive thinking (effort parameter) ────────
-  if (modelId === 'claude-opus-4-6') {
+  // ─── Opus 4.7: Adaptive thinking (effort parameter) ────────
+  if (modelId === 'claude-opus-4-7') {
     const mapping: Record<string, ThinkingConfig> = {
       'quick': {
         thinkingType: 'adaptive',

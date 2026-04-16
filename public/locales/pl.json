@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Podkreśl odstające",
       "exampleShowDistribution": "Pokaż rozkład",
       "exampleTimelineView": "Widok osi czasu",
-      "modelNote": "Anton przeanalizuje Twoje dane i wygeneruje interaktywne wykresy za pomocą Claude Opus 4.6.",
+      "modelNote": "Anton przeanalizuje Twoje dane i wygeneruje interaktywne wykresy za pomocą Claude Opus 4.7.",
       "errorMessage": "Najpierw wklej lub prześlij dane.",
       "errorQuestion": "Opisz, co chciałbyś zobaczyć."
     },

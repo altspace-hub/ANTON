@@ -1126,7 +1126,7 @@ function GapAssessmentWizardInner() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'opus' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                    <span className="text-sm font-medium text-adv-off-white">Opus 4.6</span>
+                    <span className="text-sm font-medium text-adv-off-white">Opus 4.7</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-gold/20 text-adv-gold font-medium">Deep</span>
                   </div>
                   <p className="text-[11px] text-adv-gray leading-snug">Maximum reasoning depth. Adaptive thinking at full effort. Best for critical, company-shaping assessments.</p>
@@ -1325,7 +1325,7 @@ function GapAssessmentWizardInner() {
                   Entity: {contextConfig.entityType} — {contextConfig.jurisdiction}<br />
                   Frameworks: {fwIds.join(', ')}<br />
                   Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)<br />
-                  Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.6 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
+                  Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.7 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
                 </p>
                 <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   <Play className="h-4 w-4" /> Start Assessment

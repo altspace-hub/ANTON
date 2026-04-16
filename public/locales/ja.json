@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "外れ値を強調表示",
       "exampleShowDistribution": "分布を表示",
       "exampleTimelineView": "タイムラインビュー",
-      "modelNote": "AntonはClaude Opus 4.6を使用してデータを分析し、インタラクティブなチャートを生成します。",
+      "modelNote": "AntonはClaude Opus 4.7を使用してデータを分析し、インタラクティブなチャートを生成します。",
       "errorMessage": "最初にデータを貼り付けまたはアップロードしてください。",
       "errorQuestion": "見たいものを説明してください。"
     },

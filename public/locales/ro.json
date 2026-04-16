@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Evidențiază valorile atipice",
       "exampleShowDistribution": "Arată distribuția",
       "exampleTimelineView": "Vedere cronologie",
-      "modelNote": "Anton va analiza datele tale și va genera grafice interactive folosind Claude Opus 4.6.",
+      "modelNote": "Anton va analiza datele tale și va genera grafice interactive folosind Claude Opus 4.7.",
       "errorMessage": "Te rog lipește sau încarcă date mai întâi.",
       "errorQuestion": "Te rog descrie ce ai dori să vezi."
     },

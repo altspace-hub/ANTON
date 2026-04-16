@@ -127,7 +127,7 @@ mkdir -p server/areas/legal/modules
   "icon": "Scale",
   "description": "Contract analysis, regulatory compliance, legal risk assessment, and dispute support.",
   "color": "adv-blue",
-  "defaultModel": "claude-opus-4-6",
+  "defaultModel": "claude-opus-4-7",
   "defaultThinking": "think_hard",
   "defaultCreativity": "balanced"
 }

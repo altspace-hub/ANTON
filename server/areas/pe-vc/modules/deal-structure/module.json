@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Opus 4.6 for complex term sheet analysis. Legal review always required before execution."
+    "notes": "Opus 4.7 for complex term sheet analysis. Legal review always required before execution."
   },
   "defaults": {
     "thinking": "think_hard",

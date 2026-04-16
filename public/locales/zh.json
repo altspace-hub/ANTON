@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "突出显示异常值",
       "exampleShowDistribution": "显示分布",
       "exampleTimelineView": "时间线视图",
-      "modelNote": "Anton将使用Claude Opus 4.6分析您的数据并生成交互式图表。",
+      "modelNote": "Anton将使用Claude Opus 4.7分析您的数据并生成交互式图表。",
       "errorMessage": "请先粘贴或上传数据。",
       "errorQuestion": "请描述您想看到什么。"
     },

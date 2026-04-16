@@ -41,7 +41,7 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
     }
 
     try {
-      const resolvedModel = mapModelToProvider((model as string) || 'claude-opus-4-6');
+      const resolvedModel = mapModelToProvider((model as string) || 'claude-opus-4-7');
 
       setSSEHeaders(res);
 

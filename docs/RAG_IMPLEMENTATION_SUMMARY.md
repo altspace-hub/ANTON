@@ -216,7 +216,7 @@ User:    8,000
 
 - **5-10 chunks**: Focused queries (small models)
 - **10-20 chunks**: Balanced coverage (Sonnet)
-- **20-50 chunks**: Comprehensive (Opus 4.6 with 200k context)
+- **20-50 chunks**: Comprehensive (Opus 4.7 with 200k context)
 
 ---
 
@@ -231,7 +231,7 @@ User:    8,000
 **Guidelines:**
 - 5-10: Precise answers, minimal noise
 - 10-20: Good balance for most queries
-- 20-50: Comprehensive, use only with Opus 4.6
+- 20-50: Comprehensive, use only with Opus 4.7
 
 ### Re-ranking
 
@@ -471,7 +471,7 @@ Stores JSON array:
 
 **Issue**: Context limit exceeded
 - **Cause**: Too many chunks + large system prompt
-- **Fix**: Reduce topK to 5-10, or use Opus 4.6
+- **Fix**: Reduce topK to 5-10, or use Opus 4.7
 
 **Issue**: Low relevance results
 - **Cause**: Query doesn't match document terminology
@@ -500,6 +500,6 @@ Complete RAG integration delivered with:
 
 ---
 
-**Implementation By**: Claude Code (Opus 4.6)
+**Implementation By**: Claude Code (Opus 4.7)
 **Date**: 2026-02-19
 **Build Status**: ✅ Successful (0 errors)

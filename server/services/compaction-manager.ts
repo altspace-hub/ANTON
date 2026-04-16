@@ -11,7 +11,7 @@
  * 4. Log compaction events to audit trail
  * 5. Track total tokens consumed across compactions
  *
- * Supported models: Claude Opus 4.6 and Sonnet 4.6 only.
+ * Supported models: Claude Opus 4.7 and Sonnet 4.6 only.
  */
 
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
@@ -84,7 +84,7 @@ const COMPACTION_DEFAULTS: Record<SessionType, Partial<CompactionConfig>> = {
 
 /**
  * Determine if compaction should be enabled for a session.
- * Only enable for models that support it (Opus 4.6, Sonnet 4.6).
+ * Only enable for models that support it (Opus 4.7, Sonnet 4.6).
  */
 export function shouldEnableCompaction(
   modelId: string,

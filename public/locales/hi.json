@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "आउटलायर को हाइलाइट करें",
       "exampleShowDistribution": "वितरण दिखाएं",
       "exampleTimelineView": "टाइमलाइन दृश्य",
-      "modelNote": "Anton आपके डेटा का विश्लेषण करेगा और Claude Opus 4.6 का उपयोग करके इंटरैक्टिव चार्ट उत्पन्न करेगा।",
+      "modelNote": "Anton आपके डेटा का विश्लेषण करेगा और Claude Opus 4.7 का उपयोग करके इंटरैक्टिव चार्ट उत्पन्न करेगा।",
       "errorMessage": "कृपया पहले डेटा पेस्ट या अपलोड करें।",
       "errorQuestion": "कृपया बताएं कि आप क्या देखना चाहेंगे।"
     },

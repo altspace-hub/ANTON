@@ -46,7 +46,7 @@ interface LoginAttempt {
 
 // Model pricing (per 1M tokens) - Updated Mar 2026 (1M context GA pricing)
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-opus-4-6': { input: 5, output: 25 },
+  'claude-opus-4-7': { input: 5, output: 25 },
   'claude-sonnet-4-6': { input: 3, output: 15 },
   'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
   'claude-haiku-4-5-20251001': { input: 0.80, output: 4 },

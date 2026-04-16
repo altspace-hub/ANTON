@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "برجسته کردن مقادیر پرت",
       "exampleShowDistribution": "نمایش توزیع",
       "exampleTimelineView": "نمای خط زمانی",
-      "modelNote": "Anton داده‌های شما را تحلیل کرده و نمودارهای تعاملی با استفاده از Claude Opus 4.6 تولید می‌کند.",
+      "modelNote": "Anton داده‌های شما را تحلیل کرده و نمودارهای تعاملی با استفاده از Claude Opus 4.7 تولید می‌کند.",
       "errorMessage": "لطفاً ابتدا داده‌ها را بچسبانید یا بارگذاری کنید.",
       "errorQuestion": "لطفاً توضیح دهید که می‌خواهید چه چیزی را ببینید."
     },

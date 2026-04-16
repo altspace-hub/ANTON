@@ -22,7 +22,7 @@ export function detectOptimalModel(
     !userInput.includes('gap');
   const isMedium = words < 100;
 
-  if (currentModel === 'claude-opus-4-6') {
+  if (currentModel === 'claude-opus-4-7') {
     if (isSimple) {
       return {
         suggest: 'claude-haiku-4-5-20251001',
@@ -49,7 +49,7 @@ const MODEL_LABELS: Record<string, string> = {
   'claude-haiku-4-5-20251001': 'Haiku',
   'claude-sonnet-4-6': 'Sonnet 4.6',
   'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
-  'claude-opus-4-6': 'Opus',
+  'claude-opus-4-7': 'Opus',
 };
 
 export default function SmartModelBanner({

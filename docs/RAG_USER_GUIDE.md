@@ -139,7 +139,7 @@ The **Context Budget** panel shows:
 
 1. **Start small**: Begin with 5-10 chunks, increase if needed
 2. **Monitor the budget**: Check the Context Budget indicator before running
-3. **Use larger models**: Opus 4.6 has a 200k token context (vs. 128k for Sonnet)
+3. **Use larger models**: Opus 4.7 has a 200k token context (vs. 128k for Sonnet)
 4. **Be specific**: Precise queries retrieve more relevant chunks
 
 ---
@@ -233,7 +233,7 @@ The **Context Budget** panel shows:
 **Solutions:**
 - Reduce chunks to 5-10
 - Start a new session (shorter history)
-- Use Opus 4.6 (200k context vs. 128k)
+- Use Opus 4.7 (200k context vs. 128k)
 
 ---
 

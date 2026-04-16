@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Виділити викиди",
       "exampleShowDistribution": "Показати розподіл",
       "exampleTimelineView": "Перегляд часової шкали",
-      "modelNote": "Anton проаналізує ваші дані та створить інтерактивні графіки за допомогою Claude Opus 4.6.",
+      "modelNote": "Anton проаналізує ваші дані та створить інтерактивні графіки за допомогою Claude Opus 4.7.",
       "errorMessage": "Будь ласка, спочатку вставте або завантажте дані.",
       "errorQuestion": "Будь ласка, опишіть, що б ви хотіли побачити."
     },

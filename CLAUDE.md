@@ -11,7 +11,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
-**Primary AI:** Anthropic Claude (`claude-opus-4-6` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
+**Primary AI:** Anthropic Claude (`claude-opus-4-7` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
 **Companion App:** PWA + Capacitor Android wrapper at `src/app/` — separate Vite build (`dist/app/`) for end-users on phones.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
@@ -92,7 +92,7 @@ pnpm run build && pnpm run start
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | PostgreSQL | 16+ |
-| Primary AI | Anthropic Claude | claude-opus-4-6 |
+| Primary AI | Anthropic Claude | claude-opus-4-7 (Opus 4.7) |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
@@ -180,7 +180,7 @@ Claude is the default and most deeply integrated. Other providers work through a
 
 | Provider | Env Variable | Default Model | Adapter File |
 |---|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-6` | Built-in (`claude-client.ts`) |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-7` | Built-in (`claude-client.ts`) |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
 | Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
@@ -193,7 +193,7 @@ Set the API key in `.env` to enable each provider. Users switch models in the UI
 
 ### Thinking Levels
 
-| Level | Description | Claude Opus 4.6 | Sonnet/Haiku |
+| Level | Description | Claude Opus 4.7 | Sonnet/Haiku |
 |---|---|---|---|
 | `quick` | No deep reasoning | `effort: 'low'` | thinking disabled |
 | `think` | Standard reasoning | `effort: 'medium'` | `budget_tokens: 4096` |
@@ -201,7 +201,7 @@ Set the API key in `.env` to enable each provider. Users switch models in the UI
 | `investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
 | `plan_first` | Plan then execute | `effort: 'max'` | `budget_tokens: 32768` |
 
-For `claude-opus-4-6`, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
+For `claude-opus-4-7`, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
 
 ### Export Pipeline
 

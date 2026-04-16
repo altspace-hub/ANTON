@@ -7,7 +7,7 @@ GPT and Mistral models support a `seed` parameter for deterministic outputs. Whe
 - ✅ GPT-4o (OpenAI)
 - ✅ GPT-4o Mini (OpenAI)
 - ✅ Mistral Large
-- ❌ Claude Opus 4.6 (does not support seed — even temp=0 is not fully deterministic)
+- ❌ Claude Opus 4.7 (does not support seed — even temp=0 is not fully deterministic)
 - ❌ Claude Sonnet 4.5 (does not support seed)
 - ❌ Claude Haiku 4.5 (does not support seed)
 - ❌ Gemini 2.0 Flash (does not support seed)

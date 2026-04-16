@@ -123,7 +123,7 @@ export default function ReviewEnginePage() {
   const { t } = useTranslation();
   const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [selectedModeId, setSelectedModeId] = useState<string>('peer-review');
-  const [selectedModel, setSelectedModel] = useState<ModelId>('claude-opus-4-6');
+  const [selectedModel, setSelectedModel] = useState<ModelId>('claude-opus-4-7');
   const [inputTab, setInputTab] = useState<'paste' | 'upload'>('paste');
   const [docContent, setDocContent] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; text: string }>>([]);
@@ -427,7 +427,7 @@ export default function ReviewEnginePage() {
             </label>
             <div className="flex items-center gap-2">
               {([
-                { id: 'claude-opus-4-6', label: 'Opus (default)' },
+                { id: 'claude-opus-4-7', label: 'Opus (default)' },
                 { id: 'claude-sonnet-4-6', label: 'Sonnet' },
                 { id: 'claude-haiku-4-5-20251001', label: 'Haiku' },
               ] as { id: ModelId; label: string }[]).map((m) => (

@@ -851,7 +851,7 @@
       "exampleHighlightOutliers": "Highlight outliers",
       "exampleShowDistribution": "Show distribution",
       "exampleTimelineView": "Timeline view",
-      "modelNote": "Anton will analyze your data and generate interactive charts using Claude Opus 4.6.",
+      "modelNote": "Anton will analyze your data and generate interactive charts using Claude Opus 4.7.",
       "errorMessage": "Please paste or upload data first.",
       "errorQuestion": "Please describe what you would like to see."
     },

@@ -201,7 +201,7 @@ export async function createBridgePublicRoutes(db: Database, _anthropic?: Anthro
       // 7. Call AI (non-streaming — bridge clients expect a complete response)
       const startTime = Date.now();
       const result = await callChat({
-        model: mapModelToProvider('claude-opus-4-6'),
+        model: mapModelToProvider('claude-opus-4-7'),
         system: systemPrompt,
         messages: [{ role: 'user', content: message.trim() }],
         maxTokens: 1024,

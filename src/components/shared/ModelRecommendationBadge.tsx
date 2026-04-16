@@ -44,7 +44,7 @@ function getAuthHeader(): Record<string, string> {
 }
 
 const MODEL_SHORT_LABELS: Record<string, string> = {
-  'claude-opus-4-6': 'Opus',
+  'claude-opus-4-7': 'Opus',
   'claude-sonnet-4-6': 'Sonnet 4.6',
   'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
   'claude-haiku-4-5-20251001': 'Haiku',

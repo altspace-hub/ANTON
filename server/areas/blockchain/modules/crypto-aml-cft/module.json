@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "AML compliance errors carry criminal liability. Opus 4.6 mandatory for gap assessments and policy work."
+    "notes": "AML compliance errors carry criminal liability. Opus 4.7 mandatory for gap assessments and policy work."
   },
   "defaults": {
     "thinking": "investigate",

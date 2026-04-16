@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "আউটলায়ার হাইলাইট করুন",
       "exampleShowDistribution": "বিতরণ দেখান",
       "exampleTimelineView": "টাইমলাইন ভিউ",
-      "modelNote": "Anton আপনার ডেটা বিশ্লেষণ করবে এবং Claude Opus 4.6 ব্যবহার করে ইন্টারঅ্যাক্টিভ চার্ট তৈরি করবে।",
+      "modelNote": "Anton আপনার ডেটা বিশ্লেষণ করবে এবং Claude Opus 4.7 ব্যবহার করে ইন্টারঅ্যাক্টিভ চার্ট তৈরি করবে।",
       "errorMessage": "অনুগ্রহ করে প্রথমে ডেটা পেস্ট বা আপলোড করুন।",
       "errorQuestion": "আপনি কী দেখতে চান তা বর্ণনা করুন।"
     },

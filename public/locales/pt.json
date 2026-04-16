@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Destacar valores atípicos",
       "exampleShowDistribution": "Mostrar distribuição",
       "exampleTimelineView": "Vista de cronologia",
-      "modelNote": "Anton analisará os seus dados e gerará gráficos interativos usando Claude Opus 4.6.",
+      "modelNote": "Anton analisará os seus dados e gerará gráficos interativos usando Claude Opus 4.7.",
       "errorMessage": "Por favor, cole ou carregue dados primeiro.",
       "errorQuestion": "Por favor, descreva o que gostaria de ver."
     },

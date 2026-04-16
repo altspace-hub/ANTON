@@ -6,7 +6,7 @@ Claude API's prompt caching feature allows repeated system prompts to be cached 
 
 ## How It Works
 
-When using Claude models (Opus 4.6, Sonnet 4.5), the system automatically splits the system prompt into two blocks:
+When using Claude models (Opus 4.7, Sonnet 4.5), the system automatically splits the system prompt into two blocks:
 
 1. **Static block (cached)**: Foundation prompt + Area context + Module system prompt
    - These layers don't change between follow-up messages in the same session
@@ -21,7 +21,7 @@ When using Claude models (Opus 4.6, Sonnet 4.5), the system automatically splits
 
 ### Without Caching
 - System prompt: ~3,000-5,000 tokens per call
-- Cost (Opus 4.6): 4,000 tokens × $15/1M = **$0.060** per call
+- Cost (Opus 4.7): 4,000 tokens × $15/1M = **$0.060** per call
 - Cost (Sonnet 4.5): 4,000 tokens × $3/1M = **$0.012** per call
 
 ### With Caching (after first call)
@@ -32,11 +32,11 @@ When using Claude models (Opus 4.6, Sonnet 4.5), the system automatically splits
 ### Real-World Savings
 
 On a typical session with 10 follow-up messages:
-- **Opus 4.6**: ~$0.54 saved per session
+- **Opus 4.7**: ~$0.54 saved per session
 - **Sonnet 4.5**: ~$0.11 saved per session
 
 On 100 sessions per month:
-- **Opus 4.6**: ~$54/month saved
+- **Opus 4.7**: ~$54/month saved
 - **Sonnet 4.5**: ~$11/month saved
 
 ## Implementation Details
@@ -73,7 +73,7 @@ The prompt composer splits prompts as follows:
 
 | Model | Supports Caching | Implementation |
 |-------|-----------------|----------------|
-| Claude Opus 4.6 | ✅ Yes | Automatic two-block split |
+| Claude Opus 4.7 | ✅ Yes | Automatic two-block split |
 | Claude Sonnet 4.5 | ✅ Yes | Automatic two-block split |
 | Claude Haiku 4.5 | ✅ Yes | Automatic two-block split |
 | GPT-4o / GPT-4o Mini | ❌ No | Single-block prompt (no cache control) |
@@ -125,7 +125,7 @@ SELECT
   SUM(cache_creation_tokens) as total_created,
   SUM(estimated_cost_usd) as total_cost
 FROM audit_log
-WHERE model IN ('claude-opus-4-6', 'claude-sonnet-4-5-20250929')
+WHERE model IN ('claude-opus-4-7', 'claude-sonnet-4-5-20250929')
   AND timestamp >= date('now', '-30 days')
 GROUP BY model;
 ```
@@ -167,7 +167,7 @@ const stats = db.prepare(`
     SUM(CASE WHEN cache_creation_tokens > 0 THEN 1 ELSE 0 END) as cache_creates,
     AVG(cached_tokens) as avg_cached_per_call
   FROM audit_log
-  WHERE model = 'claude-opus-4-6'
+  WHERE model = 'claude-opus-4-7'
     AND timestamp >= date('now', '-7 days')
 `).get();
 

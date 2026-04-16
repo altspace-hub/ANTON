@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Opus 4.6 for deep market analysis. Enable web search for current data."
+    "notes": "Opus 4.7 for deep market analysis. Enable web search for current data."
   },
   "defaults": {
     "thinking": "think_hard",

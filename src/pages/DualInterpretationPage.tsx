@@ -81,7 +81,7 @@ export default function DualInterpretationPage() {
     try {
       const stream = streamMessage(
         {
-          model: 'claude-opus-4-6',
+          model: 'claude-opus-4-7',
           thinking: 'think_hard',
           creativity: 'strict',
           systemPrompt: DUAL_SYSTEM_PROMPT,

@@ -344,7 +344,7 @@ const defaultProfile = {
   preferences: JSON.stringify({
     theme: 'dark',
     language: 'en',
-    default_model: 'claude-opus-4-6',
+    default_model: 'claude-opus-4-7',
     default_thinking: 'think_hard',
     default_creativity: 'balanced',
   }),

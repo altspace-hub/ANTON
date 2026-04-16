@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "เน้นค่าผิดปกติ",
       "exampleShowDistribution": "แสดงการกระจาย",
       "exampleTimelineView": "มุมมองไทม์ไลน์",
-      "modelNote": "Anton จะวิเคราะห์ข้อมูลของคุณและสร้างแผนภูมิแบบโต้ตอบโดยใช้ Claude Opus 4.6",
+      "modelNote": "Anton จะวิเคราะห์ข้อมูลของคุณและสร้างแผนภูมิแบบโต้ตอบโดยใช้ Claude Opus 4.7",
       "errorMessage": "กรุณาวางหรืออัปโหลดข้อมูลก่อน",
       "errorQuestion": "กรุณาอธิบายสิ่งที่คุณต้องการเห็น"
     },

@@ -3,12 +3,12 @@ import type { Response } from 'express';
 
 // ── Types ──────────────────────────────────────────────────
 
-type ModelId = 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+type ModelId = 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 // Models that support prompt caching via cache_control: { type: "ephemeral" }
 const CACHE_SUPPORTED_MODELS: ReadonlySet<ModelId> = new Set([
-  'claude-opus-4-6',
+  'claude-opus-4-7',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5-20250929',
 ]);
@@ -31,7 +31,7 @@ interface StreamConfig {
    * content block with cache_control: { type: "ephemeral" } so Anthropic can cache it
    * across API calls, reducing cost (~90% savings on cached tokens).
    *
-   * Only supported for claude-opus-4-6 and claude-sonnet-4-5-20250929.
+   * Only supported for claude-opus-4-7 and claude-sonnet-4-5-20250929.
    * Ignored (falls back to single-block) for claude-haiku-4-5-20251001.
    */
   staticSystemPrompt?: string;
@@ -40,14 +40,14 @@ interface StreamConfig {
   maxTokens?: number;
   nativeReasoningEnabled?: boolean;
   /** When true, adds the anthropic-beta: context-1m-2025-08-07 header to unlock
-   *  up to 1M token context for Opus 4.6 and Sonnet 4.6. Requires API beta access. */
+   *  up to 1M token context for Opus 4.7 and Sonnet 4.6. Requires API beta access. */
   useLongContext?: boolean;
   /** Optional abort signal — wire to req.on('close') to cancel the stream when the client disconnects. */
   signal?: AbortSignal;
   /** ATTR-05: Source manifest — injected into stream_end so the client can show "Sources used". */
   sourceManifest?: string[];
   /** Context compaction: when enabled, adds compact-2026-01-12 beta header and
-   *  context_management parameter. Only works with Opus 4.6 and Sonnet 4.6. */
+   *  context_management parameter. Only works with Opus 4.7 and Sonnet 4.6. */
   compaction?: {
     enabled: boolean;
     triggerThreshold: number;
@@ -117,10 +117,10 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 
 // ── Thinking Config Resolution ─────────────────────────────
 
-// Per-model max output token ceilings (Anthropic API limits, August 2025).
-// Opus 4.6: 128 000  |  Sonnet 4.6: 64 000  |  all others: 32 000
+// Per-model max output token ceilings (Anthropic API limits).
+// Opus 4.7: 128 000  |  Sonnet 4.6: 64 000  |  all others: 32 000
 const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
-  'claude-opus-4-6':             128_000,
+  'claude-opus-4-7':             128_000,
   'claude-sonnet-4-6':            64_000,
   'claude-sonnet-4-5-20250929':   64_000,
   'claude-haiku-4-5-20251001':    32_000,
@@ -130,9 +130,9 @@ function getOutputCeiling(model: string): number {
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
-  // Opus 4.6 + Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens).
-  // budget_tokens is DEPRECATED on Opus 4.6 and unnecessary on Sonnet 4.6 when using adaptive.
-  if (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6') {
+  // Opus 4.7 + Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens).
+  // budget_tokens is DEPRECATED on Opus 4.7 and unnecessary on Sonnet 4.6 when using adaptive.
+  if (model === 'claude-opus-4-7' || model === 'claude-sonnet-4-6') {
     const effortMap: Record<ThinkingLevel, string> = {
       quick: 'low',
       think: 'medium',
@@ -199,7 +199,7 @@ export async function streamToResponse(
 ): Promise<void> {
   const anthropic = getClient();
   const thinkingConfig = config.nativeReasoningEnabled
-    ? ((config.model === 'claude-opus-4-6' || config.model === 'claude-sonnet-4-6')
+    ? ((config.model === 'claude-opus-4-7' || config.model === 'claude-sonnet-4-6')
         ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
         : { thinking: { type: 'enabled' as const, budget_tokens: 32768 } })
     : getThinkingConfig(config.thinking, config.model);
@@ -237,7 +237,7 @@ export async function streamToResponse(
     // Build the system prompt content blocks.
     //
     // Prompt caching strategy:
-    //   - Supported models (Opus 4.6, Sonnet 4.5): split into two blocks.
+    //   - Supported models (Opus 4.7, Sonnet 4.6, Sonnet 4.5): split into two blocks.
     //       Block 1 (static): Foundation + Area Context + Module Prompt
     //                         → cache_control: { type: "ephemeral" } applied here.
     //                         Anthropic caches this block across API calls in the same
@@ -308,14 +308,14 @@ export async function streamToResponse(
     const requestOptions: Record<string, unknown> = {};
 
     // Collect beta headers.
-    // Opus 4.6 + Sonnet 4.6: interleaved-thinking is DEPRECATED (ignored if sent).
+    // Opus 4.7 + Sonnet 4.6: interleaved-thinking is DEPRECATED (ignored if sent).
     //   Adaptive thinking automatically enables interleaved thinking.
     // Sonnet 4.5 / Haiku: still need the interleaved-thinking beta header.
     // The 1M-context beta is only needed for Sonnet 4.5 above 200k tokens.
     const betaHeaders: string[] = [];
     const isThinkingEnabled = Object.keys(thinkingConfig).length > 0;
-    const is46Model = config.model === 'claude-opus-4-6' || config.model === 'claude-sonnet-4-6';
-    if (isThinkingEnabled && !is46Model) {
+    const isAdaptiveModel = config.model === 'claude-opus-4-7' || config.model === 'claude-sonnet-4-6';
+    if (isThinkingEnabled && !isAdaptiveModel) {
       betaHeaders.push('interleaved-thinking-2025-05-14');
     }
     if (config.useLongContext) {
@@ -323,7 +323,7 @@ export async function streamToResponse(
     }
 
     // Context compaction beta header + context_management param
-    if (config.compaction?.enabled && is46Model) {
+    if (config.compaction?.enabled && isAdaptiveModel) {
       betaHeaders.push('compact-2026-01-12');
       requestParams.context_management = {
         edits: [{

@@ -331,7 +331,7 @@ Generate the complete framework JSON now.`;
 
       // Model tier: 'opus'/'sonnet' for Claude, or a custom model ID (azure:*, gpt-*, mistral-*, etc.)
       const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
-      const tierLabel = modelTier === 'opus' ? 'Opus 4.6 (deep reasoning)'
+      const tierLabel = modelTier === 'opus' ? 'Opus 4.7 (deep reasoning)'
         : modelTier === 'sonnet' ? 'Sonnet 4.6 (standard)'
         : modelTier;
       sendEvent({ type: 'status', status: 'assessing', message: `Starting assessment with ${tierLabel}...` });

@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Aykırı değerleri vurgula",
       "exampleShowDistribution": "Dağılımı göster",
       "exampleTimelineView": "Zaman çizelgesi görünümü",
-      "modelNote": "Anton verilerinizi analiz edecek ve Claude Opus 4.6 kullanarak etkileşimli grafikler oluşturacak.",
+      "modelNote": "Anton verilerinizi analiz edecek ve Claude Opus 4.7 kullanarak etkileşimli grafikler oluşturacak.",
       "errorMessage": "Lütfen önce veri yapıştırın veya yükleyin.",
       "errorQuestion": "Lütfen ne görmek istediğinizi açıklayın."
     },

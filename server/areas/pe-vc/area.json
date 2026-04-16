@@ -11,7 +11,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Investment decisions demand maximum accuracy. Opus 4.6 default for analytical modules; Sonnet for high-volume screening and monitoring."
+    "notes": "Investment decisions demand maximum accuracy. Opus 4.7 default for analytical modules; Sonnet for high-volume screening and monitoring."
   },
   "myWayEnabled": true
 }

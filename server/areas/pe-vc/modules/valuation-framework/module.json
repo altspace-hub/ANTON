@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Accuracy is critical. Opus 4.6 default for valuation work."
+    "notes": "Accuracy is critical. Opus 4.7 default for valuation work."
   },
   "defaults": {
     "thinking": "think_hard",

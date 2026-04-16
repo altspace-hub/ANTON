@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Zvýraznit odlehlé hodnoty",
       "exampleShowDistribution": "Zobrazit distribuci",
       "exampleTimelineView": "Časová osa",
-      "modelNote": "Anton analyzuje vaše data a vygeneruje interaktivní grafy pomocí Claude Opus 4.6.",
+      "modelNote": "Anton analyzuje vaše data a vygeneruje interaktivní grafy pomocí Claude Opus 4.7.",
       "errorMessage": "Nejprve vložte nebo nahrajte data.",
       "errorQuestion": "Popište prosím, co byste chtěli vidět."
     },

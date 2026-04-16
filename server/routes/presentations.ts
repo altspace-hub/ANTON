@@ -40,7 +40,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
     try {
       await streamToResponse(
         {
-          model: 'claude-opus-4-6',
+          model: 'claude-opus-4-7',
           thinking: 'think',
           system: loadExpertPrompt(),
           messages,
@@ -333,7 +333,7 @@ FORMATTING RULES:
 
 
       const result = await callSync({
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
         thinking: 'think',
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],

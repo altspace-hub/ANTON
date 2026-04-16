@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "Ausreißer hervorheben",
       "exampleShowDistribution": "Verteilung zeigen",
       "exampleTimelineView": "Zeitachsenansicht",
-      "modelNote": "Anton analysiert Ihre Daten und generiert interaktive Diagramme mit Claude Opus 4.6.",
+      "modelNote": "Anton analysiert Ihre Daten und generiert interaktive Diagramme mit Claude Opus 4.7.",
       "errorMessage": "Bitte fügen Sie zuerst Daten ein oder laden Sie sie hoch.",
       "errorQuestion": "Bitte beschreiben Sie, was Sie sehen möchten."
     },

@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "הדגש חריגות",
       "exampleShowDistribution": "הצג התפלגות",
       "exampleTimelineView": "תצוגת ציר זמן",
-      "modelNote": "Anton ינתח את הנתונים שלך ויצור תרשימים אינטראקטיביים באמצעות Claude Opus 4.6.",
+      "modelNote": "Anton ינתח את הנתונים שלך ויצור תרשימים אינטראקטיביים באמצעות Claude Opus 4.7.",
       "errorMessage": "אנא הדבק או העלה נתונים תחילה.",
       "errorQuestion": "אנא תאר מה תרצה לראות."
     },

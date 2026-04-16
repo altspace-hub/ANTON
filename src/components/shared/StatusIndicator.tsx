@@ -22,11 +22,11 @@ function estimateCost(
   cacheCreation: number = 0
 ): string {
   const costs: Record<string, { i: number; o: number }> = {
-    'claude-opus-4-6': { i: 15, o: 75 },
+    'claude-opus-4-7': { i: 15, o: 75 },
     'claude-sonnet-4-5-20250929': { i: 3, o: 15 },
     'claude-haiku-4-5-20251001': { i: 1, o: 5 },
   };
-  const c = costs[model] || costs['claude-opus-4-6'];
+  const c = costs[model] || costs['claude-opus-4-7'];
   const inputCost = (input * c.i) / 1_000_000;
   const outputCost = (output * c.o) / 1_000_000;
   const cachedCost = (cached * c.i * 0.1) / 1_000_000; // 90% discount
@@ -38,7 +38,7 @@ function estimateCost(
 // MODEL-03: compute what the same tokens would cost on a cheaper model
 function modelSavingsComparison(input: number, output: number, currentModel: string): { label: string; saving: string } | null {
   const modelCosts: Record<string, { i: number; o: number; label: string }> = {
-    'claude-opus-4-6': { i: 15, o: 75, label: 'Opus 4.6' },
+    'claude-opus-4-7': { i: 15, o: 75, label: 'Opus 4.7' },
     'claude-sonnet-4-6': { i: 3, o: 15, label: 'Sonnet 4.6' },
     'claude-sonnet-4-5-20250929': { i: 3, o: 15, label: 'Sonnet 4.5' },
     'claude-haiku-4-5-20251001': { i: 1, o: 5, label: 'Haiku 4.5' },
@@ -57,11 +57,11 @@ function modelSavingsComparison(input: number, output: number, currentModel: str
 
 function estimateCacheSavings(cached: number, model: string): string {
   const costs: Record<string, { i: number }> = {
-    'claude-opus-4-6': { i: 15 },
+    'claude-opus-4-7': { i: 15 },
     'claude-sonnet-4-5-20250929': { i: 3 },
     'claude-haiku-4-5-20251001': { i: 1 },
   };
-  const c = costs[model] || costs['claude-opus-4-6'];
+  const c = costs[model] || costs['claude-opus-4-7'];
   const savings = (cached * c.i * 0.9) / 1_000_000; // 90% of what would have been paid
   return savings < 0.01 ? '<$0.01' : `$${savings.toFixed(2)}`;
 }

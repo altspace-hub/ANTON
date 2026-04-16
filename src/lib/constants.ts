@@ -3377,8 +3377,8 @@ export const AREAS = [
 export const MODELS: ModelInfo[] = [
   // ── Anthropic ─────────────────────────────────────────────
   {
-    id: 'claude-opus-4-6',
-    label: 'Claude Opus 4.6',
+    id: 'claude-opus-4-7',
+    label: 'Claude Opus 4.7',
     description: 'Most capable. 1M context, 128k output. Best for complex analysis, multi-document reasoning, and high-stakes compliance work.',
     inputCostPer1M: 5,
     outputCostPer1M: 25,

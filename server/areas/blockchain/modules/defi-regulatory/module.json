@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "opus",
     "professional": "opus",
-    "notes": "DeFi regulatory analysis involves deep legal ambiguity and rapidly evolving guidance. Opus 4.6 only."
+    "notes": "DeFi regulatory analysis involves deep legal ambiguity and rapidly evolving guidance. Opus 4.7 only."
   },
   "defaults": {
     "thinking": "investigate",

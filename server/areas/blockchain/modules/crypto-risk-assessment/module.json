@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Risk assessments that understate residual risk create regulatory and legal exposure. Opus 4.6 strongly recommended."
+    "notes": "Risk assessments that understate residual risk create regulatory and legal exposure. Opus 4.7 strongly recommended."
   },
   "defaults": {
     "thinking": "think_hard",

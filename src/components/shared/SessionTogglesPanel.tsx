@@ -75,7 +75,7 @@ export default function SessionTogglesPanel({
   onAtomCollectionChange,
 }: SessionTogglesPanelProps) {
   const isOpusOrSonnet =
-    currentModel === 'claude-opus-4-6' || currentModel === 'claude-sonnet-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
+    currentModel === 'claude-opus-4-7' || currentModel === 'claude-sonnet-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4 space-y-4">
       {/* ── Output Controls ── */}

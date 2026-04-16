@@ -845,7 +845,7 @@
       "exampleHighlightOutliers": "이상치 강조",
       "exampleShowDistribution": "분포 표시",
       "exampleTimelineView": "타임라인 뷰",
-      "modelNote": "Anton은 Claude Opus 4.6을 사용하여 데이터를 분석하고 대화형 차트를 생성합니다.",
+      "modelNote": "Anton은 Claude Opus 4.7을 사용하여 데이터를 분석하고 대화형 차트를 생성합니다.",
       "errorMessage": "먼저 데이터를 붙여넣거나 업로드하세요.",
       "errorQuestion": "보고 싶은 것을 설명하세요."
     },

@@ -39,7 +39,7 @@ export function estimateCost(
 ): number {
   // Pricing as of 2026-03-15 (per million tokens)
   const costs: Record<string, { input: number; output: number }> = {
-    'claude-opus-4-6': { input: 5, output: 25 },
+    'claude-opus-4-7': { input: 5, output: 25 },
     'claude-sonnet-4-6': { input: 3, output: 15 },
     'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
     'claude-haiku-4-5-20251001': { input: 0.80, output: 4 },

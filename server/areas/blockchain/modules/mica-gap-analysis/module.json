@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "MiCA article citations must be accurate. Opus 4.6 strongly recommended."
+    "notes": "MiCA article citations must be accurate. Opus 4.7 strongly recommended."
   },
   "defaults": {
     "thinking": "investigate",

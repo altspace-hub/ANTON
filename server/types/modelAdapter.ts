@@ -24,19 +24,19 @@ export interface ModelConfig {
 }
 
 export const MODEL_REGISTRY: Record<string, ModelConfig> = {
-  'claude-opus-4-6': {
+  'claude-opus-4-7': {
     provider: 'anthropic',
-    modelId: 'claude-opus-4-6',
-    displayName: 'Claude Opus 4.6',
+    modelId: 'claude-opus-4-7',
+    displayName: 'Claude Opus 4.7',
     contextWindow: 1000000,
-    maxOutputTokens: 128000,            // 128k max output (GA 2026-03-13)
+    maxOutputTokens: 128000,
     supportsThinking: true,
     supportsJsonMode: false,
     supportsPromptCaching: true,
     supportsSeed: false,
     temperatureRange: [0, 1],
-    costPer1MInput: 5,                  // GA pricing $5/M input (was $15)
-    costPer1MOutput: 25,                // GA pricing $25/M output (was $75)
+    costPer1MInput: 5,
+    costPer1MOutput: 25,
     requiresApiKey: 'ANTHROPIC_API_KEY',
     costTier: 3,
     supportsNativeReasoning: true,
