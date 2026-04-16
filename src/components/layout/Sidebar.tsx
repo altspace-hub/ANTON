@@ -36,7 +36,7 @@ import {
   // Mobile close button
   X as XIcon,
   // Community sub-nav
-  Users2, Mail, CalendarDays,
+  Users2, Mail, CalendarDays, Hexagon,
   // Orchestration Dashboard
   LayoutDashboard,
   // Regulatory Feed
@@ -701,6 +701,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               title={sidebarCollapsed ? 'Task Delegation' : undefined}>
               <Send className="h-4 w-4 shrink-0" />
               {!sidebarCollapsed && 'Task Delegation'}
+            </NavLink>
+            <NavLink to="/community/beehive"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Beehive' : undefined}>
+              <Hexagon className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Beehive'}
             </NavLink>
 
             {!sidebarCollapsed && (
