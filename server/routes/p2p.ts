@@ -193,6 +193,20 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
         }
       }
 
+      // Beehive — multi-party reasoning protocol message (Phase 4)
+      if (messageType === 'beehive_message' && payload) {
+        try {
+          const { createBeehiveProtocol } = await import('../services/beehive/beehive-protocol.js');
+          const proto = await createBeehiveProtocol(db);
+          const envelope = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          const result = await proto.handleInbound(fromHash, envelope);
+          return res.json({ ok: result.ok, type: 'beehive_message', applied: result.applied, beehive_type: result.type, reason: result.reason });
+        } catch (beehiveErr) {
+          console.error('[p2p] BEEHIVE message processing failed:', beehiveErr instanceof Error ? beehiveErr.message : beehiveErr);
+          // Fall through to store as regular mail so the user can see something arrived
+        }
+      }
+
       // Store in local inbox
       const localId = `cm_p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`

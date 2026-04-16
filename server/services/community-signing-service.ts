@@ -187,7 +187,7 @@ export async function createSigningService(db: DatabaseAdapter) {
     );
   }
 
-  return { createTrailEntry, verifyTrail, getTrailEntries, generateAndStoreKeypair, ed25519Verify, sha256 };
+  return { createTrailEntry, verifyTrail, getTrailEntries, generateAndStoreKeypair, ed25519Sign, ed25519Verify, sha256 };
 }
 
 export type SigningService = Awaited<ReturnType<typeof createSigningService>>;
