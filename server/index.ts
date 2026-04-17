@@ -490,6 +490,13 @@ app.use('/api', createBeehiveRoutes(db));
 // Missions — autonomous multi-step work (Phase 1: foundation + Knowledge Synthesis template)
 const { createMissionRoutes } = await import('./routes/missions.js');
 app.use('/api', createMissionRoutes(db));
+// Missions Phase 2 — Action Layer: credential vault, browser automation, service packs
+const { createMissionCredentialRoutes } = await import('./routes/mission-credentials.js');
+app.use('/api', createMissionCredentialRoutes(db));
+const { createBrowserRoutes } = await import('./routes/mission-browser.js');
+app.use('/api', createBrowserRoutes(db));
+const { createServicePackRoutes } = await import('./routes/service-packs.js');
+app.use('/api', createServicePackRoutes(db));
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
 app.use('/api', await createTaskDelegationRoutes(db));

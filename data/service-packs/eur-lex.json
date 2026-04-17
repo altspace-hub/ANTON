@@ -1,0 +1,95 @@
+{
+  "service_id": "eur-lex",
+  "service_name": "EUR-Lex",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "EUR-Lex — the EU's authoritative database of legislation, case-law, and treaties. Wave 1 Service Pack covering search and document retrieval.",
+  "category": "regulatory",
+  "interaction_type": "hybrid",
+  "service_info": {
+    "base_urls": ["https://eur-lex.europa.eu"],
+    "auth_type": "none",
+    "api_base": "https://eur-lex.europa.eu/search.html",
+    "rate_limits": {
+      "polite_delay_ms": 1000,
+      "notes": "EUR-Lex requires a polite delay between requests. SPARQL endpoint at /eli/sparql is preferred for structured queries."
+    }
+  },
+  "pages": {
+    "search": {
+      "url_pattern": "https://eur-lex.europa.eu/search.html",
+      "description": "Free-text search across all EU legislation",
+      "selectors": {
+        "search_input": "input[name='qid']",
+        "submit_button": "button.search-button",
+        "results_list": ".SearchResult"
+      }
+    },
+    "document": {
+      "url_pattern": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:*",
+      "description": "Single document view (CELEX-numbered)",
+      "selectors": {
+        "title": "h1.title-doc",
+        "content": "#textTabContent",
+        "metadata_section": ".dropdown-toggle"
+      }
+    }
+  },
+  "workflows": {
+    "search_by_celex": {
+      "description": "Fetch a specific document by its CELEX number (e.g. 32022R0858 for AMLR Implementing Reg).",
+      "parameters": [
+        { "name": "celex", "type": "string", "required": true, "description": "CELEX number (e.g. 32022R0858)" }
+      ],
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:${celex}",
+          "description": "Direct navigation to the CELEX-keyed document"
+        },
+        {
+          "action": "wait",
+          "selector": "h1.title-doc",
+          "description": "Wait for the document title to render"
+        },
+        {
+          "action": "extract",
+          "selector": "#textTabContent",
+          "description": "Extract the full document text"
+        }
+      ]
+    },
+    "search_keyword": {
+      "description": "Free-text search EUR-Lex and return the first results page.",
+      "parameters": [
+        { "name": "query", "type": "string", "required": true, "description": "Search query (e.g. 'AMLR Article 8')" }
+      ],
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://eur-lex.europa.eu/search.html?text=${query}&scope=EURLEX&type=quick",
+          "description": "Navigate to the quick-search results page"
+        },
+        {
+          "action": "wait",
+          "selector": ".SearchResult",
+          "description": "Wait for results to render"
+        },
+        {
+          "action": "extract",
+          "selector": ".SearchResult",
+          "description": "Extract the result list"
+        }
+      ]
+    }
+  },
+  "known_issues": [
+    "Multi-language documents — default redirect is to English; URL must include /EN/ to force English",
+    "Some PDF-only documents return empty textTabContent — fall back to /PDF/ URL variant",
+    "Search results page uses lazy-loaded sections — may need additional scroll for >10 results"
+  ],
+  "fallback_hints": {
+    "search_input": "If the primary selector breaks, look for any input within form#searchForm",
+    "results_list": "Result items are typically inside <div class='SearchResult'> or <article class='result'>. Look for elements containing CELEX numbers (regex: 3[0-9]{4}[A-Z][0-9]{4})"
+  }
+}
