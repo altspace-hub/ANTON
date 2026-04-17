@@ -31,6 +31,8 @@ import SettingsPage from './pages/SettingsPage';
 import WalletScreen from './pages/WalletScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
 import TabBar from './components/TabBar';
+import QuickActionsFab from './components/QuickActionsFab';
+import { fetchWithAuth } from './services/api';
 
 type AuthScreen = 'welcome' | 'join' | 'connections';
 type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
@@ -230,6 +232,34 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Quick actions FAB (spec §8.8) */}
+      <QuickActionsFab
+        pendingApprovals={pendingApprovals}
+        onAsk={() => { setActiveTab('chat'); setShowMore(false); }}
+        onCapture={() => { /* Phase G — Capture page */ setActiveTab('chat'); setShowMore(false); }}
+        onApprovals={() => { setActiveTab('approvals'); setShowMore(false); }}
+        onSwitchInstance={() => { /* InstanceTopBar already exposes the switcher; nothing else to do here */ }}
+        onVoiceSubmit={async (transcript: string) => {
+          if (!selectedOrgId) return null;
+          try {
+            const res = await fetchWithAuth(`/org/${selectedOrgId}/query-sync`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: transcript }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+            const reply = typeof data.assistant === 'string' ? data.assistant
+                       : typeof data.reply === 'string' ? data.reply
+                       : typeof data.text === 'string' ? data.text
+                       : (data.message?.content ?? '');
+            return { reply: String(reply || '(no reply)') };
+          } catch (e) {
+            return { reply: e instanceof Error ? e.message : 'Voice request failed' };
+          }
+        }}
+      />
 
       {/* Tab bar */}
       <TabBar tabs={MAIN_TABS} activeTab={showMore ? 'more' : activeTab} onTabChange={handleTabChange} />
