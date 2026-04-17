@@ -1,0 +1,12 @@
+{
+  "tp-payment-fraud":             "boundary",
+  "tp-data-breach":               "outside",
+  "tp-supplier-failure":          "boundary",
+  "tp-regulatory-non-compliance": "outside",
+  "tp-cyber-attack":              "outside",
+  "tp-key-person":                "boundary",
+  "tp-employee-misconduct":       "boundary",
+  "tp-reputation-event":          "within",
+  "tp-physical-incident":         "within",
+  "tp-financial-distress":        "outside"
+}

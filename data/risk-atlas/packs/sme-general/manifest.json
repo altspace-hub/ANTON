@@ -1,0 +1,9 @@
+{
+  "id": "sme-general",
+  "name": "SME General",
+  "version": "1.0.0",
+  "description": "Default pack for any small-to-medium business. Designed to be safe, useful, and never harmful — the catch-all when the user hasn't picked a more specific industry pack. Covers operational, financial, regulatory, cyber, and people-risk basics across any sector.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}
