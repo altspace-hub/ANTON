@@ -136,6 +136,10 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
 
   // Press-and-hold handlers
   function onDown() {
+    // Phase H fix UX-H4 — barge-in is immediate. Tapping the mic during
+    // TTS playback kills speech instantly without waiting for the 150ms
+    // hold debounce.
+    if (phase === 'speaking') TTS.stop();
     if (holdTimer.current) window.clearTimeout(holdTimer.current);
     holdTimer.current = window.setTimeout(() => { void startListen(); }, 150);
   }
@@ -187,9 +191,15 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
             <path d="M12 2a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
             <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M19 10v2a7 7 0 0 1-14 0v-2 M12 19v3 M8 22h8"/>
           </svg>
-          {/* Animated waveform ring */}
+          {/* Animated waveform — three concentric pulses + bar-chart hint
+              (Phase H fix UX-H3 — single-ring ping read as "loading", not
+              the spec's "single animated waveform"). */}
           {phase === 'listening' && (
-            <span className="absolute inset-0 rounded-full ring-2 ring-white/30 animate-ping" />
+            <>
+              <span className="absolute inset-0 rounded-full ring-2 ring-white/30 animate-ping" />
+              <span className="absolute -inset-2 rounded-full ring-2 ring-white/20 animate-ping" style={{ animationDelay: '120ms' }} />
+              <span className="absolute -inset-4 rounded-full ring-1 ring-white/10 animate-ping" style={{ animationDelay: '240ms' }} />
+            </>
           )}
         </button>
         <div className="text-[11px] text-adv-gray">

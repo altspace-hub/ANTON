@@ -61,17 +61,36 @@ export function getActiveInstance(): Instance | null {
   return getInstance(id);
 }
 
+/**
+ * setActiveInstance — synchronous fast path. Use setActiveInstanceAsync()
+ * when you need the per-instance session token mirrored *before* the
+ * next API call fires (Phase H fix Arch 2 — race window between switch
+ * and notify could leak the prior instance's session token to a request
+ * routed at the new instance's server_base).
+ */
 export function setActiveInstance(id: string): void {
   if (!getInstance(id)) throw new Error('Unknown instance');
   localStorage.setItem(KEY_ACTIVE, id);
-  // Bridge: cache the per-instance session token to the global SESSION_KEY
-  // so existing sync getSessionToken() callers still work without an async
-  // rewrite. Best-effort — failures don't block the switch.
   void getInstanceSessionToken(id).then(tok => {
     if (tok) localStorage.setItem('anton-companion-session', tok);
     else localStorage.removeItem('anton-companion-session');
   }).catch(() => { /* swallow */ });
-  // Notify subscribers
+  for (const cb of activeListeners) cb(id);
+}
+
+/**
+ * setActiveInstanceAsync — race-free variant that awaits the secure-store
+ * read AND completes the localStorage bridge write *before* notifying
+ * listeners. Use from instance-switcher UIs so any subscriber's
+ * getSessionToken() read sees the new instance's token.
+ */
+export async function setActiveInstanceAsync(id: string): Promise<void> {
+  if (!getInstance(id)) throw new Error('Unknown instance');
+  const tok = await getInstanceSessionToken(id);
+  // Atomic: write active id + session bridge in one sync block, THEN notify.
+  localStorage.setItem(KEY_ACTIVE, id);
+  if (tok) localStorage.setItem('anton-companion-session', tok);
+  else localStorage.removeItem('anton-companion-session');
   for (const cb of activeListeners) cb(id);
 }
 

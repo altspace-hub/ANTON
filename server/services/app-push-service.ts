@@ -53,8 +53,27 @@ export function createAppPushService(db: DatabaseAdapter) {
   // ── Token registration ──────────────────────────────────────────────
 
   async function registerToken(input: RegisterPushTokenInput): Promise<{ id: string }> {
-    // ON CONFLICT on (platform, token) — re-registering the same token from
-    // another device id rebinds it to the new device.
+    // Phase H fix H4 — ownership check on token rebinding.
+    // If (platform, token) already exists, the existing row's owner must
+    // equal the new device's owner. Otherwise reject — an attacker who
+    // learned a victim's APNs/FCM token (e.g. from a stolen unlocked
+    // device) can't silently capture future pushes.
+    const existing = await db.get<{ owner: string }>(
+      `SELECT d.connected_user_id AS owner
+         FROM app_push_tokens pt
+         JOIN app_devices d ON d.id = pt.device_id
+        WHERE pt.platform = ? AND pt.token = ?`,
+      input.platform, input.token,
+    );
+    if (existing) {
+      const newOwner = await db.get<{ connected_user_id: string }>(
+        `SELECT connected_user_id FROM app_devices WHERE id = ? AND revoked_at IS NULL`,
+        input.device_id,
+      );
+      if (!newOwner || newOwner.connected_user_id !== existing.owner) {
+        throw new Error('Token already registered to another account');
+      }
+    }
     const row = await db.get<{ id: string }>(
       `INSERT INTO app_push_tokens
          (device_id, platform, token, environment, topic, endpoint, p256dh_key, auth_key, last_used_at)

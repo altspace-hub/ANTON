@@ -3,6 +3,7 @@
  */
 
 import { activeServerBase, activeAuthHeaders, getActiveInstance } from './instances';
+import { hasPrivateKey, signEnvelope } from './identity';
 
 export type CheckpointSeverity = 'low' | 'normal' | 'high' | 'critical';
 export type CheckpointStatus = 'pending' | 'approved' | 'rejected' | 'modified' | 'expired';
@@ -58,12 +59,21 @@ export async function respondToCheckpoint(id: string, input: {
   biometric_confirmed?: boolean;
 }): Promise<Checkpoint> {
   const inst = getActiveInstance();
+  const innerBody = { ...input, device_id: inst?.device_id };
+  // Phase H fix C1 — wrap in a signed envelope when an Ed25519 keypair
+  // exists on this device. Server verifies the signature and records the
+  // nonce to prevent replay. Falls back to a raw body for legacy
+  // register-simple paired clients (still session-token gated).
+  let body: unknown = innerBody;
+  if (await hasPrivateKey()) {
+    try {
+      const env = await signEnvelope(innerBody);
+      body = { envelope: env };
+    } catch { /* fall back to raw body */ }
+  }
   const res = await authedFetch(`/api/app/checkpoints/${encodeURIComponent(id)}/respond`, {
     method: 'POST',
-    body: JSON.stringify({
-      ...input,
-      device_id: inst?.device_id,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to respond');
   return ((await res.json()).checkpoint) as Checkpoint;
