@@ -1,0 +1,53 @@
+{
+  "title": "ESG Performance Scorecard",
+  "subtitle": "Q1 2026",
+  "summary": "Overall trending positive across Environmental and Governance pillars. Social pillar lags on supplier audits.",
+  "period": "2026-Q1",
+  "as_of_date": "2026-03-31",
+  "categories": [
+    { "id": "env", "label": "Environmental", "weight": 0.35 },
+    { "id": "soc", "label": "Social",        "weight": 0.35 },
+    { "id": "gov", "label": "Governance",    "weight": 0.30 }
+  ],
+  "kpis": [
+    {
+      "id": "k1", "name": "Scope 1+2 emissions (tCO2e)", "category_id": "env",
+      "unit": "tCO2e", "target": 12000, "current": 11450, "previous": 11900, "baseline": 14800,
+      "status": "on_track", "trend": "down", "direction": "lower_is_better",
+      "owner": "Head of Sustainability", "data_source": "GHG Protocol ledger"
+    },
+    {
+      "id": "k2", "name": "Renewable energy share (%)", "category_id": "env",
+      "unit": "%", "target": 75, "current": 68, "previous": 64,
+      "status": "on_track", "trend": "up", "direction": "higher_is_better",
+      "owner": "Head of Sustainability"
+    },
+    {
+      "id": "k3", "name": "Employee engagement score", "category_id": "soc",
+      "unit": "score 0-100", "target": 80, "current": 76, "previous": 74,
+      "status": "on_track", "trend": "up", "direction": "higher_is_better",
+      "owner": "CHRO"
+    },
+    {
+      "id": "k4", "name": "Critical-supplier audit coverage (%)", "category_id": "soc",
+      "unit": "%", "target": 100, "current": 62, "previous": 48,
+      "status": "at_risk", "trend": "up", "direction": "higher_is_better",
+      "owner": "Procurement", "notes": "Behind target — need 2 additional auditors in Q2."
+    },
+    {
+      "id": "k5", "name": "Board independence (%)", "category_id": "gov",
+      "unit": "%", "target": 50, "current": 55, "previous": 55,
+      "status": "on_track", "trend": "flat", "direction": "higher_is_better",
+      "owner": "Company Secretary"
+    },
+    {
+      "id": "k6", "name": "Ethics hotline response time (days)", "category_id": "gov",
+      "unit": "days", "target": 5, "current": 4.2, "previous": 5.8,
+      "status": "on_track", "trend": "down", "direction": "lower_is_better",
+      "owner": "Chief Compliance Officer"
+    }
+  ],
+  "overall_score": {
+    "value": 3.7, "scale_max": 5, "label": "Good", "color": "#27AE60"
+  }
+}

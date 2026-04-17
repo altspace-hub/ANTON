@@ -1,0 +1,79 @@
+{
+  "title": "Q2 2026 Operational Risk Register — EU Lending Line",
+  "summary": "12 risks identified across operations, compliance, cyber, and third-party domains. 3 residual high-risk items require immediate attention.",
+  "scope": "EU lending business unit, Q2 2026 review cycle",
+  "scoring_scheme": {
+    "likelihood_scale": [
+      { "value": 1, "label": "Rare" },
+      { "value": 2, "label": "Unlikely" },
+      { "value": 3, "label": "Possible" },
+      { "value": 4, "label": "Likely" },
+      { "value": 5, "label": "Almost certain" }
+    ],
+    "impact_scale": [
+      { "value": 1, "label": "Negligible" },
+      { "value": 2, "label": "Minor" },
+      { "value": 3, "label": "Moderate" },
+      { "value": 4, "label": "Major" },
+      { "value": 5, "label": "Catastrophic" }
+    ]
+  },
+  "items": [
+    {
+      "id": "R-001",
+      "risk": "AMLR filing deadline missed",
+      "description": "Late submission of AMLA-mandated risk assessment.",
+      "category": "compliance",
+      "cause": "Unclear ownership between Compliance and Data teams",
+      "consequence": "Regulatory fine up to 2% of global turnover.",
+      "likelihood": 3,
+      "impact": 5,
+      "inherent_score": 15,
+      "controls": ["Monthly AMLR tracking meeting", "Dual sign-off on filing"],
+      "residual_likelihood": 2,
+      "residual_impact": 5,
+      "residual_score": 10,
+      "owner": "Chief Compliance Officer",
+      "treatment": "mitigate",
+      "action_plan": "Assign dedicated AMLR coordinator by 2026-05-01",
+      "review_date": "2026-06-30"
+    },
+    {
+      "id": "R-002",
+      "risk": "Core banking vendor insolvency",
+      "description": "Primary processor shows deteriorating financials.",
+      "category": "operational",
+      "likelihood": 2,
+      "impact": 5,
+      "inherent_score": 10,
+      "controls": ["Quarterly vendor financial review", "Warm failover contract with backup provider"],
+      "residual_likelihood": 1,
+      "residual_impact": 4,
+      "residual_score": 4,
+      "owner": "COO",
+      "treatment": "transfer"
+    },
+    {
+      "id": "R-003",
+      "risk": "Data exfiltration via compromised admin credential",
+      "description": "Privileged access without hardware MFA.",
+      "category": "cyber",
+      "likelihood": 3,
+      "impact": 5,
+      "inherent_score": 15,
+      "controls": ["Password rotation (90d)", "Suspicious login alerting"],
+      "residual_likelihood": 2,
+      "residual_impact": 5,
+      "residual_score": 10,
+      "owner": "CISO",
+      "treatment": "mitigate",
+      "action_plan": "Deploy hardware MFA (FIDO2) for all admin accounts by 2026-07-01"
+    }
+  ],
+  "summary_statistics": {
+    "total_risks": 3,
+    "by_category": { "compliance": 1, "operational": 1, "cyber": 1 },
+    "by_treatment": { "mitigate": 2, "transfer": 1 },
+    "high_residual": 0
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "title": "Customer Onboarding — Enhanced Due Diligence Track",
+  "summary": "EDD path for customers flagged as high-risk during initial screening.",
+  "scope": "Retail banking onboarding, EU",
+  "actors": [
+    { "id": "cust",     "name": "Customer",                 "type": "human" },
+    { "id": "onbrd",    "name": "Onboarding officer",       "role": "Front office",  "type": "human" },
+    { "id": "mlro",     "name": "MLRO",                     "role": "2LoD",          "type": "human" },
+    { "id": "screen",   "name": "Screening system",         "type": "system" },
+    { "id": "core",     "name": "Core banking",             "type": "system" }
+  ],
+  "steps": [
+    { "id": "s0", "kind": "start",    "label": "Application received", "actor_id": "cust",   "next": [{ "to": "s1" }] },
+    { "id": "s1", "kind": "action",   "label": "Collect KYC docs",     "actor_id": "onbrd",  "next": [{ "to": "s2" }],
+      "artefacts": [{ "name": "ID document", "type": "document" }, { "name": "Proof of address", "type": "document" }] },
+    { "id": "s2", "kind": "system",   "label": "Screen against lists", "actor_id": "screen", "sla": "within 2 minutes",
+      "next": [{ "to": "s3" }] },
+    { "id": "s3", "kind": "decision", "label": "High-risk flag?",      "actor_id": "screen",
+      "next": [
+        { "to": "s4", "label": "yes", "condition": "risk_score >= 70" },
+        { "to": "s7", "label": "no",  "condition": "risk_score < 70" }
+      ] },
+    { "id": "s4", "kind": "action",   "label": "Request EDD package",  "actor_id": "onbrd",
+      "sla": "within 2 business days", "next": [{ "to": "s5" }] },
+    { "id": "s5", "kind": "action",   "label": "MLRO review",          "actor_id": "mlro",
+      "sla": "within 5 business days",
+      "next": [
+        { "to": "s7", "label": "approve" },
+        { "to": "s6", "label": "reject" }
+      ] },
+    { "id": "s6", "kind": "end",      "label": "Application rejected", "actor_id": "onbrd" },
+    { "id": "s7", "kind": "system",   "label": "Open account",         "actor_id": "core",
+      "next": [{ "to": "s8" }] },
+    { "id": "s8", "kind": "end",      "label": "Customer onboarded",   "actor_id": "cust" }
+  ],
+  "swimlanes": [
+    { "id": "sl1", "label": "Customer",          "actor_ids": ["cust"] },
+    { "id": "sl2", "label": "Front office",      "actor_ids": ["onbrd"] },
+    { "id": "sl3", "label": "2LoD / Compliance", "actor_ids": ["mlro"] },
+    { "id": "sl4", "label": "Systems",           "actor_ids": ["screen", "core"] }
+  ]
+}

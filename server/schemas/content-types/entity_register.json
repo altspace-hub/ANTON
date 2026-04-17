@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:entity_register:1.0",
+  "title": "Entity Register",
+  "description": "List of entities with attributes — vendors, systems, assets, third parties, etc.",
+  "type": "object",
+  "required": ["title", "entity_type", "entities"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "entity_type": {
+      "type": "string",
+      "description": "What kind of entity the register tracks",
+      "examples": ["vendor", "system", "asset", "third_party", "data_processor", "application", "contract"]
+    },
+    "columns": {
+      "type": "array",
+      "description": "Declared column order/meaning for renderers that want a table view",
+      "items": {
+        "type": "object",
+        "required": ["key", "label"],
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "type": { "type": "string", "enum": ["string", "number", "date", "enum", "boolean", "url"] },
+          "enum_values": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "classification": { "type": "string", "description": "e.g. tier 1 / critical / low-risk" },
+          "status": { "type": "string" },
+          "owner": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "attributes": {
+            "type": "object",
+            "description": "Free-form key/value attributes per entity — should align with declared columns where present",
+            "additionalProperties": true
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "target_id"],
+              "properties": {
+                "type": { "type": "string", "description": "e.g. depends_on, processes_data_for, parent_of" },
+                "target_id": { "type": "string" },
+                "notes": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary_statistics": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer" },
+        "by_classification": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "by_status": { "type": "object", "additionalProperties": { "type": "integer" } }
+      }
+    }
+  }
+}

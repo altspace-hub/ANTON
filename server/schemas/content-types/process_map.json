@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:process_map:1.0",
+  "title": "Process Map",
+  "description": "Ordered steps, actors, decisions, artefacts — feeds Mermaid flowcharts and sequence diagrams",
+  "type": "object",
+  "required": ["title", "steps"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "scope": { "type": "string" },
+    "actors": {
+      "type": "array",
+      "description": "Participants in the process (enables sequence diagrams)",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "type": { "type": "string", "enum": ["human", "system", "external"] }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string", "description": "Short action text rendered in the node" },
+          "description": { "type": "string" },
+          "kind": { "type": "string", "enum": ["start", "end", "action", "decision", "system", "document", "subprocess"] },
+          "actor_id": { "type": "string", "description": "FK to actors[].id" },
+          "sla": { "type": "string", "description": "SLA, e.g. 'within 2 business days'" },
+          "next": {
+            "type": "array",
+            "description": "Outbound edges",
+            "items": {
+              "type": "object",
+              "required": ["to"],
+              "properties": {
+                "to": { "type": "string", "description": "Target step id" },
+                "label": { "type": "string", "description": "Edge label (decision branch e.g. 'yes'/'no')" },
+                "condition": { "type": "string" }
+              }
+            }
+          },
+          "artefacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string", "enum": ["document", "record", "message", "approval", "other"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "swimlanes": {
+      "type": "array",
+      "description": "Optional swimlane grouping by actor/department",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "actor_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

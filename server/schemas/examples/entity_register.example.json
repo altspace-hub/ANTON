@@ -1,0 +1,43 @@
+{
+  "title": "Critical Third-Party Register",
+  "summary": "Providers classified critical or important per DORA Article 28. 14 entities, of which 3 Tier 1.",
+  "entity_type": "third_party",
+  "columns": [
+    { "key": "name",           "label": "Provider",          "type": "string" },
+    { "key": "service",        "label": "Service provided",  "type": "string" },
+    { "key": "tier",           "label": "Tier",              "type": "enum", "enum_values": ["1", "2", "3"] },
+    { "key": "country",        "label": "Country",           "type": "string" },
+    { "key": "contract_end",   "label": "Contract end",      "type": "date" },
+    { "key": "exit_plan",      "label": "Exit plan",         "type": "boolean" }
+  ],
+  "entities": [
+    {
+      "id": "tp-001", "name": "Acme Core Banking", "classification": "Tier 1", "status": "active", "owner": "COO",
+      "tags": ["critical", "cloud", "hosting"],
+      "attributes": { "service": "Core banking platform", "tier": "1", "country": "DE", "contract_end": "2028-12-31", "exit_plan": true },
+      "relationships": [
+        { "type": "depends_on", "target_id": "tp-003", "notes": "Hosted on the same cloud substrate" }
+      ]
+    },
+    {
+      "id": "tp-002", "name": "SecureAuth", "classification": "Tier 1", "status": "active", "owner": "CISO",
+      "tags": ["critical", "authentication"],
+      "attributes": { "service": "IDP + MFA", "tier": "1", "country": "US", "contract_end": "2027-06-30", "exit_plan": true }
+    },
+    {
+      "id": "tp-003", "name": "CloudCo Region EU-West", "classification": "Tier 1", "status": "active", "owner": "CTO",
+      "tags": ["critical", "infrastructure"],
+      "attributes": { "service": "Cloud infrastructure (compute, storage)", "tier": "1", "country": "IE", "contract_end": "2029-03-31", "exit_plan": true }
+    },
+    {
+      "id": "tp-014", "name": "AnalyticsVendor", "classification": "Tier 3", "status": "under_review", "owner": "Head of Data",
+      "tags": ["analytics"],
+      "attributes": { "service": "Web analytics", "tier": "3", "country": "US", "contract_end": "2026-12-31", "exit_plan": false }
+    }
+  ],
+  "summary_statistics": {
+    "total": 4,
+    "by_classification": { "Tier 1": 3, "Tier 3": 1 },
+    "by_status": { "active": 3, "under_review": 1 }
+  }
+}

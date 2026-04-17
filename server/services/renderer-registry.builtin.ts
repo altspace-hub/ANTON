@@ -1,0 +1,300 @@
+// ── Renderer Registry — built-in catalogue ────────────────────────────────
+//
+// This is the declarative list of every platform-provided renderer. The
+// registry loader syncs these into the `renderers` DB table on startup;
+// admins can override status (e.g. disable a beta renderer) without a
+// code change.
+//
+// renderer_module is the import specifier the loader will `await import()`
+// at runtime. Each module MUST export a `render` function conforming to the
+// RenderFn contract.
+//
+// Phase 1: 5 built-in export wrappers + Priority 1 (5) + Priority 2 (6).
+// Priority 1/2 entries will appear empty until those files ship in
+// Phase 1c/1e; they are included here so the DB registry is seeded in one
+// pass and the transform panel UI doesn't need a later re-seed step.
+
+import type { RendererDefinition } from './renderer-registry.types.js';
+
+export const BUILTIN_RENDERERS: RendererDefinition[] = [
+  // ── Built-in exports (Phase 1a — wrapping existing export-* services) ──
+
+  {
+    id: 'export-md',
+    label: 'Download Markdown',
+    description: 'Download the source Markdown output.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'md',
+      mime_type: 'text/markdown; charset=utf-8',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/builtin/export-md-renderer.js',
+    phase: 1,
+    status: 'stable',
+    sort_order: 10,
+  },
+  {
+    id: 'export-docx',
+    label: 'Download DOCX',
+    description: 'Branded Microsoft Word document with full typography and auto-numbered headings.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'docx',
+      mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/builtin/export-docx-renderer.js',
+    phase: 1,
+    status: 'stable',
+    sort_order: 20,
+  },
+  {
+    id: 'export-xlsx',
+    label: 'Download Excel',
+    description: 'Tables rendered as Excel sheets with conditional formatting and auto-filters.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'xlsx',
+      mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/builtin/export-xlsx-renderer.js',
+    phase: 1,
+    status: 'stable',
+    sort_order: 30,
+  },
+  {
+    id: 'export-pdf',
+    label: 'Download PDF',
+    description: 'Professional typography with page numbers and brand styling.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'pdf',
+      mime_type: 'application/pdf',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/builtin/export-pdf-renderer.js',
+    phase: 1,
+    status: 'stable',
+    sort_order: 40,
+  },
+  {
+    id: 'export-pptx',
+    label: 'Download Slides',
+    description: 'PowerPoint deck with speaker notes.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'pptx',
+      mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/builtin/export-pptx-renderer.js',
+    phase: 1,
+    status: 'stable',
+    sort_order: 50,
+  },
+
+  // ── Priority 1 renderers (implementation lands in Phase 1c) ──────────
+
+  {
+    id: 'mermaid-flowchart',
+    label: 'Process flow (Mermaid)',
+    description: 'Render the process map as a Mermaid flowchart diagram (SVG).',
+    category: 'visualize',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['process_map'], requires_fields: ['steps'] },
+    output: {
+      file_type: 'svg',
+      mime_type: 'image/svg+xml',
+      filename_template: '{module_id}-flowchart-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/visualize/mermaid-flowchart.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 10,
+  },
+  {
+    id: 'mermaid-gantt',
+    label: 'Timeline (Gantt)',
+    description: 'Render the plan as a Mermaid Gantt chart (SVG).',
+    category: 'visualize',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['plan_document'], requires_fields: ['milestones'] },
+    output: {
+      file_type: 'svg',
+      mime_type: 'image/svg+xml',
+      filename_template: '{module_id}-gantt-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/visualize/mermaid-gantt.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 20,
+  },
+  {
+    id: 'svg-risk-heatmap',
+    label: 'Risk heatmap',
+    description: 'Likelihood × Impact heatmap of the risk register (SVG).',
+    category: 'visualize',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['risk_register'], requires_fields: ['items[*].likelihood', 'items[*].impact'] },
+    output: {
+      file_type: 'svg',
+      mime_type: 'image/svg+xml',
+      filename_template: '{module_id}-heatmap-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/visualize/svg-risk-heatmap.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 30,
+  },
+  {
+    id: 'executive-one-pager',
+    label: 'Executive one-pager',
+    description: 'Single-page summary tailored for a C-suite reader (PDF).',
+    category: 'adapt_audience',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'pdf',
+      mime_type: 'application/pdf',
+      filename_template: '{module_id}-one-pager-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/adapt/executive-one-pager.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 10,
+  },
+  {
+    id: 'plain-language',
+    label: 'Plain language (CEFR B1)',
+    description: 'Simplified version suitable for non-expert readers (Markdown).',
+    category: 'adapt_audience',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'md',
+      mime_type: 'text/markdown; charset=utf-8',
+      filename_template: '{module_id}-plain-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/adapt/plain-language.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 20,
+  },
+
+  // ── Priority 2 renderers (implementation lands in Phase 1e) ──────────
+
+  {
+    id: 'board-deck',
+    label: 'Board deck (3-5 slides)',
+    description: 'Condensed board-ready slide deck with key findings and recommendations.',
+    category: 'adapt_audience',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['analytic_report', 'gap_analysis', 'scorecard'] },
+    output: {
+      file_type: 'pptx',
+      mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      filename_template: '{module_id}-board-deck-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/adapt/board-deck.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 30,
+  },
+  {
+    id: 'standalone-html',
+    label: 'Standalone HTML report',
+    description: 'Self-contained single-file HTML with inlined CSS — useful for sharing without platform access.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'html',
+      mime_type: 'text/html; charset=utf-8',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/package/standalone-html.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 60,
+  },
+  {
+    id: 'mermaid-sequence',
+    label: 'Sequence diagram',
+    description: 'Actor-message sequence diagram for process maps with named actors.',
+    category: 'visualize',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['process_map'], requires_fields: ['actors', 'steps[*].actor_id'] },
+    output: {
+      file_type: 'svg',
+      mime_type: 'image/svg+xml',
+      filename_template: '{module_id}-sequence-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/visualize/mermaid-sequence.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 40,
+  },
+  {
+    id: 'mermaid-mindmap',
+    label: 'Mindmap',
+    description: 'Hierarchical mindmap of the report sections (SVG).',
+    category: 'visualize',
+    trigger: 'post_hoc',
+    applies_when: { content_types: ['analytic_report'], requires_fields: ['sections'] },
+    output: {
+      file_type: 'svg',
+      mime_type: 'image/svg+xml',
+      filename_template: '{module_id}-mindmap-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/visualize/mermaid-mindmap.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 50,
+  },
+  {
+    id: 'devils-advocate-review',
+    label: "Devil's advocate review",
+    description: 'A structured critique that challenges the assumptions and conclusions of the output.',
+    category: 'review',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'md',
+      mime_type: 'text/markdown; charset=utf-8',
+      filename_template: '{module_id}-devils-advocate-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/review/devils-advocate-review.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 10,
+  },
+  {
+    id: 'regulators-eye-review',
+    label: "Regulator's-eye view",
+    description: 'A compliance-officer review flagging regulatory gaps, ambiguities, and missing evidence.',
+    category: 'review',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'md',
+      mime_type: 'text/markdown; charset=utf-8',
+      filename_template: '{module_id}-regulators-eye-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/review/regulators-eye-review.js',
+    phase: 1,
+    status: 'experimental',
+    sort_order: 20,
+  },
+];

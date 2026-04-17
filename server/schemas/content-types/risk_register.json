@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:risk_register:1.0",
+  "title": "Risk Register",
+  "description": "Enumerated risks with scoring dimensions (likelihood, impact, residual risk)",
+  "type": "object",
+  "required": ["title", "items"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "scope": { "type": "string" },
+    "scoring_scheme": {
+      "type": "object",
+      "properties": {
+        "likelihood_scale": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "integer", "minimum": 1 },
+              "label": { "type": "string" }
+            }
+          }
+        },
+        "impact_scale": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "integer", "minimum": 1 },
+              "label": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "risk"],
+        "properties": {
+          "id": { "type": "string" },
+          "risk": { "type": "string", "description": "Short name / title" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "description": "e.g. operational, strategic, compliance, cyber" },
+          "cause": { "type": "string" },
+          "consequence": { "type": "string" },
+          "likelihood": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "impact": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "inherent_score": { "type": "integer", "description": "likelihood × impact, pre-controls" },
+          "controls": { "type": "array", "items": { "type": "string" } },
+          "residual_likelihood": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "residual_impact": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "residual_score": { "type": "integer", "description": "post-controls" },
+          "owner": { "type": "string" },
+          "treatment": { "type": "string", "enum": ["accept", "mitigate", "transfer", "avoid"] },
+          "action_plan": { "type": "string" },
+          "review_date": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "summary_statistics": {
+      "type": "object",
+      "properties": {
+        "total_risks": { "type": "integer" },
+        "by_category": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "by_treatment": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "high_residual": { "type": "integer", "description": "count of residual_score ≥ 15" }
+      }
+    }
+  }
+}
