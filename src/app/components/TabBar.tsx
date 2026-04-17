@@ -7,6 +7,8 @@ interface Tab {
   id: string;
   label: string;
   icon: string;
+  /** Optional badge — small red dot with count over the icon */
+  badge?: number;
 }
 
 interface Props {
@@ -38,7 +40,7 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors ${
                 active ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -48,6 +50,11 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
                 ))}
               </svg>
               <span className={`text-[10px] ${active ? 'font-semibold' : 'font-normal'}`}>{tab.label}</span>
+              {tab.badge && tab.badge > 0 && (
+                <span className="absolute right-1 top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-adv-red px-1 text-[9px] font-bold text-white">
+                  {tab.badge > 9 ? '9+' : tab.badge}
+                </span>
+              )}
             </button>
           );
         })}

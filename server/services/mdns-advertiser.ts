@@ -112,6 +112,10 @@ export async function createMdnsAdvertiser(port: number): Promise<MdnsAdvertiser
       bonjourInstance = null;
       console.log('[mdns] Stopped advertising');
     }
+    // Phase I fix Arch-6 — clear the module-scope singleton so a follow-up
+    // start() rebuilds the bonjour client. Without this, stop() → start()
+    // returned the destroyed advertiser and silently failed to advertise.
+    cached = null;
   }
 
   function getInfo(): MdnsAdvertiserInfo {
