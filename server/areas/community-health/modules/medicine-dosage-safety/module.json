@@ -94,5 +94,6 @@
     "drug-interactions",
     "pharmacy",
     "storage"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

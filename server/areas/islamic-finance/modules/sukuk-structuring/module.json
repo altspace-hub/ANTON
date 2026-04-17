@@ -33,14 +33,38 @@
       "label": "Sukuk Structure Type",
       "type": "select",
       "options": [
-        { "value": "ijara-sukuk", "label": "Ijara Sukuk" },
-        { "value": "musharakah-sukuk", "label": "Musharakah Sukuk" },
-        { "value": "mudarabah-sukuk", "label": "Mudarabah Sukuk" },
-        { "value": "murabaha-sukuk", "label": "Murabaha Sukuk" },
-        { "value": "wakala-sukuk", "label": "Wakala Sukuk" },
-        { "value": "istisna-sukuk", "label": "Istisna Sukuk" },
-        { "value": "diminishing-musharakah-sukuk", "label": "Diminishing Musharakah Sukuk" },
-        { "value": "hybrid", "label": "Hybrid" }
+        {
+          "value": "ijara-sukuk",
+          "label": "Ijara Sukuk"
+        },
+        {
+          "value": "musharakah-sukuk",
+          "label": "Musharakah Sukuk"
+        },
+        {
+          "value": "mudarabah-sukuk",
+          "label": "Mudarabah Sukuk"
+        },
+        {
+          "value": "murabaha-sukuk",
+          "label": "Murabaha Sukuk"
+        },
+        {
+          "value": "wakala-sukuk",
+          "label": "Wakala Sukuk"
+        },
+        {
+          "value": "istisna-sukuk",
+          "label": "Istisna Sukuk"
+        },
+        {
+          "value": "diminishing-musharakah-sukuk",
+          "label": "Diminishing Musharakah Sukuk"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid"
+        }
       ],
       "required": true
     },
@@ -56,10 +80,22 @@
       "label": "Tenor",
       "type": "select",
       "options": [
-        { "value": "short-term", "label": "Short-term (<1 year)" },
-        { "value": "medium", "label": "Medium (1–5 years)" },
-        { "value": "long", "label": "Long (5–10 years)" },
-        { "value": "very-long", "label": "Very long (10+ years)" }
+        {
+          "value": "short-term",
+          "label": "Short-term (<1 year)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (1–5 years)"
+        },
+        {
+          "value": "long",
+          "label": "Long (5–10 years)"
+        },
+        {
+          "value": "very-long",
+          "label": "Very long (10+ years)"
+        }
       ],
       "required": true
     },
@@ -89,5 +125,6 @@
     "spv",
     "aaoifi",
     "islamic-bonds"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

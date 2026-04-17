@@ -33,12 +33,30 @@
       "label": "Institution Type",
       "type": "select",
       "options": [
-        { "value": "full-islamic-bank", "label": "Full Islamic Bank" },
-        { "value": "islamic-window", "label": "Islamic Window" },
-        { "value": "islamic-investment-bank", "label": "Islamic Investment Bank" },
-        { "value": "islamic-nbfi", "label": "Islamic NBFI" },
-        { "value": "takaful-operator", "label": "Takaful Operator" },
-        { "value": "dfi", "label": "Development Finance Institution" }
+        {
+          "value": "full-islamic-bank",
+          "label": "Full Islamic Bank"
+        },
+        {
+          "value": "islamic-window",
+          "label": "Islamic Window"
+        },
+        {
+          "value": "islamic-investment-bank",
+          "label": "Islamic Investment Bank"
+        },
+        {
+          "value": "islamic-nbfi",
+          "label": "Islamic NBFI"
+        },
+        {
+          "value": "takaful-operator",
+          "label": "Takaful Operator"
+        },
+        {
+          "value": "dfi",
+          "label": "Development Finance Institution"
+        }
       ],
       "required": true
     },
@@ -47,11 +65,26 @@
       "label": "Liquidity Instruments Used",
       "type": "chips",
       "options": [
-        { "value": "commodity-murabaha", "label": "Commodity Murabaha" },
-        { "value": "wakala", "label": "Wakala" },
-        { "value": "interbank-murabaha", "label": "Interbank Murabaha" },
-        { "value": "sukuk", "label": "Sukuk" },
-        { "value": "iscap", "label": "ISCAP" }
+        {
+          "value": "commodity-murabaha",
+          "label": "Commodity Murabaha"
+        },
+        {
+          "value": "wakala",
+          "label": "Wakala"
+        },
+        {
+          "value": "interbank-murabaha",
+          "label": "Interbank Murabaha"
+        },
+        {
+          "value": "sukuk",
+          "label": "Sukuk"
+        },
+        {
+          "value": "iscap",
+          "label": "ISCAP"
+        }
       ],
       "required": false
     },
@@ -60,11 +93,26 @@
       "label": "Regulatory Framework",
       "type": "select",
       "options": [
-        { "value": "ifsb", "label": "IFSB" },
-        { "value": "aaoifi", "label": "AAOIFI" },
-        { "value": "bnm", "label": "BNM" },
-        { "value": "sama", "label": "SAMA" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ifsb",
+          "label": "IFSB"
+        },
+        {
+          "value": "aaoifi",
+          "label": "AAOIFI"
+        },
+        {
+          "value": "bnm",
+          "label": "BNM"
+        },
+        {
+          "value": "sama",
+          "label": "SAMA"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     }
@@ -87,5 +135,6 @@
     "lcr",
     "hqla",
     "islamic-banking"
-  ]
+  ],
+  "contentType": "plan_document"
 }

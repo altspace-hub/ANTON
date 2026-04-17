@@ -115,5 +115,6 @@
     "communication",
     "reporting",
     "IFRS17"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

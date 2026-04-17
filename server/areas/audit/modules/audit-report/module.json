@@ -82,5 +82,6 @@
     "findings",
     "iia",
     "opinion"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

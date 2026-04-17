@@ -87,5 +87,6 @@
       "description": "Budget, access to users, legal/privacy restrictions, remote vs in-person, etc.",
       "placeholder": "e.g. Remote only, GDPR consent required, budget £5k, limited access to B2B users"
     }
-  ]
+  ],
+  "contentType": "analytic_report"
 }

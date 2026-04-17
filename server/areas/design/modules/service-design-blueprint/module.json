@@ -116,5 +116,6 @@
       ],
       "defaultValue": "future_state"
     }
-  ]
+  ],
+  "contentType": "analytic_report"
 }

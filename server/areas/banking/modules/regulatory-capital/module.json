@@ -88,5 +88,6 @@
     "icaap",
     "stress-testing",
     "prudential"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

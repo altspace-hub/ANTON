@@ -135,5 +135,6 @@
     "documentation",
     "rfc",
     "api"
-  ]
+  ],
+  "contentType": "policy_document"
 }

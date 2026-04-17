@@ -107,5 +107,6 @@
     "mas-sandbox",
     "fca-sandbox",
     "test-and-learn"
-  ]
+  ],
+  "contentType": "plan_document"
 }

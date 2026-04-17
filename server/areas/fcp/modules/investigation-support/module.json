@@ -66,5 +66,6 @@
     "str",
     "sar",
     "typologies"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

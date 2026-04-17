@@ -104,5 +104,6 @@
     "meeting-prep",
     "executive",
     "reporting"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

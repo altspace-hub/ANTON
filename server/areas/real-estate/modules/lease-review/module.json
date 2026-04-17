@@ -167,5 +167,6 @@
     "contract",
     "review",
     "legal"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

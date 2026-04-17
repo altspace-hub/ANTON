@@ -125,5 +125,6 @@
     "ingredients",
     "food-vendor",
     "collective-purchasing"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

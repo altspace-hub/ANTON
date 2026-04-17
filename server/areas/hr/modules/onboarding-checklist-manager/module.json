@@ -104,5 +104,6 @@
     "integration",
     "30-60-90",
     "talent-management"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

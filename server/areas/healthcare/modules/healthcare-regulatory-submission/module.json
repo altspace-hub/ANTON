@@ -163,5 +163,6 @@
     "fda",
     "marketing-authorisation",
     "ctd"
-  ]
+  ],
+  "contentType": "plan_document"
 }

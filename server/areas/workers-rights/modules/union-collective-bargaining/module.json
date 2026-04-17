@@ -168,5 +168,6 @@
     "ilo-c98",
     "shop-steward",
     "employer-intimidation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

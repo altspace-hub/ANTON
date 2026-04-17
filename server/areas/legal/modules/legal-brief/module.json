@@ -137,5 +137,6 @@
     "opinion",
     "brief",
     "regulatory"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

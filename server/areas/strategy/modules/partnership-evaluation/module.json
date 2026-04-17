@@ -110,5 +110,6 @@
     "scorecard",
     "strategy",
     "decision"
-  ]
+  ],
+  "contentType": "scorecard"
 }

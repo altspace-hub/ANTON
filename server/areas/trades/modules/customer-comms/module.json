@@ -111,5 +111,6 @@
     "delay",
     "booking-confirmation",
     "payment-reminder"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

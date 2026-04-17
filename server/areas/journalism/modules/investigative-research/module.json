@@ -94,5 +94,6 @@
       "description": "Time available, team size, geographic scope, access constraints, legal risks.",
       "placeholder": "e.g. 2 journalists, 3 months, EU-based, limited budget for travel. Subject has previously threatened legal action against press."
     }
-  ]
+  ],
+  "contentType": "analytic_report"
 }

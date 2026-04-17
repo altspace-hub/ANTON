@@ -130,5 +130,6 @@
     "MiFID",
     "PRIIPs",
     "approval"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -71,5 +71,6 @@
     "bwra",
     "maturity",
     "controls"
-  ]
+  ],
+  "contentType": "risk_register"
 }

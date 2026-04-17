@@ -118,5 +118,6 @@
     "correspondent-banking",
     "humanitarian",
     "fcp"
-  ]
+  ],
+  "contentType": "plan_document"
 }

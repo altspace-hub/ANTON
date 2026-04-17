@@ -91,5 +91,6 @@
     "physical-risk",
     "transition-risk",
     "esg"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -92,5 +92,6 @@
     "pipeline",
     "strategy",
     "improvement"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

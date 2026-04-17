@@ -79,5 +79,6 @@
     "rfp",
     "client",
     "consulting"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

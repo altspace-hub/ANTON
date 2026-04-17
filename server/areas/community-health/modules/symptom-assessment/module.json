@@ -183,5 +183,6 @@
     "diarrhea",
     "malaria",
     "community-health"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

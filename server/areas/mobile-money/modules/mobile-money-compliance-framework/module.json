@@ -158,5 +158,6 @@
     "consumer-protection",
     "fatf-r14",
     "gsma"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

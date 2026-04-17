@@ -147,5 +147,6 @@
     "reputation",
     "incident",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

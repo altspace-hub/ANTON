@@ -183,5 +183,6 @@
     "property",
     "transaction",
     "risk"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

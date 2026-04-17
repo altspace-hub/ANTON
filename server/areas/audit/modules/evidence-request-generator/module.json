@@ -117,5 +117,6 @@
     "fieldwork",
     "documentation",
     "testing"
-  ]
+  ],
+  "contentType": "plan_document"
 }

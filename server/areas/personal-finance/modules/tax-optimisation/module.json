@@ -147,5 +147,6 @@
     "optimisation",
     "deductions",
     "planning"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

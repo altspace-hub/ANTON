@@ -114,5 +114,6 @@
       "description": "Anything the reviewer should know: publication, audience, what's been verified, known issues.",
       "placeholder": "e.g. For Reuters. Subjects have been given right of reply (responses in para 8). All financial figures verified against company accounts. Unsure about legal risk in paragraph 4."
     }
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

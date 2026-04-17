@@ -92,5 +92,6 @@
     "training",
     "education",
     "compliance-training"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

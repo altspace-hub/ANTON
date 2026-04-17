@@ -109,5 +109,6 @@
     "process",
     "documentation",
     "operations"
-  ]
+  ],
+  "contentType": "process_map"
 }

@@ -119,5 +119,6 @@
     "no-refrigeration",
     "tropical-climate",
     "food-safety"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

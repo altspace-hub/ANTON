@@ -164,5 +164,6 @@
     "gdpr",
     "dora",
     "operational"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

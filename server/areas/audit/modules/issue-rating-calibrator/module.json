@@ -105,5 +105,6 @@
     "severity",
     "findings",
     "quality"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

@@ -127,5 +127,6 @@
     "business-development",
     "consulting",
     "client"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -91,5 +91,6 @@
     "retention",
     "organisational-health",
     "people-analytics"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

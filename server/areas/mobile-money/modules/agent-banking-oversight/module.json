@@ -145,5 +145,6 @@
     "liquidity-management",
     "gsma",
     "cgap"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

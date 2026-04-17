@@ -163,5 +163,6 @@
     "data-subject-rights",
     "data-privacy",
     "operational"
-  ]
+  ],
+  "contentType": "policy_document"
 }

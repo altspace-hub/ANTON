@@ -180,5 +180,6 @@
     "quality",
     "best-practices",
     "testing"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

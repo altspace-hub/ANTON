@@ -189,5 +189,6 @@
     "reverse-charge",
     "digital-services",
     "input-recovery"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

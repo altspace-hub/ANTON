@@ -33,10 +33,22 @@
       "label": "Bank Type",
       "type": "select",
       "options": [
-        { "value": "commercial-bank", "label": "Commercial Bank" },
-        { "value": "investment-bank", "label": "Investment Bank" },
-        { "value": "foreign-branch", "label": "Foreign Bank Branch" },
-        { "value": "nbfi", "label": "NBFI" }
+        {
+          "value": "commercial-bank",
+          "label": "Commercial Bank"
+        },
+        {
+          "value": "investment-bank",
+          "label": "Investment Bank"
+        },
+        {
+          "value": "foreign-branch",
+          "label": "Foreign Bank Branch"
+        },
+        {
+          "value": "nbfi",
+          "label": "NBFI"
+        }
       ],
       "required": true
     },
@@ -45,11 +57,26 @@
       "label": "Products Offered",
       "type": "chips",
       "options": [
-        { "value": "murabaha", "label": "Murabaha" },
-        { "value": "ijara", "label": "Ijara" },
-        { "value": "wakala-deposits", "label": "Wakala Deposits" },
-        { "value": "islamic-trade-finance", "label": "Islamic Trade Finance" },
-        { "value": "sukuk", "label": "Sukuk" }
+        {
+          "value": "murabaha",
+          "label": "Murabaha"
+        },
+        {
+          "value": "ijara",
+          "label": "Ijara"
+        },
+        {
+          "value": "wakala-deposits",
+          "label": "Wakala Deposits"
+        },
+        {
+          "value": "islamic-trade-finance",
+          "label": "Islamic Trade Finance"
+        },
+        {
+          "value": "sukuk",
+          "label": "Sukuk"
+        }
       ],
       "required": false
     },
@@ -77,5 +104,6 @@
     "dual-banking",
     "governance",
     "assessment"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

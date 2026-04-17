@@ -187,5 +187,6 @@
     "patient-information",
     "behaviour-change",
     "self-management"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

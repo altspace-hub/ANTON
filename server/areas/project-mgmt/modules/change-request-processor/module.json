@@ -77,5 +77,6 @@
     "scope",
     "impact-assessment",
     "operational"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -143,5 +143,6 @@
     "enterprise-risk",
     "risk-register",
     "risk-assessment"
-  ]
+  ],
+  "contentType": "risk_register"
 }

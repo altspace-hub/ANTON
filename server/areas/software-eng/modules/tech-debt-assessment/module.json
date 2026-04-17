@@ -179,5 +179,6 @@
     "maintenance",
     "refactoring",
     "modernisation"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

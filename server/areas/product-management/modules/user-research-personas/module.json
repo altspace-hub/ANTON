@@ -108,5 +108,6 @@
     "discovery",
     "interviews",
     "usability"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

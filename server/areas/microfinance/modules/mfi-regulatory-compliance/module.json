@@ -162,5 +162,6 @@
     "aml-cft",
     "cgap",
     "financial-inclusion"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

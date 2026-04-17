@@ -149,5 +149,6 @@
     "deadlines",
     "regulatory-reporting",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

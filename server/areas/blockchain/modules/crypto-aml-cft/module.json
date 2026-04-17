@@ -15,7 +15,11 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["gap-scoring-matrix", "policy-document", "action-plan"],
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -37,13 +41,34 @@
       "label": "Task Type",
       "required": true,
       "options": [
-        { "value": "full-framework", "label": "Full AML/CFT framework assessment" },
-        { "value": "travel-rule", "label": "Travel Rule (TFR) gap analysis & implementation" },
-        { "value": "kyc-cdd", "label": "KYC / CDD procedures review" },
-        { "value": "tm-review", "label": "Transaction monitoring assessment" },
-        { "value": "sanctions", "label": "Sanctions screening (incl. wallet address screening)" },
-        { "value": "vasp-dd", "label": "Counterparty VASP due diligence framework" },
-        { "value": "policy-drafting", "label": "AML/CFT policy or procedure drafting" }
+        {
+          "value": "full-framework",
+          "label": "Full AML/CFT framework assessment"
+        },
+        {
+          "value": "travel-rule",
+          "label": "Travel Rule (TFR) gap analysis & implementation"
+        },
+        {
+          "value": "kyc-cdd",
+          "label": "KYC / CDD procedures review"
+        },
+        {
+          "value": "tm-review",
+          "label": "Transaction monitoring assessment"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions screening (incl. wallet address screening)"
+        },
+        {
+          "value": "vasp-dd",
+          "label": "Counterparty VASP due diligence framework"
+        },
+        {
+          "value": "policy-drafting",
+          "label": "AML/CFT policy or procedure drafting"
+        }
       ]
     },
     {
@@ -53,14 +78,38 @@
       "description": "The entity type drives which obligations apply and at what risk level.",
       "required": true,
       "options": [
-        { "value": "casp-exchange", "label": "CASP — centralised exchange (CEX)" },
-        { "value": "casp-custody", "label": "CASP — custody / wallet provider" },
-        { "value": "casp-otc", "label": "CASP — OTC broker / institutional desk" },
-        { "value": "casp-transfer", "label": "CASP — transfer / payment service" },
-        { "value": "nft-marketplace", "label": "NFT marketplace / platform" },
-        { "value": "defi-aggregator", "label": "DeFi aggregator / front-end operator" },
-        { "value": "p2p-platform", "label": "P2P exchange / marketplace" },
-        { "value": "bank-casp", "label": "Bank / FI with crypto-asset services" }
+        {
+          "value": "casp-exchange",
+          "label": "CASP — centralised exchange (CEX)"
+        },
+        {
+          "value": "casp-custody",
+          "label": "CASP — custody / wallet provider"
+        },
+        {
+          "value": "casp-otc",
+          "label": "CASP — OTC broker / institutional desk"
+        },
+        {
+          "value": "casp-transfer",
+          "label": "CASP — transfer / payment service"
+        },
+        {
+          "value": "nft-marketplace",
+          "label": "NFT marketplace / platform"
+        },
+        {
+          "value": "defi-aggregator",
+          "label": "DeFi aggregator / front-end operator"
+        },
+        {
+          "value": "p2p-platform",
+          "label": "P2P exchange / marketplace"
+        },
+        {
+          "value": "bank-casp",
+          "label": "Bank / FI with crypto-asset services"
+        }
       ]
     },
     {
@@ -68,16 +117,46 @@
       "type": "chips",
       "label": "Jurisdictions in Scope",
       "options": [
-        { "value": "eu", "label": "EU / AMLR" },
-        { "value": "de", "label": "Germany" },
-        { "value": "fr", "label": "France" },
-        { "value": "nl", "label": "Netherlands" },
-        { "value": "se", "label": "Sweden" },
-        { "value": "fi", "label": "Finland" },
-        { "value": "uk", "label": "UK" },
-        { "value": "us", "label": "US / FinCEN" },
-        { "value": "ch", "label": "Switzerland" },
-        { "value": "sg", "label": "Singapore" }
+        {
+          "value": "eu",
+          "label": "EU / AMLR"
+        },
+        {
+          "value": "de",
+          "label": "Germany"
+        },
+        {
+          "value": "fr",
+          "label": "France"
+        },
+        {
+          "value": "nl",
+          "label": "Netherlands"
+        },
+        {
+          "value": "se",
+          "label": "Sweden"
+        },
+        {
+          "value": "fi",
+          "label": "Finland"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us",
+          "label": "US / FinCEN"
+        },
+        {
+          "value": "ch",
+          "label": "Switzerland"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore"
+        }
       ]
     },
     {
@@ -86,10 +165,22 @@
       "label": "Travel Rule Implementation Status",
       "required": false,
       "options": [
-        { "value": "not-started", "label": "Not started — no Travel Rule solution in place" },
-        { "value": "evaluating", "label": "Evaluating solutions (Notabene, TRISA, OpenVASP...)" },
-        { "value": "partial", "label": "Partially implemented — some corridors covered" },
-        { "value": "implemented", "label": "Fully implemented — seeking review / validation" }
+        {
+          "value": "not-started",
+          "label": "Not started — no Travel Rule solution in place"
+        },
+        {
+          "value": "evaluating",
+          "label": "Evaluating solutions (Notabene, TRISA, OpenVASP...)"
+        },
+        {
+          "value": "partial",
+          "label": "Partially implemented — some corridors covered"
+        },
+        {
+          "value": "implemented",
+          "label": "Fully implemented — seeking review / validation"
+        }
       ]
     },
     {
@@ -98,13 +189,34 @@
       "label": "High-Risk Features Present",
       "description": "Flag any high-risk features to ensure the analysis covers them explicitly.",
       "options": [
-        { "value": "privacy-coins", "label": "Privacy coins (XMR, ZEC, DASH)" },
-        { "value": "unhosted-wallets", "label": "Unhosted / self-custody wallet transactions" },
-        { "value": "defi-exposure", "label": "DeFi protocol interactions" },
-        { "value": "nft-trading", "label": "NFT trading / marketplace" },
-        { "value": "p2p", "label": "P2P / OTC transactions" },
-        { "value": "high-risk-countries", "label": "Clients from FATF grey/black listed jurisdictions" },
-        { "value": "nested-vasp", "label": "Nested / embedded VASP clients" }
+        {
+          "value": "privacy-coins",
+          "label": "Privacy coins (XMR, ZEC, DASH)"
+        },
+        {
+          "value": "unhosted-wallets",
+          "label": "Unhosted / self-custody wallet transactions"
+        },
+        {
+          "value": "defi-exposure",
+          "label": "DeFi protocol interactions"
+        },
+        {
+          "value": "nft-trading",
+          "label": "NFT trading / marketplace"
+        },
+        {
+          "value": "p2p",
+          "label": "P2P / OTC transactions"
+        },
+        {
+          "value": "high-risk-countries",
+          "label": "Clients from FATF grey/black listed jurisdictions"
+        },
+        {
+          "value": "nested-vasp",
+          "label": "Nested / embedded VASP clients"
+        }
       ]
     },
     {
@@ -115,6 +227,21 @@
       "placeholder": "e.g. NCA exam found insufficient Travel Rule controls; transaction monitoring thresholds not calibrated for crypto volatility; no unhosted wallet risk policy in place..."
     }
   ],
-  "recommendedPersonas": ["crypto-blockchain-expert", "fcp-expert", "fsa-regulator"],
-  "tags": ["crypto-aml", "travel-rule", "tfr", "vasp", "casp", "kyc", "transaction-monitoring", "sanctions", "fatf"]
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "crypto-aml",
+    "travel-rule",
+    "tfr",
+    "vasp",
+    "casp",
+    "kyc",
+    "transaction-monitoring",
+    "sanctions",
+    "fatf"
+  ],
+  "contentType": "gap_analysis"
 }

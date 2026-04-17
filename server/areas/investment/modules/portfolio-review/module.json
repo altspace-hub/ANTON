@@ -100,5 +100,6 @@
     "performance",
     "risk",
     "mifid"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

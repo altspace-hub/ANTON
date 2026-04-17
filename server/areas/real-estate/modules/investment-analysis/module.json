@@ -122,5 +122,6 @@
     "analysis",
     "returns",
     "portfolio"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

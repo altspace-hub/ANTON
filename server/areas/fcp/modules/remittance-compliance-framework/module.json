@@ -161,5 +161,6 @@
     "travel-rule",
     "compliance-framework",
     "fcp"
-  ]
+  ],
+  "contentType": "policy_document"
 }

@@ -79,5 +79,6 @@
     "sprint",
     "planning",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

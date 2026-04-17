@@ -125,5 +125,6 @@
     "CRD",
     "governance",
     "regulatory"
-  ]
+  ],
+  "contentType": "policy_document"
 }

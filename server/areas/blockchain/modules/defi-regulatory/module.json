@@ -15,7 +15,11 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "quick-briefing", "impact-assessment"],
+    "outputFormats": [
+      "detailed-findings",
+      "quick-briefing",
+      "impact-assessment"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,14 +36,38 @@
       "label": "What is the regulatory question?",
       "required": true,
       "options": [
-        { "value": "mica-perimeter", "label": "MiCA scope — does this fall inside or outside MiCA?" },
-        { "value": "aml-applicability", "label": "AML/CFT — does AMLR / TFR apply to this protocol/entity?" },
-        { "value": "mifid-scope", "label": "MiFID II — is this a financial instrument / regulated service?" },
-        { "value": "dora-applicability", "label": "DORA — does ICT risk regulation apply?" },
-        { "value": "multi-framework", "label": "Multi-framework analysis — full regulatory mapping" },
-        { "value": "horizon-scanning", "label": "Horizon scanning — what rules are coming for this structure?" },
-        { "value": "dao-governance", "label": "DAO governance & regulatory attribution" },
-        { "value": "rwa-tokenisation", "label": "RWA tokenisation — applicable regulatory framework" }
+        {
+          "value": "mica-perimeter",
+          "label": "MiCA scope — does this fall inside or outside MiCA?"
+        },
+        {
+          "value": "aml-applicability",
+          "label": "AML/CFT — does AMLR / TFR apply to this protocol/entity?"
+        },
+        {
+          "value": "mifid-scope",
+          "label": "MiFID II — is this a financial instrument / regulated service?"
+        },
+        {
+          "value": "dora-applicability",
+          "label": "DORA — does ICT risk regulation apply?"
+        },
+        {
+          "value": "multi-framework",
+          "label": "Multi-framework analysis — full regulatory mapping"
+        },
+        {
+          "value": "horizon-scanning",
+          "label": "Horizon scanning — what rules are coming for this structure?"
+        },
+        {
+          "value": "dao-governance",
+          "label": "DAO governance & regulatory attribution"
+        },
+        {
+          "value": "rwa-tokenisation",
+          "label": "RWA tokenisation — applicable regulatory framework"
+        }
       ]
     },
     {
@@ -48,16 +76,46 @@
       "label": "Digital Asset Structure Type",
       "required": true,
       "options": [
-        { "value": "amm-dex", "label": "AMM / Decentralised exchange (DEX)" },
-        { "value": "lending", "label": "Lending / borrowing protocol (Aave, Compound model)" },
-        { "value": "yield-aggregator", "label": "Yield aggregator / restaking" },
-        { "value": "dao", "label": "DAO (governance structure)" },
-        { "value": "nft-marketplace", "label": "NFT marketplace / platform" },
-        { "value": "nft-project", "label": "NFT project / collection" },
-        { "value": "bridge", "label": "Cross-chain bridge / interoperability protocol" },
-        { "value": "rwa", "label": "Tokenised real-world assets (bonds, equity, real estate)" },
-        { "value": "staking-liquid", "label": "Liquid staking / restaking protocol" },
-        { "value": "payments-defi", "label": "DeFi-based payment infrastructure" }
+        {
+          "value": "amm-dex",
+          "label": "AMM / Decentralised exchange (DEX)"
+        },
+        {
+          "value": "lending",
+          "label": "Lending / borrowing protocol (Aave, Compound model)"
+        },
+        {
+          "value": "yield-aggregator",
+          "label": "Yield aggregator / restaking"
+        },
+        {
+          "value": "dao",
+          "label": "DAO (governance structure)"
+        },
+        {
+          "value": "nft-marketplace",
+          "label": "NFT marketplace / platform"
+        },
+        {
+          "value": "nft-project",
+          "label": "NFT project / collection"
+        },
+        {
+          "value": "bridge",
+          "label": "Cross-chain bridge / interoperability protocol"
+        },
+        {
+          "value": "rwa",
+          "label": "Tokenised real-world assets (bonds, equity, real estate)"
+        },
+        {
+          "value": "staking-liquid",
+          "label": "Liquid staking / restaking protocol"
+        },
+        {
+          "value": "payments-defi",
+          "label": "DeFi-based payment infrastructure"
+        }
       ]
     },
     {
@@ -67,11 +125,26 @@
       "description": "MiCA exempts 'fully decentralised' services. This helps assess whether the exemption applies.",
       "required": false,
       "options": [
-        { "value": "foundation-controlled", "label": "Foundation / company controls protocol and upgrades" },
-        { "value": "dao-governed", "label": "DAO governed — token holders vote on changes" },
-        { "value": "immutable", "label": "Immutable smart contracts — no upgrades possible" },
-        { "value": "hybrid", "label": "Hybrid — partially decentralised with some admin keys" },
-        { "value": "frontend-operator", "label": "Decentralised protocol but centralised front-end operated by us" }
+        {
+          "value": "foundation-controlled",
+          "label": "Foundation / company controls protocol and upgrades"
+        },
+        {
+          "value": "dao-governed",
+          "label": "DAO governed — token holders vote on changes"
+        },
+        {
+          "value": "immutable",
+          "label": "Immutable smart contracts — no upgrades possible"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid — partially decentralised with some admin keys"
+        },
+        {
+          "value": "frontend-operator",
+          "label": "Decentralised protocol but centralised front-end operated by us"
+        }
       ]
     },
     {
@@ -80,12 +153,30 @@
       "label": "Your Role in Relation to the Protocol",
       "required": false,
       "options": [
-        { "value": "developer-foundation", "label": "Protocol developer / foundation" },
-        { "value": "dao-member", "label": "DAO member / token holder" },
-        { "value": "frontend-operator", "label": "Front-end / interface operator" },
-        { "value": "investor-lp", "label": "Investor / liquidity provider" },
-        { "value": "regulated-entity", "label": "Regulated FI assessing DeFi exposure of clients" },
-        { "value": "regulator-advisor", "label": "Advisor to regulator / policy maker" }
+        {
+          "value": "developer-foundation",
+          "label": "Protocol developer / foundation"
+        },
+        {
+          "value": "dao-member",
+          "label": "DAO member / token holder"
+        },
+        {
+          "value": "frontend-operator",
+          "label": "Front-end / interface operator"
+        },
+        {
+          "value": "investor-lp",
+          "label": "Investor / liquidity provider"
+        },
+        {
+          "value": "regulated-entity",
+          "label": "Regulated FI assessing DeFi exposure of clients"
+        },
+        {
+          "value": "regulator-advisor",
+          "label": "Advisor to regulator / policy maker"
+        }
       ]
     },
     {
@@ -93,12 +184,30 @@
       "type": "chips",
       "label": "Jurisdictions of Interest",
       "options": [
-        { "value": "eu", "label": "EU / MiCA" },
-        { "value": "uk", "label": "UK / FCA" },
-        { "value": "us", "label": "US / SEC / CFTC / FinCEN" },
-        { "value": "sg", "label": "Singapore / MAS" },
-        { "value": "ch", "label": "Switzerland / FINMA" },
-        { "value": "ae", "label": "UAE / VARA / ADGM" }
+        {
+          "value": "eu",
+          "label": "EU / MiCA"
+        },
+        {
+          "value": "uk",
+          "label": "UK / FCA"
+        },
+        {
+          "value": "us",
+          "label": "US / SEC / CFTC / FinCEN"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore / MAS"
+        },
+        {
+          "value": "ch",
+          "label": "Switzerland / FINMA"
+        },
+        {
+          "value": "ae",
+          "label": "UAE / VARA / ADGM"
+        }
       ]
     },
     {
@@ -109,6 +218,20 @@
       "placeholder": "e.g. We operate a front-end for a fully on-chain AMM. The smart contracts are immutable and held by a DAO. We collect a 0.05% fee via a separate fee contract. Users connect their own wallets — we never custody funds. We are concerned about whether we need MiCA authorisation as a CASP..."
     }
   ],
-  "recommendedPersonas": ["crypto-blockchain-expert", "legal-expert"],
-  "tags": ["defi", "nft", "dao", "mica-perimeter", "decentralised-finance", "rwa", "blockchain-regulation", "iosco", "fsb"]
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "defi",
+    "nft",
+    "dao",
+    "mica-perimeter",
+    "decentralised-finance",
+    "rwa",
+    "blockchain-regulation",
+    "iosco",
+    "fsb"
+  ],
+  "contentType": "analytic_report"
 }

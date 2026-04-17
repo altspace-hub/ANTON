@@ -134,5 +134,6 @@
     "rca",
     "post-incident",
     "remediation"
-  ]
+  ],
+  "contentType": "plan_document"
 }

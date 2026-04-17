@@ -89,5 +89,6 @@
     "daily-operations",
     "aml",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

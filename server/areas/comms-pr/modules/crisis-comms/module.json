@@ -114,5 +114,6 @@
     "crisis",
     "reputation",
     "media-management"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

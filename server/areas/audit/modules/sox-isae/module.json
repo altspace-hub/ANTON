@@ -107,5 +107,6 @@
     "soc",
     "controls",
     "financial-reporting"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

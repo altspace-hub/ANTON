@@ -143,5 +143,6 @@
     "property",
     "investment",
     "analysis"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

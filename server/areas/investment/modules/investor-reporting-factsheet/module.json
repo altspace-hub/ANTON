@@ -135,5 +135,6 @@
     "gips",
     "sfdr",
     "disclosure"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

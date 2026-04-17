@@ -115,5 +115,6 @@
     "minutes",
     "governance",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

@@ -83,5 +83,6 @@
     "management",
     "board",
     "slides"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -88,5 +88,6 @@
       "description": "What specific evidence, allegations, or facts do you need to get their response to?",
       "placeholder": "e.g. Document A: email approving contract signed 3 days after joining NHS. Document B: contract value 40% above market rate. Public record: company paid her speaking fees 2021."
     }
-  ]
+  ],
+  "contentType": "plan_document"
 }

@@ -139,5 +139,6 @@
     "inrev",
     "aifmd",
     "ipev"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

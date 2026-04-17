@@ -125,5 +125,6 @@
     "mobile-money",
     "online-services",
     "digital-safety"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

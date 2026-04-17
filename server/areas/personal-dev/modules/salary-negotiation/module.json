@@ -88,5 +88,6 @@
     "salary",
     "negotiation",
     "compensation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }
