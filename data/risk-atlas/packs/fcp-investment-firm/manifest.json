@@ -1,0 +1,17 @@
+{
+  "id": "fcp-investment-firm",
+  "name": "Investment Firm — MiFID II (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "fcp-bank",
+  "description": "MiFID II investment firm — broker-dealer, asset manager, investment adviser. Inherits the bank baseline + adds MiFID II conduct (suitability + appropriateness + best execution), MAR market abuse, client-asset segregation.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",      "rationale": "Mandatory — AMLR-obliged investment firm." },
+    { "domain": "sanctions",   "rationale": "Counterparty + UBO + market-instrument issuer screening." },
+    { "domain": "fraud",       "rationale": "Account takeover, mis-selling, book-building fraud." },
+    { "domain": "market_abuse","rationale": "MAR-mandated surveillance + STORs." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

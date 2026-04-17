@@ -1,0 +1,9 @@
+[
+  { "id":"v-ec-no-3ds",                "code":"V-EC-1","name":"No 3DS / SCA on card flows",      "description":"SCA absent or routinely waived; high chargeback rate.","typical_severity": 3 },
+  { "id":"v-ec-no-fraud-rules",        "code":"V-EC-2","name":"No behavioural fraud rules",       "description":"No velocity / device / behavioural rules at checkout.","typical_severity": 4 },
+  { "id":"v-ec-no-delivery-evidence",  "code":"V-EC-3","name":"No proof-of-delivery retention",   "description":"No signed POD / photo-on-delivery / tracking on file.","typical_severity": 3 },
+  { "id":"v-ec-no-seller-onboarding",  "code":"V-EC-4","name":"No marketplace seller onboarding", "description":"Sellers admitted without identity / business verification.","typical_severity": 4 },
+  { "id":"v-ec-no-seller-monitoring",  "code":"V-EC-5","name":"No seller-behaviour monitoring",    "description":"Seller listings / refund rates / complaints not monitored.","typical_severity": 3 },
+  { "id":"v-ec-no-pen-test",           "code":"V-EC-6","name":"No periodic penetration testing",   "description":"No annual pen-test on web stack and API.","typical_severity": 3 },
+  { "id":"v-ec-no-delivery-screen",    "code":"V-EC-7","name":"No delivery-address sanctions screen","description":"Delivery addresses not screened against sanctioned territories.","typical_severity": 3 }
+]

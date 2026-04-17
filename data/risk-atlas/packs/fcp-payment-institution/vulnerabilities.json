@@ -1,0 +1,7 @@
+[
+  { "id":"v-pi-no-segregation",     "code":"V-PI-1","name":"No safeguarded-funds segregation",   "description":"Customer funds commingled with operating funds.","typical_severity": 5 },
+  { "id":"v-pi-no-recon",           "code":"V-PI-2","name":"No daily safeguarding reconciliation","description":"Safeguarded balance not reconciled daily.","typical_severity": 4 },
+  { "id":"v-pi-no-instant-rules",   "code":"V-PI-3","name":"No instant-rails behavioural rules", "description":"Instant payments not subject to behavioural fraud rules.","typical_severity": 4 },
+  { "id":"v-pi-no-agent-oversight", "code":"V-PI-4","name":"No PSD2 agent / distributor oversight","description":"Agents not subject to documented oversight + audit.","typical_severity": 4 },
+  { "id":"v-pi-no-sca-tuning",      "code":"V-PI-5","name":"No SCA exemption tuning",            "description":"SCA exemption rates and fraud rates not periodically reviewed.","typical_severity": 3 }
+]

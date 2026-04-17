@@ -1,0 +1,5 @@
+[
+  { "id":"c-ng-partner",  "code":"C-NG-1","name":"Field-partner DD + monitoring",          "description":"DD on partners; periodic field monitoring; in-country audit sample.",                       "default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Programme Director","vulnerability_refs":["v-ng-no-partner-dd","v-ng-no-field-monitor"] },
+  { "id":"c-ng-screen",   "code":"C-NG-2","name":"Partner / vendor sanctions screening",    "description":"PEP / sanctions / adverse-media screening on partners + vendors at onboarding + periodically.","default_type":"prevent","default_strength_when_in_place":"strong",  "owner_role":"Compliance Officer","vulnerability_refs":["v-ng-no-partner-screen"] },
+  { "id":"c-ng-segregation","code":"C-NG-3","name":"Segregation + reconciliation",          "description":"Donations / vendor payment / payroll / records segregated; daily / weekly recon.",          "default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Finance Director","vulnerability_refs":["v-ng-no-segregation","v-ng-no-donation-recon"] }
+]

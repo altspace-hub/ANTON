@@ -1,0 +1,7 @@
+[
+  { "id":"v-ps-no-engagement-letter","code":"V-PS-1","name":"No engagement letter on every job", "description":"Work begins on email instructions without signed engagement letter.","typical_severity": 3 },
+  { "id":"v-ps-no-change-control",   "code":"V-PS-2","name":"No change-control process",         "description":"Out-of-scope work absorbed without a change order.","typical_severity": 3 },
+  { "id":"v-ps-no-time-review",      "code":"V-PS-3","name":"No time-sheet review",              "description":"Time-sheets approved without sample review.","typical_severity": 2 },
+  { "id":"v-ps-no-expense-policy",   "code":"V-PS-4","name":"No expense policy with thresholds", "description":"Expenses approved on a discretionary basis.","typical_severity": 2 },
+  { "id":"v-ps-no-data-sanitisation","code":"V-PS-5","name":"No deliverable data-sanitisation",  "description":"Deliverables not reviewed for PII / competitor data before sharing.","typical_severity": 3 }
+]

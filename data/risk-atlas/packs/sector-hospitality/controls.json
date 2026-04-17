@@ -1,0 +1,5 @@
+[
+  { "id":"c-hp-booking",  "code":"C-HP-1","name":"Pre-auth + checkout controls",       "description":"Card pre-auth on booking; documented checkout / minibar / no-show review with manager sign-off.","default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Front-Desk Manager","vulnerability_refs":["v-hp-no-pre-auth","v-hp-no-checkout-controls"] },
+  { "id":"c-hp-event",    "code":"C-HP-2","name":"Event RAMS + safety briefing",       "description":"Per-event RAMS; capacity; fire evacuation plan; trained marshals.",                              "default_type":"prevent","default_strength_when_in_place":"strong",  "owner_role":"Events Manager","vulnerability_refs":["v-hp-no-event-rams"] },
+  { "id":"c-hp-screen",   "code":"C-HP-3","name":"Corporate-booking sanctions screen", "description":"Corporate / group bookings screened against sanctions list pre-confirmation.",                   "default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Sales Manager","vulnerability_refs":["v-hp-no-corporate-screen"] }
+]

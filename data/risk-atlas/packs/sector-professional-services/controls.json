@@ -1,0 +1,5 @@
+[
+  { "id":"c-ps-engagement","code":"C-PS-1","name":"Engagement letter + change control", "description":"Mandatory engagement letter pre-work; change orders for any out-of-scope.",       "default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Engagement Lead","vulnerability_refs":["v-ps-no-engagement-letter","v-ps-no-change-control"] },
+  { "id":"c-ps-time",      "code":"C-PS-2","name":"Time-sheet + expense controls",       "description":"Sample time-sheet review; expense policy with thresholds + approvals.",         "default_type":"detect", "default_strength_when_in_place":"adequate","owner_role":"Finance Director","vulnerability_refs":["v-ps-no-time-review","v-ps-no-expense-policy"] },
+  { "id":"c-ps-data",      "code":"C-PS-3","name":"Deliverable sanitisation review",     "description":"Pre-share review for PII / competitor data; sanitisation playbook.",            "default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Engagement Lead","vulnerability_refs":["v-ps-no-data-sanitisation"] }
+]

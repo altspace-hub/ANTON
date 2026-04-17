@@ -1,0 +1,7 @@
+[
+  { "id":"tp-rs-shrinkage",   "code":"TP-RS-1","name":"Inventory shrinkage (theft + waste)",  "description":"Customer theft, employee theft, mis-counted deliveries, expired-goods waste eroding margin.","typical_inherent": 3, "vulnerability_refs":["v-rs-no-cycle-count","v-no-vetting","v-rs-no-cctv"] },
+  { "id":"tp-rs-refund-fraud","code":"TP-RS-2","name":"Refund / return fraud",                  "description":"Customers (or staff) abuse return policies for cash refunds.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-rs-no-refund-controls"] },
+  { "id":"tp-rs-food-safety", "code":"TP-RS-3","name":"Food-safety incident / recall",          "description":"Contamination, supplier-recall, cold-chain failure causing customer harm.","typical_inherent": 4, "vulnerability_refs":["v-rs-no-coldchain","v-rs-no-recall"] },
+  { "id":"tp-rs-supplier-fraud","code":"TP-RS-4","name":"Supplier rebate / invoice fraud",     "description":"Inflated supplier invoices, ghost rebates, kickback to buyer.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-rs-no-supplier-controls"] },
+  { "id":"tp-rs-imports",     "code":"TP-RS-5","name":"Imports from sanctioned jurisdiction",   "description":"Goods sourced from a sanctioned origin or supplier.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-rs-no-supplier-screening"] }
+]

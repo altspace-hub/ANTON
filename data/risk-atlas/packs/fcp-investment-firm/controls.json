@@ -1,0 +1,5 @@
+[
+  { "id":"c-if-suitability","code":"C-IF-1","name":"MiFID II suitability + target-market",  "description":"Documented suitability + appropriateness on every recommendation; target-market governance.","default_type":"prevent","default_strength_when_in_place":"adequate","owner_role":"Head of Compliance","vulnerability_refs":["v-if-no-suitability","v-if-no-target-market"] },
+  { "id":"c-if-best-ex",   "code":"C-IF-2","name":"Best-execution policy + monitoring",     "description":"Documented policy + factor weighting + quarterly monitoring + outlier review.",            "default_type":"detect", "default_strength_when_in_place":"adequate","owner_role":"Head of Trading","vulnerability_refs":["v-if-no-best-ex","v-if-no-monitoring"] },
+  { "id":"c-if-cass",      "code":"C-IF-3","name":"CASS / client-asset segregation + recon","description":"Daily reconciliation; documented segregation; rehypothecation consents; named CASS officer.",     "default_type":"prevent","default_strength_when_in_place":"strong",  "owner_role":"CASS Officer","vulnerability_refs":["v-if-no-cass-controls"] }
+]

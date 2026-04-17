@@ -1,0 +1,15 @@
+{
+  "id": "sector-hospitality",
+  "name": "Hospitality (hotel / event venue)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "restaurant-hospitality",
+  "description": "Hotel, event venue, conference centre. Inherits restaurant-hospitality baseline + adds guest data privacy, online-booking fraud, walked-out / charge-back fraud, large-event public-safety risks.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "fraud",     "rationale": "Booking fraud, no-show / walk-out, payment-card fraud." },
+    { "domain": "sanctions", "rationale": "International guests; sanctions exposure on payment instruments." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "sector-nonprofit-ngo",
+  "name": "Non-profit / NGO / Charity",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Charity, humanitarian organisation, faith-based group. Specific risks around donor due-diligence, sanctions screening on field operations, terrorism financing exposure, restricted-jurisdiction work, governance and trustee duties.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "TF exposure + donor / beneficiary screening even when not AMLR-obliged." },
+    { "domain": "sanctions", "rationale": "Field operations in sanctioned-adjacent jurisdictions." },
+    { "domain": "fraud",      "rationale": "Donor / vendor / payroll fraud." },
+    { "domain": "abc",        "rationale": "Public-sector grants, host-country officials." }
+  ],
+  "typical_size_range": ["micro", "small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

@@ -1,0 +1,7 @@
+[
+  { "id":"tp-pi-safeguarded","code":"TP-PI-1","name":"Safeguarded-funds shortfall",            "description":"Customer funds not segregated as required by PSD2; shortfall on reconciliation.","typical_inherent": 5, "fcp_domain":"amlcft", "vulnerability_refs":["v-pi-no-segregation","v-pi-no-recon"] },
+  { "id":"tp-pi-instant",   "code":"TP-PI-2","name":"Instant-rails fraud / APP",               "description":"Instant payment rails accelerate APP fraud + reduce window for intervention.","typical_inherent": 4, "fcp_domain":"fraud", "vulnerability_refs":["v-pi-no-instant-rules","v-bank-no-confirmation-of-payee"] },
+  { "id":"tp-pi-agent",     "code":"TP-PI-3","name":"Agent / distributor compliance failure",  "description":"Agent / distributor in PSD2 model fails to apply CDD, sanctions, fraud controls.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-pi-no-agent-oversight"] },
+  { "id":"tp-pi-mule",      "code":"TP-PI-4","name":"Mule account onboarding",                  "description":"Customers (knowingly or coerced) open accounts to receive and forward illicit funds.","typical_inherent": 4, "fcp_domain":"fraud", "vulnerability_refs":["v-bank-no-onboarding-fraud-checks","v-bank-no-mule-detection-rules"] },
+  { "id":"tp-pi-sca",       "code":"TP-PI-5","name":"SCA exemption misuse / fraud uplift",      "description":"SCA exemptions over-applied; fraud uplift on weaker authentication paths.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-pi-no-sca-tuning"] }
+]

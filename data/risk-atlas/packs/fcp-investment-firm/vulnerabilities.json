@@ -1,0 +1,7 @@
+[
+  { "id":"v-if-no-suitability",   "code":"V-IF-1","name":"No MiFID II suitability process",      "description":"Recommendations made without documented suitability + appropriateness assessment.","typical_severity": 4 },
+  { "id":"v-if-no-target-market", "code":"V-IF-2","name":"No target-market governance",          "description":"Products distributed without negative-target-market identification.","typical_severity": 3 },
+  { "id":"v-if-no-best-ex",       "code":"V-IF-3","name":"No best-execution policy",              "description":"No documented best-ex policy or factor weighting.","typical_severity": 3 },
+  { "id":"v-if-no-monitoring",    "code":"V-IF-4","name":"No best-ex monitoring",                 "description":"No periodic best-ex monitoring / outlier review.","typical_severity": 3 },
+  { "id":"v-if-no-cass-controls", "code":"V-IF-5","name":"No CASS / client-asset controls",       "description":"No daily reconciliation; no segregation; no notice-of-rehypothecation.","typical_severity": 5 }
+]

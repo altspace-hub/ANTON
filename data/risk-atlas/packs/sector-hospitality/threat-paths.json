@@ -1,0 +1,7 @@
+[
+  { "id":"tp-hp-data-privacy","code":"TP-HP-1","name":"Guest data breach (PMS / booking system)","description":"Property management system or booking partner exposes guest data.","typical_inherent": 4, "vulnerability_refs":["v-no-mfa","v-no-encryption-at-rest"] },
+  { "id":"tp-hp-walkout",     "code":"TP-HP-2","name":"Walk-out / no-show fraud",                 "description":"Guest checks out without paying or pre-paid booking is chargeback'd.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-hp-no-pre-auth","v-hp-no-checkout-controls"] },
+  { "id":"tp-hp-card-fraud",  "code":"TP-HP-3","name":"Payment-card / chargeback fraud",          "description":"Stolen-card payments / friendly chargebacks.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-fraud-no-3ds"] },
+  { "id":"tp-hp-event-safety","code":"TP-HP-4","name":"Public-safety incident at large event",   "description":"Crowd, fire or medical incident at an event venue.","typical_inherent": 4, "vulnerability_refs":["v-hp-no-event-rams","v-con-no-traffic-plan"] },
+  { "id":"tp-hp-sanctions",   "code":"TP-HP-5","name":"Booking from sanctioned individual / entity","description":"Large group / corporate booking from a sanctioned counterparty.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-hp-no-corporate-screen"] }
+]

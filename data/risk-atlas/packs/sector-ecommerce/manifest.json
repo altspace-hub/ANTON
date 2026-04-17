@@ -1,0 +1,15 @@
+{
+  "id": "sector-ecommerce",
+  "name": "E-commerce / Marketplace",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Online retailer or multi-vendor marketplace. Card fraud, chargeback, marketplace seller fraud, GDPR exposure on customer data, returns abuse, dropship counterfeiting.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "fraud",     "rationale": "Card / friendly / refund / triangulation fraud; marketplace seller fraud." },
+    { "domain": "sanctions", "rationale": "Customers + suppliers + delivery destinations need screening." }
+  ],
+  "typical_size_range": ["micro", "small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

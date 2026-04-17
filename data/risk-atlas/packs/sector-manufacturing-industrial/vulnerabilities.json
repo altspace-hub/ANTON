@@ -1,0 +1,10 @@
+[
+  { "id":"v-mi-no-rams",                "code":"V-MI-1","name":"No RAMS for production processes",  "description":"No documented Risk Assessment / Method Statement for hazardous tasks.","typical_severity": 5 },
+  { "id":"v-mi-no-env-permits",         "code":"V-MI-2","name":"No environmental-permit tracker",   "description":"Environmental permits and conditions not centrally tracked.","typical_severity": 4 },
+  { "id":"v-mi-no-env-monitoring",      "code":"V-MI-3","name":"No emissions / waste monitoring",   "description":"No periodic emissions / discharge / waste-route monitoring.","typical_severity": 3 },
+  { "id":"v-mi-no-supply-screen",       "code":"V-MI-4","name":"No supplier sanctions screening",   "description":"Suppliers not screened against sanctions / origin lists.","typical_severity": 4 },
+  { "id":"v-mi-no-export-classification","code":"V-MI-5","name":"No export-control classification","description":"Goods exported without ECCN / dual-use classification.","typical_severity": 4 },
+  { "id":"v-mi-no-end-use",             "code":"V-MI-6","name":"No end-use / end-user verification","description":"Customer end-use statement not collected on dual-use shipments.","typical_severity": 4 },
+  { "id":"v-mi-no-supply-chain-audit",  "code":"V-MI-7","name":"No tier-2 supply-chain audit",      "description":"Tier-2 / tier-3 suppliers not subject to modern-slavery audit.","typical_severity": 3 },
+  { "id":"v-mi-no-agent-dd",            "code":"V-MI-8","name":"No agent / intermediary DD",        "description":"Agents engaged for sales / customs without ABC due diligence.","typical_severity": 4 }
+]
