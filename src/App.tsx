@@ -204,6 +204,9 @@ const CommunityProjectDetailPage = lazy(() => import('./pages/community/Communit
 const CommunityCapabilityCardPage = lazy(() => import('./pages/community/CommunityCapabilityCardPage'));
 const BeehivePage = lazy(() => import('./pages/community/BeehivePage'));
 const BeehiveSessionPage = lazy(() => import('./pages/community/BeehiveSessionPage'));
+const MissionsPage = lazy(() => import('./pages/missions/MissionsPage'));
+const MissionCreatorPage = lazy(() => import('./pages/missions/MissionCreatorPage'));
+const MissionDashboardPage = lazy(() => import('./pages/missions/MissionDashboardPage'));
 
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
@@ -522,6 +525,10 @@ export default function App() {
           <Route path="/community/capability-card" element={<CommunityCapabilityCardPage />} />
           <Route path="/community/beehive" element={<BeehivePage />} />
           <Route path="/community/beehive/:id" element={<BeehiveSessionPage />} />
+          {/* Missions — autonomous multi-step work */}
+          <Route path="/missions" element={<MissionsPage />} />
+          <Route path="/missions/new" element={<MissionCreatorPage />} />
+          <Route path="/missions/:id" element={<MissionDashboardPage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />
           <Route path="/futurechain/kyc" element={<FCKycPage />} />
