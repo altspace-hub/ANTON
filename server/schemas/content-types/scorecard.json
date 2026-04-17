@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:scorecard:1.0",
+  "title": "Scorecard",
+  "description": "KPI list with targets, current values, and trends",
+  "type": "object",
+  "required": ["title", "kpis"],
+  "properties": {
+    "title": { "type": "string" },
+    "subtitle": { "type": "string" },
+    "summary": { "type": "string" },
+    "period": { "type": "string", "description": "Reporting period e.g. '2026-Q1'" },
+    "as_of_date": { "type": "string", "format": "date" },
+    "categories": {
+      "type": "array",
+      "description": "Optional grouping of KPIs",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "kpis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "category_id": { "type": "string" },
+          "unit": { "type": "string", "description": "e.g. '%', 'days', 'count', 'EUR'" },
+          "target": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+          "current": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+          "previous": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+          "baseline": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+          "status": { "type": "string", "enum": ["on_track", "at_risk", "off_track", "not_measured"] },
+          "trend": { "type": "string", "enum": ["up", "down", "flat", "unknown"] },
+          "direction": { "type": "string", "enum": ["higher_is_better", "lower_is_better", "target_is_optimum"] },
+          "owner": { "type": "string" },
+          "data_source": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "overall_score": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "number" },
+        "scale_max": { "type": "number" },
+        "label": { "type": "string" },
+        "color": { "type": "string" }
+      }
+    }
+  }
+}

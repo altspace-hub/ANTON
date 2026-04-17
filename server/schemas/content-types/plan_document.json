@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:plan_document:1.0",
+  "title": "Plan Document",
+  "description": "Timeline with milestones, owners, dependencies — feeds Gantt charts",
+  "type": "object",
+  "required": ["title", "milestones"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "objective": { "type": "string" },
+    "start_date": { "type": "string", "format": "date" },
+    "end_date": { "type": "string", "format": "date" },
+    "workstreams": {
+      "type": "array",
+      "description": "Groupings of related milestones",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "owner": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "start_date", "end_date"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "workstream_id": { "type": "string", "description": "FK to workstreams[].id" },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "duration_days": { "type": "integer", "minimum": 0 },
+          "owner": { "type": "string" },
+          "status": { "type": "string", "enum": ["not_started", "in_progress", "at_risk", "blocked", "done"] },
+          "progress": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "dependencies": {
+            "type": "array",
+            "description": "Milestone ids this depends on",
+            "items": { "type": "string" }
+          },
+          "deliverables": { "type": "array", "items": { "type": "string" } },
+          "success_criteria": { "type": "string" },
+          "is_critical_path": { "type": "boolean" }
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "allocation_percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "risk": { "type": "string" },
+          "mitigation": { "type": "string" },
+          "owner": { "type": "string" }
+        }
+      }
+    }
+  }
+}

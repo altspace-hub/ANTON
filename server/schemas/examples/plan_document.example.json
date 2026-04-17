@@ -1,0 +1,37 @@
+{
+  "title": "DORA Implementation Plan",
+  "summary": "Compliance work plan for Digital Operational Resilience Act, targeting full readiness by Q1 2027.",
+  "objective": "Achieve DORA compliance across ICT risk management, incident reporting, resilience testing, third-party risk, and information-sharing pillars.",
+  "start_date": "2026-05-01",
+  "end_date": "2027-03-31",
+  "workstreams": [
+    { "id": "ws1", "label": "ICT risk management framework", "owner": "CISO" },
+    { "id": "ws2", "label": "Incident reporting",            "owner": "CISO" },
+    { "id": "ws3", "label": "Resilience testing",            "owner": "Head of IT" },
+    { "id": "ws4", "label": "Third-party risk register",     "owner": "Procurement" },
+    { "id": "ws5", "label": "Governance & board reporting",  "owner": "CRO" }
+  ],
+  "milestones": [
+    { "id": "m1", "title": "ICT risk framework v1", "workstream_id": "ws1", "start_date": "2026-05-01", "end_date": "2026-07-31",
+      "duration_days": 92, "owner": "CISO", "status": "in_progress", "progress": 30, "is_critical_path": true,
+      "deliverables": ["Framework document", "RACI chart", "Board-approved policy"] },
+    { "id": "m2", "title": "Incident taxonomy + runbooks", "workstream_id": "ws2", "start_date": "2026-06-01", "end_date": "2026-09-30",
+      "dependencies": ["m1"], "owner": "CISO", "status": "not_started", "progress": 0 },
+    { "id": "m3", "title": "Threat-led penetration test (TLPT)", "workstream_id": "ws3", "start_date": "2026-10-01", "end_date": "2026-12-15",
+      "dependencies": ["m1"], "owner": "Head of IT", "status": "not_started", "progress": 0, "is_critical_path": true,
+      "success_criteria": "All critical systems tested; red-team report delivered to board." },
+    { "id": "m4", "title": "TPR register live", "workstream_id": "ws4", "start_date": "2026-06-01", "end_date": "2026-08-31",
+      "owner": "Procurement", "status": "not_started", "progress": 0,
+      "deliverables": ["Register of critical providers", "Exit plans for top 10"] },
+    { "id": "m5", "title": "Board DORA readiness report", "workstream_id": "ws5", "start_date": "2027-01-01", "end_date": "2027-03-31",
+      "dependencies": ["m1", "m2", "m3", "m4"], "owner": "CRO", "status": "not_started", "progress": 0, "is_critical_path": true }
+  ],
+  "resources": [
+    { "name": "CISO",           "role": "Sponsor",         "allocation_percent": 30 },
+    { "name": "Head of IT",     "role": "Lead",            "allocation_percent": 50 },
+    { "name": "DORA PM",        "role": "Project manager", "allocation_percent": 100 }
+  ],
+  "risks": [
+    { "risk": "TLPT vendor not available in Q4", "mitigation": "Sign SOW by 2026-08-01", "owner": "Head of IT" }
+  ]
+}

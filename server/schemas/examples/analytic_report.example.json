@@ -1,0 +1,32 @@
+{
+  "title": "EU Green Bond Standard — Readiness Review",
+  "subtitle": "Internal readiness assessment for EUGBS issuance, May 2026",
+  "executive_summary": "Readiness is medium overall. Use-of-proceeds alignment and taxonomy screening are strong. External reviewer selection and the impact reporting framework require material uplift before first issuance.",
+  "sections": [
+    {
+      "heading": "Background", "level": 1,
+      "body": "The EU Green Bond Standard came into force for new issuances from January 2026. This review assesses our readiness against the six core requirements."
+    },
+    {
+      "heading": "Assessment by pillar", "level": 1,
+      "subsections": [
+        { "heading": "Use of proceeds", "level": 2, "body": "Strong — all 14 candidate projects map to taxonomy-aligned activities with ≥20% of turnover criterion met." },
+        { "heading": "External review", "level": 2, "body": "Partial — preferred reviewer identified but SLA and fee negotiations not complete." },
+        { "heading": "Impact reporting", "level": 2, "body": "Gap — no structured impact-reporting framework in place; currently ad-hoc in sustainability report." }
+      ]
+    }
+  ],
+  "findings": [
+    { "id": "F1", "finding": "Taxonomy alignment of candidate use of proceeds is 94% by value.", "evidence": "Internal taxonomy screening, April 2026.", "severity": "informational", "category": "strengths" },
+    { "id": "F2", "finding": "No impact-reporting framework defined.", "evidence": "Review of 2024/2025 sustainability disclosures.", "severity": "high", "category": "gaps" },
+    { "id": "F3", "finding": "External reviewer SLA negotiation stalled on indemnification clauses.", "severity": "medium", "category": "gaps" }
+  ],
+  "recommendations": [
+    { "id": "R1", "recommendation": "Define an impact-reporting framework aligned with ICMA Harmonised Framework.", "rationale": "Required for EUGBS compliance; referenced by external reviewer SLA.", "priority": "high", "owner": "Head of Sustainable Finance", "target_date": "2026-09-30", "effort": "L" },
+    { "id": "R2", "recommendation": "Complete external reviewer selection.", "priority": "high", "owner": "Treasury", "target_date": "2026-07-15", "effort": "M" }
+  ],
+  "references": [
+    { "title": "Regulation (EU) 2023/2631 — European Green Bond Standard", "source": "Official Journal L 2631", "date": "2023-11-22" },
+    { "title": "ICMA Harmonised Framework for Impact Reporting", "source": "ICMA", "date": "2024-06-01" }
+  ]
+}

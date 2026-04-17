@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:gap_analysis:1.0",
+  "title": "Gap Analysis",
+  "description": "Requirements × current-state matrix with scores",
+  "type": "object",
+  "required": ["title", "items"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "scope": { "type": "string" },
+    "regulation": { "type": "string", "description": "e.g. AMLR, GDPR, DORA" },
+    "scoring_scheme": {
+      "type": "object",
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["compliance"]
+        },
+        "scale": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "string" },
+              "label": { "type": "string" },
+              "color": { "type": "string", "description": "Hex or named colour" }
+            }
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "requirement", "score"],
+        "properties": {
+          "id": { "type": "string" },
+          "requirement": { "type": "string" },
+          "reference": { "type": "string", "description": "Regulation article or source" },
+          "current_state": { "type": "string" },
+          "gap_description": { "type": "string" },
+          "score": { "type": "string" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "owner": { "type": "string" },
+          "effort": { "type": "string", "enum": ["S", "M", "L", "XL"] },
+          "target_date": { "type": "string", "format": "date" },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "summary_statistics": {
+      "type": "object",
+      "properties": {
+        "total_items": { "type": "integer" },
+        "by_score": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "by_priority": { "type": "object", "additionalProperties": { "type": "integer" } }
+      }
+    }
+  }
+}

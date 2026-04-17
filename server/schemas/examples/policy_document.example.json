@@ -1,0 +1,44 @@
+{
+  "title": "Acceptable Use Policy",
+  "summary": "Governs use of company information systems by employees and contractors.",
+  "scope": "All employees, contractors, and third parties granted access to company systems.",
+  "effective_date": "2026-05-01",
+  "review_date": "2027-05-01",
+  "version": "2.1",
+  "owner": "CISO",
+  "approvers": ["Board Audit & Risk Committee"],
+  "regulation_references": [
+    { "name": "ISO/IEC 27001:2022 A.5.10", "url": "https://www.iso.org/standard/27001" },
+    { "name": "NIS2 Article 21" }
+  ],
+  "sections": [
+    {
+      "id": "1", "heading": "Purpose", "level": 1,
+      "body": "This policy establishes requirements for the acceptable use of information systems and data."
+    },
+    {
+      "id": "2", "heading": "Scope", "level": 1,
+      "body": "Applies to all users of company systems including BYOD devices when used to access company resources."
+    },
+    {
+      "id": "3", "heading": "Acceptable use requirements", "level": 1,
+      "clauses": [
+        { "id": "3.1", "text": "Users must use MFA on all systems accepting it.", "obligation": "must", "responsible": "All users", "evidence_required": "IAM logs" },
+        { "id": "3.2", "text": "Users should not store confidential data on personal cloud storage.", "obligation": "should", "responsible": "All users" },
+        { "id": "3.3", "text": "Users must not share credentials.", "obligation": "must_not", "responsible": "All users", "evidence_required": "Annual attestation" }
+      ]
+    },
+    {
+      "id": "4", "heading": "Monitoring", "level": 1,
+      "body": "The company monitors system activity for security and legal compliance purposes. No expectation of privacy applies to work accounts."
+    },
+    {
+      "id": "5", "heading": "Enforcement", "level": 1,
+      "body": "Violations may result in disciplinary action up to and including termination and legal action."
+    }
+  ],
+  "definitions": [
+    { "term": "Confidential data", "definition": "Data classified as Internal-Confidential or higher per the Data Classification Policy." },
+    { "term": "MFA", "definition": "Multi-factor authentication using at least two of: knowledge, possession, inherence." }
+  ]
+}

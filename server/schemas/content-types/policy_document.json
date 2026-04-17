@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "anton:content-type:policy_document:1.0",
+  "title": "Policy Document",
+  "description": "Sectioned policy text with clauses and obligations",
+  "type": "object",
+  "required": ["title", "sections"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "scope": { "type": "string" },
+    "effective_date": { "type": "string", "format": "date" },
+    "review_date": { "type": "string", "format": "date" },
+    "version": { "type": "string" },
+    "owner": { "type": "string" },
+    "approvers": { "type": "array", "items": { "type": "string" } },
+    "regulation_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "description": "e.g. GDPR Art. 32" },
+          "url": { "type": "string" }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "heading"],
+        "properties": {
+          "id": { "type": "string" },
+          "heading": { "type": "string" },
+          "level": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "body": { "type": "string", "description": "Markdown body for this section" },
+          "clauses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "text"],
+              "properties": {
+                "id": { "type": "string", "description": "e.g. '3.1.2'" },
+                "text": { "type": "string" },
+                "obligation": { "type": "string", "enum": ["must", "should", "may", "must_not"] },
+                "responsible": { "type": "string" },
+                "evidence_required": { "type": "string" }
+              }
+            }
+          },
+          "subsections": {
+            "type": "array",
+            "items": { "$ref": "#/properties/sections/items" }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["term", "definition"],
+        "properties": {
+          "term": { "type": "string" },
+          "definition": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -513,6 +513,22 @@ app.use('/api', createServicePackRoutes(db));
 // doesn't shadow the sub-routers above)
 const { createMissionRoutes } = await import('./routes/missions.js');
 app.use('/api', createMissionRoutes(db));
+
+// Output Transformation System — renderer registry + transform endpoints
+const { createRendererRoutes } = await import('./routes/renderers.js');
+app.use('/api', createRendererRoutes(db));
+// Seed the renderer registry on startup (idempotent — inserts new entries,
+// updates existing, never overrides admin-set status)
+{
+  const { createRendererRegistry } = await import('./services/renderer-registry.js');
+  const registry = createRendererRegistry(db);
+  try {
+    const seed = await registry.seedRegistry();
+    console.log(`[renderer-registry] seeded: ${seed.inserted} inserted, ${seed.updated} updated`);
+  } catch (err) {
+    console.error('[renderer-registry] seed failed:', err instanceof Error ? err.message : err);
+  }
+}
 // Mission payment execution tick — settles approved payments past their cancel window
 {
   const { createMissionBudget } = await import('./services/missions/mission-budget.js');
