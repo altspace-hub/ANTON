@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  listInstances, getActiveInstance, setActiveInstance, removeInstance,
+  listInstances, getActiveInstance, setActiveInstanceAsync, removeInstance,
   type Instance,
 } from '../services/instances';
 import { tick, light } from '../services/haptics';
@@ -38,9 +38,11 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
 
   if (!open) return null;
 
-  function pick(id: string) {
+  async function pick(id: string) {
     if (id === active?.id) { onClose(); return; }
-    setActiveInstance(id);
+    // Race-free: await the secure-store read so the next API call uses
+    // the new instance's session token (Phase H fix Arch 2).
+    await setActiveInstanceAsync(id);
     void light();
     setTick(t => t + 1);
     setTimeout(onClose, 200);
@@ -74,7 +76,7 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
           {instances.map(i => (
             <InstanceCard
               key={i.id} instance={i} active={i.id === active?.id}
-              onPick={() => pick(i.id)} onUnpair={() => unpair(i.id)}
+              onPick={() => void pick(i.id)} onUnpair={() => unpair(i.id)}
             />
           ))}
         </div>

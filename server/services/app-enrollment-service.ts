@@ -39,6 +39,8 @@ export interface EnrollmentPackage {
   /** Display-friendly contact hash for the user to confirm */
   instance_contact_hash: string | null;
   instance_display_name: string | null;
+  /** True if the issuer required an out-of-band confirmation code to complete */
+  requires_confirmation_code: boolean;
 }
 
 export interface EnrollmentCompletionInput {
@@ -53,6 +55,8 @@ export interface EnrollmentCompletionInput {
   signature: string;
   /** Optional override (e.g. user changed their language during pairing) */
   preferred_language?: string;
+  /** Required when the package's requires_confirmation_code is true */
+  confirmation_code?: string;
 }
 
 export interface EnrollmentCompletionResult {
@@ -93,6 +97,54 @@ function makeContactHash(): string {
   return `ANTON-${groups.join('-')}`;
 }
 
+/** Six-digit out-of-band confirmation code the admin reads aloud (Phase H fix C2). */
+function makeConfirmationCode(): string {
+  // 100000–999999 inclusive
+  return String(crypto.randomInt(100000, 1_000_000));
+}
+
+// ── Privkey encryption at rest (Phase H fix H2) ─────────────────────────
+// AES-256-GCM keyed off process.env.INSTANCE_KEY_ENCRYPTION_KEY (32-byte
+// hex). When the env var is missing, fall back to plaintext storage AND
+// log a one-time warning.
+
+function getEncryptionKey(): Buffer | null {
+  const k = process.env.INSTANCE_KEY_ENCRYPTION_KEY;
+  if (!k) return null;
+  const buf = Buffer.from(k, 'hex');
+  return buf.length === 32 ? buf : null;
+}
+
+function encryptPrivkey(plaintextHex: string): { encrypted: Buffer; iv: Buffer } | null {
+  const key = getEncryptionKey();
+  if (!key) return null;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const enc = Buffer.concat([cipher.update(Buffer.from(plaintextHex, 'hex')), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  // Pack tag at the end so we can store + read as one blob
+  return { encrypted: Buffer.concat([enc, tag]), iv };
+}
+
+function decryptPrivkey(encrypted: Buffer, iv: Buffer): string {
+  const key = getEncryptionKey();
+  if (!key) throw new Error('INSTANCE_KEY_ENCRYPTION_KEY missing — cannot decrypt instance privkey');
+  // Last 16 bytes are the GCM auth tag
+  const tag = encrypted.subarray(encrypted.length - 16);
+  const ciphertext = encrypted.subarray(0, encrypted.length - 16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const dec = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return dec.toString('hex');
+}
+
+let warnedNoEncKey = false;
+function warnPlaintextOnce(): void {
+  if (warnedNoEncKey) return;
+  warnedNoEncKey = true;
+  console.warn('[app-enrollment] WARNING: INSTANCE_KEY_ENCRYPTION_KEY is not set — instance Ed25519 privkey is stored in PLAINTEXT. Set the env var to a 32-byte hex string for production.');
+}
+
 /** Build the payload the device signs to complete enrollment. */
 export function enrollmentSignaturePayload(token: string, nonce: string, devicePubkey: string): string {
   return `${token}.${nonce}.${devicePubkey}`;
@@ -105,30 +157,57 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
   // ── Instance identity (one row, lazily created) ─────────────────────
 
   async function getOrCreateInstanceIdentity(): Promise<InstanceIdentity> {
-    const existing = await db.get<InstanceIdentity>(
-      `SELECT pubkey, privkey, cert_fingerprint, display_name, contact_hash
+    type Row = { pubkey: string; privkey: string | null; privkey_encrypted: Buffer | null; privkey_iv: Buffer | null; cert_fingerprint: string | null; display_name: string | null; contact_hash: string | null };
+    const existing = await db.get<Row>(
+      `SELECT pubkey, privkey, privkey_encrypted, privkey_iv, cert_fingerprint, display_name, contact_hash
          FROM instance_identity WHERE singleton = 'singleton'`,
     );
-    if (existing) return existing;
+    if (existing) {
+      let privkey: string;
+      if (existing.privkey_encrypted && existing.privkey_iv) {
+        privkey = decryptPrivkey(Buffer.from(existing.privkey_encrypted), Buffer.from(existing.privkey_iv));
+      } else if (existing.privkey) {
+        // Legacy plaintext — opportunistically migrate to encrypted form
+        privkey = existing.privkey;
+        const enc = encryptPrivkey(privkey);
+        if (enc) {
+          await db.run(
+            `UPDATE instance_identity SET privkey_encrypted = ?, privkey_iv = ?, privkey = NULL WHERE singleton = 'singleton'`,
+            enc.encrypted, enc.iv,
+          );
+        } else {
+          warnPlaintextOnce();
+        }
+      } else {
+        throw new Error('instance_identity row is corrupt — no privkey material');
+      }
+      return {
+        pubkey: existing.pubkey, privkey,
+        cert_fingerprint: existing.cert_fingerprint,
+        display_name: existing.display_name,
+        contact_hash: existing.contact_hash,
+      };
+    }
 
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
     const pubkeyHex = publicKey.export({ format: 'der', type: 'spki' }).toString('hex');
     const privkeyHex = privateKey.export({ format: 'der', type: 'pkcs8' }).toString('hex');
     const contactHash = makeContactHash();
     const displayName = process.env.APP_GATEWAY_INSTANCE_NAME || process.env.APP_GATEWAY_MDNS_NAME || 'ANTON';
+    const enc = encryptPrivkey(privkeyHex);
+    if (!enc) warnPlaintextOnce();
 
     await db.run(
-      `INSERT INTO instance_identity (singleton, pubkey, privkey, display_name, contact_hash)
-       VALUES ('singleton', ?, ?, ?, ?)
+      `INSERT INTO instance_identity (singleton, pubkey, privkey, privkey_encrypted, privkey_iv, display_name, contact_hash)
+       VALUES ('singleton', ?, ?, ?, ?, ?, ?)
        ON CONFLICT (singleton) DO NOTHING`,
-      pubkeyHex, privkeyHex, displayName, contactHash,
+      pubkeyHex,
+      enc ? null : privkeyHex,         // plaintext only when no key set
+      enc?.encrypted ?? null,
+      enc?.iv ?? null,
+      displayName, contactHash,
     );
-    const created = await db.get<InstanceIdentity>(
-      `SELECT pubkey, privkey, cert_fingerprint, display_name, contact_hash
-         FROM instance_identity WHERE singleton = 'singleton'`,
-    );
-    if (!created) throw new Error('Failed to initialise instance identity');
-    return created;
+    return getOrCreateInstanceIdentity();   // re-read with the new row
   }
 
   /** Sign a payload with the instance's Ed25519 privkey. */
@@ -160,19 +239,25 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     language_hint?: string | null;
     endpoints: EnrollmentEndpoints;
     issued_by_user_id: string;
-  }): Promise<EnrollmentPackage> {
+    /** Defaults: TRUE when intended_user_id is set (binding intent ⇒ OOB
+     *  confirmation), FALSE for self-serve enrollments. */
+    require_confirmation_code?: boolean;
+  }): Promise<EnrollmentPackage & { confirmation_code: string | null }> {
     const identity = await getOrCreateInstanceIdentity();
     const token = urlSafe(crypto.randomBytes(24));
     const nonce = urlSafe(crypto.randomBytes(16));
     const expiresAt = new Date(Date.now() + ENROLLMENT_TOKEN_TTL_MS).toISOString();
+    // Default: require code when binding to a specific user (Phase H fix C2)
+    const wantCode = input.require_confirmation_code ?? !!input.intended_user_id;
+    const code = wantCode ? makeConfirmationCode() : null;
 
     await db.run(
       `INSERT INTO app_enrollment_tokens
          (token, nonce, instance_pubkey, instance_cert_fp, endpoints,
           intended_user_id, org_id, intended_role,
           display_name_hint, language_hint,
-          expires_at, created_by_user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          expires_at, created_by_user_id, confirmation_code)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       token, nonce, identity.pubkey, identity.cert_fingerprint,
       JSON.stringify(input.endpoints),
       input.intended_user_id ?? null,
@@ -180,7 +265,7 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       input.intended_role ?? 'member',
       input.display_name_hint ?? null,
       input.language_hint ?? null,
-      expiresAt, input.issued_by_user_id,
+      expiresAt, input.issued_by_user_id, code,
     );
 
     return {
@@ -196,21 +281,26 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       expires_at: expiresAt,
       instance_contact_hash: identity.contact_hash,
       instance_display_name: identity.display_name,
+      requires_confirmation_code: !!code,
+      confirmation_code: code,        // returned to admin only — never to the device
     };
   }
 
-  /** Public: fetch enrollment package by token (single-use validity check). */
+  /** Public: fetch enrollment package by token (single-use validity check).
+   *  Never returns the confirmation_code itself — only whether one is required. */
   async function getEnrollment(token: string): Promise<EnrollmentPackage | null> {
     type Row = {
       token: string; nonce: string; instance_pubkey: string; instance_cert_fp: string | null;
       endpoints: string | object; intended_user_id: string | null; org_id: string | null;
       intended_role: string | null; display_name_hint: string | null;
       language_hint: string | null; expires_at: string; used_at: string | null;
+      confirmation_code: string | null;
     };
     const row = await db.get<Row>(
       `SELECT token, nonce, instance_pubkey, instance_cert_fp, endpoints,
               intended_user_id, org_id, intended_role,
-              display_name_hint, language_hint, expires_at, used_at
+              display_name_hint, language_hint, expires_at, used_at,
+              confirmation_code
          FROM app_enrollment_tokens WHERE token = ?`,
       token,
     );
@@ -232,6 +322,7 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       expires_at: row.expires_at,
       instance_contact_hash: identity.contact_hash,
       instance_display_name: identity.display_name,
+      requires_confirmation_code: !!row.confirmation_code,
     };
   }
 
@@ -243,11 +334,13 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       intended_user_id: string | null; org_id: string | null; intended_role: string | null;
       display_name_hint: string | null; language_hint: string | null;
       instance_cert_fp: string | null;
+      confirmation_code: string | null;
     };
     const row = await db.get<Row>(
       `SELECT id, nonce, expires_at, used_at,
               intended_user_id, org_id, intended_role,
-              display_name_hint, language_hint, instance_cert_fp
+              display_name_hint, language_hint, instance_cert_fp,
+              confirmation_code
          FROM app_enrollment_tokens WHERE token = ?`,
       input.token,
     );
@@ -255,6 +348,16 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     if (row.used_at) throw new Error('Invalid or expired enrollment token');
     if (new Date(row.expires_at) < new Date()) throw new Error('Invalid or expired enrollment token');
     if (row.nonce !== input.nonce) throw new Error('Invalid or expired enrollment token');
+
+    // 1b. Confirmation-code gate — Phase H fix C2 (intended_user binding bypass)
+    if (row.confirmation_code) {
+      const supplied = String(input.confirmation_code ?? '').trim();
+      // Constant-time compare against the stored 6-digit code
+      const a = Buffer.from(supplied);
+      const b = Buffer.from(row.confirmation_code);
+      const match = a.length === b.length && crypto.timingSafeEqual(a, b);
+      if (!match) throw new Error('Invalid confirmation code');
+    }
 
     // 2. Verify the device signature over (token, nonce, pubkey)
     const payload = enrollmentSignaturePayload(input.token, input.nonce, input.device_pubkey);

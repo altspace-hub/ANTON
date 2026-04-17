@@ -70,8 +70,14 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
   // The phone sometimes can't browse mDNS itself (PWA, restrictive
   // network APIs); the instance can do it on the phone's behalf as long
   // as the phone is already authenticated to one instance and trusts it.
+  // Phase H fix M4 — gated by APP_GATEWAY_LAN_BROWSE=true so an instance
+  // operator opts in explicitly. Off by default to avoid leaking peer
+  // metadata to authenticated-but-untrusted users.
   publicRouter.get('/discover/lan', appAuth, async (_req, res) => {
     try {
+      if (process.env.APP_GATEWAY_LAN_BROWSE !== 'true') {
+        return res.json({ instances: [], reason: 'LAN browse disabled by operator' });
+      }
       const { createMdnsAdvertiser } = await import('../services/mdns-advertiser.js');
       const advertiser = await createMdnsAdvertiser(parseInt(process.env.PORT || '3011', 10));
       const instances = await advertiser.browse(2500);
@@ -99,10 +105,11 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
       const { displayName, preferredLanguage } = req.body;
       if (!displayName?.trim()) return res.status(400).json({ error: 'displayName is required' });
       const result = await svc.registerSimple(displayName.trim(), preferredLanguage || 'en');
-      console.log('[app-gateway] register-simple success:', result.contactHash);
+      // Phase H fix M2 — don't log identifiers (links logs to a user)
+      console.log('[app-gateway] register-simple success');
       res.json(result);
     } catch (err) {
-      console.error('[app-gateway] register-simple error:', err);
+      console.error('[app-gateway] register-simple error:', err instanceof Error ? err.message : 'unknown');
       res.status(400).json({ error: err instanceof Error ? err.message : 'Registration failed' });
     }
   });
@@ -585,11 +592,29 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
   // Legacy register-simple stays available for backwards compatibility.
   // ══════════════════════════════════════════════════════════════════════════
 
-  // Public — fetch a pre-issued enrollment package by token (read-only)
+  // Public — fetch a pre-issued enrollment package (POST so the token
+  // rides in the body, not the URL — Phase H fix H1, prevents leakage
+  // via proxy / server access logs).
+  publicRouter.post('/enrollment/lookup', async (req, res) => {
+    try {
+      const token = typeof req.body?.token === 'string' ? req.body.token : '';
+      if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length < 16 || token.length > 128) {
+        return res.status(400).json({ error: 'Invalid enrollment token' });
+      }
+      const pkg = await enrollment.getEnrollment(token);
+      if (!pkg) return res.status(404).json({ error: 'Enrollment token expired or already used' });
+      res.json(pkg);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to fetch enrollment' });
+    }
+  });
+
+  // Legacy GET retained briefly for clients that haven't been updated.
+  // Logs the token-prefix only (so the full token doesn't appear in
+  // access logs). Will be removed in a future major version.
   publicRouter.get('/enrollment/:token', async (req, res) => {
     try {
       const token = String(req.params.token);
-      // Validate shape — URL-safe base64
       if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length < 16 || token.length > 128) {
         return res.status(400).json({ error: 'Invalid enrollment token' });
       }
@@ -778,15 +803,38 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
 
   publicRouter.post('/checkpoints/:id/respond', appAuth, async (req, res) => {
     try {
-      const b = req.body ?? {};
-      if (!['approved', 'rejected', 'modified'].includes(b.decision)) {
+      // Phase H fix C1 — accept either a raw body OR a signed envelope.
+      // When the envelope is present, verify Ed25519 signature against
+      // the device's pubkey AND record the nonce to prevent replay.
+      // Falls back to raw body for legacy clients (still session-token
+      // gated) so the rollout is backwards compatible.
+      let b: Record<string, unknown> = req.body ?? {};
+      if (b.envelope && typeof b.envelope === 'object') {
+        const env = b.envelope as { payload?: string; nonce?: string; signature?: string; device_pubkey?: string };
+        if (typeof env.payload !== 'string' || typeof env.nonce !== 'string' || typeof env.signature !== 'string' || typeof env.device_pubkey !== 'string') {
+          return res.status(400).json({ error: 'Malformed signed envelope' });
+        }
+        try {
+          await enrollment.verifySignedEnvelope({
+            device_pubkey: env.device_pubkey,
+            nonce: env.nonce,
+            payload: `${env.nonce}.${env.payload}`,    // matches client signEnvelope
+            signature: env.signature,
+          });
+        } catch (e) {
+          return res.status(401).json({ error: e instanceof Error ? e.message : 'Envelope verification failed' });
+        }
+        try { b = JSON.parse(env.payload); }
+        catch { return res.status(400).json({ error: 'Envelope payload not JSON' }); }
+      }
+      if (!['approved', 'rejected', 'modified'].includes(b.decision as string)) {
         return res.status(400).json({ error: 'decision must be approved, rejected, or modified' });
       }
       const result = await checkpoints.respond(String(req.params.id), req.appUser!.id,
         typeof b.device_id === 'string' ? b.device_id : null, {
           decision: b.decision as 'approved' | 'rejected' | 'modified',
-          note: typeof b.note === 'string' ? b.note.slice(0, 4000) : undefined,
-          modification: typeof b.modification === 'object' && b.modification !== null ? b.modification : undefined,
+          note: typeof b.note === 'string' ? (b.note as string).slice(0, 4000) : undefined,
+          modification: typeof b.modification === 'object' && b.modification !== null ? b.modification as Record<string, unknown> : undefined,
           biometric_confirmed: !!b.biometric_confirmed,
         });
       res.json({ checkpoint: result });

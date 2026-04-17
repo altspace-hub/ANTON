@@ -18,6 +18,11 @@
 
 import { generateAndStoreKeypair, getIdentity, saveIdentityPublic } from './identity';
 import { Capacitor } from '@capacitor/core';
+import { parsePairingLink, validateServerUrl } from './pairing-url';
+
+// Re-export pure helpers so existing callers keep importing from here.
+export { parsePairingLink, validateServerUrl };
+export type { ParsedPairingLink } from './pairing-url';
 
 export interface EnrollmentEndpoints {
   lan?: string;
@@ -39,6 +44,8 @@ export interface EnrollmentPackage {
   expires_at: string;
   instance_contact_hash: string | null;
   instance_display_name: string | null;
+  /** True when the issuer required an out-of-band confirmation code */
+  requires_confirmation_code?: boolean;
 }
 
 export interface EnrollmentResult {
@@ -58,13 +65,28 @@ export interface EnrollmentResult {
  */
 export async function fetchEnrollment(serverBase: string, token: string): Promise<EnrollmentPackage> {
   validateServerUrl(serverBase);
-  const url = `${trimSlash(serverBase)}/api/app/enrollment/${encodeURIComponent(token)}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Enrollment fetch failed (${res.status})`);
+  // Phase H fix H1 — POST so the token never appears in server / proxy
+  // access logs. Falls back to legacy GET for older instances.
+  const lookupUrl = `${trimSlash(serverBase)}/api/app/enrollment/lookup`;
+  const r1 = await fetch(lookupUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (r1?.ok) return r1.json();
+  if (r1 && r1.status !== 404 && r1.status !== 405) {
+    const body = await r1.json().catch(() => ({}));
+    throw new Error(body.error || `Enrollment fetch failed (${r1.status})`);
   }
-  return res.json();
+  // Legacy GET fallback
+  const legacyUrl = `${trimSlash(serverBase)}/api/app/enrollment/${encodeURIComponent(token)}`;
+  const r2 = await fetch(legacyUrl, { signal: AbortSignal.timeout(10_000) });
+  if (!r2.ok) {
+    const body = await r2.json().catch(() => ({}));
+    throw new Error(body.error || `Enrollment fetch failed (${r2.status})`);
+  }
+  return r2.json();
 }
 
 /**
@@ -77,6 +99,8 @@ export async function completeEnrollment(serverBase: string, pkg: EnrollmentPack
   device_os?: string;
   app_version?: string;
   preferred_language?: string;
+  /** Required when pkg.requires_confirmation_code === true */
+  confirmation_code?: string;
 }): Promise<EnrollmentResult> {
   validateServerUrl(serverBase);
   const platform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
@@ -104,6 +128,7 @@ export async function completeEnrollment(serverBase: string, pkg: EnrollmentPack
       device_name, device_model, device_os, app_version,
       signature,
       preferred_language: opts.preferred_language,
+      confirmation_code: opts.confirmation_code,
     }),
     signal: AbortSignal.timeout(15_000),
   });
@@ -171,28 +196,6 @@ export async function legacyJoin(serverBase: string, token: string, displayName:
   };
 }
 
-// ── Validation ──────────────────────────────────────────────────────────
-
-export function validateServerUrl(url: string): void {
-  if (!url) throw new Error('Server URL is required');
-  let parsed: URL;
-  try { parsed = new URL(url); } catch { throw new Error('Invalid server URL'); }
-  if (parsed.protocol === 'https:') return;
-  if (parsed.protocol === 'http:') {
-    // Permitted only for local-dev / LAN ranges
-    const host = parsed.hostname;
-    const isLocal =
-      host === 'localhost' || host === '127.0.0.1' ||
-      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /\.local$/.test(host);
-    if (isLocal) return;
-    throw new Error('Server URL must use HTTPS (HTTP only allowed on LAN)');
-  }
-  throw new Error('Server URL must use HTTPS');
-}
-
 function trimSlash(s: string): string {
   return s.replace(/\/$/, '');
 }
@@ -203,31 +206,4 @@ function defaultDeviceName(platform: string): string {
     case 'android': return 'Android device';
     default:        return 'Browser';
   }
-}
-
-// ── QR / deep-link parsing ──────────────────────────────────────────────
-
-export interface ParsedPairingLink {
-  kind: 'enroll' | 'join';
-  server: string;
-  token: string;
-}
-
-/**
- * Accepts the modern `anton://enroll?server=&token=` and the legacy
- * `anton://join?server=&token=`. Returns null if the input doesn't match.
- */
-export function parsePairingLink(raw: string): ParsedPairingLink | null {
-  try {
-    const u = new URL(raw);
-    const isAnton = u.protocol === 'anton:';
-    const isHttp = u.protocol === 'http:' || u.protocol === 'https:';
-    if (!isAnton && !isHttp) return null;
-    const path = isAnton ? (u.host || u.pathname.replace(/^\/+/, '')) : u.pathname;
-    const kind: 'enroll' | 'join' = path.includes('enroll') ? 'enroll' : 'join';
-    const server = u.searchParams.get('server') ?? '';
-    const token = u.searchParams.get('token') ?? u.searchParams.get('join') ?? '';
-    if (!server || !token) return null;
-    return { kind, server: decodeURIComponent(server), token };
-  } catch { return null; }
 }

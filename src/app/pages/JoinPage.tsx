@@ -15,6 +15,7 @@ import { saveServer, testServer } from '../services/discovery';
 import { fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUrl } from '../services/enrollment';
 import { addInstance, listInstances } from '../services/instances';
 import { tick, success, error as hapticError } from '../services/haptics';
+import { isBiometricAvailable, verifyBiometric } from '../services/biometric';
 
 interface Props {
   onJoined: () => void;
@@ -26,6 +27,8 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   const [serverUrl, setServerUrl] = useState('');
   const [token, setToken] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [confirmationCode, setConfirmationCode] = useState('');
+  const [needCodePrompt, setNeedCodePrompt] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -123,10 +126,19 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   async function doEnrollment(server: string, t: string): Promise<void> {
     setStatus('Pairing securely…');
     const pkg = await fetchEnrollment(server, t);
+    // Phase H fix C2 — out-of-band confirmation code when admin pre-bound
+    // the enrollment to a specific user. The admin reads the 6-digit code
+    // aloud; the user enters it before the device cert is issued.
+    if (pkg.requires_confirmation_code && !confirmationCode.trim()) {
+      setNeedCodePrompt(true);
+      setStatus('Enter the 6-digit code your admin gave you.');
+      return;
+    }
     setStatus(`Pairing with ${pkg.instance_display_name ?? 'instance'}…`);
     const result = await completeEnrollment(server, pkg, {
       preferred_language: navigator.language?.slice(0, 2) || 'en',
       device_name: displayName || undefined,
+      confirmation_code: confirmationCode.trim() || undefined,
     });
     // Persist as a paired instance
     await addInstance({
@@ -142,6 +154,21 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       device_certificate: result.device_certificate,
     });
     saveSessionToken(result.session_token);
+    // Phase H fix UX-CRIT-1 — post-pair biometric setup. Spec §8.1 mandates.
+    // Prompt the user to confirm with biometric so the device-cert gate is
+    // wired from the very first session.
+    if (await isBiometricAvailable()) {
+      setStatus('Confirm with biometric to lock these credentials…');
+      const r = await verifyBiometric({
+        reason: 'Pair this device — confirm with biometric',
+        title: 'Lock credentials',
+        subtitle: 'Face ID / fingerprint will be required for sensitive approvals',
+      });
+      if (r === 'cancelled') {
+        // Soft-fail: keep the pair but warn
+        setStatus('Paired without biometric — high-severity approvals will fail until set up.');
+      }
+    }
   }
 
   async function doLegacyJoin(server: string, t: string): Promise<void> {
@@ -215,7 +242,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-5 space-y-5">
           <p className="text-sm text-adv-gray leading-relaxed">
-            Open <span className="text-adv-off-white">Connect a device</span> on the desktop ANTON and scan the QR. The pairing is end-to-end — your phone generates a fresh keypair that only this device holds.
+            <span className="text-adv-off-white">Pair in under 30 seconds.</span> Open <span className="text-adv-off-white">Connect a device</span> on the desktop ANTON and scan the QR. The pairing is end-to-end — your phone generates a fresh keypair that only this device holds.
           </p>
 
           <div className="flex rounded-lg border border-border overflow-hidden">
@@ -226,7 +253,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           {mode === 'scan' && (
             <>
               {showScanner ? (
-                <div className="overflow-hidden rounded-2xl border border-border bg-black">
+                <div className="overflow-hidden rounded-2xl border border-border bg-adv-dark">
                   <video ref={videoRef} className="w-full aspect-square object-cover" />
                   <button onClick={() => setShowScanner(false)} className="w-full border-t border-border py-3.5 text-sm text-adv-gray hover:text-adv-off-white transition">Cancel</button>
                 </div>
@@ -258,6 +285,20 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                 <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Device name (optional)</label>
                 <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="My iPhone" className="w-full rounded-lg border border-border bg-adv-card px-4 py-3.5 text-sm text-adv-off-white placeholder-adv-gray/40 focus:border-adv-teal focus:outline-none" />
               </div>
+              {needCodePrompt && (
+                <div>
+                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-teal">6-digit confirmation code</label>
+                  <input
+                    value={confirmationCode}
+                    onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    inputMode="numeric"
+                    maxLength={6}
+                    className="w-full rounded-lg border border-adv-teal/40 bg-adv-card px-4 py-4 text-center font-mono text-xl tracking-[0.4em] text-adv-teal focus:border-adv-teal focus:outline-none"
+                  />
+                  <p className="mt-1 text-[11px] text-adv-gray">Your admin reads this aloud. Required so the QR can't be hijacked between scan and pair.</p>
+                </div>
+              )}
             </div>
           )}
 

@@ -61,13 +61,15 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
     const needsBio = c.requires_biometric || c.severity === 'critical' || c.severity === 'high';
     let biometricConfirmed = false;
     if (needsBio) {
-      await warning();
+      // Phase H fix UX-H5 — no pre-prompt warning haptic. warning() is
+      // reserved for re-auth *failures* per spec §9.4. Cancel is a
+      // silent abort; failure emits warning + sets the error message.
       const r = await verifyBiometric({
         reason: decision === 'approved' ? `Approve: ${c.title}` : decision === 'rejected' ? `Reject: ${c.title}` : `Modify: ${c.title}`,
         title: 'Confirm response',
       });
-      if (r === 'cancelled') { await hapticError(); return; }
-      if (r !== 'confirmed') { await hapticError(); setErr('Biometric verification failed'); return; }
+      if (r === 'cancelled') return;
+      if (r !== 'confirmed') { await warning(); setErr('Biometric verification failed'); return; }
       biometricConfirmed = true;
     } else {
       await light();

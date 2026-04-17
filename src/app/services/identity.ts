@@ -23,6 +23,7 @@
 import * as ed25519 from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha512';
 import { sha256 } from '@noble/hashes/sha256';
+import { setSecure, getSecure, removeSecure } from './secure-store';
 
 // ed25519 v2 needs SHA-512 wired explicitly for sync paths
 ed25519.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed25519.etc.concatBytes(...m));
@@ -45,106 +46,9 @@ export interface AppIdentity {
 const STORAGE_KEY_IDENTITY = 'anton-companion-identity';
 const SECURE_KEY_PRIVKEY = 'identity-private-key';
 
-// ── Storage tier detection ──────────────────────────────────────────────
-
-let secureStorageAvailability: 'native' | 'web' | 'memory' | null = null;
-
-async function detectStorage(): Promise<'native' | 'web' | 'memory'> {
-  if (secureStorageAvailability) return secureStorageAvailability;
-  try {
-    const mod = await import('@aparajita/capacitor-secure-storage');
-    await mod.SecureStorage.set('__anton_probe__', 'ok');
-    await mod.SecureStorage.remove('__anton_probe__');
-    secureStorageAvailability = 'native';
-  } catch {
-    if (typeof window !== 'undefined' && 'indexedDB' in window) {
-      secureStorageAvailability = 'web';
-    } else {
-      secureStorageAvailability = 'memory';
-    }
-  }
-  return secureStorageAvailability;
-}
-
-async function setSecure(key: string, value: string): Promise<void> {
-  const tier = await detectStorage();
-  if (tier === 'native') {
-    const mod = await import('@aparajita/capacitor-secure-storage');
-    await mod.SecureStorage.set(key, value);
-    return;
-  }
-  if (tier === 'web') { await idbSet(key, value); return; }
-  memoryStore.set(key, value);
-}
-
-async function getSecure(key: string): Promise<string | null> {
-  const tier = await detectStorage();
-  if (tier === 'native') {
-    try {
-      const mod = await import('@aparajita/capacitor-secure-storage');
-      return (await mod.SecureStorage.get(key)) as string | null;
-    } catch { return null; }
-  }
-  if (tier === 'web') return idbGet(key);
-  return memoryStore.get(key) ?? null;
-}
-
-async function removeSecure(key: string): Promise<void> {
-  const tier = await detectStorage();
-  if (tier === 'native') {
-    try {
-      const mod = await import('@aparajita/capacitor-secure-storage');
-      await mod.SecureStorage.remove(key);
-    } catch { /* swallow */ }
-    return;
-  }
-  if (tier === 'web') { await idbDel(key); return; }
-  memoryStore.delete(key);
-}
-
-// ── IndexedDB (web fallback) — small KV store ───────────────────────────
-
-const DB_NAME = 'anton-companion-id';
-const DB_STORE = 'kv';
-const memoryStore = new Map<string, string>();
-
-function idbOpen(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbSet(key: string, val: string): Promise<void> {
-  const db = await idbOpen();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).put(val, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function idbGet(key: string): Promise<string | null> {
-  const db = await idbOpen();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, 'readonly');
-    const req = tx.objectStore(DB_STORE).get(key);
-    req.onsuccess = () => resolve((req.result as string | undefined) ?? null);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbDel(key: string): Promise<void> {
-  const db = await idbOpen();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
 // ── Public identity (pubkey + contact_hash + display_name) — sync ───────
+// Tier-aware secret storage is delegated to secure-store.ts so identity.ts
+// + instances.ts share one detection ladder (Phase H fix Arch 4).
 
 export function getIdentity(): AppIdentity | null {
   try {
