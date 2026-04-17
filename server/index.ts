@@ -532,7 +532,7 @@ app.use('/api', createRendererRoutes(db));
 
 // Risk Atlas — universal seven-stage threat-path methodology
 const { createAtlasRoutes } = await import('./routes/atlas.js');
-app.use('/api', createAtlasRoutes(db));
+app.use('/api', createAtlasRoutes(db, anthropic));
 // Seed built-in industry packs (idempotent — INSERT … ON CONFLICT DO UPDATE)
 {
   const { createAtlasPackLoader } = await import('./services/risk-atlas/atlas-pack-loader.js');

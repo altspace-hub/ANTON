@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ShieldAlert, ChevronLeft, RefreshCcw, AlertCircle,
   LayoutDashboard, GitBranch, Shield, ScrollText, CalendarClock,
-  Archive, Download, FileText, FileImage, Package,
+  Archive, Download, FileText, FileImage, Package, ListChecks, Star, Loader2,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import ThreatPathsTab from '../../components/risk-atlas/ThreatPathsTab';
@@ -177,7 +177,11 @@ function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
         <Stat label="Within appetite"         value={String(a.within ?? 0)} />
       </div>
 
+      <IntegrityFindingsSection atlasId={atlasId} />
+
       <ExportRow atlasId={atlasId} />
+
+      <QualityScoreCard atlasId={atlasId} />
 
       <section>
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Outside / unacceptable paths</h2>
@@ -312,6 +316,124 @@ function ExportRow({ atlasId }: { atlasId: string }) {
         <Btn kind="paths"        ext=".pdf"  icon={FileText}  label="Threat path cards (.pdf)" hint="One card per path with full causal chain" />
         <Btn kind="heatmap.svg"  ext=".svg"  icon={FileImage} label="Residual heatmap (.svg)"  hint="5×5 inherent × residual map" />
         <Btn kind="bundle"       ext=".json" icon={Package}   label=".anton bundle" hint="Round-trip export of the full Atlas" />
+      </div>
+    </section>
+  );
+}
+
+function IntegrityFindingsSection({ atlasId }: { atlasId: string }) {
+  type Finding = { rule_code: string; severity: 'critical' | 'high' | 'medium' | 'low'; message: string; remediation: string; subject_kind: string; subject_id: string };
+  const [report, setReport] = useState<{ findings: Finding[]; counts: Record<Finding['severity'], number> } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await fetchWithAuth(`/api/atlas/${atlasId}/integrity`, { headers: getAuthHeader() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setReport(data.report);
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    finally { setLoading(false); }
+  }, [atlasId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const SEVERITY_CLS: Record<Finding['severity'], string> = {
+    critical: 'border-adv-red bg-adv-red/15 text-adv-red',
+    high:     'border-adv-red/50 bg-adv-red/10 text-adv-red',
+    medium:   'border-adv-gold/50 bg-adv-gold/10 text-adv-gold',
+    low:      'border-border bg-adv-dark text-adv-gray',
+  };
+
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal flex items-center gap-1.5">
+        <ListChecks className="h-3.5 w-3.5" /> Integrity findings
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-adv-gray" />}
+      </h2>
+      {err && <div className="mb-2 text-[11px] text-adv-red">{err}</div>}
+      {report && report.findings.length === 0 && (
+        <div className="rounded border border-dashed border-border p-4 text-center text-[11px] text-adv-gray">
+          Atlas passes all integrity rules.
+        </div>
+      )}
+      {report && report.findings.length > 0 && (
+        <div className="space-y-2">
+          {report.findings.map((f, idx) => (
+            <div key={idx} className={`rounded border px-3 py-2 ${SEVERITY_CLS[f.severity]}`}>
+              <div className="flex items-center gap-2 flex-wrap text-[10px] font-medium uppercase tracking-wider">
+                <span>{f.severity}</span>
+                <span className="opacity-60">·</span>
+                <span className="opacity-80">{f.rule_code}</span>
+              </div>
+              <div className="mt-1 text-[12px] text-adv-off-white">{f.message}</div>
+              <div className="mt-0.5 text-[11px] text-adv-gray">→ {f.remediation}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function QualityScoreCard({ atlasId }: { atlasId: string }) {
+  type Score = { score: { overall: number; completeness: number; accuracy: number; structure: number; actionability: number; citations: number }; strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string };
+  const [score, setScore] = useState<Score | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function run(): Promise<void> {
+    setLoading(true); setErr(null);
+    try {
+      const res = await fetchWithAuth(`/api/atlas/${atlasId}/quality-score`, { method: 'POST', headers: getAuthHeader() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setScore(data.score);
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal flex items-center gap-1.5">
+        <Star className="h-3.5 w-3.5" /> Board pack quality score
+      </h2>
+      {err && <div className="mb-2 text-[11px] text-adv-red">{err}</div>}
+      <div className="rounded border border-border bg-adv-card p-3 text-[11px] text-adv-gray">
+        {!score && (
+          <div className="flex items-center justify-between gap-3">
+            <div>Score the latest board pack against ANTON's Quality Ratchet (completeness, accuracy, structure, actionability, citations).</div>
+            <button
+              onClick={() => void run()}
+              disabled={loading}
+              className="rounded border border-adv-teal bg-adv-teal/10 px-2 py-1 text-[11px] text-adv-teal hover:bg-adv-teal/20 disabled:opacity-50 inline-flex items-center gap-1.5 shrink-0"
+            >
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
+              {loading ? 'Scoring…' : 'Score now'}
+            </button>
+          </div>
+        )}
+        {score && (
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="text-3xl font-semibold text-adv-off-white">{score.score.overall.toFixed(1)}<span className="text-sm text-adv-gray">/10</span></div>
+              <button onClick={() => void run()} className="rounded border border-border px-2 py-1 text-[10px] text-adv-gray hover:text-adv-off-white">Re-score</button>
+            </div>
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px]">
+              {(['completeness','accuracy','structure','actionability','citations'] as const).map(k => (
+                <div key={k} className="rounded border border-border bg-adv-dark px-2 py-1 text-center">
+                  <div className="uppercase tracking-wider text-adv-gray">{k}</div>
+                  <div className="text-adv-off-white text-sm font-medium">{score.score[k]}</div>
+                </div>
+              ))}
+            </div>
+            {score.improvementSuggestion && (
+              <div className="mt-2 text-[11px] text-adv-off-white">→ {score.improvementSuggestion}</div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

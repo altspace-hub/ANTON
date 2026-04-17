@@ -138,7 +138,7 @@ export type AtlasExport = ReturnType<typeof createAtlasExport>;
 
 // ── Markdown renderers ────────────────────────────────────────────────
 
-function renderBoardPackMarkdown(snap: AtlasExportSnapshot): string {
+export function renderBoardPackMarkdown(snap: AtlasExportSnapshot): string {
   const a = snap.atlas;
   const d = snap.dashboard;
   const lines: string[] = [];

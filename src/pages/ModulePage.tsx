@@ -20,6 +20,7 @@ import PromptEditor from '@/components/shared/PromptEditor';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
 import OutputFormatSelector from '@/components/shared/OutputFormatSelector';
 import GapAnalysisWalkthrough from '@/components/shared/GapAnalysisWalkthrough';
+import AtlasMigrationBanner from '@/components/risk-atlas/AtlasMigrationBanner';
 import CommunicationsPanel from '@/components/shared/CommunicationsPanel';
 import StructureReference from '@/components/shared/StructureReference';
 import ReferenceOutputPanel from '@/components/shared/ReferenceOutputPanel';
@@ -664,6 +665,9 @@ export default function ModulePage() {
 
           {/* ONBOARD-02: First-run gap analysis walkthrough */}
           <GapAnalysisWalkthrough moduleId={moduleId ?? ''} />
+
+          {/* Risk Atlas migration banner — surfaces on legacy FCP modules that overlap with the seven-stage methodology */}
+          <AtlasMigrationBanner moduleId={moduleId} areaId={areaId} />
 
           {/* Healthcare / medical disclaimer (LEGAL-03) */}
           {(areaId === 'healthcare' || areaId === 'community-health') && (

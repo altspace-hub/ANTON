@@ -64,7 +64,9 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createAtlasService } from '../services/risk-atlas/atlas-service.js';
 import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logger.js';
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
-import { createAtlasExport } from '../services/risk-atlas/atlas-export.js';
+import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
+import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
+import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { safeError } from '../lib/error-response.js';
 
 interface AuthedRequest { user?: { id: string; role?: string } }
@@ -86,12 +88,19 @@ async function ensureAtlasAccess(
   return true;
 }
 
-export function createAtlasRoutes(db: DatabaseAdapter): Router {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router {
   const router = Router();
   const events = createAtlasEventLogger(db);
   const service = createAtlasService(db, { eventLogger: events });
   const packs = createAtlasPackLoader(db);
   const atlasExport = createAtlasExport(db);
+  const integrity = createAtlasIntegrityRunner(db);
+  // Quality ratchet — lazily resolved on first request to avoid blocking
+  // route construction when the underlying schema isn't ready yet.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let ratchetPromise: Promise<any> | null = null;
+  const getRatchet = () => (ratchetPromise ??= createQualityRatchet(db));
 
   // ── Atlas CRUD ──────────────────────────────────────────────────
 
@@ -480,6 +489,45 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
       const cycle = await service.addReviewCycle(id, parsed.data, (req as AuthedRequest).user!.id);
       res.status(201).json({ success: true, cycle });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // ── Integrity — Compliance-as-Code surface over the Atlas state ──
+
+  router.get('/atlas/integrity/rules', async (req, res) => {
+    try {
+      if (!(req as AuthedRequest).user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
+      res.json({ success: true, rules: listIntegrityRules() });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/integrity', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const report = await integrity.evaluate(id);
+      if (!report) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      res.json({ success: true, report });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // Score the current board-pack output against the Quality Ratchet
+  router.post('/atlas/:id/quality-score', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const snap = await atlasExport.buildSnapshot(id, (req as AuthedRequest).user!.id);
+      if (!snap) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      const md = renderBoardPackMarkdown(snap);
+      const ratchet = await getRatchet();
+      const result = await ratchet.scoreOutput({
+        content: md,
+        moduleId: 'risk-atlas',
+        areaId: 'risk',
+        sessionId: id,
+        anthropicClient: anthropic,
+      });
+      res.json({ success: true, score: result });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Exports — board pack DOCX, threat-path cards PDF, heatmap SVG, .anton bundle ──
