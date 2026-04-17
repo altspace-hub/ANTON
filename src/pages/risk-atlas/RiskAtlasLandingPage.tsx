@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Compass, Target, AlertCircle, RefreshCcw, Archive, Wrench } from 'lucide-react';
+import { Plus, ShieldAlert, Target, AlertCircle, RefreshCcw, Archive, Wrench } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type AtlasStatus = 'draft' | 'active' | 'review' | 'archived';
@@ -61,7 +61,7 @@ export default function RiskAtlasLandingPage() {
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold text-adv-off-white inline-flex items-center gap-2">
-            <Compass className="h-5 w-5 text-adv-teal" />
+            <ShieldAlert className="h-5 w-5 text-adv-teal" />
             Risk Atlas
           </h1>
           <p className="mt-1 text-xs text-adv-gray">

@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  Compass, ChevronLeft, RefreshCcw, AlertCircle,
+  ShieldAlert, ChevronLeft, RefreshCcw, AlertCircle,
   LayoutDashboard, GitBranch, Shield, ScrollText, CalendarClock,
   Archive,
 } from 'lucide-react';
@@ -108,7 +108,7 @@ export default function RiskAtlasWorkspacePage() {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <Compass className="h-5 w-5 text-adv-teal shrink-0" />
+              <ShieldAlert className="h-5 w-5 text-adv-teal shrink-0" />
               <h1 className="text-lg font-semibold text-adv-off-white">{a.name}</h1>
               <span className="text-[10px] text-adv-gray">[{a.status}] · {a.mode}</span>
               {a.industry_pack_id && (

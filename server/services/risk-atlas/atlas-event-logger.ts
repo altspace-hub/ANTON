@@ -18,9 +18,9 @@ export type AtlasEventType =
   | 'inherent_scored' | 'residual_recalculated'
   | 'appetite_changed' | 'appetite_approved'
   | 'trigger_added'
-  | 'review_completed' | 'review_due'
+  | 'review_completed' | 'review_due' | 'review_cycle_added'
   | 'regulator_change_linked' | 'incident_linked'
-  | 'fcp_scope_changed';
+  | 'fcp_scope_changed' | 'atlas_updated';
 
 export interface LogEventInput {
   atlasId: string;

@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertCircle, Sparkles, Compass, Loader2 } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Sparkles, ShieldAlert, Loader2 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type Mode = 'socratic' | 'draft' | 'expert' | 'autonomous';
@@ -78,7 +78,7 @@ export default function RiskAtlasSetupPage() {
 
       <header>
         <h1 className="text-xl font-semibold text-adv-off-white inline-flex items-center gap-2">
-          <Compass className="h-5 w-5 text-adv-teal" />
+          <ShieldAlert className="h-5 w-5 text-adv-teal" />
           New Risk Atlas
         </h1>
         <p className="mt-1 text-xs text-adv-gray">Three quick steps and ANTON has the foundation it needs to draft Stages 1-3 with you.</p>
