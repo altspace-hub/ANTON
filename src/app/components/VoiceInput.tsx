@@ -1,20 +1,29 @@
 /**
- * VoiceInput — Microphone button with dual engine:
- * 1. Capacitor native speech recognition (Android/iOS — works offline, no HTTPS needed)
- * 2. Web Speech API fallback (Chrome desktop)
- * Auto-hides if neither is available.
+ * VoiceInput — Telegram-style hold-to-talk per spec §8.4.
+ *
+ * Press-and-hold (or tap-to-toggle as a fallback for keyboard / mouse
+ * users) records via the platform's native speech engine, with live
+ * captions streaming as partials arrive. Releasing sends the final
+ * transcript to the parent.
+ *
+ * Engine ladder:
+ *   1. Capacitor native (@capacitor-community/speech-recognition) —
+ *      iOS Speech framework / Android SpeechRecognizer
+ *   2. Web Speech API (window.SpeechRecognition) — desktop browsers
+ *   3. Hidden if neither is available — the parent should also expose
+ *      a typed input (spec §8.4 "Type to ANTON" pattern).
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { tick, light, error as hapticError } from '../services/haptics';
 
 interface Props {
   onTranscript: (text: string) => void;
   disabled?: boolean;
 }
 
-// Detect available speech engines
 const WebSpeechRecognition = typeof window !== 'undefined'
-  ? (window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+  ? ((window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition)
   : null;
 
 let capacitorSpeechAvailable: boolean | null = null;
@@ -23,15 +32,17 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
   const [listening, setListening] = useState(false);
   const [available, setAvailable] = useState<boolean>(!!WebSpeechRecognition);
   const [partialText, setPartialText] = useState('');
-  const webRecognitionRef = useRef<unknown>(null);
+  const webRecognitionRef = useRef<{ stop: () => void } | null>(null);
+  const holdTimer = useRef<number | null>(null);
+  const wasHoldGesture = useRef(false);
 
-  // Check Capacitor speech on mount
+  // Detect Capacitor speech once
   useEffect(() => {
     if (capacitorSpeechAvailable !== null) {
       setAvailable(capacitorSpeechAvailable || !!WebSpeechRecognition);
       return;
     }
-    (async () => {
+    void (async () => {
       try {
         const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
         const { available: isAvail } = await SpeechRecognition.available();
@@ -44,82 +55,67 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
     })();
   }, []);
 
-  async function startListening() {
-    setListening(true);
-    setPartialText('');
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (listening) void stopAndCommit(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Try Capacitor native first
+  async function start(): Promise<void> {
+    if (listening) return;
+    setPartialText('');
+    setListening(true);
+    void tick();   // medium impact when recording starts (spec §9.4)
+
+    // Capacitor native
     if (capacitorSpeechAvailable) {
       try {
         const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-
-        // Request permission
-        const { speechRecognition } = await SpeechRecognition.requestPermissions();
-        if (speechRecognition !== 'granted') {
+        const perm = await SpeechRecognition.requestPermissions().catch(() => null);
+        if (perm && (perm as { speechRecognition: string }).speechRecognition !== 'granted') {
+          await hapticError();
           setListening(false);
           return;
         }
-
-        // Add listener for partial results
-        SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
+        await SpeechRecognition.removeAllListeners();
+        await SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
           if (data.matches?.[0]) setPartialText(data.matches[0]);
         });
-
-        // Start
-        await SpeechRecognition.start({
-          language: navigator.language || 'en-US',
-          popup: false,
-          partialResults: true,
-        });
-
-        // Listen for results
-        SpeechRecognition.addListener('listeningState', (state: { status: string }) => {
-          if (state.status === 'stopped') {
-            setListening(false);
-            SpeechRecognition.removeAllListeners();
-          }
-        });
-
+        await SpeechRecognition.start({ language: navigator.language || 'en-US', popup: false, partialResults: true });
         return;
       } catch {
         // Fall through to Web Speech
       }
     }
 
-    // Fallback: Web Speech API
+    // Web Speech fallback
     if (WebSpeechRecognition) {
       try {
-        const recognition = new (WebSpeechRecognition as new () => {
-          continuous: boolean;
-          interimResults: boolean;
-          lang: string;
-          onresult: (e: { results: Array<Array<{ transcript: string }>> }) => void;
-          onend: () => void;
-          onerror: () => void;
-          start: () => void;
-          stop: () => void;
-        })();
-
-        recognition.continuous = false;
+        type RecCtor = new () => {
+          continuous: boolean; interimResults: boolean; lang: string;
+          onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string; isFinal?: boolean }> & { isFinal: boolean }> }) => void;
+          onend: () => void; onerror: () => void;
+          start: () => void; stop: () => void;
+        };
+        const recognition = new (WebSpeechRecognition as RecCtor)();
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = navigator.language || 'en-US';
-
         recognition.onresult = (event) => {
-          const last = event.results[event.results.length - 1];
-          const transcript = last?.[0]?.transcript || '';
-          setPartialText(transcript);
-          if (last && (last as unknown as { isFinal: boolean }).isFinal) {
-            onTranscript(transcript);
-            setListening(false);
+          let collected = '';
+          for (let i = 0; i < event.results.length; i++) {
+            const r = event.results[i];
+            collected += r[0]?.transcript ?? '';
           }
+          setPartialText(collected.trim());
         };
-
         recognition.onend = () => setListening(false);
-        recognition.onerror = () => setListening(false);
-
+        recognition.onerror = () => { void hapticError(); setListening(false); };
         webRecognitionRef.current = recognition;
         recognition.start();
+        return;
       } catch {
+        await hapticError();
         setListening(false);
       }
     } else {
@@ -127,25 +123,54 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
     }
   }
 
-  async function stopListening() {
-    setListening(false);
+  async function stopAndCommit(commit = true): Promise<void> {
+    if (!listening && !partialText) return;
+    void light();
 
-    // Stop Capacitor
     if (capacitorSpeechAvailable) {
       try {
         const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
         await SpeechRecognition.stop();
-        SpeechRecognition.removeAllListeners();
-        if (partialText) onTranscript(partialText);
-      } catch {}
+        await SpeechRecognition.removeAllListeners();
+      } catch { /* swallow */ }
     }
-
-    // Stop Web Speech
     if (webRecognitionRef.current) {
-      (webRecognitionRef.current as { stop: () => void }).stop();
+      try { webRecognitionRef.current.stop(); } catch { /* swallow */ }
+      webRecognitionRef.current = null;
     }
 
+    if (commit && partialText.trim()) onTranscript(partialText.trim());
+    setListening(false);
     setPartialText('');
+  }
+
+  // ── Hold gesture handlers ──────────────────────────────────────────
+
+  function onPointerDown() {
+    wasHoldGesture.current = false;
+    if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    holdTimer.current = window.setTimeout(() => {
+      wasHoldGesture.current = true;
+      void start();
+    }, 200);                                  // 200ms = "hold" not "tap"
+  }
+
+  function onPointerUp() {
+    if (holdTimer.current) { window.clearTimeout(holdTimer.current); holdTimer.current = null; }
+    if (wasHoldGesture.current) {
+      void stopAndCommit(true);
+    } else if (!listening) {
+      // Treat as tap-to-toggle (accessibility / keyboard / mouse users)
+      void start();
+    } else {
+      // Tap while listening = commit
+      void stopAndCommit(true);
+    }
+  }
+
+  function onPointerCancel() {
+    if (holdTimer.current) { window.clearTimeout(holdTimer.current); holdTimer.current = null; }
+    if (listening) void stopAndCommit(false);
   }
 
   if (!available) return null;
@@ -153,22 +178,21 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
   return (
     <div className="relative">
       <button
-        onClick={listening ? stopListening : startListening}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onPointerLeave={onPointerCancel}
         disabled={disabled}
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all active:scale-90 disabled:opacity-25 ${
+        aria-label={listening ? 'Stop recording' : 'Hold to talk, tap to toggle'}
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all touch-none select-none active:scale-90 disabled:opacity-25 ${
           listening
-            ? 'bg-adv-red text-white shadow-lg shadow-adv-red/30'
+            ? 'bg-adv-red text-white shadow-lg shadow-adv-red/30 ring-4 ring-adv-red/20 animate-pulse'
             : 'bg-adv-card border border-border text-adv-gray hover:text-adv-teal hover:border-adv-teal/30'
         }`}
-        title={listening ? 'Stop recording' : 'Voice input'}
       >
         {listening ? (
-          // Stop icon (square)
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="6" width="12" height="12" rx="2" />
-          </svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
         ) : (
-          // Microphone icon
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -178,15 +202,15 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
         )}
       </button>
 
-      {/* Recording indicator with partial transcript */}
+      {/* Live captions popover (spec §8.4) */}
       {listening && (
-        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-adv-red/90 px-3 py-1.5 text-xs text-white shadow-lg">
+        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 max-w-[280px] rounded-lg bg-adv-red/95 px-3 py-1.5 text-xs text-white shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
             {partialText ? (
-              <span className="max-w-[200px] truncate">{partialText}</span>
+              <span className="line-clamp-2 break-words">{partialText}</span>
             ) : (
-              <span>Listening...</span>
+              <span>Listening… release to send</span>
             )}
           </div>
         </div>
