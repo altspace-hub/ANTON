@@ -1,0 +1,7 @@
+[
+  { "id":"tp-ec-card-fraud", "code":"TP-EC-1","name":"Card / chargeback fraud",                "description":"Stolen cards used for purchase; legitimate customer disputes leading to chargeback liability.","typical_inherent": 4, "fcp_domain":"fraud", "vulnerability_refs":["v-ec-no-3ds","v-ec-no-fraud-rules"] },
+  { "id":"tp-ec-friendly-fraud","code":"TP-EC-2","name":"Friendly fraud (item-not-received)",   "description":"Customer claims goods not received and disputes payment.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-ec-no-delivery-evidence"] },
+  { "id":"tp-ec-seller-fraud","code":"TP-EC-3","name":"Marketplace seller fraud / counterfeit","description":"Marketplace seller lists counterfeit / non-existent goods; takes payment; disappears.","typical_inherent": 4, "fcp_domain":"fraud", "vulnerability_refs":["v-ec-no-seller-onboarding","v-ec-no-seller-monitoring"] },
+  { "id":"tp-ec-data-breach","code":"TP-EC-4","name":"Customer-data breach (GDPR)",              "description":"Customer database exposed via injection / sub-processor breach / lost device.","typical_inherent": 4, "vulnerability_refs":["v-no-mfa","v-no-encryption-at-rest","v-ec-no-pen-test"] },
+  { "id":"tp-ec-sanctions",  "code":"TP-EC-5","name":"Delivery to sanctioned jurisdiction / party","description":"Order ships to a sanctioned address or buyer / UBO matches sanctions list.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-ec-no-delivery-screen"] }
+]

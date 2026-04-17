@@ -1,0 +1,7 @@
+[
+  { "id":"tp-ps-confidentiality","code":"TP-PS-1","name":"Client confidentiality / IP leak",     "description":"Sensitive client material disclosed via lost device, mis-sent email, ex-employee.","typical_inherent": 4, "vulnerability_refs":["v-no-mfa","v-no-encryption-at-rest","v-no-leavers-process"] },
+  { "id":"tp-ps-scope-dispute", "code":"TP-PS-2","name":"Scope dispute / non-payment",            "description":"Client disputes scope or quality and refuses to pay; firm absorbs loss.","typical_inherent": 3, "vulnerability_refs":["v-ps-no-engagement-letter","v-ps-no-change-control"] },
+  { "id":"tp-ps-key-person",   "code":"TP-PS-3","name":"Key-person dependency",                    "description":"Lead consultant departs / unavailable; client relationship + delivery at risk.","typical_inherent": 3, "vulnerability_refs":["v-no-documentation","v-no-succession-plan"] },
+  { "id":"tp-ps-time-fraud",   "code":"TP-PS-4","name":"Time-sheet / expense fraud",               "description":"Staff inflate billable hours / submit fictitious expenses.","typical_inherent": 2, "fcp_domain":"fraud", "vulnerability_refs":["v-ps-no-time-review","v-ps-no-expense-policy"] },
+  { "id":"tp-ps-pii-deliverable","code":"TP-PS-5","name":"PII inadvertently included in deliverable","description":"Client PII or competitor-sensitive data included in a document shared more widely than intended.","typical_inherent": 3, "vulnerability_refs":["v-ps-no-data-sanitisation"] }
+]

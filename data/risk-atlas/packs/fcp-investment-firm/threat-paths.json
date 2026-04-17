@@ -1,0 +1,7 @@
+[
+  { "id":"tp-if-suitability",  "code":"TP-IF-1","name":"Mis-selling — unsuitable investment",   "description":"Customer recommended product unsuitable for risk / objective profile; complaint + regulatory action.","typical_inherent": 4, "vulnerability_refs":["v-if-no-suitability","v-if-no-target-market"] },
+  { "id":"tp-if-best-execution","code":"TP-IF-2","name":"Best-execution failure",                "description":"Orders routed without documented best-execution analysis; client detriment.","typical_inherent": 3, "vulnerability_refs":["v-if-no-best-ex","v-if-no-monitoring"] },
+  { "id":"tp-if-market-abuse", "code":"TP-IF-3","name":"Market abuse on dealer book",            "description":"Dealer engages in front-running, spoofing, layering or insider dealing.","typical_inherent": 4, "fcp_domain":"market_abuse", "vulnerability_refs":["v-mar-no-trade-surveillance","v-mar-no-pa-dealing"] },
+  { "id":"tp-if-client-assets","code":"TP-IF-4","name":"Client-asset segregation failure",       "description":"Client assets commingled / lent / pledged without authority.","typical_inherent": 5, "vulnerability_refs":["v-if-no-cass-controls"] },
+  { "id":"tp-if-aml",          "code":"TP-IF-5","name":"Money laundering through trading account","description":"Customer uses trading account for layering / integration via securities transactions.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-aml-no-tm","v-aml-no-edd"] }
+]

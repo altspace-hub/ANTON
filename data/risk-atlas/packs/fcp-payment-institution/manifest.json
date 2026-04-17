@@ -1,0 +1,16 @@
+{
+  "id": "fcp-payment-institution",
+  "name": "Payment Institution / EMI (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "fcp-bank",
+  "description": "PSD2 Payment Institution or Electronic Money Institution. Inherits the bank baseline + adds PSD2-specific controls (SCA, instant rails, agent / distributor model, safeguarded funds).",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory — AMLR-obliged PI/EMI." },
+    { "domain": "sanctions", "rationale": "Cross-border payments + sanctions screening at every leg." },
+    { "domain": "fraud",     "rationale": "APP, card, instant-rails, mule, agent fraud." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

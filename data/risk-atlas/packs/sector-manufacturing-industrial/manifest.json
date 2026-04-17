@@ -1,0 +1,18 @@
+{
+  "id": "sector-manufacturing-industrial",
+  "name": "Manufacturing / Industrial",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Process or discrete manufacturing, including defence-adjacent. Health & safety + environmental compliance + supply chain + dual-use export-control + intellectual property risks.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "sanctions",        "rationale": "Suppliers and customers in international supply chain." },
+    { "domain": "fraud",            "rationale": "CEO / invoice / supplier fraud; insurance claim fraud." },
+    { "domain": "abc",              "rationale": "Public-sector / infrastructure projects, agents, customs interface." },
+    { "domain": "export_controls",  "rationale": "Dual-use / defence-adjacent equipment exposure." },
+    { "domain": "modern_slavery",   "rationale": "Labour-intensive supply chain, foreign workers." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

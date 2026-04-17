@@ -1,0 +1,9 @@
+[
+  { "id":"v-rs-no-cycle-count",      "code":"V-RS-1","name":"No periodic cycle counting",   "description":"Inventory not periodically counted; shrinkage detected only at year-end.","typical_severity": 3 },
+  { "id":"v-rs-no-cctv",             "code":"V-RS-2","name":"No CCTV / shrink monitoring",  "description":"No CCTV or no periodic CCTV review.","typical_severity": 2 },
+  { "id":"v-rs-no-refund-controls",  "code":"V-RS-3","name":"No refund-control policy",     "description":"Refunds processed without manager approval / receipt verification.","typical_severity": 3 },
+  { "id":"v-rs-no-coldchain",        "code":"V-RS-4","name":"No cold-chain monitoring",     "description":"Refrigeration temperatures not logged / alerted.","typical_severity": 4 },
+  { "id":"v-rs-no-recall",           "code":"V-RS-5","name":"No supplier recall procedure", "description":"Recall communications not actioned within statutory timeframe.","typical_severity": 4 },
+  { "id":"v-rs-no-supplier-controls","code":"V-RS-6","name":"No supplier rebate validation","description":"Rebates accepted on supplier-provided figures only.","typical_severity": 3 },
+  { "id":"v-rs-no-supplier-screening","code":"V-RS-7","name":"No supplier sanctions screening","description":"Suppliers / origin countries not screened.","typical_severity": 3 }
+]

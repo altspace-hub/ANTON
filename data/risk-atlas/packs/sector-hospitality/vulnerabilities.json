@@ -1,0 +1,6 @@
+[
+  { "id":"v-hp-no-pre-auth",         "code":"V-HP-1","name":"No pre-authorisation on bookings",   "description":"Bookings accepted without card pre-auth / deposit.","typical_severity": 3 },
+  { "id":"v-hp-no-checkout-controls","code":"V-HP-2","name":"No checkout-control procedure",      "description":"No documented checkout / minibar / no-show review.","typical_severity": 2 },
+  { "id":"v-hp-no-event-rams",       "code":"V-HP-3","name":"No event-specific RAMS",              "description":"Large events without RAMS / capacity / fire-evacuation plan.","typical_severity": 4 },
+  { "id":"v-hp-no-corporate-screen", "code":"V-HP-4","name":"No corporate-booking sanctions screen","description":"Corporate / group bookings not screened against sanctions.","typical_severity": 3 }
+]

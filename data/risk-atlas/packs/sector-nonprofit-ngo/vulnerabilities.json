@@ -1,0 +1,7 @@
+[
+  { "id":"v-ng-no-partner-dd",     "code":"V-NG-1","name":"No field-partner due diligence",   "description":"Local partners / implementing organisations engaged without DD.","typical_severity": 4 },
+  { "id":"v-ng-no-field-monitor",  "code":"V-NG-2","name":"No field monitoring + reporting",  "description":"No periodic monitoring of in-country use of funds.","typical_severity": 4 },
+  { "id":"v-ng-no-partner-screen", "code":"V-NG-3","name":"No PEP / sanctions screening on partners","description":"Local partners / vendors not screened.","typical_severity": 4 },
+  { "id":"v-ng-no-segregation",    "code":"V-NG-4","name":"No segregation of duties",          "description":"Same individual handles donations / vendor payment / payroll / records.","typical_severity": 4 },
+  { "id":"v-ng-no-donation-recon", "code":"V-NG-5","name":"No donation reconciliation",        "description":"Donations not reconciled to bank deposits + receipts.","typical_severity": 3 }
+]

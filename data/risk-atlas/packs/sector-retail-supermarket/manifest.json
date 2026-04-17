@@ -1,0 +1,15 @@
+{
+  "id": "sector-retail-supermarket",
+  "name": "Retail / Supermarket",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Supermarket, grocery chain, convenience store. Cash-handling intensive, perishable inventory, food-safety, employment law and gift-card / loyalty-fraud risks.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "fraud",        "rationale": "Refund fraud, gift-card abuse, employee theft, supplier rebate fraud." },
+    { "domain": "sanctions",     "rationale": "Imported goods may originate in sanctioned jurisdictions." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

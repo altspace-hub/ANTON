@@ -1,0 +1,7 @@
+[
+  { "id":"tp-ng-tf-diversion","code":"TP-NG-1","name":"Funds diverted to terrorism financing",     "description":"Field operation in conflict zone diverts funds to designated entity.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-ng-no-partner-dd","v-ng-no-field-monitor"] },
+  { "id":"tp-ng-sanctions",   "code":"TP-NG-2","name":"Sanctioned counterparty in field operation","description":"Local partner / vendor matches sanctions list.","typical_inherent": 4, "fcp_domain":"sanctions", "vulnerability_refs":["v-ng-no-partner-screen","v-sanc-no-screen"] },
+  { "id":"tp-ng-donor-fraud", "code":"TP-NG-3","name":"Donor / payroll / vendor fraud",            "description":"Insider misappropriates donations / payroll / vendor invoices.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-ng-no-segregation","v-ng-no-donation-recon"] },
+  { "id":"tp-ng-grant-abc",   "code":"TP-NG-4","name":"Bribery to access / retain a grant",         "description":"Facilitation payment to host-country official for permits / customs / grant.","typical_inherent": 3, "fcp_domain":"abc", "vulnerability_refs":["v-abc-no-policy","v-abc-no-training"] },
+  { "id":"tp-ng-data",        "code":"TP-NG-5","name":"Beneficiary / donor data breach",            "description":"Sensitive beneficiary or donor data exposed.","typical_inherent": 3, "vulnerability_refs":["v-no-mfa","v-no-encryption-at-rest"] }
+]

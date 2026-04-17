@@ -1,0 +1,15 @@
+{
+  "id": "sector-professional-services",
+  "name": "Professional Services (consulting / engineering / creative)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Consulting, engineering services, creative agencies, marketing firms. Knowledge-business risks: client confidentiality, scope-creep, key-person dependency, IP leakage, dispute on deliverables.",
+  "amlr_obliged": false,
+  "recommends_fcp_domains": [
+    { "domain": "fraud", "rationale": "Time-sheet fraud, expense fraud, fictitious-supplier fraud." },
+    { "domain": "abc",   "rationale": "Public-sector / regulated-industry clients; agents and introducers." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}
