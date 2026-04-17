@@ -508,6 +508,8 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     try {
       const id = String(req.params.id);
       if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      // assessed_by is server-side: always set to req.user.id, never trusted
+      // from the body. Drop it from the input schema entirely.
       const schema = z.object({
         amlcft_active: z.boolean().optional(),
         sanctions_active: z.boolean().optional(),
@@ -518,7 +520,6 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
         export_controls_active: z.boolean().optional(),
         modern_slavery_active: z.boolean().optional(),
         scope_rationale: z.string().max(8000).nullable().optional(),
-        assessed_by: z.string().max(200).nullable().optional(),
       }).strict();
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }

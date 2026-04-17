@@ -354,6 +354,40 @@ The Markets Pillar is ANTON's **proof of self-learning intelligence** — daily 
 
 ---
 
+## Risk Atlas (universal seven-stage threat-path methodology)
+
+The Risk Atlas generalises the CASP BWRA threat-path methodology into a universal causal-chain risk engine that any business — bakery to bank — can use to maintain a living risk register. It's the canonical example of how Atlas-style "deterministic engine + LLM-rationale" workspaces are built in ANTON.
+
+**Core methodology (deterministic).** Stages 1-7: Exposures → Threat paths → Vulnerabilities → Inherent risk (= max(E, T, V)) → Controls (Strong / Adequate / Weak rolled up worst-of) → Residual (= inherent − reduction, clamped [1,5]) → Appetite (5x5 grid: 1-2 within / 3 boundary / 4 outside / 5 unacceptable). The LLM never decides residual scores — only the rationale around them. Audit-defensible by construction.
+
+**Data model.** Migrations `125_risk_atlas_foundation.sql` → `129_risk_atlas_addendum_review_fixes.sql` define 18 tables: `risk_atlases`, `atlas_threat_paths`, `atlas_exposure_points`, `atlas_vulnerabilities`, `atlas_controls`, `atlas_inherent_scores`, `atlas_residual_scores`, `atlas_appetite_statements`, `atlas_escalation_triggers`, `atlas_review_cycles`, `atlas_industry_packs`, `atlas_events`, `atlas_fcp_scope`, `atlas_cross_domain_path_bundles` and members.
+
+**Industry packs (25).** Composable `.anton` overlays under `data/risk-atlas/packs/` with three `pack_kind` types: `industry` (sme-general, fcp-bank, fcp-casp, sector-*, etc.), `fcp-domain` (fcp-domain-amlcft / sanctions / fraud / abc / market-abuse / tax-evasion-facilitation / export-controls), `overlay` (universal-fcp-core). Inheritance via `parent_pack_id` with cycle protection in `getPackContent`.
+
+**FCP Addendum.** `atlas_fcp_scope` carries which FCP domains are active per Atlas. `atlas_cross_domain_path_bundles` groups paths from multiple domains into a single causal "story" for the board pack. Stage 7b company-wide appetite via `computeCompanyAppetite()` — deterministic worst-of rollup per FCP domain.
+
+| File | Purpose |
+|---|---|
+| `server/services/risk-atlas/atlas-residual-calculator.ts` | The deterministic core. 25 unit tests. Audit-locked. |
+| `server/services/risk-atlas/atlas-service.ts` | CRUD for the seven stages, owner-bound mutations. |
+| `server/services/risk-atlas/atlas-pack-loader.ts` | Loads + validates + merges packs (parent inheritance, severity benchmarks). |
+| `server/services/risk-atlas/atlas-fcp-scope-service.ts` | FCP scope, cross-domain bundles, Stage 7b rollup. |
+| `server/services/risk-atlas/atlas-export.ts` | Board-pack DOCX, threat-path PDF, heatmap SVG, .anton bundle. |
+| `server/services/risk-atlas/atlas-integrity-rules.ts` | Six Compliance-as-Code rules over Atlas state (ATLAS-INT-001..006). |
+| `server/routes/atlas.ts` | ~30 REST endpoints, all gated by `ensureAtlasAccess(db, req, atlasId)`. |
+| `src/pages/risk-atlas/RiskAtlasWorkspacePage.tsx` | 5-tab workspace shell. |
+| `src/pages/risk-atlas/SmallBusinessDashboardPage.tsx` | Simplified solo-operator landing. |
+| `server/areas/risk/modules/atlas-*` | 7 atlas-* modules — Stage 1-7 LLM specialisations. |
+| `server/areas/risk/modules/atlas-company-appetite-consolidator/` | Stage 7b — board-readable rollup. |
+| `server/areas/fcp/modules/business-wide-risk-assessment/` | AMLR Article 16 BWRA — orchestrates atlas-* modules. |
+| `server/areas/fcp/modules/fcp-scope-assessor/` | AI-guided FCP-domain activation. |
+
+**Mission template.** `tmpl_amlr_readiness_v1` (`server/services/missions/seed-templates.ts`) is the 10-task end-to-end programme for an AMLR-obliged entity: scope → Atlas → BWRA → gap analysis → policies → training → audit, with four explicit checkpoints.
+
+**Atlas integrity rules** are deterministic — surface live findings (residual ≥ 4 with no appetite, Strong control without ≥5-char evidence, outside-appetite path missing action / target date, etc.) on the workspace dashboard. Pure functions over a snapshot, easy to test.
+
+---
+
 ## Specialized Agents (Layer 4 — Collaborative Intelligence)
 
 Autonomous AI personas with their own system prompts, knowledge packs, routing rules, and escalation policies. Used for support, sales, HR, travel, and any business function.
