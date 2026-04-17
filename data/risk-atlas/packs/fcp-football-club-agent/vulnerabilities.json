@@ -1,0 +1,10 @@
+[
+  { "id":"v-fb-no-transfer-benchmark","code":"V-FB-1","name":"No transfer-fee benchmarking",         "description":"Transfer fees not benchmarked against player profile / market.","typical_severity": 3 },
+  { "id":"v-fb-no-counterparty-dd",   "code":"V-FB-2","name":"No counterparty club DD",                "description":"Counterparty club / acquiring entity not subject to AML DD.","typical_severity": 4 },
+  { "id":"v-fb-no-agent-benchmark",   "code":"V-FB-3","name":"No agent-commission benchmarking",       "description":"Agent commissions not benchmarked against FIFA / industry norms.","typical_severity": 3 },
+  { "id":"v-fb-no-agent-screen",      "code":"V-FB-4","name":"No PEP / sanctions screening on agents", "description":"Agents not screened against PEP / sanctions / adverse-media.","typical_severity": 3 },
+  { "id":"v-fb-no-ubo",               "code":"V-FB-5","name":"No sponsor / shareholder UBO procedure", "description":"Sponsor / shareholder UBO not unwound to natural persons.","typical_severity": 4 },
+  { "id":"v-fb-no-screen",            "code":"V-FB-6","name":"No sponsor / shareholder UBO screening", "description":"UBO not screened against sanctions / PEP / adverse-media.","typical_severity": 4 },
+  { "id":"v-fb-no-tpo-check",         "code":"V-FB-7","name":"No third-party ownership check",          "description":"Player economic-rights ownership not verified against TPO rules.","typical_severity": 3 },
+  { "id":"v-fb-no-jurisdiction-screen","code":"V-FB-8","name":"No payment-route jurisdiction screen",  "description":"Payment routes through opaque jurisdictions not flagged.","typical_severity": 3 }
+]

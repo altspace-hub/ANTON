@@ -215,6 +215,7 @@ const ServicePacksPage = lazy(() => import('./pages/missions/ServicePacksPage'))
 const RiskAtlasLandingPage = lazy(() => import('./pages/risk-atlas/RiskAtlasLandingPage'));
 const RiskAtlasSetupPage = lazy(() => import('./pages/risk-atlas/RiskAtlasSetupPage'));
 const RiskAtlasWorkspacePage = lazy(() => import('./pages/risk-atlas/RiskAtlasWorkspacePage'));
+const SmallBusinessDashboardPage = lazy(() => import('./pages/risk-atlas/SmallBusinessDashboardPage'));
 
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
@@ -543,6 +544,7 @@ export default function App() {
           {/* Risk Atlas — universal seven-stage threat-path methodology */}
           <Route path="/atlas" element={<RiskAtlasLandingPage />} />
           <Route path="/atlas/new" element={<RiskAtlasSetupPage />} />
+          <Route path="/atlas/small-business" element={<SmallBusinessDashboardPage />} />
           <Route path="/atlas/:id" element={<RiskAtlasWorkspacePage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />

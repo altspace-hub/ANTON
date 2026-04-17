@@ -1,0 +1,16 @@
+{
+  "id": "fcp-motor-vehicle-dealer",
+  "name": "Motor Vehicle Dealer (luxury / AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "fcp-dealer-high-value-goods",
+  "description": "Motor vehicle dealer with luxury / used segment. AMLR obliged for vehicles ≥€250k under draft AMLR. Inherits high-value-goods baseline + adds title-fraud, odometer fraud, ringer-vehicle and cross-border export risks.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory for ≥€250k vehicle transactions under AMLR." },
+    { "domain": "sanctions", "rationale": "Cross-border buyers; dual-use / restricted-end-user exposure for high-spec vehicles." },
+    { "domain": "fraud",     "rationale": "Title fraud, odometer fraud, ringer vehicles, finance fraud." }
+  ],
+  "typical_size_range": ["small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

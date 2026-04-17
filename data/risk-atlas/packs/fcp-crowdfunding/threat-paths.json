@@ -1,0 +1,7 @@
+[
+  { "id":"tp-cf-investor-mule","code":"TP-CF-1","name":"Investor account used as money mule",     "description":"Investor account funded by stolen / illicit funds; investments and refunds used to launder.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-cf-no-investor-tm","v-cf-no-investor-screen"] },
+  { "id":"tp-cf-project-owner","code":"TP-CF-2","name":"Project owner conceals identity / purpose","description":"Project owner UBO obscured; funds raised used for purpose other than disclosed.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-cf-no-project-dd","v-cf-no-purpose-monitor"] },
+  { "id":"tp-cf-sanctioned-investor","code":"TP-CF-3","name":"Sanctioned investor / project owner","description":"Investor or project owner UBO matches sanctions list.","typical_inherent": 5, "fcp_domain":"sanctions", "vulnerability_refs":["v-cf-no-investor-screen","v-cf-no-project-dd"] },
+  { "id":"tp-cf-suitability", "code":"TP-CF-4","name":"Unsophisticated investor exposed beyond limits","description":"Retail investor invests beyond ECSPR appropriateness limits without proper warning.","typical_inherent": 3, "fcp_domain":"amlcft", "vulnerability_refs":["v-cf-no-suitability"] },
+  { "id":"tp-cf-secondary",   "code":"TP-CF-5","name":"Secondary-market manipulation",              "description":"If secondary market offered, wash trading / spoofing on illiquid instruments.","typical_inherent": 3, "fcp_domain":"market_abuse", "vulnerability_refs":["v-cf-no-secondary-surveillance"] }
+]

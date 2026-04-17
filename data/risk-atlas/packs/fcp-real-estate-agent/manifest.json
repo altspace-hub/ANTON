@@ -1,0 +1,17 @@
+{
+  "id": "fcp-real-estate-agent",
+  "name": "Real Estate Agent (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Real estate agency — residential, commercial, lettings. AMLR Article 3 obliged entity. Letting agents become obliged on a €10k/month rental threshold. Focus: BO verification on foreign buyers, SoF evidence on high-value sales, sanctions at both buyer and UBO level, PEP identification.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",     "rationale": "Mandatory — AMLR-obliged real-estate professional." },
+    { "domain": "sanctions",  "rationale": "Foreign buyers, nominee acquisition risk; screening at buyer + UBO level." },
+    { "domain": "fraud",      "rationale": "Buyer-impersonation, deposit-interception, seller-title fraud." },
+    { "domain": "abc",        "rationale": "Referral fees, mortgage-broker kickbacks." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

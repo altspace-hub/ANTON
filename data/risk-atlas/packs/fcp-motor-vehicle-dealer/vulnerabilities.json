@@ -1,0 +1,9 @@
+[
+  { "id":"v-mvd-no-cdd",           "code":"V-MVD-1","name":"No CDD on ≥€250k transactions",        "description":"No AMLR CDD trigger on premium vehicle sales.","typical_severity": 4 },
+  { "id":"v-mvd-no-cash-policy",   "code":"V-MVD-2","name":"No cash threshold policy",              "description":"No documented threshold or refusal protocol for cash.","typical_severity": 3 },
+  { "id":"v-mvd-no-screen",        "code":"V-MVD-3","name":"No PEP / sanctions screening",          "description":"Buyers not screened on premium sales.","typical_severity": 4 },
+  { "id":"v-mvd-no-title-check",   "code":"V-MVD-4","name":"No title-history check on used stock",  "description":"Stock acquired without HPI / equivalent title-history check.","typical_severity": 3 },
+  { "id":"v-mvd-no-odo-check",     "code":"V-MVD-5","name":"No odometer-history check",              "description":"No mileage-history validation against MoT / equivalent.","typical_severity": 3 },
+  { "id":"v-mvd-no-export-check",  "code":"V-MVD-6","name":"No export-destination screening",       "description":"Export buyers / re-export risk not assessed.","typical_severity": 3 },
+  { "id":"v-mvd-no-finance-checks","code":"V-MVD-7","name":"No customer finance-application checks","description":"Finance documents accepted without independent verification.","typical_severity": 3 }
+]

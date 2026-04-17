@@ -1,0 +1,8 @@
+[
+  { "id":"v-yab-no-ubo",            "code":"V-YAB-1","name":"No UBO unwinding for SPV buyers",            "description":"SPV buyers accepted without unwinding to natural-person UBO.","typical_severity": 5 },
+  { "id":"v-yab-no-screen",         "code":"V-YAB-2","name":"No PEP / sanctions screening at UBO level",  "description":"Only buyer of record screened.","typical_severity": 5 },
+  { "id":"v-yab-no-flag-review",    "code":"V-YAB-3","name":"No flag-state UBO-transparency review",      "description":"Flag-state choice not reviewed against UBO-obscuration risk.","typical_severity": 4 },
+  { "id":"v-yab-no-export-check",   "code":"V-YAB-4","name":"No export-control assessment",                "description":"Aircraft / component export-control implications not assessed.","typical_severity": 4 },
+  { "id":"v-yab-no-customer-checks","code":"V-YAB-5","name":"No charter / finance customer verification","description":"Charter / finance documentation accepted without independent verification.","typical_severity": 3 },
+  { "id":"v-yab-no-title-check",    "code":"V-YAB-6","name":"No title / encumbrance check",                "description":"Vessel acquired without title / mortgage / lien check.","typical_severity": 3 }
+]

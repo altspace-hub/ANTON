@@ -1,0 +1,12 @@
+[
+  { "id":"v-nlf-no-client-account-monitor","code":"V-NLF-1","name":"No client-account transaction monitoring","description":"Client account flows not monitored against layering / structuring patterns.","typical_severity": 4 },
+  { "id":"v-nlf-no-sof",                   "code":"V-NLF-2","name":"No source-of-funds for client deposits","description":"Client funds accepted without SoF/SoW evidence on threshold transactions.","typical_severity": 4 },
+  { "id":"v-nlf-no-ubo",                   "code":"V-NLF-3","name":"No UBO procedure for entity formation","description":"Corporate vehicles formed without unwinding UBO to natural persons.","typical_severity": 4 },
+  { "id":"v-nlf-no-edd",                   "code":"V-NLF-4","name":"No EDD trigger for high-risk clients","description":"PEP / high-risk-jurisdiction / complex-structure clients not flagged for EDD.","typical_severity": 4 },
+  { "id":"v-nlf-no-ubo-screen",            "code":"V-NLF-5","name":"No UBO-level sanctions screening","description":"Only client of record screened; UBOs not.","typical_severity": 4 },
+  { "id":"v-nlf-no-trust-purpose",         "code":"V-NLF-6","name":"No trust-purpose review",          "description":"Trust deeds drafted without review of stated purpose against AML/tax/sanctions risks.","typical_severity": 3 },
+  { "id":"v-nlf-no-trust-monitor",         "code":"V-NLF-7","name":"No periodic trust review",         "description":"Trusts not periodically reviewed for purpose drift / new red flags.","typical_severity": 3 },
+  { "id":"v-nlf-no-callback",              "code":"V-NLF-8","name":"No payment callback verification", "description":"Bank-detail changes accepted by email without callback.","typical_severity": 4 },
+  { "id":"v-nlf-no-secure-channel",        "code":"V-NLF-9","name":"No secure client portal",          "description":"Sensitive client correspondence on unencrypted email.","typical_severity": 3 },
+  { "id":"v-nlf-no-abc-policy",            "code":"V-NLF-10","name":"No ABC policy for public-sector interface","description":"No documented anti-bribery policy for registry / court / municipality interactions.","typical_severity": 3 }
+]

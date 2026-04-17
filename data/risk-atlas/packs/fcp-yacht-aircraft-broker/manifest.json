@@ -1,0 +1,17 @@
+{
+  "id": "fcp-yacht-aircraft-broker",
+  "name": "Yacht / Aircraft Broker (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "fcp-dealer-high-value-goods",
+  "description": "Yacht / aircraft / superyacht / jet broker. AMLR obliged for vessels ≥€7.5M (yachts) / aircraft transactions. UBO complexity, flag-state shopping, sanctions and export-controls highly relevant.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",          "rationale": "Mandatory — AMLR-obliged for high-value vessels / aircraft." },
+    { "domain": "sanctions",        "rationale": "Sanctioned UBOs (oligarch yacht / aircraft seizures); flag-state shopping risk." },
+    { "domain": "export_controls",  "rationale": "Aircraft / dual-use components exposure." },
+    { "domain": "fraud",            "rationale": "Title fraud, charter fraud, finance fraud." }
+  ],
+  "typical_size_range": ["small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "global"]
+}

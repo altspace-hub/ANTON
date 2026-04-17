@@ -1,0 +1,17 @@
+{
+  "id": "fcp-notary-law-firm",
+  "name": "Notary / Law Firm (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Notaries and law firms acting in real estate transactions, company formation, trust services or client-money management. AMLR-obliged when undertaking the relevant activities. Focus: client identification, source of funds, beneficial ownership, client account flows.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory — AMLR-obliged when conducting real estate, company formation, trust or client-money work." },
+    { "domain": "sanctions", "rationale": "Client + UBO screening; nominee / front-entity exposure." },
+    { "domain": "fraud",     "rationale": "Authority-impersonation, deposit interception, falsified instructions." },
+    { "domain": "abc",       "rationale": "Public-sector interface (registry, court, municipality)." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

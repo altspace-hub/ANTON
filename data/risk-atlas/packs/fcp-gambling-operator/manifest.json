@@ -1,0 +1,16 @@
+{
+  "id": "fcp-gambling-operator",
+  "name": "Gambling Operator (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Online or land-based gambling operator. AMLR obliged under AMLD6. Focus: customer SoF, problem-gambling intersection with money laundering, deposit-withdrawal patterns, third-party deposits, jurisdictional licensing.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory — AMLR-obliged gambling operator." },
+    { "domain": "sanctions", "rationale": "Customer + payment-instrument screening." },
+    { "domain": "fraud",     "rationale": "Bonus abuse, mule accounts, multi-accounting." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

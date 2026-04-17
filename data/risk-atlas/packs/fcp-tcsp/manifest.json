@@ -1,0 +1,18 @@
+{
+  "id": "fcp-tcsp",
+  "name": "Trust & Company Service Provider (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Trust and Company Service Provider — formation, administration and termination of corporate vehicles, trusts and foundations. AMLR-obliged. Highest concentration of UBO complexity in the sector.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory — AMLR-obliged TCSP." },
+    { "domain": "sanctions", "rationale": "UBO concentration; nominee / front-entity exposure." },
+    { "domain": "fraud",     "rationale": "Misuse of vehicles for fraud." },
+    { "domain": "tax_evasion_facilitation", "rationale": "Cross-border structures; tax treaty arbitrage; CRS / FATCA exposure." },
+    { "domain": "abc",       "rationale": "Public-sector and registry interface." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

@@ -1,0 +1,7 @@
+[
+  { "id":"tp-hvg-cash",        "code":"TP-HVG-1","name":"Above-threshold cash purchase",       "description":"Buyer presents cash above the AMLR / national threshold; CDD trigger missed.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-hvg-no-cash-policy","v-ufc-no-screening"] },
+  { "id":"tp-hvg-structured",  "code":"TP-HVG-2","name":"Structured purchases just below threshold","description":"Buyer makes multiple purchases just under threshold to avoid CDD.","typical_inherent": 3, "fcp_domain":"amlcft", "vulnerability_refs":["v-hvg-no-aggregation"] },
+  { "id":"tp-hvg-stolen",      "code":"TP-HVG-3","name":"Stolen-goods sale through the dealer","description":"Goods of unknown provenance offered for resale.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-hvg-no-provenance"] },
+  { "id":"tp-hvg-sanctioned",  "code":"TP-HVG-4","name":"Buyer / UBO matches sanctions list",      "description":"Buyer or beneficial owner matches sanctions list and goods change hands.","typical_inherent": 4, "fcp_domain":"sanctions", "vulnerability_refs":["v-hvg-no-screen"] },
+  { "id":"tp-hvg-cross-border","code":"TP-HVG-5","name":"Cross-border move of high-value goods",  "description":"Goods exported / imported to evade tax or sanctions.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-hvg-no-export-controls"] }
+]

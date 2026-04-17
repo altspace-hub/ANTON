@@ -1,0 +1,8 @@
+[
+  { "id":"v-cf-no-investor-tm",       "code":"V-CF-1","name":"No investor-account TM rules",          "description":"No behavioural rules on investor deposit / refund patterns.","typical_severity": 4 },
+  { "id":"v-cf-no-investor-screen",   "code":"V-CF-2","name":"No PEP / sanctions screening on investors","description":"Investors not screened at registration / on changes.","typical_severity": 4 },
+  { "id":"v-cf-no-project-dd",        "code":"V-CF-3","name":"No project-owner DD",                    "description":"Project owner UBO not unwound; sanctions / PEP / adverse-media not screened.","typical_severity": 5 },
+  { "id":"v-cf-no-purpose-monitor",   "code":"V-CF-4","name":"No use-of-funds monitoring",              "description":"No periodic check that funds raised are used as disclosed.","typical_severity": 3 },
+  { "id":"v-cf-no-suitability",       "code":"V-CF-5","name":"No ECSPR suitability / appropriateness", "description":"No knowledge / loss-bearing / appropriateness checks per ECSPR.","typical_severity": 3 },
+  { "id":"v-cf-no-secondary-surveillance","code":"V-CF-6","name":"No secondary-market surveillance",   "description":"If secondary market offered, no MAR-style surveillance on trading.","typical_severity": 3 }
+]

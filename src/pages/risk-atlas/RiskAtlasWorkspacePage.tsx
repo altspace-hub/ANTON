@@ -13,6 +13,7 @@ import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import ThreatPathsTab from '../../components/risk-atlas/ThreatPathsTab';
 import ControlsTab from '../../components/risk-atlas/ControlsTab';
 import MaintenanceTab from '../../components/risk-atlas/MaintenanceTab';
+import CrossDomainBundlesSection from '../../components/risk-atlas/CrossDomainBundlesSection';
 
 type TabKey = 'dashboard' | 'paths' | 'controls' | 'events' | 'maintenance';
 type AppetitePosition = 'within' | 'boundary' | 'outside' | 'unacceptable';
@@ -178,6 +179,8 @@ function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
       </div>
 
       <IntegrityFindingsSection atlasId={atlasId} />
+
+      <CrossDomainBundlesSection atlasId={atlasId} />
 
       <ExportRow atlasId={atlasId} />
 

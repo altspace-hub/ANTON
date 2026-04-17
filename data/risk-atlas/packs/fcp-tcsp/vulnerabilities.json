@@ -1,0 +1,10 @@
+[
+  { "id":"v-tcsp-no-ubo",              "code":"V-TCSP-1","name":"No UBO procedure / register submission","description":"UBO not unwound; central register not kept current.","typical_severity": 5 },
+  { "id":"v-tcsp-no-screening",        "code":"V-TCSP-2","name":"No PEP / sanctions screening at UBO level","description":"Screening only at first-tier shareholder.","typical_severity": 5 },
+  { "id":"v-tcsp-no-edd",              "code":"V-TCSP-3","name":"No EDD trigger for high-risk structures","description":"Cross-border / high-risk-jurisdiction structures handled identically.","typical_severity": 4 },
+  { "id":"v-tcsp-no-purpose-review",   "code":"V-TCSP-4","name":"No structure-purpose review at formation","description":"Purpose stated by client accepted without independent reasonableness check.","typical_severity": 3 },
+  { "id":"v-tcsp-no-tax-residency",    "code":"V-TCSP-5","name":"No tax-residency / CRS-FATCA tagging","description":"Beneficiaries' tax residency not tracked; no CRS/FATCA reporting workflow.","typical_severity": 4 },
+  { "id":"v-tcsp-no-nominee-control",  "code":"V-TCSP-6","name":"No control of nominee director conduct","description":"Nominees act on instructions without independent verification.","typical_severity": 4 },
+  { "id":"v-tcsp-no-periodic-review",  "code":"V-TCSP-7","name":"No periodic UBO + purpose review","description":"Structures reviewed only at formation; drift not detected.","typical_severity": 4 },
+  { "id":"v-tcsp-no-abc-policy",       "code":"V-TCSP-8","name":"No ABC policy for registry interface","description":"No documented policy on payments / hospitality with public officials.","typical_severity": 3 }
+]

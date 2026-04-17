@@ -1,0 +1,16 @@
+{
+  "id": "fcp-dealer-high-value-goods",
+  "name": "Dealer in High-Value Goods (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Dealer in precious metals, stones, art and other high-value goods. AMLR obliged when accepting cash payments above threshold (≥€10k EU). Generic high-value-goods baseline; specialist verticals (vehicles, yachts/aircraft) have dedicated packs.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory — AMLR-obliged when transacting above cash threshold." },
+    { "domain": "sanctions", "rationale": "Buyer + UBO screening on high-value transactions." },
+    { "domain": "fraud",     "rationale": "Stolen-goods provenance, payment-instrument fraud." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}
