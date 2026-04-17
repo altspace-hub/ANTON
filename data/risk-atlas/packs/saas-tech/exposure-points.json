@@ -1,0 +1,6 @@
+[
+  { "id": "ex-saas-tenant-data",     "name": "Multi-tenant customer data",         "description": "Customer records and content stored on shared infrastructure. Tenant isolation breach is a class incident.", "category": "data" },
+  { "id": "ex-saas-api-surface",     "name": "Public API + webhooks",               "description": "Public APIs (REST/GraphQL/webhook receivers) expand attack surface; abuse and DoS risks.",                "category": "channel" },
+  { "id": "ex-saas-sub-processors",  "name": "Sub-processors (cloud, AI, analytics)","description": "Cloud, AI inference, analytics and email vendors that process customer data on your behalf.",         "category": "supplier" },
+  { "id": "ex-saas-uptime-sla",      "name": "Customer uptime / SLA commitments",   "description": "Contractual availability and recovery targets across customers — penalty + reputational exposure.",         "category": "obligation" }
+]

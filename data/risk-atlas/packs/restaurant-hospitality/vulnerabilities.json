@@ -1,0 +1,10 @@
+[
+  { "id":"v-rest-no-haccp",         "code":"V-REST-1","name":"No HACCP plan or food-safety system","description":"No documented food-safety management plan.",         "typical_severity": 4 },
+  { "id":"v-rest-no-temp-log",      "code":"V-REST-2","name":"No fridge / cooking temp log",        "description":"No daily temperature monitoring or logging.",         "typical_severity": 4 },
+  { "id":"v-rest-no-supplier-checks","code":"V-REST-3","name":"No supplier food-safety evidence",    "description":"Suppliers not vetted; no traceability of incoming goods.","typical_severity": 3 },
+  { "id":"v-rest-no-allergen-matrix","code":"V-REST-4","name":"No documented allergen matrix",       "description":"No menu-by-menu allergen mapping.",                    "typical_severity": 4 },
+  { "id":"v-rest-no-allergen-training","code":"V-REST-5","name":"No allergen training for staff",    "description":"Staff handle allergens without formal training.",      "typical_severity": 4 },
+  { "id":"v-rest-no-incident-log",  "code":"V-REST-6","name":"No incident log for premises",         "description":"Customer complaints, fights, refusals not logged.",    "typical_severity": 3 },
+  { "id":"v-rest-no-id-policy",     "code":"V-REST-7","name":"No Challenge 25 / ID policy",          "description":"No documented underage-sale prevention policy.",       "typical_severity": 3 },
+  { "id":"v-rest-no-cash-recon",    "code":"V-REST-8","name":"No cash reconciliation",               "description":"End-of-night cash not reconciled to till by independent person.","typical_severity": 3 }
+]

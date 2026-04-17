@@ -1,0 +1,7 @@
+{
+  "tp-saas-tenant-breach": "outside",
+  "tp-saas-api-abuse": "boundary",
+  "tp-saas-subprocessor-leak": "boundary",
+  "tp-saas-sla-breach": "boundary",
+  "tp-saas-secret-leak": "outside"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "saas-tech",
+  "name": "SaaS / Tech Platform",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "Multi-tenant SaaS or platform business. Adds tenant isolation, customer-data exposure, sub-processor and uptime risks on top of the SME-general baseline.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "US", "global"]
+}

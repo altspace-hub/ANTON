@@ -1,0 +1,71 @@
+[
+  {
+    "id": "tp-casp-custody-loss",
+    "code": "TP-CASP-1",
+    "name": "Loss or theft of customer crypto assets",
+    "description": "Hot-wallet hack, key-management failure, malicious insider with custody access, or compromised cold-storage operation results in irreversible loss of customer crypto.",
+    "typical_inherent": 5,
+    "exposure_refs": ["ex-casp-custody"],
+    "vulnerability_refs": ["v-casp-no-mpc", "v-casp-no-cold-segregation", "v-casp-no-key-ceremony", "v-no-mfa"]
+  },
+  {
+    "id": "tp-casp-sanctioned-wallet",
+    "code": "TP-CASP-2",
+    "name": "Inbound transfer from sanctioned wallet",
+    "description": "Customer receives crypto from a sanctioned address, mixer, or OFAC-listed entity. Without on-chain screening you process and credit the funds, breaching sanctions law.",
+    "typical_inherent": 4,
+    "fcp_domain": "sanctions",
+    "exposure_refs": ["ex-casp-onchain", "ex-casp-customers-retail", "ex-casp-customers-institutional"],
+    "vulnerability_refs": ["v-casp-no-onchain-screening", "v-casp-no-sanctions-list-feed"]
+  },
+  {
+    "id": "tp-casp-money-laundering-layering",
+    "code": "TP-CASP-3",
+    "name": "Money laundering via layered crypto transactions",
+    "description": "Bad actors layer illicit funds through your platform using multiple wallets, peeling chains, or chain-hopping to obscure origin. Detected only post-event without behavioural monitoring.",
+    "typical_inherent": 4,
+    "fcp_domain": "amlcft",
+    "exposure_refs": ["ex-casp-onchain", "ex-casp-fiat-rails"],
+    "vulnerability_refs": ["v-casp-no-behavioural-monitoring", "v-casp-no-source-of-funds", "v-casp-no-edd-policy"]
+  },
+  {
+    "id": "tp-casp-travel-rule-breach",
+    "code": "TP-CASP-4",
+    "name": "Travel-rule failure on outbound transfer",
+    "description": "Outbound transfer to another CASP/VASP without exchanging required originator/beneficiary data. Regulatory breach + receiving CASP may freeze funds.",
+    "typical_inherent": 3,
+    "fcp_domain": "amlcft",
+    "exposure_refs": ["ex-casp-travel-rule"],
+    "vulnerability_refs": ["v-casp-no-travel-rule-protocol"]
+  },
+  {
+    "id": "tp-casp-market-abuse",
+    "code": "TP-CASP-5",
+    "name": "Market manipulation on listed tokens",
+    "description": "Wash trading, spoofing, or insider activity on tokens you list. MiCA market-abuse regime applies; you have surveillance obligations.",
+    "typical_inherent": 3,
+    "fcp_domain": "market_abuse",
+    "exposure_refs": ["ex-casp-listed-tokens"],
+    "vulnerability_refs": ["v-casp-no-trade-surveillance"]
+  },
+  {
+    "id": "tp-casp-fraudulent-deposits",
+    "code": "TP-CASP-6",
+    "name": "Fraudulent fiat deposits + crypto withdrawal (cash-out)",
+    "description": "Stolen cards or compromised bank accounts fund a customer; they immediately convert to crypto and withdraw — irreversibly. Chargebacks land on the CASP.",
+    "typical_inherent": 4,
+    "fcp_domain": "fraud",
+    "exposure_refs": ["ex-casp-fiat-rails", "ex-casp-customers-retail"],
+    "vulnerability_refs": ["v-casp-no-velocity-limits", "v-casp-no-deposit-aging", "v-casp-no-3ds"]
+  },
+  {
+    "id": "tp-casp-listing-rugpull",
+    "code": "TP-CASP-7",
+    "name": "Listed token turns out to be a rug-pull or scam",
+    "description": "Token you listed collapses (developer exit, smart-contract exploit, abandoned project). Customer losses + reputational damage + potential regulatory action.",
+    "typical_inherent": 3,
+    "fcp_domain": "fraud",
+    "exposure_refs": ["ex-casp-listed-tokens", "ex-casp-customers-retail"],
+    "vulnerability_refs": ["v-casp-no-pre-listing-dd", "v-casp-no-smart-contract-audit"]
+  }
+]

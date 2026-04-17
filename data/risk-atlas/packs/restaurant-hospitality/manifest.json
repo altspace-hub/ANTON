@@ -1,0 +1,10 @@
+{
+  "id": "restaurant-hospitality",
+  "name": "Restaurant / Hospitality",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "Restaurant, café, bar, or small hotel. Adds food safety, allergen, alcohol licensing, and cash-handling exposures on top of the SME-general baseline.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

@@ -1,0 +1,7 @@
+{
+  "tp-hc-patient-data-breach": "unacceptable",
+  "tp-hc-clinical-incident": "outside",
+  "tp-hc-cd-loss": "unacceptable",
+  "tp-hc-inspection-fail": "outside",
+  "tp-hc-consent-failure": "outside"
+}

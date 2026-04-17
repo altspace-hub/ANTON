@@ -1,0 +1,6 @@
+[
+  { "id":"ex-con-site-workers",   "name":"Site workers + subcontractors", "description":"Workers and subcontractors on site, including agency labour. Health & safety + employment status risks.", "category":"workforce" },
+  { "id":"ex-con-public",         "name":"Members of public near site",   "description":"Pedestrians, neighbours, deliveries near the work zone. Injury or property damage risk.",                  "category":"public" },
+  { "id":"ex-con-materials",      "name":"Materials + plant on site",     "description":"Materials, tools and plant — theft, misuse, damage.",                                                       "category":"asset" },
+  { "id":"ex-con-permits",        "name":"Permits + planning permission", "description":"Building control, planning permission, party-wall, environmental permits.",                                  "category":"regulatory" }
+]

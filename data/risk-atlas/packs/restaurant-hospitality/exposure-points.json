@@ -1,0 +1,6 @@
+[
+  { "id":"ex-rest-kitchen",      "name":"Kitchen + food production",       "description":"Storage, prep, cooking, allergen handling. Food-safety inspections + recall risk.","category":"operations" },
+  { "id":"ex-rest-front-of-house","name":"Front of house + service",       "description":"Service quality, complaints, accidents to guests, alcohol service.","category":"customer" },
+  { "id":"ex-rest-cash-handling","name":"Cash + tips handling",            "description":"Cash drawer, tip pool, end-of-night reconciliation. Theft and tax risk.","category":"financial" },
+  { "id":"ex-rest-licences",     "name":"Trading + alcohol licences",     "description":"Premises licence, food business registration, alcohol licence — loss closes the business.","category":"regulatory" }
+]

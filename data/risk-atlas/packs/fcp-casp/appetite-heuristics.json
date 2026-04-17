@@ -1,0 +1,9 @@
+{
+  "tp-casp-custody-loss": "unacceptable",
+  "tp-casp-sanctioned-wallet": "unacceptable",
+  "tp-casp-money-laundering-layering": "outside",
+  "tp-casp-travel-rule-breach": "outside",
+  "tp-casp-market-abuse": "outside",
+  "tp-casp-fraudulent-deposits": "boundary",
+  "tp-casp-listing-rugpull": "boundary"
+}

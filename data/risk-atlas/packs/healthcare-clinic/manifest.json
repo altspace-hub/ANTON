@@ -1,0 +1,10 @@
+{
+  "id": "healthcare-clinic",
+  "name": "Healthcare Clinic / Practice",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "Private medical, dental, or allied-health clinic. Adds patient-data, clinical-negligence, regulatory-inspection, controlled-drugs and consent exposures on top of the SME-general baseline.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

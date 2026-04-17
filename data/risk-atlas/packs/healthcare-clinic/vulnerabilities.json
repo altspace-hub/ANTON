@@ -1,0 +1,13 @@
+[
+  { "id":"v-hc-no-encryption",     "code":"V-HC-1","name":"No at-rest encryption on records",     "description":"Patient records stored unencrypted on laptops or shared drives.",        "typical_severity": 5 },
+  { "id":"v-hc-no-access-audit",   "code":"V-HC-2","name":"No access audit / privilege review",  "description":"Staff have wider access than role requires; no audit trail of record access.","typical_severity": 4 },
+  { "id":"v-hc-no-clinical-audit", "code":"V-HC-3","name":"No clinical audit cycle",              "description":"No periodic clinical-outcomes audit or peer review.",                     "typical_severity": 3 },
+  { "id":"v-hc-no-incident-system","code":"V-HC-4","name":"No clinical incident reporting",      "description":"Near-misses and incidents not logged or investigated.",                  "typical_severity": 4 },
+  { "id":"v-hc-no-supervision",    "code":"V-HC-5","name":"No clinical supervision",              "description":"Junior or new clinicians work without documented supervision.",          "typical_severity": 4 },
+  { "id":"v-hc-no-cd-register",    "code":"V-HC-6","name":"No / incomplete CD register",          "description":"Controlled-drug register absent or not kept up to date.",                "typical_severity": 5 },
+  { "id":"v-hc-no-cd-witness",     "code":"V-HC-7","name":"No witness check for CD destruction", "description":"CDs destroyed without independent witness signature.",                   "typical_severity": 4 },
+  { "id":"v-hc-no-cd-storage",     "code":"V-HC-8","name":"Non-compliant CD storage",             "description":"CD cabinet not to spec; key control weak.",                              "typical_severity": 4 },
+  { "id":"v-hc-no-policy-set",     "code":"V-HC-9","name":"No mandatory-policy set",              "description":"Safeguarding, infection control, fire, complaints policies absent.",     "typical_severity": 4 },
+  { "id":"v-hc-no-consent-template","code":"V-HC-10","name":"No standardised consent template",   "description":"No template that meets national informed-consent standards.",            "typical_severity": 3 },
+  { "id":"v-hc-no-consent-record", "code":"V-HC-11","name":"Consent not recorded",                "description":"Consent obtained but not retained in patient record.",                   "typical_severity": 3 }
+]

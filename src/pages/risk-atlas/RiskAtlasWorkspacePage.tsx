@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ShieldAlert, ChevronLeft, RefreshCcw, AlertCircle,
   LayoutDashboard, GitBranch, Shield, ScrollText, CalendarClock,
-  Archive,
+  Archive, Download, FileText, FileImage, Package,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import ThreatPathsTab from '../../components/risk-atlas/ThreatPathsTab';
@@ -167,6 +167,7 @@ export default function RiskAtlasWorkspacePage() {
 
 function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
   const a = dashboard.paths_by_appetite;
+  const atlasId = dashboard.atlas.id;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
@@ -175,6 +176,8 @@ function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
         <Stat label="At boundary"             value={String(a.boundary ?? 0)} highlight={a.boundary > 0 ? 'gold' : undefined} />
         <Stat label="Within appetite"         value={String(a.within ?? 0)} />
       </div>
+
+      <ExportRow atlasId={atlasId} />
 
       <section>
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Outside / unacceptable paths</h2>
@@ -254,6 +257,63 @@ function PlaceholderTab({ title, hint }: { title: string; hint: string }) {
       <h2 className="text-sm font-semibold text-adv-off-white">{title}</h2>
       <p className="mt-2 text-[11px] text-adv-gray">{hint}</p>
     </div>
+  );
+}
+
+function ExportRow({ atlasId }: { atlasId: string }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function download(kind: 'board' | 'paths' | 'heatmap.svg' | 'bundle', defaultExt: string): Promise<void> {
+    setBusy(kind); setErr(null);
+    try {
+      const res = await fetchWithAuth(`/api/atlas/${atlasId}/export/${kind}`, { headers: getAuthHeader() });
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* not json */ }
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = res.headers.get('Content-Disposition') || '';
+      const m = /filename="([^"]+)"/.exec(cd);
+      a.download = m ? m[1] : `atlas-${kind.replace('.svg','')}-${atlasId}${defaultExt}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(null); }
+  }
+
+  const Btn = ({ kind, ext, icon: Icon, label, hint }: { kind: 'board' | 'paths' | 'heatmap.svg' | 'bundle'; ext: string; icon: typeof FileText; label: string; hint: string }) => (
+    <button
+      onClick={() => void download(kind, ext)}
+      disabled={busy !== null}
+      className="rounded border border-border bg-adv-dark px-3 py-2 text-left text-[11px] hover:border-adv-teal disabled:opacity-50"
+    >
+      <div className="flex items-center gap-2 text-adv-off-white font-medium">
+        <Icon className="h-3.5 w-3.5" />
+        {busy === kind ? 'Downloading…' : label}
+      </div>
+      <div className="mt-0.5 text-[10px] text-adv-gray">{hint}</div>
+    </button>
+  );
+
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal flex items-center gap-1.5">
+        <Download className="h-3.5 w-3.5" /> Exports
+      </h2>
+      {err && <div className="mb-2 text-[11px] text-adv-red">{err}</div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <Btn kind="board"        ext=".docx" icon={FileText}  label="Board pack (.docx)"  hint="Headline + outside-appetite + all-paths table" />
+        <Btn kind="paths"        ext=".pdf"  icon={FileText}  label="Threat path cards (.pdf)" hint="One card per path with full causal chain" />
+        <Btn kind="heatmap.svg"  ext=".svg"  icon={FileImage} label="Residual heatmap (.svg)"  hint="5×5 inherent × residual map" />
+        <Btn kind="bundle"       ext=".json" icon={Package}   label=".anton bundle" hint="Round-trip export of the full Atlas" />
+      </div>
+    </section>
   );
 }
 
