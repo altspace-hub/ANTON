@@ -1,0 +1,8 @@
+{
+  "id": "residual-calculation",
+  "label": "Residual Risk Calculation (deterministic)",
+  "category": "methodology",
+  "applicableAreas": ["risk", "fcp", "compliance", "audit"],
+  "description": "Codifies the deterministic residual calculation rule used by the Risk Atlas: residual = inherent − reduction(rollup), clamped to [1, 5], where Strong=-2, Adequate=-1, Weak=0, Absent=0. The rollup is the WORST strength across all controls touching the path's vulnerabilities. The number is computed by atlas-residual-calculator.ts; the LLM produces only the rationale around it.",
+  "tags": ["residual", "calculation", "deterministic", "atlas", "audit-defensibility"]
+}

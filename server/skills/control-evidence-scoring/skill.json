@@ -1,0 +1,8 @@
+{
+  "id": "control-evidence-scoring",
+  "label": "Control Evidence Scoring (Strong / Adequate / Weak)",
+  "category": "methodology",
+  "applicableAreas": ["risk", "fcp", "compliance", "audit"],
+  "description": "Codifies the Strong / Adequate / Weak rubric used in the Risk Atlas Stage 5 control–vulnerability matrix. Strong requires demonstrable evidence; Adequate works in principle with known gaps; Weak is documented but not actually used. The UI refuses to mark Strong without the evidence field populated.",
+  "tags": ["controls", "evidence", "scoring", "atlas", "audit-defensibility"]
+}

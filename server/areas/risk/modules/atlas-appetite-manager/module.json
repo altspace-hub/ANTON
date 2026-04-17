@@ -1,0 +1,26 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-appetite-manager",
+  "label": "Atlas Stage 7 — Appetite Manager",
+  "shortLabel": "Appetite",
+  "description": "Builds per-path appetite statements + escalation triggers + remediation programme. Produces a board-approvable Stage 7 statement.",
+  "icon": "ScrollText",
+  "color": "adv-teal",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["risk-register", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": false, "folderPaths": [], "recursive": false }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id", "type": "text", "label": "Atlas id", "required": true }
+  ],
+  "recommendedPersonas": ["senior-risk-officer", "risk-coach"],
+  "recommendedSkills": ["threat-path-methodology"],
+  "tags": ["risk", "atlas", "stage-7", "appetite", "board-pack", "bwra"],
+  "contentType": "policy_document"
+}
