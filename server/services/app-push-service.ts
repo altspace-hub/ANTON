@@ -1,0 +1,181 @@
+// ── App Push Service — Companion App push notifications per spec §8.7 ───
+//
+// Three transports:
+//   • APNs        — iOS native build
+//   • FCM         — Android native build (and alternate iOS path)
+//   • web-push    — PWA fallback (VAPID-signed)
+//
+// End-to-end privacy: payload to the platform NEVER carries confidential
+// content — only an opaque event id + severity + a localised title.
+// The app fetches details via the authenticated channel.
+//
+// Real APNs / FCM dispatch lives behind feature flags (APP_GATEWAY_PUSH=true)
+// + provider keys (APNS_KEY, FCM_KEY). Without those, dispatch is a no-op
+// and only logs the intent — useful for development.
+
+import type { DatabaseAdapter } from '../db/database.js';
+
+export type PushPlatform = 'apns' | 'fcm' | 'web-push';
+
+export interface RegisterPushTokenInput {
+  device_id: string;
+  platform: PushPlatform;
+  token: string;
+  environment?: 'production' | 'development';
+  topic?: string;
+  endpoint?: string;
+  p256dh_key?: string;
+  auth_key?: string;
+}
+
+export interface PushPayload {
+  title: string;
+  /** Opaque event id; the client uses it to fetch the full detail */
+  event_id: string;
+  severity: 'low' | 'normal' | 'high' | 'critical';
+  /** Optional category (approval / radar / mission / digest) */
+  category?: string;
+  /** Optional deep link path (e.g. /approvals/abc123) */
+  deep_link?: string;
+}
+
+export interface DispatchResult {
+  attempted: number;
+  succeeded: number;
+  failed: number;
+  /** Per-token errors (token id → message) */
+  errors: Record<string, string>;
+}
+
+export function createAppPushService(db: DatabaseAdapter) {
+  const enabled = process.env.APP_GATEWAY_PUSH === 'true';
+
+  // ── Token registration ──────────────────────────────────────────────
+
+  async function registerToken(input: RegisterPushTokenInput): Promise<{ id: string }> {
+    // ON CONFLICT on (platform, token) — re-registering the same token from
+    // another device id rebinds it to the new device.
+    const row = await db.get<{ id: string }>(
+      `INSERT INTO app_push_tokens
+         (device_id, platform, token, environment, topic, endpoint, p256dh_key, auth_key, last_used_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+       ON CONFLICT (platform, token) DO UPDATE SET
+         device_id = EXCLUDED.device_id,
+         environment = EXCLUDED.environment,
+         topic = EXCLUDED.topic,
+         endpoint = EXCLUDED.endpoint,
+         p256dh_key = EXCLUDED.p256dh_key,
+         auth_key = EXCLUDED.auth_key,
+         enabled = TRUE,
+         last_used_at = NOW()
+       RETURNING id`,
+      input.device_id, input.platform, input.token,
+      input.environment ?? 'production',
+      input.topic ?? null, input.endpoint ?? null,
+      input.p256dh_key ?? null, input.auth_key ?? null,
+    );
+    if (!row) throw new Error('Failed to register push token');
+    return { id: row.id };
+  }
+
+  async function unregisterToken(deviceId: string, platform: PushPlatform, token: string): Promise<void> {
+    await db.run(
+      `UPDATE app_push_tokens SET enabled = FALSE
+        WHERE device_id = ? AND platform = ? AND token = ?`,
+      deviceId, platform, token,
+    );
+  }
+
+  async function listTokensForUser(connectedUserId: string): Promise<Array<{
+    id: string; device_id: string; platform: PushPlatform; token: string;
+    environment: string; endpoint: string | null;
+    p256dh_key: string | null; auth_key: string | null; topic: string | null;
+  }>> {
+    return db.all(
+      `SELECT pt.id, pt.device_id, pt.platform, pt.token, pt.environment,
+              pt.endpoint, pt.p256dh_key, pt.auth_key, pt.topic
+         FROM app_push_tokens pt
+         JOIN app_devices d ON d.id = pt.device_id
+        WHERE d.connected_user_id = ?
+          AND pt.enabled = TRUE
+          AND d.revoked_at IS NULL`,
+      connectedUserId,
+    );
+  }
+
+  // ── Dispatch ────────────────────────────────────────────────────────
+
+  /**
+   * Dispatch a push payload to every enabled token belonging to a user.
+   * Per-platform real implementations are stubbed unless APP_GATEWAY_PUSH=true
+   * AND the relevant provider keys are present. We still walk the token list
+   * and produce a result object so callers can react identically.
+   */
+  async function dispatch(connectedUserId: string, payload: PushPayload): Promise<DispatchResult> {
+    const tokens = await listTokensForUser(connectedUserId);
+    const result: DispatchResult = { attempted: tokens.length, succeeded: 0, failed: 0, errors: {} };
+    if (tokens.length === 0) return result;
+
+    if (!enabled) {
+      // Dev / no-key mode — log the intent and report success
+      console.log(`[push] (disabled) Would dispatch to ${tokens.length} token(s):`, payload.event_id, payload.severity);
+      result.succeeded = tokens.length;
+      return result;
+    }
+
+    for (const tok of tokens) {
+      try {
+        switch (tok.platform) {
+          case 'apns':
+            await sendViaApns(tok.token, payload, tok.environment);
+            break;
+          case 'fcm':
+            await sendViaFcm(tok.token, payload, tok.topic ?? null);
+            break;
+          case 'web-push':
+            await sendViaWebPush(tok.endpoint!, tok.p256dh_key!, tok.auth_key!, payload);
+            break;
+        }
+        result.succeeded++;
+        db.run(`UPDATE app_push_tokens SET last_used_at = NOW() WHERE id = ?`, tok.id).catch(() => {});
+      } catch (err) {
+        result.failed++;
+        result.errors[tok.id] = err instanceof Error ? err.message : String(err);
+      }
+    }
+    return result;
+  }
+
+  // ── Per-platform shims (operator wires real providers via env) ──────
+
+  async function sendViaApns(_token: string, _payload: PushPayload, _env: string): Promise<void> {
+    if (!process.env.APNS_KEY_ID || !process.env.APNS_TEAM_ID || !process.env.APNS_BUNDLE_ID) {
+      throw new Error('APNs not configured (set APNS_KEY_ID / APNS_TEAM_ID / APNS_BUNDLE_ID)');
+    }
+    // Real implementation would use a JWT-signed POST to api.push.apple.com
+    // with aps payload { alert: { title }, "thread-id": event_id, sound: ..., mutable-content: 1 }.
+    // For now we throw to make the missing wiring explicit at call-time.
+    throw new Error('APNs dispatch stub — wire @parse/node-apn or apn2 here');
+  }
+
+  async function sendViaFcm(_token: string, _payload: PushPayload, _topic: string | null): Promise<void> {
+    if (!process.env.FCM_SERVICE_ACCOUNT_JSON && !process.env.FCM_SERVER_KEY) {
+      throw new Error('FCM not configured (set FCM_SERVICE_ACCOUNT_JSON or FCM_SERVER_KEY)');
+    }
+    // Real: POST to fcm.googleapis.com/v1/projects/<id>/messages:send
+    throw new Error('FCM dispatch stub — wire firebase-admin here');
+  }
+
+  async function sendViaWebPush(endpoint: string, _p256dh: string, _auth: string, payload: PushPayload): Promise<void> {
+    if (!process.env.WEBPUSH_VAPID_PUBLIC_KEY || !process.env.WEBPUSH_VAPID_PRIVATE_KEY) {
+      throw new Error('Web Push not configured (set WEBPUSH_VAPID_PUBLIC_KEY / WEBPUSH_VAPID_PRIVATE_KEY)');
+    }
+    // Real: use the `web-push` package
+    void endpoint; void payload;
+    throw new Error('Web Push dispatch stub — wire web-push here');
+  }
+
+  return { registerToken, unregisterToken, listTokensForUser, dispatch };
+}
+
+export type AppPushService = ReturnType<typeof createAppPushService>;

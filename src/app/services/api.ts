@@ -2,14 +2,24 @@
  * REST API client for the companion app gateway.
  */
 
-// For Play Store app: use stored server URL. For PWA/dev: use relative path (proxy handles it).
+// For Play Store app: use the active instance's server URL or fall back to
+// the legacy single stored URL. For PWA/dev served from same origin: use
+// the relative path (Vite proxy handles it).
 function getApiBase(): string {
+  // Prefer the active instance's base if multi-instance is in play
+  try {
+    const activeId = localStorage.getItem('anton-companion-active-instance');
+    if (activeId) {
+      const list = JSON.parse(localStorage.getItem('anton-companion-instances') || '[]') as Array<{ id: string; server_base: string }>;
+      const inst = list.find(i => i.id === activeId);
+      if (inst?.server_base) return `${inst.server_base.replace(/\/$/, '')}/api/app`;
+    }
+  } catch { /* fall through */ }
   const storedServer = localStorage.getItem('anton-companion-server');
-  if (storedServer) return `${storedServer}/api/app`;
+  if (storedServer) return `${storedServer.replace(/\/$/, '')}/api/app`;
   return '/api/app';
 }
 
-const API_BASE_DEFAULT = '/api/app';
 const SESSION_KEY = 'anton-companion-session';
 
 export function getSessionToken(): string | null {
