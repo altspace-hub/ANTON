@@ -143,5 +143,6 @@
     "reporting",
     "aml",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

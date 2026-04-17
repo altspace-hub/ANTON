@@ -156,5 +156,6 @@
     "delivery-workers",
     "algorithmic-management",
     "deactivation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -146,5 +146,6 @@
     "child-health",
     "danger-signs",
     "1000-days"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

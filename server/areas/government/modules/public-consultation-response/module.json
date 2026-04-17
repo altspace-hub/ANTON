@@ -100,5 +100,6 @@
     "FATF",
     "EU",
     "public-administration"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

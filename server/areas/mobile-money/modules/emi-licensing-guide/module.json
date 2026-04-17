@@ -174,5 +174,6 @@
     "regulatory-authorisation",
     "capital-adequacy",
     "fit-and-proper"
-  ]
+  ],
+  "contentType": "plan_document"
 }

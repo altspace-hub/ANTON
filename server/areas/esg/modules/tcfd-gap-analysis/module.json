@@ -137,5 +137,6 @@
     "transition-risk",
     "esrs",
     "financial-disclosure"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

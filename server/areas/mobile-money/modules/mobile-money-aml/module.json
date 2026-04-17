@@ -127,5 +127,6 @@
     "mvts",
     "typologies",
     "gsma-mmu"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

@@ -121,5 +121,6 @@
       ],
       "defaultValue": "400-600"
     }
-  ]
+  ],
+  "contentType": "policy_document"
 }

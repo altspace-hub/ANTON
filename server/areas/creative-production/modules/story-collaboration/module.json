@@ -120,5 +120,6 @@
     "handoff",
     "shared-universe",
     "narrative-consistency"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -139,5 +139,6 @@
       "description": "Team size, budget, time commitment, existing assets.",
       "placeholder": "e.g. 1 part-time content manager, budget €2k/month, 2 subject matter experts available for 2 hours/week each."
     }
-  ]
+  ],
+  "contentType": "analytic_report"
 }

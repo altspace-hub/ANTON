@@ -106,5 +106,6 @@
     "transaction-monitoring",
     "sanctions-screening",
     "model-risk"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

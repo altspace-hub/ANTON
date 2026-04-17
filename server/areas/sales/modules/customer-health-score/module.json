@@ -85,5 +85,6 @@
     "account-management",
     "health-score",
     "nps"
-  ]
+  ],
+  "contentType": "scorecard"
 }

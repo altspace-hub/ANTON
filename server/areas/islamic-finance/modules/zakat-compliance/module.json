@@ -33,10 +33,22 @@
       "label": "Entity Type",
       "type": "select",
       "options": [
-        { "value": "islamic-bank", "label": "Islamic Bank" },
-        { "value": "corporate", "label": "Corporate" },
-        { "value": "investment-fund", "label": "Investment Fund" },
-        { "value": "family-waqf", "label": "Family Waqf" }
+        {
+          "value": "islamic-bank",
+          "label": "Islamic Bank"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate"
+        },
+        {
+          "value": "investment-fund",
+          "label": "Investment Fund"
+        },
+        {
+          "value": "family-waqf",
+          "label": "Family Waqf"
+        }
       ],
       "required": true
     },
@@ -45,14 +57,38 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        { "value": "saudi-arabia", "label": "Saudi Arabia" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "malaysia", "label": "Malaysia" },
-        { "value": "uae", "label": "UAE" },
-        { "value": "kuwait", "label": "Kuwait" },
-        { "value": "bahrain", "label": "Bahrain" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "malaysia",
+          "label": "Malaysia"
+        },
+        {
+          "value": "uae",
+          "label": "UAE"
+        },
+        {
+          "value": "kuwait",
+          "label": "Kuwait"
+        },
+        {
+          "value": "bahrain",
+          "label": "Bahrain"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -61,11 +97,26 @@
       "label": "Assets in Scope",
       "type": "chips",
       "options": [
-        { "value": "cash", "label": "Cash" },
-        { "value": "investments", "label": "Investments" },
-        { "value": "receivables", "label": "Receivables" },
-        { "value": "inventory", "label": "Inventory" },
-        { "value": "fixed-assets", "label": "Fixed Assets" }
+        {
+          "value": "cash",
+          "label": "Cash"
+        },
+        {
+          "value": "investments",
+          "label": "Investments"
+        },
+        {
+          "value": "receivables",
+          "label": "Receivables"
+        },
+        {
+          "value": "inventory",
+          "label": "Inventory"
+        },
+        {
+          "value": "fixed-assets",
+          "label": "Fixed Assets"
+        }
       ],
       "required": false
     }
@@ -85,5 +136,6 @@
     "regulatory-reporting",
     "aaoifi",
     "corporate-zakat"
-  ]
+  ],
+  "contentType": "plan_document"
 }

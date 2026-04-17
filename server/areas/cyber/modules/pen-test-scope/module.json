@@ -163,5 +163,6 @@
     "dora",
     "security-testing",
     "vulnerability-assessment"
-  ]
+  ],
+  "contentType": "plan_document"
 }

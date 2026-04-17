@@ -161,5 +161,6 @@
     "72-hour-notification",
     "dpa-notification",
     "breach-response"
-  ]
+  ],
+  "contentType": "policy_document"
 }

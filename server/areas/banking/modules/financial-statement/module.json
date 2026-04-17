@@ -110,5 +110,6 @@
     "capital",
     "ifrs9",
     "supervisory"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -178,5 +178,6 @@
     "TESDA",
     "job-training",
     "self-employment"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

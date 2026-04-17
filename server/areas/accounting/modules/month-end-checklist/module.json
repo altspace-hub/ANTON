@@ -116,5 +116,6 @@
     "close",
     "reconciliation",
     "operational"
-  ]
+  ],
+  "contentType": "plan_document"
 }

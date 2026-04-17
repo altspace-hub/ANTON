@@ -33,10 +33,22 @@
       "label": "Institution Type",
       "type": "select",
       "options": [
-        { "value": "full-islamic-bank", "label": "Full Islamic Bank" },
-        { "value": "islamic-window", "label": "Islamic Window" },
-        { "value": "takaful", "label": "Takaful" },
-        { "value": "investment-fund", "label": "Investment Fund" }
+        {
+          "value": "full-islamic-bank",
+          "label": "Full Islamic Bank"
+        },
+        {
+          "value": "islamic-window",
+          "label": "Islamic Window"
+        },
+        {
+          "value": "takaful",
+          "label": "Takaful"
+        },
+        {
+          "value": "investment-fund",
+          "label": "Investment Fund"
+        }
       ],
       "required": true
     },
@@ -45,14 +57,38 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        { "value": "saudi-arabia", "label": "Saudi Arabia (SAMA)" },
-        { "value": "uae", "label": "UAE (CBUAE/DFSA)" },
-        { "value": "malaysia", "label": "Malaysia (BNM)" },
-        { "value": "pakistan", "label": "Pakistan (SBP)" },
-        { "value": "bahrain", "label": "Bahrain (CBB)" },
-        { "value": "kuwait", "label": "Kuwait (CBK)" },
-        { "value": "indonesia", "label": "Indonesia (OJK)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (SAMA)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (CBUAE/DFSA)"
+        },
+        {
+          "value": "malaysia",
+          "label": "Malaysia (BNM)"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan (SBP)"
+        },
+        {
+          "value": "bahrain",
+          "label": "Bahrain (CBB)"
+        },
+        {
+          "value": "kuwait",
+          "label": "Kuwait (CBK)"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia (OJK)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -61,10 +97,22 @@
       "label": "Current Status",
       "type": "select",
       "options": [
-        { "value": "establishing-new", "label": "Establishing new board" },
-        { "value": "reviewing-existing", "label": "Reviewing existing" },
-        { "value": "regulatory-requirement", "label": "Regulatory requirement" },
-        { "value": "best-practice", "label": "Best practice upgrade" }
+        {
+          "value": "establishing-new",
+          "label": "Establishing new board"
+        },
+        {
+          "value": "reviewing-existing",
+          "label": "Reviewing existing"
+        },
+        {
+          "value": "regulatory-requirement",
+          "label": "Regulatory requirement"
+        },
+        {
+          "value": "best-practice",
+          "label": "Best practice upgrade"
+        }
       ],
       "required": true
     }
@@ -85,5 +133,6 @@
     "fatwas",
     "sharia-audit",
     "terms-of-reference"
-  ]
+  ],
+  "contentType": "policy_document"
 }

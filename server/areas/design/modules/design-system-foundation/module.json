@@ -126,5 +126,6 @@
       ],
       "defaultValue": "small"
     }
-  ]
+  ],
+  "contentType": "entity_register"
 }

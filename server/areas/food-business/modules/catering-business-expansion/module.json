@@ -162,5 +162,6 @@
     "school-feeding",
     "institutional-catering",
     "food-vendor"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

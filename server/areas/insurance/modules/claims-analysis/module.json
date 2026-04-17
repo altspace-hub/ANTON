@@ -115,5 +115,6 @@
     "fraud",
     "detection",
     "investigation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

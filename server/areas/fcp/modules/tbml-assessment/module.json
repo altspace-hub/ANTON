@@ -139,5 +139,6 @@
     "money-laundering",
     "commodities",
     "fcp"
-  ]
+  ],
+  "contentType": "risk_register"
 }

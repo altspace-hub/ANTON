@@ -196,5 +196,6 @@
     "data-protection",
     "health-data",
     "privacy"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

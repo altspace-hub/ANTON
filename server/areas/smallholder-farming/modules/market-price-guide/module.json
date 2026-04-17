@@ -159,5 +159,6 @@
     "traders",
     "smallholder",
     "rural-markets"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

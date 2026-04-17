@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "regulatory-comparison"],
+    "outputFormats": [
+      "detailed-findings",
+      "regulatory-comparison"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -37,12 +40,30 @@
       "label": "What do you need?",
       "required": true,
       "options": [
-        { "value": "classification", "label": "Token classification — is this an EMT, ART, utility token, or financial instrument?" },
-        { "value": "whitepaper-review", "label": "Whitepaper review — check content against MiCA requirements" },
-        { "value": "reserve-policy", "label": "Reserve asset policy — EMT/ART reserve requirements" },
-        { "value": "compliance-gap", "label": "Full compliance gap analysis for existing token" },
-        { "value": "significant-designation", "label": "Significant token preparation — EBA assessment readiness" },
-        { "value": "redemption-rights", "label": "Redemption rights & safeguarding obligations" }
+        {
+          "value": "classification",
+          "label": "Token classification — is this an EMT, ART, utility token, or financial instrument?"
+        },
+        {
+          "value": "whitepaper-review",
+          "label": "Whitepaper review — check content against MiCA requirements"
+        },
+        {
+          "value": "reserve-policy",
+          "label": "Reserve asset policy — EMT/ART reserve requirements"
+        },
+        {
+          "value": "compliance-gap",
+          "label": "Full compliance gap analysis for existing token"
+        },
+        {
+          "value": "significant-designation",
+          "label": "Significant token preparation — EBA assessment readiness"
+        },
+        {
+          "value": "redemption-rights",
+          "label": "Redemption rights & safeguarding obligations"
+        }
       ]
     },
     {
@@ -52,12 +73,30 @@
       "description": "What type do you believe the token is? Select 'unsure' if classification is the question.",
       "required": true,
       "options": [
-        { "value": "emt", "label": "E-Money Token (EMT) — single fiat currency peg" },
-        { "value": "art", "label": "Asset-Referenced Token (ART) — basket / multi-asset peg" },
-        { "value": "utility", "label": "Utility token — access to goods or services" },
-        { "value": "unbacked", "label": "Other crypto-asset — no stabilisation mechanism" },
-        { "value": "unsure", "label": "Unsure — classification analysis needed" },
-        { "value": "potential-security", "label": "Potentially a financial instrument (MiFID II scope)" }
+        {
+          "value": "emt",
+          "label": "E-Money Token (EMT) — single fiat currency peg"
+        },
+        {
+          "value": "art",
+          "label": "Asset-Referenced Token (ART) — basket / multi-asset peg"
+        },
+        {
+          "value": "utility",
+          "label": "Utility token — access to goods or services"
+        },
+        {
+          "value": "unbacked",
+          "label": "Other crypto-asset — no stabilisation mechanism"
+        },
+        {
+          "value": "unsure",
+          "label": "Unsure — classification analysis needed"
+        },
+        {
+          "value": "potential-security",
+          "label": "Potentially a financial instrument (MiFID II scope)"
+        }
       ]
     },
     {
@@ -67,13 +106,34 @@
       "description": "How is the token's value maintained? This drives the EMT vs. ART classification.",
       "required": false,
       "options": [
-        { "value": "single-fiat", "label": "Single fiat currency (EUR, USD, GBP...)" },
-        { "value": "fiat-basket", "label": "Basket of fiat currencies" },
-        { "value": "fiat-and-assets", "label": "Fiat + other assets (commodities, crypto)" },
-        { "value": "crypto-only", "label": "Crypto-collateralised (e.g., DAI-style)" },
-        { "value": "algorithmic", "label": "Algorithmic only (no reserve assets)" },
-        { "value": "hybrid", "label": "Hybrid mechanism" },
-        { "value": "none", "label": "No stabilisation (utility / unbacked)" }
+        {
+          "value": "single-fiat",
+          "label": "Single fiat currency (EUR, USD, GBP...)"
+        },
+        {
+          "value": "fiat-basket",
+          "label": "Basket of fiat currencies"
+        },
+        {
+          "value": "fiat-and-assets",
+          "label": "Fiat + other assets (commodities, crypto)"
+        },
+        {
+          "value": "crypto-only",
+          "label": "Crypto-collateralised (e.g., DAI-style)"
+        },
+        {
+          "value": "algorithmic",
+          "label": "Algorithmic only (no reserve assets)"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid mechanism"
+        },
+        {
+          "value": "none",
+          "label": "No stabilisation (utility / unbacked)"
+        }
       ]
     },
     {
@@ -83,11 +143,26 @@
       "description": "EMT issuers must already hold an EMI or bank licence. ARTs need NCA authorisation.",
       "required": false,
       "options": [
-        { "value": "no-licence", "label": "No existing financial services licence" },
-        { "value": "existing-emi", "label": "Licensed EMI / payment institution" },
-        { "value": "existing-bank", "label": "Bank / credit institution" },
-        { "value": "casp-only", "label": "CASP authorised under MiCA (no EMI/bank)" },
-        { "value": "applying", "label": "Applying for EMI / bank licence in parallel" }
+        {
+          "value": "no-licence",
+          "label": "No existing financial services licence"
+        },
+        {
+          "value": "existing-emi",
+          "label": "Licensed EMI / payment institution"
+        },
+        {
+          "value": "existing-bank",
+          "label": "Bank / credit institution"
+        },
+        {
+          "value": "casp-only",
+          "label": "CASP authorised under MiCA (no EMI/bank)"
+        },
+        {
+          "value": "applying",
+          "label": "Applying for EMI / bank licence in parallel"
+        }
       ]
     },
     {
@@ -97,10 +172,22 @@
       "description": "Scale affects whether the significant token enhanced regime (EBA direct supervision) could apply.",
       "required": false,
       "options": [
-        { "value": "small", "label": "Small — below €100M outstanding value" },
-        { "value": "medium", "label": "Medium — €100M–€1B" },
-        { "value": "large", "label": "Large — €1B–€5B (approaching significant thresholds)" },
-        { "value": "significant", "label": "Likely significant — over €5B / 1M daily transactions" }
+        {
+          "value": "small",
+          "label": "Small — below €100M outstanding value"
+        },
+        {
+          "value": "medium",
+          "label": "Medium — €100M–€1B"
+        },
+        {
+          "value": "large",
+          "label": "Large — €1B–€5B (approaching significant thresholds)"
+        },
+        {
+          "value": "significant",
+          "label": "Likely significant — over €5B / 1M daily transactions"
+        }
       ]
     },
     {
@@ -111,6 +198,19 @@
       "placeholder": "e.g. EUR-pegged stablecoin backed 1:1 by euro deposits in segregated bank accounts. Holders can redeem at any time at par. Used for DeFi collateral and cross-border payments. Issued by our Irish EMI subsidiary..."
     }
   ],
-  "recommendedPersonas": ["crypto-blockchain-expert", "legal-expert"],
-  "tags": ["mica", "stablecoin", "emt", "art", "utility-token", "reserve-assets", "significant-token", "whitepaper"]
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "mica",
+    "stablecoin",
+    "emt",
+    "art",
+    "utility-token",
+    "reserve-assets",
+    "significant-token",
+    "whitepaper"
+  ],
+  "contentType": "analytic_report"
 }

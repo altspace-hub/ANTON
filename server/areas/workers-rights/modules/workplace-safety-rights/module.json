@@ -203,5 +203,6 @@
     "right-to-refuse",
     "workers-compensation",
     "hazard"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

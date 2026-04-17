@@ -153,5 +153,6 @@
     "NSFAS",
     "Mastercard-Foundation",
     "student-loans"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

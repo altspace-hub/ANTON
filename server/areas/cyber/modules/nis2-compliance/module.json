@@ -142,5 +142,6 @@
     "essential-entity",
     "important-entity",
     "eu-regulation"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

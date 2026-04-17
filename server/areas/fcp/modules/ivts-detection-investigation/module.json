@@ -134,5 +134,6 @@
     "investigation",
     "financial-intelligence",
     "fcp"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

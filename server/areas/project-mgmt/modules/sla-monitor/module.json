@@ -83,5 +83,6 @@
     "performance",
     "vendor-management",
     "operations"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

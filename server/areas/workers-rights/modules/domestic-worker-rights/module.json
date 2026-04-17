@@ -172,5 +172,6 @@
     "abuse",
     "rest-day",
     "leave"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

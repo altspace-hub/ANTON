@@ -100,5 +100,6 @@
     "opportunity",
     "win-rate",
     "negotiation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

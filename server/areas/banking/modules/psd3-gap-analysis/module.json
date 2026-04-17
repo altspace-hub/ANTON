@@ -151,5 +151,6 @@
     "open-banking",
     "SCA",
     "gap-analysis"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

@@ -100,5 +100,6 @@
     "management-accounts",
     "reporting",
     "operational"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

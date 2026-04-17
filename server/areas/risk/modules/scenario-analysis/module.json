@@ -116,5 +116,6 @@
     "icaap",
     "risk-management",
     "capital"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

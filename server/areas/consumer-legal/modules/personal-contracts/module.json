@@ -111,5 +111,6 @@
     "consumer",
     "personal",
     "terms"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

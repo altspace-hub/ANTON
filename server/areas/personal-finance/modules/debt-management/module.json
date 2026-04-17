@@ -163,5 +163,6 @@
     "management",
     "repayment",
     "consolidation"
-  ]
+  ],
+  "contentType": "plan_document"
 }

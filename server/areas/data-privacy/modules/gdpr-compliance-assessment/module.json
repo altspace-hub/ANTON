@@ -146,5 +146,6 @@
     "compliance-assessment",
     "lawful-basis",
     "privacy"
-  ]
+  ],
+  "contentType": "entity_register"
 }

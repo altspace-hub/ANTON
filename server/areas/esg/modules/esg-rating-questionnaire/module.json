@@ -108,5 +108,6 @@
     "ecovadis",
     "questionnaire",
     "investor-relations"
-  ]
+  ],
+  "contentType": "scorecard"
 }

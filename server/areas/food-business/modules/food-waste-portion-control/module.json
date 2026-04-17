@@ -138,5 +138,6 @@
     "profitability",
     "food-vendor",
     "fifo"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

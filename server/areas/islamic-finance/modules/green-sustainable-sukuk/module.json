@@ -33,11 +33,26 @@
       "label": "ESG Focus",
       "type": "chips",
       "options": [
-        { "value": "green", "label": "Green" },
-        { "value": "social", "label": "Social" },
-        { "value": "sustainability", "label": "Sustainability" },
-        { "value": "sdg-linked", "label": "SDG-linked" },
-        { "value": "transition", "label": "Transition" }
+        {
+          "value": "green",
+          "label": "Green"
+        },
+        {
+          "value": "social",
+          "label": "Social"
+        },
+        {
+          "value": "sustainability",
+          "label": "Sustainability"
+        },
+        {
+          "value": "sdg-linked",
+          "label": "SDG-linked"
+        },
+        {
+          "value": "transition",
+          "label": "Transition"
+        }
       ],
       "required": false
     },
@@ -46,11 +61,26 @@
       "label": "Eligible Asset Categories",
       "type": "chips",
       "options": [
-        { "value": "renewable-energy", "label": "Renewable Energy" },
-        { "value": "green-buildings", "label": "Green Buildings" },
-        { "value": "water", "label": "Water" },
-        { "value": "transport", "label": "Transport" },
-        { "value": "social-infrastructure", "label": "Social Infrastructure" }
+        {
+          "value": "renewable-energy",
+          "label": "Renewable Energy"
+        },
+        {
+          "value": "green-buildings",
+          "label": "Green Buildings"
+        },
+        {
+          "value": "water",
+          "label": "Water"
+        },
+        {
+          "value": "transport",
+          "label": "Transport"
+        },
+        {
+          "value": "social-infrastructure",
+          "label": "Social Infrastructure"
+        }
       ],
       "required": false
     },
@@ -59,14 +89,38 @@
       "label": "Target Certification / Standard",
       "type": "select",
       "options": [
-        { "value": "icma-gbp", "label": "ICMA Green Bond Principles" },
-        { "value": "climate-bonds", "label": "Climate Bonds Standard" },
-        { "value": "asean-green", "label": "ASEAN Green Bond" },
-        { "value": "sc-malaysia-sri", "label": "SC Malaysia SRI Sukuk" },
-        { "value": "eu-taxonomy", "label": "EU Taxonomy" },
-        { "value": "sbp-green-taxonomy", "label": "SBP Green Taxonomy (Pakistan)" },
-        { "value": "bnm-taxonomy", "label": "BNM Principles-based Taxonomy" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "icma-gbp",
+          "label": "ICMA Green Bond Principles"
+        },
+        {
+          "value": "climate-bonds",
+          "label": "Climate Bonds Standard"
+        },
+        {
+          "value": "asean-green",
+          "label": "ASEAN Green Bond"
+        },
+        {
+          "value": "sc-malaysia-sri",
+          "label": "SC Malaysia SRI Sukuk"
+        },
+        {
+          "value": "eu-taxonomy",
+          "label": "EU Taxonomy"
+        },
+        {
+          "value": "sbp-green-taxonomy",
+          "label": "SBP Green Taxonomy (Pakistan)"
+        },
+        {
+          "value": "bnm-taxonomy",
+          "label": "BNM Principles-based Taxonomy"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     }
@@ -89,5 +143,6 @@
     "sdg",
     "sharia",
     "sukuk"
-  ]
+  ],
+  "contentType": "policy_document"
 }

@@ -152,5 +152,6 @@
     "pillar-two",
     "GloBE",
     "IFRS"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

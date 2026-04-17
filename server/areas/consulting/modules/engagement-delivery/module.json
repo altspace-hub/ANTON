@@ -102,5 +102,6 @@
     "status",
     "consulting",
     "engagement"
-  ]
+  ],
+  "contentType": "plan_document"
 }

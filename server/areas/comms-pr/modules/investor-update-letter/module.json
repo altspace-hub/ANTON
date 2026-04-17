@@ -107,5 +107,6 @@
     "startup",
     "reporting",
     "operational"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -128,5 +128,6 @@
     "oecd",
     "tax",
     "pillar-two"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

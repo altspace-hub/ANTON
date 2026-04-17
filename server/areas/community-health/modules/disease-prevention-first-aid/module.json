@@ -127,5 +127,6 @@
     "disease-prevention",
     "cholera",
     "community-health"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

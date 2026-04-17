@@ -86,5 +86,6 @@
     "issues",
     "dependencies",
     "operational"
-  ]
+  ],
+  "contentType": "risk_register"
 }

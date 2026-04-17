@@ -116,5 +116,6 @@
     "analytics",
     "conversion",
     "revenue"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -91,5 +91,6 @@
     "fte",
     "cost",
     "project-management"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -157,5 +157,6 @@
     "content",
     "social-media",
     "website"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

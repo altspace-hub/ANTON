@@ -119,5 +119,6 @@
     "pricing",
     "plg",
     "sales"
-  ]
+  ],
+  "contentType": "plan_document"
 }

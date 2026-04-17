@@ -64,6 +64,13 @@ export interface ModuleConfig {
   tags?: string[];
   /** Model tier recommendation (optional — defaults to opus if absent) */
   modelTier?: ModelTier;
+  /**
+   * Output Transformation System — one of the eight Phase 1 content types.
+   * Drives the structured extractor and the renderer registry filter.
+   * Absent modules fall back to 'analytic_report' (the most permissive schema).
+   */
+  contentType?: 'gap_analysis' | 'risk_register' | 'process_map' | 'policy_document'
+             | 'analytic_report' | 'plan_document' | 'entity_register' | 'scorecard';
   /** Populated at load time — not stored in JSON */
   systemPrompt?: string;
   areaId?: string;

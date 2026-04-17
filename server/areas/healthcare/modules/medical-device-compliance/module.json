@@ -165,5 +165,6 @@
     "iso-13485",
     "post-market-surveillance",
     "regulatory-compliance"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

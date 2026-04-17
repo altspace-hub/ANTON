@@ -135,5 +135,6 @@
     "planning",
     "savings",
     "spending"
-  ]
+  ],
+  "contentType": "plan_document"
 }

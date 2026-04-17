@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["maturity-assessment", "detailed-findings"],
+    "outputFormats": [
+      "maturity-assessment",
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -37,11 +40,26 @@
       "label": "Assessment Scope",
       "required": true,
       "options": [
-        { "value": "bwra", "label": "Business-Wide Risk Assessment (BWRA) — full entity" },
-        { "value": "product", "label": "Product / service risk assessment" },
-        { "value": "segment", "label": "Customer segment risk assessment" },
-        { "value": "vasp-dd", "label": "VASP due diligence — assess a counterparty VASP" },
-        { "value": "control-maturity", "label": "AML/CFT control maturity assessment only" }
+        {
+          "value": "bwra",
+          "label": "Business-Wide Risk Assessment (BWRA) — full entity"
+        },
+        {
+          "value": "product",
+          "label": "Product / service risk assessment"
+        },
+        {
+          "value": "segment",
+          "label": "Customer segment risk assessment"
+        },
+        {
+          "value": "vasp-dd",
+          "label": "VASP due diligence — assess a counterparty VASP"
+        },
+        {
+          "value": "control-maturity",
+          "label": "AML/CFT control maturity assessment only"
+        }
       ]
     },
     {
@@ -51,14 +69,38 @@
       "description": "The entity type determines the primary inherent risk profile.",
       "required": true,
       "options": [
-        { "value": "cex", "label": "Centralised exchange (CEX)" },
-        { "value": "p2p", "label": "P2P exchange / marketplace" },
-        { "value": "otc", "label": "OTC broker / institutional desk" },
-        { "value": "nft-marketplace", "label": "NFT marketplace" },
-        { "value": "defi-aggregator", "label": "DeFi aggregator / front-end" },
-        { "value": "crypto-atm", "label": "Crypto ATM operator" },
-        { "value": "staking-yield", "label": "Staking / yield platform" },
-        { "value": "bank-crypto", "label": "Bank / FI with crypto services" }
+        {
+          "value": "cex",
+          "label": "Centralised exchange (CEX)"
+        },
+        {
+          "value": "p2p",
+          "label": "P2P exchange / marketplace"
+        },
+        {
+          "value": "otc",
+          "label": "OTC broker / institutional desk"
+        },
+        {
+          "value": "nft-marketplace",
+          "label": "NFT marketplace"
+        },
+        {
+          "value": "defi-aggregator",
+          "label": "DeFi aggregator / front-end"
+        },
+        {
+          "value": "crypto-atm",
+          "label": "Crypto ATM operator"
+        },
+        {
+          "value": "staking-yield",
+          "label": "Staking / yield platform"
+        },
+        {
+          "value": "bank-crypto",
+          "label": "Bank / FI with crypto services"
+        }
       ]
     },
     {
@@ -67,13 +109,34 @@
       "label": "Crypto-Asset Types Offered",
       "description": "Different asset types carry different inherent risk levels.",
       "options": [
-        { "value": "btc-eth", "label": "BTC / ETH (major assets)" },
-        { "value": "stablecoins", "label": "Stablecoins (USDT, USDC, EUROC)" },
-        { "value": "privacy-coins", "label": "Privacy coins (XMR, ZEC, DASH)" },
-        { "value": "altcoins", "label": "Altcoins / long tail" },
-        { "value": "nfts", "label": "NFTs" },
-        { "value": "defi-tokens", "label": "DeFi protocol tokens" },
-        { "value": "rwa-tokens", "label": "Tokenised real-world assets (RWA)" }
+        {
+          "value": "btc-eth",
+          "label": "BTC / ETH (major assets)"
+        },
+        {
+          "value": "stablecoins",
+          "label": "Stablecoins (USDT, USDC, EUROC)"
+        },
+        {
+          "value": "privacy-coins",
+          "label": "Privacy coins (XMR, ZEC, DASH)"
+        },
+        {
+          "value": "altcoins",
+          "label": "Altcoins / long tail"
+        },
+        {
+          "value": "nfts",
+          "label": "NFTs"
+        },
+        {
+          "value": "defi-tokens",
+          "label": "DeFi protocol tokens"
+        },
+        {
+          "value": "rwa-tokens",
+          "label": "Tokenised real-world assets (RWA)"
+        }
       ]
     },
     {
@@ -82,14 +145,38 @@
       "label": "Geographic Exposure",
       "description": "Where are clients / counterparty VASPs located?",
       "options": [
-        { "value": "eu-eea", "label": "EU / EEA" },
-        { "value": "uk", "label": "UK" },
-        { "value": "us", "label": "US" },
-        { "value": "fatf-grey", "label": "FATF grey-listed jurisdictions" },
-        { "value": "fatf-black", "label": "FATF black-listed (DPRK, Iran, Myanmar)" },
-        { "value": "russia-sanctioned", "label": "Russia (sanctions exposure)" },
-        { "value": "apac", "label": "Asia-Pacific" },
-        { "value": "latam", "label": "Latin America" }
+        {
+          "value": "eu-eea",
+          "label": "EU / EEA"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us",
+          "label": "US"
+        },
+        {
+          "value": "fatf-grey",
+          "label": "FATF grey-listed jurisdictions"
+        },
+        {
+          "value": "fatf-black",
+          "label": "FATF black-listed (DPRK, Iran, Myanmar)"
+        },
+        {
+          "value": "russia-sanctioned",
+          "label": "Russia (sanctions exposure)"
+        },
+        {
+          "value": "apac",
+          "label": "Asia-Pacific"
+        },
+        {
+          "value": "latam",
+          "label": "Latin America"
+        }
       ]
     },
     {
@@ -98,12 +185,30 @@
       "label": "Special Risk Features",
       "description": "Flag features that require specific risk assessment treatment.",
       "options": [
-        { "value": "unhosted-wallets", "label": "Significant unhosted wallet volume" },
-        { "value": "defi", "label": "DeFi protocol interactions" },
-        { "value": "nested-vasps", "label": "Nested / embedded VASP clients" },
-        { "value": "institutional", "label": "Institutional / B2B client base" },
-        { "value": "retail-mass", "label": "Mass retail (high client volume)" },
-        { "value": "high-volume", "label": "Very high transaction volume" }
+        {
+          "value": "unhosted-wallets",
+          "label": "Significant unhosted wallet volume"
+        },
+        {
+          "value": "defi",
+          "label": "DeFi protocol interactions"
+        },
+        {
+          "value": "nested-vasps",
+          "label": "Nested / embedded VASP clients"
+        },
+        {
+          "value": "institutional",
+          "label": "Institutional / B2B client base"
+        },
+        {
+          "value": "retail-mass",
+          "label": "Mass retail (high client volume)"
+        },
+        {
+          "value": "high-volume",
+          "label": "Very high transaction volume"
+        }
       ]
     },
     {
@@ -114,6 +219,19 @@
       "placeholder": "e.g. Current BWRA was last updated 2023. Uses a simple 3x3 risk matrix. Customer risk dimension covered but DeFi/NFT exposure not assessed. TM rules not updated since 2022..."
     }
   ],
-  "recommendedPersonas": ["crypto-blockchain-expert", "fcp-expert"],
-  "tags": ["crypto-risk", "vasp-risk", "bwra", "risk-assessment", "fatf", "ml-tf", "defi-risk", "nft-risk"]
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "crypto-risk",
+    "vasp-risk",
+    "bwra",
+    "risk-assessment",
+    "fatf",
+    "ml-tf",
+    "defi-risk",
+    "nft-risk"
+  ],
+  "contentType": "risk_register"
 }

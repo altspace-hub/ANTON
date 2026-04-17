@@ -99,5 +99,6 @@
     "education",
     "student",
     "progress"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

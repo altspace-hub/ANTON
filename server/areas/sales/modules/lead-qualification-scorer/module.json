@@ -119,5 +119,6 @@
     "pipeline",
     "sales",
     "scoring"
-  ]
+  ],
+  "contentType": "plan_document"
 }

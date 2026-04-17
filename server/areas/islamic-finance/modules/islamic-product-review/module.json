@@ -33,18 +33,54 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        { "value": "murabaha", "label": "Murabaha" },
-        { "value": "ijara", "label": "Ijara" },
-        { "value": "musharakah", "label": "Musharakah" },
-        { "value": "diminishing-musharakah", "label": "Diminishing Musharakah" },
-        { "value": "mudarabah", "label": "Mudarabah" },
-        { "value": "tawarruq", "label": "Tawarruq" },
-        { "value": "wakala", "label": "Wakala" },
-        { "value": "istisna", "label": "Istisna" },
-        { "value": "salam", "label": "Salam" },
-        { "value": "qard", "label": "Qard" },
-        { "value": "hawalah", "label": "Hawalah" },
-        { "value": "kafalah", "label": "Kafalah" }
+        {
+          "value": "murabaha",
+          "label": "Murabaha"
+        },
+        {
+          "value": "ijara",
+          "label": "Ijara"
+        },
+        {
+          "value": "musharakah",
+          "label": "Musharakah"
+        },
+        {
+          "value": "diminishing-musharakah",
+          "label": "Diminishing Musharakah"
+        },
+        {
+          "value": "mudarabah",
+          "label": "Mudarabah"
+        },
+        {
+          "value": "tawarruq",
+          "label": "Tawarruq"
+        },
+        {
+          "value": "wakala",
+          "label": "Wakala"
+        },
+        {
+          "value": "istisna",
+          "label": "Istisna"
+        },
+        {
+          "value": "salam",
+          "label": "Salam"
+        },
+        {
+          "value": "qard",
+          "label": "Qard"
+        },
+        {
+          "value": "hawalah",
+          "label": "Hawalah"
+        },
+        {
+          "value": "kafalah",
+          "label": "Kafalah"
+        }
       ],
       "required": true
     },
@@ -53,9 +89,18 @@
       "label": "Review Stage",
       "type": "select",
       "options": [
-        { "value": "new-product", "label": "New Product" },
-        { "value": "existing-review", "label": "Existing Product Review" },
-        { "value": "modification", "label": "Product Modification" }
+        {
+          "value": "new-product",
+          "label": "New Product"
+        },
+        {
+          "value": "existing-review",
+          "label": "Existing Product Review"
+        },
+        {
+          "value": "modification",
+          "label": "Product Modification"
+        }
       ],
       "required": true
     },
@@ -85,5 +130,6 @@
     "salam",
     "documentation",
     "compliance"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

@@ -168,5 +168,6 @@
     "icaap",
     "ifr",
     "leverage-ratio"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

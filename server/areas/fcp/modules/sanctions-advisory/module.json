@@ -105,5 +105,6 @@
     "ofac",
     "eu-sanctions",
     "screening"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

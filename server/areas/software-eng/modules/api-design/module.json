@@ -168,5 +168,6 @@
     "design",
     "documentation",
     "integration"
-  ]
+  ],
+  "contentType": "policy_document"
 }

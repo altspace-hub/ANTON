@@ -109,5 +109,6 @@
     "informal-remittance",
     "aml",
     "fcp"
-  ]
+  ],
+  "contentType": "risk_register"
 }

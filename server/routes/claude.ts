@@ -714,6 +714,33 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                 .catch(() => {});
             }
+            // Output Transformation — structured extraction (fire-and-forget)
+            // Produces the JSON twin of the Markdown output so the transform
+            // panel + renderers can see a schema-typed payload. Cached by
+            // content hash; failures are silent (structured_status='failed').
+            if (sessionId && data.text && data.text.length > 200 && moduleId) {
+              void (async () => {
+                try {
+                  const { getModule } = await import('../services/module-loader.js');
+                  const mod = await getModule(moduleId);
+                  const contentType = (mod?.contentType as
+                    'gap_analysis' | 'risk_register' | 'process_map' | 'policy_document'
+                    | 'analytic_report' | 'plan_document' | 'entity_register' | 'scorecard'
+                    | undefined) ?? 'analytic_report';
+                  const { createStructuredExtractor } = await import('../services/structured-extractor.js');
+                  const extractor = createStructuredExtractor(db);
+                  await extractor.extractAndStore(sessionId, {
+                    markdown: data.text,
+                    contentType,
+                    moduleId,
+                    areaId: areaId ?? '',
+                    generationModel: selectedModel,
+                  });
+                } catch (err) {
+                  console.warn('[structured-extractor] extraction failed:', err instanceof Error ? err.message : err);
+                }
+              })();
+            }
             // Persist the settings that produced this output so history shows accurate config
             try {
               await db.run('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?', JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);

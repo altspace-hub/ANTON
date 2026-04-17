@@ -140,5 +140,6 @@
     "responsible-ai",
     "financial-inclusion",
     "model-validation"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

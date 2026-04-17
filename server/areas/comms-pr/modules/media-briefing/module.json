@@ -91,5 +91,6 @@
     "media",
     "briefing",
     "interview-prep"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

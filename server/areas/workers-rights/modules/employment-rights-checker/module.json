@@ -175,5 +175,6 @@
     "minimum-wage",
     "leave",
     "contracts"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

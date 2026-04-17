@@ -172,5 +172,6 @@
     "EMA",
     "FDA",
     "medical-devices"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

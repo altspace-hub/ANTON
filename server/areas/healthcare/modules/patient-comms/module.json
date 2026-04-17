@@ -142,5 +142,6 @@
     "communication",
     "education",
     "health-literacy"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

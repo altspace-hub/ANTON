@@ -121,5 +121,6 @@
     "zoning",
     "development",
     "land-use"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

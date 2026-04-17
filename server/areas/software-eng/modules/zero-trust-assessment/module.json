@@ -119,5 +119,6 @@
     "network",
     "cloud",
     "nist"
-  ]
+  ],
+  "contentType": "scorecard"
 }

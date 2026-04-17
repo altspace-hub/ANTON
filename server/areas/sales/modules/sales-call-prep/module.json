@@ -107,5 +107,6 @@
     "meeting",
     "objection-handling",
     "account-management"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

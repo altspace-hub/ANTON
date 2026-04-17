@@ -161,5 +161,6 @@
     "breach-response",
     "cyber-resilience",
     "business-continuity"
-  ]
+  ],
+  "contentType": "policy_document"
 }

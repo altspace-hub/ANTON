@@ -148,5 +148,6 @@
     "informal-transfer",
     "aml",
     "fcp"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

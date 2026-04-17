@@ -195,5 +195,6 @@
     "deductions",
     "domestic-workers",
     "piece-rate"
-  ]
+  ],
+  "contentType": "analytic_report"
 }

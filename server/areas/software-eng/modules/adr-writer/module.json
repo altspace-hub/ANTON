@@ -101,5 +101,6 @@
     "decision-record",
     "documentation",
     "technical-governance"
-  ]
+  ],
+  "contentType": "policy_document"
 }

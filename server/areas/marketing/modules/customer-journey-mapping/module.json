@@ -181,5 +181,6 @@
     "moments-of-truth",
     "lifecycle",
     "retention"
-  ]
+  ],
+  "contentType": "plan_document"
 }

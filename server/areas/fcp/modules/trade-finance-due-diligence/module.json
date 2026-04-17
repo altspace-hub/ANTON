@@ -89,5 +89,6 @@
     "tbml",
     "letters-of-credit",
     "fcp"
-  ]
+  ],
+  "contentType": "plan_document"
 }

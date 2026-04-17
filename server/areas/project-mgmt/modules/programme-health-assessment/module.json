@@ -120,5 +120,6 @@
     "governance",
     "consultant",
     "rag-status"
-  ]
+  ],
+  "contentType": "scorecard"
 }

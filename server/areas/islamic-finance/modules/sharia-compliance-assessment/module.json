@@ -34,17 +34,50 @@
       "label": "Product / Activity Type",
       "type": "select",
       "options": [
-        { "value": "murabaha", "label": "Murabaha" },
-        { "value": "ijara", "label": "Ijara" },
-        { "value": "diminishing-musharakah", "label": "Diminishing Musharakah" },
-        { "value": "musharakah", "label": "Musharakah" },
-        { "value": "mudarabah", "label": "Mudarabah" },
-        { "value": "tawarruq", "label": "Tawarruq" },
-        { "value": "wakala", "label": "Wakala" },
-        { "value": "istisna", "label": "Istisna" },
-        { "value": "salam", "label": "Salam" },
-        { "value": "sukuk", "label": "Sukuk" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "murabaha",
+          "label": "Murabaha"
+        },
+        {
+          "value": "ijara",
+          "label": "Ijara"
+        },
+        {
+          "value": "diminishing-musharakah",
+          "label": "Diminishing Musharakah"
+        },
+        {
+          "value": "musharakah",
+          "label": "Musharakah"
+        },
+        {
+          "value": "mudarabah",
+          "label": "Mudarabah"
+        },
+        {
+          "value": "tawarruq",
+          "label": "Tawarruq"
+        },
+        {
+          "value": "wakala",
+          "label": "Wakala"
+        },
+        {
+          "value": "istisna",
+          "label": "Istisna"
+        },
+        {
+          "value": "salam",
+          "label": "Salam"
+        },
+        {
+          "value": "sukuk",
+          "label": "Sukuk"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -53,10 +86,22 @@
       "label": "Institution Type",
       "type": "select",
       "options": [
-        { "value": "full-islamic-bank", "label": "Full Islamic Bank" },
-        { "value": "islamic-window", "label": "Islamic Window" },
-        { "value": "nbfi", "label": "NBFI" },
-        { "value": "takaful-operator", "label": "Takaful Operator" }
+        {
+          "value": "full-islamic-bank",
+          "label": "Full Islamic Bank"
+        },
+        {
+          "value": "islamic-window",
+          "label": "Islamic Window"
+        },
+        {
+          "value": "nbfi",
+          "label": "NBFI"
+        },
+        {
+          "value": "takaful-operator",
+          "label": "Takaful Operator"
+        }
       ],
       "required": true
     },
@@ -65,12 +110,30 @@
       "label": "Applicable Sharia Standard",
       "type": "select",
       "options": [
-        { "value": "aaoifi", "label": "AAOIFI" },
-        { "value": "local-sharia-board", "label": "Local Sharia Board" },
-        { "value": "ifsb", "label": "IFSB" },
-        { "value": "bnm-sac", "label": "BNM SAC" },
-        { "value": "sama", "label": "SAMA" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "aaoifi",
+          "label": "AAOIFI"
+        },
+        {
+          "value": "local-sharia-board",
+          "label": "Local Sharia Board"
+        },
+        {
+          "value": "ifsb",
+          "label": "IFSB"
+        },
+        {
+          "value": "bnm-sac",
+          "label": "BNM SAC"
+        },
+        {
+          "value": "sama",
+          "label": "SAMA"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -100,5 +163,6 @@
     "ijara",
     "musharakah",
     "islamic-banking"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

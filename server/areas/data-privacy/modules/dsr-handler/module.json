@@ -128,5 +128,6 @@
     "erasure",
     "access-request",
     "right-to-be-forgotten"
-  ]
+  ],
+  "contentType": "plan_document"
 }

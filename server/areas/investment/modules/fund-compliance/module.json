@@ -102,5 +102,6 @@
     "priips",
     "sfdr",
     "mifid"
-  ]
+  ],
+  "contentType": "gap_analysis"
 }

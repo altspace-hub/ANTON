@@ -118,5 +118,6 @@
     "supervisory",
     "fcp",
     "compliance"
-  ]
+  ],
+  "contentType": "policy_document"
 }

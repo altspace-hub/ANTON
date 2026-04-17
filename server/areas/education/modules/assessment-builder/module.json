@@ -134,5 +134,6 @@
     "exam",
     "education",
     "testing"
-  ]
+  ],
+  "contentType": "analytic_report"
 }
