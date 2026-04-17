@@ -529,6 +529,22 @@ app.use('/api', createRendererRoutes(db));
     console.error('[renderer-registry] seed failed:', err instanceof Error ? err.message : err);
   }
 }
+
+// Risk Atlas — universal seven-stage threat-path methodology
+const { createAtlasRoutes } = await import('./routes/atlas.js');
+app.use('/api', createAtlasRoutes(db));
+// Seed built-in industry packs (idempotent — INSERT … ON CONFLICT DO UPDATE)
+{
+  const { createAtlasPackLoader } = await import('./services/risk-atlas/atlas-pack-loader.js');
+  const atlasPacks = createAtlasPackLoader(db);
+  try {
+    const seed = await atlasPacks.seedBuiltinPacks();
+    console.log(`[risk-atlas] packs seeded: ${seed.inserted} inserted, ${seed.updated} updated${seed.errors.length ? `, errors: ${seed.errors.length}` : ''}`);
+    if (seed.errors.length > 0) console.warn('[risk-atlas] pack seed warnings:', seed.errors);
+  } catch (err) {
+    console.error('[risk-atlas] pack seed failed:', err instanceof Error ? err.message : err);
+  }
+}
 // Mission payment execution tick — settles approved payments past their cancel window
 {
   const { createMissionBudget } = await import('./services/missions/mission-budget.js');
