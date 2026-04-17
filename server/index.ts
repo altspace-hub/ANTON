@@ -503,6 +503,9 @@ app.use('/api', createMissionDeliveryRoutes(db));
 // Missions Phase 4 — Financial: FutureChain wallet integration, payment proposals, approval + cancel-window workflow
 const { createMissionPaymentRoutes } = await import('./routes/mission-payments.js');
 app.use('/api', createMissionPaymentRoutes(db));
+// Missions Phase 5 — AAP delegation: cross-instance mission handoff with Ed25519-signed payloads
+const { createMissionDelegationRoutes } = await import('./routes/mission-delegation.js');
+app.use('/api', createMissionDelegationRoutes(db));
 // Mission payment execution tick — settles approved payments past their cancel window
 {
   const { createMissionBudget } = await import('./services/missions/mission-budget.js');

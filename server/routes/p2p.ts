@@ -193,6 +193,51 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
         }
       }
 
+      // Missions — AAP delegation request from a peer ANTON (Phase 5)
+      if (messageType === 'mission_delegation' && payload) {
+        try {
+          const { createMissionDelegation } = await import('../services/missions/mission-delegation.js');
+          const delService = await createMissionDelegation(db);
+          const envelope = typeof payload === 'string' ? JSON.parse(payload) : payload as Record<string, unknown>;
+          const innerPayload = typeof envelope.payload_json === 'string'
+            ? JSON.parse(envelope.payload_json) as Record<string, unknown>
+            : envelope.payload_json as Record<string, unknown>;
+          const delegation = await delService.receiveDelegation({
+            delegationId: String(innerPayload.delegationId),
+            fromContactHash: String(innerPayload.fromContactHash),
+            fromDisplayName: innerPayload.fromDisplayName ? String(innerPayload.fromDisplayName) : undefined,
+            brief: innerPayload.brief as never,
+            signature: String(envelope.signature_b64),
+            signerPublicKey: String(envelope.signer_public_key),
+          }, null);
+          return res.json({ ok: true, type: 'mission_delegation', delegationId: delegation.id, status: delegation.status });
+        } catch (delErr) {
+          console.error('[p2p] Mission delegation processing failed:', delErr instanceof Error ? delErr.message : delErr);
+        }
+      }
+
+      // Missions — AAP delegation result returned to the originator (Phase 5)
+      if (messageType === 'mission_delegation_result' && payload) {
+        try {
+          const { createMissionDelegation } = await import('../services/missions/mission-delegation.js');
+          const delService = await createMissionDelegation(db);
+          const envelope = typeof payload === 'string' ? JSON.parse(payload) : payload as Record<string, unknown>;
+          const innerPayload = typeof envelope.payload_json === 'string'
+            ? JSON.parse(envelope.payload_json) as Record<string, unknown>
+            : envelope.payload_json as Record<string, unknown>;
+          const delegation = await delService.receiveDelegationResult(String(innerPayload.delegationId), {
+            payload_json: String(envelope.payload_json),
+            signature_b64: String(envelope.signature_b64),
+            signer_public_key: String(envelope.signer_public_key),
+            signer_contact_hash: String(envelope.signer_contact_hash),
+            files: (envelope.files ?? []) as Array<{ filename: string; content?: string; path?: string }>,
+          });
+          return res.json({ ok: true, type: 'mission_delegation_result', delegationId: delegation.id, status: delegation.status });
+        } catch (delErr) {
+          console.error('[p2p] Mission delegation result processing failed:', delErr instanceof Error ? delErr.message : delErr);
+        }
+      }
+
       // Beehive — multi-party reasoning protocol message (Phase 4)
       if (messageType === 'beehive_message' && payload) {
         try {
