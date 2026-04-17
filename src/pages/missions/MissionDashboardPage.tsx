@@ -11,11 +11,23 @@ import { Link, useParams } from 'react-router-dom';
 import {
   Target, ChevronLeft, RefreshCcw, AlertCircle, Sparkles,
   Play, Pause, Square, FastForward, CheckCircle2,
+  LayoutDashboard, Send, Wallet, Network,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import TaskGraphView, { type TaskNode, type DependencyEdge } from '../../components/missions/TaskGraphView';
 import ActivityFeed from '../../components/missions/ActivityFeed';
 import BudgetMonitor from '../../components/missions/BudgetMonitor';
+import DeliveriesTab from '../../components/missions/DeliveriesTab';
+import PaymentsTab from '../../components/missions/PaymentsTab';
+import OutboundDelegationsTab from '../../components/missions/OutboundDelegationsTab';
+
+type TabKey = 'overview' | 'deliveries' | 'payments' | 'delegations';
+const TABS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] = [
+  { key: 'overview',    label: 'Overview',    icon: LayoutDashboard },
+  { key: 'deliveries',  label: 'Deliveries',  icon: Send },
+  { key: 'payments',    label: 'Payments',    icon: Wallet },
+  { key: 'delegations', label: 'Delegations', icon: Network },
+];
 
 type MissionStatus = 'draft' | 'briefed' | 'active' | 'paused' | 'review' | 'completed' | 'aborted';
 type AutonomyLevel = 'check_in' | 'briefing' | 'full_autonomy';
@@ -87,6 +99,7 @@ export default function MissionDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actioning, setActioning] = useState(false);
+  const [tab, setTab] = useState<TabKey>('overview');
 
   const loadAll = useCallback(async () => {
     if (!id) return;
@@ -314,33 +327,59 @@ export default function MissionDashboardPage() {
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Task graph</h2>
-            <TaskGraphView
-              tasks={tasks}
-              dependencies={dependencies}
-              onApprove={handleApproveCheckpoint}
-              onReject={handleRejectCheckpoint}
-            />
-          </section>
-        </div>
-
-        <aside className="space-y-4">
-          {budget && (
-            <div className="rounded-xl border border-border bg-adv-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-teal mb-3">Budget</h3>
-              <BudgetMonitor tokens={budget.tokens} time={budget.time} financial={budget.financial} />
-            </div>
-          )}
-          <div className="rounded-xl border border-border bg-adv-card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-teal mb-2">Activity</h3>
-            <ActivityFeed entries={activity} />
-          </div>
-        </aside>
+      {/* Tab strip */}
+      <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 whitespace-nowrap ${
+                active ? 'border-adv-teal text-adv-teal' : 'border-transparent text-adv-gray hover:text-adv-off-white'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {t.label}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Tab content */}
+      {tab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <section>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Task graph</h2>
+              <TaskGraphView
+                tasks={tasks}
+                dependencies={dependencies}
+                onApprove={handleApproveCheckpoint}
+                onReject={handleRejectCheckpoint}
+              />
+            </section>
+          </div>
+
+          <aside className="space-y-4">
+            {budget && (
+              <div className="rounded-xl border border-border bg-adv-card p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-teal mb-3">Budget</h3>
+                <BudgetMonitor tokens={budget.tokens} time={budget.time} financial={budget.financial} />
+              </div>
+            )}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-teal mb-2">Activity</h3>
+              <ActivityFeed entries={activity} />
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {tab === 'deliveries' && id && <DeliveriesTab missionId={id} />}
+      {tab === 'payments' && id && <PaymentsTab missionId={id} />}
+      {tab === 'delegations' && id && <OutboundDelegationsTab missionId={id} />}
     </div>
   );
 }
