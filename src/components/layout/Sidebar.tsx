@@ -1733,6 +1733,16 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.workflows')}
         </NavLinkWithStar>
 
+        {/* Missions — autonomous multi-step work */}
+        <NavLink
+          to="/missions"
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          title={sidebarCollapsed ? 'Missions' : undefined}
+        >
+          <Target className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Missions'}
+        </NavLink>
+
         {/* Event Triggers sub-nav (under Workflows) */}
         {!sidebarCollapsed && pathname.startsWith('/workflows') && (
           <NavLink

@@ -487,6 +487,9 @@ app.use('/api', await createCommunityRoutes(db));
 // Beehive — multi-party reasoning sessions across N ANTONs (Phase 1: lifecycle only)
 const { createBeehiveRoutes } = await import('./routes/beehive.js');
 app.use('/api', createBeehiveRoutes(db));
+// Missions — autonomous multi-step work (Phase 1: foundation + Knowledge Synthesis template)
+const { createMissionRoutes } = await import('./routes/missions.js');
+app.use('/api', createMissionRoutes(db));
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
 app.use('/api', await createTaskDelegationRoutes(db));
