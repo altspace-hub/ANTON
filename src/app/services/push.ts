@@ -1,0 +1,175 @@
+/**
+ * push.ts — push notification registration per spec §8.7.
+ *
+ * Native (iOS / Android): @capacitor/push-notifications → APNs / FCM token
+ *   → POST to /api/app/push/register with platform + token + device_id.
+ *
+ * Web (PWA): navigator.serviceWorker.pushManager.subscribe() → web-push
+ *   subscription → POST to /api/app/push/register with platform=web-push
+ *   + endpoint + p256dh + auth.
+ *
+ * The instance dispatches push payloads that contain ONLY an opaque
+ * event id + severity + a localised title; the app fetches details via
+ * the authenticated channel.
+ */
+
+import { Capacitor } from '@capacitor/core';
+import { activeServerBase, activeAuthHeaders, getActiveInstance } from './instances';
+
+export type RegisterOutcome =
+  | { ok: true; platform: 'apns' | 'fcm' | 'web-push'; token: string }
+  | { ok: false; reason: 'unsupported' | 'permission-denied' | 'server-error' | 'no-instance' | 'no-device-id'; detail?: string };
+
+/** Ask for permission + register. Idempotent. */
+export async function registerPush(): Promise<RegisterOutcome> {
+  const platform = Capacitor.getPlatform();
+  const instance = getActiveInstance();
+  if (!instance) return { ok: false, reason: 'no-instance' };
+  if (!instance.device_id) return { ok: false, reason: 'no-device-id', detail: 'Pair via the Ed25519 enrollment flow first' };
+
+  if (platform === 'ios' || platform === 'android') {
+    return registerNative(platform, instance.device_id);
+  }
+  return registerWebPush(instance.device_id);
+}
+
+async function registerNative(platform: 'ios' | 'android', deviceId: string): Promise<RegisterOutcome> {
+  try {
+    const mod = await import('@capacitor/push-notifications');
+    const PushNotifications = mod.PushNotifications;
+    // 1. Permission
+    const perm = await PushNotifications.checkPermissions();
+    let status = perm.receive;
+    if (status === 'prompt' || status === 'prompt-with-rationale') {
+      const r = await PushNotifications.requestPermissions();
+      status = r.receive;
+    }
+    if (status !== 'granted') return { ok: false, reason: 'permission-denied' };
+
+    // 2. Token registration — wait for the registration event
+    const token = await new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Registration timed out')), 15_000);
+      const succHandler = PushNotifications.addListener('registration', (t: { value: string }) => {
+        clearTimeout(timeout);
+        succHandler.then(h => h.remove()).catch(() => {});
+        resolve(t.value);
+      });
+      const errHandler = PushNotifications.addListener('registrationError', (e: { error?: string } | string) => {
+        clearTimeout(timeout);
+        errHandler.then(h => h.remove()).catch(() => {});
+        reject(new Error(typeof e === 'string' ? e : (e.error || 'Registration error')));
+      });
+      void PushNotifications.register();
+    });
+
+    // 3. Send to instance
+    const transport: 'apns' | 'fcm' = platform === 'ios' ? 'apns' : 'fcm';
+    await postRegister({ device_id: deviceId, platform: transport, token });
+    return { ok: true, platform: transport, token };
+  } catch (err) {
+    return { ok: false, reason: 'unsupported', detail: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+async function registerWebPush(deviceId: string): Promise<RegisterOutcome> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return { ok: false, reason: 'unsupported' };
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return { ok: false, reason: 'permission-denied' };
+
+    const vapidPublic = await fetchVapidPublicKey();
+    if (!vapidPublic) return { ok: false, reason: 'unsupported', detail: 'Server has no VAPID key configured' };
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      // PushManager accepts BufferSource — cast to keep TS happy across DOM lib variants
+      applicationServerKey: vapidPublic.buffer as ArrayBuffer,
+    });
+    const json = sub.toJSON();
+    await postRegister({
+      device_id: deviceId,
+      platform: 'web-push',
+      token: sub.endpoint,
+      endpoint: sub.endpoint,
+      p256dh_key: json.keys?.p256dh,
+      auth_key: json.keys?.auth,
+    });
+    return { ok: true, platform: 'web-push', token: sub.endpoint };
+  } catch (err) {
+    return { ok: false, reason: 'unsupported', detail: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+async function fetchVapidPublicKey(): Promise<Uint8Array | null> {
+  const base = activeServerBase();
+  try {
+    const headers = await activeAuthHeaders();
+    const res = await fetch(`${base}/api/app/instance-info`, { headers });
+    if (!res.ok) return null;
+    const info = await res.json();
+    if (!info.vapid_public_key) return null;
+    return urlBase64ToUint8Array(String(info.vapid_public_key));
+  } catch {
+    return null;
+  }
+}
+
+async function postRegister(body: {
+  device_id: string;
+  platform: 'apns' | 'fcm' | 'web-push';
+  token: string;
+  endpoint?: string;
+  p256dh_key?: string;
+  auth_key?: string;
+  topic?: string;
+}): Promise<void> {
+  const base = activeServerBase();
+  const headers = await activeAuthHeaders();
+  const res = await fetch(`${base}/api/app/push/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error || `Push registration failed (${res.status})`);
+  }
+}
+
+function urlBase64ToUint8Array(b64: string): Uint8Array {
+  const padding = '='.repeat((4 - (b64.length % 4)) % 4);
+  const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+// ── Notification handling — deep-link router ─────────────────────────────
+
+export type NotificationRouter = (deepLink: string, raw: { event_id?: string; severity?: string; category?: string }) => void;
+
+let router: NotificationRouter | null = null;
+export function setNotificationRouter(fn: NotificationRouter): void {
+  router = fn;
+}
+
+/** Subscribe to native notification taps. Returns an unsubscribe function. */
+export async function startNativeNotificationListener(): Promise<() => void> {
+  const platform = Capacitor.getPlatform();
+  if (platform !== 'ios' && platform !== 'android') return () => {};
+  try {
+    const mod = await import('@capacitor/push-notifications');
+    const handler = await mod.PushNotifications.addListener('pushNotificationActionPerformed', (action: { notification: { data?: Record<string, string> } }) => {
+      const data = action?.notification?.data ?? {};
+      const deepLink = data.deep_link || data.deepLink || `/approvals/${data.event_id ?? ''}`;
+      router?.(deepLink, { event_id: data.event_id, severity: data.severity, category: data.category });
+    });
+    return () => handler.remove().catch(() => {});
+  } catch {
+    return () => {};
+  }
+}

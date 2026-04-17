@@ -14,6 +14,9 @@ import type { Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createAppAuthMiddleware } from '../middleware/app-auth.js';
 import { createAppGatewayService, SUPPORTED_LANGUAGES } from '../services/app-gateway.js';
+import { createAppEnrollmentService } from '../services/app-enrollment-service.js';
+import { createAppPushService } from '../services/app-push-service.js';
+import { createAppCheckpointService } from '../services/app-checkpoint-service.js';
 
 // ── Org membership check middleware ──────────────────────────────────────────
 function createOrgMembershipCheck(db: DatabaseAdapter) {
@@ -39,6 +42,9 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
   const svc = await createAppGatewayService(db);
   const appAuth = createAppAuthMiddleware(db);
   const orgMember = createOrgMembershipCheck(db);
+  const enrollment = createAppEnrollmentService(db);
+  const push = createAppPushService(db);
+  const checkpoints = createAppCheckpointService(db);
 
   // ══════════════════════════════════════════════════════════════════════════
   // PUBLIC ROUTES (/api/app/*) — mounted BEFORE auth middleware
@@ -559,11 +565,261 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // ENROLLMENT (spec §5.2) — Ed25519 pairing replaces register-simple for v2 clients
+  // Legacy register-simple stays available for backwards compatibility.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Public — fetch a pre-issued enrollment package by token (read-only)
+  publicRouter.get('/enrollment/:token', async (req, res) => {
+    try {
+      const token = String(req.params.token);
+      // Validate shape — URL-safe base64
+      if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length < 16 || token.length > 128) {
+        return res.status(400).json({ error: 'Invalid enrollment token' });
+      }
+      const pkg = await enrollment.getEnrollment(token);
+      if (!pkg) return res.status(404).json({ error: 'Enrollment token expired or already used' });
+      res.json(pkg);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to fetch enrollment' });
+    }
+  });
+
+  // Public — complete enrollment (signed by client's fresh Ed25519 keypair)
+  publicRouter.post('/enrollment/complete', async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      const required = ['token', 'nonce', 'device_pubkey', 'device_name', 'device_model', 'device_os', 'app_version', 'signature'] as const;
+      for (const k of required) {
+        if (typeof b[k] !== 'string' || !b[k].trim()) {
+          return res.status(400).json({ error: `${k} is required` });
+        }
+      }
+      // Length caps to bound DB columns
+      if (b.device_pubkey.length > 256) return res.status(400).json({ error: 'device_pubkey too long' });
+      if (b.signature.length > 512) return res.status(400).json({ error: 'signature too long' });
+      const result = await enrollment.completeEnrollment({
+        token: String(b.token), nonce: String(b.nonce),
+        device_pubkey: String(b.device_pubkey),
+        device_name: String(b.device_name).slice(0, 200),
+        device_model: String(b.device_model).slice(0, 200),
+        device_os: String(b.device_os).slice(0, 100),
+        app_version: String(b.app_version).slice(0, 32),
+        signature: String(b.signature),
+        preferred_language: typeof b.preferred_language === 'string' ? b.preferred_language : undefined,
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Enrollment failed' });
+    }
+  });
+
+  // Authenticated — list devices belonging to the current user
+  publicRouter.get('/devices', appAuth, async (req, res) => {
+    try {
+      const userId = req.appUser!.id;
+      const devices = await enrollment.listDevices(userId);
+      res.json({ devices });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to list devices' });
+    }
+  });
+
+  // Authenticated — unpair (revoke) a device
+  publicRouter.delete('/devices/:id', appAuth, async (req, res) => {
+    try {
+      const userId = req.appUser!.id;
+      await enrollment.revokeDevice(userId, String(req.params.id));
+      res.json({ revoked: true });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to revoke device' });
+    }
+  });
+
+  // Authenticated — get the instance's display info (used by Settings)
+  publicRouter.get('/instance-info', appAuth, async (_req, res) => {
+    try {
+      const id = await enrollment.getOrCreateInstanceIdentity();
+      res.json({
+        display_name: id.display_name,
+        contact_hash: id.contact_hash,
+        pubkey: id.pubkey,
+        cert_fingerprint: id.cert_fingerprint,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load instance info' });
+    }
+  });
+
+  // Admin — generate an enrollment QR (admin issues to a user about to pair)
+  adminRouter.post('/enrollment/start', async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      // The desktop UI's `req.user.id` is attached upstream by main auth middleware
+      const issuedBy = (req as { user?: { id: string } }).user?.id ?? 'admin';
+      // Build the endpoint set from env / request
+      const port = parseInt(process.env.PORT || '3011', 10);
+      const advertiser = await import('../services/mdns-advertiser.js')
+        .then(m => m.createMdnsAdvertiser(port))
+        .catch(() => null);
+      const info = advertiser?.getInfo();
+      const lan = info?.ip ? `http://${info.ip}:${port}` : undefined;
+      const wan = process.env.APP_GATEWAY_PUBLIC_URL || undefined;
+      const pkg = await enrollment.startEnrollment({
+        intended_user_id: typeof b.intended_user_id === 'string' ? b.intended_user_id : null,
+        org_id: typeof b.org_id === 'string' ? b.org_id : null,
+        intended_role: typeof b.intended_role === 'string' ? b.intended_role : 'member',
+        display_name_hint: typeof b.display_name_hint === 'string' ? b.display_name_hint : null,
+        language_hint: typeof b.language_hint === 'string' ? b.language_hint : null,
+        endpoints: { lan, wan, mdns_name: info?.serviceName },
+        issued_by_user_id: issuedBy,
+      });
+      res.json(pkg);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to start enrollment' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PUSH NOTIFICATIONS (spec §8.7)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  publicRouter.post('/push/register', appAuth, async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      if (typeof b.device_id !== 'string' || typeof b.platform !== 'string' || typeof b.token !== 'string') {
+        return res.status(400).json({ error: 'device_id, platform and token are required' });
+      }
+      if (!['apns', 'fcm', 'web-push'].includes(b.platform)) {
+        return res.status(400).json({ error: 'platform must be apns, fcm, or web-push' });
+      }
+      // Tenancy: device must belong to this user
+      const owns = await db.get<{ id: string }>(
+        `SELECT id FROM app_devices WHERE id = ? AND connected_user_id = ? AND revoked_at IS NULL`,
+        b.device_id, req.appUser!.id,
+      );
+      if (!owns) return res.status(404).json({ error: 'Device not found' });
+      const result = await push.registerToken({
+        device_id: String(b.device_id),
+        platform: b.platform as 'apns' | 'fcm' | 'web-push',
+        token: String(b.token).slice(0, 1024),
+        environment: b.environment === 'development' ? 'development' : 'production',
+        topic: typeof b.topic === 'string' ? b.topic.slice(0, 200) : undefined,
+        endpoint: typeof b.endpoint === 'string' ? b.endpoint.slice(0, 1024) : undefined,
+        p256dh_key: typeof b.p256dh_key === 'string' ? b.p256dh_key.slice(0, 256) : undefined,
+        auth_key: typeof b.auth_key === 'string' ? b.auth_key.slice(0, 256) : undefined,
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to register push token' });
+    }
+  });
+
+  publicRouter.delete('/push/:platform/:token', appAuth, async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      if (typeof b.device_id !== 'string') return res.status(400).json({ error: 'device_id is required' });
+      const owns = await db.get<{ id: string }>(
+        `SELECT id FROM app_devices WHERE id = ? AND connected_user_id = ?`,
+        b.device_id, req.appUser!.id,
+      );
+      if (!owns) return res.status(404).json({ error: 'Device not found' });
+      const platform = req.params.platform;
+      if (platform !== 'apns' && platform !== 'fcm' && platform !== 'web-push') {
+        return res.status(400).json({ error: 'invalid platform' });
+      }
+      await push.unregisterToken(String(b.device_id), platform, String(req.params.token));
+      res.json({ unregistered: true });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to unregister' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CHECKPOINTS (spec §8.6 — pending approvals)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  publicRouter.get('/checkpoints', appAuth, async (req, res) => {
+    try {
+      const orgId = typeof req.query.orgId === 'string' ? req.query.orgId : undefined;
+      const limit = req.query.limit ? Math.min(parseInt(String(req.query.limit), 10) || 100, 500) : undefined;
+      const list = await checkpoints.listPending(req.appUser!.id, { orgId, limit });
+      res.json({ checkpoints: list });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load checkpoints' });
+    }
+  });
+
+  publicRouter.get('/checkpoints/:id', appAuth, async (req, res) => {
+    try {
+      const c = await checkpoints.get(String(req.params.id), req.appUser!.id);
+      if (!c) return res.status(404).json({ error: 'Checkpoint not found' });
+      res.json({ checkpoint: c });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load checkpoint' });
+    }
+  });
+
+  publicRouter.post('/checkpoints/:id/respond', appAuth, async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      if (!['approved', 'rejected', 'modified'].includes(b.decision)) {
+        return res.status(400).json({ error: 'decision must be approved, rejected, or modified' });
+      }
+      const result = await checkpoints.respond(String(req.params.id), req.appUser!.id,
+        typeof b.device_id === 'string' ? b.device_id : null, {
+          decision: b.decision as 'approved' | 'rejected' | 'modified',
+          note: typeof b.note === 'string' ? b.note.slice(0, 4000) : undefined,
+          modification: typeof b.modification === 'object' && b.modification !== null ? b.modification : undefined,
+          biometric_confirmed: !!b.biometric_confirmed,
+        });
+      res.json({ checkpoint: result });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to respond' });
+    }
+  });
+
+  // Admin — create a checkpoint (used by workflow / mission / atlas integrations)
+  adminRouter.post('/checkpoints', async (req, res) => {
+    try {
+      const b = req.body ?? {};
+      const required = ['org_id', 'connected_user_id', 'title'] as const;
+      for (const k of required) {
+        if (typeof b[k] !== 'string' || !b[k].trim()) {
+          return res.status(400).json({ error: `${k} is required` });
+        }
+      }
+      const result = await checkpoints.create({
+        org_id: String(b.org_id),
+        connected_user_id: String(b.connected_user_id),
+        title: String(b.title).slice(0, 300),
+        summary: typeof b.summary === 'string' ? b.summary.slice(0, 2000) : undefined,
+        rationale: typeof b.rationale === 'string' ? b.rationale.slice(0, 8000) : undefined,
+        severity: ['low','normal','high','critical'].includes(b.severity) ? b.severity : 'normal',
+        payload: typeof b.payload === 'object' && b.payload !== null ? b.payload : undefined,
+        source_kind: typeof b.source_kind === 'string' ? b.source_kind.slice(0, 64) : undefined,
+        source_id: typeof b.source_id === 'string' ? b.source_id.slice(0, 200) : undefined,
+        deep_link: typeof b.deep_link === 'string' ? b.deep_link.slice(0, 500) : undefined,
+        expires_at: typeof b.expires_at === 'string' ? b.expires_at : undefined,
+      });
+      res.json({ checkpoint: result });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to create checkpoint' });
+    }
+  });
+
   // ── Maintenance ────────────────────────────────────────────────────────
   // L4: Periodic cleanup — store interval ID for clean shutdown
   const cleanupInterval = setInterval(() => {
     svc.cleanupExpired().catch((err) => {
       console.error('[app-gateway] Cleanup error:', err);
+    });
+    enrollment.pruneExpired().catch((err) => {
+      console.error('[app-gateway] Enrollment cleanup error:', err);
+    });
+    checkpoints.expireOverdue().catch((err) => {
+      console.error('[app-gateway] Checkpoint cleanup error:', err);
     });
   }, 600000); // Every 10 minutes
   cleanupInterval.unref?.(); // Don't keep Node alive just for cleanup
