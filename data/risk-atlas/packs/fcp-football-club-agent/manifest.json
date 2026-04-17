@@ -1,0 +1,17 @@
+{
+  "id": "fcp-football-club-agent",
+  "name": "Football Club / Agent (AMLR obliged from 2029)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Football clubs and player agents — AMLR obliged from 2029 under the AMLR transition. Build the architecture early so clubs and agents can adopt before the deadline. Focus: player-transfer payments, agent commissions, sponsor / shareholder UBO, third-party ownership.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",    "rationale": "Mandatory from 2029 — start the architecture now." },
+    { "domain": "sanctions", "rationale": "Sponsor / shareholder UBO screening; cross-border transfer payments." },
+    { "domain": "fraud",     "rationale": "Inflated transfer fees, agent-commission overpayments, kickbacks." },
+    { "domain": "abc",       "rationale": "Public-sector interface (stadium permits, regional grants); FIFA / UEFA governance." }
+  ],
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "global"]
+}

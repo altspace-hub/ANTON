@@ -1,0 +1,7 @@
+[
+  { "id":"v-hvg-no-cash-policy",     "code":"V-HVG-1","name":"No cash-threshold policy",          "description":"No documented threshold or refusal protocol for cash payments.","typical_severity": 4 },
+  { "id":"v-hvg-no-aggregation",     "code":"V-HVG-2","name":"No customer-aggregation tracking",  "description":"Multiple purchases from the same customer not aggregated against threshold.","typical_severity": 3 },
+  { "id":"v-hvg-no-provenance",      "code":"V-HVG-3","name":"No goods-provenance procedure",      "description":"Goods accepted on consignment without provenance evidence.","typical_severity": 3 },
+  { "id":"v-hvg-no-screen",          "code":"V-HVG-4","name":"No PEP / sanctions screening",       "description":"Buyers not screened against PEP / sanctions / adverse-media.","typical_severity": 4 },
+  { "id":"v-hvg-no-export-controls", "code":"V-HVG-5","name":"No cross-border tax / sanctions controls","description":"Cross-border movements of goods not flagged for tax / sanctions implications.","typical_severity": 3 }
+]

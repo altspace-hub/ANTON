@@ -1,0 +1,10 @@
+[
+  { "id":"v-gam-no-tm",             "code":"V-GAM-1","name":"No deposit-bet-withdraw behavioural rules","description":"No rules detecting low-bet / high-deposit / clean-withdrawal patterns.","typical_severity": 4 },
+  { "id":"v-gam-no-payment-mismatch","code":"V-GAM-2","name":"No deposit-vs-withdrawal instrument match","description":"Deposits and withdrawals to different instruments not flagged.","typical_severity": 4 },
+  { "id":"v-gam-no-payment-match",   "code":"V-GAM-3","name":"No payment-instrument owner match",        "description":"Account holder vs payment-instrument owner not matched.","typical_severity": 4 },
+  { "id":"v-gam-no-sof",             "code":"V-GAM-4","name":"No SoF on high-value players",              "description":"Threshold-based SoF not collected.","typical_severity": 4 },
+  { "id":"v-gam-no-screen",          "code":"V-GAM-5","name":"No PEP / sanctions screening",              "description":"Players not screened at registration / on changes.","typical_severity": 4 },
+  { "id":"v-gam-no-device-rules",    "code":"V-GAM-6","name":"No device / IP / behavioural multi-account rules","description":"Multi-accounting via same device / IP not detected.","typical_severity": 3 },
+  { "id":"v-gam-no-mule-detection",  "code":"V-GAM-7","name":"No mule-ring / collusion detection",        "description":"Coordinated low-bet / withdrawal patterns across accounts not detected.","typical_severity": 3 },
+  { "id":"v-gam-no-geo-blocking",    "code":"V-GAM-8","name":"No jurisdictional geo-blocking",            "description":"Players from non-licensed jurisdictions not blocked.","typical_severity": 3 }
+]

@@ -1,0 +1,7 @@
+[
+  { "id":"tp-yab-sanctioned-ubo","code":"TP-YAB-1","name":"Sale to sanctioned UBO via nominee",       "description":"Vessel / aircraft acquired by an entity whose UBO is sanctioned (often an oligarch via SPV).","typical_inherent": 5, "fcp_domain":"sanctions", "vulnerability_refs":["v-yab-no-ubo","v-yab-no-screen"] },
+  { "id":"tp-yab-flag-shopping",  "code":"TP-YAB-2","name":"Flag-state shopping to obscure UBO",        "description":"Vessel registered in jurisdiction with weak UBO transparency to obscure ownership.","typical_inherent": 4, "fcp_domain":"sanctions", "vulnerability_refs":["v-yab-no-flag-review"] },
+  { "id":"tp-yab-export-controls","code":"TP-YAB-3","name":"Aircraft / dual-use component restriction","description":"Aircraft or components subject to export-control regime; transfer breaches licence.","typical_inherent": 4, "fcp_domain":"export_controls", "vulnerability_refs":["v-yab-no-export-check"] },
+  { "id":"tp-yab-charter-fraud", "code":"TP-YAB-4","name":"Charter / finance fraud",                    "description":"Charter customer or finance applicant submits fraudulent documentation.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-yab-no-customer-checks"] },
+  { "id":"tp-yab-title",          "code":"TP-YAB-5","name":"Title / encumbrance fraud",                 "description":"Vessel sold with undisclosed mortgage / lien / disputed title.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-yab-no-title-check"] }
+]

@@ -1,0 +1,7 @@
+[
+  { "id":"tp-mvd-luxury-amlr",    "code":"TP-MVD-1","name":"Above-€250k vehicle sale without CDD",        "description":"Vehicle ≥€250k sold without AMLR CDD on buyer / UBO.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-mvd-no-cdd","v-mvd-no-screen"] },
+  { "id":"tp-mvd-cash-deposit",   "code":"TP-MVD-2","name":"Cash deposit on premium vehicle",              "description":"Customer pays deposit / balance in cash exceeding threshold.","typical_inherent": 3, "fcp_domain":"amlcft", "vulnerability_refs":["v-mvd-no-cash-policy"] },
+  { "id":"tp-mvd-title-fraud",    "code":"TP-MVD-3","name":"Title / odometer / ringer fraud on used stock","description":"Stock acquired with falsified title, tampered odometer, or stolen-then-rebadged identity.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-mvd-no-title-check","v-mvd-no-odo-check"] },
+  { "id":"tp-mvd-export",         "code":"TP-MVD-4","name":"Export to sanctioned jurisdiction",            "description":"Vehicle exported via re-routing to a sanctioned jurisdiction.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-mvd-no-export-check"] },
+  { "id":"tp-mvd-finance-fraud",  "code":"TP-MVD-5","name":"Customer finance fraud",                        "description":"Customer obtains finance with fraudulent documentation; vehicle disappears.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-mvd-no-finance-checks"] }
+]

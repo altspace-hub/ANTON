@@ -1,0 +1,7 @@
+[
+  { "id":"tp-fb-transfer-laundering","code":"TP-FB-1","name":"Transfer-fee inflation for laundering",      "description":"Player traded between clubs at inflated fees as a vehicle to move funds.","typical_inherent": 4, "fcp_domain":"amlcft", "vulnerability_refs":["v-fb-no-transfer-benchmark","v-fb-no-counterparty-dd"] },
+  { "id":"tp-fb-agent-commission",   "code":"TP-FB-2","name":"Agent-commission overpayment / kickback",     "description":"Excessive agent commission disguising kickback or facilitation payment.","typical_inherent": 3, "fcp_domain":"fraud", "vulnerability_refs":["v-fb-no-agent-benchmark","v-fb-no-agent-screen"] },
+  { "id":"tp-fb-sponsor-ubo",        "code":"TP-FB-3","name":"Sponsor / shareholder with sanctioned UBO",   "description":"Sponsor or shareholder UBO matches sanctions list.","typical_inherent": 4, "fcp_domain":"sanctions", "vulnerability_refs":["v-fb-no-ubo","v-fb-no-screen"] },
+  { "id":"tp-fb-third-party",        "code":"TP-FB-4","name":"Third-party ownership / TPO violation",        "description":"Player economic rights held by undisclosed third party (FIFA TPO breach).","typical_inherent": 3, "fcp_domain":"amlcft", "vulnerability_refs":["v-fb-no-tpo-check"] },
+  { "id":"tp-fb-cross-border",       "code":"TP-FB-5","name":"Cross-border transfer through opaque jurisdictions","description":"Transfer payment routed through opaque / sanctioned-adjacent jurisdiction.","typical_inherent": 3, "fcp_domain":"sanctions", "vulnerability_refs":["v-fb-no-jurisdiction-screen"] }
+]

@@ -1,0 +1,17 @@
+{
+  "id": "fcp-accounting-tax-advisor",
+  "name": "Accountant / Tax Advisor (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "External accountants, auditors, tax advisors. AMLR-obliged when providing accounting / tax / company-formation services. Focus: client identification + UBO, suspicious return-filing patterns, MTIC / VAT carousel exposure, source-of-funds.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",                   "rationale": "Mandatory — AMLR-obliged service provider." },
+    { "domain": "sanctions",                "rationale": "Client + UBO screening; cross-border filings exposure." },
+    { "domain": "fraud",                     "rationale": "Client misrepresentation, ghost-supplier patterns." },
+    { "domain": "tax_evasion_facilitation",  "rationale": "CFA 2017 / equivalent — unique exposure for tax advisors." }
+  ],
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

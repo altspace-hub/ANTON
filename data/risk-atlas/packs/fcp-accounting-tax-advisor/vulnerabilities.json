@@ -1,0 +1,11 @@
+[
+  { "id":"v-ata-no-ubo",                "code":"V-ATA-1","name":"No UBO procedure for client onboarding","description":"Clients onboarded without unwinding UBO to natural persons.","typical_severity": 4 },
+  { "id":"v-ata-no-edd",                "code":"V-ATA-2","name":"No EDD trigger for high-risk clients","description":"PEP / high-risk-jurisdiction / complex-structure clients not flagged.","typical_severity": 4 },
+  { "id":"v-ata-no-counterparty-dd",    "code":"V-ATA-3","name":"No high-VAT counterparty DD","description":"Large VAT-reclaim transactions accepted without independent verification.","typical_severity": 4 },
+  { "id":"v-ata-no-supply-chain-checks","code":"V-ATA-4","name":"No tier-2 / tier-3 supply-chain check","description":"Client supply chain not sample-verified for MTIC / carousel chain inclusion.","typical_severity": 3 },
+  { "id":"v-ata-no-supplier-checks",    "code":"V-ATA-5","name":"No supplier verification on client books","description":"Supplier existence and VAT registration not sample-checked.","typical_severity": 3 },
+  { "id":"v-ata-no-cash-monitor",       "code":"V-ATA-6","name":"No client-cash-flow review","description":"No periodic review of unreconciled cash flows in client accounts.","typical_severity": 3 },
+  { "id":"v-ata-no-cfa-policy",         "code":"V-ATA-7","name":"No CFA-style facilitation prevention policy","description":"No policy or risk assessment on facilitation of client tax evasion.","typical_severity": 4 },
+  { "id":"v-ata-no-cfa-training",       "code":"V-ATA-8","name":"No staff training on CFA / equivalent","description":"Staff untrained on CFA red flags and reporting pathway.","typical_severity": 3 },
+  { "id":"v-ata-no-ubo-screen",         "code":"V-ATA-9","name":"No UBO-level sanctions screening","description":"Only client of record screened; UBOs not.","typical_severity": 4 }
+]

@@ -1,0 +1,13 @@
+[
+  { "id":"v-rea-no-ubo",            "code":"V-REA-1","name":"No documented UBO procedure for foreign legal entities","description":"No process for unwinding ownership beyond first-tier shareholders.","typical_severity": 4 },
+  { "id":"v-rea-no-edd-foreign",    "code":"V-REA-2","name":"No EDD for foreign / high-risk-jurisdiction buyers","description":"Foreign and high-risk-jurisdiction buyers handled identically to domestic.","typical_severity": 4 },
+  { "id":"v-rea-no-cash-policy",    "code":"V-REA-3","name":"No cash-deposit threshold policy",         "description":"No documented threshold or refusal protocol for cash at contract.","typical_severity": 3 },
+  { "id":"v-rea-no-pep-screen",     "code":"V-REA-4","name":"No PEP screening at onboarding",            "description":"Buyers and sellers not screened against PEP / sanctions / adverse-media at onboarding.","typical_severity": 4 },
+  { "id":"v-rea-no-ubo-screen",     "code":"V-REA-5","name":"No UBO-level screening",                    "description":"Only contracting party screened; underlying owners not.","typical_severity": 4 },
+  { "id":"v-rea-no-adverse-media",  "code":"V-REA-6","name":"No adverse-media check",                    "description":"No periodic adverse-media check to surface nominees / fronts.","typical_severity": 3 },
+  { "id":"v-rea-no-sof",            "code":"V-REA-7","name":"No structured SoF / SoW evidence",           "description":"No threshold-based SoF/SoW collection or evidence catalogue.","typical_severity": 4 },
+  { "id":"v-rea-no-callback",       "code":"V-REA-8","name":"No callback verification on payment changes","description":"Bank-detail changes accepted by email without independent verification.","typical_severity": 4 },
+  { "id":"v-rea-no-secure-channel", "code":"V-REA-9","name":"No secure-portal client communication",      "description":"Client correspondence routed via unencrypted email.","typical_severity": 3 },
+  { "id":"v-rea-no-letting-monitor","code":"V-REA-10","name":"No letting-arrangement threshold monitor", "description":"€10k/month letting threshold not monitored.","typical_severity": 3 },
+  { "id":"v-rea-no-coi-disclosure", "code":"V-REA-11","name":"No conflict-of-interest disclosure",       "description":"Referral fees and commercial relationships not disclosed to clients.","typical_severity": 3 }
+]

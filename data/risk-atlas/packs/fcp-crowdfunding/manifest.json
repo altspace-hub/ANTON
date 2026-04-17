@@ -1,0 +1,17 @@
+{
+  "id": "fcp-crowdfunding",
+  "name": "Crowdfunding Service Provider (AMLR obliged)",
+  "version": "1.0.0",
+  "pack_kind": "industry",
+  "parent_pack_id": "sme-general",
+  "description": "Crowdfunding Service Provider under EU Regulation 2020/1503 + AMLR. Equity, lending or reward-based platforms. Focus: project-owner DD, investor SoF, payment flows on and off platform, suitability + appropriateness, market-abuse on secondary markets.",
+  "amlr_obliged": true,
+  "recommends_fcp_domains": [
+    { "domain": "amlcft",       "rationale": "Mandatory — AMLR + ECSPR-obliged service provider." },
+    { "domain": "sanctions",    "rationale": "Investor + project-owner UBO screening." },
+    { "domain": "fraud",        "rationale": "Investor onboarding fraud, project-owner misrepresentation, mule investors." },
+    { "domain": "market_abuse", "rationale": "If a secondary market is offered, MAR-style obligations apply." }
+  ],
+  "typical_size_range": ["small", "medium"],
+  "typical_jurisdictions": ["EU", "UK"]
+}
