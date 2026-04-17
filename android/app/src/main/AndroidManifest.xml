@@ -23,7 +23,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link: anton://join?server=...&token=... -->
+            <!-- Deep link: anton://enroll?server=...&token=...  (modern pairing per spec §5.2) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="anton" android:host="enroll" />
+            </intent-filter>
+
+            <!-- Legacy deep link: anton://join?server=...&token=... -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -31,7 +39,27 @@
                 <data android:scheme="anton" android:host="join" />
             </intent-filter>
 
+            <!-- Share target — receive text / urls / images from the OS share sheet (spec §8.5) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
         </activity>
+
+        <!-- Foreground service for long-running voice sessions (NGO offline path) -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="microphone"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -44,10 +72,39 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
+    <!-- ── Permissions per ANTON_COMPANION_APP_SPEC.md §7.2 ─────────────── -->
 
+    <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Capture surface (camera, voice memo) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Biometric unlock for credentials (spec §5.4) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- Push notifications (spec §8.7) — Android 13+ runtime permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Long-running voice sessions on offline NGO deployments (spec §8.7 fallback) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- mDNS LAN discovery (spec §5.1 Mode A) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- We deliberately do NOT request: ACCESS_FINE_LOCATION (Data Safety
+         consequences), BLUETOOTH_*, or any READ_EXTERNAL_STORAGE legacy perm. -->
+
+    <!-- Hardware features — declared as non-required so cheap NGO devices without
+         them can still install (spec §4.3) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>
