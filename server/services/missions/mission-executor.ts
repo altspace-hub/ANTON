@@ -8,6 +8,7 @@
 
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
+import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
 
@@ -33,6 +34,7 @@ async function callChatWithTimeout(config: StreamChatConfig, timeoutMs = 120_000
 
 export function createMissionExecutor(db: DatabaseAdapter) {
   const state = createMissionState(db);
+  const grow = createMissionGrowBridge(db);
 
   /**
    * Execute a single ready task. Updates the task row with output, timing,
@@ -99,7 +101,16 @@ QUALITY BAR
 - Be specific. Cite evidence and reasoning, not just conclusions.
 - If you cannot complete the task with available information, explicitly say what's missing.
 - Output a focused result for THIS task only — do not solve the entire mission.
-- Output Markdown. No preamble. No "Here's my response:" — just the work.`;
+- Output Markdown. No preamble. No "Here's my response:" — just the work.
+
+STRUCTURED CRM CAPTURE (optional)
+─────────────────────────────────
+If your task surfaces sales-relevant records, emit them as fenced JSON
+blocks alongside the prose. They will be routed to the Grow CRM. Only emit
+when you have real data — do NOT speculate.
+- \`\`\`grow_lead { "firstName": "...", "lastName": "...", "email": "...", "organisation": { "name": "..." } }\`\`\`
+- \`\`\`grow_opportunity { "title": "...", "value": 50000, "currency": "EUR", "stageId": "qualified" }\`\`\`
+- \`\`\`grow_signal { "signalType": "regulatory", "title": "...", "priority": "high", "source": "..." }\`\`\``;
 
     // The actual task prompt (from decomposition) is the user message.
     const userPrompt = (task.module_config as { prompt?: string })?.prompt
@@ -161,7 +172,35 @@ QUALITY BAR
       tokensConsumed: totalTokens,
     });
 
+    // Spec §13.3 — route any structured CRM blocks the LLM emitted to the
+    // Grow tables. Failures on individual records are logged but do not
+    // fail the task (the prose output is the primary deliverable).
+    await dispatchGrowBlocks(mission.id, task.id, result.text);
+
     return { success: true, outputFull: result.text, outputSummary: summary, tokens: totalTokens, durationMs };
+  }
+
+  /**
+   * Scan task output for fenced grow_* JSON blocks and route each to the
+   * appropriate Grow table via the bridge. Best-effort — never throws.
+   */
+  async function dispatchGrowBlocks(missionId: string, taskId: string, text: string): Promise<void> {
+    const blocks = extractGrowBlocks(text);
+    for (const b of blocks) {
+      try {
+        if (b.kind === 'grow_lead')         await grow.recordLead(missionId, taskId, b.data as unknown as LeadInput);
+        else if (b.kind === 'grow_opportunity') await grow.recordOpportunity(missionId, taskId, b.data as unknown as OpportunityInput);
+        else                                await grow.recordSignal(missionId, taskId, b.data as unknown as SignalInput);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await state.logActivity(missionId, {
+          activityType: 'grow_dispatch_failed',
+          description: `Failed to record ${b.kind}: ${msg}`,
+          taskId,
+          details: { kind: b.kind, error: msg },
+        });
+      }
+    }
   }
 
   return { executeTask };
@@ -174,6 +213,30 @@ export type MissionExecutor = ReturnType<typeof createMissionExecutor>;
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
   return s.slice(0, max).trim() + '… [truncated]';
+}
+
+interface GrowBlock { kind: 'grow_lead' | 'grow_opportunity' | 'grow_signal'; data: Record<string, unknown> }
+
+/**
+ * Extract fenced ```grow_lead / grow_opportunity / grow_signal``` blocks
+ * from LLM output. Tolerates surrounding whitespace and extra language tags.
+ * Malformed JSON inside a block is silently skipped.
+ */
+export function extractGrowBlocks(text: string): GrowBlock[] {
+  const out: GrowBlock[] = [];
+  const re = /```(grow_lead|grow_opportunity|grow_signal)\s*\n([\s\S]*?)\n```/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    const kind = match[1] as GrowBlock['kind'];
+    const raw = match[2].trim();
+    try {
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        out.push({ kind, data: data as Record<string, unknown> });
+      }
+    } catch { /* skip malformed block */ }
+  }
+  return out;
 }
 
 /**

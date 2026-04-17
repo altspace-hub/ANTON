@@ -20,8 +20,10 @@
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { randomUUID } from 'crypto';
-import { createFCBudgetService } from '../fc-budget-service.js';
-import { createFCTransactionService } from '../fc-transaction-service.js';
+// fc-budget-service / fc-transaction-service are dynamically imported inside
+// the factory body. This matches the BEEHIVE / community-signing lazy-import
+// pattern and removes any future circular-import risk if FC services later
+// need to read mission-side data (e.g. "spending breakdown by mission").
 
 export type PaymentStatus = 'proposed' | 'approved' | 'cancelled' | 'executing' | 'executed' | 'failed';
 
@@ -72,6 +74,8 @@ export interface MissionFinancialSettings {
 }
 
 export async function createMissionBudget(db: DatabaseAdapter) {
+  const { createFCBudgetService } = await import('../fc-budget-service.js');
+  const { createFCTransactionService } = await import('../fc-transaction-service.js');
   const fcBudget = await createFCBudgetService(db);
   const fcTx = await createFCTransactionService(db);
 

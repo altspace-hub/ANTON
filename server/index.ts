@@ -499,6 +499,9 @@ app.use('/api', createMissionPaymentRoutes(db));
 // Phase 3 — Intelligence + Delivery: output channels, risk classification, parallel-review checkpoints (BEEHIVE-backed)
 const { createMissionDeliveryRoutes } = await import('./routes/mission-delivery.js');
 app.use('/api', createMissionDeliveryRoutes(db));
+// Grow CRM bridge — sales-style mission outputs route to grow_contacts/opportunities/signals (spec v2 §13.3)
+const { createMissionGrowRoutes } = await import('./routes/mission-grow.js');
+app.use('/api', createMissionGrowRoutes(db));
 // Phase 2 — Action Layer: credential vault, browser automation, service packs
 const { createMissionCredentialRoutes } = await import('./routes/mission-credentials.js');
 app.use('/api', createMissionCredentialRoutes(db));
