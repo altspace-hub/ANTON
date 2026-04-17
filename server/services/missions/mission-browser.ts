@@ -105,19 +105,30 @@ function newSessionId(): string {
 }
 
 function isDomainAllowed(url: string, allowList: string[]): boolean {
-  if (allowList.includes('*')) return true;
+  // Wildcard sessions are dangerous (SSRF, internal services). Block private
+  // and loopback hosts even when the list contains '*'.
+  let host: string;
   try {
-    const host = new URL(url).hostname.toLowerCase();
-    return allowList.some(pattern => {
-      const p = pattern.toLowerCase();
-      if (p === host) return true;
-      // suffix match for *.example.com → matches sub.example.com but not other.com
-      if (p.startsWith('*.')) return host.endsWith(p.slice(1));
-      return host.endsWith('.' + p);
-    });
+    host = new URL(url).hostname.toLowerCase();
   } catch {
     return false;
   }
+  // Always-blocked hosts regardless of allow-list
+  const BLOCKED = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.169.254', 'metadata.google.internal'];
+  if (BLOCKED.includes(host)) return false;
+  if (/^10\./.test(host) || /^192\.168\./.test(host)
+      || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+      || /^169\.254\./.test(host) || /^fc00:/i.test(host) || /^fe80:/i.test(host)) {
+    return false;
+  }
+  if (allowList.includes('*')) return true;
+  return allowList.some(pattern => {
+    const p = pattern.toLowerCase();
+    if (p === host) return true;
+    // suffix match for *.example.com → matches sub.example.com but not other.com
+    if (p.startsWith('*.')) return host.endsWith(p.slice(1));
+    return host.endsWith('.' + p);
+  });
 }
 
 export function createBrowserAutomation(db: DatabaseAdapter, options?: { screenshotsRoot?: string }) {
@@ -154,7 +165,10 @@ export function createBrowserAutomation(db: DatabaseAdapter, options?: { screens
       status: 'active',
       pages_visited: [],
       actions_count: 0,
-      domains_allowed: input.domainsAllowed ?? ['*'],
+      // Default to empty (deny-all) — caller MUST opt into specific domains.
+      // Wildcard '*' is still accepted but loopback/private ranges are
+      // unconditionally blocked by isDomainAllowed regardless.
+      domains_allowed: input.domainsAllowed ?? [],
       created_at: new Date().toISOString(),
       closed_at: null,
     };

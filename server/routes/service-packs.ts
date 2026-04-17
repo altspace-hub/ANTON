@@ -113,6 +113,8 @@ export function createServicePackRoutes(db: DatabaseAdapter): Router {
       }).strict();
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
+      try { await resolveCallerIdentity(db, undefined); }
+      catch (err) { sendIdentityError(res, err); return; }
       const result = await manager.resolveWorkflow(
         String(req.params.serviceId),
         parsed.data.workflow_id,

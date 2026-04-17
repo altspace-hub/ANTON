@@ -69,6 +69,8 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
 
   router.post('/missions/deliveries/retry', async (_req, res) => {
     try {
+      try { await resolveCallerIdentity(db, undefined); }
+      catch (err) { sendIdentityError(res, err); return; }
       const result = await delivery.retryPending();
       res.json({ success: true, ...result });
     } catch (err) {
@@ -132,6 +134,8 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
   // ── Poll BEEHIVE-backed checkpoints for resolution ─────────────────────
   router.post('/missions/:id/tasks/poll-checkpoints', async (req, res) => {
     try {
+      try { await resolveCallerIdentity(db, undefined); }
+      catch (err) { sendIdentityError(res, err); return; }
       const result = await pollCheckpointBeehive(db, String(req.params.id));
       res.json({ success: true, ...result });
     } catch (err) {

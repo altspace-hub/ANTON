@@ -254,7 +254,9 @@ export function createServicePackManager(db: DatabaseAdapter, options?: { packsD
       ...step,
       selector: substitute(step.selector, params),
       value: substitute(step.value, params),
-      url: substitute(step.url, params),
+      // URL substitution: percent-encode params so `${q}` with value 'a&b'
+      // becomes 'a%26b' instead of breaking the query string.
+      url: substituteUrl(step.url, params),
       template: substitute(step.template, params),
     }));
 
@@ -337,4 +339,9 @@ export type ServicePackManager = ReturnType<typeof createServicePackManager>;
 function substitute(value: string | undefined, params: Record<string, string>): string | undefined {
   if (value == null) return value;
   return value.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => params[key] ?? '');
+}
+
+function substituteUrl(value: string | undefined, params: Record<string, string>): string | undefined {
+  if (value == null) return value;
+  return value.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => encodeURIComponent(params[key] ?? ''));
 }

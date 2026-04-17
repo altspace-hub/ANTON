@@ -94,14 +94,22 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
   function newDelegationId(): string { return randomUUID(); }
 
   /**
-   * Canonical JSON serialisation for signing — keys sorted, no whitespace.
-   * Both sides MUST use the exact same algorithm to verify.
+   * Canonical JSON serialisation for signing — RECURSIVE deep-sort of object
+   * keys, no whitespace, arrays preserve order. Both sides MUST use this
+   * exact algorithm to verify. Top-level-only sorting is fragile because
+   * nested objects (brief.context, brief) can serialise differently.
    */
-  function canonical(obj: Record<string, unknown>): string {
-    const sortedKeys = Object.keys(obj).sort();
-    const out: Record<string, unknown> = {};
-    for (const k of sortedKeys) out[k] = obj[k];
-    return JSON.stringify(out);
+  function canonical(value: unknown): string {
+    return JSON.stringify(deepSort(value));
+  }
+  function deepSort(value: unknown): unknown {
+    if (value === null || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map(deepSort);
+    const sorted: Record<string, unknown> = {};
+    for (const k of Object.keys(value as Record<string, unknown>).sort()) {
+      sorted[k] = deepSort((value as Record<string, unknown>)[k]);
+    }
+    return sorted;
   }
 
   async function logEvent(delegationId: string, event: string, actor: string | null, details: Record<string, unknown> = {}): Promise<void> {
@@ -229,22 +237,33 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
   // ── Inbound: receive a delegation from a peer (called by /api/p2p/receive) ─
 
   async function receiveDelegation(input: InboundDelegationPayload, inboundMailId: string | null): Promise<MissionDelegationRow> {
-    // 1. Verify signature
+    // 0. Idempotency — same id from same peer should not insert twice
+    const existing = await getDelegation(input.delegationId);
+    if (existing) {
+      if (existing.direction !== 'inbound') throw new Error(`Delegation id collision with outbound record: ${input.delegationId}`);
+      return existing;
+    }
+
+    // 1. Bind signer_public_key to the stored community_connections.public_key
+    //    for the claimed sender. Otherwise an attacker who is an accepted
+    //    contact could sign a delegation as a DIFFERENT contact by supplying
+    //    their own public key — the raw ed25519Verify only proves "someone
+    //    holding *this* private key signed the payload".
+    const conn = await db.get<{ public_key: string | null; status: string }>(
+      `SELECT public_key, status FROM community_connections WHERE contact_hash = ?`,
+      input.fromContactHash,
+    );
     const canonicalPayload = canonical({
       delegationId: input.delegationId,
       fromContactHash: input.fromContactHash,
       fromDisplayName: input.fromDisplayName,
       brief: input.brief,
     });
-    const verified = signing.ed25519Verify(canonicalPayload, input.signature, input.signerPublicKey);
-
-    // 2. Avoid duplicates — same id from same peer is idempotent
-    const existing = await getDelegation(input.delegationId);
-    if (existing) {
-      // Already received — just update verification result if it changed
-      if (existing.direction !== 'inbound') throw new Error(`Delegation id collision with outbound record: ${input.delegationId}`);
-      return existing;
-    }
+    const keyMatchesPeer = !!conn?.public_key
+      && conn.public_key.toLowerCase() === input.signerPublicKey.toLowerCase();
+    const peerActive = conn?.status === 'accepted' || conn?.status === 'active';
+    const verified = keyMatchesPeer && peerActive
+      && signing.ed25519Verify(canonicalPayload, input.signature, input.signerPublicKey);
 
     // 3. Insert + log
     await db.run(
@@ -284,22 +303,21 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
 
     let subMissionId: string | null = null;
     if (opts.createSubMission !== false) {
-      // Create a local sub-mission. We use the missions.missions table directly
-      // to avoid a hard dependency on createMission's full pipeline (which
-      // requires identity binding to the LOCAL user, not the remote peer).
+      // Create a local sub-mission directly against missions.missions (we
+      // bypass createMission because the brief was authored REMOTELY, but
+      // the local accepter still owns the row via created_by).
       subMissionId = `mis_${randomUUID()}`;
-      const localIdentity = await db.get<{ contact_hash: string; user_id: string }>(
-        `SELECT contact_hash, user_id FROM community_identity WHERE contact_hash = ?`,
-        actor,
-      );
-      const userId = localIdentity?.user_id ?? null;
+      const { resolveUserId } = await import('./mission-identity.js');
+      const userId = await resolveUserId(db);
+      const successCriteria = row.expected_output ?? `Deliver against the delegated brief: ${row.brief_objective.slice(0, 200)}`;
       await db.run(
         `INSERT INTO missions.missions
-          (id, name, objective, status, created_by, autonomy_level, brief_status, mission_type, origin_delegation_id)
-         VALUES (?, ?, ?, 'briefed', ?, 'check_in', 'approved', 'inbound_delegation', ?)`,
+          (id, title, objective, success_criteria, status, autonomy_level, created_by, origin_delegation_id)
+         VALUES (?, ?, ?, ?, 'briefed', 'check_in', ?, ?)`,
         subMissionId,
         `[delegated] ${row.brief_title}`,
         row.brief_objective,
+        successCriteria,
         userId,
         delegationId,
       );
@@ -347,6 +365,15 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     if (row.direction !== 'inbound') throw new Error('Only inbound delegations can submit results');
     if (row.status !== 'accepted' && row.status !== 'in_progress') {
       throw new Error(`Cannot submit result from status '${row.status}'`);
+    }
+    // Reject `path` references on outbound result files — the originator side
+    // would otherwise have a file path supplied by the recipient sitting in
+    // its DB. Force inline content. (Filenames are still validated separately
+    // by the delivery channel.)
+    if (result.files) {
+      for (const f of result.files) {
+        if (f.path) throw new Error(`File '${f.filename}': only inline content is permitted in delegation results, not local paths`);
+      }
     }
 
     const identity = await db.get<{ contact_hash: string; public_key: string; private_key_encrypted: string | null }>(
@@ -396,7 +423,34 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     if (!row) throw new Error(`Unknown delegation: ${delegationId}`);
     if (row.direction !== 'outbound') throw new Error('Result received for a non-outbound delegation');
 
-    const verified = signing.ed25519Verify(signedResult.payload_json, signedResult.signature_b64, signedResult.signer_public_key);
+    // Bind signer key to the recorded peer's stored public_key — same defence
+    // as receiveDelegation: a different accepted contact must not be able to
+    // forge a result for someone else's delegation.
+    const conn = await db.get<{ public_key: string | null }>(
+      `SELECT public_key FROM community_connections WHERE contact_hash = ?`,
+      row.peer_contact_hash,
+    );
+    const keyMatchesPeer = conn?.public_key
+      && conn.public_key.toLowerCase() === signedResult.signer_public_key.toLowerCase();
+    const signerHashMatchesPeer = signedResult.signer_contact_hash === row.peer_contact_hash;
+    const sigOk = keyMatchesPeer && signerHashMatchesPeer
+      && signing.ed25519Verify(signedResult.payload_json, signedResult.signature_b64, signedResult.signer_public_key);
+
+    if (!sigOk) {
+      // Refuse to write the result. Mark delegation as failed so it cannot
+      // be approved. Reject any forged result outright.
+      await db.run(
+        `UPDATE missions.mission_delegations
+         SET status = 'failed', result_signature_verified = FALSE,
+             rejection_reason = ?, updated_at = NOW()
+         WHERE id = ?`,
+        'Signature verification failed on returned result', delegationId,
+      );
+      await logEvent(delegationId, 'signature_failed', row.peer_contact_hash, { kind: 'result' });
+      await logEvent(delegationId, 'failed', null, { reason: 'invalid_result_signature' });
+      return (await getDelegation(delegationId))!;
+    }
+
     let parsedPayload: unknown = null;
     try { parsedPayload = JSON.parse(signedResult.payload_json); } catch { /* keep null */ }
 
@@ -404,21 +458,20 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
       `UPDATE missions.mission_delegations
        SET status = 'completed', completed_at = NOW(),
            result_payload = ?, result_files = ?, result_signed_payload = ?,
-           result_signature_verified = ?, updated_at = NOW()
+           result_signature_verified = TRUE, updated_at = NOW()
        WHERE id = ?`,
       JSON.stringify(parsedPayload),
       JSON.stringify(signedResult.files ?? []),
-      JSON.stringify(signedResult),
-      verified, delegationId,
+      JSON.stringify(signedResult), delegationId,
     );
-    await logEvent(delegationId, verified ? 'completed' : 'signature_failed', row.peer_contact_hash, { signature_verified: verified });
+    await logEvent(delegationId, 'completed', row.peer_contact_hash, { signature_verified: true });
     if (row.mission_id) {
       await db.run(
         `INSERT INTO missions.mission_activity (mission_id, task_id, activity_type, description, details)
          VALUES (?, ?, 'delegation_result_received', ?, ?)`,
         row.mission_id, row.task_id,
-        `Result received from ${row.peer_display_name ?? row.peer_contact_hash.slice(0, 12)} (signed: ${verified})`,
-        JSON.stringify({ delegation_id: row.id, signature_verified: verified }),
+        `Result received from ${row.peer_display_name ?? row.peer_contact_hash.slice(0, 12)} (signature verified)`,
+        JSON.stringify({ delegation_id: row.id, signature_verified: true }),
       );
     }
     return (await getDelegation(delegationId))!;
@@ -431,6 +484,11 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     if (!row) throw new Error(`Delegation not found: ${delegationId}`);
     if (row.direction !== 'outbound') throw new Error('Only outbound delegations can be approved');
     if (row.status !== 'completed') throw new Error(`Cannot approve from status '${row.status}'`);
+    // Belt-and-braces: receiveDelegationResult already gates on signature,
+    // but never trust a single check — verify here too.
+    if (row.result_signature_verified !== true) {
+      throw new Error('Cannot approve a result whose signature did not verify');
+    }
     await db.run(
       `UPDATE missions.mission_delegations
        SET status = 'approved', closed_at = NOW(), updated_at = NOW()

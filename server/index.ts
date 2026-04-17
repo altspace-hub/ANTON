@@ -487,25 +487,29 @@ app.use('/api', await createCommunityRoutes(db));
 // Beehive — multi-party reasoning sessions across N ANTONs (Phase 1: lifecycle only)
 const { createBeehiveRoutes } = await import('./routes/beehive.js');
 app.use('/api', createBeehiveRoutes(db));
-// Missions — autonomous multi-step work (Phase 1: foundation + Knowledge Synthesis template)
-const { createMissionRoutes } = await import('./routes/missions.js');
-app.use('/api', createMissionRoutes(db));
-// Missions Phase 2 — Action Layer: credential vault, browser automation, service packs
+// Mission sub-routers (Phases 2-5) MUST mount BEFORE the generic missions
+// router so collection paths like /missions/delegations/inbound are not
+// captured by missions.ts's GET /missions/:id (which would 404 with id='delegations').
+// Phase 5 — AAP delegation
+const { createMissionDelegationRoutes } = await import('./routes/mission-delegation.js');
+app.use('/api', createMissionDelegationRoutes(db));
+// Phase 4 — Financial: FutureChain wallet integration, payment proposals, approval + cancel-window workflow
+const { createMissionPaymentRoutes } = await import('./routes/mission-payments.js');
+app.use('/api', createMissionPaymentRoutes(db));
+// Phase 3 — Intelligence + Delivery: output channels, risk classification, parallel-review checkpoints (BEEHIVE-backed)
+const { createMissionDeliveryRoutes } = await import('./routes/mission-delivery.js');
+app.use('/api', createMissionDeliveryRoutes(db));
+// Phase 2 — Action Layer: credential vault, browser automation, service packs
 const { createMissionCredentialRoutes } = await import('./routes/mission-credentials.js');
 app.use('/api', createMissionCredentialRoutes(db));
 const { createBrowserRoutes } = await import('./routes/mission-browser.js');
 app.use('/api', createBrowserRoutes(db));
 const { createServicePackRoutes } = await import('./routes/service-packs.js');
 app.use('/api', createServicePackRoutes(db));
-// Missions Phase 3 — Intelligence + Delivery: output channels, risk classification, parallel-review checkpoints (BEEHIVE-backed)
-const { createMissionDeliveryRoutes } = await import('./routes/mission-delivery.js');
-app.use('/api', createMissionDeliveryRoutes(db));
-// Missions Phase 4 — Financial: FutureChain wallet integration, payment proposals, approval + cancel-window workflow
-const { createMissionPaymentRoutes } = await import('./routes/mission-payments.js');
-app.use('/api', createMissionPaymentRoutes(db));
-// Missions Phase 5 — AAP delegation: cross-instance mission handoff with Ed25519-signed payloads
-const { createMissionDelegationRoutes } = await import('./routes/mission-delegation.js');
-app.use('/api', createMissionDelegationRoutes(db));
+// Phase 1 — generic missions router (mounted LAST so its /missions/:id catch-all
+// doesn't shadow the sub-routers above)
+const { createMissionRoutes } = await import('./routes/missions.js');
+app.use('/api', createMissionRoutes(db));
 // Mission payment execution tick — settles approved payments past their cancel window
 {
   const { createMissionBudget } = await import('./services/missions/mission-budget.js');
@@ -518,6 +522,45 @@ app.use('/api', createMissionDelegationRoutes(db));
       }
     } catch (err) {
       console.error('[mission-payments] tick error:', err);
+    }
+  }, 60_000); // every minute
+}
+// Mission delivery retry tick — re-attempts deliveries that failed transiently
+{
+  const { createMissionDelivery } = await import('./services/missions/mission-delivery.js');
+  const missionDelivery = createMissionDelivery(db);
+  setInterval(async () => {
+    try {
+      const result = await missionDelivery.retryPending();
+      if (result.retried > 0) {
+        console.log(`[mission-delivery] retry tick: retried=${result.retried} succeeded=${result.succeeded} failed=${result.failed}`);
+      }
+    } catch (err) {
+      console.error('[mission-delivery] retry tick error:', err);
+    }
+  }, 180_000); // every 3 minutes
+}
+// Mission checkpoint poll tick — resumes paused missions whose BEEHIVE session concluded
+{
+  const { pollCheckpointBeehive } = await import('./services/missions/mission-checkpoint.js');
+  setInterval(async () => {
+    try {
+      const paused = await db.all<{ mission_id: string }>(
+        `SELECT DISTINCT mission_id FROM missions.mission_tasks
+         WHERE task_type = 'checkpoint' AND status = 'paused' AND beehive_session_id IS NOT NULL`,
+      );
+      for (const row of paused) {
+        try {
+          const result = await pollCheckpointBeehive(db, row.mission_id);
+          if (result.resolved > 0) {
+            console.log(`[mission-checkpoints] mission=${row.mission_id} resolved=${result.resolved} pending=${result.pending}`);
+          }
+        } catch (err) {
+          console.error(`[mission-checkpoints] mission=${row.mission_id} error:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('[mission-checkpoints] tick error:', err);
     }
   }, 60_000); // every minute
 }

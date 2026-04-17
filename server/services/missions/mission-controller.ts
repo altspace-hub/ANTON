@@ -42,6 +42,17 @@ export function createMissionController(db: DatabaseAdapter) {
     if (!input.objective?.trim()) throw new Error('Mission objective is required');
     if (!input.success_criteria?.trim()) throw new Error('Mission success criteria is required');
 
+    // EU AI Act §11.2 — classify risk + enforce autonomy ceiling. Spec
+    // mandates that high_risk missions cannot run at full_autonomy.
+    const { classifyMissionRisk, validateAutonomyForRisk, saveRiskClassification } =
+      await import('./mission-checkpoint.js');
+    const assessment = classifyMissionRisk(input.objective, input.context ?? null);
+    const requestedAutonomy = input.autonomy_level ?? 'check_in';
+    const autonomyCheck = validateAutonomyForRisk(requestedAutonomy, assessment.classification);
+    if (!autonomyCheck.ok) {
+      throw new Error(`EU AI Act compliance: ${autonomyCheck.reason}`);
+    }
+
     const id = newMissionId();
     const ts = nowIso();
     const mission: Mission = {
@@ -50,7 +61,7 @@ export function createMissionController(db: DatabaseAdapter) {
       objective: input.objective.trim(),
       context: input.context?.trim() || null,
       success_criteria: input.success_criteria.trim(),
-      autonomy_level: input.autonomy_level ?? 'check_in',
+      autonomy_level: requestedAutonomy,
       status: 'draft',
       priority: input.priority ?? 'normal',
       token_budget_max: input.budget?.token_budget_max ?? 5_000_000,
@@ -75,9 +86,11 @@ export function createMissionController(db: DatabaseAdapter) {
     };
 
     await state.insertMission(mission);
+    await saveRiskClassification(db, id, assessment);
     await state.logActivity(id, {
       activityType: 'mission_created',
       description: `Mission created: ${mission.title}`,
+      details: { risk_classification: assessment.classification, ai_act_category: assessment.category },
     });
     return mission;
   }

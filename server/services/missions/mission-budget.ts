@@ -184,6 +184,16 @@ export async function createMissionBudget(db: DatabaseAdapter) {
     const row = await getPayment(paymentId);
     if (!row) throw new Error(`Payment not found: ${paymentId}`);
     if (row.status !== 'proposed') throw new Error(`Cannot approve from status '${row.status}'`);
+    // Separation of duties — the proposer cannot also approve. The proposer
+    // is recorded as the actor on the 'proposed' log entry.
+    const proposedEntry = await db.get<{ actor: string | null }>(
+      `SELECT actor FROM missions.mission_payment_log
+       WHERE payment_id = ? AND event = 'proposed' ORDER BY created_at ASC LIMIT 1`,
+      paymentId,
+    );
+    if (proposedEntry?.actor && proposedEntry.actor === actor) {
+      throw new Error('Separation of duties: the proposer cannot approve their own payment');
+    }
     await db.run(
       `UPDATE missions.mission_payments
        SET status = 'approved', approved_by = ?, approved_at = NOW(), updated_at = NOW()
@@ -264,7 +274,20 @@ export async function createMissionBudget(db: DatabaseAdapter) {
     if (!row) return { success: false, error: 'not found' };
     if (row.status !== 'approved') return { success: false, error: `not in approved status (was ${row.status})` };
 
-    await db.run(`UPDATE missions.mission_payments SET status = 'executing', updated_at = NOW() WHERE id = ?`, paymentId);
+    // Re-verify human approval was actually recorded — defends against any
+    // future code path that might flip status without going through approve.
+    if (!row.approved_by) {
+      return { success: false, error: 'payment is approved but has no approver recorded — refusing to execute' };
+    }
+    // Atomic transition — only the caller that flips approved → executing
+    // proceeds. Concurrent ticks/manual calls see 0 rows updated and abort,
+    // preventing double-execution + double-spend.
+    const claimed = await db.get<{ id: string }>(
+      `UPDATE missions.mission_payments SET status = 'executing', updated_at = NOW()
+       WHERE id = ? AND status = 'approved' RETURNING id`,
+      paymentId,
+    );
+    if (!claimed) return { success: false, error: 'race: another worker already claimed this payment' };
     await logEvent(paymentId, 'execute_started', null, {});
 
     try {
@@ -377,6 +400,12 @@ export async function createMissionBudget(db: DatabaseAdapter) {
       'payment_requires_human_approval',
       'payment_wallet_id',
     ];
+    // Enforce a minimum cancel-window delay so a proposal cannot become
+    // executable before any human review window. Spec §5.3 default is 900s;
+    // we cap the floor at 30s to allow tighter test scenarios but not zero.
+    if (updates.payment_approval_delay_seconds !== undefined && updates.payment_approval_delay_seconds < 30) {
+      throw new Error('payment_approval_delay_seconds cannot be set below 30 seconds');
+    }
     const sets: string[] = []; const vals: unknown[] = [];
     for (const key of allowed) {
       if (updates[key] !== undefined) {
