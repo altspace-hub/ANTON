@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for ANTON Companion — iOS native shell.
+
+  Per ANTON_COMPANION_APP_SPEC.md §6.2 every privacy-sensitive API needs
+  a usage description string. App Store review rejects on missing or
+  vague strings far more often than on any other reason.
+
+  After `npx cap add ios`, MERGE the keys below into the generated
+  ios/App/App/Info.plist. Do NOT replace the whole file — Capacitor's
+  template includes other keys (CFBundleVersion, etc.) we shouldn't
+  overwrite.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>ANTON Companion</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+
+  <!-- ── Spec §6.2 usage descriptions ─────────────────────────────────── -->
+  <key>NSCameraUsageDescription</key>
+  <string>Scan QR codes to pair with an ANTON instance and capture documents to send for analysis.</string>
+
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Dictate messages and ask ANTON questions by voice.</string>
+
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Transcribe voice input on-device when your ANTON instance supports voice.</string>
+
+  <key>NSFaceIDUsageDescription</key>
+  <string>Use Face ID to unlock your ANTON credentials and confirm sensitive approvals.</string>
+
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Discover and connect to ANTON instances on your local network.</string>
+
+  <!-- mDNS service types we look for (spec §5.1 Mode A) -->
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_anton._tcp</string>
+    <string>_anton-gateway._tcp</string>
+  </array>
+
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Save exports from ANTON to your photo library.</string>
+
+  <!-- ── Export compliance — using only standard TLS + Apple crypto ───── -->
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+
+  <!-- ── Background modes — minimal: just remote notifications ────────── -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>remote-notification</string>
+  </array>
+
+  <!-- ── Custom URL scheme for anton:// deep links ────────────────────── -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.futurechain.anton.companion</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>anton</string>
+      </array>
+    </dict>
+  </array>
+
+  <!-- ── Universal links (configure ASA file separately) ──────────────── -->
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>https</string>
+  </array>
+
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+  <key>UIMainStoryboardFile</key>
+  <string>Main</string>
+  <key>UIRequiredDeviceCapabilities</key>
+  <array>
+    <string>armv7</string>
+  </array>
+  <key>UIRequiresFullScreen</key>
+  <false/>
+  <key>UIStatusBarStyle</key>
+  <string>UIStatusBarStyleLightContent</string>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UIViewControllerBasedStatusBarAppearance</key>
+  <true/>
+</dict>
+</plist>

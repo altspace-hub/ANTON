@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PrivacyInfo.xcprivacy — required by Apple from May 1, 2024 (App Store
+  rejects builds without it). Per ANTON_COMPANION_APP_SPEC.md §6.2.
+
+  Two declarations:
+    1. NSPrivacyAccessedAPITypes — every "required reason" API the app
+       (or its dependencies) calls. Each Capacitor plugin should ship its
+       own PrivacyInfo.xcprivacy; this manifest covers the app shell + any
+       direct API use.
+    2. NSPrivacyTrackingDomains — empty (we don't track).
+       NSPrivacyCollectedDataTypes — empty (we collect no data; everything
+       lives on the user's instance).
+
+  Keep this file in sync as new APIs are added. Apple's App Store
+  Connect privacy submission is auto-generated from these manifests.
+-->
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key>
+  <false/>
+
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+
+    <!-- File timestamp — used by SecureStorage / Keystore wrappers -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>C617.1</string>
+        <!-- "Inside app container" — keychain-backed credential file -->
+      </array>
+    </dict>
+
+    <!-- System boot time — used by reachability + monotonic nonces -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>35F9.1</string>
+        <!-- Measure time intervals -->
+      </array>
+    </dict>
+
+    <!-- User defaults — Capacitor stores config + selected instance -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>CA92.1</string>
+        <!-- Access info from same app, e.g., active instance id -->
+      </array>
+    </dict>
+
+    <!-- Disk space — used to gate cache eviction (LRU, 100MB default) -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>E174.1</string>
+        <!-- Display info to user -->
+      </array>
+    </dict>
+
+  </array>
+</dict>
+</plist>

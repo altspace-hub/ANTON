@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  App.entitlements — capabilities the iOS bundle needs.
+
+  Per ANTON_COMPANION_APP_SPEC.md §5.4 + §6:
+    • Keychain access — store the device private key in a per-app
+      keychain access group, kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly.
+      iCloud Keychain sync is OFF (the secure-storage plugin defaults to
+      this; verify in plugin config).
+    • APS env — push notifications.
+    • Associated domains — universal links pairing fallback (deferred).
+-->
+<plist version="1.0">
+<dict>
+  <key>aps-environment</key>
+  <string>production</string>
+
+  <!-- Keychain — access group is application-bundle-id; never iCloud-synced -->
+  <key>keychain-access-groups</key>
+  <array>
+    <string>$(AppIdentifierPrefix)com.futurechain.anton.companion</string>
+  </array>
+
+  <!-- Universal links (deferred — uncomment when apple-app-site-association is hosted) -->
+  <!--
+  <key>com.apple.developer.associated-domains</key>
+  <array>
+    <string>applinks:anton.example.com</string>
+  </array>
+  -->
+</dict>
+</plist>
