@@ -412,6 +412,7 @@ When adding features, ask: *which layer does this serve, and does it make the ne
 - **150+ Expert Modules** — Across FCP, legal, healthcare, finance, PE/VC, education, NGO, creative
 - **School Mode** — Educational interface with teacher oversight
 - **Multi-format Export** — Every output exportable to md/docx/xlsx/pdf/pptx
+- **Output Transformation System** (Phase 1) — Post-hoc renderer registry + Transform Panel. Every module run produces Markdown + a structured JSON payload (via Haiku-based extractor, cached by content hash); renderers are declared in `server/services/renderer-registry.builtin.ts` and filtered per-session by content type + required fields. Built-in renderers: the 5 existing exports + Mermaid flowchart / Gantt / sequence / mindmap, SVG risk heatmap, executive one-pager, plain-language, board deck, standalone HTML, devil's advocate + regulator's-eye reviews. Adding a new format = a single file in `server/services/renderers/` + a registry entry.
 
 ---
 
