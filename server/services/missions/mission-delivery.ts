@@ -12,6 +12,7 @@
 import type { DatabaseAdapter } from '../../db/database.js';
 import path from 'path';
 import fs from 'fs/promises';
+import { validateUrl } from '../url-validator.js';
 
 export type DeliveryChannel = 'in_app' | 'email' | 'webhook' | 'google_drive' | 'sharepoint' | 'slack' | 'filesystem';
 
@@ -40,24 +41,20 @@ export function createMissionDelivery(db: DatabaseAdapter) {
    * record + final status (delivered or failed-to-be-retried).
    */
   async function deliver(req: DeliveryRequest): Promise<DeliveryResult> {
-    const result = await db.run(
+    // RETURNING id is atomic and not subject to the race the previous
+    // re-query had (concurrent deliver() calls for the same mission/channel).
+    const inserted = await db.get<{ id: number | string }>(
       `INSERT INTO missions.mission_deliveries
         (mission_id, task_id, channel, destination, status, output_files, delivery_details)
-       VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+       VALUES (?, ?, ?, ?, 'pending', ?, ?)
+       RETURNING id`,
       req.missionId, req.taskId ?? null, req.channel,
       JSON.stringify(req.destination ?? {}),
       JSON.stringify(req.outputFiles ?? []),
       JSON.stringify({ subject: req.subject, body: req.body }),
     );
-    // Get the new id (PG returns lastInsertRowid via the adapter; but we'll re-query for safety)
-    const idRow = await db.get<{ id: number | string }>(
-      `SELECT id FROM missions.mission_deliveries
-       WHERE mission_id = ? AND channel = ? AND status = 'pending'
-       ORDER BY created_at DESC LIMIT 1`,
-      req.missionId, req.channel,
-    );
-    const id = Number(idRow?.id ?? result.lastInsertRowid);
-
+    if (!inserted?.id) throw new Error('Failed to insert delivery row');
+    const id = Number(inserted.id);
     return executeDelivery(id, req);
   }
 
@@ -98,7 +95,9 @@ export function createMissionDelivery(db: DatabaseAdapter) {
       case 'webhook': {
         const url = req.destination.url as string | undefined;
         if (!url) throw new Error('webhook delivery requires destination.url');
-        if (!/^https?:\/\//i.test(url)) throw new Error('webhook url must be http(s)');
+        // SSRF protection — reject localhost, private ranges, cloud metadata
+        const validation = validateUrl(url);
+        if (!validation.valid) throw new Error(`webhook url rejected: ${validation.error ?? 'invalid'}`);
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (typeof req.destination.auth_header === 'string') headers['Authorization'] = req.destination.auth_header;
         const payload = {
@@ -109,12 +108,17 @@ export function createMissionDelivery(db: DatabaseAdapter) {
           output_files: req.outputFiles,
           delivered_at: new Date().toISOString(),
         };
+        // redirect: 'manual' so a 30x to a private address can't bypass the check
         const res = await fetch(url, {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
+          redirect: 'manual',
           signal: AbortSignal.timeout(30_000),
         });
+        if (res.status >= 300 && res.status < 400) {
+          throw new Error(`Webhook returned redirect (${res.status}); refusing to follow for SSRF safety`);
+        }
         if (!res.ok) throw new Error(`Webhook returned ${res.status}: ${(await res.text()).slice(0, 500)}`);
         return { http_status: res.status, response_size: Number(res.headers.get('content-length') ?? 0) };
       }
@@ -122,18 +126,36 @@ export function createMissionDelivery(db: DatabaseAdapter) {
       case 'filesystem': {
         const destPath = req.destination.path as string | undefined;
         if (!destPath) throw new Error('filesystem delivery requires destination.path');
-        // Restrict to data/missions/deliverables/* — never write outside
+        // missionId must be a safe id segment (no path separators, no traversal)
+        if (!/^[A-Za-z0-9_-]+$/.test(req.missionId)) {
+          throw new Error('missionId is not a safe filesystem segment');
+        }
+        // Restrict to data/missions/deliverables/<missionId>/* — never write outside
         const root = path.resolve(process.cwd(), 'data', 'missions', 'deliverables');
-        const resolved = path.resolve(root, req.missionId, destPath);
-        if (!resolved.startsWith(root)) throw new Error('destination.path escapes the deliverables root');
+        const missionRoot = path.join(root, req.missionId);
+        const resolved = path.resolve(missionRoot, destPath);
+        // Trailing separator required so /deliverables can't be matched by /deliverables-evil
+        const rootWithSep = root + path.sep;
+        if (resolved !== root && !resolved.startsWith(rootWithSep)) {
+          throw new Error('destination.path escapes the deliverables root');
+        }
         await fs.mkdir(path.dirname(resolved), { recursive: true });
         if (req.outputFiles && req.outputFiles.length > 0) {
+          const targetDir = path.dirname(resolved);
+          const targetDirWithSep = targetDir + path.sep;
           for (const f of req.outputFiles) {
-            const filePath = path.join(path.dirname(resolved), f.filename);
+            // Filename must not contain path separators or traversal sequences
+            if (/[\\/]/.test(f.filename) || f.filename === '..' || f.filename === '.') {
+              throw new Error(`unsafe filename: ${f.filename}`);
+            }
+            const filePath = path.resolve(targetDir, f.filename);
+            if (filePath !== targetDir && !filePath.startsWith(targetDirWithSep)) {
+              throw new Error(`filename escapes target directory: ${f.filename}`);
+            }
             if (f.content) await fs.writeFile(filePath, f.content, 'utf-8');
             else if (f.path) await fs.copyFile(f.path, filePath);
           }
-          return { written: req.outputFiles.length, target_dir: path.relative(process.cwd(), path.dirname(resolved)) };
+          return { written: req.outputFiles.length, target_dir: path.relative(process.cwd(), targetDir) };
         }
         await fs.writeFile(resolved, req.body ?? '', 'utf-8');
         return { written: 1, target: path.relative(process.cwd(), resolved) };

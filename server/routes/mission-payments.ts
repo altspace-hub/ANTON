@@ -49,7 +49,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
         financial_budget_max: z.number().min(0).optional(),
         financial_max_per_transaction: z.number().min(0).optional(),
         approved_spend_categories: z.array(z.string().min(1).max(80)).max(50).optional(),
-        payment_approval_delay_seconds: z.number().int().min(0).max(86400).optional(),
+        payment_approval_delay_seconds: z.number().int().min(30).max(86400).optional(),
         payment_requires_human_approval: z.boolean().optional(),
         payment_wallet_id: z.string().nullable().optional(),
       }).strict();

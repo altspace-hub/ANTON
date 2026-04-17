@@ -120,25 +120,5 @@ BEGIN
 END
 $$;
 
--- ── mission_type expansion to include 'inbound_delegation' ────────────────
--- The mission_type CHECK was created in migration 115 for built-in types.
--- 'inbound_delegation' is a new origin marker for missions accepted via AAP.
--- We re-create the CHECK without rebuilding the column.
-
-DO $$
-DECLARE
-  cnt INT;
-BEGIN
-  SELECT COUNT(*) INTO cnt
-  FROM information_schema.columns
-  WHERE table_schema = 'missions' AND table_name = 'missions' AND column_name = 'mission_type';
-  IF cnt > 0 THEN
-    -- Drop existing CHECK if present, then re-add a permissive one that
-    -- includes inbound_delegation. We don't enumerate every prior value to
-    -- avoid drift; mission_type values are short application-controlled
-    -- strings, validated at the application layer.
-    ALTER TABLE missions.missions DROP CONSTRAINT IF EXISTS missions_mission_type_check;
-    -- (No new CHECK added — leaving free-form per ADR §C2 to avoid drift.)
-  END IF;
-END
-$$;
+-- (No mission_type column exists in 115; inbound delegation provenance is
+-- tracked by origin_delegation_id alone — no CHECK constraint needed.)
