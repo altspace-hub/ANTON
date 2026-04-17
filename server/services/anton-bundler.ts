@@ -52,7 +52,11 @@ export type AntonBundleType =
   | 'market-data-source-config'
   | 'market-atom-collection'
   | 'market-strategy-pack'
-  | 'contact-bundle';
+  | 'contact-bundle'
+  // Risk Atlas (spec v0.1 + Addendum 1)
+  | 'risk-atlas-industry-pack'
+  | 'risk-atlas-fcp-domain-pack'
+  | 'risk-atlas-export';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -93,6 +97,10 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'market-atom-collection':      { label: 'Market Atom Collection',     description: 'Curated atoms with relationships and tags',               contentsKey: 'market_atom_collections',      primaryContentDir: 'market-atom-collections' },
   'market-strategy-pack':        { label: 'Market Strategy Pack',       description: 'Composite bundle: index templates, thesis frameworks, signal weights', contentsKey: 'market_strategy_packs', primaryContentDir: 'market-strategy-packs' },
   'contact-bundle':              { label: 'Contact Bundle',             description: 'ANTON identity card: public key, display name, and bio for P2P connection', contentsKey: 'contact_bundles', primaryContentDir: 'contact-bundles' },
+  // ── Risk Atlas (spec v0.1 + Addendum 1) ─────────────────────────────────
+  'risk-atlas-industry-pack':    { label: 'Risk Atlas Industry Pack',   description: 'Industry-specific exposure points, threat catalogue, vulnerability + control libraries, regulatory tie-ins for the Risk Atlas', contentsKey: 'risk_atlas_industry_packs',   primaryContentDir: 'risk-atlas-industry-packs' },
+  'risk-atlas-fcp-domain-pack':  { label: 'Risk Atlas FCP Domain Pack', description: 'FCP domain overlay (AML, sanctions, fraud, ABC, market abuse, tax-evasion-facilitation, export controls) — composes with industry packs', contentsKey: 'risk_atlas_fcp_domain_packs', primaryContentDir: 'risk-atlas-fcp-domain-packs' },
+  'risk-atlas-export':           { label: 'Risk Atlas Export',          description: 'Full Atlas snapshot — threat paths, controls, scores, appetite, audit trail — for sharing or successor handover',         contentsKey: 'risk_atlas_exports',          primaryContentDir: 'risk-atlas-exports' },
 };
 
 interface ModuleExportData {
