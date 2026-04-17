@@ -207,6 +207,8 @@ const BeehiveSessionPage = lazy(() => import('./pages/community/BeehiveSessionPa
 const MissionsPage = lazy(() => import('./pages/missions/MissionsPage'));
 const MissionCreatorPage = lazy(() => import('./pages/missions/MissionCreatorPage'));
 const MissionDashboardPage = lazy(() => import('./pages/missions/MissionDashboardPage'));
+const CredentialVaultPage = lazy(() => import('./pages/missions/CredentialVaultPage'));
+const ServicePacksPage = lazy(() => import('./pages/missions/ServicePacksPage'));
 
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
@@ -528,6 +530,8 @@ export default function App() {
           {/* Missions — autonomous multi-step work */}
           <Route path="/missions" element={<MissionsPage />} />
           <Route path="/missions/new" element={<MissionCreatorPage />} />
+          <Route path="/missions/credentials" element={<CredentialVaultPage />} />
+          <Route path="/missions/service-packs" element={<ServicePacksPage />} />
           <Route path="/missions/:id" element={<MissionDashboardPage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />
