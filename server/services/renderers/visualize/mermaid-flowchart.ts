@@ -132,7 +132,16 @@ function sanitiseId(id: string): string {
 }
 
 function escapeMermaidText(s: string): string {
-  return String(s).replace(/"/g, '#quot;').replace(/\n/g, ' ').replace(/\|/g, '\\|').trim();
+  // Strip Mermaid directives (%%{...}%%) and HTML tags so a user-controlled
+  // label cannot override render-time config or inject markup into the
+  // client-side mermaid output.
+  return String(s)
+    .replace(/%%\{[^}]*\}%%/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/"/g, '#quot;')
+    .replace(/\n/g, ' ')
+    .replace(/\|/g, '\\|')
+    .trim();
 }
 
 function escapeFrontmatter(s: string): string {

@@ -116,5 +116,10 @@ function sanitiseTaskId(id: string): string {
 }
 
 function escapeLine(s: string): string {
-  return String(s).replace(/:/g, '-').replace(/\n/g, ' ').trim();
+  return String(s)
+    .replace(/%%\{[^}]*\}%%/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/:/g, '-')
+    .replace(/\n/g, ' ')
+    .trim();
 }

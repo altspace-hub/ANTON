@@ -9,11 +9,21 @@
 // renderers, we render nothing (the built-in exports cover the rest).
 
 import { useEffect, useState, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import {
   ChevronDown, ChevronRight, Loader2, Eye, Download, CheckCircle2, AlertCircle,
   BarChart3, Users, Package, Shield, Gavel,
 } from 'lucide-react';
+
+// SVG sanitization profile — keep visual primitives, strip script + event
+// handlers + foreignObject (which can carry HTML). This protects against
+// any future renderer that emits unescaped user content.
+const SVG_PURIFY_CONFIG = {
+  USE_PROFILES: { svg: true, svgFilters: true },
+  FORBID_TAGS: ['script', 'foreignObject'],
+  FORBID_ATTR: ['onload', 'onclick', 'onmouseover', 'onerror', 'onfocus'],
+};
 
 type Category = 'visualize' | 'adapt_audience' | 'package' | 'regulatory' | 'review';
 
@@ -271,8 +281,9 @@ function ArtifactPreview({ artifactId, fileType, mermaidSyntax }: { artifactId: 
   }
   if (fileType === 'svg') {
     if (!content) return <div className="text-[10px] text-adv-gray italic pt-1">Loading preview…</div>;
+    const safe = DOMPurify.sanitize(content, SVG_PURIFY_CONFIG);
     return (
-      <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: content }} />
+      <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: safe }} />
     );
   }
   if (fileType === 'md') {
@@ -299,8 +310,14 @@ function MermaidPreview({ source, artifactId }: { source: string; artifactId: nu
     void (async () => {
       try {
         const { default: mermaid } = await import('mermaid');
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'default' });
-        const { svg } = await mermaid.render(`mermaid-${artifactId}`, source);
+        // strict: disables HTML labels + click handlers → no XSS via user-
+        // controlled step labels or embedded directives.
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', htmlLabels: false, theme: 'default' });
+        // Defense-in-depth: strip Mermaid directive blocks (%%{init:...}%%)
+        // from the source before rendering — they're configuration, not
+        // content, and can override securityLevel at render time.
+        const safeSource = source.replace(/%%\{[^}]*\}%%/g, '');
+        const { svg } = await mermaid.render(`mermaid-${artifactId}`, safeSource);
         if (!cancelled) setSvg(svg);
       } catch (err) {
         if (!cancelled) setRenderError(err instanceof Error ? err.message : String(err));
@@ -313,7 +330,8 @@ function MermaidPreview({ source, artifactId }: { source: string; artifactId: nu
     return <div className="text-[10px] text-adv-red italic pt-1">Preview failed: {renderError}</div>;
   }
   if (!svg) return <div className="text-[10px] text-adv-gray italic pt-1">Rendering diagram…</div>;
-  return <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: svg }} />;
+  const safe = DOMPurify.sanitize(svg, SVG_PURIFY_CONFIG);
+  return <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: safe }} />;
 }
 
 function supportsInlinePreview(fileType: string): boolean {

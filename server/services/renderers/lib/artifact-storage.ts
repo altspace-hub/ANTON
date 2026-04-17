@@ -36,6 +36,14 @@ export async function saveArtifact(input: SaveArtifactInput): Promise<SaveArtifa
   if (!/^[a-zA-Z0-9_-]+$/.test(input.sessionId)) {
     throw new Error(`Unsafe session id for filesystem: ${input.sessionId}`);
   }
+  // Defense-in-depth: validate subdir at input time so traversal attempts
+  // are caught before path.join + the final startsWith check, even if the
+  // root resolution somehow drifts in future refactors.
+  if (input.subdir !== undefined) {
+    if (!/^[a-zA-Z0-9_-]*$/.test(input.subdir)) {
+      throw new Error(`Unsafe artifact subdir: ${input.subdir}`);
+    }
+  }
 
   const sessionDir = path.join(ARTIFACTS_ROOT, input.sessionId, input.subdir ?? '');
   await fs.mkdir(sessionDir, { recursive: true });

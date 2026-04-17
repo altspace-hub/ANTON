@@ -90,5 +90,12 @@ function sanitise(id: string): string {
 }
 
 function escapeSeqText(s: string): string {
-  return String(s).replace(/\n/g, ' ').replace(/:/g, '-').trim();
+  // Strip Mermaid directives + HTML tags as defense-in-depth against
+  // user-controlled step labels overriding render config or injecting markup.
+  return String(s)
+    .replace(/%%\{[^}]*\}%%/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n/g, ' ')
+    .replace(/:/g, '-')
+    .trim();
 }

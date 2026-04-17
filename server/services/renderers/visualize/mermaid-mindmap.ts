@@ -83,7 +83,13 @@ function renderSection(section: Section, indentLevel: number, lines: string[]): 
 }
 
 function truncate(s: string, max: number): string {
-  const cleaned = s.replace(/[\(\)\n"]/g, ' ').trim();
+  // Strip Mermaid directives + HTML tags + parens/newlines so user-
+  // controlled section headings cannot inject directives or markup.
+  const cleaned = s
+    .replace(/%%\{[^}]*\}%%/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/[\(\)\n"]/g, ' ')
+    .trim();
   if (cleaned.length <= max) return cleaned;
   return cleaned.slice(0, max - 1) + '…';
 }

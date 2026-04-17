@@ -8,6 +8,7 @@
 import type { RenderFn, RenderResult } from '../../renderer-registry.types.js';
 import { callChat } from '../../provider-router.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
+import { wrapUntrustedContent, INJECTION_GUARD_SUFFIX } from '../lib/prompt-injection-guard.js';
 
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 6_000;
@@ -43,7 +44,7 @@ export const render: RenderFn = async (_payload, context): Promise<RenderResult>
   const markdown = context.markdown ?? '';
   if (!markdown.trim()) throw new Error('No markdown content available for regulator\'s-eye review');
 
-  const userPrompt = `Document under review (title: ${context.session.title}):\n\n---\n\n${markdown.slice(0, 60_000)}`;
+  const userPrompt = `Document under review (title: ${context.session.title}):\n\n${wrapUntrustedContent(markdown)}${INJECTION_GUARD_SUFFIX}`;
   const chat = await Promise.race([
     callChat({ model: MODEL, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`regulators-eye timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)),

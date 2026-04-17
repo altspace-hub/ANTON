@@ -57,34 +57,37 @@ export function createRendererRegistry(db: DatabaseAdapter) {
   // ── Registry seeding (startup) ─────────────────────────────────────────
 
   async function seedRegistry(): Promise<{ inserted: number; updated: number }> {
+    // Single INSERT ... ON CONFLICT DO UPDATE — atomic. Avoids the boot race
+    // when two servers start simultaneously and both see "no row" then both
+    // INSERT (primary-key violation on one). `status` is deliberately NOT in
+    // the UPDATE set so admin overrides (disable a buggy beta renderer via
+    // direct SQL) survive restarts.
     let inserted = 0; let updated = 0;
     for (const def of BUILTIN_RENDERERS) {
-      const existing = await db.get<{ id: string }>(`SELECT id FROM renderers WHERE id = ?`, def.id);
-      if (existing) {
-        await db.run(
-          `UPDATE renderers SET label = ?, description = ?, category = ?, trigger = ?,
-             applies_when = ?, output = ?, renderer_module = ?, preview_module = ?,
-             phase = ?, sort_order = ?, updated_at = NOW()
-           WHERE id = ?`,
-          def.label, def.description, def.category, def.trigger,
-          JSON.stringify(def.applies_when), JSON.stringify(def.output),
-          def.renderer_module, def.preview_module ?? null,
-          def.phase, def.sort_order ?? 100, def.id,
-        );
-        updated++;
-      } else {
-        await db.run(
-          `INSERT INTO renderers
-            (id, label, description, category, trigger, applies_when, output,
-             renderer_module, preview_module, phase, status, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          def.id, def.label, def.description, def.category, def.trigger,
-          JSON.stringify(def.applies_when), JSON.stringify(def.output),
-          def.renderer_module, def.preview_module ?? null,
-          def.phase, def.status, def.sort_order ?? 100,
-        );
-        inserted++;
-      }
+      const row = await db.get<{ was_insert: boolean }>(
+        `INSERT INTO renderers
+          (id, label, description, category, trigger, applies_when, output,
+           renderer_module, preview_module, phase, status, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET
+           label = EXCLUDED.label,
+           description = EXCLUDED.description,
+           category = EXCLUDED.category,
+           trigger = EXCLUDED.trigger,
+           applies_when = EXCLUDED.applies_when,
+           output = EXCLUDED.output,
+           renderer_module = EXCLUDED.renderer_module,
+           preview_module = EXCLUDED.preview_module,
+           phase = EXCLUDED.phase,
+           sort_order = EXCLUDED.sort_order,
+           updated_at = NOW()
+         RETURNING (xmax = 0) AS was_insert`,
+        def.id, def.label, def.description, def.category, def.trigger,
+        JSON.stringify(def.applies_when), JSON.stringify(def.output),
+        def.renderer_module, def.preview_module ?? null,
+        def.phase, def.status, def.sort_order ?? 100,
+      );
+      if (row?.was_insert) inserted++; else updated++;
     }
     return { inserted, updated };
   }
@@ -202,32 +205,41 @@ export function createRendererRegistry(db: DatabaseAdapter) {
 
     const durationMs = Date.now() - started;
 
-    // Persist artifact row
+    // Persist artifact + output_versions link in a single transaction so the
+    // artifact can never exist without its version row, and concurrent
+    // runRenderer calls serialise on the version_number (session_id, ver)
+    // UNIQUE constraint.
     const fileSize = result.file_size_bytes
       ?? (await tryStatSize(resolveArtifactAbsPath(result.file_path)));
-    const artifactRow = await db.get<{ id: number }>(
-      `INSERT INTO rendered_artifacts
-        (session_id, renderer_id, output_version_id, file_path, preview_path,
-         file_type, mime_type, file_size_bytes, validation, metadata, options,
-         duration_ms, tokens_consumed, created_by)
-       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       RETURNING id`,
-      sessionId, rendererId,
-      result.file_path, result.preview_path ?? null,
-      result.file_type, result.mime_type, fileSize ?? null,
-      result.validation ? JSON.stringify(result.validation) : null,
-      JSON.stringify(result.metadata ?? {}),
-      JSON.stringify(options),
-      durationMs, result.tokens_consumed ?? null,
-      userId ?? null,
-    );
-    if (!artifactRow) throw new Error('Failed to insert rendered_artifacts row');
+    const { artifactId } = await db.transaction(async (tx) => {
+      const artifactRow = await tx.get<{ id: number }>(
+        `INSERT INTO rendered_artifacts
+          (session_id, renderer_id, output_version_id, file_path, preview_path,
+           file_type, mime_type, file_size_bytes, validation, metadata, options,
+           duration_ms, tokens_consumed, created_by)
+         VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING id`,
+        sessionId, rendererId,
+        result.file_path, result.preview_path ?? null,
+        result.file_type, result.mime_type, fileSize ?? null,
+        result.validation ? JSON.stringify(result.validation) : null,
+        JSON.stringify(result.metadata ?? {}),
+        JSON.stringify(options),
+        durationMs, result.tokens_consumed ?? null,
+        userId ?? null,
+      );
+      if (!artifactRow) throw new Error('Failed to insert rendered_artifacts row');
 
-    // Also write an output_versions row so the version history sees this artifact.
-    try {
-      const nextVersion = await nextVersionNumber(sessionId);
+      // Lock current max version for this session to avoid version-number
+      // collisions under concurrent runRenderer calls.
+      const maxRow = await tx.get<{ maxv: number | string | null }>(
+        `SELECT COALESCE(MAX(version_number), 0) AS maxv
+         FROM output_versions WHERE session_id = ? FOR UPDATE`,
+        sessionId,
+      );
+      const nextVersion = Number(maxRow?.maxv ?? 0) + 1;
       const ovId = `ov_${randomUUID()}`;
-      await db.run(
+      await tx.run(
         `INSERT INTO output_versions (id, session_id, version_number, content, metadata, is_current, user_id)
          VALUES (?, ?, ?, ?, ?, FALSE, ?)`,
         ovId, sessionId, nextVersion,
@@ -235,23 +247,21 @@ export function createRendererRegistry(db: DatabaseAdapter) {
         JSON.stringify({ renderer_id: rendererId, artifact_id: artifactRow.id, file_type: result.file_type }),
         userId ?? null,
       );
-      await db.run(
+      await tx.run(
         `UPDATE rendered_artifacts SET output_version_id = ? WHERE id = ?`,
         ovId, artifactRow.id,
       );
-    } catch (err) {
-      // Non-fatal — artifact exists regardless
-      console.warn('[renderer-registry] Failed to link output_version:', err instanceof Error ? err.message : err);
-    }
+      return { artifactId: artifactRow.id };
+    });
 
     await logAudit({
       sessionId, rendererId, userId, event: 'succeeded',
-      artifactId: artifactRow.id,
+      artifactId,
       details: { duration_ms: durationMs, file_type: result.file_type },
     });
 
     return {
-      artifact_id: artifactRow.id,
+      artifact_id: artifactId,
       file_path: result.file_path,
       preview_path: result.preview_path,
       validation: result.validation,
@@ -306,15 +316,6 @@ export function createRendererRegistry(db: DatabaseAdapter) {
     } catch {
       return null;
     }
-  }
-
-  async function nextVersionNumber(sessionId: string): Promise<number> {
-    const row = await db.get<{ maxv: number | string | null }>(
-      `SELECT MAX(version_number) AS maxv FROM output_versions WHERE session_id = ?`,
-      sessionId,
-    );
-    const cur = Number(row?.maxv ?? 0);
-    return (Number.isFinite(cur) ? cur : 0) + 1;
   }
 
   async function logAudit(params: {

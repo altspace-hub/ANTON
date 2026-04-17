@@ -40,6 +40,24 @@ async function main(): Promise<void> {
   const db = await createDatabase();
   const extractor = createStructuredExtractor(db);
 
+  try {
+    await runBackfill(db, extractor, { limit, onlyUser, dry });
+  } finally {
+    // Close the pool so the script can exit immediately rather than
+    // waiting on the pg pool's idle timeout.
+    if ('close' in db && typeof (db as { close?: () => Promise<void> }).close === 'function') {
+      try { await (db as { close: () => Promise<void> }).close(); } catch { /* ignore */ }
+    }
+  }
+}
+
+async function runBackfill(
+  db: Awaited<ReturnType<typeof createDatabase>>,
+  extractor: ReturnType<typeof createStructuredExtractor>,
+  opts: { limit: number; onlyUser: string | undefined; dry: boolean },
+): Promise<void> {
+  const { limit, onlyUser, dry } = opts;
+
   const where: string[] = [`(structured_status IS NULL OR structured_status IN ('pending', 'failed'))`];
   const params: unknown[] = [];
   if (onlyUser) { where.push('user_id = ?'); params.push(onlyUser); }
@@ -93,6 +111,7 @@ async function main(): Promise<void> {
         moduleId: sess.module_id,
         areaId: mod?.areaId ?? '',
         generationModel: msg.model_id ?? 'unknown',
+        userId: sess.user_id,                // user-scoped DB cache
       });
       if (result.status === 'extracted') {
         extracted++;
