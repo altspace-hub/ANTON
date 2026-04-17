@@ -133,18 +133,29 @@ export interface RegistryEntry extends RendererDefinition {
 export function evaluateRequiresField(body: unknown, expr: string): boolean {
   if (body == null || typeof body !== 'object') return false;
   const parts = expr.split('.');
-  // Handle each segment; a '[*]' suffix means "check every array element"
+  // `strict` flips on after the first [*] segment — once we're iterating
+  // array elements, missing values mean FAILURE (not "skip this element").
   let cursors: unknown[] = [body];
+  let strict = false;
   for (const seg of parts) {
     const next: unknown[] = [];
     const [rawKey, ...rest] = seg.split('[');
     const isForAll = rest.length > 0 && rest[0].startsWith('*]');
     for (const c of cursors) {
-      if (c == null || typeof c !== 'object') continue;
+      if (c == null || typeof c !== 'object') {
+        if (strict) return false;
+        continue;
+      }
       const v = (c as Record<string, unknown>)[rawKey];
-      if (v == null) continue;
+      if (v == null || v === '') {
+        if (strict) return false;
+        continue;
+      }
       if (isForAll) {
-        if (!Array.isArray(v) || v.length === 0) continue;
+        if (!Array.isArray(v) || v.length === 0) {
+          if (strict) return false;
+          continue;
+        }
         for (const item of v) next.push(item);
       } else {
         next.push(v);
@@ -152,8 +163,9 @@ export function evaluateRequiresField(body: unknown, expr: string): boolean {
     }
     if (next.length === 0) return false;
     cursors = next;
+    if (isForAll) strict = true;
   }
-  // All final cursors must be non-empty (truthy, or non-empty array/string)
+  // All final cursors must be truthy / non-empty
   return cursors.every(v => {
     if (v == null) return false;
     if (typeof v === 'string') return v.length > 0;
