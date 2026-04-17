@@ -29,6 +29,7 @@ import { ResumePanel } from '@/components/shared/ResumePanel';
 import StatusIndicator from '@/components/shared/StatusIndicator';
 import RevelationTrailPanel, { IREPhaseProgress } from '@/components/shared/RevelationTrailPanel';
 import ExportBar from '@/components/shared/ExportBar';
+import TransformPanel from '@/components/shared/TransformPanel';
 import HumanOversightGate from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
@@ -1157,6 +1158,9 @@ export default function ModulePage() {
               entityId={sessionId ?? moduleId}
               moduleId={moduleId ?? undefined}
             />
+            {/* Output Transformation panel — surfaces applicable renderers
+                beyond the built-in export formats. Silent when none apply. */}
+            <TransformPanel sessionId={sessionId ?? null} />
             {showReframePicker && (
               <div className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-3 py-2">
                 <span className="text-xs text-adv-gray">{t('module.reframeFor')}</span>

@@ -1,0 +1,329 @@
+// ── Transform Panel — Output Transformation System UI (spec §8) ──────────
+//
+// Renders alongside (below) the existing export buttons on the module
+// output page. Fetches applicable renderers for the current session,
+// groups them by category, and runs them on click with inline preview +
+// download actions.
+//
+// Empty state per spec §8.3: if no non-package category has applicable
+// renderers, we render nothing (the built-in exports cover the rest).
+
+import { useEffect, useState, useCallback } from 'react';
+import { fetchWithAuth, getAuthHeader } from '../../lib/api';
+import {
+  ChevronDown, ChevronRight, Loader2, Eye, Download, CheckCircle2, AlertCircle,
+  BarChart3, Users, Package, Shield, Gavel,
+} from 'lucide-react';
+
+type Category = 'visualize' | 'adapt_audience' | 'package' | 'regulatory' | 'review';
+
+interface Renderer {
+  id: string;
+  label: string;
+  description: string;
+  category: Category;
+  output: { file_type: string; mime_type: string; filename_template: string };
+  status: 'stable' | 'beta' | 'experimental' | 'disabled';
+}
+
+interface RunResult {
+  artifact_id: number;
+  file_path: string;
+  preview_path?: string;
+  file_type: string;
+  mime_type: string;
+  metadata?: Record<string, unknown>;
+  duration_ms: number;
+  error?: string;
+  file_size_bytes?: number;
+}
+
+interface ArtifactRow {
+  id: number;
+  renderer_id: string;
+  file_path: string;
+  file_type: string;
+  mime_type: string;
+  file_size_bytes: number | null;
+  metadata: unknown;
+  created_at: string;
+}
+
+const CATEGORY_ORDER: Category[] = ['visualize', 'adapt_audience', 'package', 'regulatory', 'review'];
+const CATEGORY_META: Record<Category, { label: string; icon: typeof BarChart3 }> = {
+  visualize:       { label: 'Visualize',            icon: BarChart3 },
+  adapt_audience:  { label: 'Adapt for audience',   icon: Users },
+  package:         { label: 'Package',              icon: Package },
+  review:          { label: 'Review',               icon: Shield },
+  regulatory:      { label: 'Regulatory',           icon: Gavel },
+};
+
+export default function TransformPanel({ sessionId }: { sessionId: string | null | undefined }) {
+  const [renderers, setRenderers] = useState<Renderer[]>([]);
+  const [artifacts, setArtifacts] = useState<ArtifactRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<Category>>(new Set());
+  const [running, setRunning] = useState<string | null>(null);
+  const [results, setResults] = useState<Map<string, RunResult>>(new Map());
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!sessionId) { setLoading(false); return; }
+    setError(null);
+    try {
+      const [appRes, artRes] = await Promise.all([
+        fetchWithAuth(`/api/renderers/applicable?session_id=${encodeURIComponent(sessionId)}`, { headers: getAuthHeader() }),
+        fetchWithAuth(`/api/sessions/${encodeURIComponent(sessionId)}/artifacts`, { headers: getAuthHeader() }),
+      ]);
+      if (appRes.ok) {
+        const d = await appRes.json() as { renderers?: Renderer[] };
+        setRenderers(d.renderers ?? []);
+      }
+      if (artRes.ok) {
+        const d = await artRes.json() as { artifacts?: ArtifactRow[] };
+        setArtifacts(d.artifacts ?? []);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // When renderers arrive, auto-expand the first non-empty non-package
+  // category (spec §8.2). Package stays collapsed by default because the
+  // built-in export buttons above already cover it.
+  useEffect(() => {
+    if (renderers.length === 0) return;
+    const grouped = groupByCategory(renderers);
+    const firstNonPackage = CATEGORY_ORDER.find(c => c !== 'package' && grouped[c]?.length);
+    if (firstNonPackage && expanded.size === 0) {
+      setExpanded(new Set([firstNonPackage]));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderers]);
+
+  async function runRenderer(r: Renderer): Promise<void> {
+    if (!sessionId) return;
+    setRunning(r.id); setError(null);
+    try {
+      const res = await fetchWithAuth('/api/renderers/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ session_id: sessionId, renderer_id: r.id }),
+      });
+      const data = await res.json() as RunResult & { error?: string };
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setResults(m => { const nm = new Map(m); nm.set(r.id, data); return nm; });
+      await load();
+    } catch (e) {
+      setError(`${r.label}: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  if (!sessionId || loading) return null;
+
+  const grouped = groupByCategory(renderers);
+  // Panel visibility: the built-in export buttons already cover "package",
+  // so we only show the panel when there is at least one applicable
+  // renderer in a non-package category.
+  const nonPackageCount = CATEGORY_ORDER.filter(c => c !== 'package')
+    .reduce((acc, c) => acc + (grouped[c]?.length ?? 0), 0);
+  if (nonPackageCount === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-adv-card/30 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-teal">Transform</h3>
+        <span className="text-[10px] text-adv-gray">{nonPackageCount} available</span>
+      </div>
+
+      {error && (
+        <div className="rounded border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-[11px] text-adv-red flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {CATEGORY_ORDER.map(cat => {
+        const items = grouped[cat] ?? [];
+        if (items.length === 0) return null;
+        if (cat === 'package') return null; // handled by ExportBar
+        const Icon = CATEGORY_META[cat].icon;
+        const isOpen = expanded.has(cat);
+        return (
+          <div key={cat} className="rounded-lg border border-border">
+            <button
+              onClick={() => setExpanded(s => { const n = new Set(s); if (n.has(cat)) n.delete(cat); else n.add(cat); return n; })}
+              className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-adv-dark/40"
+            >
+              {isOpen ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray" /> : <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />}
+              <Icon className="h-3.5 w-3.5 text-adv-teal" />
+              <span className="text-xs font-medium text-adv-off-white">{CATEGORY_META[cat].label}</span>
+              <span className="text-[10px] text-adv-gray/70">({items.length})</span>
+            </button>
+            {isOpen && (
+              <div className="border-t border-border p-2 flex flex-wrap gap-2">
+                {items.map(r => (
+                  <RendererButton
+                    key={r.id}
+                    renderer={r}
+                    sessionId={sessionId}
+                    busy={running === r.id}
+                    result={results.get(r.id)}
+                    existingArtifact={artifacts.find(a => a.renderer_id === r.id)}
+                    onRun={() => void runRenderer(r)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RendererButton({ renderer, sessionId, busy, result, existingArtifact, onRun }: {
+  renderer: Renderer;
+  sessionId: string;
+  busy: boolean;
+  result?: RunResult;
+  existingArtifact?: ArtifactRow;
+  onRun: () => void;
+}) {
+  const done = !!result || !!existingArtifact;
+  const artifactId = result?.artifact_id ?? existingArtifact?.id;
+  const fileType = result?.file_type ?? existingArtifact?.file_type ?? renderer.output.file_type;
+  const [showPreview, setShowPreview] = useState(false);
+
+  return (
+    <div className="rounded border border-border bg-adv-dark/50 p-2 flex flex-col gap-1 min-w-[200px]">
+      <button
+        onClick={onRun}
+        disabled={busy}
+        title={renderer.description}
+        className={`rounded px-2.5 py-1.5 text-[11px] font-medium inline-flex items-center gap-1.5 disabled:opacity-60 ${
+          done
+            ? 'border border-adv-green/40 text-adv-green hover:bg-adv-green/10'
+            : 'bg-adv-teal text-adv-dark hover:bg-adv-teal-dark'
+        }`}
+      >
+        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : done ? <CheckCircle2 className="h-3 w-3" /> : null}
+        {renderer.label}
+        {renderer.status !== 'stable' && (
+          <span className="ml-1 text-[9px] uppercase tracking-wider text-adv-gold">{renderer.status}</span>
+        )}
+      </button>
+      {done && artifactId && (
+        <div className="flex items-center gap-1 pt-1">
+          {supportsInlinePreview(fileType) && (
+            <button
+              onClick={() => setShowPreview(s => !s)}
+              className="text-[10px] text-adv-gray hover:text-adv-off-white inline-flex items-center gap-1"
+            >
+              <Eye className="h-3 w-3" /> {showPreview ? 'Hide' : 'Preview'}
+            </button>
+          )}
+          <a
+            href={`/api/renderers/artifacts/${artifactId}`}
+            className="text-[10px] text-adv-gray hover:text-adv-off-white inline-flex items-center gap-1 ml-auto"
+          >
+            <Download className="h-3 w-3" /> .{fileType}
+          </a>
+        </div>
+      )}
+      {showPreview && artifactId && (
+        <ArtifactPreview
+          artifactId={artifactId}
+          fileType={fileType}
+          mermaidSyntax={(result?.metadata?.mermaid_syntax as string | undefined) ?? null}
+          sessionId={sessionId}
+        />
+      )}
+    </div>
+  );
+}
+
+function ArtifactPreview({ artifactId, fileType, mermaidSyntax }: { artifactId: number; fileType: string; mermaidSyntax: string | null; sessionId: string }) {
+  const [content, setContent] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (mermaidSyntax) { setContent(mermaidSyntax); return; }
+    if (!supportsInlinePreview(fileType)) return;
+    void (async () => {
+      try {
+        const r = await fetchWithAuth(`/api/renderers/artifacts/${artifactId}`, { headers: getAuthHeader() });
+        if (!r.ok) return;
+        const t = await r.text();
+        if (!cancelled) setContent(t);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [artifactId, fileType, mermaidSyntax]);
+
+  if (fileType === 'mmd') {
+    return <MermaidPreview source={content ?? mermaidSyntax ?? ''} artifactId={artifactId} />;
+  }
+  if (fileType === 'svg') {
+    if (!content) return <div className="text-[10px] text-adv-gray italic pt-1">Loading preview…</div>;
+    return (
+      <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: content }} />
+    );
+  }
+  if (fileType === 'md') {
+    if (!content) return <div className="text-[10px] text-adv-gray italic pt-1">Loading preview…</div>;
+    return (
+      <pre className="rounded border border-border bg-adv-dark p-2 text-[10px] text-adv-off-white whitespace-pre-wrap max-h-96 overflow-auto mt-1 leading-snug">
+        {content}
+      </pre>
+    );
+  }
+  return null;
+}
+
+/**
+ * Render Mermaid source inline via dynamic mermaid.js import. We import
+ * on first render so the library isn't shipped in the main bundle.
+ */
+function MermaidPreview({ source, artifactId }: { source: string; artifactId: number }) {
+  const [svg, setSvg] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!source) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { default: mermaid } = await import('mermaid');
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'default' });
+        const { svg } = await mermaid.render(`mermaid-${artifactId}`, source);
+        if (!cancelled) setSvg(svg);
+      } catch (err) {
+        if (!cancelled) setRenderError(err instanceof Error ? err.message : String(err));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [source, artifactId]);
+
+  if (renderError) {
+    return <div className="text-[10px] text-adv-red italic pt-1">Preview failed: {renderError}</div>;
+  }
+  if (!svg) return <div className="text-[10px] text-adv-gray italic pt-1">Rendering diagram…</div>;
+  return <div className="rounded border border-border bg-white p-2 max-h-96 overflow-auto mt-1" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+function supportsInlinePreview(fileType: string): boolean {
+  return fileType === 'mmd' || fileType === 'svg' || fileType === 'md' || fileType === 'html';
+}
+
+function groupByCategory(items: Renderer[]): Record<Category, Renderer[]> {
+  const out: Record<Category, Renderer[]> = {
+    visualize: [], adapt_audience: [], package: [], review: [], regulatory: [],
+  };
+  for (const r of items) out[r.category]?.push(r);
+  return out;
+}
