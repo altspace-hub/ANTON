@@ -1,0 +1,49 @@
+{
+  "formatVersion": "1.0",
+  "id": "fcp-scope-assessor",
+  "label": "FCP Scope Assessor — which financial-crime domains apply?",
+  "shortLabel": "FCP Scope",
+  "description": "Short, AI-guided assessment that recommends which FCP (Financial Crime Prevention) domain packs to activate for an Atlas: AML/CFT, sanctions, fraud, anti-bribery, market abuse, tax-evasion facilitation, export controls, modern slavery. Writes the recommendation to the Atlas's atlas_fcp_scope row with rationale per domain.",
+  "icon": "ListChecks",
+  "color": "adv-teal",
+  "areaId": "fcp",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["decision-memo", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id", "type": "text", "label": "Atlas id", "required": true },
+    { "id": "business_description", "type": "textarea", "label": "What the business does (sales, channels, customers, geography)", "required": true, "placeholder": "Sells what, to whom, how delivered, where, who pays. Include rough headcount and revenue band." },
+    { "id": "is_amlr_obliged", "type": "select", "label": "AMLR obliged entity?", "required": true,
+      "options": [
+        { "value": "yes",     "label": "Yes — AMLR-obliged (bank, CASP, real estate, notary, accountant, TCSP, dealer, gambling, …)" },
+        { "value": "no",      "label": "No — not on the AMLR obliged list" },
+        { "value": "unsure",  "label": "Unsure — assess from the description" }
+      ]
+    },
+    { "id": "jurisdictions", "type": "multi-select", "label": "Jurisdictions of operation", "required": true,
+      "options": [
+        { "value": "EU",      "label": "European Union (any member state)" },
+        { "value": "UK",      "label": "United Kingdom" },
+        { "value": "US",      "label": "United States" },
+        { "value": "Nordics", "label": "Nordics" },
+        { "value": "global",  "label": "Other / global" }
+      ]
+    },
+    { "id": "cash_handling", "type": "select", "label": "Cash handling?", "required": true,
+      "options": [
+        { "value": "none",          "label": "No cash" },
+        { "value": "occasional",    "label": "Occasional, under EU 10k threshold" },
+        { "value": "frequent",      "label": "Frequent or above-threshold" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["risk-coach", "senior-mlro", "senior-risk-officer"],
+  "recommendedSkills": ["threat-path-methodology"],
+  "tags": ["fcp", "atlas", "scope-assessment", "amlr"],
+  "contentType": "decision_memo"
+}

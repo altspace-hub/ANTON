@@ -1,0 +1,6 @@
+[
+  { "event":"Sanctions / PEP screening match",                          "action":"Freeze the relationship; named owner triages; STR/SAR if applicable; document decision.", "timeline":"<24 h" },
+  { "event":"Cash payment offer / receipt over EU 10k EUR",             "action":"Trigger CDD; document refusal or accept-with-evidence; log threshold cross.",          "timeline":"<24 h" },
+  { "event":"Any staff suspicion that a transaction relates to crime",   "action":"Internal escalation to named owner; STR/SAR consideration; tipping-off rules apply.",  "timeline":"<5 working days" },
+  { "event":"Regulator / FIU information request",                       "action":"Acknowledge; preserve evidence; respond inside the deadline; legal review if borderline.","timeline":"<7 days" }
+]

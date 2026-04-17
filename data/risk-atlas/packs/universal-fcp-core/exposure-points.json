@@ -1,0 +1,7 @@
+[
+  { "id":"ex-ufc-ubo",         "name":"Customer / counterparty beneficial ownership", "description":"Who ultimately owns or controls the parties you transact with. Foundation of every FCP regime.", "category":"counterparty" },
+  { "id":"ex-ufc-pep",         "name":"PEP / sanctions exposure on counterparties",   "description":"Customers, suppliers, agents, owners screened against PEP and sanctions lists.",          "category":"counterparty" },
+  { "id":"ex-ufc-cash",        "name":"Cash-payment touchpoints",                      "description":"Any inbound or outbound cash flow across the EU 10k EUR threshold (lower thresholds in some member states).", "category":"channel" },
+  { "id":"ex-ufc-records",     "name":"Counterparty + transaction records",           "description":"Records you hold to demonstrate CDD, monitoring, screening, training, escalation.",          "category":"data" },
+  { "id":"ex-ufc-suspicion",   "name":"Suspicion-raising pathway",                     "description":"How a member of staff (or the owner) reports suspicion to the FIU / NCA.",                  "category":"governance" }
+]

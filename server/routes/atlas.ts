@@ -66,6 +66,7 @@ import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logge
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
 import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
+import { createAtlasFcpScopeService } from '../services/risk-atlas/atlas-fcp-scope-service.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { safeError } from '../lib/error-response.js';
 
@@ -96,6 +97,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
   const packs = createAtlasPackLoader(db);
   const atlasExport = createAtlasExport(db);
   const integrity = createAtlasIntegrityRunner(db);
+  const fcp = createAtlasFcpScopeService(db);
   // Quality ratchet — lazily resolved on first request to avoid blocking
   // route construction when the underlying schema isn't ready yet.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -489,6 +491,119 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       const cycle = await service.addReviewCycle(id, parsed.data, (req as AuthedRequest).user!.id);
       res.status(201).json({ success: true, cycle });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // ── FCP Scope (Addendum 1) — which FCP domains are active for an Atlas ──
+
+  router.get('/atlas/:id/fcp-scope', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const scope = await fcp.getScope(id);
+      res.json({ success: true, scope });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.post('/atlas/:id/fcp-scope', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const schema = z.object({
+        amlcft_active: z.boolean().optional(),
+        sanctions_active: z.boolean().optional(),
+        fraud_active: z.boolean().optional(),
+        abc_active: z.boolean().optional(),
+        market_abuse_active: z.boolean().optional(),
+        tax_evasion_facilitation_active: z.boolean().optional(),
+        export_controls_active: z.boolean().optional(),
+        modern_slavery_active: z.boolean().optional(),
+        scope_rationale: z.string().max(8000).nullable().optional(),
+        assessed_by: z.string().max(200).nullable().optional(),
+      }).strict();
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
+      const scope = await fcp.upsertScope(id, parsed.data, (req as AuthedRequest).user!.id);
+      res.status(200).json({ success: true, scope });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // ── Cross-domain path bundles (Addendum 1) ──────────────────────
+
+  router.get('/atlas/:id/cross-domain-bundles', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const bundles = await fcp.listBundles(id);
+      res.json({ success: true, bundles });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.post('/atlas/:id/cross-domain-bundles', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const schema = z.object({
+        bundle_code: z.string().min(1).max(40),
+        name: z.string().min(1).max(200),
+        description: z.string().max(4000).optional(),
+        primary_domain: z.enum(['amlcft','sanctions','fraud','abc','market_abuse','tax_evasion_facilitation','export_controls','modern_slavery']).optional(),
+        member_path_ids: z.array(z.string()).max(50).optional(),
+      }).strict();
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
+      const bundle = await fcp.createBundle(id, parsed.data, (req as AuthedRequest).user!.id);
+      res.status(201).json({ success: true, bundle });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  router.post('/atlas/:id/cross-domain-bundles/:bundleId/members', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const schema = z.object({
+        threat_path_id: z.string().min(1),
+        role_in_bundle: z.enum(['entry','middle','exit','amplifier']).optional(),
+      }).strict();
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
+      const bundleId = Number(req.params.bundleId);
+      if (!Number.isInteger(bundleId) || bundleId <= 0) { res.status(400).json({ error: 'Invalid bundle id' }); return; }
+      await fcp.addBundleMember(id, bundleId, parsed.data.threat_path_id, parsed.data.role_in_bundle ?? 'middle', (req as AuthedRequest).user!.id);
+      res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  router.delete('/atlas/:id/cross-domain-bundles/:bundleId/members/:pathId', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const bundleId = Number(req.params.bundleId);
+      if (!Number.isInteger(bundleId) || bundleId <= 0) { res.status(400).json({ error: 'Invalid bundle id' }); return; }
+      await fcp.removeBundleMember(id, bundleId, String(req.params.pathId), (req as AuthedRequest).user!.id);
+      res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  router.delete('/atlas/:id/cross-domain-bundles/:bundleId', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const bundleId = Number(req.params.bundleId);
+      if (!Number.isInteger(bundleId) || bundleId <= 0) { res.status(400).json({ error: 'Invalid bundle id' }); return; }
+      await fcp.deleteBundle(id, bundleId, (req as AuthedRequest).user!.id);
+      res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // ── Company-wide appetite rollup (Stage 7b) ─────────────────────
+
+  router.get('/atlas/:id/company-appetite', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const rollup = await fcp.computeCompanyAppetite(id);
+      res.json({ success: true, rollup });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Integrity — Compliance-as-Code surface over the Atlas state ──
