@@ -1,0 +1,10 @@
+{
+  "id": "fcp-bank",
+  "name": "Bank / Credit Institution",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "AMLR-obliged credit institution. Adds AML/CFT, sanctions, fraud, market abuse, payment-services and prudential exposures on top of the SME-general baseline. Suited to challenger banks, e-money institutions and licensed credit institutions.",
+  "amlr_obliged": true,
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

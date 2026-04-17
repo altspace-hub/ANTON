@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ex-casp-custody",
+    "name": "Customer asset custody (hot + cold wallets)",
+    "description": "Customer crypto assets you hold for them — segregated wallets, hot wallets for liquidity, cold storage for the bulk. Loss, theft, misappropriation and key-management failures are existential risks.",
+    "category": "asset"
+  },
+  {
+    "id": "ex-casp-onchain",
+    "name": "On-chain transaction flows",
+    "description": "Inbound and outbound crypto transactions linking your customers to the wider blockchain ecosystem — including counterparties on sanctioned wallets, mixers, darknet markets, and high-risk exchanges.",
+    "category": "channel"
+  },
+  {
+    "id": "ex-casp-fiat-rails",
+    "name": "Fiat on-ramp / off-ramp",
+    "description": "SEPA, card and bank-rail flows used by customers to fund or withdraw from your platform. Touches AML, sanctions, fraud and PSP liability.",
+    "category": "channel"
+  },
+  {
+    "id": "ex-casp-customers-retail",
+    "name": "Retail crypto customers",
+    "description": "Individuals trading or holding crypto. Subject to MiCA suitability, complaints, and consumer-protection regimes alongside AML checks.",
+    "category": "customer"
+  },
+  {
+    "id": "ex-casp-customers-institutional",
+    "name": "Institutional / corporate customers",
+    "description": "Corporates, funds, OTC desks. Higher value, more complex beneficial-ownership and source-of-funds reviews; potential PEP and high-risk-jurisdiction concentration.",
+    "category": "customer"
+  },
+  {
+    "id": "ex-casp-travel-rule",
+    "name": "Travel-rule counterparties",
+    "description": "Other VASPs / CASPs you transact with under the FATF Travel Rule and the EU Transfer of Funds Regulation. Verifying beneficiary information is mandatory.",
+    "category": "counterparty"
+  },
+  {
+    "id": "ex-casp-listed-tokens",
+    "name": "Listed token catalogue",
+    "description": "Every token you make available is a market-abuse, fraud, sanctions and regulatory exposure. New listings need a pre-trade risk review.",
+    "category": "product"
+  }
+]

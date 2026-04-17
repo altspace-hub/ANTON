@@ -1,0 +1,12 @@
+{
+  "MPC": "Multi-Party Computation — a cryptographic scheme that splits private-key control across multiple parties so no single party can spend customer funds alone.",
+  "Travel Rule": "FATF Recommendation 16 / EU Transfer of Funds Regulation requirement that VASPs/CASPs exchange originator and beneficiary information for transfers above a threshold.",
+  "VASP": "Virtual Asset Service Provider — FATF terminology for any business performing crypto custody, exchange, transfer, or issuance services.",
+  "CASP": "Crypto-Asset Service Provider — the EU MiCA term for a regulated VASP operating in the EEA.",
+  "MiCA": "Markets in Crypto-Assets Regulation — the EU framework regulating crypto-asset issuance and service provision.",
+  "Cold storage": "Keys held offline (paper, hardware, air-gapped device) with no network access. Slow to access but not exposed to remote attack.",
+  "Hot wallet": "Operational wallet with online connectivity, used to settle customer trades. Higher attack surface.",
+  "Mixer / tumbler": "Service that pools and obfuscates the origin of crypto transactions. High AML/sanctions risk.",
+  "Peeling chain": "Money-laundering technique that splits a large balance through many small outgoing transactions to obscure provenance.",
+  "Rug pull": "Token issuer abandons or maliciously drains liquidity, collapsing the token. Common scam pattern."
+}

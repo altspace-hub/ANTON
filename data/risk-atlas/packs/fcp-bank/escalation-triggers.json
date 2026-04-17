@@ -1,0 +1,7 @@
+[
+  { "event": "Sanctions match (OFAC / EU / UK) on payment or customer", "action": "Block; escalate to MLRO; file with NCA; freeze account.", "timeline": "<24 h" },
+  { "event": "SAR / STR threshold met for a customer or transaction set", "action": "Investigate; file SAR; consider account closure.",         "timeline": "<5 working days" },
+  { "event": "APP-fraud reimbursement claim received",                    "action": "Acknowledge; investigate; reimburse if PSR criteria met.",  "timeline": "<5 working days" },
+  { "event": "Trade-surveillance alert: insider dealing pattern",         "action": "Suspend trader; preserve evidence; legal + HR review; MAR notification if confirmed.", "timeline": "<24 h" },
+  { "event": "Operational incident: outage > 30 minutes on critical service", "action": "DORA major-incident notification path; customer comms.","timeline": "<4 h" }
+]

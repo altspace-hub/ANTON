@@ -1,0 +1,13 @@
+[
+  { "id":"v-saas-no-tenant-tests",       "code":"V-SAAS-1","name":"No tenant-isolation test suite",   "description":"Code paths not exercised with cross-tenant probe data.",        "typical_severity": 4 },
+  { "id":"v-saas-no-row-level-security", "code":"V-SAAS-2","name":"No row-level security in DB",       "description":"Tenant filtering relies entirely on application code.",         "typical_severity": 4 },
+  { "id":"v-saas-no-rate-limiting",      "code":"V-SAAS-3","name":"No API rate limiting",              "description":"Public APIs without per-key / per-IP throttles.",                "typical_severity": 3 },
+  { "id":"v-saas-no-bot-defences",       "code":"V-SAAS-4","name":"No bot or credential-stuffing defences","description":"No CAPTCHA, ML-detection, or velocity rules on auth endpoints.","typical_severity": 3 },
+  { "id":"v-saas-no-subprocessor-dpa",   "code":"V-SAAS-5","name":"Sub-processors without DPA",        "description":"Sub-processors used without written DPA or basis for transfer.","typical_severity": 4 },
+  { "id":"v-saas-no-subprocessor-review","code":"V-SAAS-6","name":"No periodic sub-processor review",  "description":"No annual security review or SOC2 / ISO27001 evidence collection.","typical_severity": 3 },
+  { "id":"v-saas-no-multi-az",           "code":"V-SAAS-7","name":"Single-AZ / single-region critical service","description":"No multi-AZ failover for the database or core service.","typical_severity": 4 },
+  { "id":"v-saas-no-deploy-freeze",      "code":"V-SAAS-8","name":"No deploy freeze around peak / weekends","description":"Deploys to prod permitted at any time, including peak load.","typical_severity": 2 },
+  { "id":"v-saas-no-runbook",            "code":"V-SAAS-9","name":"No incident runbook / on-call rota", "description":"On-call rota informal, no scenario-tested runbooks.","typical_severity": 3 },
+  { "id":"v-saas-no-secret-scanning",    "code":"V-SAAS-10","name":"No secret scanning on commits / builds","description":"Secrets can land in repo or build logs without detection.","typical_severity": 3 },
+  { "id":"v-saas-no-vault",              "code":"V-SAAS-11","name":"No secret manager / vault",        "description":"Secrets stored in env files or config repos rather than a managed vault.","typical_severity": 3 }
+]

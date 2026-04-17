@@ -1,0 +1,10 @@
+{
+  "id": "construction-trades",
+  "name": "Construction / Trades",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "Construction firm, builder, or trades business. Adds site-safety, subcontractor liability, planning permission, and materials-handling exposures on top of the SME-general baseline.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

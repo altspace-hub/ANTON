@@ -1,0 +1,6 @@
+[
+  { "id":"ex-hc-patient-data",  "name":"Patient health records",          "description":"Special-category data under GDPR. Highest fine-band + regulator (ICO / DPA) interest.","category":"data" },
+  { "id":"ex-hc-clinical-care", "name":"Clinical care delivery",          "description":"Diagnosis, prescribing, procedures, follow-up. Negligence + GMC/GDC referral risk.",   "category":"service" },
+  { "id":"ex-hc-controlled-drugs","name":"Controlled drugs / prescriptions","description":"Schedule 2-5 drugs on premises; CD register obligations + Home Office inspection risk.","category":"asset" },
+  { "id":"ex-hc-regulator",     "name":"Healthcare regulator inspection",  "description":"CQC / IVO / equivalent inspections, registration conditions, suspension power.",       "category":"regulatory" }
+]

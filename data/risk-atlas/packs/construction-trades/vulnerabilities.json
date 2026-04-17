@@ -1,0 +1,12 @@
+[
+  { "id":"v-con-no-rams",          "code":"V-CON-1","name":"No Risk Assessment / Method Statement",   "description":"No documented RAMS for the works.",                  "typical_severity": 5 },
+  { "id":"v-con-no-toolbox-talk",  "code":"V-CON-2","name":"No daily toolbox talks",                  "description":"Workers start the day without briefing on hazards.","typical_severity": 4 },
+  { "id":"v-con-no-ppe",           "code":"V-CON-3","name":"PPE not enforced",                        "description":"Hard hat, hi-vis, safety boots etc. not consistently worn.","typical_severity": 4 },
+  { "id":"v-con-no-site-perimeter","code":"V-CON-4","name":"No site perimeter / segregation",         "description":"Members of public can enter the work zone.",        "typical_severity": 4 },
+  { "id":"v-con-no-traffic-plan",  "code":"V-CON-5","name":"No traffic management plan",              "description":"Vehicle movement, deliveries and pedestrians not segregated.","typical_severity": 3 },
+  { "id":"v-con-no-status-checks", "code":"V-CON-6","name":"No subcontractor status review",          "description":"Self-employed declarations accepted without review.","typical_severity": 3 },
+  { "id":"v-con-no-cis-process",   "code":"V-CON-7","name":"No CIS / payroll-tax process",            "description":"No documented withholding or verification process.","typical_severity": 3 },
+  { "id":"v-con-no-permit-tracker","code":"V-CON-8","name":"No permit / approval tracker",            "description":"No central register of permits, conditions and expiry dates.","typical_severity": 3 },
+  { "id":"v-con-no-site-security", "code":"V-CON-9","name":"No site security",                        "description":"Site unfenced or unlit overnight; no CCTV.",         "typical_severity": 3 },
+  { "id":"v-con-no-asset-register","code":"V-CON-10","name":"No tool / plant register",               "description":"Tools and plant not registered or tagged.",          "typical_severity": 2 }
+]

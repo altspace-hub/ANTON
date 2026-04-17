@@ -64,6 +64,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createAtlasService } from '../services/risk-atlas/atlas-service.js';
 import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logger.js';
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
+import { createAtlasExport } from '../services/risk-atlas/atlas-export.js';
 import { safeError } from '../lib/error-response.js';
 
 interface AuthedRequest { user?: { id: string; role?: string } }
@@ -90,6 +91,7 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
   const events = createAtlasEventLogger(db);
   const service = createAtlasService(db, { eventLogger: events });
   const packs = createAtlasPackLoader(db);
+  const atlasExport = createAtlasExport(db);
 
   // ── Atlas CRUD ──────────────────────────────────────────────────
 
@@ -478,6 +480,58 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
       const cycle = await service.addReviewCycle(id, parsed.data, (req as AuthedRequest).user!.id);
       res.status(201).json({ success: true, cycle });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // ── Exports — board pack DOCX, threat-path cards PDF, heatmap SVG, .anton bundle ──
+
+  router.get('/atlas/:id/export/board', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const buf = await atlasExport.generateBoardPackDocx(id, (req as AuthedRequest).user!.id);
+      if (!buf) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      const safeName = encodeURIComponent(id) + '.docx';
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="atlas-board-${safeName}"`);
+      res.send(buf);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/export/paths', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const buf = await atlasExport.generateThreatPathCardsPdf(id, (req as AuthedRequest).user!.id);
+      if (!buf) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      const safeName = encodeURIComponent(id) + '.pdf';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="atlas-paths-${safeName}"`);
+      res.send(buf);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/export/heatmap.svg', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const svg = await atlasExport.generateHeatMapSvg(id);
+      if (!svg) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Content-Disposition', `inline; filename="atlas-heatmap-${encodeURIComponent(id)}.svg"`);
+      res.send(svg);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/export/bundle', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const out = await atlasExport.generateAtlasBundle(id, (req as AuthedRequest).user!.id);
+      if (!out) { res.status(404).json({ error: 'Atlas not found' }); return; }
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${out.filename}"`);
+      res.send(out.payload);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Packs ──────────────────────────────────────────────────────

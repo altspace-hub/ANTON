@@ -1,0 +1,10 @@
+{
+  "id": "fcp-casp",
+  "name": "Crypto-Asset Service Provider (CASP)",
+  "version": "1.0.0",
+  "parent_pack_id": "sme-general",
+  "description": "AMLR-obliged crypto-asset service provider under MiCA. Inherits SME-general baseline and adds custody, on-chain provenance, sanctions screening, market abuse and travel-rule specific exposures and controls.",
+  "amlr_obliged": true,
+  "typical_size_range": ["small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK"]
+}

@@ -1,0 +1,16 @@
+[
+  { "id": "v-bank-no-behavioural-monitoring",  "code":"V-BANK-1","name":"No behavioural transaction monitoring rules", "description":"No documented thresholds for layering, structuring, velocity, geography.","typical_severity": 4 },
+  { "id": "v-bank-no-edd",                     "code":"V-BANK-2","name":"No EDD trigger policy",                       "description":"PEPs and high-risk-jurisdiction customers handled identically to standard.","typical_severity": 4 },
+  { "id": "v-bank-stale-cdd",                  "code":"V-BANK-3","name":"Stale customer due diligence",                "description":"No periodic CDD refresh; risk profile drifts over years.","typical_severity": 3 },
+  { "id": "v-bank-stale-sanctions-screening",  "code":"V-BANK-4","name":"Stale sanctions screening lists",             "description":"Sanctions lists refreshed only weekly or rely on manual upload.","typical_severity": 4 },
+  { "id": "v-bank-no-fuzzy-matching",          "code":"V-BANK-5","name":"No fuzzy / phonetic name matching",            "description":"Sanctions screening uses exact match only — trivial spelling variations bypass.","typical_severity": 3 },
+  { "id": "v-bank-no-confirmation-of-payee",   "code":"V-BANK-6","name":"No confirmation of payee on outbound",        "description":"Beneficiary name not validated against account number, enabling APP fraud.","typical_severity": 4 },
+  { "id": "v-bank-no-behavioural-fraud-rules", "code":"V-BANK-7","name":"No behavioural fraud detection",              "description":"Card and account fraud detection rules limited to static thresholds.","typical_severity": 3 },
+  { "id": "v-bank-no-3ds",                     "code":"V-BANK-8","name":"No 3-D Secure / SCA on card flows",           "description":"Strong customer authentication absent or commonly waived.","typical_severity": 3 },
+  { "id": "v-bank-no-onboarding-fraud-checks", "code":"V-BANK-9","name":"No fraud signal at onboarding",               "description":"No device, behavioural, or velocity checks during account opening.","typical_severity": 4 },
+  { "id": "v-bank-no-mule-detection-rules",    "code":"V-BANK-10","name":"No money-mule detection rules",              "description":"No rapid-in / rapid-out, structured-deposits, or unusual-counterparty rules.","typical_severity": 4 },
+  { "id": "v-bank-no-trade-surveillance",      "code":"V-BANK-11","name":"No trade surveillance",                       "description":"No automated detection of front-running, spoofing, layering on dealer book.","typical_severity": 4 },
+  { "id": "v-bank-no-personal-account-dealing","code":"V-BANK-12","name":"No personal-account-dealing policy",         "description":"Trading staff allowed personal trading without disclosure / pre-approval.","typical_severity": 3 },
+  { "id": "v-bank-no-correspondent-edd",       "code":"V-BANK-13","name":"No correspondent-bank EDD",                  "description":"Correspondent relationships established without Wolfsberg-style due diligence.","typical_severity": 4 },
+  { "id": "v-bank-no-nested-account-detection","code":"V-BANK-14","name":"No nested account detection",                "description":"Cannot identify when correspondent's underlying customer transacts as if they were a direct customer.","typical_severity": 3 }
+]

@@ -1,0 +1,8 @@
+[
+  { "id": "ex-bank-deposits",        "name": "Customer deposits",                  "description": "Retail and corporate deposits across current, savings and term products. Concentration risk + financial-crime entry point.", "category": "asset" },
+  { "id": "ex-bank-lending",         "name": "Lending portfolio",                  "description": "Retail, SME and corporate lending. Credit risk, fraud, money-mule conduit.",                                              "category": "asset" },
+  { "id": "ex-bank-payment-rails",   "name": "SEPA / SWIFT / cards / instant rails","description": "Inbound and outbound payment rails — sanctions screening, fraud, AML, settlement risk.",                                  "category": "channel" },
+  { "id": "ex-bank-correspondent",   "name": "Correspondent / nostro relationships","description": "Other banks you settle through or for. Heightened AML/sanctions risk, EBA correspondent guidance.",                       "category": "counterparty" },
+  { "id": "ex-bank-customers-pep",   "name": "PEP / high-risk customers",           "description": "Politically exposed persons, high-risk-jurisdiction nationals, complex beneficial ownership.",                            "category": "customer" },
+  { "id": "ex-bank-market-trading",  "name": "Market / treasury trading desk",      "description": "Bank's own trading book — market abuse, mis-selling, conduct risk.",                                                       "category": "product" }
+]

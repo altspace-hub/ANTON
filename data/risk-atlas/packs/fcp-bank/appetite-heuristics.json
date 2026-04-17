@@ -1,0 +1,9 @@
+{
+  "tp-bank-money-laundering": "outside",
+  "tp-bank-sanctions-payment": "unacceptable",
+  "tp-bank-app-fraud": "outside",
+  "tp-bank-card-fraud": "boundary",
+  "tp-bank-mule-account": "outside",
+  "tp-bank-market-abuse": "unacceptable",
+  "tp-bank-correspondent-aml": "outside"
+}

@@ -1,0 +1,8 @@
+[
+  { "event": "Hot-wallet anomaly: outflow > €500k or > 1% of float in 1h",   "action": "Pause withdrawals; alert Head of Custody, MLRO, CISO; trigger incident-response runbook.", "timeline": "<15 min" },
+  { "event": "Match against sanctions list (OFAC/EU/UK)",                    "action": "Freeze wallet; notify MLRO; file required regulatory report; assess unwind path.",            "timeline": "<24 h"  },
+  { "event": "On-chain screening flags inbound from mixer / sanctioned address","action": "Freeze credit; SAR/STR filing; investigate; consider account closure.",                       "timeline": "<24 h"  },
+  { "event": "MiCA reportable incident (loss > €100k, governance breach)",    "action": "Notify NCA per MiCA Art. 9 reporting; root-cause; customer comms plan.",                       "timeline": "<72 h"  },
+  { "event": "Listed token suspected rug-pull or smart-contract exploit",     "action": "Halt trading on the pair; customer notification; coordinate with issuer; legal review.",       "timeline": "<6 h"   },
+  { "event": "Travel-rule receiver rejects an outbound for missing data",     "action": "Freeze the transfer; remediate beneficiary data; review counterparty registry.",                "timeline": "<24 h"  }
+]
