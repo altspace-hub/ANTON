@@ -497,6 +497,9 @@ const { createBrowserRoutes } = await import('./routes/mission-browser.js');
 app.use('/api', createBrowserRoutes(db));
 const { createServicePackRoutes } = await import('./routes/service-packs.js');
 app.use('/api', createServicePackRoutes(db));
+// Missions Phase 3 — Intelligence + Delivery: output channels, risk classification, parallel-review checkpoints (BEEHIVE-backed)
+const { createMissionDeliveryRoutes } = await import('./routes/mission-delivery.js');
+app.use('/api', createMissionDeliveryRoutes(db));
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
 app.use('/api', await createTaskDelegationRoutes(db));
