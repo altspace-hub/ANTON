@@ -1,0 +1,10 @@
+[
+  { "id":"v-ufc-no-ubo-procedure", "code":"V-UFC-1","name":"No UBO identification procedure",       "description":"No documented process for unwinding ownership to natural persons.",                "typical_severity": 4 },
+  { "id":"v-ufc-no-screening",     "code":"V-UFC-2","name":"No PEP / sanctions screening",          "description":"Counterparties not screened against PEP / sanctions / adverse-media lists.",       "typical_severity": 5 },
+  { "id":"v-ufc-stale-lists",      "code":"V-UFC-3","name":"Sanctions / PEP lists out of date",     "description":"Lists relied on are weeks or months old.",                                          "typical_severity": 4 },
+  { "id":"v-ufc-no-cash-policy",   "code":"V-UFC-4","name":"No cash-handling policy / threshold",   "description":"Staff have no documented threshold or escalation rule for cash.",                  "typical_severity": 3 },
+  { "id":"v-ufc-no-records-cycle", "code":"V-UFC-5","name":"No record-keeping cycle",                "description":"Records not retained for the regulatory minimum (typically 5 years).",              "typical_severity": 4 },
+  { "id":"v-ufc-no-str-pathway",   "code":"V-UFC-6","name":"No STR / SAR pathway",                   "description":"No documented pathway from suspicion to FIU / NCA filing.",                         "typical_severity": 4 },
+  { "id":"v-ufc-no-training",      "code":"V-UFC-7","name":"No baseline staff / owner training",    "description":"Staff and owner have no documented FCP awareness training.",                       "typical_severity": 3 },
+  { "id":"v-ufc-no-named-owner",   "code":"V-UFC-8","name":"No named compliance responsibility",   "description":"No-one is accountable for FCP — even on a part-time / owner-wears-it basis.",      "typical_severity": 4 }
+]

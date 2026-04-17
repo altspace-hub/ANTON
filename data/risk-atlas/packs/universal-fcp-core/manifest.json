@@ -1,0 +1,9 @@
+{
+  "id": "universal-fcp-core",
+  "name": "Universal FCP Core",
+  "version": "1.0.0",
+  "description": "AMLR Article 16 distilled into a minimal pattern any business can implement: UBO identification, sanctions screening, cash-threshold awareness, PEP identification, record-keeping, STR/SAR pathway, named compliance owner, baseline training. Activated automatically when any FCP domain is active.",
+  "amlr_obliged": false,
+  "typical_size_range": ["micro", "small", "medium", "large"],
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

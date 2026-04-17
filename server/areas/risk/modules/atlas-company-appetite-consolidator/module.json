@@ -1,0 +1,34 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-company-appetite-consolidator",
+  "label": "Atlas Stage 7b — Company-wide Appetite Consolidator",
+  "shortLabel": "Stage 7b",
+  "description": "Rolls the per-path appetite statements from Stage 7 into a single board-approvable company-wide Risk Appetite Statement. Reads the deterministic worst-of rollup from atlas-fcp-scope-service.computeCompanyAppetite() and produces the one-page board document with remediation programme, escalation triggers, and sign-off block.",
+  "icon": "Award",
+  "color": "adv-teal",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["executive-summary", "risk-appetite-statement"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id",       "type": "text",     "label": "Atlas id",            "required": true },
+    { "id": "approver_name",  "type": "text",     "label": "Approver name (board chair / owner / sole director)", "required": true },
+    { "id": "approver_role",  "type": "text",     "label": "Approver role",        "required": false, "placeholder": "e.g. Board Chair, Owner, Managing Director" },
+    { "id": "review_cadence", "type": "select",   "label": "Review cadence",       "required": false,
+      "options": [
+        { "value": "annual",      "label": "Annual (typical for small business)" },
+        { "value": "semi-annual", "label": "Semi-annual" },
+        { "value": "quarterly",   "label": "Quarterly (typical for regulated entities)" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["senior-risk-officer", "senior-mlro"],
+  "recommendedSkills": ["residual-calculation", "control-evidence-scoring"],
+  "tags": ["atlas", "stage-7", "appetite", "board-pack", "governance"],
+  "contentType": "appetite_statement"
+}

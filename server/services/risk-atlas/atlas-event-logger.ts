@@ -20,7 +20,10 @@ export type AtlasEventType =
   | 'trigger_added'
   | 'review_completed' | 'review_due' | 'review_cycle_added'
   | 'regulator_change_linked' | 'incident_linked'
-  | 'fcp_scope_changed' | 'atlas_updated';
+  | 'fcp_scope_changed' | 'fcp_scope_updated' | 'atlas_updated'
+  // Addendum 1 — cross-domain bundles
+  | 'cross_domain_bundle_created' | 'cross_domain_bundle_member_added'
+  | 'cross_domain_bundle_member_removed' | 'cross_domain_bundle_deleted';
 
 export interface LogEventInput {
   atlasId: string;
