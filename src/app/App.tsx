@@ -7,11 +7,13 @@
 import { useState, useEffect } from 'react';
 import { getIdentity } from './services/identity';
 import { getSessionToken } from './services/api';
+import { onActiveInstanceChange } from './services/instances';
 
 // Auth screens
 import WelcomePage from './pages/WelcomePage';
 import JoinPage from './pages/JoinPage';
 import ConnectionsPage from './pages/ConnectionsPage';
+import InstanceTopBar from './components/InstanceTopBar';
 
 // Tabbed screens
 import HomeScreen from './pages/HomeScreen';
@@ -47,6 +49,8 @@ export default function App() {
   const [selectedOrgType, setSelectedOrgType] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
+  // Bumped each time the user switches instance, forces tab content to re-mount + re-fetch
+  const [instanceVersion, setInstanceVersion] = useState(0);
 
   useEffect(() => {
     const identity = getIdentity();
@@ -57,6 +61,15 @@ export default function App() {
       setAuthScreen('welcome');
     }
   }, []);
+
+  // Switch instance → bump key → tab content remounts with the new server base
+  useEffect(() => onActiveInstanceChange(() => {
+    setInstanceVersion(v => v + 1);
+    // After switching instance, the user's prior org selection no longer
+    // makes sense — bounce them back to the connections list.
+    setSelectedOrgId(null);
+    setAuthScreen('connections');
+  }), []);
 
   function selectOrg(orgId: string, orgName?: string, orgType?: string) {
     setSelectedOrgId(orgId);
@@ -95,6 +108,9 @@ export default function App() {
   // ── Tabbed org workspace ──────────────────────────────────────
   return (
     <div className="flex min-h-dvh flex-col bg-adv-dark safe-top">
+      {/* Multi-instance top bar (spec §4.2 + §8.9) */}
+      <InstanceTopBar onAddInstance={() => setAuthScreen('join')} />
+
       {/* Active tab content */}
       {activeTab === 'home' && (
         <HomeScreen
