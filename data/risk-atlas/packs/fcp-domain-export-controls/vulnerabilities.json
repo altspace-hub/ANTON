@@ -1,0 +1,10 @@
+[
+  { "id":"v-exp-no-classification",       "code":"V-EXP-1","name":"No formal item classification process","description":"Items shipped without documented ECCN / dual-use classification.",                       "typical_severity": 4 },
+  { "id":"v-exp-no-eccn-tooling",         "code":"V-EXP-2","name":"No ECCN classification tooling",        "description":"Manual look-ups; no integration with classification database.",                       "typical_severity": 3 },
+  { "id":"v-exp-no-end-use-statement",    "code":"V-EXP-3","name":"No end-use statement collected",       "description":"No requirement for customer end-use statement on dual-use shipments.",                "typical_severity": 4 },
+  { "id":"v-exp-no-end-user-screening",   "code":"V-EXP-4","name":"No end-user screening",                 "description":"End-user not screened against denied-party / restricted-end-user lists.",              "typical_severity": 5 },
+  { "id":"v-exp-no-supply-chain-dd",      "code":"V-EXP-5","name":"No re-routing / supply-chain checks",  "description":"No verification of distributor / freight-forwarder onward shipments.",                "typical_severity": 4 },
+  { "id":"v-exp-no-licence-tracker",      "code":"V-EXP-6","name":"No OGEL / specific-licence tracker",   "description":"Licences and conditions not tracked centrally; activity-vs-scope unmonitored.",        "typical_severity": 3 },
+  { "id":"v-exp-no-deemed-controls",      "code":"V-EXP-7","name":"No deemed-export controls",             "description":"No process to flag controlled-tech disclosure to foreign nationals.",                  "typical_severity": 3 },
+  { "id":"v-exp-no-training",             "code":"V-EXP-8","name":"No export-control training",           "description":"Engineering / sales / shipping staff untrained on red flags.",                          "typical_severity": 3 }
+]

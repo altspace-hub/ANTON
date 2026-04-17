@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: domestic-only counterparties, no UBO complexity, no dual-use goods, no high-risk jurisdictions in supply chain.",
+    "2": "Limited: occasional EU-based cross-border counterparties; no sanctioned-jurisdiction touchpoints.",
+    "3": "Moderate: cross-border activity beyond EU; supply chain or customer base touches one or two higher-risk jurisdictions.",
+    "4": "High: regular activity in or with sanctioned-adjacent jurisdictions; complex UBO chains; dual-use or restricted goods.",
+    "5": "Severe: direct activity in heavily sanctioned regimes; defence / dual-use / energy supply chain; correspondent / nominee structures."
+  },
+  "threat_credibility_anchors": {
+    "1": "No active sanctions enforcement targeting this profile.",
+    "2": "Documented but rare enforcement in this sector / jurisdiction.",
+    "3": "Active enforcement in the operating jurisdictions; OFAC / OFSI bulletins reference the sector.",
+    "4": "Active and adapted: typology in active use; circumvention via re-routing common.",
+    "5": "Active and targeted: entity has prior alerts or enforcement contact; sector is a stated enforcement priority."
+  },
+  "vulnerability_anchors": {
+    "1": "Real-time fuzzy screening + UBO + adverse-media + end-use; recent independent audit.",
+    "2": "Real-time screening with minor coverage gaps; periodic audit.",
+    "3": "Screening present but with stale lists / exact-match-only / no UBO depth.",
+    "4": "Screening partial or batch-only; no UBO; no adverse-media; no end-use checks.",
+    "5": "No screening, or screening documented but not operating."
+  }
+}

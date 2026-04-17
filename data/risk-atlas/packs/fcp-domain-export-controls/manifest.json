@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-export-controls",
+  "name": "FCP Domain — Export Controls",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "Dual-use, defence and sensitive-tech export-control overlay (EU Regulation 2021/821, US EAR/ITAR, UK ECJU). Activate when the entity handles dual-use goods, defence-adjacent equipment, or operates in supply chains adjacent to sanctioned jurisdictions.",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK", "US", "global"]
+}

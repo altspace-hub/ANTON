@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: payroll-only operation, no subcontractors / suppliers, low-VAT.",
+    "2": "Limited: small supplier base, no cash payments, no subcontracted labour.",
+    "3": "Moderate: regular use of subcontractors or VAT-eligible suppliers; occasional cash.",
+    "4": "High: significant subcontracted labour or supplier book; cash component; international supply chain.",
+    "5": "Severe: labour-intensive sector (construction, hospitality, agriculture) with informal payment culture; high-VAT goods sector."
+  },
+  "threat_credibility_anchors": {
+    "1": "No documented enforcement in this profile.",
+    "2": "Documented but rare CFA / equivalent enforcement.",
+    "3": "Active enforcement in the sector / region.",
+    "4": "Active and adapted: peers prosecuted; HMRC / equivalent bulletins.",
+    "5": "Active and targeted: prior CFA enforcement contact or sector listed as priority."
+  },
+  "vulnerability_anchors": {
+    "1": "Reasonable Procedures complete + audited; supplier and subbie controls evidenced.",
+    "2": "Programme broadly in place with minor gaps.",
+    "3": "Programme partial: subbie / supplier checks inconsistent; training thin.",
+    "4": "Programme weak: cash payments common; no counterparty DD on high-VAT.",
+    "5": "No programme; reliance on individual judgement; no risk assessment."
+  }
+}

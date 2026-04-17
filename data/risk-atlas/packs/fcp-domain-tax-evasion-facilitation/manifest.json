@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-tax-evasion-facilitation",
+  "name": "FCP Domain — Tax Evasion Facilitation",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "Corporate criminal offence of facilitating tax evasion overlay (UK CFA 2017 + equivalent EU regimes). Activate when the business has subcontractors, agents, or supply chains that could facilitate counterparty tax evasion (e.g., cash-in-hand, ghost subcontractors, MTIC / VAT carousel exposure).",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

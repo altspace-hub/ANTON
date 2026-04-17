@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-abc",
+  "name": "FCP Domain — Anti-Bribery & Corruption",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "Anti-bribery and corruption overlay covering UKBA, FCPA, EU Directive on combating corruption, and equivalent regimes. Activate when the business has public-sector touchpoints, agents, or operates in higher-corruption jurisdictions.",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

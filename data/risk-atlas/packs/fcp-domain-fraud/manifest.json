@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-fraud",
+  "name": "FCP Domain — Fraud",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "Internal and external fraud overlay covering CEO fraud, invoice fraud, mule accounts, card fraud, APP fraud, insider misappropriation. Default-on for any business with payment flows.",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK", "Nordics", "global"]
+}

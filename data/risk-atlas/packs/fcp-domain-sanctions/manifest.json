@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-sanctions",
+  "name": "FCP Domain — Sanctions",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "EU / UK / OFAC sanctions overlay. Default-on for any business operating in or trading with EU/UK/US jurisdictions. Activated when atlas_fcp_scope.sanctions_active is TRUE.",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK", "US", "global"]
+}

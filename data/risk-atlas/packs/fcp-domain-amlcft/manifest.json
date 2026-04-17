@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-amlcft",
+  "name": "FCP Domain — AML / CFT",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "Anti-money-laundering / counter-terrorism financing overlay. Activated automatically when atlas_fcp_scope.amlcft_active is TRUE. Mandatory for AMLR Article 16 obliged entities.",
+  "amlr_obliged": true,
+  "typical_jurisdictions": ["EU", "UK", "Nordics"]
+}

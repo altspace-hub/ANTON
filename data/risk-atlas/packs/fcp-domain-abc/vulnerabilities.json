@@ -1,0 +1,9 @@
+[
+  { "id":"v-abc-no-policy",                "code":"V-ABC-1","name":"No ABC policy",                             "description":"No documented anti-bribery / anti-corruption policy and code of conduct.",      "typical_severity": 4 },
+  { "id":"v-abc-no-training",              "code":"V-ABC-2","name":"No staff / officer ABC training",            "description":"Staff and officers untrained on ABC red flags, gifts policy, escalation.",       "typical_severity": 3 },
+  { "id":"v-abc-no-coi",                   "code":"V-ABC-3","name":"No conflict-of-interest disclosure",          "description":"Staff and officers do not periodically disclose conflicts of interest.",         "typical_severity": 3 },
+  { "id":"v-abc-no-procurement-controls",  "code":"V-ABC-4","name":"No procurement segregation / approvals",     "description":"Same individual selects, contracts and approves payment to suppliers.",          "typical_severity": 4 },
+  { "id":"v-abc-no-agent-dd",              "code":"V-ABC-5","name":"No third-party agent due diligence",         "description":"Agents and intermediaries onboarded without ABC due diligence.",                 "typical_severity": 4 },
+  { "id":"v-abc-no-agent-payment-controls","code":"V-ABC-6","name":"No controls on agent payment patterns",      "description":"Agent fees not benchmarked; no approval workflow for unusual payments.",         "typical_severity": 4 },
+  { "id":"v-abc-no-register",              "code":"V-ABC-7","name":"No gifts / hospitality register",            "description":"No register of gifts and hospitality given or received.",                       "typical_severity": 2 }
+]
