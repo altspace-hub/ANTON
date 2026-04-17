@@ -96,6 +96,21 @@ button { -webkit-user-select: none; user-select: none; }
 }
 #app > * { animation: fadeSlideIn 0.2s ease-out; }
 
+/* Bottom-sheet slide-up — used by InstanceSwitcher, BottomSheet (§9.3) */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0.5; }
+  to   { transform: translateY(0);    opacity: 1;   }
+}
+.animate-slideUp { animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1); }
+
+/* Quick scale-bounce for the FAB tap (§9.4 micro-interaction) */
+@keyframes fabPress {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-fabPress { animation: fabPress 0.18s ease-out; }
+
 /* Org branding — override accent when --org-brand-color is set */
 :root { --org-brand-color: var(--color-adv-teal); }
 html[style*="--org-brand-color"] .chat-user { background-color: var(--org-brand-color) !important; }

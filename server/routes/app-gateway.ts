@@ -66,6 +66,21 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Browse the LAN for other ANTON instances (spec §5.1 Mode A) ──────
+  // The phone sometimes can't browse mDNS itself (PWA, restrictive
+  // network APIs); the instance can do it on the phone's behalf as long
+  // as the phone is already authenticated to one instance and trusts it.
+  publicRouter.get('/discover/lan', appAuth, async (_req, res) => {
+    try {
+      const { createMdnsAdvertiser } = await import('../services/mdns-advertiser.js');
+      const advertiser = await createMdnsAdvertiser(parseInt(process.env.PORT || '3011', 10));
+      const instances = await advertiser.browse(2500);
+      res.json({ instances });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'LAN browse failed' });
+    }
+  });
+
   // ── Registration (no auth) ─────────────────────────────────────────────
   publicRouter.post('/register', async (req, res) => {
     try {
