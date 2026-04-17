@@ -1,0 +1,11 @@
+[
+  { "id":"v-tef-no-subbie-checks",        "code":"V-TEF-1","name":"No subcontractor tax-status checks",      "description":"UTR / F-skatt / equivalent not verified at onboarding.",                               "typical_severity": 4 },
+  { "id":"v-tef-cash-payments",           "code":"V-TEF-2","name":"Cash / informal payments to staff / subs","description":"Cash or Swish / Vipps used outside documented payroll.",                              "typical_severity": 4 },
+  { "id":"v-tef-no-supplier-verification","code":"V-TEF-3","name":"No supplier tax / existence verification","description":"Suppliers onboarded without check of VAT registration, premises, deliverables.",       "typical_severity": 4 },
+  { "id":"v-tef-no-delivery-evidence",    "code":"V-TEF-4","name":"No goods-in / proof-of-delivery records", "description":"Invoices paid without documented receipt of goods / service.",                        "typical_severity": 4 },
+  { "id":"v-tef-no-counterparty-dd",      "code":"V-TEF-5","name":"No counterparty DD on high-VAT deals",    "description":"Large VAT-reclaim transactions with counterparties not independently verified.",      "typical_severity": 3 },
+  { "id":"v-tef-no-supply-chain-checks",  "code":"V-TEF-6","name":"No tier-2 / tier-3 supply-chain checks",  "description":"Indirect counterparties not verified for MTIC / carousel chain inclusion.",           "typical_severity": 3 },
+  { "id":"v-tef-no-policy",               "code":"V-TEF-7","name":"No anti-tax-evasion-facilitation policy", "description":"No documented policy prohibiting facilitation or describing reporting pathway.",      "typical_severity": 4 },
+  { "id":"v-tef-no-training",             "code":"V-TEF-8","name":"No staff training on CFA / equivalent",   "description":"Staff untrained on CFA 2017 obligations and red flags.",                             "typical_severity": 3 },
+  { "id":"v-tef-no-risk-assessment",      "code":"V-TEF-9","name":"No CFA-style facilitation risk assessment","description":"No documented assessment of where facilitation risk lives in the business.",         "typical_severity": 4 }
+]

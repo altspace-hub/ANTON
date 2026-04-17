@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: no payment flows, fully manual, owner-only operation, no online presence.",
+    "2": "Limited: small invoice volumes, no card acceptance, no online customer onboarding.",
+    "3": "Moderate: regular invoicing, occasional bank-detail changes, some online customer interactions.",
+    "4": "High: significant payment volumes, online customer onboarding, card acceptance, supplier flows in multiple currencies.",
+    "5": "Severe: high-volume payments, instant rails, large supplier book, online lending / consumer credit, mass-market customer base."
+  },
+  "threat_credibility_anchors": {
+    "1": "Sector / region with no documented fraud activity targeting this profile.",
+    "2": "Documented but rare incidents in this sector / region.",
+    "3": "Active fraud campaigns documented in the sector or region; incidents within peer firms.",
+    "4": "Active and adapted: fraud actors actively probe controls; sector is known target.",
+    "5": "Active and targeted: entity has incidents on file; published industry alerts name the sector."
+  },
+  "vulnerability_anchors": {
+    "1": "All controls in place + tested + audited; staff trained; case management mature.",
+    "2": "Controls in place with minor gaps; recent review.",
+    "3": "Controls partial: callback exists but inconsistent; behavioural rules limited; mule detection thin.",
+    "4": "Multiple controls absent or untested; segregation weak; onboarding fraud signals minimal.",
+    "5": "No callback / dual control / behavioural monitoring; no onboarding fraud checks."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: domestic-only services, no physical goods, no controlled tech.",
+    "2": "Limited: occasional EU exports of clearly non-controlled goods.",
+    "3": "Moderate: regular international shipments; some dual-use risk.",
+    "4": "High: dual-use product line; international distribution including emerging markets; foreign-national engineering team.",
+    "5": "Severe: defence / encryption / advanced-materials / sensitive-tech sector; supply chain into sanctioned-adjacent jurisdictions."
+  },
+  "threat_credibility_anchors": {
+    "1": "No documented enforcement in this profile.",
+    "2": "Documented but rare enforcement.",
+    "3": "Active enforcement in the sector (BIS, ECJU, customs raids).",
+    "4": "Active and adapted: peers prosecuted; sector named in enforcement bulletins.",
+    "5": "Active and targeted: prior enforcement contact or sector listed as priority."
+  },
+  "vulnerability_anchors": {
+    "1": "Programme complete: classification, end-user screening, licence tracking, deemed-export, training, audit.",
+    "2": "Programme broadly in place with minor gaps.",
+    "3": "Programme partial: classification inconsistent; deemed-export weak.",
+    "4": "Programme weak: end-user screening absent; supply chain unverified.",
+    "5": "No programme; reliance on customer self-declaration."
+  }
+}

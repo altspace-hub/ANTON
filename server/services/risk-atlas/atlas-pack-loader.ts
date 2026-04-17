@@ -81,6 +81,18 @@ const escalationTriggerZ = z.object({
   action: z.string().min(1).max(1000),
   timeline: z.string().max(200).optional(),
 });
+const severityAnchorBlockZ = z.object({
+  '1': z.string().min(1).max(2000),
+  '2': z.string().min(1).max(2000),
+  '3': z.string().min(1).max(2000),
+  '4': z.string().min(1).max(2000),
+  '5': z.string().min(1).max(2000),
+}).partial();
+const severityBenchmarksZ = z.object({
+  exposure_anchors: severityAnchorBlockZ.optional(),
+  threat_credibility_anchors: severityAnchorBlockZ.optional(),
+  vulnerability_anchors: severityAnchorBlockZ.optional(),
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BUILTIN_PACKS_ROOT = path.resolve(__dirname, '..', '..', '..', 'data', 'risk-atlas', 'packs');
@@ -128,10 +140,16 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
 
   async function upsertPackRow(manifest: IndustryPackManifest, packDir: string): Promise<'inserted' | 'updated'> {
     const relPath = path.relative(process.cwd(), packDir);
+    // pack_kind classifier — added in migration 128. Defaults to 'industry'
+    // for backwards compatibility with manifests that pre-date the field.
+    const packKind = (manifest as { pack_kind?: string }).pack_kind ?? 'industry';
+    if (!['industry', 'fcp-domain', 'overlay'].includes(packKind)) {
+      throw new Error(`Pack ${manifest.id}: pack_kind must be one of 'industry' | 'fcp-domain' | 'overlay'`);
+    }
     const row = await db.get<{ was_insert: boolean }>(
       `INSERT INTO atlas_industry_packs
-        (id, name, description, version, source, pack_path, parent_pack_id, amlr_obliged, is_enabled)
-       VALUES (?, ?, ?, ?, 'builtin', ?, ?, ?, TRUE)
+        (id, name, description, version, source, pack_path, parent_pack_id, amlr_obliged, is_enabled, pack_kind)
+       VALUES (?, ?, ?, ?, 'builtin', ?, ?, ?, TRUE, ?)
        ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          description = EXCLUDED.description,
@@ -139,10 +157,11 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
          pack_path = EXCLUDED.pack_path,
          parent_pack_id = EXCLUDED.parent_pack_id,
          amlr_obliged = EXCLUDED.amlr_obliged,
+         pack_kind = EXCLUDED.pack_kind,
          updated_at = NOW()
        RETURNING (xmax = 0) AS was_insert`,
       manifest.id, manifest.name, manifest.description ?? null, manifest.version,
-      relPath, manifest.parent_pack_id ?? null, manifest.amlr_obliged ?? false,
+      relPath, manifest.parent_pack_id ?? null, manifest.amlr_obliged ?? false, packKind,
     );
     return row?.was_insert ? 'inserted' : 'updated';
   }
@@ -172,7 +191,7 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       throw new Error(`Pack dir ${resolved} is outside the built-in packs root`);
     }
 
-    const [exposurePointsRaw, threatPathsRaw, vulnerabilitiesRaw, controlsRaw, glossaryRaw, appetiteHeuristicsRaw, escalationTriggersRaw, regulatoryTagsRaw] = await Promise.all([
+    const [exposurePointsRaw, threatPathsRaw, vulnerabilitiesRaw, controlsRaw, glossaryRaw, appetiteHeuristicsRaw, escalationTriggersRaw, regulatoryTagsRaw, severityBenchmarksRaw] = await Promise.all([
       readJsonOrEmpty<unknown>(path.join(packDir, 'exposure-points.json'), []),
       readJsonOrEmpty<unknown>(path.join(packDir, 'threat-paths.json'), []),
       readJsonOrEmpty<unknown>(path.join(packDir, 'vulnerabilities.json'), []),
@@ -181,6 +200,7 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       readJsonOrEmpty<unknown>(path.join(packDir, 'appetite-heuristics.json'), {}),
       readJsonOrEmpty<unknown>(path.join(packDir, 'escalation-triggers.json'), []),
       readJsonOrEmpty<unknown>(path.join(packDir, 'regulatory-tags.json'), { tags: [] }),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'severity-benchmarks.json'), null),
     ]);
 
     // Validate each library — reject the whole pack on any schema failure.
@@ -195,6 +215,8 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
     const appetiteHeuristics   = appetiteHeuristicsZ.parse(appetiteHeuristicsRaw ?? {});
     const escalationTriggers   = z.array(escalationTriggerZ).parse(escalationTriggersRaw);
     const regulatoryTagsParsed = z.object({ tags: z.array(z.string().max(120)).optional() }).parse(regulatoryTagsRaw ?? {});
+    // Severity benchmarks — optional, validated against the Stage 4 anchor shape.
+    const severityBenchmarks = severityBenchmarksRaw ? severityBenchmarksZ.parse(severityBenchmarksRaw) : undefined;
 
     const socraticScripts = await readSocraticScripts(path.join(packDir, 'socratic-scripts'));
 
@@ -209,6 +231,7 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       appetiteHeuristics,
       escalationTriggers,
       regulatoryTags: regulatoryTagsParsed.tags ?? [],
+      severityBenchmarks,
     };
   }
 
@@ -344,6 +367,12 @@ export function mergePackContent(parent: IndustryPackContent, child: IndustryPac
     appetiteHeuristics: { ...parent.appetiteHeuristics, ...child.appetiteHeuristics },
     escalationTriggers: [...(parent.escalationTriggers ?? []), ...(child.escalationTriggers ?? [])],
     regulatoryTags: Array.from(new Set([...(parent.regulatoryTags ?? []), ...(child.regulatoryTags ?? [])])),
+    // Severity benchmarks — child anchors override parent at the per-block level.
+    severityBenchmarks: (parent.severityBenchmarks || child.severityBenchmarks) ? {
+      exposure_anchors:           { ...(parent.severityBenchmarks?.exposure_anchors ?? {}),           ...(child.severityBenchmarks?.exposure_anchors ?? {}) },
+      threat_credibility_anchors: { ...(parent.severityBenchmarks?.threat_credibility_anchors ?? {}), ...(child.severityBenchmarks?.threat_credibility_anchors ?? {}) },
+      vulnerability_anchors:      { ...(parent.severityBenchmarks?.vulnerability_anchors ?? {}),     ...(child.severityBenchmarks?.vulnerability_anchors ?? {}) },
+    } : undefined,
   };
 }
 

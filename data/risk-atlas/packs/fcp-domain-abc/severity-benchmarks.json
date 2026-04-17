@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: no public-sector touchpoints, no agents / intermediaries, no permitting or licensing, jurisdictions with low corruption perception.",
+    "2": "Limited: occasional public-sector interface (filings, certifications), no agents.",
+    "3": "Moderate: regular permitting / inspection / licensing interface; some use of intermediaries.",
+    "4": "High: significant public-sector interface (procurement, infrastructure); agents in higher-corruption jurisdictions.",
+    "5": "Severe: defence / extractives / large infrastructure; multiple agents in CPI > 50 jurisdictions; politically-connected counterparties."
+  },
+  "threat_credibility_anchors": {
+    "1": "No documented ABC enforcement in this sector / region.",
+    "2": "Documented but rare enforcement.",
+    "3": "Active enforcement in the sector / region.",
+    "4": "Active and adapted: corruption schemes documented in adjacent firms.",
+    "5": "Active and targeted: prior ABC enforcement contact or sector listed as enforcement priority."
+  },
+  "vulnerability_anchors": {
+    "1": "Adequate Procedures (UKBA s.7) demonstrably in place + audited.",
+    "2": "Adequate Procedures broadly in place with minor gaps.",
+    "3": "Programme partial: policy + training present, agent DD inconsistent, register weak.",
+    "4": "Programme weak: multiple controls absent or untested.",
+    "5": "No ABC programme; reliance on individual judgement."
+  }
+}

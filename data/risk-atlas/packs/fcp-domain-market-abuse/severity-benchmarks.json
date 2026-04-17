@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible: not a regulated trading venue / broker / asset manager / issuer; no staff with MNPI access.",
+    "2": "Limited: occasional access to inside information (small adviser, single-issuer dealings).",
+    "3": "Moderate: regulated entity with limited trading book or single-product venue.",
+    "4": "High: trading desk + asset management; CASP listing tradable tokens; published research function.",
+    "5": "Severe: multi-asset venue, sell-side trading, large issuer with frequent material announcements."
+  },
+  "threat_credibility_anchors": {
+    "1": "No documented MAR enforcement in this profile.",
+    "2": "Documented but rare enforcement.",
+    "3": "Active enforcement in the sector.",
+    "4": "Active and adapted: insider patterns documented in adjacent firms.",
+    "5": "Active and targeted: prior enforcement contact or prominent named-and-shamed peer."
+  },
+  "vulnerability_anchors": {
+    "1": "Surveillance + insider list + PA-dealing + disclosure + training + STOR pathway in place + audited.",
+    "2": "Programme broadly in place with minor gaps.",
+    "3": "Programme partial: surveillance present, insider list inconsistent, training thin.",
+    "4": "Programme weak: surveillance limited; STOR pathway theoretical.",
+    "5": "No surveillance, no insider list, no PA-dealing policy, no STOR pathway."
+  }
+}

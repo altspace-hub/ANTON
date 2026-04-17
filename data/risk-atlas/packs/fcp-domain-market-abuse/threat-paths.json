@@ -1,0 +1,6 @@
+[
+  { "id":"tp-mar-insider",       "code":"TP-MAR-1","name":"Insider dealing on inside information",          "description":"Staff or counterparty trades on material non-public information ahead of announcement.","typical_inherent": 4, "fcp_domain":"market_abuse", "vulnerability_refs":["v-mar-no-pa-dealing","v-mar-no-insider-list"] },
+  { "id":"tp-mar-disclosure",    "code":"TP-MAR-2","name":"Unlawful disclosure of inside information",      "description":"Inside information shared selectively (analyst tipping, partner leakage, social media slip).","typical_inherent": 3, "fcp_domain":"market_abuse", "vulnerability_refs":["v-mar-no-disclosure-controls","v-mar-no-training"] },
+  { "id":"tp-mar-manipulation",  "code":"TP-MAR-3","name":"Market manipulation (spoofing / wash / layering)","description":"Trading desk or customer engages in spoofing, wash trades or layering on a venue or token pair.","typical_inherent": 4, "fcp_domain":"market_abuse", "vulnerability_refs":["v-mar-no-trade-surveillance"] },
+  { "id":"tp-mar-stor",          "code":"TP-MAR-4","name":"Suspicious-trade order report (STOR) not filed", "description":"Surveillance flags a suspicious order or trade and no STOR / equivalent is filed to the NCA.","typical_inherent": 3, "fcp_domain":"market_abuse", "vulnerability_refs":["v-mar-no-stor-pathway"] }
+]

@@ -1,0 +1,8 @@
+[
+  { "id":"v-mar-no-pa-dealing",          "code":"V-MAR-1","name":"No personal-account dealing policy",       "description":"Staff allowed to trade personal accounts without disclosure / pre-approval / restricted-list checks.","typical_severity": 4 },
+  { "id":"v-mar-no-insider-list",        "code":"V-MAR-2","name":"No insider list maintained",                "description":"No documented insider list; project-specific access not tracked.",                                  "typical_severity": 3 },
+  { "id":"v-mar-no-disclosure-controls", "code":"V-MAR-3","name":"No disclosure controls",                    "description":"No documented procedure for selective disclosure / cleansing announcements.",                       "typical_severity": 3 },
+  { "id":"v-mar-no-training",            "code":"V-MAR-4","name":"No MAR / market-abuse training",            "description":"Staff and officers untrained on MAR red flags and reporting obligations.",                          "typical_severity": 3 },
+  { "id":"v-mar-no-trade-surveillance",  "code":"V-MAR-5","name":"No trade surveillance",                     "description":"No automated detection of spoofing / wash / layering across venues or pairs.",                      "typical_severity": 4 },
+  { "id":"v-mar-no-stor-pathway",        "code":"V-MAR-6","name":"No STOR pathway",                           "description":"No documented escalation path to file STORs / suspicious-order reports with the NCA.",              "typical_severity": 4 }
+]

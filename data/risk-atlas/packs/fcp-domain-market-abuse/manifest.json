@@ -1,0 +1,9 @@
+{
+  "id": "fcp-domain-market-abuse",
+  "name": "FCP Domain — Market Abuse",
+  "version": "1.0.0",
+  "pack_kind": "fcp-domain",
+  "description": "EU MAR / MiCA market-abuse regime overlay. Activate when the entity is a regulated trading venue, broker, asset manager, issuer, CASP listing tradable tokens, or has staff with material non-public information.",
+  "amlr_obliged": false,
+  "typical_jurisdictions": ["EU", "UK"]
+}

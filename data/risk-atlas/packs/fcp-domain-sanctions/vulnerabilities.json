@@ -1,0 +1,10 @@
+[
+  { "id":"v-sanc-no-screen",            "code":"V-SANC-1","name":"No real-time sanctions screening",        "description":"Counterparties not screened at onboarding or transaction time.",                                  "typical_severity": 5 },
+  { "id":"v-sanc-stale-list",           "code":"V-SANC-2","name":"Stale sanctions lists",                    "description":"Lists refreshed weekly or via manual upload.",                                                     "typical_severity": 4 },
+  { "id":"v-sanc-no-ubo-screen",        "code":"V-SANC-3","name":"No UBO-level screening",                   "description":"Only the contracting party is screened; underlying owners and controllers are not.",              "typical_severity": 4 },
+  { "id":"v-sanc-no-adverse-media",     "code":"V-SANC-4","name":"No adverse-media check",                   "description":"No periodic screen against adverse-media datasets to catch nominees / front entities.",            "typical_severity": 3 },
+  { "id":"v-sanc-no-jurisdiction-screen","code":"V-SANC-5","name":"No counterparty-jurisdiction screening", "description":"No automated check on counterparty country of registration / operation against sanctioned regimes.","typical_severity": 4 },
+  { "id":"v-sanc-no-end-use",           "code":"V-SANC-6","name":"No end-use / end-user verification",      "description":"No documented end-use statement or check against restricted-purpose lists.",                       "typical_severity": 3 },
+  { "id":"v-sanc-no-supply-chain-dd",   "code":"V-SANC-7","name":"No supply-chain due diligence",            "description":"Tier-2 / tier-3 suppliers not verified; circumvention via re-export goes undetected.",             "typical_severity": 3 },
+  { "id":"v-sanc-no-licence-tracker",   "code":"V-SANC-8","name":"No OFAC / OFSI licence tracker",           "description":"Licences and conditions not tracked centrally; activity-vs-scope not monitored.",                   "typical_severity": 3 }
+]

@@ -1,0 +1,23 @@
+{
+  "exposure_anchors": {
+    "1": "Negligible AML/CFT exposure: domestic-only, low-value, fully cashless, no PEP/high-risk customers, no third-party flows.",
+    "2": "Limited exposure: small-value, mostly domestic, occasional international, no obvious high-risk customer types.",
+    "3": "Moderate exposure: cross-border activity, some PEP / high-risk jurisdictions in the customer base, occasional cash, third-party payments.",
+    "4": "High exposure: significant cross-border activity, regular PEP / high-risk-jurisdiction touchpoints, complex ownership counterparties, third-party flows, virtual-asset interfaces.",
+    "5": "Severe exposure: AMLR-obliged entity at scale (bank, CASP, payment institution), high-volume cross-border flows, large PEP book, multi-product complexity, correspondent / nested relationships."
+  },
+  "threat_credibility_anchors": {
+    "1": "Theoretical: no credible TF/ML threat actors known to target this profile; jurisdiction not on FATF / EU lists.",
+    "2": "Documented but rare: domestic typology, infrequent and well-contained.",
+    "3": "Documented and current: typology actively used by criminal groups in the operating jurisdiction; recent regulator alerts.",
+    "4": "Active and adapted: typology in active use; criminals adapt to controls; FIU bulletins reference the entity's sector.",
+    "5": "Active and targeted: the entity has evidence (alerts, prior incidents) of being directly targeted by AML/TF networks."
+  },
+  "vulnerability_anchors": {
+    "1": "Programme essentially complete: documented + tested + audited; minor improvement items only.",
+    "2": "Programme largely in place: small gaps, recent independent review.",
+    "3": "Programme partial: key controls present but with documented exceptions / stale evidence / training gaps.",
+    "4": "Programme weak: multiple controls absent or untested; no recent independent review; staff coverage thin.",
+    "5": "Programme absent: no documented CDD / TM / screening / STR pathway; or documented but not operating."
+  }
+}

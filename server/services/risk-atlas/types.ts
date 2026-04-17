@@ -302,12 +302,25 @@ export interface IndustryPackManifest {
   name: string;
   version: string;
   description?: string;
+  /** 'industry' | 'fcp-domain' | 'overlay'. Defaults to 'industry' when omitted. */
+  pack_kind?: 'industry' | 'fcp-domain' | 'overlay';
   amlr_obliged?: boolean;
   parent_pack_id?: string;
   recommends_fcp_domains?: Array<{ domain: FcpDomain; rationale: string }>;
   recommends_fcp_domains_optional?: Array<{ domain: FcpDomain; rationale: string }>;
   typical_size_range?: Array<'micro' | 'small' | 'medium' | 'large' | 'enterprise'>;
   typical_jurisdictions?: string[];
+}
+
+/**
+ * Calibration anchors for the deterministic 1-5 scoring at Stage 4.
+ * Each domain or industry pack ships its own anchors so the scoring
+ * remains comparable within a domain across Atlases.
+ */
+export interface SeverityBenchmarks {
+  exposure_anchors?: Partial<Record<'1' | '2' | '3' | '4' | '5', string>>;
+  threat_credibility_anchors?: Partial<Record<'1' | '2' | '3' | '4' | '5', string>>;
+  vulnerability_anchors?: Partial<Record<'1' | '2' | '3' | '4' | '5', string>>;
 }
 
 export interface IndustryPackContent {
@@ -321,4 +334,5 @@ export interface IndustryPackContent {
   appetiteHeuristics?: Record<string, AppetitePosition>;
   escalationTriggers?: Array<{ event: string; action: string; timeline?: string }>;
   regulatoryTags?: string[];
+  severityBenchmarks?: SeverityBenchmarks;
 }

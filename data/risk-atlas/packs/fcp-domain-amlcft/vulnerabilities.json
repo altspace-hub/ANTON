@@ -1,0 +1,9 @@
+[
+  { "id":"v-aml-no-cdd",      "code":"V-AML-1","name":"No / weak customer due diligence",          "description":"Identity verification thin; beneficial ownership not documented; relationship purpose not captured.", "typical_severity": 4 },
+  { "id":"v-aml-no-tm",       "code":"V-AML-2","name":"No transaction monitoring",                  "description":"No automated rules; reliance on staff to spot suspicious activity in the moment.",                       "typical_severity": 4 },
+  { "id":"v-aml-no-edd",      "code":"V-AML-3","name":"No EDD trigger or refresh policy",            "description":"PEPs and high-risk customers handled identically to standard.",                                          "typical_severity": 4 },
+  { "id":"v-aml-no-sof",      "code":"V-AML-4","name":"No source-of-funds / source-of-wealth",       "description":"No threshold-based SoF/SoW evidence collection.",                                                       "typical_severity": 4 },
+  { "id":"v-aml-no-tf-rules", "code":"V-AML-5","name":"No TF-specific rule set or intel feed",       "description":"TF-specific patterns (small structured outflows, sanctioned charities, conflict zones) not detected.","typical_severity": 4 },
+  { "id":"v-aml-no-screening","code":"V-AML-6","name":"No PEP / sanctions / adverse-media screening","description":"Counterparties not screened against PEP / sanctions / adverse-media lists.",                              "typical_severity": 5 },
+  { "id":"v-aml-no-str",      "code":"V-AML-7","name":"No STR / SAR pathway",                        "description":"No documented escalation path to the FIU; no templates retained; tipping-off rules unknown to staff.","typical_severity": 4 }
+]
