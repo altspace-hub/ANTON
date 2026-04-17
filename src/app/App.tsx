@@ -7,7 +7,9 @@
 import { useState, useEffect } from 'react';
 import { getIdentity } from './services/identity';
 import { getSessionToken } from './services/api';
-import { onActiveInstanceChange } from './services/instances';
+import { onActiveInstanceChange, getActiveInstance } from './services/instances';
+import { registerPush, setNotificationRouter, startNativeNotificationListener } from './services/push';
+import { listPendingCheckpoints } from './services/checkpoints';
 
 // Auth screens
 import WelcomePage from './pages/WelcomePage';
@@ -23,15 +25,15 @@ import TaskScreen from './pages/TaskScreen';
 import SearchScreen from './pages/SearchScreen';
 import MarketsScreen from './pages/MarketsScreen';
 import RadarScreen from './pages/RadarScreen';
-import OrgHomePage from './pages/OrgHomePage';
 import SessionHistoryPage from './pages/SessionHistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import WalletScreen from './pages/WalletScreen';
+import ApprovalsScreen from './pages/ApprovalsScreen';
 import TabBar from './components/TabBar';
 
 type AuthScreen = 'welcome' | 'join' | 'connections';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
+type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
 
 const MAIN_TABS = [
   { id: 'home', label: 'Home', icon: 'home' },
@@ -51,6 +53,10 @@ export default function App() {
   const [showMore, setShowMore] = useState(false);
   // Bumped each time the user switches instance, forces tab content to re-mount + re-fetch
   const [instanceVersion, setInstanceVersion] = useState(0);
+  // Pending approvals badge — refreshed every 60s and on tab change
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+  // Set when a push deep-link routes to a specific approval id
+  const [openApprovalId, setOpenApprovalId] = useState<string | null>(null);
 
   useEffect(() => {
     const identity = getIdentity();
@@ -70,6 +76,43 @@ export default function App() {
     setSelectedOrgId(null);
     setAuthScreen('connections');
   }), []);
+
+  // Push registration + notification deep-link router (best-effort)
+  useEffect(() => {
+    const inst = getActiveInstance();
+    if (!inst?.device_id) return;          // legacy pair has no device_id; skip
+    void registerPush().catch(() => { /* swallow — silent by default per spec §8.7 */ });
+    setNotificationRouter((deepLink, raw) => {
+      // /approvals/:id deep links land us on the approvals tab with the detail open
+      const m = deepLink.match(/^\/approvals\/([^/?]+)/);
+      if (m) {
+        setOpenApprovalId(m[1]);
+        setActiveTab('approvals');
+        setShowMore(false);
+      } else if (raw.event_id) {
+        setOpenApprovalId(raw.event_id);
+        setActiveTab('approvals');
+      }
+    });
+    let off: (() => void) | null = null;
+    void startNativeNotificationListener().then(fn => { off = fn; });
+    return () => { off?.(); };
+  }, [instanceVersion]);
+
+  // Pending approvals badge — refresh now + every 60s
+  useEffect(() => {
+    if (!getActiveInstance()) { setPendingApprovals(0); return; }
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const list = await listPendingCheckpoints({ limit: 100 });
+        if (!cancelled) setPendingApprovals(list.length);
+      } catch { /* silent */ }
+    }
+    void refresh();
+    const id = window.setInterval(refresh, 60_000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [instanceVersion, activeTab]);
 
   function selectOrg(orgId: string, orgName?: string, orgType?: string) {
     setSelectedOrgId(orgId);
@@ -142,6 +185,12 @@ export default function App() {
           onBack={() => setActiveTab('home')}
         />
       )}
+      {activeTab === 'approvals' && (
+        <ApprovalsScreen
+          key={`approvals-${instanceVersion}-${openApprovalId ?? 'list'}`}
+          initialCheckpointId={openApprovalId}
+        />
+      )}
       {activeTab === 'profile' && <ProfilePage onBack={() => setActiveTab('home')} />}
       {activeTab === 'settings' && <SettingsPage onBack={() => setActiveTab('home')} />}
 
@@ -150,14 +199,15 @@ export default function App() {
         <div className="absolute bottom-16 left-0 right-0 z-40 border-t border-border bg-adv-dark-2 safe-bottom">
           <div className="mx-auto max-w-2xl grid grid-cols-3 gap-1 p-3">
             {[
-              { id: 'search', icon: '🔍', label: 'Research' },
+              { id: 'approvals', icon: '✅', label: 'Approvals', badge: pendingApprovals },
+              { id: 'search',  icon: '🔍', label: 'Research' },
               { id: 'markets', icon: '📊', label: 'Markets' },
-              { id: 'radar', icon: '📡', label: 'Radar' },
-              { id: 'wallet', icon: '💰', label: 'Wallet' },
+              { id: 'radar',   icon: '📡', label: 'Radar' },
+              { id: 'wallet',  icon: '💰', label: 'Wallet' },
               { id: 'history', icon: '💬', label: 'History' },
               { id: 'profile', icon: '👤', label: 'Profile' },
-              { id: 'settings', icon: '⚙️', label: 'Settings' },
-              { id: 'back', icon: '🔙', label: 'Switch Org' },
+              { id: 'settings',icon: '⚙️', label: 'Settings' },
+              { id: 'back',    icon: '🔙', label: 'Switch Org' },
             ].map(item => (
               <button
                 key={item.id}
@@ -166,10 +216,15 @@ export default function App() {
                   if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
                   else setActiveTab(item.id as OrgTab);
                 }}
-                className="flex flex-col items-center gap-1 rounded-lg py-3 text-adv-gray hover:text-adv-teal hover:bg-adv-card transition"
+                className="relative flex flex-col items-center gap-1 rounded-lg py-3 text-adv-gray hover:text-adv-teal hover:bg-adv-card transition"
               >
                 <span className="text-xl">{item.icon}</span>
                 <span className="text-[10px]">{item.label}</span>
+                {(item as { badge?: number }).badge && (item as { badge?: number }).badge! > 0 && (
+                  <span className="absolute right-2 top-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-adv-red px-1 text-[9px] font-bold text-white">
+                    {(item as { badge?: number }).badge! > 9 ? '9+' : (item as { badge?: number }).badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
