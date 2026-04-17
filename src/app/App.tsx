@@ -30,12 +30,13 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import WalletScreen from './pages/WalletScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
+import CapturePage from './pages/CapturePage';
 import TabBar from './components/TabBar';
 import QuickActionsFab from './components/QuickActionsFab';
 import { fetchWithAuth } from './services/api';
 
 type AuthScreen = 'welcome' | 'join' | 'connections';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
+type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
 
 const MAIN_TABS = [
   { id: 'home', label: 'Home', icon: 'home' },
@@ -193,6 +194,14 @@ export default function App() {
           initialCheckpointId={openApprovalId}
         />
       )}
+      {activeTab === 'capture' && (
+        <CapturePage
+          key={`capture-${instanceVersion}`}
+          orgId={selectedOrgId}
+          onSent={(sid) => { if (sid) setSessionId(sid); setActiveTab('chat'); }}
+          onBack={() => setActiveTab('home')}
+        />
+      )}
       {activeTab === 'profile' && <ProfilePage onBack={() => setActiveTab('home')} />}
       {activeTab === 'settings' && <SettingsPage onBack={() => setActiveTab('home')} />}
 
@@ -202,6 +211,7 @@ export default function App() {
           <div className="mx-auto max-w-2xl grid grid-cols-3 gap-1 p-3">
             {[
               { id: 'approvals', icon: '✅', label: 'Approvals', badge: pendingApprovals },
+              { id: 'capture', icon: '📸', label: 'Capture' },
               { id: 'search',  icon: '🔍', label: 'Research' },
               { id: 'markets', icon: '📊', label: 'Markets' },
               { id: 'radar',   icon: '📡', label: 'Radar' },
@@ -237,7 +247,7 @@ export default function App() {
       <QuickActionsFab
         pendingApprovals={pendingApprovals}
         onAsk={() => { setActiveTab('chat'); setShowMore(false); }}
-        onCapture={() => { /* Phase G — Capture page */ setActiveTab('chat'); setShowMore(false); }}
+        onCapture={() => { setActiveTab('capture'); setShowMore(false); }}
         onApprovals={() => { setActiveTab('approvals'); setShowMore(false); }}
         onSwitchInstance={() => { /* InstanceTopBar already exposes the switcher; nothing else to do here */ }}
         onVoiceSubmit={async (transcript: string) => {
