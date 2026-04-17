@@ -1,0 +1,39 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-threat-cataloguer",
+  "label": "Atlas Stage 2 — Threat Path Cataloguer",
+  "shortLabel": "Threat Paths",
+  "description": "Catalogues credible harm scenarios as named threat paths. Industry-pack-driven; converts categories into stories management can act on.",
+  "icon": "GitBranch",
+  "color": "adv-gold",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["risk-register"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": false, "folderPaths": [], "recursive": false }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id", "type": "text", "label": "Atlas id", "required": true },
+    { "id": "industry_pack", "type": "text", "label": "Industry pack id", "required": false, "placeholder": "Inherited from the Atlas if blank" },
+    { "id": "fcp_domains", "type": "multi-select", "label": "Active FCP domains (optional)", "required": false,
+      "options": [
+        { "value": "amlcft",                   "label": "AML/CFT" },
+        { "value": "sanctions",                "label": "Sanctions" },
+        { "value": "fraud",                    "label": "Fraud" },
+        { "value": "abc",                      "label": "Anti-Bribery & Corruption" },
+        { "value": "market_abuse",             "label": "Market Abuse" },
+        { "value": "tax_evasion_facilitation", "label": "Tax Evasion Facilitation" },
+        { "value": "export_controls",          "label": "Export Controls" },
+        { "value": "modern_slavery",           "label": "Modern Slavery" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["risk-coach", "senior-risk-officer"],
+  "recommendedSkills": ["threat-path-methodology"],
+  "tags": ["risk", "atlas", "stage-2", "threat-path", "bwra"],
+  "contentType": "risk_register"
+}

@@ -1,0 +1,27 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-inherent-scorer",
+  "label": "Atlas Stage 4 — Inherent Scorer",
+  "shortLabel": "Inherent",
+  "description": "Scores each threat path's exposure × threat × vulnerability dimensions. Inherent score is auto-calculated as max-of-three (deterministic — never LLM-decided).",
+  "icon": "Gauge",
+  "color": "adv-gold",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["risk-register"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": false, "folderPaths": [], "recursive": false }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id",       "type": "text", "label": "Atlas id", "required": true },
+    { "id": "threat_path_id", "type": "text", "label": "Single threat path (optional — leave blank for full Atlas)", "required": false }
+  ],
+  "recommendedPersonas": ["risk-coach", "senior-risk-officer"],
+  "recommendedSkills": ["threat-path-methodology", "residual-calculation"],
+  "tags": ["risk", "atlas", "stage-4", "inherent", "bwra"],
+  "contentType": "risk_register"
+}

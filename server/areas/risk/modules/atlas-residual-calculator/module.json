@@ -1,0 +1,27 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-residual-calculator",
+  "label": "Atlas Stage 6 — Residual Calculator (rationale)",
+  "shortLabel": "Residual",
+  "description": "Produces the rationale around the calculated residual scores. The number itself is computed deterministically by atlas-residual-calculator.ts — never by an LLM.",
+  "icon": "Calculator",
+  "color": "adv-blue",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["risk-register"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": false, "folderPaths": [], "recursive": false }
+    }
+  },
+  "guidedInputs": [
+    { "id": "atlas_id",       "type": "text", "label": "Atlas id", "required": true },
+    { "id": "threat_path_id", "type": "text", "label": "Single threat path (optional)", "required": false }
+  ],
+  "recommendedPersonas": ["risk-coach", "senior-risk-officer"],
+  "recommendedSkills": ["residual-calculation", "control-evidence-scoring"],
+  "tags": ["risk", "atlas", "stage-6", "residual", "deterministic", "bwra"],
+  "contentType": "risk_register"
+}

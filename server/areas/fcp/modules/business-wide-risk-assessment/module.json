@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-wide-risk-assessment",
+  "label": "Business-Wide Risk Assessment (BWRA) — FCP",
+  "shortLabel": "BWRA",
+  "description": "AMLR Article 16 / FATF R.1 business-wide risk assessment for obliged entities. Built on the Risk Atlas seven-stage methodology with the FCP Bank or CASP industry pack pre-selected. Outputs a regulator-ready BWRA document and seeds an Atlas the institution maintains as a living workspace.",
+  "icon": "FileShield",
+  "color": "adv-red",
+  "areaId": "fcp",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["risk-register", "policy-document", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": true, "folderPaths": [], "recursive": true }
+    }
+  },
+  "guidedInputs": [
+    { "id": "institution_type", "type": "select", "label": "Institution type", "required": true,
+      "options": [
+        { "value": "bank",                     "label": "Bank / Credit Institution" },
+        { "value": "casp",                     "label": "Crypto-Asset Service Provider (CASP)" },
+        { "value": "payment_institution",      "label": "Payment Institution / EMI" },
+        { "value": "investment_firm",          "label": "Investment Firm (MiFID II)" },
+        { "value": "insurance",                "label": "Life Insurer (obliged)" },
+        { "value": "real_estate_agent",        "label": "Real Estate Agent (obliged from 2027)" },
+        { "value": "law_firm",                 "label": "Law Firm / Notary (obliged where applicable)" },
+        { "value": "accountant_tax_advisor",   "label": "Accountant / Tax Advisor (obliged)" },
+        { "value": "tcsp",                     "label": "Trust & Company Service Provider" },
+        { "value": "high_value_dealer",        "label": "Dealer in High-Value Goods" },
+        { "value": "gambling_operator",        "label": "Gambling Operator" },
+        { "value": "crowdfunding",             "label": "Crowdfunding Service Provider" },
+        { "value": "other_obliged",            "label": "Other obliged entity" }
+      ]
+    },
+    { "id": "jurisdictions",     "type": "multi-select", "label": "Operating jurisdictions", "required": true,
+      "options": [
+        { "value": "EU",      "label": "European Union (any member state)" },
+        { "value": "UK",      "label": "United Kingdom" },
+        { "value": "US",      "label": "United States" },
+        { "value": "Nordics", "label": "Nordics (SE/NO/DK/FI/IS)" },
+        { "value": "global",  "label": "Other / global" }
+      ]
+    },
+    { "id": "business_description", "type": "textarea", "label": "Business description", "required": true, "placeholder": "Customer base, services, channels, geographies, transaction volumes, key counterparties." },
+    { "id": "atlas_id", "type": "text", "label": "Existing Atlas id (optional — leave blank to create one)", "required": false }
+  ],
+  "recommendedPersonas": ["senior-mlro", "senior-risk-officer", "risk-coach"],
+  "recommendedSkills": ["threat-path-methodology", "control-evidence-scoring", "residual-calculation"],
+  "tags": ["fcp", "bwra", "amlr", "amlr-article-16", "fatf", "atlas", "obliged-entity"],
+  "contentType": "risk_register"
+}

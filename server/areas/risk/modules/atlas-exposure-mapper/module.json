@@ -1,0 +1,28 @@
+{
+  "formatVersion": "1.0",
+  "id": "atlas-exposure-mapper",
+  "label": "Atlas Stage 1 — Exposure Mapper",
+  "shortLabel": "Exposure Map",
+  "description": "Maps the surfaces of the business where harm could land — the foundation of the Risk Atlas. Industry-pack-driven; works for a bakery and a bank with the same engine.",
+  "icon": "Compass",
+  "color": "adv-teal",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["entity-register"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": false, "folderPaths": [], "recursive": false }
+    }
+  },
+  "guidedInputs": [
+    { "id": "business_description", "type": "textarea", "label": "Business description (1-2 paragraphs)", "required": true, "placeholder": "What you sell, who you sell to, and how. Two or three sentences is fine." },
+    { "id": "industry_pack", "type": "text", "label": "Industry pack id", "required": false, "placeholder": "sme-general (default), fcp-casp, fcp-bank, …" },
+    { "id": "atlas_id", "type": "text", "label": "Existing Atlas id (optional)", "required": false, "placeholder": "Leave blank for a fresh exposure map" }
+  ],
+  "recommendedPersonas": ["risk-coach"],
+  "recommendedSkills": ["threat-path-methodology"],
+  "tags": ["risk", "atlas", "stage-1", "exposure", "bwra"],
+  "contentType": "entity_register"
+}
