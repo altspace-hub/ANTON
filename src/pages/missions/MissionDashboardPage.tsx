@@ -356,8 +356,10 @@ export default function MissionDashboardPage() {
               <TaskGraphView
                 tasks={tasks}
                 dependencies={dependencies}
+                missionId={id}
                 onApprove={handleApproveCheckpoint}
                 onReject={handleRejectCheckpoint}
+                onParallelReviewCreated={() => void loadAll()}
               />
             </section>
           </div>
