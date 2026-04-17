@@ -32,18 +32,22 @@ import WalletScreen from './pages/WalletScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
 import CapturePage from './pages/CapturePage';
 import TabBar from './components/TabBar';
+import BottomSheet from './components/BottomSheet';
 import QuickActionsFab from './components/QuickActionsFab';
 import { fetchWithAuth } from './services/api';
 
 type AuthScreen = 'welcome' | 'join' | 'connections';
 type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings';
 
+// Spec §9.2 — primary tabs ≤ 5. Approvals promoted out of More because
+// it is the enterprise-wedge surface (spec §4.2 + §8.6); Schedule +
+// Tasks move into More so the bottom row stays at 5.
 const MAIN_TABS = [
-  { id: 'home', label: 'Home', icon: 'home' },
-  { id: 'chat', label: 'Chat', icon: 'chat' },
-  { id: 'schedule', label: 'Schedule', icon: 'schedule' },
-  { id: 'tasks', label: 'Tasks', icon: 'tasks' },
-  { id: 'more', label: 'More', icon: 'more' },
+  { id: 'home',      label: 'Home',      icon: 'home' },
+  { id: 'chat',      label: 'Chat',      icon: 'chat' },
+  { id: 'approvals', label: 'Approvals', icon: 'tasks' },
+  { id: 'capture',   label: 'Capture',   icon: 'schedule' },
+  { id: 'more',      label: 'More',      icon: 'more' },
 ];
 
 export default function App() {
@@ -205,43 +209,36 @@ export default function App() {
       {activeTab === 'profile' && <ProfilePage onBack={() => setActiveTab('home')} />}
       {activeTab === 'settings' && <SettingsPage onBack={() => setActiveTab('home')} />}
 
-      {/* More menu overlay */}
-      {showMore && (
-        <div className="absolute bottom-16 left-0 right-0 z-40 border-t border-border bg-adv-dark-2 safe-bottom">
-          <div className="mx-auto max-w-2xl grid grid-cols-3 gap-1 p-3">
-            {[
-              { id: 'approvals', icon: '✅', label: 'Approvals', badge: pendingApprovals },
-              { id: 'capture', icon: '📸', label: 'Capture' },
-              { id: 'search',  icon: '🔍', label: 'Research' },
-              { id: 'markets', icon: '📊', label: 'Markets' },
-              { id: 'radar',   icon: '📡', label: 'Radar' },
-              { id: 'wallet',  icon: '💰', label: 'Wallet' },
-              { id: 'history', icon: '💬', label: 'History' },
-              { id: 'profile', icon: '👤', label: 'Profile' },
-              { id: 'settings',icon: '⚙️', label: 'Settings' },
-              { id: 'back',    icon: '🔙', label: 'Switch Org' },
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setShowMore(false);
-                  if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
-                  else setActiveTab(item.id as OrgTab);
-                }}
-                className="relative flex flex-col items-center gap-1 rounded-lg py-3 text-adv-gray hover:text-adv-teal hover:bg-adv-card transition"
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-[10px]">{item.label}</span>
-                {(item as { badge?: number }).badge && (item as { badge?: number }).badge! > 0 && (
-                  <span className="absolute right-2 top-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-adv-red px-1 text-[9px] font-bold text-white">
-                    {(item as { badge?: number }).badge! > 9 ? '9+' : (item as { badge?: number }).badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+      {/* More menu — bottom sheet (Phase I fix UX-H1, spec §9.3) */}
+      <BottomSheet open={showMore} onClose={() => setShowMore(false)} title="More" maxHeight="60dvh">
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: 'schedule', icon: '📅', label: 'Schedule' },
+            { id: 'tasks',    icon: '☑️', label: 'Tasks' },
+            { id: 'search',   icon: '🔍', label: 'Research' },
+            { id: 'markets',  icon: '📊', label: 'Markets' },
+            { id: 'radar',    icon: '📡', label: 'Radar' },
+            { id: 'wallet',   icon: '💰', label: 'Wallet' },
+            { id: 'history',  icon: '💬', label: 'History' },
+            { id: 'profile',  icon: '👤', label: 'Profile' },
+            { id: 'settings', icon: '⚙️', label: 'Settings' },
+            { id: 'back',     icon: '🔙', label: 'Switch Org' },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setShowMore(false);
+                if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
+                else setActiveTab(item.id as OrgTab);
+              }}
+              className="flex flex-col items-center gap-1 rounded-xl border border-border bg-adv-card py-4 text-adv-gray transition hover:border-adv-teal/40 hover:text-adv-teal active:scale-[0.98]"
+            >
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-[10px]">{item.label}</span>
+            </button>
+          ))}
         </div>
-      )}
+      </BottomSheet>
 
       {/* Quick actions FAB (spec §8.8) */}
       <QuickActionsFab
@@ -271,8 +268,12 @@ export default function App() {
         }}
       />
 
-      {/* Tab bar */}
-      <TabBar tabs={MAIN_TABS} activeTab={showMore ? 'more' : activeTab} onTabChange={handleTabChange} />
+      {/* Tab bar — Approvals tab carries the live pending-count badge */}
+      <TabBar
+        tabs={MAIN_TABS.map(t => t.id === 'approvals' ? { ...t, badge: pendingApprovals } : t)}
+        activeTab={showMore ? 'more' : activeTab}
+        onTabChange={handleTabChange}
+      />
     </div>
   );
 }

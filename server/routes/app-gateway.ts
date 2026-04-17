@@ -287,8 +287,18 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
   // Non-streaming query — returns JSON directly (works through any proxy)
   publicRouter.post('/org/:orgId/query-sync', appAuth, orgMember, async (req, res) => {
     try {
-      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage } = req.body;
+      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage, capture } = req.body;
       if (!message) return res.status(400).json({ error: 'message is required' });
+      // Phase I fix Arch-3 — soft cap on inline capture payload size.
+      // Spec §10.4 — keep per-screen usable at 200 kbps. 1MB is the
+      // ceiling; clients should resize before sending.
+      if (capture && typeof capture === 'object' && typeof (capture as { base64?: string }).base64 === 'string') {
+        const b64 = (capture as { base64: string }).base64;
+        const approxBytes = Math.floor((b64.length * 3) / 4);
+        if (approxBytes > 1_048_576) {
+          return res.status(413).json({ error: 'Capture too large — resize to ≤1MB before sending' });
+        }
+      }
 
       // Use a promise to capture the onComplete result
       const queryResult = await new Promise<Record<string, unknown>>((resolve, reject) => {

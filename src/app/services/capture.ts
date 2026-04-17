@@ -52,7 +52,11 @@ async function capacitorCamera(source: 'CAMERA' | 'PHOTOS'): Promise<Capture | n
     const photo = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
       source: source === 'CAMERA' ? CameraSource.Camera : CameraSource.Photos,
-      quality: 80,
+      // Phase I fix Arch-3 — keep payloads under the 1MB server cap.
+      // 70% JPEG quality + 2048px max width is OCR-grade for documents
+      // and good for portraits without exceeding ~750KB on most devices.
+      quality: 70,
+      width: 2048,
       allowEditing: false,
       correctOrientation: true,
     });
@@ -82,17 +86,59 @@ async function webFileInput(capture?: 'environment' | 'user'): Promise<Capture |
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) { resolve(null); return; }
-      const data = await fileToBase64(file);
+      // For images, resize / re-encode under 1MB before base64 (Arch-3).
+      // PDFs and other types pass through unchanged — caller's
+      // responsibility to keep them small.
+      let data: string;
+      let mimeType = file.type || 'image/jpeg';
+      let size = file.size;
+      if (file.type.startsWith('image/')) {
+        const r = await resizeImageToBase64(file, 2048, 0.7);
+        data = r.base64;
+        mimeType = 'image/jpeg';                // resize always emits JPEG
+        size = Math.floor((data.length * 3) / 4);
+      } else {
+        data = await fileToBase64(file);
+      }
       resolve({
         kind: capture ? 'camera' : 'library',
-        data, mimeType: file.type || 'image/jpeg',
+        data, mimeType,
         filename: file.name || `capture-${Date.now()}`,
-        size: file.size,
+        size,
         isText: false,
       });
     };
     input.click();
   });
+}
+
+/** Resize an image File to fit within maxDim and emit base64 JPEG at the given quality. */
+async function resizeImageToBase64(file: File, maxDim: number, quality: number): Promise<{ base64: string }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Image decode failed'));
+      i.src = url;
+    });
+    let { width, height } = img;
+    if (width > maxDim || height > maxDim) {
+      const scale = maxDim / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas not available');
+    ctx.drawImage(img, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    const i = dataUrl.indexOf(',');
+    return { base64: i >= 0 ? dataUrl.slice(i + 1) : dataUrl };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 function fileToBase64(file: File): Promise<string> {

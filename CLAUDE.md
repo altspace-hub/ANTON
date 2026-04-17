@@ -406,16 +406,56 @@ DB tables (migration `111_specialized_agents.sql`): `agent_profiles`, `agent_con
 
 ---
 
-## Companion App (PWA + Android)
+## Companion App (PWA + iOS + Android)
 
-Separate React app for end-users on phones/tablets. Lives at `src/app/`. Built with its own Vite config (`vite.config.app.ts` → `dist/app/`). Wrapped as Android APK/AAB via Capacitor (`android/`).
+Separate React app for end-users on phones / tablets / desktop browsers. Lives at `src/app/`. Built with its own Vite config (`vite.config.app.ts` → `dist/app/`). Wrapped as Android APK/AAB via Capacitor (`android/`); iOS scaffold templates at `ios-templates/` to overlay onto a Mac-generated `npx cap add ios` project.
 
-- **Talks to the main server** via REST query-sync at `/api/app/*` (gateway: `server/routes/app-gateway.ts`, migration `094_app_gateway.sql`)
-- **Identity:** Ed25519 keypair stored in Capacitor secure storage
-- **15 screens:** Welcome → Join (QR) → Connections → Home / Chat / Schedule / Tasks / Search / Markets / Radar / History / Profile / Settings
-- **3 themes** (dark/light/corporate), 30 languages, offline cache + message queue
-- **Connection flow:** admin generates an invitation QR in the main app's `/app-gateway` page; user scans → app extracts `anton://join?server=<url>&token=<code>` → registers → joins
-- **Default theme is light** (matches main app default)
+**Pairing (spec §5.2 — Ed25519 enrollment ritual)**
+1. Admin opens "Connect a device" → instance issues a 60s-TTL enrollment package (instance pubkey + cert fingerprint + endpoints + intended user/role + nonce + optional 6-digit OOB confirmation code)
+2. Phone scans QR → generates a fresh Ed25519 keypair (private key in Keychain / Keystore via `@aparajita/capacitor-secure-storage`)
+3. Phone signs `${token}.${nonce}.${publicKey}`, POSTs to `/api/app/enrollment/complete` with the user-typed confirmation code
+4. Server verifies + issues a device certificate + session token; phone biometric-locks the credentials
+
+**Multi-instance** — `src/app/services/instances.ts` holds the paired instance list; `InstanceTopBar` + `InstanceSwitcher` (Wallet-card style bottom sheet) make the active instance unambiguous (spec §4.2). `setActiveInstanceAsync()` is race-free; the legacy single-session global key is bridged.
+
+**Approvals (the enterprise wedge — spec §8.6)** — `app_checkpoints` table + `/api/app/checkpoints/*` + `ApprovalsScreen` (now a primary tab with live badge). Severity-sorted inbox; biometric re-confirm on critical / high / `requires_biometric=true`; signed-envelope responses (Ed25519 sig + replay-protected nonce) when keypair exists.
+
+**Push (spec §8.7)** — `app_push_tokens` table + APNs / FCM / web-push dispatcher. Payload carries only `event_id + severity + opaque title + deep_link` — never confidential content.
+
+**Voice (spec §8.4)** — `VoiceMode` full-screen overlay with Telegram-style hold-to-talk, on-device speech fallback, live captions, platform TTS via `tts.ts`, immediate barge-in on tap.
+
+**Capture (spec §8.5)** — Camera / library / share-target → resize-to-2048px-70%-quality → POST to `/query-sync` with structured `capture` field (1MB soft cap server-side).
+
+**FAB + bottom sheets (spec §8.8 + §9.3)** — `QuickActionsFab` opens a `BottomSheet` with Voice / Capture / Ask / Approvals / Switch instance. The More menu is also a `BottomSheet`.
+
+**Tables** (migrations 094 + 130 + 131): `connected_users`, `connected_user_orgs`, `org_invitations`, `app_sessions`, `app_messages`, `app_session_tokens`, `app_devices` (Ed25519-paired phones), `app_enrollment_tokens` (with `confirmation_code`), `app_push_tokens`, `app_checkpoints`, `app_signed_envelope_nonces`, `instance_identity` (encrypted privkey).
+
+**Security at rest** — set `INSTANCE_KEY_ENCRYPTION_KEY` (32-byte hex) so the instance Ed25519 privkey is AES-256-GCM encrypted in `instance_identity.privkey_encrypted`. Without it the service stores plaintext + logs a one-time warning.
+
+**Optional env**:
+- `APP_GATEWAY_MDNS=true` — advertise `_anton._tcp.local`
+- `APP_GATEWAY_LAN_BROWSE=true` — let authenticated apps browse the LAN via `/api/app/discover/lan`
+- `APP_GATEWAY_PUSH=true` — enable real APNs/FCM/web-push dispatch (also needs provider keys)
+- `APP_GATEWAY_PUBLIC_URL=https://anton.example.com` — WAN endpoint baked into enrollment QRs
+
+| File | Purpose |
+|---|---|
+| `server/services/app-enrollment-service.ts` | Pairing ritual + device certs + signed-envelope verification + privkey encryption |
+| `server/services/app-push-service.ts` | APNs/FCM/web-push dispatch (stubs until provider keys present) |
+| `server/services/app-checkpoint-service.ts` | Pending-approval CRUD + severity-driven biometric requirement |
+| `server/services/mdns-advertiser.ts` | Bonjour `_anton._tcp` + legacy `_anton-gateway._tcp` |
+| `src/app/services/identity.ts` | Ed25519 (via `@noble/ed25519`) + signed envelope + tier-aware secure storage |
+| `src/app/services/instances.ts` | Multi-instance store with race-free switcher |
+| `src/app/services/checkpoints.ts` | Approvals client (envelope-signed responses) |
+| `src/app/services/push.ts` + `biometric.ts` + `haptics.ts` + `tts.ts` + `capture.ts` | Capacitor wrappers |
+| `src/app/pages/JoinPage.tsx` | Pairing UI (modern + legacy paths + post-pair biometric setup) |
+| `src/app/pages/ApprovalsScreen.tsx` | Primary-tab inbox with biometric-gated responses |
+| `src/app/pages/CapturePage.tsx` | Camera + share-target capture surface |
+| `src/app/components/InstanceSwitcher.tsx` + `InstanceTopBar.tsx` + `BottomSheet.tsx` + `QuickActionsFab.tsx` + `VoiceMode.tsx` | UI primitives |
+| `tests/app/enrollment-link.test.ts` + `enrollment-service.test.ts` | 16 tests on URL parsing + signature contract |
+| `ios-templates/` | `Info.plist`, `PrivacyInfo.xcprivacy`, `App.entitlements`, `Podfile` to overlay onto Mac-generated iOS project |
+
+**Distribution** — Android: Google Play (standard), Managed Google Play, sideload APK, optional F-Droid. iOS: App Store, TestFlight, Custom Apps via Apple Business Manager, Unlisted Apps. PWA served at `/app/` from the instance.
 
 ---
 
