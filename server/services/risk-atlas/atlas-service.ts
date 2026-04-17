@@ -20,6 +20,7 @@
 import type { DatabaseAdapter } from '../../db/database.js';
 import { randomUUID } from 'crypto';
 import { createAtlasEventLogger, type AtlasEventLogger } from './atlas-event-logger.js';
+import { createAtlasKnowledgeBridge, type AtlasKnowledgeBridge } from './atlas-knowledge-bridge.js';
 import {
   calculatePathScores,
   calculateInherent,
@@ -136,23 +137,38 @@ export interface CreateReviewCycleInput {
 
 // ── Service factory ─────────────────────────────────────────────────
 
-export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?: AtlasEventLogger }) {
+export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?: AtlasEventLogger; knowledgeBridge?: AtlasKnowledgeBridge }) {
   const events = options?.eventLogger ?? createAtlasEventLogger(db);
+  const bridge = options?.knowledgeBridge ?? createAtlasKnowledgeBridge(db);
+
+  // Helper: best-effort verify that a referenced industry_pack_id exists
+  // and is enabled. Throws (caller catches) on bad reference rather than
+  // silently writing a dangling pointer.
+  async function assertPackExistsIfSet(packId: string | null | undefined): Promise<void> {
+    if (!packId) return;
+    const row = await db.get<{ id: string }>(
+      `SELECT id FROM atlas_industry_packs WHERE id = ? AND is_enabled = TRUE`,
+      packId,
+    );
+    if (!row) throw new Error(`Industry pack not found or disabled: ${packId}`);
+  }
 
   // ── Atlas CRUD ──────────────────────────────────────────────────
 
   async function createAtlas(input: CreateAtlasInput, actorUserId: string, orgId = 'default'): Promise<RiskAtlasRow> {
+    await assertPackExistsIfSet(input.industry_pack_id);
     const id = `atlas_${randomUUID()}`;
-    const now = new Date().toISOString();
+    // Timestamps default to NOW() in the schema — don't pass them so the
+    // single source of truth is PG, avoiding JS-vs-DB clock skew.
     await db.run(
       `INSERT INTO risk_atlases
         (id, name, description, project_id, business_description, industry_pack_id,
-         status, mode, entity_id, owner_user_id, created_by, org_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)`,
+         status, mode, entity_id, owner_user_id, created_by, org_id)
+       VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
       id, input.name, input.description ?? null, input.project_id ?? null,
       input.business_description ?? null, input.industry_pack_id ?? null,
       input.mode ?? 'socratic', input.entity_id ?? null,
-      actorUserId, actorUserId, orgId, now, now,
+      actorUserId, actorUserId, orgId,
     );
     await events.logEvent({
       atlasId: id, event: 'atlas_created', userId: actorUserId,
@@ -180,6 +196,9 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
   }
 
   async function updateAtlas(id: string, updates: UpdateAtlasInput, actorUserId: string): Promise<RiskAtlasRow> {
+    if (updates.industry_pack_id !== undefined) {
+      await assertPackExistsIfSet(updates.industry_pack_id);
+    }
     const allowed: Array<keyof UpdateAtlasInput> = [
       'name', 'description', 'business_description', 'industry_pack_id',
       'mode', 'status', 'next_review_due_at',
@@ -203,6 +222,13 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       await events.logEvent({
         atlasId: id, event: 'atlas_status_changed', userId: actorUserId,
         details: { new_status: updates.status },
+      });
+    } else {
+      // Capture non-status changes (rename, pack swap, mode change, …)
+      // so the audit trail is complete.
+      await events.logEvent({
+        atlasId: id, event: 'atlas_updated', userId: actorUserId,
+        details: { fields: Object.keys(updates) },
       });
     }
     const updated = await getAtlas(id);
@@ -273,6 +299,9 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     });
     const row = await db.get<AtlasThreatPathRow>(`SELECT * FROM atlas_threat_paths WHERE id = ?`, id);
     if (!row) throw new Error('Threat path missing after insert');
+    // Cross-Workflow Intelligence — push as a 'risk' atom (best-effort)
+    const atlas = await getAtlas(atlasId);
+    if (atlas) await bridge.pushThreatPathAtom(atlas, row, null);
     return row;
   }
 
@@ -313,6 +342,8 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     });
     const row = await db.get<AtlasVulnerabilityRow>(`SELECT * FROM atlas_vulnerabilities WHERE id = ?`, id);
     if (!row) throw new Error('Vulnerability missing after insert');
+    const atlas = await getAtlas(atlasId);
+    if (atlas) await bridge.pushVulnerabilityFinding(atlas, row);
     return row;
   }
 
@@ -401,6 +432,8 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     }
     const row = await db.get<AtlasControlRow>(`SELECT * FROM atlas_controls WHERE id = ?`, id);
     if (!row) throw new Error('Control missing after insert');
+    const atlas = await getAtlas(atlasId);
+    if (atlas) await bridge.pushControlAtom(atlas, row);
     return row;
   }
 
@@ -468,26 +501,30 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   async function upsertAppetite(atlasId: string, input: UpsertAppetiteInput, actorUserId: string): Promise<AtlasAppetiteStatementRow> {
     const id = `app_${randomUUID().slice(0, 12)}`;
-    const existing = input.threat_path_id
-      ? await db.get<{ id: string }>(
-          `SELECT id FROM atlas_appetite_statements WHERE atlas_id = ? AND threat_path_id = ? LIMIT 1`,
-          atlasId, input.threat_path_id,
-        )
-      : null;
-    if (existing) {
-      await db.run(
-        `UPDATE atlas_appetite_statements
-         SET appetite_position = ?, required_action = ?, target_date = ?, budget_eur = ?, updated_at = NOW()
-         WHERE id = ?`,
-        input.appetite_position, input.required_action ?? null,
-        input.target_date ?? null, input.budget_eur ?? null, existing.id,
-      );
-    } else {
+    if (input.threat_path_id) {
+      // Per-path: rely on the partial unique index uq_atlas_appetite_path
+      // (added in migration 126). ON CONFLICT serialises concurrent upserts.
       await db.run(
         `INSERT INTO atlas_appetite_statements
           (id, atlas_id, threat_path_id, appetite_position, required_action, target_date, budget_eur)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        id, atlasId, input.threat_path_id ?? null,
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (atlas_id, threat_path_id) WHERE threat_path_id IS NOT NULL DO UPDATE SET
+           appetite_position = EXCLUDED.appetite_position,
+           required_action = EXCLUDED.required_action,
+           target_date = EXCLUDED.target_date,
+           budget_eur = EXCLUDED.budget_eur,
+           updated_at = NOW()`,
+        id, atlasId, input.threat_path_id,
+        input.appetite_position, input.required_action ?? null,
+        input.target_date ?? null, input.budget_eur ?? null,
+      );
+    } else {
+      // Company-wide (Stage 7b) — multiple rows over time are intentional.
+      await db.run(
+        `INSERT INTO atlas_appetite_statements
+          (id, atlas_id, threat_path_id, appetite_position, required_action, target_date, budget_eur)
+         VALUES (?, ?, NULL, ?, ?, ?, ?)`,
+        id, atlasId,
         input.appetite_position, input.required_action ?? null,
         input.target_date ?? null, input.budget_eur ?? null,
       );
@@ -504,6 +541,8 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       ...(input.threat_path_id ? [atlasId, input.threat_path_id] : [id]),
     );
     if (!row) throw new Error('Appetite row missing after upsert');
+    const atlas = await getAtlas(atlasId);
+    if (atlas) await bridge.pushAppetiteRecommendation(atlas, row);
     return row;
   }
 
@@ -553,7 +592,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Maintenance — review cycles ────────────────────────────────
 
-  async function addReviewCycle(atlasId: string, input: CreateReviewCycleInput): Promise<AtlasReviewCycleRow> {
+  async function addReviewCycle(atlasId: string, input: CreateReviewCycleInput, actorUserId?: string | null): Promise<AtlasReviewCycleRow> {
     const id = `rc_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_review_cycles
@@ -562,6 +601,10 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       id, atlasId, input.activity, input.frequency,
       input.owner_user_id ?? null, input.next_due_at ?? null, input.deadline_id ?? null,
     );
+    await events.logEvent({
+      atlasId, event: 'review_cycle_added', userId: actorUserId ?? null, subResourceId: id,
+      details: { activity: input.activity, frequency: input.frequency },
+    });
     const row = await db.get<AtlasReviewCycleRow>(`SELECT * FROM atlas_review_cycles WHERE id = ?`, id);
     if (!row) throw new Error('Review cycle missing after insert');
     return row;
@@ -625,8 +668,11 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     };
     const byResidual: Record<Score1to5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const outsidePathsFull: ThreatPathFull[] = [];
-    for (const p of paths) {
-      const full = await getThreatPathFull(p.id);
+    // Parallel hydration — for 20 paths this turns 20×6=120 sequential
+    // queries into 20 concurrent batches of 6. Phase 2 will replace with
+    // a single batched snapshot query, but Promise.all is the cheap win.
+    const fulls = await Promise.all(paths.map(p => getThreatPathFull(p.id)));
+    for (const full of fulls) {
       if (!full) continue;
       const r = full.residual?.residual_score ?? null;
       const ap = r ? appetitePositionFor(r) : null;

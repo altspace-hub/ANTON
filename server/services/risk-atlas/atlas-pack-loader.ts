@@ -20,6 +20,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import { z } from 'zod';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type {
   IndustryPackContent,
@@ -32,6 +33,54 @@ import type {
   AppetitePosition,
   Score1to5,
 } from './types.js';
+
+// ── Zod schemas for pack content ─────────────────────────────────────────
+// Validates every pack file at load time so a malicious or malformed pack
+// cannot smuggle out-of-domain values (e.g. severity 99) into the
+// deterministic calculator. Reject the whole pack on schema failure rather
+// than caching partial garbage.
+
+const score1to5Z = z.number().int().min(1).max(5);
+const exposurePointZ = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(200),
+  description: z.string().max(4000),
+  category: z.string().max(80),
+});
+const threatPathLibraryZ = z.object({
+  id: z.string().min(1).max(80),
+  code: z.string().min(1).max(40),
+  name: z.string().min(1).max(200),
+  description: z.string().max(4000),
+  typical_inherent: score1to5Z,
+  fcp_domain: z.enum(['amlcft','sanctions','fraud','abc','market_abuse','tax_evasion_facilitation','export_controls','modern_slavery']).optional(),
+  exposure_refs: z.array(z.string()).max(50).optional(),
+  vulnerability_refs: z.array(z.string()).max(50).optional(),
+});
+const vulnerabilityLibraryZ = z.object({
+  id: z.string().min(1).max(80),
+  code: z.string().min(1).max(40),
+  name: z.string().min(1).max(200),
+  description: z.string().max(4000),
+  typical_severity: score1to5Z,
+});
+const controlLibraryZ = z.object({
+  id: z.string().min(1).max(80),
+  code: z.string().min(1).max(40),
+  name: z.string().min(1).max(200),
+  description: z.string().max(4000),
+  default_type: z.enum(['prevent','detect','respond']),
+  default_strength_when_in_place: z.enum(['strong','adequate','weak']),
+  evidence_examples: z.array(z.string().max(500)).max(20).optional(),
+  owner_role: z.string().max(200).optional(),
+  vulnerability_refs: z.array(z.string()).max(50).optional(),
+});
+const appetiteHeuristicsZ = z.record(z.string(), z.enum(['within','boundary','outside','unacceptable']));
+const escalationTriggerZ = z.object({
+  event: z.string().min(1).max(500),
+  action: z.string().min(1).max(1000),
+  timeline: z.string().max(200).optional(),
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BUILTIN_PACKS_ROOT = path.resolve(__dirname, '..', '..', '..', 'data', 'risk-atlas', 'packs');
@@ -57,15 +106,21 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       return { inserted, updated, errors };
     }
 
-    for (const dirName of dirs) {
-      try {
-        const packDir = path.join(BUILTIN_PACKS_ROOT, dirName);
-        const content = await readPackDir(packDir);
-        contentCache.set(content.manifest.id, content);
-        const result = await upsertPackRow(content.manifest, packDir);
-        if (result === 'inserted') inserted++; else if (result === 'updated') updated++;
-      } catch (err) {
-        errors.push(`${dirName}: ${err instanceof Error ? err.message : String(err)}`);
+    // Parallel reads — packs are independent. Errors stay isolated per pack.
+    const results = await Promise.allSettled(dirs.map(async (dirName) => {
+      const packDir = path.join(BUILTIN_PACKS_ROOT, dirName);
+      const content = await readPackDir(packDir);
+      contentCache.set(content.manifest.id, content);
+      const result = await upsertPackRow(content.manifest, packDir);
+      return { dirName, result };
+    }));
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === 'fulfilled') {
+        if (r.value.result === 'inserted') inserted++;
+        else if (r.value.result === 'updated') updated++;
+      } else {
+        errors.push(`${dirs[i]}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
       }
     }
     return { inserted, updated, errors };
@@ -98,17 +153,48 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
     const manifest = await readJson<IndustryPackManifest>(path.join(packDir, 'manifest.json'));
     if (!manifest.id) throw new Error(`Pack manifest missing 'id'`);
     if (!manifest.name) throw new Error(`Pack ${manifest.id}: manifest missing 'name'`);
+    // Validate manifest.id — used as PK on atlas_industry_packs and as a
+    // stored path component. Strict character set + length so a crafted
+    // pack can't smuggle traversal sequences or shell metacharacters.
+    if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(manifest.id)) {
+      throw new Error(`Pack ${manifest.id}: id must match /^[a-z0-9][a-z0-9_-]{0,63}$/`);
+    }
+    // Defence in depth: assert id matches the directory name so two packs
+    // in different folders can't silently overwrite each other in the DB.
+    const dirName = path.basename(packDir);
+    if (manifest.id !== dirName) {
+      throw new Error(`Pack id "${manifest.id}" does not match directory name "${dirName}"`);
+    }
+    // Containment: the pack dir must live under one of the known roots.
+    const resolved = path.resolve(packDir);
+    const builtinWithSep = BUILTIN_PACKS_ROOT + path.sep;
+    if (resolved !== BUILTIN_PACKS_ROOT && !resolved.startsWith(builtinWithSep)) {
+      throw new Error(`Pack dir ${resolved} is outside the built-in packs root`);
+    }
 
-    const [exposurePoints, threatPaths, vulnerabilities, controls, glossary, appetiteHeuristics, escalationTriggers, regulatoryTags] = await Promise.all([
-      readJsonOrEmpty<PackExposureLibraryEntry[]>(path.join(packDir, 'exposure-points.json'), []),
-      readJsonOrEmpty<PackThreatPathLibraryEntry[]>(path.join(packDir, 'threat-paths.json'), []),
-      readJsonOrEmpty<PackVulnerabilityLibraryEntry[]>(path.join(packDir, 'vulnerabilities.json'), []),
-      readJsonOrEmpty<PackControlLibraryEntry[]>(path.join(packDir, 'controls.json'), []),
-      readJsonOrEmpty<Record<string, string>>(path.join(packDir, 'glossary.json'), {}),
-      readJsonOrEmpty<Record<string, AppetitePosition>>(path.join(packDir, 'appetite-heuristics.json'), {}),
-      readJsonOrEmpty<Array<{ event: string; action: string; timeline?: string }>>(path.join(packDir, 'escalation-triggers.json'), []),
-      readJsonOrEmpty<{ tags?: string[] }>(path.join(packDir, 'regulatory-tags.json'), { tags: [] }),
+    const [exposurePointsRaw, threatPathsRaw, vulnerabilitiesRaw, controlsRaw, glossaryRaw, appetiteHeuristicsRaw, escalationTriggersRaw, regulatoryTagsRaw] = await Promise.all([
+      readJsonOrEmpty<unknown>(path.join(packDir, 'exposure-points.json'), []),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'threat-paths.json'), []),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'vulnerabilities.json'), []),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'controls.json'), []),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'glossary.json'), {}),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'appetite-heuristics.json'), {}),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'escalation-triggers.json'), []),
+      readJsonOrEmpty<unknown>(path.join(packDir, 'regulatory-tags.json'), { tags: [] }),
     ]);
+
+    // Validate each library — reject the whole pack on any schema failure.
+    // Cast through `unknown` for fields where Zod widens 1-5 to `number`
+    // but the TS literal type is `Score1to5 = 1|2|3|4|5`. The runtime
+    // values are guaranteed in [1,5] by .min(1).max(5), so the cast is safe.
+    const exposurePoints       = z.array(exposurePointZ).parse(exposurePointsRaw) as PackExposureLibraryEntry[];
+    const threatPaths          = z.array(threatPathLibraryZ).parse(threatPathsRaw) as unknown as PackThreatPathLibraryEntry[];
+    const vulnerabilities      = z.array(vulnerabilityLibraryZ).parse(vulnerabilitiesRaw) as unknown as PackVulnerabilityLibraryEntry[];
+    const controls             = z.array(controlLibraryZ).parse(controlsRaw) as PackControlLibraryEntry[];
+    const glossary             = z.record(z.string(), z.string().max(2000)).parse(glossaryRaw ?? {});
+    const appetiteHeuristics   = appetiteHeuristicsZ.parse(appetiteHeuristicsRaw ?? {});
+    const escalationTriggers   = z.array(escalationTriggerZ).parse(escalationTriggersRaw);
+    const regulatoryTagsParsed = z.object({ tags: z.array(z.string().max(120)).optional() }).parse(regulatoryTagsRaw ?? {});
 
     const socraticScripts = await readSocraticScripts(path.join(packDir, 'socratic-scripts'));
 
@@ -122,7 +208,7 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       socraticScripts,
       appetiteHeuristics,
       escalationTriggers,
-      regulatoryTags: regulatoryTags.tags ?? [],
+      regulatoryTags: regulatoryTagsParsed.tags ?? [],
     };
   }
 
@@ -131,7 +217,13 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
     try {
       const files = await fs.readdir(scriptsDir);
       for (const f of files) {
-        if (!f.endsWith('.md')) continue;
+        // Strict pattern — only stage-N.md (1..9). Rejects:
+        //   - hidden files (.foo.md)
+        //   - traversal sequences (../foo.md)
+        //   - alternate stage namespaces (stage-foo.md)
+        // The strict pattern means a malicious community pack can't smuggle
+        // arbitrary keys into socraticScripts.
+        if (!/^stage-\d+\.md$/.test(f)) continue;
         const stage = f.replace(/\.md$/, '');
         out[stage] = await fs.readFile(path.join(scriptsDir, f), 'utf-8');
       }

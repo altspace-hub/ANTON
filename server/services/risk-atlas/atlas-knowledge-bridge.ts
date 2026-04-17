@@ -45,11 +45,20 @@ export function createAtlasKnowledgeBridge(db: DatabaseAdapter) {
     try {
       await db.run(
         `INSERT INTO knowledge_atoms
-          (id, source_module_id, source_area_id, content, atom_type, confidence,
-           category, subcategory, tags, created_at)
-         VALUES (?, ?, 'risk', ?, ?, ?, ?, ?, ?, NOW())`,
-        id, input.sourceModuleId ?? 'risk-atlas', input.content, input.type,
-        input.confidence ?? 0.85, input.category ?? null, input.subcategory ?? null, tags,
+          (id, source_workflow_id, source_execution_id, source_module_id, source_area_id,
+           content, atom_type, confidence, category, subcategory, tags, created_at)
+         VALUES (?, ?, ?, ?, 'risk', ?, ?, ?, ?, ?, ?, NOW())`,
+        id,
+        // source_workflow_id + source_execution_id are NOT NULL on knowledge_atoms.
+        // Atlases aren't workflows, so we use synthetic identifiers that mark the
+        // origin as the Atlas itself. CWI queries can filter via tags
+        // ('atlas:<id>') or via source_workflow_id = 'risk-atlas'.
+        'risk-atlas', input.atlas.id,
+        input.sourceModuleId ?? 'risk-atlas', input.content, input.type,
+        input.confidence ?? 0.85,
+        // category is NOT NULL — fall back to the atom_type so the row is valid.
+        input.category ?? input.type,
+        input.subcategory ?? null, tags,
       );
       return id;
     } catch (err) {

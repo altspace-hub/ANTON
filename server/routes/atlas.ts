@@ -97,7 +97,11 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
     try {
       const userId = (req as AuthedRequest).user?.id;
       if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
-      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      // Validate status — z.enum prevents arbitrary strings flowing into the SQL
+      const statusSchema = z.enum(['draft','active','review','archived']).optional();
+      const statusParse = statusSchema.safeParse(typeof req.query.status === 'string' ? req.query.status : undefined);
+      if (!statusParse.success) { res.status(400).json({ error: 'Invalid status filter' }); return; }
+      const status = statusParse.data;
       const atlases = (req as AuthedRequest).user?.role === 'admin'
         ? await service.listAtlases({ status })
         : await service.listAtlases({ userId, status });
@@ -471,15 +475,17 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
       }).strict();
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
-      const cycle = await service.addReviewCycle(id, parsed.data);
+      const cycle = await service.addReviewCycle(id, parsed.data, (req as AuthedRequest).user!.id);
       res.status(201).json({ success: true, cycle });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });
 
   // ── Packs ──────────────────────────────────────────────────────
 
-  router.get('/atlas/packs', async (_req, res) => {
+  router.get('/atlas/packs', async (req, res) => {
     try {
+      // Pack content is internal authoring IP — require auth even for the list
+      if (!(req as AuthedRequest).user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
       const list = await packs.listPacks();
       res.json({ success: true, packs: list });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
@@ -487,8 +493,9 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
 
   router.post('/atlas/packs/seed', async (req, res) => {
     try {
-      const userRole = (req as AuthedRequest).user?.role;
-      if (userRole !== 'admin') { res.status(403).json({ error: 'Admin required' }); return; }
+      const user = (req as AuthedRequest).user;
+      if (!user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
+      if (user.role !== 'admin') { res.status(403).json({ error: 'Admin required' }); return; }
       const result = await packs.seedBuiltinPacks();
       res.json({ success: true, ...result });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
@@ -496,7 +503,12 @@ export function createAtlasRoutes(db: DatabaseAdapter): Router {
 
   router.get('/atlas/packs/:packId/content', async (req, res) => {
     try {
-      const content = await packs.getPackContent(String(req.params.packId));
+      if (!(req as AuthedRequest).user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
+      // Validate packId pattern to mirror the loader's id constraint and
+      // to prevent enumeration with traversal-shaped strings.
+      const packId = String(req.params.packId);
+      if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(packId)) { res.status(400).json({ error: 'Invalid pack id' }); return; }
+      const content = await packs.getPackContent(packId);
       if (!content) { res.status(404).json({ error: 'Pack not found' }); return; }
       res.json({ success: true, content });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }

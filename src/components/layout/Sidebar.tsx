@@ -1806,7 +1806,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           title={sidebarCollapsed ? 'Risk Atlas' : undefined}
         >
-          <Compass className="h-4 w-4 shrink-0" />
+          <ShieldAlert className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && 'Risk Atlas'}
         </NavLink>
 
