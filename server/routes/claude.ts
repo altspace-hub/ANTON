@@ -56,6 +56,22 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     return _outputStore;
   }
 
+  // Output Transformation — bounded-concurrency structured-extraction queue.
+  // Created once so all /claude/message completions share a MAX_CONCURRENT
+  // semaphore and per-session dedup. Enqueue is fire-and-forget.
+  const { createExtractionQueue } = await import('../services/structured-extraction-queue.js');
+  const { getModule } = await import('../services/module-loader.js');
+  const extractionQueue = createExtractionQueue(db, async (moduleId) => {
+    if (!moduleId) return 'analytic_report';
+    try {
+      const mod = await getModule(moduleId);
+      return (mod?.contentType ?? 'analytic_report') as 'gap_analysis' | 'risk_register' | 'process_map' | 'policy_document' | 'analytic_report' | 'plan_document' | 'entity_register' | 'scorecard';
+    } catch { return 'analytic_report'; }
+  });
+  function enqueueExtraction(input: { sessionId: string; markdown: string; moduleId: string | null; areaId?: string | null; userId?: string | null; generationModel?: string | null }): void {
+    extractionQueue.enqueue(input);
+  }
+
   // POST /api/claude/message — streaming SSE proxy (multi-LLM)
   router.post('/claude/message', validate(ClaudeMessageSchema), checkBudget, async (req, res) => {
     try {
@@ -715,31 +731,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 .catch(() => {});
             }
             // Output Transformation — structured extraction (fire-and-forget)
-            // Produces the JSON twin of the Markdown output so the transform
-            // panel + renderers can see a schema-typed payload. Cached by
-            // content hash; failures are silent (structured_status='failed').
-            if (sessionId && data.text && data.text.length > 200 && moduleId) {
-              void (async () => {
-                try {
-                  const { getModule } = await import('../services/module-loader.js');
-                  const mod = await getModule(moduleId);
-                  const contentType = (mod?.contentType as
-                    'gap_analysis' | 'risk_register' | 'process_map' | 'policy_document'
-                    | 'analytic_report' | 'plan_document' | 'entity_register' | 'scorecard'
-                    | undefined) ?? 'analytic_report';
-                  const { createStructuredExtractor } = await import('../services/structured-extractor.js');
-                  const extractor = createStructuredExtractor(db);
-                  await extractor.extractAndStore(sessionId, {
-                    markdown: data.text,
-                    contentType,
-                    moduleId,
-                    areaId: areaId ?? '',
-                    generationModel: selectedModel,
-                  });
-                } catch (err) {
-                  console.warn('[structured-extractor] extraction failed:', err instanceof Error ? err.message : err);
-                }
-              })();
+            // Uses a bounded-concurrency queue so a burst of session completions
+            // doesn't spawn N parallel Haiku calls. Deduplicates per-session.
+            // Missing moduleId falls back to analytic_report (most permissive);
+            // threshold lowered to 100 chars to cover short policy outputs.
+            if (sessionId && data.text && data.text.length > 100) {
+              void enqueueExtraction({
+                sessionId,
+                markdown: data.text,
+                moduleId: moduleId ?? null,
+                areaId,
+                userId: req.user?.id ?? null,
+                generationModel: selectedModel,
+              });
             }
             // Persist the settings that produced this output so history shows accurate config
             try {

@@ -42,9 +42,14 @@ interface BuildHtmlInput {
 }
 
 function buildHtml({ title, markdown, brand }: BuildHtmlInput): string {
-  const primary = brand?.primary_color ?? '#0D7D6C';
-  const accent = brand?.accent_color ?? '#1BA882';
-  const font = brand?.font_family ?? 'system-ui, -apple-system, Segoe UI, sans-serif';
+  // Whitelist colours + fonts to prevent CSS-injection via brand_config
+  // (e.g. user setting primary_color = "red; } body { background: url('x') ...").
+  // Allowed: hex (#abc / #abcdef), rgb(...), named colours, CSS comma lists.
+  const COLOR_RE = /^[#a-zA-Z0-9,.\s()-]{1,60}$/;
+  const FONT_RE = /^[a-zA-Z0-9,.\s'"-]{1,200}$/;
+  const primary = brand?.primary_color && COLOR_RE.test(brand.primary_color) ? brand.primary_color : '#0D7D6C';
+  const accent  = brand?.accent_color  && COLOR_RE.test(brand.accent_color)  ? brand.accent_color  : '#1BA882';
+  const font    = brand?.font_family   && FONT_RE.test(brand.font_family)    ? brand.font_family   : 'system-ui, -apple-system, Segoe UI, sans-serif';
   const body = markdownToHtml(markdown);
   const escapedTitle = escapeHtml(title);
 

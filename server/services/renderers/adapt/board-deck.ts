@@ -18,6 +18,7 @@ import PptxGenJS from 'pptxgenjs';
 import type { RenderFn, RenderResult } from '../../renderer-registry.types.js';
 import { callChat } from '../../provider-router.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
+import { wrapUntrustedContent, INJECTION_GUARD_SUFFIX } from '../lib/prompt-injection-guard.js';
 
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 3_500;
@@ -63,7 +64,7 @@ export const render: RenderFn = async (payload, context): Promise<RenderResult> 
   if (!markdown.trim()) throw new Error('No markdown content available for board deck');
 
   // Ask LLM for the distilled deck spec
-  const userPrompt = `Report title: ${context.session.title}\nContent type: ${payload.content_type}\n\n---\n\n${markdown.slice(0, 60_000)}`;
+  const userPrompt = `Report title: ${context.session.title}\nContent type: ${payload.content_type}\n\n${wrapUntrustedContent(markdown)}${INJECTION_GUARD_SUFFIX}`;
   const chat = await Promise.race([
     callChat({ model: MODEL, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`board-deck timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)),
@@ -135,6 +136,19 @@ function parseDeckSpec(text: string): DeckSpec | null {
   try {
     const obj = JSON.parse(raw) as DeckSpec;
     if (!obj?.deck_title || !Array.isArray(obj.slides)) return null;
+    // Defensive bounds — prevents the LLM from producing pathologically
+    // large slides/bullets that bloat PPTX or hide injected content.
+    obj.deck_title = String(obj.deck_title).slice(0, 200);
+    obj.framing = String(obj.framing ?? '').slice(0, 500);
+    obj.next_decision = String(obj.next_decision ?? '').slice(0, 500);
+    obj.slides = obj.slides
+      .slice(0, 8)
+      .filter(s => s && typeof s.title === 'string' && Array.isArray(s.bullets))
+      .map(s => ({
+        title: s.title.slice(0, 100),
+        bullets: s.bullets.filter(b => typeof b === 'string').map(b => b.slice(0, 500)).slice(0, 12),
+        speaker_notes: s.speaker_notes ? String(s.speaker_notes).slice(0, 2000) : undefined,
+      }));
     return obj;
   } catch { return null; }
 }
