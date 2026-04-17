@@ -6,7 +6,8 @@
  */
 
 import { useState } from 'react';
-import { CheckCircle2, Circle, Loader2, AlertCircle, Pause, ChevronDown, ChevronRight, Clock, Hexagon } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, AlertCircle, Pause, ChevronDown, ChevronRight, Clock, Hexagon, Users } from 'lucide-react';
+import ParallelReviewModal from './ParallelReviewModal';
 
 export type TaskStatus = 'queued' | 'active' | 'completed' | 'failed' | 'skipped' | 'blocked' | 'paused';
 export type TaskType = 'llm' | 'research' | 'analysis' | 'export' | 'review' | 'notification' | 'checkpoint' | 'conditional' | 'parallel_group' | 'browser' | 'api_call' | 'database_query';
@@ -37,8 +38,10 @@ export interface DependencyEdge {
 interface TaskGraphViewProps {
   tasks: TaskNode[];
   dependencies: DependencyEdge[];
+  missionId?: string;                                       // enables parallel-review on checkpoint tasks
   onApprove?: (taskId: string) => Promise<void>;
   onReject?: (taskId: string, feedback: string) => Promise<void>;
+  onParallelReviewCreated?: () => void;
 }
 
 const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
@@ -56,17 +59,20 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   failed: 'Failed', skipped: 'Skipped', blocked: 'Blocked', paused: 'Awaiting human',
 };
 
-function TaskCard({ task, depends, dependents, onApprove, onReject }: {
+function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, onParallelReviewCreated }: {
   task: TaskNode;
   depends: TaskNode[];
   dependents: TaskNode[];
+  missionId?: string;
   onApprove?: (id: string) => Promise<void>;
   onReject?: (id: string, feedback: string) => Promise<void>;
+  onParallelReviewCreated?: () => void;
 }) {
   const [expanded, setExpanded] = useState(task.status === 'active' || task.status === 'paused');
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showParallelReview, setShowParallelReview] = useState(false);
 
   const isCheckpoint = task.task_type === 'checkpoint';
   const awaitingHuman = isCheckpoint && task.status === 'paused';
@@ -144,13 +150,23 @@ function TaskCard({ task, depends, dependents, onApprove, onReject }: {
             </div>
           )}
 
+          {missionId && (
+            <ParallelReviewModal
+              open={showParallelReview}
+              missionId={missionId}
+              taskId={task.id}
+              taskTitle={task.title}
+              onClose={() => setShowParallelReview(false)}
+              onSuccess={() => { setShowParallelReview(false); onParallelReviewCreated?.(); }}
+            />
+          )}
           {awaitingHuman && (onApprove || onReject) && (
             <div className="pt-2 border-t border-adv-gold/20">
               <div className="text-[11px] text-adv-gold font-medium mb-1">
                 Awaiting your approval
               </div>
               {!showRejectForm ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {onApprove && (
                     <button
                       onClick={handleApprove}
@@ -168,6 +184,16 @@ function TaskCard({ task, depends, dependents, onApprove, onReject }: {
                     >
                       <AlertCircle className="h-3 w-3" />
                       Reject with feedback
+                    </button>
+                  )}
+                  {missionId && (
+                    <button
+                      onClick={() => setShowParallelReview(true)}
+                      className="rounded border border-adv-teal/40 bg-adv-teal/10 px-2.5 py-1 text-[11px] text-adv-teal hover:bg-adv-teal/20 inline-flex items-center gap-1"
+                      title="Defer this checkpoint to a multi-reviewer BEEHIVE session"
+                    >
+                      <Users className="h-3 w-3" />
+                      Send to parallel review
                     </button>
                   )}
                 </div>
@@ -205,7 +231,7 @@ function TaskCard({ task, depends, dependents, onApprove, onReject }: {
   );
 }
 
-export default function TaskGraphView({ tasks, dependencies, onApprove, onReject }: TaskGraphViewProps) {
+export default function TaskGraphView({ tasks, dependencies, missionId, onApprove, onReject, onParallelReviewCreated }: TaskGraphViewProps) {
   if (tasks.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-adv-card/30 p-8 text-center text-xs text-adv-gray italic">
@@ -235,8 +261,10 @@ export default function TaskGraphView({ tasks, dependencies, onApprove, onReject
             task={t}
             depends={depsByTask.get(t.id) ?? []}
             dependents={reverseDepsByTask.get(t.id) ?? []}
+            missionId={missionId}
             onApprove={onApprove}
             onReject={onReject}
+            onParallelReviewCreated={onParallelReviewCreated}
           />
         </li>
       ))}
