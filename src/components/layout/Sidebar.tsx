@@ -1800,6 +1800,16 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </NavLink>
         )}
 
+        {/* Risk Atlas — universal seven-stage threat-path methodology */}
+        <NavLink
+          to="/atlas"
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          title={sidebarCollapsed ? 'Risk Atlas' : undefined}
+        >
+          <Compass className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Risk Atlas'}
+        </NavLink>
+
         {/* Event Triggers sub-nav (under Workflows) */}
         {!sidebarCollapsed && pathname.startsWith('/workflows') && (
           <NavLink

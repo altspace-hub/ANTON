@@ -211,6 +211,11 @@ const MissionInboxPage = lazy(() => import('./pages/missions/MissionInboxPage'))
 const CredentialVaultPage = lazy(() => import('./pages/missions/CredentialVaultPage'));
 const ServicePacksPage = lazy(() => import('./pages/missions/ServicePacksPage'));
 
+// Risk Atlas pages
+const RiskAtlasLandingPage = lazy(() => import('./pages/risk-atlas/RiskAtlasLandingPage'));
+const RiskAtlasSetupPage = lazy(() => import('./pages/risk-atlas/RiskAtlasSetupPage'));
+const RiskAtlasWorkspacePage = lazy(() => import('./pages/risk-atlas/RiskAtlasWorkspacePage'));
+
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
 const FCKycPage = lazy(() => import('./pages/futurechain/FCKycPage'));
@@ -535,6 +540,10 @@ export default function App() {
           <Route path="/missions/credentials" element={<CredentialVaultPage />} />
           <Route path="/missions/service-packs" element={<ServicePacksPage />} />
           <Route path="/missions/:id" element={<MissionDashboardPage />} />
+          {/* Risk Atlas — universal seven-stage threat-path methodology */}
+          <Route path="/atlas" element={<RiskAtlasLandingPage />} />
+          <Route path="/atlas/new" element={<RiskAtlasSetupPage />} />
+          <Route path="/atlas/:id" element={<RiskAtlasWorkspacePage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />
           <Route path="/futurechain/kyc" element={<FCKycPage />} />
