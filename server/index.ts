@@ -500,6 +500,24 @@ app.use('/api', createServicePackRoutes(db));
 // Missions Phase 3 — Intelligence + Delivery: output channels, risk classification, parallel-review checkpoints (BEEHIVE-backed)
 const { createMissionDeliveryRoutes } = await import('./routes/mission-delivery.js');
 app.use('/api', createMissionDeliveryRoutes(db));
+// Missions Phase 4 — Financial: FutureChain wallet integration, payment proposals, approval + cancel-window workflow
+const { createMissionPaymentRoutes } = await import('./routes/mission-payments.js');
+app.use('/api', createMissionPaymentRoutes(db));
+// Mission payment execution tick — settles approved payments past their cancel window
+{
+  const { createMissionBudget } = await import('./services/missions/mission-budget.js');
+  const missionBudget = await createMissionBudget(db);
+  setInterval(async () => {
+    try {
+      const result = await missionBudget.runPendingExecutions();
+      if (result.executed > 0 || result.failed > 0) {
+        console.log(`[mission-payments] tick: executed=${result.executed} failed=${result.failed} waiting=${result.waiting}`);
+      }
+    } catch (err) {
+      console.error('[mission-payments] tick error:', err);
+    }
+  }, 60_000); // every minute
+}
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
 app.use('/api', await createTaskDelegationRoutes(db));
