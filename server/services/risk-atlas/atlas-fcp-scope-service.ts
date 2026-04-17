@@ -12,11 +12,10 @@
 // in the atlas-company-appetite-consolidator module.
 
 import type { DatabaseAdapter } from '../../db/database.js';
-import { createAtlasService } from './atlas-service.js';
 import { appetitePositionFor } from './atlas-residual-calculator.js';
 import { createAtlasEventLogger } from './atlas-event-logger.js';
 import type {
-  AppetitePosition, FcpDomain, ThreatPathFull, Score1to5,
+  AppetitePosition, FcpDomain, Score1to5,
 } from './types.js';
 
 export type FcpScopeFlagKey =
@@ -98,7 +97,6 @@ function worstOf(a: AppetitePosition | null, b: AppetitePosition): AppetitePosit
 }
 
 export function createAtlasFcpScopeService(db: DatabaseAdapter) {
-  const atlasService = createAtlasService(db);
   const events = createAtlasEventLogger(db);
 
   // ── Scope ────────────────────────────────────────────────────────────
@@ -110,9 +108,12 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
     )) ?? null;
   }
 
-  async function upsertScope(atlasId: string, scope: Partial<Omit<AtlasFcpScopeRow, 'atlas_id' | 'created_at' | 'updated_at'>>, actorUserId: string): Promise<AtlasFcpScopeRow> {
+  async function upsertScope(atlasId: string, scope: Partial<Omit<AtlasFcpScopeRow, 'atlas_id' | 'assessed_by' | 'created_at' | 'updated_at'>>, actorUserId: string): Promise<AtlasFcpScopeRow> {
     // Universal Core is implicitly ON when any FCP domain flag is on.
     // Compute the derived flag here so the route layer doesn't have to.
+    // assessed_by is always the current actor — never trusted from the
+    // request body so the audit trail can't be spoofed by a malicious
+    // (but otherwise authenticated) caller (multi-expert review fix).
     const merged: AtlasFcpScopeRow = {
       atlas_id: atlasId,
       amlcft_active: scope.amlcft_active ?? false,
@@ -125,7 +126,7 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
       modern_slavery_active: scope.modern_slavery_active ?? false,
       universal_core_active: false,
       scope_rationale: scope.scope_rationale ?? null,
-      assessed_by: scope.assessed_by ?? actorUserId,
+      assessed_by: actorUserId,
       last_reviewed_at: new Date().toISOString(),
       created_at: '', updated_at: '',
     };
@@ -166,16 +167,12 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
 
   // ── Cross-domain bundles ────────────────────────────────────────────
 
-  async function listBundles(atlasId: string): Promise<BundleWithMembers[]> {
-    const bundles = await db.all<AtlasCrossDomainBundleRow>(
-      `SELECT * FROM atlas_cross_domain_path_bundles WHERE atlas_id = ? ORDER BY created_at`,
-      atlasId,
-    );
-    if (bundles.length === 0) return [];
-    const bundleIds = bundles.map(b => b.id);
+  type BundleMemberHydrated = AtlasCrossDomainBundleMemberRow & { path_code: string; name: string; fcp_domain: FcpDomain | null; residual_score: number | null };
+
+  async function fetchBundleMembers(bundleIds: number[]): Promise<BundleMemberHydrated[]> {
+    if (bundleIds.length === 0) return [];
     const placeholders = bundleIds.map(() => '?').join(',');
-    // One round-trip for all members
-    const rows = await db.all<AtlasCrossDomainBundleMemberRow & { path_code: string; name: string; fcp_domain: FcpDomain | null; residual_score: number | null }>(
+    return db.all<BundleMemberHydrated>(
       `SELECT m.bundle_id, m.threat_path_id, m.role_in_bundle, m.notes, m.created_at,
               tp.path_code, tp.name, tp.fcp_domain,
               r.residual_score
@@ -185,6 +182,15 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
          WHERE m.bundle_id IN (${placeholders})`,
       ...bundleIds,
     );
+  }
+
+  async function listBundles(atlasId: string): Promise<BundleWithMembers[]> {
+    const bundles = await db.all<AtlasCrossDomainBundleRow>(
+      `SELECT * FROM atlas_cross_domain_path_bundles WHERE atlas_id = ? ORDER BY created_at`,
+      atlasId,
+    );
+    if (bundles.length === 0) return [];
+    const rows = await fetchBundleMembers(bundles.map(b => b.id));
     return bundles.map(b => ({ ...b, members: rows.filter(r => r.bundle_id === b.id) }));
   }
 
@@ -198,41 +204,57 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
     );
     if (!created) throw new Error('Failed to create cross-domain bundle');
     if (input.member_path_ids?.length) {
-      await Promise.all(input.member_path_ids.map(pid =>
-        db.run(
-          `INSERT INTO atlas_cross_domain_path_bundle_members (bundle_id, threat_path_id, role_in_bundle)
-           VALUES (?, ?, 'middle')
-           ON CONFLICT (bundle_id, threat_path_id) DO NOTHING`,
-          created.id, pid,
-        ),
-      ));
+      // Tenancy: only insert paths that belong to this Atlas. The parent
+      // bundle's atlas_id is enforced by the route's ensureAtlasAccess —
+      // but member_path_ids comes from the body and could reference a
+      // foreign atlas. Filter at the SQL layer (multi-expert review fix).
+      const placeholders = input.member_path_ids.map(() => '?').join(',');
+      await db.run(
+        `INSERT INTO atlas_cross_domain_path_bundle_members (bundle_id, threat_path_id, role_in_bundle)
+         SELECT ?, tp.id, 'middle' FROM atlas_threat_paths tp
+          WHERE tp.atlas_id = ? AND tp.id IN (${placeholders})
+         ON CONFLICT (bundle_id, threat_path_id) DO NOTHING`,
+        created.id, atlasId, ...input.member_path_ids,
+      );
     }
     void events.logEvent({ atlasId, event: 'cross_domain_bundle_created', userId: actorUserId, subResourceId: String(created.id), details: { bundle_code: created.bundle_code } });
-    const list = await listBundles(atlasId);
-    const found = list.find(b => b.id === created.id);
-    if (!found) throw new Error('Failed to hydrate bundle after create');
-    return found;
+    // Hydrate this bundle directly — no listBundles round-trip
+    const members = await fetchBundleMembers([created.id]);
+    return { ...created, members };
   }
 
   async function addBundleMember(atlasId: string, bundleId: number, threatPathId: string, roleInBundle: AtlasCrossDomainBundleMemberRow['role_in_bundle'], actorUserId: string): Promise<void> {
-    await db.run(
+    // Tenancy: bundle must belong to this Atlas AND path must belong to
+    // this Atlas. Single SQL guard prevents cross-tenant attachment.
+    const result = await db.run(
       `INSERT INTO atlas_cross_domain_path_bundle_members (bundle_id, threat_path_id, role_in_bundle)
-       VALUES (?, ?, ?)
+       SELECT b.id, tp.id, ?
+         FROM atlas_cross_domain_path_bundles b
+         JOIN atlas_threat_paths tp ON tp.atlas_id = b.atlas_id
+         WHERE b.id = ? AND b.atlas_id = ? AND tp.id = ?
        ON CONFLICT (bundle_id, threat_path_id) DO UPDATE SET role_in_bundle = EXCLUDED.role_in_bundle`,
-      bundleId, threatPathId, roleInBundle,
+      roleInBundle, bundleId, atlasId, threatPathId,
     );
+    if ((result?.changes ?? 0) === 0) {
+      throw new Error('Bundle or threat path not found in this Atlas');
+    }
     void events.logEvent({ atlasId, event: 'cross_domain_bundle_member_added', userId: actorUserId, subResourceId: String(bundleId), details: { threat_path_id: threatPathId, role_in_bundle: roleInBundle } });
   }
 
   async function removeBundleMember(atlasId: string, bundleId: number, threatPathId: string, actorUserId: string): Promise<void> {
+    // Tenancy: only delete if the bundle belongs to this Atlas.
     await db.run(
-      `DELETE FROM atlas_cross_domain_path_bundle_members WHERE bundle_id = ? AND threat_path_id = ?`,
-      bundleId, threatPathId,
+      `DELETE FROM atlas_cross_domain_path_bundle_members
+        WHERE bundle_id = ?
+          AND threat_path_id = ?
+          AND bundle_id IN (SELECT id FROM atlas_cross_domain_path_bundles WHERE atlas_id = ?)`,
+      bundleId, threatPathId, atlasId,
     );
     void events.logEvent({ atlasId, event: 'cross_domain_bundle_member_removed', userId: actorUserId, subResourceId: String(bundleId), details: { threat_path_id: threatPathId } });
   }
 
   async function deleteBundle(atlasId: string, bundleId: number, actorUserId: string): Promise<void> {
+    // Already scoped by atlas_id — no change needed for tenancy.
     await db.run(
       `DELETE FROM atlas_cross_domain_path_bundles WHERE id = ? AND atlas_id = ?`,
       bundleId, atlasId,
@@ -244,22 +266,38 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
   // Deterministic worst-of across all per-path appetites. The LLM may
   // produce narrative around the rollup, but never the numbers — same
   // discipline as Stages 4-6.
+  //
+  // Single LEFT JOIN — replaces the previous 1+6N round-trips per Atlas
+  // (one listThreatPaths + six getThreatPathFull queries per path).
+  // Multi-expert review fix.
 
   async function computeCompanyAppetite(atlasId: string): Promise<CompanyAppetiteRollup> {
-    const allPaths = await atlasService.listThreatPaths(atlasId);
-    const fulls = await Promise.all(allPaths.map(p => atlasService.getThreatPathFull(p.id)));
-    const paths = fulls.filter((p): p is ThreatPathFull => p !== null);
+    type RollupRow = {
+      fcp_domain: FcpDomain | null;
+      residual_score: number | null;
+      declared_position: AppetitePosition | null;
+    };
+    const rows = await db.all<RollupRow>(
+      `SELECT tp.fcp_domain,
+              r.residual_score,
+              a.appetite_position AS declared_position
+         FROM atlas_threat_paths tp
+         LEFT JOIN atlas_residual_scores      r ON r.threat_path_id = tp.id
+         LEFT JOIN atlas_appetite_statements  a ON a.threat_path_id = tp.id
+         WHERE tp.atlas_id = ?`,
+      atlasId,
+    );
 
     const byDomain: Partial<Record<FcpDomain, AppetitePosition>> = {};
     let overall: AppetitePosition | null = null;
     let operational: AppetitePosition | null = null;
     let outside = 0, boundary = 0, within = 0, unscored = 0;
 
-    for (const p of paths) {
+    for (const row of rows) {
       // Prefer declared appetite, fall back to calculated
-      let pos: AppetitePosition | null = p.appetite?.appetite_position ?? null;
-      if (!pos && p.residual?.residual_score) {
-        pos = appetitePositionFor(p.residual.residual_score as Score1to5);
+      let pos: AppetitePosition | null = row.declared_position ?? null;
+      if (!pos && row.residual_score) {
+        pos = appetitePositionFor(row.residual_score as Score1to5);
       }
       if (!pos) { unscored++; continue; }
       if (pos === 'outside' || pos === 'unacceptable') outside++;
@@ -267,7 +305,7 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
       else within++;
 
       overall = worstOf(overall, pos);
-      const domain = p.path.fcp_domain;
+      const domain = row.fcp_domain;
       if (domain) byDomain[domain] = worstOf(byDomain[domain] ?? null, pos);
       else operational = worstOf(operational, pos);
     }

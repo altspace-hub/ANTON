@@ -270,9 +270,19 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
    * Resolve full pack content, merging parent packs if there's an inheritance
    * chain (FCP-CASP inherits from FCP-Bank inherits from SME-general). Child
    * entries override parent entries with the same id.
+   *
+   * Cycle protection (multi-expert review fix): track the visit set down
+   * the recursion. A misconfigured `parent_pack_id` chain (especially from
+   * a community-imported `.anton` bundle) would otherwise recurse until
+   * stack overflow.
    */
-  async function getPackContent(packId: string): Promise<IndustryPackContent | null> {
+  async function getPackContent(packId: string, visited?: Set<string>): Promise<IndustryPackContent | null> {
     if (contentCache.has(packId)) return contentCache.get(packId)!;
+    const seen = visited ?? new Set<string>();
+    if (seen.has(packId)) {
+      throw new Error(`Pack inheritance cycle detected at "${packId}" (visited: ${Array.from(seen).join(' → ')})`);
+    }
+    seen.add(packId);
     const row = await getPack(packId);
     if (!row?.pack_path) return null;
     const absPackPath = path.isAbsolute(row.pack_path)
@@ -283,7 +293,7 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       contentCache.set(packId, own);
       return own;
     }
-    const parent = await getPackContent(row.parent_pack_id);
+    const parent = await getPackContent(row.parent_pack_id, seen);
     if (!parent) {
       contentCache.set(packId, own);
       return own;
