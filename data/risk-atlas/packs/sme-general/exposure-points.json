@@ -1,0 +1,12 @@
+[
+  { "id": "ex-customers",      "name": "Customer base",                 "description": "The people or organisations you sell to or serve. Includes their geography, size, and how they pay you.", "category": "customer_segment" },
+  { "id": "ex-suppliers",      "name": "Suppliers and vendors",         "description": "The third parties you depend on for goods, services, software, or infrastructure.",                       "category": "partner" },
+  { "id": "ex-employees",      "name": "Employees and contractors",     "description": "Anyone who works for you, including subcontractors and seasonal staff.",                                  "category": "process" },
+  { "id": "ex-payments-in",    "name": "Payment-in channels",           "description": "How money comes in: card, bank transfer, cash, marketplace payouts, invoicing.",                          "category": "channel" },
+  { "id": "ex-payments-out",   "name": "Payment-out channels",          "description": "How money leaves: payroll, supplier transfers, expense reimbursement, refunds.",                         "category": "channel" },
+  { "id": "ex-data",           "name": "Customer + employee data",      "description": "Personal data and other sensitive records you hold.",                                                    "category": "system" },
+  { "id": "ex-ip-systems",     "name": "Core IT systems",               "description": "The applications, devices, and cloud accounts your business depends on day-to-day.",                     "category": "system" },
+  { "id": "ex-physical",       "name": "Physical premises and stock",   "description": "Buildings, equipment, inventory, vehicles.",                                                             "category": "process" },
+  { "id": "ex-regulators",     "name": "Regulatory perimeter",          "description": "The licences, registrations, tax filings, and supervisory relationships your business depends on.",      "category": "geography" },
+  { "id": "ex-brand",          "name": "Reputation and brand",          "description": "Public perception of your business — reviews, press, social media, complaints.",                         "category": "process" }
+]

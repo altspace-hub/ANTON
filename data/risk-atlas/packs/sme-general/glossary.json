@@ -1,0 +1,14 @@
+{
+  "Exposure":         "Something in your business that creates the possibility of harm. Not the harm itself — just the surface where harm could land. Example: 'we accept card payments' is an exposure; 'fraud through card payments' is the threat.",
+  "Threat path":      "A short, named story about how harm could actually unfold in your business. Example: 'a fake supplier sends us an invoice and we pay it'. The path has a beginning (what's exposed), a middle (what could go wrong), and an end (what it costs).",
+  "Vulnerability":    "A weakness in your defences that makes a threat plausible. Example: 'we don't verify supplier bank-detail changes by phone' is a vulnerability that makes invoice fraud plausible.",
+  "Inherent risk":    "How bad the situation would be without your controls. The starting score before you take credit for what you've put in place.",
+  "Control":          "Something you do to make a threat less likely (prevent), to spot it when it happens (detect), or to recover when it does (respond).",
+  "Prevent control":  "Stops the bad thing from happening. Locks on doors. Two signatures on big payments. MFA on email.",
+  "Detect control":   "Tells you when something has happened. Bank statement reconciliation. Login alerts. Backup-restore tests.",
+  "Respond control":  "Helps you recover quickly when it does happen. Incident playbooks. Backup restores. Press protocol. Insurance.",
+  "Residual risk":    "What's left after your controls. The point of the Atlas is to know this number for each path, not just hope.",
+  "Risk appetite":    "How much risk the business is OK with. 'Within' = fine. 'Boundary' = monitor. 'Outside' = act now. 'Unacceptable' = stop trading or it kills the business.",
+  "Strong / Adequate / Weak control": "Strong = the control works as intended, with evidence on file. Adequate = it works in principle but has known gaps. Weak = it's documented but not actually used, or it's missing key elements.",
+  "Owner":            "The named person responsible for keeping a control working. Without an owner, a control isn't really a control."
+}

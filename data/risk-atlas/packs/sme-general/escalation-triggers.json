@@ -1,0 +1,10 @@
+[
+  { "event": "Any threat path reaches residual 5",                                 "action": "Owner / board reviews and approves a remediation plan",       "timeline": "within 5 business days" },
+  { "event": "A regulatory filing is missed",                                       "action": "Same-day notification to owner; remediate within statutory grace period; review next compliance cycle", "timeline": "same day" },
+  { "event": "Suspected data breach affecting personal data",                       "action": "Triage within 24 hours; notify supervisory authority within 72 hours where required (GDPR Art. 33)", "timeline": "24 hours" },
+  { "event": "Major payment fraud loss confirmed",                                  "action": "Notify bank, file police report, review payment controls", "timeline": "same day" },
+  { "event": "Critical supplier announces insolvency or significant disruption",    "action": "Activate exit / fallback plan; communicate to affected customers", "timeline": "within 5 business days" },
+  { "event": "Workplace injury serious enough to require medical attention",        "action": "Internal incident report; notify regulator if required by sector",  "timeline": "within 24 hours" },
+  { "event": "Cash runway falls below 60 days",                                     "action": "Owner reviews; consider trading restrictions; notify accountant",   "timeline": "within 5 business days" },
+  { "event": "Public complaint or press inquiry materially affecting brand",        "action": "Press protocol activated; spokesperson identified",                  "timeline": "within 1 business day" }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "tp-payment-fraud",
+    "code": "TP-1",
+    "name": "Payment / invoice fraud against the business",
+    "description": "External attackers (or insiders) trick the business into paying a fraudulent invoice, redirecting a real payment, or accepting a fraudulent payment that's later clawed back.",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-payments-in", "ex-payments-out", "ex-suppliers"],
+    "vulnerability_refs": ["v-no-dual-control", "v-email-only-payment-instructions"]
+  },
+  {
+    "id": "tp-data-breach",
+    "code": "TP-2",
+    "name": "Customer or employee data breach",
+    "description": "Sensitive personal data is exposed or stolen — through a system compromise, lost device, misconfigured cloud bucket, or social engineering.",
+    "typical_inherent": 4,
+    "exposure_refs": ["ex-data", "ex-ip-systems"],
+    "vulnerability_refs": ["v-no-mfa", "v-no-encryption-at-rest", "v-no-leavers-process"]
+  },
+  {
+    "id": "tp-supplier-failure",
+    "code": "TP-3",
+    "name": "Critical supplier or platform failure",
+    "description": "A supplier you depend on (cloud platform, payment provider, key vendor) fails, withdraws, or massively raises prices, disrupting the business.",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-suppliers", "ex-ip-systems"],
+    "vulnerability_refs": ["v-single-supplier", "v-no-exit-plan"]
+  },
+  {
+    "id": "tp-regulatory-non-compliance",
+    "code": "TP-4",
+    "name": "Regulatory non-compliance (tax, employment, sector)",
+    "description": "Missed filings, non-compliant employment practices, missing licences, or breach of sector rules that result in fines, prosecution, or licence loss.",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-regulators", "ex-employees"],
+    "vulnerability_refs": ["v-no-compliance-calendar", "v-no-named-owner"]
+  },
+  {
+    "id": "tp-cyber-attack",
+    "code": "TP-5",
+    "name": "Ransomware or destructive cyber attack",
+    "description": "Malicious actors encrypt or destroy your systems, demand ransom, and/or steal data for extortion.",
+    "typical_inherent": 4,
+    "exposure_refs": ["ex-ip-systems", "ex-data"],
+    "vulnerability_refs": ["v-no-backups-tested", "v-no-mfa", "v-no-patching-cadence"]
+  },
+  {
+    "id": "tp-key-person",
+    "code": "TP-6",
+    "name": "Key-person dependency",
+    "description": "A single person holds knowledge, credentials, or relationships the business cannot operate without — and is unavailable (illness, departure, conflict).",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-employees"],
+    "vulnerability_refs": ["v-no-documentation", "v-no-succession-plan"]
+  },
+  {
+    "id": "tp-employee-misconduct",
+    "code": "TP-7",
+    "name": "Employee misconduct or insider abuse",
+    "description": "An employee steals from the business, leaks confidential information, or harasses colleagues or customers.",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-employees", "ex-data", "ex-payments-out"],
+    "vulnerability_refs": ["v-no-vetting", "v-no-leavers-process"]
+  },
+  {
+    "id": "tp-reputation-event",
+    "code": "TP-8",
+    "name": "Reputation / customer-trust event",
+    "description": "A bad incident (poor service, complaint, social media flare-up, regulatory finding) becomes a public story that damages the brand.",
+    "typical_inherent": 2,
+    "exposure_refs": ["ex-brand", "ex-customers"],
+    "vulnerability_refs": ["v-no-complaint-log", "v-no-press-protocol"]
+  },
+  {
+    "id": "tp-physical-incident",
+    "code": "TP-9",
+    "name": "Physical incident (fire, theft, accident)",
+    "description": "Damage or loss at your premises — fire, flood, burglary, equipment failure, workplace injury.",
+    "typical_inherent": 2,
+    "exposure_refs": ["ex-physical", "ex-employees"],
+    "vulnerability_refs": ["v-no-fire-test", "v-no-incident-log"]
+  },
+  {
+    "id": "tp-financial-distress",
+    "code": "TP-10",
+    "name": "Cash-flow shock or financial distress",
+    "description": "Late payments, customer concentration, or a single big loss leaves the business unable to meet obligations.",
+    "typical_inherent": 3,
+    "exposure_refs": ["ex-customers", "ex-payments-in"],
+    "vulnerability_refs": ["v-customer-concentration", "v-no-cash-buffer"]
+  }
+]
