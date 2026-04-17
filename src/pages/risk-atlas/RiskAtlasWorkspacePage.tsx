@@ -10,6 +10,9 @@ import {
   Archive,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
+import ThreatPathsTab from '../../components/risk-atlas/ThreatPathsTab';
+import ControlsTab from '../../components/risk-atlas/ControlsTab';
+import MaintenanceTab from '../../components/risk-atlas/MaintenanceTab';
 
 type TabKey = 'dashboard' | 'paths' | 'controls' | 'events' | 'maintenance';
 type AppetitePosition = 'within' | 'boundary' | 'outside' | 'unacceptable';
@@ -153,11 +156,11 @@ export default function RiskAtlasWorkspacePage() {
         })}
       </div>
 
-      {tab === 'dashboard' && <DashboardTab dashboard={dashboard} />}
-      {tab === 'paths'      && <PlaceholderTab title="Threat paths" hint="Phase 1f wires the per-stage UIs into this tab." />}
-      {tab === 'controls'   && <PlaceholderTab title="Controls"     hint="Phase 1f surfaces the control matrix here." />}
+      {tab === 'dashboard'  && <DashboardTab dashboard={dashboard} />}
+      {tab === 'paths'      && id && <ThreatPathsTab atlasId={id} />}
+      {tab === 'controls'   && id && <ControlsTab atlasId={id} />}
       {tab === 'events'     && id && <EventsTab atlasId={id} />}
-      {tab === 'maintenance'&& <PlaceholderTab title="Maintenance"  hint="Phase 1f wires review cycles + trigger feed here." />}
+      {tab === 'maintenance'&& id && <MaintenanceTab atlasId={id} />}
     </div>
   );
 }
