@@ -362,6 +362,10 @@ const { adminRouter: gwAdmin, publicRouter: gwPublic } = await createFCGatewayRo
 app.use('/api/gateway', gwPublic);
 
 // Companion App Gateway — M9: controlled by APP_GATEWAY_ENABLED (default: enabled)
+// Radar fetcher is created here (early) so the companion-app gateway can
+// expose POST /api/app/radar/scan; the main /api/radar mount below shares
+// the same instance.
+const radarFetcher = anthropic ? await createRadarFetcher(db, anthropic) : undefined;
 const APP_GATEWAY_ENABLED = process.env.APP_GATEWAY_ENABLED !== 'false';
 let appGatewaySvc: Awaited<ReturnType<typeof createAppGatewayRoutes>>['service'] | null = null;
 if (APP_GATEWAY_ENABLED) {
@@ -369,7 +373,7 @@ if (APP_GATEWAY_ENABLED) {
   app.use('/api/app/auth', authLimiter);
   // SEC: General rate limit on all app public routes
   app.use('/api/app', userLimiter);
-  const { publicRouter: appPublic, adminRouter: appAdmin, service } = await createAppGatewayRoutes(db);
+  const { publicRouter: appPublic, adminRouter: appAdmin, service } = await createAppGatewayRoutes(db, radarFetcher);
   appGatewaySvc = service;
   app.use('/api/app', appPublic);
   // Admin routes mounted after auth middleware (see below)
@@ -470,8 +474,8 @@ app.use('/api', await createDeadlinesRoutes(db));
 app.use('/api/workflows', await createWorkflowRoutes(db, anthropic));
 app.use('/api', await createMemoryRoutes(db));
 app.use('/api', await createCanvasRoutes(db));
-// Initialize radar fetcher for automated feed scanning
-const radarFetcher = anthropic ? await createRadarFetcher(db, anthropic) : undefined;
+// Radar fetcher created earlier (above app-gateway mount) so the companion
+// app can share the same instance for POST /api/app/radar/scan.
 app.use('/api', await createRadarRoutes(db, radarFetcher));
 app.use('/api', createNotificationsRouter(db));
 app.use('/api', await createQualityRoutes(db, anthropic));
@@ -962,6 +966,20 @@ httpServer.listen(PORT, async () => {
 
     const MARKET_TZ = { timezone: 'Europe/Stockholm' };
 
+    // ── Pause flags (cost control) ──────────────────────────────────────────
+    // MARKETS_THINKING_DISABLED=true  → skip every LLM-spending call (atom
+    //   extraction, daily/weekly intelligence, validation, fundamental
+    //   analysis). NAV, price syncs, prediction checkpoints (price-only),
+    //   event triggers and materialized-view refreshes still run.
+    // MARKETS_FETCH_DISABLED=true     → skip every external data fetch
+    //   (FMP, news, RSS). Free in-DB processing still runs if thinking is on.
+    const marketsThinkingDisabled =
+      String(process.env.MARKETS_THINKING_DISABLED || '').toLowerCase() === 'true';
+    const marketsFetchDisabled =
+      String(process.env.MARKETS_FETCH_DISABLED || '').toLowerCase() === 'true';
+    if (marketsThinkingDisabled) console.log('[markets-schedule] MARKETS_THINKING_DISABLED=true — LLM phases will skip');
+    if (marketsFetchDisabled) console.log('[markets-schedule] MARKETS_FETCH_DISABLED=true — data fetches will skip');
+
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
     // Backlog gate: skip new fetches if too many unprocessed articles
     async function getBacklogSize(): Promise<number> {
@@ -991,16 +1009,20 @@ httpServer.listen(PORT, async () => {
       try {
         await marketAtomService.applyAtomDecay();
         const backlog = await getBacklogSize();
-        // Only fetch if backlog is manageable (< 500)
-        if (backlog < 500) {
+        if (!marketsFetchDisabled && backlog < 500) {
           await marketDataService.fetchAllSources();
           console.log(`[markets-schedule] Phase 1: fetched data (backlog was ${backlog})`);
+        } else if (marketsFetchDisabled) {
+          console.log('[markets-schedule] Phase 1: fetch skipped (MARKETS_FETCH_DISABLED)');
         } else {
           console.log(`[markets-schedule] Phase 1: skipping fetch, processing backlog (${backlog} items)`);
         }
-        // Always process — more than we fetch
-        const processed = await processBacklog(40);
-        console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
+        if (marketsThinkingDisabled) {
+          console.log('[markets-schedule] Phase 1: backlog processing skipped (MARKETS_THINKING_DISABLED)');
+        } else {
+          const processed = await processBacklog(40);
+          console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
+        }
       } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
     }, MARKET_TZ);
 
@@ -1009,15 +1031,23 @@ httpServer.listen(PORT, async () => {
       console.log('[markets-schedule] Phase 2: Pre-Open');
       try {
         const backlog = await getBacklogSize();
-        if (backlog < 500) await marketDataService.fetchAllSources();
-        const processed = await processBacklog(20);
-        console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
+        if (!marketsFetchDisabled && backlog < 500) await marketDataService.fetchAllSources();
+        if (marketsThinkingDisabled) {
+          console.log('[markets-schedule] Phase 2: backlog processing skipped (MARKETS_THINKING_DISABLED)');
+        } else {
+          const processed = await processBacklog(20);
+          console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
+        }
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
     }, MARKET_TZ);
 
     // Phase 3: Market Open (15:45 CET) — prices only (no news to avoid backlog)
     cron.schedule('45 15 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 3: Market Open');
+      if (marketsFetchDisabled) {
+        console.log('[markets-schedule] Phase 3 skipped (MARKETS_FETCH_DISABLED)');
+        return;
+      }
       try {
         const priceSources = await db.all<{ id: string }>(
           "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'"
@@ -1034,12 +1064,15 @@ httpServer.listen(PORT, async () => {
       console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
       try {
         const backlog = await getBacklogSize();
-        if (backlog < 500) await marketDataService.fetchAllSources();
-        // Process a big batch before intelligence
-        const processed = await processBacklog(40);
-        console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
-        await workflowOrchestrator.runDailyIntelligence();
-        console.log('[markets-schedule] Phase 4 complete');
+        if (!marketsFetchDisabled && backlog < 500) await marketDataService.fetchAllSources();
+        if (marketsThinkingDisabled) {
+          console.log('[markets-schedule] Phase 4 skipped (MARKETS_THINKING_DISABLED) — daily intelligence + backlog deferred');
+        } else {
+          const processed = await processBacklog(40);
+          console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
+          await workflowOrchestrator.runDailyIntelligence();
+          console.log('[markets-schedule] Phase 4 complete');
+        }
       } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
     }, MARKET_TZ);
 
@@ -1047,7 +1080,7 @@ httpServer.listen(PORT, async () => {
     cron.schedule('15 22 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
-        await marketDataService.fetchAllSources();
+        if (!marketsFetchDisabled) await marketDataService.fetchAllSources();
         await marketDataService.syncPricesToHistorical();
         await navEngine.updateAllActiveIndexes();
         await navEngine.updateLeaderboard();
@@ -1063,6 +1096,10 @@ httpServer.listen(PORT, async () => {
     // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis
     cron.schedule('0 23 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 6: Post-Market Processing + Fundamental Analysis');
+      if (marketsThinkingDisabled) {
+        console.log('[markets-schedule] Phase 6 skipped (MARKETS_THINKING_DISABLED)');
+        return;
+      }
       try {
         const processed = await processBacklog(60);
 
@@ -1117,6 +1154,10 @@ httpServer.listen(PORT, async () => {
     // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch
     cron.schedule('0 10 * * 6', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
+      if (marketsThinkingDisabled) {
+        console.log('[markets-schedule] Phase 7 skipped (MARKETS_THINKING_DISABLED)');
+        return;
+      }
       try {
         await workflowOrchestrator.runPredictionValidation();
         const processed = await processBacklog(100);
@@ -1136,6 +1177,10 @@ httpServer.listen(PORT, async () => {
     // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET)
     cron.schedule('0 9 * * 1,4', async () => {
       console.log('[markets-schedule] Phase 8: Weekly Pulse Predictions');
+      if (marketsThinkingDisabled) {
+        console.log('[markets-schedule] Phase 8 skipped (MARKETS_THINKING_DISABLED)');
+        return;
+      }
       try {
         await workflowOrchestrator.runWeeklyPulse();
         console.log('[markets-schedule] Phase 8 complete');
@@ -1156,6 +1201,7 @@ httpServer.listen(PORT, async () => {
 
     // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00)
     cron.schedule('0 14,16,18,20,22 * * 1-5', async () => {
+      if (marketsFetchDisabled) return;
       try {
         const priceSources = await db.all<{ id: string }>(
           "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'"
@@ -1168,6 +1214,7 @@ httpServer.listen(PORT, async () => {
 
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
+      if (marketsFetchDisabled) return;
       const backlog = await getBacklogSize();
       if (backlog > 1000) {
         console.log(`[markets-news] Skipping news fetch — backlog too large (${backlog})`);
@@ -1209,30 +1256,34 @@ httpServer.listen(PORT, async () => {
         const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
         let catchUpActions = 0;
 
-        // 1. Process backlog immediately (always useful after restart)
+        // 1. Process backlog immediately (always useful after restart) — LLM-spending
         const backlog = await getBacklogSize();
-        if (backlog > 0) {
+        if (backlog > 0 && !marketsThinkingDisabled) {
           const processed = await processBacklog(Math.min(backlog, 100));
           console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
           catchUpActions++;
+        } else if (backlog > 0) {
+          console.log(`[markets-catchup] Backlog of ${backlog} items deferred (MARKETS_THINKING_DISABLED)`);
         }
 
-        // 1b. Sync prices to historical table
+        // 1b. Sync prices to historical table (free)
         try {
           await marketDataService.syncPricesToHistorical();
         } catch { /* non-fatal */ }
 
-        // 1c. Ensure sector ETF data exists for rotation analysis
-        try {
-          const { backfilled } = await marketDataService.ensureSectorETFData();
-          if (backfilled.length > 0) {
-            console.log(`[markets-catchup] Backfilled sector ETFs: ${backfilled.join(', ')}`);
-            catchUpActions++;
-          }
-        } catch { /* non-fatal */ }
+        // 1c. Ensure sector ETF data exists for rotation analysis (fetch)
+        if (!marketsFetchDisabled) {
+          try {
+            const { backfilled } = await marketDataService.ensureSectorETFData();
+            if (backfilled.length > 0) {
+              console.log(`[markets-catchup] Backfilled sector ETFs: ${backfilled.join(', ')}`);
+              catchUpActions++;
+            }
+          } catch { /* non-fatal */ }
+        }
 
-        // 2. Check if daily intelligence ran today (weekdays only)
-        if (isWeekday) {
+        // 2. Check if daily intelligence ran today (weekdays only) — LLM-spending
+        if (isWeekday && !marketsThinkingDisabled) {
           const lastIntel = await db.get<{ started_at: string }>(
             "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
           );
@@ -1243,7 +1294,7 @@ httpServer.listen(PORT, async () => {
           if (hoursSinceIntel > 24) {
             console.log(`[markets-catchup] Daily intelligence last ran ${hoursSinceIntel === Infinity ? 'never' : Math.round(hoursSinceIntel) + 'h ago'} — running now`);
             try {
-              await marketDataService.fetchAllSources();
+              if (!marketsFetchDisabled) await marketDataService.fetchAllSources();
               await workflowOrchestrator.runDailyIntelligence();
               catchUpActions++;
               console.log('[markets-catchup] Daily intelligence catch-up complete');
@@ -1269,8 +1320,8 @@ httpServer.listen(PORT, async () => {
           } catch (err) { console.error('[markets-catchup] NAV catch-up failed:', err); }
         }
 
-        // 4. Check if prediction validation ran this week (should run Saturday)
-        if (dayOfWeek === 6 || dayOfWeek === 0) {
+        // 4. Check if prediction validation ran this week (should run Saturday) — LLM-spending
+        if ((dayOfWeek === 6 || dayOfWeek === 0) && !marketsThinkingDisabled) {
           const lastValidation = await db.get<{ started_at: string }>(
             "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_prediction_validation' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
           );
@@ -1288,20 +1339,22 @@ httpServer.listen(PORT, async () => {
           }
         }
 
-        // 5. Check if weekly pulse ran recently
-        const lastPulse = await db.get<{ started_at: string }>(
-          "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_weekly_pulse' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
-        );
-        const daysSincePulse = lastPulse
-          ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000
-          : Infinity;
-        if (daysSincePulse > 4 && isWeekday) {
-          console.log(`[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
-          try {
-            await workflowOrchestrator.runWeeklyPulse();
-            catchUpActions++;
-            console.log('[markets-catchup] Weekly pulse catch-up complete');
-          } catch (err) { console.error('[markets-catchup] Weekly pulse catch-up failed:', err); }
+        // 5. Check if weekly pulse ran recently — LLM-spending
+        if (!marketsThinkingDisabled) {
+          const lastPulse = await db.get<{ started_at: string }>(
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_weekly_pulse' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+          );
+          const daysSincePulse = lastPulse
+            ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000
+            : Infinity;
+          if (daysSincePulse > 4 && isWeekday) {
+            console.log(`[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
+            try {
+              await workflowOrchestrator.runWeeklyPulse();
+              catchUpActions++;
+              console.log('[markets-catchup] Weekly pulse catch-up complete');
+            } catch (err) { console.error('[markets-catchup] Weekly pulse catch-up failed:', err); }
+          }
         }
 
         // 6. Refresh materialized views (always safe, idempotent)
@@ -1328,36 +1381,42 @@ httpServer.listen(PORT, async () => {
 
   // Initialize radar background scanning from DB settings
   if (radarFetcher) {
-    try {
-      const autoEnabled = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'");
-      const autoInterval = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'");
-      const enabled = autoEnabled?.value === '1';
-      const hours = parseInt(autoInterval?.value || '24', 10);
+    const radarAutomationDisabled =
+      String(process.env.RADAR_AUTOMATION_DISABLED || '').toLowerCase() === 'true';
+    if (radarAutomationDisabled) {
+      console.log('[radar] RADAR_AUTOMATION_DISABLED=true — auto-scan + cron skipped');
+    } else {
+      try {
+        const autoEnabled = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'");
+        const autoInterval = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'");
+        const enabled = autoEnabled?.value === '1';
+        const hours = parseInt(autoInterval?.value || '24', 10);
 
-      if (enabled) {
-        radarFetcher.startAutoScan(hours);
-        console.log(`[radar] Auto-scan enabled (${hours}h interval)`);
-      } else {
-        console.log('[radar] Auto-scan disabled (change in Radar settings)');
-      }
+        if (enabled) {
+          radarFetcher.startAutoScan(hours);
+          console.log(`[radar] Auto-scan enabled (${hours}h interval)`);
+        } else {
+          console.log('[radar] Auto-scan disabled (change in Radar settings)');
+        }
 
-      // Also check for cron-based radar schedule
-      const radarCronRow = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'");
-      const radarCronExpr = radarCronRow?.value;
-      if (radarCronExpr && cron.validate(radarCronExpr)) {
-        cron.schedule(radarCronExpr, async () => {
-          console.log('[radar-cron] Starting scheduled radar scan');
-          try {
-            await radarFetcher!.scanAllSources();
-            console.log('[radar-cron] Scheduled scan completed');
-          } catch (err) {
-            console.error('[radar-cron] Scan failed:', err);
-          }
-        });
-        console.log(`[radar-cron] Scheduled radar scan: ${radarCronExpr}`);
+        // Also check for cron-based radar schedule
+        const radarCronRow = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'");
+        const radarCronExpr = radarCronRow?.value;
+        if (radarCronExpr && cron.validate(radarCronExpr)) {
+          cron.schedule(radarCronExpr, async () => {
+            console.log('[radar-cron] Starting scheduled radar scan');
+            try {
+              await radarFetcher!.scanAllSources();
+              console.log('[radar-cron] Scheduled scan completed');
+            } catch (err) {
+              console.error('[radar-cron] Scan failed:', err);
+            }
+          });
+          console.log(`[radar-cron] Scheduled radar scan: ${radarCronExpr}`);
+        }
+      } catch (err) {
+        console.error('[radar] Failed to read auto-scan settings:', err);
       }
-    } catch (err) {
-      console.error('[radar] Failed to read auto-scan settings:', err);
     }
   }
 });
