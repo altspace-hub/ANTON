@@ -667,7 +667,7 @@ export default function ModulePage() {
           <GapAnalysisWalkthrough moduleId={moduleId ?? ''} />
 
           {/* Risk Atlas migration banner — surfaces on legacy FCP modules that overlap with the seven-stage methodology */}
-          <AtlasMigrationBanner moduleId={moduleId} areaId={areaId} />
+          <AtlasMigrationBanner moduleId={moduleId} areaId={areaId ?? undefined} />
 
           {/* Healthcare / medical disclaimer (LEGAL-03) */}
           {(areaId === 'healthcare' || areaId === 'community-health') && (
