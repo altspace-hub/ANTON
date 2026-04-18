@@ -417,9 +417,30 @@ export default function HardwareProjectPage() {
           {project.tier >= 2 && project.path === 'develop' && (
             <RegulatoryPackPanel projectId={project.id} />
           )}
+
+          {/* Humanitarian deployment shortcut (always available) */}
+          <HumanitarianShortcut projectId={project.id} />
         </div>
       </div>
     </div>
+  );
+}
+
+function HumanitarianShortcut({ projectId }: { projectId: string }) {
+  const nav = useNavigate();
+  return (
+    <section className="lg:col-span-1">
+      <h2 className="text-lg font-semibold mb-2">Humanitarian deployment</h2>
+      <button
+        onClick={() => nav(`/hardware/projects/${projectId}/humanitarian`)}
+        className="w-full p-3 rounded border border-adv-gray/20 bg-adv-card hover:border-adv-teal/40 transition text-left"
+      >
+        <div className="text-sm font-medium">Open humanitarian workspace →</div>
+        <p className="text-xs text-adv-gray mt-1">
+          Manage the deployment record (local partner, OCHA cluster, donor exit), generate capacity-transfer artefacts in the project's working language, and download the offline deployment kit.
+        </p>
+      </button>
+    </section>
   );
 }
 

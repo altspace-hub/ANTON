@@ -46,6 +46,14 @@ import {
 } from '../services/maintain-service.js';
 import { createCveApplicabilityService } from '../services/cve-applicability-service.js';
 import { createRegulatoryPackService, type ArtefactKind } from '../services/regulatory-pack-service.js';
+import {
+  createHumanitarianService,
+  type CapacityArtefactKind,
+  type DeploymentStatus,
+  type InternetPosture,
+  type PowerPosture,
+} from '../services/humanitarian-service.js';
+import { bundleHumanitarianDeploymentKit } from '../services/anton-bundler.js';
 import { safeError } from '../lib/error-response.js';
 
 // In-memory multer for photo-id uploads (max 4 photos × 8MB).
@@ -289,6 +297,42 @@ const withdrawArtefactSchema = z.object({
   reason: z.string().max(2000).optional(),
 });
 
+const CAPACITY_ARTEFACT_KINDS: [CapacityArtefactKind, ...CapacityArtefactKind[]] = [
+  'installation-guide', 'operator-checklist', 'troubleshooting-flowchart',
+  'spares-procedure', 'escalation', 'decommissioning',
+];
+const DEPLOYMENT_STATUSES: [DeploymentStatus, ...DeploymentStatus[]] = [
+  'planning', 'training', 'pilot', 'rollout', 'operating', 'transferred', 'decommissioned',
+];
+const INTERNET_POSTURES: [InternetPosture, ...InternetPosture[]] = ['none', 'intermittent', 'scheduled', 'always-on'];
+const POWER_POSTURES: [PowerPosture, ...PowerPosture[]] = ['grid', 'grid+battery', 'solar', 'generator', 'battery'];
+
+const upsertDeploymentSchema = z.object({
+  local_partner_name: z.string().min(2).max(300),
+  local_partner_contact: z.string().min(3).max(500),
+  ocha_cluster: z.string().nullable().optional(),
+  cluster_contact: z.string().nullable().optional(),
+  donor_exit_date: z.string().nullable().optional(),
+  post_donor_plan: z.string().nullable().optional(),
+  units_planned: z.number().int().min(1).max(100000).optional(),
+  internet_posture: z.enum(INTERNET_POSTURES).optional(),
+  power_posture: z.enum(POWER_POSTURES).optional(),
+  status: z.enum(DEPLOYMENT_STATUSES).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const generateCapacityArtefactSchema = z.object({
+  kind: z.enum(CAPACITY_ARTEFACT_KINDS),
+});
+
+const updateCapacityArtefactSchema = z.object({
+  content_markdown: z.string().min(100),
+});
+
+const signOffCapacityArtefactSchema = z.object({
+  attestation: z.string().min(30),
+});
+
 const cveApplicabilitySchema = z.object({
   lookback_days: z.number().int().min(1).max(3650).optional(),
   min_cvss: z.number().min(0).max(10).optional(),
@@ -335,6 +379,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const maintain = createMaintainService(db);
   const cveApplicability = createCveApplicabilityService(db);
   const regulatory = createRegulatoryPackService(db);
+  const humanitarian = createHumanitarianService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -1165,6 +1210,137 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.json({ success: true, summary });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Humanitarian deployment + capacity-transfer artefacts ────────────────
+
+  router.get('/hardware/projects/:id/humanitarian-deployment', async (req, res) => {
+    try {
+      const deployment = await humanitarian.getDeployment(req.params.id);
+      res.json({ success: true, deployment });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/humanitarian-deployment', async (req, res) => {
+    try {
+      const parsed = upsertDeploymentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const deployment = await humanitarian.upsertDeployment({
+        project_id: req.params.id,
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+      });
+      res.status(201).json({ success: true, deployment });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/projects/:id/capacity-transfer-artefacts', async (req, res) => {
+    try {
+      const artefacts = await humanitarian.listArtefacts(req.params.id);
+      const summary = await humanitarian.assessCompleteness(req.params.id);
+      res.json({ success: true, artefacts, summary });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/capacity-transfer-artefacts', async (req, res) => {
+    try {
+      const parsed = generateCapacityArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await humanitarian.generateOrRegenerate({
+        project_id: req.params.id,
+        kind: parsed.data.kind,
+        actor_id: getOwnerId(req),
+      });
+      res.status(201).json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/capacity-transfer-artefacts/:artefactId', async (req, res) => {
+    try {
+      const artefact = await humanitarian.getArtefact(req.params.artefactId);
+      if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      const history = await humanitarian.listSignoffs(req.params.artefactId);
+      res.json({ success: true, artefact, history });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/capacity-transfer-artefacts/:artefactId', async (req, res) => {
+    try {
+      const parsed = updateCapacityArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await humanitarian.updateContent({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        content_markdown: parsed.data.content_markdown,
+      });
+      if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/capacity-transfer-artefacts/:artefactId/signoff', async (req, res) => {
+    try {
+      const parsed = signOffCapacityArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await humanitarian.signOff({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        attestation: parsed.data.attestation,
+      });
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/capacity-transfer-artefacts/:artefactId/withdraw', async (req, res) => {
+    try {
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason : undefined;
+      const artefact = await humanitarian.withdraw({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        reason,
+      });
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/projects/:id/humanitarian-bundle', async (req, res) => {
+    try {
+      const allowUnsigned = req.query.allow_unsigned === 'true';
+      const buf = await bundleHumanitarianDeploymentKit(db, req.params.id, { allow_unsigned: allowUnsigned });
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="humanitarian-deployment-kit-${req.params.id.slice(0, 8)}.zip"`);
+      res.send(buf);
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
     }
   });
 

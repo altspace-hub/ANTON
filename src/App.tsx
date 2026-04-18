@@ -78,6 +78,7 @@ const HardwareProjectPage = lazy(() => import('./pages/HardwareProjectPage'));
 const HardwareDiagnosePage = lazy(() => import('./pages/HardwareDiagnosePage'));
 const HardwareMaintainPage = lazy(() => import('./pages/HardwareMaintainPage'));
 const HardwareRegulatoryPage = lazy(() => import('./pages/HardwareRegulatoryPage'));
+const HardwareHumanitarianPage = lazy(() => import('./pages/HardwareHumanitarianPage'));
 const BriefMePage = lazy(() => import('./pages/BriefMePage'));
 const GuideMePage = lazy(() => import('./pages/GuideMePage'));
 const BatchCreatePage = lazy(() => import('./pages/BatchCreatePage'));
@@ -463,6 +464,7 @@ export default function App() {
           <Route path="/hardware/projects/:id/maintain" element={<HardwareMaintainPage />} />
           <Route path="/hardware/projects/:id/regulatory" element={<HardwareRegulatoryPage />} />
           <Route path="/hardware/projects/:id/regulatory/:kind" element={<HardwareRegulatoryPage />} />
+          <Route path="/hardware/projects/:id/humanitarian" element={<HardwareHumanitarianPage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
           <Route path="/exchange" element={<ExchangePage />} />
