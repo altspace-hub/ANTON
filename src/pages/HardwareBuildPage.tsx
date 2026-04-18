@@ -145,6 +145,18 @@ export default function HardwareBuildPage() {
           description="See the 6 gates (PlatformIO, Clang-tidy, CycloneDX, CVE scan, Wokwi, Security scorecard) and adapter status"
           onClick={() => nav('/hardware/knowledge-packs')}
         />
+        <QuickLink
+          icon={<Activity className="w-5 h-5 text-emerald-400" />}
+          title="Hardware templates"
+          description="Pre-populated project blueprints — start from a curated ESP32 template instead of from scratch"
+          onClick={() => nav('/hardware/templates')}
+        />
+        <QuickLink
+          icon={<ShieldAlert className="w-5 h-5 text-amber-400" />}
+          title="Community review queue"
+          description="Pending HKP, diagnostic case, and template submissions awaiting review"
+          onClick={() => nav('/hardware/review-queue')}
+        />
       </section>
 
       {wizardOpen && (
