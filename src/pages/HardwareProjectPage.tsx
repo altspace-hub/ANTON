@@ -334,7 +334,7 @@ export default function HardwareProjectPage() {
             <h2 className="text-lg font-semibold mb-2">Quality pipeline</h2>
             <div className="p-3 rounded border border-adv-gray/20 bg-adv-card mb-3">
               <div className="text-xs text-adv-gray mb-2">
-                6 gates run on the active firmware artefact. Mandatory gates that fail force <code>ship_verdict=block</code> regardless of overall score.
+                8 gates run on the active firmware artefact. Mandatory gates that fail force <code>ship_verdict=block</code> regardless of overall score.
               </div>
               <button
                 onClick={runQuality}
@@ -344,9 +344,7 @@ export default function HardwareProjectPage() {
                 {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
                 Run pipeline
               </button>
-              <p className="text-xs text-adv-gray mt-2 leading-snug">
-                Phase 4 ships <strong>mock</strong> adapters for PlatformIO / Clang-tidy / CycloneDX / Wokwi / Security scorecard, and a <strong>real</strong> CVE-scan adapter that queries the lifecycle layer. Real adapters drop in via the same QualityAdapter contract in subsequent sprints.
-              </p>
+              <AdapterAvailabilityPanel />
             </div>
 
             {/* Latest verdict + reasoning */}
@@ -520,4 +518,63 @@ function Pill({ kind, children }: { kind: 'path' | 'tier' | 'warn' | 'warn-pink'
     'warn-pink': 'bg-pink-500/10 text-pink-400 border-pink-500/30',
   }[kind];
   return <span className={`text-xs px-2 py-0.5 rounded border ${cls}`}>{children}</span>;
+}
+
+interface AvailabilityEntry {
+  gateKey: string;
+  installed: boolean;
+  version: string | null;
+  install_hint: string;
+}
+
+function AdapterAvailabilityPanel() {
+  const [list, setList] = useState<AvailabilityEntry[] | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchWithAuth(`${API_BASE}/hardware/quality/adapter-availability`);
+        const json = await res.json();
+        if (!cancelled && json.success) setList(json.availability);
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!list) {
+    return <p className="text-xs text-adv-gray mt-2"><Loader2 className="w-3 h-3 animate-spin inline" /> Detecting installed tools…</p>;
+  }
+  const installed = list.filter(a => a.installed).length;
+  const missing = list.length - installed;
+  return (
+    <div className="mt-2 text-xs">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="text-adv-gray hover:text-adv-off-white flex items-center gap-1"
+      >
+        <Activity className="w-3 h-3" />
+        {installed}/{list.length} adapter tools detected
+        {missing > 0 && <span className="text-amber-400">· {missing} will skip</span>}
+        <span className="text-[10px]">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <ul className="mt-2 space-y-1">
+          {list.map(a => (
+            <li key={a.gateKey} className="border-l-2 pl-2 border-adv-gray/30">
+              <div className={`flex items-center gap-1 ${a.installed ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: a.installed ? '#34d399' : '#fbbf24' }} />
+                <span className="font-mono">{a.gateKey}</span>
+                {a.version && <span className="text-adv-gray">· {a.version.slice(0, 36)}</span>}
+              </div>
+              {!a.installed && (
+                <div className="text-adv-gray text-[10px] mt-0.5 leading-snug">{a.install_hint}</div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }

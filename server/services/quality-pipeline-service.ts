@@ -24,7 +24,16 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import type { HardwareProject } from './hardware-project-service.js';
-import { createRegulatoryPackService } from './regulatory-pack-service.js';
+
+import platformioBuildAdapter, { detect as detectPlatformio } from './quality-adapters/platformio-build-adapter.js';
+import clangTidyAdapter, { detect as detectClangTidy } from './quality-adapters/clang-tidy-adapter.js';
+import cyclonedxSbomAdapter, { detect as detectCyclonedx } from './quality-adapters/cyclonedx-sbom-adapter.js';
+import cveScanAdapter, { detect as detectCveScan } from './quality-adapters/cve-scan-adapter.js';
+import wokwiSimAdapter, { detect as detectWokwi } from './quality-adapters/wokwi-sim-adapter.js';
+import securityScorecardAdapter, { detect as detectSecurityScorecard } from './quality-adapters/security-scorecard-adapter.js';
+import rollbackArtefactAdapter, { detect as detectRollback } from './quality-adapters/rollback-artefact-adapter.js';
+import regulatoryPackAdapter, { detect as detectRegulatory } from './quality-adapters/regulatory-pack-adapter.js';
+import type { AdapterAvailability } from './quality-adapters/_shared.js';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -90,359 +99,34 @@ export interface QualityRunSummary {
   }>;
 }
 
-// ── Mock adapter helpers ──────────────────────────────────────────────────────
-
-function deterministicNoise(seed: string, max: number): number {
-  // Tiny deterministic hash so the same project + gate always returns the
-  // same mock score. Lets the UI show stable data across reloads.
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return h % max;
-}
-
-// ── Adapters ──────────────────────────────────────────────────────────────────
-
-const platformioMockAdapter: QualityAdapter = {
-  gateKey: 'platformio-build',
-  displayLabel: 'PlatformIO Build',
-  isMandatory: true,
-  kind: 'mock',
-  version: '0.1.0-mock',
-  appliesTo: () => true,
-  run: async ({ project }) => {
-    const start = Date.now();
-    // Mock: succeeds with a "binary size used" stat that varies per project
-    const flashUsed = 65 + deterministicNoise(project.id, 25); // 65-89%
-    const ramUsed = 35 + deterministicNoise(project.id + ':ram', 20);   // 35-54%
-    const outcome: GateOutcome = flashUsed < 90 ? 'pass' : 'warn';
-    return {
-      outcome,
-      score: 100 - flashUsed,
-      summary: outcome === 'pass'
-        ? `Build succeeded. Flash ${flashUsed}% used, RAM ${ramUsed}% used.`
-        : `Build succeeded but flash usage is tight (${flashUsed}%) — review before shipping.`,
-      details: {
-        toolchain: 'platformio (mock)',
-        framework: 'arduino-esp32',
-        flash_used_percent: flashUsed,
-        ram_used_percent: ramUsed,
-        warnings_count: deterministicNoise(project.id + ':warn', 5),
-        note: 'Mock adapter — real PlatformIO subprocess invocation lands in a future sprint.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const clangTidyMockAdapter: QualityAdapter = {
-  gateKey: 'clang-tidy',
-  displayLabel: 'Static Analysis (Clang-tidy)',
-  isMandatory: true,
-  kind: 'mock',
-  version: '0.1.0-mock',
-  appliesTo: () => true,
-  run: async ({ project }) => {
-    const start = Date.now();
-    const findings = deterministicNoise(project.id + ':clang', 8);
-    const critical = deterministicNoise(project.id + ':crit', 2);
-    const outcome: GateOutcome = critical > 0 ? 'fail' : findings > 4 ? 'warn' : 'pass';
-    return {
-      outcome,
-      score: Math.max(0, 100 - findings * 8 - critical * 30),
-      summary: outcome === 'pass'
-        ? `Clean: ${findings} non-critical findings.`
-        : outcome === 'warn'
-        ? `${findings} findings to address before shipping (none critical).`
-        : `${critical} critical finding(s); firmware cannot ship until resolved.`,
-      details: {
-        analyzer: 'clang-tidy (mock)',
-        checks_enabled: ['cert-*', 'bugprone-*', 'cppcoreguidelines-*', 'misc-*'],
-        findings_count: findings,
-        critical_count: critical,
-        sample_findings: critical > 0
-          ? ['cert-err34-c: \'atoi\' called instead of \'strtol\' (line 142, main.cpp)']
-          : [],
-        note: 'Mock adapter — real Clang-tidy subprocess invocation lands in a future sprint.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const cyclonedxMockAdapter: QualityAdapter = {
-  gateKey: 'cyclonedx-sbom',
-  displayLabel: 'Software Bill of Materials (CycloneDX)',
-  isMandatory: true,
-  kind: 'mock',
-  version: '0.1.0-mock',
-  appliesTo: () => true,
-  run: async ({ project }) => {
-    const start = Date.now();
-    const components = 18 + deterministicNoise(project.id + ':sbom', 15);
-    return {
-      outcome: 'pass',
-      score: 100,
-      summary: `SBOM generated. ${components} components catalogued.`,
-      details: {
-        format: 'CycloneDX 1.5 (mock)',
-        component_count: components,
-        bom_ref: `pkg:hw/${project.family_id}/${project.id.slice(0, 8)}`,
-        sample_components: [
-          { type: 'firmware', name: 'esp-idf', version: 'v5.1.2' },
-          { type: 'library', name: 'mbedtls', version: '3.4.0' },
-          { type: 'library', name: 'lwip', version: '2.1.3' },
-        ],
-        note: 'Mock SBOM — real generator from PlatformIO build output lands in a future sprint.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const cveScanRealAdapter: QualityAdapter = {
-  gateKey: 'cve-scan',
-  displayLabel: 'CVE Scan (against lifecycle layer)',
-  isMandatory: true,
-  kind: 'real',
-  version: '0.1.0',
-  appliesTo: () => true,
-  run: async ({ db, project }) => {
-    const start = Date.now();
-    // Pull lifecycle events affecting this project's family. In a future
-    // sprint we'll narrow further by SBOM component versions; for now we
-    // surface every advisory in the family with CVSS ≥ 7.0 as load-bearing.
-    const events = await db.all(
-      `SELECT event_id, title, severity, cvss_score, source, source_url
-       FROM lifecycle_events
-       WHERE family_id = ?
-         AND (cvss_score >= 7.0 OR severity IN ('high', 'critical'))
-         AND ingested_at > NOW() - INTERVAL '365 days'
-       ORDER BY published_at DESC
-       LIMIT 25`,
-      project.family_id,
-    ) as Array<{ event_id: string; title: string; severity: string | null; cvss_score: number | null; source: string; source_url: string | null }>;
-
-    const critical = events.filter(e => (e.cvss_score ?? 0) >= 9.0).length;
-    const high = events.filter(e => (e.cvss_score ?? 0) >= 7.0 && (e.cvss_score ?? 0) < 9.0).length;
-
-    let outcome: GateOutcome = 'pass';
-    let score = 100;
-    if (critical > 0) { outcome = 'fail'; score = 0; }
-    else if (high > 0) { outcome = 'warn'; score = Math.max(0, 100 - high * 12); }
-
-    return {
-      outcome,
-      score,
-      summary:
-        outcome === 'pass' ? `No critical/high CVEs in the last 365 days for ${project.family_id}.` :
-        outcome === 'warn' ? `${high} high-severity CVE(s) in scope. Review applicability before shipping.` :
-        `${critical} critical-severity CVE(s) in scope. Firmware must not ship without remediation.`,
-      details: {
-        family: project.family_id,
-        critical_count: critical,
-        high_count: high,
-        total_in_scope: events.length,
-        events: events.slice(0, 10),
-        note: 'Adapter checks lifecycle_events table populated by the NVD/GHSA/Espressif ingestor. Refine via the Maintain CVE Applicability module before treating any high-severity event as project-applicable.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const wokwiMockAdapter: QualityAdapter = {
-  gateKey: 'wokwi-sim',
-  displayLabel: 'Simulation (Wokwi)',
-  isMandatory: false, // not all projects are simulatable; e.g. unique sensor hw
-  kind: 'mock',
-  version: '0.1.0-mock',
-  appliesTo: (project) => project.family_id === 'esp32',
-  run: async ({ project }) => {
-    const start = Date.now();
-    const scenarios = ['boot', 'wifi-connect', 'sensor-read', 'deep-sleep-wake'];
-    const failed = deterministicNoise(project.id + ':wokwi', 5) > 3;
-    return {
-      outcome: failed ? 'warn' : 'pass',
-      score: failed ? 70 : 100,
-      summary: failed
-        ? `4 scenarios run; 3 passed, 1 produced a non-fatal warning in deep-sleep-wake.`
-        : `All 4 simulation scenarios passed.`,
-      details: {
-        simulator: 'wokwi (mock)',
-        scenarios_run: scenarios,
-        scenarios_passed: failed ? scenarios.slice(0, 3) : scenarios,
-        scenarios_warned: failed ? ['deep-sleep-wake'] : [],
-        note: 'Mock simulation results. Real Wokwi API integration requires a Wokwi API key; deferred to the Phase 4+ external-tool sprint.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const securityScorecardMockAdapter: QualityAdapter = {
-  gateKey: 'security-scorecard',
-  displayLabel: 'Security Scorecard',
-  isMandatory: true, // mandatory unless explicit Tier 1 acknowledgement
-  kind: 'mock',
-  version: '0.1.0-mock',
-  appliesTo: (project) => {
-    // Tier 1 builds with the secure-update ack can skip this gate per spec §13.
-    if (project.tier === 1 && project.tier1_secure_update_ack) return false;
-    return true;
-  },
-  run: async ({ project }) => {
-    const start = Date.now();
-    const secureBoot = project.tier !== 1 ? true : Boolean(deterministicNoise(project.id + ':sb', 2));
-    const flashEnc = project.tier !== 1 ? true : Boolean(deterministicNoise(project.id + ':fe', 2));
-    const signedOta = project.tier === 3 ? true : Boolean(deterministicNoise(project.id + ':ota', 2));
-
-    const score =
-      (secureBoot ? 35 : 0) +
-      (flashEnc ? 35 : 0) +
-      (signedOta ? 30 : 0);
-
-    let outcome: GateOutcome = 'pass';
-    if (project.tier === 3 && score < 100) outcome = 'fail';
-    else if (project.tier === 2 && score < 70) outcome = 'fail';
-    else if (score < 70) outcome = 'warn';
-
-    return {
-      outcome,
-      score,
-      summary:
-        outcome === 'pass' ? `Secure boot, flash encryption, signed OTA all green.` :
-        outcome === 'warn' ? `Secure-update posture incomplete (${score}/100). Acceptable for Tier 1 with acknowledgement.` :
-        `Secure-update chain insufficient for Tier ${project.tier} — must enable secure boot v2, flash encryption, and signed OTA before shipping.`,
-      details: {
-        secure_boot_v2: secureBoot,
-        flash_encryption: flashEnc,
-        signed_ota: signedOta,
-        anti_rollback: signedOta,
-        tier: project.tier,
-        note: 'Mock scorecard. Real adapter inspects ESP-IDF sdkconfig + eFuse status from a connected device or build artefact.',
-      },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const rollbackArtefactRealAdapter: QualityAdapter = {
-  gateKey: 'rollback-artefact',
-  displayLabel: 'Rollback artefact present',
-  isMandatory: true,
-  kind: 'real',
-  version: '0.1.0',
-  appliesTo: (project) => project.path === 'maintain',
-  run: async ({ db, project }) => {
-    const start = Date.now();
-    // Inspect every active patch plan on the project. The latest non-cancelled
-    // plan must have rollback_artefact_ref set; for Tier 3 the secure-update
-    // chain (signed_image + verified_boot + rollback_protected) must also be
-    // true. This mirrors the locked invariants enforced by maintain-service.ts.
-    const plans = await db.all(
-      `SELECT id, title, rollback_artefact_ref, signed_image, verified_boot, rollback_protected, status
-       FROM hw_patch_plans
-       WHERE project_id = ? AND status NOT IN ('cancelled', 'rolled_back')
-       ORDER BY created_at DESC`,
-      project.id,
-    ) as Array<{
-      id: string; title: string;
-      rollback_artefact_ref: string | null;
-      signed_image: boolean; verified_boot: boolean; rollback_protected: boolean;
-      status: string;
-    }>;
-
-    if (plans.length === 0) {
-      return {
-        outcome: 'skip',
-        score: null,
-        summary: 'No active patch plans to evaluate. Create a Maintain patch plan first.',
-        details: { plan_count: 0, note: 'Maintain pipeline runs with no plan to evaluate against.' },
-        durationMs: Date.now() - start,
-      };
-    }
-
-    const failingPlans: Array<{ id: string; title: string; reason: string }> = [];
-    for (const p of plans) {
-      const reasons: string[] = [];
-      if (!p.rollback_artefact_ref) reasons.push('missing rollback_artefact_ref');
-      if (project.tier === 3) {
-        if (!p.signed_image) reasons.push('Tier 3 requires signed_image=true');
-        if (!p.verified_boot) reasons.push('Tier 3 requires verified_boot=true');
-        if (!p.rollback_protected) reasons.push('Tier 3 requires rollback_protected=true');
-      }
-      if (reasons.length > 0) failingPlans.push({ id: p.id, title: p.title, reason: reasons.join('; ') });
-    }
-
-    if (failingPlans.length > 0) {
-      return {
-        outcome: 'fail',
-        score: 0,
-        summary: `${failingPlans.length} of ${plans.length} active patch plan(s) missing required rollback / secure-update fields`,
-        details: { failing_plans: failingPlans, total_plans: plans.length, project_tier: project.tier },
-        durationMs: Date.now() - start,
-      };
-    }
-
-    return {
-      outcome: 'pass',
-      score: 100,
-      summary: `All ${plans.length} active patch plan(s) have required rollback artefact${project.tier === 3 ? ' + secure-update chain' : ''}.`,
-      details: { plan_count: plans.length, project_tier: project.tier },
-      durationMs: Date.now() - start,
-    };
-  },
-};
-
-const regulatoryPackRealAdapter: QualityAdapter = {
-  gateKey: 'regulatory-pack-complete',
-  displayLabel: 'Regulatory pack complete',
-  isMandatory: true,
-  kind: 'real',
-  version: '0.1.0',
-  appliesTo: (project) => project.path === 'develop' && project.tier >= 2,
-  run: async ({ db, project }) => {
-    const start = Date.now();
-    const reg = createRegulatoryPackService(db);
-    const summary = await reg.assessCompleteness({ project_id: project.id });
-
-    if (summary.ready_to_ship) {
-      return {
-        outcome: 'pass',
-        score: 100,
-        summary: `${summary.signed_off}/${summary.required_total} required regulatory artefacts signed off.`,
-        details: { ...summary, project_tier: project.tier },
-        durationMs: Date.now() - start,
-      };
-    }
-
-    // Tier 2 with only DPA + workplace-safety: warn (not block) if reviewed
-    // but not signed; fail if any are missing.
-    const hasMissing = summary.missing > 0;
-    return {
-      outcome: hasMissing ? 'fail' : 'warn',
-      score: Math.round((summary.signed_off / Math.max(summary.required_total, 1)) * 100),
-      summary: hasMissing
-        ? `${summary.missing}/${summary.required_total} required regulatory artefacts missing.`
-        : `All required artefacts present but ${summary.required_total - summary.signed_off} not yet signed off.`,
-      details: { ...summary, project_tier: project.tier },
-      durationMs: Date.now() - start,
-    };
-  },
-};
+// ── Adapter registry ──────────────────────────────────────────────────────────
+// All adapters live under server/services/quality-adapters/. Each is real
+// (subprocess detect + invoke OR DB query); when the underlying tool is not
+// installed, the adapter returns outcome='skip' with a clear install_hint.
 
 const ADAPTERS: QualityAdapter[] = [
-  platformioMockAdapter,
-  clangTidyMockAdapter,
-  cyclonedxMockAdapter,
-  cveScanRealAdapter,
-  wokwiMockAdapter,
-  securityScorecardMockAdapter,
-  rollbackArtefactRealAdapter,
-  regulatoryPackRealAdapter,
+  platformioBuildAdapter,
+  clangTidyAdapter,
+  cyclonedxSbomAdapter,
+  cveScanAdapter,
+  wokwiSimAdapter,
+  securityScorecardAdapter,
+  rollbackArtefactAdapter,
+  regulatoryPackAdapter,
 ];
+
+// One detect() per adapter, parallel to the ADAPTERS array.
+const ADAPTER_DETECT: Record<string, () => Promise<{ installed: boolean; version: string | null; install_hint: string }>> = {
+  'platformio-build':       detectPlatformio,
+  'clang-tidy':             detectClangTidy,
+  'cyclonedx-sbom':         detectCyclonedx,
+  'cve-scan':               detectCveScan,
+  'wokwi-sim':              detectWokwi,
+  'security-scorecard':     detectSecurityScorecard,
+  'rollback-artefact':      detectRollback,
+  'regulatory-pack-complete': detectRegulatory,
+};
+
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
@@ -467,6 +151,44 @@ export function createQualityPipelineService(db: DatabaseAdapter) {
       kind: a.kind,
       version: a.version,
     }));
+  }
+
+  /**
+   * Run each adapter's detect() in parallel — returns the install status
+   * + version + install hint for each gate. Used by the project workspace
+   * UI to show which gates will skip and why before the user clicks Run.
+   */
+  async function getAvailability(): Promise<AdapterAvailability[]> {
+    const results = await Promise.all(
+      ADAPTERS.map(async (adapter) => {
+        const detector = ADAPTER_DETECT[adapter.gateKey];
+        if (!detector) {
+          return {
+            gateKey: adapter.gateKey,
+            installed: false,
+            version: null,
+            install_hint: '(no detect() function registered for this adapter)',
+          };
+        }
+        try {
+          const det = await detector();
+          return {
+            gateKey: adapter.gateKey,
+            installed: det.installed,
+            version: det.version,
+            install_hint: det.install_hint,
+          };
+        } catch (err) {
+          return {
+            gateKey: adapter.gateKey,
+            installed: false,
+            version: null,
+            install_hint: `Detect failed: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
+      }),
+    );
+    return results;
   }
 
   async function runPipeline(input: RunQualityPipelineInput): Promise<QualityRunSummary> {
@@ -676,7 +398,7 @@ export function createQualityPipelineService(db: DatabaseAdapter) {
     };
   }
 
-  return { listAdapters, runPipeline, listRuns, getRunDetail };
+  return { listAdapters, getAvailability, runPipeline, listRuns, getRunDetail };
 }
 
 // ── Deterministic scoring ─────────────────────────────────────────────────────
