@@ -75,6 +75,7 @@ const SkillsLibrary = lazy(() => import('./pages/SkillsLibrary'));
 const HardwareKnowledgePacksPage = lazy(() => import('./pages/HardwareKnowledgePacksPage'));
 const HardwareBuildPage = lazy(() => import('./pages/HardwareBuildPage'));
 const HardwareProjectPage = lazy(() => import('./pages/HardwareProjectPage'));
+const HardwareDiagnosePage = lazy(() => import('./pages/HardwareDiagnosePage'));
 const BriefMePage = lazy(() => import('./pages/BriefMePage'));
 const GuideMePage = lazy(() => import('./pages/GuideMePage'));
 const BatchCreatePage = lazy(() => import('./pages/BatchCreatePage'));
@@ -456,6 +457,7 @@ export default function App() {
           <Route path="/skills" element={<SkillsLibrary />} />
           <Route path="/hardware" element={<HardwareBuildPage />} />
           <Route path="/hardware/projects/:id" element={<HardwareProjectPage />} />
+          <Route path="/hardware/projects/:id/diagnose" element={<HardwareDiagnosePage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
           <Route path="/exchange" element={<ExchangePage />} />
