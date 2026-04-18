@@ -45,6 +45,7 @@ import {
   type RolloutStatus,
 } from '../services/maintain-service.js';
 import { createCveApplicabilityService } from '../services/cve-applicability-service.js';
+import { createRegulatoryPackService, type ArtefactKind } from '../services/regulatory-pack-service.js';
 import { safeError } from '../lib/error-response.js';
 
 // In-memory multer for photo-id uploads (max 4 photos × 8MB).
@@ -267,6 +268,27 @@ const updateRolloutSchema = z.object({
   post_patch_state: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
+const ARTEFACT_KINDS: [ArtefactKind, ...ArtefactKind[]] = [
+  'cra-tech-file', 'doc', 'vdp', 'hazard-analysis',
+  'red-declaration', 'mdr-classification', 'dpa', 'workplace-safety',
+];
+
+const generateArtefactSchema = z.object({
+  kind: z.enum(ARTEFACT_KINDS),
+});
+
+const updateArtefactSchema = z.object({
+  content_markdown: z.string().min(50),
+});
+
+const signOffArtefactSchema = z.object({
+  attestation: z.string().min(30),
+});
+
+const withdrawArtefactSchema = z.object({
+  reason: z.string().max(2000).optional(),
+});
+
 const cveApplicabilitySchema = z.object({
   lookback_days: z.number().int().min(1).max(3650).optional(),
   min_cvss: z.number().min(0).max(10).optional(),
@@ -312,6 +334,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const photoId = createPhotoIdService(db);
   const maintain = createMaintainService(db);
   const cveApplicability = createCveApplicabilityService(db);
+  const regulatory = createRegulatoryPackService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -1036,6 +1059,110 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         ...parsed.data,
       });
       res.json({ success: true, assessment: result });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Regulatory pack (Tier 2 + Tier 3 artefacts) ──────────────────────────
+
+  router.get('/hardware/projects/:id/regulatory-artefacts', async (req, res) => {
+    try {
+      const list = await regulatory.listForProject(req.params.id);
+      res.json({ success: true, artefacts: list });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/regulatory-artefacts', async (req, res) => {
+    try {
+      const parsed = generateArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await regulatory.generateOrRegenerate({
+        project_id: req.params.id,
+        kind: parsed.data.kind,
+        actor_id: getOwnerId(req),
+      });
+      res.status(201).json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/regulatory-artefacts/:artefactId', async (req, res) => {
+    try {
+      const artefact = await regulatory.getArtefact(req.params.artefactId);
+      if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      const history = await regulatory.listSignoffs(req.params.artefactId);
+      res.json({ success: true, artefact, history });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/regulatory-artefacts/:artefactId', async (req, res) => {
+    try {
+      const parsed = updateArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await regulatory.updateContent({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        content_markdown: parsed.data.content_markdown,
+      });
+      if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/regulatory-artefacts/:artefactId/signoff', async (req, res) => {
+    try {
+      const parsed = signOffArtefactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await regulatory.signOff({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        attestation: parsed.data.attestation,
+      });
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/regulatory-artefacts/:artefactId/withdraw', async (req, res) => {
+    try {
+      const parsed = withdrawArtefactSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const artefact = await regulatory.withdraw({
+        artefact_id: req.params.artefactId,
+        actor_id: getOwnerId(req),
+        reason: parsed.data.reason,
+      });
+      res.json({ success: true, artefact });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/projects/:id/regulatory-pack-status', async (req, res) => {
+    try {
+      const summary = await regulatory.assessCompleteness({ project_id: req.params.id });
+      res.json({ success: true, summary });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }

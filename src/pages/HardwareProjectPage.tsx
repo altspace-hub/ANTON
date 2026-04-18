@@ -4,7 +4,7 @@ import {
   ArrowLeft, Cpu, ChevronRight, CheckCircle2, Circle, AlertTriangle,
   PlayCircle, Loader2, ShieldAlert, ShieldCheck, FlaskConical,
   Beaker, Hammer, Activity, BookOpen, Globe, Languages, Wifi,
-  Stethoscope, Palette, Zap,
+  Stethoscope, Palette, Zap, ScrollText,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
 
@@ -412,9 +412,82 @@ export default function HardwareProjectPage() {
               ))}
             </ul>
           </section>
+
+          {/* Regulatory pack summary (Tier 2/3 develop projects only) */}
+          {project.tier >= 2 && project.path === 'develop' && (
+            <RegulatoryPackPanel projectId={project.id} />
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function RegulatoryPackPanel({ projectId }: { projectId: string }) {
+  const nav = useNavigate();
+  const [summary, setSummary] = useState<{
+    required_total: number; signed_off: number; user_reviewed: number;
+    generated: number; missing: number; ready_to_ship: boolean;
+    blockers: string[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchWithAuth(`${API_BASE}/hardware/projects/${projectId}/regulatory-pack-status`);
+        const json = await res.json();
+        if (!cancelled && res.ok && json.success) setSummary(json.summary);
+      } catch { /* non-fatal */ }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  return (
+    <section className="lg:col-span-1">
+      <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+        <ScrollText className="w-5 h-5 text-adv-teal" />Regulatory pack
+      </h2>
+      <div className="p-3 rounded border border-adv-gray/20 bg-adv-card">
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin text-adv-teal" />
+        ) : !summary ? (
+          <div className="text-xs text-adv-gray">Pack status unavailable.</div>
+        ) : (
+          <>
+            <div className={`text-sm font-medium flex items-center gap-2 ${summary.ready_to_ship ? 'text-emerald-400' : summary.missing > 0 ? 'text-red-400' : 'text-amber-400'}`}>
+              {summary.ready_to_ship ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+              {summary.ready_to_ship
+                ? 'Pack complete — ready to ship'
+                : `${summary.signed_off}/${summary.required_total} signed off`}
+            </div>
+            <div className="text-xs text-adv-gray mt-1">
+              {summary.missing > 0 && `${summary.missing} missing · `}
+              {summary.generated > 0 && `${summary.generated} generated · `}
+              {summary.user_reviewed > 0 && `${summary.user_reviewed} reviewed`}
+            </div>
+            {summary.blockers.length > 0 && (
+              <ul className="mt-2 text-xs text-adv-gray space-y-0.5 max-h-32 overflow-y-auto">
+                {summary.blockers.slice(0, 5).map((b, i) => (
+                  <li key={i} className="border-l-2 border-amber-500/40 pl-2">{b}</li>
+                ))}
+              </ul>
+            )}
+            <button
+              onClick={() => nav(`/hardware/projects/${projectId}/regulatory`)}
+              className="mt-3 w-full px-3 py-2 rounded bg-adv-teal text-adv-dark hover:bg-adv-teal-dark text-sm font-medium"
+            >
+              Open regulatory workspace
+            </button>
+            <p className="text-xs text-adv-gray mt-2">
+              ANTON does not certify. The user is the responsible economic operator. Independent legal review required before sign-off.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
