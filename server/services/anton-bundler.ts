@@ -56,7 +56,16 @@ export type AntonBundleType =
   // Risk Atlas (spec v0.1 + Addendum 1)
   | 'risk-atlas-industry-pack'
   | 'risk-atlas-fcp-domain-pack'
-  | 'risk-atlas-export';
+  | 'risk-atlas-export'
+  // Hardware Build (Tier 5 of the Coding area, spec v4)
+  // — three-layer knowledge base + path artefacts + project bundles
+  | 'hardware-knowledge-pack'
+  | 'hardware-template'
+  | 'hardware-project'
+  | 'humanitarian-deployment-kit'
+  | 'diagnostic-case-bundle'
+  | 'patch-bundle'
+  | 'lifecycle-advisory-bundle';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -101,6 +110,14 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'risk-atlas-industry-pack':    { label: 'Risk Atlas Industry Pack',   description: 'Industry-specific exposure points, threat catalogue, vulnerability + control libraries, regulatory tie-ins for the Risk Atlas', contentsKey: 'risk_atlas_industry_packs',   primaryContentDir: 'risk-atlas-industry-packs' },
   'risk-atlas-fcp-domain-pack':  { label: 'Risk Atlas FCP Domain Pack', description: 'FCP domain overlay (AML, sanctions, fraud, ABC, market abuse, tax-evasion-facilitation, export controls) — composes with industry packs', contentsKey: 'risk_atlas_fcp_domain_packs', primaryContentDir: 'risk-atlas-fcp-domain-packs' },
   'risk-atlas-export':           { label: 'Risk Atlas Export',          description: 'Full Atlas snapshot — threat paths, controls, scores, appetite, audit trail — for sharing or successor handover',         contentsKey: 'risk_atlas_exports',          primaryContentDir: 'risk-atlas-exports' },
+  // ── Hardware Build (Tier 5 of the Coding area, spec v4) ────────────────
+  'hardware-knowledge-pack':       { label: 'Hardware Knowledge Pack',     description: 'Three-layer HKP: specification (SheetsData MCP + own content), diagnostic cases, lifecycle events for one hardware variant',           contentsKey: 'hardware_knowledge_packs',    primaryContentDir: 'hardware-knowledge-packs' },
+  'hardware-template':             { label: 'Hardware Template',           description: 'Partially-filled hardware project skeleton — clone, specialise, build',                                                                  contentsKey: 'hardware_templates',          primaryContentDir: 'hardware-templates' },
+  'hardware-project':              { label: 'Hardware Project',            description: 'Complete hardware project from Develop path: requirements, BOM, wiring, firmware, quality artefacts, lifecycle history',              contentsKey: 'hardware_projects',           primaryContentDir: 'hardware-projects' },
+  'humanitarian-deployment-kit':   { label: 'Humanitarian Deployment Kit', description: 'Hardware project + fleet deployment + capacity-transfer + sustaining partnership for humanitarian field deployment',                  contentsKey: 'humanitarian_deployment_kits',primaryContentDir: 'humanitarian-deployment-kits' },
+  'diagnostic-case-bundle':        { label: 'Diagnostic Case',             description: 'Structured fault-pattern + resolution case from the Diagnose path, packaged for community contribution and reuse',                    contentsKey: 'diagnostic_cases',            primaryContentDir: 'diagnostic-cases' },
+  'patch-bundle':                  { label: 'Patch Bundle',                description: 'Governed change package from the Maintain path: change scope, impact assessment, rollback plan, verification plan, audit trail',     contentsKey: 'patch_bundles',               primaryContentDir: 'patch-bundles' },
+  'lifecycle-advisory-bundle':     { label: 'Lifecycle Advisory',          description: 'Authoritative lifecycle event (CVE, EOL, recall, regulatory update) with applicability assessment and recommended action',           contentsKey: 'lifecycle_advisories',        primaryContentDir: 'lifecycle-advisories' },
 };
 
 interface ModuleExportData {
