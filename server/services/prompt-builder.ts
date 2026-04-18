@@ -1,6 +1,7 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
 import { hybridSearch } from './hybrid-search.js';
+import { createHkpService } from './hkp-service.js';
 
 type CreativityLevel = 'strict' | 'balanced' | 'creative';
 
@@ -557,3 +558,219 @@ export { buildRoaringLayer } from './roaring-connector.js';
 // ── Layer 2d: Dow Jones Screening Data ────────────────────────────────────────
 // Called when a module session includes DJ screening results (sanctions-advisory, edd, SAR modules)
 export { buildDJScreeningLayer } from './dowjones-connector.js';
+
+// ── Layer 6: Hardware Knowledge Pack (path-aware) ─────────────────────────────
+// Attached when the session is in the hardware-engineering area and a
+// hardware_family is set. Path determines which knowledge layer is presented
+// first per spec §3 + §4:
+//   diagnose  → diagnostic > specification > lifecycle
+//   maintain  → lifecycle  > specification > diagnostic
+//   develop   → specification > lifecycle > diagnostic
+//
+// Claim classifications are inlined per claim so the model can flag
+// AI-unverified values in critical-firmware paths (non-negotiable §4).
+
+export type HardwarePath = 'diagnose' | 'maintain' | 'develop';
+
+const CLASSIFICATION_TAGS: Record<string, string> = {
+  'datasheet-verified': '[datasheet-verified]',
+  'community-verified': '[community-verified]',
+  'physically-verified': '[physically-verified]',
+  'AI-unverified': '[AI-unverified ⚠]',
+};
+
+export async function buildHardwareHkpLayer(
+  db: DatabaseAdapter,
+  input: {
+    family_id: string | null;
+    part_number?: string | null;
+    path?: HardwarePath | null;
+    claim_limit?: number;
+    diagnostic_case_limit?: number;
+    lifecycle_event_limit?: number;
+  },
+): Promise<string> {
+  if (!input.family_id) return '';
+
+  try {
+    const hkp = createHkpService(db);
+
+    const pack = await hkp.findPackForContext({
+      family_id: input.family_id,
+      part_number: input.part_number ?? null,
+    });
+    if (!pack) return '';
+
+    const claimLimit = input.claim_limit ?? 60;
+    const caseLimit = input.diagnostic_case_limit ?? 8;
+    const eventLimit = input.lifecycle_event_limit ?? 8;
+    const path = input.path ?? 'develop';
+
+    const [claims, components, regionalAlts, lifecycle, diagnosticRows] = await Promise.all([
+      hkp.listClaims(pack.id),
+      hkp.listComponents(pack.id),
+      hkp.listRegionalAlternatives(pack.id),
+      hkp.listRecentLifecycleEvents(pack.id, 365, eventLimit),
+      db.all(
+        `SELECT case_id, title, severity, case_data
+         FROM diagnostic_cases
+         WHERE (hkp_id = ? OR family_id = ?)
+         ORDER BY (severity = 'critical') DESC, (severity = 'high') DESC, last_updated DESC
+         LIMIT ?`,
+        pack.id, pack.family_id, caseLimit,
+      ),
+    ]);
+
+    // ── Build sub-blocks ────────────────────────────────────────────────────
+
+    const specBlock = renderSpecificationBlock(pack, claims, components, regionalAlts, claimLimit);
+    const diagnosticBlock = renderDiagnosticBlock(diagnosticRows as DiagnosticCaseRow[]);
+    const lifecycleBlock = renderLifecycleBlock(lifecycle);
+
+    // ── Order sub-blocks by path ────────────────────────────────────────────
+
+    let ordered: string[];
+    switch (path) {
+      case 'diagnose':
+        ordered = [diagnosticBlock, specBlock, lifecycleBlock];
+        break;
+      case 'maintain':
+        ordered = [lifecycleBlock, specBlock, diagnosticBlock];
+        break;
+      case 'develop':
+      default:
+        ordered = [specBlock, lifecycleBlock, diagnosticBlock];
+        break;
+    }
+    ordered = ordered.filter(b => b.trim().length > 0);
+    if (ordered.length === 0) return '';
+
+    const header = `## HARDWARE KNOWLEDGE PACK — ${pack.manufacturer} ${pack.part_number}` +
+      (pack.revision ? ` (rev ${pack.revision})` : '') +
+      ` · path=${path}` +
+      `\n\nPack version ${pack.hkp_version} · primary source: ${pack.primary_source}` +
+      (pack.signing_verified ? ` · signed by ${pack.signed_by}` : '') +
+      `. Treat the **classification tag on each claim as load-bearing**: when a value drives a critical firmware path (interrupt timing, power calculations, secure-storage addresses), surface the tag in your output. Any \`[AI-unverified ⚠]\` value used critically must produce an explicit warning. Regional sourcing entries with counterfeit_risk ≥ high should never be silently accepted for Tier 2 / Tier 3 builds.`;
+
+    return [header, ...ordered].join('\n\n');
+  } catch (err) {
+    console.warn('[buildHardwareHkpLayer] failed:', err instanceof Error ? err.message : err);
+    return '';
+  }
+}
+
+interface DiagnosticCaseRow {
+  case_id: string;
+  title: string;
+  severity: string | null;
+  case_data: unknown;
+}
+
+function renderSpecificationBlock(
+  pack: { manufacturer: string; part_number: string },
+  claims: Array<{ claim_path: string; claim_value: string; classification: string; notes: string | null }>,
+  components: Array<{ component_type: string; name: string; metadata: Record<string, unknown> }>,
+  regionalAlts: Array<{ region: string; alternative_part: string; distributor: string | null;
+                        typical_price_local: number | null; typical_price_currency: string | null;
+                        counterfeit_risk: string | null; notes: string | null }>,
+  claimLimit: number,
+): string {
+  if (claims.length === 0 && components.length === 0 && regionalAlts.length === 0) return '';
+
+  const lines: string[] = ['### Specification layer'];
+
+  if (claims.length > 0) {
+    lines.push('', '**Datasheet & community claims** (showing up to ' + claimLimit + ' most relevant):');
+    const ordered = [...claims].sort((a, b) => {
+      const order = ['datasheet-verified', 'physically-verified', 'community-verified', 'AI-unverified'];
+      return order.indexOf(a.classification) - order.indexOf(b.classification)
+        || a.claim_path.localeCompare(b.claim_path);
+    });
+    for (const c of ordered.slice(0, claimLimit)) {
+      const tag = CLASSIFICATION_TAGS[c.classification] ?? `[${c.classification}]`;
+      const notes = c.notes ? ` _(${c.notes})_` : '';
+      lines.push(`- \`${c.claim_path}\` = **${c.claim_value}** ${tag}${notes}`);
+    }
+    if (claims.length > claimLimit) {
+      lines.push(`- _… ${claims.length - claimLimit} more claims not shown_`);
+    }
+  }
+
+  if (components.length > 0) {
+    lines.push('', '**Components & peripherals:**');
+    for (const c of components) {
+      lines.push(`- _${c.component_type}_ — **${c.name}** ${summariseMetadata(c.metadata)}`);
+    }
+  }
+
+  if (regionalAlts.length > 0) {
+    lines.push('', '**Regional sourcing alternatives** (verify counterfeit signals before procurement):');
+    const byRegion: Record<string, typeof regionalAlts> = {};
+    for (const a of regionalAlts) (byRegion[a.region] ??= []).push(a);
+    for (const region of Object.keys(byRegion).sort()) {
+      lines.push(`- _${region}_:`);
+      for (const a of byRegion[region]) {
+        const price = a.typical_price_local !== null
+          ? `${a.typical_price_local} ${a.typical_price_currency ?? ''}`.trim()
+          : 'price n/a';
+        const risk = a.counterfeit_risk ? ` · counterfeit risk: **${a.counterfeit_risk}**` : '';
+        const dist = a.distributor ? ` via ${a.distributor}` : '';
+        lines.push(`  - **${a.alternative_part}**${dist} — ${price}${risk}`);
+        if (a.notes) lines.push(`    > ${a.notes}`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function summariseMetadata(meta: Record<string, unknown>): string {
+  if (!meta || Object.keys(meta).length === 0) return '';
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(meta)) {
+    if (Array.isArray(v)) parts.push(`${k}=[${v.join(',')}]`);
+    else if (typeof v === 'object' && v !== null) continue;
+    else parts.push(`${k}=${String(v)}`);
+    if (parts.length >= 6) { parts.push('…'); break; }
+  }
+  return parts.length ? `(${parts.join(', ')})` : '';
+}
+
+function renderDiagnosticBlock(rows: DiagnosticCaseRow[]): string {
+  if (rows.length === 0) return '';
+  const lines: string[] = ['### Diagnostic layer (community-curated cases)'];
+  for (const r of rows) {
+    const data = (typeof r.case_data === 'string' ? safeParse(r.case_data) : r.case_data) as Record<string, unknown> | null;
+    const symptoms = (data?.symptoms as Array<{ description?: string; pattern?: string }> | undefined) ?? [];
+    const causes = (data?.probable_causes as Array<{ description?: string; cause?: string; likelihood?: string }> | undefined) ?? [];
+    const sevTag = r.severity ? ` _(${r.severity})_` : '';
+    lines.push(`- **${r.case_id}** — ${r.title}${sevTag}`);
+    if (symptoms.length > 0) {
+      const top = symptoms.slice(0, 2).map(s => s.description ?? s.pattern ?? '').filter(Boolean).join(' · ');
+      if (top) lines.push(`  - symptoms: ${top}`);
+    }
+    if (causes.length > 0) {
+      const top = causes.slice(0, 2).map(c => c.description ?? c.cause ?? '').filter(Boolean).join(' · ');
+      if (top) lines.push(`  - causes: ${top}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function renderLifecycleBlock(events: Array<{
+  event_id: string; event_type: string; title: string; severity: string | null;
+  cvss_score: number | null; published_at: string; source: string;
+}>): string {
+  if (events.length === 0) return '';
+  const lines: string[] = ['### Lifecycle layer (active advisories & events, last 365d)'];
+  for (const e of events) {
+    const sev = e.cvss_score ? `CVSS ${e.cvss_score}` : (e.severity ?? 'severity n/a');
+    const published = e.published_at?.slice(0, 10) ?? 'date n/a';
+    lines.push(`- _${e.event_type}_ · **${e.event_id}** — ${e.title} (${sev}, ${published}, source: ${e.source})`);
+  }
+  return lines.join('\n');
+}
+
+function safeParse(s: string): unknown {
+  try { return JSON.parse(s); } catch { return null; }
+}

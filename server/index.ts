@@ -147,6 +147,7 @@ import { createAzureOpenAIRoutes } from './routes/azure-openai.js';
 import { createProcureRoutes } from './routes/procure.js';
 import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
+import { createHardwareRoutes } from './routes/hardware.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
 import { setupCompanionNamespace } from './services/app-websocket.js';
@@ -725,6 +726,9 @@ app.use('/api', await createCivicRoutes(db));
 
 // Grow Pillar — CRM & business development intelligence
 app.use('/api', await createGrowRoutes(db));
+
+// Hardware Build (Tier 5 of Coding area) — HKPs, families, paths
+app.use('/api', createHardwareRoutes(db));
 
 // Talent — Discovery-driven recruitment with EU AI Act compliance
 app.use('/api', await createTalentRoutes(db));
