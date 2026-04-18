@@ -1,0 +1,394 @@
+/**
+ * hardware.ts — REST API for the Hardware Build pillar.
+ *
+ * Phase 2 surface area:
+ *   - HKP CRUD + nested claims/components/regional alternatives
+ *   - Family registry read endpoints
+ *
+ * Diagnose/Maintain/Develop path routes will mount here in later phases.
+ */
+
+import { Router } from 'express';
+import { z } from 'zod';
+import type { DatabaseAdapter } from '../db/database.js';
+import {
+  createHkpService,
+  type ClaimClassification,
+  type CounterfeitRisk,
+  type PrimarySource,
+} from '../services/hkp-service.js';
+import {
+  HARDWARE_FAMILIES,
+  getFamily,
+  listLaunchFamilies,
+  listAllFamilies,
+} from '../hardware/family-registry.js';
+import { runLifecycleIngest } from '../services/lifecycle-feed-ingestor.js';
+import { safeError } from '../lib/error-response.js';
+
+// ── Validation schemas ────────────────────────────────────────────────────────
+
+const PRIMARY_SOURCES: [PrimarySource, ...PrimarySource[]] = [
+  'sheetsdata-mcp', 'anton-curated', 'community', 'user-generated', 'legacy-identified',
+];
+
+const CLAIM_CLASSIFICATIONS: [ClaimClassification, ...ClaimClassification[]] = [
+  'datasheet-verified', 'community-verified', 'physically-verified', 'AI-unverified',
+];
+
+const COUNTERFEIT_RISKS: [CounterfeitRisk, ...CounterfeitRisk[]] = [
+  'low', 'moderate', 'high', 'critical',
+];
+
+const createPackSchema = z.object({
+  family_id: z.string().min(1).max(64),
+  manufacturer: z.string().min(1).max(200),
+  part_number: z.string().min(1).max(200),
+  revision: z.string().max(64).nullable().optional(),
+  hkp_version: z.string().min(1).max(64),
+  primary_source: z.enum(PRIMARY_SOURCES),
+  signed_by: z.string().max(200).nullable().optional(),
+  signing_verified: z.boolean().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const updatePackSchema = z.object({
+  revision: z.string().max(64).nullable().optional(),
+  hkp_version: z.string().min(1).max(64).optional(),
+  primary_source: z.enum(PRIMARY_SOURCES).optional(),
+  source_last_refreshed: z.string().nullable().optional(),
+  signed_by: z.string().max(200).nullable().optional(),
+  signing_verified: z.boolean().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const upsertClaimSchema = z.object({
+  claim_path: z.string().min(1).max(500),
+  claim_value: z.string().min(1),
+  classification: z.enum(CLAIM_CLASSIFICATIONS),
+  verified_by: z.array(z.string()).optional(),
+  evidence_ref: z.string().max(2000).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+const createComponentSchema = z.object({
+  component_type: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const createRegionalAltSchema = z.object({
+  component_id: z.string().nullable().optional(),
+  region: z.string().min(1).max(100),
+  alternative_part: z.string().min(1).max(200),
+  distributor: z.string().max(200).nullable().optional(),
+  typical_price_local: z.number().nullable().optional(),
+  typical_price_currency: z.string().max(10).nullable().optional(),
+  typical_lead_days: z.number().int().nullable().optional(),
+  counterfeit_risk: z.enum(COUNTERFEIT_RISKS).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ── Route factory ─────────────────────────────────────────────────────────────
+
+export function createHardwareRoutes(db: DatabaseAdapter): Router {
+  const router = Router();
+  const hkp = createHkpService(db);
+
+  // ── Family registry (read-only) ───────────────────────────────────────────
+
+  router.get('/hardware/families', (_req, res) => {
+    res.json({
+      success: true,
+      families: listAllFamilies(),
+      launch: listLaunchFamilies().map(f => f.id),
+    });
+  });
+
+  router.get('/hardware/families/:id', (req, res) => {
+    const family = getFamily(req.params.id);
+    if (!family) {
+      res.status(404).json({ error: 'Family not found' });
+      return;
+    }
+    res.json({ success: true, family });
+  });
+
+  // ── HKPs ──────────────────────────────────────────────────────────────────
+
+  router.get('/hardware/hkps', async (req, res) => {
+    try {
+      const filters: Parameters<typeof hkp.listPacks>[0] = {};
+      if (req.query.family_id) filters.family_id = String(req.query.family_id);
+      if (req.query.primary_source) {
+        const ps = String(req.query.primary_source);
+        if ((PRIMARY_SOURCES as string[]).includes(ps)) filters.primary_source = ps as PrimarySource;
+      }
+      if (req.query.search) filters.search = String(req.query.search);
+      const packs = await hkp.listPacks(filters);
+      res.json({ success: true, packs });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/hkps', async (req, res) => {
+    try {
+      const parsed = createPackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      if (!HARDWARE_FAMILIES[parsed.data.family_id]) {
+        res.status(400).json({ error: `Unknown hardware family: ${parsed.data.family_id}` });
+        return;
+      }
+      const pack = await hkp.createPack(parsed.data);
+      res.status(201).json({ success: true, pack });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/hkps/:id', async (req, res) => {
+    try {
+      const detail = await hkp.getPackDetail(req.params.id);
+      if (!detail) {
+        res.status(404).json({ error: 'HKP not found' });
+        return;
+      }
+      const lifecycle_events = await hkp.listRecentLifecycleEvents(req.params.id);
+      res.json({ success: true, hkp: detail, lifecycle_events });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/hkps/:id', async (req, res) => {
+    try {
+      const parsed = updatePackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const pack = await hkp.updatePack(req.params.id, parsed.data);
+      if (!pack) {
+        res.status(404).json({ error: 'HKP not found' });
+        return;
+      }
+      res.json({ success: true, pack });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/hkps/:id', async (req, res) => {
+    try {
+      const ok = await hkp.deletePack(req.params.id);
+      if (!ok) {
+        res.status(404).json({ error: 'HKP not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Claims (nested) ───────────────────────────────────────────────────────
+
+  router.get('/hardware/hkps/:id/claims', async (req, res) => {
+    try {
+      const cls = req.query.classification ? String(req.query.classification) as ClaimClassification : undefined;
+      const claims = await hkp.listClaims(req.params.id, cls);
+      res.json({ success: true, claims });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/hkps/:id/claims', async (req, res) => {
+    try {
+      const parsed = upsertClaimSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const claim = await hkp.upsertClaim({ hkp_id: req.params.id, ...parsed.data });
+      res.status(201).json({ success: true, claim });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/hkps/:hkpId/claims/:claimId', async (req, res) => {
+    try {
+      const ok = await hkp.deleteClaim(req.params.claimId);
+      if (!ok) {
+        res.status(404).json({ error: 'Claim not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Components (nested) ───────────────────────────────────────────────────
+
+  router.get('/hardware/hkps/:id/components', async (req, res) => {
+    try {
+      const componentType = req.query.component_type ? String(req.query.component_type) : undefined;
+      const components = await hkp.listComponents(req.params.id, componentType);
+      res.json({ success: true, components });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/hkps/:id/components', async (req, res) => {
+    try {
+      const parsed = createComponentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const component = await hkp.createComponent({ hkp_id: req.params.id, ...parsed.data });
+      res.status(201).json({ success: true, component });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/hkps/:hkpId/components/:componentId', async (req, res) => {
+    try {
+      const ok = await hkp.deleteComponent(req.params.componentId);
+      if (!ok) {
+        res.status(404).json({ error: 'Component not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Regional alternatives (nested) ────────────────────────────────────────
+
+  router.get('/hardware/hkps/:id/regional-alternatives', async (req, res) => {
+    try {
+      const region = req.query.region ? String(req.query.region) : undefined;
+      const alternatives = await hkp.listRegionalAlternatives(req.params.id, region);
+      res.json({ success: true, alternatives });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/hkps/:id/regional-alternatives', async (req, res) => {
+    try {
+      const parsed = createRegionalAltSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const alternative = await hkp.createRegionalAlternative({ hkp_id: req.params.id, ...parsed.data });
+      res.status(201).json({ success: true, alternative });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/hkps/:hkpId/regional-alternatives/:altId', async (req, res) => {
+    try {
+      const ok = await hkp.deleteRegionalAlternative(req.params.altId);
+      if (!ok) {
+        res.status(404).json({ error: 'Regional alternative not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Diagnostic cases (read-only for now; contribution flow in Phase 5) ────
+
+  router.get('/hardware/hkps/:id/diagnostic-cases', async (req, res) => {
+    try {
+      const pack = await hkp.getPack(req.params.id);
+      if (!pack) {
+        res.status(404).json({ error: 'HKP not found' });
+        return;
+      }
+      const rows = await db.all(
+        `SELECT case_id, title, severity, case_data, signed_by, authoritative
+         FROM diagnostic_cases
+         WHERE hkp_id = ? OR family_id = ?
+         ORDER BY (severity = 'critical') DESC, (severity = 'high') DESC, last_updated DESC
+         LIMIT 50`,
+        pack.id, pack.family_id,
+      );
+      const cases = (rows as Array<{ case_id: string; title: string; severity: string | null;
+                                     case_data: string | object; signed_by: string | null;
+                                     authoritative: boolean }>).map(r => ({
+        case_id: r.case_id,
+        title: r.title,
+        severity: r.severity,
+        signed_by: r.signed_by,
+        authoritative: r.authoritative,
+        case_data: typeof r.case_data === 'string' ? JSON.parse(r.case_data) : r.case_data,
+      }));
+      res.json({ success: true, cases });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Lifecycle layer: events + manual feed ingest ──────────────────────────
+
+  router.get('/hardware/lifecycle-events', async (req, res) => {
+    try {
+      const familyId = req.query.family_id ? String(req.query.family_id) : null;
+      const eventType = req.query.event_type ? String(req.query.event_type) : null;
+      const limit = Math.min(Number(req.query.limit ?? 100), 500);
+      const where: string[] = [];
+      const params: unknown[] = [];
+      if (familyId) { where.push('family_id = ?'); params.push(familyId); }
+      if (eventType) { where.push('event_type = ?'); params.push(eventType); }
+      const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+      params.push(limit);
+      const rows = await db.all(
+        `SELECT event_id, family_id, event_type, title, severity, cvss_score,
+                published_at, source, source_url, ingested_at
+         FROM lifecycle_events
+         ${whereSql}
+         ORDER BY published_at DESC
+         LIMIT ?`,
+        ...params,
+      );
+      res.json({ success: true, events: rows });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/lifecycle-feeds/run', async (req, res) => {
+    try {
+      const body = (req.body ?? {}) as {
+        family_id?: string; lookback_days?: number;
+        sources?: Array<'nvd' | 'ghsa' | 'espressif'>;
+      };
+      const result = await runLifecycleIngest(db, {
+        family_id: body.family_id ?? 'esp32',
+        lookback_days: body.lookback_days ?? 30,
+        sources: body.sources,
+      });
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  return router;
+}
