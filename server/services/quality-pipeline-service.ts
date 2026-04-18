@@ -327,6 +327,74 @@ const securityScorecardMockAdapter: QualityAdapter = {
   },
 };
 
+const rollbackArtefactRealAdapter: QualityAdapter = {
+  gateKey: 'rollback-artefact',
+  displayLabel: 'Rollback artefact present',
+  isMandatory: true,
+  kind: 'real',
+  version: '0.1.0',
+  appliesTo: (project) => project.path === 'maintain',
+  run: async ({ db, project }) => {
+    const start = Date.now();
+    // Inspect every active patch plan on the project. The latest non-cancelled
+    // plan must have rollback_artefact_ref set; for Tier 3 the secure-update
+    // chain (signed_image + verified_boot + rollback_protected) must also be
+    // true. This mirrors the locked invariants enforced by maintain-service.ts.
+    const plans = await db.all(
+      `SELECT id, title, rollback_artefact_ref, signed_image, verified_boot, rollback_protected, status
+       FROM hw_patch_plans
+       WHERE project_id = ? AND status NOT IN ('cancelled', 'rolled_back')
+       ORDER BY created_at DESC`,
+      project.id,
+    ) as Array<{
+      id: string; title: string;
+      rollback_artefact_ref: string | null;
+      signed_image: boolean; verified_boot: boolean; rollback_protected: boolean;
+      status: string;
+    }>;
+
+    if (plans.length === 0) {
+      return {
+        outcome: 'skip',
+        score: null,
+        summary: 'No active patch plans to evaluate. Create a Maintain patch plan first.',
+        details: { plan_count: 0, note: 'Maintain pipeline runs with no plan to evaluate against.' },
+        durationMs: Date.now() - start,
+      };
+    }
+
+    const failingPlans: Array<{ id: string; title: string; reason: string }> = [];
+    for (const p of plans) {
+      const reasons: string[] = [];
+      if (!p.rollback_artefact_ref) reasons.push('missing rollback_artefact_ref');
+      if (project.tier === 3) {
+        if (!p.signed_image) reasons.push('Tier 3 requires signed_image=true');
+        if (!p.verified_boot) reasons.push('Tier 3 requires verified_boot=true');
+        if (!p.rollback_protected) reasons.push('Tier 3 requires rollback_protected=true');
+      }
+      if (reasons.length > 0) failingPlans.push({ id: p.id, title: p.title, reason: reasons.join('; ') });
+    }
+
+    if (failingPlans.length > 0) {
+      return {
+        outcome: 'fail',
+        score: 0,
+        summary: `${failingPlans.length} of ${plans.length} active patch plan(s) missing required rollback / secure-update fields`,
+        details: { failing_plans: failingPlans, total_plans: plans.length, project_tier: project.tier },
+        durationMs: Date.now() - start,
+      };
+    }
+
+    return {
+      outcome: 'pass',
+      score: 100,
+      summary: `All ${plans.length} active patch plan(s) have required rollback artefact${project.tier === 3 ? ' + secure-update chain' : ''}.`,
+      details: { plan_count: plans.length, project_tier: project.tier },
+      durationMs: Date.now() - start,
+    };
+  },
+};
+
 const ADAPTERS: QualityAdapter[] = [
   platformioMockAdapter,
   clangTidyMockAdapter,
@@ -334,6 +402,7 @@ const ADAPTERS: QualityAdapter[] = [
   cveScanRealAdapter,
   wokwiMockAdapter,
   securityScorecardMockAdapter,
+  rollbackArtefactRealAdapter,
 ];
 
 // ── Service ───────────────────────────────────────────────────────────────────
