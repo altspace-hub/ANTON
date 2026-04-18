@@ -1,10 +1,24 @@
 /**
- * HomeScreen — Daily digest, announcements, quick stats.
- * Adapts content based on org type.
+ * HomeScreen — Pro mode dashboard, Evolution design.
+ *
+ * Layout (matches design/screens-auth.jsx HomeScreen_D):
+ *   • Greeting + sub line
+ *   • Priority approval card (top-most pending checkpoint, severity-coloured)
+ *   • Quick-actions grid (Voice / Capture / Ask / Missions)
+ *   • Today list — recent activity from the user's app sessions
+ *   • Optional announcements section (unchanged from v1)
+ *
+ * Data sources are real:
+ *   • listPendingCheckpoints()                       → priority card + count
+ *   • GET /api/app/org/:orgId/sessions               → today list
+ *   • GET /api/app/org/:orgId/announcements          → announcements
  */
 
-import { useState, useEffect } from 'react';
-import { getSessionToken } from '../services/api';
+import { useEffect, useState } from 'react';
+import { Btn, Card, Pill, SectionLabel, Ico } from '../components/ui';
+import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
+import { activeServerBase, activeAuthHeaders } from '../services/instances';
+import { getIdentity } from '../services/identity';
 
 interface Props {
   orgId: string;
@@ -13,101 +27,291 @@ interface Props {
   onNavigate: (tab: string) => void;
 }
 
-interface Announcement { id: string; title: string; content: string; priority: string; is_pinned: boolean; created_at: string; }
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: string;
+  is_pinned: boolean;
+  created_at: string;
+}
 
-const ORG_GREETING: Record<string, string> = {
-  school: 'Ready to learn?', ngo: 'How can we help today?', sports_club: 'Game on!',
-  consulting: 'Your project at a glance', company: 'Good morning',
-  default: 'Welcome back',
+interface SessionRow {
+  id: string;
+  title: string;
+  status: string;
+  message_count: number;
+  total_input_tokens: number | null;
+  total_output_tokens: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const SEVERITY_TONE: Record<Checkpoint['severity'], 'red' | 'gold' | 'neutral'> = {
+  critical: 'red',
+  high:     'red',
+  normal:   'gold',
+  low:      'neutral',
 };
 
-export default function HomeScreen({ orgId, orgName, orgType, onNavigate }: Props) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+function timeOfDayGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 5)  return 'Working late';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function shortTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch { return ''; }
+}
+
+function tokenSummary(s: SessionRow): string {
+  const total = (s.total_input_tokens ?? 0) + (s.total_output_tokens ?? 0);
+  if (!total) return `${s.message_count} msg`;
+  const k = total >= 1000 ? `${(total / 1000).toFixed(1)}k` : `${total}`;
+  return `${k} tokens · ${s.message_count} msg`;
+}
+
+export default function HomeScreen({ orgId, orgName, onNavigate }: Props) {
+  const [pending,        setPending]        = useState<Checkpoint[]>([]);
+  const [sessions,       setSessions]       = useState<SessionRow[]>([]);
+  const [announcements,  setAnnouncements]  = useState<Announcement[]>([]);
+  const identity = getIdentity();
+  const firstName = (identity?.displayName || '').split(/\s+/)[0] || '';
 
   useEffect(() => {
-    const token = getSessionToken();
-    Promise.all([
-      fetch(`/api/app/org/${orgId}/announcements`, { headers: { 'x-app-session': token || '' } })
-        .then(r => r.ok ? r.json() : []).then(d => setAnnouncements(Array.isArray(d) ? d : [])),
-    ]).catch(() => {}).finally(() => setLoading(false));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await listPendingCheckpoints({ orgId, limit: 10 });
+        if (!cancelled) setPending(list);
+      } catch { /* silent */ }
+
+      try {
+        const base = activeServerBase();
+        const headers = await activeAuthHeaders();
+        const r = await fetch(`${base}/api/app/org/${encodeURIComponent(orgId)}/sessions`, { headers });
+        if (r.ok) {
+          const rows = (await r.json()) as SessionRow[];
+          if (!cancelled) setSessions(Array.isArray(rows) ? rows.slice(0, 4) : []);
+        }
+      } catch { /* silent */ }
+
+      try {
+        const base = activeServerBase();
+        const headers = await activeAuthHeaders();
+        const r = await fetch(`${base}/api/app/org/${encodeURIComponent(orgId)}/announcements`, { headers });
+        if (r.ok) {
+          const rows = await r.json();
+          if (!cancelled) setAnnouncements(Array.isArray(rows) ? rows.slice(0, 3) : []);
+        }
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
   }, [orgId]);
 
-  const greeting = ORG_GREETING[orgType] || ORG_GREETING.default;
+  const top = pending[0];
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-2xl px-4 py-5 space-y-5">
-        {/* Greeting */}
-        <div>
-          <h1 className="text-xl font-bold text-adv-off-white">{orgName}</h1>
-          <p className="text-sm text-adv-gray">{greeting}</p>
-        </div>
+    <div className="flex-1 overflow-y-auto" style={{ background: 'var(--color-bg)' }}>
+      <div className="mx-auto max-w-2xl px-4 pb-6 pt-5">
+        {/* ── Greeting ─────────────────────────────────────────── */}
+        <h1
+          className="text-[var(--color-text)]"
+          style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.1 }}
+        >
+          {timeOfDayGreeting()}{firstName && `, ${firstName}`}.
+        </h1>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+          {pending.length > 0
+            ? `${pending.length} ${pending.length === 1 ? 'thing needs' : 'things need'} a look.`
+            : `Connected to ${orgName}.`}
+        </p>
 
-        {/* Quick actions grid */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <QuickAction icon="💬" label="Ask anything" desc="AI-powered chat" onClick={() => onNavigate('chat')} />
-          <QuickAction icon="📅" label="Schedule" desc="Deadlines & events" onClick={() => onNavigate('schedule')} />
-          <QuickAction icon="✅" label="Tasks" desc="Action items" onClick={() => onNavigate('tasks')} />
-          <QuickAction icon="🔍" label="Research" desc="Pathfinder search" onClick={() => onNavigate('search')} />
-        </div>
-
-        {/* Announcements */}
-        {announcements.length > 0 && (
-          <div>
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-adv-gray">Announcements</h2>
-            <div className="space-y-2">
-              {announcements.slice(0, 5).map(a => (
-                <div key={a.id} className={`rounded-xl border p-4 ${
-                  a.priority === 'urgent' ? 'border-adv-red/30 bg-adv-red/5' :
-                  a.priority === 'high' ? 'border-adv-gold/30 bg-adv-gold/5' :
-                  'border-border bg-adv-card'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    {a.is_pinned && <span className="text-xs">📌</span>}
-                    <h3 className="text-sm font-medium text-adv-off-white">{a.title}</h3>
-                  </div>
-                  <p className="text-xs text-adv-gray leading-relaxed line-clamp-3">{a.content}</p>
-                  <p className="mt-2 text-[10px] text-adv-gray/50">{new Date(a.created_at).toLocaleDateString()}</p>
+        {/* ── Priority approval card ───────────────────────────── */}
+        {top && (
+          <button
+            onClick={() => onNavigate('approvals')}
+            className="mt-5 block w-full overflow-hidden rounded-[var(--radius-r3)] border border-[var(--color-border)] bg-[var(--color-surface)] text-left transition-shadow hover:shadow-sm active:scale-[0.99]"
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+                borderBottom: '1px solid var(--color-accent-dim)',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Ico name="shield" color="currentColor" size={15} />
+                <span
+                  className="font-mono font-bold uppercase"
+                  style={{ fontSize: 11, letterSpacing: '0.6px' }}
+                >
+                  {pending.length} approval{pending.length === 1 ? '' : 's'} waiting
+                </span>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>Review →</span>
+            </div>
+            <div className="px-4 py-4">
+              <div className="text-sm font-semibold text-[var(--color-text)]">
+                {top.title}
+              </div>
+              {top.summary && (
+                <div className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-muted)]">
+                  {top.summary}
                 </div>
-              ))}
+              )}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <Pill tone={SEVERITY_TONE[top.severity]} mono>
+                  {top.severity.toUpperCase()}
+                </Pill>
+                <Pill tone="neutral" mono>{top.id.slice(-8)}</Pill>
+                {top.requires_biometric && (
+                  <Pill tone="neutral">
+                    <Ico name="fingerprint" size={11} /> Biometric
+                  </Pill>
+                )}
+              </div>
+            </div>
+          </button>
+        )}
+
+        {/* ── Quick actions ────────────────────────────────────── */}
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          {[
+            { id: 'voice',    icon: 'mic'      as const, label: 'Voice',    desc: 'Hold to talk',   onTap: () => onNavigate('voice') },
+            { id: 'capture',  icon: 'camera'   as const, label: 'Capture',  desc: 'Photo or share', onTap: () => onNavigate('capture') },
+            { id: 'ask',      icon: 'message'  as const, label: 'Ask',      desc: 'Text chat',      onTap: () => onNavigate('chat') },
+            { id: 'missions', icon: 'sparkles' as const, label: 'Missions', desc: `${pending.length} pending`, onTap: () => onNavigate('approvals') },
+          ].map(a => (
+            <button
+              key={a.id}
+              onClick={a.onTap}
+              className="rounded-[var(--radius-r2)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 text-left transition active:scale-[0.97]"
+            >
+              <div
+                className="flex items-center justify-center rounded-[var(--radius-r1)]"
+                style={{
+                  width: 30, height: 30,
+                  background: 'var(--color-surface-alt)',
+                  color: 'var(--color-text)',
+                }}
+              >
+                <Ico name={a.icon} color="currentColor" size={17} />
+              </div>
+              <div className="mt-2.5 text-[13px] font-semibold text-[var(--color-text)]">
+                {a.label}
+              </div>
+              <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+                {a.desc}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Today (recent activity) ──────────────────────────── */}
+        {sessions.length > 0 && (
+          <div className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <SectionLabel>Today</SectionLabel>
+              <button
+                onClick={() => onNavigate('history')}
+                className="text-[11px] font-semibold"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                See all
+              </button>
+            </div>
+            {sessions.map((s, i) => (
+              <div
+                key={s.id}
+                className="flex items-start gap-3 py-3"
+                style={{
+                  borderBottom: i < sessions.length - 1
+                    ? '1px solid var(--color-border-soft)'
+                    : 'none',
+                }}
+              >
+                <div
+                  className="font-mono"
+                  style={{ minWidth: 38, fontSize: 11, color: 'var(--color-text-muted)', paddingTop: 1 }}
+                >
+                  {shortTime(s.updated_at)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-semibold leading-tight text-[var(--color-text)]">
+                    {s.title || '(untitled session)'}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+                    {tokenSummary(s)}
+                  </div>
+                </div>
+                <Pill tone={s.status === 'archived' ? 'neutral' : 'teal'}>
+                  {(s.status || 'open').toUpperCase()}
+                </Pill>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Announcements (legacy) ───────────────────────────── */}
+        {announcements.length > 0 && (
+          <div className="mt-6">
+            <SectionLabel className="mb-3">Announcements</SectionLabel>
+            <div className="space-y-2">
+              {announcements.map(a => {
+                const tone =
+                  a.priority === 'urgent' ? 'red' :
+                  a.priority === 'high'   ? 'gold' :
+                  'neutral';
+                return (
+                  <Card key={a.id}>
+                    <div className="mb-1 flex items-center gap-2">
+                      {a.is_pinned && <Pill tone="neutral" mono>PINNED</Pill>}
+                      <Pill tone={tone} mono>{a.priority.toUpperCase()}</Pill>
+                    </div>
+                    <div className="text-[13px] font-semibold text-[var(--color-text)]">
+                      {a.title}
+                    </div>
+                    <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                      {a.content}
+                    </p>
+                    <p className="mt-2 text-[10px] text-[var(--color-text-faint)]">
+                      {new Date(a.created_at).toLocaleDateString()}
+                    </p>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Feature cards based on org type */}
-        <div>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-adv-gray">Explore</h2>
-          <div className="space-y-2">
-            <FeatureCard icon="📊" title="Markets Intelligence" desc="ANTON 100 index, predictions, analysis" onClick={() => onNavigate('markets')} />
-            <FeatureCard icon="📡" title="Horizon Radar" desc="Regulatory signals & compliance alerts" onClick={() => onNavigate('radar')} />
-            <FeatureCard icon="📄" title="Documents" desc="Track required documents & status" onClick={() => onNavigate('docs')} />
-          </div>
-        </div>
+        {/* ── Empty state when nothing is pending ──────────────── */}
+        {pending.length === 0 && sessions.length === 0 && announcements.length === 0 && (
+          <Card className="mt-6">
+            <div className="text-center">
+              <div className="text-[13px] font-semibold text-[var(--color-text)]">All clear.</div>
+              <div className="mt-1 text-[11px] text-[var(--color-text-muted)]">
+                Nothing waiting for you. Ask ANTON something below.
+              </div>
+              <div className="mt-3 flex justify-center gap-2">
+                <Btn size="sm" variant="primary" onClick={() => onNavigate('chat')}
+                     icon={<Ico name="message" color="currentColor" size={14} />}>
+                  Start chat
+                </Btn>
+                <Btn size="sm" variant="secondary" onClick={() => onNavigate('voice')}
+                     icon={<Ico name="mic" color="currentColor" size={14} />}>
+                  Voice
+                </Btn>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
-  );
-}
-
-function QuickAction({ icon, label, desc, onClick }: { icon: string; label: string; desc: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-adv-card p-4 transition hover:border-adv-teal/30 active:scale-[0.97]">
-      <span className="text-2xl">{icon}</span>
-      <span className="text-xs font-medium text-adv-off-white">{label}</span>
-      <span className="text-[10px] text-adv-gray">{desc}</span>
-    </button>
-  );
-}
-
-function FeatureCard({ icon, title, desc, onClick }: { icon: string; title: string; desc: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition hover:border-adv-teal/20 active:scale-[0.98]">
-      <span className="text-xl">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-adv-off-white">{title}</div>
-        <div className="text-[10px] text-adv-gray">{desc}</div>
-      </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-adv-gray/40"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
   );
 }

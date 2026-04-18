@@ -6,7 +6,7 @@ import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
-type RadarFetcher = ReturnType<typeof createRadarFetcher>;
+type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
 
 export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetcher) {
   const router = Router();

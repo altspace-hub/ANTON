@@ -9,10 +9,10 @@ import { getTheme, setTheme, type AppTheme } from '../services/theme';
 
 interface Props { onBack: () => void; }
 
+// Themes were dropped in the Evolution redesign (light only). The picker
+// is replaced by the personal-accent picker in the Phase 5 settings refresh.
 const THEMES: { value: AppTheme; label: string; icon: string; desc: string }[] = [
-  { value: 'dark', label: 'Dark', icon: '🌙', desc: 'Default ANTON dark' },
-  { value: 'light', label: 'Light', icon: '☀️', desc: 'Warm linen feel' },
-  { value: 'corporate', label: 'Corporate', icon: '🏢', desc: 'Professional blue' },
+  { value: 'light', label: 'Light', icon: '☀️', desc: 'Warm linen' },
 ];
 
 export default function ProfilePage({ onBack }: Props) {

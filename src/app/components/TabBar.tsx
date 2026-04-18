@@ -1,13 +1,23 @@
 /**
- * TabBar — Bottom navigation for the companion app.
- * Tabs adapt based on org type.
+ * TabBar — bottom navigation, Evolution design.
+ *
+ * Two visual variants driven by `mode`:
+ *   • pro      — text-coloured active state, thin top indicator bar,
+ *                tighter spacing (matches design/screens-auth.jsx
+ *                BottomTabs).
+ *   • standard — accent-coloured active state, bigger icons + labels,
+ *                more breathing room (matches design/screens-standard.jsx
+ *                SBottomTabs). Hits the looser-density rules of the
+ *                Standard mode spec.
  */
+
+import { Ico, type IcoName } from './ui/Ico';
+import { usePersonalization } from './ui/PersonalizationContext';
 
 interface Tab {
   id: string;
   label: string;
-  icon: string;
-  /** Optional badge — small red dot with count over the icon */
+  icon: string;            // legacy string key (kept for App.tsx compat)
   badge?: number;
 }
 
@@ -17,48 +27,99 @@ interface Props {
   onTabChange: (tabId: string) => void;
 }
 
-const TAB_ICONS: Record<string, string> = {
-  home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10',
-  chat: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
-  schedule: 'M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
-  tasks: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
-  search: 'M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M21 21l-4.35-4.35',
-  radar: 'M5.636 18.364A9 9 0 1 0 18.364 5.636 9 9 0 0 0 5.636 18.364z M12 12h.01',
-  markets: 'M23 6l-9.5 9.5-5-5L1 18',
-  docs: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8',
-  more: 'M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
+/**
+ * Map the legacy tab.icon string keys to Ico names. Keeps App.tsx's
+ * existing tab definitions working without touching them. Anything
+ * unknown falls back to the `more` (3-dot) icon.
+ */
+const ICON_MAP: Record<string, IcoName> = {
+  home: 'home',
+  chat: 'message',
+  message: 'message',
+  schedule: 'inbox',         // schedule → inbox-style icon
+  tasks: 'inbox',            // tasks → same
+  approvals: 'inbox',        // approvals always renders the inbox icon
+  capture: 'camera',
+  search: 'search',
+  ask: 'sparkles',
+  voice: 'mic',
+  radar: 'radar',
+  markets: 'arrowUp',
+  wallet: 'qr',
+  more: 'more',
+  you: 'shield',
+  profile: 'shield',
+  settings: 'shield',
 };
 
 export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
+  const { mode } = usePersonalization();
+  const isStandard = mode === 'standard';
+
   return (
-    <nav className="border-t border-border bg-adv-dark-2 safe-bottom">
-      <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-1">
-        {tabs.map(tab => {
-          const active = tab.id === activeTab;
-          const iconPath = TAB_ICONS[tab.icon] || TAB_ICONS.more;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`relative flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors ${
-                active ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
-              }`}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? '2.5' : '1.5'} strokeLinecap="round" strokeLinejoin="round">
-                {iconPath.split(' M').map((segment, i) => (
-                  <path key={i} d={i === 0 ? segment : `M${segment}`} />
-                ))}
-              </svg>
-              <span className={`text-[10px] ${active ? 'font-semibold' : 'font-normal'}`}>{tab.label}</span>
-              {tab.badge && tab.badge > 0 && (
-                <span className="absolute right-1 top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-adv-red px-1 text-[9px] font-bold text-white">
-                  {tab.badge > 9 ? '9+' : tab.badge}
+    <nav
+      className="safe-bottom flex flex-shrink-0 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]"
+      style={{
+        padding: isStandard ? '8px 6px 14px' : '6px 4px 10px',
+      }}
+    >
+      {tabs.map(tab => {
+        const active = tab.id === activeTab;
+        const iconName = ICON_MAP[tab.icon] || ICON_MAP[tab.id] || 'more';
+        const colour = active
+          ? (isStandard ? 'var(--color-accent)' : 'var(--color-text)')
+          : 'var(--color-text-muted)';
+
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className="relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors"
+            style={{ padding: '6px 0', minHeight: 44 }}
+          >
+            {/* Pro mode top indicator bar */}
+            {!isStandard && active && (
+              <span
+                aria-hidden
+                className="absolute top-0 h-[2px] w-7 rounded-sm"
+                style={{ background: 'var(--color-text)' }}
+              />
+            )}
+
+            <span className="relative inline-flex">
+              <Ico name={iconName} color={colour} size={isStandard ? 26 : 22} />
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span
+                  className="absolute inline-flex items-center justify-center rounded-full font-bold text-white"
+                  style={{
+                    background: 'var(--color-red)',
+                    border: '1.5px solid var(--color-surface)',
+                    top: isStandard ? -4 : -3,
+                    right: isStandard ? -10 : -8,
+                    minWidth: isStandard ? 20 : 16,
+                    height: isStandard ? 20 : 16,
+                    padding: '0 4px',
+                    fontSize: isStandard ? 11 : 9,
+                  }}
+                >
+                  {tab.badge > 99 ? '99+' : tab.badge}
                 </span>
               )}
-            </button>
-          );
-        })}
-      </div>
+            </span>
+
+            <span
+              className={active ? 'font-semibold' : 'font-medium'}
+              style={{
+                color: colour,
+                fontSize: isStandard ? 12 : 10,
+                letterSpacing: '-0.1px',
+              }}
+            >
+              {tab.label}
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

@@ -1,98 +1,286 @@
 /**
- * SearchScreen — Pathfinder-powered research assistant.
- * Simplified version of the full Pathfinder for mobile.
+ * SearchScreen — Pathfinder, "search that thinks before it answers".
+ *
+ * Layout from design/screens-modules.jsx PathfinderScreen:
+ *   • Top bar — "Pathfinder · Search that thinks"
+ *   • Query input pinned at top (composer-style)
+ *   • Once a query lands:
+ *       - Question card (echoes what was asked)
+ *       - Thinking trace — N checked steps with connector line, header
+ *         "ANTON THOUGHT FOR Xs · Y STEPS"
+ *       - Answer card with inline numbered superscript citations
+ *       - Sources list — numbered, private (accent-tinted, "YOURS" pill)
+ *         vs public (neutral)
+ *       - Privacy footer
  */
 
 import { useState } from 'react';
-import { fetchWithAuth } from '../services/api';
-import ChatBubble from '../components/ChatBubble';
+import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
+import { runPathfinderQuery, splitAnswer, type PathfinderResult, type PathfinderSource } from '../services/pathfinder';
 
-interface Props { orgId: string; }
+interface Props { orgId: string }
 
-const MODES = [
-  { id: 'knowledge', label: '🎓 Knowledge', desc: 'Deep research' },
-  { id: 'local', label: '📍 Local', desc: 'Nearby places' },
-  { id: 'news', label: '📰 News', desc: 'Current events' },
-  { id: 'shopping', label: '🛒 Shopping', desc: 'Products & prices' },
-];
+function citeColour(_n: number): string {
+  return 'var(--color-accent)';
+}
 
-export default function SearchScreen({ orgId }: Props) {
-  const [query, setQuery] = useState('');
-  const [mode, setMode] = useState('knowledge');
-  const [result, setResult] = useState<string | null>(null);
-  const [searching, setSearching] = useState(false);
+function SourceCard({ s }: { s: PathfinderSource }) {
+  const isPrivate = s.type === 'private';
+  return (
+    <div
+      className="mb-1.5 flex gap-2.5 rounded-[var(--radius-r2)] p-2.5"
+      style={{
+        background: isPrivate ? 'var(--color-accent-soft)' : 'var(--color-surface-alt)',
+        border: `1px solid ${isPrivate ? 'var(--color-accent-dim)' : 'var(--color-border-soft)'}`,
+      }}
+    >
+      <div
+        className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full font-mono font-bold text-white"
+        style={{ background: 'var(--color-text)', fontSize: 11 }}
+      >
+        {s.n}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] font-semibold leading-tight text-[var(--color-text)]">
+          {s.title}
+        </div>
+        <div className="mt-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+          {s.domain}
+        </div>
+        {s.snippet && (
+          <div className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--color-text-body)]">
+            {s.snippet}
+          </div>
+        )}
+      </div>
+      {isPrivate && (
+        <Pill tone="teal" style={{ fontSize: 9, alignSelf: 'flex-start' }}>YOURS</Pill>
+      )}
+    </div>
+  );
+}
 
-  async function handleSearch() {
-    if (!query.trim() || searching) return;
-    setSearching(true);
+export default function SearchScreen({ orgId }: Props): JSX.Element {
+  const [draft,    setDraft]    = useState('');
+  const [running,  setRunning]  = useState(false);
+  const [result,   setResult]   = useState<PathfinderResult | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+
+  async function ask() {
+    const q = draft.trim();
+    if (!q || running) return;
+    setRunning(true);
+    setError(null);
     setResult(null);
     try {
-      // Use the org's AI endpoint for search-like queries
-      const serverBase = localStorage.getItem('anton-companion-server') || '';
-      const res = await fetch(`${serverBase}/api/app/org/${orgId}/query-sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-app-session': localStorage.getItem('anton-companion-session') || '',
-        },
-        body: JSON.stringify({
-          message: `[${mode} search] ${query.trim()}`,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data.text || 'No results found');
-      }
-    } catch {
-      setResult('Search failed. Please try again.');
+      const r = await runPathfinderQuery(orgId, q);
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Pathfinder failed');
+    } finally {
+      setRunning(false);
     }
-    setSearching(false);
   }
 
+  // Derive the thinking-trace header copy: "ANTON THOUGHT FOR Xs · Y STEPS"
+  const traceHeader = result
+    ? `ANTON THOUGHT FOR ${(result.took_ms / 1000).toFixed(1)}S · ${result.thoughts.length} STEP${result.thoughts.length === 1 ? '' : 'S'}`
+    : null;
+
+  const segments = result ? splitAnswer(result.answer) : [];
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-2xl px-4 py-5 space-y-4">
-        <h1 className="text-lg font-bold text-adv-off-white">Research</h1>
-
-        {/* Mode selector */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {MODES.map(m => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`shrink-0 rounded-lg border px-3 py-2 text-xs transition ${
-                mode === m.id ? 'border-adv-teal bg-adv-teal/10 text-adv-teal' : 'border-border bg-adv-card text-adv-gray'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+    <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+      {/* ── Top bar ─────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{
+          background: 'var(--color-surface-alt)',
+          borderBottom: '1px solid var(--color-border-soft)',
+          minHeight: 44,
+        }}
+      >
+        <div>
+          <div
+            className="text-[var(--color-text)]"
+            style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.05 }}
+          >
+            Pathfinder
+          </div>
+          <div
+            className="font-mono text-[10px] text-[var(--color-text-muted)]"
+            style={{ letterSpacing: '0.3px' }}
+          >
+            Search that thinks
+          </div>
         </div>
+        <Ico name="more" color="var(--color-text-muted)" size={18} />
+      </div>
 
-        {/* Search input */}
-        <div className="flex gap-2">
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            placeholder="What do you want to research?"
-            className="flex-1 rounded-lg border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none"
+      <div className="flex-1 overflow-y-auto px-4 py-3.5">
+        {/* ── Query composer ──────────────────────────────────── */}
+        <div
+          className="mb-3 flex items-end gap-2 rounded-[var(--radius-r2)] p-2.5"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void ask();
+              }
+            }}
+            rows={2}
+            placeholder="Ask anything about your instance, the regulations you track, your portfolio…"
+            className="min-h-[44px] flex-1 resize-none bg-transparent text-[14px] leading-relaxed text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+            disabled={running}
           />
-          <button onClick={handleSearch} disabled={searching || !query.trim()} className="rounded-lg bg-adv-teal px-4 py-3 text-sm font-medium text-adv-dark disabled:opacity-40">
-            {searching ? '...' : '🔍'}
-          </button>
+          <Btn
+            size="sm"
+            variant="primary"
+            onClick={() => void ask()}
+            disabled={running || !draft.trim()}
+            icon={running
+              ? <span className="inline-block h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+              : <Ico name="arrowUp" color="currentColor" size={14} />}
+          >
+            {running ? 'Thinking' : 'Ask'}
+          </Btn>
         </div>
 
-        {/* Results */}
-        {searching && (
-          <div className="flex items-center gap-2 py-8 justify-center">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
-            <span className="text-sm text-adv-gray">Researching...</span>
+        {error && (
+          <div className="mb-3 rounded-[var(--radius-r2)] border border-[var(--color-red-dim)] bg-[var(--color-red-dim)] px-3 py-2 text-xs text-[var(--color-red)]">
+            {error}
           </div>
         )}
 
-        {result && !searching && (
-          <ChatBubble role="assistant" content={result} timestamp={Date.now()} />
+        {/* ── Live "thinking" placeholder ─────────────────────── */}
+        {running && !result && (
+          <div className="rounded-[var(--radius-r2)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+            <div className="mb-2 flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+              <span
+                className="font-mono font-bold uppercase"
+                style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              >
+                ANTON is thinking…
+              </span>
+            </div>
+            <p className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+              Searching your instance, then synthesising a cited answer.
+            </p>
+          </div>
+        )}
+
+        {/* ── Result ──────────────────────────────────────────── */}
+        {result && (
+          <>
+            {/* Question card */}
+            <div
+              className="mb-3.5 rounded-[var(--radius-r2)] p-3.5"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+            >
+              <div
+                className="mb-1 font-mono text-[var(--color-text-muted)]"
+                style={{ fontSize: 10, letterSpacing: '0.5px' }}
+              >
+                YOUR QUESTION
+              </div>
+              <div
+                className="text-[var(--color-text)]"
+                style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.35, letterSpacing: '-0.1px' }}
+              >
+                {result.question}
+              </div>
+            </div>
+
+            {/* Thinking trace */}
+            {result.thoughts.length > 0 && (
+              <div className="mb-3.5">
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Ico name="sparkles" color="var(--color-accent)" size={13} />
+                  <span
+                    className="font-mono font-bold uppercase"
+                    style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                  >
+                    {traceHeader}
+                  </span>
+                </div>
+                {result.thoughts.map((t, i) => (
+                  <div key={i} className="mb-1 flex gap-2.5">
+                    <div className="flex w-4 flex-shrink-0 flex-col items-center">
+                      <div
+                        className="flex h-3 w-3 items-center justify-center rounded-full font-bold text-white"
+                        style={{ background: 'var(--color-accent)', fontSize: 8 }}
+                      >
+                        ✓
+                      </div>
+                      {i < result.thoughts.length - 1 && (
+                        <div
+                          className="w-px flex-1"
+                          style={{ background: 'var(--color-accent-dim)', minHeight: 10 }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-1 text-[12px] leading-relaxed text-[var(--color-text-body)]">
+                      {t}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Answer */}
+            <div
+              className="mb-3 rounded-[var(--radius-r3)] p-3.5"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+            >
+              <div
+                className="text-[14px] leading-relaxed text-[var(--color-text)]"
+                style={{ wordBreak: 'break-word' }}
+              >
+                {segments.length > 0 ? segments.map((seg, i) => (
+                  seg.kind === 'text'
+                    ? <span key={i}>{seg.value}</span>
+                    : <sup
+                        key={i}
+                        className="font-bold"
+                        style={{ color: citeColour(seg.n), fontSize: 10, padding: '0 1px' }}
+                      >[{seg.n}]</sup>
+                )) : result.answer}
+              </div>
+            </div>
+
+            {/* Sources */}
+            {result.sources.length > 0 && (
+              <>
+                <SectionLabel className="mb-2">Sources · {result.sources.length}</SectionLabel>
+                {result.sources.map(s => <SourceCard key={s.n} s={s} />)}
+              </>
+            )}
+
+            {/* Privacy footer */}
+            <div
+              className="mt-4 text-center text-[11px] leading-relaxed text-[var(--color-text-faint)]"
+            >
+              You're never the product. No tracking. Your question stays on your instance.
+            </div>
+          </>
+        )}
+
+        {/* Empty state */}
+        {!result && !running && !error && (
+          <div className="mt-8 text-center">
+            <Ico name="search" color="var(--color-text-faint)" size={32} />
+            <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+              Ask Pathfinder anything.
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
+              It searches your instance and shows its reasoning before answering.
+            </p>
+          </div>
         )}
       </div>
     </div>
