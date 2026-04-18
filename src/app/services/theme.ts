@@ -1,42 +1,26 @@
 /**
- * Theme management for the companion app.
- * Mirrors main ANTON's theme system: dark (default), light, corporate.
+ * theme.ts — DEPRECATED shim.
+ *
+ * Old companion app had three themes (dark / light / corporate). The
+ * Evolution redesign is light-only, so themes were replaced by
+ * `personalization.ts` (accent + app mode). This module is kept solely
+ * so the old call sites (e.g. ProfilePage's appearance picker) compile
+ * during the migration. Remove once those screens are rewritten in the
+ * Phase 5 auth/onboarding refresh.
+ *
+ * Side-effect import here triggers personalization to apply the user's
+ * accent + mode to <html> before React renders (parity with the old
+ * `import './services/theme'` in main.tsx).
  */
 
-export type AppTheme = 'dark' | 'light' | 'corporate';
+import './personalization';
 
-const STORAGE_KEY = 'anton-companion-theme';
+export type AppTheme = 'light';
 
-export function getTheme(): AppTheme {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark' || saved === 'corporate') return saved;
-  } catch {}
-  return 'light';
+export function getTheme(): AppTheme { return 'light'; }
+
+export function setTheme(_theme: AppTheme): void {
+  /* no-op — themes are gone; use setAccent / setMode from personalization.ts */
 }
 
-export function setTheme(theme: AppTheme): void {
-  localStorage.setItem(STORAGE_KEY, theme);
-  applyTheme(theme);
-}
-
-export function applyTheme(theme: AppTheme): void {
-  const html = document.documentElement;
-  html.classList.remove('light', 'corporate');
-  if (theme === 'light') html.classList.add('light');
-  else if (theme === 'corporate') html.classList.add('corporate');
-
-  // Update meta theme-color for mobile browser chrome
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) {
-    const colors: Record<AppTheme, string> = {
-      dark: '#0B1426',
-      light: '#F5F3EF',
-      corporate: '#F3F5F9',
-    };
-    meta.setAttribute('content', colors[theme]);
-  }
-}
-
-// Apply immediately on module load (prevents flash)
-applyTheme(getTheme());
+export function applyTheme(_theme: AppTheme): void { /* no-op */ }

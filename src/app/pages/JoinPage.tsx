@@ -16,6 +16,7 @@ import { fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUr
 import { addInstance, listInstances } from '../services/instances';
 import { tick, success, error as hapticError } from '../services/haptics';
 import { isBiometricAvailable, verifyBiometric } from '../services/biometric';
+import { Btn, Pill, SectionLabel, StatusDot, Ico } from '../components/ui';
 
 interface Props {
   onJoined: () => void;
@@ -229,104 +230,243 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-adv-dark safe-top safe-bottom">
-      <div className="border-b border-border bg-adv-dark-2">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
-          <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-lg bg-adv-card text-adv-gray transition hover:text-adv-off-white active:scale-95">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <h1 className="text-lg font-bold text-adv-off-white">Pair with ANTON</h1>
-        </div>
+    <div
+      className="safe-top safe-bottom flex min-h-dvh flex-col"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      {/* Top bar */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ background: 'var(--color-surface-alt)', borderBottom: '1px solid var(--color-border-soft)', minHeight: 44 }}
+      >
+        <button onClick={onBack} className="flex items-center gap-1.5">
+          <Ico name="chevronLeft" color="var(--color-text-muted)" size={20} />
+          <span className="text-sm font-semibold text-[var(--color-text)]">Connect</span>
+        </button>
+        <Pill tone="neutral" mono>STEP 2 / 4</Pill>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-4 py-5 space-y-5">
-          <p className="text-sm text-adv-gray leading-relaxed">
-            <span className="text-adv-off-white">Pair in under 30 seconds.</span> Open <span className="text-adv-off-white">Connect a device</span> on the desktop ANTON and scan the QR. The pairing is end-to-end — your phone generates a fresh keypair that only this device holds.
-          </p>
+      <div className="flex-1 overflow-y-auto px-5 pb-6 pt-5">
+        <div
+          className="text-[var(--color-text)]"
+          style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.15 }}
+        >
+          Pair with your ANTON
+        </div>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+          Scan the QR your admin showed you. We'll mint a fresh Ed25519 key on this device and
+          confirm with a 6-digit code if needed.
+        </p>
 
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            <button onClick={() => setMode('scan')} className={`flex-1 py-2.5 text-xs font-medium transition ${mode === 'scan' ? 'bg-adv-teal text-adv-dark' : 'bg-adv-card text-adv-gray'}`}>Scan QR</button>
-            <button onClick={() => setMode('manual')} className={`flex-1 py-2.5 text-xs font-medium transition ${mode === 'manual' ? 'bg-adv-teal text-adv-dark' : 'bg-adv-card text-adv-gray'}`}>Enter manually</button>
-          </div>
-
-          {mode === 'scan' && (
-            <>
-              {showScanner ? (
-                <div className="overflow-hidden rounded-2xl border border-border bg-adv-dark">
-                  <video ref={videoRef} className="w-full aspect-square object-cover" />
-                  <button onClick={() => setShowScanner(false)} className="w-full border-t border-border py-3.5 text-sm text-adv-gray hover:text-adv-off-white transition">Cancel</button>
-                </div>
-              ) : (
-                <button onClick={() => setShowScanner(true)} className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-adv-card/30 py-12 transition hover:border-adv-teal/30 active:scale-[0.98]">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-adv-teal/10">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-adv-teal">
-                      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/>
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-adv-off-white">Tap to scan QR</span>
-                  <span className="text-xs text-adv-gray">The QR contains the server URL + a one-time token</span>
-                </button>
-              )}
-            </>
-          )}
-
-          {mode === 'manual' && (
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Server</label>
-                <input value={serverUrl} onChange={(e) => setServerUrl(e.target.value)} placeholder="https://anton.example.com" className="w-full rounded-lg border border-border bg-adv-card px-4 py-3.5 text-sm text-adv-off-white placeholder-adv-gray/40 focus:border-adv-teal focus:outline-none" />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Pairing token</label>
-                <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="abcd…" className="w-full rounded-lg border border-border bg-adv-card px-4 py-4 text-center font-mono text-base text-adv-teal focus:border-adv-teal focus:outline-none" />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Device name (optional)</label>
-                <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="My iPhone" className="w-full rounded-lg border border-border bg-adv-card px-4 py-3.5 text-sm text-adv-off-white placeholder-adv-gray/40 focus:border-adv-teal focus:outline-none" />
-              </div>
-              {needCodePrompt && (
-                <div>
-                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-teal">6-digit confirmation code</label>
-                  <input
-                    value={confirmationCode}
-                    onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className="w-full rounded-lg border border-adv-teal/40 bg-adv-card px-4 py-4 text-center font-mono text-xl tracking-[0.4em] text-adv-teal focus:border-adv-teal focus:outline-none"
-                  />
-                  <p className="mt-1 text-[11px] text-adv-gray">Your admin reads this aloud. Required so the QR can't be hijacked between scan and pair.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {status && (
-            <div className="flex items-center gap-2 rounded-lg bg-adv-teal/10 px-4 py-2.5 text-xs text-adv-teal">
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
-              {status}
-            </div>
-          )}
-          {error && <div className="rounded-lg border border-adv-red/30 bg-adv-red/5 px-4 py-2.5 text-xs text-adv-red">{error}</div>}
-
+        {/* Mode toggle */}
+        <div
+          className="mt-5 flex overflow-hidden rounded-[var(--radius-r2)]"
+          style={{ border: '1px solid var(--color-border)' }}
+        >
           <button
-            onClick={() => doPair(serverUrl, token)}
-            disabled={loading || !token.trim() || !serverUrl.trim()}
-            className="w-full rounded-lg bg-adv-teal py-3.5 text-sm font-semibold text-adv-dark transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:opacity-40"
+            onClick={() => setMode('scan')}
+            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+            style={{
+              background: mode === 'scan' ? 'var(--color-accent)' : 'var(--color-surface)',
+              color:      mode === 'scan' ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
+            }}
           >
-            {loading ? 'Connecting…' : 'Pair'}
+            Scan QR
           </button>
+          <button
+            onClick={() => setMode('manual')}
+            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+            style={{
+              background: mode === 'manual' ? 'var(--color-accent)' : 'var(--color-surface)',
+              color:      mode === 'manual' ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
+            }}
+          >
+            Enter manually
+          </button>
+        </div>
 
-          <div className="rounded-xl border border-border bg-adv-card p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-adv-off-white">How pairing works</h3>
-            <ol className="text-[11px] text-adv-gray leading-relaxed space-y-1.5 list-decimal list-inside">
-              <li>The instance issues a one-time token (≤60 seconds) embedded in the QR.</li>
-              <li>Your phone generates a fresh Ed25519 keypair — the private key never leaves the device.</li>
-              <li>The phone signs <span className="font-mono">token.nonce.publicKey</span>; the instance verifies + issues a device certificate.</li>
-              <li>All future calls are mutually authenticated with that certificate. No passwords, ever.</li>
-            </ol>
+        {/* QR scan path */}
+        {mode === 'scan' && (
+          <div
+            className="mt-4 overflow-hidden rounded-[var(--radius-r3)]"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          >
+            {showScanner ? (
+              <>
+                <video ref={videoRef} className="aspect-square w-full object-cover" />
+                <button
+                  onClick={() => setShowScanner(false)}
+                  className="w-full py-3.5 text-sm text-[var(--color-text-muted)]"
+                  style={{ borderTop: '1px solid var(--color-border)' }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowScanner(true)}
+                className="flex w-full flex-col items-center gap-3 py-10"
+              >
+                <div
+                  className="flex h-16 w-16 items-center justify-center rounded-[var(--radius-r2)]"
+                  style={{ background: 'var(--color-accent-soft)' }}
+                >
+                  <Ico name="qr" color="var(--color-accent)" size={36} />
+                </div>
+                <span className="text-sm font-semibold text-[var(--color-text)]">Tap to scan QR</span>
+                <span className="px-6 text-center text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                  The QR contains the server URL + a one-time token (≤60s TTL)
+                </span>
+              </button>
+            )}
           </div>
+        )}
+
+        {/* Manual entry path */}
+        {mode === 'manual' && (
+          <div className="mt-4 space-y-3.5">
+            <div>
+              <SectionLabel className="mb-1.5">Server</SectionLabel>
+              <input
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                placeholder="https://anton.example.com"
+                className="w-full rounded-[var(--radius-r2)] px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+                style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+              />
+            </div>
+            <div>
+              <SectionLabel className="mb-1.5">Pairing token</SectionLabel>
+              <input
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="abcd…"
+                className="w-full rounded-[var(--radius-r2)] px-4 py-4 text-center font-mono text-base focus:outline-none"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-accent)',
+                  letterSpacing: '0.1em',
+                }}
+              />
+            </div>
+            <div>
+              <SectionLabel className="mb-1.5">Device name (optional)</SectionLabel>
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="My iPhone"
+                className="w-full rounded-[var(--radius-r2)] px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+                style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+              />
+            </div>
+            {needCodePrompt && (
+              <div
+                className="rounded-[var(--radius-r2)] p-3.5"
+                style={{ background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent-dim)' }}
+              >
+                <SectionLabel className="mb-2" style={{ color: 'var(--color-accent)' }}>
+                  Confirmation code
+                </SectionLabel>
+                <div className="flex justify-between gap-1.5">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-[var(--radius-r1)] py-2.5 text-center font-mono font-bold"
+                      style={{
+                        background: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text)',
+                        fontSize: 22,
+                        letterSpacing: '0.1em',
+                      }}
+                    >
+                      {confirmationCode[i] || ''}
+                    </div>
+                  ))}
+                </div>
+                <input
+                  value={confirmationCode}
+                  onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Tap and type the code"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="mt-2 w-full rounded-[var(--radius-r2)] px-4 py-2.5 text-center text-sm focus:outline-none"
+                  style={{ background: 'var(--color-surface)', border: '1px solid var(--color-accent-dim)', color: 'var(--color-text-body)' }}
+                />
+                <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+                  Admin reads this aloud. Required so the QR can't be hijacked between scan and pair.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Status / error */}
+        {status && (
+          <div
+            className="mt-3.5 flex items-center gap-2 rounded-[var(--radius-r2)] px-3.5 py-2.5 text-xs"
+            style={{
+              background: 'var(--color-accent-soft)',
+              color: 'var(--color-accent)',
+              border: '1px solid var(--color-accent-dim)',
+            }}
+          >
+            <span
+              className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-t-transparent"
+              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
+            />
+            {status}
+          </div>
+        )}
+        {error && (
+          <div
+            className="mt-3.5 rounded-[var(--radius-r2)] px-3.5 py-2.5 text-xs"
+            style={{
+              background: 'var(--color-red-dim)',
+              color: 'var(--color-red)',
+              border: '1px solid var(--color-red-dim)',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Status row — Internet / LAN / TTL */}
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
+          <StatusDot tone={loading ? 'gold' : 'green'} pulse size={8} />
+          <span>{loading ? 'Pairing…' : 'Awaiting scan'}</span>
+          <span className="flex-1" />
+          <span className="font-mono text-[var(--color-text-faint)]">TTL 60s</span>
+        </div>
+
+        <Btn
+          variant="primary"
+          block
+          className="mt-4"
+          disabled={loading || !token.trim() || !serverUrl.trim()}
+          onClick={() => void doPair(serverUrl, token)}
+          icon={loading
+            ? <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            : <Ico name="shieldCheck" color="currentColor" size={15} />}
+        >
+          {loading ? 'Connecting…' : 'Pair'}
+        </Btn>
+
+        {/* "How pairing works" — collapsed-explanation card */}
+        <div
+          className="mt-5 rounded-[var(--radius-r2)] p-3.5"
+          style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border-soft)' }}
+        >
+          <SectionLabel className="mb-2">How pairing works</SectionLabel>
+          <ol
+            className="list-inside list-decimal space-y-1.5 text-[11px] leading-relaxed text-[var(--color-text-body)]"
+          >
+            <li>The instance issues a one-time token (≤60s TTL) embedded in the QR.</li>
+            <li>Your phone generates a fresh Ed25519 keypair — the private key never leaves the device.</li>
+            <li>The phone signs <span className="font-mono">token.nonce.publicKey</span>; the instance verifies + issues a device certificate.</li>
+            <li>All future calls are mutually authenticated with that certificate. No passwords, ever.</li>
+          </ol>
         </div>
       </div>
     </div>

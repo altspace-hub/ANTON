@@ -17,6 +17,11 @@ import { createAppGatewayService, SUPPORTED_LANGUAGES } from '../services/app-ga
 import { createAppEnrollmentService } from '../services/app-enrollment-service.js';
 import { createAppPushService } from '../services/app-push-service.js';
 import { createAppCheckpointService } from '../services/app-checkpoint-service.js';
+import { createRegulatoryRadar } from '../services/regulatory-radar.js';
+import type { createRadarFetcher } from '../services/radar-fetcher.js';
+import { hybridSearch } from '../services/hybrid-search.js';
+import { callChat, resolveModel } from '../services/provider-router.js';
+import { createAppMailService, type MailProviderKind } from '../services/app-mail-service.js';
 
 // ── Org membership check middleware ──────────────────────────────────────────
 function createOrgMembershipCheck(db: DatabaseAdapter) {
@@ -36,7 +41,9 @@ function createOrgMembershipCheck(db: DatabaseAdapter) {
   };
 }
 
-export async function createAppGatewayRoutes(db: DatabaseAdapter) {
+type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
+
+export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?: RadarFetcher) {
   const publicRouter = Router();
   const adminRouter = Router();
   const svc = await createAppGatewayService(db);
@@ -45,6 +52,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
   const enrollment = createAppEnrollmentService(db);
   const push = createAppPushService(db);
   const checkpoints = createAppCheckpointService(db);
+  const radar = await createRegulatoryRadar(db);
+  const mail = createAppMailService(db);
 
   // ══════════════════════════════════════════════════════════════════════════
   // PUBLIC ROUTES (/api/app/*) — mounted BEFORE auth middleware
@@ -880,6 +889,720 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter) {
     } catch (err) {
       res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to create checkpoint' });
     }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CALENDAR (companion app surface) — unified day view.
+  //
+  // v1 sources:
+  //   • ANTON-internal: pending app_checkpoints with expires_at land here
+  //     as time-anchored events (the deadline is the event time)
+  //   • External providers: scaffolded for M365 / Google / iCloud / Family
+  //     in the source-legend strip; actual sync arrives with the mail
+  //     OAuth/IMAP work in a follow-up phase.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  publicRouter.get('/org/:orgId/calendar/today', appAuth, orgMember, async (req, res) => {
+    try {
+      const userId = req.appUser!.id;
+      const orgId = String(req.params.orgId);
+      const dayParam = typeof req.query.date === 'string' ? req.query.date : undefined;
+      // Default to "today in the server's timezone"
+      const day = dayParam ? new Date(dayParam) : new Date();
+      const start = new Date(day); start.setHours(0, 0, 0, 0);
+      const end = new Date(day);   end.setHours(23, 59, 59, 999);
+
+      // ANTON-internal events: pending checkpoints whose deadline lands in the day
+      const checkpoints = await db.all<{
+        id: string; title: string; summary: string | null;
+        severity: string; expires_at: string; deep_link: string | null;
+      }>(
+        `SELECT id, title, summary, severity, expires_at, deep_link
+         FROM app_checkpoints
+         WHERE status = 'pending' AND connected_user_id = $1 AND org_id = $2
+           AND expires_at IS NOT NULL
+           AND expires_at >= $3 AND expires_at <= $4
+         ORDER BY expires_at ASC`,
+        userId, orgId, start.toISOString(), end.toISOString()
+      ).catch(() => []);
+
+      const events = checkpoints.map(c => {
+        const t = new Date(c.expires_at);
+        return {
+          id: `ck:${c.id}`,
+          time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+          duration_minutes: 15,
+          title: c.title,
+          location: c.summary || 'ANTON checkpoint',
+          source: 'anton' as const,
+          source_label: 'ANTON',
+          color: c.severity === 'critical' || c.severity === 'high' ? 'red' as const : 'teal' as const,
+          anton: true,
+          ext:   false,
+          personal: false,
+          anton_prep: c.severity === 'high' || c.severity === 'critical' ? 'High-severity approval expires soon' : null,
+          deep_link: c.deep_link || `/approvals/${c.id}`,
+        };
+      });
+
+      // Source legend — only ANTON is a "real" feed in v1; the other rows
+      // appear so the UI strip looks normal but their counts are 0.
+      const sources = [
+        { id: 'anton',    label: 'ANTON',           count: events.length, color: 'teal'  as const },
+        { id: 'work',     label: 'Work · M365',     count: 0,             color: 'blue'  as const },
+        { id: 'personal', label: 'Personal',        count: 0,             color: 'gold'  as const },
+        { id: 'family',   label: 'Family',          count: 0,             color: 'plum'  as const },
+      ];
+
+      // ANTON prep banner — most pressing high/critical event today
+      const prepEvent = events.find(e => e.color === 'red');
+      const prep = prepEvent ? {
+        title: prepEvent.title,
+        note: prepEvent.anton_prep || 'Brief ready · open to review.',
+      } : null;
+
+      res.json({
+        date: start.toISOString().slice(0, 10),
+        sources,
+        events,
+        prep,
+      });
+    } catch (err) {
+      console.error('[app-gateway] calendar/today error:', err);
+      res.status(500).json({ error: 'Failed to load calendar' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCHOOL (companion app surface) — daily lesson feed.
+  //
+  // The School pillar today uses a prompt overlay (school-prompt-builder.ts)
+  // rather than dedicated student/lesson tables. This endpoint returns the
+  // surface the UI needs — when proper school content + student progress
+  // tables land, plug them in here.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  publicRouter.get('/org/:orgId/school/today', appAuth, orgMember, async (req, res) => {
+    try {
+      const userId = req.appUser!.id;
+      // Streak — derive from a user-prefs-like source; for v1, count
+      // distinct days in the last 30 days the user has had a session.
+      const streakRow = await db.get<{ days: number }>(
+        `SELECT COUNT(DISTINCT DATE(created_at)) AS days
+         FROM app_messages m
+         JOIN app_sessions s ON s.id = m.session_id
+         WHERE s.connected_user_id = $1
+           AND s.org_id = $2
+           AND m.role = 'user'
+           AND m.created_at >= NOW() - INTERVAL '30 days'`,
+        userId, String(req.params.orgId)
+      ).catch(() => null);
+      const streak = Math.min(99, Number(streakRow?.days ?? 0));
+
+      // For v1: no curriculum tables, so today_lesson is null. UI shows
+      // a "set up your school profile" empty state. Up-next is empty;
+      // the homework camera CTA is always available.
+      res.json({
+        streak,
+        day_label: streak > 0 ? `Day ${streak}` : 'Welcome',
+        course_label: 'School Mode',
+        today_lesson: null,
+        up_next: [
+          {
+            id: 'ask-anton',
+            kind: 'ask',
+            title: 'Ask ANTON anything',
+            subtitle: 'Stuck? Voice or text.',
+            color: 'blue',
+            icon: 'mic',
+          },
+        ],
+      });
+    } catch (err) {
+      console.error('[app-gateway] school/today error:', err);
+      res.status(500).json({ error: 'Failed to load school feed' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // WORK MODULES (companion app surface) — curated subset for mobile.
+  // Returns Pinned (highlighted) + Browse list with the colour/desc the
+  // design needs. Module ids match the main app's MODULES registry so
+  // tapping one can deep-link into the desktop UI on the connected ANTON.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  publicRouter.get('/org/:orgId/modules', appAuth, orgMember, (_req, res) => {
+    const pinned = [
+      { id: 'sanctions-advisory',  name: 'Sanctions Advisory', description: 'Screen · advise · SAR',     color: 'red',    busy: false },
+      { id: 'counsels-desk',        name: "Counsel's Desk",     description: 'Draft · redline · cite',    color: 'blue',   busy: false },
+      { id: 'gap-analysis',         name: 'Gap Assessment',     description: 'Policy ↔ control',          color: 'teal',   busy: false },
+      { id: 'finance-autopilot',    name: 'Finance Autopilot',  description: 'AP · payments · approvals', color: 'gold',   busy: false },
+    ];
+    const browse = [
+      { id: 'markets-intelligence',  name: 'Markets Intelligence',  description: 'Tape · briefs · scenarios' },
+      { id: 'orchestrator',          name: 'Orchestrator',          description: 'Run, monitor missions' },
+      { id: 'knowledge-base',        name: 'Knowledge Base',        description: 'Docs · atoms · search' },
+      { id: 'presentation-builder',  name: 'Presentation Builder',  description: 'Deck from brief' },
+      { id: 'task-agent',            name: 'Task Agent',            description: 'Long-running jobs' },
+      { id: 'civic',                 name: 'Civic',                 description: 'Public affairs · NGO' },
+      { id: 'talent',                name: 'Talent',                description: 'Hiring · onboarding' },
+      { id: 'travel',                name: 'Travel',                description: 'Itineraries · expense' },
+      { id: 'risk-atlas',            name: 'Risk Atlas',            description: '7-stage threat paths' },
+      { id: 'horizon-radar',         name: 'Horizon Radar',         description: 'Reg + competitor scan' },
+    ];
+    res.json({ pinned, browse });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MAIL (companion app surface) — Unified inbox merging ANTON-native
+  // (synthesised from app_messages + app_checkpoints) with external
+  // providers (M365 / Gmail / IMAP / Exchange). External provider sync
+  // is scaffolded — connections are stored encrypted, and providers
+  // appear in the source-filter strip, but actual mail pulling is gated
+  // on the per-provider implementation landing in a follow-up phase.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // GET /api/app/org/:orgId/mail/providers — list connected providers
+  publicRouter.get('/org/:orgId/mail/providers', appAuth, orgMember, async (req, res) => {
+    try {
+      const providers = await mail.listProviders(req.appUser!.id, String(req.params.orgId));
+      // ANTON-native is always implicitly active; surface it as a provider
+      // entry so the UI can render the source-filter chip without a DB row.
+      res.json({
+        providers: [
+          {
+            id: 'anton',
+            provider: 'anton' as MailProviderKind,
+            display_name: 'ANTON',
+            email_address: `${req.appUser!.id}@anton.${String(req.params.orgId)}`,
+            status: 'active' as const,
+            last_sync_at: null,
+            last_sync_error: null,
+            unread_count: 0,
+            is_default: true,
+            created_at: new Date().toISOString(),
+          },
+          ...providers,
+        ],
+      });
+    } catch (err) {
+      console.error('[app-gateway] mail providers error:', err);
+      res.status(500).json({ error: 'Failed to load mail providers' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/mail/providers — connect a new provider
+  publicRouter.post('/org/:orgId/mail/providers', appAuth, orgMember, async (req, res) => {
+    const body = (req.body ?? {}) as {
+      provider?: MailProviderKind;
+      display_name?: string;
+      email_address?: string;
+      oauth_tokens?: Record<string, unknown>;
+      imap_config?: { host: string; port: number; user: string; password: string; secure?: boolean };
+    };
+    if (!body.provider) return res.status(400).json({ error: 'provider is required' });
+    try {
+      const row = await mail.connectProvider(req.appUser!.id, String(req.params.orgId), {
+        provider: body.provider,
+        display_name: body.display_name,
+        email_address: body.email_address,
+        oauth_tokens: body.oauth_tokens,
+        imap_config: body.imap_config,
+      });
+      res.json({ provider: row });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to connect provider' });
+    }
+  });
+
+  // DELETE /api/app/org/:orgId/mail/providers/:id
+  publicRouter.delete('/org/:orgId/mail/providers/:id', appAuth, orgMember, async (req, res) => {
+    try {
+      await mail.disconnectProvider(req.appUser!.id, String(req.params.orgId), String(req.params.id));
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to disconnect provider' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/mail/providers/:id/sync — trigger a sync
+  publicRouter.post('/org/:orgId/mail/providers/:id/sync', appAuth, orgMember, async (req, res) => {
+    try {
+      const result = await mail.syncProvider(req.appUser!.id, String(req.params.orgId), String(req.params.id));
+      res.status(result.ok ? 200 : 503).json(result);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to sync provider' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/mail/inbox?provider=...&limit=...
+  publicRouter.get('/org/:orgId/mail/inbox', appAuth, orgMember, async (req, res) => {
+    try {
+      const provider = typeof req.query.provider === 'string'
+        ? req.query.provider as MailProviderKind | 'all'
+        : 'all';
+      const limit = req.query.limit ? Math.max(1, Math.min(100, parseInt(String(req.query.limit), 10) || 30)) : 30;
+      const messages = await mail.listInbox(req.appUser!.id, String(req.params.orgId), { provider, limit });
+      res.json({ messages });
+    } catch (err) {
+      console.error('[app-gateway] mail inbox error:', err);
+      res.status(500).json({ error: 'Failed to load inbox' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PATHFINDER (companion app surface) — "search that thinks before it
+  // answers". Runs a hybrid vector + BM25 search over the org's knowledge,
+  // then asks Claude to produce a short, JSON-structured response containing:
+  //   • thoughts[] — 4-6 brief reasoning steps for the trace UI
+  //   • answer     — the prose answer with [^n] citation markers
+  //
+  // Sources returned with n=1..N matching the markers, tagged 'private' for
+  // the org's own KB (tinted accent in the UI) so users can immediately tell
+  // their own material apart from public web results.
+  // ══════════════════════════════════════════════════════════════════════════
+  publicRouter.post('/org/:orgId/pathfinder/query', appAuth, orgMember, async (req, res) => {
+    const orgId = String(req.params.orgId);
+    const body = (req.body ?? {}) as { question?: unknown };
+    const question = typeof body.question === 'string' ? body.question.trim() : '';
+    if (!question) return res.status(400).json({ error: 'question is required' });
+    if (question.length > 1000) return res.status(400).json({ error: 'question is too long (1000 char max)' });
+
+    const t0 = Date.now();
+    try {
+      // 1. Pull top private sources from the org's knowledge.
+      const hits = await hybridSearch(db, {
+        query: question,
+        topK: 5,
+        includeDocumentChunks: false, // no folderPaths → atoms + chunks only via vector
+      }).catch(() => []);
+
+      const sources = hits.slice(0, 5).map((h, i) => {
+        const meta = h.metadata as Record<string, unknown>;
+        const titleCandidate =
+          (typeof meta.title === 'string' && meta.title) ||
+          (typeof meta.documentName === 'string' && meta.documentName) ||
+          (typeof meta.atom_type === 'string' && `${meta.atom_type} atom`) ||
+          h.content_type;
+        const folderHint = typeof meta.folderPath === 'string' ? meta.folderPath : 'this instance';
+        return {
+          n: i + 1,
+          title: String(titleCandidate),
+          domain: `${folderHint} · private`,
+          type: 'private' as const,
+          snippet: (h.snippet || h.content_text || '').slice(0, 280),
+          score: h.score,
+        };
+      });
+
+      // 2. Build the context block from snippets + numbered references.
+      const context = sources.length > 0
+        ? sources.map(s => `[${s.n}] ${s.title}\n${s.snippet}`).join('\n\n')
+        : '(no private sources matched — answer from general knowledge.)';
+
+      const system = [
+        'You are ANTON Pathfinder — a search assistant that shows its reasoning.',
+        'You will be given a question and a set of numbered private sources from the user\'s instance.',
+        'Respond with ONLY a JSON object (no prose, no markdown fences) of shape:',
+        '  { "thoughts": [string, ...], "answer": string }',
+        'Rules:',
+        '  • thoughts: 4-6 short reasoning steps in plain language, each ≤90 chars.',
+        '  • answer: 2-4 sentences. Use citation markers like [^1], [^2] inline where you draw on the numbered sources.',
+        '  • Only cite sources you actually used. If none apply, omit citation markers.',
+        '  • If the private sources cover the question well, lead with them; else say so plainly.',
+      ].join('\n');
+
+      const user = `Question: ${question}\n\n--- Private sources ---\n${context}`;
+
+      // 3. Call Claude with extended thinking enabled (Haiku for speed).
+      const result = await callChat({
+        model: resolveModel('small'),
+        system,
+        messages: [{ role: 'user', content: user }],
+        maxTokens: 1500,
+        temperature: 0.3,
+        thinkingLevel: 'think',
+      }).catch((err) => {
+        throw new Error(`LLM call failed: ${err instanceof Error ? err.message : 'unknown'}`);
+      });
+
+      // 4. Parse the JSON. Tolerate stray code fences / leading prose.
+      const raw = result.text.trim();
+      const jsonStart = raw.indexOf('{');
+      const jsonEnd   = raw.lastIndexOf('}');
+      let parsed: { thoughts?: unknown; answer?: unknown } = {};
+      try {
+        parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1)) as typeof parsed;
+      } catch { /* fall through to defaults */ }
+
+      const thoughts = Array.isArray(parsed.thoughts)
+        ? parsed.thoughts.filter((t): t is string => typeof t === 'string').slice(0, 6)
+        : [];
+      const answer = typeof parsed.answer === 'string' && parsed.answer
+        ? parsed.answer
+        : raw; // raw fallback if JSON parse failed
+
+      res.json({
+        question,
+        thoughts: thoughts.length > 0 ? thoughts : ['Read the question.', 'Searched your instance.', 'Synthesised an answer.'],
+        answer,
+        sources,
+        org_id: orgId,
+        took_ms: Date.now() - t0,
+        used_thinking: !!result.thinking,
+        input_tokens: result.inputTokens,
+        output_tokens: result.outputTokens,
+      });
+    } catch (err) {
+      console.error('[app-gateway] pathfinder error:', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Pathfinder query failed' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MARKETS (companion app surface) — small read-only adapter that pulls
+  // from the existing markets pillar tables (market_indexes, _holdings,
+  // _data_raw, _predictions, _narratives) and returns the shape the new
+  // MarketsScreen wants: morning briefing hero + tape + Monte-Carlo card.
+  //
+  // Read-only and per-instance (markets pillar isn't org-scoped today).
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // GET /api/app/markets/briefing — single morning brief from the
+  // strongest active narrative, with citation/portfolio/flag counts so
+  // the design's pill row can render without extra calls.
+  publicRouter.get('/markets/briefing', appAuth, async (_req, res) => {
+    try {
+      const narrative = await db.get<{
+        id: string; title: string; description: string;
+        narrative_type: string; strength: number; momentum: string;
+        updated_at: string;
+      }>(
+        `SELECT id, title, description, narrative_type, strength, momentum, updated_at
+         FROM market_narratives
+         WHERE lifecycle IN ('emerging', 'active', 'mature')
+         ORDER BY strength DESC, updated_at DESC
+         LIMIT 1`
+      );
+
+      const portfolioRow = await db.get<{ n: number }>(
+        "SELECT COUNT(DISTINCT symbol) as n FROM market_index_holdings WHERE removed_at IS NULL"
+      );
+      const flagsRow = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM market_predictions WHERE status = 'active' AND confidence >= 0.7 AND deadline > NOW()::text"
+      );
+      const citationsRow = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM market_data_raw WHERE fetched_at >= NOW() - INTERVAL '24 hours' AND data_type = 'news'"
+      );
+
+      if (!narrative) {
+        return res.json({
+          available: false,
+          headline: null,
+          blurb: 'No active narratives. Trigger a market intelligence run on the main ANTON instance to populate this brief.',
+          citations: 0,
+          portfolio_size: Number(portfolioRow?.n ?? 0),
+          flags: 0,
+          updated_at: null,
+        });
+      }
+
+      res.json({
+        available: true,
+        narrative_type: narrative.narrative_type,
+        momentum: narrative.momentum,
+        strength: Number(narrative.strength),
+        headline: narrative.title,
+        blurb: narrative.description,
+        citations: Number(citationsRow?.n ?? 0),
+        portfolio_size: Number(portfolioRow?.n ?? 0),
+        flags: Number(flagsRow?.n ?? 0),
+        updated_at: narrative.updated_at,
+      });
+    } catch (err) {
+      console.error('[app-gateway] markets briefing error:', err);
+      res.status(500).json({ error: 'Failed to load market briefing' });
+    }
+  });
+
+  // GET /api/app/markets/tape — top holdings across active indexes with
+  // their current prices + a small sparkline derived from raw price data.
+  publicRouter.get('/markets/tape', appAuth, async (req, res) => {
+    try {
+      const limit = req.query.limit ? Math.min(20, parseInt(String(req.query.limit), 10) || 8) : 8;
+
+      // Top symbols by aggregate weight across active indexes
+      const rows = await db.all<{
+        symbol: string; name: string | null;
+        current_price: number | null; entry_price: number | null;
+        weight: number;
+      }>(
+        `SELECT h.symbol, MAX(h.name) AS name,
+                MAX(h.current_price) AS current_price,
+                MAX(h.entry_price)   AS entry_price,
+                SUM(h.weight)        AS weight
+         FROM market_index_holdings h
+         JOIN market_indexes i ON i.id = h.index_id AND i.status = 'active'
+         WHERE h.removed_at IS NULL
+         GROUP BY h.symbol
+         ORDER BY weight DESC
+         LIMIT $1`,
+        limit
+      );
+
+      const out = await Promise.all(rows.map(async (r) => {
+        // Pull last ~7 price points for a tiny sparkline
+        const points = await db.all<{ content: string; fetched_at: string }>(
+          `SELECT content, fetched_at FROM market_data_raw
+           WHERE data_type = 'price' AND symbol = $1
+           ORDER BY fetched_at DESC LIMIT 7`,
+          r.symbol
+        );
+        const series: number[] = [];
+        for (const p of points) {
+          try {
+            const parsed = JSON.parse(p.content) as Record<string, unknown>;
+            const px = Number(parsed.close ?? parsed.price ?? parsed.last ?? parsed.c);
+            if (Number.isFinite(px)) series.unshift(px);
+          } catch { /* skip malformed */ }
+        }
+
+        const price = r.current_price ?? series[series.length - 1] ?? null;
+        const ref   = r.entry_price ?? series[0] ?? null;
+        const change_pct = (price && ref && ref !== 0)
+          ? ((price - ref) / ref) * 100
+          : null;
+
+        return {
+          symbol: r.symbol,
+          name: r.name,
+          price,
+          change_pct,
+          spark: series.length >= 2 ? series : null,
+        };
+      }));
+
+      res.json({ tape: out });
+    } catch (err) {
+      console.error('[app-gateway] markets tape error:', err);
+      res.status(500).json({ error: 'Failed to load market tape' });
+    }
+  });
+
+  // GET /api/app/markets/prediction — most recent active prediction,
+  // expressed as a 3-bucket Monte-Carlo-style distribution for the design.
+  publicRouter.get('/markets/prediction', appAuth, async (_req, res) => {
+    try {
+      const p = await db.get<{
+        id: string; title: string; description: string;
+        prediction_type: string; target_symbol: string | null;
+        predicted_direction: string | null; predicted_outcome: string;
+        confidence: number; deadline: string | null; created_at: string;
+      }>(
+        `SELECT id, title, description, prediction_type, target_symbol,
+                predicted_direction, predicted_outcome, confidence, deadline, created_at
+         FROM market_predictions
+         WHERE status = 'active'
+         ORDER BY created_at DESC
+         LIMIT 1`
+      );
+
+      if (!p) {
+        return res.json({ available: false });
+      }
+
+      const conf = Math.max(0, Math.min(1, Number(p.confidence) || 0.5));
+      const dir = (p.predicted_direction || '').toLowerCase();
+      const remainder = Math.max(0, 1 - conf);
+
+      // Split the "not the predicted direction" mass between the two
+      // alternatives, biased slightly toward "flat" (more plausible than the
+      // opposite move). For non-directional predictions, fall back to a
+      // balanced 50/30/20 split.
+      let buckets: Array<{ label: string; pct: number; color: 'accent' | 'gold' | 'red' }>;
+      if (dir === 'up') {
+        buckets = [
+          { label: 'up',   pct: Math.round(conf * 100),                   color: 'accent' },
+          { label: 'flat', pct: Math.round(remainder * 0.7 * 100),        color: 'gold'   },
+          { label: 'down', pct: Math.max(0, 100 - Math.round(conf * 100) - Math.round(remainder * 0.7 * 100)), color: 'red' },
+        ];
+      } else if (dir === 'down') {
+        buckets = [
+          { label: 'down', pct: Math.round(conf * 100),                   color: 'accent' },
+          { label: 'flat', pct: Math.round(remainder * 0.7 * 100),        color: 'gold'   },
+          { label: 'up',   pct: Math.max(0, 100 - Math.round(conf * 100) - Math.round(remainder * 0.7 * 100)), color: 'red' },
+        ];
+      } else if (dir === 'flat') {
+        buckets = [
+          { label: 'flat', pct: Math.round(conf * 100),                   color: 'accent' },
+          { label: 'up',   pct: Math.round(remainder * 0.5 * 100),        color: 'gold'   },
+          { label: 'down', pct: Math.max(0, 100 - Math.round(conf * 100) - Math.round(remainder * 0.5 * 100)), color: 'red' },
+        ];
+      } else {
+        buckets = [
+          { label: p.predicted_outcome.slice(0, 16), pct: Math.round(conf * 100), color: 'accent' },
+          { label: 'partial', pct: Math.round(remainder * 0.6 * 100),              color: 'gold'   },
+          { label: 'miss',    pct: Math.max(0, 100 - Math.round(conf * 100) - Math.round(remainder * 0.6 * 100)), color: 'red' },
+        ];
+      }
+
+      res.json({
+        available: true,
+        id: p.id,
+        title: p.title,
+        target_symbol: p.target_symbol,
+        prediction_type: p.prediction_type,
+        deadline: p.deadline,
+        buckets,
+      });
+    } catch (err) {
+      console.error('[app-gateway] markets prediction error:', err);
+      res.status(500).json({ error: 'Failed to load market prediction' });
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // HORIZON RADAR (companion app surface) — thin adapter over the existing
+  // /api/radar service. Returns items + sources reshaped for the new
+  // HorizonRadarScreen design (companion JSX shape: cat / src / blurb /
+  // rel 0-100 / tone / tag / meta).
+  //
+  // Read-only for the companion app. Source CRUD lives in the main ANTON UI.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  type RadarRow = {
+    id: string; title: string; summary: string | null; ai_summary: string | null;
+    relevance_score: number | null; urgency_score: number | null;
+    status: string; item_type: string | null; category: string | null;
+    impact_areas: string | null;
+    published_at: string | null; fetched_at: string | null; url: string | null;
+    source_name: string | null; source_type: string | null; source_category: string | null;
+  };
+
+  function shapeItem(r: RadarRow) {
+    const rel = Math.round(((r.relevance_score ?? 0)) * 100);
+    let tone: 'red' | 'gold' | 'neutral' | 'teal';
+    let tag: string;
+    if (rel >= 85)      { tone = 'red';     tag = 'HIGH RELEVANCE'; }
+    else if (rel >= 65) { tone = 'gold';    tag = 'WATCHLIST'; }
+    else if (rel >= 50) { tone = 'gold';    tag = 'ACTION SUGGESTED'; }
+    else                { tone = 'neutral'; tag = 'FYI'; }
+
+    // Impact areas are stored JSON-stringified in radar_items.impact_areas
+    let areas: string[] = [];
+    if (r.impact_areas) {
+      try {
+        const v = JSON.parse(r.impact_areas);
+        if (Array.isArray(v)) areas = v.filter((a) => typeof a === 'string').slice(0, 3);
+      } catch { /* malformed — ignore */ }
+    }
+
+    const cat = (r.category || r.source_category || 'Other')
+      .replace(/^./, (c) => c.toUpperCase());
+    const srcType = (r.source_type || 'official').toLowerCase();
+    const srcLabel = `${(r.source_name || 'Unknown')} · ${
+      srcType === 'official' ? 'Official' :
+      srcType === 'paper'    ? 'Paper'    :
+      srcType === 'rss'      ? 'News'     :
+      srcType
+    }`;
+
+    return {
+      id: r.id,
+      cat,
+      src: srcLabel,
+      source_type: srcType,
+      title: r.title,
+      blurb: r.ai_summary || r.summary || '',
+      rel,
+      tone,
+      tag,
+      areas,
+      url: r.url,
+      published_at: r.published_at,
+      fetched_at: r.fetched_at,
+      status: r.status,
+    };
+  }
+
+  // GET /api/app/radar/summary — 3-up dashboard numbers + scanned-today count
+  publicRouter.get('/radar/summary', appAuth, async (_req, res) => {
+    try {
+      const summary = await radar.getRadarSummary();
+      // Items fetched in the last 24h — proxy for "scanned today"
+      const scannedRow = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM radar_items WHERE fetched_at >= NOW() - INTERVAL '24 hours'"
+      );
+      const sourcesRow = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM radar_sources WHERE is_active = 1"
+      );
+      const actionRow = await db.get<{ n: number }>(
+        "SELECT COUNT(*) as n FROM radar_items WHERE relevance_score >= 0.5 AND relevance_score < 0.85 AND status = 'new'"
+      );
+      res.json({
+        new_today: Number(scannedRow?.n ?? 0),
+        high_relevance: summary.highRelevance,
+        action_suggested: Number(actionRow?.n ?? 0),
+        sources_active: Number(sourcesRow?.n ?? 0),
+        scanned_today: Number(scannedRow?.n ?? 0),
+        category_counts: summary.categoryCounts,
+      });
+    } catch (err) {
+      console.error('[app-gateway] radar summary error:', err);
+      res.status(500).json({ error: 'Failed to load radar summary' });
+    }
+  });
+
+  // GET /api/app/radar/items?category=...&limit=...
+  publicRouter.get('/radar/items', appAuth, async (req, res) => {
+    try {
+      const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+      const limit = req.query.limit ? Math.min(100, parseInt(String(req.query.limit), 10) || 30) : 30;
+      const rows = await radar.getItems({
+        category,
+        limit,
+        offset: req.query.offset ? parseInt(String(req.query.offset), 10) || 0 : 0,
+      }) as RadarRow[];
+      res.json({ items: rows.map(shapeItem) });
+    } catch (err) {
+      console.error('[app-gateway] radar items error:', err);
+      res.status(500).json({ error: 'Failed to load radar items' });
+    }
+  });
+
+  // GET /api/app/radar/sources — active source pills for the footer strip
+  publicRouter.get('/radar/sources', appAuth, async (_req, res) => {
+    try {
+      const rows = await radar.getSources(true) as Array<{
+        id: string; display_name: string; source_type: string; category: string;
+      }>;
+      res.json({
+        sources: rows.map((s) => ({
+          id: s.id,
+          label: s.display_name,
+          type: s.source_type,
+          category: s.category,
+        })),
+      });
+    } catch (err) {
+      console.error('[app-gateway] radar sources error:', err);
+      res.status(500).json({ error: 'Failed to load radar sources' });
+    }
+  });
+
+  // POST /api/app/radar/scan — trigger a scan; respects RADAR_AUTOMATION_DISABLED
+  publicRouter.post('/radar/scan', appAuth, async (req, res) => {
+    if (!radarFetcher) {
+      return res.status(503).json({ error: 'Radar fetcher not initialized on this instance.' });
+    }
+    if (String(process.env.RADAR_AUTOMATION_DISABLED || '').toLowerCase() === 'true') {
+      return res.status(503).json({ error: 'Radar automation is paused on this instance.' });
+    }
+    const category = (req.body as { category?: string } | undefined)?.category || undefined;
+    res.json({ started: true, category: category ?? 'all' });
+    radarFetcher.scanAllSources(category).catch((err: unknown) => {
+      console.error('[app-gateway] radar scan error:', err);
+    });
   });
 
   // ── Maintenance ────────────────────────────────────────────────────────

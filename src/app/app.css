@@ -1,86 +1,156 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   ANTON Companion App — 3-theme design system
-   Inherits main ANTON color system: Dark (default), Light, Corporate
+   ANTON Companion App — Evolution design system
+   Light theme only. Warm linen canvas + deep teal accent.
+   8-colour personal accent palette (data-accent="..." on <html>).
+   Status colours (red/gold/green/blue) are LOCKED — never change.
    ═══════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* Default (Dark) theme */
-  --color-adv-dark: oklch(0.15 0.02 250);
-  --color-adv-dark-2: oklch(0.18 0.02 250);
-  --color-adv-card: oklch(0.22 0.03 250);
-  --color-adv-teal: oklch(0.78 0.15 170);
-  --color-adv-teal-dark: oklch(0.65 0.13 170);
-  --color-adv-teal-dim: oklch(0.35 0.08 170);
-  --color-adv-off-white: oklch(0.9 0 0);
-  --color-adv-gray: oklch(0.75 0 0);
-  --color-adv-gold: oklch(0.75 0.14 70);
-  --color-adv-red: oklch(0.6 0.2 25);
-  --color-adv-green: oklch(0.65 0.17 145);
-  --color-adv-blue: oklch(0.65 0.13 240);
-  --color-border: oklch(0.3 0.02 250);
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* ── Canvas (Evolution direction) ─────────────────────────── */
+  --color-bg:           #F5F3EF;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFAF8;
+  --color-surface-muted:#EFECE5;
+
+  /* ── Text ────────────────────────────────────────────────── */
+  --color-text:         #1A1B2E;
+  --color-text-body:    #3B3D50;
+  --color-text-muted:   #636577;
+  --color-text-faint:   #878999;
+
+  /* ── Lines ───────────────────────────────────────────────── */
+  --color-border:       #DDD9D2;
+  --color-border-soft:  #EAE7E0;
+
+  /* ── Brand accent (default = Emerald) ─────────────────────
+     Overridden at runtime by html[data-accent="..."] below.   */
+  --color-accent:       #0D7D6C;
+  --color-accent-dark:  #06655A;
+  --color-accent-dim:   #D5F0EB;
+  --color-accent-soft:  #E5F5F2;
+  --color-accent-fg:    #FFFFFF;
+
+  /* ── Status (LOCKED — never change with accent) ───────────── */
+  --color-gold:         #C8842B;
+  --color-gold-dim:     #F7ECD9;
+  --color-red:          #C7361F;
+  --color-red-dim:      #F9E2DD;
+  --color-green:        #1F8A5C;
+  --color-green-dim:    #DCEEE4;
+  --color-blue:         #3070C7;
+  --color-blue-dim:     #DEE8F6;
+
+  /* ── adv-* legacy aliases (remap to Evolution palette so
+     existing screens inherit the light look automatically.
+     Will be progressively retired as screens are rewritten.)  */
+  --color-adv-dark:        var(--color-bg);
+  --color-adv-dark-2:      var(--color-surface-alt);
+  --color-adv-card:        var(--color-surface);
+  --color-adv-teal:        var(--color-accent);
+  --color-adv-teal-dark:   var(--color-accent-dark);
+  --color-adv-teal-dim:    var(--color-accent-dim);
+  --color-adv-off-white:   var(--color-text);
+  --color-adv-gray:        var(--color-text-muted);
+  --color-adv-gold:        var(--color-gold);
+  --color-adv-red:         var(--color-red);
+  --color-adv-green:       var(--color-green);
+  --color-adv-blue:        var(--color-blue);
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ── Radii (Evolution) ───────────────────────────────────── */
+  --radius-r1: 8px;
+  --radius-r2: 12px;
+  --radius-r3: 16px;
+  --radius-r4: 22px;
 }
 
-/* ─── Light theme ─────────────────────────────────────────────── */
-html.light {
-  --color-adv-dark: oklch(0.965 0.005 80);
-  --color-adv-dark-2: oklch(0.985 0.003 80);
-  --color-adv-card: oklch(1.0 0 0);
-  --color-adv-teal: oklch(0.47 0.14 175);
-  --color-adv-teal-dark: oklch(0.40 0.12 175);
-  --color-adv-teal-dim: oklch(0.92 0.04 175);
-  --color-adv-off-white: oklch(0.28 0.015 260);
-  --color-adv-gray: oklch(0.45 0.01 260);
-  --color-adv-gold: oklch(0.62 0.16 65);
-  --color-adv-red: oklch(0.52 0.22 25);
-  --color-adv-green: oklch(0.52 0.15 150);
-  --color-adv-blue: oklch(0.52 0.13 245);
-  --color-border: oklch(0.88 0.008 80);
-}
+/* ═══════════════════════════════════════════════════════════════
+   Personal accent palette — 8 swatches.
+   Set by services/personalization.ts via <html data-accent="...">.
+   Status colours are NOT touched here.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ─── Corporate theme ─────────────────────────────────────────── */
-html.corporate {
-  --color-adv-dark: oklch(0.965 0.008 250);
-  --color-adv-dark-2: oklch(0.99 0.003 250);
-  --color-adv-card: oklch(1.0 0 0);
-  --color-adv-teal: oklch(0.50 0.16 250);
-  --color-adv-teal-dark: oklch(0.43 0.14 250);
-  --color-adv-teal-dim: oklch(0.93 0.03 250);
-  --color-adv-off-white: oklch(0.20 0.01 260);
-  --color-adv-gray: oklch(0.44 0.015 255);
-  --color-adv-gold: oklch(0.62 0.16 65);
-  --color-adv-red: oklch(0.52 0.22 25);
-  --color-adv-green: oklch(0.52 0.15 150);
-  --color-adv-blue: oklch(0.52 0.13 245);
-  --color-border: oklch(0.87 0.015 250);
+html[data-accent="emerald"] {
+  --color-accent:       #0D7D6C;
+  --color-accent-dark:  #06655A;
+  --color-accent-dim:   #D5F0EB;
+  --color-accent-soft:  #E5F5F2;
 }
-
-html.corporate h1, html.corporate h2, html.corporate h3 {
-  font-family: 'Montserrat', system-ui, sans-serif;
-  color: oklch(0.25 0.08 265);
+html[data-accent="ocean"] {
+  --color-accent:       #1F5FAE;
+  --color-accent-dark:  #174880;
+  --color-accent-dim:   #D5E2F2;
+  --color-accent-soft:  #E8EFF9;
+}
+html[data-accent="sunrise"] {
+  --color-accent:       #C97220;
+  --color-accent-dark:  #A15A15;
+  --color-accent-dim:   #F5DDC0;
+  --color-accent-soft:  #FBEEDB;
+}
+html[data-accent="ember"] {
+  --color-accent:       #B02E3B;
+  --color-accent-dark:  #8A1F2A;
+  --color-accent-dim:   #F0CDD1;
+  --color-accent-soft:  #F8E2E4;
+}
+html[data-accent="plum"] {
+  --color-accent:       #6A3E8F;
+  --color-accent-dark:  #522D71;
+  --color-accent-dim:   #E0D0ED;
+  --color-accent-soft:  #EEE3F5;
+}
+html[data-accent="slate"] {
+  --color-accent:       #2D3142;
+  --color-accent-dark:  #1A1C2A;
+  --color-accent-dim:   #D3D6DC;
+  --color-accent-soft:  #E6E8EC;
+}
+html[data-accent="forest"] {
+  --color-accent:       #3E6B3A;
+  --color-accent-dark:  #2C4F2A;
+  --color-accent-dim:   #D4E2D1;
+  --color-accent-soft:  #E5EEE3;
+}
+html[data-accent="gold"] {
+  --color-accent:       #A07C26;
+  --color-accent-dark:  #7E5F15;
+  --color-accent-dim:   #EADFBE;
+  --color-accent-soft:  #F3EDD6;
 }
 
 /* ─── Base styles ─────────────────────────────────────────────── */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { height: 100%; -webkit-text-size-adjust: 100%; }
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+  background: var(--color-bg);
+}
 
 body {
-  background: var(--color-adv-dark);
-  color: var(--color-adv-off-white);
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: var(--font-sans);
+  font-size: 14px;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: contain;
 }
 
+/* Standard mode — bigger base type for daily-life users */
+html[data-mode="standard"] body { font-size: 16px; }
+
 #app { min-height: 100dvh; display: flex; flex-direction: column; }
 
-.safe-top { padding-top: env(safe-area-inset-top, 0); }
+.safe-top    { padding-top: env(safe-area-inset-top, 0); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
 
 ::-webkit-scrollbar { width: 3px; }
@@ -92,11 +162,11 @@ button { -webkit-user-select: none; user-select: none; }
 /* Screen transition — fade in */
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 #app > * { animation: fadeSlideIn 0.2s ease-out; }
 
-/* Bottom-sheet slide-up — used by InstanceSwitcher, BottomSheet (§9.3) */
+/* Bottom-sheet slide-up (used by InstanceSwitcher, BottomSheet, §9.3) */
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0.5; }
   to   { transform: translateY(0);    opacity: 1;   }
@@ -111,21 +181,23 @@ button { -webkit-user-select: none; user-select: none; }
 }
 .animate-fabPress { animation: fabPress 0.18s ease-out; }
 
-/* Org branding — override accent when --org-brand-color is set */
-:root { --org-brand-color: var(--color-adv-teal); }
-html[style*="--org-brand-color"] .chat-user { background-color: var(--org-brand-color) !important; }
-
-/* Light/Corporate chat bubbles — user messages need different text color */
-html.light .chat-user, html.corporate .chat-user {
-  color: oklch(0.97 0 0) !important;
+/* Live/pulse dot ring — 2s rhythm, used by status indicators */
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+  40%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 8%, transparent);  }
 }
+.animate-pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+/* Org branding — overrides accent when --org-brand-color is set */
+:root { --org-brand-color: var(--color-accent); }
+html[style*="--org-brand-color"] .chat-user { background-color: var(--org-brand-color) !important; }
 
 /* Markdown prose styling for assistant bubbles */
 .prose-app p { margin: 0.4em 0; }
 .prose-app p:first-child { margin-top: 0; }
-.prose-app p:last-child { margin-bottom: 0; }
+.prose-app p:last-child  { margin-bottom: 0; }
 .prose-app h1, .prose-app h2, .prose-app h3, .prose-app h4 {
-  font-weight: 600; margin: 0.8em 0 0.3em; color: var(--color-adv-off-white);
+  font-weight: 600; margin: 0.8em 0 0.3em; color: var(--color-text);
 }
 .prose-app h1 { font-size: 1.1em; }
 .prose-app h2 { font-size: 1.05em; }
@@ -133,21 +205,21 @@ html.light .chat-user, html.corporate .chat-user {
 .prose-app ul, .prose-app ol { margin: 0.4em 0; padding-left: 1.4em; }
 .prose-app li { margin: 0.15em 0; }
 .prose-app code {
-  background: var(--color-adv-dark); padding: 0.15em 0.4em; border-radius: 4px;
-  font-size: 0.88em; font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: var(--color-surface-alt); padding: 0.15em 0.4em; border-radius: 4px;
+  font-size: 0.88em; font-family: var(--font-mono);
 }
 .prose-app pre {
-  background: var(--color-adv-dark); padding: 0.8em; border-radius: 8px;
+  background: var(--color-surface-alt); padding: 0.8em; border-radius: 8px;
   overflow-x: auto; margin: 0.5em 0; font-size: 0.85em;
 }
 .prose-app pre code { background: none; padding: 0; }
-.prose-app strong { font-weight: 600; color: var(--color-adv-off-white); }
-.prose-app a { color: var(--color-adv-teal); text-decoration: underline; }
+.prose-app strong { font-weight: 600; color: var(--color-text); }
+.prose-app a { color: var(--color-accent); text-decoration: underline; }
 .prose-app blockquote {
-  border-left: 3px solid var(--color-adv-teal); padding-left: 0.8em;
-  margin: 0.5em 0; color: var(--color-adv-gray);
+  border-left: 3px solid var(--color-accent); padding-left: 0.8em;
+  margin: 0.5em 0; color: var(--color-text-muted);
 }
 .prose-app table { border-collapse: collapse; width: 100%; margin: 0.5em 0; font-size: 0.9em; }
 .prose-app th, .prose-app td { border: 1px solid var(--color-border); padding: 0.3em 0.6em; text-align: left; }
-.prose-app th { font-weight: 600; background: var(--color-adv-dark); }
+.prose-app th { font-weight: 600; background: var(--color-surface-alt); }
 .prose-app hr { border: none; border-top: 1px solid var(--color-border); margin: 0.8em 0; }
