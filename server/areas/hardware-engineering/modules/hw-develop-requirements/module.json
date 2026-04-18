@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-develop-requirements",
+  "label": "Develop — Requirements & Constraints",
+  "shortLabel": "Requirements",
+  "icon": "ListChecks",
+  "description": "First phase of the 6-phase Develop workflow. Captures user need, intended use, deployment context, environmental envelope, regulatory tier, safety-criticality, and BoM cost target. Produces the requirements record that drives architecture, schematic, firmware, and quality-pipeline decisions downstream.",
+  "color": "adv-green",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Hardware engineering requirement patterns, environmental classes, deployment archetypes" }
+    }
+  }
+}

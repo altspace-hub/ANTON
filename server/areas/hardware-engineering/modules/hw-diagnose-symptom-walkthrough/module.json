@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-diagnose-symptom-walkthrough",
+  "label": "Diagnose — Symptom Walkthrough",
+  "shortLabel": "Diagnose",
+  "icon": "Stethoscope",
+  "description": "Conversational symptom-driven diagnosis. Walks the user through observation, measurement, and isolation steps using the diagnostic case layer of the active HKP. Produces a Reasoning Trail, a candidate root cause, and a remediation plan; offers to contribute the case back to the community on resolution.",
+  "color": "adv-blue",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "action-plan"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "ESP32 community knowledge, Espressif advisories, diagnostic case patterns" }
+    }
+  }
+}

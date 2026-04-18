@@ -1,23 +1,41 @@
-# Hardware Engineering — personas (Phase 3)
+# Hardware Engineering — personas
 
-Per spec §4.1, this directory will contain 9 path-tagged personas:
+Hardware-engineering personas are registered in the **global persona
+registry** at `server/personas/`, not in this directory. The
+personas-manager loads every directory under `server/personas/` that
+contains a `persona.json` + `persona-prompt.md` pair, and uses each
+persona's `applicableAreas` array to decide whether it shows up in
+the persona picker for a given area.
 
-- `embedded-systems-engineer.md` — default: develop, maintain
-- `electronics-engineer.md` — default: develop, diagnose
-- `industrial-designer.md` — default: develop
-- `reliability-engineer.md` — default: diagnose, maintain, develop
-- `safety-engineer.md` — default: develop (safety-critical)
-- `clinical-safety-officer.md` — default: develop + maintain (medical-adjacent)
-- `field-technician.md` — default: diagnose, maintain
-- `humanitarian-tech-operator.md` — default: all paths (humanitarian context)
-- `quality-engineer.md` — default: maintain, develop
+## The 9 Phase-3 hardware personas (already registered)
 
-Each persona markdown file has YAML frontmatter declaring:
-- `path_defaults` — which paths the persona is auto-injected into
-- `family_applicability` — which hardware families (default: all)
-- `activation_triggers` — symptom patterns or regulatory contexts that
-  trigger this persona
+| Persona ID | Default paths |
+|---|---|
+| `embedded-systems-engineer` | Develop, Maintain |
+| `electronics-engineer` | Develop, Diagnose |
+| `industrial-designer` | Develop |
+| `reliability-engineer` | Diagnose, Maintain, Develop |
+| `safety-engineer` | Develop (safety-critical) |
+| `clinical-safety-officer` | Develop + Maintain (medical-adjacent) |
+| `field-technician` | Diagnose, Maintain |
+| `humanitarian-tech-operator` | All paths (humanitarian context) |
+| `quality-engineer` | Maintain, Develop |
 
-These personas use the same frontmatter pattern as existing area
-personas (`server/areas/cyber/personas/`, `server/areas/coding/personas/`,
-etc.). Keep them consistent with the established pattern.
+To add another hardware persona:
+
+1. Create `server/personas/{persona-id}/persona.json` with
+   `applicableAreas: ["hardware-engineering", ...]`.
+2. Create `server/personas/{persona-id}/persona-prompt.md` with the
+   Layer 4 perspective text.
+3. Restart the server (the persona cache rebuilds on first read).
+
+## Cross-area persona injection
+
+Per `area-context.md`, hardware sessions also pull experts from
+neighbouring areas (cybersecurity, software engineering, data &
+analytics, FCP/legal, healthcare). This works automatically as long
+as the relevant persona's `applicableAreas` includes
+`hardware-engineering`. Phase 3 widened the applicable-areas of the
+key cyber, coding, data, legal, and healthcare personas to include
+the hardware area; future phases can refine this with path/family
+defaults.

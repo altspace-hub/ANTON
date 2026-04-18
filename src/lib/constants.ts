@@ -13,6 +13,7 @@ import { BLOCKCHAIN_MODULES } from './area-patches/blockchain-patch';
 import { PAYMENTS_DORA_MODULES } from './area-patches/payments-dora-patch';
 import { INSURANCE_MODULES } from './area-patches/insurance-patch';
 import { TALENT_MODULES } from './area-patches/talent-patch';
+import { HARDWARE_MODULES } from './area-patches/hardware-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -3372,6 +3373,26 @@ export const AREAS = [
     color: 'adv-teal',
     moduleIds: [],
   },
+  // ── Tier 5 of Coding: Hardware Engineering (ESP32 launch) ───────────────
+  {
+    id: 'hardware-engineering',
+    label: 'Hardware Engineering',
+    shortLabel: 'Hardware',
+    icon: 'Cpu',
+    color: 'adv-teal',
+    moduleIds: [
+      'hw-classifier',
+      'hw-diagnose-symptom-walkthrough',
+      'hw-diagnose-photo-id',
+      'hw-diagnose-runtime-trace',
+      'hw-maintain-cve-applicability',
+      'hw-maintain-patch-planner',
+      'hw-develop-requirements',
+      'hw-develop-architecture',
+      'hw-develop-pin-mapper',
+      'hw-humanitarian-deployment-planner',
+    ],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
@@ -3659,6 +3680,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...PAYMENTS_DORA_MODULES,
     ...INSURANCE_MODULES,
     ...TALENT_MODULES,
+    ...HARDWARE_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

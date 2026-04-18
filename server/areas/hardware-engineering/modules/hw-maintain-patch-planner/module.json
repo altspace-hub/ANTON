@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-maintain-patch-planner",
+  "label": "Maintain — Patch Plan & Rollback",
+  "shortLabel": "Patch Plan",
+  "icon": "GitMerge",
+  "description": "Produces a patch plan with explicit rollback for a single device or a fleet. Covers pre-patch verification, OTA / USB reflash sequencing, per-stage acceptance test, post-patch verification, and the rollback chain when the patch fails. Required for any firmware change in a Maintain context.",
+  "color": "adv-teal",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["action-plan"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "OTA partition layout, signed updates, fleet rollout patterns" }
+    }
+  }
+}

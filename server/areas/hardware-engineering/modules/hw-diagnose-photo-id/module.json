@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-diagnose-photo-id",
+  "label": "Diagnose — Photo-Based Module Identification",
+  "shortLabel": "Photo ID",
+  "icon": "Camera",
+  "description": "Identifies the actual hardware module from one or more photos, including counterfeit detection. Compares visible markings, package, antenna style, and shielding can finish against the known-good reference set in the HKP. Produces a confidence-rated identification + a counterfeit risk score.",
+  "color": "adv-gold",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "Module markings, FCC IDs, vendor logos, counterfeit indicator patterns" }
+    }
+  }
+}
