@@ -53,7 +53,15 @@ import {
   type InternetPosture,
   type PowerPosture,
 } from '../services/humanitarian-service.js';
-import { bundleHumanitarianDeploymentKit } from '../services/anton-bundler.js';
+import { bundleHumanitarianDeploymentKit, bundleHardwareTemplate } from '../services/anton-bundler.js';
+import {
+  createTemplateService,
+} from '../services/template-service.js';
+import {
+  createReviewQueueService,
+  type SubmissionKind,
+} from '../services/review-queue-service.js';
+import { createExtendDeviceService } from '../services/extend-device-service.js';
 import { safeError } from '../lib/error-response.js';
 
 // In-memory multer for photo-id uploads (max 4 photos × 8MB).
@@ -333,6 +341,44 @@ const signOffCapacityArtefactSchema = z.object({
   attestation: z.string().min(30),
 });
 
+const SUBMISSION_KINDS: [SubmissionKind, ...SubmissionKind[]] = ['hkp', 'diagnostic-case', 'template', 'patch-bundle'];
+
+const captureTemplateSchema = z.object({
+  template_id: z.string().regex(/^[a-z0-9-]{4,80}$/, 'lowercase / digits / hyphens only, 4-80 chars'),
+  title: z.string().min(3).max(200),
+  short_description: z.string().min(10).max(500),
+  long_description: z.string().nullable().optional(),
+  tags: z.array(z.string().min(1).max(40)).max(10).optional(),
+});
+
+const instantiateTemplateSchema = z.object({
+  title: z.string().min(3).max(300),
+  region: z.string().nullable().optional(),
+  working_language: z.string().max(10).optional(),
+  tier_override: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+});
+
+const submitReviewSchema = z.object({
+  kind: z.enum(SUBMISSION_KINDS),
+  source_id: z.string().min(1).max(120),
+  source_family_id: z.string().nullable().optional(),
+  summary: z.string().min(10).max(500),
+  notes: z.string().max(4000).nullable().optional(),
+});
+
+const reviewDecisionSchema = z.object({
+  notes: z.string().max(4000).optional(),
+});
+
+const rejectDecisionSchema = z.object({
+  notes: z.string().min(10).max(4000),
+});
+
+const extendDeviceSchema = z.object({
+  desired_change: z.string().min(10).max(4000),
+  model: z.enum(['claude-opus-4-7','claude-sonnet-4-6','claude-haiku-4-5-20251001']).optional(),
+});
+
 const cveApplicabilitySchema = z.object({
   lookback_days: z.number().int().min(1).max(3650).optional(),
   min_cvss: z.number().min(0).max(10).optional(),
@@ -380,6 +426,9 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const cveApplicability = createCveApplicabilityService(db);
   const regulatory = createRegulatoryPackService(db);
   const humanitarian = createHumanitarianService(db);
+  const templates = createTemplateService(db);
+  const reviewQueue = createReviewQueueService(db);
+  const extend = createExtendDeviceService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -1339,6 +1388,209 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="humanitarian-deployment-kit-${req.params.id.slice(0, 8)}.zip"`);
       res.send(buf);
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Templates ─────────────────────────────────────────────────────────────
+
+  router.get('/hardware/templates', async (req, res) => {
+    try {
+      const filters: Parameters<typeof templates.listTemplates>[0] = {};
+      if (req.query.family_id) filters.family_id = String(req.query.family_id);
+      if (req.query.path) filters.path = String(req.query.path) as HardwarePath;
+      if (req.query.tier) filters.tier = Number(req.query.tier) as HardwareTier;
+      if (req.query.authoritative_only === 'true') filters.authoritative_only = true;
+      if (req.query.search) filters.search = String(req.query.search);
+      const list = await templates.listTemplates(filters);
+      res.json({ success: true, templates: list });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/templates/:id', async (req, res) => {
+    try {
+      const tpl = await templates.getTemplate(req.params.id);
+      if (!tpl) { res.status(404).json({ error: 'Template not found' }); return; }
+      res.json({ success: true, template: tpl });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/capture-template', async (req, res) => {
+    try {
+      const parsed = captureTemplateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const tpl = await templates.captureFromProject({
+        project_id: req.params.id,
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+      });
+      res.status(201).json({ success: true, template: tpl });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/templates/:id/instantiate', async (req, res) => {
+    try {
+      const parsed = instantiateTemplateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const result = await templates.instantiate({
+        template_id: req.params.id,
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+      });
+      res.status(201).json({ success: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/templates/:id', async (req, res) => {
+    try {
+      const ok = await templates.deleteTemplate(req.params.id, getOwnerId(req));
+      if (!ok) { res.status(404).json({ error: 'Template not found' }); return; }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/templates/:id/bundle', async (req, res) => {
+    try {
+      const buf = await bundleHardwareTemplate(db, req.params.id);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="hardware-template-${req.params.id}.zip"`);
+      res.send(buf);
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Review queue (community submissions) ──────────────────────────────────
+
+  router.get('/hardware/review-queue', async (req, res) => {
+    try {
+      const filters: { kind?: SubmissionKind; family_id?: string } = {};
+      if (req.query.kind) filters.kind = String(req.query.kind) as SubmissionKind;
+      if (req.query.family_id) filters.family_id = String(req.query.family_id);
+      const submissions = await reviewQueue.listPending(filters);
+      res.json({ success: true, submissions });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/review-queue/mine', async (req, res) => {
+    try {
+      const submissions = await reviewQueue.listForSubmitter(getOwnerId(req));
+      res.json({ success: true, submissions });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/submit', async (req, res) => {
+    try {
+      const parsed = submitReviewSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const submission = await reviewQueue.submit({
+        kind: parsed.data.kind,
+        source_id: parsed.data.source_id,
+        source_family_id: parsed.data.source_family_id,
+        submitted_by: getOwnerId(req),
+        summary: parsed.data.summary,
+        notes: parsed.data.notes,
+      });
+      res.status(201).json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/:id/claim', async (req, res) => {
+    try {
+      const submission = await reviewQueue.claim(req.params.id, getOwnerId(req));
+      if (!submission) { res.status(404).json({ error: 'Submission not pending or not found' }); return; }
+      res.json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/:id/security-review', async (req, res) => {
+    try {
+      const submission = await reviewQueue.recordSecurityReview(req.params.id, getOwnerId(req));
+      res.json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/:id/approve', async (req, res) => {
+    try {
+      const parsed = reviewDecisionSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const submission = await reviewQueue.approve(req.params.id, getOwnerId(req), parsed.data.notes);
+      res.json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/:id/reject', async (req, res) => {
+    try {
+      const parsed = rejectDecisionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const submission = await reviewQueue.reject(req.params.id, getOwnerId(req), parsed.data.notes);
+      res.json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/review-queue/:id/withdraw', async (req, res) => {
+    try {
+      const submission = await reviewQueue.withdraw(req.params.id, getOwnerId(req));
+      res.json({ success: true, submission });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Extend existing device ────────────────────────────────────────────────
+
+  router.post('/hardware/projects/:id/extend', async (req, res) => {
+    try {
+      const parsed = extendDeviceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const proposal = await extend.generateProposal({
+        project_id: req.params.id,
+        ...parsed.data,
+      });
+      res.json({ success: true, proposal });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
     }

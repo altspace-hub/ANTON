@@ -1962,3 +1962,106 @@ ANTON does not certify any document in this kit. The user is the responsible eco
   return zip.toBuffer();
 }
 
+// ── Hardware Template Bundle ─────────────────────────────────────────────────
+
+/**
+ * Bundle a hardware template as a single .anton zip for distribution.
+ *
+ * Layout:
+ *   /manifest.json          — bundle metadata
+ *   /template.json          — the template row + project_blueprint + phase_seed_data
+ *   /system-prompt.md       — the starter system prompt (if any)
+ *   /hkp/{part_number}.json — optional HKP snapshot (only if the template has a hkp_id)
+ *   /README.md              — human-readable summary
+ */
+export async function bundleHardwareTemplate(
+  db: DatabaseAdapter,
+  templateId: string,
+): Promise<Buffer> {
+  const tpl = await db.get(
+    `SELECT * FROM hw_templates WHERE id = ?`,
+    templateId,
+  ) as Record<string, unknown> | undefined;
+  if (!tpl) throw new Error('Template not found');
+
+  let hkpRow: Record<string, unknown> | null = null;
+  let hkpClaims: Array<Record<string, unknown>> = [];
+  let hkpComponents: Array<Record<string, unknown>> = [];
+  if (tpl.hkp_id) {
+    hkpRow = (await db.get(`SELECT * FROM hardware_knowledge_packs WHERE id = ?`, tpl.hkp_id as string)) as Record<string, unknown> | null;
+    hkpClaims = await db.all(
+      `SELECT claim_path, claim_value, classification, evidence_ref, notes
+       FROM hkp_claims WHERE hkp_id = ? ORDER BY claim_path`,
+      tpl.hkp_id as string,
+    ) as Array<Record<string, unknown>>;
+    hkpComponents = await db.all(
+      `SELECT component_type, name, metadata FROM hkp_components WHERE hkp_id = ? ORDER BY component_type, name`,
+      tpl.hkp_id as string,
+    ) as Array<Record<string, unknown>>;
+  }
+
+  const zip = new AdmZip();
+  const generatedAt = new Date().toISOString();
+
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify({
+    bundleType: 'hardware-template',
+    bundleSchemaVersion: '1.0',
+    generatedAt,
+    template: {
+      id: tpl.id,
+      title: tpl.title,
+      family_id: tpl.family_id,
+      path: tpl.path,
+      recommended_tier: tpl.recommended_tier,
+      authoritative: tpl.authoritative,
+      installs_count: tpl.installs_count,
+    },
+    has_hkp: !!hkpRow,
+  }, null, 2), 'utf-8'));
+
+  zip.addFile('template.json', Buffer.from(JSON.stringify(tpl, null, 2), 'utf-8'));
+
+  if (typeof tpl.starter_system_prompt === 'string' && tpl.starter_system_prompt.trim().length > 0) {
+    zip.addFile('system-prompt.md', Buffer.from(tpl.starter_system_prompt, 'utf-8'));
+  }
+
+  if (hkpRow) {
+    zip.addFile(
+      `hkp/${hkpRow.part_number}.json`,
+      Buffer.from(JSON.stringify({ hkp: hkpRow, claims: hkpClaims, components: hkpComponents }, null, 2), 'utf-8'),
+    );
+  }
+
+  const tags = (() => { try { return JSON.parse(String(tpl.tags ?? '[]')); } catch { return []; } })() as string[];
+  const readme = `# Hardware Template — ${tpl.title}
+
+**Template ID:** \`${tpl.id}\`
+**Family:** ${tpl.family_id}
+**Path:** ${tpl.path}
+**Recommended tier:** ${tpl.recommended_tier}
+**Authoritative:** ${tpl.authoritative ? '✓' : 'community-contributed (review before use)'}
+**Installs:** ${tpl.installs_count ?? 0}
+**Tags:** ${tags.join(', ') || '(none)'}
+
+${tpl.short_description ?? ''}
+
+${tpl.long_description ?? ''}
+
+## How to use this template
+
+1. Install via ANTON: \`POST /api/hardware/templates/${tpl.id}/instantiate\` with your project title.
+2. Review the generated project — the Phase 0 classification is pre-filled.
+3. Verify the HKP attachment matches your hardware (especially board variant).
+4. Walk through the Develop phases — most have starter context already populated.
+
+## Provenance
+
+Signed by: ${tpl.signed_by}
+Schema version: ${tpl.schema_version}
+${tpl.source_project_id ? `Captured from project: ${tpl.source_project_id}` : ''}
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  return zip.toBuffer();
+}
+

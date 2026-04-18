@@ -14,6 +14,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { createAapRolloutBridge } from './aap-rollout-bridge.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -538,6 +539,39 @@ export function createMaintainService(db: DatabaseAdapter) {
       );
       if (r) rollouts.push(rowToRollout(r));
     }
+
+    // If AAP store-and-forward is the delivery channel, dispatch a single
+    // checkpoint to the project owner's paired phone (one approval covers the
+    // batch of devices in this stage). The checkpoint includes the rollback
+    // artefact reference so the operator can confirm safe rollout.
+    if (opts.delivery_channel === 'aap-store-and-forward' && rollouts.length > 0) {
+      const proj = await db.get(
+        `SELECT owner_id, tier, safety_critical FROM hardware_projects WHERE id = ?`,
+        plan.project_id,
+      ) as { owner_id: string; tier: number; safety_critical: boolean } | undefined;
+      if (proj) {
+        const bridge = createAapRolloutBridge(db);
+        const severity = (proj.tier === 3 || proj.safety_critical) ? 'high' : 'normal';
+        try {
+          await bridge.dispatchPatch({
+            project_id: plan.project_id,
+            stage_id: stageId,
+            plan_title: plan.title,
+            stage_title: stage.title,
+            rollback_artefact_ref: plan.rollback_artefact_ref,
+            owner_id: proj.owner_id,
+            device_count: rollouts.length,
+            severity,
+          });
+        } catch (err) {
+          // Bridge dispatch failure is non-fatal for the rollout creation —
+          // operator can retry via manual channel. Log so the route handler
+          // surfaces it.
+          console.warn('[maintain-service] AAP dispatch failed:', err instanceof Error ? err.message : err);
+        }
+      }
+    }
+
     return rollouts;
   }
 
