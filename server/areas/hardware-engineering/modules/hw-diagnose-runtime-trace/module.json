@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-diagnose-runtime-trace",
+  "label": "Diagnose — Runtime Trace Analyzer",
+  "shortLabel": "Trace Analyzer",
+  "icon": "Activity",
+  "description": "Analyzes serial console logs, ESP-IDF core dumps, panic backtraces, and runtime stack traces. Maps stack pointers to function names using the build's symbol table when available; otherwise reasons from offsets and pattern matches against known crash signatures.",
+  "color": "adv-blue",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "ESP-IDF panic format, Xtensa register conventions, common crash patterns" }
+    }
+  }
+}

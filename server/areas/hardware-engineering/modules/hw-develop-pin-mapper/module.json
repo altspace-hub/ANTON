@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-develop-pin-mapper",
+  "label": "Develop — Pin Mapper & Conflict Detector",
+  "shortLabel": "Pin Map",
+  "icon": "Grid3x3",
+  "description": "Given a list of required peripheral functions and the active HKP, produces a conflict-free pin assignment. Respects flash-reserved pins, input-only pins, strapping-pin boot constraints, ADC1-vs-ADC2 Wi-Fi rules, and DAC / touch / RTC-GPIO requirements. Surfaces every assignment with the HKP claim that supports it.",
+  "color": "adv-blue",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "ESP32 GPIO matrix, peripheral routing, pin capabilities" }
+    }
+  }
+}

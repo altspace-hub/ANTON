@@ -6,5 +6,17 @@
   "description": "Diagnose, maintain, and develop embedded hardware (ESP32 at launch; Arduino, Raspberry Pi, STM32, nRF52, RP2040 reserved). Three paths × three tiers × three knowledge layers (specification, diagnostic, lifecycle). Quality-gated firmware pipeline. Tier 3 regulatory artefact generation. Humanitarian deployment kits with capacity-transfer artefacts.",
   "icon": "Cpu",
   "color": "adv-teal",
-  "cluster": "technology"
+  "cluster": "technology",
+  "moduleIds": [
+    "hw-classifier",
+    "hw-diagnose-symptom-walkthrough",
+    "hw-diagnose-photo-id",
+    "hw-diagnose-runtime-trace",
+    "hw-maintain-cve-applicability",
+    "hw-maintain-patch-planner",
+    "hw-develop-requirements",
+    "hw-develop-architecture",
+    "hw-develop-pin-mapper",
+    "hw-humanitarian-deployment-planner"
+  ]
 }

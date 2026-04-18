@@ -81,23 +81,32 @@ The path determines which layer is primary:
 
 ## Cross-area expert injection
 
-This area injects experts from other areas based on context:
+This area pulls in experts from other areas based on context. As of
+Phase 3 the injection is **document-driven, not auto-enforced** — the
+`applicableAreas` field on each persona is descriptive metadata; the
+persona picker shows all personas, and the user / module guides which
+to attach. A future phase will turn `applicableAreas` into an active
+filter and add path-driven default personas.
 
-- **Cybersecurity** (Area `cyber`) — security-relevant symptoms,
-  connected-device firmware, Tier 3 builds, security advisories
-- **Software Engineering** (Area `coding`) — firmware code quality,
-  refactoring, library selection
-- **Data & Analytics** (Area `data-analytics`) — sensor data integrity
-  symptoms, analytics-pipeline-feeding builds
-- **FCP / Legal** (Areas `fcp`, `legal`) — Tier 2 + Tier 3 regulatory
-  obligations, customer-data handling on devices
-- **Healthcare** — medical-adjacent builds (Clinical Safety Officer
-  persona injected for hazard analysis)
+| External persona | Injected when |
+|---|---|
+| `dpo` (Data Protection Officer) | Device handles personal data; Tier 2/3 builds |
+| `legal-expert` | Tier 2/3 obligations under CRA / RED / MDR / GDPR |
+| `clinical-safety-officer` | Medical-adjacent builds (also lives in this area) |
+| `humanitarian-tech-operator` | Humanitarian deployment context (also in this area) |
+| `pragmatist` | All Tier 1 / personal-tinkering work — keeps scope honest |
 
-The path determines the default injection set:
-- Diagnose default: Reliability Engineer + Field Technician
-- Maintain default: Cybersecurity + Software Engineering + Quality Engineer
-- Develop default: full panel applicable to the project context
+Path-default personas (own-area personas; Phase 4 will auto-inject):
+- **Diagnose** default: `field-technician` + `reliability-engineer`
+- **Maintain** default: `embedded-systems-engineer` + `quality-engineer` + `dpo` (when data-handling)
+- **Develop** default: `embedded-systems-engineer` + `electronics-engineer` + `safety-engineer` (when safety-critical) + `clinical-safety-officer` (when medical)
+
+Adjacent-area personas to add when their disk records are created
+(currently only available as `EXPERT_ROLE_INSTRUCTIONS` strings inside
+`prompt-builder.ts`, not as picker-visible personas):
+- `cyber-expert` — security-relevant symptoms, connected-device firmware
+- `tech-expert` — firmware code quality, refactoring, library selection
+- `data-scientist` — sensor data integrity, analytics-pipeline-feeding builds
 
 ## How to use the HKP context
 

@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-humanitarian-deployment-planner",
+  "label": "Humanitarian Deployment Planner",
+  "shortLabel": "Humanitarian Kit",
+  "icon": "Globe",
+  "description": "Cross-cutting planner for humanitarian / low-infrastructure deployments. Wraps an architecture + BoM in the deployment-context obligations: regional sourcing with counterfeit-risk awareness, capacity-transfer artefacts in the local language, offline-first telemetry, sustainable spare-part stocking, and named local partner ownership.",
+  "color": "adv-gold",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["action-plan", "detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "Humanitarian tech deployment patterns, capacity transfer, regional sourcing, OCHA cluster coordination" }
+    }
+  }
+}

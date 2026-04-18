@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-classifier",
+  "label": "Phase 0 Hardware Classifier",
+  "shortLabel": "Classify",
+  "icon": "Compass",
+  "description": "Mandatory entry point for any hardware build. Captures the user's intent, identifies the target hardware family + variant, classifies path (Diagnose / Maintain / Develop) and tier (1 Personal / 2 Professional / 3 Market-placed). Produces the classification record that gates every downstream module.",
+  "color": "adv-teal",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Hardware family registry, regulatory tier criteria (CRA, RED, MDR), path semantics" }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "hw-develop-architecture",
+  "label": "Develop — Architecture",
+  "shortLabel": "Architecture",
+  "icon": "Layers",
+  "description": "Translates the requirements record into an architecture: hardware family + module variant choice, peripheral assignments, connectivity stack, power architecture, partition layout, and the high-level firmware structure. Cites HKP claims for every load-bearing decision and surfaces AI-unverified values for review.",
+  "color": "adv-green",
+  "areaId": "hardware-engineering",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Embedded architecture patterns, peripheral capability matrices" }
+    }
+  }
+}
