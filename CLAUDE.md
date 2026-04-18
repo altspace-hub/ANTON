@@ -508,6 +508,9 @@ See `.env.example` for the complete list. Key variables:
 | `OLLAMA_BASE_URL` | No | Local Ollama endpoint (default: localhost:11434) |
 | `MAX_CONTEXT_TOKENS` | No | Max context window (default: 900000) |
 | `ALLOWED_FOLDER_PATHS` | No | Comma-separated whitelist for filesystem-connector access |
+| `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. |
+| `MARKETS_FETCH_DISABLED` | No | `true` pauses every external markets data fetch (FMP, news, RSS). |
+| `RADAR_AUTOMATION_DISABLED` | No | `true` disables radar auto-scan + scheduled radar cron. Manual UI scans still work. |
 
 ---
 
