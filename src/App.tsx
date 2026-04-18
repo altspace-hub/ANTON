@@ -56,6 +56,10 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 // and EXPERT_ROLES. Deferring it keeps the initial bundle ~40% smaller.
 // The Suspense fallback is already in place so the first navigation is seamless.
 const ModulePage = lazy(() => import('./pages/ModulePage'));
+// Web UX v2 — editorial home with Activity/Agent toggle rail at /home-v2.
+// (We tried a parallel /module-v2 page too; user preferred the existing
+// ModulePage layout so that experiment was dropped.)
+const HomeV2 = lazy(() => import('./pages/HomeV2'));
 
 // Heavy/secondary pages — lazy-loaded to reduce initial bundle size
 const PromptPage = lazy(() => import('./pages/PromptPage'));
@@ -425,7 +429,10 @@ export default function App() {
 
         {/* Main app layout — ProtectedRoute re-checks auth on every navigation */}
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route path="/" element={<Dashboard />} />
+          {/* Home is now the Web UX v2 design (editorial brief + Activity/Agent rail).
+              Old Dashboard kept at /home-v1 as fallback during transition. */}
+          <Route path="/" element={<HomeV2 />} />
+          <Route path="/home-v1" element={<Dashboard />} />
           <Route path="/brief" element={<BriefMePage />} />
           <Route path="/guide" element={<GuideMePage />} />
           <Route path="/fill" element={<FillFormPage />} />

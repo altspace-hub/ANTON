@@ -43,6 +43,68 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  /* ════════════════════════════════════════════════════════════════
+     Web UX v2 — Evolution-direction tokens (companion app aligned)
+     Used by the new run-page shell, sidebar, top-bar, right-rail,
+     overlays. The default values below are the DARK theme; light +
+     corporate overrides are in their respective html.X blocks.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* Surfaces */
+  --color-bg:             #121316;
+  --color-bg-deep:        #0B0C0E;
+  --color-surface:        #1A1B1F;
+  --color-surface-alt:    #1F2024;
+  --color-surface-raised: #22242A;
+  --color-surface-muted:  #17181B;
+  --color-sidebar:        #141518;
+  --color-sidebar-hover:  #1F2024;
+  --color-topbar:         #17181B;
+  --color-rail:           #1A1B1F;
+
+  /* Text scale (web has more variants than companion) */
+  --color-text:           #F5F5F4;
+  --color-text-body:      #D0D0CC;
+  --color-text-muted:     #93938E;
+  --color-text-faint:     #5C5C58;
+
+  /* Borders */
+  --color-border-soft:    #1F2024;
+  --color-border-strong:  #3A3B40;
+
+  /* Accent (emerald default — overridden by html[data-accent="..."]) */
+  --color-accent-fg:      #FFFFFF;
+  --color-accent-soft:    #122623;
+  --color-accent-dim:     #1A3A34;
+  --color-accent-hover:   #0A6E5F;
+
+  /* Status — gold/red/green/blue with Soft + Dim companions (LOCKED) */
+  --color-gold:        #E0A050;
+  --color-gold-dim:    #3A2D13;
+  --color-gold-soft:   #27200C;
+  --color-red:         #E5573F;
+  --color-red-dim:     #3A1915;
+  --color-red-soft:    #26110E;
+  --color-green:       #3FBD85;
+  --color-green-dim:   #13301F;
+  --color-green-soft:  #0C1F14;
+  --color-blue:        #5F9AE0;
+  --color-blue-dim:    #1A2A3E;
+  --color-blue-soft:   #0F1A29;
+
+  /* Web shadows */
+  --shadow-web:    0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-web-lg: 0 4px 8px rgba(0,0,0,0.45), 0 12px 32px rgba(0,0,0,0.5);
+
+  /* Web radii (slightly tighter than companion) */
+  --radius-r1: 6px;
+  --radius-r2: 10px;
+  --radius-r3: 14px;
+  --radius-r4: 20px;
+
+  /* Mono font for hashes / metadata / section labels */
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -94,6 +156,40 @@ html.light {
   --color-ring: var(--color-adv-teal);
   --color-popover: var(--color-adv-card);
   --color-popover-foreground: var(--color-adv-off-white);
+
+  /* ── Web UX v2 — light theme overrides ──────────────────── */
+  --color-bg:             #F5F3EF;
+  --color-bg-deep:        #EFECE5;
+  --color-surface:        #FFFFFF;
+  --color-surface-alt:    #FAFAF8;
+  --color-surface-raised: #FFFFFF;
+  --color-surface-muted:  #EFECE5;
+  --color-sidebar:        #F9F7F2;
+  --color-sidebar-hover:  #F1EEE7;
+  --color-topbar:         #FFFFFF;
+  --color-rail:           #FAFAF8;
+  --color-text:           #1A1B2E;
+  --color-text-body:      #3B3D50;
+  --color-text-muted:     #636577;
+  --color-text-faint:     #878999;
+  --color-border-soft:    #EAE7E0;
+  --color-border-strong:  #C9C4BA;
+  --color-accent-soft:    #E5F5F2;
+  --color-accent-dim:     #D5F0EB;
+  --color-gold:           #C8842B;
+  --color-gold-dim:       #F7ECD9;
+  --color-gold-soft:      #FCF5E8;
+  --color-red:            #C7361F;
+  --color-red-dim:        #F9E2DD;
+  --color-red-soft:       #FCEFEB;
+  --color-green:          #1F8A5C;
+  --color-green-dim:      #DCEEE4;
+  --color-green-soft:     #EEF6F1;
+  --color-blue:           #3070C7;
+  --color-blue-dim:       #DEE8F6;
+  --color-blue-soft:      #EFF4FA;
+  --shadow-web:    0 1px 2px rgba(26,27,46,0.04), 0 4px 12px rgba(26,27,46,0.04);
+  --shadow-web-lg: 0 4px 8px rgba(26,27,46,0.06), 0 12px 32px rgba(26,27,46,0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -146,6 +242,96 @@ html.corporate {
   --color-popover: var(--color-adv-card);
   --color-popover-foreground: var(--color-adv-off-white);
 
+  /* ── Web UX v2 — corporate theme overrides ───────────────── */
+  --color-bg:             #F3F5F9;
+  --color-bg-deep:        #E7EAF0;
+  --color-surface:        #FFFFFF;
+  --color-surface-alt:    #F7F9FC;
+  --color-surface-raised: #FFFFFF;
+  --color-surface-muted:  #E9ECF2;
+  --color-sidebar:        #F6F8FB;
+  --color-sidebar-hover:  #ECEFF5;
+  --color-topbar:         #FFFFFF;
+  --color-rail:           #F7F9FC;
+  --color-text:           #111827;
+  --color-text-body:      #1F2937;
+  --color-text-muted:     #4B5563;
+  --color-text-faint:     #6B7280;
+  --color-border-soft:    #E5E9F0;
+  --color-border-strong:  #BEC5D1;
+  --color-accent-soft:    #E5F5F2;
+  --color-accent-dim:     #D5F0EB;
+  --color-gold:           #C8842B;
+  --color-gold-dim:       #F7ECD9;
+  --color-gold-soft:      #FCF5E8;
+  --color-red:            #C7361F;
+  --color-red-dim:        #F9E2DD;
+  --color-red-soft:       #FCEFEB;
+  --color-green:          #1F8A5C;
+  --color-green-dim:      #DCEEE4;
+  --color-green-soft:     #EEF6F1;
+  --color-blue:           #3070C7;
+  --color-blue-dim:       #DEE8F6;
+  --color-blue-soft:      #EFF4FA;
+  --shadow-web:    0 1px 2px rgba(17,24,39,0.04), 0 4px 12px rgba(17,24,39,0.05);
+  --shadow-web-lg: 0 4px 8px rgba(17,24,39,0.06), 0 12px 32px rgba(17,24,39,0.08);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Personal accent palette — 8 swatches.
+   Set by services/personalization (or web equivalent) via
+   <html data-accent="..."> attribute. Status colours never change.
+   `accent-soft`/`accent-dim` use light-theme tints; the html.X
+   blocks above can override for a darker feel if needed.
+   ════════════════════════════════════════════════════════════════ */
+
+html[data-accent="emerald"] {
+  --color-adv-teal:    #0D7D6C;
+  --color-accent-hover:#0A6E5F;
+  --color-accent-soft: #E5F5F2;
+  --color-accent-dim:  #D5F0EB;
+}
+html[data-accent="ocean"] {
+  --color-adv-teal:    #1F5FAE;
+  --color-accent-hover:#1B5499;
+  --color-accent-soft: #E8EFF9;
+  --color-accent-dim:  #D5E2F2;
+}
+html[data-accent="sunrise"] {
+  --color-adv-teal:    #C97220;
+  --color-accent-hover:#B36619;
+  --color-accent-soft: #FBEEDB;
+  --color-accent-dim:  #F5DDC0;
+}
+html[data-accent="ember"] {
+  --color-adv-teal:    #B02E3B;
+  --color-accent-hover:#992834;
+  --color-accent-soft: #F8E2E4;
+  --color-accent-dim:  #F0CDD1;
+}
+html[data-accent="plum"] {
+  --color-adv-teal:    #6A3E8F;
+  --color-accent-hover:#5C3579;
+  --color-accent-soft: #EEE3F5;
+  --color-accent-dim:  #E0D0ED;
+}
+html[data-accent="slate"] {
+  --color-adv-teal:    #2D3142;
+  --color-accent-hover:#242835;
+  --color-accent-soft: #E6E8EC;
+  --color-accent-dim:  #D3D6DC;
+}
+html[data-accent="forest"] {
+  --color-adv-teal:    #3E6B3A;
+  --color-accent-hover:#355D32;
+  --color-accent-soft: #E5EEE3;
+  --color-accent-dim:  #D4E2D1;
+}
+html[data-accent="gold"] {
+  --color-adv-teal:    #A07C26;
+  --color-accent-hover:#8C6C20;
+  --color-accent-soft: #F3EDD6;
+  --color-accent-dim:  #EADFBE;
 }
 
 /* Montserrat headings in corporate mode */
