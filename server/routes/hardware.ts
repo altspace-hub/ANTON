@@ -35,6 +35,16 @@ import {
 import { createQualityPipelineService } from '../services/quality-pipeline-service.js';
 import { createDiagnoseService } from '../services/diagnose-service.js';
 import { createPhotoIdService, type PhotoInput } from '../services/photo-id-service.js';
+import {
+  createMaintainService,
+  type ChangeKind,
+  type DeliveryChannel,
+  type PlanStatus,
+  type StageKind,
+  type StageStatus,
+  type RolloutStatus,
+} from '../services/maintain-service.js';
+import { createCveApplicabilityService } from '../services/cve-applicability-service.js';
 import { safeError } from '../lib/error-response.js';
 
 // In-memory multer for photo-id uploads (max 4 photos × 8MB).
@@ -181,6 +191,87 @@ const logOutcomeSchema = z.object({
   consent_for_sharing: z.boolean().optional(),
 });
 
+const CHANGE_KINDS: [ChangeKind, ...ChangeKind[]] = [
+  'firmware-update', 'config-change', 'calibration',
+  'partition-table', 'secure-boot-burn', 'recall',
+];
+const STAGE_KINDS: [StageKind, ...StageKind[]] = ['canary', 'wave', 'full-rollout', 'verification', 'soak'];
+const STAGE_STATUSES: [StageStatus, ...StageStatus[]] = ['pending', 'in_progress', 'soaking', 'passed', 'failed', 'rolled_back', 'skipped'];
+const PLAN_STATUSES: [PlanStatus, ...PlanStatus[]] = ['draft', 'ready', 'in_progress', 'paused', 'rolled_back', 'complete', 'cancelled'];
+const ROLLOUT_STATUSES: [RolloutStatus, ...RolloutStatus[]] = ['pending', 'queued', 'sent', 'applying', 'verified', 'failed', 'rolled_back', 'skipped'];
+const DELIVERY_CHANNELS: [DeliveryChannel, ...DeliveryChannel[]] = ['ota', 'usb', 'aap-store-and-forward', 'manual'];
+
+const createPatchPlanSchema = z.object({
+  title: z.string().min(3).max(300),
+  description: z.string().nullable().optional(),
+  change_kind: z.enum(CHANGE_KINDS),
+  source_event_id: z.string().nullable().optional(),
+});
+
+const updatePatchPlanSchema = z.object({
+  title: z.string().min(3).max(300).optional(),
+  description: z.string().nullable().optional(),
+  rollback_artefact_ref: z.string().nullable().optional(),
+  rollback_artefact_hash: z.string().nullable().optional(),
+  signed_image: z.boolean().optional(),
+  verified_boot: z.boolean().optional(),
+  rollback_protected: z.boolean().optional(),
+  status: z.enum(PLAN_STATUSES).optional(),
+});
+
+const addStageSchema = z.object({
+  stage_kind: z.enum(STAGE_KINDS),
+  title: z.string().min(3).max(200),
+  description: z.string().nullable().optional(),
+  cohort: z.object({
+    device_ids: z.array(z.string()).optional(),
+    percentage: z.number().int().min(1).max(100).optional(),
+    all: z.boolean().optional(),
+  }),
+  acceptance_rules: z.array(z.object({
+    metric: z.string().min(1),
+    operator: z.enum(['<', '<=', '==', '>=', '>', '!=', 'within']),
+    threshold: z.union([z.number(), z.string(), z.object({ min: z.number(), max: z.number() })]),
+    observed_via: z.string().min(1),
+  })).max(20),
+  rollback_on_failure: z.boolean().optional(),
+});
+
+const advanceStageSchema = z.object({
+  new_status: z.enum(STAGE_STATUSES),
+});
+
+const recordAcceptanceSchema = z.object({
+  observations: z.array(z.object({
+    metric: z.string().min(1),
+    observed: z.union([z.number(), z.string()]),
+  })).min(1),
+});
+
+const addDeviceSchema = z.object({
+  device_label: z.string().min(1).max(120),
+  hardware_serial: z.string().nullable().optional(),
+  region: z.string().nullable().optional(),
+  current_firmware: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const planRolloutSchema = z.object({
+  delivery_channel: z.enum(DELIVERY_CHANNELS),
+});
+
+const updateRolloutSchema = z.object({
+  status: z.enum(ROLLOUT_STATUSES),
+  failure_reason: z.string().nullable().optional(),
+  pre_patch_state: z.record(z.string(), z.unknown()).nullable().optional(),
+  post_patch_state: z.record(z.string(), z.unknown()).nullable().optional(),
+});
+
+const cveApplicabilitySchema = z.object({
+  lookback_days: z.number().int().min(1).max(3650).optional(),
+  min_cvss: z.number().min(0).max(10).optional(),
+});
+
 const contributeCaseSchema = z.object({
   case_id: z.string().regex(/^[a-z0-9-]{4,80}$/, 'lowercase / digits / hyphens only, 4-80 chars'),
   family_id: z.string().min(1).max(64),
@@ -219,6 +310,8 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const quality = createQualityPipelineService(db);
   const diagnose = createDiagnoseService(db);
   const photoId = createPhotoIdService(db);
+  const maintain = createMaintainService(db);
+  const cveApplicability = createCveApplicabilityService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -759,6 +852,192 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.status(201).json({ success: true, case_id: result.case_id });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Maintain path: patch plans + stages + fleet + rollouts ────────────────
+
+  router.get('/hardware/projects/:id/patch-plans', async (req, res) => {
+    try {
+      const plans = await maintain.listPlans(req.params.id);
+      res.json({ success: true, plans });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/patch-plans', async (req, res) => {
+    try {
+      const parsed = createPatchPlanSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const plan = await maintain.createPlan({
+        project_id: req.params.id,
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+      });
+      res.status(201).json({ success: true, plan });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/patch-plans/:planId', async (req, res) => {
+    try {
+      const plan = await maintain.getPlan(req.params.planId);
+      if (!plan) { res.status(404).json({ error: 'Plan not found' }); return; }
+      const stages = await maintain.listStages(plan.id);
+      res.json({ success: true, plan, stages });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/patch-plans/:planId', async (req, res) => {
+    try {
+      const parsed = updatePatchPlanSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const plan = await maintain.updatePlan(req.params.planId, getOwnerId(req), parsed.data);
+      if (!plan) { res.status(404).json({ error: 'Plan not found' }); return; }
+      res.json({ success: true, plan });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/patch-plans/:planId/stages', async (req, res) => {
+    try {
+      const parsed = addStageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const stage = await maintain.addStage(req.params.planId, getOwnerId(req), parsed.data);
+      res.status(201).json({ success: true, stage });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/patch-stages/:stageId/advance', async (req, res) => {
+    try {
+      const parsed = advanceStageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const stage = await maintain.advanceStage(req.params.stageId, getOwnerId(req), parsed.data.new_status);
+      if (!stage) { res.status(404).json({ error: 'Stage not found' }); return; }
+      res.json({ success: true, stage });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/patch-stages/:stageId/acceptance', async (req, res) => {
+    try {
+      const parsed = recordAcceptanceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const result = await maintain.recordAcceptance(req.params.stageId, getOwnerId(req), parsed.data.observations);
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Fleet devices
+
+  router.get('/hardware/projects/:id/fleet-devices', async (req, res) => {
+    try {
+      const devices = await maintain.listFleet(req.params.id);
+      res.json({ success: true, devices });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/fleet-devices', async (req, res) => {
+    try {
+      const parsed = addDeviceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const device = await maintain.addDevice({
+        project_id: req.params.id,
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+      });
+      res.status(201).json({ success: true, device });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Rollouts
+
+  router.post('/hardware/patch-stages/:stageId/rollouts', async (req, res) => {
+    try {
+      const parsed = planRolloutSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const rollouts = await maintain.planRollout(req.params.stageId, getOwnerId(req), parsed.data);
+      res.status(201).json({ success: true, rollouts });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/patch-stages/:stageId/rollouts', async (req, res) => {
+    try {
+      const rollouts = await maintain.listRolloutsForStage(req.params.stageId);
+      res.json({ success: true, rollouts });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/patch-rollouts/:rolloutId', async (req, res) => {
+    try {
+      const parsed = updateRolloutSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const rollout = await maintain.updateRolloutStatus(req.params.rolloutId, getOwnerId(req), parsed.data);
+      if (!rollout) { res.status(404).json({ error: 'Rollout not found' }); return; }
+      res.json({ success: true, rollout });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // CVE applicability assessment per project posture
+
+  router.post('/hardware/projects/:id/cve-applicability', async (req, res) => {
+    try {
+      const parsed = cveApplicabilitySchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const result = await cveApplicability.assess({
+        project_id: req.params.id,
+        ...parsed.data,
+      });
+      res.json({ success: true, assessment: result });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
