@@ -1691,3 +1691,274 @@ ${module.tags?.map(tag => `- ${tag}`).join('\n') || '- No tags'}
 **Exported via openEXPERT .anton Exchange System**
 `;
 }
+
+// ── Humanitarian Deployment Kit Bundle ───────────────────────────────────────
+
+/**
+ * Bundle a humanitarian deployment kit for a single project.
+ *
+ * Includes everything a local partner needs to operate the deployment
+ * offline: the project record, the HKP snapshot, regional sourcing for
+ * the deployment region, all signed regulatory artefacts (in English),
+ * all signed capacity-transfer artefacts (in the working language).
+ *
+ * Output is a .zip with this layout:
+ *   /manifest.json                    — top-level metadata
+ *   /project.json                     — project + deployment record
+ *   /hkp/{part_number}.json           — HKP snapshot (claims, components, regional alts)
+ *   /regulatory/{kind}.md             — each signed regulatory artefact
+ *   /capacity-transfer/{kind}.md      — each signed capacity-transfer artefact
+ *   /sourcing/regional-alternatives.json — region-scoped sourcing
+ *   /sourcing/diagnostic-cases.md     — top diagnostic cases as field reference
+ *
+ * Designed for offline transfer (USB stick, SD card) when the partner
+ * site has no internet. Per spec §13: humanitarian Tier 3 deployments
+ * never ship without local-language capacity-transfer artefacts — the
+ * bundler refuses to produce a kit if any required capacity-transfer
+ * artefact is unsigned.
+ */
+export async function bundleHumanitarianDeploymentKit(
+  db: DatabaseAdapter,
+  projectId: string,
+  options: { allow_unsigned?: boolean } = {},
+): Promise<Buffer> {
+  // 1. Project + deployment
+  const project = await db.get(
+    `SELECT * FROM hardware_projects WHERE id = ?`,
+    projectId,
+  ) as Record<string, unknown> | undefined;
+  if (!project) throw new Error('Project not found');
+
+  const deployment = await db.get(
+    `SELECT * FROM hw_humanitarian_deployments WHERE project_id = ?`,
+    projectId,
+  ) as Record<string, unknown> | undefined;
+  if (!deployment && !options.allow_unsigned) {
+    throw new Error('No humanitarian deployment record on this project — create one before bundling');
+  }
+
+  // 2. HKP + child tables (claims / components / regional alts)
+  const hkpId = project.hkp_id as string | null;
+  let hkp: Record<string, unknown> | null = null;
+  let hkpClaims: Array<Record<string, unknown>> = [];
+  let hkpComponents: Array<Record<string, unknown>> = [];
+  let regionalAlts: Array<Record<string, unknown>> = [];
+  if (hkpId) {
+    hkp = (await db.get('SELECT * FROM hardware_knowledge_packs WHERE id = ?', hkpId)) as Record<string, unknown> | null;
+    hkpClaims = await db.all(
+      `SELECT claim_path, claim_value, classification, evidence_ref, notes
+       FROM hkp_claims WHERE hkp_id = ? ORDER BY claim_path`,
+      hkpId,
+    ) as Array<Record<string, unknown>>;
+    hkpComponents = await db.all(
+      `SELECT component_type, name, metadata FROM hkp_components WHERE hkp_id = ? ORDER BY component_type, name`,
+      hkpId,
+    ) as Array<Record<string, unknown>>;
+    const region = project.region as string | null;
+    regionalAlts = await db.all(
+      `SELECT region, alternative_part, distributor, typical_price_local,
+              typical_price_currency, typical_lead_days, counterfeit_risk, notes
+       FROM hkp_regional_alternatives
+       WHERE hkp_id = ?${region ? ' AND region = ?' : ''}
+       ORDER BY counterfeit_risk ASC NULLS LAST, typical_price_local ASC NULLS LAST`,
+      ...(region ? [hkpId, region] : [hkpId]),
+    ) as Array<Record<string, unknown>>;
+  }
+
+  // 3. Regulatory artefacts
+  const regulatoryRows = await db.all(
+    `SELECT kind, title, status, content_markdown, signed_off_by, signed_off_at, signoff_attestation
+     FROM hw_regulatory_artefacts
+     WHERE project_id = ?
+     ORDER BY kind`,
+    projectId,
+  ) as Array<{ kind: string; title: string; status: string; content_markdown: string | null;
+              signed_off_by: string | null; signed_off_at: string | null; signoff_attestation: string | null }>;
+
+  // 4. Capacity-transfer artefacts
+  const capacityRows = await db.all(
+    `SELECT kind, title, language, status, content_markdown, generator_kind,
+            signed_off_by, signed_off_at, signoff_attestation
+     FROM hw_capacity_transfer_artefacts
+     WHERE project_id = ?
+     ORDER BY kind`,
+    projectId,
+  ) as Array<{ kind: string; title: string; language: string; status: string;
+              content_markdown: string | null; generator_kind: string;
+              signed_off_by: string | null; signed_off_at: string | null; signoff_attestation: string | null }>;
+
+  // Pre-flight: enforce sign-off requirement unless explicitly allowed
+  if (!options.allow_unsigned) {
+    const unsignedCapacity = capacityRows.filter(r => r.status !== 'signed-off');
+    if (unsignedCapacity.length > 0) {
+      throw new Error(
+        `Cannot ship a humanitarian deployment kit with ${unsignedCapacity.length} unsigned capacity-transfer artefact(s): ` +
+        unsignedCapacity.map(r => r.kind).join(', ') +
+        '. Sign off all required artefacts first, or call with { allow_unsigned: true } for a draft kit (clearly marked).',
+      );
+    }
+  }
+
+  // 5. Diagnostic cases reference
+  const diagCases = await db.all(
+    `SELECT case_id, title, severity, case_data
+     FROM diagnostic_cases
+     WHERE family_id = ?
+     ORDER BY (severity = 'critical') DESC, (severity = 'high') DESC, last_updated DESC
+     LIMIT 25`,
+    project.family_id as string,
+  ) as Array<{ case_id: string; title: string; severity: string | null; case_data: string | object }>;
+
+  // ── Build the zip ─────────────────────────────────────────────────────────
+  const zip = new AdmZip();
+  const generatedAt = new Date().toISOString();
+
+  // Manifest
+  const manifest = {
+    bundleType: 'humanitarian-deployment-kit',
+    bundleSchemaVersion: '1.0',
+    generatedAt,
+    project: {
+      id: project.id,
+      title: project.title,
+      family_id: project.family_id,
+      tier: project.tier,
+      region: project.region,
+      working_language: project.working_language,
+      safety_critical: project.safety_critical,
+      medical_adjacent: project.medical_adjacent,
+    },
+    deployment: deployment ? {
+      local_partner_name: deployment.local_partner_name,
+      local_partner_contact: deployment.local_partner_contact,
+      ocha_cluster: deployment.ocha_cluster,
+      donor_exit_date: deployment.donor_exit_date,
+      units_planned: deployment.units_planned,
+      internet_posture: deployment.internet_posture,
+      power_posture: deployment.power_posture,
+      status: deployment.status,
+    } : null,
+    hkp: hkp ? {
+      manufacturer: hkp.manufacturer,
+      part_number: hkp.part_number,
+      revision: hkp.revision,
+      hkp_version: hkp.hkp_version,
+    } : null,
+    counts: {
+      hkp_claims: hkpClaims.length,
+      hkp_components: hkpComponents.length,
+      regional_alternatives: regionalAlts.length,
+      regulatory_artefacts: regulatoryRows.length,
+      capacity_transfer_artefacts: capacityRows.length,
+      diagnostic_cases_included: diagCases.length,
+    },
+    sign_off_status: {
+      regulatory_signed: regulatoryRows.filter(r => r.status === 'signed-off').length,
+      regulatory_total: regulatoryRows.length,
+      capacity_transfer_signed: capacityRows.filter(r => r.status === 'signed-off').length,
+      capacity_transfer_total: capacityRows.length,
+      complete: regulatoryRows.every(r => r.status === 'signed-off') && capacityRows.every(r => r.status === 'signed-off'),
+    },
+  };
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
+
+  // Project + deployment
+  zip.addFile('project.json', Buffer.from(JSON.stringify({ project, deployment }, null, 2), 'utf-8'));
+
+  // HKP
+  if (hkp) {
+    zip.addFile(
+      `hkp/${hkp.part_number}.json`,
+      Buffer.from(JSON.stringify({ hkp, claims: hkpClaims, components: hkpComponents }, null, 2), 'utf-8'),
+    );
+  }
+
+  // Regional sourcing
+  zip.addFile(
+    'sourcing/regional-alternatives.json',
+    Buffer.from(JSON.stringify(regionalAlts, null, 2), 'utf-8'),
+  );
+
+  // Regulatory artefacts
+  for (const r of regulatoryRows) {
+    if (!r.content_markdown) continue;
+    const header = `<!-- status: ${r.status} -->\n<!-- signed_off_by: ${r.signed_off_by ?? '(unsigned)'} -->\n<!-- signed_off_at: ${r.signed_off_at ?? '(unsigned)'} -->\n<!-- attestation: ${r.signoff_attestation ?? '(unsigned)'} -->\n\n`;
+    zip.addFile(`regulatory/${r.kind}.md`, Buffer.from(header + r.content_markdown, 'utf-8'));
+  }
+
+  // Capacity-transfer artefacts
+  for (const r of capacityRows) {
+    if (!r.content_markdown) continue;
+    const header = `<!-- language: ${r.language} -->\n<!-- generator: ${r.generator_kind} -->\n<!-- status: ${r.status} -->\n<!-- signed_off_by: ${r.signed_off_by ?? '(unsigned)'} -->\n<!-- signed_off_at: ${r.signed_off_at ?? '(unsigned)'} -->\n<!-- attestation: ${r.signoff_attestation ?? '(unsigned)'} -->\n\n`;
+    zip.addFile(`capacity-transfer/${r.kind}.md`, Buffer.from(header + r.content_markdown, 'utf-8'));
+  }
+
+  // Diagnostic cases reference (folded into one markdown for offline readability)
+  const diagLines: string[] = [];
+  diagLines.push(`# Diagnostic case reference — ${project.family_id}\n`);
+  diagLines.push(`> Cross-reference for the field troubleshooting flowchart. ${diagCases.length} case(s) included.\n`);
+  for (const c of diagCases) {
+    const data = typeof c.case_data === 'string'
+      ? (() => { try { return JSON.parse(c.case_data); } catch { return {}; } })()
+      : (c.case_data as Record<string, unknown>);
+    const symptoms = (data.symptoms as Array<{ symptom?: string; description?: string }> | undefined) ?? [];
+    const causes = (data.probable_causes as Array<{ cause?: string }> | undefined) ?? [];
+    const resolutions = (data.resolutions as Array<{ description?: string }> | undefined) ?? [];
+    diagLines.push(`## ${c.case_id} — ${c.title}\n`);
+    if (c.severity) diagLines.push(`**Severity:** ${c.severity}\n`);
+    if (symptoms.length) {
+      diagLines.push('**Symptoms:**');
+      for (const s of symptoms.slice(0, 3)) diagLines.push(`- ${s.symptom ?? s.description ?? ''}`);
+      diagLines.push('');
+    }
+    if (causes.length) {
+      diagLines.push('**Most likely causes:**');
+      for (const c2 of causes.slice(0, 3)) diagLines.push(`- ${c2.cause ?? ''}`);
+      diagLines.push('');
+    }
+    if (resolutions.length) {
+      diagLines.push('**Resolutions to try:**');
+      for (const r of resolutions.slice(0, 3)) diagLines.push(`- ${r.description ?? ''}`);
+      diagLines.push('');
+    }
+    diagLines.push('---\n');
+  }
+  zip.addFile('sourcing/diagnostic-cases.md', Buffer.from(diagLines.join('\n'), 'utf-8'));
+
+  // Top-level README so the partner sees what they got at first glance
+  const readme = `# Humanitarian Deployment Kit
+
+**Project:** ${project.title}
+**Hardware:** ${hkp ? `${hkp.manufacturer} ${hkp.part_number}` : '(no HKP)'}
+**Deployment region:** ${project.region ?? '(unspecified)'}
+**Local partner:** ${deployment?.local_partner_name ?? '(no deployment record)'}
+**Working language:** ${project.working_language}
+**Generated:** ${generatedAt}
+**Sign-off status:** ${manifest.sign_off_status.complete ? '✓ COMPLETE' : '⚠ INCOMPLETE — see manifest.json'}
+
+## Contents
+
+| Path | What it is |
+|---|---|
+| \`manifest.json\` | Index + sign-off status of every artefact in this kit |
+| \`project.json\` | Project + humanitarian deployment record |
+| \`hkp/\` | Hardware Knowledge Pack snapshot (claims, components) |
+| \`sourcing/regional-alternatives.json\` | Local sourcing options + counterfeit-risk |
+| \`sourcing/diagnostic-cases.md\` | Field troubleshooting reference (${diagCases.length} cases) |
+| \`regulatory/\` | Regulatory artefacts (in English unless overridden) |
+| \`capacity-transfer/\` | Operator-facing docs (in ${project.working_language}) |
+
+## How to use this kit
+
+1. Read \`manifest.json\` first — confirm sign-off status of every artefact.
+2. Hand off the \`capacity-transfer/\` directory to the local technician — these are the operator-facing docs in their working language.
+3. Keep the \`regulatory/\` directory with the implementing partner (corporate / legal) — these are the operator-of-record documents.
+4. \`sourcing/\` and \`hkp/\` go to whoever is responsible for spares procurement.
+
+ANTON does not certify any document in this kit. The user is the responsible economic operator under the applicable law.
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  return zip.toBuffer();
+}
+
