@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "hardware-engineering",
+  "name": "Hardware Engineering",
+  "shortName": "Hardware",
+  "description": "Diagnose, maintain, and develop embedded hardware (ESP32 at launch; Arduino, Raspberry Pi, STM32, nRF52, RP2040 reserved). Three paths × three tiers × three knowledge layers (specification, diagnostic, lifecycle). Quality-gated firmware pipeline. Tier 3 regulatory artefact generation. Humanitarian deployment kits with capacity-transfer artefacts.",
+  "icon": "Cpu",
+  "color": "adv-teal",
+  "cluster": "technology"
+}
