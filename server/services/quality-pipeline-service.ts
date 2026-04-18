@@ -24,6 +24,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import type { HardwareProject } from './hardware-project-service.js';
+import { createRegulatoryPackService } from './regulatory-pack-service.js';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -395,6 +396,43 @@ const rollbackArtefactRealAdapter: QualityAdapter = {
   },
 };
 
+const regulatoryPackRealAdapter: QualityAdapter = {
+  gateKey: 'regulatory-pack-complete',
+  displayLabel: 'Regulatory pack complete',
+  isMandatory: true,
+  kind: 'real',
+  version: '0.1.0',
+  appliesTo: (project) => project.path === 'develop' && project.tier >= 2,
+  run: async ({ db, project }) => {
+    const start = Date.now();
+    const reg = createRegulatoryPackService(db);
+    const summary = await reg.assessCompleteness({ project_id: project.id });
+
+    if (summary.ready_to_ship) {
+      return {
+        outcome: 'pass',
+        score: 100,
+        summary: `${summary.signed_off}/${summary.required_total} required regulatory artefacts signed off.`,
+        details: { ...summary, project_tier: project.tier },
+        durationMs: Date.now() - start,
+      };
+    }
+
+    // Tier 2 with only DPA + workplace-safety: warn (not block) if reviewed
+    // but not signed; fail if any are missing.
+    const hasMissing = summary.missing > 0;
+    return {
+      outcome: hasMissing ? 'fail' : 'warn',
+      score: Math.round((summary.signed_off / Math.max(summary.required_total, 1)) * 100),
+      summary: hasMissing
+        ? `${summary.missing}/${summary.required_total} required regulatory artefacts missing.`
+        : `All required artefacts present but ${summary.required_total - summary.signed_off} not yet signed off.`,
+      details: { ...summary, project_tier: project.tier },
+      durationMs: Date.now() - start,
+    };
+  },
+};
+
 const ADAPTERS: QualityAdapter[] = [
   platformioMockAdapter,
   clangTidyMockAdapter,
@@ -403,6 +441,7 @@ const ADAPTERS: QualityAdapter[] = [
   wokwiMockAdapter,
   securityScorecardMockAdapter,
   rollbackArtefactRealAdapter,
+  regulatoryPackRealAdapter,
 ];
 
 // ── Service ───────────────────────────────────────────────────────────────────

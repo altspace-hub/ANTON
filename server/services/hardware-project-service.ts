@@ -12,6 +12,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { createRegulatoryPackService } from './regulatory-pack-service.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -359,6 +360,17 @@ export function createHardwareProjectService(db: DatabaseAdapter) {
       const chain = data?.secure_update_chain;
       if (!chain || !chain.signed_image || !chain.verified_boot || !chain.rollback_protected) {
         throw new Error('Tier 3 deploy_operate completion requires secure-update chain: signed image + verified boot + rollback protection (record these in phase.data.secure_update_chain)');
+      }
+    }
+
+    // Invariant: develop.deploy_operate → complete on Tier 2 / Tier 3 requires
+    // every required regulatory artefact to be signed off (per spec §13).
+    if (project.path === 'develop' && phase.phase_key === 'deploy_operate' && opts.new_status === 'complete' && project.tier >= 2) {
+      const reg = createRegulatoryPackService(db);
+      const summary = await reg.assessCompleteness({ project_id: projectId });
+      if (!summary.ready_to_ship) {
+        const reasons = summary.blockers.slice(0, 5).join(' | ');
+        throw new Error(`Tier ${project.tier} deploy_operate completion requires the regulatory pack signed off (${summary.signed_off}/${summary.required_total} signed). Blockers: ${reasons}`);
       }
     }
 
