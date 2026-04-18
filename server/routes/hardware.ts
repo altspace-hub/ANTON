@@ -24,6 +24,14 @@ import {
   listAllFamilies,
 } from '../hardware/family-registry.js';
 import { runLifecycleIngest } from '../services/lifecycle-feed-ingestor.js';
+import {
+  createHardwareProjectService,
+  type HardwarePath,
+  type HardwareTier,
+  type ProjectStatus,
+  type PhaseStatus,
+} from '../services/hardware-project-service.js';
+import { createQualityPipelineService } from '../services/quality-pipeline-service.js';
 import { safeError } from '../lib/error-response.js';
 
 // ── Validation schemas ────────────────────────────────────────────────────────
@@ -91,9 +99,71 @@ const createRegionalAltSchema = z.object({
 
 // ── Route factory ─────────────────────────────────────────────────────────────
 
+// ── Project / phase / quality validation schemas ─────────────────────────────
+
+const HARDWARE_PATHS: [HardwarePath, ...HardwarePath[]] = ['diagnose', 'maintain', 'develop'];
+const PROJECT_STATUSES: [ProjectStatus, ...ProjectStatus[]] = ['active', 'paused', 'archived', 'shipped'];
+const PHASE_STATUSES: [PhaseStatus, ...PhaseStatus[]] = ['pending', 'in_progress', 'blocked', 'complete', 'skipped'];
+
+const createProjectSchema = z.object({
+  title: z.string().min(1).max(300),
+  description: z.string().nullable().optional(),
+  family_id: z.string().min(1).max(64),
+  path: z.enum(HARDWARE_PATHS),
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  region: z.string().max(100).nullable().optional(),
+  working_language: z.string().max(10).optional(),
+  offline_first: z.boolean().optional(),
+  safety_critical: z.boolean().optional(),
+  medical_adjacent: z.boolean().optional(),
+  tier1_secure_update_ack: z.boolean().optional(),
+  hkp_id: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const updateProjectSchema = z.object({
+  title: z.string().min(1).max(300).optional(),
+  description: z.string().nullable().optional(),
+  region: z.string().max(100).nullable().optional(),
+  working_language: z.string().max(10).optional(),
+  offline_first: z.boolean().optional(),
+  safety_critical: z.boolean().optional(),
+  medical_adjacent: z.boolean().optional(),
+  tier1_secure_update_ack: z.boolean().optional(),
+  hkp_id: z.string().nullable().optional(),
+  status: z.enum(PROJECT_STATUSES).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const advancePhaseSchema = z.object({
+  new_status: z.enum(PHASE_STATUSES),
+  blocking_reason: z.string().nullable().optional(),
+  artefact_ref: z.string().nullable().optional(),
+  quality_score_id: z.string().nullable().optional(),
+});
+
+const updatePhaseDataSchema = z.object({
+  data: z.record(z.string(), z.unknown()),
+});
+
+const runQualitySchema = z.object({
+  phase_id: z.string().nullable().optional(),
+  trigger_reason: z.string().max(100).optional(),
+  artefact_ref: z.string().nullable().optional(),
+  artefact_hash: z.string().nullable().optional(),
+  only_gates: z.array(z.string()).optional(),
+});
+
+function getOwnerId(req: import('express').Request): string {
+  const user = (req as { user?: { id?: string; username?: string } }).user;
+  return user?.id ?? user?.username ?? 'default';
+}
+
 export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const router = Router();
   const hkp = createHkpService(db);
+  const projects = createHardwareProjectService(db);
+  const quality = createQualityPipelineService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -385,6 +455,180 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         sources: body.sources,
       });
       res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Hardware projects ─────────────────────────────────────────────────────
+
+  router.get('/hardware/projects', async (req, res) => {
+    try {
+      const ownerId = getOwnerId(req);
+      const filters: Parameters<typeof projects.listProjects>[0] = { owner_id: ownerId };
+      if (req.query.family_id) filters.family_id = String(req.query.family_id);
+      if (req.query.path) filters.path = String(req.query.path) as HardwarePath;
+      if (req.query.status) filters.status = String(req.query.status) as ProjectStatus;
+      const list = await projects.listProjects(filters);
+      res.json({ success: true, projects: list });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects', async (req, res) => {
+    try {
+      const parsed = createProjectSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      if (!HARDWARE_FAMILIES[parsed.data.family_id]) {
+        res.status(400).json({ error: `Unknown hardware family: ${parsed.data.family_id}` });
+        return;
+      }
+      const detail = await projects.createProject({
+        owner_id: getOwnerId(req),
+        ...parsed.data,
+        tier: parsed.data.tier as HardwareTier,
+      });
+      res.status(201).json({ success: true, project: detail });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/projects/:id', async (req, res) => {
+    try {
+      const detail = await projects.getProjectDetail(req.params.id);
+      if (!detail) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      res.json({ success: true, project: detail });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.put('/hardware/projects/:id', async (req, res) => {
+    try {
+      const parsed = updateProjectSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const project = await projects.updateProject(req.params.id, getOwnerId(req), parsed.data);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      res.json({ success: true, project });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/hardware/projects/:id', async (req, res) => {
+    try {
+      const ok = await projects.deleteProject(req.params.id, getOwnerId(req));
+      if (!ok) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Phases ────────────────────────────────────────────────────────────────
+
+  router.put('/hardware/projects/:id/phases/:phaseId/data', async (req, res) => {
+    try {
+      const parsed = updatePhaseDataSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const phase = await projects.updatePhaseData(req.params.id, getOwnerId(req), req.params.phaseId, parsed.data.data);
+      if (!phase) {
+        res.status(404).json({ error: 'Phase not found' });
+        return;
+      }
+      res.json({ success: true, phase });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/phases/:phaseId/advance', async (req, res) => {
+    try {
+      const parsed = advancePhaseSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const result = await projects.advancePhase(
+        req.params.id, getOwnerId(req), req.params.phaseId, parsed.data,
+      );
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Quality pipeline ──────────────────────────────────────────────────────
+
+  router.get('/hardware/quality/adapters', (_req, res) => {
+    res.json({ success: true, adapters: quality.listAdapters() });
+  });
+
+  router.post('/hardware/projects/:id/quality/run', async (req, res) => {
+    try {
+      const parsed = runQualitySchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const project = await projects.getProject(req.params.id);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      const summary = await quality.runPipeline({
+        project,
+        phaseId: parsed.data.phase_id ?? null,
+        triggeredBy: getOwnerId(req),
+        triggerReason: parsed.data.trigger_reason ?? 'manual',
+        artefactRef: parsed.data.artefact_ref ?? null,
+        artefactHash: parsed.data.artefact_hash ?? null,
+        onlyGates: parsed.data.only_gates,
+      });
+      res.json({ success: true, run: summary });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/projects/:id/quality/runs', async (req, res) => {
+    try {
+      const limit = Math.min(Number(req.query.limit ?? 25), 100);
+      const runs = await quality.listRuns(req.params.id, limit);
+      res.json({ success: true, runs });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/quality/runs/:runId', async (req, res) => {
+    try {
+      const detail = await quality.getRunDetail(req.params.runId);
+      if (!detail) {
+        res.status(404).json({ error: 'Quality run not found' });
+        return;
+      }
+      res.json({ success: true, run: detail });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
