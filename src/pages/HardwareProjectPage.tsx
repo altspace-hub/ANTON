@@ -157,6 +157,13 @@ export default function HardwareProjectPage() {
 
   useEffect(() => { loadProject(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [id]);
 
+  useEffect(() => {
+    // Diagnose-path projects use the dedicated 5-phase Diagnose workspace.
+    if (project && project.path === 'diagnose') {
+      nav(`/hardware/projects/${project.id}/diagnose`, { replace: true });
+    }
+  }, [project, nav]);
+
   const runQuality = async () => {
     if (!id) return;
     setRunning(true);

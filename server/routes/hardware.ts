@@ -10,6 +10,7 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
+import multer from 'multer';
 import type { DatabaseAdapter } from '../db/database.js';
 import {
   createHkpService,
@@ -32,7 +33,19 @@ import {
   type PhaseStatus,
 } from '../services/hardware-project-service.js';
 import { createQualityPipelineService } from '../services/quality-pipeline-service.js';
+import { createDiagnoseService } from '../services/diagnose-service.js';
+import { createPhotoIdService, type PhotoInput } from '../services/photo-id-service.js';
 import { safeError } from '../lib/error-response.js';
+
+// In-memory multer for photo-id uploads (max 4 photos × 8MB).
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024, files: 4 },
+  fileFilter: (_req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only JPEG / PNG / WebP / GIF photos are accepted'));
+  },
+});
 
 // ── Validation schemas ────────────────────────────────────────────────────────
 
@@ -154,6 +167,46 @@ const runQualitySchema = z.object({
   only_gates: z.array(z.string()).optional(),
 });
 
+const matchSymptomsSchema = z.object({
+  description: z.string().min(5).max(4000),
+  hkp_id: z.string().nullable().optional(),
+  limit: z.number().int().min(1).max(20).optional(),
+});
+
+const logOutcomeSchema = z.object({
+  case_id: z.string().min(1).max(120),
+  resolution_id: z.string().min(1).max(40),
+  outcome: z.enum(['worked', 'made_worse', 'no_effect', 'partial']),
+  context_notes: z.string().max(2000).nullable().optional(),
+  consent_for_sharing: z.boolean().optional(),
+});
+
+const contributeCaseSchema = z.object({
+  case_id: z.string().regex(/^[a-z0-9-]{4,80}$/, 'lowercase / digits / hyphens only, 4-80 chars'),
+  family_id: z.string().min(1).max(64),
+  hkp_id: z.string().nullable().optional(),
+  title: z.string().min(5).max(300),
+  severity: z.enum(['low', 'moderate', 'high', 'critical']).optional(),
+  symptoms: z.array(z.object({
+    symptom: z.string().min(3),
+    observable_via: z.array(z.string()).optional(),
+    confidence_when_present: z.number().min(0).max(1).optional(),
+  })).min(1).max(10),
+  probable_causes: z.array(z.object({
+    cause: z.string().min(3),
+    confidence: z.number().min(0).max(1).optional(),
+    evidence: z.array(z.string()).optional(),
+  })).min(1).max(10),
+  resolutions: z.array(z.object({
+    description: z.string().min(3),
+    preferred: z.boolean().optional(),
+    verified_by: z.array(z.string()).optional(),
+  })).min(1).max(10),
+  diagnostic_questions: z.array(z.string()).max(10).optional(),
+  related_cases: z.array(z.string()).max(10).optional(),
+  consent_for_sharing: z.boolean(),
+});
+
 function getOwnerId(req: import('express').Request): string {
   const user = (req as { user?: { id?: string; username?: string } }).user;
   return user?.id ?? user?.username ?? 'default';
@@ -164,6 +217,8 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const hkp = createHkpService(db);
   const projects = createHardwareProjectService(db);
   const quality = createQualityPipelineService(db);
+  const diagnose = createDiagnoseService(db);
+  const photoId = createPhotoIdService(db);
 
   // ── Family registry (read-only) ───────────────────────────────────────────
 
@@ -633,6 +688,112 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.status(500).json({ error: safeError(err) });
     }
   });
+
+  // ── Diagnose path: symptom matching, outcome logging, contribution ────────
+
+  router.post('/hardware/projects/:id/diagnose/match', async (req, res) => {
+    try {
+      const parsed = matchSymptomsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const project = await projects.getProject(req.params.id);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      const candidates = await diagnose.matchSymptoms({
+        family_id: project.family_id,
+        hkp_id: parsed.data.hkp_id ?? project.hkp_id,
+        description: parsed.data.description,
+        limit: parsed.data.limit,
+      });
+      res.json({ success: true, candidates });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/projects/:id/diagnose/outcomes', async (req, res) => {
+    try {
+      const parsed = logOutcomeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const result = await diagnose.logOutcome({
+        ...parsed.data,
+        contributor_id: getOwnerId(req),
+      });
+      res.status(201).json({ success: true, outcome_id: result.id });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/hardware/diagnostic-cases/:caseId/outcomes', async (req, res) => {
+    try {
+      const summary = await diagnose.summariseOutcomes(req.params.caseId);
+      res.json({ success: true, summary });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/hardware/diagnostic-cases', async (req, res) => {
+    try {
+      const parsed = contributeCaseSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      if (!HARDWARE_FAMILIES[parsed.data.family_id]) {
+        res.status(400).json({ error: `Unknown hardware family: ${parsed.data.family_id}` });
+        return;
+      }
+      const result = await diagnose.contributeCase({
+        ...parsed.data,
+        contributor_id: getOwnerId(req),
+      });
+      res.status(201).json({ success: true, case_id: result.case_id });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Photo-based module identification ─────────────────────────────────────
+
+  router.post('/hardware/identify-photo',
+    photoUpload.array('photos', 4),
+    async (req, res) => {
+      try {
+        const familyId = String(req.body.family_id ?? '').trim();
+        if (!familyId || !HARDWARE_FAMILIES[familyId]) {
+          res.status(400).json({ error: 'family_id is required and must be a known hardware family' });
+          return;
+        }
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        if (files.length === 0) {
+          res.status(400).json({ error: 'At least one photo is required (multipart field name: photos)' });
+          return;
+        }
+        const photos: PhotoInput[] = files.map(f => ({
+          bytes: f.buffer,
+          mimeType: f.mimetype as PhotoInput['mimeType'],
+        }));
+        const result = await photoId.identify({
+          family_id: familyId,
+          hkp_id: req.body.hkp_id || null,
+          context: req.body.context || null,
+          photos,
+        });
+        res.json({ success: true, identification: result });
+      } catch (err) {
+        res.status(500).json({ error: safeError(err) });
+      }
+    },
+  );
 
   return router;
 }
