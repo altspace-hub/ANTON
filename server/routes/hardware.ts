@@ -849,6 +849,15 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
     res.json({ success: true, adapters: quality.listAdapters() });
   });
 
+  router.get('/hardware/quality/adapter-availability', async (_req, res) => {
+    try {
+      const availability = await quality.getAvailability();
+      res.json({ success: true, availability });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   router.post('/hardware/projects/:id/quality/run', async (req, res) => {
     try {
       const parsed = runQualitySchema.safeParse(req.body ?? {});
