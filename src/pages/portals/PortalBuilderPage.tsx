@@ -420,7 +420,11 @@ function buildDraftFor(session: SessionState): Record<string, unknown> {
     return { pages: session.template.seedPages.map(s => ({ path: s.path, title: s.title, sort_order: s.sortOrder })) };
   }
   if (phase === 'content_generation') {
-    return { pages: session.template.seedPages.map(s => ({ path: s.path, html: '' })) };
+    // Pre-fill the textareas with the template's seed HTML so users see
+    // what they're editing instead of a blank slate. The renderer's
+    // {{title}}, {{portal.*}}, {{data.*}}, {{#each kind}} placeholders
+    // are visible — users can adjust copy without losing the structure.
+    return { pages: session.template.seedPages.map(s => ({ path: s.path, html: (s as { html?: string }).html ?? '' })) };
   }
   if (phase === 'capabilities') {
     return {
