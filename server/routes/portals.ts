@@ -251,6 +251,53 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // Owner: install / replace the trust bundle. Trust bundles ship the
+  // registry operator's Ed25519 public key — without one, STH proofs from
+  // the registry can't be verified and we can only do best-effort lookups.
+  // Body is JSON matching the TrustBundle shape; we validate before swapping
+  // the in-process singleton.
+  const trustedOperatorSchema = z.object({
+    operatorId: z.string().min(1),
+    namespaces: z.array(z.string().min(1)).min(1),
+    publicKeyHex: z.string().regex(/^[0-9a-fA-F]+$/, 'publicKeyHex must be hex'),
+    publicKeyFingerprint: z.string().min(1),
+    bundleDate: z.string().min(1),
+    expiresAt: z.string().min(1),
+    rotatedToOperatorId: z.string().optional(),
+  });
+  const trustBundleSchema = z.object({
+    trustStoreVersion: z.number().int().positive(),
+    registryOperators: z.array(trustedOperatorSchema).min(1),
+  });
+  router.post('/portals/trust-bundle', requireAuth, async (req, res) => {
+    try {
+      const parsed = trustBundleSchema.parse(req.body);
+      // Reject placeholder keys to stop accidental no-op uploads.
+      const placeholders = parsed.registryOperators.filter((op) => op.publicKeyHex.startsWith('__PENDING_'));
+      if (placeholders.length > 0) {
+        return res.status(400).json({
+          error: 'Bundle still contains placeholder operator keys: '
+            + placeholders.map((p) => p.operatorId).join(', '),
+        });
+      }
+      getTrustStore().replace(parsed);
+      const snap = getTrustStore().snapshot();
+      res.json({
+        installed: true,
+        trustStoreVersion: snap.trustStoreVersion,
+        operators: snap.registryOperators.map((op) => ({
+          operatorId: op.operatorId,
+          namespaces: op.namespaces,
+          publicKeyFingerprint: op.publicKeyFingerprint,
+          bundleDate: op.bundleDate,
+          expiresAt: op.expiresAt,
+        })),
+      });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
   // Public: trust-bundle status for the UI banner. Tells the client whether
   // the registry operator's public key is the bundled placeholder (in which
   // case STH verification can't succeed and registry submissions are best-
@@ -815,6 +862,37 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // ── Owner: stats — aggregated invocation counts per capability ────────────
+  // One row per declared capability with totals per status. Driven entirely
+  // from portal_capability_invocations so deleted capabilities still show up
+  // (helpful during audits — "this used to be a thing, here's what happened").
+  router.get('/portals/:id/stats', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const rows = await db.all<{
+        capability_id: string; capability_verb: string;
+        total: number; pending: number; acknowledged: number;
+        responded: number; rejected: number;
+        last_received_at: string | null;
+      }>(
+        `SELECT capability_id, capability_verb,
+                COUNT(*)::int AS total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END)::int AS pending,
+                SUM(CASE WHEN status = 'acknowledged' THEN 1 ELSE 0 END)::int AS acknowledged,
+                SUM(CASE WHEN status = 'responded' THEN 1 ELSE 0 END)::int AS responded,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END)::int AS rejected,
+                MAX(received_at) AS last_received_at
+         FROM portal_capability_invocations
+         WHERE portal_id = ?
+         GROUP BY capability_id, capability_verb
+         ORDER BY total DESC, capability_id ASC`,
+        req.params.id,
+      );
+      res.json({ stats: rows });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── Owner: bundle export / import ─────────────────────────────────────────
 
   router.get('/portals/:id/bundle', requireAuth, requirePortalOwner, async (req, res) => {
@@ -848,6 +926,41 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Visitor: fetch + invoke ───────────────────────────────────────────────
+
+  // Public: list visible pages for a portal address. Used by the visitor
+  // page's nav rail. For local portals we read straight from portal_pages;
+  // for LAN-discovered remotes we proxy the same endpoint on the origin.
+  router.get('/portals/visit/:address/pages', async (req, res) => {
+    try {
+      const portalAddress = decodeURIComponent(req.params.address);
+      const remote = await db.get<{ origin_endpoint: string | null }>(
+        `SELECT origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
+        portalAddress,
+      );
+      if (remote?.origin_endpoint) {
+        try {
+          const r = await fetch(`${remote.origin_endpoint}/api/portals/visit/${encodeURIComponent(portalAddress)}/pages`);
+          if (!r.ok) return res.status(r.status).json({ error: 'Remote returned non-OK' });
+          return res.json(await r.json());
+        } catch {
+          return res.status(503).json({ error: 'Remote portal unreachable' });
+        }
+      }
+      const m = portalAddress.match(/^([^.]+(?:\.[^.]+)*)\.([^.]+)\.portal$/);
+      if (!m) return res.status(400).json({ error: 'Invalid portal address' });
+      const rows = await db.all<{ path: string; title: string | null; sort_order: number }>(
+        `SELECT pp.path, pp.title, pp.sort_order
+         FROM portal_pages pp
+         JOIN portals p ON p.id = pp.portal_id
+         WHERE p.name = ? AND p.namespace = ? AND p.status = 'active' AND pp.visible = TRUE
+         ORDER BY pp.sort_order ASC, pp.path ASC`,
+        m[1], m[2],
+      );
+      res.json({ pages: rows.map((r) => ({ path: r.path, title: r.title, sortOrder: r.sort_order })) });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
 
   router.get('/portals/visit/:address/page', async (req, res) => {
     try {

@@ -34,6 +34,12 @@ interface PortalDetail {
 interface Page { id: string; path: string; title: string | null; html: string; sortOrder: number; visible: boolean; updatedAt: string }
 interface Invocation { id: string; capability_id: string; capability_verb: string; aap_endpoint: string; visitor_contact_hash: string | null; input: Record<string, unknown>; output: Record<string, unknown> | null; status: string; received_at: string; response_id: string }
 interface Asset { id: string; path: string; mimeType: string; byteSize: number; contentHash: string; updatedAt: string }
+interface CapabilityStat {
+  capability_id: string; capability_verb: string;
+  total: number; pending: number; acknowledged: number;
+  responded: number; rejected: number;
+  last_received_at: string | null;
+}
 interface CapabilityEdit {
   id: string; verb: string; customVerbName?: string;
   title: string; description: string; aapEndpoint: string;
@@ -58,6 +64,16 @@ export default function PortalManagePage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [stats, setStats] = useState<CapabilityStat[]>([]);
+
+  async function refreshStats() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/stats`);
+    if (res.ok) {
+      const j = await res.json() as { stats: CapabilityStat[] };
+      setStats(j.stats ?? []);
+    }
+  }
 
   async function refreshCapabilities() {
     if (!id) return;
@@ -196,6 +212,13 @@ export default function PortalManagePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tab]);
 
+  // Stats live on the Overview tab — load once when the user lands there.
+  useEffect(() => {
+    if (!id || tab !== 'overview') return;
+    void refreshStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, tab]);
+
   useEffect(() => {
     if (!id || tab !== 'inbox') return;
     void (async () => {
@@ -281,6 +304,7 @@ export default function PortalManagePage() {
         {tab === 'overview' && (
           <OverviewTab
             portal={portal} pageCount={pageCount} inboxPending={inboxPending}
+            stats={stats}
             onTogglePublicIndex={async (v) => {
               try { await patchPortal({ public_index: v }); }
               catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -333,11 +357,12 @@ export default function PortalManagePage() {
 }
 
 function OverviewTab({
-  portal, pageCount, inboxPending, onTogglePublicIndex,
+  portal, pageCount, inboxPending, stats, onTogglePublicIndex,
 }: {
   portal: PortalDetail['portal'];
   pageCount: number;
   inboxPending: number;
+  stats: CapabilityStat[];
   onTogglePublicIndex: (v: boolean) => void | Promise<void>;
 }) {
   const verbs = portal.capability_summary?.capabilityVerbs ?? [];
@@ -383,6 +408,45 @@ function OverviewTab({
       </Card>
       <Card title="Descriptor binding" wide>
         <KV label="Hash" value={<code className="text-xs break-all">{portal.descriptor_hash ?? '—'}</code>} />
+      </Card>
+      <Card title="Capability activity" wide>
+        {stats.length === 0 ? (
+          <p className="text-sm text-adv-gray">No invocations yet. Visitors haven't called any capability.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide text-adv-gray text-left">
+                  <th className="pb-2 pr-3 font-normal">Capability</th>
+                  <th className="pb-2 px-2 font-normal text-right">Total</th>
+                  <th className="pb-2 px-2 font-normal text-right">Pending</th>
+                  <th className="pb-2 px-2 font-normal text-right">Responded</th>
+                  <th className="pb-2 px-2 font-normal text-right">Rejected</th>
+                  <th className="pb-2 pl-2 font-normal">Last call</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.map((s) => (
+                  <tr key={s.capability_id} className="border-t border-border/40">
+                    <td className="py-1.5 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-1.5 py-0.5 rounded bg-adv-teal/10 text-adv-teal text-xs">{s.capability_verb}</span>
+                        <code className="text-xs">{s.capability_id}</code>
+                      </div>
+                    </td>
+                    <td className="py-1.5 px-2 text-right">{s.total}</td>
+                    <td className={`py-1.5 px-2 text-right ${s.pending > 0 ? 'text-adv-gold' : 'text-adv-gray'}`}>{s.pending}</td>
+                    <td className="py-1.5 px-2 text-right text-adv-green">{s.responded}</td>
+                    <td className={`py-1.5 px-2 text-right ${s.rejected > 0 ? 'text-adv-red' : 'text-adv-gray'}`}>{s.rejected}</td>
+                    <td className="py-1.5 pl-2 text-xs text-adv-gray">
+                      {s.last_received_at ? new Date(s.last_received_at).toLocaleString() : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
