@@ -32,6 +32,7 @@ import { z } from 'zod';
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { generateAppKeypair } from '../identity.js';
+import { encryptPortalKey } from '../../lib/portal-key-cipher.js';
 import { buildDescriptor, type CapabilityDeclaration } from '../capability-descriptor/builder.js';
 import { createPortalDatabaseService } from './portal-database-service.js';
 import {
@@ -375,9 +376,15 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
         session.templateId,
         kp.contactHash,
         kp.publicKeyHex,
-        kp.privateKeyPem,
+        // Encrypt at rest using INSTANCE_KEY_ENCRYPTION_KEY (AES-256-GCM).
+        // Falls back to plaintext + one-time warning if env var missing.
+        encryptPortalKey(kp.privateKeyPem),
         publish.public_index,
-        JSON.stringify({ walkthroughSessionId: session.id }),
+        // Stamp ownerId so the route-layer requirePortalOwner check can
+        // enforce who is allowed to mutate this portal afterwards. The
+        // walkthrough session's owner_id is the source of truth — the
+        // creator of the walkthrough is the owner of the portal.
+        JSON.stringify({ walkthroughSessionId: session.id, ownerId: session.ownerId }),
       );
       if (!inserted) throw new Error('finalize: portal insert returned no id');
       const portalId = inserted.id;

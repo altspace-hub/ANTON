@@ -1,21 +1,31 @@
 /**
- * portals.ts — REST API for Portals (Phase B / Step 12-14, 16).
+ * portals.ts — REST API for Portals.
  *
  * Three audiences:
  *   1. The local owner managing their own portals (CRUD + inbox)
  *   2. The walkthrough UI driving the 8-phase builder
  *   3. The visitor UI rendering another portal's content & invoking caps
  *
- * Owner-side endpoints assume the caller IS the local ANTON owner — auth
- * integration with the broader app is a separate concern (v0.7.x scope).
+ * Auth model:
+ *   - Owner endpoints (CRUD, pages, inbox-respond, bundle export, walkthroughs):
+ *     require an authenticated user (requireAuth). For :id-scoped endpoints
+ *     we additionally check that the caller owns the portal via the
+ *     `ownerId` stored in `portals.metadata`. The walkthrough's POST creates
+ *     a session bound to req.user.id; finalize stamps the portal row's
+ *     metadata.ownerId. Pre-auth portals (rare, only relevant for solo-mode
+ *     historical state) are owned by the first authenticated caller per
+ *     pragmatic legacy compat.
+ *   - Visitor endpoints (.../visit/...) and search/templates are public —
+ *     anyone can fetch a portal page or invoke a declared capability.
  */
 
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAuth } from '../middleware/auth.js';
 
 import { createPortalDatabaseService } from '../services/portals/portal-database-service.js';
 import { createPortalHandler } from '../services/portals/portal-handler.js';
@@ -23,6 +33,37 @@ import { createPortalSearchEngine } from '../services/portals/portal-search-engi
 import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-engine.js';
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
+
+// ── Owner-check middleware ──────────────────────────────────────────────────
+// Used on /portals/:id/* mutations after requireAuth. Verifies that the
+// authenticated user (req.user.id) owns the portal at :id (matching the
+// metadata.ownerId field). Falls through to the next handler on success;
+// 403s on mismatch, 404s if the portal doesn't exist.
+
+function makeRequirePortalOwner(db: DatabaseAdapter) {
+  return async function requirePortalOwner(req: Request, res: Response, next: NextFunction) {
+    try {
+      const portalId = req.params.id;
+      if (!portalId) return res.status(400).json({ error: 'Portal id required' });
+      if (!req.user?.id) return res.status(401).json({ error: 'Authentication required' });
+      const row = await db.get<{ metadata: { ownerId?: string } | null }>(
+        `SELECT metadata FROM portals WHERE id = ?`, portalId,
+      );
+      if (!row) return res.status(404).json({ error: 'Portal not found' });
+      const ownerId = row.metadata?.ownerId;
+      // Solo-mode legacy compat: portals created before owner stamping have
+      // no ownerId; the first authenticated caller in solo mode is allowed
+      // through (gates immediately tighten once owner is stamped on next
+      // mutation via finalizeSession or POST /portals).
+      if (ownerId && ownerId !== req.user.id) {
+        return res.status(403).json({ error: 'Not the portal owner' });
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  };
+}
 
 // ── Validation schemas ─────────────────────────────────────────────────────
 
@@ -82,16 +123,30 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   const handler = createPortalHandler(db);
   const search = createPortalSearchEngine(db);
   const walkthroughs = createWalkthroughEngine(db);
+  const requirePortalOwner = makeRequirePortalOwner(db);
+
+  // Helper: assert that the authenticated caller owns the walkthrough session.
+  async function assertSessionOwner(req: Request, res: Response): Promise<boolean> {
+    const sid = req.params.id;
+    const row = await db.get<{ owner_id: string }>(
+      `SELECT owner_id FROM portal_walkthrough_sessions WHERE id = ?`, sid,
+    );
+    if (!row) { res.status(404).json({ error: 'Session not found' }); return false; }
+    if (row.owner_id !== req.user!.id) { res.status(403).json({ error: 'Not the session owner' }); return false; }
+    return true;
+  }
 
   // ── Templates + walkthroughs ──────────────────────────────────────────────
 
+  // Public: anyone can list templates.
   router.get('/portals/templates', (_req, res) => {
     res.json({ templates: listTemplates() });
   });
 
-  router.post('/portals/walkthroughs', async (req, res) => {
+  router.post('/portals/walkthroughs', requireAuth, async (req, res) => {
     try {
-      const parsed = createWalkthroughSchema.parse(req.body);
+      // Always stamp ownerId from the authenticated user — never trust the body.
+      const parsed = createWalkthroughSchema.parse({ ...req.body, ownerId: req.user!.id });
       const session = await walkthroughs.createSession(parsed);
       res.status(201).json({ session });
     } catch (err) {
@@ -99,8 +154,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/portals/walkthroughs/:id', async (req, res) => {
+  router.get('/portals/walkthroughs/:id', requireAuth, async (req, res) => {
     try {
+      if (!await assertSessionOwner(req, res)) return;
       const session = await walkthroughs.getSession(req.params.id);
       if (!session) return res.status(404).json({ error: 'Session not found' });
       res.json({ session });
@@ -109,8 +165,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/portals/walkthroughs/:id/prompt', async (req, res) => {
+  router.get('/portals/walkthroughs/:id/prompt', requireAuth, async (req, res) => {
     try {
+      if (!await assertSessionOwner(req, res)) return;
       const prompt = await walkthroughs.generatePhasePrompt(req.params.id);
       res.json({ prompt });
     } catch (err) {
@@ -118,8 +175,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/walkthroughs/:id/advance', async (req, res) => {
+  router.post('/portals/walkthroughs/:id/advance', requireAuth, async (req, res) => {
     try {
+      if (!await assertSessionOwner(req, res)) return;
       const result = await walkthroughs.advanceSession(req.params.id, req.body);
       res.json(result);
     } catch (err) {
@@ -127,8 +185,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/walkthroughs/:id/finalize', async (req, res) => {
+  router.post('/portals/walkthroughs/:id/finalize', requireAuth, async (req, res) => {
     try {
+      if (!await assertSessionOwner(req, res)) return;
       const result = await walkthroughs.finalizeSession(req.params.id);
       res.status(201).json(result);
     } catch (err) {
@@ -136,8 +195,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/walkthroughs/:id/abandon', async (req, res) => {
+  router.post('/portals/walkthroughs/:id/abandon', requireAuth, async (req, res) => {
     try {
+      if (!await assertSessionOwner(req, res)) return;
       await walkthroughs.abandonSession(req.params.id);
       res.status(204).end();
     } catch (err) {
@@ -149,17 +209,18 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   // MUST be declared before /portals/:id (Express ordering — "inbox" would
   // otherwise be matched as the UUID :id param).
 
-  router.get('/portals/inbox', async (req, res) => {
+  router.get('/portals/inbox', requireAuth, async (req, res) => {
     try {
       const status = (req.query.status as string | undefined) ?? null;
-      const limit = Math.min(Number(req.query.limit ?? 100), 500);
-      const where = ['1 = 1'];
-      const params: unknown[] = [];
+      const limit = Math.min(Number(req.query.limit ?? 100) || 100, 500);
+      const ownerId = req.user!.id;
+      const where = [`p.metadata->>'ownerId' = ?`];
+      const params: unknown[] = [ownerId];
       if (status) {
         where.push('inv.status = ?');
         params.push(status);
       }
-      params.push(limit);
+      const queryParams = [...params, limit];
       const rows = await db.all(
         `SELECT inv.id, inv.portal_id, p.name AS portal_name, p.namespace AS portal_namespace,
                 p.display_title AS portal_title,
@@ -171,12 +232,13 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
          JOIN portals p ON p.id = inv.portal_id
          WHERE ${where.join(' AND ')}
          ORDER BY inv.received_at DESC LIMIT ?`,
-        ...params,
+        ...queryParams,
       );
       const totalRow = await db.get<{ n: number }>(
-        `SELECT COUNT(*)::int AS n FROM portal_capability_invocations
-         ${status ? `WHERE status = ?` : ''}`,
-        ...(status ? [status] : []),
+        `SELECT COUNT(*)::int AS n FROM portal_capability_invocations inv
+         JOIN portals p ON p.id = inv.portal_id
+         WHERE ${where.join(' AND ')}`,
+        ...params,
       );
       res.json({ invocations: rows, total: totalRow?.n ?? 0 });
     } catch (err) {
@@ -212,18 +274,17 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // ── Owner: portal CRUD ────────────────────────────────────────────────────
 
-  router.get('/portals', async (req, res) => {
+  router.get('/portals', requireAuth, async (req, res) => {
     try {
-      const ownerId = (req.query.ownerId as string | undefined) ?? null;
-      const where = ownerId ? `WHERE metadata->>'ownerId' = ?` : '';
-      const params = ownerId ? [ownerId] : [];
+      // Authenticated owner only — ownerId comes from the JWT, not query params.
+      const ownerId = req.user!.id;
       const rows = await db.all(
         `SELECT id, name, namespace, category, display_title, description, status,
                 public_index, descriptor_hash, registered_at, last_synced_at,
                 created_at, updated_at
-         FROM portals ${where}
+         FROM portals WHERE metadata->>'ownerId' = ?
          ORDER BY created_at DESC`,
-        ...params,
+        ownerId,
       );
       res.json({ portals: rows });
     } catch (err) {
@@ -231,7 +292,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/portals/:id', async (req, res) => {
+  router.get('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const portal = await db.get(
         `SELECT id, name, namespace, category, display_title, description, status,
@@ -253,7 +314,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.delete('/portals/:id', async (req, res) => {
+  router.delete('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const r = await db.run(`DELETE FROM portals WHERE id = ?`, req.params.id);
       if (r.changes === 0) return res.status(404).json({ error: 'Portal not found' });
@@ -265,7 +326,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // ── Owner: pages CRUD ─────────────────────────────────────────────────────
 
-  router.get('/portals/:id/pages', async (req, res) => {
+  router.get('/portals/:id/pages', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const pages = await portalDb.listPages(req.params.id);
       res.json({ pages });
@@ -274,7 +335,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.put('/portals/:id/pages', async (req, res) => {
+  router.put('/portals/:id/pages', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const parsed = upsertPageSchema.parse(req.body);
       const page = await portalDb.upsertPage(req.params.id, parsed);
@@ -284,7 +345,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.delete('/portals/:id/pages', async (req, res) => {
+  router.delete('/portals/:id/pages', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const path = req.query.path as string | undefined;
       if (!path) return res.status(400).json({ error: 'path query parameter required' });
@@ -298,7 +359,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // ── Owner: inbox ──────────────────────────────────────────────────────────
 
-  router.get('/portals/:id/inbox', async (req, res) => {
+  router.get('/portals/:id/inbox', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const status = (req.query.status as string | undefined) ?? null;
       const where = status ? 'AND status = ?' : '';
@@ -320,7 +381,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/:id/inbox/:invId/respond', async (req, res) => {
+  router.post('/portals/:id/inbox/:invId/respond', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const parsed = inboxRespondSchema.parse(req.body);
       const now = new Date().toISOString();
@@ -359,7 +420,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // ── Owner: bundle export / import ─────────────────────────────────────────
 
-  router.get('/portals/:id/bundle', async (req, res) => {
+  router.get('/portals/:id/bundle', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const redactToTemplate = req.query.template === '1';
       const buf = await bundlePortal(db, req.params.id, { redactToTemplate });
@@ -375,7 +436,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/import', upload.single('bundle'), async (req, res) => {
+  router.post('/portals/import', requireAuth, upload.single('bundle'), async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'bundle file required' });
       const newName = (req.body?.newName as string | undefined);

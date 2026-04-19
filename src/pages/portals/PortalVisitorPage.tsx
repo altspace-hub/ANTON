@@ -105,13 +105,19 @@ export default function PortalVisitorPage() {
             </div>
           )}
           {page.kind === 'page' && (
-            <article
-              className="prose-output max-w-none rounded-xl border border-border bg-adv-card p-6"
-              // The HTML is server-rendered + interpolated through the renderer
-              // which HTML-escapes structured data by default. Owner-authored
-              // HTML in portal_pages is trusted (the owner can author whatever
-              // they want for their own portal).
-              dangerouslySetInnerHTML={{ __html: page.html }}
+            // Sandbox the owner-authored HTML in an iframe. The visitor of
+            // portal X is NOT the owner of portal X — owner HTML can contain
+            // arbitrary <script> that would otherwise execute in the
+            // visitor's authenticated session. `sandbox` with no `allow-*`
+            // disables scripts, forms, popups, navigation, plugins, and
+            // same-origin access. `srcdoc` keeps the served HTML inline.
+            // We give the iframe the same prose-output styling via a
+            // wrapper + base style injection so visitor pages look right.
+            <iframe
+              title={page.title ?? 'Portal page'}
+              sandbox=""
+              srcDoc={wrapForSandbox(page.html, page.title)}
+              className="w-full min-h-[60vh] rounded-xl border border-border bg-adv-card"
             />
           )}
         </main>
@@ -153,6 +159,39 @@ export default function PortalVisitorPage() {
       )}
     </div>
   );
+}
+
+// ── Sandbox HTML wrapper ────────────────────────────────────────────────────
+// We can't inherit the parent app's CSS into the sandboxed iframe (no
+// same-origin), so we inline a minimal style block that mirrors the
+// `.prose-output` look from src/index.css for the common HTML elements
+// portals will produce.
+
+function wrapForSandbox(html: string, title: string | null): string {
+  const escapedTitle = (title ?? 'Portal page').replace(/[<>"&]/g, c =>
+    ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' }[c] ?? c));
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escapedTitle}</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; padding: 1.25rem; background: #152238; color: #E0E0E0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; line-height: 1.6; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1f2a44; }
+    h2 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.6rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+    p { margin: 0.5rem 0; }
+    a { color: #2DD4A8; text-decoration: underline; }
+    ul, ol { margin: 0.5rem 0; padding-left: 1.25rem; }
+    li { margin: 0.25rem 0; }
+    code { background: #0F1B2D; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.9em; }
+    img { max-width: 100%; height: auto; }
+    blockquote { margin: 0.75rem 0; padding-left: 0.75rem; border-left: 3px solid #2DD4A8; color: #B0B0B0; }
+  </style>
+</head>
+<body>${html}</body>
+</html>`;
 }
 
 // ── Offline card per Spec C.1 ───────────────────────────────────────────────
