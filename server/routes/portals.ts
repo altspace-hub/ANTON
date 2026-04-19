@@ -35,6 +35,7 @@ import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
 import { suggestPhase, suggestPhaseStream, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
+import { scanLan, listKnownNeighbors } from '../services/portals/portal-lan-discovery.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
@@ -154,6 +155,76 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   // Public: anyone can list templates.
   router.get('/portals/templates', (_req, res) => {
     res.json({ templates: listTemplates() });
+  });
+
+  // Public: this instance's public portal directory. Consumed by peer ANTONs
+  // doing LAN discovery — they fetch this after mDNS-finding us, then ingest
+  // each entry into their portal_descriptor_cache with origin_endpoint set
+  // to our http://host:port. Returns only active + public_index portals.
+  // Intentionally unauthenticated: the descriptor envelope is signed with
+  // the portal's Ed25519 key, so peers can verify integrity without trusting
+  // us. Sensitive material (private_key_pem, owner metadata) never appears.
+  router.get('/portals/public-directory', async (_req, res) => {
+    try {
+      const rows = await db.all<{
+        portal_address: string; descriptor_hash: string;
+        descriptor: Record<string, unknown> | string;
+        signature: string; signing_key_fingerprint: string;
+        valid_from: string; valid_until: string;
+      }>(
+        `SELECT c.portal_address, c.descriptor_hash, c.descriptor,
+                c.signature, c.signing_key_fingerprint,
+                c.valid_from, c.valid_until
+         FROM portal_descriptor_cache c
+         JOIN portals p ON p.name || '.' || p.namespace || '.portal' = c.portal_address
+         WHERE p.status = 'active' AND p.public_index = TRUE
+           AND c.origin_endpoint IS NULL
+         ORDER BY p.created_at DESC
+         LIMIT 500`,
+      );
+      const portals = rows.map((r) => ({
+        portalAddress: r.portal_address,
+        descriptorHash: r.descriptor_hash,
+        descriptor: typeof r.descriptor === 'string' ? JSON.parse(r.descriptor) : r.descriptor,
+        signature: r.signature,
+        signingKeyFingerprint: r.signing_key_fingerprint,
+        validFrom: r.valid_from,
+        validUntil: r.valid_until,
+      }));
+      res.json({
+        instance: {
+          name: process.env.APP_GATEWAY_INSTANCE_NAME || process.env.APP_GATEWAY_MDNS_NAME || 'ANTON',
+        },
+        portals,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Owner: trigger an mDNS scan of the LAN, fetch each peer's public
+  // directory, ingest into the descriptor cache as remote-origin entries.
+  // Owner-only because scanning is mildly costly (mDNS + N HTTP fetches)
+  // and surfaces external state into the user's discovery UI.
+  router.post('/portals/lan/scan', requireAuth, async (_req, res) => {
+    try {
+      const port = Number(process.env.PORT) || 3001;
+      const result = await scanLan(db, port);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Owner: list LAN neighbors we've discovered + their last-scan health.
+  // Powers the "On your LAN" section of /portals/discovery.
+  router.get('/portals/lan/neighbors', requireAuth, async (_req, res) => {
+    try {
+      const neighbors = await listKnownNeighbors(db);
+      res.json({ neighbors });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // Public: trust-bundle status for the UI banner. Tells the client whether
