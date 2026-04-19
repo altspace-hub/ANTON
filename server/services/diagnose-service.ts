@@ -19,6 +19,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -165,23 +166,37 @@ export function createDiagnoseService(db: DatabaseAdapter) {
   }
 
   async function logOutcome(input: DiagnosticCaseOutcomeInput): Promise<{ id: string }> {
-    const r = await db.get(
-      `INSERT INTO diagnostic_case_outcomes
-        (case_id, resolution_id, outcome, contributor_id, context_notes, consent_for_sharing)
-       VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-      input.case_id, input.resolution_id, input.outcome,
-      input.contributor_id ?? null, input.context_notes ?? null,
-      input.consent_for_sharing ?? false,
-    ) as { id: string } | undefined;
-    if (!r) throw new Error('Failed to log outcome');
-    // Bump contributor count on the case (simple aggregate)
-    await db.run(
-      `UPDATE diagnostic_cases
-       SET contributor_count = contributor_count + 1, last_updated = NOW()
-       WHERE case_id = ?`,
-      input.case_id,
-    );
-    return r;
+    // Insert + counter-bump in one transaction. Migration 144's UNIQUE
+    // (case_id, resolution_id, contributor_id) catches duplicate logs;
+    // ON CONFLICT keeps the call idempotent.
+    return await db.transaction(async (tx) => {
+      const r = await tx.get(
+        `INSERT INTO diagnostic_case_outcomes
+          (case_id, resolution_id, outcome, contributor_id, context_notes, consent_for_sharing)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (case_id, resolution_id, contributor_id)
+           WHERE contributor_id IS NOT NULL
+         DO UPDATE SET outcome = EXCLUDED.outcome,
+                       context_notes = EXCLUDED.context_notes,
+                       consent_for_sharing = EXCLUDED.consent_for_sharing,
+                       attempted_at = NOW()
+         RETURNING id, (xmax = 0) AS inserted`,
+        input.case_id, input.resolution_id, input.outcome,
+        input.contributor_id ?? null, input.context_notes ?? null,
+        input.consent_for_sharing ?? false,
+      ) as { id: string; inserted: boolean } | undefined;
+      if (!r) throw new Error('Failed to log outcome');
+      // Only bump contributor count on first insert, not on idempotent re-log.
+      if (r.inserted) {
+        await tx.run(
+          `UPDATE diagnostic_cases
+           SET contributor_count = contributor_count + 1, last_updated = NOW()
+           WHERE case_id = ?`,
+          input.case_id,
+        );
+      }
+      return { id: r.id };
+    });
   }
 
   async function listOutcomesForCase(caseId: string): Promise<Array<{

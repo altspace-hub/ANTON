@@ -1692,6 +1692,52 @@ ${module.tags?.map(tag => `- ${tag}`).join('\n') || '- No tags'}
 `;
 }
 
+// ── HKP loader (shared by humanitarian + template bundlers) ──────────────────
+
+/**
+ * Load an HKP row + its claims + components, optionally with regional sourcing
+ * alternatives filtered to a specific region. Returns null hkp + empty arrays
+ * when hkpId is null. Centralised so the humanitarian + template bundlers
+ * don't drift apart.
+ */
+async function loadHkpData(
+  db: DatabaseAdapter,
+  hkpId: string | null,
+  options: { includeRegionalAlternatives: boolean; regionFilter?: string | null } = { includeRegionalAlternatives: false },
+): Promise<{
+  hkp: Record<string, unknown> | null;
+  claims: Array<Record<string, unknown>>;
+  components: Array<Record<string, unknown>>;
+  regionalAlternatives: Array<Record<string, unknown>>;
+}> {
+  if (!hkpId) {
+    return { hkp: null, claims: [], components: [], regionalAlternatives: [] };
+  }
+  const hkp = (await db.get('SELECT * FROM hardware_knowledge_packs WHERE id = ?', hkpId)) as Record<string, unknown> | null;
+  const claims = await db.all(
+    `SELECT claim_path, claim_value, classification, evidence_ref, notes
+     FROM hkp_claims WHERE hkp_id = ? ORDER BY claim_path`,
+    hkpId,
+  ) as Array<Record<string, unknown>>;
+  const components = await db.all(
+    `SELECT component_type, name, metadata FROM hkp_components WHERE hkp_id = ? ORDER BY component_type, name`,
+    hkpId,
+  ) as Array<Record<string, unknown>>;
+  let regionalAlternatives: Array<Record<string, unknown>> = [];
+  if (options.includeRegionalAlternatives) {
+    const region = options.regionFilter ?? null;
+    regionalAlternatives = await db.all(
+      `SELECT region, alternative_part, distributor, typical_price_local,
+              typical_price_currency, typical_lead_days, counterfeit_risk, notes
+       FROM hkp_regional_alternatives
+       WHERE hkp_id = ?${region ? ' AND region = ?' : ''}
+       ORDER BY counterfeit_risk ASC NULLS LAST, typical_price_local ASC NULLS LAST`,
+      ...(region ? [hkpId, region] : [hkpId]),
+    ) as Array<Record<string, unknown>>;
+  }
+  return { hkp, claims, components, regionalAlternatives };
+}
+
 // ── Humanitarian Deployment Kit Bundle ───────────────────────────────────────
 
 /**
@@ -1738,32 +1784,14 @@ export async function bundleHumanitarianDeploymentKit(
   }
 
   // 2. HKP + child tables (claims / components / regional alts)
-  const hkpId = project.hkp_id as string | null;
-  let hkp: Record<string, unknown> | null = null;
-  let hkpClaims: Array<Record<string, unknown>> = [];
-  let hkpComponents: Array<Record<string, unknown>> = [];
-  let regionalAlts: Array<Record<string, unknown>> = [];
-  if (hkpId) {
-    hkp = (await db.get('SELECT * FROM hardware_knowledge_packs WHERE id = ?', hkpId)) as Record<string, unknown> | null;
-    hkpClaims = await db.all(
-      `SELECT claim_path, claim_value, classification, evidence_ref, notes
-       FROM hkp_claims WHERE hkp_id = ? ORDER BY claim_path`,
-      hkpId,
-    ) as Array<Record<string, unknown>>;
-    hkpComponents = await db.all(
-      `SELECT component_type, name, metadata FROM hkp_components WHERE hkp_id = ? ORDER BY component_type, name`,
-      hkpId,
-    ) as Array<Record<string, unknown>>;
-    const region = project.region as string | null;
-    regionalAlts = await db.all(
-      `SELECT region, alternative_part, distributor, typical_price_local,
-              typical_price_currency, typical_lead_days, counterfeit_risk, notes
-       FROM hkp_regional_alternatives
-       WHERE hkp_id = ?${region ? ' AND region = ?' : ''}
-       ORDER BY counterfeit_risk ASC NULLS LAST, typical_price_local ASC NULLS LAST`,
-      ...(region ? [hkpId, region] : [hkpId]),
-    ) as Array<Record<string, unknown>>;
-  }
+  const hkpData = await loadHkpData(db, project.hkp_id as string | null, {
+    includeRegionalAlternatives: true,
+    regionFilter: project.region as string | null,
+  });
+  const hkp = hkpData.hkp;
+  const hkpClaims = hkpData.claims;
+  const hkpComponents = hkpData.components;
+  const regionalAlts = hkpData.regionalAlternatives;
 
   // 3. Regulatory artefacts
   const regulatoryRows = await db.all(
@@ -1984,21 +2012,10 @@ export async function bundleHardwareTemplate(
   ) as Record<string, unknown> | undefined;
   if (!tpl) throw new Error('Template not found');
 
-  let hkpRow: Record<string, unknown> | null = null;
-  let hkpClaims: Array<Record<string, unknown>> = [];
-  let hkpComponents: Array<Record<string, unknown>> = [];
-  if (tpl.hkp_id) {
-    hkpRow = (await db.get(`SELECT * FROM hardware_knowledge_packs WHERE id = ?`, tpl.hkp_id as string)) as Record<string, unknown> | null;
-    hkpClaims = await db.all(
-      `SELECT claim_path, claim_value, classification, evidence_ref, notes
-       FROM hkp_claims WHERE hkp_id = ? ORDER BY claim_path`,
-      tpl.hkp_id as string,
-    ) as Array<Record<string, unknown>>;
-    hkpComponents = await db.all(
-      `SELECT component_type, name, metadata FROM hkp_components WHERE hkp_id = ? ORDER BY component_type, name`,
-      tpl.hkp_id as string,
-    ) as Array<Record<string, unknown>>;
-  }
+  const hkpData = await loadHkpData(db, tpl.hkp_id as string | null, { includeRegionalAlternatives: false });
+  const hkpRow = hkpData.hkp;
+  const hkpClaims = hkpData.claims;
+  const hkpComponents = hkpData.components;
 
   const zip = new AdmZip();
   const generatedAt = new Date().toISOString();

@@ -12,6 +12,9 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { parseJson, ServiceError, checkSchemaVersion } from '../lib/hardware-helpers.js';
+
+const HKP_SUPPORTED_MAJOR = 1;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -103,13 +106,8 @@ export interface HkpDetail extends HardwareKnowledgePack {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
-
 function rowToPack(r: Record<string, unknown>): HardwareKnowledgePack {
+  checkSchemaVersion(`HKP ${r.id}`, r.hkp_schema_version as string | null, HKP_SUPPORTED_MAJOR);
   return {
     id: r.id as string,
     family_id: r.family_id as string,
@@ -208,14 +206,87 @@ export function createHkpService(db: DatabaseAdapter) {
        ORDER BY family_id ASC, manufacturer ASC, part_number ASC`,
       ...params,
     );
+    const packs = rows.map(rowToPack);
+    if (packs.length === 0) return [];
 
-    const summaries: HkpSummary[] = [];
-    for (const r of rows) {
-      const pack = rowToPack(r);
-      const summary = await summarisePack(pack);
-      summaries.push(summary);
+    // Fan-out to one query per child table (NOT one per pack — that would
+    // be N+1). Each query is grouped by hkp_id; we merge in JS.
+    const ids = packs.map(p => p.id);
+    const placeholders = ids.map(() => '?').join(',');
+    const [claimRows, compRows, altRows, diagRows, eventRows] = await Promise.all([
+      db.all(
+        `SELECT hkp_id, classification, COUNT(*)::int AS n
+         FROM hkp_claims WHERE hkp_id IN (${placeholders})
+         GROUP BY hkp_id, classification`,
+        ...ids,
+      ) as Promise<Array<{ hkp_id: string; classification: string; n: number | string }>>,
+      db.all(
+        `SELECT hkp_id, COUNT(*)::int AS n FROM hkp_components
+         WHERE hkp_id IN (${placeholders}) GROUP BY hkp_id`,
+        ...ids,
+      ) as Promise<Array<{ hkp_id: string; n: number | string }>>,
+      db.all(
+        `SELECT hkp_id, COUNT(*)::int AS n FROM hkp_regional_alternatives
+         WHERE hkp_id IN (${placeholders}) GROUP BY hkp_id`,
+        ...ids,
+      ) as Promise<Array<{ hkp_id: string; n: number | string }>>,
+      db.all(
+        `SELECT hkp_id, COUNT(*)::int AS n FROM diagnostic_cases
+         WHERE hkp_id IN (${placeholders}) GROUP BY hkp_id`,
+        ...ids,
+      ) as Promise<Array<{ hkp_id: string; n: number | string }>>,
+      // Lifecycle events: direct hkp_id OR pattern match. We pull distinct
+      // (hkp_id, event_id) pairs touched in the last 90 days, then count
+      // per pack in JS.
+      db.all(
+        `WITH recent AS (
+           SELECT event_id, hkp_id, hkp_id_pattern FROM lifecycle_events
+           WHERE ingested_at > NOW() - INTERVAL '90 days'
+         )
+         SELECT p.id AS hkp_id, COUNT(DISTINCT r.event_id)::int AS n
+         FROM hardware_knowledge_packs p
+         LEFT JOIN recent r ON
+           r.hkp_id = p.id
+           OR (r.hkp_id_pattern IS NOT NULL AND p.id LIKE REPLACE(r.hkp_id_pattern, '*', '%'))
+         WHERE p.id IN (${placeholders})
+         GROUP BY p.id`,
+        ...ids,
+      ) as Promise<Array<{ hkp_id: string; n: number | string }>>,
+    ]);
+
+    const compByHkp = new Map(compRows.map(r => [r.hkp_id, Number(r.n)]));
+    const altByHkp = new Map(altRows.map(r => [r.hkp_id, Number(r.n)]));
+    const diagByHkp = new Map(diagRows.map(r => [r.hkp_id, Number(r.n)]));
+    const eventByHkp = new Map(eventRows.map(r => [r.hkp_id, Number(r.n)]));
+    const claimsByHkp = new Map<string, Record<ClaimClassification, number>>();
+    for (const r of claimRows) {
+      if (!claimsByHkp.has(r.hkp_id)) {
+        claimsByHkp.set(r.hkp_id, {
+          'datasheet-verified': 0, 'community-verified': 0,
+          'physically-verified': 0, 'AI-unverified': 0,
+        });
+      }
+      const slot = claimsByHkp.get(r.hkp_id)!;
+      const cls = r.classification as ClaimClassification;
+      if (cls in slot) slot[cls] = Number(r.n);
     }
-    return summaries;
+
+    return packs.map(pack => {
+      const breakdown = claimsByHkp.get(pack.id) ?? {
+        'datasheet-verified': 0, 'community-verified': 0,
+        'physically-verified': 0, 'AI-unverified': 0,
+      };
+      const claimTotal = Object.values(breakdown).reduce((a, b) => a + b, 0);
+      return {
+        ...pack,
+        claim_count: claimTotal,
+        component_count: compByHkp.get(pack.id) ?? 0,
+        regional_alternative_count: altByHkp.get(pack.id) ?? 0,
+        classification_breakdown: breakdown,
+        diagnostic_case_count: diagByHkp.get(pack.id) ?? 0,
+        recent_lifecycle_event_count: eventByHkp.get(pack.id) ?? 0,
+      };
+    });
   }
 
   async function getPack(id: string): Promise<HardwareKnowledgePack | null> {

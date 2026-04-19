@@ -6,6 +6,7 @@ import {
   CheckCircle2, RefreshCcw,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
+import ConfirmModal from '@/components/hardware/ConfirmModal';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export default function HardwareRegulatoryPage() {
   const [busy, setBusy] = useState<null | string>(null);
   const [signoffOpen, setSignoffOpen] = useState(false);
   const [attestation, setAttestation] = useState('');
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
 
   const loadProject = async () => {
     if (!id) return;
@@ -179,14 +181,13 @@ export default function HardwareRegulatoryPage() {
     finally { setBusy(null); }
   };
 
-  const withdraw = async () => {
+  const withdraw = async (reason?: string) => {
     if (!activeArtefact) return;
-    if (!confirm('Withdraw sign-off? The historical sign-off is retained in the audit trail.')) return;
     setBusy('withdraw');
     try {
       const res = await fetchWithAuth(`${API_BASE}/hardware/regulatory-artefacts/${activeArtefact.id}/withdraw`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'Operator-initiated withdrawal' }),
+        body: JSON.stringify({ reason: reason ?? 'Operator-initiated withdrawal' }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.error ?? 'Withdraw failed');
@@ -278,6 +279,17 @@ export default function HardwareRegulatoryPage() {
               ANTON does <strong>not</strong> certify any artefact. The user is the responsible economic operator under the applicable law and must obtain independent legal review before sign-off.
             </div>
           </div>
+          <details className="mt-2 text-xs text-adv-gray">
+            <summary className="cursor-pointer hover:text-adv-off-white">Acronym glossary</summary>
+            <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pl-2">
+              <div><dt className="inline font-mono">CRA</dt> <dd className="inline">— EU Cyber Resilience Act (Regulation 2024/2847). Mandatory for "products with digital elements" placed on the EU market.</dd></div>
+              <div><dt className="inline font-mono">RED</dt> <dd className="inline">— EU Radio Equipment Directive 2014/53/EU. Applies to any device with intentional radio transmission (Wi-Fi, BT, BLE).</dd></div>
+              <div><dt className="inline font-mono">MDR</dt> <dd className="inline">— EU Medical Device Regulation (EU) 2017/745. Applies if intended use includes diagnosis / monitoring / treatment of a medical condition.</dd></div>
+              <div><dt className="inline font-mono">DoC</dt> <dd className="inline">— Declaration of Conformity. Signed manufacturer statement that the product meets applicable EU directives.</dd></div>
+              <div><dt className="inline font-mono">VDP</dt> <dd className="inline">— Vulnerability Disclosure Policy. CRA Annex I §2 + ENISA-mandated reporting + remediation pathway.</dd></div>
+              <div><dt className="inline font-mono">DPA</dt> <dd className="inline">— Data Protection Assessment. GDPR Article 35 baseline for any device processing personal data.</dd></div>
+            </dl>
+          </details>
         </div>
 
         {error && (
@@ -287,7 +299,7 @@ export default function HardwareRegulatoryPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Required-artefact list */}
           <aside className="lg:col-span-1 space-y-2">
             {loading ? (
@@ -347,7 +359,7 @@ export default function HardwareRegulatoryPage() {
                       </button>
                     )}
                     {!editing && activeArtefact.status === 'signed-off' && (
-                      <button onClick={withdraw} disabled={busy === 'withdraw'} className="text-xs px-2 py-1 rounded border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 flex items-center gap-1 disabled:opacity-50">
+                      <button onClick={() => setWithdrawConfirmOpen(true)} disabled={busy === 'withdraw'} aria-label="Withdraw signoff" className="text-xs px-2 py-1 rounded border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 flex items-center gap-1 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-orange-400">
                         <RotateCcw className="w-3 h-3" />Withdraw
                       </button>
                     )}
@@ -419,6 +431,21 @@ export default function HardwareRegulatoryPage() {
             )}
           </main>
         </div>
+
+        <ConfirmModal
+          open={withdrawConfirmOpen}
+          title="Withdraw signoff?"
+          description="The historical signoff is retained in the audit trail; the artefact returns to user-reviewed status. This action is reversible by re-signing."
+          severity="warning"
+          confirmLabel="Withdraw"
+          requireReason
+          reasonPlaceholder="e.g., Discovered a typo in the affected article reference; will re-sign after correction."
+          onConfirm={async (reason) => {
+            setWithdrawConfirmOpen(false);
+            await withdraw(reason);
+          }}
+          onCancel={() => setWithdrawConfirmOpen(false)}
+        />
       </div>
     </div>
   );

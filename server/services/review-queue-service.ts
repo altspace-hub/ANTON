@@ -13,6 +13,7 @@
 
 import { createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -216,13 +217,13 @@ export function createReviewQueueService(db: DatabaseAdapter) {
        RETURNING *`,
       reviewerId, submissionId,
     );
-    if (!r) throw new Error('Submission does not require security review or not found');
+    if (!r) throw ServiceError.notFound('Submission does not require security review or');
     return rowToSubmission(r);
   }
 
   async function approve(submissionId: string, reviewerId: string, reviewNotes?: string): Promise<ReviewSubmission> {
     const sub = await getSubmission(submissionId);
-    if (!sub) throw new Error('Submission not found');
+    if (!sub) throw ServiceError.notFound('Submission');
     if (sub.security_review_required && !sub.security_reviewed_at) {
       throw new Error('HKP submissions require an explicit security review before approval — record it via recordSecurityReview() first');
     }

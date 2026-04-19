@@ -15,6 +15,9 @@
 
 import { createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { parseJson, ServiceError, checkSchemaVersion } from '../lib/hardware-helpers.js';
+
+const REGULATORY_SUPPORTED_MAJOR = 1;
 
 // ── Vocabulary ────────────────────────────────────────────────────────────────
 
@@ -90,17 +93,12 @@ export interface PackCompletenessSummary {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
-
 function sha256(s: string): string {
   return createHash('sha256').update(s).digest('hex');
 }
 
 function rowToArtefact(r: Record<string, unknown>): RegulatoryArtefact {
+  checkSchemaVersion(`regulatory artefact ${r.id}`, r.content_schema_version as string | null, REGULATORY_SUPPORTED_MAJOR);
   return {
     id: r.id as string,
     project_id: r.project_id as string,
@@ -781,7 +779,7 @@ export function createRegulatoryPackService(db: DatabaseAdapter) {
        FROM hardware_projects WHERE id = ?`,
       projectId,
     ) as Record<string, unknown> | undefined;
-    if (!proj) throw new Error('Project not found');
+    if (!proj) throw ServiceError.notFound('Project');
 
     const metadata = parseJson(proj.metadata, {} as Record<string, unknown>);
     const posture = (metadata.posture as Record<string, unknown> | undefined) ?? {};
@@ -935,7 +933,7 @@ export function createRegulatoryPackService(db: DatabaseAdapter) {
 
   async function signOff(input: { artefact_id: string; actor_id: string; attestation: string }): Promise<RegulatoryArtefact> {
     const existing = await db.get('SELECT content_markdown FROM hw_regulatory_artefacts WHERE id = ?', input.artefact_id) as { content_markdown: string | null } | undefined;
-    if (!existing) throw new Error('Artefact not found');
+    if (!existing) throw ServiceError.notFound('Artefact');
     if (!existing.content_markdown || existing.content_markdown.trim().length < 50) {
       throw new Error('Cannot sign off an empty or trivial artefact — generate or write content first');
     }

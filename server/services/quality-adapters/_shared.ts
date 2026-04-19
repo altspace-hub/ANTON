@@ -14,11 +14,15 @@ import { promises as fs } from 'fs';
 export const execFileP = promisify(execFile);
 
 const WORKSPACES_ROOT = process.env.WORKSPACES_DIR || './workspaces';
+const HARDWARE_WORKSPACES_ROOT = path.resolve(WORKSPACES_ROOT, 'hw');
 
 /**
  * Resolve the on-disk workspace path for a hardware project. Convention:
- *   project.metadata.workspace_path (explicit override)
- *   else ${WORKSPACES_ROOT}/hw/${project_id}
+ *   project.metadata.workspace_path (explicit override) — MUST stay inside
+ *     the hardware-workspaces root; otherwise we fall back to the default
+ *     and emit a warning. This prevents an owner from pointing the quality
+ *     pipeline (clang-tidy, cyclonedx, etc.) at arbitrary system paths.
+ *   else ${WORKSPACES_DIR}/hw/${project_id}
  *
  * Adapters that need a workspace (PlatformIO, Clang-tidy, CycloneDX, sdkconfig
  * parser) call this to find the user's project files. Returns the path even if
@@ -26,9 +30,24 @@ const WORKSPACES_ROOT = process.env.WORKSPACES_DIR || './workspaces';
  * a failure.
  */
 export function workspacePathFor(project: { id: string; metadata?: Record<string, unknown> | null }): string {
+  const defaultPath = path.resolve(HARDWARE_WORKSPACES_ROOT, project.id);
   const explicit = (project.metadata?.workspace_path as string | undefined) ?? null;
-  if (explicit) return path.resolve(explicit);
-  return path.resolve(WORKSPACES_ROOT, 'hw', project.id);
+  if (!explicit) return defaultPath;
+
+  // Validate explicit path stays inside the hardware workspaces root. Defends
+  // against `../`, absolute paths to system directories, etc. — an owner-
+  // controlled value can never escape the sandbox.
+  const resolved = path.resolve(explicit);
+  const relative = path.relative(HARDWARE_WORKSPACES_ROOT, resolved);
+  const escapesRoot = relative.startsWith('..') || path.isAbsolute(relative);
+  if (escapesRoot) {
+    console.warn(
+      `[quality-adapters] Project ${project.id} metadata.workspace_path "${explicit}" ` +
+      `escapes hardware workspaces root (${HARDWARE_WORKSPACES_ROOT}); ignoring + using default.`,
+    );
+    return defaultPath;
+  }
+  return resolved;
 }
 
 /** Existence check that doesn't throw. */

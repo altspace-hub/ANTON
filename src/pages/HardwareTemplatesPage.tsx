@@ -5,6 +5,7 @@ import {
   ShieldCheck, ChevronRight, X, Tag,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
+import SkeletonCard from '@/components/hardware/SkeletonCard';
 
 type HardwarePath = 'diagnose' | 'maintain' | 'develop';
 
@@ -153,7 +154,7 @@ export default function HardwareTemplatesPage() {
         {/* Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {loading ? (
-            <div className="col-span-full py-12 text-center text-adv-gray"><Loader2 className="w-6 h-6 animate-spin inline" /></div>
+            <SkeletonCard variant="grid" count={6} />
           ) : list.length === 0 ? (
             <div className="col-span-full py-12 text-center text-adv-gray">No templates match these filters.</div>
           ) : list.map(t => (

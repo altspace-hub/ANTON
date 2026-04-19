@@ -6,6 +6,7 @@ import {
   Camera, ThumbsUp, ThumbsDown, Minus, RotateCw, BookOpen, Shield,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
+import { relativeTime } from '@/theme/hardware-status';
 import VoiceSymptomCapture from '@/components/hardware/VoiceSymptomCapture';
 import PhotoModuleId from '@/components/hardware/PhotoModuleId';
 
@@ -213,7 +214,7 @@ export default function HardwareDiagnosePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <main className="lg:col-span-2 space-y-4">
             {step === 'symptom_capture' && (
               <SymptomCaptureCard
@@ -700,7 +701,7 @@ function ReasoningTrail({ trail }: { trail: Array<{ ts: string; phase: DiagnoseS
         <ol className="space-y-1 text-xs">
           {trail.map((t, i) => (
             <li key={i} className="border-l-2 border-adv-teal/40 pl-2">
-              <div className="text-adv-gray">{new Date(t.ts).toLocaleTimeString()} · {t.phase}</div>
+              <div className="text-adv-gray" title={new Date(t.ts).toLocaleString()}>{relativeTime(t.ts)} · {t.phase}</div>
               <div className="text-adv-off-white">{t.text}</div>
             </li>
           ))}

@@ -5,6 +5,7 @@ import {
   RefreshCcw, Pencil, Save, X, Download, History, CheckCircle2, RotateCcw, Languages,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
+import ConfirmModal from '@/components/hardware/ConfirmModal';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,7 @@ export default function HardwareHumanitarianPage() {
   const [signoffOpen, setSignoffOpen] = useState(false);
   const [attestation, setAttestation] = useState('');
   const [showDeploymentEdit, setShowDeploymentEdit] = useState(false);
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
 
   // ── Loaders ────────────────────────────────────────────────────────────────
 
@@ -184,14 +186,13 @@ export default function HardwareHumanitarianPage() {
     finally { setBusy(null); }
   };
 
-  const withdraw = async () => {
+  const withdraw = async (reason?: string) => {
     if (!active) return;
-    if (!confirm('Withdraw sign-off? Audit trail is retained.')) return;
     setBusy('withdraw');
     try {
       const res = await fetchWithAuth(`${API_BASE}/hardware/capacity-transfer-artefacts/${active.id}/withdraw`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'Operator-initiated withdrawal' }),
+        body: JSON.stringify({ reason: reason ?? 'Operator-initiated withdrawal' }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.error ?? 'Withdraw failed');
@@ -301,7 +302,7 @@ export default function HardwareHumanitarianPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Deployment record + artefact list */}
           <aside className="lg:col-span-1 space-y-3">
             {/* Deployment record */}
@@ -347,7 +348,7 @@ export default function HardwareHumanitarianPage() {
                 onSignoffClose={() => { setSignoffOpen(false); setAttestation(''); }}
                 onAttestationChange={setAttestation}
                 onSignoff={signOff}
-                onWithdraw={withdraw}
+                onWithdraw={() => setWithdrawConfirmOpen(true)}
                 onRegenerate={() => generate(active.kind)}
               />
             )}
@@ -363,6 +364,21 @@ export default function HardwareHumanitarianPage() {
             onError={setError}
           />
         )}
+
+        <ConfirmModal
+          open={withdrawConfirmOpen}
+          title="Withdraw signoff?"
+          description="The audit trail keeps the historical signoff. The artefact returns to user-reviewed status. Re-sign to restore."
+          severity="warning"
+          confirmLabel="Withdraw"
+          requireReason
+          reasonPlaceholder="e.g., Local language phrase needs review by partner before re-signing."
+          onConfirm={async (reason) => {
+            setWithdrawConfirmOpen(false);
+            await withdraw(reason);
+          }}
+          onCancel={() => setWithdrawConfirmOpen(false)}
+        />
       </div>
     </div>
   );

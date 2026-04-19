@@ -116,7 +116,7 @@ export default function HardwareBuildPage() {
             <div>Loading your hardware projects…</div>
           </div>
         ) : projects.length === 0 ? (
-          <EmptyState onNew={() => setWizardOpen(true)} />
+          <EmptyState onNew={() => setWizardOpen(true)} onBrowseTemplates={() => nav('/hardware/templates')} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {projects.map(p => (
@@ -175,17 +175,29 @@ export default function HardwareBuildPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function EmptyState({ onNew }: { onNew: () => void }) {
+function EmptyState({ onNew, onBrowseTemplates }: { onNew: () => void; onBrowseTemplates: () => void }) {
   return (
     <div className="text-center py-16 border border-dashed border-adv-gray/30 rounded">
-      <Cpu className="w-12 h-12 text-adv-gray mx-auto mb-3" />
+      <Cpu className="w-12 h-12 text-adv-gray mx-auto mb-3" aria-hidden="true" />
       <h2 className="text-lg font-semibold">No hardware projects yet</h2>
       <p className="text-sm text-adv-gray mt-1 max-w-md mx-auto">
         Start with the Phase 0 classification — pick the hardware family, choose between Diagnose / Maintain / Develop, and confirm the tier so every downstream module knows which gates to enforce.
       </p>
-      <button onClick={onNew} className="mt-4 px-4 py-2 rounded bg-adv-teal text-adv-dark hover:bg-adv-teal-dark font-medium">
-        Start a new project
-      </button>
+      <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+        <button
+          onClick={onNew}
+          className="px-4 py-2 rounded bg-adv-teal text-adv-dark hover:bg-adv-teal-dark font-medium focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-dark"
+        >
+          Start a new project
+        </button>
+        <span className="text-xs text-adv-gray">or</span>
+        <button
+          onClick={onBrowseTemplates}
+          className="px-4 py-2 rounded border border-adv-teal/40 text-adv-teal hover:bg-adv-teal/10 font-medium focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-dark"
+        >
+          Browse templates →
+        </button>
+      </div>
     </div>
   );
 }
