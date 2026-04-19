@@ -15,6 +15,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { createAapRolloutBridge } from './aap-rollout-bridge.js';
+import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -115,12 +116,6 @@ export interface PatchRollout {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
 
 function rowToPlan(r: Record<string, unknown>): PatchPlan {
   return {
@@ -348,7 +343,7 @@ export function createMaintainService(db: DatabaseAdapter) {
     rollback_on_failure?: boolean;
   }): Promise<PatchStage> {
     const plan = await getPlan(planId);
-    if (!plan) throw new Error('Plan not found');
+    if (!plan) throw ServiceError.notFound('Plan');
     await assertProjectOwner(plan.project_id, ownerId);
 
     const last = await db.get(
@@ -381,7 +376,7 @@ export function createMaintainService(db: DatabaseAdapter) {
     if (!stage) return null;
     const parsed = rowToStage(stage);
     const plan = await getPlan(parsed.plan_id);
-    if (!plan) throw new Error('Parent plan not found');
+    if (!plan) throw ServiceError.notFound('Parent plan');
     await assertProjectOwner(plan.project_id, ownerId);
 
     if (newStatus === 'in_progress') {
@@ -400,7 +395,7 @@ export function createMaintainService(db: DatabaseAdapter) {
             parsed.plan_id, parsed.stage_index,
           );
           if (!earlierCanaryPassed) {
-            throw new Error(`Wave stage cannot start: fleet has > 5 active devices and no earlier canary stage has passed`);
+            throw ServiceError.badRequest('Wave stage cannot start: fleet has > 5 active devices and no earlier canary stage has passed');
           }
         }
       }
@@ -416,11 +411,18 @@ export function createMaintainService(db: DatabaseAdapter) {
     const extra = transitions[newStatus] ?? '';
     const setSql = ['status = ?', 'notes = COALESCE(notes, \'\')', extra].filter(Boolean).join(', ');
 
+    // Race-safe: include the previously-observed status in the WHERE clause
+    // so concurrent advanceStage() calls can't both win. If the row's status
+    // changed between our SELECT and this UPDATE, RETURNING is empty and we
+    // throw — the caller can re-fetch + retry.
     const r = await db.get(
-      `UPDATE hw_patch_stages SET ${setSql} WHERE id = ? RETURNING *`,
-      newStatus, stageId,
+      `UPDATE hw_patch_stages SET ${setSql} WHERE id = ? AND status = ? RETURNING *`,
+      newStatus, stageId, parsed.status,
     );
-    return r ? rowToStage(r) : null;
+    if (!r) {
+      throw new Error(`Stage ${stageId} status changed concurrently (expected '${parsed.status}'). Re-fetch and retry.`);
+    }
+    return rowToStage(r);
   }
 
   /**
@@ -430,10 +432,10 @@ export function createMaintainService(db: DatabaseAdapter) {
    */
   async function recordAcceptance(stageId: string, ownerId: string, observations: Array<{ metric: string; observed: number | string }>): Promise<{ stage: PatchStage; allPassed: boolean }> {
     const r = await db.get('SELECT * FROM hw_patch_stages WHERE id = ?', stageId) as Record<string, unknown> | undefined;
-    if (!r) throw new Error('Stage not found');
+    if (!r) throw ServiceError.notFound('Stage');
     const stage = rowToStage(r);
     const plan = await getPlan(stage.plan_id);
-    if (!plan) throw new Error('Plan not found');
+    if (!plan) throw ServiceError.notFound('Plan');
     await assertProjectOwner(plan.project_id, ownerId);
 
     const results: AcceptanceResult[] = stage.acceptance_rules.map(rule => {
@@ -500,10 +502,10 @@ export function createMaintainService(db: DatabaseAdapter) {
     delivery_channel: DeliveryChannel;
   }): Promise<PatchRollout[]> {
     const rStage = await db.get('SELECT * FROM hw_patch_stages WHERE id = ?', stageId) as Record<string, unknown> | undefined;
-    if (!rStage) throw new Error('Stage not found');
+    if (!rStage) throw ServiceError.notFound('Stage');
     const stage = rowToStage(rStage);
     const plan = await getPlan(stage.plan_id);
-    if (!plan) throw new Error('Plan not found');
+    if (!plan) throw ServiceError.notFound('Plan');
     await assertProjectOwner(plan.project_id, ownerId);
 
     // Resolve cohort to device_ids
@@ -598,7 +600,7 @@ export function createMaintainService(db: DatabaseAdapter) {
     const r0 = await db.get('SELECT plan_id FROM hw_patch_rollouts WHERE id = ?', rolloutId) as { plan_id: string } | undefined;
     if (!r0) return null;
     const plan = await getPlan(r0.plan_id);
-    if (!plan) throw new Error('Plan not found');
+    if (!plan) throw ServiceError.notFound('Plan');
     await assertProjectOwner(plan.project_id, ownerId);
 
     const sets: string[] = ['status = ?'];
@@ -625,8 +627,8 @@ export function createMaintainService(db: DatabaseAdapter) {
       'SELECT owner_id FROM hardware_projects WHERE id = ?',
       projectId,
     ) as { owner_id: string } | undefined;
-    if (!r) throw new Error('Project not found');
-    if (r.owner_id !== ownerId) throw new Error('Permission denied: not project owner');
+    if (!r) throw ServiceError.notFound('Project');
+    if (r.owner_id !== ownerId) throw ServiceError.forbidden('Permission denied: not project owner');
   }
 
   return {

@@ -14,6 +14,7 @@
 import { createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createHardwareProjectService, type HardwareTier, type HardwarePath } from './hardware-project-service.js';
+import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,12 +55,6 @@ export interface TemplateListItem {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
 
 function rowToTemplate(r: Record<string, unknown>): HardwareTemplate {
   return {
@@ -169,7 +164,7 @@ export function createTemplateService(db: DatabaseAdapter) {
     // Authoritative templates can only be deleted by their signer; community
     // ones by their owner.
     if (t.signed_by !== ownerId && t.signed_by !== 'anton-hardware-team') {
-      throw new Error('Permission denied: not template owner');
+      throw ServiceError.forbidden('Permission denied: not template owner');
     }
     const r = await db.run('DELETE FROM hw_templates WHERE id = ?', id);
     return r.changes > 0;
@@ -182,7 +177,7 @@ export function createTemplateService(db: DatabaseAdapter) {
    */
   async function instantiate(input: InstantiateInput): Promise<{ project_id: string; template_id: string }> {
     const tpl = await getTemplate(input.template_id);
-    if (!tpl) throw new Error('Template not found');
+    if (!tpl) throw ServiceError.notFound('Template');
 
     const blueprint = tpl.project_blueprint;
     const bpFlags = blueprint as {
@@ -299,9 +294,9 @@ export function createTemplateService(db: DatabaseAdapter) {
       throw new Error('template_id must be 4-80 chars, lowercase letters / digits / hyphens only');
     }
     const project = await projects.getProjectDetail(input.project_id);
-    if (!project) throw new Error('Project not found');
+    if (!project) throw ServiceError.notFound('Project');
     if (project.owner_id !== input.owner_id) {
-      throw new Error('Permission denied: only the project owner can capture it as a template');
+      throw ServiceError.forbidden('Permission denied: only the project owner can capture it as a template');
     }
 
     const blueprint = {

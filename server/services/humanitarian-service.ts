@@ -26,6 +26,7 @@
 import { createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getClient, isApiKeyConfigured } from './claude-client.js';
+import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Vocabulary ────────────────────────────────────────────────────────────────
 
@@ -183,12 +184,6 @@ export interface CapacityPackSummary {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
-
 function sha256(s: string): string {
   return createHash('sha256').update(s).digest('hex');
 }
@@ -271,7 +266,7 @@ async function loadContext(db: DatabaseAdapter, projectId: string): Promise<Gene
      FROM hardware_projects WHERE id = ?`,
     projectId,
   ) as Record<string, unknown> | undefined;
-  if (!proj) throw new Error('Project not found');
+  if (!proj) throw ServiceError.notFound('Project');
 
   let hkp: GenerationContext['hkp'] = null;
   let regional: GenerationContext['regional_alternatives'] = [];
@@ -621,7 +616,7 @@ export function createHumanitarianService(db: DatabaseAdapter) {
       `SELECT content_markdown, language, generator_kind FROM hw_capacity_transfer_artefacts WHERE id = ?`,
       input.artefact_id,
     ) as { content_markdown: string | null; language: string; generator_kind: GeneratorKind } | undefined;
-    if (!existing) throw new Error('Artefact not found');
+    if (!existing) throw ServiceError.notFound('Artefact');
     if (!existing.content_markdown || existing.content_markdown.trim().length < 100) {
       throw new Error('Cannot sign off an empty or trivial artefact — generate or write content first');
     }

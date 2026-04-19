@@ -253,7 +253,7 @@ export default function HardwareMaintainPage() {
         {/* CVE applicability banner */}
         <CveBanner assessment={assessment} assessing={assessing} onRefresh={runAssessment} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
           <main className="lg:col-span-2 space-y-4">
             {/* Patch plans */}
             <section className="p-4 rounded border border-adv-gray/20 bg-adv-card">

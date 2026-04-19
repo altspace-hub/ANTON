@@ -12,7 +12,15 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
-import { createRegulatoryPackService } from './regulatory-pack-service.js';
+import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
+
+// Lazy: regulatory-pack-service is only consulted from a single advancePhase
+// branch (Tier 2/3 deploy_operate completion). Loaded once on first hit.
+let _regulatoryPackServiceModule: Promise<typeof import('./regulatory-pack-service.js')> | null = null;
+function loadRegulatoryPackService() {
+  _regulatoryPackServiceModule ??= import('./regulatory-pack-service.js');
+  return _regulatoryPackServiceModule;
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -91,12 +99,6 @@ const PHASE_SCAFFOLDS: Record<HardwarePath, Array<{ key: string; label: string }
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return value as T;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
-}
 
 function rowToProject(r: Record<string, unknown>): HardwareProject {
   return {
@@ -329,9 +331,9 @@ export function createHardwareProjectService(db: DatabaseAdapter) {
   }): Promise<{ phase: HardwareProjectPhase; project: HardwareProject; warnings: string[] }> {
     await assertOwner(projectId, ownerId);
     const project = await getProject(projectId);
-    if (!project) throw new Error('Project not found');
+    if (!project) throw ServiceError.notFound('Project');
     const phase = await getPhase(phaseId);
-    if (!phase || phase.project_id !== projectId) throw new Error('Phase not found');
+    if (!phase || phase.project_id !== projectId) throw ServiceError.notFound('Phase');
 
     const warnings: string[] = [];
 
@@ -366,6 +368,7 @@ export function createHardwareProjectService(db: DatabaseAdapter) {
     // Invariant: develop.deploy_operate → complete on Tier 2 / Tier 3 requires
     // every required regulatory artefact to be signed off (per spec §13).
     if (project.path === 'develop' && phase.phase_key === 'deploy_operate' && opts.new_status === 'complete' && project.tier >= 2) {
+      const { createRegulatoryPackService } = await loadRegulatoryPackService();
       const reg = createRegulatoryPackService(db);
       const summary = await reg.assessCompleteness({ project_id: projectId });
       if (!summary.ready_to_ship) {
@@ -440,8 +443,8 @@ export function createHardwareProjectService(db: DatabaseAdapter) {
       'SELECT owner_id FROM hardware_projects WHERE id = ?',
       projectId,
     ) as { owner_id: string } | undefined;
-    if (!r) throw new Error('Project not found');
-    if (r.owner_id !== ownerId) throw new Error('Permission denied: not project owner');
+    if (!r) throw ServiceError.notFound('Project');
+    if (r.owner_id !== ownerId) throw ServiceError.forbidden('Permission denied: not project owner');
   }
 
   return {

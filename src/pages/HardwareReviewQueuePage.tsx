@@ -114,8 +114,9 @@ export default function HardwareReviewQueuePage() {
     finally { setBusy(null); }
   };
 
+  const [withdrawTargetId, setWithdrawTargetId] = useState<string | null>(null);
+
   const withdraw = async (id: string) => {
-    if (!confirm('Withdraw this submission?')) return;
     setBusy(`withdraw-${id}`);
     try {
       const res = await fetchWithAuth(`${API_BASE}/hardware/review-queue/${id}/withdraw`, { method: 'POST' });
@@ -160,7 +161,7 @@ export default function HardwareReviewQueuePage() {
           </button>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <ul className="lg:col-span-1 space-y-2">
             {loading ? (
               <li className="text-center text-adv-gray py-6"><Loader2 className="w-5 h-5 animate-spin inline" /></li>
@@ -211,11 +212,25 @@ export default function HardwareReviewQueuePage() {
                 onSecurityReview={() => recordSecurityReview(active.id)}
                 onApprove={() => decide(active.id, 'approve')}
                 onReject={() => decide(active.id, 'reject')}
-                onWithdraw={() => withdraw(active.id)}
+                onWithdraw={() => setWithdrawTargetId(active.id)}
               />
             )}
           </main>
         </div>
+
+        <ConfirmModal
+          open={withdrawTargetId !== null}
+          title="Withdraw submission?"
+          description="The submission moves to status 'withdrawn' and won't appear in the reviewer queue. The history is retained."
+          severity="warning"
+          confirmLabel="Withdraw"
+          onConfirm={async () => {
+            const id = withdrawTargetId;
+            setWithdrawTargetId(null);
+            if (id) await withdraw(id);
+          }}
+          onCancel={() => setWithdrawTargetId(null)}
+        />
       </div>
     </div>
   );
