@@ -38,6 +38,15 @@ export interface PortalBundleManifest {
   bundleType: 'portal';
   bundleVersion: typeof PORTAL_BUNDLE_FORMAT_VERSION;
   schemaVersion: typeof PORTAL_BUNDLE_SCHEMA_VERSION;
+  /**
+   * 'template' bundles are shareable starting points without a real signing
+   * key; their descriptor signature is intentionally not verified at import
+   * because they don't represent a real portal. 'concrete' bundles MUST have
+   * a verifiable descriptor signature. Default when missing: 'concrete'
+   * (safer — old importers would otherwise be tricked into accepting a
+   * crafted manifest that LOOKS like a template).
+   */
+  bundleKind: 'template' | 'concrete';
   name: string;
   namespace: string;
   displayTitle: string;
@@ -189,6 +198,7 @@ export async function bundlePortal(
     bundleType: 'portal',
     bundleVersion: PORTAL_BUNDLE_FORMAT_VERSION,
     schemaVersion: PORTAL_BUNDLE_SCHEMA_VERSION,
+    bundleKind: options.redactToTemplate ? 'template' : 'concrete',
     name: portal.name,
     namespace: portal.namespace,
     displayTitle: portal.display_title ?? portal.name,
@@ -339,10 +349,13 @@ export async function importPortal(
     warnings.push(`Manifest schemaVersion is ${manifest.schemaVersion}; expected ${PORTAL_BUNDLE_SCHEMA_VERSION} (will attempt import anyway)`);
   }
 
-  // Detect template vs concrete portal.
-  const isTemplate =
-    manifest.author.contactHash === 'ANTON-TMPL-TMPL-TMPL-TMPL' ||
-    manifest.adaptationPoints.some((p) => p.required && p.currentValue === null);
+  // Detect template vs concrete portal. v1+ manifests carry an explicit
+  // bundleKind field. For older bundles (no field), default to 'concrete'
+  // so the descriptor signature MUST verify — closes the "fake template"
+  // bypass where an attacker crafted a manifest with the placeholder
+  // contact hash + null adaptation points to skip signature checks.
+  const explicitKind = (manifest as { bundleKind?: 'template' | 'concrete' }).bundleKind;
+  const isTemplate = explicitKind === 'template';
 
   // 3. Descriptor signature verification (skip for unsigned templates).
   const descEntry = zip.getEntry('capability-descriptor.json');

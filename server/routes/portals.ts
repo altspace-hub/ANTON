@@ -21,6 +21,7 @@
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 
 import type { DatabaseAdapter } from '../db/database.js';
@@ -115,6 +116,16 @@ const invokeSchema = z.object({
 });
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+// Rate-limit visitor capability invokes per IP. The owner's inbox would
+// otherwise be a DoS target — anyone could spam it.
+const visitorInvokeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30, // 30 invokes per minute per IP — generous for legit visitors
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many capability invocations from this IP. Slow down.' },
+});
 
 // ── Factory ────────────────────────────────────────────────────────────────
 
@@ -573,7 +584,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/visit/:address/capabilities/:capId/invoke', async (req, res) => {
+  router.post('/portals/visit/:address/capabilities/:capId/invoke', visitorInvokeLimiter, async (req, res) => {
     try {
       const parsed = invokeSchema.parse(req.body);
       const r = await handler.handleInvoke({

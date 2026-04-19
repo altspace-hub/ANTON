@@ -27,12 +27,18 @@ export interface TransportConfig {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_RETRIES = 3;
 
-// ── Backoff: exponential with jitter, capped at 16 minutes ────────────────
+// ── Backoff: exponential with jitter ──────────────────────────────────────
+// Reads (resolve, search, sth) keep the 16-min cap — they're idempotent and
+// the user usually isn't blocking on them. Writes (operations) cap at 30s
+// total because a 14-minute hang on "Register portal" is user-hostile.
 
-/** Returns ms to wait before retry attempt N (1-indexed). Capped at 16 minutes total. */
-export function backoffMs(attempt: number): number {
-  const cap = 16 * 60 * 1000;
-  const base = Math.min(Math.pow(2, attempt) * 60 * 1000, cap);
+const READ_BACKOFF_CAP_MS = 16 * 60 * 1000;
+const WRITE_BACKOFF_CAP_MS = 30 * 1000;
+
+/** Returns ms to wait before retry attempt N (1-indexed). */
+export function backoffMs(attempt: number, kind: 'read' | 'write' = 'read'): number {
+  const cap = kind === 'write' ? WRITE_BACKOFF_CAP_MS : READ_BACKOFF_CAP_MS;
+  const base = Math.min(Math.pow(2, attempt) * (kind === 'write' ? 1000 : 60 * 1000), cap);
   const jitter = Math.random() * 0.3 * base;
   return Math.min(base + jitter, cap);
 }
@@ -59,7 +65,7 @@ export function createTransport(config: TransportConfig): TransportClient {
     return u.toString();
   }
 
-  async function execute<T>(req: () => Promise<Response>): Promise<T> {
+  async function execute<T>(req: () => Promise<Response>, kind: 'read' | 'write'): Promise<T> {
     let lastErr: unknown;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
@@ -98,8 +104,8 @@ export function createTransport(config: TransportConfig): TransportClient {
         }
 
         if (err.isRetryable && attempt < maxRetries) {
-          const wait = backoffMs(attempt + 1);
-          log.warn({ code: err.code, httpStatus: err.httpStatus, attempt: attempt + 1, retryInMs: wait }, 'registry retry');
+          const wait = backoffMs(attempt + 1, kind);
+          log.warn({ code: err.code, httpStatus: err.httpStatus, attempt: attempt + 1, retryInMs: wait, kind }, 'registry retry');
           await sleep(wait);
           lastErr = err;
           continue;
@@ -109,8 +115,8 @@ export function createTransport(config: TransportConfig): TransportClient {
       } catch (e) {
         if (e instanceof RegistryError) throw e;
         if (attempt < maxRetries) {
-          const wait = backoffMs(attempt + 1);
-          log.warn({ err: e instanceof Error ? e.message : String(e), attempt: attempt + 1, retryInMs: wait }, 'registry transport error, retrying');
+          const wait = backoffMs(attempt + 1, kind);
+          log.warn({ err: e instanceof Error ? e.message : String(e), attempt: attempt + 1, retryInMs: wait, kind }, 'registry transport error, retrying');
           await sleep(wait);
           lastErr = e;
           continue;
@@ -130,6 +136,9 @@ export function createTransport(config: TransportConfig): TransportClient {
 
   return {
     async postSignedEnvelope<T>(path, body) {
+      // Writes use the short-cap backoff (max ~30s total) — failing fast
+      // is a better UX than holding the user's "Register portal" click
+      // open for 14 minutes.
       return execute<T>(() =>
         fetchImpl(url(path), {
           method: 'POST',
@@ -137,6 +146,7 @@ export function createTransport(config: TransportConfig): TransportClient {
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(timeoutMs),
         }),
+        'write',
       );
     },
 
@@ -147,6 +157,7 @@ export function createTransport(config: TransportConfig): TransportClient {
           headers: { Accept: 'application/json', 'User-Agent': userAgent() },
           signal: AbortSignal.timeout(timeoutMs),
         }),
+        'read',
       );
     },
   };
