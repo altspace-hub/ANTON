@@ -22,9 +22,13 @@
 import { randomUUID } from 'crypto';
 
 import type { DatabaseAdapter } from '../../db/database.js';
+import { childLogger } from '../../lib/logger.js';
 import { validateAgainstSchema } from '../capability-descriptor/validator.js';
+import { createAppCheckpointService } from '../app-checkpoint-service.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
 import { createPortalRenderer, type PortalRenderer } from './portal-renderer.js';
+
+const log = childLogger('portal-handler');
 
 // ── Request / response shapes ──────────────────────────────────────────────
 
@@ -340,6 +344,24 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
         responseId,
       );
 
+      log.info({
+        portalId: ctx.portalId, portalAddress: req.portalAddress,
+        capabilityId: req.capabilityId, verb, responseId,
+        visitor: req.visitorContactHash ?? null,
+      }, 'capability invoked');
+
+      // Best-effort push notification to the owner's paired phone (if any).
+      // Non-blocking — visitor response shape is unaffected by push delivery.
+      void notifyOwnerOfInvocation(db, {
+        portalId: ctx.portalId,
+        portalAddress: req.portalAddress,
+        portalTitle: ctx.portalRow.display_title ?? ctx.portalRow.name,
+        capabilityId: req.capabilityId,
+        verb,
+        responseId,
+        invocationId: inserted!.id,
+      });
+
       return {
         kind: 'invoke_accepted',
         responseId,
@@ -349,4 +371,64 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
       };
     },
   };
+}
+
+// ── Owner notification (best-effort push via Companion App checkpoint) ──────
+
+interface InvocationNotice {
+  portalId: string;
+  portalAddress: string;
+  portalTitle: string;
+  capabilityId: string;
+  verb: string;
+  responseId: string;
+  invocationId: string;
+}
+
+async function notifyOwnerOfInvocation(db: DatabaseAdapter, n: InvocationNotice): Promise<void> {
+  try {
+    const portal = await db.get<{ metadata: { ownerId?: string } | null }>(
+      `SELECT metadata FROM portals WHERE id = ?`, n.portalId,
+    );
+    const ownerId = portal?.metadata?.ownerId;
+    if (!ownerId) {
+      log.debug({ portalId: n.portalId }, 'no ownerId on portal — skipping push');
+      return;
+    }
+    // Find a connected_user row for this owner across any org. We pick the
+    // first (most-recent) — production would let the user designate which
+    // device receives notifications.
+    const connected = await db.get<{ id: string; org_id: string }>(
+      `SELECT cu.id, cu.org_id FROM connected_users cu
+       JOIN app_devices ad ON ad.connected_user_id = cu.id AND ad.revoked_at IS NULL
+       WHERE cu.user_id = ? OR cu.display_name = ?
+       ORDER BY cu.created_at DESC LIMIT 1`,
+      ownerId, ownerId,
+    );
+    if (!connected) {
+      log.debug({ ownerId }, 'no paired phone for owner — skipping push');
+      return;
+    }
+    const checkpoints = createAppCheckpointService(db);
+    await checkpoints.create({
+      org_id: connected.org_id,
+      connected_user_id: connected.id,
+      title: `New ${n.verb} on ${n.portalTitle}`,
+      summary: `Capability "${n.capabilityId}" invoked. Response id: ${n.responseId}`,
+      severity: 'normal',
+      payload: {
+        kind: 'portal-capability-invocation',
+        portalAddress: n.portalAddress,
+        invocationId: n.invocationId,
+        verb: n.verb,
+      },
+      source_kind: 'portal-invocation',
+      source_id: n.invocationId,
+      deep_link: `/portals/${n.portalId}/manage`,
+    });
+    log.info({ portalId: n.portalId, ownerId, connectedUserId: connected.id }, 'owner push fired');
+  } catch (err) {
+    // Push failure must not affect the visitor's response.
+    log.warn({ err, portalId: n.portalId }, 'owner notification failed');
+  }
 }
