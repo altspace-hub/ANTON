@@ -349,8 +349,12 @@ ANTON is organised into **top-level pillars**, each representing a different mod
 | **Civic** | Civic engagements, eligibility checks, document submissions, knowledge packs | `server/services/civic-service.ts`, migration `092_civic_pillar.sql` |
 | **Grow** | CRM-style: contacts, pipeline stages, opportunities, signals, briefings | `server/services/grow-service.ts`, migration `093_grow_pillar.sql` |
 | **Payments** | FutureChain wallet & marketplace integration | `src/pages/payments/`, `server/routes/fc-marketplace.ts` |
+| **Portals** | User-created ANTON-only web spaces with capability descriptors. 8-phase walkthrough builder, 7 starter templates, 12-verb capability taxonomy, registry protocol with transparency log, `anton-portal` Pathfinder mode. Full e2e: build → publish → visit → invoke. | `server/services/portals/*`, `server/services/registry-protocol/*`, `server/services/registry-client/*`, `server/services/capability-descriptor/*`, `server/routes/portals.ts`, `src/pages/portals/`, migrations `145–148` |
+| **Missions** | Multi-step automation jobs (research / outreach / monitoring) with credential vault + service packs + inbox | `src/pages/missions/`, `server/routes/mission-*.ts` |
 
 The Markets Pillar is ANTON's **proof of self-learning intelligence** — daily market feedback validates predictions and reasoning quality. Markets is the canonical example for any new "intelligent pillar."
+
+The Portals Pillar is ANTON's **proof of inter-instance interoperability** — every portal is simultaneously a human-facing site and a machine-readable AAP endpoint. See `ANTON_Portals_Spec.md` v0.2 + the three companion reference docs (Registry Protocol, Capability Descriptor Schema, Registry Server Ops) for the full design.
 
 ---
 

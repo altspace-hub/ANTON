@@ -106,7 +106,7 @@ export default function PortalVisitorPage() {
           )}
           {page.kind === 'page' && (
             <article
-              className="prose prose-invert max-w-none rounded-xl border border-border bg-adv-card p-6"
+              className="prose-output max-w-none rounded-xl border border-border bg-adv-card p-6"
               // The HTML is server-rendered + interpolated through the renderer
               // which HTML-escapes structured data by default. Owner-authored
               // HTML in portal_pages is trusted (the owner can author whatever
