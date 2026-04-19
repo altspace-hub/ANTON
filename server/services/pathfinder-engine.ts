@@ -41,6 +41,11 @@ const MODE_INSTRUCTIONS: Record<string, string> = {
   fix: 'Prefer step-by-step guides. Note difficulty level and time estimate. Flag outdated guides. Prefer official documentation over rewrites. Note if video tutorial available.',
   news: 'Rank by recency FIRST, then credibility. Classify each source as: News Report, Opinion, Editorial, Analysis, or Press Release. Note the outlet\'s known political positioning. Flag single-source stories.',
   local: 'Rank by proximity. Extract opening hours, rating, address, phone. Flag if currently open/closed. Note price range where applicable.',
+  // anton-portal: discovery within the ANTON network. The portal-search-engine
+  // performs the actual lookup against the portal registry / local cache; the
+  // LLM's job is to interpret intent (verb / category / location / language)
+  // and rank results by capability fit + recency.
+  'anton-portal': 'Discover ANTON portals: people, businesses, communities, teams, creators. Match user intent to capability verbs (contact / order / book / inquire / join / pay / etc.). Filter by category, tag, service area, language. Rank by capability fit, then recency (last_seen_at). Surface only public-indexed portals. Always show the portal address (<name>.<namespace>.portal) and the verbs it supports — not URLs.',
 };
 
 const MODE_HINTS: Record<string, string> = {
@@ -51,11 +56,12 @@ const MODE_HINTS: Record<string, string> = {
   fix: 'Step-by-step solutions, verified and current',
   news: 'Most recent first. Bias shown. Opinion clearly labelled.',
   local: 'Nearest first. Open now highlighted.',
+  'anton-portal': 'ANTON portals only. Capability fit ranked. Address shown.',
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export type SearchDepth = 'quick' | 'thorough' | 'deep';
-export type SearchMode = 'knowledge' | 'shopping' | 'travel' | 'food' | 'fix' | 'news' | 'local';
+export type SearchMode = 'knowledge' | 'shopping' | 'travel' | 'food' | 'fix' | 'news' | 'local' | 'anton-portal';
 
 export interface ModelResult {
   modelId: string;
