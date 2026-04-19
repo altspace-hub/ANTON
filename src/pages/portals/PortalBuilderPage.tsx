@@ -49,6 +49,7 @@ export default function PortalBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
+  const [streamProgress, setStreamProgress] = useState<{ chars: number; thinking: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [cost, setCost] = useState<CostState | null>(null);
@@ -110,6 +111,18 @@ export default function PortalBuilderPage() {
 
   async function advance() {
     if (!session) return;
+    // Quality Ratchet: at the review phase, if AI scored <6/10 the user has
+    // to actively confirm. This isn't a hard block — they can override —
+    // but it surfaces "this draft has problems" before they publish.
+    if (session.currentPhase === 'review' && typeof draft.quality_score === 'number' && draft.quality_score < 6) {
+      const score = draft.quality_score;
+      const issueCount = Array.isArray(draft.flagged_issues) ? (draft.flagged_issues as unknown[]).length : 0;
+      const ok = window.confirm(
+        `Quality score is ${score}/10` + (issueCount > 0 ? ` with ${issueCount} flagged issue${issueCount === 1 ? '' : 's'}` : '')
+        + '. Publishing now means visitors see a portal you flagged as below quality threshold. Proceed anyway?',
+      );
+      if (!ok) return;
+    }
     setError(null);
     setAdvancing(true);
     try {
@@ -171,39 +184,29 @@ export default function PortalBuilderPage() {
   // POST /llm-suggest — server picks the model based on session.depth, calls
   // the LLM, validates against the phase schema, persists as draft. On 200 we
   // copy the suggestion into the live draft so the user sees it in the form.
+  // For content_generation we use the streaming variant — the LLM output is
+  // long enough that a 30-second blank loader is poor UX.
   async function suggestWithAI() {
     if (!session) return;
     setError(null);
     setSuggesting(true);
+    setStreamProgress(null);
     try {
-      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/llm-suggest`, {
-        method: 'POST',
-      });
-      const json = await res.json().catch(() => ({}));
-      if (res.status === 200) {
-        if (json?.suggestion) setDraft(json.suggestion);
-        await refreshCost(session.id);
-        return;
+      const useStream = session.currentPhase === 'content_generation';
+      const result = useStream
+        ? await suggestStreaming(session.id, setStreamProgress)
+        : await suggestSync(session.id);
+      if (result.kind === 'ok' && result.suggestion) {
+        setDraft(result.suggestion);
+      } else if (result.kind === 'error') {
+        setError(result.message);
       }
-      // Map server error envelopes to readable messages.
-      const e = json?.error ?? {};
-      let msg = 'AI suggestion failed';
-      if (e.kind === 'cap_exceeded') msg = `LLM call cap reached (${e.limit}/walkthrough). Fill the rest manually.`;
-      else if (e.kind === 'no_provider') msg = 'No LLM provider configured. Set ANTHROPIC_API_KEY in .env.';
-      else if (e.kind === 'parse_error') msg = `Model returned non-JSON output. ${e.retryable ? 'Try again.' : ''}`;
-      else if (e.kind === 'shape_error') {
-        const issues = (e.zodErrors as Array<{ path: string; message: string }> | undefined)?.slice(0, 2)
-          .map(z => `${z.path}: ${z.message}`).join('; ');
-        msg = `Model output didn't match schema. ${issues ?? ''}`;
-      } else if (e.kind === 'provider_error') msg = `Provider error: ${e.message ?? 'unknown'}`;
-      else if (e.kind === 'session_inactive') msg = `Session is ${e.status}; cannot suggest.`;
-      setError(msg);
-      // Cost may still have been recorded for the failed call.
       await refreshCost(session.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSuggesting(false);
+      setStreamProgress(null);
     }
   }
 
@@ -295,18 +298,25 @@ export default function PortalBuilderPage() {
 
             <div className="mt-6 flex items-center justify-between gap-2 flex-wrap">
               {!allComplete && (
-                <button
-                  onClick={suggestWithAI}
-                  disabled={suggesting || advancing || phaseDone || (cost ? cost.callsUsed >= cost.callLimit : false)}
-                  title={cost && cost.callsUsed >= cost.callLimit
-                    ? `LLM call cap reached (${cost.callLimit}/walkthrough)`
-                    : 'Have ANTON draft this phase for you'}
-                  className="px-3 py-2 rounded-lg border border-adv-teal/40 text-adv-teal hover:bg-adv-teal/10 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
-                  aria-label="Suggest this phase with AI"
-                >
-                  {suggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {suggesting ? 'ANTON is drafting…' : 'Suggest with AI'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={suggestWithAI}
+                    disabled={suggesting || advancing || phaseDone || (cost ? cost.callsUsed >= cost.callLimit : false)}
+                    title={cost && cost.callsUsed >= cost.callLimit
+                      ? `LLM call cap reached (${cost.callLimit}/walkthrough)`
+                      : 'Have ANTON draft this phase for you'}
+                    className="px-3 py-2 rounded-lg border border-adv-teal/40 text-adv-teal hover:bg-adv-teal/10 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                    aria-label="Suggest this phase with AI"
+                  >
+                    {suggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {suggesting ? 'ANTON is drafting…' : 'Suggest with AI'}
+                  </button>
+                  {streamProgress && (
+                    <span className="text-xs text-adv-gray" aria-live="polite">
+                      {streamProgress.thinking ? 'thinking…' : `${streamProgress.chars.toLocaleString()} chars`}
+                    </span>
+                  )}
+                </div>
               )}
               <div className="ml-auto flex items-center gap-2">
                 {allComplete ? (
@@ -471,10 +481,38 @@ function PhaseForm({
     );
   }
   if (phase === 'review') {
+    const score = typeof draft.quality_score === 'number' ? draft.quality_score : null;
+    const issues = (draft.flagged_issues as string[] | undefined) ?? [];
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Review</h2>
-        <p className="text-sm text-adv-gray">Confirm the portal looks right before publishing.</p>
+        <p className="text-sm text-adv-gray">
+          Confirm the portal looks right before publishing.
+          {' '}Click <span className="text-adv-teal">Suggest with AI</span> for an honest critique.
+        </p>
+        {score !== null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-adv-gray">Quality score:</span>
+            <span className={`px-2 py-0.5 rounded font-medium ${
+              score >= 8 ? 'bg-adv-green/20 text-adv-green'
+              : score >= 6 ? 'bg-adv-teal/20 text-adv-teal'
+              : 'bg-adv-gold/20 text-adv-gold'
+            }`}>{score}/10</span>
+            {score < 6 && (
+              <span className="text-xs text-adv-gold">
+                Below threshold — fix flagged issues before publishing.
+              </span>
+            )}
+          </div>
+        )}
+        {issues.length > 0 && (
+          <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 p-3">
+            <div className="text-xs font-medium text-adv-gold mb-2">Flagged issues to address:</div>
+            <ul className="text-sm text-adv-off-white space-y-1 list-disc list-inside">
+              {issues.map((issue, i) => <li key={i}>{issue}</li>)}
+            </ul>
+          </div>
+        )}
         <Checkbox label="Approved" value={!!draft.approved} onChange={(v) => update({ approved: v })} />
         <Field label="Reviewer notes" value={(draft.reviewer_notes as string) ?? ''} onChange={(v) => update({ reviewer_notes: v })} multi />
       </div>
@@ -539,6 +577,105 @@ function formatCents(cents: number): string {
   if (!cents || cents <= 0) return '$0.00';
   if (cents < 1) return '<$0.01';
   return `$${(cents / 100).toFixed(cents < 100 ? 3 : 2)}`;
+}
+
+// ── LLM suggest helpers ───────────────────────────────────────────────────
+// Two transport variants: sync (JSON) for short phases, streaming (SSE) for
+// content_generation where the wait would otherwise be 15-30 seconds.
+
+type SuggestOutcome =
+  | { kind: 'ok'; suggestion: Record<string, unknown> }
+  | { kind: 'error'; message: string };
+
+async function suggestSync(sessionId: string): Promise<SuggestOutcome> {
+  const res = await fetchWithAuth(`/api/portals/walkthroughs/${sessionId}/llm-suggest`, {
+    method: 'POST',
+  });
+  const json = await res.json().catch(() => ({}));
+  if (res.status === 200 && json?.suggestion) {
+    return { kind: 'ok', suggestion: json.suggestion as Record<string, unknown> };
+  }
+  return { kind: 'error', message: messageForError(json?.error ?? {}) };
+}
+
+async function suggestStreaming(
+  sessionId: string,
+  onProgress: (p: { chars: number; thinking: boolean } | null) => void,
+): Promise<SuggestOutcome> {
+  const res = await fetchWithAuth(`/api/portals/walkthroughs/${sessionId}/llm-suggest/stream`, {
+    method: 'POST',
+  });
+  if (!res.ok || !res.body) {
+    const j = await res.json().catch(() => ({}));
+    return { kind: 'error', message: messageForError(j?.error ?? { kind: 'transport_error' }) };
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let chars = 0;
+  let thinking = false;
+  let outcome: SuggestOutcome = { kind: 'error', message: 'Stream ended without a complete event' };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    // SSE frames are separated by \n\n. Process every complete frame.
+    let idx;
+    while ((idx = buffer.indexOf('\n\n')) >= 0) {
+      const frame = buffer.slice(0, idx);
+      buffer = buffer.slice(idx + 2);
+      const parsed = parseSseFrame(frame);
+      if (!parsed) continue;
+      if (parsed.event === 'complete') {
+        const data = parsed.data as { suggestion?: Record<string, unknown> };
+        if (data?.suggestion) outcome = { kind: 'ok', suggestion: data.suggestion };
+      } else if (parsed.event === 'error' || parsed.event === 'aborted') {
+        outcome = { kind: 'error', message: messageForError(parsed.data ?? {}) };
+      } else {
+        // Default 'message' frames from streamChat: text_delta / thinking_delta.
+        const d = parsed.data as { type?: string; content?: string };
+        if (d?.type === 'text_delta' && d.content) {
+          chars += d.content.length;
+          thinking = false;
+          onProgress({ chars, thinking });
+        } else if (d?.type === 'thinking_delta' && d.content) {
+          thinking = true;
+          onProgress({ chars, thinking });
+        }
+      }
+    }
+  }
+  return outcome;
+}
+
+// Parses one SSE frame ("event: name\ndata: {…}" or just "data: {…}") into
+// {event, data}. Default event name per SSE spec is "message".
+function parseSseFrame(frame: string): { event: string; data: unknown } | null {
+  const lines = frame.split('\n');
+  let event = 'message';
+  let dataText = '';
+  for (const line of lines) {
+    if (line.startsWith('event: ')) event = line.slice(7).trim();
+    else if (line.startsWith('data: ')) dataText += line.slice(6);
+  }
+  if (!dataText || dataText === '[DONE]') return null;
+  try { return { event, data: JSON.parse(dataText) }; }
+  catch { return null; }
+}
+
+function messageForError(e: { kind?: string; limit?: number; reason?: string; retryable?: boolean; message?: string; status?: string; zodErrors?: Array<{ path: string; message: string }> }): string {
+  if (e.kind === 'cap_exceeded') return `LLM call cap reached (${e.limit}/walkthrough). Fill the rest manually.`;
+  if (e.kind === 'no_provider') return 'No LLM provider configured. Set ANTHROPIC_API_KEY in .env.';
+  if (e.kind === 'parse_error') return `Model returned non-JSON output. ${e.retryable ? 'Try again.' : ''}`;
+  if (e.kind === 'shape_error') {
+    const issues = e.zodErrors?.slice(0, 2).map(z => `${z.path}: ${z.message}`).join('; ');
+    return `Model output didn't match schema. ${issues ?? ''}`;
+  }
+  if (e.kind === 'provider_error') return `Provider error: ${e.message ?? 'unknown'}`;
+  if (e.kind === 'session_inactive') return `Session is ${e.status}; cannot suggest.`;
+  if (e.kind === 'internal_error') return `Internal error: ${e.message ?? 'unknown'}`;
+  return 'AI suggestion failed';
 }
 
 // ── Draft seeding ───────────────────────────────────────────────────────────
