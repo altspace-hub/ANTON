@@ -225,6 +225,13 @@ function CapabilityDialog({
   const props = capability.inputSchema?.properties ?? {};
   const required = new Set(capability.inputSchema?.required ?? []);
 
+  // Esc-to-close. Focus the first input on mount for keyboard users.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   async function invoke() {
     setBusy(true); setError(null); setResponse(null);
     try {
@@ -242,18 +249,31 @@ function CapabilityDialog({
     }
   }
 
+  const titleId = `capability-dialog-title-${capability.id}`;
+  const descId = `capability-dialog-desc-${capability.id}`;
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descId}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="w-full max-w-xl rounded-xl border border-border bg-adv-card p-5 max-h-[90vh] overflow-y-auto">
         <header className="flex items-baseline justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-1.5 py-0.5 rounded bg-adv-teal/10 text-adv-teal text-xs">{capability.verb}</span>
-              <h2 className="font-semibold">{capability.title}</h2>
+              <h2 id={titleId} className="font-semibold">{capability.title}</h2>
             </div>
-            <p className="text-xs text-adv-gray mt-1">{capability.description}</p>
+            <p id={descId} className="text-xs text-adv-gray mt-1">{capability.description}</p>
           </div>
-          <button onClick={onClose} className="text-adv-gray hover:text-adv-off-white">×</button>
+          <button
+            onClick={onClose}
+            aria-label="Close capability dialog"
+            className="text-adv-gray hover:text-adv-off-white text-xl leading-none px-2"
+          >×</button>
         </header>
 
         <div className="space-y-3">

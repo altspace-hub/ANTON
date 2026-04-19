@@ -291,7 +291,10 @@ function PortalInboxBadge() {
   }, []);
   if (count === 0) return null;
   return (
-    <span className="ml-auto rounded-full bg-adv-gold/20 px-1.5 py-0.5 text-xs font-semibold text-adv-gold">
+    <span
+      className="ml-auto rounded-full bg-adv-gold/20 px-1.5 py-0.5 text-xs font-semibold text-adv-gold"
+      aria-label={`${count} pending portal invocation${count === 1 ? '' : 's'}`}
+    >
       {count > 9 ? '9+' : count}
     </span>
   );

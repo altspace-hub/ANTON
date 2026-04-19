@@ -121,10 +121,18 @@ export default function PortalsDiscoveryPage() {
             </button>
           </div>
 
-          {/* Filters */}
+          {/* Filters — show active count when collapsed so the user knows
+              filters are constraining the results. */}
           <details className="text-sm">
             <summary className="cursor-pointer text-adv-gray hover:text-adv-off-white flex items-center gap-1.5">
               <Filter className="h-3.5 w-3.5" /> Filters
+              {(() => {
+                const n = selVerbs.length + selCategories.length
+                  + (tagsRaw.trim() ? 1 : 0)
+                  + (serviceAreasRaw.trim() ? 1 : 0)
+                  + (languagesRaw.trim() ? 1 : 0);
+                return n > 0 ? <span className="ml-1 rounded-full bg-adv-teal/20 px-1.5 text-xs text-adv-teal">{n}</span> : null;
+              })()}
             </summary>
             <div className="mt-3 space-y-3">
               <div>

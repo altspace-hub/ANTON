@@ -216,6 +216,34 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // Auto-save the in-flight phase draft. Lightweight: does NOT advance the
+  // phase or validate against the phase schema — just stores the partial
+  // input so the user doesn't lose work if they navigate away mid-phase.
+  // Stored under accumulated_state.__drafts.<phaseId> so it doesn't collide
+  // with the validated outputs the engine writes on advance.
+  router.put('/portals/walkthroughs/:id/draft', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      const sessionRow = await db.get<{ accumulated_state: Record<string, unknown> | string; current_phase: string }>(
+        `SELECT accumulated_state, current_phase FROM portal_walkthrough_sessions WHERE id = ?`,
+        req.params.id,
+      );
+      if (!sessionRow) return res.status(404).json({ error: 'Session not found' });
+      const acc = typeof sessionRow.accumulated_state === 'string'
+        ? JSON.parse(sessionRow.accumulated_state) : sessionRow.accumulated_state;
+      const drafts = (acc.__drafts as Record<string, unknown> | undefined) ?? {};
+      drafts[sessionRow.current_phase] = req.body;
+      acc.__drafts = drafts;
+      await db.run(
+        `UPDATE portal_walkthrough_sessions SET accumulated_state = ? WHERE id = ?`,
+        JSON.stringify(acc), req.params.id,
+      );
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
   router.post('/portals/walkthroughs/:id/abandon', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;

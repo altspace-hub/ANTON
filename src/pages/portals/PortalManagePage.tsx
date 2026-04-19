@@ -5,7 +5,7 @@
  * Destructive actions (delete portal) gated through ConfirmModal.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Globe, ChevronLeft, Loader2, AlertCircle, Trash2, Download, Inbox, FileText, Eye } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
@@ -211,7 +211,15 @@ function OverviewTab({ portal, pageCount, inboxPending }: { portal: PortalDetail
 }
 
 function PagesTab({ pages }: { pages: Page[] }) {
-  if (pages.length === 0) return <div className="text-sm text-adv-gray">No pages yet.</div>;
+  if (pages.length === 0) return (
+    <div className="rounded-xl border border-dashed border-border bg-adv-card p-10 text-center">
+      <FileText className="h-10 w-10 text-adv-gray mx-auto mb-3" />
+      <p className="text-sm text-adv-off-white font-medium">No pages yet</p>
+      <p className="text-xs text-adv-gray mt-1 max-w-md mx-auto">
+        Pages are seeded from your template during the walkthrough. Re-run the walkthrough or import a portal bundle to populate this surface.
+      </p>
+    </div>
+  );
   return (
     <div className="space-y-2">
       {pages.map((p) => (

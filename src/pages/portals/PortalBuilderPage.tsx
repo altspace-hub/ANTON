@@ -7,9 +7,9 @@
  * reuses generatePhasePrompt + the existing unified-llm-client.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 const PHASES = [
@@ -74,6 +74,32 @@ export default function PortalBuilderPage() {
     setDraft(buildDraftFor(session));
   }, [session]);
 
+  // Debounced auto-save of the in-flight draft so users don't lose work
+  // when they navigate away mid-phase (e.g. accidental sidebar click).
+  // Saves to accumulated_state.__drafts.<currentPhase> on the server.
+  useEffect(() => {
+    if (!session || advancing) return;
+    const t = setTimeout(() => {
+      void fetchWithAuth(`/api/portals/walkthroughs/${session.id}/draft`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [draft, session, advancing]);
+
+  // Warn the user if they try to close the tab mid-phase with unsaved changes.
+  useEffect(() => {
+    function beforeUnload(e: BeforeUnloadEvent) {
+      if (!session || session.status !== 'active') return;
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [session]);
+
   async function advance() {
     if (!session) return;
     setError(null);
@@ -131,16 +157,25 @@ export default function PortalBuilderPage() {
 
   const phaseDone = session.phasesCompleted.includes(session.currentPhase);
   const allComplete = session.phasesCompleted.length === PHASES.length;
+  const phaseIndex = PHASES.findIndex((p) => p.id === session.currentPhase);
+  const validation = validatePhase(session.currentPhase, draft);
 
   return (
     <div className="min-h-screen bg-adv-dark text-adv-off-white p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>
+            <div className="text-xs uppercase tracking-wide text-adv-teal mb-1">
+              Phase {phaseIndex + 1} of {PHASES.length}
+            </div>
             <h1 className="text-xl font-semibold">{session.template.label} portal</h1>
             <p className="text-sm text-adv-gray mt-1">{session.template.description}</p>
           </div>
-          <button onClick={abandon} className="text-sm text-adv-gray hover:text-adv-red transition flex items-center gap-1">
+          <button
+            onClick={abandon}
+            aria-label="Abandon walkthrough and discard the draft"
+            className="text-sm text-adv-gray hover:text-adv-red transition flex items-center gap-1"
+          >
             <X className="h-4 w-4" /> Abandon
           </button>
         </header>
@@ -178,13 +213,14 @@ export default function PortalBuilderPage() {
               setDraft={setDraft}
               template={session.template}
             />
-            <div className="mt-6 flex items-center justify-between">
-              <button
-                disabled
-                className="text-sm text-adv-gray flex items-center gap-1 opacity-50 cursor-not-allowed"
-              >
-                <ArrowLeft className="h-4 w-4" /> Back (resume by URL)
-              </button>
+            {/* Validation hint when the form is incomplete. */}
+            {!validation.valid && validation.missing.length > 0 && (
+              <div className="mt-4 text-xs text-adv-gray">
+                <span className="text-adv-red">*</span> Required: {validation.missing.join(', ')}
+              </div>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-2">
               {allComplete ? (
                 <button
                   onClick={finalize}
@@ -197,8 +233,9 @@ export default function PortalBuilderPage() {
               ) : (
                 <button
                   onClick={advance}
-                  disabled={advancing || phaseDone}
-                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                  disabled={advancing || phaseDone || !validation.valid}
+                  title={!validation.valid ? `Fill required fields: ${validation.missing.join(', ')}` : undefined}
+                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                   {phaseDone ? 'Phase recorded' : 'Save & continue'}
@@ -260,7 +297,7 @@ function PhaseForm({
         <h2 className="text-lg font-medium">Pages</h2>
         <p className="text-sm text-adv-gray">Three pages cover most cases. Edit the seeds from the template:</p>
         {pages.map((p, i) => (
-          <div key={i} className="grid grid-cols-12 gap-2">
+          <div key={i} className="grid grid-cols-1 sm:grid-cols-12 gap-2">
             <input className={inputCls + ' col-span-4'} value={p.path} onChange={(e) => {
               const np = [...pages]; np[i] = { ...p, path: e.target.value }; update({ pages: np });
             }} />
@@ -308,7 +345,7 @@ function PhaseForm({
         <p className="text-sm text-adv-gray">What can visitors do? Each capability becomes a button in their ANTON.</p>
         {caps.map((c, i) => (
           <div key={i} className="rounded-lg border border-border bg-adv-dark p-3 space-y-2">
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
               <input className={inputCls + ' col-span-3'} value={c.id} onChange={(e) => {
                 const nc = [...caps]; nc[i] = { ...c, id: e.target.value }; update({ capabilities: nc });
               }} placeholder="id (slug)" />
@@ -407,6 +444,52 @@ function CenterMsg({ children }: { children: React.ReactNode }) {
 }
 
 // ── Draft seeding ───────────────────────────────────────────────────────────
+
+// ── Per-phase validation ────────────────────────────────────────────────────
+// Returns { valid, missing[] } so the UI can disable Save & continue and
+// show the user exactly what's needed.
+
+function validatePhase(phase: PhaseId, draft: Record<string, unknown>): { valid: boolean; missing: string[] } {
+  const missing: string[] = [];
+  switch (phase) {
+    case 'intent':
+      if (!stringFilled(draft.audience, 3)) missing.push('audience');
+      if (!stringFilled(draft.problem_solved, 3)) missing.push('problem_solved');
+      if (!Array.isArray(draft.visitor_actions) || (draft.visitor_actions as string[]).length === 0) missing.push('visitor_actions');
+      break;
+    case 'identity':
+      if (!stringFilled(draft.name, 1) || !/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test((draft.name as string) ?? '')) missing.push('name (lowercase slug)');
+      if (!stringFilled(draft.namespace, 3)) missing.push('namespace');
+      if (!stringFilled(draft.display_title, 1)) missing.push('display_title');
+      if (!stringFilled(draft.category, 1)) missing.push('category');
+      break;
+    case 'content_structure':
+      if (!Array.isArray(draft.pages) || (draft.pages as unknown[]).length === 0) missing.push('at least one page');
+      break;
+    case 'content_generation': {
+      const pages = (draft.pages as Array<{ html?: string }> | undefined) ?? [];
+      if (pages.length === 0 || pages.some(p => !stringFilled(p.html, 1))) missing.push('html for every page');
+      break;
+    }
+    case 'capabilities':
+      if (!Array.isArray(draft.capabilities) || (draft.capabilities as unknown[]).length === 0) missing.push('at least one capability');
+      break;
+    case 'aesthetics':
+      // All optional.
+      break;
+    case 'review':
+      if (draft.approved !== true) missing.push('approved (check the box)');
+      break;
+    case 'publish':
+      if (draft.ready_to_register !== true) missing.push('ready_to_register');
+      break;
+  }
+  return { valid: missing.length === 0, missing };
+}
+
+function stringFilled(v: unknown, minLen: number): boolean {
+  return typeof v === 'string' && v.trim().length >= minLen;
+}
 
 function buildDraftFor(session: SessionState): Record<string, unknown> {
   const phase = session.currentPhase;
