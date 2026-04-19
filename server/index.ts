@@ -352,6 +352,21 @@ app.use('/mcp', await createMcpRouter(db));
 // Prune expired CSRF tokens every hour
 setInterval(pruneExpiredCsrfTokens, 60 * 60 * 1000);
 
+// Prune expired Portals caches (resolution, descriptor, replay nonces)
+// every hour. Without this, three tables grow unbounded forever.
+setInterval(async () => {
+  try {
+    const { createRegistryClient } = await import('./services/registry-client/index.js');
+    const client = createRegistryClient(db, { baseUrl: process.env.PORTAL_REGISTRY_URL ?? 'https://registry.anton.space/v1' });
+    const r = await client.pruneExpiredCaches();
+    if (r.resolution + r.descriptor + r.nonces > 0) {
+      console.log(`[portals] pruned: ${r.resolution} resolution + ${r.descriptor} descriptor + ${r.nonces} nonce rows`);
+    }
+  } catch (e) {
+    console.warn('[portals] cache prune failed:', e instanceof Error ? e.message : e);
+  }
+}, 60 * 60 * 1000);
+
 // API routes — auth routes and config must be registered BEFORE the auth middleware
 app.use('/api', await createAuthRoutes(db));
 

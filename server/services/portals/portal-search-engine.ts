@@ -92,6 +92,11 @@ export function createPortalSearchEngine(db: DatabaseAdapter): PortalSearchEngin
       // Pull every public-indexed portal once; rank in JS for v0.7.x scale
       // (a single user typically has < 50 portals locally; registry-side
       // ranking is the registry server's job).
+      // Push filters into SQL so the JSONB GIN index (migration 149) can
+      // do the work. Verbs / tags / serviceAreas / languages use the `?|`
+      // (any-of) operator against the capability_summary JSONB column.
+      // Text scoring + final ordering still happen in JS because relevance
+      // weighting is small enough to be acceptable post-filter.
       const where: string[] = ['public_index = TRUE', `status = 'active'`];
       const params: unknown[] = [];
       if (query.namespace) {
@@ -101,6 +106,25 @@ export function createPortalSearchEngine(db: DatabaseAdapter): PortalSearchEngin
       if (query.categories && query.categories.length > 0) {
         where.push(`category = ANY(?::text[])`);
         params.push(query.categories);
+      }
+      // Use the function form (jsonb_exists_any) instead of the `?|` operator
+      // because the postgres adapter translates literal `?` to `$N` placeholders
+      // — the operator's `?` would get clobbered.
+      if (query.verbs && query.verbs.length > 0) {
+        where.push(`jsonb_exists_any(capability_summary->'capabilityVerbs', ?::text[])`);
+        params.push(query.verbs as unknown as string[]);
+      }
+      if (query.tags && query.tags.length > 0) {
+        where.push(`jsonb_exists_any(capability_summary->'tags', ?::text[])`);
+        params.push(query.tags);
+      }
+      if (query.serviceAreas && query.serviceAreas.length > 0) {
+        where.push(`jsonb_exists_any(capability_summary->'serviceAreas', ?::text[])`);
+        params.push(query.serviceAreas);
+      }
+      if (query.languages && query.languages.length > 0) {
+        where.push(`jsonb_exists_any(capability_summary->'languages', ?::text[])`);
+        params.push(query.languages);
       }
 
       // Local schema uses last_synced_at as the freshness signal (the
@@ -114,50 +138,31 @@ export function createPortalSearchEngine(db: DatabaseAdapter): PortalSearchEngin
         ...params,
       );
 
-      // Apply remaining filters in JS (verbs/tags/serviceAreas/languages
-      // require JSONB introspection which is more readable here).
-      const candidates: PortalSearchHit[] = [];
-      for (const row of rows) {
+      // No JS-side filtering needed; SQL already filtered everything except
+      // text relevance (handled below).
+      const candidates: PortalSearchHit[] = rows.map((row) => {
         const summary = (row.capability_summary ?? {}) as {
           capabilityVerbs?: string[];
           tags?: string[];
           serviceAreas?: string[];
           languages?: string[];
         };
-        const verbs = summary.capabilityVerbs ?? [];
-        const tags = summary.tags ?? [];
-        const serviceAreas = summary.serviceAreas ?? [];
-        const languages = summary.languages ?? [];
-
-        if (query.verbs && query.verbs.length > 0) {
-          if (!query.verbs.some((v) => verbs.includes(v))) continue;
-        }
-        if (query.tags && query.tags.length > 0) {
-          if (!query.tags.some((t) => tags.includes(t))) continue;
-        }
-        if (query.serviceAreas && query.serviceAreas.length > 0) {
-          if (!query.serviceAreas.some((sa) => serviceAreas.includes(sa))) continue;
-        }
-        if (query.languages && query.languages.length > 0) {
-          if (!query.languages.some((l) => languages.includes(l))) continue;
-        }
-
-        candidates.push({
+        return {
           portalAddress: `${row.name}.${row.namespace}.portal`,
           name: row.name,
           namespace: row.namespace,
           displayTitle: row.display_title,
           category: row.category,
           description: row.description,
-          capabilityVerbs: verbs,
-          tags,
-          serviceAreas,
-          languages,
+          capabilityVerbs: summary.capabilityVerbs ?? [],
+          tags: summary.tags ?? [],
+          serviceAreas: summary.serviceAreas ?? [],
+          languages: summary.languages ?? [],
           registeredAt: row.registered_at ? new Date(row.registered_at).toISOString() : null,
           lastSeenAt: row.last_seen_at ? new Date(row.last_seen_at).toISOString() : null,
           relevanceScore: 0, // filled below
-        });
-      }
+        };
+      });
 
       // Score relevance.
       const text = query.text?.trim().toLowerCase() ?? '';

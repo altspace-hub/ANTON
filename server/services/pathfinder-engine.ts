@@ -17,6 +17,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider, type ChatResult } from './provider-router.js';
 import { estimateTokens, estimateCost } from './token-estimator.js';
 import { hybridSearch, type HybridSearchResult } from './hybrid-search.js';
+import { createPortalSearchEngine } from './portals/portal-search-engine.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -652,6 +653,71 @@ function buildDeepenPrompt(query: string, priorContext: string, gaps: string): s
   ].filter(Boolean).join('\n');
 }
 
+// ── anton-portal dispatch (no LLM; queries portal-search-engine) ────────────
+//
+// When searchMode === 'anton-portal' we bypass the web-LLM dispatch and serve
+// hits from the local portal search engine instead. This stops Pathfinder
+// from hallucinating portal addresses via web search.
+
+async function dispatchPortalSearch(
+  db: DatabaseAdapter,
+  query: string,
+  context: SearchContext | undefined,
+  callbacks: SearchCallbacks,
+  depth: SearchDepth,
+): Promise<SearchResult> {
+  const searchId = randomUUID();
+  const startTime = Date.now();
+  callbacks.onSearchStart(searchId, depth);
+
+  const enrichedQuery = enrichQuery(query, context);
+  const preSearchReasoning = `Looking for ANTON portals matching "${query}". Searching the local registry of public-indexed portals.`;
+  callbacks.onPreSearchReasoning(preSearchReasoning);
+
+  const engine = createPortalSearchEngine(db);
+
+  // Direct address lookup if the query parses as a portal address.
+  const addressMatch = query.trim().match(/^([a-z0-9][a-z0-9.-]*[a-z0-9])\.([a-z][a-z0-9-]{2,31})\.portal$/i);
+  const result = addressMatch
+    ? await engine.search({ namespace: addressMatch[2].toLowerCase(), text: addressMatch[1].toLowerCase(), limit: 10 })
+    : await engine.search({ text: query, limit: 25 });
+  const hits = result.results;
+  const total = result.total;
+
+  // Format hits as local-source entries so the existing Pathfinder UI can
+  // render them. URL is the in-app /portals/p/:address route.
+  const localSources: WebSource[] = hits.map((h, idx) => ({
+    url: `/portals/p/${encodeURIComponent(h.portalAddress)}`,
+    title: h.displayTitle ?? h.portalAddress,
+    snippet: [
+      h.description ?? '',
+      h.capabilityVerbs.length > 0 ? `Verbs: ${h.capabilityVerbs.join(', ')}` : '',
+      h.tags.length > 0 ? `Tags: ${h.tags.join(', ')}` : '',
+    ].filter(Boolean).join(' · ') || `Portal ${h.portalAddress}`,
+    modelId: 'anton-portal-search',
+    sourceType: 'local',
+    qualityScore: 1.0,
+    relevanceScore: Math.min(1.0, h.relevanceScore / 50),
+    consensusScore: idx === 0 ? 1.0 : 0.8,
+  }));
+
+  const synthesis = hits.length === 0
+    ? `No portals matched "${query}" in the local registry. Public-indexed portals from federated registries will appear once the federation server is wired.`
+    : `Found ${total} portal${total === 1 ? '' : 's'} matching "${query}". Top ${hits.length} shown below; click a result to visit the portal directly.`;
+
+  callbacks.onSynthesisStart();
+  callbacks.onTextDelta(synthesis);
+
+  return {
+    id: searchId, query, enrichedQuery, depth,
+    synthesis, thinking: '', preSearchReasoning,
+    modelResults: [], webSources: [], localSources,
+    inputTokens: 0, outputTokens: 0, costUsd: 0,
+    durationMs: Date.now() - startTime,
+    followUpSuggestions: [],
+  };
+}
+
 // ── Quick search (Haiku web_search → Haiku think_hard synthesis) ────────────
 
 export async function dispatchQuickSearch(
@@ -666,6 +732,12 @@ export async function dispatchQuickSearch(
   context?: SearchContext,
   searchMode: SearchMode = 'knowledge',
 ): Promise<SearchResult> {
+  // anton-portal mode bypasses the LLM entirely; serve hits from the
+  // local portal-search-engine instead.
+  if (searchMode === 'anton-portal') {
+    return dispatchPortalSearch(db, query, context, callbacks, 'quick');
+  }
+
   const searchId = randomUUID();
   const startTime = Date.now();
   callbacks.onSearchStart(searchId, 'quick');
@@ -749,6 +821,10 @@ export async function dispatchThoroughSearch(
   context?: SearchContext,
   searchMode: SearchMode = 'knowledge',
 ): Promise<SearchResult> {
+  if (searchMode === 'anton-portal') {
+    return dispatchPortalSearch(db, query, context, callbacks, 'thorough');
+  }
+
   const searchId = randomUUID();
   const startTime = Date.now();
   callbacks.onSearchStart(searchId, 'thorough');
@@ -852,6 +928,10 @@ export async function dispatchDeepSearch(
   context?: SearchContext,
   searchMode: SearchMode = 'knowledge',
 ): Promise<SearchResult> {
+  if (searchMode === 'anton-portal') {
+    return dispatchPortalSearch(db, query, context, callbacks, 'deep');
+  }
+
   const searchId = randomUUID();
   const startTime = Date.now();
   callbacks.onSearchStart(searchId, 'deep');
