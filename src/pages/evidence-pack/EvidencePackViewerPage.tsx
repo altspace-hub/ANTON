@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ShieldCheck, ChevronLeft, Loader2, AlertCircle, Download, FileText, Lock, Search } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, Loader2, AlertCircle, Download, FileText, Lock, Search, Share2, Copy, Check, Trash2, Activity } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 interface PackDetail {
@@ -29,7 +29,36 @@ interface PackDetail {
   }>;
 }
 
-type Tab = 'overview' | 'timeline' | 'search';
+type Tab = 'overview' | 'timeline' | 'search' | 'shares' | 'access_log';
+
+interface ShareRow {
+  id: string;
+  access_token: string;
+  recipient_name: string;
+  recipient_organisation: string;
+  recipient_contact: string | null;
+  purpose: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  revoked_reason: string | null;
+  allow_download: boolean;
+  watermark_text: string | null;
+  password_required: boolean;
+}
+
+interface AccessRow {
+  id: string;
+  share_id: string | null;
+  accessed_at: string;
+  accessor_type: string;
+  action: string;
+  item_accessed: string | null;
+  success: boolean;
+  error_reason: string | null;
+  recipient_name: string | null;
+  recipient_organisation: string | null;
+}
 
 export default function EvidencePackViewerPage() {
   const { id } = useParams<{ id: string }>();
@@ -149,15 +178,19 @@ export default function EvidencePackViewerPage() {
           </div>
         )}
 
-        <nav className="flex gap-1 border-b border-border">
+        <nav className="flex gap-1 border-b border-border overflow-x-auto">
           <TabButton active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</TabButton>
           <TabButton active={tab === 'timeline'} onClick={() => setTab('timeline')}>Timeline ({items.length})</TabButton>
           <TabButton active={tab === 'search'} onClick={() => setTab('search')}>Search</TabButton>
+          <TabButton active={tab === 'shares'} onClick={() => setTab('shares')}>Shares</TabButton>
+          <TabButton active={tab === 'access_log'} onClick={() => setTab('access_log')}>Access Log</TabButton>
         </nav>
 
         {tab === 'overview' && <OverviewTab pack={pack} frameworks={frameworks} items={items} />}
         {tab === 'timeline' && <TimelineTab items={items} />}
         {tab === 'search' && <SearchTab items={items} />}
+        {tab === 'shares' && <SharesTab packId={pack.id} canShare={pack.status === 'finalised' || pack.status === 'shared'} />}
+        {tab === 'access_log' && <AccessLogTab packId={pack.id} />}
       </div>
     </div>
   );
@@ -264,6 +297,273 @@ function SearchTab({ items }: { items: PackDetail['items'] }) {
       <ol className="space-y-2">
         {filtered.map((item) => <ItemRow key={`${item.item_type}-${item.item_id}`} item={item} />)}
       </ol>
+    </div>
+  );
+}
+
+function SharesTab({ packId, canShare }: { packId: string; canShare: boolean }) {
+  const [shares, setShares] = useState<ShareRow[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newShareToken, setNewShareToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  async function refresh() {
+    try {
+      const res = await fetchWithAuth(`/api/evidence-pack/${packId}/shares`);
+      if (res.ok) {
+        const j = await res.json();
+        setShares(j.shares ?? []);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+  useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [packId]);
+
+  async function revoke(shareId: string) {
+    const reason = prompt('Reason for revocation? (optional)') ?? undefined;
+    const res = await fetchWithAuth(`/api/evidence-pack/${packId}/shares/${shareId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    if (res.ok || res.status === 204) await refresh();
+  }
+
+  async function copyShareUrl(token: string) {
+    const url = `${window.location.origin}/shared/pack/${encodeURIComponent(token)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(token);
+      setTimeout(() => setCopied(null), 2000);
+    } catch { /* ignore */ }
+  }
+
+  return (
+    <div className="space-y-4">
+      {!canShare && (
+        <div className="rounded-lg border border-adv-gold/40 bg-adv-gold/10 p-3 text-sm text-adv-gold">
+          Pack must be finalised before it can be shared with regulators.
+        </div>
+      )}
+      {error && <div className="text-sm text-adv-red">{error}</div>}
+
+      {canShare && !showCreate && (
+        <button
+          onClick={() => { setShowCreate(true); setNewShareToken(null); }}
+          className="px-3 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark flex items-center gap-2"
+        >
+          <Share2 className="h-4 w-4" /> Create regulator share
+        </button>
+      )}
+      {canShare && showCreate && (
+        <CreateShareForm
+          onCancel={() => setShowCreate(false)}
+          onCreate={async (input) => {
+            setError(null);
+            try {
+              const res = await fetchWithAuth(`/api/evidence-pack/${packId}/shares`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(input),
+              });
+              const j = await res.json();
+              if (!res.ok) throw new Error(j.error ?? `Create failed (${res.status})`);
+              setNewShareToken(j.accessToken);
+              setShowCreate(false);
+              await refresh();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : String(e));
+            }
+          }}
+        />
+      )}
+      {newShareToken && (
+        <div className="rounded-lg border border-adv-green/40 bg-adv-green/5 p-3 text-sm">
+          <div className="font-medium text-adv-green mb-2">Share created. Send this URL to the recipient (it's the only time it'll be shown in full).</div>
+          <code className="block bg-adv-dark p-2 rounded text-xs break-all">
+            {window.location.origin}/shared/pack/{newShareToken}
+          </code>
+        </div>
+      )}
+
+      {shares.length === 0 ? (
+        <p className="text-sm text-adv-gray">No shares created yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {shares.map((s) => {
+            const expired = new Date(s.expires_at) < new Date();
+            const inactive = !!s.revoked_at || expired;
+            return (
+              <li key={s.id} className={`rounded-lg border border-border bg-adv-card p-3 ${inactive ? 'opacity-60' : ''}`}>
+                <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                  <div>
+                    <div className="font-medium">{s.recipient_name} — {s.recipient_organisation}</div>
+                    <div className="text-xs text-adv-gray mt-0.5">{s.purpose}</div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    {s.password_required && <span className="px-1.5 py-0.5 rounded bg-adv-teal/15 text-adv-teal flex items-center gap-1"><Lock className="h-3 w-3" /> password</span>}
+                    {!s.allow_download && <span className="px-1.5 py-0.5 rounded bg-adv-card">view-only</span>}
+                    {s.revoked_at && <span className="px-1.5 py-0.5 rounded bg-adv-red/15 text-adv-red">revoked</span>}
+                    {expired && !s.revoked_at && <span className="px-1.5 py-0.5 rounded bg-adv-gold/15 text-adv-gold">expired</span>}
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs text-adv-gray">
+                    Created {new Date(s.created_at).toLocaleDateString()} · expires {new Date(s.expires_at).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!inactive && (
+                      <>
+                        <button
+                          onClick={() => copyShareUrl(s.access_token)}
+                          className="px-2 py-1 rounded text-xs border border-border hover:border-adv-teal text-adv-gray hover:text-adv-teal flex items-center gap-1"
+                        >
+                          {copied === s.access_token ? <Check className="h-3 w-3 text-adv-green" /> : <Copy className="h-3 w-3" />}
+                          {copied === s.access_token ? 'Copied' : 'Copy URL'}
+                        </button>
+                        <button
+                          onClick={() => void revoke(s.id)}
+                          className="px-2 py-1 rounded text-xs border border-adv-red/40 text-adv-red hover:bg-adv-red/10 flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3 w-3" /> Revoke
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function CreateShareForm({ onCancel, onCreate }: {
+  onCancel: () => void;
+  onCreate: (input: { recipientName: string; recipientOrganisation: string; recipientContact?: string; purpose: string; expiresInDays: number; password?: string; allowDownload: boolean; watermarkText?: string }) => Promise<void>;
+}) {
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientOrganisation, setRecipientOrganisation] = useState('');
+  const [recipientContact, setRecipientContact] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [expiresInDays, setExpiresInDays] = useState(30);
+  const [password, setPassword] = useState('');
+  const [allowDownload, setAllowDownload] = useState(true);
+  const [watermarkText, setWatermarkText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!recipientName.trim() || !recipientOrganisation.trim() || !purpose.trim()) return;
+        setSubmitting(true);
+        try {
+          await onCreate({
+            recipientName: recipientName.trim(),
+            recipientOrganisation: recipientOrganisation.trim(),
+            recipientContact: recipientContact.trim() || undefined,
+            purpose: purpose.trim(),
+            expiresInDays,
+            password: password.trim() || undefined,
+            allowDownload,
+            watermarkText: watermarkText.trim() || undefined,
+          });
+        } finally { setSubmitting(false); }
+      }}
+      className="rounded-lg border border-border bg-adv-card p-4 space-y-3"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <FormField label="Recipient name" value={recipientName} onChange={setRecipientName} placeholder="Jan Johansson" required />
+        <FormField label="Recipient organisation" value={recipientOrganisation} onChange={setRecipientOrganisation} placeholder="Finansinspektionen" required />
+      </div>
+      <FormField label="Recipient email (optional)" value={recipientContact} onChange={setRecipientContact} type="email" />
+      <FormField label="Purpose" value={purpose} onChange={setPurpose} placeholder="On-site inspection, ref FI-2026-0123" required />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <FormField label="Expires in (days)" value={String(expiresInDays)} onChange={(v) => setExpiresInDays(Math.max(1, Math.min(365, Number(v) || 30)))} type="number" />
+        <FormField label="Password (optional, ≥8 chars)" value={password} onChange={setPassword} type="password" />
+      </div>
+      <FormField label="Watermark text (optional)" value={watermarkText} onChange={setWatermarkText} placeholder="CONFIDENTIAL — Finansinspektionen only" />
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input type="checkbox" checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} className="accent-adv-teal" />
+        Allow .anton bundle download
+      </label>
+      <div className="flex items-center justify-end gap-2 pt-2">
+        <button type="button" onClick={onCancel} className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-gray">Cancel</button>
+        <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark disabled:opacity-50 flex items-center gap-2">
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />} Create share
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function FormField({ label, value, onChange, placeholder, required, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean; type?: string }) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium mb-1">{label}{required && <span className="text-adv-red"> *</span>}</span>
+      <input
+        type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+      />
+    </label>
+  );
+}
+
+function AccessLogTab({ packId }: { packId: string }) {
+  const [accesses, setAccesses] = useState<AccessRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetchWithAuth(`/api/evidence-pack/${packId}/access-log`);
+        if (!res.ok) throw new Error(`Failed to load access log (${res.status})`);
+        const j = await res.json();
+        setAccesses(j.accesses ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  }, [packId]);
+
+  if (error) return <div className="text-sm text-adv-red">{error}</div>;
+  if (!accesses) return <div className="flex items-center gap-2 text-adv-gray text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
+  if (accesses.length === 0) return (
+    <div className="rounded-xl border border-dashed border-border bg-adv-card p-6 text-center">
+      <Activity className="h-10 w-10 text-adv-gray mx-auto mb-3" />
+      <p className="text-sm text-adv-off-white font-medium">No external access yet</p>
+      <p className="text-xs text-adv-gray mt-1">Regulator hits will appear here in real time.</p>
+    </div>
+  );
+  return (
+    <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="text-xs uppercase tracking-wide text-adv-gray bg-adv-dark/30">
+          <tr>
+            <th className="text-left p-3 font-normal">When</th>
+            <th className="text-left p-3 font-normal">Recipient</th>
+            <th className="text-left p-3 font-normal">Action</th>
+            <th className="text-left p-3 font-normal">Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          {accesses.map((a) => (
+            <tr key={a.id} className="border-t border-border/40">
+              <td className="p-3 text-xs text-adv-gray">{new Date(a.accessed_at).toLocaleString()}</td>
+              <td className="p-3 text-sm">
+                {a.recipient_name ? `${a.recipient_name} — ${a.recipient_organisation}` : a.accessor_type}
+              </td>
+              <td className="p-3 text-xs"><code>{a.action}</code></td>
+              <td className="p-3 text-xs">
+                {a.success ? <span className="text-adv-green">✓ ok</span> : <span className="text-adv-red">✗ {a.error_reason ?? 'failed'}</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

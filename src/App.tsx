@@ -92,6 +92,7 @@ const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage')
 const EvidencePackListPage = lazy(() => import('./pages/evidence-pack/EvidencePackListPage'));
 const EvidencePackBuilderPage = lazy(() => import('./pages/evidence-pack/EvidencePackBuilderPage'));
 const EvidencePackViewerPage = lazy(() => import('./pages/evidence-pack/EvidencePackViewerPage'));
+const RegulatorSharedPackPage = lazy(() => import('./pages/evidence-pack/RegulatorSharedPackPage'));
 const BriefMePage = lazy(() => import('./pages/BriefMePage'));
 const GuideMePage = lazy(() => import('./pages/GuideMePage'));
 const BatchCreatePage = lazy(() => import('./pages/BatchCreatePage'));
@@ -443,6 +444,9 @@ export default function App() {
       <Routes>
         {/* Standalone public page — no sidebar/header */}
         <Route path="/share/:token" element={<SharePage />} />
+
+        {/* Standalone public regulator view of an evidence pack — no nav chrome */}
+        <Route path="/shared/pack/:token" element={<RegulatorSharedPackPage />} />
 
         {/* Password reset — public, standalone */}
         <Route path="/reset-password" element={<ResetPasswordPage />} />

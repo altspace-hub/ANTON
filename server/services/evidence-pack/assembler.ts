@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
 import { canonicalise, type CollectedItem, type CollectedItems, type ScopeDefinition } from './collector.js';
+import { signManifestHash } from './signer.js';
 
 const log = childLogger('evidence-pack-assembler');
 
@@ -182,17 +183,25 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
  * Flip the pack from 'draft' to 'finalised'. After finalise the contents are
  * immutable; further /collect calls must create a new pack via supersedes.
  *
- * Phase 1: no Ed25519 sign here — that ships in Phase 2.
+ * Phase 2: signs the manifest hash with the instance Ed25519 keypair and
+ * persists signature + signer_public_key so a verifier with the bundled
+ * pack can verify without platform access.
  */
 export async function finalisePack(db: DatabaseAdapter, packId: string): Promise<void> {
   const pack = await readPackRow(db, packId);
   if (!pack) throw new Error(`Pack ${packId} not found`);
   if (pack.status !== 'draft') throw new Error(`Pack ${packId} is ${pack.status}, cannot finalise`);
+  if (!pack.hash_manifest) throw new Error(`Pack ${packId} has no manifest hash; run /collect first`);
+
+  const { signature, publicKeyHex } = await signManifestHash(db, pack.hash_manifest);
   await db.run(
-    `UPDATE evidence_packs SET status = 'finalised', finalised_at = NOW() WHERE id = ?`,
-    packId,
+    `UPDATE evidence_packs
+       SET status = 'finalised', finalised_at = NOW(),
+           signature = ?, signer_public_key = ?
+     WHERE id = ?`,
+    signature, publicKeyHex, packId,
   );
-  log.info({ packId }, 'pack_finalised');
+  log.info({ packId, signature: signature.slice(0, 24) + '…' }, 'pack_finalised_signed');
 }
 
 export async function readPackRow(db: DatabaseAdapter, packId: string): Promise<PackRow | null> {
