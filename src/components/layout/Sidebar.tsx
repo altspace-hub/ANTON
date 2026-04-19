@@ -43,6 +43,8 @@ import {
   Rss,
   // Mission Inbox
   Inbox,
+  // Portals sub-nav
+  Plus,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -242,6 +244,42 @@ function MissionInboxBadge() {
         const data = await r.json() as { delegations?: Array<{ status: string }> };
         if (cancelled) return;
         setCount((data.delegations ?? []).filter(d => d.status === 'received').length);
+      } catch { /* ignore */ }
+    }
+    void load();
+    const iv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void load();
+    }, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+  if (count === 0) return null;
+  return (
+    <span className="ml-auto rounded-full bg-adv-gold/20 px-1.5 py-0.5 text-xs font-semibold text-adv-gold">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
+/**
+ * Lightweight badge that polls the cross-portal inbox count (status=pending)
+ * every 60s. Uses the same auth + idle-skip pattern as MissionInboxBadge.
+ */
+function PortalInboxBadge() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    function getAuthHeader(): Record<string, string> {
+      const token = localStorage.getItem('openexpert-token');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+    let cancelled = false;
+    async function load() {
+      try {
+        const r = await fetch('/api/portals/inbox?status=pending', { headers: getAuthHeader() });
+        if (!r.ok) return;
+        const data = await r.json() as { invocations?: Array<unknown>; total?: number };
+        if (cancelled) return;
+        setCount(data.total ?? data.invocations?.length ?? 0);
       } catch { /* ignore */ }
     }
     void load();
@@ -1798,6 +1836,76 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <span className="flex-1">Inbox</span>
             <MissionInboxBadge />
           </NavLink>
+        )}
+
+        {/* Portals — user-created ANTON-only web spaces */}
+        <NavLink
+          to="/portals"
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          title={sidebarCollapsed ? 'Portals' : undefined}
+        >
+          <Globe className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Portals'}
+        </NavLink>
+
+        {/* Portals sub-nav — shown when inside /portals */}
+        {!sidebarCollapsed && pathname.startsWith('/portals') && (
+          <>
+            <NavLink
+              to="/portals"
+              end
+              className={({ isActive }) =>
+                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-adv-teal/15 text-adv-teal'
+                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+                }`
+              }
+            >
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1">My portals</span>
+            </NavLink>
+            <NavLink
+              to="/portals/build"
+              className={({ isActive }) =>
+                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-adv-teal/15 text-adv-teal'
+                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+                }`
+              }
+            >
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1">Build new</span>
+            </NavLink>
+            <NavLink
+              to="/portals/discovery"
+              className={({ isActive }) =>
+                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-adv-teal/15 text-adv-teal'
+                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+                }`
+              }
+            >
+              <Search className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1">Discovery</span>
+            </NavLink>
+            <NavLink
+              to="/portals/inbox"
+              className={({ isActive }) =>
+                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-adv-teal/15 text-adv-teal'
+                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+                }`
+              }
+            >
+              <Inbox className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1">Inbox</span>
+              <PortalInboxBadge />
+            </NavLink>
+          </>
         )}
 
         {/* Risk Atlas — universal seven-stage threat-path methodology */}
