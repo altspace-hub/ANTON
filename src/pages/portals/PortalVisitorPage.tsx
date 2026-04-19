@@ -30,20 +30,46 @@ type FetchState =
   | { kind: 'portal_offline'; reason: string }
   | { kind: 'error'; reason: string };
 
+interface NavPage { path: string; title: string | null; sortOrder: number }
+
 export default function PortalVisitorPage() {
   const { address: rawAddress } = useParams<{ address: string }>();
   const address = rawAddress ? decodeURIComponent(rawAddress) : '';
   const [page, setPage] = useState<FetchState>({ kind: 'loading' });
   const [descriptor, setDescriptor] = useState<Descriptor | null>(null);
   const [activeCap, setActiveCap] = useState<Descriptor['capabilities'][number] | null>(null);
+  const [navPages, setNavPages] = useState<NavPage[]>([]);
+  const [activePath, setActivePath] = useState('/');
 
+  // Load nav pages + descriptor once per address.
   useEffect(() => {
     let cancelled = false;
     if (!address) return;
+    void (async () => {
+      const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/pages`);
+      if (res.ok) {
+        const j = await res.json() as { pages: NavPage[] };
+        if (!cancelled) setNavPages(j.pages ?? []);
+      }
+    })();
+    void (async () => {
+      const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/capabilities`);
+      if (res.ok) {
+        const j = await res.json();
+        if (!cancelled) setDescriptor(j.descriptor);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [address]);
 
+  // Re-fetch the page whenever activePath (or address) changes.
+  useEffect(() => {
+    let cancelled = false;
+    if (!address) return;
+    setPage({ kind: 'loading' });
     void (async () => {
       try {
-        const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/page?path=/`);
+        const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/page?path=${encodeURIComponent(activePath)}`);
         const json = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (res.ok && json.kind === 'page') setPage({ kind: 'page', html: json.html, title: json.title });
@@ -54,17 +80,8 @@ export default function PortalVisitorPage() {
         if (!cancelled) setPage({ kind: 'error', reason: e instanceof Error ? e.message : String(e) });
       }
     })();
-
-    void (async () => {
-      const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/capabilities`);
-      if (res.ok) {
-        const j = await res.json();
-        if (!cancelled) setDescriptor(j.descriptor);
-      }
-    })();
-
     return () => { cancelled = true; };
-  }, [address]);
+  }, [address, activePath]);
 
   return (
     <div className="min-h-screen bg-adv-dark text-adv-off-white">
@@ -83,6 +100,28 @@ export default function PortalVisitorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
         {/* Page content */}
         <main className="p-6 md:p-8 max-w-3xl mx-auto w-full">
+          {/* Page nav — only render if there's more than one visible page. */}
+          {navPages.length > 1 && (
+            <nav
+              className="mb-4 flex flex-wrap items-center gap-1 rounded-lg border border-border bg-adv-card p-1.5"
+              aria-label="Portal page navigation"
+            >
+              {navPages.map((p) => (
+                <button
+                  key={p.path}
+                  onClick={() => setActivePath(p.path)}
+                  className={`px-3 py-1.5 rounded-md text-sm transition ${
+                    p.path === activePath
+                      ? 'bg-adv-teal text-adv-dark font-medium'
+                      : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+                  }`}
+                  aria-current={p.path === activePath ? 'page' : undefined}
+                >
+                  {p.title ?? p.path}
+                </button>
+              ))}
+            </nav>
+          )}
           {page.kind === 'loading' && (
             <div className="flex items-center gap-2 text-adv-gray text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
           )}

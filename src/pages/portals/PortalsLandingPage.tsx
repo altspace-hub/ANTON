@@ -42,6 +42,35 @@ export default function PortalsLandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
+  const trustInput = useRef<HTMLInputElement>(null);
+  const [trustInstalling, setTrustInstalling] = useState(false);
+  const [trustError, setTrustError] = useState<string | null>(null);
+
+  async function installTrustBundle(file: File) {
+    setTrustInstalling(true);
+    setTrustError(null);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const res = await fetchWithAuth('/api/portals/trust-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.installed) {
+        throw new Error(json.error ?? `Install failed (${res.status})`);
+      }
+      // Refresh the status to dismiss the banner.
+      const statusRes = await fetchWithAuth('/api/portals/trust-bundle/status');
+      if (statusRes.ok) setTrustStatus(await statusRes.json());
+    } catch (e) {
+      setTrustError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTrustInstalling(false);
+      if (trustInput.current) trustInput.current.value = '';
+    }
+  }
 
   async function importBundle(file: File) {
     setImporting(true);
@@ -142,7 +171,7 @@ export default function PortalsLandingPage() {
         {trustStatus?.futurechainPlaceholder && (
           <div className="rounded-xl border border-adv-gold/40 bg-adv-gold/5 p-4 flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 text-adv-gold flex-shrink-0 mt-0.5" aria-hidden />
-            <div className="text-sm">
+            <div className="text-sm flex-1">
               <div className="font-medium text-adv-gold">Registry operator key not installed</div>
               <p className="text-adv-gray mt-1">
                 The bundled trust store still ships the FutureChain placeholder. Portals you build are
@@ -152,6 +181,29 @@ export default function PortalsLandingPage() {
                 {' '}<code className="text-adv-off-white">PORTAL_REGISTRY_URL</code> + ship the trust
                 bundle update to enable end-to-end registry checks.
               </p>
+              {trustError && (
+                <div className="mt-2 text-xs text-adv-red flex items-start gap-1">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {trustError}
+                </div>
+              )}
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  ref={trustInput}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void installTrustBundle(f); }}
+                />
+                <button
+                  type="button"
+                  onClick={() => trustInput.current?.click()}
+                  disabled={trustInstalling}
+                  className="px-3 py-1.5 rounded-lg border border-adv-gold/50 text-adv-gold text-xs hover:bg-adv-gold/10 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {trustInstalling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {trustInstalling ? 'Installing…' : 'Install trust bundle (JSON)'}
+                </button>
+              </div>
             </div>
           </div>
         )}
