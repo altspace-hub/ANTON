@@ -65,7 +65,10 @@ export type AntonBundleType =
   | 'humanitarian-deployment-kit'
   | 'diagnostic-case-bundle'
   | 'patch-bundle'
-  | 'lifecycle-advisory-bundle';
+  | 'lifecycle-advisory-bundle'
+  // Portals (spec v0.2)
+  // — user-created ANTON-only web spaces with capability descriptors
+  | 'portal';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -118,6 +121,8 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'diagnostic-case-bundle':        { label: 'Diagnostic Case',             description: 'Structured fault-pattern + resolution case from the Diagnose path, packaged for community contribution and reuse',                    contentsKey: 'diagnostic_cases',            primaryContentDir: 'diagnostic-cases' },
   'patch-bundle':                  { label: 'Patch Bundle',                description: 'Governed change package from the Maintain path: change scope, impact assessment, rollback plan, verification plan, audit trail',     contentsKey: 'patch_bundles',               primaryContentDir: 'patch-bundles' },
   'lifecycle-advisory-bundle':     { label: 'Lifecycle Advisory',          description: 'Authoritative lifecycle event (CVE, EOL, recall, regulatory update) with applicability assessment and recommended action',           contentsKey: 'lifecycle_advisories',        primaryContentDir: 'lifecycle-advisories' },
+  // ── Portals (spec v0.2) ─────────────────────────────────────────────────
+  'portal':                        { label: 'Portal',                       description: 'User-created ANTON-only web space: pages, assets, capability descriptor, schema, walkthrough transcript — portable origin',   contentsKey: 'portals',                     primaryContentDir: 'portals' },
 };
 
 interface ModuleExportData {
