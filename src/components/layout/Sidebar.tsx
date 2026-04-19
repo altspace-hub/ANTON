@@ -2125,6 +2125,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </NavLinkWithStar>
 
         <NavLinkWithStar
+          to="/evidence-packs"
+          navId="evidence-packs"
+          title={sidebarCollapsed ? 'Evidence Packs' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('evidence-packs')}
+          isHidden={hiddenNavItems.has('evidence-packs')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Evidence Packs'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
           to="/app-gateway"
           navId="app-gateway"
           title={sidebarCollapsed ? 'App Gateway' : undefined}
