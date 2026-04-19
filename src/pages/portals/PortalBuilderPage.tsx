@@ -7,9 +7,9 @@
  * reuses generatePhasePrompt + the existing unified-llm-client.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X, Sparkles } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 const PHASES = [
@@ -36,14 +36,22 @@ interface SessionState {
   portalId: string | null;
 }
 
+interface CostState {
+  costUsdCents: number;
+  callsUsed: number;
+  callLimit: number;
+}
+
 export default function PortalBuilderPage() {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [cost, setCost] = useState<CostState | null>(null);
 
   // Bootstrap session.
   useEffect(() => {
@@ -147,6 +155,58 @@ export default function PortalBuilderPage() {
     navigate('/portals');
   }
 
+  // Refresh the cost chip. Called once per session bootstrap and after every
+  // suggest call. Soft-fails — a missing cost endpoint shouldn't block the UI.
+  const refreshCost = useCallback(async (sid: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${sid}/cost`);
+      if (res.ok) setCost(await res.json());
+    } catch { /* non-fatal */ }
+  }, []);
+
+  useEffect(() => {
+    if (session) void refreshCost(session.id);
+  }, [session?.id, refreshCost]);
+
+  // POST /llm-suggest — server picks the model based on session.depth, calls
+  // the LLM, validates against the phase schema, persists as draft. On 200 we
+  // copy the suggestion into the live draft so the user sees it in the form.
+  async function suggestWithAI() {
+    if (!session) return;
+    setError(null);
+    setSuggesting(true);
+    try {
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/llm-suggest`, {
+        method: 'POST',
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 200) {
+        if (json?.suggestion) setDraft(json.suggestion);
+        await refreshCost(session.id);
+        return;
+      }
+      // Map server error envelopes to readable messages.
+      const e = json?.error ?? {};
+      let msg = 'AI suggestion failed';
+      if (e.kind === 'cap_exceeded') msg = `LLM call cap reached (${e.limit}/walkthrough). Fill the rest manually.`;
+      else if (e.kind === 'no_provider') msg = 'No LLM provider configured. Set ANTHROPIC_API_KEY in .env.';
+      else if (e.kind === 'parse_error') msg = `Model returned non-JSON output. ${e.retryable ? 'Try again.' : ''}`;
+      else if (e.kind === 'shape_error') {
+        const issues = (e.zodErrors as Array<{ path: string; message: string }> | undefined)?.slice(0, 2)
+          .map(z => `${z.path}: ${z.message}`).join('; ');
+        msg = `Model output didn't match schema. ${issues ?? ''}`;
+      } else if (e.kind === 'provider_error') msg = `Provider error: ${e.message ?? 'unknown'}`;
+      else if (e.kind === 'session_inactive') msg = `Session is ${e.status}; cannot suggest.`;
+      setError(msg);
+      // Cost may still have been recorded for the failed call.
+      await refreshCost(session.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
   if (loading) {
     return <CenterMsg><Loader2 className="h-5 w-5 animate-spin" /> Starting walkthrough…</CenterMsg>;
   }
@@ -171,13 +231,26 @@ export default function PortalBuilderPage() {
             <h1 className="text-xl font-semibold">{session.template.label} portal</h1>
             <p className="text-sm text-adv-gray mt-1">{session.template.description}</p>
           </div>
-          <button
-            onClick={abandon}
-            aria-label="Abandon walkthrough and discard the draft"
-            className="text-sm text-adv-gray hover:text-adv-red transition flex items-center gap-1"
-          >
-            <X className="h-4 w-4" /> Abandon
-          </button>
+          <div className="flex items-center gap-3">
+            {cost && (
+              <div
+                className="hidden sm:flex items-center gap-2 text-xs text-adv-gray bg-adv-card border border-border rounded-lg px-3 py-1.5"
+                title={`${cost.callsUsed} of ${cost.callLimit} LLM calls used`}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
+                <span>{formatCents(cost.costUsdCents)}</span>
+                <span className="text-adv-gray/60">·</span>
+                <span>{cost.callsUsed}/{cost.callLimit}</span>
+              </div>
+            )}
+            <button
+              onClick={abandon}
+              aria-label="Abandon walkthrough and discard the draft"
+              className="text-sm text-adv-gray hover:text-adv-red transition flex items-center gap-1"
+            >
+              <X className="h-4 w-4" /> Abandon
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
@@ -220,27 +293,43 @@ export default function PortalBuilderPage() {
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-end gap-2">
-              {allComplete ? (
+            <div className="mt-6 flex items-center justify-between gap-2 flex-wrap">
+              {!allComplete && (
                 <button
-                  onClick={finalize}
-                  disabled={advancing}
-                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                  onClick={suggestWithAI}
+                  disabled={suggesting || advancing || phaseDone || (cost ? cost.callsUsed >= cost.callLimit : false)}
+                  title={cost && cost.callsUsed >= cost.callLimit
+                    ? `LLM call cap reached (${cost.callLimit}/walkthrough)`
+                    : 'Have ANTON draft this phase for you'}
+                  className="px-3 py-2 rounded-lg border border-adv-teal/40 text-adv-teal hover:bg-adv-teal/10 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                  aria-label="Suggest this phase with AI"
                 >
-                  {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  Publish portal
-                </button>
-              ) : (
-                <button
-                  onClick={advance}
-                  disabled={advancing || phaseDone || !validation.valid}
-                  title={!validation.valid ? `Fill required fields: ${validation.missing.join(', ')}` : undefined}
-                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                  {phaseDone ? 'Phase recorded' : 'Save & continue'}
+                  {suggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {suggesting ? 'ANTON is drafting…' : 'Suggest with AI'}
                 </button>
               )}
+              <div className="ml-auto flex items-center gap-2">
+                {allComplete ? (
+                  <button
+                    onClick={finalize}
+                    disabled={advancing}
+                    className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    Publish portal
+                  </button>
+                ) : (
+                  <button
+                    onClick={advance}
+                    disabled={advancing || phaseDone || !validation.valid}
+                    title={!validation.valid ? `Fill required fields: ${validation.missing.join(', ')}` : undefined}
+                    className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                    {phaseDone ? 'Phase recorded' : 'Save & continue'}
+                  </button>
+                )}
+              </div>
             </div>
           </main>
         </div>
@@ -441,6 +530,15 @@ function Checkbox({ label, value, onChange }: { label: string; value: boolean; o
 
 function CenterMsg({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center text-sm text-adv-gray gap-2">{children}</div>;
+}
+
+// Render a USD-cent count as a money string. Sub-cent values (which are
+// common for haiku-cheap phases) collapse to "<$0.01" so the chip never
+// shows a misleading "$0.00".
+function formatCents(cents: number): string {
+  if (!cents || cents <= 0) return '$0.00';
+  if (cents < 1) return '<$0.01';
+  return `$${(cents / 100).toFixed(cents < 100 ? 3 : 2)}`;
 }
 
 // ── Draft seeding ───────────────────────────────────────────────────────────

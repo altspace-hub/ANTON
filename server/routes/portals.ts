@@ -34,6 +34,7 @@ import { createPortalSearchEngine } from '../services/portals/portal-search-engi
 import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-engine.js';
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
+import { suggestPhase, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
@@ -260,6 +261,72 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       if (!await assertSessionOwner(req, res)) return;
       await walkthroughs.abandonSession(req.params.id);
       res.status(204).end();
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // LLM-driven phase suggestion. Calls the configured provider (Anthropic /
+  // OpenAI / etc.), validates against PHASE_SCHEMAS[phase], persists as a
+  // draft under accumulated_state.__drafts.<phase>, and records a cost row.
+  // The UI reads the suggestion to populate the form; the user still
+  // confirms via the existing /advance endpoint.
+  router.post('/portals/walkthroughs/:id/llm-suggest', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      const r = await suggestPhase(db, req.params.id);
+      switch (r.kind) {
+        case 'ok':
+          return res.status(200).json({
+            phase: r.phase,
+            suggestion: r.suggestion,
+            usage: r.usage,
+          });
+        case 'parse_error':
+          return res.status(422).json({
+            error: { kind: r.kind, phase: r.phase, reason: r.reason, retryable: r.retryable },
+          });
+        case 'shape_error':
+          return res.status(422).json({
+            error: { kind: r.kind, phase: r.phase, zodErrors: r.zodErrors, retryable: r.retryable },
+          });
+        case 'cap_exceeded':
+          return res.status(429).json({
+            error: { kind: r.kind, phase: r.phase, limit: r.limit },
+          });
+        case 'no_provider':
+          return res.status(503).json({
+            error: { kind: r.kind, reason: r.reason },
+          });
+        case 'session_inactive':
+          // not_found vs already-finalized
+          return res.status(r.status === 'not_found' ? 404 : 409).json({
+            error: { kind: r.kind, status: r.status },
+          });
+        case 'provider_error':
+          return res.status(502).json({
+            error: { kind: r.kind, phase: r.phase, message: r.message },
+          });
+      }
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Cumulative session cost (USD cents) — feeds the cost chip in the
+  // walkthrough header so the user can see what they've spent.
+  router.get('/portals/walkthroughs/:id/cost', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      const costUsdCents = await getSessionCostCents(db, req.params.id);
+      const callRow = await db.get<{ llm_calls_used: number }>(
+        `SELECT llm_calls_used FROM portal_walkthrough_sessions WHERE id = ?`, req.params.id,
+      );
+      res.json({
+        costUsdCents,
+        callsUsed: callRow?.llm_calls_used ?? 0,
+        callLimit: 16,
+      });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
