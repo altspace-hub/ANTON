@@ -24,6 +24,7 @@ import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { validateAgainstSchema } from '../capability-descriptor/validator.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
+import { createPortalRenderer, type PortalRenderer } from './portal-renderer.js';
 
 // ── Request / response shapes ──────────────────────────────────────────────
 
@@ -205,6 +206,7 @@ export interface PortalHandler {
 
 export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
   const dbSvc: PortalDatabaseService = createPortalDatabaseService(db);
+  const renderer: PortalRenderer = createPortalRenderer(db);
 
   return {
     async handleFetch(req) {
@@ -232,7 +234,22 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
       if (!page || !page.visible) {
         return { kind: 'not_found', reason: `Page not found: ${req.path}` };
       }
-      return { kind: 'page', html: page.html, title: page.title, mimeType: 'text/html' };
+
+      // Run the minimal-interpolation renderer so {{title}} / {{portal.*}} /
+      // {{data.*}} / {{#each kind}} / {{asset:path}} are expanded before
+      // serving. Page.html stays the source of truth in the DB.
+      const html = await renderer.renderPage({
+        page,
+        portal: {
+          address: req.portalAddress,
+          name: ctx.portalRow.name,
+          namespace: ctx.portalRow.namespace,
+          displayTitle: ctx.portalRow.display_title,
+          category: ctx.portalRow.category,
+        },
+      });
+
+      return { kind: 'page', html, title: page.title, mimeType: 'text/html' };
     },
 
     async handleInquire(req) {
