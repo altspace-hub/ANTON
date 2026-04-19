@@ -1,0 +1,439 @@
+/**
+ * PortalBuilderPage — /portals/build/:templateId
+ *
+ * 8-phase walkthrough UI. Left column: phase stepper. Right: current phase form.
+ * For v0.7.x the phase forms are direct-input (the user fills the structured
+ * output by hand). LLM-driven population is a Phase 11+ enhancement that
+ * reuses generatePhasePrompt + the existing unified-llm-client.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowRight, ArrowLeft, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
+
+const PHASES = [
+  { id: 'intent', label: 'Intent' },
+  { id: 'identity', label: 'Identity' },
+  { id: 'content_structure', label: 'Pages' },
+  { id: 'content_generation', label: 'Content' },
+  { id: 'capabilities', label: 'Capabilities' },
+  { id: 'aesthetics', label: 'Aesthetics' },
+  { id: 'review', label: 'Review' },
+  { id: 'publish', label: 'Publish' },
+] as const;
+
+type PhaseId = typeof PHASES[number]['id'];
+
+interface SessionState {
+  id: string;
+  templateId: string;
+  template: { id: string; label: string; description: string; defaultCapabilities: Array<{ id: string; verb: string; title: string; description: string; aapEndpoint: string }>; seedPages: Array<{ path: string; title: string; sortOrder: number }> };
+  currentPhase: PhaseId;
+  phasesCompleted: PhaseId[];
+  accumulatedState: Record<string, unknown>;
+  status: string;
+  portalId: string | null;
+}
+
+export default function PortalBuilderPage() {
+  const { templateId } = useParams<{ templateId: string }>();
+  const navigate = useNavigate();
+  const [session, setSession] = useState<SessionState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [advancing, setAdvancing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Record<string, unknown>>({});
+
+  // Bootstrap session.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // Default ownerId is the local user — use 'local-owner' for v0.7.x.
+        const res = await fetchWithAuth('/api/portals/walkthroughs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ownerId: 'local-owner', templateId }),
+        });
+        if (!res.ok) throw new Error(`Failed to start session (${res.status})`);
+        const json = await res.json();
+        if (!cancelled) setSession(json.session);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [templateId]);
+
+  // When phase changes, seed draft from accumulatedState if present.
+  useEffect(() => {
+    if (!session) return;
+    setDraft(buildDraftFor(session));
+  }, [session]);
+
+  async function advance() {
+    if (!session) return;
+    setError(null);
+    setAdvancing(true);
+    try {
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serialiseDraft(session.currentPhase, draft)),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Advance failed (${res.status})`);
+      }
+      const json = await res.json();
+      setSession(json.session);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAdvancing(false);
+    }
+  }
+
+  async function finalize() {
+    if (!session) return;
+    setError(null);
+    setAdvancing(true);
+    try {
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/finalize`, { method: 'POST' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Finalize failed (${res.status})`);
+      }
+      const json = await res.json();
+      navigate(`/portals/${json.portalId}/manage`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setAdvancing(false);
+    }
+  }
+
+  async function abandon() {
+    if (!session) return;
+    await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/abandon`, { method: 'POST' });
+    navigate('/portals');
+  }
+
+  if (loading) {
+    return <CenterMsg><Loader2 className="h-5 w-5 animate-spin" /> Starting walkthrough…</CenterMsg>;
+  }
+  if (error && !session) {
+    return <CenterMsg><AlertCircle className="h-5 w-5 text-adv-red" /> {error} <button className="ml-3 text-adv-teal underline" onClick={() => navigate('/portals')}>Back</button></CenterMsg>;
+  }
+  if (!session) return null;
+
+  const phaseDone = session.phasesCompleted.includes(session.currentPhase);
+  const allComplete = session.phasesCompleted.length === PHASES.length;
+
+  return (
+    <div className="min-h-screen bg-adv-dark text-adv-off-white p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <header className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">{session.template.label} portal</h1>
+            <p className="text-sm text-adv-gray mt-1">{session.template.description}</p>
+          </div>
+          <button onClick={abandon} className="text-sm text-adv-gray hover:text-adv-red transition flex items-center gap-1">
+            <X className="h-4 w-4" /> Abandon
+          </button>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+          {/* Stepper */}
+          <nav aria-label="Walkthrough phases" className="space-y-1">
+            {PHASES.map((p, i) => {
+              const completed = session.phasesCompleted.includes(p.id);
+              const current = session.currentPhase === p.id;
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg ${current ? 'bg-adv-teal/10 border border-adv-teal/30' : 'border border-transparent'}`}
+                >
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs ${completed ? 'bg-adv-green text-adv-dark' : current ? 'bg-adv-teal text-adv-dark' : 'bg-adv-card text-adv-gray'}`}>
+                    {completed ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                  </span>
+                  <span className={`text-sm ${current ? 'text-adv-off-white' : completed ? 'text-adv-gray' : 'text-adv-gray'}`}>{p.label}</span>
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Phase form */}
+          <main className="rounded-xl border border-border bg-adv-card p-6">
+            {error && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 p-3 text-sm">
+                <AlertCircle className="h-4 w-4 text-adv-red flex-shrink-0 mt-0.5" />{error}
+              </div>
+            )}
+            <PhaseForm
+              phase={session.currentPhase}
+              draft={draft}
+              setDraft={setDraft}
+              template={session.template}
+            />
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                disabled
+                className="text-sm text-adv-gray flex items-center gap-1 opacity-50 cursor-not-allowed"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back (resume by URL)
+              </button>
+              {allComplete ? (
+                <button
+                  onClick={finalize}
+                  disabled={advancing}
+                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  Publish portal
+                </button>
+              ) : (
+                <button
+                  onClick={advance}
+                  disabled={advancing || phaseDone}
+                  className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                  {phaseDone ? 'Phase recorded' : 'Save & continue'}
+                </button>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Per-phase forms ─────────────────────────────────────────────────────────
+
+function PhaseForm({
+  phase, draft, setDraft, template,
+}: {
+  phase: PhaseId;
+  draft: Record<string, unknown>;
+  setDraft: (d: Record<string, unknown>) => void;
+  template: SessionState['template'];
+}) {
+  const update = (patch: Record<string, unknown>) => setDraft({ ...draft, ...patch });
+
+  if (phase === 'intent') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Who is this portal for?</h2>
+        <Field label="Audience" value={(draft.audience as string) ?? ''} onChange={(v) => update({ audience: v })} multi />
+        <Field label="Problem solved" value={(draft.problem_solved as string) ?? ''} onChange={(v) => update({ problem_solved: v })} multi />
+        <Field label="Visitor actions (one per line)" value={Array.isArray(draft.visitor_actions) ? (draft.visitor_actions as string[]).join('\n') : ''}
+          onChange={(v) => update({ visitor_actions: v.split('\n').map(s => s.trim()).filter(Boolean) })} multi />
+      </div>
+    );
+  }
+  if (phase === 'identity') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Identity</h2>
+        <Field label="Portal name (lowercase, dots/dashes OK)" value={(draft.name as string) ?? ''} onChange={(v) => update({ name: v.toLowerCase() })} />
+        <Field label="Namespace" value={(draft.namespace as string) ?? 'futurechain'} onChange={(v) => update({ namespace: v })} />
+        <Field label="Display title" value={(draft.display_title as string) ?? ''} onChange={(v) => update({ display_title: v })} />
+        <Field label="Tagline" value={(draft.tagline as string) ?? ''} onChange={(v) => update({ tagline: v })} />
+        <Field label="Description" value={(draft.description as string) ?? ''} onChange={(v) => update({ description: v })} multi />
+        <Select
+          label="Category"
+          value={(draft.category as string) ?? template?.id ?? 'personal'}
+          options={['personal','business','community','commerce','team','creator','bulletin','classroom','teacher','organisation','other']}
+          onChange={(v) => update({ category: v })}
+        />
+      </div>
+    );
+  }
+  if (phase === 'content_structure') {
+    const pages = (draft.pages as Array<{ path: string; title: string; sort_order: number }>) ?? [];
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Pages</h2>
+        <p className="text-sm text-adv-gray">Three pages cover most cases. Edit the seeds from the template:</p>
+        {pages.map((p, i) => (
+          <div key={i} className="grid grid-cols-12 gap-2">
+            <input className={inputCls + ' col-span-4'} value={p.path} onChange={(e) => {
+              const np = [...pages]; np[i] = { ...p, path: e.target.value }; update({ pages: np });
+            }} />
+            <input className={inputCls + ' col-span-6'} value={p.title} onChange={(e) => {
+              const np = [...pages]; np[i] = { ...p, title: e.target.value }; update({ pages: np });
+            }} />
+            <input type="number" min={0} className={inputCls + ' col-span-2'} value={p.sort_order} onChange={(e) => {
+              const np = [...pages]; np[i] = { ...p, sort_order: Number(e.target.value) }; update({ pages: np });
+            }} />
+          </div>
+        ))}
+        <button
+          type="button" onClick={() => update({ pages: [...pages, { path: '/' + (pages.length + 1), title: 'New page', sort_order: pages.length }] })}
+          className="text-sm text-adv-teal hover:underline"
+        >+ Add page</button>
+      </div>
+    );
+  }
+  if (phase === 'content_generation') {
+    const pages = (draft.pages as Array<{ path: string; html: string }>) ?? [];
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Content</h2>
+        <p className="text-sm text-adv-gray">Edit the HTML for each page. Use <code>{'{{title}}'}</code>, <code>{'{{portal.displayTitle}}'}</code>, <code>{'{{data.<key>}}'}</code>, <code>{'{{#each kind}}…{{/each}}'}</code>.</p>
+        {pages.map((p, i) => (
+          <div key={i}>
+            <div className="text-xs text-adv-gray mb-1">{p.path}</div>
+            <textarea
+              className={inputCls + ' h-32 font-mono text-xs'}
+              value={p.html}
+              onChange={(e) => {
+                const np = [...pages]; np[i] = { ...p, html: e.target.value }; update({ pages: np });
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (phase === 'capabilities') {
+    const caps = (draft.capabilities as Array<{ id: string; verb: string; title: string; description: string; aap_endpoint: string }>) ?? [];
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Capabilities</h2>
+        <p className="text-sm text-adv-gray">What can visitors do? Each capability becomes a button in their ANTON.</p>
+        {caps.map((c, i) => (
+          <div key={i} className="rounded-lg border border-border bg-adv-dark p-3 space-y-2">
+            <div className="grid grid-cols-12 gap-2">
+              <input className={inputCls + ' col-span-3'} value={c.id} onChange={(e) => {
+                const nc = [...caps]; nc[i] = { ...c, id: e.target.value }; update({ capabilities: nc });
+              }} placeholder="id (slug)" />
+              <select className={inputCls + ' col-span-3'} value={c.verb} onChange={(e) => {
+                const nc = [...caps]; nc[i] = { ...c, verb: e.target.value }; update({ capabilities: nc });
+              }}>
+                {['contact','inquire','request','order','pay','book','subscribe','join','query','publish','delegate','authenticate','custom'].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <input className={inputCls + ' col-span-3'} value={c.title} onChange={(e) => {
+                const nc = [...caps]; nc[i] = { ...c, title: e.target.value }; update({ capabilities: nc });
+              }} placeholder="title" />
+              <input className={inputCls + ' col-span-3'} value={c.aap_endpoint} onChange={(e) => {
+                const nc = [...caps]; nc[i] = { ...c, aap_endpoint: e.target.value }; update({ capabilities: nc });
+              }} placeholder="endpoint" />
+            </div>
+            <input className={inputCls} value={c.description} onChange={(e) => {
+              const nc = [...caps]; nc[i] = { ...c, description: e.target.value }; update({ capabilities: nc });
+            }} placeholder="description" />
+          </div>
+        ))}
+        <button type="button" onClick={() => update({ capabilities: [...caps, { id: 'cap-' + (caps.length + 1), verb: 'contact', title: 'New capability', description: '', aap_endpoint: 'messages' }] })}
+          className="text-sm text-adv-teal hover:underline">+ Add capability</button>
+      </div>
+    );
+  }
+  if (phase === 'aesthetics') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Aesthetics</h2>
+        <Field label="Palette (free-form)" value={(draft.palette as string) ?? 'minimal'} onChange={(v) => update({ palette: v })} />
+        <Field label="Font family" value={(draft.font_family as string) ?? 'system-ui'} onChange={(v) => update({ font_family: v })} />
+        <Field label="Custom CSS (optional, max 20 KB)" value={(draft.custom_css as string) ?? ''} onChange={(v) => update({ custom_css: v })} multi />
+      </div>
+    );
+  }
+  if (phase === 'review') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Review</h2>
+        <p className="text-sm text-adv-gray">Confirm the portal looks right before publishing.</p>
+        <Checkbox label="Approved" value={!!draft.approved} onChange={(v) => update({ approved: v })} />
+        <Field label="Reviewer notes" value={(draft.reviewer_notes as string) ?? ''} onChange={(v) => update({ reviewer_notes: v })} multi />
+      </div>
+    );
+  }
+  if (phase === 'publish') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium">Publish</h2>
+        <Checkbox label="Public index (discoverable via anton-portal search)" value={!!draft.public_index} onChange={(v) => update({ public_index: v })} />
+        <Checkbox label="Ready to register" value={draft.ready_to_register === true} onChange={(v) => update({ ready_to_register: v })} />
+        <p className="text-sm text-adv-gray">When you click "Publish portal" the local portal is created (status=active) and its descriptor is cached. Registry submission happens separately when the registry server is available.</p>
+      </div>
+    );
+  }
+  return null;
+}
+
+// ── Bits ────────────────────────────────────────────────────────────────────
+
+const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none';
+
+function Field({ label, value, onChange, multi }: { label: string; value: string; onChange: (v: string) => void; multi?: boolean }) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium text-adv-off-white mb-1">{label}</span>
+      {multi
+        ? <textarea className={inputCls + ' h-20'} value={value} onChange={(e) => onChange(e.target.value)} />
+        : <input className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} />}
+    </label>
+  );
+}
+
+function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium text-adv-off-white mb-1">{label}</span>
+      <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function Checkbox({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} className="accent-adv-teal" />
+      <span className="text-sm">{label}</span>
+    </label>
+  );
+}
+
+function CenterMsg({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen flex items-center justify-center text-sm text-adv-gray gap-2">{children}</div>;
+}
+
+// ── Draft seeding ───────────────────────────────────────────────────────────
+
+function buildDraftFor(session: SessionState): Record<string, unknown> {
+  const phase = session.currentPhase;
+  const existing = session.accumulatedState[phase] as Record<string, unknown> | undefined;
+  if (existing) return existing;
+  // Seed sensible defaults from the template.
+  if (phase === 'identity') {
+    return { namespace: 'futurechain', category: session.template?.id ?? 'personal' };
+  }
+  if (phase === 'content_structure') {
+    return { pages: session.template.seedPages.map(s => ({ path: s.path, title: s.title, sort_order: s.sortOrder })) };
+  }
+  if (phase === 'content_generation') {
+    return { pages: session.template.seedPages.map(s => ({ path: s.path, html: '' })) };
+  }
+  if (phase === 'capabilities') {
+    return {
+      capabilities: session.template.defaultCapabilities.map(c => ({
+        id: c.id, verb: c.verb, title: c.title, description: c.description, aap_endpoint: c.aapEndpoint,
+      })),
+    };
+  }
+  if (phase === 'review') return { approved: true };
+  if (phase === 'publish') return { public_index: false, ready_to_register: true };
+  return {};
+}
+
+function serialiseDraft(_phase: PhaseId, draft: Record<string, unknown>): Record<string, unknown> {
+  return draft;
+}

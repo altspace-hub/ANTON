@@ -148,6 +148,7 @@ import { createProcureRoutes } from './routes/procure.js';
 import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
 import { createHardwareRoutes } from './routes/hardware.js';
+import { createPortalsRoutes } from './routes/portals.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
 import { setupCompanionNamespace } from './services/app-websocket.js';
@@ -729,6 +730,9 @@ app.use('/api', await createGrowRoutes(db));
 
 // Hardware Build (Tier 5 of Coding area) — HKPs, families, paths
 app.use('/api', createHardwareRoutes(db));
+
+// Portals (spec v0.2) — user-created ANTON-only web spaces with capability descriptors
+app.use('/api', createPortalsRoutes(db));
 
 // Talent — Discovery-driven recruitment with EU AI Act compliance
 app.use('/api', await createTalentRoutes(db));
