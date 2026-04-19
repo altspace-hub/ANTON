@@ -6,7 +6,10 @@
  * failures (5xx, 429 with Retry-After).
  */
 
+import { childLogger } from '../../lib/logger.js';
 import { RegistryError, type RegistryResponseBody } from './types.js';
+
+const log = childLogger('registry-transport');
 
 // ── Configuration ──────────────────────────────────────────────────────────
 
@@ -95,19 +98,24 @@ export function createTransport(config: TransportConfig): TransportClient {
         }
 
         if (err.isRetryable && attempt < maxRetries) {
-          await sleep(backoffMs(attempt + 1));
+          const wait = backoffMs(attempt + 1);
+          log.warn({ code: err.code, httpStatus: err.httpStatus, attempt: attempt + 1, retryInMs: wait }, 'registry retry');
+          await sleep(wait);
           lastErr = err;
           continue;
         }
+        log.error({ code: err.code, httpStatus: err.httpStatus }, 'registry call failed (non-retryable)');
         throw err;
       } catch (e) {
         if (e instanceof RegistryError) throw e;
-        // Network error or AbortError — retryable.
         if (attempt < maxRetries) {
-          await sleep(backoffMs(attempt + 1));
+          const wait = backoffMs(attempt + 1);
+          log.warn({ err: e instanceof Error ? e.message : String(e), attempt: attempt + 1, retryInMs: wait }, 'registry transport error, retrying');
+          await sleep(wait);
           lastErr = e;
           continue;
         }
+        log.error({ err: e instanceof Error ? e.message : String(e) }, 'registry transport exhausted retries');
         throw new RegistryError(
           'E_TRANSPORT',
           e instanceof Error ? e.message : 'Transport error',
