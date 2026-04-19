@@ -81,6 +81,11 @@ const HardwareRegulatoryPage = lazy(() => import('./pages/HardwareRegulatoryPage
 const HardwareHumanitarianPage = lazy(() => import('./pages/HardwareHumanitarianPage'));
 const HardwareTemplatesPage = lazy(() => import('./pages/HardwareTemplatesPage'));
 const HardwareReviewQueuePage = lazy(() => import('./pages/HardwareReviewQueuePage'));
+// Portals (spec v0.2)
+const PortalsLandingPage = lazy(() => import('./pages/portals/PortalsLandingPage'));
+const PortalBuilderPage = lazy(() => import('./pages/portals/PortalBuilderPage'));
+const PortalManagePage = lazy(() => import('./pages/portals/PortalManagePage'));
+const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage'));
 const BriefMePage = lazy(() => import('./pages/BriefMePage'));
 const GuideMePage = lazy(() => import('./pages/GuideMePage'));
 const BatchCreatePage = lazy(() => import('./pages/BatchCreatePage'));
@@ -469,6 +474,11 @@ export default function App() {
           <Route path="/hardware/projects/:id/humanitarian" element={<HardwareHumanitarianPage />} />
           <Route path="/hardware/templates" element={<HardwareTemplatesPage />} />
           <Route path="/hardware/review-queue" element={<HardwareReviewQueuePage />} />
+          {/* Portals (spec v0.2) */}
+          <Route path="/portals" element={<PortalsLandingPage />} />
+          <Route path="/portals/build/:templateId" element={<PortalBuilderPage />} />
+          <Route path="/portals/:id/manage" element={<PortalManagePage />} />
+          <Route path="/portals/p/:address" element={<PortalVisitorPage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
           <Route path="/exchange" element={<ExchangePage />} />

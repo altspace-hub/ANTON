@@ -5,6 +5,7 @@ import {
   Inbox, Sparkles, ShieldCheck, Pencil,
 } from 'lucide-react';
 import { fetchWithAuth, API_BASE } from '@/lib/api';
+import ConfirmModal from '@/components/hardware/ConfirmModal';
 
 type SubmissionKind = 'hkp' | 'diagnostic-case' | 'template' | 'patch-bundle';
 type SubmissionStatus = 'pending' | 'in-review' | 'approved' | 'rejected' | 'withdrawn';

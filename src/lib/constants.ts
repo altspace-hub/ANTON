@@ -3393,6 +3393,15 @@ export const AREAS = [
       'hw-humanitarian-deployment-planner',
     ],
   },
+  // ── Portals (spec v0.2): user-created ANTON-only web spaces ────────────
+  {
+    id: 'portals',
+    label: 'Portals',
+    shortLabel: 'Portals',
+    icon: 'Globe',
+    color: 'adv-teal',
+    moduleIds: [],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
