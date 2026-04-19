@@ -314,6 +314,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const isProcureMode = pathname.startsWith('/procure');
   const isCivicMode = pathname.startsWith('/civic');
   const isGrowMode = pathname.startsWith('/grow');
+  // Portals owns its own sidebar like Markets/Payments. Visitor pages
+  // (/portals/p/*) intentionally fall through to the Work nav since the
+  // visitor isn't doing portal admin — they're browsing someone else's site.
+  const isPortalsMode = pathname.startsWith('/portals') && !pathname.startsWith('/portals/p/');
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
   const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -1146,8 +1150,94 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
+        {/* ── Portals sidebar — dedicated nav for /portals/* (excl. visitor) */}
+        {isPortalsMode && (
+          <>
+            {!sidebarCollapsed ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Portals</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Dashboard — owner's My Portals hub */}
+            <NavLink
+              to="/portals"
+              end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'My portals' : undefined}
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'My portals'}
+            </NavLink>
+
+            {/* Build */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Build
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/portals/build"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Build new' : undefined}
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Build new'}
+            </NavLink>
+
+            {/* Discover */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Discover
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/portals/discovery"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Find portals' : undefined}
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Find portals'}
+            </NavLink>
+
+            {/* Inbox — visitor invocations across all owner's portals */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Inbox
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/portals/inbox"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Pending invocations' : undefined}
+            >
+              <Inbox className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span className="flex-1">Pending invocations</span>}
+              <PortalInboxBadge />
+            </NavLink>
+          </>
+        )}
+
         {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets/Pillar routes) */}
-        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && !isProcureMode && !isCivicMode && !isGrowMode && (<>
+        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && !isProcureMode && !isCivicMode && !isGrowMode && !isPortalsMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
@@ -1850,66 +1940,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           <Globe className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && 'Portals'}
         </NavLink>
-
-        {/* Portals sub-nav — shown when inside /portals */}
-        {!sidebarCollapsed && pathname.startsWith('/portals') && (
-          <>
-            <NavLink
-              to="/portals"
-              end
-              className={({ isActive }) =>
-                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-adv-teal/15 text-adv-teal'
-                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Globe className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">My portals</span>
-            </NavLink>
-            <NavLink
-              to="/portals/build"
-              className={({ isActive }) =>
-                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-adv-teal/15 text-adv-teal'
-                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Plus className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">Build new</span>
-            </NavLink>
-            <NavLink
-              to="/portals/discovery"
-              className={({ isActive }) =>
-                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-adv-teal/15 text-adv-teal'
-                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Search className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">Discovery</span>
-            </NavLink>
-            <NavLink
-              to="/portals/inbox"
-              className={({ isActive }) =>
-                `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-adv-teal/15 text-adv-teal'
-                    : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Inbox className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">Inbox</span>
-              <PortalInboxBadge />
-            </NavLink>
-          </>
-        )}
 
         {/* Risk Atlas — universal seven-stage threat-path methodology */}
         <NavLink
