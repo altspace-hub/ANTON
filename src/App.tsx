@@ -89,6 +89,9 @@ const PortalsInboxPage = lazy(() => import('./pages/portals/PortalsInboxPage'));
 const PortalBuilderPage = lazy(() => import('./pages/portals/PortalBuilderPage'));
 const PortalManagePage = lazy(() => import('./pages/portals/PortalManagePage'));
 const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage'));
+const EvidencePackListPage = lazy(() => import('./pages/evidence-pack/EvidencePackListPage'));
+const EvidencePackBuilderPage = lazy(() => import('./pages/evidence-pack/EvidencePackBuilderPage'));
+const EvidencePackViewerPage = lazy(() => import('./pages/evidence-pack/EvidencePackViewerPage'));
 const BriefMePage = lazy(() => import('./pages/BriefMePage'));
 const GuideMePage = lazy(() => import('./pages/GuideMePage'));
 const BatchCreatePage = lazy(() => import('./pages/BatchCreatePage'));
@@ -485,6 +488,9 @@ export default function App() {
           <Route path="/portals/inbox" element={<PortalsInboxPage />} />
           <Route path="/portals/:id/manage" element={<PortalManagePage />} />
           <Route path="/portals/p/:address" element={<PortalVisitorPage />} />
+          <Route path="/evidence-packs" element={<EvidencePackListPage />} />
+          <Route path="/evidence-packs/new" element={<EvidencePackBuilderPage />} />
+          <Route path="/evidence-packs/:id" element={<EvidencePackViewerPage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
           <Route path="/exchange" element={<ExchangePage />} />

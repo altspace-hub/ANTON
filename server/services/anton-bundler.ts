@@ -68,7 +68,11 @@ export type AntonBundleType =
   | 'lifecycle-advisory-bundle'
   // Portals (spec v0.2)
   // — user-created ANTON-only web spaces with capability descriptors
-  | 'portal';
+  | 'portal'
+  // Evidence Pack (spec EVIDENCE_PACK_SPEC.md)
+  // — regulator-ready audit bundle: signed manifest + per-item canonical
+  //   bodies + compliance mapping (EU AI Act Annex IV, AMLR auditability)
+  | 'evidence-pack';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -123,6 +127,8 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'lifecycle-advisory-bundle':     { label: 'Lifecycle Advisory',          description: 'Authoritative lifecycle event (CVE, EOL, recall, regulatory update) with applicability assessment and recommended action',           contentsKey: 'lifecycle_advisories',        primaryContentDir: 'lifecycle-advisories' },
   // ── Portals (spec v0.2) ─────────────────────────────────────────────────
   'portal':                        { label: 'Portal',                       description: 'User-created ANTON-only web space: pages, assets, capability descriptor, schema, walkthrough transcript — portable origin',   contentsKey: 'portals',                     primaryContentDir: 'portals' },
+  // ── Evidence Pack ───────────────────────────────────────────────────────
+  'evidence-pack':                 { label: 'Evidence Pack',                description: 'Regulator-ready audit bundle: signed manifest + per-item canonical content + compliance mapping (EU AI Act Annex IV, AMLR auditability)', contentsKey: 'evidence_packs',          primaryContentDir: 'evidence-packs' },
 };
 
 interface ModuleExportData {
