@@ -6,9 +6,9 @@
  * This page focuses on the user's own portals + quick stats + a CTA.
  */
 
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Globe, Plus, Loader2, AlertCircle, Search, Inbox, ShieldAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Globe, Plus, Loader2, AlertCircle, Search, Inbox, ShieldAlert, Upload } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 interface PortalRow {
@@ -34,11 +34,37 @@ interface TrustStatus {
 }
 
 export default function PortalsLandingPage() {
+  const navigate = useNavigate();
   const [portals, setPortals] = useState<PortalRow[]>([]);
   const [inboxPending, setInboxPending] = useState(0);
   const [trustStatus, setTrustStatus] = useState<TrustStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importInput = useRef<HTMLInputElement>(null);
+
+  async function importBundle(file: File) {
+    setImporting(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('bundle', file);
+      const res = await fetchWithAuth('/api/portals/import', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        const issues = (json.issues as Array<{ message: string }> | undefined)?.map(i => i.message).join('; ');
+        throw new Error(json.error ?? issues ?? `Import failed (${res.status})`);
+      }
+      // Bundle imports return { success, portalId, portalAddress, ...}.
+      if (json.portalId) navigate(`/portals/${json.portalId}/manage`);
+      else window.location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setImporting(false);
+      if (importInput.current) importInput.current.value = '';
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -83,12 +109,31 @@ export default function PortalsLandingPage() {
               </p>
             </div>
           </div>
-          <Link
-            to="/portals/build"
-            className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" /> Build a new portal
-          </Link>
+          <div className="flex items-center gap-2">
+            <input
+              ref={importInput}
+              type="file"
+              accept=".anton,application/octet-stream"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void importBundle(f); }}
+            />
+            <button
+              type="button"
+              onClick={() => importInput.current?.click()}
+              disabled={importing}
+              className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal disabled:opacity-50 flex items-center gap-2"
+              title="Import a .anton portal bundle from disk"
+            >
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {importing ? 'Importing…' : 'Import bundle'}
+            </button>
+            <Link
+              to="/portals/build"
+              className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" /> Build a new portal
+            </Link>
+          </div>
         </header>
 
         {/* Trust-bundle warning: when the FutureChain operator key is still a

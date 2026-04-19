@@ -124,6 +124,15 @@ function substituteEachItem(template: string, value: Record<string, unknown>, ke
 
 // ── Pass 2: simple substitutions ───────────────────────────────────────────
 
+/**
+ * Exported wrapper around the simple-substitution pass for use by the
+ * walkthrough preview, which has no DB-resident portal yet so can't run the
+ * full renderer. Skips {{#each}} blocks and asset lookups.
+ */
+export function renderSimpleSubstitutionsOnly(input: RenderPageInput): string {
+  return expandSimpleSubstitutions(input.page.html, input);
+}
+
 function expandSimpleSubstitutions(html: string, input: RenderPageInput): string {
   const portalAddr = input.portal.address;
   const facts: Record<string, string> = {

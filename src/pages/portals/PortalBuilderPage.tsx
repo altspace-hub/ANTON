@@ -288,6 +288,8 @@ export default function PortalBuilderPage() {
               draft={draft}
               setDraft={setDraft}
               template={session.template}
+              sessionId={session.id}
+              accumulatedState={session.accumulatedState}
             />
             {/* Validation hint when the form is incomplete. */}
             {!validation.valid && validation.missing.length > 0 && (
@@ -351,12 +353,14 @@ export default function PortalBuilderPage() {
 // ── Per-phase forms ─────────────────────────────────────────────────────────
 
 function PhaseForm({
-  phase, draft, setDraft, template,
+  phase, draft, setDraft, template, sessionId, accumulatedState,
 }: {
   phase: PhaseId;
   draft: Record<string, unknown>;
   setDraft: (d: Record<string, unknown>) => void;
   template: SessionState['template'];
+  sessionId: string;
+  accumulatedState: Record<string, unknown>;
 }) {
   const update = (patch: Record<string, unknown>) => setDraft({ ...draft, ...patch });
 
@@ -483,6 +487,7 @@ function PhaseForm({
   if (phase === 'review') {
     const score = typeof draft.quality_score === 'number' ? draft.quality_score : null;
     const issues = (draft.flagged_issues as string[] | undefined) ?? [];
+    const generationPages = ((accumulatedState.content_generation as { pages?: Array<{ path: string }> } | undefined)?.pages) ?? [];
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Review</h2>
@@ -490,6 +495,7 @@ function PhaseForm({
           Confirm the portal looks right before publishing.
           {' '}Click <span className="text-adv-teal">Suggest with AI</span> for an honest critique.
         </p>
+        <PortalPreview sessionId={sessionId} pages={generationPages} />
         {score !== null && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-adv-gray">Quality score:</span>
@@ -568,6 +574,77 @@ function Checkbox({ label, value, onChange }: { label: string; value: boolean; o
 
 function CenterMsg({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center text-sm text-adv-gray gap-2">{children}</div>;
+}
+
+// Sandboxed live preview of the in-flight portal. Iframe srcdoc'd from the
+// /preview endpoint — the renderer pulls draft pages from the session, runs
+// only the simple substitution pass (no DB lookups), and returns HTML.
+// Auth tokens are embedded into the URL via the existing fetchWithAuth flow:
+// since iframe.src can't carry headers, we fetch the HTML ourselves and
+// stuff it into srcdoc.
+function PortalPreview({ sessionId, pages }: { sessionId: string; pages: Array<{ path: string }> }) {
+  const [activePath, setActivePath] = useState(pages[0]?.path ?? '/');
+  const [html, setHtml] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true); setErr(null);
+      try {
+        const res = await fetchWithAuth(`/api/portals/walkthroughs/${sessionId}/preview?path=${encodeURIComponent(activePath)}`);
+        if (!res.ok) throw new Error(`Preview failed (${res.status})`);
+        const text = await res.text();
+        if (!cancelled) setHtml(text);
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [sessionId, activePath]);
+
+  if (pages.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-adv-card p-4 text-xs text-adv-gray">
+        No content yet — complete the Content phase to enable preview.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-adv-card overflow-hidden">
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border bg-adv-dark/40 overflow-x-auto">
+        <span className="text-xs text-adv-gray pr-2">Preview:</span>
+        {pages.map((p) => (
+          <button
+            key={p.path}
+            onClick={() => setActivePath(p.path)}
+            className={`px-2 py-1 rounded text-xs font-mono transition ${
+              p.path === activePath ? 'bg-adv-teal/20 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+            }`}
+          >{p.path}</button>
+        ))}
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-gray ml-2" aria-label="Loading preview" />}
+      </div>
+      {err ? (
+        <div className="p-4 text-xs text-adv-red flex items-start gap-2">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {err}
+        </div>
+      ) : (
+        <iframe
+          title="Portal preview"
+          sandbox=""
+          srcDoc={html}
+          className="w-full bg-white"
+          style={{ height: 360 }}
+        />
+      )}
+    </div>
+  );
 }
 
 // Render a USD-cent count as a money string. Sub-cent values (which are
