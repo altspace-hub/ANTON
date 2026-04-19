@@ -149,7 +149,7 @@ import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
 import { createHardwareRoutes } from './routes/hardware.js';
 import { createPortalsRoutes } from './routes/portals.js';
-import { createEvidencePackRoutes } from './routes/evidence-pack.js';
+import { createEvidencePackRoutes, createSharedPackRoutes } from './routes/evidence-pack.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
 import { setupCompanionNamespace } from './services/app-websocket.js';
@@ -373,6 +373,10 @@ app.use('/api', await createAuthRoutes(db));
 
 // Channel Bridge public query endpoint — uses per-bridge Bearer token, not session auth
 app.use('/api', await createBridgePublicRoutes(db, anthropic));
+
+// Evidence Pack — public regulator endpoints (token IS the auth, no JWT,
+// no CSRF). Must mount before authMiddleware. Owner endpoints stay below.
+app.use('/api', createSharedPackRoutes(db));
 
 // Payment Gateway public API (API key auth, no session required)
 const { createFCGatewayRoutes } = await import('./routes/fc-gateway.js');

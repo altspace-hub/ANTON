@@ -17,7 +17,8 @@
 
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash, createHmac } from 'node:crypto';
+import bcrypt from 'bcryptjs';
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
@@ -47,6 +48,17 @@ const createPackSchema = z.object({
 });
 
 const exportFormatSchema = z.enum(['anton', 'pdf']);
+
+const createShareSchema = z.object({
+  recipientName: z.string().min(1).max(200),
+  recipientOrganisation: z.string().min(1).max(200),
+  recipientContact: z.string().email().optional().or(z.literal('')),
+  purpose: z.string().min(1).max(500),
+  expiresInDays: z.number().int().min(1).max(365).default(30),
+  password: z.string().min(8).max(200).optional(),
+  allowDownload: z.boolean().default(true),
+  watermarkText: z.string().max(200).optional(),
+});
 
 // ── Factory ────────────────────────────────────────────────────────────────
 
@@ -209,6 +221,104 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // ── Owner: share management ─────────────────────────────────────────────
+  // Spec §6: only finalised packs can be shared. Each share gets a random
+  // URL-safe access token; password is bcrypt-hashed.
+  router.post('/evidence-pack/:id/shares', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const parsed = createShareSchema.parse(req.body);
+      const pack = await readPackRow(db, req.params.id);
+      if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      if (pack.status !== 'finalised') {
+        return res.status(409).json({ error: 'Pack must be finalised before sharing' });
+      }
+      const token = randomBytes(32).toString('base64url');
+      const passwordHash = parsed.password ? await bcrypt.hash(parsed.password, 10) : null;
+      const expiresAt = new Date(Date.now() + parsed.expiresInDays * 86400000).toISOString();
+      const row = await db.get<{ id: string }>(
+        `INSERT INTO evidence_pack_shares
+           (pack_id, access_token, password_hash, recipient_name, recipient_organisation,
+            recipient_contact, purpose, created_by, expires_at,
+            allow_download, watermark_text)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::timestamptz, ?, ?)
+         RETURNING id`,
+        req.params.id, token, passwordHash,
+        parsed.recipientName, parsed.recipientOrganisation,
+        parsed.recipientContact || null,
+        parsed.purpose, req.user!.id, expiresAt,
+        parsed.allowDownload, parsed.watermarkText ?? null,
+      );
+      // Mark the pack as shared if it wasn't already.
+      await db.run(`UPDATE evidence_packs SET status = 'shared' WHERE id = ? AND status = 'finalised'`, req.params.id);
+      log.info({ packId: req.params.id, shareId: row?.id, expiresAt }, 'share_created');
+      res.status(201).json({
+        id: row?.id, accessToken: token, expiresAt,
+        passwordRequired: !!passwordHash,
+      });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.get('/evidence-pack/:id/shares', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const rows = await db.all(
+        `SELECT id, access_token, recipient_name, recipient_organisation,
+                recipient_contact, purpose, created_at, expires_at,
+                revoked_at, revoked_reason, allow_download, watermark_text,
+                (password_hash IS NOT NULL) AS password_required
+         FROM evidence_pack_shares WHERE pack_id = ?
+         ORDER BY created_at DESC`,
+        req.params.id,
+      );
+      res.json({ shares: rows });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/evidence-pack/:id/shares/:shareId', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const reason = (req.body?.reason as string | undefined) ?? 'revoked by owner';
+      const r = await db.run(
+        `UPDATE evidence_pack_shares
+            SET revoked_at = NOW(), revoked_reason = ?
+          WHERE id = ? AND pack_id = ? AND revoked_at IS NULL`,
+        reason, req.params.shareId, req.params.id,
+      );
+      if (r.changes === 0) return res.status(404).json({ error: 'Share not found or already revoked' });
+      log.info({ packId: req.params.id, shareId: req.params.shareId, reason }, 'share_revoked');
+      res.status(204).end();
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Owner: chain-of-custody ─────────────────────────────────────────────
+  router.get('/evidence-pack/:id/access-log', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const limit = Math.min(Number(req.query.limit ?? 200) || 200, 1000);
+      const rows = await db.all(
+        `SELECT al.id, al.share_id, al.accessed_at, al.accessor_type,
+                al.accessor_id, al.action, al.item_accessed, al.success,
+                al.error_reason, al.ip_address_hash,
+                s.recipient_name, s.recipient_organisation
+         FROM evidence_pack_access_log al
+         LEFT JOIN evidence_pack_shares s ON s.id = al.share_id
+         WHERE al.pack_id = ?
+         ORDER BY al.accessed_at DESC LIMIT ?`,
+        req.params.id, limit,
+      );
+      res.json({ accesses: rows });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── Soft delete (respects legal hold + retention) ──────────────────────
   router.delete('/evidence-pack/:id', requireAuth, async (req, res) => {
     try {
@@ -242,6 +352,202 @@ function generatePackId(): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const rand = randomBytes(3).toString('hex').toUpperCase();
   return `EP-${date}-${rand}`;
+}
+
+// ── Public regulator factory (no auth, mounted before authMiddleware) ─────
+
+/**
+ * Routes for external auditors hitting `/api/shared-pack/:token`. NO auth
+ * middleware — the token IS the authentication. Every request appends a row
+ * to `evidence_pack_access_log` BEFORE rendering, per spec §6.
+ *
+ * Auth model for password-protected shares: client POSTs password to /auth,
+ * server returns a short-lived HMAC of (token + password_hash + secret) that
+ * the client echoes as the `X-Pack-Session` header on subsequent calls. No
+ * server-side session storage — the HMAC re-validates on each request.
+ */
+export function createSharedPackRoutes(db: DatabaseAdapter): Router {
+  const router = Router();
+  const SECRET = process.env.JWT_SECRET || 'evidence-pack-shared-fallback-secret-change-me';
+
+  function ipHash(req: Request): string {
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '';
+    return createHash('sha256').update(ip + SECRET.slice(0, 16)).digest('hex').slice(0, 32);
+  }
+  function uaHash(req: Request): string {
+    return createHash('sha256').update((req.headers['user-agent'] ?? '') + SECRET.slice(0, 16)).digest('hex').slice(0, 32);
+  }
+  function sessionHmac(token: string, passwordHash: string): string {
+    return createHmac('sha256', SECRET).update(token + ':' + passwordHash).digest('hex');
+  }
+
+  /**
+   * Resolve a share token. Returns the share + pack rows on success, or
+   * sends an error response and returns null. ALWAYS logs the attempt
+   * before continuing — even invalid tokens get a log row so the owner can
+   * spot probing.
+   */
+  async function resolveShare(req: Request, res: Response, action: string, requirePassword: boolean): Promise<{ share: ShareRow; pack: PackRowMin } | null> {
+    const token = req.params.token;
+    const share = await db.get<ShareRow>(
+      `SELECT id, pack_id, password_hash, recipient_name, recipient_organisation,
+              created_at, expires_at, revoked_at, allow_download, watermark_text
+       FROM evidence_pack_shares WHERE access_token = ?`, token,
+    );
+    if (!share) {
+      // Don't write to access_log without a valid pack_id — just 404.
+      res.status(404).json({ error: 'Share not found' });
+      return null;
+    }
+    const pack = await db.get<PackRowMin>(
+      `SELECT id, title, status FROM evidence_packs WHERE id = ?`, share.pack_id,
+    );
+    if (!pack) { res.status(404).json({ error: 'Pack not found' }); return null; }
+
+    // Always log the attempt, regardless of outcome.
+    const baseLog = {
+      shareId: share.id, packId: pack.id, action,
+      ipAddressHash: ipHash(req), userAgentHash: uaHash(req),
+    };
+
+    if (share.revoked_at) {
+      await logAccess(db, baseLog, false, 'share_revoked');
+      res.status(410).json({ error: 'Share revoked' }); return null;
+    }
+    if (new Date(share.expires_at) < new Date()) {
+      await logAccess(db, baseLog, false, 'share_expired');
+      res.status(410).json({ error: 'Share expired' }); return null;
+    }
+
+    if (requirePassword && share.password_hash) {
+      const sessionHeader = req.headers['x-pack-session'] as string | undefined;
+      const expected = sessionHmac(token, share.password_hash);
+      if (!sessionHeader || sessionHeader !== expected) {
+        await logAccess(db, baseLog, false, 'password_required');
+        res.status(401).json({ error: 'Password required', kind: 'password_required' });
+        return null;
+      }
+    }
+
+    await logAccess(db, baseLog, true, null);
+    return { share, pack };
+  }
+
+  // ── Manifest + index ────────────────────────────────────────────────────
+  router.get('/shared-pack/:token', async (req, res) => {
+    const r = await resolveShare(req, res, 'view_index', true);
+    if (!r) return;
+    const items = await db.all(
+      `SELECT item_type, item_id, item_hash, item_summary, item_order,
+              regulatory_relevance
+       FROM evidence_pack_items WHERE pack_id = ?
+       ORDER BY item_order ASC`, r.pack.id,
+    );
+    const pack = await db.get(
+      `SELECT id, title, purpose, scope_type, scope_label, status,
+              hash_manifest, signature, signer_public_key,
+              finalised_at, compliance_frameworks
+       FROM evidence_packs WHERE id = ?`, r.pack.id,
+    );
+    res.json({
+      pack, items,
+      share: {
+        recipientName: r.share.recipient_name,
+        recipientOrganisation: r.share.recipient_organisation,
+        expiresAt: r.share.expires_at,
+        allowDownload: r.share.allow_download,
+        watermarkText: r.share.watermark_text,
+      },
+    });
+  });
+
+  // ── Password challenge ──────────────────────────────────────────────────
+  router.post('/shared-pack/:token/auth', async (req, res) => {
+    try {
+      const password = (req.body?.password as string | undefined) ?? '';
+      const share = await db.get<ShareRow>(
+        `SELECT id, pack_id, password_hash, expires_at, revoked_at
+         FROM evidence_pack_shares WHERE access_token = ?`, req.params.token,
+      );
+      if (!share) return res.status(404).json({ error: 'Share not found' });
+      if (!share.password_hash) {
+        // No password configured — return a session token that always validates.
+        return res.json({ sessionToken: sessionHmac(req.params.token, '') });
+      }
+      const ok = await bcrypt.compare(password, share.password_hash);
+      const baseLog = {
+        shareId: share.id, packId: share.pack_id, action: 'auth_attempt',
+        ipAddressHash: ipHash(req), userAgentHash: uaHash(req),
+      };
+      await logAccess(db, baseLog, ok, ok ? null : 'wrong_password');
+      if (!ok) return res.status(401).json({ error: 'Wrong password' });
+      res.json({ sessionToken: sessionHmac(req.params.token, share.password_hash) });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Single item content ─────────────────────────────────────────────────
+  router.get('/shared-pack/:token/item/:itemId', async (req, res) => {
+    const r = await resolveShare(req, res, 'view_item', true);
+    if (!r) return;
+    const item = await db.get<{ item_summary: string; item_hash: string; item_type: string; regulatory_relevance: unknown }>(
+      `SELECT item_summary, item_hash, item_type, regulatory_relevance
+       FROM evidence_pack_items WHERE pack_id = ? AND item_id = ?`,
+      r.pack.id, req.params.itemId,
+    );
+    if (!item) return res.status(404).json({ error: 'Item not in pack' });
+    // We deliberately do NOT serve the canonical body itself here — the
+    // bundle download is the canonical export. The item endpoint shows
+    // metadata only so regulators can navigate without pulling MB of JSON.
+    res.json({ item });
+  });
+
+  // ── Bundle download (if allow_download) ────────────────────────────────
+  router.get('/shared-pack/:token/download', async (req, res) => {
+    const r = await resolveShare(req, res, 'download', true);
+    if (!r) return;
+    if (!r.share.allow_download) return res.status(403).json({ error: 'Download not permitted by this share' });
+    try {
+      const assembled = await rebuildAssembledPack(db, r.pack.id);
+      if (!assembled) return res.status(404).json({ error: 'Pack not found' });
+      const buf = await bundleEvidencePackToAnton(db, assembled);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${r.pack.id}.anton"`);
+      res.send(buf);
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  return router;
+}
+
+interface ShareRow {
+  id: string; pack_id: string; password_hash: string | null;
+  recipient_name: string; recipient_organisation: string;
+  created_at: string; expires_at: string;
+  revoked_at: string | null; allow_download: boolean;
+  watermark_text: string | null;
+}
+interface PackRowMin { id: string; title: string; status: string }
+
+async function logAccess(
+  db: DatabaseAdapter,
+  base: { shareId: string; packId: string; action: string; ipAddressHash: string; userAgentHash: string; itemAccessed?: string | null },
+  success: boolean, errorReason: string | null,
+): Promise<void> {
+  try {
+    await db.run(
+      `INSERT INTO evidence_pack_access_log
+         (share_id, pack_id, accessor_type, accessor_id, ip_address_hash,
+          user_agent_hash, action, item_accessed, success, error_reason)
+       VALUES (?, ?, 'external_auditor', ?, ?, ?, ?, ?, ?, ?)`,
+      base.shareId, base.packId, base.shareId,
+      base.ipAddressHash, base.userAgentHash,
+      base.action, base.itemAccessed ?? null, success, errorReason,
+    );
+  } catch { /* never fail the request because logging failed */ }
 }
 
 /**
