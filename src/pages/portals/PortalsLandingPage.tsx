@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Plus, Loader2, AlertCircle, Search, Inbox } from 'lucide-react';
+import { Globe, Plus, Loader2, AlertCircle, Search, Inbox, ShieldAlert } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 interface PortalRow {
@@ -28,9 +28,15 @@ interface InboxSummary {
   total: number;
 }
 
+interface TrustStatus {
+  registryUrl: string | null;
+  futurechainPlaceholder: boolean;
+}
+
 export default function PortalsLandingPage() {
   const [portals, setPortals] = useState<PortalRow[]>([]);
   const [inboxPending, setInboxPending] = useState(0);
+  const [trustStatus, setTrustStatus] = useState<TrustStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,16 +44,19 @@ export default function PortalsLandingPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [portalsRes, inboxRes] = await Promise.all([
+        const [portalsRes, inboxRes, trustRes] = await Promise.all([
           fetchWithAuth('/api/portals'),
           fetchWithAuth('/api/portals/inbox?status=pending&limit=1'),
+          fetchWithAuth('/api/portals/trust-bundle/status'),
         ]);
         if (!portalsRes.ok) throw new Error(`Failed to load portals (${portalsRes.status})`);
         const portalsJson = await portalsRes.json();
         const inboxJson: InboxSummary = inboxRes.ok ? await inboxRes.json() : { total: 0 };
+        const trustJson: TrustStatus = trustRes.ok ? await trustRes.json() : { registryUrl: null, futurechainPlaceholder: true };
         if (cancelled) return;
         setPortals(portalsJson.portals ?? []);
         setInboxPending(inboxJson.total ?? 0);
+        setTrustStatus(trustJson);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -81,6 +90,26 @@ export default function PortalsLandingPage() {
             <Plus className="h-4 w-4" /> Build a new portal
           </Link>
         </header>
+
+        {/* Trust-bundle warning: when the FutureChain operator key is still a
+            placeholder, registry submissions are best-effort and the
+            transparency log can't be verified. */}
+        {trustStatus?.futurechainPlaceholder && (
+          <div className="rounded-xl border border-adv-gold/40 bg-adv-gold/5 p-4 flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 text-adv-gold flex-shrink-0 mt-0.5" aria-hidden />
+            <div className="text-sm">
+              <div className="font-medium text-adv-gold">Registry operator key not installed</div>
+              <p className="text-adv-gray mt-1">
+                The bundled trust store still ships the FutureChain placeholder. Portals you build are
+                fully usable locally, and other ANTONs that have your portal address can still verify
+                your portal's signed descriptor — but registry transparency-log proofs cannot be
+                verified until the real operator key is installed. Set
+                {' '}<code className="text-adv-off-white">PORTAL_REGISTRY_URL</code> + ship the trust
+                bundle update to enable end-to-end registry checks.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Quick stats / CTAs */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-3">

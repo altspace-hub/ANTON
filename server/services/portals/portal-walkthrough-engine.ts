@@ -31,10 +31,14 @@
 import { z } from 'zod';
 
 import type { DatabaseAdapter } from '../../db/database.js';
+import { childLogger } from '../../lib/logger.js';
 import { generateAppKeypair } from '../identity.js';
 import { encryptPortalKey } from '../../lib/portal-key-cipher.js';
 import { buildDescriptor, type CapabilityDeclaration } from '../capability-descriptor/builder.js';
 import { createPortalDatabaseService } from './portal-database-service.js';
+import { createRegistryClient, RegistryError } from '../registry-client/index.js';
+
+const log = childLogger('portal-walkthrough');
 import {
   getTemplate,
   type PortalTemplate,
@@ -198,7 +202,9 @@ export interface AdvanceResult {
 export interface FinalizeResult {
   portalId: string;
   portalAddress: string;
+  /** True only if PORTAL_REGISTRY_URL is set AND the registry accepted the register op. */
   registeredOk: boolean;
+  /** Populated when registry submission failed; the local portal is still usable. */
   registerError?: string;
 }
 
@@ -346,85 +352,20 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
       if (session.status !== 'active') {
         throw new Error(`Session is already ${session.status}`);
       }
-      // Must have completed all 8 phases.
       if (session.phasesCompleted.length !== PHASE_ORDER.length) {
         throw new Error(`Cannot finalize: ${session.phasesCompleted.length}/${PHASE_ORDER.length} phases complete`);
       }
 
-      // Pull validated phase outputs.
       const identity = session.accumulatedState.identity as z.infer<typeof identitySchema>;
       const structure = session.accumulatedState.content_structure as z.infer<typeof contentStructureSchema>;
       const generation = session.accumulatedState.content_generation as z.infer<typeof contentGenerationSchema>;
       const caps = session.accumulatedState.capabilities as z.infer<typeof capabilitySchema>;
       const publish = session.accumulatedState.publish as z.infer<typeof publishSchema>;
 
-      // 1. Generate keypair for this portal.
+      // Generate keypair + build the descriptor BEFORE the transaction so
+      // failures in build (validation, signing) don't leave a partial portal.
       const kp = generateAppKeypair();
-
-      // 2. Insert portals row.
-      const inserted = await db.get<{ id: string }>(
-        `INSERT INTO portals (name, namespace, category, display_title, description,
-                              template, contact_hash, public_key_hex, private_key_pem,
-                              public_index, status, metadata)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
-         RETURNING id`,
-        identity.name,
-        identity.namespace,
-        identity.category,
-        identity.display_title,
-        identity.description ?? null,
-        session.templateId,
-        kp.contactHash,
-        kp.publicKeyHex,
-        // Encrypt at rest using INSTANCE_KEY_ENCRYPTION_KEY (AES-256-GCM).
-        // Falls back to plaintext + one-time warning if env var missing.
-        encryptPortalKey(kp.privateKeyPem),
-        publish.public_index,
-        // Stamp ownerId so the route-layer requirePortalOwner check can
-        // enforce who is allowed to mutate this portal afterwards. The
-        // walkthrough session's owner_id is the source of truth — the
-        // creator of the walkthrough is the owner of the portal.
-        JSON.stringify({ walkthroughSessionId: session.id, ownerId: session.ownerId }),
-      );
-      if (!inserted) throw new Error('finalize: portal insert returned no id');
-      const portalId = inserted.id;
       const portalAddress = `${identity.name}.${identity.namespace}.portal`;
-
-      // 3. Seed pages.
-      // Walkthrough may have produced full HTML for each declared page; if
-      // a structure-declared page has no generation entry, fall back to
-      // the template's seed HTML (so the user can still publish with
-      // skeleton pages).
-      const generatedByPath = new Map(generation.pages.map((p) => [p.path, p]));
-      const templateSeedByPath = new Map(session.template.seedPages.map((p) => [p.path, p]));
-      for (const declared of structure.pages) {
-        const gen = generatedByPath.get(declared.path);
-        const seed = templateSeedByPath.get(declared.path);
-        const html = gen?.html ?? seed?.html ?? `<h1>${declared.title}</h1><p>{{data.placeholder}}</p>`;
-        await portalDb.upsertPage(portalId, {
-          path: declared.path,
-          title: declared.title,
-          html,
-          sortOrder: declared.sort_order,
-          structuredData: gen?.structured_data,
-          visible: true,
-        });
-      }
-
-      // 4. Seed structured data (if generation produced any).
-      if (generation.structured_kinds) {
-        for (const k of generation.structured_kinds) {
-          for (const item of k.items) {
-            await portalDb.upsertStructured(portalId, {
-              kind: k.kind,
-              key: item.key,
-              value: item.value,
-            });
-          }
-        }
-      }
-
-      // 5. Build capability descriptor + cache it.
       const declarations: CapabilityDeclaration[] = caps.capabilities.map((c) => ({
         id: c.id,
         verb: c.verb as CapabilityVerb,
@@ -434,7 +375,6 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
         paymentCoupling: c.payment_required ? { required: true } : undefined,
         tags: c.tags,
       }));
-
       const built = buildDescriptor({
         portal: {
           name: identity.name,
@@ -458,45 +398,145 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
           : { publicIndex: false },
       }, kp.privateKeyPem);
 
+      // All DB writes go in one transaction — if any fails, the whole
+      // finalize is rolled back and the session stays 'active' so the
+      // user can retry without a half-built portal in the table.
+      const portalId = await db.transaction(async (tx) => {
+        const inserted = await tx.get<{ id: string }>(
+          `INSERT INTO portals (name, namespace, category, display_title, description,
+                                template, contact_hash, public_key_hex, private_key_pem,
+                                public_index, status, descriptor_hash, capability_summary, metadata)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+           RETURNING id`,
+          identity.name,
+          identity.namespace,
+          identity.category,
+          identity.display_title,
+          identity.description ?? null,
+          session.templateId,
+          kp.contactHash,
+          kp.publicKeyHex,
+          encryptPortalKey(kp.privateKeyPem),
+          publish.public_index,
+          built.hash,
+          JSON.stringify(built.capabilitySummary),
+          JSON.stringify({ walkthroughSessionId: session.id, ownerId: session.ownerId }),
+        );
+        if (!inserted) throw new Error('finalize: portal insert returned no id');
+        const pid = inserted.id;
+
+        // Seed pages — fall back to template seed HTML when generation skipped a path.
+        const generatedByPath = new Map(generation.pages.map((p) => [p.path, p]));
+        const templateSeedByPath = new Map(session.template.seedPages.map((p) => [p.path, p]));
+        for (const declared of structure.pages) {
+          const gen = generatedByPath.get(declared.path);
+          const seed = templateSeedByPath.get(declared.path);
+          const html = gen?.html ?? seed?.html ?? `<h1>${declared.title}</h1><p>{{data.placeholder}}</p>`;
+          await tx.run(
+            `INSERT INTO portal_pages (portal_id, path, title, html, sort_order, visible, structured_data)
+             VALUES (?, ?, ?, ?, ?, TRUE, ?)
+             ON CONFLICT (portal_id, path) DO UPDATE SET
+               title = EXCLUDED.title, html = EXCLUDED.html,
+               sort_order = EXCLUDED.sort_order, visible = TRUE,
+               structured_data = EXCLUDED.structured_data`,
+            pid, declared.path, declared.title, html, declared.sort_order,
+            gen?.structured_data ? JSON.stringify(gen.structured_data) : null,
+          );
+        }
+
+        // Seed structured data (commerce products, team roster, etc.).
+        if (generation.structured_kinds) {
+          for (const k of generation.structured_kinds) {
+            for (const item of k.items) {
+              await tx.run(
+                `INSERT INTO portal_structured_data (portal_id, kind, key, value)
+                 VALUES (?, ?, ?, ?)
+                 ON CONFLICT (portal_id, kind, key) DO UPDATE SET value = EXCLUDED.value`,
+                pid, k.kind, item.key, JSON.stringify(item.value),
+              );
+            }
+          }
+        }
+
+        // Cache the signed descriptor envelope so visitors can fetch + verify.
+        await tx.run(
+          `INSERT INTO portal_descriptor_cache (portal_address, descriptor_hash, descriptor,
+                                                signature, signing_key_fingerprint,
+                                                valid_from, valid_until)
+           VALUES (?, ?, ?, ?, ?, NOW(), NOW() + INTERVAL '365 days')
+           ON CONFLICT (portal_address) DO UPDATE SET
+             descriptor_hash = EXCLUDED.descriptor_hash,
+             descriptor = EXCLUDED.descriptor,
+             signature = EXCLUDED.signature,
+             signing_key_fingerprint = EXCLUDED.signing_key_fingerprint,
+             valid_from = EXCLUDED.valid_from,
+             valid_until = EXCLUDED.valid_until`,
+          portalAddress, built.hash, JSON.stringify(built.descriptor),
+          built.envelope.signature, built.envelope.signingKeyFingerprint,
+        );
+
+        // Mark the session finalized within the same transaction.
+        await tx.run(
+          `UPDATE portal_walkthrough_sessions SET
+             current_phase = ?, phases_completed = ?, accumulated_state = ?,
+             depth = ?, status = 'finalized', portal_id = ?, finalized_at = NOW()
+           WHERE id = ?`,
+          session.currentPhase,
+          JSON.stringify(session.phasesCompleted),
+          JSON.stringify(session.accumulatedState),
+          session.depth,
+          pid,
+          session.id,
+        );
+
+        return pid;
+      });
+
+      // Resolution-cache invalidation: if a stale entry for this address
+      // existed (unlikely on first publish but possible if the name was
+      // previously revoked + dormancy-released), drop it now.
       await db.run(
-        `INSERT INTO portal_descriptor_cache (portal_address, descriptor_hash, descriptor,
-                                              signature, signing_key_fingerprint,
-                                              valid_from, valid_until)
-         VALUES (?, ?, ?, ?, ?, NOW(), NOW() + INTERVAL '365 days')
-         ON CONFLICT (portal_address) DO UPDATE SET
-           descriptor_hash = EXCLUDED.descriptor_hash,
-           descriptor = EXCLUDED.descriptor,
-           signature = EXCLUDED.signature,
-           signing_key_fingerprint = EXCLUDED.signing_key_fingerprint,
-           valid_from = EXCLUDED.valid_from,
-           valid_until = EXCLUDED.valid_until`,
-        portalAddress,
-        built.hash,
-        JSON.stringify(built.descriptor),
-        built.envelope.signature,
-        built.envelope.signingKeyFingerprint,
+        `DELETE FROM portal_resolution_cache WHERE cache_key = ?`,
+        `${identity.namespace}/${identity.name}`,
       );
 
-      // 6. Update portals.descriptor_hash + capability_summary so the registry
-      //    sync (next phase, registry-client) will publish them.
-      await db.run(
-        `UPDATE portals SET descriptor_hash = ?, capability_summary = ? WHERE id = ?`,
-        built.hash,
-        JSON.stringify(built.capabilitySummary),
-        portalId,
-      );
+      // Optional registry submission — best-effort. The registry server may
+      // not exist yet (v0.7.x ships without it); we never block finalize on
+      // it. Configure with PORTAL_REGISTRY_URL env var to enable.
+      let registeredOk = false;
+      let registerError: string | undefined;
+      const registryUrl = process.env.PORTAL_REGISTRY_URL;
+      if (registryUrl) {
+        try {
+          const client = createRegistryClient(db, { baseUrl: registryUrl });
+          const accepted = await client.register({
+            name: identity.name,
+            namespace: identity.namespace,
+            category: identity.category as never,
+            title: identity.display_title,
+            description: identity.description,
+            publicIndex: publish.public_index,
+            actor: { contactHash: kp.contactHash, publicKeyHex: kp.publicKeyHex },
+            privateKeyPem: kp.privateKeyPem,
+          });
+          // Persist the registry's UUID + log id for chain-continuity on subsequent ops.
+          await db.run(
+            `UPDATE portals SET registered_at = NOW(), last_synced_at = NOW(),
+                                registry_portal_id = ?, registry_log_id = ? WHERE id = ?`,
+            accepted.portalId, accepted.logId, portalId,
+          );
+          registeredOk = true;
+          log.info({ portalId, portalAddress, registryLogId: accepted.logId }, 'portal registered with registry');
+        } catch (err) {
+          registerError = err instanceof RegistryError ? `${err.code}: ${err.message}` :
+                          err instanceof Error ? err.message : String(err);
+          log.warn({ portalId, portalAddress, error: registerError }, 'registry submission failed (portal still usable locally)');
+        }
+      } else {
+        log.info({ portalId, portalAddress }, 'PORTAL_REGISTRY_URL not set — local portal created, registry submission skipped');
+      }
 
-      // 7. Mark session finalized.
-      session.status = 'finalized';
-      session.portalId = portalId;
-      await saveSession(session);
-
-      // The actual registry submission (registry-client.register) is a
-      // separate caller decision — finalize creates the local portal +
-      // descriptor without requiring the registry to be reachable. The
-      // caller can then call client.register() and persist the returned
-      // portalId/logId.
-      return { portalId, portalAddress, registeredOk: false };
+      return { portalId, portalAddress, registeredOk, registerError };
     },
   };
 }
