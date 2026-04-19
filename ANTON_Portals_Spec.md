@@ -1,8 +1,8 @@
 # ANTON Portals — Implementation Specification
 
 **Target version:** v0.7.x (post go-live)
-**Status:** Specification — investigation complete, build-ready
-**Version:** 0.2 (2026-04-19)
+**Status:** Specification — investigation complete, Phases 1-10 + audit-fix Batches A-F shipped
+**Version:** 0.3 (2026-04-19)
 **Layer:** Infrastructure (Layer 3: The Network, with reach into Layer 4 Collaborative Intelligence, Layer 5 Marketplace, Layer 6 Economy)
 **Owner:** Daniel Bardun / FutureChain AB
 **Classification:** Core platform capability — sits alongside the Companion App Gateway, the bundler, and Pathfinder
@@ -18,6 +18,120 @@
 ---
 
 ## Changelog
+
+### v0.3 (2026-04-19)
+
+Audit-fix amendment after Phases 1-10 shipped. Captures the 6-batch fix
+pass that closed all 21 findings from the 5-expert review (security ·
+database · backend · React/UX · architecture/honest-scope). No protocol
+or architecture changes — this is the spec catching up to what now ships.
+
+New env vars:
+- **`PORTAL_REGISTRY_URL`** — registry submission target. Unset by
+  default in v0.7.x; `finalizeSession` logs a one-line "registry skipped"
+  info and returns `registeredOk: false`. The local portal is fully
+  usable without the registry.
+- **`INSTANCE_KEY_ENCRYPTION_KEY`** — 32-byte hex. When set, portal
+  private keys are encrypted at rest via AES-256-GCM (envelope
+  `enc:v1:<iv-base64>:<ct+tag-base64>` inline in the existing
+  `private_key_pem` TEXT column). Falls back to plaintext + a one-time
+  `childLogger.warn()` when unset. Same key the Companion App uses for
+  `instance_identity.privkey_encrypted`.
+
+New endpoints:
+- **`GET /portals/trust-bundle/status`** (public) — surfaces whether the
+  bundled FutureChain operator key is the placeholder. Lets the UI show
+  a "registry not yet wired" banner instead of failing silently.
+- **`GET /portals/inbox`** (auth, scoped to caller's `metadata.ownerId`)
+  — cross-portal aggregator: every capability invocation across all the
+  caller's portals, joined to portal name/namespace/title, ordered by
+  `received_at DESC`. Filterable by `status` query param.
+- **`PUT /portals/walkthroughs/:id/draft`** (auth, owner-scoped) —
+  debounced auto-save target. Stores the in-flight phase draft under
+  `accumulated_state.__drafts.<phaseId>` so users don't lose work mid-phase.
+  Does NOT advance phase or validate against the phase schema.
+
+Auth: every owner endpoint now requires `requireAuth` (per CLAUDE.md
+§Coding Patterns 4) plus a `requirePortalOwner` middleware that checks
+the JWT `req.user.id` against `portals.metadata.ownerId`. Walkthrough
+sessions get an inline `assertSessionOwner()` check against
+`portal_walkthrough_sessions.owner_id`. Visitor endpoints
+(`/portals/visit/*`), `/portals/templates`, `/portals/search`, and
+`/portals/trust-bundle/status` remain public.
+
+New manifest field:
+- **`bundleKind: 'template' | 'concrete'`** in the portal `.anton`
+  manifest. Concrete bundles MUST have a verifiable descriptor signature.
+  Template bundles intentionally skip signature verification at import
+  (they don't represent a real portal — the importer adapts them via
+  the walkthrough's adaptation phase). Legacy bundles without the field
+  default to `'concrete'` — closes the previous bypass where an
+  attacker could craft a manifest with the `ANTON-TMPL-TMPL-TMPL-TMPL`
+  contact_hash + null adaptation points to be inferred-as-template and
+  skip signature checks.
+
+Pathfinder behaviour:
+- `searchMode === 'anton-portal'` now bypasses the LLM web-search
+  dispatch entirely. `dispatchPortalSearch()` queries the local
+  `portal-search-engine` and formats hits as `localSources` with
+  `/portals/p/<address>` URLs. Cost is zero (no LLM tokens). Direct
+  address lookups (`name.namespace.portal`) are recognised and
+  short-circuited to a namespace-scoped exact match.
+
+Visitor render:
+- Owner-authored HTML is now rendered inside an `<iframe sandbox="">`
+  (no allow-* — blocks scripts, forms, popups, navigation, plugins,
+  same-origin access). Closes the previous XSS surface where a
+  malicious portal owner could exfiltrate the visitor's
+  `localStorage['openexpert-token']` via `<script>` injected into
+  `portal_pages.html`. A `wrapForSandbox()` helper inlines a minimal
+  CSS reset that mirrors `.prose-output` so portal pages still look
+  right inside the sandbox.
+
+Migration 149: 5 missing performance indexes
+- `(metadata->>'ownerId')` expression — drives every "list my portals"
+- `(status) WHERE public_index = TRUE` — search candidate set
+- GIN+`jsonb_path_ops` on `capability_summary` — backs the new SQL
+  filters in portal-search-engine via `jsonb_exists_any(col, ?::text[])`
+- `(status, received_at DESC)` composite — inbox lookups
+- `(portal_id, sort_order, path)` — page list ordering
+
+Lifecycle scheduling:
+- `setInterval(registryClient.pruneExpiredCaches(), 1h)` registered in
+  `server/index.ts` next to the existing CSRF prune. Without this, the
+  resolution cache, descriptor cache, and outbound replay-nonce table
+  grew unbounded forever.
+
+Capability notifications:
+- `handleInvoke` now fires a best-effort `app_checkpoint` to the
+  portal owner's paired phone via the existing `app-checkpoint-service`.
+  Lookup chain: `portal.metadata.ownerId` → `connected_users` →
+  `app_devices` (where `revoked_at IS NULL`). Non-blocking — visitor's
+  response shape is unaffected by push delivery.
+
+Backoff differentiation:
+- Registry-client `transport.ts` now takes a `kind: 'read' | 'write'`
+  parameter on retries. Reads keep the 16-min cap (idempotent, user
+  rarely blocking). Writes cap at 30s total because a 14-minute hang
+  on "Register portal" is user-hostile. `postSignedEnvelope` passes
+  `'write'`; `get` passes `'read'`.
+
+Visitor rate limit:
+- `POST /portals/visit/:address/capabilities/:capId/invoke` is now
+  rate-limited via `express-rate-limit` (30 invokes / minute / IP).
+  Owner's inbox would otherwise be a DoS target.
+
+Client-side validation:
+- `PortalBuilderPage` now validates per phase via a `validatePhase()`
+  helper. Required fields are surfaced inline; "Save & continue" is
+  disabled until valid; tooltip names what's missing. Mobile-responsive
+  via `grid-cols-1 sm:grid-cols-12`. Draft auto-save (1.5s debounce)
+  to the new draft endpoint. Beforeunload guard. Phase N of 8 indicator.
+
+Capability dialog a11y:
+- `PortalVisitorPage` capability invoke dialog now has `aria-modal`,
+  `aria-labelledby`, `aria-describedby`, Esc-to-close, backdrop-click-
+  close, and a labelled close button.
 
 ### v0.2 (2026-04-19)
 
