@@ -109,6 +109,105 @@ interface PortalRow {
   status: string;
 }
 
+/**
+ * Returns the origin_endpoint for a remote LAN portal, or null if the portal
+ * is local (or unknown). Used by every handler to short-circuit to the
+ * proxy path when this portal lives on a peer ANTON.
+ */
+async function lookupRemoteOrigin(db: DatabaseAdapter, portalAddress: string): Promise<string | null> {
+  const row = await db.get<{ origin_endpoint: string | null }>(
+    `SELECT origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
+    portalAddress,
+  );
+  return row?.origin_endpoint ?? null;
+}
+
+const PROXY_TIMEOUT_MS = 10_000;
+
+async function proxyFetch(originEndpoint: string, req: PortalFetchRequest): Promise<PortalFetchResponse> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const isAsset = isAssetPath(req.path);
+    const url = isAsset
+      ? `${originEndpoint}/api/portals/visit/${encodeURIComponent(req.portalAddress)}/asset/${req.path.replace(/^\/+/, '')}`
+      : `${originEndpoint}/api/portals/visit/${encodeURIComponent(req.portalAddress)}/page?path=${encodeURIComponent(req.path)}`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (isAsset) {
+      if (!res.ok) {
+        if (res.status === 404) return { kind: 'not_found', reason: 'Remote asset not found' };
+        if (res.status === 503) return { kind: 'portal_offline', reason: 'Remote portal offline' };
+        return { kind: 'not_found', reason: `Remote asset error ${res.status}` };
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      return {
+        kind: 'asset',
+        bytes: buf,
+        mimeType: res.headers.get('content-type') ?? 'application/octet-stream',
+        contentHash: res.headers.get('etag') ?? '',
+      };
+    }
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+    if (json && typeof json === 'object' && 'kind' in json) {
+      return json as unknown as PortalFetchResponse;
+    }
+    return { kind: 'not_found', reason: 'Remote returned malformed response' };
+  } catch (err) {
+    log.warn({ originEndpoint, address: req.portalAddress, err: String(err) }, 'proxy_fetch_failed');
+    return { kind: 'portal_offline', reason: 'Remote portal unreachable' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function proxyInquire(originEndpoint: string, req: CapabilityInquireRequest): Promise<CapabilityInquireResponse> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const url = `${originEndpoint}/api/portals/visit/${encodeURIComponent(req.portalAddress)}/capabilities/${encodeURIComponent(req.capabilityId)}/inquire`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visitorContactHash: req.visitorContactHash }),
+      signal: ctrl.signal,
+    });
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+    if (json && typeof json === 'object' && 'kind' in json) {
+      return json as unknown as CapabilityInquireResponse;
+    }
+    return { kind: 'portal_offline', reason: 'Remote returned malformed response' };
+  } catch (err) {
+    log.warn({ originEndpoint, address: req.portalAddress, err: String(err) }, 'proxy_inquire_failed');
+    return { kind: 'portal_offline', reason: 'Remote portal unreachable' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function proxyInvoke(originEndpoint: string, req: CapabilityInvokeRequest): Promise<CapabilityInvokeResponse> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const url = `${originEndpoint}/api/portals/visit/${encodeURIComponent(req.portalAddress)}/capabilities/${encodeURIComponent(req.capabilityId)}/invoke`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: req.input, visitorContactHash: req.visitorContactHash }),
+      signal: ctrl.signal,
+    });
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+    if (json && typeof json === 'object' && 'kind' in json) {
+      return json as unknown as CapabilityInvokeResponse;
+    }
+    return { kind: 'portal_offline', reason: 'Remote returned malformed response' };
+  } catch (err) {
+    log.warn({ originEndpoint, address: req.portalAddress, err: String(err) }, 'proxy_invoke_failed');
+    return { kind: 'portal_offline', reason: 'Remote portal unreachable' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function loadPortalContext(
   db: DatabaseAdapter,
   portalAddress: string,
@@ -214,6 +313,11 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
 
   return {
     async handleFetch(req) {
+      // LAN proxy short-circuit: when the descriptor cache has an
+      // origin_endpoint, this portal lives on a peer ANTON. Forward instead
+      // of looking in our local tables (which would say not_found).
+      const remote = await lookupRemoteOrigin(db, req.portalAddress);
+      if (remote) return proxyFetch(remote, req);
       const ctx = await loadPortalContext(db, req.portalAddress);
       if (!ctx) return { kind: 'not_found', reason: `No portal at ${req.portalAddress}` };
       if (ctx.portalRow.status !== 'active') {
@@ -257,6 +361,8 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
     },
 
     async handleInquire(req) {
+      const remote = await lookupRemoteOrigin(db, req.portalAddress);
+      if (remote) return proxyInquire(remote, req);
       const ctx = await loadPortalContext(db, req.portalAddress);
       if (!ctx) return { kind: 'portal_offline', reason: `No portal at ${req.portalAddress}` };
       if (ctx.portalRow.status !== 'active') {
@@ -296,6 +402,8 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
     },
 
     async handleInvoke(req) {
+      const remote = await lookupRemoteOrigin(db, req.portalAddress);
+      if (remote) return proxyInvoke(remote, req);
       const ctx = await loadPortalContext(db, req.portalAddress);
       if (!ctx) return { kind: 'portal_offline', reason: `No portal at ${req.portalAddress}` };
       if (ctx.portalRow.status !== 'active') {

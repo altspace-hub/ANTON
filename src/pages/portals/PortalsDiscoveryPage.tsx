@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Filter, Globe, Loader2, AlertCircle, Wifi, RefreshCw } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 const VERBS = ['contact', 'inquire', 'request', 'order', 'pay', 'book', 'subscribe', 'join', 'query', 'publish', 'delegate', 'authenticate'] as const;
@@ -29,6 +29,25 @@ interface Hit {
   relevanceScore: number;
 }
 
+interface LanNeighbor {
+  id: string;
+  instanceName: string;
+  endpoint: string;
+  portalsCount: number;
+  lastSeenAt: string;
+  lastScanStatus: string | null;
+  lastScanError: string | null;
+}
+
+interface LanScanResult {
+  peersFound: number;
+  peersScanned: number;
+  peersUnreachable: number;
+  portalsIngested: number;
+  selfSkipped: boolean;
+  durationMs: number;
+}
+
 export default function PortalsDiscoveryPage() {
   const [text, setText] = useState('');
   const [selVerbs, setSelVerbs] = useState<string[]>([]);
@@ -41,6 +60,44 @@ export default function PortalsDiscoveryPage() {
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // LAN discovery — separate state from registry search.
+  const [neighbors, setNeighbors] = useState<LanNeighbor[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [scanSummary, setScanSummary] = useState<LanScanResult | null>(null);
+  const [lanError, setLanError] = useState<string | null>(null);
+
+  async function loadNeighbors() {
+    try {
+      const res = await fetchWithAuth('/api/portals/lan/neighbors');
+      if (!res.ok) return;
+      const json = await res.json() as { neighbors: LanNeighbor[] };
+      setNeighbors(json.neighbors ?? []);
+    } catch { /* non-fatal */ }
+  }
+
+  async function scanLan() {
+    setScanning(true);
+    setLanError(null);
+    setScanSummary(null);
+    try {
+      const res = await fetchWithAuth('/api/portals/lan/scan', { method: 'POST' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Scan failed (${res.status})`);
+      }
+      const json = await res.json() as LanScanResult;
+      setScanSummary(json);
+      await loadNeighbors();
+      // If new portals were ingested, also refresh the search results so
+      // they appear in the list below.
+      if (json.portalsIngested > 0) await runSearch();
+    } catch (e) {
+      setLanError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setScanning(false);
+    }
+  }
 
   function toggleIn(arr: string[], setArr: (v: string[]) => void, v: string) {
     setArr(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
@@ -72,8 +129,10 @@ export default function PortalsDiscoveryPage() {
   }
 
   useEffect(() => {
-    // Initial load: empty search to surface recent public portals.
+    // Initial load: empty search to surface recent public portals + load
+    // any LAN neighbors we've previously discovered.
     void runSearch();
+    void loadNeighbors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -89,6 +148,69 @@ export default function PortalsDiscoveryPage() {
             </p>
           </div>
         </header>
+
+        {/* LAN discovery — peer ANTONs found via mDNS on the local network.
+            These are unmediated by any registry: just two boxes on the same
+            Wi-Fi recognising each other. Layer 3 of the vision. */}
+        <section className="rounded-xl border border-border bg-adv-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wifi className="h-4 w-4 text-adv-teal" aria-hidden />
+              <h2 className="text-sm font-medium">On your LAN</h2>
+              <span className="text-xs text-adv-gray">
+                {neighbors.length === 0 ? 'No peers yet' : `${neighbors.length} peer${neighbors.length === 1 ? '' : 's'}`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void scanLan()}
+              disabled={scanning}
+              className="px-3 py-1.5 rounded-lg border border-adv-teal/40 text-adv-teal hover:bg-adv-teal/10 transition disabled:opacity-50 flex items-center gap-2 text-sm"
+              aria-label="Scan the local network for peer ANTON instances"
+            >
+              {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {scanning ? 'Scanning…' : 'Scan LAN'}
+            </button>
+          </div>
+          {lanError && (
+            <div className="mb-3 flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 p-2 text-xs">
+              <AlertCircle className="h-3.5 w-3.5 text-adv-red flex-shrink-0 mt-0.5" /> {lanError}
+            </div>
+          )}
+          {scanSummary && (
+            <div className="mb-3 text-xs text-adv-gray">
+              Found {scanSummary.peersFound} peer{scanSummary.peersFound === 1 ? '' : 's'} ·
+              scanned {scanSummary.peersScanned} ·
+              ingested {scanSummary.portalsIngested} portal{scanSummary.portalsIngested === 1 ? '' : 's'} ·
+              {scanSummary.peersUnreachable > 0 && ` ${scanSummary.peersUnreachable} unreachable · `}
+              {scanSummary.durationMs}ms
+            </div>
+          )}
+          {neighbors.length === 0 ? (
+            <p className="text-xs text-adv-gray">
+              Set <code className="text-adv-teal">APP_GATEWAY_MDNS=true</code> on every ANTON you want to be discoverable, then click <span className="text-adv-off-white">Scan LAN</span>. Peers are matched by mDNS — no registry, no internet.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {neighbors.map((n) => (
+                <li key={n.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                      n.lastScanStatus === 'ok' ? 'bg-adv-green'
+                      : n.lastScanStatus === 'unreachable' ? 'bg-adv-red'
+                      : 'bg-adv-gray'
+                    }`} aria-hidden />
+                    <span className="truncate">{n.instanceName}</span>
+                    <code className="text-xs text-adv-gray truncate">{n.endpoint}</code>
+                  </div>
+                  <span className="text-xs text-adv-gray flex-shrink-0">
+                    {n.portalsCount} portal{n.portalsCount === 1 ? '' : 's'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         {/* Search box */}
         <form
