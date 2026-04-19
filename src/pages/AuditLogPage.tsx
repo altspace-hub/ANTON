@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ShieldCheck, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShieldCheck, ChevronLeft, ChevronRight, Loader2, FileBox } from 'lucide-react';
 
 interface AuditEntry {
   id: string;
@@ -136,14 +137,23 @@ export default function AuditLogPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-adv-teal/10">
-          <ShieldCheck className="h-5 w-5 text-adv-teal" />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-adv-teal/10">
+            <ShieldCheck className="h-5 w-5 text-adv-teal" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-adv-white">Audit Log</h1>
+            <p className="text-sm text-adv-gray">Every AI interaction recorded for compliance</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold text-adv-white">Audit Log</h1>
-          <p className="text-sm text-adv-gray">Every AI interaction recorded for compliance</p>
-        </div>
+        <Link
+          to="/evidence-packs/new"
+          className="px-3 py-2 rounded-lg border border-adv-teal/40 text-adv-teal text-sm hover:bg-adv-teal/10 transition flex items-center gap-2"
+          title="Bundle audit entries into a regulator-ready evidence pack"
+        >
+          <FileBox className="h-4 w-4" /> Build evidence pack
+        </Link>
       </div>
 
       {/* Stats Row */}
@@ -270,6 +280,15 @@ export default function AuditLogPage() {
                         >
                           Approve
                         </button>
+                      )}
+                      {entry.session_id && (
+                        <Link
+                          to={`/evidence-packs/new?scopeType=session&sessionId=${entry.session_id}`}
+                          className="rounded bg-adv-teal/15 px-2 py-1 text-xs text-adv-teal hover:bg-adv-teal/25 transition-colors flex items-center gap-1"
+                          title="Build evidence pack scoped to this session"
+                        >
+                          <FileBox className="h-3 w-3" /> Pack
+                        </Link>
                       )}
                     </div>
                   </td>
