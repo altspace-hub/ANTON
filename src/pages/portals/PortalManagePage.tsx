@@ -5,9 +5,9 @@
  * Destructive actions (delete portal) gated through ConfirmModal.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Globe, ChevronLeft, Loader2, AlertCircle, Trash2, Download, Inbox, FileText, Eye } from 'lucide-react';
+import { Globe, ChevronLeft, Loader2, AlertCircle, Trash2, Download, FileText, Eye, Image, Upload, Pencil, X, Share2, Copy, Check } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 import ConfirmModal from '@/components/hardware/ConfirmModal';
 
@@ -33,8 +33,16 @@ interface PortalDetail {
 
 interface Page { id: string; path: string; title: string | null; html: string; sortOrder: number; visible: boolean; updatedAt: string }
 interface Invocation { id: string; capability_id: string; capability_verb: string; aap_endpoint: string; visitor_contact_hash: string | null; input: Record<string, unknown>; output: Record<string, unknown> | null; status: string; received_at: string; response_id: string }
+interface Asset { id: string; path: string; mimeType: string; byteSize: number; contentHash: string; updatedAt: string }
+interface CapabilityEdit {
+  id: string; verb: string; customVerbName?: string;
+  title: string; description: string; aapEndpoint: string;
+  tags?: string[]; paymentCoupling?: { required?: boolean };
+}
 
-type Tab = 'overview' | 'pages' | 'inbox' | 'export';
+const VERBS = ['contact','inquire','request','order','pay','book','subscribe','join','query','publish','delegate','authenticate','custom'] as const;
+
+type Tab = 'overview' | 'pages' | 'assets' | 'capabilities' | 'inbox' | 'export';
 
 export default function PortalManagePage() {
   const { id } = useParams<{ id: string }>();
@@ -42,10 +50,115 @@ export default function PortalManagePage() {
   const [tab, setTab] = useState<Tab>('overview');
   const [detail, setDetail] = useState<PortalDetail | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [capabilities, setCapabilities] = useState<CapabilityEdit[]>([]);
   const [inbox, setInbox] = useState<Invocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  async function refreshCapabilities() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/capabilities`);
+    if (res.ok) {
+      const j = await res.json() as { capabilities: CapabilityEdit[] };
+      setCapabilities(j.capabilities ?? []);
+    }
+  }
+
+  async function refreshDetail() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}`);
+    if (res.ok) setDetail(await res.json());
+  }
+
+  async function saveCapabilities(next: CapabilityEdit[]): Promise<void> {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/capabilities`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capabilities: next }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `Save failed (${res.status})`);
+    }
+    await Promise.all([refreshCapabilities(), refreshDetail()]);
+  }
+
+  async function patchPortal(patch: { display_title?: string; description?: string; public_index?: boolean }): Promise<void> {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok && res.status !== 204) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `Update failed (${res.status})`);
+    }
+    await refreshDetail();
+  }
+
+  async function refreshPages() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/pages`);
+    if (res.ok) {
+      const j = await res.json();
+      setPages(j.pages ?? []);
+    }
+  }
+
+  async function refreshAssets() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/assets`);
+    if (res.ok) {
+      const j = await res.json();
+      setAssets(j.assets ?? []);
+    }
+  }
+
+  async function savePage(p: Page): Promise<void> {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/pages`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: p.path, title: p.title ?? '', html: p.html,
+        sortOrder: p.sortOrder, visible: p.visible,
+      }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `Save failed (${res.status})`);
+    }
+    await refreshPages();
+  }
+
+  async function uploadAsset(file: File, path: string): Promise<void> {
+    if (!id) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('path', path);
+    const res = await fetchWithAuth(`/api/portals/${id}/assets`, { method: 'POST', body: fd });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `Upload failed (${res.status})`);
+    }
+    await refreshAssets();
+  }
+
+  async function deleteAsset(path: string): Promise<void> {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/portals/${id}/assets?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 204) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? `Delete failed (${res.status})`);
+    }
+    await refreshAssets();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -67,13 +180,20 @@ export default function PortalManagePage() {
 
   useEffect(() => {
     if (!id || tab !== 'pages') return;
-    void (async () => {
-      const res = await fetchWithAuth(`/api/portals/${id}/pages`);
-      if (res.ok) {
-        const j = await res.json();
-        setPages(j.pages ?? []);
-      }
-    })();
+    void refreshPages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, tab]);
+
+  useEffect(() => {
+    if (!id || tab !== 'assets') return;
+    void refreshAssets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, tab]);
+
+  useEffect(() => {
+    if (!id || tab !== 'capabilities') return;
+    void refreshCapabilities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tab]);
 
   useEffect(() => {
@@ -132,6 +252,10 @@ export default function PortalManagePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShareOpen(true)}
+              className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal flex items-center gap-1"
+            ><Share2 className="h-4 w-4" /> Share</button>
             <Link
               to={`/portals/p/${encodeURIComponent(portalAddress)}`}
               className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal flex items-center gap-1"
@@ -143,20 +267,56 @@ export default function PortalManagePage() {
           </div>
         </header>
 
-        <nav className="flex gap-1 mb-4 border-b border-border">
+        <nav className="flex gap-1 mb-4 border-b border-border overflow-x-auto">
           <TabButton active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</TabButton>
           <TabButton active={tab === 'pages'} onClick={() => setTab('pages')}>Pages ({pageCount})</TabButton>
+          <TabButton active={tab === 'assets'} onClick={() => setTab('assets')}>Assets ({assets.length})</TabButton>
+          <TabButton active={tab === 'capabilities'} onClick={() => setTab('capabilities')}>Capabilities</TabButton>
           <TabButton active={tab === 'inbox'} onClick={() => setTab('inbox')}>Inbox ({inboxPending} pending)</TabButton>
           <TabButton active={tab === 'export'} onClick={() => setTab('export')}>Export</TabButton>
         </nav>
 
         {error && <div className="mb-4 flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 p-3 text-sm"><AlertCircle className="h-4 w-4 text-adv-red flex-shrink-0 mt-0.5" />{error}</div>}
 
-        {tab === 'overview' && <OverviewTab portal={portal} pageCount={pageCount} inboxPending={inboxPending} />}
-        {tab === 'pages' && <PagesTab pages={pages} />}
+        {tab === 'overview' && (
+          <OverviewTab
+            portal={portal} pageCount={pageCount} inboxPending={inboxPending}
+            onTogglePublicIndex={async (v) => {
+              try { await patchPortal({ public_index: v }); }
+              catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+            }}
+          />
+        )}
+        {tab === 'pages' && <PagesTab pages={pages} onEdit={(p) => setEditingPage(p)} />}
+        {tab === 'assets' && <AssetsTab assets={assets} onUpload={uploadAsset} onDelete={deleteAsset} onError={setError} />}
+        {tab === 'capabilities' && (
+          <CapabilitiesTab
+            capabilities={capabilities}
+            onSave={async (next) => {
+              try { await saveCapabilities(next); }
+              catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; }
+            }}
+          />
+        )}
         {tab === 'inbox' && <InboxTab invocations={inbox} />}
         {tab === 'export' && <ExportTab onDownload={downloadBundle} />}
+
+        {editingPage && (
+          <EditPageModal
+            page={editingPage}
+            onClose={() => setEditingPage(null)}
+            onSave={async (p) => { await savePage(p); setEditingPage(null); }}
+          />
+        )}
       </div>
+
+      {shareOpen && (
+        <ShareModal
+          portalAddress={portalAddress}
+          visitUrl={`${window.location.origin}/portals/p/${encodeURIComponent(portalAddress)}`}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       <ConfirmModal
         open={deleteOpen}
@@ -172,7 +332,14 @@ export default function PortalManagePage() {
   );
 }
 
-function OverviewTab({ portal, pageCount, inboxPending }: { portal: PortalDetail['portal']; pageCount: number; inboxPending: number }) {
+function OverviewTab({
+  portal, pageCount, inboxPending, onTogglePublicIndex,
+}: {
+  portal: PortalDetail['portal'];
+  pageCount: number;
+  inboxPending: number;
+  onTogglePublicIndex: (v: boolean) => void | Promise<void>;
+}) {
   const verbs = portal.capability_summary?.capabilityVerbs ?? [];
   const tags = portal.capability_summary?.tags ?? [];
   return (
@@ -181,7 +348,18 @@ function OverviewTab({ portal, pageCount, inboxPending }: { portal: PortalDetail
         <KV label="Name" value={<code className="text-adv-teal">{portal.name}</code>} />
         <KV label="Namespace" value={portal.namespace} />
         <KV label="Category" value={portal.category} />
-        <KV label="Public index" value={portal.public_index ? 'yes' : 'no'} />
+        <div className="flex items-center justify-between gap-2 text-sm pt-1">
+          <span className="text-adv-gray">Public index</span>
+          <label className="flex items-center gap-2 cursor-pointer" title="Toggle whether this portal appears in registry/LAN search">
+            <input
+              type="checkbox"
+              checked={portal.public_index}
+              onChange={(e) => { void onTogglePublicIndex(e.target.checked); }}
+              className="accent-adv-teal"
+            />
+            <span className="text-xs">{portal.public_index ? 'discoverable' : 'private'}</span>
+          </label>
+        </div>
       </Card>
       <Card title="Activity">
         <KV label="Pages" value={String(pageCount)} />
@@ -210,7 +388,7 @@ function OverviewTab({ portal, pageCount, inboxPending }: { portal: PortalDetail
   );
 }
 
-function PagesTab({ pages }: { pages: Page[] }) {
+function PagesTab({ pages, onEdit }: { pages: Page[]; onEdit: (p: Page) => void }) {
   if (pages.length === 0) return (
     <div className="rounded-xl border border-dashed border-border bg-adv-card p-10 text-center">
       <FileText className="h-10 w-10 text-adv-gray mx-auto mb-3" />
@@ -229,7 +407,16 @@ function PagesTab({ pages }: { pages: Page[] }) {
               <div className="font-medium">{p.title ?? p.path}</div>
               <code className="text-xs text-adv-teal">{p.path}</code>
             </div>
-            <div className="text-xs text-adv-gray">{p.visible ? 'visible' : 'hidden'} · order {p.sortOrder}</div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-adv-gray">{p.visible ? 'visible' : 'hidden'} · order {p.sortOrder}</span>
+              <button
+                onClick={() => onEdit(p)}
+                className="px-2 py-1 rounded text-xs border border-border hover:border-adv-teal text-adv-gray hover:text-adv-teal transition flex items-center gap-1"
+                aria-label={`Edit page ${p.path}`}
+              >
+                <Pencil className="h-3 w-3" /> Edit
+              </button>
+            </div>
           </div>
           <details className="mt-2">
             <summary className="text-xs text-adv-gray cursor-pointer hover:text-adv-off-white">View HTML ({p.html.length} chars)</summary>
@@ -239,6 +426,435 @@ function PagesTab({ pages }: { pages: Page[] }) {
       ))}
     </div>
   );
+}
+
+function AssetsTab({
+  assets, onUpload, onDelete, onError,
+}: {
+  assets: Asset[];
+  onUpload: (file: File, path: string) => Promise<void>;
+  onDelete: (path: string) => Promise<void>;
+  onError: (msg: string | null) => void;
+}) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [pendingPath, setPendingPath] = useState('');
+
+  async function handleFile(file: File) {
+    onError(null);
+    // Default the path to the filename — owner can override before clicking upload.
+    if (!pendingPath) setPendingPath(file.name);
+    setUploading(true);
+    try {
+      await onUpload(file, pendingPath || file.name);
+      setPendingPath('');
+      if (fileInput.current) fileInput.current.value = '';
+    } catch (e) {
+      onError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-dashed border-border bg-adv-card p-4">
+        <div className="flex items-center gap-2 text-sm font-medium mb-2">
+          <Upload className="h-4 w-4 text-adv-teal" /> Upload an asset
+        </div>
+        <p className="text-xs text-adv-gray mb-3">
+          Reference uploaded assets from page HTML via <code className="text-adv-teal">{'{{asset:logo.png}}'}</code>.
+          Max 25 MB. Common types: png, jpg, svg, webp, woff2, pdf.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={pendingPath}
+            onChange={(e) => setPendingPath(e.target.value)}
+            placeholder="logo.png"
+            className="flex-1 min-w-[180px] rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+            aria-label="Asset path (e.g. logo.png)"
+          />
+          <input
+            ref={fileInput}
+            type="file"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            className="px-3 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploading ? 'Uploading…' : 'Choose file'}
+          </button>
+        </div>
+      </div>
+
+      {assets.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-adv-card p-8 text-center">
+          <Image className="h-10 w-10 text-adv-gray mx-auto mb-3" />
+          <p className="text-sm text-adv-off-white font-medium">No assets uploaded yet</p>
+          <p className="text-xs text-adv-gray mt-1">Logos, illustrations, fonts — anything page HTML references.</p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-border rounded-xl border border-border bg-adv-card overflow-hidden">
+          {assets.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <code className="text-adv-teal text-xs">{a.path}</code>
+                <div className="text-xs text-adv-gray mt-0.5">
+                  {a.mimeType} · {formatBytes(a.byteSize)}
+                </div>
+              </div>
+              <button
+                onClick={() => { void onDelete(a.path).catch((e) => onError(String(e))); }}
+                className="px-2 py-1 rounded text-xs border border-adv-red/40 text-adv-red hover:bg-adv-red/10 transition flex items-center gap-1"
+                aria-label={`Delete asset ${a.path}`}
+              >
+                <Trash2 className="h-3 w-3" /> Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EditPageModal({
+  page, onClose, onSave,
+}: { page: Page; onClose: () => void; onSave: (p: Page) => Promise<void> }) {
+  const [draft, setDraft] = useState<Page>(page);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true); setErr(null);
+    try { await onSave(draft); }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)); setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true">
+      <div className="w-full max-w-3xl rounded-xl border border-border bg-adv-card mt-8 mb-8">
+        <header className="flex items-center justify-between gap-3 p-4 border-b border-border">
+          <div>
+            <h2 className="text-base font-medium">Edit page</h2>
+            <code className="text-xs text-adv-teal">{draft.path}</code>
+          </div>
+          <button onClick={onClose} className="p-1 rounded hover:bg-white/5" aria-label="Close edit modal">
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="p-4 space-y-3">
+          {err && (
+            <div className="flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 p-2 text-xs">
+              <AlertCircle className="h-3.5 w-3.5 text-adv-red flex-shrink-0 mt-0.5" /> {err}
+            </div>
+          )}
+          <label className="block">
+            <span className="block text-xs font-medium mb-1">Title</span>
+            <input
+              type="text"
+              value={draft.title ?? ''}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="block text-xs font-medium mb-1">Sort order</span>
+              <input
+                type="number" min={0}
+                value={draft.sortOrder}
+                onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) })}
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+              />
+            </label>
+            <label className="flex items-center gap-2 mt-6">
+              <input
+                type="checkbox"
+                checked={draft.visible}
+                onChange={(e) => setDraft({ ...draft, visible: e.target.checked })}
+                className="accent-adv-teal"
+              />
+              <span className="text-sm">Visible to visitors</span>
+            </label>
+          </div>
+          <label className="block">
+            <span className="block text-xs font-medium mb-1">HTML</span>
+            <textarea
+              value={draft.html}
+              onChange={(e) => setDraft({ ...draft, html: e.target.value })}
+              className="w-full h-72 rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs font-mono focus:border-adv-teal focus:outline-none"
+            />
+            <span className="block text-xs text-adv-gray mt-1">
+              Interpolation: <code>{'{{title}}'}</code>, <code>{'{{portal.displayTitle}}'}</code>, <code>{'{{asset:logo.png}}'}</code>, <code>{'{{#each kind}}…{{/each}}'}</code>
+            </span>
+          </label>
+        </div>
+        <footer className="flex items-center justify-end gap-2 p-4 border-t border-border">
+          <button onClick={onClose} className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-gray">Cancel</button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Save changes
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function CapabilitiesTab({
+  capabilities, onSave,
+}: {
+  capabilities: CapabilityEdit[];
+  onSave: (next: CapabilityEdit[]) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState<CapabilityEdit[]>(capabilities);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  // Sync local draft when fetched capabilities change.
+  useEffect(() => { setDraft(capabilities); }, [capabilities]);
+
+  function update(i: number, patch: Partial<CapabilityEdit>) {
+    const next = [...draft];
+    next[i] = { ...next[i], ...patch };
+    setDraft(next);
+  }
+  function remove(i: number) {
+    if (draft.length === 1) return;
+    setDraft(draft.filter((_, idx) => idx !== i));
+  }
+  function add() {
+    setDraft([...draft, {
+      id: `cap-${draft.length + 1}`, verb: 'contact',
+      title: 'New capability', description: '', aapEndpoint: 'messages',
+    }]);
+  }
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setSavedAt(Date.now());
+      setTimeout(() => setSavedAt(null), 3000);
+    } catch { /* error already surfaced by caller */ }
+    finally { setSaving(false); }
+  }
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(capabilities);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg bg-adv-card border border-border p-3 text-xs text-adv-gray">
+        Editing capabilities re-signs the portal's descriptor and invalidates the visitor cache.
+        Changes apply immediately on save — visitors get the new descriptor on their next request.
+      </div>
+
+      {draft.map((c, i) => (
+        <div key={i} className="rounded-lg border border-border bg-adv-card p-3 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm sm:col-span-3 focus:border-adv-teal focus:outline-none"
+              value={c.id}
+              onChange={(e) => update(i, { id: e.target.value })}
+              placeholder="id (slug)"
+              aria-label="Capability id"
+            />
+            <select
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm sm:col-span-3 focus:border-adv-teal focus:outline-none"
+              value={c.verb}
+              onChange={(e) => update(i, { verb: e.target.value })}
+              aria-label="Capability verb"
+            >
+              {VERBS.map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+            <input
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm sm:col-span-4 focus:border-adv-teal focus:outline-none"
+              value={c.title}
+              onChange={(e) => update(i, { title: e.target.value })}
+              placeholder="title (visible to visitors)"
+              aria-label="Capability title"
+            />
+            <input
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm sm:col-span-2 focus:border-adv-teal focus:outline-none"
+              value={c.aapEndpoint}
+              onChange={(e) => update(i, { aapEndpoint: e.target.value })}
+              placeholder="aap_endpoint"
+              aria-label="AAP endpoint"
+            />
+          </div>
+          {c.verb === 'custom' && (
+            <input
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+              value={c.customVerbName ?? ''}
+              onChange={(e) => update(i, { customVerbName: e.target.value })}
+              placeholder="custom verb name (e.g. 'lend-tool')"
+              aria-label="Custom verb name"
+            />
+          )}
+          <textarea
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+            rows={2}
+            value={c.description}
+            onChange={(e) => update(i, { description: e.target.value })}
+            placeholder="description (one or two sentences)"
+            aria-label="Capability description"
+          />
+          <input
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm focus:border-adv-teal focus:outline-none"
+            value={(c.tags ?? []).join(', ')}
+            onChange={(e) => update(i, { tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+            placeholder="tags (comma-separated)"
+            aria-label="Capability tags"
+          />
+          <div className="flex items-center justify-between text-xs">
+            <label className="flex items-center gap-2 cursor-pointer text-adv-gray">
+              <input
+                type="checkbox"
+                checked={c.paymentCoupling?.required === true}
+                onChange={(e) => update(i, { paymentCoupling: e.target.checked ? { required: true } : undefined })}
+                className="accent-adv-teal"
+              />
+              Payment required
+            </label>
+            <button
+              onClick={() => remove(i)}
+              disabled={draft.length === 1}
+              className="text-adv-red hover:underline disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed"
+              aria-label={`Remove capability ${c.id}`}
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <div className="flex items-center justify-between gap-2 pt-2">
+        <button
+          onClick={add}
+          className="text-sm text-adv-teal hover:underline"
+        >+ Add capability</button>
+        <div className="flex items-center gap-3">
+          {savedAt && <span className="text-xs text-adv-green" aria-live="polite">Saved · descriptor re-signed</span>}
+          <button
+            onClick={handleSave}
+            disabled={saving || !dirty}
+            className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Save & re-sign
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareModal({
+  portalAddress, visitUrl, onClose,
+}: { portalAddress: string; visitUrl: string; onClose: () => void }) {
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
+  const [copiedAddr, setCopiedAddr] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // Lazy-load qrcode lib so we don't pay its weight on the initial bundle.
+  // Encode the portal address (the canonical identifier) — anyone scanning
+  // can paste it into their ANTON's anton-portal Pathfinder mode.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = await import('qrcode');
+        const svg = await mod.default.toString(portalAddress, {
+          type: 'svg', errorCorrectionLevel: 'M', margin: 2, width: 240,
+          color: { dark: '#0D7D6C', light: '#ffffff' },
+        });
+        if (!cancelled) setQrSvg(svg);
+      } catch { /* QR generation failed — show address only */ }
+    })();
+    return () => { cancelled = true; };
+  }, [portalAddress]);
+
+  async function copyText(text: string, setter: (v: boolean) => void) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setter(true);
+      setTimeout(() => setter(false), 2000);
+    } catch { /* clipboard blocked */ }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-xl border border-border bg-adv-card">
+        <header className="flex items-center justify-between gap-2 p-4 border-b border-border">
+          <h2 className="text-base font-medium flex items-center gap-2">
+            <Share2 className="h-4 w-4 text-adv-teal" /> Share this portal
+          </h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-white/5" aria-label="Close share modal">
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="p-4 space-y-4">
+          {qrSvg ? (
+            <div
+              className="rounded-lg bg-white p-3 mx-auto"
+              style={{ width: 'fit-content' }}
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+              aria-label="QR code for portal address"
+            />
+          ) : (
+            <div className="rounded-lg bg-adv-dark p-6 text-center">
+              <Loader2 className="h-5 w-5 animate-spin text-adv-gray mx-auto" />
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-adv-gray mb-1">Portal address</div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded bg-adv-dark px-3 py-2 text-sm text-adv-teal">{portalAddress}</code>
+              <button
+                onClick={() => copyText(portalAddress, setCopiedAddr)}
+                className="px-2 py-2 rounded border border-border hover:border-adv-teal text-adv-gray hover:text-adv-teal"
+                aria-label="Copy portal address"
+              >
+                {copiedAddr ? <Check className="h-4 w-4 text-adv-green" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-adv-gray mb-1">Visit URL (this instance)</div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded bg-adv-dark px-3 py-2 text-xs">{visitUrl}</code>
+              <button
+                onClick={() => copyText(visitUrl, setCopiedUrl)}
+                className="px-2 py-2 rounded border border-border hover:border-adv-teal text-adv-gray hover:text-adv-teal"
+                aria-label="Copy visit URL"
+              >
+                {copiedUrl ? <Check className="h-4 w-4 text-adv-green" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-adv-gray">
+            Other ANTONs that know your portal address can resolve it via mDNS on your LAN, or via the registry once published.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function InboxTab({ invocations }: { invocations: Invocation[] }) {

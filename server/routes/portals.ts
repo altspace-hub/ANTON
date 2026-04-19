@@ -36,6 +36,7 @@ import { listTemplates } from '../services/portals/portal-walkthrough-templates.
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
 import { suggestPhase, suggestPhaseStream, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
 import { scanLan, listKnownNeighbors } from '../services/portals/portal-lan-discovery.js';
+import { rebuildPortalDescriptor, readCurrentCapabilities } from '../services/portals/portal-capabilities-editor.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
@@ -110,6 +111,29 @@ const searchQuerySchema = z.object({
 
 const inquireSchema = z.object({
   visitorContactHash: z.string().optional(),
+});
+
+const capabilityEditSchema = z.object({
+  id: z.string().min(1).regex(/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/i, 'lowercase slug'),
+  verb: z.string().min(1),
+  customVerbName: z.string().optional(),
+  title: z.string().min(1).max(120),
+  description: z.string().max(2000),
+  aapEndpoint: z.string().min(1),
+  paymentCoupling: z.record(z.string(), z.unknown()).optional(),
+  inputSchema: z.record(z.string(), z.unknown()).optional(),
+  outputSchema: z.record(z.string(), z.unknown()).optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+const capabilitiesUpdateSchema = z.object({
+  capabilities: z.array(capabilityEditSchema).min(1).max(20),
+});
+
+const portalPatchSchema = z.object({
+  display_title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  public_index: z.boolean().optional(),
 });
 
 const invokeSchema = z.object({
@@ -416,6 +440,52 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // Render an in-flight walkthrough page as HTML, for the review-phase
+  // preview iframe. Reads pages from accumulated_state.content_generation
+  // rather than the portals table (which doesn't exist yet pre-finalize).
+  // Only does simple {{title}} / {{portal.*}} / {{data.*}} substitution —
+  // {{#each}} blocks and asset lookups are skipped since neither the
+  // structured_data nor portal_assets rows exist yet.
+  router.get('/portals/walkthroughs/:id/preview', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      const requestedPath = (req.query.path as string | undefined) ?? '/';
+      const session = await db.get<{ accumulated_state: Record<string, unknown> | string }>(
+        `SELECT accumulated_state FROM portal_walkthrough_sessions WHERE id = ?`,
+        req.params.id,
+      );
+      if (!session) return res.status(404).json({ error: 'Session not found' });
+      const acc = typeof session.accumulated_state === 'string'
+        ? JSON.parse(session.accumulated_state) : session.accumulated_state;
+      const identity = (acc.identity ?? {}) as { name?: string; namespace?: string; display_title?: string; category?: string };
+      const generation = (acc.content_generation ?? {}) as { pages?: Array<{ path: string; html: string; structured_data?: Record<string, unknown> }> };
+      const page = (generation.pages ?? []).find((p) => p.path === requestedPath)
+        ?? (generation.pages ?? [])[0];
+      if (!page) return res.status(404).json({ error: 'No page in draft' });
+
+      const { renderSimpleSubstitutionsOnly } = await import('../services/portals/portal-renderer.js');
+      const html = renderSimpleSubstitutionsOnly({
+        page: {
+          path: page.path, title: identity.display_title ?? null,
+          html: page.html, sortOrder: 0, updatedAt: new Date().toISOString(),
+          structuredData: page.structured_data ?? null,
+        },
+        portal: {
+          address: `${identity.name ?? 'preview'}.${identity.namespace ?? 'preview'}.portal`,
+          name: identity.name ?? 'preview',
+          namespace: identity.namespace ?? 'preview',
+          displayTitle: identity.display_title ?? null,
+          category: identity.category ?? 'personal',
+        },
+      });
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.send(html);
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // Cumulative session cost (USD cents) — feeds the cost chip in the
   // walkthrough header so the user can see what they've spent.
   router.get('/portals/walkthroughs/:id/cost', requireAuth, async (req, res) => {
@@ -544,6 +614,61 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // Patch portal-level fields. When public_index changes, the descriptor
+  // must be re-signed because discoveryMetadata depends on it; we route
+  // through rebuildPortalDescriptor in that case to keep cache + portal row
+  // + capability_summary atomic.
+  router.patch('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const parsed = portalPatchSchema.parse(req.body);
+      if (parsed.public_index !== undefined) {
+        const caps = await readCurrentCapabilities(db, req.params.id);
+        await rebuildPortalDescriptor(db, req.params.id, caps, {
+          displayTitle: parsed.display_title,
+          description: parsed.description,
+          publicIndex: parsed.public_index,
+        });
+      } else {
+        // Identity-only change — no descriptor rebuild needed.
+        const sets: string[] = ['updated_at = NOW()'];
+        const params: unknown[] = [];
+        if (parsed.display_title !== undefined) { sets.push('display_title = ?'); params.push(parsed.display_title); }
+        if (parsed.description !== undefined) { sets.push('description = ?'); params.push(parsed.description); }
+        if (params.length === 0) return res.status(400).json({ error: 'No updatable fields supplied' });
+        params.push(req.params.id);
+        await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
+      }
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Read current capabilities (extracted from cached descriptor) — used by
+  // the edit UI to seed its form.
+  router.get('/portals/:id/capabilities', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const capabilities = await readCurrentCapabilities(db, req.params.id);
+      res.json({ capabilities });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Replace the portal's capabilities. Triggers a full descriptor rebuild +
+  // re-sign + cache update inside one transaction. Visitors fetching
+  // /capabilities get the new descriptor on their next request — there's no
+  // explicit cache invalidation step.
+  router.put('/portals/:id/capabilities', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const parsed = capabilitiesUpdateSchema.parse(req.body);
+      const result = await rebuildPortalDescriptor(db, req.params.id, parsed.capabilities);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
   router.delete('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const r = await db.run(`DELETE FROM portals WHERE id = ?`, req.params.id);
@@ -581,6 +706,48 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       if (!path) return res.status(400).json({ error: 'path query parameter required' });
       const ok = await portalDb.deletePage(req.params.id, path);
       if (!ok) return res.status(404).json({ error: 'Page not found' });
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Owner: assets (logos, images, files referenced via {{asset:path}}) ────
+
+  router.get('/portals/:id/assets', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const assets = await portalDb.listAssets(req.params.id);
+      res.json({ assets });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Multipart upload — `file` is the binary body, `path` is the asset path
+  // (form field). Reuses the same multer instance as portal bundle imports.
+  router.post('/portals/:id/assets', requireAuth, requirePortalOwner, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'file required' });
+      const path = (req.body?.path as string | undefined)?.trim();
+      if (!path) return res.status(400).json({ error: 'path field required' });
+      const asset = await portalDb.upsertAsset(req.params.id, {
+        path,
+        mimeType: req.file.mimetype || 'application/octet-stream',
+        content: req.file.buffer,
+      });
+      // Strip the bytes from the response — the client already has them.
+      res.status(201).json({ asset: { ...asset, content: undefined } });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/portals/:id/assets', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const path = req.query.path as string | undefined;
+      if (!path) return res.status(400).json({ error: 'path query parameter required' });
+      const ok = await portalDb.deleteAsset(req.params.id, path);
+      if (!ok) return res.status(404).json({ error: 'Asset not found' });
       res.status(204).end();
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
