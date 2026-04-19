@@ -71,7 +71,7 @@ function applyThemeToDOM(theme: Theme) {
 }
 
 type DeploymentMode = 'solo' | 'team';
-export type AppMode = 'work' | 'school' | 'life' | 'pathfinder' | 'markets' | 'community' | 'payments';
+export type AppMode = 'work' | 'school' | 'life' | 'pathfinder' | 'markets' | 'community' | 'payments' | 'portals' | 'missions';
 
 function getInitialAppMode(): AppMode {
   if (typeof window !== 'undefined') {

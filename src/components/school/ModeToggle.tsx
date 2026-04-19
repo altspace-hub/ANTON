@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Briefcase, GraduationCap, Globe, Compass, TrendingUp, Users, Wallet } from 'lucide-react';
+import { Briefcase, GraduationCap, Globe2, Compass, TrendingUp, Users, Wallet, Globe, Target } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { AppMode } from '@/stores/useSettingsStore';
 
@@ -13,6 +13,8 @@ const PATHFINDER_ROUTES = ['/pathfinder'];
 const MARKETS_ROUTES = ['/markets'];
 const COMMUNITY_ROUTES = ['/community'];
 const PAYMENTS_ROUTES = ['/futurechain'];
+const PORTALS_ROUTES = ['/portals'];
+const MISSIONS_ROUTES = ['/missions'];
 
 export default function ModeToggle({ className = '' }: ModeToggleProps) {
   const { t } = useTranslation('school');
@@ -27,19 +29,25 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       ? 'community'
       : PAYMENTS_ROUTES.some(r => pathname.startsWith(r))
         ? 'payments'
-        : PATHFINDER_ROUTES.some(r => pathname.startsWith(r))
-          ? 'pathfinder'
-          : LIFE_ROUTES.some(r => pathname.startsWith(r))
-            ? 'life'
-            : appMode === 'school'
-              ? 'school'
-              : 'work';
+        : PORTALS_ROUTES.some(r => pathname.startsWith(r))
+          ? 'portals'
+          : MISSIONS_ROUTES.some(r => pathname.startsWith(r))
+            ? 'missions'
+            : PATHFINDER_ROUTES.some(r => pathname.startsWith(r))
+              ? 'pathfinder'
+              : LIFE_ROUTES.some(r => pathname.startsWith(r))
+                ? 'life'
+                : appMode === 'school'
+                  ? 'school'
+                  : 'work';
 
   function handleToggle(mode: AppMode) {
     setAppMode(mode);
     if (mode === 'markets') navigate('/markets');
     else if (mode === 'community') navigate('/community');
     else if (mode === 'payments') navigate('/futurechain');
+    else if (mode === 'portals') navigate('/portals');
+    else if (mode === 'missions') navigate('/missions');
     else if (mode === 'pathfinder') navigate('/pathfinder');
     else if (mode === 'school') navigate('/school');
     else if (mode === 'life') navigate('/life');
@@ -90,7 +98,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         }`}
         aria-pressed={activeMode === 'life'}
       >
-        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+        <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
         Life
       </button>
 
@@ -148,6 +156,34 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       >
         <Compass className="h-3.5 w-3.5" aria-hidden="true" />
         Pathfinder
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleToggle('portals')}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+          activeMode === 'portals'
+            ? 'bg-adv-teal text-adv-dark'
+            : 'text-adv-gray hover:text-adv-off-white'
+        }`}
+        aria-pressed={activeMode === 'portals'}
+      >
+        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+        Portals
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleToggle('missions')}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+          activeMode === 'missions'
+            ? 'bg-adv-teal text-adv-dark'
+            : 'text-adv-gray hover:text-adv-off-white'
+        }`}
+        aria-pressed={activeMode === 'missions'}
+      >
+        <Target className="h-3.5 w-3.5" aria-hidden="true" />
+        Missions
       </button>
     </div>
   );
