@@ -83,6 +83,9 @@ const HardwareTemplatesPage = lazy(() => import('./pages/HardwareTemplatesPage')
 const HardwareReviewQueuePage = lazy(() => import('./pages/HardwareReviewQueuePage'));
 // Portals (spec v0.2)
 const PortalsLandingPage = lazy(() => import('./pages/portals/PortalsLandingPage'));
+const PortalsTemplateGalleryPage = lazy(() => import('./pages/portals/PortalsTemplateGalleryPage'));
+const PortalsDiscoveryPage = lazy(() => import('./pages/portals/PortalsDiscoveryPage'));
+const PortalsInboxPage = lazy(() => import('./pages/portals/PortalsInboxPage'));
 const PortalBuilderPage = lazy(() => import('./pages/portals/PortalBuilderPage'));
 const PortalManagePage = lazy(() => import('./pages/portals/PortalManagePage'));
 const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage'));
@@ -476,7 +479,10 @@ export default function App() {
           <Route path="/hardware/review-queue" element={<HardwareReviewQueuePage />} />
           {/* Portals (spec v0.2) */}
           <Route path="/portals" element={<PortalsLandingPage />} />
+          <Route path="/portals/build" element={<PortalsTemplateGalleryPage />} />
           <Route path="/portals/build/:templateId" element={<PortalBuilderPage />} />
+          <Route path="/portals/discovery" element={<PortalsDiscoveryPage />} />
+          <Route path="/portals/inbox" element={<PortalsInboxPage />} />
           <Route path="/portals/:id/manage" element={<PortalManagePage />} />
           <Route path="/portals/p/:address" element={<PortalVisitorPage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />

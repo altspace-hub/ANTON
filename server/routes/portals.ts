@@ -145,6 +145,45 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // ── Cross-portal inbox: aggregates invocations across owner's portals ────
+  // MUST be declared before /portals/:id (Express ordering — "inbox" would
+  // otherwise be matched as the UUID :id param).
+
+  router.get('/portals/inbox', async (req, res) => {
+    try {
+      const status = (req.query.status as string | undefined) ?? null;
+      const limit = Math.min(Number(req.query.limit ?? 100), 500);
+      const where = ['1 = 1'];
+      const params: unknown[] = [];
+      if (status) {
+        where.push('inv.status = ?');
+        params.push(status);
+      }
+      params.push(limit);
+      const rows = await db.all(
+        `SELECT inv.id, inv.portal_id, p.name AS portal_name, p.namespace AS portal_namespace,
+                p.display_title AS portal_title,
+                inv.capability_id, inv.capability_verb, inv.aap_endpoint,
+                inv.visitor_contact_hash, inv.input, inv.output, inv.response_id,
+                inv.status, inv.received_at, inv.acknowledged_at, inv.responded_at,
+                inv.rejection_reason
+         FROM portal_capability_invocations inv
+         JOIN portals p ON p.id = inv.portal_id
+         WHERE ${where.join(' AND ')}
+         ORDER BY inv.received_at DESC LIMIT ?`,
+        ...params,
+      );
+      const totalRow = await db.get<{ n: number }>(
+        `SELECT COUNT(*)::int AS n FROM portal_capability_invocations
+         ${status ? `WHERE status = ?` : ''}`,
+        ...(status ? [status] : []),
+      );
+      res.json({ invocations: rows, total: totalRow?.n ?? 0 });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── Discovery: search ─────────────────────────────────────────────────────
   // MUST be declared before /portals/:id, otherwise Express matches "search"
   // as the :id param (which then fails uuid coercion).
