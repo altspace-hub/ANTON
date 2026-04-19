@@ -33,6 +33,7 @@ import { createPortalSearchEngine } from '../services/portals/portal-search-engi
 import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-engine.js';
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
+import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
 // Used on /portals/:id/* mutations after requireAuth. Verifies that the
@@ -141,6 +142,26 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   // Public: anyone can list templates.
   router.get('/portals/templates', (_req, res) => {
     res.json({ templates: listTemplates() });
+  });
+
+  // Public: trust-bundle status for the UI banner. Tells the client whether
+  // the registry operator's public key is the bundled placeholder (in which
+  // case STH verification can't succeed and registry submissions are best-
+  // effort only) or a real key from a trust-bundle update.
+  router.get('/portals/trust-bundle/status', (_req, res) => {
+    const store = getTrustStore();
+    const futurechain = store.forNamespace('futurechain');
+    res.json({
+      registryUrl: process.env.PORTAL_REGISTRY_URL ?? null,
+      operators: store.snapshot().registryOperators.map((op) => ({
+        operatorId: op.operatorId,
+        namespaces: op.namespaces,
+        isPlaceholder: store.isPlaceholder(op.operatorId),
+        bundleDate: op.bundleDate,
+        expiresAt: op.expiresAt,
+      })),
+      futurechainPlaceholder: futurechain ? store.isPlaceholder(futurechain.operatorId) : true,
+    });
   });
 
   router.post('/portals/walkthroughs', requireAuth, async (req, res) => {

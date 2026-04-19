@@ -116,16 +116,65 @@ export async function bundlePortal(
   }>(`SELECT descriptor, signature, signing_key_fingerprint
         FROM portal_descriptor_cache WHERE portal_address = ?`, portalAddress);
 
-  // Pages, assets, walkthrough, schema/seed all come from the portal's local
-  // sub-schema. Phase 5 (portal-database-service) will populate these tables.
-  // For now we read them through a side-channel: portal.metadata.bundleArtefacts.
-  const artefacts = (portal.metadata?.bundleArtefacts ?? {}) as Record<string, unknown>;
-  const pages = (artefacts.pages ?? {}) as Record<string, string>;
-  const assets = (artefacts.assets ?? {}) as Record<string, string>; // base64 strings
-  const walkthrough = artefacts.walkthrough ?? null;
-  const schemaSql = (artefacts.schemaSql ?? '-- (no schema yet)') as string;
-  const dataSeedSql = (artefacts.dataSeedSql ?? '-- (no seed data yet)') as string;
-  const adaptationPoints = ((artefacts.adaptationPoints ?? []) as AdaptationPoint[]);
+  // Pages, assets, structured data, walkthrough come from the real tables
+  // populated by the walkthrough engine and the portal-database-service.
+  // (Earlier the bundler read these from a metadata.bundleArtefacts
+  // side-channel that the walkthrough never wrote to — a contract bug
+  // that produced empty bundles. Now we go straight to the source.)
+  const pageRows = await db.all<{
+    path: string; title: string | null; html: string;
+    structured_data: Record<string, unknown> | null; sort_order: number; visible: boolean;
+  }>(
+    `SELECT path, title, html, structured_data, sort_order, visible
+     FROM portal_pages WHERE portal_id = ? ORDER BY sort_order, path`,
+    portalId,
+  );
+  const pages: Record<string, string> = {};
+  for (const p of pageRows) {
+    // Strip leading slash for the bundle's pages/ directory; '/' → 'index.html',
+    // '/about' → 'about.html', '/products/cake' → 'products/cake.html'.
+    const fname = (p.path === '/' ? 'index' : p.path.replace(/^\/+/, '')) + '.html';
+    pages[fname] = p.html;
+  }
+
+  const assetRows = await db.all<{
+    path: string; mime_type: string; content: Buffer | null;
+  }>(
+    `SELECT path, mime_type, content FROM portal_assets WHERE portal_id = ?`,
+    portalId,
+  );
+  const assets: Record<string, string> = {};
+  for (const a of assetRows) {
+    if (a.content) assets[a.path] = a.content.toString('base64');
+  }
+
+  const structuredRows = await db.all<{
+    kind: string; key: string; value: Record<string, unknown>;
+  }>(
+    `SELECT kind, key, value FROM portal_structured_data WHERE portal_id = ?
+     ORDER BY kind, key`,
+    portalId,
+  );
+
+  // Walkthrough transcript: pull the most recent finalized session for this portal.
+  const sessRow = await db.get<{ accumulated_state: Record<string, unknown> }>(
+    `SELECT accumulated_state FROM portal_walkthrough_sessions
+     WHERE portal_id = ? AND status = 'finalized'
+     ORDER BY finalized_at DESC LIMIT 1`,
+    portalId,
+  );
+  const walkthrough = sessRow?.accumulated_state ?? null;
+
+  // schema.sql / data-seed.sql remain placeholders — the portal's content is
+  // captured via portal_pages + portal_structured_data above. The .anton
+  // bundle format reserves these slots for future use (e.g. exporting a
+  // restorable portal-content.sql script).
+  const schemaSql = '-- portal content is in pages/ and structured-data.json; sql restore not yet generated\n';
+  const dataSeedSql = `-- structured data: ${structuredRows.length} item(s) across ${new Set(structuredRows.map(r => r.kind)).size} kind(s)\n`;
+
+  // Adaptation points are still authored via metadata (Phase 9+ enhancement
+  // would let the walkthrough's own outputs declare them).
+  const adaptationPoints = ((portal.metadata?.bundleArtefacts as { adaptationPoints?: AdaptationPoint[] } | undefined)?.adaptationPoints ?? []);
 
   // Construct manifest. If redactToTemplate, blank out identity-bearing values.
   const author = {
@@ -188,6 +237,18 @@ export async function bundlePortal(
   for (const [path, base64] of Object.entries(assets)) {
     if (!isSafePath(path)) continue;
     zip.addFile(`assets/${path}`, Buffer.from(base64, 'base64'));
+  }
+
+  // Structured data: serialised as one JSON file grouped by kind. The
+  // renderer iterates over portal_structured_data via {{#each kind}} blocks,
+  // so re-importers can re-seed by upserting each (kind, key, value).
+  if (structuredRows.length > 0) {
+    const grouped: Record<string, Array<{ key: string; value: Record<string, unknown> }>> = {};
+    for (const r of structuredRows) {
+      grouped[r.kind] ??= [];
+      grouped[r.kind].push({ key: r.key, value: r.value });
+    }
+    zip.addFile('structured-data.json', Buffer.from(JSON.stringify(grouped, null, 2), 'utf-8'));
   }
 
   zip.addFile('walkthrough.json', Buffer.from(JSON.stringify(walkthrough, null, 2), 'utf-8'));
