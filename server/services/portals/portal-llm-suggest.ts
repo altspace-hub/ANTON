@@ -15,9 +15,10 @@
  *   9. Return { suggestion, usage } — caller's UI populates the form
  */
 
+import type { Response } from 'express';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
-import { callChat, mapModelToProvider, type ChatResult } from '../provider-router.js';
+import { callChat, streamChat, mapModelToProvider, type ChatResult } from '../provider-router.js';
 import { MODEL_CAPABILITIES } from '../../config/model-capabilities.js';
 import {
   createWalkthroughEngine,
@@ -96,12 +97,59 @@ export async function suggestPhase(db: DatabaseAdapter, sessionId: string): Prom
   const model = mapDepthToModel(session.depth);
   const maxTokens = maxPhaseOutputTokens(session.depth);
 
-  // 5. Call LLM.
+  // First attempt.
+  const first = await runOneAttempt(db, sessionId, phase, model, maxTokens, phasePrompt.systemPrompt, userMessage, null);
+
+  // Retry once on retryable failures, if we still have cap budget. ~5-10%
+  // of LLM responses fluff the JSON contract; one targeted retry rescues
+  // most of them at the cost of a second cap slot.
+  if ((first.kind === 'parse_error' || first.kind === 'shape_error') && first.retryable) {
+    const after = await db.get<{ llm_calls_used: number }>(
+      `SELECT llm_calls_used FROM portal_walkthrough_sessions WHERE id = ?`, sessionId,
+    );
+    if ((after?.llm_calls_used ?? 0) < PER_WALKTHROUGH_CAP) {
+      const retryHint = first.kind === 'parse_error'
+        ? `Your previous response could not be parsed as JSON. Output ONLY a single JSON object — no prose, no code fences, no preamble.`
+        : `Your previous response was JSON but did not match the phase schema. Errors: ${JSON.stringify(first.zodErrors).slice(0, 300)}. Output a corrected JSON object that addresses every error.`;
+      log.info({ sessionId, phase, firstFailureKind: first.kind }, 'retry_after_failure');
+      return runOneAttempt(db, sessionId, phase, model, maxTokens, phasePrompt.systemPrompt, userMessage, retryHint);
+    }
+    // No budget for retry — return the original failure.
+  }
+
+  return first;
+}
+
+/**
+ * One LLM round-trip for the current phase. Records a cost row + bumps
+ * llm_calls_used regardless of outcome (any provider call costs cap budget).
+ * Returns a fully-formed SuggestResult — caller decides whether to retry.
+ *
+ * `retryHint`, when set, is appended to the system prompt and signals this is
+ * the second attempt. Recorded as 'ok-retry' / 'parse_error-retry' / etc. in
+ * the cost rows for audit clarity.
+ */
+async function runOneAttempt(
+  db: DatabaseAdapter,
+  sessionId: string,
+  phase: PhaseId,
+  model: string,
+  maxTokens: number,
+  systemPrompt: string,
+  userMessage: string,
+  retryHint: string | null,
+): Promise<SuggestResult> {
+  const isRetry = retryHint !== null;
+  const statusSuffix = isRetry ? '-retry' : '';
+  const fullSystem = systemPrompt
+    + '\n\nIMPORTANT: Output must be ONLY a single JSON object that validates against the phase schema. No prose, no code fences, no preamble.'
+    + (retryHint ? `\n\nRETRY: ${retryHint}` : '');
+
   let chatResult: ChatResult;
   try {
     chatResult = await callChat({
       model: mapModelToProvider(model),
-      system: phasePrompt.systemPrompt + '\n\nIMPORTANT: Output must be ONLY a single JSON object that validates against the phase schema. No prose, no code fences, no preamble.',
+      system: fullSystem,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens,
       thinkingLevel: 'think',
@@ -109,50 +157,50 @@ export async function suggestPhase(db: DatabaseAdapter, sessionId: string): Prom
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    log.error({ sessionId, phase, model, err: message }, 'provider_error');
-    await recordCallRow(db, sessionId, phase, model, 'provider_error', 0, 0, 0, message);
+    log.error({ sessionId, phase, model, isRetry, err: message }, 'provider_error');
+    await recordCallRow(db, sessionId, phase, model, `provider_error${statusSuffix}`, 0, 0, 0, message);
     return { kind: 'provider_error', phase, message };
   }
 
   const costUsdCents = estimateCostCents(model, chatResult.inputTokens, chatResult.outputTokens);
 
-  // 6. Extract JSON.
+  // Extract JSON.
   const extracted = extractJsonObject(chatResult.text);
   if (!extracted) {
-    log.warn({ sessionId, phase, rawSnippet: chatResult.text.slice(0, 200) }, 'parse_error');
-    await recordCallRow(db, sessionId, phase, model, 'parse_error',
+    log.warn({ sessionId, phase, isRetry, rawSnippet: chatResult.text.slice(0, 200) }, 'parse_error');
+    await recordCallRow(db, sessionId, phase, model, `parse_error${statusSuffix}`,
       chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
       'no JSON object found in response');
     await bumpCallsUsed(db, sessionId);
     return { kind: 'parse_error', phase, rawText: chatResult.text, reason: 'no JSON object found in response', retryable: true };
   }
 
-  // 7. Validate.
+  // Validate.
   const schema = PHASE_SCHEMAS[phase];
   const parsed = schema.safeParse(extracted);
   if (!parsed.success) {
-    const zodErrors = parsed.error.issues.map((i: { path: Array<string | number>; message: string }) => ({
-      path: i.path.join('.') || '<root>',
+    const zodErrors = parsed.error.issues.map((i) => ({
+      path: (i.path as ReadonlyArray<unknown>).join('.') || '<root>',
       message: i.message,
     }));
-    log.warn({ sessionId, phase, zodErrors }, 'shape_error');
-    await recordCallRow(db, sessionId, phase, model, 'shape_error',
+    log.warn({ sessionId, phase, isRetry, zodErrors }, 'shape_error');
+    await recordCallRow(db, sessionId, phase, model, `shape_error${statusSuffix}`,
       chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
       JSON.stringify(zodErrors).slice(0, 500));
     await bumpCallsUsed(db, sessionId);
     return { kind: 'shape_error', phase, partial: extracted, zodErrors, retryable: true };
   }
 
-  // 8. Persist as draft.
+  // Persist as draft.
   await persistDraft(db, sessionId, phase, parsed.data as Record<string, unknown>);
 
-  // 9. Record cost + bump cap counter.
-  await recordCallRow(db, sessionId, phase, model, 'ok',
+  // Record cost + bump cap counter.
+  await recordCallRow(db, sessionId, phase, model, `ok${statusSuffix}`,
     chatResult.inputTokens, chatResult.outputTokens, costUsdCents, null);
   await bumpCallsUsed(db, sessionId);
 
   log.info({
-    sessionId, phase, model,
+    sessionId, phase, model, isRetry,
     inputTokens: chatResult.inputTokens, outputTokens: chatResult.outputTokens,
     costUsdCents,
   }, 'suggest_ok');
@@ -168,6 +216,130 @@ export async function suggestPhase(db: DatabaseAdapter, sessionId: string): Prom
       model,
     },
   };
+}
+
+/**
+ * Streaming variant of suggestPhase. Emits SSE events as the LLM tokens
+ * arrive, then a final `event: complete` with the validated suggestion (or
+ * `event: error` with the failure shape). Use only for content_generation
+ * (or future long-output phases) — short phases don't benefit and the
+ * synchronous endpoint is simpler.
+ *
+ * SSE event vocabulary on the wire:
+ *   - text_delta / thinking_delta — emitted by streamChat itself
+ *   - event: complete + JSON  — final success payload (suggestion + usage)
+ *   - event: error + JSON     — final failure (kind + retryable + details)
+ *   - event: aborted + JSON   — cap/provider/session pre-flight failure
+ *
+ * The caller is responsible for headers + final `data: [DONE]` / res.end().
+ */
+export async function suggestPhaseStream(
+  db: DatabaseAdapter,
+  sessionId: string,
+  res: Response,
+): Promise<void> {
+  // Pre-flight checks. These don't stream — the caller has already set SSE
+  // headers, so we emit a single `event: aborted` and return.
+  const engine = createWalkthroughEngine(db);
+  const session = await engine.getSession(sessionId);
+  if (!session) {
+    return writeSseEvent(res, 'aborted', { kind: 'session_inactive', status: 'not_found' });
+  }
+  if (session.status !== 'active') {
+    return writeSseEvent(res, 'aborted', { kind: 'session_inactive', status: session.status });
+  }
+  const callsUsedRow = await db.get<{ llm_calls_used: number }>(
+    `SELECT llm_calls_used FROM portal_walkthrough_sessions WHERE id = ?`, sessionId,
+  );
+  if ((callsUsedRow?.llm_calls_used ?? 0) >= PER_WALKTHROUGH_CAP) {
+    return writeSseEvent(res, 'aborted', { kind: 'cap_exceeded', limit: PER_WALKTHROUGH_CAP });
+  }
+  if (!detectProvider()) {
+    return writeSseEvent(res, 'aborted', {
+      kind: 'no_provider',
+      reason: 'No LLM provider API key configured (set ANTHROPIC_API_KEY or similar)',
+    });
+  }
+
+  const phase = session.currentPhase;
+  const phasePrompt = await engine.generatePhasePrompt(sessionId);
+  const userMessage = buildPhaseUserMessage(session, phase);
+  const model = mapDepthToModel(session.depth);
+  const maxTokens = maxPhaseOutputTokens(session.depth);
+
+  let chatResult: ChatResult;
+  try {
+    chatResult = await streamChat({
+      model: mapModelToProvider(model),
+      system: phasePrompt.systemPrompt + '\n\nIMPORTANT: Output must be ONLY a single JSON object that validates against the phase schema. No prose, no code fences, no preamble.',
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens,
+      thinkingLevel: 'think',
+      db,
+    }, res);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error({ sessionId, phase, model, err: message }, 'provider_error_stream');
+    await recordCallRow(db, sessionId, phase, model, 'provider_error', 0, 0, 0, message);
+    return writeSseEvent(res, 'error', { kind: 'provider_error', phase, message });
+  }
+
+  const costUsdCents = estimateCostCents(model, chatResult.inputTokens, chatResult.outputTokens);
+
+  const extracted = extractJsonObject(chatResult.text);
+  if (!extracted) {
+    log.warn({ sessionId, phase, rawSnippet: chatResult.text.slice(0, 200) }, 'parse_error_stream');
+    await recordCallRow(db, sessionId, phase, model, 'parse_error',
+      chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
+      'no JSON object found in stream');
+    await bumpCallsUsed(db, sessionId);
+    return writeSseEvent(res, 'error', {
+      kind: 'parse_error', phase, reason: 'no JSON object found in stream', retryable: true,
+    });
+  }
+
+  const schema = PHASE_SCHEMAS[phase];
+  const parsed = schema.safeParse(extracted);
+  if (!parsed.success) {
+    const zodErrors = parsed.error.issues.map((i) => ({
+      path: (i.path as ReadonlyArray<unknown>).join('.') || '<root>',
+      message: i.message,
+    }));
+    log.warn({ sessionId, phase, zodErrors }, 'shape_error_stream');
+    await recordCallRow(db, sessionId, phase, model, 'shape_error',
+      chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
+      JSON.stringify(zodErrors).slice(0, 500));
+    await bumpCallsUsed(db, sessionId);
+    return writeSseEvent(res, 'error', {
+      kind: 'shape_error', phase, zodErrors, retryable: true,
+    });
+  }
+
+  await persistDraft(db, sessionId, phase, parsed.data as Record<string, unknown>);
+  await recordCallRow(db, sessionId, phase, model, 'ok',
+    chatResult.inputTokens, chatResult.outputTokens, costUsdCents, null);
+  await bumpCallsUsed(db, sessionId);
+
+  log.info({
+    sessionId, phase, model, mode: 'stream',
+    inputTokens: chatResult.inputTokens, outputTokens: chatResult.outputTokens,
+    costUsdCents,
+  }, 'suggest_ok_stream');
+
+  writeSseEvent(res, 'complete', {
+    phase,
+    suggestion: parsed.data,
+    usage: {
+      inputTokens: chatResult.inputTokens,
+      outputTokens: chatResult.outputTokens,
+      costUsdCents,
+      model,
+    },
+  });
+}
+
+function writeSseEvent(res: Response, name: string, payload: unknown): void {
+  res.write(`event: ${name}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

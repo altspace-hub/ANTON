@@ -34,7 +34,7 @@ import { createPortalSearchEngine } from '../services/portals/portal-search-engi
 import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-engine.js';
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
-import { suggestPhase, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
+import { suggestPhase, suggestPhaseStream, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
@@ -310,6 +310,38 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       }
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Streaming variant of /llm-suggest. SSE — emits text_delta/thinking_delta
+  // tokens as the LLM generates them, then a final `event: complete` with
+  // {phase, suggestion, usage} or `event: error` with the failure shape.
+  // Used by the builder for content_generation (long output) so the user
+  // sees progress instead of a 30-second blank loader. Other phases keep
+  // using the synchronous endpoint above — short output, no UX gain.
+  router.post('/portals/walkthroughs/:id/llm-suggest/stream', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+      await suggestPhaseStream(db, req.params.id, res);
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (err) {
+      // If we never got past the headers, fall back to a JSON 500. After
+      // streaming begins, just emit an SSE error event and end the stream.
+      if (!res.headersSent) {
+        res.status(500).json({ error: safeError(err) });
+        return;
+      }
+      try {
+        res.write(`event: error\ndata: ${JSON.stringify({ kind: 'internal_error', message: String(err) })}\n\n`);
+        res.write('data: [DONE]\n\n');
+      } finally {
+        res.end();
+      }
     }
   });
 
