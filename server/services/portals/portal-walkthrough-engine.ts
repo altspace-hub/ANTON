@@ -44,6 +44,7 @@ import {
   type PortalTemplate,
   type PhaseId,
 } from './portal-walkthrough-templates.js';
+export type { PhaseId };
 import {
   getWalkthroughDepth,
   type WalkthroughDepth,
@@ -152,7 +153,7 @@ const publishSchema = z.object({
   ready_to_register: z.literal(true),
 });
 
-const PHASE_SCHEMAS: Record<PhaseId, z.ZodType> = {
+export const PHASE_SCHEMAS: Record<PhaseId, z.ZodType> = {
   intent: intentSchema,
   identity: identitySchema,
   content_structure: contentStructureSchema,
