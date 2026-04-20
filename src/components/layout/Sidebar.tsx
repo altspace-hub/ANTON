@@ -265,6 +265,41 @@ function MissionInboxBadge() {
  * Lightweight badge that polls the cross-portal inbox count (status=pending)
  * every 60s. Uses the same auth + idle-skip pattern as MissionInboxBadge.
  */
+function EvidencePackDraftBadge() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    function getAuthHeader(): Record<string, string> {
+      const token = localStorage.getItem('openexpert-token');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+    let cancelled = false;
+    async function load() {
+      try {
+        const r = await fetch('/api/evidence-pack?status=draft', { headers: getAuthHeader() });
+        if (!r.ok) return;
+        const data = await r.json() as { packs?: Array<unknown> };
+        if (cancelled) return;
+        setCount(data.packs?.length ?? 0);
+      } catch { /* ignore */ }
+    }
+    void load();
+    const iv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void load();
+    }, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+  if (count === 0) return null;
+  return (
+    <span
+      className="ml-auto rounded-full bg-adv-teal/20 px-1.5 py-0.5 text-xs font-semibold text-adv-teal"
+      aria-label={`${count} draft evidence pack${count === 1 ? '' : 's'}`}
+    >
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
 function PortalInboxBadge() {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -2135,7 +2170,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Evidence Packs'}
+          {!sidebarCollapsed && (
+            <>
+              <span className="flex-1">Evidence Packs</span>
+              <EvidencePackDraftBadge />
+            </>
+          )}
         </NavLinkWithStar>
 
         <NavLinkWithStar
