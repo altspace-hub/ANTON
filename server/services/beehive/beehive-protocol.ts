@@ -233,12 +233,22 @@ export async function createBeehiveProtocol(db: DatabaseAdapter) {
           await applyConclude(envelope as BeehiveMessage<ConcludePayload>);
           applied = true; break;
         case 'hive:state_sync':
+          await applyStateSync(envelope as BeehiveMessage<StateSyncPayload>);
+          applied = true; break;
         case 'hive:heartbeat':
+          await applyHeartbeat(envelope.hive_id, envelope.sender, envelope.timestamp);
+          applied = true; break;
         case 'hive:synthesis_draft':
+          await applySynthesisDraft(envelope as BeehiveMessage<SynthesisDraftPayload>);
+          applied = true; break;
         case 'hive:approve':
+          await applyApproval(envelope.hive_id, envelope.sender, 'approved', null);
+          applied = true; break;
         case 'hive:dissent':
+          await applyApproval(envelope.hive_id, envelope.sender, 'dissented', (envelope.payload as DissentPayload)?.content ?? null);
+          applied = true; break;
         default:
-          reason = 'Handler not implemented in v1 — message audited only';
+          reason = `Unknown message type '${String(envelope.type)}'`;
       }
     } catch (err) {
       return { ok: false, type: envelope.type, applied: false, reason: err instanceof Error ? err.message : String(err) };
@@ -417,8 +427,243 @@ export async function createBeehiveProtocol(db: DatabaseAdapter) {
     await state.updateHiveStatus(envelope.hive_id, 'concluded', envelope.timestamp);
   }
 
+  // ── Phase 4 completion appliers (audit improvement #5) ──────────────────
+
+  /**
+   * Reconcile local state from a Queen-authored full snapshot. Used when a
+   * participant (re)joins late or has gone offline long enough to miss
+   * broadcasts. Idempotent — everything upserts. Only accepted from the Queen.
+   */
+  async function applyStateSync(envelope: BeehiveMessage<StateSyncPayload>): Promise<void> {
+    const hive = await state.getHive(envelope.hive_id);
+    // Only accept state_sync from the current Queen (hive.created_by) if we
+    // already know the hive. If we don't, trust the snapshot — we're
+    // bootstrapping and have nothing to compare against yet.
+    if (hive && hive.created_by !== envelope.sender) {
+      throw new Error('state_sync rejected: sender is not the Queen of this hive');
+    }
+    const snap = envelope.payload;
+    if (!hive) await state.insertHive(snap.hive);
+    for (const p of snap.participants) {
+      const existing = await state.getParticipant(snap.hive.id, p.anton_contact_hash);
+      if (!existing) {
+        await state.addParticipant(snap.hive.id, {
+          anton_contact_hash: p.anton_contact_hash,
+          display_name: p.display_name,
+          role: p.role,
+          disclosure_policy: p.disclosure_policy,
+          invitation_status: p.invitation_status,
+          status: p.status,
+          joinedAt: p.joined_at ?? undefined,
+        });
+      } else {
+        await state.updateParticipantStatus(snap.hive.id, p.anton_contact_hash, {
+          invitation_status: p.invitation_status,
+          status: p.status,
+          disclosure_policy: p.disclosure_policy,
+          joined_at: p.joined_at ?? undefined,
+        });
+      }
+    }
+    for (const r of snap.rounds) {
+      await db.run(
+        `INSERT INTO beehive_rounds (hive_id, round_number, phase, started_at, ended_at, summary, consensus_temperature, contribution_count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (hive_id, round_number) DO UPDATE SET
+           phase = EXCLUDED.phase,
+           ended_at = COALESCE(EXCLUDED.ended_at, beehive_rounds.ended_at),
+           summary = COALESCE(EXCLUDED.summary, beehive_rounds.summary),
+           consensus_temperature = COALESCE(EXCLUDED.consensus_temperature, beehive_rounds.consensus_temperature),
+           contribution_count = GREATEST(beehive_rounds.contribution_count, EXCLUDED.contribution_count)`,
+        snap.hive.id, r.round_number, r.phase, r.started_at, r.ended_at ?? null,
+        r.summary ?? null, r.consensus_temperature ?? null, r.contribution_count ?? 0,
+      );
+    }
+    if (snap.output) {
+      await db.run(
+        `INSERT INTO beehive_outputs (id, hive_id, output_type, synthesis_text, dissents, reasoning_trail, convergence_path, participant_approvals, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (hive_id) DO UPDATE SET
+           synthesis_text = EXCLUDED.synthesis_text,
+           dissents = EXCLUDED.dissents,
+           reasoning_trail = EXCLUDED.reasoning_trail,
+           convergence_path = EXCLUDED.convergence_path,
+           participant_approvals = EXCLUDED.participant_approvals`,
+        snap.output.id, snap.hive.id, snap.output.output_type, snap.output.synthesis_text,
+        JSON.stringify(snap.output.dissents ?? []),
+        JSON.stringify(snap.output.reasoning_trail ?? []),
+        JSON.stringify(snap.output.convergence_path ?? []),
+        JSON.stringify(snap.output.participant_approvals ?? {}),
+        snap.output.created_at,
+      );
+    }
+  }
+
+  async function applyHeartbeat(hiveId: string, sender: string, _timestamp: string): Promise<void> {
+    // Presence signal — just bump last_active_at. The column already defaults
+    // to NOW() on any participant update so we piggyback on that.
+    await db.run(
+      `UPDATE beehive_participants SET last_active_at = NOW()
+       WHERE hive_id = ? AND anton_contact_hash = ?`,
+      hiveId, sender,
+    );
+  }
+
+  /**
+   * Queen-authored synthesis draft arriving at a participant. Upserts
+   * beehive_outputs so the hive's single output row progressively fills out:
+   * draft text now, approvals later, final dissents/reasoning at conclude.
+   */
+  async function applySynthesisDraft(envelope: BeehiveMessage<SynthesisDraftPayload>): Promise<void> {
+    const hive = await state.getHive(envelope.hive_id);
+    if (hive && hive.created_by !== envelope.sender) {
+      throw new Error('synthesis_draft rejected: only the Queen may author drafts');
+    }
+    const d = envelope.payload;
+    await db.run(
+      `INSERT INTO beehive_outputs (id, hive_id, output_type, synthesis_text, dissents, reasoning_trail, convergence_path, participant_approvals, created_at)
+       VALUES (?, ?, ?, ?, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '{}'::jsonb, ?)
+       ON CONFLICT (hive_id) DO UPDATE SET
+         synthesis_text = EXCLUDED.synthesis_text,
+         output_type = EXCLUDED.output_type`,
+      d.id, envelope.hive_id, d.output_type ?? 'synthesis_report',
+      d.draft_text, d.created_at ?? envelope.timestamp,
+    );
+    await state.updateHiveStatus(envelope.hive_id, 'converging');
+  }
+
+  /**
+   * Record a participant's stance on the current synthesis draft. Uses
+   * jsonb_set so concurrent approvals from multiple peers don't clobber each
+   * other's entries. On dissent we also append a DissentRecord to the
+   * dissents[] array for the audit trail.
+   */
+  async function applyApproval(
+    hiveId: string,
+    senderHash: string,
+    stance: 'approved' | 'dissented' | 'abstained',
+    dissentContent: string | null,
+  ): Promise<void> {
+    // Ensure an output row exists — approvals can in principle arrive before
+    // the draft is persisted locally (reorder on the wire).
+    await db.run(
+      `INSERT INTO beehive_outputs (id, hive_id, output_type, synthesis_text, dissents, reasoning_trail, convergence_path, participant_approvals, created_at)
+       VALUES (?, ?, 'synthesis_report', NULL, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '{}'::jsonb, NOW())
+       ON CONFLICT (hive_id) DO NOTHING`,
+      `bh_out_${hiveId}`, hiveId,
+    );
+    await db.run(
+      `UPDATE beehive_outputs
+         SET participant_approvals = jsonb_set(
+               COALESCE(participant_approvals, '{}'::jsonb),
+               ARRAY[?::text],
+               to_jsonb(?::text),
+               true
+             )
+       WHERE hive_id = ?`,
+      senderHash, stance, hiveId,
+    );
+    if (stance === 'dissented' && dissentContent) {
+      const participant = await state.getParticipant(hiveId, senderHash);
+      const record = {
+        contributor_hash: senderHash,
+        contributor_display_name: participant?.display_name ?? senderHash,
+        content: dissentContent,
+        references_contributions: [],
+        created_at: new Date().toISOString(),
+      };
+      await db.run(
+        `UPDATE beehive_outputs
+           SET dissents = COALESCE(dissents, '[]'::jsonb) || to_jsonb(?::json)
+         WHERE hive_id = ?`,
+        JSON.stringify(record), hiveId,
+      );
+    }
+  }
+
+  // ── Phase 4 outbound helpers ─────────────────────────────────────────────
+
+  /**
+   * 1:1 send — used for state_sync where the Queen targets a specific peer
+   * rather than broadcasting. Falls through to the same encryption +
+   * message-queue path as `broadcast` but with a single recipient.
+   */
+  async function sendToTarget<P>(hiveId: string, type: BeehiveMessageType, payload: P, targetHash: string): Promise<void> {
+    const identity = await getLocalIdentityFull();
+    if (!identity) throw new Error('Local community identity not activated — cannot send');
+    const envelope = await buildEnvelope(hiveId, type, payload, identity.contact_hash, identity.private_key_encrypted);
+    await auditLog(hiveId, envelope);
+
+    const { createMessageQueueService } = await import('../message-queue-service.js');
+    const queue = await createMessageQueueService(db);
+    const myKeys = await getMyX25519Keys(db);
+    if (!myKeys) throw new Error('Local X25519 key missing — run identity activation');
+    const peerPubKey = await getPeerX25519PublicKey(db, targetHash);
+    if (!peerPubKey) throw new Error(`Peer ${targetHash} has no X25519 public key`);
+
+    const sharedSecret = deriveSharedSecret(myKeys.privateKeyHex, peerPubKey);
+    const aad = `${identity.contact_hash}:${targetHash}`;
+    const innerNonce = randomUUID();
+    const innerTimestamp = Date.now();
+    const plaintext = JSON.stringify({
+      subject: `[beehive] ${type}`, body: '',
+      messageType: 'beehive_message', payload: envelope,
+      nonce: innerNonce, timestamp: innerTimestamp,
+    });
+    const encrypted = encryptMessage(plaintext, sharedSecret, aad);
+    const encryptedPayload = JSON.stringify({ ...encrypted, nonce: innerNonce, timestamp: innerTimestamp });
+
+    const mailId = `cm_beehive_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    await db.run(
+      `INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, folder, message_type, payload, delivery_status)
+       VALUES (?, ?, ?, ?, ?, 'sent', 'beehive_message', ?, 'pending')`,
+      mailId, identity.contact_hash, targetHash,
+      '[encrypted]', '[encrypted]', JSON.stringify(envelope),
+    );
+    await queue.enqueueMessage(mailId, targetHash, encryptedPayload);
+  }
+
+  /** Queen-only. Sends the full state snapshot to one target (typically a late-joining participant). */
+  async function sendStateSync(hiveId: string, targetHash: string): Promise<void> {
+    const snap = await state.loadFullState(hiveId);
+    if (!snap) throw new Error('Hive not found');
+    await sendToTarget<StateSyncPayload>(hiveId, 'hive:state_sync', snap as StateSyncPayload, targetHash);
+  }
+
+  /** Any participant. Cheap presence signal — no payload fields of note. */
+  async function sendHeartbeat(hiveId: string): Promise<void> {
+    await broadcast<HeartbeatPayload>(hiveId, 'hive:heartbeat', { sent_at: new Date().toISOString() });
+  }
+
+  /** Queen-only. Broadcasts the proposed synthesis for participants to review. */
+  async function broadcastSynthesisDraft(hiveId: string, draftText: string, outputType: import('./types.js').OutputFormat = 'synthesis_report'): Promise<void> {
+    const payload: SynthesisDraftPayload = {
+      id: `bh_out_${hiveId}`,
+      output_type: outputType,
+      draft_text: draftText,
+      created_at: new Date().toISOString(),
+    };
+    await broadcast<SynthesisDraftPayload>(hiveId, 'hive:synthesis_draft', payload);
+  }
+
+  /** Any participant. Record an approve or formal dissent on the current draft. */
+  async function sendApproval(hiveId: string, stance: 'approved' | 'dissented', dissentContent?: string): Promise<void> {
+    if (stance === 'approved') {
+      await broadcast<Record<string, never>>(hiveId, 'hive:approve', {});
+    } else {
+      await broadcast<DissentPayload>(hiveId, 'hive:dissent', {
+        content: dissentContent ?? 'Formal dissent (no reason provided)',
+      });
+    }
+  }
+
   return {
     broadcast,
+    sendToTarget,
+    sendStateSync,
+    sendHeartbeat,
+    broadcastSynthesisDraft,
+    sendApproval,
     handleInbound,
     auditLog,
     buildEnvelope,
@@ -478,4 +723,32 @@ export interface ConcludePayload {
   convergence_path?: import('./types.js').ConvergencePathStep[];
   participant_approvals?: Record<string, 'approved' | 'dissented' | 'abstained'>;
   created_at?: string;
+}
+
+// ── Phase 4 completion payloads (audit improvement #5) ─────────────────────
+
+/** Queen-authored full snapshot used by hive:state_sync. Mirrors LocalHiveState. */
+export interface StateSyncPayload {
+  hive: import('./types.js').Hive;
+  participants: import('./types.js').HiveParticipant[];
+  rounds: import('./types.js').DeliberationRound[];
+  contributions_count: number;
+  output: import('./types.js').HiveOutput | null;
+}
+
+export interface HeartbeatPayload {
+  /** ISO timestamp on send. Redundant with envelope.timestamp but useful when diagnosing clock skew. */
+  sent_at: string;
+}
+
+export interface SynthesisDraftPayload {
+  id: string;
+  output_type: import('./types.js').OutputFormat;
+  draft_text: string;
+  created_at?: string;
+}
+
+export interface DissentPayload {
+  content: string;
+  references_contributions?: string[];
 }
