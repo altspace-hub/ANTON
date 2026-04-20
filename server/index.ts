@@ -368,6 +368,20 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
+// Portals transparency-log freshness check (audit #3c). Warn when the
+// registry's Signed Tree Head stops advancing — registry down, withheld
+// log, or network broken. Edge-triggered so we don't spam logs.
+if (process.env.PORTAL_STH_MONITOR_DISABLED !== 'true') {
+  try {
+    const { createRegistryClient } = await import('./services/registry-client/index.js');
+    const { startSthGapMonitor } = await import('./services/registry-client/sth-gap-check.js');
+    const sthClient = createRegistryClient(db, { baseUrl: process.env.PORTAL_REGISTRY_URL ?? 'https://registry.anton.space/v1' });
+    startSthGapMonitor(sthClient);
+  } catch (e) {
+    console.warn('[portals] STH monitor failed to start:', e instanceof Error ? e.message : e);
+  }
+}
+
 // API routes — auth routes and config must be registered BEFORE the auth middleware
 app.use('/api', await createAuthRoutes(db));
 

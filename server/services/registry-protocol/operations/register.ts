@@ -13,6 +13,7 @@
 import { z } from 'zod';
 
 import { buildEnvelope, signEnvelope, type SignedEnvelope } from '../envelope.js';
+import { hasRiskyMixedScript } from '../homoglyph.js';
 
 // ── Categories per Capability Schema §10.1 ─────────────────────────────────
 
@@ -53,6 +54,14 @@ export function validatePortalName(rawName: string): string {
   }
   if (/\.\.|\.-|-\./.test(name)) {
     throw new Error('E_NAME_INVALID: name must not contain consecutive `.` or `.-` or `-.`');
+  }
+  // Homoglyph defence (audit #3a) — reject Latin mixed with confusable scripts
+  // at build-time so a client can't even attempt to register 'gооgle' with
+  // Cyrillic 'о'. Server also runs computeSkeleton() to enforce uniqueness
+  // against already-registered skeletons.
+  const scriptCheck = hasRiskyMixedScript(name);
+  if (scriptCheck.risky) {
+    throw new Error(`E_NAME_CONFUSABLE: ${scriptCheck.reason}`);
   }
   return name;
 }
