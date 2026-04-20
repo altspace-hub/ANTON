@@ -14,6 +14,7 @@
 
 import PDFDocument from 'pdfkit';
 import type { AssembledPack } from './assembler.js';
+import { mapCompliance, type ComplianceMapping, type FrameworkResult } from './compliance-mapper.js';
 import { childLogger } from '../../lib/logger.js';
 
 const log = childLogger('evidence-pack-pdf');
@@ -48,7 +49,17 @@ export function generateEvidencePackPdf(assembled: AssembledPack): Promise<Buffe
     doc.on('error', reject);
 
     // ── Cover ───────────────────────────────────────────────────────────
-    drawCover(doc, assembled);
+    const compliance = mapCompliance(
+      assembled,
+      assembled.pack.compliance_frameworks,
+      assembled.pack.compliance_gaps,
+    );
+    drawCover(doc, assembled, compliance);
+
+    // ── Compliance coverage (always before ToC so regulators see gaps
+    //    before they see the item list) ─────────────────────────────────
+    doc.addPage();
+    drawCompliance(doc, compliance);
 
     // ── Table of contents (always starts on a new page) ────────────────
     doc.addPage();
@@ -78,7 +89,7 @@ export function generateEvidencePackPdf(assembled: AssembledPack): Promise<Buffe
 
 // ── Sections ───────────────────────────────────────────────────────────────
 
-function drawCover(doc: PDFKit.PDFDocument, a: AssembledPack): void {
+function drawCover(doc: PDFKit.PDFDocument, a: AssembledPack, compliance: ComplianceMapping): void {
   const { width } = doc.page;
 
   doc.fillColor(COLOR.accent).font(FONT.bold).fontSize(10)
@@ -117,6 +128,44 @@ function drawCover(doc: PDFKit.PDFDocument, a: AssembledPack): void {
     doc.text(`  • ${n} × ${t}`);
   }
 
+  // Compliance summary on the cover (spec §11.3 acceptance: "gaps either
+  // filled, justified, or explicitly accepted with rationale visible on the
+  // cover page").
+  doc.moveDown(1.2);
+  doc.fillColor(COLOR.ink).font(FONT.bold).fontSize(11).text('Compliance coverage');
+  doc.moveDown(0.3);
+  doc.fillColor(COLOR.ink).font(FONT.regular).fontSize(10);
+  for (const fr of compliance.frameworks) {
+    const open = fr.gapCount - fr.acceptedGapCount;
+    const tone = open > 0 ? COLOR.warn : COLOR.accent;
+    doc.fillColor(tone).text(`  • ${fr.label}`);
+    doc.fillColor(COLOR.gray).fontSize(9)
+      .text(`    ${fr.evidencedCount} evidenced · ${open} open gaps · ${fr.acceptedGapCount} accepted gaps · ${fr.notApplicableCount} not applicable`);
+    doc.fontSize(10);
+  }
+
+  // Accepted-gap list — surfaced on the cover so regulators see exactly
+  // which gaps the owner explicitly accepted.
+  const accepted = compliance.frameworks.flatMap((fr) =>
+    fr.points.filter((p) => p.acceptance).map((p) => ({ fr, p })),
+  );
+  if (accepted.length > 0) {
+    doc.moveDown(0.8);
+    doc.fillColor(COLOR.warn).font(FONT.bold).fontSize(10).text('Accepted gaps (owner has documented why these are not evidenced):');
+    doc.moveDown(0.2);
+    doc.fillColor(COLOR.ink).font(FONT.regular).fontSize(9);
+    for (const { p } of accepted.slice(0, 6)) {
+      doc.text(`  • ${p.label}`);
+      doc.fillColor(COLOR.gray).fontSize(8)
+        .text(`    "${truncate(p.acceptance!.rationale, 110)}"`);
+      doc.fillColor(COLOR.ink).fontSize(9);
+    }
+    if (accepted.length > 6) {
+      doc.fillColor(COLOR.gray).fontSize(8).text(`  … and ${accepted.length - 6} more — see compliance section`);
+      doc.fillColor(COLOR.ink).fontSize(9);
+    }
+  }
+
   // Disclaimer (verbatim per spec §9.4)
   doc.moveDown(2);
   const disclaimerY = doc.y;
@@ -136,6 +185,56 @@ function drawCover(doc: PDFKit.PDFDocument, a: AssembledPack): void {
       { width: width - 2 * PAGE.margin - 24, align: 'left' },
     );
   void metaTop;
+}
+
+function drawCompliance(doc: PDFKit.PDFDocument, mapping: ComplianceMapping): void {
+  doc.fillColor(COLOR.ink).font(FONT.bold).fontSize(16).text('Compliance Coverage');
+  doc.moveDown(0.3);
+  doc.fillColor(COLOR.gray).font(FONT.regular).fontSize(9)
+    .text(`Per-framework mapping. ${mapping.totalGaps} open gap(s) across all frameworks · ${mapping.totalAccepted} accepted gap(s).`);
+  doc.moveDown(0.5);
+  doc.moveTo(PAGE.margin, doc.y).lineTo(doc.page.width - PAGE.margin, doc.y)
+    .strokeColor(COLOR.rule).lineWidth(0.5).stroke();
+  doc.moveDown(0.5);
+
+  for (const fr of mapping.frameworks) {
+    drawFramework(doc, fr);
+    doc.moveDown(0.8);
+  }
+}
+
+function drawFramework(doc: PDFKit.PDFDocument, fr: FrameworkResult): void {
+  doc.fillColor(COLOR.ink).font(FONT.bold).fontSize(12).text(fr.label);
+  doc.fillColor(COLOR.gray).font(FONT.regular).fontSize(8).text(fr.citation);
+  doc.moveDown(0.2);
+  doc.fillColor(COLOR.gray).fontSize(9)
+    .text(`${fr.evidencedCount} evidenced · ${fr.gapCount - fr.acceptedGapCount} open gaps · ${fr.acceptedGapCount} accepted gaps · ${fr.notApplicableCount} N/A`);
+  doc.moveDown(0.4);
+
+  for (const p of fr.points) {
+    if (doc.y > doc.page.height - 80) doc.addPage();
+    const icon = p.status === 'evidenced' ? '✓'
+      : p.status === 'not_applicable' ? '·'
+      : p.acceptance ? '!' : '✗';
+    const tone = p.status === 'evidenced' ? COLOR.accent
+      : p.status === 'not_applicable' ? COLOR.gray
+      : p.acceptance ? COLOR.warn : '#B91C1C';
+    doc.fillColor(tone).font(FONT.bold).fontSize(10)
+      .text(`${icon}  ${p.label}`, { continued: false });
+    if (p.notes) {
+      doc.fillColor(COLOR.gray).font(FONT.regular).fontSize(8).text(`    ${truncate(p.notes, 200)}`);
+    }
+    if (p.acceptance) {
+      doc.fillColor(COLOR.warn).font(FONT.regular).fontSize(8)
+        .text(`    Accepted by ${p.acceptance.acceptedBy} (${isoToLocale(p.acceptance.acceptedAt)}):`);
+      doc.fillColor(COLOR.ink).fontSize(8)
+        .text(`    "${truncate(p.acceptance.rationale, 240)}"`);
+    } else if (p.evidence.length > 0) {
+      doc.fillColor(COLOR.gray).font(FONT.regular).fontSize(8)
+        .text(`    Evidence: ${p.evidence.length} item(s) — ${p.evidence.slice(0, 3).map((e) => e.type).join(', ')}${p.evidence.length > 3 ? '…' : ''}`);
+    }
+    doc.moveDown(0.25);
+  }
 }
 
 function drawToc(doc: PDFKit.PDFDocument, a: AssembledPack): void {

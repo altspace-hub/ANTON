@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, ChevronLeft, ArrowRight, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, ArrowRight, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 interface SessionRow { id: string; title: string; module_id: string; created_at: string }
@@ -51,6 +51,47 @@ export default function EvidencePackBuilderPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Phase 3 — compliance mapping after collect.
+  interface PointResult {
+    id: string; label: string;
+    status: 'evidenced' | 'not_applicable' | 'gap';
+    notes?: string;
+    acceptance?: { rationale: string; acceptedAt: string; acceptedBy: string };
+  }
+  interface FrameworkResult {
+    id: string; label: string; citation: string;
+    points: PointResult[];
+    evidencedCount: number; gapCount: number;
+    acceptedGapCount: number; notApplicableCount: number;
+  }
+  const [mapping, setMapping] = useState<{ frameworks: FrameworkResult[]; totalGaps: number; totalAccepted: number } | null>(null);
+
+  async function refreshMapping(pid: string) {
+    const res = await fetchWithAuth(`/api/evidence-pack/${pid}/preview`, { method: 'POST' });
+    if (res.ok) {
+      const j = await res.json();
+      setMapping(j.mapping);
+    }
+  }
+
+  async function acceptGap(pointId: string, rationale: string) {
+    if (!packId) return;
+    const res = await fetchWithAuth(`/api/evidence-pack/${packId}/gap-acceptance`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pointId, rationale }),
+    });
+    if (res.ok) await refreshMapping(packId);
+  }
+
+  async function clearGapAcceptance(pointId: string) {
+    if (!packId) return;
+    const res = await fetchWithAuth(`/api/evidence-pack/${packId}/gap-acceptance/${encodeURIComponent(pointId)}`, {
+      method: 'DELETE',
+    });
+    if (res.ok || res.status === 204) await refreshMapping(packId);
+  }
 
   // Lookups for the scope picker
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -109,6 +150,8 @@ export default function EvidencePackBuilderPage() {
         itemsByType: collectJson.itemsByType,
         manifestHash: collectJson.manifestHash,
       });
+      // Run the compliance mapper so the user sees gaps before finalising.
+      await refreshMapping(newId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -278,16 +321,27 @@ export default function EvidencePackBuilderPage() {
                 <div className="text-xs text-adv-gray">
                   Manifest hash: <code className="text-adv-off-white break-all">{collectInfo.manifestHash}</code>
                 </div>
+
+                {/* Compliance mapping + gap UI */}
+                {mapping && (
+                  <ComplianceGapPanel
+                    mapping={mapping}
+                    onAcceptGap={acceptGap}
+                    onClearGap={clearGapAcceptance}
+                  />
+                )}
+
                 <button
                   onClick={finalise}
                   disabled={busy}
                   className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  Finalise (lock contents)
+                  Finalise (lock + sign)
                 </button>
                 <p className="text-xs text-adv-gray">
-                  Once finalised, contents are immutable. Phase 2 will add Ed25519 signing here.
+                  Once finalised, contents are immutable + signed with the instance Ed25519 key.
+                  Open gaps below will be flagged on the pack cover; accepted gaps will appear with their rationale.
                 </p>
               </div>
             )}
@@ -369,6 +423,142 @@ function ProjectPicker({ projects, selectedId, onSelect }: { projects: ProjectRo
         </li>
       ))}
     </ul>
+  );
+}
+
+interface PointResult {
+  id: string; label: string;
+  status: 'evidenced' | 'not_applicable' | 'gap';
+  notes?: string;
+  acceptance?: { rationale: string; acceptedAt: string; acceptedBy: string };
+}
+interface FrameworkResult {
+  id: string; label: string; citation: string;
+  points: PointResult[];
+  evidencedCount: number; gapCount: number;
+  acceptedGapCount: number; notApplicableCount: number;
+}
+
+function ComplianceGapPanel({
+  mapping, onAcceptGap, onClearGap,
+}: {
+  mapping: { frameworks: FrameworkResult[]; totalGaps: number; totalAccepted: number };
+  onAcceptGap: (pointId: string, rationale: string) => Promise<void>;
+  onClearGap: (pointId: string) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [rationale, setRationale] = useState('');
+
+  const allOpenGaps = mapping.frameworks.flatMap((fr) =>
+    fr.points.filter((p) => p.status === 'gap' && !p.acceptance).map((p) => ({ fr, p })),
+  );
+  const allAccepted = mapping.frameworks.flatMap((fr) =>
+    fr.points.filter((p) => !!p.acceptance).map((p) => ({ fr, p })),
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-medium text-adv-off-white">Compliance check</div>
+
+      {mapping.frameworks.map((fr) => (
+        <div key={fr.id} className="rounded-lg border border-border bg-adv-dark p-3 space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-adv-off-white">{fr.label}</span>
+            <span className="text-adv-gray">
+              <span className="text-adv-green">{fr.evidencedCount} ✓</span>
+              {' · '}
+              <span className={fr.gapCount - fr.acceptedGapCount > 0 ? 'text-adv-gold' : 'text-adv-gray'}>
+                {fr.gapCount - fr.acceptedGapCount} open
+              </span>
+              {' · '}
+              <span className="text-adv-gray">{fr.acceptedGapCount} accepted</span>
+              {' · '}
+              <span className="text-adv-gray/60">{fr.notApplicableCount} N/A</span>
+            </span>
+          </div>
+        </div>
+      ))}
+
+      {allOpenGaps.length > 0 && (
+        <div className="rounded-lg border border-adv-gold/40 bg-adv-gold/5 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-adv-gold mb-2">
+            <AlertTriangle className="h-4 w-4" />
+            {allOpenGaps.length} open gap{allOpenGaps.length === 1 ? '' : 's'} — accept with rationale or close the builder and add evidence
+          </div>
+          <ul className="space-y-2">
+            {allOpenGaps.map(({ fr, p }) => (
+              <li key={p.id} className="rounded bg-adv-dark p-2 text-xs">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <div>
+                    <div className="font-medium text-adv-off-white">{p.label}</div>
+                    <div className="text-adv-gray/80">{fr.label}</div>
+                  </div>
+                  {editing === p.id ? null : (
+                    <button
+                      onClick={() => { setEditing(p.id); setRationale(''); }}
+                      className="px-2 py-1 rounded text-xs border border-adv-gold/40 text-adv-gold hover:bg-adv-gold/10 transition flex-shrink-0"
+                    >Accept gap</button>
+                  )}
+                </div>
+                {p.notes && <div className="text-adv-gray italic mb-2">{p.notes}</div>}
+                {editing === p.id && (
+                  <div className="space-y-2">
+                    <textarea
+                      value={rationale} onChange={(e) => setRationale(e.target.value)}
+                      placeholder="Why is this gap acceptable? This rationale will appear on the pack cover page."
+                      className="w-full h-16 rounded-lg border border-border bg-adv-card px-2 py-1.5 text-xs focus:border-adv-teal focus:outline-none"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          if (!rationale.trim()) return;
+                          await onAcceptGap(p.id, rationale.trim());
+                          setEditing(null);
+                        }}
+                        disabled={!rationale.trim()}
+                        className="px-2 py-1 rounded bg-adv-teal text-adv-dark text-xs font-medium disabled:opacity-50"
+                      >Save acceptance</button>
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="px-2 py-1 rounded border border-border text-xs"
+                      >Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {allAccepted.length > 0 && (
+        <div className="rounded-lg border border-border bg-adv-card p-3">
+          <div className="text-xs font-medium text-adv-gray mb-2">Accepted gaps (visible on cover):</div>
+          <ul className="space-y-1.5">
+            {allAccepted.map(({ p }) => (
+              <li key={p.id} className="text-xs">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-adv-off-white">{p.label}</div>
+                    <div className="text-adv-gray italic mt-0.5">"{p.acceptance!.rationale}"</div>
+                  </div>
+                  <button
+                    onClick={() => void onClearGap(p.id)}
+                    className="text-adv-gray hover:text-adv-red text-xs flex-shrink-0"
+                  >Clear</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {mapping.totalGaps === 0 && allAccepted.length === 0 && (
+        <div className="text-xs text-adv-green flex items-center gap-1">
+          <CheckCircle2 className="h-3.5 w-3.5" /> All declared frameworks fully evidenced.
+        </div>
+      )}
+    </div>
   );
 }
 
