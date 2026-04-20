@@ -120,7 +120,7 @@ export async function createTimeIntelligence(db: DatabaseAdapter) {
         notes?: string;
       },
       _userId: string
-    ): Deadline {
+    ): Promise<Deadline> {
       const id = randomUUID();
       const preparationDays = data.preparation_days ?? 0;
       const reviewDays = data.review_days ?? 0;
@@ -219,7 +219,7 @@ export async function createTimeIntelligence(db: DatabaseAdapter) {
         parent_id?: string | null;
         kanban_column?: string;
       }
-    ): Deadline[] {
+    ): Promise<Deadline[]> {
       let query = 'SELECT * FROM deadlines WHERE 1=1';
       const params: unknown[] = [];
 
@@ -407,12 +407,14 @@ export async function createTimeIntelligence(db: DatabaseAdapter) {
     async reorderDeadlines(updates: Array<{ id: string; sort_order: number; kanban_column?: string }>): Promise<void> {
 
       const now = new Date().toISOString();
-      const txn = await db.transaction(async (tx) => {
+      // db.transaction runs the callback inside a TX and returns whatever the
+      // callback returns (void here). Previously this awaited then tried to
+      // call the result — ts void-not-callable error + logic-already-done bug.
+      await db.transaction(async (tx) => {
         for (const u of updates) {
-          await db.run('UPDATE deadlines SET sort_order = ?, kanban_column = COALESCE(?, kanban_column), updated_at = ? WHERE id = ?', u.sort_order, u.kanban_column ?? null, now, u.id);
+          await tx.run('UPDATE deadlines SET sort_order = ?, kanban_column = COALESCE(?, kanban_column), updated_at = ? WHERE id = ?', u.sort_order, u.kanban_column ?? null, now, u.id);
         }
       });
-      txn();
     },
 
     async createRhythm(data: {

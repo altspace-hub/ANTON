@@ -168,7 +168,7 @@ export async function keywordSearch(
   query: string,
   collectionIds: string[],
   limit: number = 10
-): SearchResult[] {
+): Promise<SearchResult[]> {
   // Deduplicated meaningful keywords from the query
   const queryWords = [...new Set(
     query.toLowerCase()

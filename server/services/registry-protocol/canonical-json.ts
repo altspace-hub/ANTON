@@ -22,7 +22,15 @@ import { canonify } from '@truestamp/canonify';
  * deterministic number serialisation, and RFC 8259 string escaping.
  */
 export function canonicalize(value: unknown): string {
-  return canonify(value);
+  // canonify returns undefined for values it can't canonicalise (e.g. a bare
+  // function or symbol). For our call sites that would be a programmer error
+  // — surface it loudly rather than letting an `undefined` leak into
+  // signatures / hashes / audit logs.
+  const canonical = canonify(value);
+  if (canonical === undefined) {
+    throw new Error('canonicalize: value is not JSON-canonicalisable (functions, symbols, or cyclic refs?)');
+  }
+  return canonical;
 }
 
 /**

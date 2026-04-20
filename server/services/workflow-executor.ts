@@ -301,7 +301,7 @@ async function executeHeadlessStep(
       } else {
         // Regular filesystem connection
         const manager = await createConnectionManager(db);
-        const conn = manager.get(connId);
+        const conn = await manager.get(connId);
         if (!conn) throw new Error(`Connection not found: ${connId}`);
         if (conn.type !== 'filesystem') throw new Error('Connection is not a filesystem connection');
         const cfg = conn.config as Record<string, unknown>;
@@ -352,7 +352,7 @@ async function executeHeadlessStep(
       if (!step.config?.connectionId) throw new Error('API call step requires connectionId');
 
       const manager = await createConnectionManager(db);
-      const conn = manager.get(step.config.connectionId);
+      const conn = await manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
       if (conn.type !== 'api') throw new Error(`Connection is not an API connection`);
 
@@ -415,7 +415,7 @@ async function executeHeadlessStep(
       if (!step.config?.connectionId) throw new Error('Database query step requires connectionId');
 
       const manager = await createConnectionManager(db);
-      const conn = manager.get(step.config.connectionId);
+      const conn = await manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
 
       const cfg = conn.config as Record<string, unknown>;
@@ -627,15 +627,16 @@ async function executeHeadlessStep(
 
       // Use cost-efficient model for headless LLM calls
       const { callChat } = await import('./provider-router.js');
+      const modelId = (cfg.model as string) || 'claude-haiku-4-5-20251001';
       const result = await callChat({
-        model: (cfg.model as string) || 'claude-haiku-4-5-20251001',
-        systemPrompt,
+        model: modelId,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
         maxTokens: (cfg.maxTokens as number) || 4096,
         thinkingLevel: (cfg.thinking as string) || undefined,
       });
 
-      return { output: { [outputVar]: result.text, model: result.model } };
+      return { output: { [outputVar]: result.text, model: modelId } };
     }
 
     case 'parallel': {
@@ -685,7 +686,7 @@ async function recordRun(
   scheduleId: number,
   status: string,
   errorMessage?: string
-): void {
+): Promise<void> {
   try {
     await db.run(`
       INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, error_message)
@@ -702,7 +703,7 @@ async function updateRun(
   runId: string,
   status: string,
   errorMessage?: string
-): void {
+): Promise<void> {
   try {
     await db.run(`
       UPDATE workflow_runs SET status = ?, completed_at = NOW(), error_message = ? WHERE id = ?

@@ -12,7 +12,7 @@ export interface SecurityEvent {
  * Log security events to the database for monitoring and alerting.
  * Creates immutable audit trail of all security-relevant events.
  */
-export async function logSecurityEvent(db: Database, event: SecurityEvent): void {
+export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent): Promise<void> {
   try {
     await db.run(`
       INSERT INTO security_events (event_type, user_id, ip_address, details, severity, created_at)
@@ -29,12 +29,29 @@ export async function logSecurityEvent(db: Database, event: SecurityEvent): void
 }
 
 /**
- * Query recent security events for monitoring dashboard
+ * Query recent security events for the monitoring dashboard.
  */
-export function getRecentSecurityEvents(db: Database, limit = 100): SecurityEvent[] {
+export async function getRecentSecurityEvents(db: DatabaseAdapter, limit = 100): Promise<SecurityEvent[]> {
   try {
-
-    return events as SecurityEvent[];
+    const rows = await db.all<{
+      event_type: SecurityEvent['eventType'];
+      user_id: string | null;
+      ip_address: string | null;
+      details: string;
+      severity: SecurityEvent['severity'];
+    }>(`
+      SELECT event_type, user_id, ip_address, details, severity
+      FROM security_events
+      ORDER BY created_at DESC
+      LIMIT ?
+    `, limit);
+    return rows.map(r => ({
+      eventType: r.event_type,
+      userId: r.user_id ?? undefined,
+      ipAddress: r.ip_address ?? undefined,
+      details: r.details,
+      severity: r.severity,
+    }));
   } catch (error) {
     console.error('[security-logger] Failed to query security events:', error);
     return [];
@@ -42,12 +59,12 @@ export function getRecentSecurityEvents(db: Database, limit = 100): SecurityEven
 }
 
 /**
- * Get security event statistics by type
+ * Get security event statistics by type, over a rolling window.
  */
-export async function getSecurityEventStats(db: Database, hoursBack = 24): Record<string, number> {
+export async function getSecurityEventStats(db: DatabaseAdapter, hoursBack = 24): Promise<Record<string, number>> {
   try {
     const since = new Date(Date.now() - hoursBack * 3600000).toISOString();
-    const stats = await db.all(`
+    const stats = await db.all<{ event_type: string; count: number | string }>(`
       SELECT event_type, COUNT(*) as count
       FROM security_events
       WHERE created_at > ?
@@ -55,7 +72,7 @@ export async function getSecurityEventStats(db: Database, hoursBack = 24): Recor
     `, since);
 
     return Object.fromEntries(
-      stats.map((s: any) => [s.event_type, s.count])
+      stats.map(s => [s.event_type, typeof s.count === 'string' ? Number(s.count) : s.count]),
     );
   } catch (error) {
     console.error('[security-logger] Failed to get security stats:', error);

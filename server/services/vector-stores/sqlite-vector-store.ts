@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { DatabaseAdapter } from '../db/database.js';
+import type { DatabaseAdapter } from '../../db/database.js';
 
 import { cosineSimilarity, deserializeVector, serializeVector } from '../embedding-adapter.js';
 

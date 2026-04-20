@@ -2,7 +2,7 @@
  * RAG Retriever -- given a query, returns the top-k most relevant chunks using BM25.
  */
 
-import type { DatabaseAdapter } from '../db/database.js';
+import type { DatabaseAdapter } from '../../db/database.js';
 import { bm25Score, tokenise, type BM25Corpus } from './bm25.js';
 
 export interface RetrievedChunk {
