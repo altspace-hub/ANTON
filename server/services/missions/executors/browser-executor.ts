@@ -29,6 +29,7 @@ import type { Mission, MissionTask } from '../types.js';
 import { childLogger } from '../../../lib/logger.js';
 import { createCredentialVault } from '../mission-credential-vault.js';
 import { createServicePackManager, type ServicePackWorkflowStep, type ServicePack } from '../service-pack-manager.js';
+import { executeApiWorkflow } from './service-pack-api-executor.js';
 
 const log = childLogger('mission-browser');
 
@@ -130,6 +131,19 @@ export async function executeBrowser(
   const timeoutMs = Math.min(config.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
   const headless = config.headless !== false;
   const maxElements = Math.min(config.max_extract_elements ?? DEFAULT_EXTRACT_ELEMENTS, MAX_EXTRACT_ELEMENTS);
+
+  // ── API-type packs skip Playwright entirely ─────────────────────────────
+  // Gmail / HubSpot / Notion Wave-1 packs run HTTP workflows via the
+  // dedicated api executor. The user still submits task_type='browser'
+  // (and picks the pack by service_id) — dispatch happens here based on
+  // the pack's declared interaction_type.
+  if (pack.interaction_type === 'api') {
+    const apiResult = await executeApiWorkflow({
+      db, mission, task, pack, resolvedSteps, credentialSecret, credentialType, totalTimeoutMs: timeoutMs,
+    });
+    await packMgr.recordWorkflowUse(pack.service_id, config.workflow_id, apiResult.success);
+    return apiResult;
+  }
 
   // ── Launch browser + run steps with overall timeout ─────────────────────
   const runPromise = runSteps({ pack, resolvedSteps, headless, maxElements, baseUrls, credentialSecret, credentialType });

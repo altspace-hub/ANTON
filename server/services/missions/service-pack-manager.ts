@@ -37,8 +37,21 @@ export interface ServicePackWorkflowStep {
   selector?: string;
   value?: string;
   url?: string;
-  /** Variable substitution: "${param_name}" replaced from invocation params */
+  /** HTTP method for api steps (default GET). */
+  method?: string;
+  /**
+   * Reference template — JSON-shaped body documented for LLM + humans.
+   * NOT executed by the runner (pseudocode like base64url(...) is allowed
+   * here). Use `body_template` for machine-executable bodies.
+   */
   template?: string;
+  /**
+   * Executable body template. JSON-compatible object where string leaves
+   * may contain `${param}` placeholders. The runner walks the tree and
+   * substitutes each string leaf, so values stay type-safe (no raw string
+   * concat into JSON).
+   */
+  body_template?: unknown;
   description?: string;
 }
 
@@ -249,7 +262,9 @@ export function createServicePackManager(db: DatabaseAdapter, options?: { packsD
       }
     }
 
-    // Substitute ${param_name} in step values + selectors + URLs
+    // Substitute ${param_name} in step values + selectors + URLs. Body
+    // templates are walked recursively so only string leaves get substituted —
+    // keeps JSON structure intact without risking injection into raw JSON.
     const resolved = workflow.steps.map(step => ({
       ...step,
       selector: substitute(step.selector, params),
@@ -258,6 +273,7 @@ export function createServicePackManager(db: DatabaseAdapter, options?: { packsD
       // becomes 'a%26b' instead of breaking the query string.
       url: substituteUrl(step.url, params),
       template: substitute(step.template, params),
+      body_template: step.body_template !== undefined ? substituteDeep(step.body_template, params) : undefined,
     }));
 
     return { pack, workflow, resolvedSteps: resolved };
@@ -344,4 +360,27 @@ function substitute(value: string | undefined, params: Record<string, string>): 
 function substituteUrl(value: string | undefined, params: Record<string, string>): string | undefined {
   if (value == null) return value;
   return value.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => encodeURIComponent(params[key] ?? ''));
+}
+
+/**
+ * Walk a JSON-shaped value, substituting `${param}` in string leaves. Arrays
+ * and plain objects recurse; numbers/booleans/null pass through untouched.
+ * Guarantees the output stays structurally identical to the input — only
+ * string contents change. Safe for building HTTP request bodies without
+ * risking JSON injection via raw string concatenation.
+ */
+function substituteDeep(value: unknown, params: Record<string, string>): unknown {
+  if (typeof value === 'string') return substitute(value, params);
+  if (Array.isArray(value)) return value.map(v => substituteDeep(v, params));
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      // Keys can carry placeholders too (e.g. Notion's dynamic title property
+      // key). substitute() leaves keys without placeholders unchanged.
+      const resolvedKey = substitute(k, params) ?? k;
+      out[resolvedKey] = substituteDeep(v, params);
+    }
+    return out;
+  }
+  return value;
 }
