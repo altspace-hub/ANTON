@@ -215,6 +215,37 @@ Save into `design-export/screenshots/` with the suggested filenames.
 
 ---
 
+## 10b — Portals (5 captures — new pillar, high priority)
+
+Switch App Mode → Portals. This pillar has its own left sidebar, so capture one with the sidebar expanded.
+
+- [ ] **Portals landing**
+  Route: `/portals`
+  State: With at least one portal already built so the recent-portals list has content.
+  File: `screenshots/10b-portals-landing.png`
+
+- [ ] **Portal builder — phase view**
+  Route: `/portals/build/:portalId`
+  State: Mid-walkthrough on the Capabilities phase so the verb-picker + phase indicator are visible.
+  File: `screenshots/10b-portal-builder.png`
+
+- [ ] **Portal discover**
+  Route: `/portals/discover`
+  State: After a search with at least 3 results so trust-bundle badges + capability chips show.
+  File: `screenshots/10b-portal-discover.png`
+
+- [ ] **Portal inbox**
+  Route: `/portals/inbox`
+  State: With one pending capability invocation and one past-approved item.
+  File: `screenshots/10b-portal-inbox.png`
+
+- [ ] **Portal visitor (public)**
+  Route: `/p/:namespace/:name`
+  State: Log out first so the unauthenticated render is captured. Pick a template-based portal for the richest visual.
+  File: `screenshots/10b-portal-visitor.png`
+
+---
+
 ## 11 — Payments / FutureChain (2 captures)
 
 - [ ] **FC dashboard**
