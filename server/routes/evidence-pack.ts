@@ -29,6 +29,7 @@ import { collectForScope, type ScopeDefinition } from '../services/evidence-pack
 import { assemblePack, finalisePack, readPackRow, type AssembledPack } from '../services/evidence-pack/assembler.js';
 import { bundleEvidencePackToAnton } from '../services/evidence-pack/bundler.js';
 import { generateEvidencePackPdf } from '../services/evidence-pack/pdf-layout.js';
+import { generateEvidencePackHtml } from '../services/evidence-pack/html-exporter.js';
 import { mapCompliance } from '../services/evidence-pack/compliance-mapper.js';
 
 const log = childLogger('evidence-pack-route');
@@ -37,7 +38,8 @@ const log = childLogger('evidence-pack-route');
 
 const sessionScopeSchema = z.object({ type: z.literal('session'), sessionId: z.string().min(1) });
 const projectScopeSchema = z.object({ type: z.literal('project'), projectId: z.string().min(1) });
-const scopeSchema = z.discriminatedUnion('type', [sessionScopeSchema, projectScopeSchema]);
+const missionScopeSchema = z.object({ type: z.literal('mission'), missionId: z.string().min(1) });
+const scopeSchema = z.discriminatedUnion('type', [sessionScopeSchema, projectScopeSchema, missionScopeSchema]);
 
 const createPackSchema = z.object({
   title: z.string().min(1).max(300),
@@ -48,7 +50,7 @@ const createPackSchema = z.object({
   notes: z.string().max(5000).optional(),
 });
 
-const exportFormatSchema = z.enum(['anton', 'pdf']);
+const exportFormatSchema = z.enum(['anton', 'pdf', 'jsonl', 'html']);
 
 const gapAcceptanceSchema = z.object({
   pointId: z.string().min(1).max(200),
@@ -143,7 +145,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const items = await db.all(
         `SELECT item_type, item_id, item_hash, item_summary, item_order,
-                regulatory_relevance
+                regulatory_relevance, redaction_status, redaction_reason
          FROM evidence_pack_items
          WHERE pack_id = ?
          ORDER BY item_order ASC`,
@@ -286,11 +288,36 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
         res.setHeader('Content-Disposition', `attachment; filename="${assembled.pack.id}.anton"`);
         return res.send(buf);
       }
-      // PDF
-      const pdfBuf = await generateEvidencePackPdf(assembled);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${assembled.pack.id}.pdf"`);
-      return res.send(pdfBuf);
+      if (format === 'pdf') {
+        const pdfBuf = await generateEvidencePackPdf(assembled);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${assembled.pack.id}.pdf"`);
+        return res.send(pdfBuf);
+      }
+      if (format === 'jsonl') {
+        // One JSON object per line — manifest first, then each item.
+        // Streaming-friendly for ingestion pipelines per spec §5.4.
+        const lines = [JSON.stringify({ kind: 'manifest', ...assembled.manifest })];
+        for (const item of assembled.collectedItems) {
+          const redaction = assembled.redactions[`${item.itemType}:${item.itemId}`];
+          lines.push(JSON.stringify({
+            kind: 'item',
+            type: item.itemType, id: item.itemId, hash: item.itemHash,
+            summary: item.itemSummary, regulatory_relevance: item.regulatoryRelevance,
+            body: redaction && redaction.status !== 'none'
+              ? { _redacted: true, status: redaction.status, reason: redaction.reason }
+              : JSON.parse(item.canonicalJson),
+          }));
+        }
+        res.setHeader('Content-Type', 'application/x-ndjson');
+        res.setHeader('Content-Disposition', `attachment; filename="${assembled.pack.id}.jsonl"`);
+        return res.send(lines.join('\n') + '\n');
+      }
+      // HTML
+      const html = generateEvidencePackHtml(assembled);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${assembled.pack.id}.html"`);
+      return res.send(html);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
     }
@@ -391,6 +418,70 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
       res.json({ accesses: rows });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Phase 4: legal hold toggle ──────────────────────────────────────────
+  // When set, the pack cannot be deleted by anyone, regardless of retention.
+  // Cleared with a reason that lands in the access log (Phase 4 audit).
+  router.put('/evidence-pack/:id/legal-hold', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const enable = req.body?.enable === true;
+      const reason = (req.body?.reason as string | undefined)?.trim() || (enable ? 'enabled' : 'cleared');
+      await db.run(
+        `UPDATE evidence_packs SET legal_hold = ? WHERE id = ?`,
+        enable, req.params.id,
+      );
+      // Use the access log to record the toggle so it shows up in chain-of-custody.
+      await db.run(
+        `INSERT INTO evidence_pack_access_log
+           (pack_id, accessor_type, accessor_id, action, success, error_reason)
+         VALUES (?, 'internal_user', ?, ?, TRUE, ?)`,
+        req.params.id, req.user!.id,
+        enable ? 'legal_hold_set' : 'legal_hold_cleared',
+        reason,
+      );
+      log.info({ packId: req.params.id, enable, reason, userId: req.user!.id }, 'legal_hold_toggled');
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Phase 4: redaction workflow ─────────────────────────────────────────
+  // Mark an item as redacted (legal privilege, GDPR personal data, etc.).
+  // The bundle + PDF will hide the canonical body for redacted items but
+  // keep the manifest reference + hash so verifiers know the item existed
+  // and can audit the redaction.
+  router.put('/evidence-pack/:id/items/:itemKey/redact', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const status = req.body?.status === 'full' ? 'full' : req.body?.status === 'partial' ? 'partial' : 'none';
+      const reason = (req.body?.reason as string | undefined)?.trim() || null;
+      if (status !== 'none' && !reason) {
+        return res.status(400).json({ error: 'Reason required when redacting' });
+      }
+      // itemKey is "<type>:<id>" so we can target one polymorphic row.
+      const [itemType, itemId] = String(req.params.itemKey).split(':', 2);
+      if (!itemType || !itemId) return res.status(400).json({ error: 'itemKey must be "type:id"' });
+      const r = await db.run(
+        `UPDATE evidence_pack_items
+           SET redaction_status = ?, redaction_reason = ?
+         WHERE pack_id = ? AND item_type = ? AND item_id = ?`,
+        status, reason, req.params.id, itemType, itemId,
+      );
+      if (r.changes === 0) return res.status(404).json({ error: 'Item not found in pack' });
+      await db.run(
+        `INSERT INTO evidence_pack_access_log
+           (pack_id, accessor_type, accessor_id, action, item_accessed, success)
+         VALUES (?, 'internal_user', ?, 'redact', ?, TRUE)`,
+        req.params.id, req.user!.id, `${itemType}:${itemId}:${status}`,
+      );
+      log.info({ packId: req.params.id, itemType, itemId, status, userId: req.user!.id }, 'item_redacted');
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
     }
   });
 

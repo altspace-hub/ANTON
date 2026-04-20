@@ -71,6 +71,10 @@ export interface AssembledPack {
   pack: PackRow;
   manifest: PackManifest;
   collectedItems: CollectedItem[];   // exporters need the raw canonical bodies
+  /** Phase 4: per-item redaction status, keyed by `${itemType}:${itemId}`.
+   *  Bundler + PDF inspect this to redact bodies on export. Empty object
+   *  when no items are redacted. */
+  redactions: Record<string, { status: string; reason: string | null }>;
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────
@@ -103,19 +107,33 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
   // type itself for stability.
   const ordered = orderItems(deduped);
 
-  // 3. Write evidence_pack_items rows in one transaction.
+  // 3. Write evidence_pack_items rows in one transaction. Preserve existing
+  // redaction state across re-assembly (Phase 4): if the same (item_type,
+  // item_id) appears again, re-apply its prior redaction so re-collecting
+  // doesn't silently un-redact items.
+  const priorRedactions = await db.all<{ item_type: string; item_id: string; redaction_status: string; redaction_reason: string | null }>(
+    `SELECT item_type, item_id, redaction_status, redaction_reason
+     FROM evidence_pack_items
+     WHERE pack_id = ? AND redaction_status != 'none'`,
+    input.packId,
+  );
+  const redactionMap = new Map<string, { status: string; reason: string | null }>();
+  for (const r of priorRedactions) {
+    redactionMap.set(`${r.item_type}:${r.item_id}`, { status: r.redaction_status, reason: r.redaction_reason });
+  }
   await db.transaction(async (tx) => {
-    // Replace any prior items for this pack — we always write a complete set.
     await tx.run(`DELETE FROM evidence_pack_items WHERE pack_id = ?`, input.packId);
     for (let i = 0; i < ordered.length; i++) {
       const item = ordered[i];
+      const prior = redactionMap.get(`${item.itemType}:${item.itemId}`);
       await tx.run(
         `INSERT INTO evidence_pack_items
            (pack_id, item_type, item_table, item_id, item_hash, item_summary,
-            item_order, regulatory_relevance)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb)`,
+            item_order, regulatory_relevance, redaction_status, redaction_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)`,
         input.packId, item.itemType, item.itemTable, item.itemId, item.itemHash,
         item.itemSummary, i, JSON.stringify(item.regulatoryRelevance),
+        prior?.status ?? 'none', prior?.reason ?? null,
       );
     }
   });
@@ -177,7 +195,13 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
     itemCount: ordered.length, manifestHash, itemsByType,
   }, 'pack_assembled');
 
-  return { pack, manifest, collectedItems: ordered };
+  // Re-read redactions in case any were already set during prior assemblies
+  // — they were preserved in the INSERT above but we now expose them on the
+  // returned AssembledPack so exporters can honor them.
+  const redactions: Record<string, { status: string; reason: string | null }> = {};
+  for (const [k, v] of redactionMap.entries()) redactions[k] = v;
+
+  return { pack, manifest, collectedItems: ordered, redactions };
 }
 
 /**
