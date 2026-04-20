@@ -7,7 +7,7 @@
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { readdirSync, statSync, existsSync } from 'fs';
-import type { DatabaseAdapter } from '../db/database.js';
+import type { DatabaseAdapter } from '../../db/database.js';
 import { chunkText } from './chunker.js';
 import { tokenise, computeTermFrequencies } from './bm25.js';
 

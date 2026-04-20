@@ -135,7 +135,7 @@ export function createTransport(config: TransportConfig): TransportClient {
   }
 
   return {
-    async postSignedEnvelope<T>(path, body) {
+    async postSignedEnvelope<T>(path: string, body: unknown) {
       // Writes use the short-cap backoff (max ~30s total) — failing fast
       // is a better UX than holding the user's "Register portal" click
       // open for 14 minutes.
@@ -150,7 +150,7 @@ export function createTransport(config: TransportConfig): TransportClient {
       );
     },
 
-    async get<T>(path, query) {
+    async get<T>(path: string, query?: Record<string, string | number | undefined>) {
       return execute<T>(() =>
         fetchImpl(url(path, query), {
           method: 'GET',

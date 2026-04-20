@@ -5,6 +5,7 @@
 
 export type WorkflowStepType =
   | 'claude'
+  | 'llm'
   | 'input'
   | 'conditional'
   | 'export'
@@ -21,6 +22,7 @@ export type WorkflowStepType =
   | 'wait'
   | 'sub_workflow'
   | 'notification'
+  | 'approval'
   | 'checkpoint'
   | 'data_import'
   | 'data_transform'

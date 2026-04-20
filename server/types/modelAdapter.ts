@@ -316,7 +316,7 @@ export function getTemperature(modelId: string, precision: PrecisionLevel): numb
   return TEMPERATURE_MAP[config.provider][precision];
 }
 
-export async function getModelConfig(modelId: string, db?: import('../db/database.js').DatabaseAdapter): ModelConfig | undefined {
+export async function getModelConfig(modelId: string, db?: import('../db/database.js').DatabaseAdapter): Promise<ModelConfig | undefined> {
   const registryEntry = MODEL_REGISTRY[modelId];
   if (registryEntry) return registryEntry;
 

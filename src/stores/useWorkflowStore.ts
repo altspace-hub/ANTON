@@ -190,6 +190,16 @@ export function createBlankStep(type: WorkflowStepType): WorkflowStep {
       description: 'Send a message to a Slack or Teams channel',
       config: { level: 'info' as const },
     },
+    llm: {
+      label: 'LLM Call',
+      description: 'Run a prompt through a cost-efficient model (server-side, headless).',
+      config: {},
+    },
+    approval: {
+      label: 'Approval Gate',
+      description: 'Pause the workflow until a human explicitly approves.',
+      config: {},
+    },
   };
 
   const def = defaults[type];

@@ -32,7 +32,11 @@ const NODE_PREFIX = Buffer.from([0x01]);
 function sha256(...parts: Buffer[]): Buffer {
   const h = createHash('sha256');
   for (const p of parts) h.update(p);
-  return h.digest();
+  // The generic-narrowing change in recent @types/node makes digest() return
+  // Buffer<ArrayBufferLike> while Buffer.from(...) returns Buffer<ArrayBuffer>;
+  // the two are not assignment-compatible. Cast at the crypto boundary so the
+  // rest of the file can stay simply-typed `Buffer`.
+  return h.digest() as Buffer;
 }
 
 /** Compute the leaf hash of a log entry per RFC 6962. */
@@ -78,7 +82,10 @@ export function verifyInclusion(
   // RFC 6962 §2.1.1 algorithm — see also CT log monitor reference impls.
   let fn = leafIndex;
   let sn = proof.treeSize - 1;
-  let r = Buffer.from(proof.leafHash, 'hex');
+  // Widen to plain `Buffer` so reassigns from nodeHash() don't fight the
+  // Buffer<ArrayBuffer> narrowing that Buffer.from() introduces under the
+  // current @types/node generics.
+  let r: Buffer = Buffer.from(proof.leafHash, 'hex');
 
   for (const step of proof.auditPath) {
     if (sn === 0) return false;
@@ -176,7 +183,9 @@ export function computeRoot(leafHashesHex: string[]): string {
   if (leafHashesHex.length === 0) {
     return sha256(Buffer.alloc(0)).toString('hex');
   }
-  let level = leafHashesHex.map((h) => Buffer.from(h, 'hex'));
+  // Plain `Buffer[]` annotations here — see comment in verifyInclusion about
+  // why we deliberately widen away from Buffer.from's ArrayBuffer narrowing.
+  let level: Buffer[] = leafHashesHex.map((h) => Buffer.from(h, 'hex'));
   while (level.length > 1) {
     const next: Buffer[] = [];
     for (let i = 0; i < level.length; i += 2) {
@@ -195,7 +204,7 @@ export function computeRoot(leafHashesHex: string[]): string {
 /** Build an inclusion-proof audit path for `leafIndex` against `leafHashes`. */
 export function buildAuditPath(leafHashesHex: string[], leafIndex: number): string[] {
   const path: string[] = [];
-  let level = leafHashesHex.map((h) => Buffer.from(h, 'hex'));
+  let level: Buffer[] = leafHashesHex.map((h) => Buffer.from(h, 'hex'));
   let idx = leafIndex;
   while (level.length > 1) {
     const sibling = idx % 2 === 0 ? idx + 1 : idx - 1;

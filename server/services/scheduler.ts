@@ -24,7 +24,7 @@ export async function initScheduler(db: DatabaseAdapter) {
   console.log(`[scheduler] Loaded ${schedules.length} active workflow schedules`);
 }
 
-export async function scheduleWorkflow(db: Database, schedule: ScheduleRow) {
+export async function scheduleWorkflow(db: DatabaseAdapter, schedule: ScheduleRow) {
   // Validate cron expression
   if (!cron.validate(schedule.cron_expression)) {
     console.warn(`[scheduler] Invalid cron expression for schedule ${schedule.id}: ${schedule.cron_expression}`);
