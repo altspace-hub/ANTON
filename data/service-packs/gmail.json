@@ -1,0 +1,98 @@
+{
+  "service_id": "gmail",
+  "service_name": "Gmail — Mail Read/Send",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "Gmail via the Google Gmail API v1. OAuth2 required; use an oauth2 credential with scopes gmail.readonly + gmail.send. Workflows are HTTP templates — they execute through the mission api_call task type by referencing this pack's endpoints, or through a future workflow executor that runs them directly.",
+  "category": "email",
+  "interaction_type": "api",
+  "service_info": {
+    "base_urls": ["https://gmail.googleapis.com", "https://oauth2.googleapis.com"],
+    "api_base": "https://gmail.googleapis.com/gmail/v1",
+    "auth_type": "oauth2",
+    "auth_flow": {
+      "token_url": "https://oauth2.googleapis.com/token",
+      "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+      "scopes_read": "https://www.googleapis.com/auth/gmail.readonly",
+      "scopes_send": "https://www.googleapis.com/auth/gmail.send",
+      "scopes_modify": "https://www.googleapis.com/auth/gmail.modify",
+      "notes": "Create a Google Cloud project, enable the Gmail API, generate OAuth2 client credentials. Store the refresh_token on the credential; the vault's refreshOauthToken() helper handles rotation."
+    },
+    "rate_limits": {
+      "quota_unit_cost": "1 for metadata, 5 for messages.get/full, 100 for messages.send",
+      "daily_quota": "1,000,000,000 quota units/day per project (default)",
+      "notes": "Per-user quota: 250 units/sec. Batch reads via users.messages.list (pagination) + messages.get rather than threads when you only need metadata."
+    }
+  },
+  "pages": {},
+  "workflows": {
+    "list_messages": {
+      "description": "List message ids matching a Gmail search query (e.g. 'from:foo@bar.com newer_than:7d').",
+      "parameters": [
+        { "name": "query", "type": "string", "required": true, "description": "Gmail search query string" },
+        { "name": "max_results", "type": "string", "required": false, "description": "Up to 500; default 100" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=${max_results}",
+          "description": "GET — returns { messages: [{ id, threadId }], nextPageToken }"
+        }
+      ]
+    },
+    "get_message": {
+      "description": "Fetch a single message by id (full format — headers + body).",
+      "parameters": [
+        { "name": "message_id", "type": "string", "required": true, "description": "Message id from list_messages" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/${message_id}?format=full",
+          "description": "GET — returns the full RFC 5322 payload with headers + parts"
+        }
+      ]
+    },
+    "send_message": {
+      "description": "Send an email. Body must be a base64url-encoded RFC 5322 message in the request body.",
+      "parameters": [
+        { "name": "to", "type": "string", "required": true, "description": "Recipient email" },
+        { "name": "subject", "type": "string", "required": true, "description": "Subject line" },
+        { "name": "body_text", "type": "string", "required": true, "description": "Plain-text body" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+          "method": "POST",
+          "template": "{ \"raw\": base64url('To: ${to}\\r\\nSubject: ${subject}\\r\\n\\r\\n${body_text}') }",
+          "description": "POST — server composes the raw RFC 5322, base64url-encodes it, then wraps as { raw: ... }"
+        }
+      ]
+    },
+    "add_label": {
+      "description": "Apply a label id to a message (e.g. to archive: remove INBOX; to mark read: remove UNREAD).",
+      "parameters": [
+        { "name": "message_id", "type": "string", "required": true, "description": "Message id" },
+        { "name": "label_id", "type": "string", "required": true, "description": "Label id (e.g. 'Label_123')" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/${message_id}/modify",
+          "method": "POST",
+          "template": "{ \"addLabelIds\": [\"${label_id}\"] }",
+          "description": "POST — modifies labels on the message"
+        }
+      ]
+    }
+  },
+  "known_issues": [
+    "OAuth2 refresh tokens issued by Google can be revoked if the user changes their password or the app exceeds inactivity. The vault should detect 401 + invalid_grant and prompt re-auth.",
+    "messages.list only returns ids — each message body requires a separate messages.get. Plan api_call task batches accordingly.",
+    "Send quota is 100 units/user/sec; bulk outreach should fan out across multiple user mailboxes or use batch endpoints."
+  ],
+  "fallback_hints": {
+    "send_message": "If the POST fails with 403 'insufficient scopes', the OAuth grant was issued with gmail.readonly only. Re-authorise with gmail.send."
+  }
+}
