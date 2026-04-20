@@ -213,6 +213,48 @@ export function createMissionController(db: DatabaseAdapter) {
     }
   }
 
+  /**
+   * Grant approval for an action task (api_call / database_query / browser)
+   * that was paused by the autonomy gate. Stamps approval metadata into
+   * module_config, re-queues the task, and resumes the mission. The next
+   * advance() call will run the approved task.
+   *
+   * Distinct from approveCheckpoint (which completes a checkpoint task):
+   * this one unblocks work that hasn't executed yet.
+   */
+  async function grantTaskApproval(
+    missionId: string,
+    taskId: string,
+    approvedByUserId: string,
+    feedback?: string,
+  ): Promise<void> {
+    const task = await state.getTask(taskId);
+    if (!task || task.mission_id !== missionId) throw new Error('Task not found');
+    if (task.task_type === 'checkpoint') {
+      throw new Error('Use approveCheckpoint for checkpoint tasks');
+    }
+    if (task.status !== 'paused') {
+      throw new Error(`Task is in status '${task.status}' — only paused tasks need approval`);
+    }
+    await state.markTaskApproved(taskId, { approvedBy: approvedByUserId, feedback: feedback ?? null });
+    await state.updateTaskStatus(taskId, 'queued');
+    await state.logActivity(missionId, {
+      activityType: 'approval_granted',
+      description: feedback
+        ? `Approved '${task.title}' — ${feedback.slice(0, 200)}`
+        : `Approved '${task.title}'`,
+      taskId,
+    });
+    const mission = await state.getMission(missionId);
+    if (mission?.status === 'review' || mission?.status === 'paused') {
+      await state.updateMissionStatus(missionId, 'active');
+      await state.logActivity(missionId, {
+        activityType: 'mission_resumed',
+        description: 'Resumed after action-task approval',
+      });
+    }
+  }
+
   async function rejectCheckpoint(missionId: string, taskId: string, feedback: string): Promise<void> {
     const task = await state.getTask(taskId);
     if (!task || task.mission_id !== missionId) throw new Error('Task not found');
@@ -224,6 +266,29 @@ export function createMissionController(db: DatabaseAdapter) {
       taskId,
     });
     // Mission stays paused for human follow-up
+  }
+
+  /**
+   * Reject an action task paused at the autonomy gate. Marks the task failed
+   * with the feedback as the recorded error. Mission stays paused so the
+   * human can re-plan or abort; we don't auto-resume because the next task
+   * in the graph may depend on this one.
+   */
+  async function rejectTaskApproval(missionId: string, taskId: string, feedback: string): Promise<void> {
+    const task = await state.getTask(taskId);
+    if (!task || task.mission_id !== missionId) throw new Error('Task not found');
+    if (task.task_type === 'checkpoint') {
+      throw new Error('Use rejectCheckpoint for checkpoint tasks');
+    }
+    if (task.status !== 'paused') {
+      throw new Error(`Task is in status '${task.status}' — only paused tasks can be rejected at the approval gate`);
+    }
+    await state.updateTaskStatus(taskId, 'failed', { lastError: feedback, completedAt: nowIso() });
+    await state.logActivity(missionId, {
+      activityType: 'approval_rejected',
+      description: feedback,
+      taskId,
+    });
   }
 
   // ── Execution ────────────────────────────────────────────────────────────
@@ -377,7 +442,9 @@ export function createMissionController(db: DatabaseAdapter) {
     resumeMission,
     abortMission,
     approveCheckpoint,
+    grantTaskApproval,
     rejectCheckpoint,
+    rejectTaskApproval,
     // execution
     getNextReadyTask,
     advance,
