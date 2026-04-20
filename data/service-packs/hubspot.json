@@ -1,0 +1,116 @@
+{
+  "service_id": "hubspot",
+  "service_name": "HubSpot CRM — Contacts / Companies / Deals",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "HubSpot CRM via the v3 REST API. Supports both Private App tokens (bearer_token credential — preferred) and OAuth2 apps. Workflows cover the most-used CRUD flows against contacts, companies, and deals.",
+  "category": "crm",
+  "interaction_type": "api",
+  "service_info": {
+    "base_urls": ["https://api.hubapi.com"],
+    "api_base": "https://api.hubapi.com",
+    "auth_type": "bearer_token",
+    "auth_flow": {
+      "preferred_method": "private_app",
+      "private_app_docs": "https://developers.hubspot.com/docs/api/private-apps",
+      "oauth2_token_url": "https://api.hubapi.com/oauth/v1/token",
+      "scopes_minimum": ["crm.objects.contacts.read", "crm.objects.contacts.write", "crm.objects.companies.read", "crm.objects.deals.read"],
+      "notes": "For a single-instance ANTON deployment, a HubSpot Private App token is simpler than OAuth2 and doesn't require a redirect URL. Store as a bearer_token credential."
+    },
+    "rate_limits": {
+      "burst": "100 requests / 10 seconds per Private App token",
+      "daily": "250,000 requests/day default (higher on Enterprise)",
+      "notes": "429 response carries Retry-After. Always honour it — repeated 429s can trigger a token suspension."
+    }
+  },
+  "pages": {},
+  "workflows": {
+    "search_contacts": {
+      "description": "Search contacts by property filter (e.g. email domain, lifecycle stage).",
+      "parameters": [
+        { "name": "property", "type": "string", "required": true, "description": "Contact property name (e.g. 'email', 'lifecyclestage')" },
+        { "name": "operator", "type": "string", "required": true, "description": "EQ | NEQ | CONTAINS_TOKEN | HAS_PROPERTY" },
+        { "name": "value", "type": "string", "required": true, "description": "Filter value" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.hubapi.com/crm/v3/objects/contacts/search",
+          "method": "POST",
+          "template": "{ \"filterGroups\": [{ \"filters\": [{ \"propertyName\": \"${property}\", \"operator\": \"${operator}\", \"value\": \"${value}\" }] }], \"properties\": [\"firstname\",\"lastname\",\"email\",\"company\",\"lifecyclestage\"], \"limit\": 100 }",
+          "description": "POST — returns { total, results: [{ id, properties, createdAt, updatedAt }] }"
+        }
+      ]
+    },
+    "get_contact": {
+      "description": "Fetch a single contact by id or by email (idProperty=email).",
+      "parameters": [
+        { "name": "contact_id", "type": "string", "required": true, "description": "Contact vid or email (when combined with idProperty=email)" },
+        { "name": "id_property", "type": "string", "required": false, "description": "Default unset (contact id). Set to 'email' to look up by email." }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.hubapi.com/crm/v3/objects/contacts/${contact_id}?idProperty=${id_property}&properties=firstname,lastname,email,company,lifecyclestage,hs_lead_status",
+          "description": "GET — single contact with all requested properties"
+        }
+      ]
+    },
+    "create_contact": {
+      "description": "Create a new contact.",
+      "parameters": [
+        { "name": "email", "type": "string", "required": true, "description": "Contact email (must be unique)" },
+        { "name": "firstname", "type": "string", "required": false, "description": "First name" },
+        { "name": "lastname", "type": "string", "required": false, "description": "Last name" },
+        { "name": "company", "type": "string", "required": false, "description": "Company name" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+          "method": "POST",
+          "template": "{ \"properties\": { \"email\": \"${email}\", \"firstname\": \"${firstname}\", \"lastname\": \"${lastname}\", \"company\": \"${company}\" } }",
+          "description": "POST — returns the new contact id. Duplicate emails yield 409."
+        }
+      ]
+    },
+    "get_deal": {
+      "description": "Fetch a deal by id with its line items and associated contacts.",
+      "parameters": [
+        { "name": "deal_id", "type": "string", "required": true, "description": "Deal id" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.hubapi.com/crm/v3/objects/deals/${deal_id}?properties=dealname,amount,dealstage,pipeline,closedate&associations=contacts,line_items",
+          "description": "GET — deal with associations expanded to ids"
+        }
+      ]
+    },
+    "list_deals_by_stage": {
+      "description": "List deals filtered by pipeline stage.",
+      "parameters": [
+        { "name": "pipeline_id", "type": "string", "required": true, "description": "Pipeline id (default-sales-pipeline for out-of-box)" },
+        { "name": "stage_id", "type": "string", "required": true, "description": "Stage id within the pipeline" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.hubapi.com/crm/v3/objects/deals/search",
+          "method": "POST",
+          "template": "{ \"filterGroups\": [{ \"filters\": [{ \"propertyName\": \"pipeline\", \"operator\": \"EQ\", \"value\": \"${pipeline_id}\" }, { \"propertyName\": \"dealstage\", \"operator\": \"EQ\", \"value\": \"${stage_id}\" }] }], \"properties\": [\"dealname\",\"amount\",\"closedate\"], \"limit\": 100 }",
+          "description": "POST — returns deals in the given stage"
+        }
+      ]
+    }
+  },
+  "known_issues": [
+    "Private App scopes are frozen at app-creation time — adding new scopes requires creating a new token.",
+    "The /search endpoint has a 5-request-per-second limit independent of the overall rate limit. Stagger consecutive searches.",
+    "HubSpot returns 404 for soft-deleted records by default. Pass archived=true to include them.",
+    "Custom properties are case-sensitive and namespaced under the portal — confirm exact internal name via the /properties endpoint before filtering."
+  ],
+  "fallback_hints": {
+    "search_contacts": "If a search returns 0 with operator=EQ but you expect matches, the property may be a dropdown stored by internal value, not label. Query /crm/v3/properties/contacts/{property} to see the allowed values."
+  }
+}

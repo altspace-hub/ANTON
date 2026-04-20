@@ -1,0 +1,64 @@
+{
+  "service_id": "google-search",
+  "service_name": "Google Search — Web Results",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "Google Web Search via the public SERP. For production use prefer the Custom Search JSON API (100 free queries/day, then paid) — this browser pack is a best-effort fallback for ad-hoc research. Google fingerprints automation and will serve captchas; missions should run at most a few queries per session.",
+  "category": "research",
+  "interaction_type": "browser",
+  "service_info": {
+    "base_urls": ["https://google.com", "https://www.google.com"],
+    "auth_type": "none",
+    "rate_limits": {
+      "polite_delay_ms": 5000,
+      "notes": "3-5 queries per session before captcha becomes likely. For anything higher-volume switch to the Custom Search JSON API."
+    }
+  },
+  "pages": {
+    "serp": {
+      "url_pattern": "https://www.google.com/search*",
+      "description": "Standard SERP",
+      "selectors": {
+        "results_container": "div#search",
+        "result_group": "div.g",
+        "result_title": "h3",
+        "result_link": "a",
+        "result_snippet": "div[data-snf]"
+      }
+    }
+  },
+  "workflows": {
+    "search": {
+      "description": "Run a Google web search and extract title + snippet for each organic result on the first page.",
+      "parameters": [
+        { "name": "query", "type": "string", "required": true, "description": "Search query" },
+        { "name": "num", "type": "string", "required": false, "description": "Result count hint (10, 20, 50 — Google may ignore)" }
+      ],
+      "steps": [
+        { "action": "navigate", "url": "https://www.google.com/search?q=${query}&hl=en", "description": "Open SERP" },
+        { "action": "wait", "selector": "div#search", "description": "Wait for results container" },
+        { "action": "extract", "selector": "div.g h3", "description": "Extract result titles" },
+        { "action": "extract", "selector": "div.g div[data-snf]", "description": "Extract result snippets" }
+      ]
+    },
+    "search_news": {
+      "description": "Run a Google News search (tbm=nws) and extract the first page of news results.",
+      "parameters": [
+        { "name": "query", "type": "string", "required": true, "description": "News query" }
+      ],
+      "steps": [
+        { "action": "navigate", "url": "https://www.google.com/search?q=${query}&tbm=nws&hl=en", "description": "Open news SERP" },
+        { "action": "wait", "selector": "div#search", "description": "Wait for results container" },
+        { "action": "extract", "selector": "div.SoaBEf", "description": "Extract news result cards (title + source + snippet as innerText)" }
+      ]
+    }
+  },
+  "known_issues": [
+    "Google renders different HTML for logged-in vs anonymous sessions and for different regions/languages. The selectors target anonymous English (hl=en).",
+    "The SERP layout A/B-tests frequently — div.g and div.SoaBEf are the most stable anchors as of 2026 but expect them to drift.",
+    "Captcha or 'unusual traffic' pages appear after ~5 automated queries per IP. The executor will see an empty results container and should return a fallback error."
+  ],
+  "fallback_hints": {
+    "serp": "If div#search is empty but the page loaded, Google likely served a captcha or 'before you continue' consent wall. For robust pipelines migrate to the Custom Search JSON API with a CSE id + API key."
+  }
+}

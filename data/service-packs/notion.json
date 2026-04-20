@@ -1,0 +1,118 @@
+{
+  "service_id": "notion",
+  "service_name": "Notion — Databases & Pages",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "Notion via the official API (v1, 2022-06-28 version header). Integrations are connected per-workspace; a bearer_token credential holds the integration secret. The integration must be explicitly shared with the databases/pages the mission needs.",
+  "category": "knowledge_base",
+  "interaction_type": "api",
+  "service_info": {
+    "base_urls": ["https://api.notion.com"],
+    "api_base": "https://api.notion.com/v1",
+    "auth_type": "bearer_token",
+    "auth_flow": {
+      "preferred_method": "internal_integration",
+      "docs": "https://www.notion.so/my-integrations",
+      "notes": "Create an Internal Integration in the Notion workspace, copy the secret (starts with 'secret_'), store as a bearer_token credential. Manually share the target database or page with the integration from its ... menu."
+    },
+    "required_headers": {
+      "Authorization": "Bearer {{secret}}",
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json"
+    },
+    "rate_limits": {
+      "limit": "3 requests / second per integration (average)",
+      "notes": "429 Retry-After is honoured. Large database queries should use start_cursor pagination rather than requesting big page_size values."
+    }
+  },
+  "pages": {},
+  "workflows": {
+    "query_database": {
+      "description": "Query a Notion database with optional property filters + sort. Returns up to 100 rows per page.",
+      "parameters": [
+        { "name": "database_id", "type": "string", "required": true, "description": "Database id (32-char UUID with or without dashes)" },
+        { "name": "page_size", "type": "string", "required": false, "description": "1-100, default 100" },
+        { "name": "start_cursor", "type": "string", "required": false, "description": "Pagination cursor from a previous response" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.notion.com/v1/databases/${database_id}/query",
+          "method": "POST",
+          "template": "{ \"page_size\": ${page_size}, \"start_cursor\": \"${start_cursor}\" }",
+          "description": "POST — returns { results: [page], has_more, next_cursor }. Empty start_cursor means first page."
+        }
+      ]
+    },
+    "get_page": {
+      "description": "Fetch a page's properties + metadata.",
+      "parameters": [
+        { "name": "page_id", "type": "string", "required": true, "description": "Page id" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.notion.com/v1/pages/${page_id}",
+          "description": "GET — page object with property values but NOT block children"
+        }
+      ]
+    },
+    "get_page_content": {
+      "description": "Fetch the block children of a page (paragraph, heading, list, toggle, etc.).",
+      "parameters": [
+        { "name": "page_id", "type": "string", "required": true, "description": "Page id" },
+        { "name": "start_cursor", "type": "string", "required": false, "description": "Pagination cursor" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.notion.com/v1/blocks/${page_id}/children?page_size=100&start_cursor=${start_cursor}",
+          "description": "GET — returns { results: [block], has_more, next_cursor }. Recurse into blocks with has_children=true."
+        }
+      ]
+    },
+    "create_page": {
+      "description": "Create a new page in a parent database with property values.",
+      "parameters": [
+        { "name": "database_id", "type": "string", "required": true, "description": "Parent database id" },
+        { "name": "title_property", "type": "string", "required": true, "description": "Name of the title property on that database (often 'Name')" },
+        { "name": "title_value", "type": "string", "required": true, "description": "Title text for the new page" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.notion.com/v1/pages",
+          "method": "POST",
+          "template": "{ \"parent\": { \"database_id\": \"${database_id}\" }, \"properties\": { \"${title_property}\": { \"title\": [{ \"text\": { \"content\": \"${title_value}\" } }] } } }",
+          "description": "POST — creates an empty page with only the title filled. Use update_page to set additional properties."
+        }
+      ]
+    },
+    "update_page_properties": {
+      "description": "Update one or more properties on an existing page.",
+      "parameters": [
+        { "name": "page_id", "type": "string", "required": true, "description": "Page id" },
+        { "name": "properties_json", "type": "string", "required": true, "description": "JSON-encoded properties object per Notion property-values schema" }
+      ],
+      "steps": [
+        {
+          "action": "http",
+          "url": "https://api.notion.com/v1/pages/${page_id}",
+          "method": "PATCH",
+          "template": "{ \"properties\": ${properties_json} }",
+          "description": "PATCH — callers must pre-encode the properties shape since each property type differs"
+        }
+      ]
+    }
+  },
+  "known_issues": [
+    "Integrations only see databases/pages that were explicitly shared with them — silent 404s usually mean 'not shared', not 'does not exist'.",
+    "Notion-Version header is required on every request. Omitting it returns a 400 with a confusing 'invalid_request' message.",
+    "Rollup and formula properties are computed — you can read them but cannot write to them. update_page_properties will fail quietly on these.",
+    "Rich text content is deeply nested (blocks → rich_text[] → plain_text). Missions extracting page content should concat plain_text across all blocks."
+  ],
+  "fallback_hints": {
+    "query_database": "If you get 'object_not_found', the integration lacks access. Open the database in Notion → ... menu → Add connections → select the integration.",
+    "create_page": "If the title property name doesn't exist, you'll get 'validation_error'. Query the database's schema via /databases/${database_id} first and read the property whose type is 'title'."
+  }
+}

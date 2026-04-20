@@ -1,0 +1,102 @@
+{
+  "service_id": "linkedin-search",
+  "service_name": "LinkedIn — People & Company Search",
+  "version": "1.0.0",
+  "author": "ANTON",
+  "description": "LinkedIn people + company search driven by the public web UI. Requires an authenticated session (cookie_jar credential). LinkedIn actively detects automation — expect degraded selectors over time and fall back to manual verification.",
+  "category": "sales_intelligence",
+  "interaction_type": "browser",
+  "service_info": {
+    "base_urls": ["https://linkedin.com", "https://www.linkedin.com"],
+    "auth_type": "username_password",
+    "auth_flow": {
+      "preferred_method": "cookie_jar",
+      "notes": "The safest pattern is to log in manually once in a supervised browser, export the `li_at` + `JSESSIONID` cookies, and store them as a cookie_jar credential. Username/password flow trips MFA + captcha frequently."
+    },
+    "rate_limits": {
+      "polite_delay_ms": 3000,
+      "notes": "LinkedIn throttles aggressively. Keep missions under ~50 profile views per session and back off immediately on any interstitial page."
+    }
+  },
+  "pages": {
+    "people_search": {
+      "url_pattern": "https://www.linkedin.com/search/results/people/*",
+      "description": "People-search results page",
+      "selectors": {
+        "results_container": "div.search-results-container",
+        "result_card": "li.reusable-search__result-container",
+        "result_name": "span.entity-result__title-text a span[aria-hidden='true']",
+        "result_headline": "div.entity-result__primary-subtitle",
+        "result_location": "div.entity-result__secondary-subtitle"
+      }
+    },
+    "profile": {
+      "url_pattern": "https://www.linkedin.com/in/*",
+      "description": "A single member profile",
+      "selectors": {
+        "name": "h1.text-heading-xlarge",
+        "headline": "div.text-body-medium.break-words",
+        "about_section": "section.pv-about-section",
+        "experience_section": "section#experience",
+        "education_section": "section#education"
+      }
+    },
+    "company": {
+      "url_pattern": "https://www.linkedin.com/company/*",
+      "description": "Company page",
+      "selectors": {
+        "name": "h1.org-top-card-summary__title",
+        "tagline": "p.org-top-card-summary__tagline",
+        "about": "p.org-about-us-organization-description__text"
+      }
+    }
+  },
+  "workflows": {
+    "search_people": {
+      "description": "Run a people search by keyword/title/company and extract the first results page.",
+      "parameters": [
+        { "name": "keywords", "type": "string", "required": true, "description": "Free-text search (e.g. 'compliance officer amsterdam')" }
+      ],
+      "steps": [
+        { "action": "navigate", "url": "https://www.linkedin.com/search/results/people/?keywords=${keywords}", "description": "Open people-search results" },
+        { "action": "wait", "selector": "div.search-results-container", "description": "Wait for results to render" },
+        { "action": "extract", "selector": "li.reusable-search__result-container", "description": "Extract each result card (name + headline + location as innerText)" }
+      ]
+    },
+    "fetch_profile": {
+      "description": "Open a profile by public slug and extract headline + about + experience.",
+      "parameters": [
+        { "name": "slug", "type": "string", "required": true, "description": "Profile slug from /in/{slug}" }
+      ],
+      "steps": [
+        { "action": "navigate", "url": "https://www.linkedin.com/in/${slug}/", "description": "Open the profile page" },
+        { "action": "wait", "selector": "h1.text-heading-xlarge", "description": "Wait for profile to render" },
+        { "action": "extract", "selector": "h1.text-heading-xlarge", "description": "Name" },
+        { "action": "extract", "selector": "div.text-body-medium.break-words", "description": "Headline" },
+        { "action": "extract", "selector": "section#experience", "description": "Experience section text" }
+      ]
+    },
+    "fetch_company": {
+      "description": "Open a company page by slug and extract tagline + about copy.",
+      "parameters": [
+        { "name": "slug", "type": "string", "required": true, "description": "Company slug from /company/{slug}" }
+      ],
+      "steps": [
+        { "action": "navigate", "url": "https://www.linkedin.com/company/${slug}/about/", "description": "Open company about page" },
+        { "action": "wait", "selector": "h1.org-top-card-summary__title", "description": "Wait for company header" },
+        { "action": "extract", "selector": "h1.org-top-card-summary__title", "description": "Company name" },
+        { "action": "extract", "selector": "p.org-about-us-organization-description__text", "description": "Company about copy" }
+      ]
+    }
+  },
+  "known_issues": [
+    "LinkedIn renders auth walls for unauthenticated sessions — workflows will fail without a cookie_jar credential.",
+    "LinkedIn rotates CSS class prefixes periodically (entity-result__*, search-results-container). Fall back to text-based extraction if selectors break.",
+    "Search-results page structure differs by account type (Recruiter, Sales Navigator, basic). Selectors target the basic UI.",
+    "LinkedIn uses checkpoint challenges (captcha + email verification) when automation is detected. Back off for 24h on first sight."
+  ],
+  "fallback_hints": {
+    "people_search": "If the results container never renders, the account likely hit a 'please verify' checkpoint. Open the page manually and complete the challenge, then refresh the cookie_jar credential.",
+    "profile": "Some profiles are 'semi-private' and only show the name + headline without About/Experience. Treat missing sections as expected, not as failure."
+  }
+}
