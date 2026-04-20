@@ -4,10 +4,11 @@
 //   • checkpoint      — pauses the mission, records a checkpoint activity entry
 //   • api_call        — real HTTP request (audit improvement #1A)
 //   • database_query  — read-only SELECT against local or external DB (#1B)
-//   • browser         — Playwright-driven Service Pack workflow (#1C)
+//   • browser         — Playwright or api-workflow Service Pack runner (#1C)
+//   • conditional     — evaluates a predicate; skips dependents on false
+//   • parallel_group  — marker task (completes immediately)
 //
-// Other task_types ('research', 'analysis', 'export', 'conditional',
-// 'parallel_group') still fall back to an llm-style call.
+// 'research' / 'analysis' / 'export' still fall back to an llm-style call.
 
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
@@ -118,6 +119,62 @@ export function createMissionExecutor(db: DatabaseAdapter) {
         taskId: task.id,
       });
       return { success: true, pausedMission: true, reason };
+    }
+
+    // ── parallel_group: marker that completes immediately ─────────────────
+    // v1 is a structural no-op — the task graph says "these children are
+    // conceptually parallel" but advance() still picks them serially. True
+    // concurrency (running multiple ready tasks at once) lands later. Kept
+    // as its own branch so mission authors can express fan-out intent.
+    if (task.task_type === 'parallel_group') {
+      await state.recordTaskOutput(task.id, {
+        full: JSON.stringify({ kind: 'parallel_group', note: 'Fan-out marker — children run independently' }),
+        summary: `parallel_group: children run independently`,
+        provider: 'control', model: 'control', tier: 'utility',
+        tokens: 0, durationSeconds: 0,
+      });
+      await state.logActivity(mission.id, {
+        activityType: 'task_completed',
+        description: `Completed: ${task.title} (parallel_group marker)`,
+        taskId: task.id,
+      });
+      return { success: true, outputSummary: 'parallel_group marker', durationMs: Date.now() - start };
+    }
+
+    // ── conditional: predicate evaluation; skips dependents on false ──────
+    if (task.task_type === 'conditional') {
+      const cfg = (task.module_config ?? {}) as { predicate?: ConditionalPredicate };
+      const verdict = await evaluateConditional(cfg.predicate, mission.id, state);
+      await state.recordTaskOutput(task.id, {
+        full: JSON.stringify({ predicate: cfg.predicate ?? null, outcome: verdict.outcome, reason: verdict.reason }),
+        summary: `conditional: ${verdict.outcome ? 'true' : 'false'} — ${verdict.reason}`,
+        provider: 'control', model: 'control', tier: 'utility',
+        tokens: 0, durationSeconds: 0,
+      });
+      if (!verdict.outcome) {
+        // Skip direct dependents. Transitive skipping lets advance() naturally
+        // propagate: a task whose only blocking dep is 'skipped' will itself
+        // be picked up as ready, but getNextReadyTask currently treats skipped
+        // deps as unmet. We explicitly skip the immediate children here; a
+        // future enhancement can walk the chain.
+        const deps = await state.listDependencies(mission.id);
+        const dependentIds = deps.filter(d => d.depends_on_task_id === task.id).map(d => d.task_id);
+        for (const depId of dependentIds) {
+          await state.updateTaskStatus(depId, 'skipped', { completedAt: new Date().toISOString() });
+        }
+        await state.logActivity(mission.id, {
+          activityType: 'task_completed',
+          description: `Conditional '${task.title}' → false; skipped ${dependentIds.length} dependent task${dependentIds.length === 1 ? '' : 's'}: ${verdict.reason}`,
+          taskId: task.id,
+        });
+      } else {
+        await state.logActivity(mission.id, {
+          activityType: 'task_completed',
+          description: `Conditional '${task.title}' → true: ${verdict.reason}`,
+          taskId: task.id,
+        });
+      }
+      return { success: true, outputSummary: `conditional=${verdict.outcome}`, durationMs: Date.now() - start };
     }
 
     // ── Mark active ────────────────────────────────────────────────────────
@@ -377,4 +434,60 @@ function resolveModel(tier: 'planning' | 'execution' | 'utility', _strategy: { p
   if (tier === 'planning') return 'claude-opus-4-7';
   if (tier === 'utility')  return 'claude-haiku-4-5-20251001';
   return 'claude-sonnet-4-6';
+}
+
+// ── Conditional predicates ─────────────────────────────────────────────────
+// Union kept small on purpose — mission authors compose branching logic from
+// concrete task outputs rather than free-form DSL. always_true / always_false
+// exist for manually-gated placeholder branches that the human flips later
+// via an edit.
+
+export type ConditionalPredicate =
+  | { kind: 'always_true' }
+  | { kind: 'always_false' }
+  | { kind: 'task_output_contains'; task_id: string; substring: string; case_sensitive?: boolean; expect?: boolean }
+  | { kind: 'task_output_nonempty'; task_id: string; expect?: boolean };
+
+interface ConditionalVerdict {
+  outcome: boolean;
+  reason: string;
+}
+
+async function evaluateConditional(
+  predicate: ConditionalPredicate | undefined,
+  _missionId: string,
+  state: ReturnType<typeof createMissionState>,
+): Promise<ConditionalVerdict> {
+  if (!predicate) return { outcome: true, reason: 'no predicate — treating as true (vacuous)' };
+  switch (predicate.kind) {
+    case 'always_true':  return { outcome: true,  reason: 'always_true' };
+    case 'always_false': return { outcome: false, reason: 'always_false' };
+    case 'task_output_contains': {
+      const t = await state.getTask(predicate.task_id);
+      if (!t) return { outcome: false, reason: `referenced task ${predicate.task_id} not found` };
+      const haystackRaw = `${t.output_summary ?? ''}\n${t.output_full ?? ''}`;
+      const needle = predicate.substring;
+      const found = predicate.case_sensitive
+        ? haystackRaw.includes(needle)
+        : haystackRaw.toLowerCase().includes(needle.toLowerCase());
+      const expect = predicate.expect !== false;
+      const outcome = expect ? found : !found;
+      return {
+        outcome,
+        reason: `${found ? 'found' : 'did not find'} '${needle.slice(0, 40)}' in task ${predicate.task_id.slice(0, 12)}; expect=${expect}`,
+      };
+    }
+    case 'task_output_nonempty': {
+      const t = await state.getTask(predicate.task_id);
+      if (!t) return { outcome: false, reason: `referenced task ${predicate.task_id} not found` };
+      const nonempty = Boolean((t.output_full ?? '').trim() || (t.output_summary ?? '').trim());
+      const expect = predicate.expect !== false;
+      const outcome = expect ? nonempty : !nonempty;
+      return { outcome, reason: `task ${predicate.task_id.slice(0, 12)} output ${nonempty ? 'non-empty' : 'empty'}; expect=${expect}` };
+    }
+    default: {
+      const _exhaustive: never = predicate;
+      return { outcome: false, reason: `unknown predicate kind: ${JSON.stringify(_exhaustive)}` };
+    }
+  }
 }
