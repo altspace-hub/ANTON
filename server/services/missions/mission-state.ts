@@ -471,6 +471,34 @@ export function createMissionState(db: DatabaseAdapter) {
     );
   }
 
+  /**
+   * Stamp approval metadata on an action task's module_config. Used by the
+   * check-in / briefing autonomy gate — the executor reads these fields to
+   * decide whether to run the task or pause pending approval.
+   *
+   * Merges into existing module_config rather than overwriting so the
+   * underlying task params (url, query, workflow_id, …) are preserved.
+   */
+  async function markTaskApproved(id: string, params: { approvedBy: string; feedback?: string | null }): Promise<void> {
+    const existing = await db.get<{ module_config: unknown }>(
+      `SELECT module_config FROM missions.mission_tasks WHERE id = ?`,
+      id,
+    );
+    if (!existing) throw new Error(`Task ${id} not found`);
+    const current = asJson<Record<string, unknown>>(existing.module_config, {});
+    const merged = {
+      ...current,
+      approval_granted: true,
+      approved_at: new Date().toISOString(),
+      approved_by: params.approvedBy,
+      approval_feedback: params.feedback ?? null,
+    };
+    await db.run(
+      `UPDATE missions.mission_tasks SET module_config = ? WHERE id = ?`,
+      JSON.stringify(merged), id,
+    );
+  }
+
   // ── Dependencies ─────────────────────────────────────────────────────────
 
   async function insertDependency(taskId: string, dependsOnTaskId: string, type: 'blocking' | 'informational' = 'blocking'): Promise<void> {
@@ -600,7 +628,7 @@ export function createMissionState(db: DatabaseAdapter) {
     insertMission, getMission, listMissions, updateMissionStatus,
     bumpTokenBudget, setMissionSummary,
     // tasks
-    insertTask, getTask, listTasks, updateTaskStatus, recordTaskOutput, bumpTaskRetry,
+    insertTask, getTask, listTasks, updateTaskStatus, recordTaskOutput, bumpTaskRetry, markTaskApproved,
     // dependencies
     insertDependency, listDependencies,
     // activity

@@ -278,28 +278,56 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  // POST /api/missions/:id/tasks/:taskId/approve — checkpoint approval
+  // POST /api/missions/:id/tasks/:taskId/approve
+  // Dual-purpose: approves a checkpoint task OR grants approval for a paused
+  // action task (api_call / database_query / browser) that hit the autonomy
+  // gate. Dispatch is by task_type — callers don't need to know which.
   router.post('/missions/:id/tasks/:taskId/approve', async (req, res) => {
     try {
       const parsed = checkpointSchema.safeParse(req.body ?? {});
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
-      try { await resolveCallerIdentity(db, undefined); }
+      let identity;
+      try { identity = await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }
-      await controller.approveCheckpoint(String(req.params.id), String(req.params.taskId), parsed.data.feedback);
+      const missionId = String(req.params.id);
+      const taskId = String(req.params.taskId);
+      const task = await state.getTask(taskId);
+      if (!task || task.mission_id !== missionId) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+      if (task.task_type === 'checkpoint') {
+        await controller.approveCheckpoint(missionId, taskId, parsed.data.feedback);
+      } else {
+        await controller.grantTaskApproval(missionId, taskId, identity.user_id, parsed.data.feedback);
+      }
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
     }
   });
 
-  // POST /api/missions/:id/tasks/:taskId/reject — checkpoint rejection (with feedback)
+  // POST /api/missions/:id/tasks/:taskId/reject
+  // Dual-purpose like /approve: rejects a checkpoint OR an action task that
+  // was paused at the autonomy gate. Feedback is required in both cases.
   router.post('/missions/:id/tasks/:taskId/reject', async (req, res) => {
     try {
       const parsed = z.object({ feedback: z.string().min(1).max(8000) }).safeParse(req.body ?? {});
       if (!parsed.success) { res.status(400).json({ error: 'Feedback is required' }); return; }
       try { await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }
-      await controller.rejectCheckpoint(String(req.params.id), String(req.params.taskId), parsed.data.feedback);
+      const missionId = String(req.params.id);
+      const taskId = String(req.params.taskId);
+      const task = await state.getTask(taskId);
+      if (!task || task.mission_id !== missionId) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+      if (task.task_type === 'checkpoint') {
+        await controller.rejectCheckpoint(missionId, taskId, parsed.data.feedback);
+      } else {
+        await controller.rejectTaskApproval(missionId, taskId, parsed.data.feedback);
+      }
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });

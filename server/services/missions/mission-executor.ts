@@ -27,6 +27,54 @@ const ACTION_PROVIDER_LABELS: Partial<Record<string, string>> = {
   browser: 'browser',
 };
 
+// Autonomy gate (audit improvement #2). Before running an action task the
+// executor consults this function; if it returns a reason, the mission is
+// paused until grantTaskApproval() stamps the approval flag.
+//
+// Semantics:
+//   • full_autonomy — never gated (explicit `checkpoint` tasks still work).
+//   • briefing      — pause only when the action will mutate state
+//                     (non-GET api_call, any external database_query,
+//                     credentialed browser workflow). GET reads auto-run.
+//   • check_in      — pause before every action task. Belt-and-braces mode
+//                     for EU-AI-Act high-risk or when the user wants to
+//                     review every outbound call.
+export function approvalReasonForTask(
+  mission: Mission,
+  task: MissionTask,
+): string | null {
+  if (mission.autonomy_level === 'full_autonomy') return null;
+  if (!ACTION_PROVIDER_LABELS[task.task_type]) return null;
+  const cfg = (task.module_config ?? {}) as Record<string, unknown>;
+  if (cfg.approval_granted === true) return null;
+
+  if (mission.autonomy_level === 'check_in') {
+    return `check_in autonomy: human approval required before ${task.task_type} task '${task.title}'.`;
+  }
+
+  // briefing — only gate side-effect-producing actions.
+  if (task.task_type === 'api_call') {
+    const method = String((cfg.method ?? 'GET')).toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') {
+      return `briefing autonomy: approval required — api_call is ${method} (state-changing).`;
+    }
+    return null;
+  }
+  if (task.task_type === 'database_query') {
+    if (cfg.target === 'external') {
+      return `briefing autonomy: approval required — database_query targets an external DB.`;
+    }
+    return null;
+  }
+  if (task.task_type === 'browser') {
+    if (cfg.auth_credential_id) {
+      return `briefing autonomy: approval required — browser workflow runs with an authenticated session.`;
+    }
+    return null;
+  }
+  return null;
+}
+
 interface ExecutionResult {
   success: boolean;
   outputFull?: string;
@@ -80,6 +128,22 @@ export function createMissionExecutor(db: DatabaseAdapter) {
       description: `Started: ${task.title}`,
       taskId: task.id,
     });
+
+    // ── Autonomy gate (audit #2) ──────────────────────────────────────────
+    // Pause the mission before any action task that needs human approval
+    // given the mission's autonomy_level. Resume happens when
+    // controller.grantTaskApproval() stamps approval_granted.
+    const approvalReason = approvalReasonForTask(mission, task);
+    if (approvalReason) {
+      await state.updateTaskStatus(task.id, 'paused');
+      await state.updateMissionStatus(mission.id, 'review');
+      await state.logActivity(mission.id, {
+        activityType: 'approval_required',
+        description: approvalReason,
+        taskId: task.id,
+      });
+      return { success: true, pausedMission: true, reason: approvalReason };
+    }
 
     // ── Non-LLM action executors (api_call, database_query, browser) ──────
     // All three run a tool, record output + activity, and share retry/fail
