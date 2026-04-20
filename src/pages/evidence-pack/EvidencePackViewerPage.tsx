@@ -29,7 +29,21 @@ interface PackDetail {
   }>;
 }
 
-type Tab = 'overview' | 'timeline' | 'search' | 'shares' | 'access_log';
+type Tab = 'overview' | 'compliance' | 'timeline' | 'search' | 'shares' | 'access_log';
+
+interface PointResult {
+  id: string; label: string;
+  status: 'evidenced' | 'not_applicable' | 'gap';
+  notes?: string;
+  evidence: Array<{ type: string; id: string; hash: string; summary: string }>;
+  acceptance?: { rationale: string; acceptedAt: string; acceptedBy: string };
+}
+interface FrameworkResult {
+  id: string; label: string; citation: string;
+  points: PointResult[];
+  evidencedCount: number; gapCount: number;
+  acceptedGapCount: number; notApplicableCount: number;
+}
 
 interface ShareRow {
   id: string;
@@ -180,6 +194,7 @@ export default function EvidencePackViewerPage() {
 
         <nav className="flex gap-1 border-b border-border overflow-x-auto">
           <TabButton active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</TabButton>
+          <TabButton active={tab === 'compliance'} onClick={() => setTab('compliance')}>Compliance</TabButton>
           <TabButton active={tab === 'timeline'} onClick={() => setTab('timeline')}>Timeline ({items.length})</TabButton>
           <TabButton active={tab === 'search'} onClick={() => setTab('search')}>Search</TabButton>
           <TabButton active={tab === 'shares'} onClick={() => setTab('shares')}>Shares</TabButton>
@@ -187,6 +202,7 @@ export default function EvidencePackViewerPage() {
         </nav>
 
         {tab === 'overview' && <OverviewTab pack={pack} frameworks={frameworks} items={items} />}
+        {tab === 'compliance' && <ComplianceTab packId={pack.id} />}
         {tab === 'timeline' && <TimelineTab items={items} />}
         {tab === 'search' && <SearchTab items={items} />}
         {tab === 'shares' && <SharesTab packId={pack.id} canShare={pack.status === 'finalised' || pack.status === 'shared'} />}
@@ -297,6 +313,86 @@ function SearchTab({ items }: { items: PackDetail['items'] }) {
       <ol className="space-y-2">
         {filtered.map((item) => <ItemRow key={`${item.item_type}-${item.item_id}`} item={item} />)}
       </ol>
+    </div>
+  );
+}
+
+function ComplianceTab({ packId }: { packId: string }) {
+  const [mapping, setMapping] = useState<{ frameworks: FrameworkResult[]; totalGaps: number; totalAccepted: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetchWithAuth(`/api/evidence-pack/${packId}/preview`, { method: 'POST' });
+        if (!res.ok) throw new Error(`Compliance preview failed (${res.status})`);
+        const j = await res.json();
+        setMapping(j.mapping);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  }, [packId]);
+
+  if (error) return <div className="text-sm text-adv-red">{error}</div>;
+  if (!mapping) return <div className="flex items-center gap-2 text-adv-gray text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Running compliance mapper…</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-adv-card border border-border p-3 text-sm flex items-center gap-3 flex-wrap">
+        <ShieldCheck className="h-5 w-5 text-adv-teal" />
+        <span>
+          Across all frameworks: <strong className="text-adv-green">{mapping.frameworks.reduce((s, f) => s + f.evidencedCount, 0)} evidenced</strong>
+          {' · '}
+          <strong className={mapping.totalGaps > 0 ? 'text-adv-gold' : 'text-adv-gray'}>{mapping.totalGaps} open gaps</strong>
+          {' · '}
+          <strong className="text-adv-gray">{mapping.totalAccepted} accepted gaps</strong>
+        </span>
+      </div>
+      {mapping.frameworks.map((fr) => (
+        <details key={fr.id} open className="rounded-xl border border-border bg-adv-card overflow-hidden">
+          <summary className="cursor-pointer p-4 flex items-center justify-between">
+            <div>
+              <div className="font-medium">{fr.label}</div>
+              <div className="text-xs text-adv-gray mt-0.5">{fr.citation}</div>
+            </div>
+            <div className="text-xs text-adv-gray">
+              <span className="text-adv-green">{fr.evidencedCount}</span> evidenced · <span className={fr.gapCount - fr.acceptedGapCount > 0 ? 'text-adv-gold' : ''}>{fr.gapCount - fr.acceptedGapCount}</span> open · {fr.acceptedGapCount} accepted · {fr.notApplicableCount} N/A
+            </div>
+          </summary>
+          <ul className="border-t border-border divide-y divide-border/40">
+            {fr.points.map((p) => {
+              const tone = p.status === 'evidenced' ? 'text-adv-green'
+                : p.status === 'not_applicable' ? 'text-adv-gray'
+                : p.acceptance ? 'text-adv-gold' : 'text-adv-red';
+              const icon = p.status === 'evidenced' ? '✓'
+                : p.status === 'not_applicable' ? '·'
+                : p.acceptance ? '!' : '✗';
+              return (
+                <li key={p.id} className="p-3 text-sm">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <div className="font-medium"><span className={`mr-2 ${tone}`}>{icon}</span>{p.label}</div>
+                    <code className="text-xs text-adv-gray">{p.id}</code>
+                  </div>
+                  {p.notes && <div className="text-xs text-adv-gray mt-1">{p.notes}</div>}
+                  {p.acceptance && (
+                    <div className="mt-2 rounded bg-adv-gold/5 border border-adv-gold/30 p-2 text-xs">
+                      <div className="text-adv-gold font-medium mb-1">Owner-accepted gap</div>
+                      <div className="text-adv-off-white italic">"{p.acceptance.rationale}"</div>
+                      <div className="text-adv-gray mt-1">— {p.acceptance.acceptedBy}, {new Date(p.acceptance.acceptedAt).toLocaleString()}</div>
+                    </div>
+                  )}
+                  {p.evidence.length > 0 && (
+                    <div className="mt-2 text-xs text-adv-gray">
+                      Evidence: {p.evidence.length} item(s) — {p.evidence.slice(0, 3).map((e) => e.type).join(', ')}{p.evidence.length > 3 ? '…' : ''}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      ))}
     </div>
   );
 }

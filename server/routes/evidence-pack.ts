@@ -29,6 +29,7 @@ import { collectForScope, type ScopeDefinition } from '../services/evidence-pack
 import { assemblePack, finalisePack, readPackRow, type AssembledPack } from '../services/evidence-pack/assembler.js';
 import { bundleEvidencePackToAnton } from '../services/evidence-pack/bundler.js';
 import { generateEvidencePackPdf } from '../services/evidence-pack/pdf-layout.js';
+import { mapCompliance } from '../services/evidence-pack/compliance-mapper.js';
 
 const log = childLogger('evidence-pack-route');
 
@@ -48,6 +49,11 @@ const createPackSchema = z.object({
 });
 
 const exportFormatSchema = z.enum(['anton', 'pdf']);
+
+const gapAcceptanceSchema = z.object({
+  pointId: z.string().min(1).max(200),
+  rationale: z.string().min(1).max(2000),
+});
 
 const createShareSchema = z.object({
   recipientName: z.string().min(1).max(200),
@@ -184,8 +190,77 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // ── Preview (Phase 3): run the compliance mapper, return the mapping
+  // and the gap list so the builder can show "fix / justify / accept" UI
+  // before the user clicks finalise.
+  router.post('/evidence-pack/:id/preview', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const assembled = await rebuildAssembledPack(db, req.params.id);
+      if (!assembled) return res.status(404).json({ error: 'Pack not found' });
+      const mapping = mapCompliance(
+        assembled,
+        assembled.pack.compliance_frameworks,
+        assembled.pack.compliance_gaps,
+      );
+      res.json({ mapping });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Gap acceptance: owner explicitly accepts a documented gap, with
+  // rationale that ends up on the pack cover page (per spec §5.6).
+  // Reversible until finalise.
+  router.put('/evidence-pack/:id/gap-acceptance', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const parsed = gapAcceptanceSchema.parse(req.body);
+      const pack = await readPackRow(db, req.params.id);
+      if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      if (pack.status !== 'draft') {
+        return res.status(409).json({ error: 'Pack is finalised; cannot edit gap acceptances' });
+      }
+      const gaps = { ...pack.compliance_gaps };
+      gaps[parsed.pointId] = {
+        rationale: parsed.rationale,
+        acceptedAt: new Date().toISOString(),
+        acceptedBy: req.user!.id,
+      };
+      await db.run(
+        `UPDATE evidence_packs SET compliance_gaps = ?::jsonb WHERE id = ?`,
+        JSON.stringify(gaps), req.params.id,
+      );
+      log.info({ packId: req.params.id, pointId: parsed.pointId }, 'gap_accepted');
+      res.json({ gaps });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  router.delete('/evidence-pack/:id/gap-acceptance/:pointId', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      const pack = await readPackRow(db, req.params.id);
+      if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      if (pack.status !== 'draft') {
+        return res.status(409).json({ error: 'Pack is finalised; cannot edit gap acceptances' });
+      }
+      const gaps = { ...pack.compliance_gaps };
+      delete gaps[String(req.params.pointId)];
+      await db.run(
+        `UPDATE evidence_packs SET compliance_gaps = ?::jsonb WHERE id = ?`,
+        JSON.stringify(gaps), req.params.id,
+      );
+      res.status(204).end();
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
   // ── Finalise (lock contents) ────────────────────────────────────────────
-  // Phase 1: signing not yet implemented (Phase 2 will sign here too).
+  // Phase 2 signs here. Phase 3 doesn't change the gate — open gaps are
+  // allowed but flagged on the cover.
   router.post('/evidence-pack/:id/finalise', requireAuth, requireRole('analyst'), async (req, res) => {
     try {
       if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;

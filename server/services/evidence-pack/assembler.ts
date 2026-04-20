@@ -35,6 +35,7 @@ export interface PackRow {
   retention_until: string | null; legal_hold: boolean;
   supersedes: string | null;
   compliance_frameworks: string[];
+  compliance_gaps: Record<string, { rationale: string; acceptedAt: string; acceptedBy: string }>;
   notes: string | null;
 }
 
@@ -215,12 +216,14 @@ export async function readPackRow(db: DatabaseAdapter, packId: string): Promise<
     retention_until: string | null; legal_hold: boolean;
     supersedes: string | null;
     compliance_frameworks: string[] | string;
+    compliance_gaps: Record<string, { rationale: string; acceptedAt: string; acceptedBy: string }> | string;
     notes: string | null;
   }>(
     `SELECT id, title, purpose, scope_type, scope_ref, scope_label,
             created_by, created_at, finalised_at, status, hash_manifest,
             signature, signer_public_key, item_count, size_bytes,
-            retention_until, legal_hold, supersedes, compliance_frameworks, notes
+            retention_until, legal_hold, supersedes, compliance_frameworks,
+            compliance_gaps, notes
      FROM evidence_packs WHERE id = ?`, packId,
   );
   if (!row) return null;
@@ -232,6 +235,9 @@ export async function readPackRow(db: DatabaseAdapter, packId: string): Promise<
     compliance_frameworks: typeof row.compliance_frameworks === 'string'
       ? JSON.parse(row.compliance_frameworks)
       : row.compliance_frameworks,
+    compliance_gaps: typeof row.compliance_gaps === 'string'
+      ? JSON.parse(row.compliance_gaps)
+      : (row.compliance_gaps ?? {}),
   };
 }
 

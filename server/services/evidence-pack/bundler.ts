@@ -23,6 +23,7 @@ import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
 import type { AssembledPack } from './assembler.js';
 import { canonicalise } from './collector.js';
+import { mapCompliance, renderFrameworkMarkdown } from './compliance-mapper.js';
 
 const log = childLogger('evidence-pack-bundler');
 
@@ -50,11 +51,33 @@ export async function bundleEvidencePackToAnton(
   const manifestBytes = Buffer.from(JSON.stringify(manifestForExport, null, 2), 'utf-8');
   zip.addFile('manifest.json', manifestBytes);
 
-  // 3. Compliance mapping placeholders — Phase 3 fills these in. We always
-  //    write the files so the bundle layout is stable across phases and
-  //    regulators see the structure even on a Phase 1 export.
-  zip.addFile('compliance/eu_ai_act_annex_iv.md', Buffer.from(annexIvStub(assembled), 'utf-8'));
-  zip.addFile('compliance/amlr_auditability.md', Buffer.from(amlrAuditabilityStub(assembled), 'utf-8'));
+  // 3. Compliance mapping — real Phase 3 output. Run the mapper for every
+  // framework declared on the pack and write a markdown per framework.
+  // Owner-accepted gaps land in the mapping via compliance_gaps on the pack.
+  const mapping = mapCompliance(
+    assembled,
+    assembled.pack.compliance_frameworks,
+    assembled.pack.compliance_gaps,
+  );
+  for (const fr of mapping.frameworks) {
+    const filename = `compliance/${fr.id === 'eu_ai_act' ? 'eu_ai_act_annex_iv' : fr.id}.md`;
+    zip.addFile(filename, Buffer.from(renderFrameworkMarkdown(assembled, fr.id, mapping), 'utf-8'));
+  }
+  // Coverage summary as JSON so machine-readable consumers don't have to
+  // parse the markdowns.
+  zip.addFile('compliance/coverage.json', Buffer.from(JSON.stringify({
+    packId: mapping.packId,
+    generatedAt: mapping.generatedAt,
+    totalGaps: mapping.totalGaps,
+    totalAccepted: mapping.totalAccepted,
+    frameworks: mapping.frameworks.map((f) => ({
+      id: f.id, label: f.label,
+      evidencedCount: f.evidencedCount,
+      gapCount: f.gapCount,
+      acceptedGapCount: f.acceptedGapCount,
+      notApplicableCount: f.notApplicableCount,
+    })),
+  }, null, 2), 'utf-8'));
 
   // 4. Signature + verifier. For finalised packs we ship the real signature
   //    and the standalone verifier (Phase 2B). For draft packs (which can
@@ -94,55 +117,6 @@ export async function bundleEvidencePackToAnton(
 
 function manifestRefFor(itemType: string, itemId: string): string {
   return `items/${itemType}_${itemId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80)}.json`;
-}
-
-// ── Phase 1 placeholders ───────────────────────────────────────────────────
-
-function annexIvStub(a: AssembledPack): string {
-  return `# EU AI Act — Annex IV Technical Documentation Mapping
-
-**Pack:** ${a.pack.title}
-**Pack ID:** ${a.pack.id}
-**Items in scope:** ${a.collectedItems.length}
-
-> Phase 3 produces the populated nine-point Annex IV checklist with per-point
-> evidence references. This Phase 1 bundle only ships the raw evidence; use
-> the items/ directory to verify each artefact, and the manifest hash on the
-> cover to verify integrity.
-
-## Annex IV Structure (to be filled by Phase 3 mapper)
-
-1. General description of the AI system
-2. Detailed description of system elements + development
-3. Monitoring, functioning, and control
-4. Risk management system
-5. Changes through lifecycle
-6. Standards applied
-7. EU declaration of conformity
-8. Post-market monitoring plan
-9. List of harmonised standards applied
-`;
-}
-
-function amlrAuditabilityStub(a: AssembledPack): string {
-  return `# AMLR — Auditability Mapping
-
-**Pack:** ${a.pack.title}
-**Pack ID:** ${a.pack.id}
-
-> Phase 3 produces the populated five-dimension AML data quality mapping +
-> AMLR Article 21 record-keeping checklist. This Phase 1 bundle ships the
-> raw audit_log entries for every AI call; use those + the per-item review
-> status to verify auditability.
-
-## AMLR Auditability Dimensions (to be filled by Phase 3 mapper)
-
-- Completeness
-- Accuracy
-- Timeliness
-- Consistency
-- **Auditability** — when data was captured, changed, by whom (Article 21)
-`;
 }
 
 /**
