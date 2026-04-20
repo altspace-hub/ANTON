@@ -1,17 +1,19 @@
 // ── Missions — Task Executor ────────────────────────────────────────────────
 // Per-task execution. Supported task types:
-//   • llm         — calls the LLM with the task prompt + mission context
-//   • checkpoint  — pauses the mission, records a checkpoint activity entry
-//   • api_call    — real HTTP request via api-call-executor (audit improvement #1A)
+//   • llm             — calls the LLM with the task prompt + mission context
+//   • checkpoint      — pauses the mission, records a checkpoint activity entry
+//   • api_call        — real HTTP request (audit improvement #1A)
+//   • database_query  — read-only SELECT against local or external DB (#1B)
 //
-// Other task_types ('research', 'analysis', 'export', 'browser', 'database_query',
-// 'conditional', 'parallel_group') still fall back to an llm-style call —
-// browser + database_query land in #1B + #1C of the audit improvement plan.
+// Other task_types ('research', 'analysis', 'export', 'browser', 'conditional',
+// 'parallel_group') still fall back to an llm-style call — browser lands in
+// #1C of the audit improvement plan.
 
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
 import { executeApiCall } from './executors/api-call-executor.js';
+import { executeDatabaseQuery } from './executors/database-query-executor.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
 
@@ -69,14 +71,20 @@ export function createMissionExecutor(db: DatabaseAdapter) {
       taskId: task.id,
     });
 
-    // ── api_call: real HTTP request (audit improvement #1A) ───────────────
-    if (task.task_type === 'api_call') {
-      const r = await executeApiCall(db, mission, task);
+    // ── Non-LLM action executors (api_call, database_query) ───────────────
+    // Both run a tool, record output + activity, and share retry/fail
+    // semantics with the LLM path above. When #1C (browser) lands this will
+    // be the third caller — good moment to extract a helper.
+    if (task.task_type === 'api_call' || task.task_type === 'database_query') {
+      const r = task.task_type === 'api_call'
+        ? await executeApiCall(db, mission, task)
+        : await executeDatabaseQuery(db, mission, task);
+      const providerLabel = task.task_type === 'api_call' ? 'http' : 'sql';
       await state.recordTaskOutput(task.id, {
         full: r.outputFull,
         summary: r.outputSummary,
-        provider: 'http',
-        model: 'http',
+        provider: providerLabel,
+        model: providerLabel,
         tier: 'utility',
         tokens: 0,
         durationSeconds: Math.round(r.durationMs / 1000),
@@ -89,12 +97,13 @@ export function createMissionExecutor(db: DatabaseAdapter) {
         taskId: task.id,
       });
       if (!r.success) {
+        const fallbackMsg = `${task.task_type} failed`;
         const newRetry = task.retry_count + 1;
         if (newRetry > task.max_retries) {
-          await state.updateTaskStatus(task.id, 'failed', { lastError: r.errorReason ?? 'api_call failed' });
+          await state.updateTaskStatus(task.id, 'failed', { lastError: r.errorReason ?? fallbackMsg });
           return { success: false, reason: r.errorReason };
         }
-        await state.bumpTaskRetry(task.id, r.errorReason ?? 'api_call failed');
+        await state.bumpTaskRetry(task.id, r.errorReason ?? fallbackMsg);
         return { success: false, reason: r.errorReason };
       }
       return { success: true, outputFull: r.outputFull, outputSummary: r.outputSummary, durationMs: r.durationMs };
