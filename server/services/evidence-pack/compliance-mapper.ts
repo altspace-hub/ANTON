@@ -192,9 +192,89 @@ const AMLR: FrameworkDef = {
   ],
 };
 
+const GDPR: FrameworkDef = {
+  id: 'gdpr',
+  label: 'GDPR — Article 22 + Article 30',
+  citation: 'Regulation (EU) 2016/679 — automated decision-making + records of processing',
+  points: [
+    {
+      id: 'art_22',
+      label: 'Article 22 — Automated individual decision-making',
+      description: 'Where AI output contributes to decisions about natural persons, the data subject has a right to meaningful information about the logic involved. Thinking content is the transparency surface.',
+      isEvidenced: (items) => items.filter((i) => i.regulatoryRelevance.includes('eu_ai_act.art_13') || i.regulatoryRelevance.includes('gdpr.art_22')),
+    },
+    {
+      id: 'art_30',
+      label: 'Article 30 — Records of processing activities',
+      description: 'For each processing activity: purposes, categories of data subjects + personal data, recipients, retention periods. The pack manifest + audit_log entries provide provenance.',
+      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log' || i.itemType === 'session'),
+    },
+    {
+      id: 'art_5_1c',
+      label: 'Article 5(1)(c) — Data minimisation',
+      description: 'Personal data limited to what is necessary. Redactions in this pack are how data minimisation is enforced when sharing externally.',
+      isEvidenced: (_items) => [],
+      isNotApplicable: (_pack) => true,    // Heuristic can't prove minimisation; surface as N/A by default.
+    },
+    {
+      id: 'art_32',
+      label: 'Article 32 — Security of processing',
+      description: 'Pseudonymisation, encryption, integrity guarantees. Manifest hashing + Ed25519 signing + at-rest encryption of the signing key satisfy this for the pack itself.',
+      isEvidenced: (items) => items,    // every item benefits from manifest-hash integrity
+    },
+  ],
+};
+
+const DORA: FrameworkDef = {
+  id: 'dora',
+  label: 'DORA — ICT Risk Management + Incident Records',
+  citation: 'Regulation (EU) 2022/2554 — Digital Operational Resilience Act',
+  points: [
+    {
+      id: 'art_5',
+      label: 'Article 5 — Governance + organisation',
+      description: 'Internal governance + control framework that ensures effective management of ICT risk. Project + session records show governance in action.',
+      isEvidenced: (items) => items.filter((i) => i.itemType === 'project' || i.itemType === 'session'),
+    },
+    {
+      id: 'art_6',
+      label: 'Article 6 — ICT risk management framework',
+      description: 'Identification, protection, detection, response, recovery. Rule violations + override events are the response surface.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'rule_violation' || i.itemType === 'override_event'
+        || i.regulatoryRelevance.includes('eu_ai_act.art_9'),
+      ),
+    },
+    {
+      id: 'art_8',
+      label: 'Article 8 — Identification + classification of ICT-related risk',
+      description: 'Documented inventory of ICT assets + their criticality. Out of pack scope; inventory is a separate artefact.',
+      isEvidenced: (_items) => [],
+      isNotApplicable: (_pack) => true,
+    },
+    {
+      id: 'art_17',
+      label: 'Article 17 — ICT-related incident management',
+      description: 'Process to detect, manage, and notify ICT-related incidents. Mission decisions + activity logs surface the management trail.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'mission_decision' || i.itemType === 'mission_activity' || i.itemType === 'rule_violation',
+      ),
+    },
+    {
+      id: 'art_28',
+      label: 'Article 28 — Register of information (third-party providers)',
+      description: 'Register of all contractual arrangements with ICT third-party service providers. Out of pack scope.',
+      isEvidenced: (_items) => [],
+      isNotApplicable: (_pack) => true,
+    },
+  ],
+};
+
 const FRAMEWORKS: Record<string, FrameworkDef> = {
   eu_ai_act: ANNEX_IV,
   amlr: AMLR,
+  gdpr: GDPR,
+  dora: DORA,
 };
 
 // ── Public API ─────────────────────────────────────────────────────────────

@@ -34,9 +34,22 @@ export async function bundleEvidencePackToAnton(
   const zip = new AdmZip();
 
   // 1. Per-item canonical JSON bodies — the actual evidence content.
+  // Phase 4: redacted items get a placeholder body that preserves the hash
+  // (so verifiers can still see the manifest is internally consistent —
+  // the hash references the original content), with the redaction reason.
   for (const item of assembled.collectedItems) {
     const filename = manifestRefFor(item.itemType, item.itemId);
-    zip.addFile(filename, Buffer.from(item.canonicalJson, 'utf-8'));
+    const redaction = assembled.redactions[`${item.itemType}:${item.itemId}`];
+    const body = redaction && redaction.status !== 'none'
+      ? JSON.stringify({
+          _redacted: true,
+          redaction_status: redaction.status,
+          redaction_reason: redaction.reason ?? '(no reason provided)',
+          original_hash: item.itemHash,
+          note: 'Original content removed from this bundle by the pack owner. The manifest hash references the original content; verifying the manifest still proves the redaction was made before signing.',
+        }, null, 2)
+      : item.canonicalJson;
+    zip.addFile(filename, Buffer.from(body, 'utf-8'));
   }
 
   // 2. Manifest. If the pack has been finalised + signed, splice the
@@ -89,7 +102,12 @@ export async function bundleEvidencePackToAnton(
   zip.addFile('signature.txt', Buffer.from(sigContent, 'utf-8'));
   zip.addFile('verifier.html', Buffer.from(verifierHtml(assembled), 'utf-8'));
 
-  // 5. README — orienting prose for whoever opens this in a file browser.
+  // 5. CLI verifier — tiny Node.js script for power users without a browser.
+  // Same logic as verifier.html but on the command line; reads manifest.json
+  // from the bundle directory and verifies the signature offline.
+  zip.addFile('verifier.cjs', Buffer.from(cliVerifierScript(), 'utf-8'));
+
+  // 6. README — orienting prose for whoever opens this in a file browser.
   zip.addFile('README.md', Buffer.from(readme(assembled), 'utf-8'));
 
   // 6. Bundle integrity sidecar — sha256 of every entry so a regulator can
@@ -297,6 +315,70 @@ function show(cls, msg) {
 
 function escapeHtml(s: string): string {
   return s.replace(/[<>"&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' }[c] ?? c));
+}
+
+/**
+ * CLI verifier bundled into every .anton — for power users without a
+ * browser. Same logic as verifier.html: load manifest.json, recompute
+ * canonical hash, verify signature with node:crypto Ed25519. Single file
+ * with zero deps beyond Node.
+ *
+ * Usage: `node verifier.cjs` from inside the unzipped bundle directory.
+ */
+function cliVerifierScript(): string {
+  return `#!/usr/bin/env node
+// Evidence Pack CLI verifier — zero deps, runs against an unzipped .anton.
+// Usage: cd into the bundle dir, run: node verifier.cjs
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+function fail(msg) { console.error('\\x1b[31m✗ ' + msg + '\\x1b[0m'); process.exit(1); }
+function ok(msg)   { console.log('\\x1b[32m✓ ' + msg + '\\x1b[0m'); }
+function info(msg) { console.log('\\x1b[36mℹ ' + msg + '\\x1b[0m'); }
+
+const manifestPath = path.join(process.cwd(), 'manifest.json');
+if (!fs.existsSync(manifestPath)) fail('manifest.json not found in current directory');
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+
+info('Pack ' + manifest.packId + ' — "' + manifest.title + '"');
+info('Items: ' + manifest.itemCount + ', frameworks: ' + (manifest.complianceFrameworks || []).join(', '));
+
+// 1. Recompute manifest hash.
+function sortKeys(v) {
+  if (v === null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) return v.map(sortKeys);
+  const out = {};
+  for (const k of Object.keys(v).sort()) out[k] = sortKeys(v[k]);
+  return out;
+}
+const hashable = Object.assign({}, manifest, {
+  manifestHash: '', signature: null, signerPublicKey: null,
+  created: Object.assign({}, manifest.created, { at: '__pinned__' }),
+});
+const recomputed = 'sha256:' + crypto.createHash('sha256').update(JSON.stringify(sortKeys(hashable))).digest('hex');
+if (recomputed !== manifest.manifestHash) {
+  fail('Manifest tampered: recomputed ' + recomputed + ' does not match claimed ' + manifest.manifestHash);
+}
+ok('Manifest hash matches recomputation');
+
+// 2. Verify signature.
+if (!manifest.signature || !manifest.signerPublicKey) {
+  console.log('\\x1b[33m! Pack is unsigned (was not finalised).\\x1b[0m');
+  process.exit(0);
+}
+if (!manifest.signature.startsWith('ed25519:')) fail('Unknown signature format');
+
+const sigB64u = manifest.signature.slice('ed25519:'.length);
+const sigB64 = sigB64u.replace(/-/g, '+').replace(/_/g, '/').padEnd(sigB64u.length + (4 - sigB64u.length % 4) % 4, '=');
+const sigBytes = Buffer.from(sigB64, 'base64');
+const pubKeyDer = Buffer.from(manifest.signerPublicKey, 'hex');
+const pubKey = crypto.createPublicKey({ key: pubKeyDer, format: 'der', type: 'spki' });
+const verified = crypto.verify(null, Buffer.from(manifest.manifestHash, 'utf-8'), pubKey, sigBytes);
+if (!verified) fail('Signature INVALID — pack contents may have been altered after signing.');
+ok('Signature VALID under embedded public key');
+info('Signed by: ' + manifest.signerPublicKey.slice(0, 32) + '...');
+`;
 }
 
 function readme(a: AssembledPack): string {

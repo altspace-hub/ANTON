@@ -26,6 +26,8 @@ interface PackDetail {
     item_type: string; item_id: string; item_hash: string;
     item_summary: string; item_order: number;
     regulatory_relevance: string[] | string | null;
+    redaction_status?: string;
+    redaction_reason?: string | null;
   }>;
 }
 
@@ -80,7 +82,7 @@ export default function EvidencePackViewerPage() {
   const [detail, setDetail] = useState<PackDetail | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<'anton' | 'pdf' | null>(null);
+  const [exporting, setExporting] = useState<'anton' | 'pdf' | 'jsonl' | 'html' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +100,49 @@ export default function EvidencePackViewerPage() {
     return () => { cancelled = true; };
   }, [id]);
 
-  async function exportPack(format: 'anton' | 'pdf') {
+  async function refreshDetail() {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/evidence-pack/${id}`);
+    if (res.ok) setDetail(await res.json());
+  }
+
+  async function toggleLegalHold(enable: boolean) {
+    if (!id) return;
+    const reason = enable
+      ? prompt('Reason for legal hold? (e.g. "ongoing FI inspection")') ?? 'enabled'
+      : prompt('Reason for clearing legal hold?') ?? 'cleared';
+    const res = await fetchWithAuth(`/api/evidence-pack/${id}/legal-hold`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enable, reason }),
+    });
+    if (res.ok || res.status === 204) await refreshDetail();
+  }
+
+  async function redactItem(itemType: string, itemId: string) {
+    if (!id) return;
+    const reason = prompt(`Reason for redacting ${itemType} ${itemId}? (legal privilege, GDPR personal data, ...)`)
+      ?.trim();
+    if (!reason) return;
+    const res = await fetchWithAuth(`/api/evidence-pack/${id}/items/${encodeURIComponent(`${itemType}:${itemId}`)}/redact`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'full', reason }),
+    });
+    if (res.ok || res.status === 204) await refreshDetail();
+  }
+
+  async function clearRedaction(itemType: string, itemId: string) {
+    if (!id) return;
+    const res = await fetchWithAuth(`/api/evidence-pack/${id}/items/${encodeURIComponent(`${itemType}:${itemId}`)}/redact`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'none' }),
+    });
+    if (res.ok || res.status === 204) await refreshDetail();
+  }
+
+  async function exportPack(format: 'anton' | 'pdf' | 'jsonl' | 'html') {
     if (!id) return;
     setExporting(format);
     setError(null);
@@ -168,7 +212,18 @@ export default function EvidencePackViewerPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => void toggleLegalHold(!pack.legal_hold)}
+              className={`px-3 py-2 rounded-lg border text-sm flex items-center gap-1 ${
+                pack.legal_hold
+                  ? 'border-adv-gold/40 text-adv-gold bg-adv-gold/10 hover:bg-adv-gold/20'
+                  : 'border-border hover:border-adv-gold/40 text-adv-gray hover:text-adv-gold'
+              }`}
+              title={pack.legal_hold ? 'Clear legal hold' : 'Place under legal hold (cannot be deleted)'}
+            >
+              <Lock className="h-4 w-4" /> {pack.legal_hold ? 'Hold on' : 'Legal hold'}
+            </button>
             <button
               onClick={() => void exportPack('anton')}
               disabled={exporting !== null}
@@ -182,6 +237,22 @@ export default function EvidencePackViewerPage() {
               className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal flex items-center gap-1 disabled:opacity-50"
             >
               {exporting === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} PDF
+            </button>
+            <button
+              onClick={() => void exportPack('jsonl')}
+              disabled={exporting !== null}
+              className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal flex items-center gap-1 disabled:opacity-50"
+              title="Newline-delimited JSON, one item per line — for ingestion pipelines"
+            >
+              {exporting === 'jsonl' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} JSONL
+            </button>
+            <button
+              onClick={() => void exportPack('html')}
+              disabled={exporting !== null}
+              className="px-3 py-2 rounded-lg border border-border text-sm hover:border-adv-teal flex items-center gap-1 disabled:opacity-50"
+              title="Single self-contained HTML file — browse offline"
+            >
+              {exporting === 'html' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} HTML
             </button>
           </div>
         </header>
@@ -203,7 +274,7 @@ export default function EvidencePackViewerPage() {
 
         {tab === 'overview' && <OverviewTab pack={pack} frameworks={frameworks} items={items} />}
         {tab === 'compliance' && <ComplianceTab packId={pack.id} />}
-        {tab === 'timeline' && <TimelineTab items={items} />}
+        {tab === 'timeline' && <TimelineTab items={items} onRedact={redactItem} onClearRedaction={clearRedaction} />}
         {tab === 'search' && <SearchTab items={items} />}
         {tab === 'shares' && <SharesTab packId={pack.id} canShare={pack.status === 'finalised' || pack.status === 'shared'} />}
         {tab === 'access_log' && <AccessLogTab packId={pack.id} />}
@@ -270,10 +341,21 @@ function OverviewTab({ pack, frameworks, items }: { pack: PackDetail['pack']; fr
   );
 }
 
-function TimelineTab({ items }: { items: PackDetail['items'] }) {
+function TimelineTab({ items, onRedact, onClearRedaction }: {
+  items: PackDetail['items'];
+  onRedact: (type: string, id: string) => void | Promise<void>;
+  onClearRedaction: (type: string, id: string) => void | Promise<void>;
+}) {
   return (
     <ol className="space-y-2">
-      {items.map((item) => <ItemRow key={`${item.item_type}-${item.item_id}`} item={item} />)}
+      {items.map((item) => (
+        <ItemRow
+          key={`${item.item_type}-${item.item_id}`}
+          item={item}
+          onRedact={() => void onRedact(item.item_type, item.item_id)}
+          onClearRedaction={() => void onClearRedaction(item.item_type, item.item_id)}
+        />
+      ))}
     </ol>
   );
 }
@@ -664,22 +746,31 @@ function AccessLogTab({ packId }: { packId: string }) {
   );
 }
 
-function ItemRow({ item }: { item: PackDetail['items'][number] }) {
+function ItemRow({ item, onRedact, onClearRedaction }: {
+  item: PackDetail['items'][number];
+  onRedact?: () => void;
+  onClearRedaction?: () => void;
+}) {
   const tags = Array.isArray(item.regulatory_relevance)
     ? item.regulatory_relevance
     : item.regulatory_relevance
       ? JSON.parse(item.regulatory_relevance)
       : [];
+  const redacted = item.redaction_status && item.redaction_status !== 'none';
   return (
-    <li className="rounded-lg border border-border bg-adv-card p-3">
+    <li className={`rounded-lg border p-3 ${redacted ? 'border-adv-gold/40 bg-adv-gold/5' : 'border-border bg-adv-card'}`}>
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="px-1.5 py-0.5 rounded bg-adv-teal/10 text-adv-teal text-xs">{item.item_type}</span>
             <span className="text-xs text-adv-gray">#{item.item_order + 1}</span>
+            {redacted && <span className="px-1.5 py-0.5 rounded bg-adv-gold/20 text-adv-gold text-xs font-medium">REDACTED</span>}
           </div>
           <div className="text-sm">{item.item_summary}</div>
           <code className="text-xs text-adv-gray">{item.item_id}</code>
+          {redacted && item.redaction_reason && (
+            <div className="text-xs text-adv-gold/90 italic mt-1">"{item.redaction_reason}"</div>
+          )}
         </div>
         <div className="text-xs text-adv-gray text-right">
           <code className="block">{item.item_hash.slice(0, 24)}…</code>
@@ -688,6 +779,17 @@ function ItemRow({ item }: { item: PackDetail['items'][number] }) {
               {tags.slice(0, 3).map((t: string) => (
                 <span key={t} className="px-1.5 py-0.5 rounded bg-adv-dark text-adv-gray">{t}</span>
               ))}
+            </div>
+          )}
+          {(onRedact || onClearRedaction) && (
+            <div className="mt-2">
+              {redacted
+                ? onClearRedaction && (
+                  <button onClick={onClearRedaction} className="text-xs text-adv-gray hover:text-adv-teal">Clear redaction</button>
+                )
+                : onRedact && (
+                  <button onClick={onRedact} className="text-xs text-adv-gray hover:text-adv-gold">Redact</button>
+                )}
             </div>
           )}
         </div>

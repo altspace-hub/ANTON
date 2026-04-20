@@ -254,12 +254,15 @@ function drawToc(doc: PDFKit.PDFDocument, a: AssembledPack): void {
 function drawItem(doc: PDFKit.PDFDocument, item: AssembledPack['collectedItems'][number], a: AssembledPack): void {
   const { width } = doc.page;
   const idx = a.collectedItems.indexOf(item) + 1;
+  const redaction = a.redactions[`${item.itemType}:${item.itemId}`];
+  const isRedacted = redaction && redaction.status !== 'none';
 
-  // Header strip
+  // Header strip — redacted items get a warning-toned strip.
   doc.rect(PAGE.margin, PAGE.margin, width - 2 * PAGE.margin, 32)
-    .fillColor('#F5F7FA').fill();
-  doc.fillColor(COLOR.accent).font(FONT.bold).fontSize(10)
-    .text(`#${idx}  ·  ${item.itemType.toUpperCase()}`, PAGE.margin + 10, PAGE.margin + 9, { characterSpacing: 1 });
+    .fillColor(isRedacted ? '#FEF3C7' : '#F5F7FA').fill();
+  doc.fillColor(isRedacted ? COLOR.warn : COLOR.accent).font(FONT.bold).fontSize(10)
+    .text(`#${idx}  ·  ${item.itemType.toUpperCase()}${isRedacted ? '  ·  REDACTED' : ''}`,
+      PAGE.margin + 10, PAGE.margin + 9, { characterSpacing: 1 });
   doc.fillColor(COLOR.gray).font(FONT.regular).fontSize(9)
     .text(item.itemSummary, PAGE.margin + 10, PAGE.margin + 22, { width: width - 2 * PAGE.margin - 20 });
 
@@ -274,6 +277,23 @@ function drawItem(doc: PDFKit.PDFDocument, item: AssembledPack['collectedItems']
   doc.text(`Source: ${item.itemTable} / ${item.itemId}`, { lineGap: 1 });
 
   doc.moveDown(0.6);
+
+  if (isRedacted) {
+    // Box describing the redaction; no body content.
+    const boxY = doc.y;
+    doc.rect(PAGE.margin, boxY, width - 2 * PAGE.margin, 80).fillColor('#FFFBEB').fill();
+    doc.fillColor(COLOR.warn).font(FONT.bold).fontSize(11)
+      .text('REDACTED', PAGE.margin + 12, boxY + 12);
+    doc.fillColor(COLOR.ink).font(FONT.regular).fontSize(9)
+      .text(`Status: ${redaction.status}`, PAGE.margin + 12, boxY + 30);
+    doc.text(`Reason: ${redaction.reason ?? '(no reason provided)'}`, PAGE.margin + 12, boxY + 44, {
+      width: width - 2 * PAGE.margin - 24,
+    });
+    doc.fillColor(COLOR.gray).fontSize(8)
+      .text('The manifest hash above references the original content prior to redaction. Manifest verification still passes.',
+        PAGE.margin + 12, boxY + 64, { width: width - 2 * PAGE.margin - 24 });
+    return;
+  }
 
   // Canonical body — render as monospace JSON block. Pdfkit will paginate.
   doc.fillColor(COLOR.ink).font(FONT.mono).fontSize(8)

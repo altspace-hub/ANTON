@@ -67,10 +67,9 @@ export async function collectForScope(db: DatabaseAdapter, scope: ScopeDefinitio
   switch (scope.type) {
     case 'session': return collectSessionScope(db, scope.sessionId);
     case 'project': return collectProjectScope(db, scope.projectId);
+    case 'mission': return collectMissionScope(db, scope.missionId);
     default:
-      // Phase 2/3 will fill these in. Throw early so the route layer can
-      // map this to a clean 400.
-      throw new Error(`Unsupported scope type for Phase 1: ${scope.type}`);
+      throw new Error(`Unsupported scope type: ${scope.type}`);
   }
 }
 
@@ -149,6 +148,135 @@ async function collectProjectScope(db: DatabaseAdapter, projectId: string): Prom
     items,
     scopeLabel: `Project "${project.name}" — ${sessionRows.length} session(s), ${items.length} items`,
   };
+}
+
+// ── Mission scope ──────────────────────────────────────────────────────────
+
+async function collectMissionScope(db: DatabaseAdapter, missionId: string): Promise<CollectedItems> {
+  const mission = await db.get<MissionRow>(
+    `SELECT id, title, objective, context, success_criteria, autonomy_level,
+            status, priority, created_at, updated_at
+     FROM missions.missions WHERE id = ?`, missionId,
+  );
+  if (!mission) throw new Error(`Mission ${missionId} not found`);
+
+  const items: CollectedItem[] = [];
+  items.push(toItem({
+    itemType: 'mission',
+    itemTable: 'missions.missions',
+    itemId: mission.id,
+    summary: `Mission "${mission.title}" (${mission.status}, ${mission.autonomy_level})`,
+    payload: mission,
+    relevance: ['eu_ai_act.art_12', 'eu_ai_act.art_14'],   // missions = autonomous AI; oversight matters
+  }));
+
+  // Tasks — every step the mission ran or planned to run.
+  const tasks = await db.all<MissionTaskRow>(
+    `SELECT id, mission_id, parent_task_id, title, description, task_type,
+            status, priority, created_at, updated_at
+     FROM missions.mission_tasks WHERE mission_id = ?
+     ORDER BY created_at ASC`, missionId,
+  );
+  for (const t of tasks) {
+    items.push(toItem({
+      itemType: 'mission_task',
+      itemTable: 'missions.mission_tasks',
+      itemId: t.id,
+      summary: `Task "${t.title}" (${t.task_type}, ${t.status})`,
+      payload: t,
+      relevance: ['eu_ai_act.art_12'],
+    }));
+  }
+
+  // Activity log — narrative of what happened.
+  const activity = await db.all<{ id: string; mission_id: string; activity_type: string; summary: string | null; payload: unknown; created_at: string }>(
+    `SELECT id, mission_id, activity_type, summary, payload, created_at
+     FROM missions.mission_activity WHERE mission_id = ?
+     ORDER BY created_at ASC LIMIT 1000`, missionId,
+  );
+  for (const a of activity) {
+    items.push(toItem({
+      itemType: 'mission_activity',
+      itemTable: 'missions.mission_activity',
+      itemId: a.id,
+      summary: `${a.activity_type}: ${a.summary ?? '(no summary)'}`,
+      payload: a,
+      relevance: ['eu_ai_act.art_12'],
+    }));
+  }
+
+  // Decisions — Article 14 evidence (what was decided, by whom, when).
+  const decisions = await db.all<{ id: string; mission_id: string; decision_type: string; summary: string | null; created_at: string }>(
+    `SELECT id, mission_id, decision_type, summary, created_at
+     FROM missions.mission_decisions WHERE mission_id = ?
+     ORDER BY created_at ASC`, missionId,
+  );
+  for (const d of decisions) {
+    items.push(toItem({
+      itemType: 'mission_decision',
+      itemTable: 'missions.mission_decisions',
+      itemId: d.id,
+      summary: `Decision (${d.decision_type}): ${d.summary ?? '(no summary)'}`,
+      payload: d,
+      relevance: ['eu_ai_act.art_14'],
+    }));
+  }
+
+  // Browser traces — Playwright sessions are valuable provenance for any
+  // mission that hit external systems. Action rows are noisy (one per click);
+  // we cap at the first 200 per session for pack size sanity.
+  const browserSessions = await db.all<{ id: string; mission_id: string; status: string | null; created_at: string }>(
+    `SELECT id, mission_id, status, created_at
+     FROM missions.browser_sessions WHERE mission_id = ?
+     ORDER BY created_at ASC`, missionId,
+  );
+  for (const bs of browserSessions) {
+    items.push(toItem({
+      itemType: 'browser_session',
+      itemTable: 'missions.browser_sessions',
+      itemId: bs.id,
+      summary: `Browser session ${bs.id} (${bs.status ?? 'unknown'})`,
+      payload: bs,
+      relevance: ['eu_ai_act.art_12', 'eu_ai_act.art_14'],
+    }));
+    const actions = await db.all<{ id: string; session_id: string; action_type: string; created_at: string }>(
+      `SELECT id, session_id, action_type, created_at
+       FROM missions.browser_actions WHERE session_id = ?
+       ORDER BY created_at ASC LIMIT 200`, bs.id,
+    );
+    for (const a of actions) {
+      items.push(toItem({
+        itemType: 'browser_action',
+        itemTable: 'missions.browser_actions',
+        itemId: a.id,
+        summary: `${a.action_type}`,
+        payload: a,
+        relevance: ['eu_ai_act.art_12'],
+      }));
+    }
+  }
+
+  log.info({
+    missionId, taskCount: tasks.length, activityCount: activity.length,
+    decisionCount: decisions.length, browserSessionCount: browserSessions.length,
+    itemCount: items.length,
+  }, 'mission_scope_collected');
+
+  return {
+    items,
+    scopeLabel: `Mission "${mission.title}" — ${tasks.length} task(s), ${activity.length} activity entries, ${decisions.length} decisions, ${browserSessions.length} browser session(s)`,
+  };
+}
+
+interface MissionRow {
+  id: string; title: string; objective: string; context: string | null;
+  success_criteria: string; autonomy_level: string; status: string; priority: string;
+  created_at: string; updated_at: string;
+}
+interface MissionTaskRow {
+  id: string; mission_id: string; parent_task_id: string | null;
+  title: string; description: string | null; task_type: string;
+  status: string; priority: number; created_at: string; updated_at: string;
 }
 
 // ── Per-session walker ─────────────────────────────────────────────────────
