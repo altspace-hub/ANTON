@@ -25,6 +25,8 @@ export interface Instance {
   paired_at: string;                // ISO
   last_sync_at: string | null;      // ISO
   last_status: 'online' | 'offline' | 'unknown';
+  /** Which endpoint the most recent successful ping reached. null when offline. */
+  last_transport: 'lan' | 'wan' | null;
   notification_categories: string[]; // ['approval', 'radar', 'mission_complete']
   default_voice_language: string | null;
 }
@@ -100,7 +102,7 @@ export function onActiveInstanceChange(cb: (id: string) => void): () => void {
   return () => activeListeners.delete(cb);
 }
 
-export async function addInstance(input: Omit<Instance, 'id' | 'paired_at' | 'last_sync_at' | 'last_status' | 'notification_categories' | 'default_voice_language'> & {
+export async function addInstance(input: Omit<Instance, 'id' | 'paired_at' | 'last_sync_at' | 'last_status' | 'last_transport' | 'notification_categories' | 'default_voice_language'> & {
   session_token: string;
   device_certificate: string;
 }): Promise<Instance> {
@@ -119,6 +121,7 @@ export async function addInstance(input: Omit<Instance, 'id' | 'paired_at' | 'la
     paired_at: new Date().toISOString(),
     last_sync_at: null,
     last_status: 'unknown',
+    last_transport: null,
     notification_categories: ['approval'],   // approvals on by default
     default_voice_language: null,
   };
@@ -156,7 +159,7 @@ export async function removeInstance(id: string): Promise<void> {
   }
 }
 
-export function updateInstance(id: string, patch: Partial<Pick<Instance, 'display_name' | 'last_status' | 'last_sync_at' | 'notification_categories' | 'default_voice_language' | 'org'>>): void {
+export function updateInstance(id: string, patch: Partial<Pick<Instance, 'display_name' | 'last_status' | 'last_transport' | 'last_sync_at' | 'notification_categories' | 'default_voice_language' | 'org'>>): void {
   const list = load();
   const idx = list.findIndex(i => i.id === id);
   if (idx < 0) return;
@@ -164,8 +167,12 @@ export function updateInstance(id: string, patch: Partial<Pick<Instance, 'displa
   save(list);
 }
 
-export function markSeen(id: string, status: 'online' | 'offline' = 'online'): void {
-  updateInstance(id, { last_status: status, last_sync_at: new Date().toISOString() });
+export function markSeen(id: string, status: 'online' | 'offline' = 'online', transport: 'lan' | 'wan' | null = null): void {
+  updateInstance(id, {
+    last_status: status,
+    last_transport: status === 'online' ? transport : null,
+    last_sync_at: new Date().toISOString(),
+  });
 }
 
 // ── Convenience: build the auth headers for the active instance ─────────

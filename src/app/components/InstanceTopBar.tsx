@@ -19,17 +19,30 @@ export default function InstanceTopBar({ onAddInstance }: { onAddInstance?: () =
   // Re-render when the active instance changes (e.g., user picked another)
   useEffect(() => onActiveInstanceChange(() => setTick(t => t + 1)), []);
 
-  // Cheap reachability ping — every 30s, against /api/app/discover
+  // Reachability ping — tries LAN first (if defined), falls back to the
+  // canonical server_base (usually WAN). Records WHICH transport succeeded
+  // so the UI can tell the user why they're connected the way they are.
+  //
+  // Previously this was a single probe against server_base which silently
+  // retried WAN when LAN went dark — the user had no way to tell LAN was
+  // down (audit improvement #4).
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    async function ping() {
+    async function probe(url: string): Promise<boolean> {
       try {
-        const res = await fetch(`${active!.server_base.replace(/\/$/, '')}/api/app/discover`, { signal: AbortSignal.timeout(3000) });
-        if (!cancelled) markSeen(active!.id, res.ok ? 'online' : 'offline');
-      } catch {
-        if (!cancelled) markSeen(active!.id, 'offline');
-      }
+        const res = await fetch(`${url.replace(/\/$/, '')}/api/app/discover`, { signal: AbortSignal.timeout(3000) });
+        return res.ok;
+      } catch { return false; }
+    }
+    async function ping() {
+      const lanUrl = active!.endpoints.lan;
+      const wanUrl = active!.endpoints.wan ?? active!.server_base;
+      let status: 'online' | 'offline' = 'offline';
+      let transport: 'lan' | 'wan' | null = null;
+      if (lanUrl && await probe(lanUrl)) { status = 'online'; transport = 'lan'; }
+      else if (wanUrl && await probe(wanUrl)) { status = 'online'; transport = 'wan'; }
+      if (!cancelled) markSeen(active!.id, status, transport);
       if (!cancelled) setTick(t => t + 1);
     }
     void ping();
@@ -40,17 +53,22 @@ export default function InstanceTopBar({ onAddInstance }: { onAddInstance?: () =
   if (!active) return null;
 
   const status = active.last_status;
+  const transport = active.last_transport;
   const dot = status === 'online' ? 'bg-adv-green' : status === 'offline' ? 'bg-adv-red' : 'bg-adv-gray';
+  const badge = status === 'online' && transport
+    ? transport.toUpperCase()
+    : status === 'offline' ? 'offline' : 'connecting';
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
         className="flex w-full items-center gap-2 border-b border-border bg-adv-dark-2 px-4 py-2 text-left transition active:bg-adv-card"
-        aria-label={`Active instance: ${active.display_name}. Tap to switch.`}
+        aria-label={`Active instance: ${active.display_name}. Status: ${badge}. Tap to switch.`}
       >
         <span className={`h-2 w-2 rounded-full ${dot}`} />
         <span className="flex-1 truncate text-xs font-medium text-adv-off-white">{active.display_name}</span>
+        <span className="text-[10px] uppercase tracking-wide text-adv-gray">{badge}</span>
         {totalInstances > 1 && (
           <span className="text-[10px] text-adv-gray">{totalInstances} instances</span>
         )}
