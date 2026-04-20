@@ -95,7 +95,13 @@ function parseTrigger(row: RawTriggerRow): WebhookTrigger {
 }
 
 export interface InternalEvent {
-  source: 'regulatory_radar' | 'compliance_rules' | 'file_watcher';
+  /**
+   * Must stay in sync with `InternalSource` in server/services/event-emitter.ts.
+   * Any caller of emitInternalEvent() lands in processInternalEvent(), so a
+   * source declared there but not here makes the listener un-assignable to
+   * the emitter's EmitFunction type.
+   */
+  source: 'regulatory_radar' | 'compliance_rules' | 'file_watcher' | 'market_signal' | 'market_event';
   [key: string]: unknown;
 }
 
