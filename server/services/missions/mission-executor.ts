@@ -4,18 +4,28 @@
 //   • checkpoint      — pauses the mission, records a checkpoint activity entry
 //   • api_call        — real HTTP request (audit improvement #1A)
 //   • database_query  — read-only SELECT against local or external DB (#1B)
+//   • browser         — Playwright-driven Service Pack workflow (#1C)
 //
-// Other task_types ('research', 'analysis', 'export', 'browser', 'conditional',
-// 'parallel_group') still fall back to an llm-style call — browser lands in
-// #1C of the audit improvement plan.
+// Other task_types ('research', 'analysis', 'export', 'conditional',
+// 'parallel_group') still fall back to an llm-style call.
 
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
 import { executeApiCall } from './executors/api-call-executor.js';
 import { executeDatabaseQuery } from './executors/database-query-executor.js';
+import { executeBrowser } from './executors/browser-executor.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
+
+// Action-layer task types share post-execution plumbing. The label is used
+// as the `provider`/`model` slug in recordTaskOutput — picks up cleanly in
+// the mission-activity log without pretending these are LLM calls.
+const ACTION_PROVIDER_LABELS: Partial<Record<string, string>> = {
+  api_call: 'http',
+  database_query: 'sql',
+  browser: 'browser',
+};
 
 interface ExecutionResult {
   success: boolean;
@@ -71,20 +81,18 @@ export function createMissionExecutor(db: DatabaseAdapter) {
       taskId: task.id,
     });
 
-    // ── Non-LLM action executors (api_call, database_query) ───────────────
-    // Both run a tool, record output + activity, and share retry/fail
-    // semantics with the LLM path above. When #1C (browser) lands this will
-    // be the third caller — good moment to extract a helper.
-    if (task.task_type === 'api_call' || task.task_type === 'database_query') {
-      const r = task.task_type === 'api_call'
-        ? await executeApiCall(db, mission, task)
-        : await executeDatabaseQuery(db, mission, task);
-      const providerLabel = task.task_type === 'api_call' ? 'http' : 'sql';
+    // ── Non-LLM action executors (api_call, database_query, browser) ──────
+    // All three run a tool, record output + activity, and share retry/fail
+    // semantics. Keep the shared plumbing here so each executor stays a
+    // single-responsibility function.
+    const actionLabel = ACTION_PROVIDER_LABELS[task.task_type];
+    if (actionLabel) {
+      const r = await runActionExecutor(task.task_type, mission, task);
       await state.recordTaskOutput(task.id, {
         full: r.outputFull,
         summary: r.outputSummary,
-        provider: providerLabel,
-        model: providerLabel,
+        provider: actionLabel,
+        model: actionLabel,
         tier: 'utility',
         tokens: 0,
         durationSeconds: Math.round(r.durationMs / 1000),
@@ -107,6 +115,16 @@ export function createMissionExecutor(db: DatabaseAdapter) {
         return { success: false, reason: r.errorReason };
       }
       return { success: true, outputFull: r.outputFull, outputSummary: r.outputSummary, durationMs: r.durationMs };
+    }
+
+    async function runActionExecutor(
+      type: MissionTask['task_type'],
+      m: Mission,
+      t: MissionTask,
+    ): Promise<{ success: boolean; outputFull: string; outputSummary: string; durationMs: number; errorReason?: string }> {
+      if (type === 'api_call') return executeApiCall(db, m, t);
+      if (type === 'database_query') return executeDatabaseQuery(db, m, t);
+      return executeBrowser(db, m, t);
     }
 
     // ── Build per-task system prompt ───────────────────────────────────────
