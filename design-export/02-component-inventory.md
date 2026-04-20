@@ -174,6 +174,21 @@ The Deadlines page (`/deadlines`) is large; broken into sub-views.
 
 ---
 
+## Portals (page-level, 7) — `src/pages/portals/`
+
+Unlike most pillars, Portals has no shared-component subfolder — each page composes directly from `src/components/shared/` primitives plus pillar-local inline components. Listed here so designers know where to look when redesigning a portal surface.
+
+| Name | Notes |
+|---|---|
+| `PortalsLandingPage`, `PortalsTemplateGalleryPage` | Entry + 7 starter templates |
+| `PortalBuilderPage` | 8-phase walkthrough — phase indicator, capability verb picker, LLM phase-suggestion, SSE streaming output |
+| `PortalManagePage` | Post-publish editor: assets, metadata, capabilities, visibility, transfer/revoke |
+| `PortalsDiscoveryPage` | Registry search — trust-bundle badges, capability chips, LAN-discoverable dot |
+| `PortalsInboxPage` | Incoming capability invocations with approval gate |
+| `PortalVisitorPage` | Public-facing render (auth-less, light/dark/corporate) + `/.well-known/aap-capabilities` |
+
+---
+
 ## Beehive (8) — `src/components/beehive/`
 
 Multi-participant deliberation. Live inside `BeehivePage` + `BeehiveSessionPage`.

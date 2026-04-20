@@ -332,6 +332,56 @@ Hiring + talent pipeline — fully in code.
 
 ---
 
+## Portals (`appMode = 'portals'`)
+
+ANTON-hosted public pages with an AAP machine-readable twin. Every portal is simultaneously a human-visitable site AND a capability descriptor other ANTONs can invoke. This is ANTON's proof of inter-instance interoperability — see `ANTON_Portals_Spec.md` v0.3.
+
+The pillar has its own left sidebar (parallels Markets / Payments). Nav sections: Landing, Manage, Discover, Inbox, Templates.
+
+### Portals landing
+- Route: `/portals`
+- Source: `src/pages/portals/PortalsLandingPage.tsx`
+- Function: First-run welcome or recently-built portals + Quick-Start shortcut.
+- State: `clean`.
+
+### Portal builder (8-phase walkthrough)
+- Route: `/portals/build/:portalId?`
+- Source: `src/pages/portals/PortalBuilderPage.tsx`
+- Function: Guided construction — name, category, audience, capabilities, pages, publish. LLM phase-suggestions + Quality Ratchet + SSE streaming.
+- State: `clean`. Phase indicator at the top; capability descriptor editor + 12-verb taxonomy (contact, order, book, etc.) as a dedicated phase.
+
+### Portal manage
+- Route: `/portals/manage/:portalId`
+- Source: `src/pages/portals/PortalManagePage.tsx`
+- Function: Post-publish editor — assets, metadata, capabilities, visibility, transfer/revoke. Publish → registry signs + pushes to transparency log.
+- State: `clean`.
+
+### Portal discovery
+- Route: `/portals/discover`
+- Source: `src/pages/portals/PortalsDiscoveryPage.tsx`
+- Function: Search the public registry by name/capability/tag. Results show trust-bundle status + capability badges + LAN-discoverable flag.
+- State: `clean`. LAN-discoverable portals get a small signal dot next to the name.
+
+### Portal inbox
+- Route: `/portals/inbox`
+- Source: `src/pages/portals/PortalsInboxPage.tsx`
+- Function: Incoming capability invocations (another ANTON asked yours to `contact`, `book`, etc.). Approval gate lives here for high-severity verbs.
+- State: `clean`.
+
+### Portal template gallery
+- Route: `/portals/templates`
+- Source: `src/pages/portals/PortalsTemplateGalleryPage.tsx`
+- Function: 7 starter templates (bakery, clinic, etc.) that seed the builder.
+- State: `clean`.
+
+### Portal visitor (public-facing)
+- Route: `/p/:namespace/:name`
+- Source: `src/pages/portals/PortalVisitorPage.tsx`
+- Function: The rendered portal itself — a unique surface per builder output. Also serves `/.well-known/aap-capabilities` for machine-readable discovery.
+- State: `clean`. Visitor view must render correctly in light/dark/corporate themes AND without auth.
+
+---
+
 ## Payments / FutureChain (`appMode = 'payments'`)
 
 FutureChain wallet + marketplace integration.

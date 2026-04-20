@@ -58,6 +58,13 @@ Used as a quality+depth chain across long-running flows. Visible in:
 - Historical trend at `/quality` (`QualityPage`).
 - Per-module trend in `SystemCardsPage`.
 - Atlas board pack scoring at `RiskAtlasWorkspacePage` Dashboard tab.
+- Portal builder `/portals/build/:id` uses the same ratchet to gate phase advancement.
+
+### Portals + AAP (inter-instance interoperability)
+- Every portal renders as both a human page (`/p/:namespace/:name`) and a machine endpoint (`/.well-known/aap-capabilities`) — design matters on both.
+- Pathfinder has an `anton-portal` mode that routes natural-language queries through the portal registry.
+- Capability invocations from another ANTON appear in `PortalsInboxPage` and use the same approval gate pattern as Missions (`check_in` / `briefing` / `full_autonomy`).
+- Registry-signed trust bundles show up as badges on `PortalsDiscoveryPage` search results.
 
 ---
 
