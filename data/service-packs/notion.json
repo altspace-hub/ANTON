@@ -40,7 +40,8 @@
           "url": "https://api.notion.com/v1/databases/${database_id}/query",
           "method": "POST",
           "template": "{ \"page_size\": ${page_size}, \"start_cursor\": \"${start_cursor}\" }",
-          "description": "POST — returns { results: [page], has_more, next_cursor }. Empty start_cursor means first page."
+          "body_template": {},
+          "description": "POST — returns { results: [page], has_more, next_cursor }. The v1 runner sends an empty body (default 100 rows); add page_size / start_cursor via a custom api_call task if you need pagination."
         }
       ]
     },
@@ -84,7 +85,13 @@
           "url": "https://api.notion.com/v1/pages",
           "method": "POST",
           "template": "{ \"parent\": { \"database_id\": \"${database_id}\" }, \"properties\": { \"${title_property}\": { \"title\": [{ \"text\": { \"content\": \"${title_value}\" } }] } } }",
-          "description": "POST — creates an empty page with only the title filled. Use update_page to set additional properties."
+          "body_template": {
+            "parent": { "database_id": "${database_id}" },
+            "properties": {
+              "${title_property}": { "title": [{ "text": { "content": "${title_value}" } }] }
+            }
+          },
+          "description": "POST — creates an empty page with only the title filled. Use update_page_properties to set additional properties."
         }
       ]
     },
