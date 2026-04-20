@@ -1,14 +1,17 @@
 // ── Missions — Task Executor ────────────────────────────────────────────────
-// Per-task execution. Phase 1 supports two task types end-to-end:
-//   • llm        — calls the LLM with the task prompt + mission context, stores text output
-//   • checkpoint — pauses the mission, records a checkpoint activity entry
+// Per-task execution. Supported task types:
+//   • llm         — calls the LLM with the task prompt + mission context
+//   • checkpoint  — pauses the mission, records a checkpoint activity entry
+//   • api_call    — real HTTP request via api-call-executor (audit improvement #1A)
 //
-// Other task_types ('research', 'analysis', 'export', 'browser', 'api_call', etc.)
-// are placeholders for Phase 2+. They currently fall back to an llm-style call.
+// Other task_types ('research', 'analysis', 'export', 'browser', 'database_query',
+// 'conditional', 'parallel_group') still fall back to an llm-style call —
+// browser + database_query land in #1B + #1C of the audit improvement plan.
 
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
+import { executeApiCall } from './executors/api-call-executor.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
 
@@ -65,6 +68,37 @@ export function createMissionExecutor(db: DatabaseAdapter) {
       description: `Started: ${task.title}`,
       taskId: task.id,
     });
+
+    // ── api_call: real HTTP request (audit improvement #1A) ───────────────
+    if (task.task_type === 'api_call') {
+      const r = await executeApiCall(db, mission, task);
+      await state.recordTaskOutput(task.id, {
+        full: r.outputFull,
+        summary: r.outputSummary,
+        provider: 'http',
+        model: 'http',
+        tier: 'utility',
+        tokens: 0,
+        durationSeconds: Math.round(r.durationMs / 1000),
+      });
+      await state.logActivity(mission.id, {
+        activityType: r.success ? 'task_completed' : 'task_failed',
+        description: r.success
+          ? `Completed: ${task.title} (${r.outputSummary})`
+          : `Failed: ${task.title} — ${r.errorReason ?? 'unknown'}`,
+        taskId: task.id,
+      });
+      if (!r.success) {
+        const newRetry = task.retry_count + 1;
+        if (newRetry > task.max_retries) {
+          await state.updateTaskStatus(task.id, 'failed', { lastError: r.errorReason ?? 'api_call failed' });
+          return { success: false, reason: r.errorReason };
+        }
+        await state.bumpTaskRetry(task.id, r.errorReason ?? 'api_call failed');
+        return { success: false, reason: r.errorReason };
+      }
+      return { success: true, outputFull: r.outputFull, outputSummary: r.outputSummary, durationMs: r.durationMs };
+    }
 
     // ── Build per-task system prompt ───────────────────────────────────────
     // Phase 1: simple — mission objective + success criteria + accumulated
