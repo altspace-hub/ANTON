@@ -1257,6 +1257,25 @@ httpServer.listen(PORT, async () => {
       } catch { /* silent */ }
     }, MARKET_TZ);
 
+    // Daily pattern → signal-weight feedback (03:00 CET). Reads unapplied
+    // entries from market_pattern_detections and adjusts market_signal_weights
+    // with bounded multipliers. Pure arithmetic (no LLM) so runs even when
+    // MARKETS_THINKING_DISABLED is set — this is the loop the April audit
+    // flagged as the biggest closed-loop gap (M1 of effectiveness plan).
+    cron.schedule('0 3 * * *', async () => {
+      try {
+        const { createMarketPatternWeightFeedbackService } =
+          await import('./services/market-pattern-weight-feedback-service.js');
+        const svc = await createMarketPatternWeightFeedbackService(db);
+        const r = await svc.applyPatternFeedback();
+        if (r.patternsConsidered > 0) {
+          console.log(`[markets-feedback] considered=${r.patternsConsidered} applied=${r.patternsApplied} adjustments=${r.adjustments} skipped=${r.patternsSkipped.length}`);
+        }
+      } catch (err) {
+        console.error('[markets-feedback] pattern feedback error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
