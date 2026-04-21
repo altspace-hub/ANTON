@@ -89,6 +89,9 @@ const PortalsInboxPage = lazy(() => import('./pages/portals/PortalsInboxPage'));
 const PortalBuilderPage = lazy(() => import('./pages/portals/PortalBuilderPage'));
 const PortalManagePage = lazy(() => import('./pages/portals/PortalManagePage'));
 const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage'));
+// Portals Visitor Layer v0.8
+const PortalVisitorHomePage = lazy(() => import('./pages/portals/PortalVisitorHomePage'));
+const CategoryPage = lazy(() => import('./components/portals/CategoryPage'));
 const EvidencePackListPage = lazy(() => import('./pages/evidence-pack/EvidencePackListPage'));
 const EvidencePackBuilderPage = lazy(() => import('./pages/evidence-pack/EvidencePackBuilderPage'));
 const EvidencePackViewerPage = lazy(() => import('./pages/evidence-pack/EvidencePackViewerPage'));
@@ -485,7 +488,20 @@ export default function App() {
           <Route path="/hardware/templates" element={<HardwareTemplatesPage />} />
           <Route path="/hardware/review-queue" element={<HardwareReviewQueuePage />} />
           {/* Portals (spec v0.2) */}
-          <Route path="/portals" element={<PortalsLandingPage />} />
+          <Route path="/portals" element={<PortalVisitorHomePage />} />
+          <Route path="/portals/mine" element={<PortalsLandingPage />} />
+          {/* 10 Tier-B category placeholder routes (music, food, shop, sport, news,
+              money, travel, health, places, learn) share the CategoryPage template */}
+          <Route path="/life/music"  element={<CategoryPage categoryId="music"  />} />
+          <Route path="/life/food"   element={<CategoryPage categoryId="food"   />} />
+          <Route path="/life/shop"   element={<CategoryPage categoryId="shop"   />} />
+          <Route path="/life/sport"  element={<CategoryPage categoryId="sport"  />} />
+          <Route path="/life/news"   element={<CategoryPage categoryId="news"   />} />
+          <Route path="/life/money"  element={<CategoryPage categoryId="money"  />} />
+          <Route path="/life/travel" element={<CategoryPage categoryId="travel" />} />
+          <Route path="/life/health" element={<CategoryPage categoryId="health" />} />
+          <Route path="/life/places" element={<CategoryPage categoryId="places" />} />
+          <Route path="/life/learn"  element={<CategoryPage categoryId="learn"  />} />
           <Route path="/portals/build" element={<PortalsTemplateGalleryPage />} />
           <Route path="/portals/build/:templateId" element={<PortalBuilderPage />} />
           <Route path="/portals/discovery" element={<PortalsDiscoveryPage />} />

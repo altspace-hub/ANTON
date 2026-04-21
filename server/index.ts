@@ -149,6 +149,8 @@ import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
 import { createHardwareRoutes } from './routes/hardware.js';
 import { createPortalsRoutes } from './routes/portals.js';
+import { createPortalBookmarksRoutes } from './routes/portal-bookmarks.js';
+import { createStarterPackRoutes } from './routes/starter-packs.js';
 import { createEvidencePackRoutes, createSharedPackRoutes } from './routes/evidence-pack.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
@@ -767,6 +769,8 @@ app.use('/api', createHardwareRoutes(db));
 
 // Portals (spec v0.2) — user-created ANTON-only web spaces with capability descriptors
 app.use('/api', createPortalsRoutes(db));
+app.use('/api', createPortalBookmarksRoutes(db));
+app.use('/api', await createStarterPackRoutes(db));
 
 // Evidence Pack (regulator-ready audit bundles, EVIDENCE_PACK_SPEC.md)
 app.use('/api', createEvidencePackRoutes(db));

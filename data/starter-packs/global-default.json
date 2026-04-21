@@ -1,0 +1,31 @@
+{
+  "bundle_type": "starter-pack",
+  "spec_version": "1.0",
+  "id": "global-default",
+  "name": "ANTON Default",
+  "description": "The baseline Visitor Home: 15 categories (5 'We own' + 10 placeholders) and four platform bookmarks. Shipped for every deployment unless a region- or mode-specific pack is chosen.",
+  "target_mode": "global",
+  "bookmarks": [
+    { "bookmark_type": "platform", "target_route": "/pathfinder",   "label": "Pathfinder",  "icon_ref": "Compass",   "sort_order": 0, "undeletable": true  },
+    { "bookmark_type": "route",    "target_route": "/jobs",         "label": "Jobs",        "icon_ref": "Briefcase", "sort_order": 1, "undeletable": false },
+    { "bookmark_type": "route",    "target_route": "/marketplace",  "label": "Marketplace", "icon_ref": "Store",     "sort_order": 2, "undeletable": false },
+    { "bookmark_type": "platform", "target_route": "/portals/mine", "label": "My ANTON",    "icon_ref": "User",      "sort_order": 3, "undeletable": true  }
+  ],
+  "categories": [
+    { "id": "pathfinder",  "label": "Pathfinder",   "icon_ref": "Compass",       "tier": "we-own",      "sort_order": 0,  "pathfinder_scope": "all",         "design_principle": "Search that tells you why." },
+    { "id": "jobs",        "label": "Jobs",         "icon_ref": "Briefcase",     "tier": "we-own",      "sort_order": 1,  "pathfinder_scope": "jobs",        "design_principle": "Transparent hiring or none at all." },
+    { "id": "marketplace", "label": "Marketplace",  "icon_ref": "Store",         "tier": "we-own",      "sort_order": 2,  "pathfinder_scope": "marketplace", "design_principle": "Inspect before you install." },
+    { "id": "friends",     "label": "Friends",      "icon_ref": "Users",         "tier": "we-own",      "sort_order": 3,  "pathfinder_scope": "people",      "design_principle": "Social without the surveillance." },
+    { "id": "video",       "label": "Video",        "icon_ref": "Video",         "tier": "we-own",      "sort_order": 4,  "pathfinder_scope": "content",     "design_principle": "Video that respects you." },
+    { "id": "music",       "label": "Music",        "icon_ref": "Music",         "tier": "placeholder", "sort_order": 5,  "pathfinder_scope": "content",     "design_principle": "Creators paid via FutureChain. No platform ads." },
+    { "id": "food",        "label": "Food",         "icon_ref": "ChefHat",       "tier": "placeholder", "sort_order": 6,  "pathfinder_scope": "local",       "design_principle": "No dark-pattern upsells. No opaque fees." },
+    { "id": "shop",        "label": "Shop",         "icon_ref": "ShoppingBag",   "tier": "placeholder", "sort_order": 7,  "pathfinder_scope": "shopping",    "design_principle": "No fake reviews. Quality signals are AAP attestations, not stars." },
+    { "id": "sport",       "label": "Sport",        "icon_ref": "Trophy",        "tier": "placeholder", "sort_order": 8,  "pathfinder_scope": "all",         "design_principle": "No engagement-optimised rankings." },
+    { "id": "news",        "label": "News",         "icon_ref": "Newspaper",     "tier": "placeholder", "sort_order": 9,  "pathfinder_scope": "news",        "design_principle": "Ranking is transparent and time-decayed, not outrage-weighted." },
+    { "id": "money",       "label": "Money",        "icon_ref": "Wallet",        "tier": "placeholder", "sort_order": 10, "pathfinder_scope": "knowledge",   "design_principle": "No hidden spread. No gamified trading." },
+    { "id": "travel",      "label": "Travel",       "icon_ref": "Plane",         "tier": "placeholder", "sort_order": 11, "pathfinder_scope": "travel",      "design_principle": "No dark-pattern booking funnels. Pricing transparent." },
+    { "id": "health",      "label": "Health",       "icon_ref": "HeartPulse",    "tier": "placeholder", "sort_order": 12, "pathfinder_scope": "knowledge",   "design_principle": "Medical privacy by default. No commercialisation of health data." },
+    { "id": "places",      "label": "Places",       "icon_ref": "MapPin",        "tier": "placeholder", "sort_order": 13, "pathfinder_scope": "local",       "design_principle": "No surveillance tracking. Location stays on-device." },
+    { "id": "learn",       "label": "Learn",        "icon_ref": "GraduationCap", "tier": "placeholder", "sort_order": 14, "pathfinder_scope": "knowledge",   "design_principle": "Content is inspectable. No black-box AI tutors." }
+  ]
+}

@@ -72,7 +72,16 @@ export type AntonBundleType =
   // Evidence Pack (spec EVIDENCE_PACK_SPEC.md)
   // — regulator-ready audit bundle: signed manifest + per-item canonical
   //   bodies + compliance mapping (EU AI Act Annex IV, AMLR auditability)
-  | 'evidence-pack';
+  | 'evidence-pack'
+  // Portals Visitor Layer v0.8 (PORTALS_VISITOR_LAYER_BUILD_BRIEF_v2.md)
+  // #43 — Visitor Home config: bookmark bar + 15-category grid + featured
+  //       portals. Shipped per region / pillar-mode / deployment.
+  | 'starter-pack'
+  // #44 — portable career profile (Talent spec). Works as the candidate's
+  //       CV: aspirations, career path, growth map, assessments, rendered CV.
+  | 'career-profile'
+  // #45 — curated list of videos; shareable + importable across ANTONs.
+  | 'video-playlist';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -129,6 +138,10 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'portal':                        { label: 'Portal',                       description: 'User-created ANTON-only web space: pages, assets, capability descriptor, schema, walkthrough transcript — portable origin',   contentsKey: 'portals',                     primaryContentDir: 'portals' },
   // ── Evidence Pack ───────────────────────────────────────────────────────
   'evidence-pack':                 { label: 'Evidence Pack',                description: 'Regulator-ready audit bundle: signed manifest + per-item canonical content + compliance mapping (EU AI Act Annex IV, AMLR auditability)', contentsKey: 'evidence_packs',          primaryContentDir: 'evidence-packs' },
+  // ── Visitor Layer v0.8 ──────────────────────────────────────────────────
+  'starter-pack':                  { label: 'Starter Pack',                 description: 'Visitor Home configuration: bookmark bar + 15-category grid + featured portals. Ships per region / pillar-mode / deployment',          contentsKey: 'starter_packs',            primaryContentDir: 'starter-packs' },
+  'career-profile':                { label: 'Career Profile',               description: 'Portable CV + aspiration data. Candidate-owned, AAP-signed, importable across ANTON instances',                                          contentsKey: 'career_profiles',          primaryContentDir: 'career-profiles' },
+  'video-playlist':                { label: 'Video Playlist',               description: 'Curated collection of videos with metadata; shareable and importable',                                                                   contentsKey: 'video_playlists',          primaryContentDir: 'video-playlists' },
 };
 
 interface ModuleExportData {

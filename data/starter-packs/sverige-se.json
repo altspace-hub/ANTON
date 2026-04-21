@@ -1,0 +1,33 @@
+{
+  "bundle_type": "starter-pack",
+  "spec_version": "1.0",
+  "id": "sverige-se",
+  "name": "ANTON Sverige",
+  "description": "Svensk lokaliserad Visitor Home. Samma 15 kategorier som global-default men med ordning, etiketter och designprinciper anpassade för den svenska marknaden. Rekommenderade portaler (featured_portals) lämnas tomma tills specifika partners bekräftat samarbete.",
+  "target_mode": "global",
+  "locale": "sv-SE",
+  "bookmarks": [
+    { "bookmark_type": "platform", "target_route": "/pathfinder",   "label": "Pathfinder",  "icon_ref": "Compass",   "sort_order": 0, "undeletable": true  },
+    { "bookmark_type": "route",    "target_route": "/jobs",         "label": "Jobb",        "icon_ref": "Briefcase", "sort_order": 1, "undeletable": false },
+    { "bookmark_type": "route",    "target_route": "/marketplace",  "label": "Marknad",     "icon_ref": "Store",     "sort_order": 2, "undeletable": false },
+    { "bookmark_type": "platform", "target_route": "/portals/mine", "label": "Min ANTON",   "icon_ref": "User",      "sort_order": 3, "undeletable": true  }
+  ],
+  "categories": [
+    { "id": "pathfinder",  "label": "Pathfinder",  "icon_ref": "Compass",        "tier": "we-own",      "sort_order": 0,  "pathfinder_scope": "all",         "design_principle": "Sökning som förklarar varför." },
+    { "id": "jobs",        "label": "Jobb",        "icon_ref": "Briefcase",      "tier": "we-own",      "sort_order": 1,  "pathfinder_scope": "jobs",        "design_principle": "Transparent rekrytering. Lönespann alltid synligt (EU-lönedirektivet)." },
+    { "id": "marketplace", "label": "Marknad",     "icon_ref": "Store",          "tier": "we-own",      "sort_order": 2,  "pathfinder_scope": "marketplace", "design_principle": "Granska innan du installerar." },
+    { "id": "friends",     "label": "Vänner",      "icon_ref": "Users",          "tier": "we-own",      "sort_order": 3,  "pathfinder_scope": "people",      "design_principle": "Sociala funktioner utan övervakning." },
+    { "id": "video",       "label": "Video",       "icon_ref": "Video",          "tier": "we-own",      "sort_order": 4,  "pathfinder_scope": "content",     "design_principle": "Video som respekterar dig." },
+    { "id": "money",       "label": "Pengar",      "icon_ref": "Wallet",         "tier": "placeholder", "sort_order": 5,  "pathfinder_scope": "knowledge",   "design_principle": "Ingen dold spread. Ingen gamifierad trading. Kvalitetskontroll på leverantörer." },
+    { "id": "food",        "label": "Mat",         "icon_ref": "ChefHat",        "tier": "placeholder", "sort_order": 6,  "pathfinder_scope": "local",       "design_principle": "Inga mönstermörka trick. Inga dolda avgifter." },
+    { "id": "shop",        "label": "Handel",      "icon_ref": "ShoppingBag",    "tier": "placeholder", "sort_order": 7,  "pathfinder_scope": "shopping",    "design_principle": "Inga falska recensioner. Kvalitet baseras på AAP-attestering." },
+    { "id": "travel",      "label": "Resa",        "icon_ref": "Plane",          "tier": "placeholder", "sort_order": 8,  "pathfinder_scope": "travel",      "design_principle": "Ingen mönstermörk bokningskanal. Priser transparenta." },
+    { "id": "news",        "label": "Nyheter",     "icon_ref": "Newspaper",      "tier": "placeholder", "sort_order": 9,  "pathfinder_scope": "news",        "design_principle": "Rankning är transparent och tidsnedsatt — inte raseri-viktad." },
+    { "id": "health",      "label": "Hälsa",       "icon_ref": "HeartPulse",     "tier": "placeholder", "sort_order": 10, "pathfinder_scope": "knowledge",   "design_principle": "Medicinsk integritet som standard." },
+    { "id": "sport",       "label": "Sport",       "icon_ref": "Trophy",         "tier": "placeholder", "sort_order": 11, "pathfinder_scope": "all",         "design_principle": "Ingen engagement-optimerad rankning." },
+    { "id": "music",       "label": "Musik",       "icon_ref": "Music",          "tier": "placeholder", "sort_order": 12, "pathfinder_scope": "content",     "design_principle": "Skapare betalas via FutureChain. Inga plattformsannonser." },
+    { "id": "places",      "label": "Platser",     "icon_ref": "MapPin",         "tier": "placeholder", "sort_order": 13, "pathfinder_scope": "local",       "design_principle": "Ingen övervakningsspårning. Plats stannar på enheten." },
+    { "id": "learn",       "label": "Lär",         "icon_ref": "GraduationCap",  "tier": "placeholder", "sort_order": 14, "pathfinder_scope": "knowledge",   "design_principle": "Innehåll ska gå att granska. Inga svarta AI-lärare." }
+  ],
+  "featured_portals": {}
+}
