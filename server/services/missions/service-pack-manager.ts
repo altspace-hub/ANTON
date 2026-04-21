@@ -52,6 +52,14 @@ export interface ServicePackWorkflowStep {
    * concat into JSON).
    */
   body_template?: unknown;
+  /**
+   * Named server-side composer for bodies that need logic beyond simple
+   * param substitution (e.g. base64url-encoded RFC 5322 for Gmail, or
+   * splicing a user-supplied JSON sub-tree into a Notion PATCH body).
+   * Registered composers live in the api workflow executor. Takes
+   * precedence over body_template when both are present.
+   */
+  body_compose?: string;
   description?: string;
 }
 
