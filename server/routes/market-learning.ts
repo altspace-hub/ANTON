@@ -4,6 +4,7 @@ import { createMarketIntelligenceService } from '../services/market-intelligence
 import { createMarketPredictionAttributionService } from '../services/market-prediction-attribution-service.js';
 import { createMarketThesisLifecycleService } from '../services/market-thesis-lifecycle-service.js';
 import { createMarketInvestigationLifecycleService } from '../services/market-investigation-lifecycle-service.js';
+import { createMarketDataBacklogTriageService } from '../services/market-data-backlog-triage-service.js';
 
 export async function createMarketLearningRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -11,6 +12,7 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
   const attribution = await createMarketPredictionAttributionService(db);
   const thesisLifecycle = await createMarketThesisLifecycleService(db);
   const investigationLifecycle = await createMarketInvestigationLifecycleService(db);
+  const backlogTriage = await createMarketDataBacklogTriageService(db);
 
   // Calibration
   router.get('/markets/learning/calibration', async (_req, res) => {
@@ -198,6 +200,18 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[market-learning] List closed investigations error:', err);
       res.status(500).json({ error: 'Failed to list closed investigations' });
+    }
+  });
+
+  // ── Backlog triage (M7) ──────────────────────────────────────────────────
+
+  router.post('/markets/learning/backlog/triage', async (req, res) => {
+    try {
+      const batchLimit = req.body?.batchLimit ? parseInt(String(req.body.batchLimit), 10) : undefined;
+      res.json(await backlogTriage.triageBacklog({ batchLimit }));
+    } catch (err) {
+      console.error('[market-learning] Backlog triage error:', err);
+      res.status(500).json({ error: 'Failed to run backlog triage' });
     }
   });
 
