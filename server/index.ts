@@ -1238,8 +1238,8 @@ httpServer.listen(PORT, async () => {
         const { createPredictionVerifier } = await import('./services/market-prediction-verifier.js');
         const verifier = await createPredictionVerifier(db);
         const result = await verifier.runAutoVerification();
-        if (result.verified > 0) {
-          console.log(`[markets-verify] Daily: verified ${result.verified} (${result.correct} correct, ${result.incorrect} wrong)`);
+        if (result.verified > 0 || result.unverifiable > 0 || result.deferred_llm > 0) {
+          console.log(`[markets-verify] Daily: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
         }
       } catch (err) { console.error('[markets-verify] Daily verification error:', err); }
     }, MARKET_TZ);
