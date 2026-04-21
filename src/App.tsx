@@ -176,6 +176,19 @@ const SystemCardsPage = lazy(() => import('./pages/SystemCardsPage'));
 // Pathfinder — AI-Powered Multi-Model Search
 const PathfinderPage = lazy(() => import('./pages/PathfinderPage'));
 const PathfinderHistoryPage = lazy(() => import('./pages/PathfinderHistoryPage'));
+// Pathfinder Visitor UI (Visitor Layer v0.8)
+const PathfinderVisitorPage = lazy(() => import('./pages/pathfinder/PathfinderVisitorPage'));
+// Jobs — candidate side (Visitor Layer v0.8)
+const JobsHomePage = lazy(() => import('./pages/jobs/JobsHomePage'));
+const JobDetailPage = lazy(() => import('./pages/jobs/JobDetailPage'));
+const ApplicationFlowPage = lazy(() => import('./pages/jobs/ApplicationFlowPage'));
+const CandidateDashboardPage = lazy(() => import('./pages/jobs/CandidateDashboardPage'));
+const CareerProfilePage = lazy(() => import('./pages/jobs/CareerProfilePage'));
+// Marketplace — visitor side (Visitor Layer v0.8)
+const MarketplaceHomePage = lazy(() => import('./pages/marketplace/MarketplaceHomePage'));
+const BundleDetailPage = lazy(() => import('./pages/marketplace/BundleDetailPage'));
+const LibraryPage = lazy(() => import('./pages/marketplace/LibraryPage'));
+const PublishPage = lazy(() => import('./pages/marketplace/PublishPage'));
 
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
@@ -541,7 +554,13 @@ export default function App() {
           <Route path="/system-cards" element={<SystemCardsPage />} />
           <Route path="/system-cards/:moduleId" element={<SystemCardsPage />} />
           <Route path="/skill-packs" element={<SkillPacksPage />} />
-          <Route path="/marketplace" element={<MarketplacePage />} />
+          {/* Visitor Layer v0.8: /marketplace is the new visitor home;
+              legacy upload/preview tool moves to /marketplace/upload */}
+          <Route path="/marketplace" element={<MarketplaceHomePage />} />
+          <Route path="/marketplace/library" element={<LibraryPage />} />
+          <Route path="/marketplace/publish" element={<PublishPage />} />
+          <Route path="/marketplace/upload" element={<MarketplacePage />} />
+          <Route path="/marketplace/:id" element={<BundleDetailPage />} />
           {/* Presentations Area */}
           <Route path="/presentations" element={<PresentationsLandingPage />} />
           <Route path="/presentations/builder" element={<PresentationBuilderPage />} />
@@ -645,7 +664,17 @@ export default function App() {
           <Route path="/regulatory-feed" element={<RegulatoryFeedPage />} />
           <Route path="/lore-ledger" element={<LoreLedgerPage />} />
           {/* Pathfinder — AI-Powered Multi-Model Search */}
-          <Route path="/pathfinder" element={<PathfinderPage />} />
+          {/* Visitor Layer v0.8: /pathfinder is the visitor-facing search;
+              power-user layout moved to /pathfinder/classic */}
+          <Route path="/pathfinder" element={<PathfinderVisitorPage />} />
+          <Route path="/pathfinder/classic" element={<PathfinderPage />} />
+          {/* Jobs — candidate side (Visitor Layer v0.8) */}
+          <Route path="/jobs" element={<JobsHomePage />} />
+          <Route path="/jobs/profile" element={<CareerProfilePage />} />
+          <Route path="/jobs/applications" element={<CandidateDashboardPage />} />
+          <Route path="/jobs/applications/:id" element={<CandidateDashboardPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
+          <Route path="/jobs/:id/apply" element={<ApplicationFlowPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />

@@ -107,7 +107,7 @@ export function createPathfinderRoutes(
     const abortController = new AbortController();
     req.on('close', () => abortController.abort());
 
-    const documentContext = buildDocumentContext(db, documentIds);
+    const documentContext = await buildDocumentContext(db, documentIds ?? []);
 
     const callbacks: SearchCallbacks = {
       onSearchStart: (searchId, d) => sendEvent(res, { type: 'search_start', searchId, depth: d }),
@@ -429,6 +429,87 @@ export function createPathfinderRoutes(
     } catch (err) {
       console.error('[pathfinder] Smart actions error:', err);
       res.status(500).json({ error: 'Failed to extract actions' });
+    }
+  });
+
+  // ── Visitor Layer v0.8 endpoints ────────────────────────────────────────
+
+  // GET /api/pathfinder/trending?since=24h&limit=10
+  // Returns the top N distinct query_hashes by frequency in the window.
+  // Time-windowed frequency only — no ML ranking, no user-level targeting.
+  router.get('/pathfinder/trending', async (req: Request, res: Response) => {
+    try {
+      const since = typeof req.query.since === 'string' ? req.query.since : '24h';
+      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit ?? '10'), 10)));
+      const interval = since === '7d' ? '7 days' : since === '1h' ? '1 hour' : '24 hours';
+      const rows = await db.all<{ query_hash: string; n: number | string }>(
+        `SELECT query_hash, COUNT(*) AS n
+         FROM pathfinder_search_log
+         WHERE created_at > NOW() - INTERVAL '${interval}'
+         GROUP BY query_hash
+         ORDER BY n DESC
+         LIMIT ?`,
+        limit,
+      );
+      res.json({ trending: rows.map(r => ({ query_hash: r.query_hash, count: Number(r.n) })) });
+    } catch (err) {
+      console.error('[pathfinder] Trending error:', err);
+      res.status(500).json({ error: 'Failed to fetch trending' });
+    }
+  });
+
+  // POST /api/pathfinder/visitor-search
+  // Records a search event + returns search_id. Clients pair this with the
+  // existing /pathfinder/search SSE to get the search_id for feedback.
+  router.post('/pathfinder/visitor-search', async (req: Request, res: Response) => {
+    try {
+      const { query, mode, scope, result_count } = req.body ?? {};
+      if (typeof query !== 'string' || typeof mode !== 'string') {
+        res.status(400).json({ error: 'query + mode required' }); return;
+      }
+      const userId = req.user?.id ?? null;
+      const { createHash } = await import('crypto');
+      const salt = userId ?? 'anon';
+      const queryHash = createHash('sha256').update(`${query}|${salt}`).digest('hex');
+      const result = await db.get<{ id: string }>(
+        `INSERT INTO pathfinder_search_log (user_id, query_hash, mode, scope, result_count)
+         VALUES (?, ?, ?, ?, ?)
+         RETURNING id`,
+        userId, queryHash, mode,
+        typeof scope === 'string' ? scope : null,
+        typeof result_count === 'number' ? result_count : 0,
+      );
+      res.json({ search_id: result?.id });
+    } catch (err) {
+      console.error('[pathfinder] Visitor search log error:', err);
+      res.status(500).json({ error: 'Failed to log search' });
+    }
+  });
+
+  // POST /api/pathfinder/feedback
+  // Visitor marks a result helpful / wrong-match / low-quality / spam.
+  router.post('/pathfinder/feedback', async (req: Request, res: Response) => {
+    try {
+      const { search_id, result_ref, signal, note } = req.body ?? {};
+      if (typeof result_ref !== 'string' || typeof signal !== 'string') {
+        res.status(400).json({ error: 'result_ref + signal required' }); return;
+      }
+      if (!['helpful', 'wrong-match', 'low-quality', 'spam'].includes(signal)) {
+        res.status(400).json({ error: 'signal must be helpful | wrong-match | low-quality | spam' }); return;
+      }
+      const userId = req.user?.id ?? null;
+      await db.run(
+        `INSERT INTO pathfinder_result_feedback (user_id, search_log_id, result_ref, signal, note)
+         VALUES (?, ?, ?, ?, ?)`,
+        userId,
+        typeof search_id === 'string' ? search_id : null,
+        result_ref, signal,
+        typeof note === 'string' ? note.slice(0, 500) : null,
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[pathfinder] Feedback error:', err);
+      res.status(500).json({ error: 'Failed to record feedback' });
     }
   });
 
