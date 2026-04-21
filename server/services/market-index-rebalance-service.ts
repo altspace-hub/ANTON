@@ -137,6 +137,117 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     };
   }
 
+  // ── Target weights per weighting method (M6.1) ──────────────────────────
+  //
+  // Returns a Map<symbol, targetWeight> or null when the method isn't yet
+  // implemented (caller falls back to all-hold with a clear reason).
+  //
+  //   equal       → 1/N for every holding
+  //   conviction  → baseline 1/N biased by aggregated active-prediction
+  //                 sentiment on each symbol. Bounded so conviction never
+  //                 pushes below 0.5× or above 1.5× equal-weight (prevents
+  //                 one noisy prediction from concentrating the portfolio).
+  //
+  // market_cap, risk_parity: return null for now — real implementations
+  // require fundamentals + historical vol pipelines that are their own
+  // follow-up work. Falling through to hold-with-clear-reason is better
+  // than silently pretending to rebalance.
+  async function computeTargetWeights(
+    db: DatabaseAdapter,
+    index: IndexRow,
+    holdings: HoldingRow[],
+  ): Promise<Map<string, number> | null> {
+    if (holdings.length === 0) return null;
+    const method = index.weighting_method;
+
+    if (method === 'equal') {
+      const equal = 1.0 / holdings.length;
+      return new Map(holdings.map(h => [h.symbol, equal]));
+    }
+
+    if (method === 'conviction') {
+      return computeConvictionWeights(db, holdings);
+    }
+
+    return null;
+  }
+
+  /**
+   * Conviction-weighted targets. Baseline = 1/N, adjusted up for symbols
+   * with net-bullish active predictions and down for net-bearish. Bounded
+   * to [0.5×, 1.5×] baseline so a single high-confidence bearish call
+   * doesn't drive a holding near zero on its own. Normalised so the
+   * returned weights sum to 1.0.
+   */
+  async function computeConvictionWeights(
+    db: DatabaseAdapter,
+    holdings: HoldingRow[],
+  ): Promise<Map<string, number>> {
+    const baseline = 1.0 / holdings.length;
+    const symbols = holdings.map(h => h.symbol);
+
+    // Active predictions on any held symbol — cheaper than one query per.
+    const placeholders = symbols.map(() => '?').join(', ');
+    const predictions = symbols.length > 0
+      ? await db.all<{ target_symbol: string; confidence: number | string; predicted_direction: string | null }>(
+          `SELECT target_symbol, confidence, predicted_direction
+           FROM market_predictions
+           WHERE status = 'active'
+             AND target_symbol IN (${placeholders})
+             AND (deadline IS NULL OR deadline > NOW())`,
+          ...symbols,
+        )
+      : [];
+
+    // Symbol overrides from M1.1 so persistently bad tickers don't get
+    // concentrated just because they happen to have loud predictions.
+    const overrides = symbols.length > 0
+      ? await db.all<{ symbol: string; weight_multiplier: number | string }>(
+          `SELECT symbol, weight_multiplier FROM market_symbol_weight_overrides
+           WHERE symbol IN (${placeholders}) AND weight_multiplier <> 1.0`,
+          ...symbols,
+        )
+      : [];
+    const overrideMap = new Map(overrides.map(o => [o.symbol, Number(o.weight_multiplier)]));
+
+    // Aggregate conviction score per symbol: mean(confidence × dir × override).
+    const scores = new Map<string, { sum: number; count: number }>();
+    for (const p of predictions) {
+      const dir = p.predicted_direction === 'up' ? 1
+        : p.predicted_direction === 'down' ? -1 : 0;
+      if (dir === 0) continue;
+      const override = overrideMap.get(p.target_symbol) ?? 1.0;
+      const conf = Math.max(0, Math.min(1, Number(p.confidence)));
+      const entry = scores.get(p.target_symbol) ?? { sum: 0, count: 0 };
+      entry.sum += dir * conf * override;
+      entry.count++;
+      scores.set(p.target_symbol, entry);
+    }
+
+    // Per-symbol raw weight = baseline × (1 + score × 0.5), clamped to
+    // [0.5, 1.5] × baseline. Then renormalise to sum-to-one.
+    const raw = new Map<string, number>();
+    for (const h of holdings) {
+      const s = scores.get(h.symbol);
+      const meanScore = s && s.count > 0 ? s.sum / s.count : 0;
+      const clamped = Math.max(-1, Math.min(1, meanScore));
+      const factor = Math.max(0.5, Math.min(1.5, 1 + clamped * 0.5));
+      raw.set(h.symbol, baseline * factor);
+    }
+    const sum = Array.from(raw.values()).reduce((a, b) => a + b, 0);
+    const normalised = new Map<string, number>();
+    if (sum > 0) {
+      for (const [symbol, rawWeight] of raw) {
+        normalised.set(symbol, rawWeight / sum);
+      }
+    } else {
+      // Fallback should be unreachable given baseline > 0, but guards
+      // divide-by-zero if every holding ended up at baseline * 0 somehow.
+      for (const h of holdings) normalised.set(h.symbol, baseline);
+    }
+    return normalised;
+  }
+
   // ── Generate Rebalance Proposal ──────────────────────────────────────────
 
   async function generateRebalanceProposal(indexId: string): Promise<RebalanceProposal> {
@@ -151,11 +262,16 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     const weightingMethod = index.weighting_method;
     const proposedChanges: ProposedChange[] = [];
 
-    if (weightingMethod === 'equal' && holdings.length > 0) {
-      const targetWeight = 1.0 / holdings.length;
-      const tolerance = 0.02; // 2% drift tolerance
+    // Target-weight computation per weighting_method. Equal and conviction
+    // produce real targets; other methods fall back to holding current
+    // weights with an explicit reason so the operator sees the gap rather
+    // than silent no-ops (M6.1).
+    const targets = await computeTargetWeights(db, index, holdings);
+    const tolerance = 0.02; // 2% drift tolerance across methods
 
+    if (holdings.length > 0 && targets) {
       for (const h of holdings) {
+        const targetWeight = targets.get(h.symbol) ?? h.weight;
         const diff = Math.abs(h.weight - targetWeight);
         if (diff < tolerance) {
           proposedChanges.push({
@@ -163,7 +279,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
             action: 'hold',
             currentWeight: h.weight,
             proposedWeight: targetWeight,
-            reason: `Weight ${(h.weight * 100).toFixed(1)}% is within tolerance of target ${(targetWeight * 100).toFixed(1)}%`,
+            reason: `Weight ${(h.weight * 100).toFixed(1)}% is within tolerance of ${weightingMethod}-method target ${(targetWeight * 100).toFixed(1)}%`,
           });
         } else if (h.weight > targetWeight) {
           proposedChanges.push({
@@ -171,7 +287,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
             action: 'decrease',
             currentWeight: h.weight,
             proposedWeight: targetWeight,
-            reason: `Overweight at ${(h.weight * 100).toFixed(1)}% vs target ${(targetWeight * 100).toFixed(1)}%`,
+            reason: `Overweight at ${(h.weight * 100).toFixed(1)}% vs ${weightingMethod} target ${(targetWeight * 100).toFixed(1)}%`,
           });
         } else {
           proposedChanges.push({
@@ -179,19 +295,24 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
             action: 'increase',
             currentWeight: h.weight,
             proposedWeight: targetWeight,
-            reason: `Underweight at ${(h.weight * 100).toFixed(1)}% vs target ${(targetWeight * 100).toFixed(1)}%`,
+            reason: `Underweight at ${(h.weight * 100).toFixed(1)}% vs ${weightingMethod} target ${(targetWeight * 100).toFixed(1)}%`,
           });
         }
       }
     } else {
-      // For non-equal-weight or empty holdings, keep current weights as proposal
+      // Unsupported weighting method or empty holdings — hold everything and
+      // surface the reason. Previously this branch silently returned all-hold
+      // for any non-equal method.
+      const reason = holdings.length === 0
+        ? 'Index has no active holdings'
+        : `Weighting method '${weightingMethod}' is not yet implemented — maintaining current weights. Supported: equal, conviction.`;
       for (const h of holdings) {
         proposedChanges.push({
           symbol: h.symbol,
           action: 'hold',
           currentWeight: h.weight,
           proposedWeight: h.weight,
-          reason: 'Maintaining current weight',
+          reason,
         });
       }
     }
