@@ -174,6 +174,23 @@ The Deadlines page (`/deadlines`) is large; broken into sub-views.
 
 ---
 
+## Companion App v3 UI primitives (8) — `src/app/components/ui/`
+
+Introduced by the v3 Evolution redesign (commit `c0e05ed`, Apr 2026). These are the preferred primitives for any new companion-app work — v2 pages still use raw Tailwind but are being migrated incrementally.
+
+| Name | Notes |
+|---|---|
+| `Btn` | Filled / ghost / danger variants; honours the active accent palette from `PersonalizationContext` |
+| `Card` | `interactive` flag adds press affordance; fires `onClick` |
+| `Pill` | Status chips with tone={neutral|success|warn|danger|info} |
+| `StatusDot` | 8px coloured dot for presence / status indicators |
+| `SectionLabel` | Uppercase, tracking-wide section heading |
+| `Avatar` | Initials-only, auto-colour by hash |
+| `Ico` | Custom 1.75-stroke SVG set (80+ icons) — replaces Lucide for v3 pages |
+| `PersonalizationContext` | React context providing `{ accent, mode, setAccent, setMode }` from `services/personalization.ts` to any descendant |
+
+---
+
 ## Portals (page-level, 7) — `src/pages/portals/`
 
 Unlike most pillars, Portals has no shared-component subfolder — each page composes directly from `src/components/shared/` primitives plus pillar-local inline components. Listed here so designers know where to look when redesigning a portal surface.

@@ -324,6 +324,50 @@ Confirm light theme is active in companion settings.
 
 ---
 
+## 13b — Companion App v3 Evolution redesign (9 captures — highest priority)
+
+The v3 integration (commit `c0e05ed`, Apr 2026) is the current design baseline. Capture these in **light theme** (the only theme v3 supports) with the `teal` default accent unless noted.
+
+- [ ] **v3 HomeScreen (Pro mode)**
+  Route: `/app/` after pairing, mode=pro.
+  State: at least one pending approval card + 2–3 Today items. Shows the warm-linen palette, deep-teal primary accent, the PersonalizationContext in action.
+  File: `screenshots/13b-app-v3-home-pro.png`
+
+- [ ] **v3 StdHomeScreen (Standard mode)**
+  State: switch mode=standard via `PersonalizePage` or `StdSettingsScreen`. Capture the "Waiting for you" hero with a critical approval queued.
+  File: `screenshots/13b-app-v3-home-std.png`
+
+- [ ] **v3 MarketsScreen**
+  Route: `/app/#/markets` (Pro tab).
+  State: at least one active thesis + one prediction visible in the list.
+  File: `screenshots/13b-app-v3-markets.png`
+
+- [ ] **v3 RadarScreen**
+  State: seed via `services/radar.ts` scan so 2–3 radar signals are listed with severity chips.
+  File: `screenshots/13b-app-v3-radar.png`
+
+- [ ] **v3 UnifiedMailScreen**
+  State: connect a mail adapter via `EmailSetupScreen` first (or seed fixtures); show 4–5 threads with the Pro-mode density.
+  File: `screenshots/13b-app-v3-mail.png`
+
+- [ ] **v3 WorkModulesScreen**
+  State: scroll to a mid-list module — captures card density + PersonalizationContext accent.
+  File: `screenshots/13b-app-v3-work-modules.png`
+
+- [ ] **v3 PersonalizePage**
+  State: captures the 8-accent picker + mode toggle. Try switching accents live so the next screenshot uses a non-teal accent.
+  File: `screenshots/13b-app-v3-personalize.png`
+
+- [ ] **v3 SearchScreen (Pathfinder)**
+  State: typed a multi-word query; at least one AI response card + one suggestion chip row.
+  File: `screenshots/13b-app-v3-search.png`
+
+- [ ] **v3 JoinPage (rewrite)**
+  State: first-run, no instances paired. The v3 rewrite shows the warm-linen hero + larger QR affordance.
+  File: `screenshots/13b-app-v3-join.png`
+
+---
+
 ## 14 — States to capture across surfaces (1 capture each, optional but high-value)
 
 - [ ] **Empty state — Atlas with no threat paths yet** (if you have time)

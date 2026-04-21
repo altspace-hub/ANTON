@@ -176,6 +176,58 @@ The companion app additionally defines two animation classes used by its bottom 
 
 ---
 
+## v3 Evolution redesign (commit c0e05ed, April 2026) — NEW
+
+The v3 integration of the Claude Design "Evolution" handoff landed five phases on top of the v2 base described above. **Claude Design iterations should start from these screens** — the v2 pages are being migrated incrementally.
+
+### Light-theme-only + warm linen palette
+
+`app.css` now uses `#F5F3EF` warm linen as the page background and `#0D7D6C` deep teal as the primary accent in light mode. The `adv-*` tokens stay as aliases so unmigrated screens still render correctly, but v3 components consume the Evolution palette directly. Dark + corporate themes are **disabled on the companion app** — the single light theme is enforced to keep the "calm professional surface" the CISO brief asks for.
+
+### 8 personal accent palettes
+
+`services/personalization.ts` + `<html data-accent="...">` triggers one of eight accent schemes (teal default + amber, rose, indigo, moss, copper, violet, slate). Status colours (`adv-red` / `adv-gold` / `adv-green` / `adv-blue`) are **locked** across accents so failure/success/info signalling never drifts. User picks the accent on `PersonalizePage`.
+
+### Pro vs Standard mode
+
+`services/personalization.ts.getMode()` returns `'pro' | 'standard'`. The `TabBar` component dispatches: Pro mode shows the 5-tab power-user variant, Standard mode shows a 4-tab simplified variant with bigger type + plainer language. Each Std-prefixed page is the Standard-mode counterpart of its Pro sibling — the user picks mode on first run or swaps later via `StdSettingsScreen`.
+
+### New UI primitives — `src/app/components/ui/`
+
+Drop-in components consumed by every v3 page. `Btn` (filled / ghost / danger variants), `Card` (with `interactive` flag for taps), `Pill` (status chips), `StatusDot`, `SectionLabel` (uppercase tracking-wide), `Avatar`, `Ico` (custom 1.75-stroke SVG set — 80+ icons replacing the Lucide dependency for v3 screens). `PersonalizationContext` wraps the tree so any descendant can read current accent + mode without prop-drilling.
+
+### New pages (12 v3 screens + 3 rewrites)
+
+**Pro mode:**
+- `HomeScreen` rewrite — real priority approval card from `listPendingCheckpoints`, real Today list from `/api/app/org/:id/sessions`
+- `CalendarScreen` — new, powered by `services/calendar.ts`
+- `MarketsScreen` — new, consumes `services/markets.ts`
+- `RadarScreen` rewrite — compliance radar from `services/radar.ts`
+- `SchoolFeedScreen` — new school-mode feed from `services/school.ts`
+- `SearchScreen` rewrite — Pathfinder-powered via `services/pathfinder.ts`
+- `UnifiedMailScreen` — new inbox powered by `services/mail.ts`
+- `WorkModulesScreen` — new, surfaces available expert modules per `services/modules.ts`
+- `PersonalizePage` — new, accent + mode selector
+- `EmailSetupScreen` — new, first-run mail adapter wizard
+
+**Standard mode (simplified variants):**
+- `StdHomeScreen` — "Waiting for you" hero with biometric-aware approve button
+- `StdCalendarScreen`, `StdMailScreen`, `StdThreadScreen`, `StdSettingsScreen`, `StdVoiceScreen`, `StdWalletScreen`
+
+**Shared:**
+- `JoinPage` rewrite — larger type, clearer QR affordance
+- `WelcomePage` rewrite — warm-linen hero matching the Evolution brief
+
+### New services — `src/app/services/`
+
+Four backend adapters added: `calendar.ts`, `mail.ts` (Gmail + Outlook hooks), `markets.ts`, `modules.ts`, `pathfinder.ts`, `radar.ts`, `school.ts`. All consume real ANTON endpoints — no fixture stubs.
+
+### Font
+
+Inter + JetBrains Mono via Google Fonts. The gap noted in "Known gaps" below (Inter not self-hosted) applies here.
+
+---
+
 ## Known gaps (deferred from the April 2026 review)
 
 - ApprovalsScreen DetailSheet duplicates the BottomSheet chrome instead of using the shared component (works but DRY).
