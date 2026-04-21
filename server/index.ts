@@ -1276,6 +1276,25 @@ httpServer.listen(PORT, async () => {
       }
     }, MARKET_TZ);
 
+    // Daily prediction-attribution PnL compute (04:00 CET). Walks matured
+    // attributions (horizon elapsed or prediction validated), pulls historical
+    // prices at rebalance date + horizon date, fills subsequent_return and
+    // attribution_pnl. Pure DB + arithmetic — runs under every pause flag.
+    // M2 of the Markets effectiveness plan.
+    cron.schedule('0 4 * * *', async () => {
+      try {
+        const { createMarketPredictionAttributionService } =
+          await import('./services/market-prediction-attribution-service.js');
+        const svc = await createMarketPredictionAttributionService(db);
+        const r = await svc.computeMaturedAttributionPnL();
+        if (r.matured_considered > 0) {
+          console.log(`[markets-attribution] considered=${r.matured_considered} computed=${r.pnl_computed} missing_price=${r.skipped_missing_price} errors=${r.errors.length}`);
+        }
+      } catch (err) {
+        console.error('[markets-attribution] pnl compute error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;

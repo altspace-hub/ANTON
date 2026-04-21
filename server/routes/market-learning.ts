@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketIntelligenceService } from '../services/market-intelligence-service.js';
+import { createMarketPredictionAttributionService } from '../services/market-prediction-attribution-service.js';
 
 export async function createMarketLearningRoutes(db: DatabaseAdapter) {
   const router = Router();
   const service = await createMarketIntelligenceService(db);
+  const attribution = await createMarketPredictionAttributionService(db);
 
   // Calibration
   router.get('/markets/learning/calibration', async (_req, res) => {
@@ -72,6 +74,56 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
       const id = await service.createBacktest({ name, description, strategyConfig: strategyConfig ?? {}, startDate, endDate });
       res.status(201).json({ id });
     } catch (err) { console.error('[market-learning] Create backtest error:', err); res.status(500).json({ error: 'Failed' }); }
+  });
+
+  // ── Prediction attribution (M2) ──────────────────────────────────────────
+
+  // Manual trigger for the PnL compute pass. Daily cron runs at 04:00 CET.
+  router.post('/markets/learning/attribution/compute', async (req, res) => {
+    try {
+      const batchLimit = req.body?.batchLimit ? parseInt(String(req.body.batchLimit), 10) : undefined;
+      res.json(await attribution.computeMaturedAttributionPnL({ batchLimit }));
+    } catch (err) {
+      console.error('[market-learning] Attribution compute error:', err);
+      res.status(500).json({ error: 'Failed to compute attribution PnL' });
+    }
+  });
+
+  // Recent attribution rows for inspection. Defaults to 100, cap 500.
+  router.get('/markets/learning/attribution', async (req, res) => {
+    try {
+      const limit = req.query.limit ? Math.min(500, parseInt(String(req.query.limit), 10)) : 100;
+      const predictionId = typeof req.query.prediction_id === 'string' ? req.query.prediction_id : null;
+      const where = predictionId ? 'WHERE a.prediction_id = ?' : '';
+      const params: unknown[] = predictionId ? [predictionId, limit] : [limit];
+      const rows = await db.all<{
+        id: number; prediction_id: string; rebalance_id: string;
+        signal_score: number | string; weight_change: number | string;
+        subsequent_return: number | string | null; attribution_pnl: number | string | null;
+        computed_at: string | null; created_at: string;
+        target_symbol: string | null; predicted_direction: string | null;
+      }>(
+        `SELECT a.id, a.prediction_id, a.rebalance_id, a.signal_score, a.weight_change,
+                a.subsequent_return, a.attribution_pnl, a.computed_at, a.created_at,
+                p.target_symbol, p.predicted_direction
+         FROM market_prediction_attribution a
+         JOIN market_predictions p ON p.id = a.prediction_id
+         ${where}
+         ORDER BY a.created_at DESC
+         LIMIT ?`,
+        ...params,
+      );
+      res.json(rows.map(r => ({
+        ...r,
+        signal_score: Number(r.signal_score),
+        weight_change: Number(r.weight_change),
+        subsequent_return: r.subsequent_return == null ? null : Number(r.subsequent_return),
+        attribution_pnl: r.attribution_pnl == null ? null : Number(r.attribution_pnl),
+      })));
+    } catch (err) {
+      console.error('[market-learning] Attribution list error:', err);
+      res.status(500).json({ error: 'Failed to list attribution rows' });
+    }
   });
 
   // ── Auto-verify expired predictions ──────────────────────────────────────

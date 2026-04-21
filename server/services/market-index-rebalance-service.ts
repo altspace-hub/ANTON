@@ -466,6 +466,21 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       _pgNotify.notify('market_rebalance_executed', { rebalanceId, indexId, tradesCount: trades.length }).catch(() => {});
     }
 
+    // M2: record prediction → rebalance attribution rows so the closed loop
+    // can later compute per-prediction portfolio impact. Best-effort — a
+    // failure here must not roll back the rebalance itself.
+    try {
+      const { createMarketPredictionAttributionService } =
+        await import('./market-prediction-attribution-service.js');
+      const attribution = await createMarketPredictionAttributionService(db);
+      await attribution.recordAttributionsForRebalance(rebalanceId, trades);
+    } catch (err) {
+      console.warn(
+        `[rebalance] attribution recording failed for ${rebalanceId}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+
     return rebalanceId;
   }
 
