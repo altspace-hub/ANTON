@@ -47,6 +47,13 @@ const MODE_INSTRUCTIONS: Record<string, string> = {
   // LLM's job is to interpret intent (verb / category / location / language)
   // and rank results by capability fit + recency.
   'anton-portal': 'Discover ANTON portals: people, businesses, communities, teams, creators. Match user intent to capability verbs (contact / order / book / inquire / join / pay / etc.). Filter by category, tag, service area, language. Rank by capability fit, then recency (last_seen_at). Surface only public-indexed portals. Always show the portal address (<name>.<namespace>.portal) and the verbs it supports — not URLs.',
+  // Visitor Layer v0.8 — 5 new modes (Q11: Daniel chose "new modes per chip"
+  // over facets). Each dispatches to its own ANTON-internal search path.
+  people: 'Discover ANTON contacts: people with portals, creators, community leaders. Match by name, portal address, capabilities. Rank by AAP attestations received + recency. Show contact_hash + portal address; never surface email or phone unless the portal descriptor explicitly lists them as public capabilities.',
+  bundles: 'Discover .anton bundles in the marketplace: modules, skills, personas, workflows, templates, starter packs. Filter by bundle_type, licence, price, verified publisher. Rank by signature validity + install count + average rating. Show publisher identity + signature verification status.',
+  jobs: 'Discover open jobs across ANTON-published portals. Filter by location, jurisdiction, remote/hybrid/onsite, salary range, industry, required skills, EU AI Act transparency flag. Rank by match-to-profile score when a career profile is available; else by recency. Always show published salary range (EU Pay Transparency Directive).',
+  marketplace: 'Discover .anton bundles available for purchase or free installation. Same corpus as "bundles" mode but ranked by a shopper lens: price / licence / publisher verification / install count / recency. Show FutureChain price where applicable — no fiat surface (per deployment policy).',
+  content: 'Discover videos, articles, lessons, playlists published on ANTON portals. Filter by category (educational / creative / news / entertainment / how-to / research), language, portal. Rank by creator quality score + AAP attestations + publication recency. No algorithmic feed — pure filter + recency sort.',
 };
 
 const MODE_HINTS: Record<string, string> = {
@@ -58,11 +65,21 @@ const MODE_HINTS: Record<string, string> = {
   news: 'Most recent first. Bias shown. Opinion clearly labelled.',
   local: 'Nearest first. Open now highlighted.',
   'anton-portal': 'ANTON portals only. Capability fit ranked. Address shown.',
+  // Visitor Layer v0.8 hints
+  people: 'Contacts on ANTON. No emails surfaced unless public.',
+  bundles: '.anton bundles. Signature + install count ranked.',
+  jobs: 'Open jobs across ANTON portals. Salary range always shown.',
+  marketplace: 'Bundles for purchase or free install. FutureChain pricing.',
+  content: 'Videos, articles, lessons. Creator-owned. No algorithmic feed.',
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export type SearchDepth = 'quick' | 'thorough' | 'deep';
-export type SearchMode = 'knowledge' | 'shopping' | 'travel' | 'food' | 'fix' | 'news' | 'local' | 'anton-portal';
+export type SearchMode =
+  | 'knowledge' | 'shopping' | 'travel' | 'food' | 'fix' | 'news' | 'local'
+  | 'anton-portal'
+  // Visitor Layer v0.8 — five new modes
+  | 'people' | 'bundles' | 'jobs' | 'marketplace' | 'content';
 
 export interface ModelResult {
   modelId: string;
