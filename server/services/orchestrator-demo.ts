@@ -155,7 +155,7 @@ export interface DemoState {
 }
 
 /** Return the demo state from the DB config field */
-export async function getDemoState(db: DatabaseAdapter): DemoState {
+export async function getDemoState(db: DatabaseAdapter): Promise<DemoState> {
   try {
     const row = await db.get("SELECT demo_state FROM orchestrator_config WHERE id = 'default'") as
       { demo_state: string | null } | undefined;
@@ -164,7 +164,7 @@ export async function getDemoState(db: DatabaseAdapter): DemoState {
   return { mode: 'off', persona: 'meridian', activated_at: null, signals_injected: 0, simulation_day: null };
 }
 
-async function saveDemoState(db: DatabaseAdapter, state: DemoState): void {
+async function saveDemoState(db: DatabaseAdapter, state: DemoState): Promise<void> {
   try {
     await db.run("UPDATE orchestrator_config SET demo_state = ?, updated_at = NOW() WHERE id = 'default'", JSON.stringify(state));
   } catch { /* column may not exist */ }
@@ -241,7 +241,7 @@ export async function activateDemoMode(db: DatabaseAdapter, mode: DemoState['mod
 }
 
 /** Deactivate Demo Mode — remove all injected signals and reset state */
-export async function deactivateDemoMode(db: DatabaseAdapter): { cleaned: number } {
+export async function deactivateDemoMode(db: DatabaseAdapter): Promise<{ cleaned: number }> {
   let cleaned = 0;
   // Use a transaction so cleanup is atomic — partial cleanup is worse than no cleanup
   try {

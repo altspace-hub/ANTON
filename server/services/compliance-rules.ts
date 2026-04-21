@@ -44,18 +44,18 @@ export interface RuleViolation {
 
 export async function createComplianceRulesService(db: DatabaseAdapter) {
   // Rule management
-  async function getAllRules(category?: string): ComplianceRule[] {
+  async function getAllRules(category?: string): Promise<ComplianceRule[]> {
     if (category) {
       return await db.all('SELECT * FROM compliance_rules WHERE category = ? ORDER BY severity DESC, title', category) as ComplianceRule[];
     }
     return await db.all('SELECT * FROM compliance_rules ORDER BY category, severity DESC, title') as ComplianceRule[];
   }
 
-  async function getRule(id: number): ComplianceRule | null {
+  async function getRule(id: number): Promise<ComplianceRule | null> {
     return await db.get('SELECT * FROM compliance_rules WHERE id = ?', id) as ComplianceRule | null;
   }
 
-  async function createRule(rule: Omit<ComplianceRule, 'id' | 'created_at' | 'updated_at'>): number {
+  async function createRule(rule: Omit<ComplianceRule, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
     const result = await db.run(`
       INSERT INTO compliance_rules (rule_code, title, description, category, severity, regulatory_source, rule_logic, active, auto_remediate, remediation_steps)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -90,7 +90,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
     }
   }
 
-  async function deleteRule(id: number): void {
+  async function deleteRule(id: number): Promise<void> {
     await db.run('DELETE FROM compliance_rules WHERE id = ?', id);
   }
 
@@ -304,7 +304,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
   }
 
   // Violation management
-  async function getViolations(filters?: { status?: string; severity?: string; ruleId?: number }): RuleViolation[] {
+  async function getViolations(filters?: { status?: string; severity?: string; ruleId?: number }): Promise<RuleViolation[]> {
     let query = 'SELECT * FROM rule_violations WHERE 1=1';
     const params: any[] = [];
 
@@ -360,7 +360,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
   }
 
   // Compliance dashboard stats
-  async function getComplianceDashboard(): any {
+  async function getComplianceDashboard(): Promise<any> {
 
     const totalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE remediation_status = 'open'") as { count: number };
     const criticalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE severity = 'critical' AND remediation_status = 'open'") as { count: number };

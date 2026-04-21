@@ -158,7 +158,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get atom distribution by category
    */
-  async function getAtomDistribution(params: InsightParams = {}): Record<string, number> {
+  async function getAtomDistribution(params: InsightParams = {}): Promise<Record<string, number>> {
     let query = 'SELECT category, COUNT(*) as count FROM knowledge_atoms WHERE is_active = 1';
     const queryParams: any[] = [];
 
@@ -185,12 +185,12 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get top entities by interaction count
    */
-  async function getTopEntities(limit: number = 10): Array<{
+  async function getTopEntities(limit: number = 10): Promise<Array<{
     entity_type: string;
     entity_id: string;
     entity_name: string | null;
     atom_count: number;
-  }> {
+  }>> {
     const query = `
       SELECT
         entity_type,
@@ -209,13 +209,13 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get sentiment trend over time
    */
-  async function getSentimentTrend(days: number = 30): Array<{
+  async function getSentimentTrend(days: number = 30): Promise<Array<{
     date: string;
     positive: number;
     negative: number;
     warning: number;
     critical: number;
-  }> {
+  }>> {
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const query = `
       SELECT

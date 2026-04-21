@@ -221,13 +221,13 @@ export async function createKnowledgeGraph(db: DatabaseAdapter) {
     relationshipTypes: string[],
     maxDepth = 10,
     packId?: string,
-  ): Array<{
+  ): Promise<Array<{
     entity_type: string;
     entity_id: string;
     canonical_name: string | null;
     depth: number;
     path: string;
-  }> {
+  }>> {
     if (relationshipTypes.length === 0) return [];
     maxDepth = Math.min(maxDepth, 20); // hard cap
 

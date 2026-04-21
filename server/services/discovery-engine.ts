@@ -1061,7 +1061,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
   // ── Session CRUD ─────────────────────────────────────────────────────
 
-  async function createSession(tier: DiscoveryTier, userId?: string): { id: string; state: DiscoveryState } {
+  async function createSession(tier: DiscoveryTier, userId?: string): Promise<{ id: string; state: DiscoveryState }> {
     const id = randomUUID();
     const state = createDefaultState(tier);
 
@@ -1073,7 +1073,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     return { id, state };
   }
 
-  async function getSession(id: string): { id: string; tier: DiscoveryTier; state: DiscoveryState; status: DiscoveryStatus; output_id: string | null } | null {
+  async function getSession(id: string): Promise<{ id: string; tier: DiscoveryTier; state: DiscoveryState; status: DiscoveryStatus; output_id: string | null } | null> {
     const row = await db.get('SELECT * FROM discovery_sessions WHERE id = ?', id) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
@@ -1085,7 +1085,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     };
   }
 
-  async function listSessions(userId?: string): Array<{ id: string; tier: string; status: string; started_at: string; last_active_at: string; phase: string; progress: number }> {
+  async function listSessions(userId?: string): Promise<Array<{ id: string; tier: string; status: string; started_at: string; last_active_at: string; phase: string; progress: number }>> {
     let query = 'SELECT id, tier, status, started_at, last_active_at, state FROM discovery_sessions';
     const args: unknown[] = [];
     if (userId) {
@@ -1109,7 +1109,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     });
   }
 
-  async function updateSessionState(id: string, state: DiscoveryState): void {
+  async function updateSessionState(id: string, state: DiscoveryState): Promise<void> {
     await db.run(`
       UPDATE discovery_sessions
       SET state = ?, last_active_at = NOW(), autosave_version = autosave_version + 1
@@ -1117,12 +1117,12 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     `, JSON.stringify(state), id);
   }
 
-  async function updateSessionStatus(id: string, status: DiscoveryStatus): void {
+  async function updateSessionStatus(id: string, status: DiscoveryStatus): Promise<void> {
     const extra = status === 'completed' ? ", completed_at = NOW()" : '';
     await db.run(`UPDATE discovery_sessions SET status = ?${extra} WHERE id = ?`, status, id);
   }
 
-  async function deleteSession(id: string): void {
+  async function deleteSession(id: string): Promise<void> {
     await db.run('DELETE FROM discovery_sessions WHERE id = ?', id);
   }
 

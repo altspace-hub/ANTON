@@ -35,7 +35,7 @@ import {
   getMeridianPersonaContext,
 } from '../services/orchestrator-demo.js';
 
-export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Router {
+export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Promise<Router> {
   const router = Router();
 
   // ── Status ─────────────────────────────────────────────────────────────────

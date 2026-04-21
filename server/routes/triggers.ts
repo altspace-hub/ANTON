@@ -9,7 +9,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { createWebhookListener, type TriggerType } from '../services/webhook-listener.js';
 
-export async function createTriggersRoutes(db: DatabaseAdapter): Router {
+export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const listener = await createWebhookListener(db);
 

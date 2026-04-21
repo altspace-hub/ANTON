@@ -3,7 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingEngine } from '../services/coding-engine.js';
 
-export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
+export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const codingEngine = await createCodingEngine(db);
 

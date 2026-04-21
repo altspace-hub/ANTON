@@ -13,7 +13,7 @@ const DIMENSIONS = [
   { name: 'goal-drift', persona: 'Project Manager', reviewType: 'goal_alignment' },
 ] as const;
 
-export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router {
+export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/coding/alignment-reviews — list all reviews

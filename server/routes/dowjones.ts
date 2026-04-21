@@ -15,7 +15,7 @@ import {
   getConnectorStatus,
 } from '../services/dowjones-connector.js';
 
-export async function createDowJonesRoutes(db: DatabaseAdapter): Router {
+export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/dowjones/status — connector health + mock/live indicator

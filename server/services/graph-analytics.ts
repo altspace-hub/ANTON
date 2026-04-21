@@ -26,7 +26,7 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Build in-memory graph representation for analysis
    */
-  async function buildGraphRepresentation(): { nodes: Map<string, GraphNode>; edges: GraphEdge[]; adjacency: Map<string, Set<string>> } {
+  async function buildGraphRepresentation(): Promise<{ nodes: Map<string, GraphNode>; edges: GraphEdge[]; adjacency: Map<string, Set<string>> }> {
     const nodes = new Map<string, GraphNode>();
     const edges: GraphEdge[] = [];
     const adjacency = new Map<string, Set<string>>();

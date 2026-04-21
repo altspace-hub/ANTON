@@ -431,7 +431,7 @@ Use severity badges: \`🔴 CRITICAL\`, \`🟠 HIGH\`, \`🟡 MEDIUM\`, \`🔵 L
    * the composed review prompt configuration for the frontend to send to
    * POST /api/claude/message.
    */
-  async function startReview(config: StartReviewConfig): StartReviewResult {
+  async function startReview(config: StartReviewConfig): Promise<StartReviewResult> {
     const {
       sourceType,
       code,
@@ -736,7 +736,7 @@ For each HIGH or CRITICAL risk dependency, provide:
   async function listReviewSessions(
     limit: number = 20,
     offset: number = 0,
-  ): { sessions: ReviewSessionRow[]; total: number } {
+  ): Promise<{ sessions: ReviewSessionRow[]; total: number }> {
 
 
     const total = ((await db.get('SELECT COUNT(*) as c FROM code_review_sessions')) as { c: number } | undefined)?.c ?? 0;

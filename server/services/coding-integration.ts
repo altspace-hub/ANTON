@@ -52,7 +52,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
 
   // ── Helpers ────────────────────────────────────────────────────
 
-  async function tableExists(tableName: string): boolean {
+  async function tableExists(tableName: string): Promise<boolean> {
     const row = await db.get(
       "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = ?"
     , tableName) as { name: string } | undefined;
@@ -90,7 +90,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
     entityId: string,
     content: string,
     label?: string
-  ): SavedVersion {
+  ): Promise<SavedVersion> {
     // Get current max version_number for this entity
     const maxRow = await db.get(
       'SELECT MAX(version_number) as max_ver FROM versions WHERE entity_type = ? AND entity_id = ?'
@@ -116,7 +116,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
     entityType: string,
     entityId: string,
     limit: number = 20
-  ): VersionRecord[] {
+  ): Promise<VersionRecord[]> {
     const rows = await db.all(
       `SELECT id, version_number, label, created_at, LENGTH(content) as content_length
        FROM versions
@@ -141,7 +141,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
     entityId: string,
     v1: number,
     v2: number
-  ): DiffResult | null {
+  ): Promise<DiffResult | null> {
     const version1 = await db.get('SELECT content FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
     , entityType, entityId, v1) as { content: string } | undefined;
 

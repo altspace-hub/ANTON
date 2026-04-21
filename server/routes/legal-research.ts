@@ -93,7 +93,7 @@ function loadBasePrompt(): string {
   }
 }
 
-export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Router {
+export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Promise<Router> {
   const router = Router();
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY }) : null);
 

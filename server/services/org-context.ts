@@ -60,7 +60,7 @@ export async function createOrgContextService(db: DatabaseAdapter) {
   /**
    * Get the org context for a user (creates empty one if not exists).
    */
-  async function getContext(userId: string = 'default'): OrgContext {
+  async function getContext(userId: string = 'default'): Promise<OrgContext> {
     const existing = await db.get('SELECT * FROM org_context WHERE id = ?', CONTEXT_ID) as RawOrgContextRow | undefined;
 
     if (existing) return parseOrgContext(existing);
@@ -82,7 +82,7 @@ export async function createOrgContextService(db: DatabaseAdapter) {
   /**
    * Update the org context, logging history for changed fields.
    */
-  async function updateContext(update: OrgContextUpdate, changedBy: string = 'default'): OrgContext {
+  async function updateContext(update: OrgContextUpdate, changedBy: string = 'default'): Promise<OrgContext> {
     const current = getContext(changedBy);
 
     const fields: Record<string, unknown> = {};
@@ -171,10 +171,10 @@ export async function createOrgContextService(db: DatabaseAdapter) {
   /**
    * Get context change history.
    */
-  async function getHistory(limit = 20): Array<{
+  async function getHistory(limit = 20): Promise<Array<{
     id: number; field_changed: string; previous_value: string;
     new_value: string; changed_by: string; changed_at: string;
-  }> {
+  }>> {
     return await db.all(`
       SELECT * FROM org_context_history WHERE org_context_id = ?
       ORDER BY changed_at DESC LIMIT ?

@@ -18,7 +18,7 @@ function loadExpertPrompt(): string {
   }
 }
 
-export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
+export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // POST /api/presentations/consult — streaming expert consultation turn

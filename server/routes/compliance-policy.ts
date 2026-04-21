@@ -26,7 +26,7 @@ const AllowlistAddSchema = z.object({
   modelId: z.string().min(1).max(100),
 });
 
-export async function createCompliancePolicyRoutes(db: DatabaseAdapter): Router {
+export async function createCompliancePolicyRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/compliance-policy — list all module policies (admin)

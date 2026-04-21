@@ -8,7 +8,7 @@ import { callSync } from '../services/claude-client.js';
 const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || './outputs');
 const MAX_FIX_CYCLES = 3;
 
-export async function createPptxPipelineRoutes(db: DatabaseAdapter): Router {
+export async function createPptxPipelineRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // POST /api/pptx-pipeline/generate

@@ -12,7 +12,7 @@ import {
   getConnectorStatus,
 } from '../services/roaring-connector.js';
 
-export async function createRoaringRoutes(db: DatabaseAdapter): Router {
+export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/roaring/status — connector health, mock/live indicator
