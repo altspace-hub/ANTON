@@ -1022,8 +1022,11 @@ httpServer.listen(PORT, async () => {
       String(process.env.MARKETS_THINKING_DISABLED || '').toLowerCase() === 'true';
     const marketsFetchDisabled =
       String(process.env.MARKETS_FETCH_DISABLED || '').toLowerCase() === 'true';
+    const marketsAutorebalanceDisabled =
+      String(process.env.MARKETS_AUTOREBALANCE_DISABLED || '').toLowerCase() === 'true';
     if (marketsThinkingDisabled) console.log('[markets-schedule] MARKETS_THINKING_DISABLED=true — LLM phases will skip');
     if (marketsFetchDisabled) console.log('[markets-schedule] MARKETS_FETCH_DISABLED=true — data fetches will skip');
+    if (marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_AUTOREBALANCE_DISABLED=true — scheduled rebalances will skip');
 
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
     // Backlog gate: skip new fetches if too many unprocessed articles
@@ -1330,6 +1333,31 @@ httpServer.listen(PORT, async () => {
         }
       } catch (err) {
         console.error('[markets-investigation-lifecycle] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
+    // Daily scheduled rebalance sweep (06:00 CET). Previously runScheduledRebalances
+    // was exposed by the service but never called — only the prediction-driven
+    // path in workflow-orchestrator could trigger a rebalance, and that path
+    // is LLM-gated AND requires strong signals that the current prediction
+    // pool (21% accuracy) doesn't produce. The April audit found 1 rebalance
+    // ever across 5 active indexes as a result. This cron drives the time-
+    // based path (deterministic, no LLM) so indexes with 'weekly'/'monthly'/
+    // 'quarterly' frequencies actually run on schedule. Gate via
+    // MARKETS_AUTOREBALANCE_DISABLED for environments that want manual-only
+    // control. M6 of the effectiveness plan.
+    cron.schedule('0 6 * * *', async () => {
+      if (marketsAutorebalanceDisabled) return;
+      try {
+        const { createMarketIndexRebalanceService } =
+          await import('./services/market-index-rebalance-service.js');
+        const svc = await createMarketIndexRebalanceService(db);
+        const r = await svc.runScheduledRebalances();
+        if (r.checked > 0 || r.rebalanced.length > 0) {
+          console.log(`[markets-rebalance-schedule] checked=${r.checked} rebalanced=${r.rebalanced.length}${r.rebalanced.length > 0 ? ` (${r.rebalanced.join(', ')})` : ''}`);
+        }
+      } catch (err) {
+        console.error('[markets-rebalance-schedule] sweep error:', err instanceof Error ? err.message : err);
       }
     }, MARKET_TZ);
 
