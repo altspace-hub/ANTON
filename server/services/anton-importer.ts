@@ -23,7 +23,7 @@ export interface ImportResult {
 
 export async function importAntonFile(
   buffer: Buffer,
-  db: Database,
+  db: DatabaseAdapter,
   _userId?: string
 ): Promise<ImportResult> {
   // Step 1-5: Validate the .anton file

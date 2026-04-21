@@ -22,7 +22,7 @@ export interface IndexDocumentResult {
  * Index a document: extract text, chunk it, embed chunks, store in ChromaDB and SQLite
  */
 export async function indexDocument(
-  db: Database,
+  db: DatabaseAdapter,
   filePath: string,
   filename: string,
   collectionId: string,
@@ -124,7 +124,7 @@ export async function indexDocument(
  * Re-index a document (delete old chunks, create new ones)
  */
 export async function reindexDocument(
-  db: Database,
+  db: DatabaseAdapter,
   documentId: string,
   collectionId: string,
   chunkingOptions?: Partial<ChunkingOptions>
@@ -212,7 +212,7 @@ export async function reindexDocument(
  * Delete a document and all its chunks
  */
 export async function deleteDocument(
-  db: Database,
+  db: DatabaseAdapter,
   documentId: string,
   collectionId: string
 ): Promise<boolean> {
@@ -239,7 +239,7 @@ export async function deleteDocument(
 /**
  * Get indexing statistics for a collection
  */
-export async function getCollectionIndexStats(db: Database, collectionId: string): Promise<{
+export async function getCollectionIndexStats(db: DatabaseAdapter, collectionId: string): Promise<{
   totalDocuments: number;
   indexedDocuments: number;
   failedDocuments: number;

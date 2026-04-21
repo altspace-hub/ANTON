@@ -96,7 +96,7 @@ function parseBridgeRow(row: RawConnectionRow, showToken = false) {
 /**
  * Register BEFORE app.use('/api', authMiddleware) in server/index.ts
  */
-export async function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
+export async function createBridgePublicRoutes(db: DatabaseAdapter, _anthropic?: Anthropic) {
   const router = Router();
 
   /**
@@ -272,7 +272,7 @@ export async function createBridgePublicRoutes(db: Database, _anthropic?: Anthro
 /**
  * Register AFTER app.use('/api', authMiddleware) in server/index.ts
  */
-export async function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
+export async function createBridgeRoutes(db: DatabaseAdapter, _anthropic?: Anthropic) {
   const router = Router();
 
   // GET /api/bridges — list all channel bridges

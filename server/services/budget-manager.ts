@@ -13,7 +13,7 @@ export interface BudgetStatus {
   isNearLimit: boolean;
 }
 
-export async function getUserBudgetStatus(db: Database, userId: string): BudgetStatus {
+export async function getUserBudgetStatus(db: DatabaseAdapter, userId: string): Promise<BudgetStatus> {
   const user = await db.get('SELECT username, monthly_token_budget FROM users WHERE id = ?', userId) as { username: string; monthly_token_budget: number } | undefined;
 
   if (!user) {
@@ -45,12 +45,12 @@ export async function getUserBudgetStatus(db: Database, userId: string): BudgetS
   };
 }
 
-export function checkBudgetBeforeApiCall(
-  db: Database,
+export async function checkBudgetBeforeApiCall(
+  db: DatabaseAdapter,
   userId: string,
   estimatedTokens: number
-): { allowed: boolean; reason?: string } {
-  const status = getUserBudgetStatus(db, userId);
+): Promise<{ allowed: boolean; reason?: string }> {
+  const status = await getUserBudgetStatus(db, userId);
 
   if (status.budget === 0) {
     return { allowed: true }; // No budget = unlimited
@@ -74,7 +74,7 @@ export function checkBudgetBeforeApiCall(
 }
 
 export async function updateUserBudget(
-  db: Database,
+  db: DatabaseAdapter,
   userId: string,
   monthlyTokenBudget: number,
   alertThreshold?: number
@@ -89,12 +89,12 @@ export async function updateUserBudget(
   }
 }
 
-export async function getAllUserBudgets(db: DatabaseAdapter): BudgetStatus[] {
+export async function getAllUserBudgets(db: DatabaseAdapter): Promise<BudgetStatus[]> {
   const users = await db.all('SELECT id FROM users') as { id: string }[];
-  return users.map((u) => getUserBudgetStatus(db, u.id));
+  return Promise.all(users.map((u) => getUserBudgetStatus(db, u.id)));
 }
 
-export async function resetMonthlyUsage(db: Database, userId: string): boolean {
+export async function resetMonthlyUsage(db: DatabaseAdapter, userId: string): Promise<boolean> {
   try {
     const currentMonth = new Date().toISOString().slice(0, 7);
     await db.run('DELETE FROM user_monthly_usage WHERE user_id = ? AND year_month = ?', userId, currentMonth);

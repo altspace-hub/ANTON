@@ -661,7 +661,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
 
 // ─── OAuth helper ────────────────────────────────────────────────────────────
 
-async function acceptPendingInvitations(db: Database, userId: string, email: string) {
+async function acceptPendingInvitations(db: DatabaseAdapter, userId: string, email: string) {
   try {
     const pending = await db.get(`
       SELECT * FROM project_invitations
@@ -689,7 +689,7 @@ async function acceptPendingInvitations(db: Database, userId: string, email: str
   }
 }
 
-async function findOrCreateOAuthUser(db: Database, email: string, name: string, _provider: string): Promise<string> {
+async function findOrCreateOAuthUser(db: DatabaseAdapter, email: string, name: string, _provider: string): Promise<string> {
   let user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
   let isNewUser = false;
 

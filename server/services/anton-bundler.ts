@@ -262,7 +262,7 @@ function buildSpecManifest(params: {
 // ── Bundle Module to .anton File ───────────────────────────────
 
 export async function bundleModuleToAnton(
-  db: Database,
+  db: DatabaseAdapter,
   moduleId: string
 ): Promise<Buffer> {
   // Fetch module from database using actual custom_modules schema
@@ -404,7 +404,7 @@ export async function bundleModuleToAnton(
  * Contains the review configuration (lenses, explanation level, security mode).
  */
 export async function bundleCodingReviewProfile(
-  db: Database,
+  db: DatabaseAdapter,
   sessionId: string
 ): Promise<Buffer> {
   const session = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', sessionId) as any;
@@ -486,7 +486,7 @@ and security framework settings.
  * Contains a generated Python script with requirements.
  */
 export async function bundleScriptLiteTemplate(
-  db: Database,
+  db: DatabaseAdapter,
   sessionId: string
 ): Promise<Buffer> {
   const session = await db.get('SELECT * FROM sessions WHERE id = ?', sessionId) as any;
@@ -572,7 +572,7 @@ Always review generated scripts before executing them in a production environmen
  * Contains generated source files for a multi-file application.
  */
 export async function bundleScriptMediumTemplate(
-  db: Database,
+  db: DatabaseAdapter,
   sessionId: string
 ): Promise<Buffer> {
   const session = await db.get('SELECT * FROM sessions WHERE id = ?', sessionId) as any;
@@ -677,7 +677,7 @@ Always review generated code before deploying to production.
  * releases, tasks, tech debt, and reviews.
  */
 export async function bundleCodingLargeBlueprint(
-  db: Database,
+  db: DatabaseAdapter,
   projectId: string
 ): Promise<Buffer> {
   const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', projectId) as any;
@@ -815,7 +815,7 @@ ${releases.map((r: any) => `- **Release ${r.release_number}:** ${r.name} (${r.st
  * expert reviews, and generated instruction files.
  */
 export async function bundleInstructionBuilderProject(
-  db: Database,
+  db: DatabaseAdapter,
   projectId: string
 ): Promise<Buffer> {
   const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', projectId) as any;
@@ -919,7 +919,7 @@ ${project.description || 'No description available.'}
  * Optionally filter by category.
  */
 export async function bundleComplianceRuleset(
-  db: Database,
+  db: DatabaseAdapter,
   options: {
     name?: string;
     description?: string;
@@ -1072,7 +1072,7 @@ export async function bundleReviewPanel(params: {
  * Optionally filter by specific module IDs.
  */
 export async function bundleQualityBaseline(
-  db: Database,
+  db: DatabaseAdapter,
   options: {
     name?: string;
     description?: string;
