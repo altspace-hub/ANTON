@@ -208,8 +208,16 @@ export async function createMarketWorkflowOrchestrator(
       try {
         const { createMarketAtomService } = await import('./market-atom-service.js');
         const atomSvc = await createMarketAtomService(db);
+        // M7: newest-first + recency floor. FIFO was wrong — old news is the
+        // least valuable atom source and burns tokens on stale signal. The
+        // triage cron catches items that fall past 14d without extraction.
         const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
-          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT 40"
+          `SELECT id, data_type, content, title FROM market_data_raw
+           WHERE is_processed = 0
+             AND data_type NOT IN ('price')
+             AND fetched_at >= NOW() - INTERVAL '14 days'
+           ORDER BY COALESCE(published_at, fetched_at::text) DESC
+           LIMIT 40`,
         );
         let atomsCreated = 0;
         for (const row of unprocessed) {

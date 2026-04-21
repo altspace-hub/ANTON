@@ -1361,6 +1361,26 @@ httpServer.listen(PORT, async () => {
       }
     }, MARKET_TZ);
 
+    // Daily market-data backlog triage (06:30 CET). Marks clearly-worthless
+    // unprocessed news items as is_processed=1 without LLM spend: stale
+    // (>30d), empty/short content, same-source duplicates within a day.
+    // Lets the backlog drain even under MARKETS_THINKING_DISABLED and keeps
+    // the extractor focused on recent, extractable items when thinking
+    // resumes. M7 of the effectiveness plan.
+    cron.schedule('30 6 * * *', async () => {
+      try {
+        const { createMarketDataBacklogTriageService } =
+          await import('./services/market-data-backlog-triage-service.js');
+        const svc = await createMarketDataBacklogTriageService(db);
+        const r = await svc.triageBacklog();
+        if (r.scanned > 0 || r.still_pending > 0) {
+          console.log(`[markets-backlog-triage] triaged=${r.scanned} (stale=${r.triaged_stale} empty=${r.triaged_empty} short=${r.triaged_short} dup=${r.triaged_duplicate}) still_pending=${r.still_pending}`);
+        }
+      } catch (err) {
+        console.error('[markets-backlog-triage] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
