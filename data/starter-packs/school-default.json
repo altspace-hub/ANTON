@@ -1,0 +1,28 @@
+{
+  "bundle_type": "starter-pack",
+  "spec_version": "1.0",
+  "id": "school-default",
+  "name": "ANTON School",
+  "description": "Age-appropriate Visitor Home for School mode. Jobs hidden, Marketplace read-only + age-gated, Friends and Video guardian-moderated, no Money feature. Auto-applied when appMode === 'school'.",
+  "target_mode": "school",
+  "bookmarks": [
+    { "bookmark_type": "platform", "target_route": "/pathfinder",   "label": "Pathfinder",  "icon_ref": "Compass",       "sort_order": 0, "undeletable": true  },
+    { "bookmark_type": "route",    "target_route": "/school",       "label": "Class",       "icon_ref": "School",        "sort_order": 1, "undeletable": false },
+    { "bookmark_type": "route",    "target_route": "/life/learn",   "label": "Study",       "icon_ref": "GraduationCap", "sort_order": 2, "undeletable": false },
+    { "bookmark_type": "platform", "target_route": "/portals/mine", "label": "My ANTON",    "icon_ref": "User",          "sort_order": 3, "undeletable": true  }
+  ],
+  "categories": [
+    { "id": "pathfinder", "label": "Pathfinder", "icon_ref": "Compass",       "tier": "we-own",      "sort_order": 0,  "pathfinder_scope": "all",       "design_principle": "Safe search for young learners." },
+    { "id": "class",      "label": "Class",      "icon_ref": "School",        "tier": "we-own",      "sort_order": 1,  "pathfinder_scope": "knowledge", "design_principle": "School-mode classroom home." },
+    { "id": "study",      "label": "Study",      "icon_ref": "GraduationCap", "tier": "we-own",      "sort_order": 2,  "pathfinder_scope": "knowledge", "design_principle": "Inspectable study material. No black-box AI tutors." },
+    { "id": "friends",    "label": "Friends",    "icon_ref": "Users",         "tier": "we-own",      "sort_order": 3,  "pathfinder_scope": "people",    "design_principle": "Guardian-approved contacts only." },
+    { "id": "video",      "label": "Video",      "icon_ref": "Video",         "tier": "we-own",      "sort_order": 4,  "pathfinder_scope": "content",   "design_principle": "Curated library only. No uploads, no ads." },
+    { "id": "music",      "label": "Music",      "icon_ref": "Music",         "tier": "placeholder", "sort_order": 5,  "pathfinder_scope": "content",   "design_principle": "Age-appropriate music discovery." },
+    { "id": "read",       "label": "Read",       "icon_ref": "BookOpen",      "tier": "placeholder", "sort_order": 6,  "pathfinder_scope": "knowledge", "design_principle": "Books, stories, poems — inspectable sources." },
+    { "id": "create",     "label": "Create",     "icon_ref": "Palette",       "tier": "placeholder", "sort_order": 7,  "pathfinder_scope": "all",       "design_principle": "Make something. Tools are transparent." },
+    { "id": "games",      "label": "Games",      "icon_ref": "Gamepad2",      "tier": "placeholder", "sort_order": 8,  "pathfinder_scope": "all",       "design_principle": "Age-rated. No dark patterns. No in-game purchases." },
+    { "id": "places",     "label": "Places",     "icon_ref": "MapPin",        "tier": "placeholder", "sort_order": 9,  "pathfinder_scope": "local",     "design_principle": "Locations stay on-device. No surveillance." },
+    { "id": "explore",    "label": "Explore",    "icon_ref": "Telescope",     "tier": "placeholder", "sort_order": 10, "pathfinder_scope": "knowledge", "design_principle": "Curiosity-led, not algorithm-led." },
+    { "id": "health",     "label": "Health",     "icon_ref": "HeartPulse",    "tier": "placeholder", "sort_order": 11, "pathfinder_scope": "knowledge", "design_principle": "Medical privacy by default." }
+  ]
+}
