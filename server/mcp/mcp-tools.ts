@@ -231,7 +231,7 @@ function suggestModules(description: string): ModuleSuggestion[] {
 
 // ── Tool executor ────────────────────────────────────────────────────────────
 
-export function createMcpToolExecutor(_db: Database) {
+export function createMcpToolExecutor(_db: DatabaseAdapter) {
   async function execute(
     tool: string,
     parameters: Record<string, unknown>

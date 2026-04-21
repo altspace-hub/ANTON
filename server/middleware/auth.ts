@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export async function createAuthMiddleware(db: Database) {
+export async function createAuthMiddleware(db: DatabaseAdapter) {
   return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Solo mode: no auth required
     if (!IS_TEAM_MODE) {

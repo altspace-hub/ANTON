@@ -43,7 +43,7 @@ export interface RAGChunk {
 /**
  * Create a new knowledge collection
  */
-export async function createCollection(db: Database, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): string {
+export async function createCollection(db: DatabaseAdapter, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): string {
   const id = collection.name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 
   const result = await db.run(`
@@ -73,14 +73,14 @@ export async function listCollections(db: DatabaseAdapter): KnowledgeCollection[
 /**
  * Get collection by ID
  */
-export async function getCollection(db: Database, id: string): KnowledgeCollection | null {
+export async function getCollection(db: DatabaseAdapter, id: string): KnowledgeCollection | null {
   return await db.get('SELECT * FROM knowledge_collections WHERE id = ?', id) as KnowledgeCollection | null;
 }
 
 /**
  * Update collection
  */
-export async function updateCollection(db: Database, id: string, updates: Partial<KnowledgeCollection>): Promise<boolean> {
+export async function updateCollection(db: DatabaseAdapter, id: string, updates: Partial<KnowledgeCollection>): Promise<boolean> {
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -103,7 +103,7 @@ export async function updateCollection(db: Database, id: string, updates: Partia
 /**
  * Delete collection metadata
  */
-export async function deleteCollectionMetadata(db: Database, id: string): boolean {
+export async function deleteCollectionMetadata(db: DatabaseAdapter, id: string): boolean {
   try {
     await db.run('DELETE FROM knowledge_collections WHERE id = ?', id);
     return true;
@@ -115,7 +115,7 @@ export async function deleteCollectionMetadata(db: Database, id: string): boolea
 /**
  * Get collection document count
  */
-export async function getCollectionDocumentCount(db: Database, collectionId: string): number {
+export async function getCollectionDocumentCount(db: DatabaseAdapter, collectionId: string): number {
   const result = await db.get('SELECT COUNT(*) as count FROM rag_documents WHERE collection_id = ?', collectionId) as { count: number };
   return result.count;
 }
@@ -123,7 +123,7 @@ export async function getCollectionDocumentCount(db: Database, collectionId: str
 /**
  * Get collection chunk count
  */
-export async function getCollectionChunkCount(db: Database, collectionId: string): number {
+export async function getCollectionChunkCount(db: DatabaseAdapter, collectionId: string): number {
   const result = await db.get(`
     SELECT SUM(chunk_count) as total FROM rag_documents WHERE collection_id = ?
   `, collectionId) as { total: number | null };
@@ -133,7 +133,7 @@ export async function getCollectionChunkCount(db: Database, collectionId: string
 /**
  * Create a RAG document record
  */
-export async function createRAGDocument(db: Database, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): string {
+export async function createRAGDocument(db: DatabaseAdapter, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): string {
   const id = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   await db.run(`
@@ -158,7 +158,7 @@ export async function createRAGDocument(db: Database, doc: Omit<RAGDocument, 'id
 /**
  * Update RAG document
  */
-export async function updateRAGDocument(db: Database, id: string, updates: Partial<RAGDocument>): Promise<boolean> {
+export async function updateRAGDocument(db: DatabaseAdapter, id: string, updates: Partial<RAGDocument>): Promise<boolean> {
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -187,7 +187,7 @@ export async function getCollectionDocuments(db: DatabaseAdapter, collectionId: 
 /**
  * Create a RAG chunk record
  */
-export async function createRAGChunk(db: Database, chunk: Omit<RAGChunk, 'id' | 'created_at'>): string {
+export async function createRAGChunk(db: DatabaseAdapter, chunk: Omit<RAGChunk, 'id' | 'created_at'>): string {
   const id = `chunk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   await db.run(`
@@ -215,7 +215,7 @@ export async function getDocumentChunks(db: DatabaseAdapter, documentId: string)
 /**
  * Delete RAG document and all its chunks
  */
-export async function deleteRAGDocument(db: Database, id: string): boolean {
+export async function deleteRAGDocument(db: DatabaseAdapter, id: string): boolean {
   try {
     await db.run('DELETE FROM rag_documents WHERE id = ?', id);
     return true;

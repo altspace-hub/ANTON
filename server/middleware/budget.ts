@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { checkBudgetBeforeApiCall } from '../services/budget-manager.js';
 
-export function createBudgetMiddleware(db: Database) {
+export function createBudgetMiddleware(db: DatabaseAdapter) {
   return function checkBudget(req: Request, res: Response, next: NextFunction): void {
     const userId = req.user?.id;
 

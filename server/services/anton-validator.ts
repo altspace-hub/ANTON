@@ -46,8 +46,8 @@ export interface ValidationWarning {
 
 export async function validateAntonFile(
   buffer: Buffer,
-  db: Database
-): Promise<ValidationResult> {
+  db: DatabaseAdapter
+):Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
   let manifest: any = null;
@@ -427,8 +427,8 @@ async function scanForInjection(systemPrompt: string): Promise<{
 
 async function resolveDependencies(
   manifest: any,
-  db: Database
-): Promise<{ warnings: ValidationWarning[] }> {
+  db: DatabaseAdapter
+):Promise<{ warnings: ValidationWarning[] }> {
   const warnings: ValidationWarning[] = [];
 
   if (!manifest?.dependencies) {

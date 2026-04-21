@@ -49,7 +49,7 @@ export const REGULATORY_SOURCES = [
 
 // ── Route factory ────────────────────────────────────────────────────────────
 
-export async function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | null | undefined) {
+export async function createRegulatoryFeedRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined) {
   const router = Router();
 
   // GET /api/regulatory-feed/sources

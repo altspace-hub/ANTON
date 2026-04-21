@@ -30,7 +30,7 @@ const mcpLimiter = rateLimit({
 
 // ── Router factory ───────────────────────────────────────────────────────────
 
-export async function createMcpRouter(db: Database): Router {
+export async function createMcpRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const executor = createMcpToolExecutor(db);
 
