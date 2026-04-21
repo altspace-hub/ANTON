@@ -306,6 +306,19 @@ export async function createMarketIndexesRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // Sweep all active indexes and auto-execute rebalances whose time-based
+  // threshold has been crossed. Daily cron calls this same service method
+  // at 06:00 CET; this route is the manual trigger for operators to flush
+  // on demand (after changing a frequency, re-seeding, etc.). M6.
+  router.post('/markets/indexes/rebalance-schedule/run', async (_req, res) => {
+    try {
+      res.json(await rebalanceService.runScheduledRebalances());
+    } catch (err) {
+      console.error('[market-indexes] Scheduled rebalance run error:', err);
+      res.status(500).json({ error: 'Failed to run scheduled rebalances' });
+    }
+  });
+
   router.post('/markets/indexes/:id/rebalances/:rid/execute', async (req, res) => {
     try {
       const { changes } = req.body;
