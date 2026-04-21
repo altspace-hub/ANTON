@@ -122,7 +122,7 @@ async function handleBrief(
 async function handleStatus(
   id: string,
   db: DatabaseAdapter,
-): CommandResult {
+): Promise<CommandResult> {
   if (!id) {
     return { text: 'Usage: `/anton status <workflow-run-id>`', response_type: 'ephemeral' };
   }
@@ -157,7 +157,7 @@ async function handleStatus(
 async function handleLatest(
   area: string,
   db: DatabaseAdapter,
-): CommandResult {
+): Promise<CommandResult> {
   const query = area
     ? "SELECT id, title, summary, updated_at FROM sessions WHERE module_id LIKE ? ORDER BY updated_at DESC LIMIT 1"
     : "SELECT id, title, summary, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 1";

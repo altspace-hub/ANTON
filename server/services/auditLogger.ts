@@ -73,7 +73,7 @@ export interface GeneralAuditEvent {
 /**
  * Write AI model usage audit entry
  */
-export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): string {
+export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): Promise<string> {
   const id = randomUUID();
   try {
     await db.run(`INSERT INTO audit_log (
@@ -116,7 +116,7 @@ export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): s
 /**
  * Log security event
  */
-export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent): number | null {
+export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent): Promise<number | null> {
   try {
     const result = await db.run(`
       INSERT INTO security_events (event_type, user_id, ip_address, details, severity)
@@ -137,7 +137,7 @@ export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent
 /**
  * Log login attempt
  */
-export async function logLoginAttempt(db: DatabaseAdapter, attempt: LoginAttempt): number | null {
+export async function logLoginAttempt(db: DatabaseAdapter, attempt: LoginAttempt): Promise<number | null> {
   try {
     const result = await db.run(`
       INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, failure_reason)

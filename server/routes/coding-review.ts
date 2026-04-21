@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { createCodingReviewEngine } from '../services/coding-review-engine.js';
 import { createCodingIntegration } from '../services/coding-integration.js';
 
-export async function createCodingReviewRoutes(db: DatabaseAdapter): Router {
+export async function createCodingReviewRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const reviewEngine = await createCodingReviewEngine(db);
 

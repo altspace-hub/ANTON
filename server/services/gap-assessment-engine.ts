@@ -689,11 +689,11 @@ ${capabilityView}`,
 type AssessmentRow = { id: string; frameworks: string; scope_config: string; context_config: string; article_scores: string; capability_view: string | null; status: string };
 
 export async function createGapAssessmentEngine(db: DatabaseAdapter) {
-  async function getAssessment(id: string): AssessmentRow | undefined {
+  async function getAssessment(id: string): Promise<AssessmentRow | undefined> {
     return await db.get('SELECT * FROM gap_assessments WHERE id = ?', id) as AssessmentRow | undefined;
   }
 
-  async function getAssessmentForUser(id: string, userId: string): AssessmentRow | undefined {
+  async function getAssessmentForUser(id: string, userId: string): Promise<AssessmentRow | undefined> {
     return await db.get('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?', id, userId) as AssessmentRow | undefined;
   }
 

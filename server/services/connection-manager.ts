@@ -124,7 +124,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
   return {
     // ── Connections ────────────────────────────────────────────
 
-    async list(userId: string, role: string): Connection[] {
+    async list(userId: string, role: string): Promise<Connection[]> {
       let rows: RawConnectionRow[];
       if (role === 'admin') {
         rows = await db.all('SELECT * FROM connections ORDER BY created_at DESC') as RawConnectionRow[];
@@ -273,7 +273,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       details: Record<string, unknown> | null,
       result: string | null,
       userId: string
-    ): void {
+    ): Promise<void> {
       await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
@@ -319,7 +319,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       file_hash?: string;
       version?: string;
       approved_by?: string;
-    }): Script {
+    }): Promise<Script> {
       const id = randomUUID();
       const now = new Date().toISOString();
       await db.run(`
@@ -352,7 +352,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
     async updateScript(
       id: string,
       data: Partial<Pick<Script, 'display_name' | 'description' | 'parameters' | 'expected_outputs' | 'max_runtime_seconds' | 'memory_limit_mb' | 'version'>>
-    ): Script | null {
+    ): Promise<Script | null> {
       const existing = this.getScript(id);
       if (!existing) return null;
       await db.run(`

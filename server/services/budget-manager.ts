@@ -78,7 +78,7 @@ export async function updateUserBudget(
   userId: string,
   monthlyTokenBudget: number,
   alertThreshold?: number
-): boolean {
+): Promise<boolean> {
   try {
     // Only update budget; alert threshold is currently hardcoded but column is ready for future use
     await db.run('UPDATE users SET monthly_token_budget = ? WHERE id = ?', monthlyTokenBudget, userId);

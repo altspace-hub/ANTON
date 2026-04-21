@@ -48,7 +48,7 @@ function getUserId(req: unknown): string {
 }
 
 // Factory function — accepts the shared db instance from server/index.ts
-export async function createExportRouter(db: DatabaseAdapter): Router {
+export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // POST /api/export — generate file for download

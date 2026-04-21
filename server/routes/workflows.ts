@@ -1014,7 +1014,7 @@ DESIGN PRINCIPLES:
 - Most workflows should have 3-6 steps
 - Add api_call or notification only if the user explicitly wants to connect to an external system`;
 
-export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anthropic): Router {
+export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anthropic): Promise<Router> {
   const router = Router();
 
   // ── POST /api/workflows/executions — start a new execution

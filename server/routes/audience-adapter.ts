@@ -3,7 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { AUDIENCES, getAudienceProfile } from '../services/audience-adapter.js';
 import { callSync } from '../services/claude-client.js';
 
-export async function createAudienceAdapterRoutes(): Router {
+export async function createAudienceAdapterRoutes(): Promise<Router> {
   const router = Router();
 
   // GET /api/audience-adapter/profiles — returns all audience profiles

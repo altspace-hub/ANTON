@@ -272,7 +272,7 @@ ${intakeSection}
 ${selfKnowledge}`;
 }
 
-export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined): Router {
+export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined): Promise<Router> {
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });

@@ -8,7 +8,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { createSessionResumeService, type CreateSnapshotInput } from '../services/session-resume.js';
 
-export async function createSessionResumeRoutes(db: DatabaseAdapter): Router {
+export async function createSessionResumeRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const resumeService = await createSessionResumeService(db);
 

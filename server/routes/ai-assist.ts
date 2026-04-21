@@ -35,7 +35,7 @@ async function aiJson(system: string, user: string): Promise<unknown> {
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
-export async function createAiAssistRoutes(): Router {
+export async function createAiAssistRoutes(): Promise<Router> {
   const router = Router();
 
   // ── 1. Module Prompt Drafter ──────────────────────────────────────────────

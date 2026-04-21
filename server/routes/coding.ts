@@ -8,7 +8,7 @@ import {
   bundleCodingLargeBlueprint,
 } from '../services/anton-bundler.js';
 
-export async function createCodingRoutes(db: DatabaseAdapter): Router {
+export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/coding/overview — Dashboard stats for Coding area

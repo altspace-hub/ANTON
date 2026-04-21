@@ -1736,7 +1736,7 @@ Be thorough within the scope, but do not expand beyond it. If you identify issue
   return message;
 }
 
-export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
+export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // ── Project CRUD ─────────────────────────────────────────────────────────

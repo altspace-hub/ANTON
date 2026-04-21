@@ -51,7 +51,7 @@ function parseProfile(row: RawProfileRow): ContinuityProfile {
   };
 }
 
-export async function createContinuityRoutes(db: DatabaseAdapter): Router {
+export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   function getUserId(req: Request): string {

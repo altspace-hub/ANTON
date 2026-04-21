@@ -18,7 +18,7 @@ const upload = multer({
   },
 });
 
-export async function createTemplatesRouter(db: DatabaseAdapter): Router {
+export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/templates — list all templates

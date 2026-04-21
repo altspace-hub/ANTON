@@ -43,7 +43,7 @@ export interface RAGChunk {
 /**
  * Create a new knowledge collection
  */
-export async function createCollection(db: DatabaseAdapter, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): string {
+export async function createCollection(db: DatabaseAdapter, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
   const id = collection.name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 
   const result = await db.run(`
@@ -66,14 +66,14 @@ export async function createCollection(db: DatabaseAdapter, collection: Omit<Kno
 /**
  * List all collections
  */
-export async function listCollections(db: DatabaseAdapter): KnowledgeCollection[] {
+export async function listCollections(db: DatabaseAdapter): Promise<KnowledgeCollection[]> {
   return await db.all('SELECT * FROM knowledge_collections ORDER BY created_at DESC') as KnowledgeCollection[];
 }
 
 /**
  * Get collection by ID
  */
-export async function getCollection(db: DatabaseAdapter, id: string): KnowledgeCollection | null {
+export async function getCollection(db: DatabaseAdapter, id: string): Promise<KnowledgeCollection | null> {
   return await db.get('SELECT * FROM knowledge_collections WHERE id = ?', id) as KnowledgeCollection | null;
 }
 
@@ -103,7 +103,7 @@ export async function updateCollection(db: DatabaseAdapter, id: string, updates:
 /**
  * Delete collection metadata
  */
-export async function deleteCollectionMetadata(db: DatabaseAdapter, id: string): boolean {
+export async function deleteCollectionMetadata(db: DatabaseAdapter, id: string): Promise<boolean> {
   try {
     await db.run('DELETE FROM knowledge_collections WHERE id = ?', id);
     return true;
@@ -115,7 +115,7 @@ export async function deleteCollectionMetadata(db: DatabaseAdapter, id: string):
 /**
  * Get collection document count
  */
-export async function getCollectionDocumentCount(db: DatabaseAdapter, collectionId: string): number {
+export async function getCollectionDocumentCount(db: DatabaseAdapter, collectionId: string): Promise<number> {
   const result = await db.get('SELECT COUNT(*) as count FROM rag_documents WHERE collection_id = ?', collectionId) as { count: number };
   return result.count;
 }
@@ -123,7 +123,7 @@ export async function getCollectionDocumentCount(db: DatabaseAdapter, collection
 /**
  * Get collection chunk count
  */
-export async function getCollectionChunkCount(db: DatabaseAdapter, collectionId: string): number {
+export async function getCollectionChunkCount(db: DatabaseAdapter, collectionId: string): Promise<number> {
   const result = await db.get(`
     SELECT SUM(chunk_count) as total FROM rag_documents WHERE collection_id = ?
   `, collectionId) as { total: number | null };
@@ -133,7 +133,7 @@ export async function getCollectionChunkCount(db: DatabaseAdapter, collectionId:
 /**
  * Create a RAG document record
  */
-export async function createRAGDocument(db: DatabaseAdapter, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): string {
+export async function createRAGDocument(db: DatabaseAdapter, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): Promise<string> {
   const id = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   await db.run(`
@@ -187,7 +187,7 @@ export async function getCollectionDocuments(db: DatabaseAdapter, collectionId: 
 /**
  * Create a RAG chunk record
  */
-export async function createRAGChunk(db: DatabaseAdapter, chunk: Omit<RAGChunk, 'id' | 'created_at'>): string {
+export async function createRAGChunk(db: DatabaseAdapter, chunk: Omit<RAGChunk, 'id' | 'created_at'>): Promise<string> {
   const id = `chunk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   await db.run(`
@@ -215,7 +215,7 @@ export async function getDocumentChunks(db: DatabaseAdapter, documentId: string)
 /**
  * Delete RAG document and all its chunks
  */
-export async function deleteRAGDocument(db: DatabaseAdapter, id: string): boolean {
+export async function deleteRAGDocument(db: DatabaseAdapter, id: string): Promise<boolean> {
   try {
     await db.run('DELETE FROM rag_documents WHERE id = ?', id);
     return true;

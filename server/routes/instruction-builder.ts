@@ -3,7 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { callSync } from '../services/claude-client.js';
 
-export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Router {
+export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/coding/instruction-builder/projects — list all IB projects

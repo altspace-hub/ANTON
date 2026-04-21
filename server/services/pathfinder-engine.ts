@@ -1119,7 +1119,7 @@ export async function handleFollowUp(
 
 // ── Document context builder ───────────────────────────────────────────────
 
-export async function buildDocumentContext(db: DatabaseAdapter, documentIds: string[], maxTokens = 30000): string {
+export async function buildDocumentContext(db: DatabaseAdapter, documentIds: string[], maxTokens = 30000): Promise<string> {
   if (!documentIds.length) return '';
   const placeholders = documentIds.map(() => '?').join(',');
   const docs = await db.all(`SELECT filename, extracted_text, token_estimate FROM pathfinder_documents WHERE id IN (${placeholders})`

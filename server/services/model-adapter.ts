@@ -589,7 +589,7 @@ export function createModelAdapter(
  * Load custom model configs from the app_settings table.
  * Returns an array of enabled CustomModelConfig objects.
  */
-export async function getCustomModelConfigs(db: DatabaseAdapter): CustomModelConfig[] {
+export async function getCustomModelConfigs(db: DatabaseAdapter): Promise<CustomModelConfig[]> {
   const configs: CustomModelConfig[] = [];
   for (const slot of [1, 2]) {
     try {

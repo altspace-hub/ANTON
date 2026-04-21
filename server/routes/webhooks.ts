@@ -18,7 +18,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { createWebhookListener } from '../services/webhook-listener.js';
 
-export async function createWebhooksPublicRoutes(db: DatabaseAdapter): Router {
+export async function createWebhooksPublicRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const listener = await createWebhookListener(db);
 

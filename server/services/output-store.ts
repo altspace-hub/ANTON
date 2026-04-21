@@ -84,7 +84,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  async function storeOutput(params: StoreOutputParams): string {
+  async function storeOutput(params: StoreOutputParams): Promise<string> {
     const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     await db.run(`
@@ -114,7 +114,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
     return id;
   }
 
-  async function storeCheckpointDecision(params: StoreCheckpointDecisionParams): string {
+  async function storeCheckpointDecision(params: StoreCheckpointDecisionParams): Promise<string> {
     const id = `dec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     await db.run(`
@@ -142,13 +142,13 @@ export async function createOutputStore(db: DatabaseAdapter) {
     return id;
   }
 
-  async function getOutputsForExecution(executionId: string): WorkflowOutput[] {
+  async function getOutputsForExecution(executionId: string): Promise<WorkflowOutput[]> {
     return await db.all(`
     SELECT * FROM workflow_outputs WHERE execution_id = ? ORDER BY step_index ASC
   `, executionId) as WorkflowOutput[];
   }
 
-  async function getDecisionsForWorkflow(workflowId: string, limit = 100): CheckpointDecision[] {
+  async function getDecisionsForWorkflow(workflowId: string, limit = 100): Promise<CheckpointDecision[]> {
     return await db.all(`
     SELECT * FROM checkpoint_decisions WHERE workflow_id = ? ORDER BY decided_at DESC LIMIT ?
   `, workflowId, limit) as CheckpointDecision[];
@@ -157,7 +157,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
   async function getDecisionDistribution(
     workflowId: string,
     stepIndex: number
-  ): Record<string, number> {
+  ): Promise<Record<string, number>> {
     const rows = await db.all(`
     SELECT human_decision AS decision, COUNT(*) AS count
     FROM checkpoint_decisions
@@ -177,7 +177,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
 
   // ── Background helpers ───────────────────────────────────────────────────
 
-  async function queueSummaryGeneration(outputId: string, outputData: unknown): void {
+  async function queueSummaryGeneration(outputId: string, outputData: unknown): Promise<void> {
     // Run after current event-loop tick so the HTTP response is not delayed
     setImmediate(async () => {
       try {

@@ -36,7 +36,7 @@ export interface DetectedPattern {
 // ── Built-in pattern detectors ─────────────────────────────────────────────────
 
 /** Detect quality drops: module score declining consistently */
-async function detectQualityDropPatterns(db: DatabaseAdapter): DetectedPattern[] {
+async function detectQualityDropPatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const patterns: DetectedPattern[] = [];
   try {
     const rows = await db.all(`
@@ -73,7 +73,7 @@ async function detectQualityDropPatterns(db: DatabaseAdapter): DetectedPattern[]
 }
 
 /** Detect workflow recurrence: same workflow run multiple times in a period */
-async function detectWorkflowRecurrencePatterns(db: DatabaseAdapter): DetectedPattern[] {
+async function detectWorkflowRecurrencePatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const patterns: DetectedPattern[] = [];
   try {
     const rows = await db.all(`
@@ -110,7 +110,7 @@ async function detectWorkflowRecurrencePatterns(db: DatabaseAdapter): DetectedPa
 }
 
 /** Detect signal clusters: multiple high-urgency signals from the same source recently */
-async function detectSignalClusterPatterns(db: DatabaseAdapter): DetectedPattern[] {
+async function detectSignalClusterPatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const patterns: DetectedPattern[] = [];
   try {
     // Check radar items clustering
@@ -140,7 +140,7 @@ async function detectSignalClusterPatterns(db: DatabaseAdapter): DetectedPattern
 }
 
 /** Detect deadline clusters: multiple deadlines in a 2-week window */
-async function detectDeadlineClusterPatterns(db: DatabaseAdapter): DetectedPattern[] {
+async function detectDeadlineClusterPatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const patterns: DetectedPattern[] = [];
   try {
     const result = await db.all(`
@@ -174,7 +174,7 @@ async function detectDeadlineClusterPatterns(db: DatabaseAdapter): DetectedPatte
  * Check if orchestrator quality is declining (auto-pause trigger).
  * Returns true if quality issues warrant pausing the orchestrator.
  */
-export async function shouldAutoPause(db: DatabaseAdapter): { pause: boolean; reason: string } {
+export async function shouldAutoPause(db: DatabaseAdapter): Promise<{ pause: boolean; reason: string }> {
   try {
     // Check if more than 40% of proposals in last 7 days are rated as wrong/irrelevant
     const ratings = await db.get(`
@@ -239,7 +239,7 @@ export async function recordPatternDetection(
   db: DatabaseAdapter,
   pattern: DetectedPattern,
   briefingId: string | null
-): string | null {
+): Promise<string | null> {
   const detectionId = randomUUID();
   try {
     // Upsert pattern definition

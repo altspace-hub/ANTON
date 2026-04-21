@@ -36,7 +36,7 @@ const IS_TEAM = process.env.DEPLOYMENT_MODE === 'team';
 function getUserId(req: Request): string { return (req as unknown as { user?: { id?: string } }).user?.id ?? 'solo'; }
 function getUserRole(req: Request): string { return (req as unknown as { user?: { role?: string } }).user?.role ?? 'admin'; }
 
-async function canView(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): boolean {
+async function canView(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
   if (!IS_TEAM || userRole === 'admin') return true;
   const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
@@ -48,7 +48,7 @@ async function canView(db: DatabaseAdapter, engagementId: string, userId: string
   return false;
 }
 
-async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): boolean {
+async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
   if (!IS_TEAM || userRole === 'admin') return true;
   const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
@@ -62,7 +62,7 @@ async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string
   return false;
 }
 
-export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
+export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // ── Helper ──────────────────────────────────────────────────────────────────
