@@ -1295,6 +1295,25 @@ httpServer.listen(PORT, async () => {
       }
     }, MARKET_TZ);
 
+    // Daily thesis lifecycle sweep (05:00 CET). Closes theses whose child
+    // predictions have all resolved (→ validated / invalidated), archives
+    // stale theses past 2× their horizon, and archives redundant theses that
+    // never gained atoms or predictions. Deterministic rules, no LLM — runs
+    // under MARKETS_THINKING_DISABLED. M3 of the effectiveness plan.
+    cron.schedule('0 5 * * *', async () => {
+      try {
+        const { createMarketThesisLifecycleService } =
+          await import('./services/market-thesis-lifecycle-service.js');
+        const svc = await createMarketThesisLifecycleService(db);
+        const r = await svc.applyThesisLifecycle();
+        if (r.theses_considered > 0) {
+          console.log(`[markets-thesis-lifecycle] considered=${r.theses_considered} validated=${r.validated} invalidated=${r.invalidated} stale=${r.archived_stale} redundant=${r.archived_redundant} left_open=${r.left_open} errors=${r.errors.length}`);
+        }
+      } catch (err) {
+        console.error('[markets-thesis-lifecycle] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
