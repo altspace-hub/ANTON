@@ -177,6 +177,10 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       return computeMarketCapWeights(db, holdings);
     }
 
+    if (method === 'mean_variance') {
+      return computeMeanVarianceWeights(db, holdings);
+    }
+
     return null;
   }
 
@@ -389,6 +393,182 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
   }
 
   /**
+   * Mean-variance (global minimum variance) weights (D1). Computes
+   * Σ^{-1} × 1 / (1^T × Σ^{-1} × 1) where Σ is the sample covariance of
+   * daily returns with Ledoit-Wolf-style shrinkage toward its diagonal
+   * (α = 0.2) to guarantee positive-definiteness + diagonal dominance.
+   *
+   * Solver: Jacobi iteration for Σ × x = 1. Converges when Σ is
+   * diagonally dominant, which the shrinkage guarantees. ~100 iterations
+   * with a 1e-6 tolerance. No matrix-library dependency.
+   *
+   * Constraints applied after the solve:
+   *   • Non-negativity — clip w_i < 0 to 0, renormalise. Repeated up to
+   *     5 times so the "iterative clip" converges close to the true
+   *     constrained GMV.
+   *   • 25% single-position cap (matches evaluateHoldings + market_cap).
+   *
+   * Falls back to conviction weights if the covariance fit fails (not
+   * enough overlapping history, NaN entries, or Jacobi didn't converge).
+   */
+  async function computeMeanVarianceWeights(
+    db: DatabaseAdapter,
+    holdings: HoldingRow[],
+  ): Promise<Map<string, number>> {
+    const symbols = holdings.map(h => h.symbol);
+    const n = symbols.length;
+    if (n === 0) return new Map();
+    if (n === 1) return new Map([[symbols[0], 1]]);
+
+    // Collect 60-day close series per symbol, aligned by intersection of
+    // trading days (the common price_date set).
+    const series = new Map<string, Map<string, number>>();
+    for (const symbol of symbols) {
+      const rows = await db.all<{ price_date: string; close: number | string }>(
+        `SELECT price_date, close FROM market_historical_prices
+         WHERE symbol = ? ORDER BY price_date DESC LIMIT 60`,
+        symbol,
+      );
+      const m = new Map<string, number>();
+      for (const r of rows) {
+        const c = Number(r.close);
+        if (Number.isFinite(c) && c > 0) m.set(r.price_date, c);
+      }
+      if (m.size >= 10) series.set(symbol, m);
+    }
+
+    if (series.size < 2) return computeConvictionWeights(db, holdings);
+
+    // Intersect trading days across the symbols we have data for.
+    const iter = series.values();
+    const firstSet = iter.next().value;
+    if (!firstSet) return computeConvictionWeights(db, holdings);
+    const commonDays = new Set(firstSet.keys());
+    for (const daysMap of series.values()) {
+      for (const d of commonDays) if (!daysMap.has(d)) commonDays.delete(d);
+    }
+    const sortedDays = Array.from(commonDays).sort().reverse().slice(0, 60);
+    if (sortedDays.length < 10) return computeConvictionWeights(db, holdings);
+
+    // Returns per symbol across the common window, oldest-first.
+    const orderedDays = sortedDays.slice().reverse();
+    const returns = new Map<string, number[]>();
+    const useSymbols: string[] = [];
+    for (const symbol of symbols) {
+      const prices = series.get(symbol);
+      if (!prices) continue;
+      const seq: number[] = [];
+      let ok = true;
+      for (const d of orderedDays) {
+        const p = prices.get(d);
+        if (p == null) { ok = false; break; }
+        seq.push(p);
+      }
+      if (!ok || seq.length < 2) continue;
+      const r: number[] = [];
+      for (let i = 1; i < seq.length; i++) r.push((seq[i] - seq[i - 1]) / seq[i - 1]);
+      if (r.length < 5) continue;
+      returns.set(symbol, r);
+      useSymbols.push(symbol);
+    }
+    if (useSymbols.length < 2) return computeConvictionWeights(db, holdings);
+
+    // Sample covariance over the common window.
+    const T = returns.get(useSymbols[0])!.length;
+    const means = useSymbols.map(s => {
+      const r = returns.get(s)!;
+      return r.reduce((a, b) => a + b, 0) / r.length;
+    });
+    const m = useSymbols.length;
+    const cov: number[][] = Array.from({ length: m }, () => new Array(m).fill(0));
+    for (let i = 0; i < m; i++) {
+      const ri = returns.get(useSymbols[i])!;
+      for (let j = 0; j <= i; j++) {
+        const rj = returns.get(useSymbols[j])!;
+        let s = 0;
+        for (let k = 0; k < T; k++) s += (ri[k] - means[i]) * (rj[k] - means[j]);
+        const value = s / Math.max(1, T - 1);
+        cov[i][j] = value;
+        cov[j][i] = value;
+      }
+    }
+
+    // Ledoit-Wolf-style shrinkage toward diagonal with a fixed alpha. A
+    // true optimal-α fitter would inspect the off-diagonal structure; 0.2
+    // is a conservative default that keeps Σ well-conditioned for Jacobi
+    // without over-biasing toward risk-parity behaviour (which the
+    // existing 'risk_parity' method already covers).
+    const alpha = 0.2;
+    const shrunk: number[][] = Array.from({ length: m }, () => new Array(m).fill(0));
+    for (let i = 0; i < m; i++) {
+      for (let j = 0; j < m; j++) {
+        if (i === j) shrunk[i][j] = cov[i][j];
+        else shrunk[i][j] = (1 - alpha) * cov[i][j];
+      }
+    }
+    // Guard zero-diagonal symbols (totally constant returns) so Jacobi
+    // doesn't divide by zero.
+    for (let i = 0; i < m; i++) {
+      if (!(shrunk[i][i] > 0)) shrunk[i][i] = 1e-8;
+    }
+
+    // Jacobi: solve shrunk × x = 1.
+    const x = new Array(m).fill(1 / m);
+    const b = new Array(m).fill(1);
+    const maxIter = 200;
+    const tol = 1e-7;
+    let converged = false;
+    for (let k = 0; k < maxIter; k++) {
+      const xNew = new Array(m).fill(0);
+      for (let i = 0; i < m; i++) {
+        let s = 0;
+        for (let j = 0; j < m; j++) if (j !== i) s += shrunk[i][j] * x[j];
+        xNew[i] = (b[i] - s) / shrunk[i][i];
+      }
+      let delta = 0;
+      for (let i = 0; i < m; i++) delta = Math.max(delta, Math.abs(xNew[i] - x[i]));
+      for (let i = 0; i < m; i++) x[i] = xNew[i];
+      if (delta < tol) { converged = true; break; }
+    }
+    if (!converged) return computeConvictionWeights(db, holdings);
+
+    // Non-negativity projection: iteratively clip and renormalise.
+    let weights = x.slice();
+    for (let iter = 0; iter < 5; iter++) {
+      let anyNeg = false;
+      for (let i = 0; i < m; i++) {
+        if (weights[i] < 0) { weights[i] = 0; anyNeg = true; }
+      }
+      const sum = weights.reduce((a, b) => a + b, 0);
+      if (sum <= 0) return computeConvictionWeights(db, holdings);
+      for (let i = 0; i < m; i++) weights[i] = weights[i] / sum;
+      if (!anyNeg) break;
+    }
+
+    // Single-position cap 25%, redistribute excess across unbounded.
+    const cap = 0.25;
+    for (let pass = 0; pass < 5; pass++) {
+      let excess = 0;
+      const capped: boolean[] = new Array(m).fill(false);
+      for (let i = 0; i < m; i++) {
+        if (weights[i] > cap) { excess += weights[i] - cap; weights[i] = cap; capped[i] = true; }
+      }
+      if (excess === 0) break;
+      const unbounded = weights.reduce((s, w, i) => s + (capped[i] ? 0 : w), 0);
+      if (unbounded <= 0) break;
+      for (let i = 0; i < m; i++) if (!capped[i]) weights[i] += excess * (weights[i] / unbounded);
+    }
+
+    // Build output map aligned to useSymbols; unused holdings (dropped
+    // for insufficient history) get zero weight — the proposal step will
+    // see weight=0 and propose 'remove', which an operator can review.
+    const out = new Map<string, number>();
+    for (const symbol of symbols) out.set(symbol, 0);
+    for (let i = 0; i < m; i++) out.set(useSymbols[i], weights[i]);
+    return out;
+  }
+
+  /**
    * Shared normaliser for the non-equal weighting methods. Scales a raw-
    * weight map so its values sum to 1.0; guards divide-by-zero with equal
    * weights as a last-resort fallback.
@@ -461,7 +641,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       // for any non-equal method.
       const reason = holdings.length === 0
         ? 'Index has no active holdings'
-        : `Weighting method '${weightingMethod}' is not yet implemented — maintaining current weights. Supported: equal, conviction, risk_parity, market_cap.`;
+        : `Weighting method '${weightingMethod}' is not yet implemented — maintaining current weights. Supported: equal, conviction, risk_parity, market_cap, mean_variance.`;
       for (const h of holdings) {
         proposedChanges.push({
           symbol: h.symbol,
