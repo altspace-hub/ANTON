@@ -296,22 +296,49 @@ export function createMissionController(db: DatabaseAdapter) {
   /**
    * Identify the next task whose dependencies are all completed and which is
    * still queued. Returns null if no task is ready (mission may be done or
-   * blocked).
+   * blocked). Treats 'skipped' deps as met — a conditional false branch
+   * that skipped a dependency should not block the successor chain.
    */
   async function getNextReadyTask(missionId: string): Promise<MissionTask | null> {
+    const ready = await getReadyTasks(missionId, 1);
+    return ready[0] ?? null;
+  }
+
+  /**
+   * Identify up to `limit` tasks ready to run in parallel. Returned tasks
+   * have mutually-compatible dependencies (none depends on another in the
+   * batch), so they are safe to execute concurrently. Used by advanceBatch
+   * to run parallel_group children without round-trips.
+   */
+  async function getReadyTasks(missionId: string, limit: number): Promise<MissionTask[]> {
+    if (limit <= 0) return [];
     const tasks = await state.listTasks(missionId);
-    const completedIds = new Set(tasks.filter(t => t.status === 'completed').map(t => t.id));
+    // 'completed' and 'skipped' both satisfy downstream deps — a skipped
+    // branch (from a conditional task's false verdict) shouldn't freeze
+    // tasks further down the chain.
+    const resolvedIds = new Set(
+      tasks.filter(t => t.status === 'completed' || t.status === 'skipped').map(t => t.id),
+    );
     const deps = await state.listDependencies(missionId);
     const queuedTasks = tasks
       .filter(t => t.status === 'queued')
       .sort((a, b) => a.sort_order - b.sort_order);
 
+    const batch: MissionTask[] = [];
+    const batchIds = new Set<string>();
     for (const t of queuedTasks) {
+      if (batch.length >= limit) break;
       const myDeps = deps.filter(d => d.task_id === t.id && d.dependency_type === 'blocking');
-      const allDepsMet = myDeps.every(d => completedIds.has(d.depends_on_task_id));
-      if (allDepsMet) return t;
+      const allDepsMet = myDeps.every(d => resolvedIds.has(d.depends_on_task_id));
+      if (!allDepsMet) continue;
+      // Don't add a task that depends on another already in this batch —
+      // parallelism requires mutual independence within the tick.
+      const depsOnBatch = myDeps.some(d => batchIds.has(d.depends_on_task_id));
+      if (depsOnBatch) continue;
+      batch.push(t);
+      batchIds.add(t.id);
     }
-    return null;
+    return batch;
   }
 
   /**
@@ -354,6 +381,71 @@ export function createMissionController(db: DatabaseAdapter) {
       return { status: 'task_failed', task, reason: result.reason };
     }
     return { status: 'task_completed', task };
+  }
+
+  /**
+   * Advance the mission by up to `maxParallel` mutually-independent ready
+   * tasks, executed via Promise.allSettled so one failure doesn't abort
+   * the others. Returns per-task AdvanceResult[] so the caller sees every
+   * branch's outcome.
+   *
+   * Semantics:
+   *   • Budget check runs once before the batch. A task that would bust
+   *     the budget mid-batch still completes (it's cheaper to let it
+   *     finish than to orphan its partial state); the next batch call
+   *     will see the mission paused.
+   *   • Any task that pauses the mission (approval gate, explicit
+   *     checkpoint) transitions the mission to 'review' synchronously in
+   *     the executor; subsequent calls see mission.status !== 'active'
+   *     and return no_ready_task until a human resumes.
+   *
+   * Default maxParallel = 4 — enough to benefit a parallel_group fan-out
+   * without thundering-herd on LLM providers. Caller can override.
+   */
+  async function advanceBatch(
+    missionId: string,
+    maxParallel = 4,
+  ): Promise<{ status: 'no_ready_task' | 'mission_completed' | 'mission_paused' | 'batch_executed'; results: AdvanceResult[]; reason?: string }> {
+    const mission = await state.getMission(missionId);
+    if (!mission) throw new Error('Mission not found');
+    if (mission.status !== 'active') {
+      return { status: 'no_ready_task', results: [], reason: `Mission is '${mission.status}', not 'active'` };
+    }
+
+    const budget = computeBudgetStatus(mission);
+    if (budget.tokens.exceeded) {
+      await pauseMission(missionId, `Token budget exceeded (${budget.tokens.consumed.toLocaleString()} / ${budget.tokens.max.toLocaleString()})`);
+      await state.logActivity(missionId, { activityType: 'budget_exceeded', description: 'Token budget reached' });
+      return { status: 'mission_paused', results: [], reason: 'token_budget_exceeded' };
+    }
+
+    const ready = await getReadyTasks(missionId, Math.max(1, Math.min(maxParallel, 16)));
+    if (ready.length === 0) {
+      const tasks = await state.listTasks(missionId);
+      const allDone = tasks.length > 0 && tasks.every(t => t.status === 'completed' || t.status === 'skipped' || t.status === 'failed');
+      if (allDone) {
+        await state.updateMissionStatus(missionId, 'completed', { completedAt: nowIso() });
+        await state.logActivity(missionId, { activityType: 'mission_completed', description: 'All tasks completed' });
+        return { status: 'mission_completed', results: [] };
+      }
+      return { status: 'no_ready_task', results: [] };
+    }
+
+    const settled = await Promise.allSettled(
+      ready.map(async (task) => {
+        const result = await executor.executeTask(mission, task);
+        if (result.pausedMission) return { status: 'mission_paused' as const, task, reason: result.reason };
+        if (!result.success) return { status: 'task_failed' as const, task, reason: result.reason };
+        return { status: 'task_completed' as const, task };
+      }),
+    );
+    const results: AdvanceResult[] = settled.map((s, i) => {
+      if (s.status === 'fulfilled') return s.value;
+      const err = s.reason instanceof Error ? s.reason.message : String(s.reason);
+      return { status: 'task_failed', task: ready[i], reason: `Unhandled error: ${err}` };
+    });
+    const pausedAny = results.some(r => r.status === 'mission_paused');
+    return { status: pausedAny ? 'mission_paused' : 'batch_executed', results };
   }
 
   // ── Budget ───────────────────────────────────────────────────────────────
@@ -447,7 +539,9 @@ export function createMissionController(db: DatabaseAdapter) {
     rejectTaskApproval,
     // execution
     getNextReadyTask,
+    getReadyTasks,
     advance,
+    advanceBatch,
     // budget
     computeBudgetStatus,
     // expose state for downstream services
