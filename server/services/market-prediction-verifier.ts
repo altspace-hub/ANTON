@@ -24,7 +24,13 @@ interface ExpiredPrediction {
   deadline: string;
   created_at: string;
   thesis_id: string | null;
+  verification_attempts?: number;
 }
+
+/** Max retry attempts before permanently stamping status='expired'. */
+const MAX_VERIFICATION_ATTEMPTS = 3;
+/** Gap between retries once a prediction has been tried at least once. */
+const RETRY_BACKOFF_DAYS = 7;
 
 interface VerificationResult {
   predictionId: string;
@@ -40,19 +46,41 @@ interface VerificationResult {
 export async function createPredictionVerifier(db: DatabaseAdapter) {
 
   /**
-   * Find all active predictions past their deadline.
+   * Find all active predictions past their effective deadline. Includes:
+   *   • Explicit deadlines in the past (original behaviour).
+   *   • Null deadlines whose (created_at + time_horizon_days) window has
+   *     elapsed — otherwise these predictions sit as 'active' forever and
+   *     never enter the closed loop.
+   *   • Predictions previously marked 'expired' (unverifiable) that are
+   *     eligible for retry: under MAX_VERIFICATION_ATTEMPTS and last tried
+   *     ≥ RETRY_BACKOFF_DAYS ago (price data may have backfilled since).
    */
   async function findExpired(): Promise<ExpiredPrediction[]> {
     const today = new Date().toISOString().split('T')[0];
+    const backoffCutoff = new Date(Date.now() - RETRY_BACKOFF_DAYS * 86400000).toISOString();
     return db.all<ExpiredPrediction>(`
       SELECT id, title, prediction_type, target_symbol, predicted_direction,
-             predicted_outcome, predicted_value, confidence, deadline, created_at, thesis_id
+             predicted_outcome, predicted_value, confidence,
+             COALESCE(
+               deadline,
+               TO_CHAR((created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval)::date, 'YYYY-MM-DD')
+             ) AS deadline,
+             created_at, thesis_id, verification_attempts
       FROM market_predictions
-      WHERE status = 'active'
-        AND deadline IS NOT NULL
-        AND deadline < $1
+      WHERE (
+          status = 'active'
+          AND (
+            (deadline IS NOT NULL AND deadline < $1)
+            OR (deadline IS NULL AND (created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval) < NOW())
+          )
+        )
+        OR (
+          status = 'expired' AND was_correct IS NULL
+          AND verification_attempts < ${MAX_VERIFICATION_ATTEMPTS}
+          AND (last_verification_attempt_at IS NULL OR last_verification_attempt_at < $2)
+        )
       ORDER BY deadline ASC
-    `, today);
+    `, today, backoffCutoff);
   }
 
   /**
@@ -289,31 +317,52 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
-   * Run auto-verification on all expired predictions.
+   * Run auto-verification on all expired predictions. Respects the
+   * MARKETS_THINKING_DISABLED env flag: when set, LLM-based (binary/event)
+   * verification is skipped rather than failing — predictions stay retriable
+   * and will be verified when the flag clears.
    */
   async function runAutoVerification(): Promise<{
     verified: number;
     unverifiable: number;
     correct: number;
     incorrect: number;
+    deferred_llm: number;
     results: VerificationResult[];
   }> {
+    const thinkingDisabled =
+      String(process.env.MARKETS_THINKING_DISABLED || '').toLowerCase() === 'true';
     const expired = await findExpired();
-    console.log(`[verifier] Found ${expired.length} expired predictions to verify`);
+    console.log(`[verifier] Found ${expired.length} expired predictions to verify${thinkingDisabled ? ' (LLM paths deferred)' : ''}`);
 
     const results: VerificationResult[] = [];
-    let verified = 0, unverifiable = 0, correct = 0, incorrect = 0;
+    let verified = 0, unverifiable = 0, correct = 0, incorrect = 0, deferred_llm = 0;
 
     for (const pred of expired) {
+      // Defer LLM-based verifications when thinking is paused — the
+      // prediction stays retriable and will be picked up next run.
+      if (thinkingDisabled && requiresLLMVerification(pred)) {
+        deferred_llm++;
+        continue;
+      }
+
       const result = await verifyPrediction(pred);
       results.push(result);
 
       if (result.method === 'unverifiable') {
         unverifiable++;
-        // Mark as unverifiable so we don't retry every night
+        const newAttempts = (pred.verification_attempts ?? 0) + 1;
+        // Record the attempt. status='expired' means "past the horizon and
+        // still unverified"; retry eligibility is governed jointly by
+        // verification_attempts < MAX and the backoff in findExpired's WHERE
+        // (and mirrored in the partial index from migration 156). Once
+        // newAttempts reaches MAX, the predicate fails → no further retries.
         await db.run(
-          `UPDATE market_predictions SET status = 'expired', updated_at = NOW() WHERE id = $1`,
-          pred.id
+          `UPDATE market_predictions SET status = 'expired',
+             verification_attempts = $1, last_verification_attempt_at = NOW(),
+             last_verification_failure = $2, updated_at = NOW()
+           WHERE id = $3`,
+          newAttempts, truncateFailure(result.explanation), pred.id
         );
         continue;
       }
@@ -374,8 +423,28 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       if (expired.length > 3) await new Promise(r => setTimeout(r, 1000));
     }
 
-    console.log(`[verifier] Done: ${verified} verified (${correct} correct, ${incorrect} wrong), ${unverifiable} unverifiable`);
-    return { verified, unverifiable, correct, incorrect, results };
+    console.log(
+      `[verifier] Done: ${verified} verified (${correct} correct, ${incorrect} wrong), ${unverifiable} unverifiable${deferred_llm > 0 ? `, ${deferred_llm} LLM-deferred` : ''}`,
+    );
+    return { verified, unverifiable, correct, incorrect, deferred_llm, results };
+  }
+
+  /**
+   * A prediction needs the LLM path when it has no price-based grading
+   * route: non-directional + non-price_target types, OR directional types
+   * missing the symbol/direction needed by verifyDirectional.
+   */
+  function requiresLLMVerification(pred: ExpiredPrediction): boolean {
+    if (pred.prediction_type === 'binary' || pred.prediction_type === 'event') return true;
+    if (pred.prediction_type === 'directional' || pred.prediction_type === 'price_target') return false;
+    // 'timing', 'relative', or unknown types: LLM is the only viable path
+    // unless a symbol + direction are present.
+    return !(pred.target_symbol && pred.predicted_direction);
+  }
+
+  function truncateFailure(text: string | null | undefined): string | null {
+    if (!text) return null;
+    return text.length > 500 ? text.slice(0, 500) + '…' : text;
   }
 
   return { findExpired, findNearExpiry, verifyPrediction, runAutoVerification };
