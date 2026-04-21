@@ -69,6 +69,30 @@ export async function createMarketPatternsRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // GET active per-symbol weight overrides (M1.1). Read-only view of which
+  // tickers the pattern feedback service has tightened and by how much.
+  router.get('/markets/patterns/symbol-overrides', async (req, res) => {
+    try {
+      const limit = req.query.limit ? Math.min(500, parseInt(String(req.query.limit), 10)) : 100;
+      const rows = await db.all<{
+        symbol: string; weight_multiplier: number | string;
+        last_pattern_id: string | null; last_applied_at: string;
+        rationale: string | null; updated_at: string;
+      }>(
+        `SELECT symbol, weight_multiplier, last_pattern_id, last_applied_at, rationale, updated_at
+         FROM market_symbol_weight_overrides
+         WHERE weight_multiplier <> 1.0
+         ORDER BY last_applied_at DESC
+         LIMIT ?`,
+        limit,
+      );
+      res.json(rows.map(r => ({ ...r, weight_multiplier: Number(r.weight_multiplier) })));
+    } catch (err) {
+      console.error('[market-patterns] List symbol overrides error:', err);
+      res.status(500).json({ error: 'Failed to list symbol overrides' });
+    }
+  });
+
   // GET the most recent weight adjustments — read-only audit of what the
   // feedback service actually did. Useful for verifying the closed loop
   // without having to query Postgres by hand.

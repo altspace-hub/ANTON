@@ -575,6 +575,13 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     );
     const weightMap = new Map(signalWeights.map(sw => [`${sw.signal_type}:${sw.category}`, sw.weight]));
 
+    // M1.1: per-symbol overrides multiply the base category weight. Only
+    // rows that diverge from 1.0 are loaded (partial-index-friendly).
+    const symbolOverrides = await db.all<{ symbol: string; weight_multiplier: number | string }>(
+      "SELECT symbol, weight_multiplier FROM market_symbol_weight_overrides WHERE weight_multiplier <> 1.0"
+    );
+    const symbolOverrideMap = new Map(symbolOverrides.map(s => [s.symbol, Number(s.weight_multiplier)]));
+
     // Compute per-symbol scores
     const signals: Record<string, {
       symbol: string; score: number; direction: string;
@@ -586,12 +593,16 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       signals[h.symbol] = { symbol: h.symbol, score: 0, direction: 'neutral', confidence: 0, predictionCount: 0, predictions: [] };
     }
 
-    // Aggregate micro-level predictions (targeting specific symbols)
+    // Aggregate micro-level predictions (targeting specific symbols). The
+    // symbol override (M1.1) multiplies the category weight when the
+    // pattern detector has flagged repeated failures on that ticker —
+    // default 1.0 means no effect.
     for (const p of predictions) {
       if (!p.target_symbol || !signals[p.target_symbol]) continue;
       const dirMultiplier = p.predicted_direction === 'up' ? 1 : p.predicted_direction === 'down' ? -1 : 0;
       const calibrationWeight = weightMap.get(`${p.prediction_type}:equity`) ?? 1.0;
-      const signalContribution = dirMultiplier * p.confidence * calibrationWeight;
+      const symbolOverride = symbolOverrideMap.get(p.target_symbol) ?? 1.0;
+      const signalContribution = dirMultiplier * p.confidence * calibrationWeight * symbolOverride;
 
       signals[p.target_symbol].score += signalContribution;
       signals[p.target_symbol].predictionCount++;

@@ -46,14 +46,30 @@ interface PatternRow {
   detected_at: string;
 }
 
-interface PendingAdjustment {
-  pattern_id: string;
-  pattern_type: string;
-  signal_type: string;
-  category: string;
-  multiplier: number;
-  rationale: string;
-}
+/**
+ * Discriminated union of the two weight-target kinds:
+ *   • 'signal'  → writes to market_signal_weights at (signal_type, category)
+ *   • 'symbol'  → writes to market_symbol_weight_overrides at (symbol) — the
+ *                 proper grain for symbol_failure_cluster patterns (M1.1).
+ */
+type PendingAdjustment =
+  | {
+      kind: 'signal';
+      pattern_id: string;
+      pattern_type: string;
+      signal_type: string;
+      category: string;
+      multiplier: number;
+      rationale: string;
+    }
+  | {
+      kind: 'symbol';
+      pattern_id: string;
+      pattern_type: string;
+      symbol: string;
+      multiplier: number;
+      rationale: string;
+    };
 
 export interface FeedbackResult {
   patternsConsidered: number;
@@ -162,8 +178,8 @@ function deriveFromDirectionalBias(pattern: PatternRow, meta: Record<string, unk
   const multiplier = clamp(0.5 + accuracy, MIN_MULTIPLIER, MAX_MULTIPLIER);
   const rationale = `directional_bias on '${direction}' (${Math.round(accuracy * 100)}% accuracy over ${total} validated predictions) → down-weight prediction/signal types`;
   return [
-    { pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'prediction', category: 'general', multiplier, rationale },
-    { pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'signal',     category: 'general', multiplier, rationale },
+    { kind: 'signal', pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'prediction', category: 'general', multiplier, rationale },
+    { kind: 'signal', pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'signal',     category: 'general', multiplier, rationale },
   ];
 }
 
@@ -180,35 +196,44 @@ function deriveFromMiscalibration(pattern: PatternRow, meta: Record<string, unkn
   const multiplier = clamp(1 - gap * 0.5, MIN_MULTIPLIER, MAX_MULTIPLIER);
   const rationale = `confidence_miscalibration on '${bucket}' bucket (gap ${Math.round(gap * 100)}pp over ${total} predictions) → down-weight signal/insight types`;
   return [
-    { pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'signal',  category: 'general', multiplier, rationale },
-    { pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'insight', category: 'general', multiplier, rationale },
+    { kind: 'signal', pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'signal',  category: 'general', multiplier, rationale },
+    { kind: 'signal', pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'insight', category: 'general', multiplier, rationale },
   ];
 }
 
 /**
- * Symbol failure cluster — many wrong predictions on one symbol. We don't
- * have a symbol-grain weight table (that's a M1.1 follow-up). As a soft
- * proxy, apply a mild down-weight to equity-category prediction signal when
- * the failure rate is high; rationale explicitly notes the symbol so an
- * operator reading the audit log can see why.
+ * Symbol failure cluster — many wrong predictions on one symbol. M1.1
+ * routes this to the symbol-grain override table instead of the category
+ * fallback so one bad ticker doesn't drag all equity predictions down.
+ * Scale: 0.5 + accuracy × 0.5 — tighter than directional_bias (which hits
+ * a whole axis) because a symbol override directly multiplies every
+ * future prediction's contribution on that ticker.
  */
 function deriveFromSymbolFailure(pattern: PatternRow, meta: Record<string, unknown>): PendingAdjustment[] {
-  const symbol = typeof meta.symbol === 'string' ? meta.symbol : '?';
+  const symbol = typeof meta.symbol === 'string' ? meta.symbol : null;
   const accuracy = typeof meta.accuracy === 'number' ? meta.accuracy : 0;
   const total = typeof meta.total === 'number' ? meta.total : 0;
-  if (total < 3) return [];
-  // Gentler than directional_bias because we're applying to the whole equity
-  // category off a single-symbol signal. Midpoint between 1.0 and accuracy.
-  const multiplier = clamp(0.7 + accuracy * 0.3, MIN_MULTIPLIER, MAX_MULTIPLIER);
-  const rationale = `symbol_failure_cluster on ${symbol} (${Math.round(accuracy * 100)}% accuracy over ${total} predictions) → mild equity-category down-weight; symbol-grain override pending`;
+  if (!symbol || total < 3) return [];
+  const multiplier = clamp(0.5 + accuracy * 0.5, MIN_MULTIPLIER, MAX_MULTIPLIER);
+  const rationale = `symbol_failure_cluster on ${symbol} (${Math.round(accuracy * 100)}% accuracy over ${total} predictions) → symbol-grain override`;
   return [
-    { pattern_id: pattern.id, pattern_type: pattern.pattern_type, signal_type: 'prediction', category: 'equity', multiplier, rationale },
+    { kind: 'symbol', pattern_id: pattern.id, pattern_type: pattern.pattern_type, symbol, multiplier, rationale },
   ];
 }
 
 // ── Apply one adjustment transactionally ──────────────────────────────────
 
 async function applyOneAdjustment(db: DatabaseAdapter, adj: PendingAdjustment): Promise<boolean> {
+  if (adj.kind === 'signal') {
+    return applySignalWeightAdjustment(db, adj);
+  }
+  return applySymbolOverrideAdjustment(db, adj);
+}
+
+async function applySignalWeightAdjustment(
+  db: DatabaseAdapter,
+  adj: Extract<PendingAdjustment, { kind: 'signal' }>,
+): Promise<boolean> {
   // Read current weight (insert default if row missing — signal_types beyond
   // the seed list are valid per the pattern detectors).
   const row = await db.get<{ weight: number | string }>(
@@ -235,6 +260,53 @@ async function applyOneAdjustment(db: DatabaseAdapter, adj: PendingAdjustment): 
       (pattern_id, pattern_type, signal_type, category, multiplier, weight_before, weight_after, rationale)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     adj.pattern_id, adj.pattern_type, adj.signal_type, adj.category,
+    adj.multiplier, weightBefore, weightAfter, adj.rationale,
+  );
+
+  return weightAfter !== weightBefore;
+}
+
+/**
+ * Write/update a per-symbol weight multiplier (M1.1). If a previous
+ * multiplier already exists, we compound *geometrically* with the same
+ * floor as signal weights. Successive failure clusters on the same symbol
+ * therefore tighten the override — they don't reset each time — but never
+ * drop below WEIGHT_FLOOR.
+ *
+ * Audit is written to market_signal_weight_adjustments with signal_type=
+ * 'symbol_override' + category='<symbol>' so the existing
+ * /weight-adjustments inspection endpoint shows these rows alongside
+ * signal-weight changes.
+ */
+async function applySymbolOverrideAdjustment(
+  db: DatabaseAdapter,
+  adj: Extract<PendingAdjustment, { kind: 'symbol' }>,
+): Promise<boolean> {
+  const row = await db.get<{ weight_multiplier: number | string }>(
+    `SELECT weight_multiplier FROM market_symbol_weight_overrides WHERE symbol = ?`,
+    adj.symbol,
+  );
+  const weightBefore = row ? Number(row.weight_multiplier) : 1.0;
+  const weightAfter = Math.max(WEIGHT_FLOOR, weightBefore * adj.multiplier);
+
+  await db.run(
+    `INSERT INTO market_symbol_weight_overrides
+      (symbol, weight_multiplier, last_pattern_id, last_applied_at, rationale, created_at, updated_at)
+     VALUES (?, ?, ?, NOW(), ?, NOW(), NOW())
+     ON CONFLICT (symbol) DO UPDATE SET
+       weight_multiplier = EXCLUDED.weight_multiplier,
+       last_pattern_id = EXCLUDED.last_pattern_id,
+       last_applied_at = NOW(),
+       rationale = EXCLUDED.rationale,
+       updated_at = NOW()`,
+    adj.symbol, weightAfter, adj.pattern_id, adj.rationale,
+  );
+
+  await db.run(
+    `INSERT INTO market_signal_weight_adjustments
+      (pattern_id, pattern_type, signal_type, category, multiplier, weight_before, weight_after, rationale)
+     VALUES (?, ?, 'symbol_override', ?, ?, ?, ?, ?)`,
+    adj.pattern_id, adj.pattern_type, adj.symbol,
     adj.multiplier, weightBefore, weightAfter, adj.rationale,
   );
 
