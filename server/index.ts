@@ -153,6 +153,7 @@ import { createPortalBookmarksRoutes } from './routes/portal-bookmarks.js';
 import { createStarterPackRoutes } from './routes/starter-packs.js';
 import { createJobsRoutes } from './routes/jobs.js';
 import { createMarketplaceVisitorRoutes } from './routes/marketplace-visitor.js';
+import { createFriendsRoutes } from './routes/friends.js';
 import { createEvidencePackRoutes, createSharedPackRoutes } from './routes/evidence-pack.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
@@ -775,6 +776,7 @@ app.use('/api', createPortalBookmarksRoutes(db));
 app.use('/api', await createStarterPackRoutes(db));
 app.use('/api', createJobsRoutes(db));
 app.use('/api', createMarketplaceVisitorRoutes(db));
+app.use('/api', createFriendsRoutes(db));
 
 // Evidence Pack (regulator-ready audit bundles, EVIDENCE_PACK_SPEC.md)
 app.use('/api', createEvidencePackRoutes(db));

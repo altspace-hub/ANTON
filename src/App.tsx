@@ -189,6 +189,12 @@ const MarketplaceHomePage = lazy(() => import('./pages/marketplace/MarketplaceHo
 const BundleDetailPage = lazy(() => import('./pages/marketplace/BundleDetailPage'));
 const LibraryPage = lazy(() => import('./pages/marketplace/LibraryPage'));
 const PublishPage = lazy(() => import('./pages/marketplace/PublishPage'));
+// Friends — visitor side (Visitor Layer v0.8)
+const FriendsHomePage = lazy(() => import('./pages/friends/FriendsHomePage'));
+const ContactDetailPage = lazy(() => import('./pages/friends/ContactDetailPage'));
+const FriendsChatPage = lazy(() => import('./pages/friends/ChatPage'));
+const FriendsGroupsPage = lazy(() => import('./pages/friends/GroupsPage'));
+const FriendsInviteFlowPage = lazy(() => import('./pages/friends/InviteFlowPage'));
 
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
@@ -675,6 +681,12 @@ export default function App() {
           <Route path="/jobs/applications/:id" element={<CandidateDashboardPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="/jobs/:id/apply" element={<ApplicationFlowPage />} />
+          {/* Friends — consumer-facing social surface (Visitor Layer v0.8) */}
+          <Route path="/friends" element={<FriendsHomePage />} />
+          <Route path="/friends/invite" element={<FriendsInviteFlowPage />} />
+          <Route path="/friends/groups" element={<FriendsGroupsPage />} />
+          <Route path="/friends/:id" element={<ContactDetailPage />} />
+          <Route path="/friends/:id/chat" element={<FriendsChatPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />
