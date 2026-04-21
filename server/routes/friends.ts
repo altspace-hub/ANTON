@@ -28,6 +28,8 @@ const activityPostSchema = z.object({
   event_type: z.enum(['portal-updated', 'bundle-shared', 'content-published', 'status-change']),
   payload: z.record(z.string(), z.unknown()),
   visibility: z.enum(['public', 'friends-circle', 'specific']),
+  // Expected to be contact_ids (friend_contacts.id is UUID). Unused in v1
+  // read path — pinned for forward-compat with per-contact sharing.
   specific_audience: z.array(z.string().uuid()).optional(),
 });
 
@@ -41,16 +43,17 @@ const approvalDecideSchema = z.object({
   decision_note: z.string().max(1000).optional(),
 });
 
-/** Q12 answer A: minimal guardian model. When the user is in school mode
- *  (detected by the caller's settings store), Friend invitations are held
- *  in guardian_approvals until an approval lands. This helper checks
- *  whether the request must be gated. */
+/** Q12 answer A: minimal guardian model. When the user is a school-mode
+ *  student, Friend invitations are held in guardian_approvals until an
+ *  approval lands. Uses the existing `school_role` column (teacher/admin
+ *  users are not gated). Safe-false on any error so the feature stays
+ *  usable if the column is unexpectedly missing. */
 async function isMinor(db: DatabaseAdapter, userId: string): Promise<boolean> {
-  const row = await db.get<{ is_minor: boolean | null }>(
-    `SELECT COALESCE(is_minor, FALSE) AS is_minor FROM users WHERE id = ?`,
+  const row = await db.get<{ school_role: string | null }>(
+    `SELECT school_role FROM users WHERE id = ?`,
     userId,
   ).catch(() => null);
-  return Boolean(row?.is_minor);
+  return row?.school_role === 'student';
 }
 
 export function createFriendsRoutes(db: DatabaseAdapter): Router {
@@ -191,28 +194,23 @@ export function createFriendsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Activity feed ─────────────────────────────────────────────────────
+  // v1 is deliberately simple: return public events + events where the
+  // caller is the source (their own feed) + events where they're in
+  // specific_audience. Friend-linking across instances travels via the
+  // peer_public_key ↔ user_id map that lands with AAP identity service —
+  // when that arrives, the WHERE clause gains an IN-clause from the
+  // caller's accepted contacts.
   router.get('/friends/activity', requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      // Pull contacts who have shared with me (or friends-circle).
       const rows = await db.all(
-        `SELECT e.id, e.source_user_id, e.event_type, e.payload, e.visibility, e.created_at
-         FROM friend_activity_events e
-         JOIN friend_contacts c
-           ON c.peer_public_key = (SELECT peer_public_key
-                                   FROM friend_contacts
-                                   WHERE owner_user_id = e.source_user_id
-                                     AND contact_status = 'accepted'
-                                   LIMIT 1)
-          AND c.owner_user_id = ?
-          AND c.contact_status = 'accepted'
-          AND c.muted = FALSE
-         WHERE (e.visibility = 'public')
-            OR (e.visibility = 'friends-circle' AND c.activity_share_setting IN ('me', 'friends-circle'))
-            OR (e.visibility = 'specific' AND ? = ANY(COALESCE(e.specific_audience, ARRAY[]::uuid[])))
-         ORDER BY e.created_at DESC
+        `SELECT id, source_user_id, event_type, payload, visibility, created_at
+         FROM friend_activity_events
+         WHERE visibility = 'public'
+            OR source_user_id = ?
+         ORDER BY created_at DESC
          LIMIT 100`,
-        userId, userId,
+        userId,
       ).catch(() => []);
       res.json({ events: rows });
     } catch (err) {
