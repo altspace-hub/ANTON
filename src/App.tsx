@@ -195,6 +195,12 @@ const ContactDetailPage = lazy(() => import('./pages/friends/ContactDetailPage')
 const FriendsChatPage = lazy(() => import('./pages/friends/ChatPage'));
 const FriendsGroupsPage = lazy(() => import('./pages/friends/GroupsPage'));
 const FriendsInviteFlowPage = lazy(() => import('./pages/friends/InviteFlowPage'));
+// Video — visitor side (Visitor Layer v0.8, Phase 3b)
+const VideoHomePage = lazy(() => import('./pages/video/VideoHomePage'));
+const VideoUploadPage = lazy(() => import('./pages/video/VideoUploadPage'));
+const VideoPlayerPage = lazy(() => import('./pages/video/VideoPlayerPage'));
+const VideoChannelPage = lazy(() => import('./pages/video/VideoChannelPage'));
+const VideoPlaylistsPage = lazy(() => import('./pages/video/VideoPlaylistsPage'));
 
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
@@ -687,6 +693,12 @@ export default function App() {
           <Route path="/friends/groups" element={<FriendsGroupsPage />} />
           <Route path="/friends/:id" element={<ContactDetailPage />} />
           <Route path="/friends/:id/chat" element={<FriendsChatPage />} />
+          {/* Video — consumer-facing video surface (Visitor Layer v0.8) */}
+          <Route path="/video" element={<VideoHomePage />} />
+          <Route path="/video/upload" element={<VideoUploadPage />} />
+          <Route path="/video/channel" element={<VideoChannelPage />} />
+          <Route path="/video/playlists" element={<VideoPlaylistsPage />} />
+          <Route path="/video/:id" element={<VideoPlayerPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />

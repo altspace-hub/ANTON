@@ -154,6 +154,7 @@ import { createStarterPackRoutes } from './routes/starter-packs.js';
 import { createJobsRoutes } from './routes/jobs.js';
 import { createMarketplaceVisitorRoutes } from './routes/marketplace-visitor.js';
 import { createFriendsRoutes } from './routes/friends.js';
+import { createVideoRoutes } from './routes/video.js';
 import { createEvidencePackRoutes, createSharedPackRoutes } from './routes/evidence-pack.js';
 import { createTalentRoutes } from './routes/talent.js';
 import { createAppGatewayRoutes } from './routes/app-gateway.js';
@@ -777,6 +778,7 @@ app.use('/api', await createStarterPackRoutes(db));
 app.use('/api', createJobsRoutes(db));
 app.use('/api', createMarketplaceVisitorRoutes(db));
 app.use('/api', createFriendsRoutes(db));
+app.use('/api', createVideoRoutes(db));
 
 // Evidence Pack (regulator-ready audit bundles, EVIDENCE_PACK_SPEC.md)
 app.use('/api', createEvidencePackRoutes(db));
