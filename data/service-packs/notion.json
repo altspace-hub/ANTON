@@ -107,7 +107,8 @@
           "url": "https://api.notion.com/v1/pages/${page_id}",
           "method": "PATCH",
           "template": "{ \"properties\": ${properties_json} }",
-          "description": "PATCH — callers must pre-encode the properties shape since each property type differs"
+          "body_compose": "notion.properties_patch",
+          "description": "PATCH — caller supplies properties_json as a JSON-encoded object; composer parses it and wraps as { properties: ... }. Invalid JSON fails the step cleanly."
         }
       ]
     }

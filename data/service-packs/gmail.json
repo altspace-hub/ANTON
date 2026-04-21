@@ -66,7 +66,8 @@
           "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
           "method": "POST",
           "template": "{ \"raw\": base64url('To: ${to}\\r\\nSubject: ${subject}\\r\\n\\r\\n${body_text}') }",
-          "description": "POST — server composes the raw RFC 5322, base64url-encodes it, then wraps as { raw: ... }"
+          "body_compose": "gmail.rfc5322_send",
+          "description": "POST — composer assembles RFC 5322 from to/subject/body_text params, base64url-encodes, wraps as { raw: ... }. Validates email + strips CR/LF to block header injection."
         }
       ]
     },
@@ -82,6 +83,7 @@
           "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/${message_id}/modify",
           "method": "POST",
           "template": "{ \"addLabelIds\": [\"${label_id}\"] }",
+          "body_template": { "addLabelIds": ["${label_id}"] },
           "description": "POST — modifies labels on the message"
         }
       ]

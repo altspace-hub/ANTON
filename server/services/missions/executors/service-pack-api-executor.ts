@@ -113,19 +113,36 @@ export async function executeApiWorkflow(args: ExecuteApiWorkflowArgs): Promise<
       return stepFailure(startedAt, stepLog, i + 1, `URL ${step.url} is outside pack base_urls`);
     }
 
-    // Body source: prefer body_template (executable). Fall back to refusing
-    // to execute string templates since they may contain pseudo-functions.
+    // Body source priority: named composer > body_template > doc template.
+    // Composers are registered in BODY_COMPOSERS for bodies that need
+    // server-side logic beyond simple param substitution (Gmail base64url
+    // RFC 5322, Notion PATCH with a pre-typed properties sub-tree, etc.).
     const method = (step.method ?? 'GET').toUpperCase();
     let bodyInit: BodyInit | undefined;
     const headers: Record<string, string> = { ...sharedHeaders };
     if (method !== 'GET' && method !== 'HEAD') {
-      if (step.body_template !== undefined) {
+      if (step.body_compose) {
+        const composer = BODY_COMPOSERS[step.body_compose];
+        if (!composer) {
+          return stepFailure(
+            startedAt, stepLog, i + 1,
+            `Unknown body_compose '${step.body_compose}'. Known: ${Object.keys(BODY_COMPOSERS).join(', ')}.`,
+          );
+        }
+        const taskParams = ((task.module_config as { params?: Record<string, string> })?.params) ?? {};
+        const composed = composer(taskParams);
+        if (!composed.ok) {
+          return stepFailure(startedAt, stepLog, i + 1, composed.reason);
+        }
+        bodyInit = composed.body;
+        headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+      } else if (step.body_template !== undefined) {
         bodyInit = JSON.stringify(step.body_template);
         headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
       } else if (step.template !== undefined) {
         return stepFailure(
           startedAt, stepLog, i + 1,
-          `Step has only a documentation 'template' — not executable. Add 'body_template' (JSON object) to the pack step, or use an api_call task directly.`,
+          `Step has only a documentation 'template' — not executable. Add 'body_template' (JSON object), 'body_compose' (named composer), or use an api_call task directly.`,
         );
       }
     }
@@ -227,6 +244,79 @@ function isUrlAllowed(urlStr: string, baseUrls: string[]): boolean {
 
 function sanitiseHeaderName(s: string): string { return s.replace(/[\r\n:]+/g, ''); }
 function sanitiseHeaderValue(s: string): string { return s.replace(/[\r\n]+/g, ' '); }
+
+// ── Named body composers (F1) ──────────────────────────────────────────────
+// Each composer takes the task's params (raw, not url-substituted) and
+// returns the serialised HTTP body or a reason string on failure. New
+// composers should validate inputs strictly — a malformed compose is a
+// step failure, not a silent empty body.
+
+type ComposerResult =
+  | { ok: true; body: string }
+  | { ok: false; reason: string };
+
+type Composer = (params: Record<string, string>) => ComposerResult;
+
+const BODY_COMPOSERS: Record<string, Composer> = {
+  /**
+   * Gmail send_message. Takes `to`, `subject`, `body_text` and produces
+   * { raw: base64url(RFC 5322 message) } ready for POST users/me/messages/send.
+   * Strips CR/LF from To/Subject to block header injection via param content.
+   */
+  'gmail.rfc5322_send': (params) => {
+    const to = (params.to ?? '').trim();
+    const subject = (params.subject ?? '').trim();
+    const bodyText = params.body_text ?? '';
+    if (!to || !subject) {
+      return { ok: false, reason: 'gmail.rfc5322_send requires params `to` and `subject`' };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return { ok: false, reason: `gmail.rfc5322_send: 'to' is not a valid email: ${to.slice(0, 50)}` };
+    }
+    // Header injection hardening: CR/LF inside To/Subject would break out
+    // of the header context. Strip them defensively even though the fields
+    // above shouldn't legitimately contain them.
+    const safeTo = to.replace(/[\r\n]+/g, ' ');
+    const safeSubject = subject.replace(/[\r\n]+/g, ' ');
+    const rfc5322 = [
+      `To: ${safeTo}`,
+      `Subject: ${safeSubject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=UTF-8',
+      '',
+      bodyText,
+    ].join('\r\n');
+    const base64url = Buffer.from(rfc5322, 'utf-8')
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    return { ok: true, body: JSON.stringify({ raw: base64url }) };
+  },
+
+  /**
+   * Notion PATCH /pages/:id — splices the caller's pre-typed `properties_json`
+   * string into { properties: <parsed> }. We parse (not stringify) to
+   * surface JSON errors as a clean step failure rather than letting an
+   * invalid blob hit the Notion API as raw text.
+   */
+  'notion.properties_patch': (params) => {
+    const raw = params.properties_json;
+    if (!raw) {
+      return { ok: false, reason: 'notion.properties_patch requires param `properties_json`' };
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      return { ok: false, reason: `notion.properties_patch: properties_json is not valid JSON: ${err instanceof Error ? err.message : String(err)}` };
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return { ok: false, reason: 'notion.properties_patch: properties_json must be a JSON object' };
+    }
+    return { ok: true, body: JSON.stringify({ properties: parsed }) };
+  },
+};
 
 function failure(startedAt: number, reason: string): ApiWorkflowResult {
   return {
