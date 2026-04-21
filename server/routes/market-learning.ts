@@ -3,12 +3,14 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketIntelligenceService } from '../services/market-intelligence-service.js';
 import { createMarketPredictionAttributionService } from '../services/market-prediction-attribution-service.js';
 import { createMarketThesisLifecycleService } from '../services/market-thesis-lifecycle-service.js';
+import { createMarketInvestigationLifecycleService } from '../services/market-investigation-lifecycle-service.js';
 
 export async function createMarketLearningRoutes(db: DatabaseAdapter) {
   const router = Router();
   const service = await createMarketIntelligenceService(db);
   const attribution = await createMarketPredictionAttributionService(db);
   const thesisLifecycle = await createMarketThesisLifecycleService(db);
+  const investigationLifecycle = await createMarketInvestigationLifecycleService(db);
 
   // Calibration
   router.get('/markets/learning/calibration', async (_req, res) => {
@@ -162,6 +164,40 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[market-learning] List closed theses error:', err);
       res.status(500).json({ error: 'Failed to list closed theses' });
+    }
+  });
+
+  // ── Investigation lifecycle (M5) ─────────────────────────────────────────
+
+  router.post('/markets/learning/investigations/lifecycle-sweep', async (req, res) => {
+    try {
+      const batchLimit = req.body?.batchLimit ? parseInt(String(req.body.batchLimit), 10) : undefined;
+      res.json(await investigationLifecycle.applyInvestigationLifecycle({ batchLimit }));
+    } catch (err) {
+      console.error('[market-learning] Investigation lifecycle sweep error:', err);
+      res.status(500).json({ error: 'Failed to run investigation lifecycle sweep' });
+    }
+  });
+
+  router.get('/markets/learning/investigations/closed', async (req, res) => {
+    try {
+      const limit = req.query.limit ? Math.min(500, parseInt(String(req.query.limit), 10)) : 100;
+      const rows = await db.all<{
+        id: string; trigger_type: string; trigger_reference: string | null;
+        title: string; status: string; root_cause: string | null;
+        completed_at: string | null; created_at: string;
+      }>(
+        `SELECT id, trigger_type, trigger_reference, title, status, root_cause, completed_at, created_at
+         FROM market_investigation_tasks
+         WHERE status IN ('completed', 'abandoned')
+         ORDER BY completed_at DESC NULLS LAST
+         LIMIT ?`,
+        limit,
+      );
+      res.json(rows);
+    } catch (err) {
+      console.error('[market-learning] List closed investigations error:', err);
+      res.status(500).json({ error: 'Failed to list closed investigations' });
     }
   });
 
