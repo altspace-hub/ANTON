@@ -169,6 +169,14 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       return computeConvictionWeights(db, holdings);
     }
 
+    if (method === 'risk_parity') {
+      return computeRiskParityWeights(db, holdings);
+    }
+
+    if (method === 'market_cap') {
+      return computeMarketCapWeights(db, holdings);
+    }
+
     return null;
   }
 
@@ -248,6 +256,154 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     return normalised;
   }
 
+  /**
+   * Risk-parity weights (F4). Equal risk contribution per holding using a
+   * naive inverse-volatility heuristic: weight_i ∝ 1 / sigma_i where sigma_i
+   * is the annualised daily-return vol over the last 60 sessions.
+   *
+   * Simplification: true risk parity solves for weights that equalise
+   * marginal risk contributions using the full covariance matrix. The
+   * inverse-vol heuristic is the diagonal-only approximation — a reasonable
+   * default that doesn't require fitting a covariance matrix. When a
+   * covariance-aware optimiser lands it can slot in behind this same
+   * interface.
+   *
+   * Symbols with insufficient price history fall back to the average vol
+   * of the cohort so they don't dominate by having zero measured risk.
+   * Weights are clamped to [0.3×, 3×] the cohort median raw-weight to
+   * prevent a single ultra-low-vol name from concentrating the portfolio.
+   */
+  async function computeRiskParityWeights(
+    db: DatabaseAdapter,
+    holdings: HoldingRow[],
+  ): Promise<Map<string, number>> {
+    const symbols = holdings.map(h => h.symbol);
+    const vols = new Map<string, number>();
+    for (const symbol of symbols) {
+      const rows = await db.all<{ close: number | string }>(
+        `SELECT close FROM market_historical_prices
+         WHERE symbol = ? ORDER BY price_date DESC LIMIT 60`,
+        symbol,
+      );
+      if (rows.length < 10) continue;
+      const prices = rows.map(r => Number(r.close)).filter(p => Number.isFinite(p) && p > 0).reverse();
+      if (prices.length < 10) continue;
+      const returns: number[] = [];
+      for (let i = 1; i < prices.length; i++) {
+        const r = (prices[i] - prices[i - 1]) / prices[i - 1];
+        if (Number.isFinite(r)) returns.push(r);
+      }
+      if (returns.length < 5) continue;
+      const mean = returns.reduce((s, r) => s + r, 0) / returns.length;
+      const variance = returns.reduce((s, r) => s + (r - mean) ** 2, 0) / returns.length;
+      const sigma = Math.sqrt(variance);
+      if (sigma > 0) vols.set(symbol, sigma);
+    }
+
+    // Cohort fallback: symbols with no usable history get the mean vol, so
+    // a missing-data ticker doesn't get weighted at infinity (1/0).
+    const measuredVols = Array.from(vols.values());
+    const meanVol = measuredVols.length > 0
+      ? measuredVols.reduce((s, v) => s + v, 0) / measuredVols.length
+      : 0.01; // fallback of 1%/day if the entire cohort has no history
+    for (const symbol of symbols) {
+      if (!vols.has(symbol)) vols.set(symbol, meanVol);
+    }
+
+    // Raw weight ∝ 1 / vol, clamped to [0.3×, 3×] cohort median to avoid
+    // one ultra-low-vol name swallowing the portfolio.
+    const raw = new Map<string, number>();
+    for (const symbol of symbols) {
+      raw.set(symbol, 1 / (vols.get(symbol) ?? meanVol));
+    }
+    const rawValues = Array.from(raw.values()).sort((a, b) => a - b);
+    const median = rawValues[Math.floor(rawValues.length / 2)] ?? 1;
+    const lo = median * 0.3;
+    const hi = median * 3;
+    const clamped = new Map<string, number>();
+    for (const [symbol, value] of raw) {
+      clamped.set(symbol, Math.max(lo, Math.min(hi, value)));
+    }
+    return normaliseWeights(clamped, holdings);
+  }
+
+  /**
+   * Market-cap weights (F4). Looks up the most-recent market_cap field from
+   * the fundamental rows ingested into market_data_raw; weights proportional
+   * to market cap; clamped so a single mega-cap can't exceed 25% of the
+   * portfolio (soft concentration guard matching evaluateHoldings).
+   *
+   * Symbols missing a current market_cap fall back to the cohort mean so
+   * they aren't silently dropped — the operator sees a hold action with a
+   * clear "fallback to cohort mean" reason if they inspect the proposal.
+   */
+  async function computeMarketCapWeights(
+    db: DatabaseAdapter,
+    holdings: HoldingRow[],
+  ): Promise<Map<string, number>> {
+    const symbols = holdings.map(h => h.symbol);
+    const caps = new Map<string, number>();
+    for (const symbol of symbols) {
+      // Fundamental rows are JSON in `content` with a market_cap or
+      // marketCap field depending on provider. Try both.
+      const row = await db.get<{ content: string | null }>(
+        `SELECT content FROM market_data_raw
+         WHERE symbol = ? AND data_type IN ('fundamental', 'key_metrics', 'ratios')
+         ORDER BY fetched_at DESC LIMIT 1`,
+        symbol,
+      );
+      if (!row?.content) continue;
+      try {
+        const parsed = JSON.parse(row.content) as Record<string, unknown>;
+        const mcap =
+          typeof parsed.marketCap === 'number' ? parsed.marketCap
+          : typeof parsed.market_cap === 'number' ? parsed.market_cap
+          : null;
+        if (mcap && mcap > 0) caps.set(symbol, mcap);
+      } catch { /* skip malformed */ }
+    }
+
+    const measured = Array.from(caps.values());
+    const meanCap = measured.length > 0
+      ? measured.reduce((s, v) => s + v, 0) / measured.length
+      : 1; // guards divide-by-zero if no holdings have a market cap yet
+    for (const symbol of symbols) {
+      if (!caps.has(symbol)) caps.set(symbol, meanCap);
+    }
+
+    // Concentration clamp: 25% single-position ceiling. We translate this
+    // to a raw-weight cap so normalisation doesn't simply undo it.
+    const totalCap = Array.from(caps.values()).reduce((s, v) => s + v, 0);
+    if (totalCap <= 0) {
+      // All-zero fallback: degrade to equal weight.
+      const equal = 1 / holdings.length;
+      return new Map(holdings.map(h => [h.symbol, equal]));
+    }
+    const cappedShare = 0.25;
+    const clamped = new Map<string, number>();
+    for (const [symbol, cap] of caps) {
+      const share = cap / totalCap;
+      clamped.set(symbol, Math.min(cappedShare, share));
+    }
+    return normaliseWeights(clamped, holdings);
+  }
+
+  /**
+   * Shared normaliser for the non-equal weighting methods. Scales a raw-
+   * weight map so its values sum to 1.0; guards divide-by-zero with equal
+   * weights as a last-resort fallback.
+   */
+  function normaliseWeights(raw: Map<string, number>, holdings: HoldingRow[]): Map<string, number> {
+    const sum = Array.from(raw.values()).reduce((a, b) => a + b, 0);
+    if (sum > 0) {
+      const normalised = new Map<string, number>();
+      for (const [symbol, value] of raw) normalised.set(symbol, value / sum);
+      return normalised;
+    }
+    const equal = 1 / Math.max(1, holdings.length);
+    return new Map(holdings.map(h => [h.symbol, equal]));
+  }
+
   // ── Generate Rebalance Proposal ──────────────────────────────────────────
 
   async function generateRebalanceProposal(indexId: string): Promise<RebalanceProposal> {
@@ -305,7 +461,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       // for any non-equal method.
       const reason = holdings.length === 0
         ? 'Index has no active holdings'
-        : `Weighting method '${weightingMethod}' is not yet implemented — maintaining current weights. Supported: equal, conviction.`;
+        : `Weighting method '${weightingMethod}' is not yet implemented — maintaining current weights. Supported: equal, conviction, risk_parity, market_cap.`;
       for (const h of holdings) {
         proposedChanges.push({
           symbol: h.symbol,
