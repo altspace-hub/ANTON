@@ -1314,6 +1314,25 @@ httpServer.listen(PORT, async () => {
       }
     }, MARKET_TZ);
 
+    // Daily investigation lifecycle sweep (05:30 CET). Closes investigations
+    // whose linked why-chain has resolved to root cause, abandons older
+    // investigations superseded by a newer one on the same trigger, and
+    // abandons stale open ones past 90 days with no recorded progress.
+    // Deterministic rules, no LLM. M5 of the effectiveness plan.
+    cron.schedule('30 5 * * *', async () => {
+      try {
+        const { createMarketInvestigationLifecycleService } =
+          await import('./services/market-investigation-lifecycle-service.js');
+        const svc = await createMarketInvestigationLifecycleService(db);
+        const r = await svc.applyInvestigationLifecycle();
+        if (r.considered > 0) {
+          console.log(`[markets-investigation-lifecycle] considered=${r.considered} completed=${r.completed_via_why_chain} superseded=${r.abandoned_superseded} stale=${r.abandoned_stale} left_open=${r.left_open} errors=${r.errors.length}`);
+        }
+      } catch (err) {
+        console.error('[markets-investigation-lifecycle] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
     cron.schedule('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
