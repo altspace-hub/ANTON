@@ -122,14 +122,15 @@ export function createMissionExecutor(db: DatabaseAdapter) {
     }
 
     // ── parallel_group: marker that completes immediately ─────────────────
-    // v1 is a structural no-op — the task graph says "these children are
-    // conceptually parallel" but advance() still picks them serially. True
-    // concurrency (running multiple ready tasks at once) lands later. Kept
-    // as its own branch so mission authors can express fan-out intent.
+    // The task itself is a structural no-op — completes immediately so its
+    // children (which depend on it) become ready. controller.advanceBatch
+    // then runs those mutually-independent children in parallel via
+    // Promise.allSettled, so authors get real concurrency by structuring
+    // their graph with a parallel_group parent over independent siblings.
     if (task.task_type === 'parallel_group') {
       await state.recordTaskOutput(task.id, {
-        full: JSON.stringify({ kind: 'parallel_group', note: 'Fan-out marker — children run independently' }),
-        summary: `parallel_group: children run independently`,
+        full: JSON.stringify({ kind: 'parallel_group', note: 'Fan-out marker — children run concurrently via advanceBatch' }),
+        summary: `parallel_group: children run concurrently`,
         provider: 'control', model: 'control', tier: 'utility',
         tokens: 0, durationSeconds: 0,
       });

@@ -211,6 +211,29 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // POST /api/missions/:id/advance-batch — run up to N mutually-independent
+  // ready tasks in parallel via Promise.allSettled. Designed for
+  // parallel_group fan-outs: children become ready simultaneously after
+  // their group marker completes, and a single call resolves the whole
+  // batch instead of N round-trips. maxParallel body param defaults to 4,
+  // capped at 16 inside the controller.
+  router.post('/missions/:id/advance-batch', claudeLimiter, async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      const parsed = z.object({
+        requester_hash: z.string().optional(),
+        maxParallel: z.number().int().min(1).max(16).optional(),
+      }).safeParse(req.body ?? {});
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
+      try { await resolveCallerIdentity(db, parsed.data.requester_hash); }
+      catch (err) { sendIdentityError(res, err); return; }
+      const result = await controller.advanceBatch(id, parsed.data.maxParallel);
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
   // POST /api/missions/:id/pause
   router.post('/missions/:id/pause', async (req, res) => {
     try {
