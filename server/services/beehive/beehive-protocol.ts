@@ -280,35 +280,6 @@ export async function createBeehiveProtocol(db: DatabaseAdapter) {
     return { ok: true, type: envelope.type, applied, reason };
   }
 
-  /**
-   * Which message types should a Queen automatically re-broadcast on receipt?
-   * Anything originated by a non-Queen participant that other participants
-   * need to see for state convergence.
-   */
-  function shouldQueenRelay(type: BeehiveMessageType): boolean {
-    switch (type) {
-      case 'hive:contribution':
-      case 'hive:join':
-      case 'hive:leave':
-      case 'hive:decline':
-      case 'hive:dissent':
-      case 'hive:approve':
-        return true;
-      // Queen-only events — never relayed (Queen is the origin)
-      case 'hive:invite':
-      case 'hive:round_advance':
-      case 'hive:round_summary':
-      case 'hive:converge':
-      case 'hive:conclude':
-      case 'hive:synthesis_draft':
-      case 'hive:state_sync':
-      case 'hive:heartbeat':
-      case 'hive:create':
-      default:
-        return false;
-    }
-  }
-
   // ── Inbound appliers ─────────────────────────────────────────────────────
   // Each applier mutates local DB to reflect remote state changes.
 
@@ -751,4 +722,38 @@ export interface SynthesisDraftPayload {
 export interface DissentPayload {
   content: string;
   references_contributions?: string[];
+}
+
+// ── Module-level helpers (pure, testable in isolation) ────────────────────
+
+/**
+ * Which message types should a Queen automatically re-broadcast on
+ * receipt? Anything originated by a non-Queen participant that other
+ * participants need to see for state convergence. Queen-authored events
+ * never relay — the Queen is the origin.
+ *
+ * Exported at module scope so tests can exercise the table without
+ * building a full protocol factory (which needs DB + signing + x25519).
+ */
+export function shouldQueenRelay(type: BeehiveMessageType): boolean {
+  switch (type) {
+    case 'hive:contribution':
+    case 'hive:join':
+    case 'hive:leave':
+    case 'hive:decline':
+    case 'hive:dissent':
+    case 'hive:approve':
+      return true;
+    case 'hive:invite':
+    case 'hive:round_advance':
+    case 'hive:round_summary':
+    case 'hive:converge':
+    case 'hive:conclude':
+    case 'hive:synthesis_draft':
+    case 'hive:state_sync':
+    case 'hive:heartbeat':
+    case 'hive:create':
+    default:
+      return false;
+  }
 }
