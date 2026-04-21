@@ -105,7 +105,7 @@ export function createVideoRoutes(db: DatabaseAdapter): Router {
       const rows = await db.all(
         `SELECT v.id, v.title, v.description, v.duration_seconds, v.uploader_user_id,
                 v.created_at, v.poster_storage_key,
-                u.name AS uploader_name
+                COALESCE(u.display_name, u.username) AS uploader_name
          FROM video_uploads v
          LEFT JOIN users u ON u.id = v.uploader_user_id
          WHERE v.state = 'ready'
@@ -116,41 +116,6 @@ export function createVideoRoutes(db: DatabaseAdapter): Router {
       res.json({ videos: rows });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
-    }
-  });
-
-  // Playback descriptor: the URL goes through signed short-lived URL.
-  router.get('/video/:id', requireAuth, async (req: Request, res: Response) => {
-    try {
-      const video = await db.get<Record<string, unknown>>(
-        `SELECT v.id, v.title, v.description, v.visibility, v.duration_seconds,
-                v.uploader_user_id, v.storage_key, v.created_at, u.name AS uploader_name
-         FROM video_uploads v
-         LEFT JOIN users u ON u.id = v.uploader_user_id
-         WHERE v.id = ? AND v.state = 'ready'`,
-        req.params.id,
-      );
-      if (!video) { res.status(404).json({ error: 'Not found' }); return; }
-      const playbackUrl = await storage.getSignedGetUrl(String(video.storage_key));
-      delete (video as Record<string, unknown>).storage_key;
-      res.json({ video: { ...video, playback_url: playbackUrl } });
-    } catch (err) {
-      res.status(500).json({ error: safeError(err) });
-    }
-  });
-
-  // Log a view (for the uploader-channel analytics card).
-  router.post('/video/:id/view', requireAuth, async (req: Request, res: Response) => {
-    try {
-      const body = z.object({ completion_pct: z.number().int().min(0).max(100).optional() }).safeParse(req.body ?? {});
-      await db.run(
-        `INSERT INTO video_views (upload_id, viewer_user_id, completion_pct)
-         VALUES (?, ?, ?)`,
-        req.params.id, req.user!.id, body.success ? body.data.completion_pct ?? null : null,
-      );
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -256,6 +221,42 @@ export function createVideoRoutes(db: DatabaseAdapter): Router {
       res.json({ playlist, items });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Per-video routes (must be declared AFTER all specific paths so
+  //    the :id wildcard does not shadow /video/feed, /video/stream,
+  //    /video/channel/*, or /video/playlists/*.) ──
+  router.get('/video/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const video = await db.get<Record<string, unknown>>(
+        `SELECT v.id, v.title, v.description, v.visibility, v.duration_seconds,
+                v.uploader_user_id, v.storage_key, v.created_at, COALESCE(u.display_name, u.username) AS uploader_name
+         FROM video_uploads v
+         LEFT JOIN users u ON u.id = v.uploader_user_id
+         WHERE v.id = ? AND v.state = 'ready'`,
+        req.params.id,
+      );
+      if (!video) { res.status(404).json({ error: 'Not found' }); return; }
+      const playbackUrl = await storage.getSignedGetUrl(String(video.storage_key));
+      delete (video as Record<string, unknown>).storage_key;
+      res.json({ video: { ...video, playback_url: playbackUrl } });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/video/:id/view', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const body = z.object({ completion_pct: z.number().int().min(0).max(100).optional() }).safeParse(req.body ?? {});
+      await db.run(
+        `INSERT INTO video_views (upload_id, viewer_user_id, completion_pct)
+         VALUES (?, ?, ?)`,
+        req.params.id, req.user!.id, body.success ? body.data.completion_pct ?? null : null,
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
