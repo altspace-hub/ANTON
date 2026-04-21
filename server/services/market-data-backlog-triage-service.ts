@@ -80,6 +80,16 @@ export async function createMarketDataBacklogTriageService(db: DatabaseAdapter) 
 
     // Rule 1: stale — batch UPDATE stamps triage_reason into the metadata
     // JSONB and flips is_processed in one pass.
+    //
+    // Timestamp comparison: published_at is TEXT and feeds aren't guaranteed
+    // to use ISO-8601. A naive `published_at < $1` is lexicographic — 'Mon,
+    // 21 Apr 2026 10:30 GMT' would compare as a string and silently rank
+    // wrong against '2026-03-22T00:00:00Z'. The CASE below only trusts
+    // published_at when it's unambiguously ISO-8601-prefixed (YYYY-MM-DD);
+    // anything else falls through to fetched_at (which is a real TIMESTAMPTZ
+    // set by the ingest path and always trustworthy). Both sides of the
+    // comparison are TIMESTAMPTZ so the result is time-correct regardless
+    // of provider format drift.
     const stale = await db.run(
       `UPDATE market_data_raw
          SET is_processed = 1,
@@ -89,7 +99,13 @@ export async function createMarketDataBacklogTriageService(db: DatabaseAdapter) 
              )::text
        WHERE is_processed = 0
          AND data_type NOT IN ('price')
-         AND COALESCE(published_at, fetched_at::text) < $1`,
+         AND COALESCE(
+               CASE WHEN published_at ~ '^\\d{4}-\\d{2}-\\d{2}'
+                    THEN published_at::timestamptz
+                    ELSE NULL
+               END,
+               fetched_at
+             ) < $1::timestamptz`,
       staleCutoff,
     );
     result.triaged_stale = stale?.changes ?? 0;
