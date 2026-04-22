@@ -21,6 +21,9 @@ interface PortalDetail {
     category: string;
     status: string;
     public_index: boolean;
+    surface_mode: 'managed' | 'external';
+    external_primary_url: string | null;
+    external_url_verified_at: string | null;
     descriptor_hash: string | null;
     capability_summary: { capabilityVerbs?: string[]; tags?: string[] } | null;
     registered_at: string | null;
@@ -104,7 +107,13 @@ export default function PortalManagePage() {
     await Promise.all([refreshCapabilities(), refreshDetail()]);
   }
 
-  async function patchPortal(patch: { display_title?: string; description?: string; public_index?: boolean }): Promise<void> {
+  async function patchPortal(patch: {
+    display_title?: string;
+    description?: string;
+    public_index?: boolean;
+    surface_mode?: 'managed' | 'external';
+    external_primary_url?: string | null;
+  }): Promise<void> {
     if (!id) return;
     const res = await fetchWithAuth(`/api/portals/${id}`, {
       method: 'PATCH',
@@ -309,6 +318,15 @@ export default function PortalManagePage() {
               try { await patchPortal({ public_index: v }); }
               catch (e) { setError(e instanceof Error ? e.message : String(e)); }
             }}
+            onSurfaceSave={async (mode, url) => {
+              try {
+                await patchPortal({
+                  surface_mode: mode,
+                  external_primary_url: mode === 'external' ? url : null,
+                });
+                await refreshDetail();
+              } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+            }}
           />
         )}
         {tab === 'pages' && <PagesTab pages={pages} onEdit={(p) => setEditingPage(p)} />}
@@ -357,13 +375,14 @@ export default function PortalManagePage() {
 }
 
 function OverviewTab({
-  portal, pageCount, inboxPending, stats, onTogglePublicIndex,
+  portal, pageCount, inboxPending, stats, onTogglePublicIndex, onSurfaceSave,
 }: {
   portal: PortalDetail['portal'];
   pageCount: number;
   inboxPending: number;
   stats: CapabilityStat[];
   onTogglePublicIndex: (v: boolean) => void | Promise<void>;
+  onSurfaceSave: (mode: 'managed' | 'external', url: string | null) => void | Promise<void>;
 }) {
   const verbs = portal.capability_summary?.capabilityVerbs ?? [];
   const tags = portal.capability_summary?.tags ?? [];
@@ -408,6 +427,9 @@ function OverviewTab({
       </Card>
       <Card title="Descriptor binding" wide>
         <KV label="Hash" value={<code className="text-xs break-all">{portal.descriptor_hash ?? '—'}</code>} />
+      </Card>
+      <Card title="Site surface" wide>
+        <SurfaceEditor portal={portal} onSave={onSurfaceSave} />
       </Card>
       <Card title="Capability activity" wide>
         {stats.length === 0 ? (
@@ -981,6 +1003,71 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={`px-4 py-2 text-sm border-b-2 transition ${active ? 'border-adv-teal text-adv-off-white' : 'border-transparent text-adv-gray hover:text-adv-off-white'}`}
     >{children}</button>
+  );
+}
+
+function SurfaceEditor({
+  portal, onSave,
+}: {
+  portal: PortalDetail['portal'];
+  onSave: (mode: 'managed' | 'external', url: string | null) => void | Promise<void>;
+}) {
+  const [mode, setMode] = useState<'managed' | 'external'>(portal.surface_mode);
+  const [url, setUrl] = useState<string>(portal.external_primary_url ?? '');
+  const [saving, setSaving] = useState(false);
+  const dirty = mode !== portal.surface_mode || url !== (portal.external_primary_url ?? '');
+
+  async function handleSave(): Promise<void> {
+    if (!dirty || saving) return;
+    if (mode === 'external' && !url.trim()) return;
+    setSaving(true);
+    try { await onSave(mode, mode === 'external' ? url.trim() : null); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-xs text-adv-gray">
+        Pick whether ANTON hosts this portal's HTML (managed) or points at a site
+        you host yourself (external). Either way, every capability invocation
+        still travels through ANTON and is signed by the portal's Ed25519 key —
+        the trust chain does not change.
+      </p>
+      <div className="flex gap-2">
+        <label className={`flex-1 cursor-pointer rounded-lg border p-3 ${mode === 'managed' ? 'border-adv-teal bg-adv-teal/5' : 'border-border'}`}>
+          <input type="radio" name="surface" value="managed"
+            checked={mode === 'managed'} onChange={() => setMode('managed')}
+            className="sr-only" />
+          <div className="font-medium">Managed</div>
+          <div className="text-xs text-adv-gray">ANTON hosts the HTML pages.</div>
+        </label>
+        <label className={`flex-1 cursor-pointer rounded-lg border p-3 ${mode === 'external' ? 'border-adv-teal bg-adv-teal/5' : 'border-border'}`}>
+          <input type="radio" name="surface" value="external"
+            checked={mode === 'external'} onChange={() => setMode('external')}
+            className="sr-only" />
+          <div className="font-medium">External</div>
+          <div className="text-xs text-adv-gray">Point at a site you host.</div>
+        </label>
+      </div>
+      {mode === 'external' && (
+        <div>
+          <label className="text-xs text-adv-gray">Primary URL</label>
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://your-site.example"
+            className="mt-1 w-full bg-adv-dark border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-adv-teal"
+          />
+        </div>
+      )}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={() => { void handleSave(); }}
+          disabled={!dirty || saving || (mode === 'external' && !url.trim())}
+          className="px-3 py-1.5 rounded bg-adv-teal text-adv-dark text-sm font-medium disabled:opacity-50"
+        >{saving ? 'Saving…' : 'Save surface'}</button>
+      </div>
+    </div>
   );
 }
 
