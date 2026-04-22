@@ -109,6 +109,19 @@ export const DESCRIPTOR_SCHEMA = {
         category: { enum: PORTAL_CATEGORIES },
         contactHash: { type: 'string', pattern: '^ANTON-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$' },
         publicKey: { type: 'string', minLength: 40 },
+        // Optional surface block — describes where the human-facing HTML
+        // lives. AAP capability endpoints remain on ANTON regardless of
+        // surface.mode so the trust chain is preserved.
+        surface: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['mode'],
+          properties: {
+            mode: { enum: ['managed', 'external'] },
+            url: { type: 'string', format: 'uri', maxLength: 2000 },
+            verifiedAt: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
 

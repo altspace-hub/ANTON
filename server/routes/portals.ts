@@ -134,6 +134,10 @@ const portalPatchSchema = z.object({
   display_title: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional(),
   public_index: z.boolean().optional(),
+  // Bring-your-own-site mode. Switching to 'external' requires an
+  // external_primary_url; the DB check constraint enforces it too.
+  surface_mode: z.enum(['managed', 'external']).optional(),
+  external_primary_url: z.string().url().max(2000).nullable().optional(),
 });
 
 const invokeSchema = z.object({
@@ -644,6 +648,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       const portal = await db.get(
         `SELECT id, name, namespace, category, display_title, description, status,
                 public_index, descriptor_hash, capability_summary,
+                surface_mode, external_primary_url, external_url_verified_at,
                 registered_at, last_synced_at, created_at, updated_at, metadata
          FROM portals WHERE id = ?`,
         req.params.id,
@@ -668,22 +673,52 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.patch('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const parsed = portalPatchSchema.parse(req.body);
-      if (parsed.public_index !== undefined) {
+
+      // Integrity check before hitting the DB: switching to external
+      // requires a URL; managed may clear the URL.
+      if (parsed.surface_mode === 'external' && !parsed.external_primary_url) {
+        const current = await db.get<{ external_primary_url: string | null }>(
+          `SELECT external_primary_url FROM portals WHERE id = ?`, req.params.id,
+        );
+        if (!current?.external_primary_url) {
+          return res.status(400).json({ error: 'external_primary_url is required when switching to external mode' });
+        }
+      }
+
+      const surfaceChanged =
+        parsed.surface_mode !== undefined || parsed.external_primary_url !== undefined;
+
+      // Identity + surface changes that DON'T flip public_index: update the
+      // row in place, then rebuild the descriptor if surface changed so the
+      // signed envelope reflects the new surface block.
+      if (parsed.public_index === undefined && !surfaceChanged) {
+        const sets: string[] = ['updated_at = NOW()'];
+        const params: unknown[] = [];
+        if (parsed.display_title !== undefined) { sets.push('display_title = ?'); params.push(parsed.display_title); }
+        if (parsed.description !== undefined) { sets.push('description = ?'); params.push(parsed.description); }
+        if (params.length === 1) return res.status(400).json({ error: 'No updatable fields supplied' });
+        params.push(req.params.id);
+        await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
+      } else {
+        if (surfaceChanged) {
+          const sets: string[] = ['updated_at = NOW()'];
+          const params: unknown[] = [];
+          if (parsed.surface_mode !== undefined) {
+            sets.push('surface_mode = ?'); params.push(parsed.surface_mode);
+          }
+          if (parsed.external_primary_url !== undefined) {
+            sets.push('external_primary_url = ?'); params.push(parsed.external_primary_url);
+            sets.push('external_url_verified_at = NULL');
+          }
+          params.push(req.params.id);
+          await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
+        }
         const caps = await readCurrentCapabilities(db, req.params.id);
         await rebuildPortalDescriptor(db, req.params.id, caps, {
           displayTitle: parsed.display_title,
           description: parsed.description,
           publicIndex: parsed.public_index,
         });
-      } else {
-        // Identity-only change — no descriptor rebuild needed.
-        const sets: string[] = ['updated_at = NOW()'];
-        const params: unknown[] = [];
-        if (parsed.display_title !== undefined) { sets.push('display_title = ?'); params.push(parsed.display_title); }
-        if (parsed.description !== undefined) { sets.push('description = ?'); params.push(parsed.description); }
-        if (params.length === 0) return res.status(400).json({ error: 'No updatable fields supplied' });
-        params.push(req.params.id);
-        await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
       }
       res.status(204).end();
     } catch (err) {

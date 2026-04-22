@@ -33,6 +33,9 @@ interface PortalRow {
   display_title: string | null; description: string | null;
   contact_hash: string; public_key_hex: string; private_key_pem: string;
   public_index: boolean;
+  surface_mode: 'managed' | 'external';
+  external_primary_url: string | null;
+  external_url_verified_at: string | null;
 }
 
 interface DescriptorRow { descriptor: Record<string, unknown> | string }
@@ -49,7 +52,8 @@ export async function rebuildPortalDescriptor(
 ): Promise<{ descriptorHash: string; capabilitySummary: Record<string, unknown> }> {
   const portal = await db.get<PortalRow>(
     `SELECT id, name, namespace, category, display_title, description,
-            contact_hash, public_key_hex, private_key_pem, public_index
+            contact_hash, public_key_hex, private_key_pem, public_index,
+            surface_mode, external_primary_url, external_url_verified_at
      FROM portals WHERE id = ?`, portalId,
   );
   if (!portal) throw new Error(`Portal ${portalId} not found`);
@@ -79,6 +83,13 @@ export async function rebuildPortalDescriptor(
       category: portal.category as (typeof PORTAL_CATEGORIES)[number],
       contactHash: portal.contact_hash,
       publicKeyHex: portal.public_key_hex,
+      surface: portal.surface_mode === 'external' && portal.external_primary_url
+        ? {
+            mode: 'external',
+            url: portal.external_primary_url,
+            ...(portal.external_url_verified_at ? { verifiedAt: portal.external_url_verified_at } : {}),
+          }
+        : { mode: 'managed' },
     },
     identity: (existingDescriptor.identity as Record<string, unknown>) ?? {
       humanContact: { available: true, displayName: displayTitle, languages: ['en'] },

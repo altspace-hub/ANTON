@@ -31,6 +31,14 @@ export interface PortalFacts {
   category: (typeof PORTAL_CATEGORIES)[number];
   contactHash: string;
   publicKeyHex: string;
+  /** Optional surface block — only set when the portal points at an
+   *  externally-hosted HTML site. AAP endpoints stay on ANTON so the
+   *  trust chain (Ed25519 signature + transparency log) is preserved. */
+  surface?: {
+    mode: 'managed' | 'external';
+    url?: string;
+    verifiedAt?: string;
+  };
 }
 
 export interface CapabilityDeclaration {
@@ -108,6 +116,7 @@ export function buildDescriptor(input: BuilderInput, privateKeyPem: string): Bui
       category: input.portal.category,
       contactHash: input.portal.contactHash,
       publicKey: publicKeyHexToWire(input.portal.publicKeyHex),
+      ...(input.portal.surface ? { surface: input.portal.surface } : {}),
     },
     identity: input.identity,
     capabilities: input.capabilities.map(buildCapability),

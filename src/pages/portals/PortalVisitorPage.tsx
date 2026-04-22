@@ -9,12 +9,19 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Globe, Loader2, AlertCircle, CloudOff, ChevronLeft, MessageSquare, Send } from 'lucide-react';
+import { Globe, Loader2, AlertCircle, CloudOff, ChevronLeft, MessageSquare, Send, ExternalLink, ShieldCheck } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
 interface Descriptor {
   schemaVersion: string;
-  portal: { displayTitle: string; category: string; contactHash: string };
+  portal: {
+    displayTitle: string;
+    category: string;
+    contactHash: string;
+    /** Present when the portal's HTML surface lives externally. AAP
+     *  capability endpoints still resolve to ANTON regardless. */
+    surface?: { mode: 'managed' | 'external'; url?: string; verifiedAt?: string };
+  };
   capabilities: Array<{
     id: string; verb: string; title: string; description: string;
     aapEndpoint: string;
@@ -143,7 +150,36 @@ export default function PortalVisitorPage() {
               <div>{page.reason}</div>
             </div>
           )}
-          {page.kind === 'page' && (
+          {descriptor?.portal.surface?.mode === 'external' && descriptor.portal.surface.url && (
+            // External surface: the owner points ANTON at their self-hosted
+            // site. AAP capability endpoints continue to resolve to this
+            // ANTON instance (see the capabilities rail on the right), so
+            // the Ed25519 trust chain + transparency log are unchanged.
+            <div className="rounded-xl border border-adv-teal/40 bg-adv-card p-6 space-y-3">
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="h-5 w-5 text-adv-teal flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium">This portal's site lives externally.</div>
+                  <div className="text-adv-gray mt-1">
+                    Capabilities (order, pay, book, inquire, …) still invoke
+                    through ANTON and are signed by the portal's Ed25519 key.
+                  </div>
+                </div>
+              </div>
+              <a
+                href={descriptor.portal.surface.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-adv-teal text-adv-dark rounded text-sm font-medium"
+              >
+                <ExternalLink className="h-4 w-4" /> Open site
+              </a>
+              <div className="text-xs text-adv-gray break-all">
+                {descriptor.portal.surface.url}
+              </div>
+            </div>
+          )}
+          {descriptor?.portal.surface?.mode !== 'external' && page.kind === 'page' && (
             // Sandbox the owner-authored HTML in an iframe. The visitor of
             // portal X is NOT the owner of portal X — owner HTML can contain
             // arbitrary <script> that would otherwise execute in the
