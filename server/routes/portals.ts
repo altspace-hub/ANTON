@@ -640,6 +640,10 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       );
       res.json({ portals: rows });
     } catch (err) {
+      // Log the underlying error so a server-log tail reveals the true
+      // cause — safeError() strips details before they reach the client.
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[portals] GET /api/portals failed:', msg, err);
       res.status(500).json({ error: safeError(err) });
     }
   });
@@ -697,7 +701,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
         const params: unknown[] = [];
         if (parsed.display_title !== undefined) { sets.push('display_title = ?'); params.push(parsed.display_title); }
         if (parsed.description !== undefined) { sets.push('description = ?'); params.push(parsed.description); }
-        if (params.length === 1) return res.status(400).json({ error: 'No updatable fields supplied' });
+        if (params.length === 0) return res.status(400).json({ error: 'No updatable fields supplied' });
         params.push(req.params.id);
         await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
       } else {
