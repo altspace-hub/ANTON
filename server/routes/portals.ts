@@ -37,6 +37,7 @@ import { bundlePortal, importPortal } from '../services/portals/portal-bundler.j
 import { suggestPhase, suggestPhaseStream, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
 import { scanLan, listKnownNeighbors } from '../services/portals/portal-lan-discovery.js';
 import { rebuildPortalDescriptor, readCurrentCapabilities } from '../services/portals/portal-capabilities-editor.js';
+import { verifyAndPersist } from '../services/portals/external-url-verifier.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
@@ -720,9 +721,37 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
           publicIndex: parsed.public_index,
         });
       }
+      // Kick off a reachability check in the background so a slow
+      // external host can't stall the PATCH response. The timestamp
+      // will appear on the next GET.
+      if (parsed.external_primary_url || parsed.surface_mode === 'external') {
+        const portalId = String(req.params.id);
+        void verifyAndPersist(db, portalId).catch(() => undefined);
+      }
       res.status(204).end();
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Manual re-check of the external surface URL. Returns the verify
+  // result + the new external_url_verified_at so the UI can update
+  // without a second GET.
+  router.post('/portals/:id/verify-external-url', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const portalId = String(req.params.id);
+      const result = await verifyAndPersist(db, portalId);
+      if (!result) {
+        return res.status(400).json({ error: 'Portal is not in external surface mode' });
+      }
+      res.json({
+        ok: result.ok,
+        status: result.status,
+        reason: result.reason,
+        verifiedAt: result.ok ? result.checkedAt : null,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

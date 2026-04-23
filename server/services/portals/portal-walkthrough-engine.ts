@@ -151,7 +151,16 @@ const reviewSchema = z.object({
 const publishSchema = z.object({
   public_index: z.boolean().default(false),
   ready_to_register: z.literal(true),
-});
+  // Site-surface choice captured at creation time. Defaults to 'managed'
+  // so existing flows + LLM-driven runs keep working without a change.
+  // When 'external', external_primary_url is required — see the refine()
+  // below and the DB check constraint.
+  surface_mode: z.enum(['managed', 'external']).default('managed'),
+  external_primary_url: z.string().url().max(2000).optional(),
+}).refine(
+  (v) => v.surface_mode === 'managed' || !!v.external_primary_url,
+  { path: ['external_primary_url'], message: 'Required when surface_mode is external' },
+);
 
 export const PHASE_SCHEMAS: Record<PhaseId, z.ZodType> = {
   intent: intentSchema,
@@ -384,6 +393,9 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
           category: identity.category as (typeof PORTAL_CATEGORIES)[number],
           contactHash: kp.contactHash,
           publicKeyHex: kp.publicKeyHex,
+          surface: publish.surface_mode === 'external' && publish.external_primary_url
+            ? { mode: 'external', url: publish.external_primary_url }
+            : { mode: 'managed' },
         },
         identity: {
           humanContact: { available: true, displayName: identity.display_title, languages: ['en'] },
@@ -406,8 +418,9 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
         const inserted = await tx.get<{ id: string }>(
           `INSERT INTO portals (name, namespace, category, display_title, description,
                                 template, contact_hash, public_key_hex, private_key_pem,
-                                public_index, status, descriptor_hash, capability_summary, metadata)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+                                public_index, status, descriptor_hash, capability_summary, metadata,
+                                surface_mode, external_primary_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)
            RETURNING id`,
           identity.name,
           identity.namespace,
@@ -422,6 +435,8 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
           built.hash,
           JSON.stringify(built.capabilitySummary),
           JSON.stringify({ walkthroughSessionId: session.id, ownerId: session.ownerId }),
+          publish.surface_mode ?? 'managed',
+          publish.surface_mode === 'external' ? (publish.external_primary_url ?? null) : null,
         );
         if (!inserted) throw new Error('finalize: portal insert returned no id');
         const pid = inserted.id;
@@ -579,7 +594,7 @@ const PHASE_INSTRUCTIONS: Record<PhaseId, string> = {
   capabilities: `Decide which capability verbs the portal exposes. Use the 12-verb taxonomy (contact, inquire, request, order, pay, book, subscribe, join, query, publish, delegate, authenticate). Each capability needs id (slug), verb, title, description, aap_endpoint name. For commerce verbs, set payment_required: true.`,
   aesthetics: `Pick a palette and font family. Optional custom CSS for advanced users (capped at 20 KB).`,
   review: `Run a structured pre-publish review. Report approved boolean + flagged_issues array + optional reviewer_notes + quality_score (0-10). The Quality Ratchet wraps this to record the score against the apprentice progression.`,
-  publish: `Confirm public_index choice (default false) and ready_to_register: true. After this phase, the engine creates the local portal + caches the signed descriptor + leaves registry registration to the caller.`,
+  publish: `Confirm public_index choice (default false) and ready_to_register: true. Pick a surface_mode: 'managed' (default — ANTON hosts the HTML pages generated in earlier phases) or 'external' (owner is bringing their own self-hosted site; supply external_primary_url as an http(s) URL). AAP capability endpoints stay on ANTON in either mode, so the trust chain is preserved. After this phase, the engine creates the local portal + caches the signed descriptor + leaves registry registration to the caller.`,
 };
 
 // ── Row mapping ────────────────────────────────────────────────────────────
