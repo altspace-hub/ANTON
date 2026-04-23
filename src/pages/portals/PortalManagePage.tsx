@@ -1015,6 +1015,8 @@ function SurfaceEditor({
   const [mode, setMode] = useState<'managed' | 'external'>(portal.surface_mode);
   const [url, setUrl] = useState<string>(portal.external_primary_url ?? '');
   const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
   const dirty = mode !== portal.surface_mode || url !== (portal.external_primary_url ?? '');
 
   async function handleSave(): Promise<void> {
@@ -1023,6 +1025,29 @@ function SurfaceEditor({
     setSaving(true);
     try { await onSave(mode, mode === 'external' ? url.trim() : null); }
     finally { setSaving(false); }
+  }
+
+  async function handleReVerify(): Promise<void> {
+    if (verifying) return;
+    setVerifying(true);
+    setVerifyMsg(null);
+    try {
+      const res = await fetchWithAuth(`/api/portals/${portal.id}/verify-external-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j.ok) {
+        setVerifyMsg(`Reachable (HTTP ${j.status}) at ${new Date(j.verifiedAt).toLocaleString()}`);
+      } else {
+        setVerifyMsg(j.reason ?? `Unreachable${j.status ? ` (HTTP ${j.status})` : ''}`);
+      }
+    } catch (err) {
+      setVerifyMsg(err instanceof Error ? err.message : String(err));
+    } finally {
+      setVerifying(false);
+    }
   }
 
   return (
@@ -1058,6 +1083,23 @@ function SurfaceEditor({
             placeholder="https://your-site.example"
             className="mt-1 w-full bg-adv-dark border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-adv-teal"
           />
+          {portal.surface_mode === 'external' && !dirty && (
+            <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+              <div className="text-adv-gray">
+                {portal.external_url_verified_at
+                  ? <>Last reachable ✓ {new Date(portal.external_url_verified_at).toLocaleString()}</>
+                  : <>Not verified — the site has not responded to a recent check.</>}
+              </div>
+              <button
+                onClick={() => { void handleReVerify(); }}
+                disabled={verifying}
+                className="px-2 py-1 rounded border border-border text-adv-off-white hover:bg-white/5 disabled:opacity-50"
+              >{verifying ? 'Checking…' : 'Re-check'}</button>
+            </div>
+          )}
+          {verifyMsg && (
+            <div className="mt-2 text-xs text-adv-gray">{verifyMsg}</div>
+          )}
         </div>
       )}
       <div className="flex items-center justify-end gap-2">
