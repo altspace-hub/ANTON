@@ -45,6 +45,8 @@ import {
   Inbox,
   // Portals sub-nav
   Plus,
+  // Visitor Layer sidebar
+  Video as VideoIcon,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -352,7 +354,30 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   // Portals owns its own sidebar like Markets/Payments. Visitor pages
   // (/portals/p/*) intentionally fall through to the Work nav since the
   // visitor isn't doing portal admin — they're browsing someone else's site.
-  const isPortalsMode = pathname.startsWith('/portals') && !pathname.startsWith('/portals/p/');
+  // Portals ADMIN — the owner-facing surface. After Visitor Layer v0.8,
+  // /portals itself is the visitor home, so isPortalsMode only matches
+  // the admin routes: /portals/mine, /portals/build, /portals/discovery,
+  // /portals/inbox, /portals/:id/manage, /portals/walkthroughs/*.
+  const isPortalsMode =
+    pathname.startsWith('/portals/mine') ||
+    pathname.startsWith('/portals/build') ||
+    pathname.startsWith('/portals/discovery') ||
+    pathname.startsWith('/portals/inbox') ||
+    pathname.startsWith('/portals/walkthroughs') ||
+    /^\/portals\/[^/]+\/manage/.test(pathname);
+  // Visitor Layer v0.8 surfaces — /portals visitor home, /portals/p/*
+  // (visiting a specific portal), /jobs, /friends, /video, /marketplace
+  // (visitor side). These are consumer-facing and should not render the
+  // Work nav.
+  const isVisitorMode =
+    !isPortalsMode && (
+      pathname === '/portals' ||
+      pathname.startsWith('/portals/p/') ||
+      pathname.startsWith('/jobs') ||
+      pathname.startsWith('/friends') ||
+      pathname.startsWith('/video') ||
+      pathname.startsWith('/marketplace')
+    );
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
   const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -1271,8 +1296,79 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
+        {/* ── Visitor Layer sidebar — consumer-facing routes: Portals
+               visitor home, Jobs, Friends, Video, Marketplace. Minimal
+               nav, no Work favorites / interactive modes stack. */}
+        {isVisitorMode && (
+          <>
+            {!sidebarCollapsed ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Visitor</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            <NavLink to="/portals" end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Home' : undefined}>
+              <Globe className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Home'}
+            </NavLink>
+            <NavLink to="/jobs"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Jobs' : undefined}>
+              <Briefcase className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Jobs'}
+            </NavLink>
+            <NavLink to="/friends"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Friends' : undefined}>
+              <Users className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Friends'}
+            </NavLink>
+            <NavLink to="/video"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Video' : undefined}>
+              <VideoIcon className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Video'}
+            </NavLink>
+            <NavLink to="/marketplace"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Marketplace' : undefined}>
+              <ShoppingBag className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Marketplace'}
+            </NavLink>
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/marketplace/library"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'My library' : undefined}>
+              <BookOpen className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'My library'}
+            </NavLink>
+            <NavLink to="/portals/mine"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'My portals' : undefined}>
+              <Settings className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'My portals'}
+            </NavLink>
+          </>
+        )}
+
         {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets/Pillar routes) */}
-        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && !isProcureMode && !isCivicMode && !isGrowMode && !isPortalsMode && (<>
+        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && !isProcureMode && !isCivicMode && !isGrowMode && !isPortalsMode && !isVisitorMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
