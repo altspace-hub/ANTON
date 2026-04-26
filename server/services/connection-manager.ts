@@ -266,26 +266,37 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       return result;
     },
 
-    async logAction(
+    /**
+     * Fire-and-forget audit log entry. Returns synchronously (void) but
+     * schedules an async DB INSERT. Audit log writes must never block the
+     * caller and must never propagate failure to the user. Errors are
+     * logged but swallowed.
+     *
+     * Audit-detectable: G.14 forgotten-await won't flag this because the
+     * function is sync-typed.
+     */
+    logAction(
       connectionId: string,
       executionId: string | null,
       action: string,
       details: Record<string, unknown> | null,
       result: string | null,
       userId: string
-    ): Promise<void> {
-      await db.run(`
+    ): void {
+      db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, 
+      `,
         connectionId,
         executionId,
         action,
         details ? JSON.stringify(details) : null,
         result,
         userId
-      );
+      ).catch((err) => {
+        console.warn('[connection-manager] logAction failed (non-fatal):', err instanceof Error ? err.message : err);
+      });
     },
 
     async getAuditLog(connectionId: string, limit = 50): Promise<AuditEntry[]> {

@@ -185,7 +185,9 @@ export async function getPersona(id: string): Promise<PersonaConfig | undefined>
 
 export async function resolvePersonas(ids: string[]): Promise<PersonaConfig[]> {
   if (!_index) await loadAll();
-  return ids.map((id) => _index!.get(id)).filter(Boolean) as PersonaConfig[];
+  return ids
+    .map((id) => _index!.get(id))
+    .filter((p): p is PersonaConfig => p !== undefined);
 }
 
 /**

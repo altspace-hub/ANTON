@@ -118,23 +118,55 @@ export function createAtlasPackLoader(db: DatabaseAdapter) {
       return { inserted, updated, errors };
     }
 
-    // Parallel reads — packs are independent. Errors stay isolated per pack.
-    const results = await Promise.allSettled(dirs.map(async (dirName) => {
+    // Two-pass insert to satisfy the parent_pack_id FK regardless of file-system
+    // order. Pass 1: upsert all packs with parent_pack_id NULLed. Pass 2: update
+    // each pack's parent_pack_id from its manifest (now that every parent row
+    // exists). Replaces the previous Promise.allSettled which raced on the FK.
+    type Loaded = { dirName: string; manifest: IndustryPackManifest; packDir: string };
+    const loaded: Loaded[] = [];
+
+    // Read every pack manifest first (parallel — no DB writes here).
+    const reads = await Promise.allSettled(dirs.map(async (dirName) => {
       const packDir = path.join(BUILTIN_PACKS_ROOT, dirName);
       const content = await readPackDir(packDir);
       contentCache.set(content.manifest.id, content);
-      const result = await upsertPackRow(content.manifest, packDir);
-      return { dirName, result };
+      return { dirName, manifest: content.manifest, packDir } satisfies Loaded;
     }));
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
+    for (let i = 0; i < reads.length; i++) {
+      const r = reads[i];
       if (r.status === 'fulfilled') {
-        if (r.value.result === 'inserted') inserted++;
-        else if (r.value.result === 'updated') updated++;
+        loaded.push(r.value);
       } else {
         errors.push(`${dirs[i]}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
       }
     }
+
+    // Pass 1: upsert each pack with parent_pack_id forced to NULL — bypasses
+    // the FK ordering problem. Captures inserted/updated counts.
+    for (const { manifest, packDir } of loaded) {
+      try {
+        const parentless: IndustryPackManifest = { ...manifest, parent_pack_id: undefined };
+        const result = await upsertPackRow(parentless, packDir);
+        if (result === 'inserted') inserted++;
+        else if (result === 'updated') updated++;
+      } catch (err) {
+        errors.push(`${manifest.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // Pass 2: now every parent row exists, write parent_pack_id where set.
+    for (const { manifest } of loaded) {
+      if (!manifest.parent_pack_id) continue;
+      try {
+        await db.run(
+          `UPDATE atlas_industry_packs SET parent_pack_id = ?, updated_at = NOW() WHERE id = ?`,
+          manifest.parent_pack_id, manifest.id,
+        );
+      } catch (err) {
+        errors.push(`${manifest.id} parent_pack_id link: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     return { inserted, updated, errors };
   }
 

@@ -10,10 +10,45 @@ const { Pool } = pg;
 // ── SQL Translation Pipeline ─────────────────────────────────────────────────
 
 /**
+ * Mask single-quoted string literals before applying token translations, then
+ * restore them afterwards. Prevents naive `\bREAL\b → DOUBLE PRECISION` (and
+ * every other word-boundary swap below) from corrupting string contents like
+ * "real-world" or "datetime contexts" inside seed INSERTs or UPDATE values.
+ *
+ * Handles SQL's escaped-quote convention (`''` inside a string).
+ *
+ * Limitation: dollar-quoted blocks ($$...$$) are NOT masked — they're handled
+ * by their own DO/EXECUTE layer in PG and rarely contain SQLite-specific
+ * tokens. If you add a translation that could fire inside a $$-block, mask
+ * those too.
+ */
+function maskAndRestoreStrings<T>(sql: string, fn: (masked: string) => T): T {
+  const literals: string[] = [];
+  // Match a single-quoted string with SQL-escaped quotes ('' inside).
+  const masked = sql.replace(/'(?:[^']|'')*'/g, (m) => {
+    literals.push(m);
+    return `STR${literals.length - 1}`;
+  });
+  const out = fn(masked);
+  if (typeof out === 'string') {
+    return out.replace(/STR(\d+)/g, (_m, i) => literals[Number(i)]) as unknown as T;
+  }
+  return out;
+}
+
+/**
  * Stage 1: Translate SQLite-specific SQL syntax to PostgreSQL equivalents.
  * Handles the ~90% of queries that follow predictable patterns.
+ *
+ * String literals are masked first so no translation can corrupt their
+ * contents (caught a real bug where the word "real" inside a curriculum
+ * seed string was being rewritten to "DOUBLE PRECISION").
  */
 export function translateSql(sql: string): string {
+  return maskAndRestoreStrings(sql, (masked) => translateSqlImpl(masked));
+}
+
+function translateSqlImpl(sql: string): string {
   let out = sql;
 
   // datetime('now') or datetime("now") → NOW()

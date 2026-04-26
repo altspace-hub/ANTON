@@ -176,7 +176,11 @@ export function serializeEmbedding(embedding: number[]): string {
  */
 export function deserializeEmbedding(embeddingJson: string): number[] {
   try {
-    return JSON.parse(embeddingJson) as number[];
+    const parsed: unknown = JSON.parse(embeddingJson);
+    if (Array.isArray(parsed) && parsed.every((n) => typeof n === 'number')) {
+      return parsed;
+    }
+    throw new Error('parsed value is not number[]');
   } catch (error) {
     console.error('[embeddings] Failed to deserialize embedding:', error);
     return new Array(EMBEDDING_DIMENSIONS).fill(0);

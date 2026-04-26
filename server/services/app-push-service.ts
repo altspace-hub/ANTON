@@ -1,19 +1,38 @@
 // ── App Push Service — Companion App push notifications per spec §8.7 ───
 //
 // Three transports:
-//   • APNs        — iOS native build
-//   • FCM         — Android native build (and alternate iOS path)
-//   • web-push    — PWA fallback (VAPID-signed)
+//   • APNs        — iOS native build       (TODO — wire @parse/node-apn)
+//   • FCM         — Android native build   (TODO — wire firebase-admin)
+//   • web-push    — PWA fallback           (real, via `web-push` package)
 //
 // End-to-end privacy: payload to the platform NEVER carries confidential
 // content — only an opaque event id + severity + a localised title.
 // The app fetches details via the authenticated channel.
 //
-// Real APNs / FCM dispatch lives behind feature flags (APP_GATEWAY_PUSH=true)
-// + provider keys (APNS_KEY, FCM_KEY). Without those, dispatch is a no-op
-// and only logs the intent — useful for development.
+// Dispatch is gated by APP_GATEWAY_PUSH=true. Within enabled mode each
+// platform additionally requires its provider keys; if a platform is
+// unconfigured, its tokens fail with a clear "not configured" error and
+// the dispatch continues for the other platforms.
 
+import webpush from 'web-push';
 import type { DatabaseAdapter } from '../db/database.js';
+
+// ── VAPID one-time setup ────────────────────────────────────────────────
+// Configures web-push at module-load when both VAPID keys are present.
+// Without VAPID keys, web-push dispatch will throw a clear error.
+let webpushReady = false;
+if (process.env.WEBPUSH_VAPID_PUBLIC_KEY && process.env.WEBPUSH_VAPID_PRIVATE_KEY) {
+  try {
+    webpush.setVapidDetails(
+      process.env.WEBPUSH_VAPID_SUBJECT ?? 'mailto:admin@anton.local',
+      process.env.WEBPUSH_VAPID_PUBLIC_KEY,
+      process.env.WEBPUSH_VAPID_PRIVATE_KEY,
+    );
+    webpushReady = true;
+  } catch (err) {
+    console.warn('[push] VAPID setup failed:', err instanceof Error ? err.message : err);
+  }
+}
 
 export type PushPlatform = 'apns' | 'fcm' | 'web-push';
 
@@ -171,27 +190,40 @@ export function createAppPushService(db: DatabaseAdapter) {
     if (!process.env.APNS_KEY_ID || !process.env.APNS_TEAM_ID || !process.env.APNS_BUNDLE_ID) {
       throw new Error('APNs not configured (set APNS_KEY_ID / APNS_TEAM_ID / APNS_BUNDLE_ID)');
     }
-    // Real implementation would use a JWT-signed POST to api.push.apple.com
+    // TODO: wire @parse/node-apn or apn2 — JWT-signed POST to api.push.apple.com
     // with aps payload { alert: { title }, "thread-id": event_id, sound: ..., mutable-content: 1 }.
-    // For now we throw to make the missing wiring explicit at call-time.
-    throw new Error('APNs dispatch stub — wire @parse/node-apn or apn2 here');
+    throw new Error('APNs dispatch not implemented — wire @parse/node-apn');
   }
 
   async function sendViaFcm(_token: string, _payload: PushPayload, _topic: string | null): Promise<void> {
     if (!process.env.FCM_SERVICE_ACCOUNT_JSON && !process.env.FCM_SERVER_KEY) {
       throw new Error('FCM not configured (set FCM_SERVICE_ACCOUNT_JSON or FCM_SERVER_KEY)');
     }
-    // Real: POST to fcm.googleapis.com/v1/projects/<id>/messages:send
-    throw new Error('FCM dispatch stub — wire firebase-admin here');
+    // TODO: wire firebase-admin — POST to fcm.googleapis.com/v1/projects/<id>/messages:send
+    throw new Error('FCM dispatch not implemented — wire firebase-admin');
   }
 
-  async function sendViaWebPush(endpoint: string, _p256dh: string, _auth: string, payload: PushPayload): Promise<void> {
-    if (!process.env.WEBPUSH_VAPID_PUBLIC_KEY || !process.env.WEBPUSH_VAPID_PRIVATE_KEY) {
+  async function sendViaWebPush(endpoint: string, p256dh: string, auth: string, payload: PushPayload): Promise<void> {
+    if (!webpushReady) {
       throw new Error('Web Push not configured (set WEBPUSH_VAPID_PUBLIC_KEY / WEBPUSH_VAPID_PRIVATE_KEY)');
     }
-    // Real: use the `web-push` package
-    void endpoint; void payload;
-    throw new Error('Web Push dispatch stub — wire web-push here');
+    // Privacy-preserving body — no confidential content per spec §8.7.
+    // The client uses event_id to fetch full details over the authenticated channel.
+    const body = JSON.stringify({
+      title: payload.title,
+      event_id: payload.event_id,
+      severity: payload.severity,
+      category: payload.category,
+      deep_link: payload.deep_link,
+    });
+    await webpush.sendNotification(
+      { endpoint, keys: { p256dh, auth } },
+      body,
+      {
+        TTL: payload.severity === 'critical' ? 86400 : 3600,
+        urgency: payload.severity === 'critical' || payload.severity === 'high' ? 'high' : 'normal',
+      },
+    );
   }
 
   return { registerToken, unregisterToken, listTokensForUser, dispatch };

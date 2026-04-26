@@ -4,6 +4,11 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createKnowledgeGraph } from '../services/knowledge-graph.js';
 import { createGraphAnalytics } from '../services/graph-analytics.js';
 
+/** Narrow `unknown` thrown values to a user-safe error message. */
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   const router = express.Router();
   const graphService = await createKnowledgeGraph(db);
@@ -15,8 +20,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const { minAtomCount, sinceDays } = req.body;
       const result = await graphService.buildGraph({ minAtomCount, sinceDays });
       res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -26,8 +31,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const limit = parseInt(req.query.limit as string) || 20;
       const entities = await graphService.getTopEntities(limit);
       res.json(entities);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -55,8 +60,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       `, type, id);
 
       res.json({ node, neighbors, atoms });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -87,8 +92,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         total: closure.length,
         nodes: closure,
       });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -100,8 +105,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
 
       const subgraph = await graphService.getEntitySubgraph(type, id, maxDepth);
       res.json(subgraph);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -117,8 +122,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
 
       await graphService.mergeEntities({ entityType, fromId, intoId, reason, mergedBy });
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -132,8 +137,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         LIMIT ?
       `, limit);
       res.json(log);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -144,8 +149,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
     try {
       const stats = analytics.getGraphStats();
       res.json(stats);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -155,8 +160,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const limit = parseInt(req.query.limit as string) || 20;
       const results = analytics.calculateDegreeCentrality(limit);
       res.json(results);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -166,8 +171,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const limit = parseInt(req.query.limit as string) || 20;
       const results = analytics.calculateBetweennessCentrality(limit);
       res.json(results);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -178,8 +183,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const iterations = parseInt(req.query.iterations as string) || 20;
       const results = analytics.calculatePageRank(iterations, 0.85, limit);
       res.json(results);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -197,8 +202,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       }));
 
       res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -223,8 +228,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       }
 
       res.json({ path, length: path.length - 1 });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -322,9 +327,9 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
           relationship_count: relationships.length,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[knowledge-graph/export]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 

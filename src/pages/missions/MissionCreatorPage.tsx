@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Target, ChevronLeft, AlertCircle, Sparkles } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
@@ -29,8 +29,9 @@ const AUTONOMY_OPTIONS: Array<{ id: AutonomyLevel; label: string; hint: string }
 
 export default function MissionCreatorPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [templates, setTemplates] = useState<MissionTemplate[]>([]);
-  const [templateId, setTemplateId] = useState<string>('');
+  const [templateId, setTemplateId] = useState<string>(() => searchParams.get('template') ?? '');
   const [title, setTitle] = useState('');
   const [objective, setObjective] = useState('');
   const [successCriteria, setSuccessCriteria] = useState('');

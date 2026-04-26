@@ -17,6 +17,8 @@ import {
   CheckCircle,
   Loader2,
   Search,
+  Building2,
+  BarChart3,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
@@ -161,6 +163,40 @@ export default function ProcurePage() {
             <div className="text-2xl font-bold text-adv-green">{completedCycles}</div>
             <div className="text-xs text-adv-gray">Completed</div>
           </div>
+        </div>
+
+        {/* Catalogue & reference tiles */}
+        <div className="grid grid-cols-3 gap-4">
+          <button
+            onClick={() => navigate('/procure/vendors')}
+            className="flex items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal/40 hover:bg-adv-card/80"
+          >
+            <Building2 className="h-5 w-5 text-adv-teal shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-adv-off-white">Vendor directory</div>
+              <div className="text-xs text-adv-gray">Searchable catalogue with trust scores</div>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate('/procure/benchmarks')}
+            className="flex items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal/40 hover:bg-adv-card/80"
+          >
+            <BarChart3 className="h-5 w-5 text-adv-teal shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-adv-off-white">Benchmarks</div>
+              <div className="text-xs text-adv-gray">Validate quotes against the market</div>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate('/procure/rfq-templates')}
+            className="flex items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal/40 hover:bg-adv-card/80"
+          >
+            <FileText className="h-5 w-5 text-adv-teal shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-adv-off-white">RFQ templates</div>
+              <div className="text-xs text-adv-gray">Per-category RFQ scaffolds</div>
+            </div>
+          </button>
         </div>
 
         {/* Search */}

@@ -3,6 +3,10 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createPatternDetection } from '../services/pattern-detection.js';
 import { createPatternScheduler } from '../services/pattern-scheduler.js';
 
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   const router = Router();
   const patternDetection = await createPatternDetection(db);
@@ -17,11 +21,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
         ...result,
         detectorState: patternDetection.getDetectorState(),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-detection] Error running detectors:', error);
       res.status(500).json({
         success: false,
-        error: error.message || 'Failed to run pattern detectors',
+        error: errMsg(error) || 'Failed to run pattern detectors',
       });
     }
   });
@@ -45,11 +49,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
         detectorState,
         count: patterns.length,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-detection] Error fetching patterns:', error);
       res.status(500).json({
         success: false,
-        error: error.message || 'Failed to fetch patterns',
+        error: errMsg(error) || 'Failed to fetch patterns',
       });
     }
   });
@@ -81,11 +85,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
         success: true,
         message: 'Pattern status updated successfully',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-detection] Error updating pattern status:', error);
       res.status(500).json({
         success: false,
-        error: error.message || 'Failed to update pattern status',
+        error: errMsg(error) || 'Failed to update pattern status',
       });
     }
   });
@@ -104,11 +108,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
           enabled: 1,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-detection] Error fetching detector state:', error);
       res.status(500).json({
         success: false,
-        error: error.message || 'Failed to fetch detector state',
+        error: errMsg(error) || 'Failed to fetch detector state',
       });
     }
   });
@@ -148,11 +152,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
         patternsDetected: patterns.length,
         patterns,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[pattern-detection] Error running ${req.params.type} detector:`, error);
       res.status(500).json({
         success: false,
-        error: error.message || 'Failed to run detector',
+        error: errMsg(error) || 'Failed to run detector',
       });
     }
   });
@@ -164,9 +168,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
     try {
       const status = await scheduler.getStatus();
       res.json({ success: true, ...status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error getting status:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 
@@ -176,9 +180,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
       await scheduler.start();
       const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler started', ...status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error starting scheduler:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 
@@ -188,9 +192,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
       await scheduler.stop();
       const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler stopped', ...status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error stopping scheduler:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 
@@ -201,9 +205,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
       await scheduler.updateConfig({ enabled, cronExpression, detectorTypes });
       const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler config updated', ...status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error updating config:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 
@@ -212,9 +216,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
     try {
       const result = await scheduler.runManual();
       res.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error running manual detection:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 
@@ -224,9 +228,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const runs = await scheduler.getRecentRuns(limit);
       res.json({ success: true, runs, count: runs.length });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[pattern-scheduler] Error getting history:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: errMsg(error) });
     }
   });
 

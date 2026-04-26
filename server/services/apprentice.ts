@@ -1,5 +1,21 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
+export type ApprenticeStage = 'observer' | 'guided' | 'supervised' | 'autonomous';
+
+export interface ApprenticeProfile {
+  id: string;
+  user_id: string;
+  module_id: string;
+  area_id: string | null;
+  stage: ApprenticeStage;
+  sessions_completed: number;
+  quality_avg: number | null;
+  last_session: string;
+  promoted_to_guided: string | null;
+  promoted_to_supervised: string | null;
+  promoted_to_autonomous: string | null;
+}
+
 export const STAGE_THRESHOLDS = {
   guided: { sessions: 3, qualityAvg: 0 },       // After 3 sessions: guided
   supervised: { sessions: 8, qualityAvg: 7.0 },  // After 8 sessions + quality 7+: supervised
@@ -16,16 +32,18 @@ export const STAGE_LABELS = {
 
 export async function createApprentice(db: DatabaseAdapter) {
 
-  async function getProfile(userId: string, moduleId: string) {
-    return await db.get(
-      'SELECT * FROM apprentice_profiles WHERE user_id = ? AND module_id = ?'
-    , userId, moduleId) as any ?? null;
+  async function getProfile(userId: string, moduleId: string): Promise<ApprenticeProfile | null> {
+    return (await db.get<ApprenticeProfile>(
+      'SELECT * FROM apprentice_profiles WHERE user_id = ? AND module_id = ?',
+      userId, moduleId,
+    )) ?? null;
   }
 
-  async function getAllProfiles(userId: string) {
-    return await db.all(
-      'SELECT * FROM apprentice_profiles WHERE user_id = ? ORDER BY last_session DESC'
-    , userId) as any[];
+  async function getAllProfiles(userId: string): Promise<ApprenticeProfile[]> {
+    return await db.all<ApprenticeProfile>(
+      'SELECT * FROM apprentice_profiles WHERE user_id = ? ORDER BY last_session DESC',
+      userId,
+    );
   }
 
   async function recordSession(params: {
@@ -98,8 +116,11 @@ export async function createApprentice(db: DatabaseAdapter) {
     const profile = await getProfile(userId, moduleId);
     if (!profile) return null;
 
+    // Observer is the implicit starting stage; no schema column tracks when the
+    // user entered it (the first INSERT into apprentice_profiles happens after
+    // the first session, by which time they're already eligible to advance).
     const timeline: Array<{ stage: string; promoted_at: string | null }> = [
-      { stage: 'observer', promoted_at: profile.created_at ?? null },
+      { stage: 'observer', promoted_at: null },
     ];
     if (profile.promoted_to_guided) timeline.push({ stage: 'guided', promoted_at: profile.promoted_to_guided });
     if (profile.promoted_to_supervised) timeline.push({ stage: 'supervised', promoted_at: profile.promoted_to_supervised });

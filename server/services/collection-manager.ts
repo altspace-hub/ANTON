@@ -67,14 +67,14 @@ export async function createCollection(db: DatabaseAdapter, collection: Omit<Kno
  * List all collections
  */
 export async function listCollections(db: DatabaseAdapter): Promise<KnowledgeCollection[]> {
-  return await db.all('SELECT * FROM knowledge_collections ORDER BY created_at DESC') as KnowledgeCollection[];
+  return await db.all<KnowledgeCollection>('SELECT * FROM knowledge_collections ORDER BY created_at DESC');
 }
 
 /**
  * Get collection by ID
  */
 export async function getCollection(db: DatabaseAdapter, id: string): Promise<KnowledgeCollection | null> {
-  return await db.get('SELECT * FROM knowledge_collections WHERE id = ?', id) as KnowledgeCollection | null;
+  return (await db.get<KnowledgeCollection>('SELECT * FROM knowledge_collections WHERE id = ?', id)) ?? null;
 }
 
 /**
@@ -181,7 +181,7 @@ export async function updateRAGDocument(db: DatabaseAdapter, id: string, updates
  * Get RAG documents for a collection
  */
 export async function getCollectionDocuments(db: DatabaseAdapter, collectionId: string): Promise<RAGDocument[]> {
-  return await db.all('SELECT * FROM rag_documents WHERE collection_id = ? ORDER BY uploaded_at DESC', collectionId) as RAGDocument[];
+  return await db.all<RAGDocument>('SELECT * FROM rag_documents WHERE collection_id = ? ORDER BY uploaded_at DESC', collectionId);
 }
 
 /**
@@ -209,7 +209,7 @@ export async function createRAGChunk(db: DatabaseAdapter, chunk: Omit<RAGChunk, 
  * Get chunks for a document
  */
 export async function getDocumentChunks(db: DatabaseAdapter, documentId: string): Promise<RAGChunk[]> {
-  return await db.all('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC', documentId) as RAGChunk[];
+  return await db.all<RAGChunk>('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC', documentId);
 }
 
 /**

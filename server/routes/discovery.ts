@@ -5,6 +5,11 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { createDiscoveryEngine } from '../services/discovery-engine.js';
 import type { DiscoveryTier } from '../services/discovery-engine.js';
 
+/** Narrow `unknown` thrown values to a user-safe error message. */
+function errMsg(err: unknown): string {
+  return err instanceof Error ? errMsg(err) : String(err);
+}
+
 export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
   const engine = await createDiscoveryEngine(db, anthropic);
@@ -20,9 +25,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       const userId = (req as any).user?.id || null;
       const session = await engine.createSession(tier as DiscoveryTier, userId);
       res.json({ id: session.id, state: session.state });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Create session error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -32,8 +37,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       const userId = (req as any).user?.id || null;
       const sessions = await engine.listSessions(userId);
       res.json(sessions);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -46,8 +51,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         return;
       }
       res.json(session);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -64,8 +69,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         await engine.updateSessionState(req.params.id, state);
       }
       res.json({ ok: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -79,8 +84,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       }
       await engine.updateSessionStatus(req.params.id, status as any);
       res.json({ ok: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -89,8 +94,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
     try {
       await engine.deleteSession(req.params.id);
       res.json({ ok: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -109,9 +114,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         state: result.state,
         phaseChanged: result.phaseChanged,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Respond error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -120,9 +125,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
     try {
       const insights = await engine.generateInsights(req.params.id);
       res.json(insights);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Insights error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -131,9 +136,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
     try {
       const output = await engine.generateOutput(req.params.id);
       res.json(output);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Generate error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -146,8 +151,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         return;
       }
       res.json(output);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -161,8 +166,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         VALUES (?, ?, ?, ?, 'pending')
       `, id, req.params.id, type || '30_day', scheduledDate || null);
       res.json({ id });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -177,8 +182,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         ORDER BY f.scheduled_date ASC
       `);
       res.json(rows);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -203,8 +208,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       values.push(req.params.id);
       await db.run(`UPDATE discovery_followups SET ${updates.join(', ')} WHERE id = ?`, ...values);
       res.json({ ok: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -262,9 +267,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         }
         return;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Export error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -295,9 +300,9 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         const firstAssistant = session.state.conversationHistory.find((m: any) => m.role === 'assistant');
         res.json({ response: firstAssistant?.content || '', state: session.state });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[discovery] Start error:', err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -374,8 +379,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         },
       ];
       res.json(builtInPacks);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -399,8 +404,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       }
 
       res.json({ id: packId, ...packMeta[packId], status: 'active' });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -434,8 +439,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       await db.run('UPDATE discovery_sessions SET tier = ? WHERE id = ?', newTier, req.params.id);
 
       res.json({ ok: true, tier: newTier });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 
@@ -464,8 +469,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
       await engine.updateSessionState(req.params.id, updatedState);
 
       res.json({ ok: true, activePack: packId });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+      res.status(500).json({ error: errMsg(err) });
     }
   });
 

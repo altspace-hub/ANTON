@@ -336,7 +336,8 @@ VALUES
      "What library are you using — WebServer, AsyncWebServer, ESPAsyncWebServer fork, or something else?"
    ]
  }'::jsonb,
- '1.0', '2024-07-08', '2026-04-18', 'anton-hardware-team', TRUE, TRUE, 0);
+ '1.0', '2024-07-08', '2026-04-18', 'anton-hardware-team', TRUE, TRUE, 0)
+ON CONFLICT (case_id) DO NOTHING;
 
 -- ── Optional: a few cross-references between related cases ─────────────
 INSERT INTO diagnostic_case_cross_references
@@ -345,4 +346,5 @@ VALUES
   ('esp32-adc2-wifi-conflict',          'esp32-brownout-bad-usb-power',          'similar-symptoms'),
   ('esp32-brownout-bad-usb-power',      'esp32-ota-failure-boot-loop',           'shared-root-cause'),
   ('esp32-counterfeit-or-misidentified-module', 'esp32-psram-access-crash',      'shared-root-cause'),
-  ('esp32-web-server-memory-exhaustion', 'esp32-psram-access-crash',             'similar-symptoms');
+  ('esp32-web-server-memory-exhaustion', 'esp32-psram-access-crash',             'similar-symptoms')
+ON CONFLICT DO NOTHING;

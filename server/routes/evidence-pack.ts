@@ -148,7 +148,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
                 regulatory_relevance, redaction_status, redaction_reason
          FROM evidence_pack_items
          WHERE pack_id = ?
-         ORDER BY item_order ASC`,
+         ORDER BY item_order ASC LIMIT 1000`,
         req.params.id,
       );
       res.json({ pack, items });
@@ -372,7 +372,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
                 revoked_at, revoked_reason, allow_download, watermark_text,
                 (password_hash IS NOT NULL) AS password_required
          FROM evidence_pack_shares WHERE pack_id = ?
-         ORDER BY created_at DESC`,
+         ORDER BY created_at DESC LIMIT 200`,
         req.params.id,
       );
       res.json({ shares: rows });
@@ -607,7 +607,7 @@ export function createSharedPackRoutes(db: DatabaseAdapter): Router {
       `SELECT item_type, item_id, item_hash, item_summary, item_order,
               regulatory_relevance
        FROM evidence_pack_items WHERE pack_id = ?
-       ORDER BY item_order ASC`, r.pack.id,
+       ORDER BY item_order ASC LIMIT 1000`, r.pack.id,
     );
     const pack = await db.get(
       `SELECT id, title, purpose, scope_type, scope_label, status,

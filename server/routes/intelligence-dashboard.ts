@@ -8,6 +8,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
+/** Narrow `unknown` thrown values to a user-safe error message. */
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   const router = Router();
   const insights = await createInsightsGenerator(db, anthropic);
@@ -24,9 +29,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         topEntities: await db.all('SELECT * FROM entity_nodes ORDER BY interaction_count DESC LIMIT 10'),
       };
       res.json(stats);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/summary]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -44,9 +49,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         ORDER BY date ASC
       `, since);
       res.json(results);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/temporal/atoms-per-day]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -63,9 +68,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         ORDER BY week ASC
       `, since);
       res.json(results);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/temporal/patterns-per-week]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -83,9 +88,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         ORDER BY week ASC
       `, since);
       res.json(results);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/temporal/entity-activity]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -105,9 +110,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         ORDER BY week ASC
       `, since);
       res.json(results);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/temporal/quality-trend]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -127,9 +132,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       });
 
       res.json({ insights: generatedInsights });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/insights]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -139,9 +144,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const timeRange = (req.query.timeRange as string) || 'week';
       const distribution = insights.getAtomDistribution({ timeRange: timeRange as any });
       res.json(distribution);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/distribution]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -151,9 +156,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const topEntities = insights.getTopEntities(limit);
       res.json(topEntities);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/top-entities]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -163,9 +168,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
       const trend = insights.getSentimentTrend(days);
       res.json(trend);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/sentiment-trend]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 
@@ -225,9 +230,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
         res.setHeader('Content-Disposition', `attachment; filename="atoms-${Date.now()}.json"`);
         res.json({ atoms, exported_at: new Date().toISOString(), count: atoms.length });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[intelligence/export]', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: errMsg(error) });
     }
   });
 

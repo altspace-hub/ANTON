@@ -3,6 +3,40 @@ import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
 import { hybridSearch } from './hybrid-search.js';
 import { createHkpService } from './hkp-service.js';
 
+/**
+ * SEVEN-LAYER PROMPT STRUCTURE
+ * ────────────────────────────
+ * ANTON's system prompt is composed in seven KINDS of context. Sub-layers
+ * extend Layers 2 and 4 — twelve assembly points in total but seven
+ * conceptual layers. Decision: keep the "seven-layer" name externally,
+ * document sub-layers internally (per ANTON_Improvement_and_Investigation_Brief
+ * §D.4).
+ *
+ *   Layer 1 — System Foundation     (this file: CREATIVITY_INSTRUCTIONS,
+ *                                    PLAN_FIRST_INSTRUCTION, getStructureReferenceInstruction;
+ *                                    composed inline by routes/claude.ts)
+ *   Layer 2 — Area Context          (server/areas/{area}/area-context.md;
+ *                                    composed inline by routes/claude.ts)
+ *     Layer 2a — Org context        → buildOrgContextLayer (L259)
+ *     Layer 2b — Knowledge pack     → buildKnowledgePackLayer (L340)
+ *     Layer 2c — Roaring entity     → comment marker (L554) — see
+ *                                     /docs/marketing/roaring-integration.md
+ *     Layer 2d — Dow Jones screen   → comment marker (L558) — see
+ *                                     /docs/marketing/dow-jones-integration.md
+ *   Layer 3 — Module Expertise      (server/areas/{area}/modules/{module}/system-prompt.md;
+ *                                    composed inline by routes/claude.ts)
+ *   Layer 4 — Persona (optional)    → getExpertRoleInstruction (L155)
+ *     Layer 4a — Resume context     → buildResumeContextLayer (L299)
+ *   Layer 5 — Skills (optional)     (custom_modules + skill mixins; composed
+ *                                    inline by routes/claude.ts)
+ *   Layer 6 — Knowledge Sources     → resolveKnowledgeSources in knowledge-resolver.ts
+ *                                     + buildAtomLayer (L382) + buildHardwareHkpLayer (L582)
+ *   Layer 7 — Transparency          (thinking-level config + reasoning-trail
+ *                                    emission flags; composed inline by routes/claude.ts)
+ *
+ * For the visual map see /docs/architecture/11-seven-layer-prompt-builder.md.
+ */
+
 type CreativityLevel = 'strict' | 'balanced' | 'creative';
 
 const CREATIVITY_INSTRUCTIONS: Record<CreativityLevel, string> = {

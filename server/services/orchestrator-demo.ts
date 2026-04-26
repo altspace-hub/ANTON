@@ -157,9 +157,13 @@ export interface DemoState {
 /** Return the demo state from the DB config field */
 export async function getDemoState(db: DatabaseAdapter): Promise<DemoState> {
   try {
-    const row = await db.get("SELECT demo_state FROM orchestrator_config WHERE id = 'default'") as
-      { demo_state: string | null } | undefined;
-    if (row?.demo_state) return JSON.parse(row.demo_state) as DemoState;
+    const row = await db.get<{ demo_state: string | null }>("SELECT demo_state FROM orchestrator_config WHERE id = 'default'");
+    if (row?.demo_state) {
+      const parsed: unknown = JSON.parse(row.demo_state);
+      if (parsed && typeof parsed === 'object' && 'mode' in parsed) {
+        return parsed as DemoState;
+      }
+    }
   } catch { /* column may not exist yet */ }
   return { mode: 'off', persona: 'meridian', activated_at: null, signals_injected: 0, simulation_day: null };
 }

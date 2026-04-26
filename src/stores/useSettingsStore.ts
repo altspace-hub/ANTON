@@ -71,15 +71,33 @@ function applyThemeToDOM(theme: Theme) {
 }
 
 type DeploymentMode = 'solo' | 'team';
-export type AppMode = 'work' | 'school' | 'life' | 'pathfinder' | 'markets' | 'community' | 'payments' | 'portals' | 'missions';
+// 12 pillars — Procure / Civic / Grow promoted into the union per
+// ANTON_Improvement_and_Investigation_Brief.md §C.3. Sidebar still detects
+// per-pillar variants by pathname (Sidebar.tsx:346-380); appMode is the
+// persisted preference for which surface the user starts in.
+export type AppMode =
+  | 'work'
+  | 'school'
+  | 'life'
+  | 'pathfinder'
+  | 'markets'
+  | 'community'
+  | 'payments'
+  | 'portals'
+  | 'missions'
+  | 'procure'
+  | 'civic'
+  | 'grow';
+
+const VALID_APP_MODES: ReadonlyArray<AppMode> = [
+  'work', 'school', 'life', 'pathfinder', 'markets', 'community',
+  'payments', 'portals', 'missions', 'procure', 'civic', 'grow',
+];
 
 function getInitialAppMode(): AppMode {
   if (typeof window !== 'undefined') {
-    const saved = safeStorage.getItem('openexpert-app-mode');
-    if (saved === 'school') return 'school';
-    if (saved === 'life') return 'life';
-    if (saved === 'pathfinder') return 'pathfinder';
-    if (saved === 'markets') return 'markets';
+    const saved = safeStorage.getItem('openexpert-app-mode') as AppMode | null;
+    if (saved && (VALID_APP_MODES as readonly string[]).includes(saved)) return saved;
   }
   return 'work';
 }
