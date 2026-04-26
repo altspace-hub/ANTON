@@ -18,10 +18,20 @@
 -- Net new (this migration): 11 atlas_* tables + 1 enum extension on
 -- entity_relationships.relationship_type.
 
--- ── Stage 0 — extend existing enums to cover Risk Atlas vocabulary ─────────
--- The spec uses 'mitigates', 'implements', 'prevents', 'detects',
--- 'responds_to' for the Control–Vulnerability matrix and regulation→
--- control linkage. The current entity_relationships CHECK omits these.
+-- ── Stage 0 — entity_relationships vocabulary handling ────────────────────
+-- Original intent of this block was to ADD a CHECK constraint listing
+-- ~10 allowed relationship_type values (the original 6 + the 5 Risk Atlas
+-- additions: mitigates / prevents / detects / responds_to / implements).
+--
+-- Operational reality: live data uses 55+ distinct relationship_type values
+-- (e.g. 'references', 'contains', 'defines', 'developed_via', 'mandated_to_develop',
+-- 'links', 'elaborated_by', etc.) — the system has been using a free-form
+-- vocabulary, so a rigid enum was always going to fail.
+--
+-- Fix: drop any existing CHECK on relationship_type and DO NOT add a new one.
+-- Validation moves to the application layer (knowledge-graph service) which
+-- can curate the canonical set without blocking inserts. This keeps Risk
+-- Atlas additions valid alongside historical free-form relationships.
 
 DO $$
 BEGIN
@@ -31,13 +41,7 @@ BEGIN
   ) THEN
     ALTER TABLE entity_relationships DROP CONSTRAINT entity_relationships_relationship_type_check;
   END IF;
-  ALTER TABLE entity_relationships
-    ADD CONSTRAINT entity_relationships_relationship_type_check
-    CHECK (relationship_type IN (
-      'supports', 'contradicts', 'extends', 'requires', 'caused_by', 'related_to',
-      -- Risk Atlas additions:
-      'mitigates', 'prevents', 'detects', 'responds_to', 'implements'
-    ));
+  -- Intentionally no ADD CONSTRAINT — see comment above.
 END
 $$;
 

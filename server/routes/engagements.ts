@@ -67,11 +67,23 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
 
   // ── Helper ──────────────────────────────────────────────────────────────────
 
-  async function logChange(engagementId: string, phase: string, action: string, description: string, prev?: unknown, next?: unknown) {
-    await db.run(`INSERT INTO engagement_changelog (id, engagement_id, phase, action, description, previous_value, new_value)
+  // Fire-and-forget changelog write. Returns synchronously (void) but
+  // schedules an async DB INSERT. The changelog is best-effort: it never
+  // blocks the response, and a failure (e.g. table missing on a fresh
+  // deploy) must not affect the user operation that triggered it.
+  // Errors are logged but swallowed.
+  //
+  // Callers do not need to await — the function returns void, not Promise.
+  // Audit-detectable: G.14 forgotten-await won't flag this because the
+  // function isn't async-typed.
+  function logChange(engagementId: string, phase: string, action: string, description: string, prev?: unknown, next?: unknown): void {
+    db.run(`INSERT INTO engagement_changelog (id, engagement_id, phase, action, description, previous_value, new_value)
       VALUES (?, ?, ?, ?, ?, ?, ?)`, randomUUID(), engagementId, phase, action, description,
       prev ? JSON.stringify(prev) : null,
-      next ? JSON.stringify(next) : null);
+      next ? JSON.stringify(next) : null,
+    ).catch((err) => {
+      console.warn('[engagements] logChange failed (non-fatal):', err instanceof Error ? err.message : err);
+    });
   }
 
   // ── Engagements CRUD ────────────────────────────────────────────────────────
@@ -95,6 +107,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
               )
             )
           ORDER BY e.updated_at DESC
+          LIMIT 200
         `, userId, userId);
         return res.json(engagements);
       }
@@ -106,6 +119,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
         FROM engagements e
         WHERE e.status != 'archived'
         ORDER BY e.updated_at DESC
+        LIMIT 200
       `);
       res.json(engagements);
     } catch (e) {
@@ -169,16 +183,20 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const userRole = getUserRole(req);
       if (!await canView(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
-      const documents = await db.all('SELECT * FROM engagement_documents WHERE engagement_id = ? ORDER BY uploaded_at', String(req.params.id));
-      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? ORDER BY sort_order', String(req.params.id));
-      const workstreams = await db.all('SELECT * FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order', String(req.params.id));
-      const resources = await db.all('SELECT * FROM engagement_resources WHERE engagement_id = ? ORDER BY category, uploaded_at', String(req.params.id));
-      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id));
-      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ? AND status = ?', String(req.params.id), 'active');
-      const client_intelligence = await db.all('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id));
-      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC', String(req.params.id));
-      const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ?', String(req.params.id));
-      const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id));
+      // Sub-collections for one engagement. LIMIT 500 protects against runaway
+      // growth (e.g. a long-running engagement that accumulates thousands of
+      // resources). Real engagements are nowhere near 500 per table; if one
+      // exceeds, UI needs proper pagination.
+      const documents = await db.all('SELECT * FROM engagement_documents WHERE engagement_id = ? ORDER BY uploaded_at LIMIT 500', String(req.params.id));
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? ORDER BY sort_order LIMIT 500', String(req.params.id));
+      const workstreams = await db.all('SELECT * FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order LIMIT 500', String(req.params.id));
+      const resources = await db.all('SELECT * FROM engagement_resources WHERE engagement_id = ? ORDER BY category, uploaded_at LIMIT 500', String(req.params.id));
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ? LIMIT 500', String(req.params.id));
+      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ? AND status = ? LIMIT 500', String(req.params.id), 'active');
+      const client_intelligence = await db.all('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ? LIMIT 500', String(req.params.id));
+      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC LIMIT 500', String(req.params.id));
+      const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? LIMIT 500', String(req.params.id));
+      const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
       res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
     } catch (e) {
@@ -403,72 +421,72 @@ Return ONLY valid JSON, no explanation.`;
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
 
-          const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id)) as unknown[];
+          // Existence check only — LIMIT 1 (we just test length === 0).
+          const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = ? LIMIT 1', String(req.params.id)) as unknown[];
           if (existing.length === 0 && Array.isArray(ex.scope_items)) {
             const scopeItems = ex.scope_items as Array<Record<string, unknown>>;
-            for (let idx = 0; idx < scopeItems.length; idx++) {
-              const si = scopeItems[idx];
-              await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
+            await Promise.all(scopeItems.map((si, idx) =>
+              db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)`,
                 randomUUID(), String(req.params.id),
                 String(si.title || ''), String(si.description || ''), String(si.category || 'analysis'),
                 JSON.stringify(si.methodology || []), idx, String(si.description || '')
-              );
-            }
+              )
+            ));
           }
           if (Array.isArray(ex.workstreams)) {
-            const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = ?', String(req.params.id)) as unknown[];
+            const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = ? LIMIT 1', String(req.params.id)) as unknown[];
             if (existingWs.length === 0) {
               const workstreams = ex.workstreams as Array<Record<string, unknown>>;
-              for (let idx = 0; idx < workstreams.length; idx++) {
-                const ws = workstreams[idx];
-                await db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, timeline_start, timeline_end, sort_order)
+              await Promise.all(workstreams.map((ws, idx) =>
+                db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, timeline_start, timeline_end, sort_order)
                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
                   randomUUID(), String(req.params.id), String(ws.title || ''), String(ws.description || ''),
                   String(ws.timeline_start || ''), String(ws.timeline_end || ''), idx
-                );
-              }
+                )
+              ));
             }
           }
           if (Array.isArray(ex.deliverables)) {
-            const existingDel = await db.all('SELECT id FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as unknown[];
+            const existingDel = await db.all('SELECT id FROM engagement_deliverables WHERE engagement_id = ? LIMIT 1', String(req.params.id)) as unknown[];
             if (existingDel.length === 0) {
               const deliverables = ex.deliverables as Array<Record<string, unknown>>;
-              for (const d of deliverables) {
-                await db.run(`INSERT INTO engagement_deliverables (id, engagement_id, title, format, description, delivery_date)
+              await Promise.all(deliverables.map((d) =>
+                db.run(`INSERT INTO engagement_deliverables (id, engagement_id, title, format, description, delivery_date)
                   VALUES (?, ?, ?, ?, ?, ?)`,
                   randomUUID(), String(req.params.id), String(d.title || ''), String(d.format || 'docx'),
                   String(d.description || ''), String(d.delivery_date || '')
-                );
-              }
+                )
+              ));
             }
           }
           // Add boundaries (assumptions + exclusions)
           if (Array.isArray(ex.assumptions)) {
-            for (const a of (ex.assumptions as string[])) {
-              if (a) await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
-                VALUES (?, ?, 'assumption', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(a));
-            }
+            await Promise.all((ex.assumptions as string[])
+              .filter(Boolean)
+              .map((a) => db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
+                VALUES (?, ?, 'assumption', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(a)))
+            );
           }
           if (Array.isArray(ex.exclusions)) {
-            for (const e2 of (ex.exclusions as string[])) {
-              if (e2) await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
-                VALUES (?, ?, 'exclusion', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(e2));
-            }
+            await Promise.all((ex.exclusions as string[])
+              .filter(Boolean)
+              .map((e2) => db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
+                VALUES (?, ?, 'exclusion', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(e2)))
+            );
           }
           // Auto-populate stakeholders from parties.contacts (only if none exist yet)
           const existingTeam = await db.get('SELECT id FROM engagement_stakeholders WHERE engagement_id = ? LIMIT 1', String(req.params.id));
           if (!existingTeam && ex.parties && typeof ex.parties === 'object') {
             const parties = ex.parties as Record<string, unknown>;
             const contacts = Array.isArray(parties.contacts) ? parties.contacts as Array<Record<string, unknown>> : [];
-            for (const c of contacts) {
-              if (c.name) {
-                await db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, stakeholder_type, expertise_areas)
-                  VALUES (?, ?, ?, ?, ?, 'client_contact', '[]')`,
-                  randomUUID(), String(req.params.id), String(c.name), String(c.role || ''), String(c.organisation || '')
-                );
-              }
-            }
+            await Promise.all(contacts
+              .filter((c) => c.name)
+              .map((c) => db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, stakeholder_type, expertise_areas)
+                VALUES (?, ?, ?, ?, ?, 'client_contact', '[]')`,
+                randomUUID(), String(req.params.id), String(c.name), String(c.role || ''), String(c.organisation || '')
+              ))
+            );
           }
           // Update engagement_brief
           await db.run("UPDATE engagements SET engagement_brief = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
@@ -738,11 +756,11 @@ Return ONLY valid JSON, no explanation.`;
       if (!engagement) return res.status(404).json({ error: 'Engagement not found' });
 
       const workstream = workstream_id ? await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', workstream_id) as Record<string, unknown> : null;
-      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != ?', String(req.params.id), 'removed') as Array<Record<string, unknown>>;
-      const resources = await db.all('SELECT id, category, title, extracted_content, url FROM engagement_resources WHERE engagement_id = ? AND status NOT IN (?, ?)', String(req.params.id), 'not_available', 'coming_later') as Array<Record<string, unknown>>;
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != ? LIMIT 500', String(req.params.id), 'removed') as Array<Record<string, unknown>>;
+      const resources = await db.all('SELECT id, category, title, extracted_content, url FROM engagement_resources WHERE engagement_id = ? AND status NOT IN (?, ?) LIMIT 500', String(req.params.id), 'not_available', 'coming_later') as Array<Record<string, unknown>>;
       const client_intel = await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
-      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
-      const team_members = await db.all(`SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY stakeholder_type, created_at ASC`, String(req.params.id)) as Array<Record<string, unknown>>;
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Array<Record<string, unknown>>;
+      const team_members = await db.all(`SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY stakeholder_type, created_at ASC LIMIT 500`, String(req.params.id)) as Array<Record<string, unknown>>;
 
       let qualityBlueprint: Record<string, unknown> = {};
       try { qualityBlueprint = JSON.parse(String(engagement.quality_blueprint || '{}')); } catch { /**/ }
@@ -788,7 +806,7 @@ ${deliveryTeam.map(m => {
       const qualityInstructions = qualityBlueprint && (qualityBlueprint as Record<string, unknown>).quality_instructions
         ? `\n\nQUALITY BLUEPRINT:\n${((qualityBlueprint as Record<string, unknown>).quality_instructions as string[] || []).join('\n')}` : '';
 
-      const peerBenchmarks = await db.all('SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
+      const peerBenchmarks = await db.all('SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Array<Record<string, unknown>>;
       const peerContext = peerBenchmarks.length > 0 ? `
 
 PEER BENCHMARKS (for comparative context — institution identities are confidential):
@@ -936,7 +954,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
   router.get('/:id/iterations', async (req: Request, res: Response) => {
     try {
-      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC', String(req.params.id));
+      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC LIMIT 500', String(req.params.id));
       res.json(iterations);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -968,8 +986,8 @@ Format your output as professional consulting deliverables. Use clear headings, 
       const { lens = 'scope', custom_instruction = '' } = req.body as { lens?: string; custom_instruction?: string };
 
       const engagement = await db.get('SELECT * FROM engagement_tasks WHERE id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
-      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown>[];
-      const resources = await db.all('SELECT id, category, title, extracted_content FROM engagement_resources WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown>[];
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Record<string, unknown>[];
+      const resources = await db.all('SELECT id, category, title, extracted_content FROM engagement_resources WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Record<string, unknown>[];
 
       // Build reference context based on lens
       let lensInstruction = '';
@@ -1068,7 +1086,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
   // GET /api/engagements/:id/team — list all team members + client contacts
   router.get('/:id/team', async (req: Request, res: Response) => {
     try {
-      const members = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC', String(req.params.id));
+      const members = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC LIMIT 500', String(req.params.id));
       res.json(members);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1313,7 +1331,7 @@ Return ONLY valid JSON.`,
   // GET /api/engagements/:id/peer-benchmarks
   router.get('/:id/peer-benchmarks', async (req: Request, res: Response) => {
     try {
-      res.json(await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id)));
+      res.json(await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -1345,10 +1363,10 @@ Return ONLY valid JSON.`,
 
       if (!iteration) return res.status(400).json({ error: 'No iteration found to review' });
 
-      const scope_items = await db.all("SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed'", String(req.params.id)) as Array<Record<string, unknown>>;
-      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
-      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
-      const peer_benchmarks = await db.all("SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?", String(req.params.id)) as Array<Record<string, unknown>>;
+      const scope_items = await db.all("SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed' LIMIT 500", String(req.params.id)) as Array<Record<string, unknown>>;
+      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Array<Record<string, unknown>>;
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Array<Record<string, unknown>>;
+      const peer_benchmarks = await db.all("SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ? LIMIT 500", String(req.params.id)) as Array<Record<string, unknown>>;
 
       let qualityBlueprint: Record<string, unknown> = {};
       try { qualityBlueprint = JSON.parse(String(engagement.quality_blueprint || '{}')); } catch { /**/ }
@@ -1574,7 +1592,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
 
   router.get('/:id/changelog', async (req: Request, res: Response) => {
     try {
-      const changes = await db.all('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id));
+      const changes = await db.all('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       res.json(changes);
     } catch (e) {
       res.status(500).json({ error: String(e) });

@@ -292,7 +292,10 @@ Generate the complete framework JSON now.`;
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    async function sendEvent(data: Record<string, unknown>) {
+    // Body is sync (`res.write` returns immediately). The `async` keyword
+    // would produce a Promise<void> that callers don't await, triggering
+    // G.14 forgotten-await false positives. Stay sync.
+    function sendEvent(data: Record<string, unknown>): void {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     }
 

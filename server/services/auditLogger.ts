@@ -127,7 +127,7 @@ export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent
       event.details || null,
       event.severity || 'medium');
     log.info({ eventType: event.event_type, severity: event.severity }, 'Security event logged');
-    return result.lastInsertRowid as number;
+    return Number(result.lastInsertRowid);
   } catch (e) {
     log.error({ err: e }, 'Failed to log security event');
     return null;
@@ -151,7 +151,7 @@ export async function logLoginAttempt(db: DatabaseAdapter, attempt: LoginAttempt
       attempt.failure_reason || null
     );
     log.info({ username: attempt.username, success: attempt.success }, 'Login attempt recorded');
-    return result.lastInsertRowid as number;
+    return Number(result.lastInsertRowid);
   } catch (e) {
     log.error({ err: e }, 'Failed to log login attempt');
     return null;

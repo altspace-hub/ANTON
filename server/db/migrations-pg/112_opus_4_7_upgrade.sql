@@ -63,12 +63,39 @@ BEGIN
   END IF;
 
   -- ── User profile preferences (JSON column) ────────────────────
-  -- user_profiles.preferences is JSON text; only rewrite when the old value is present.
+  -- user_profiles.preferences is a JSON text column. Originally assumed to
+  -- exist; in practice the user_profiles table never gained a `preferences`
+  -- column (model preferences live in `communication_preferences` instead).
+  -- Guard with column-existence check so this block is a no-op where the
+  -- column was never created. Also handles the canonical preferences column
+  -- if a future migration adds it.
 
-  IF to_regclass('public.user_profiles') IS NOT NULL THEN
+  IF to_regclass('public.user_profiles') IS NOT NULL
+     AND EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'user_profiles'
+         AND column_name = 'preferences'
+     )
+  THEN
     UPDATE user_profiles
     SET preferences = REPLACE(preferences, 'claude-opus-4-6', 'claude-opus-4-7')
     WHERE preferences LIKE '%claude-opus-4-6%';
+  END IF;
+
+  -- Same swap on the column that *does* exist on this schema.
+  IF to_regclass('public.user_profiles') IS NOT NULL
+     AND EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'user_profiles'
+         AND column_name = 'communication_preferences'
+     )
+  THEN
+    UPDATE user_profiles
+    SET communication_preferences =
+        REPLACE(communication_preferences, 'claude-opus-4-6', 'claude-opus-4-7')
+    WHERE communication_preferences LIKE '%claude-opus-4-6%';
   END IF;
 
   -- ── Compliance rule (model whitelist) ─────────────────────────

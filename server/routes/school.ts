@@ -540,96 +540,21 @@ function generateDailyQuests(userId: string, date: string): Array<{ quest_type: 
 // ── Factory ────────────────────────────────────────────────────────────────
 
 export async function createSchoolRoutes(db: DatabaseAdapter) {
-  // ── DB migrations (non-fatal) — run in background IIFE ─────────────────────
+  // Schema evolution moved to `server/db/migrations-pg/204_school_inline_migrations_consolidation.sql`.
+  // Previously this file ran ~30 inline try-blocks wrapping db.exec('ALTER…') on every server
+  // start — flagged by G.15 as silent catches and obscured the real schema history. Mig 204 owns
+  // those changes; this block now only handles non-schema startup tasks.
   (async () => {
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN streak_shields INTEGER DEFAULT 2`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN gymnasiet_program TEXT`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN university_program TEXT`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
-  try { await db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN xp_level INTEGER DEFAULT 1`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN current_streak INTEGER DEFAULT 0`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN longest_streak INTEGER DEFAULT 0`); } catch {}
-  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN last_active_date TEXT`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
-  try { await db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS guardian_digest_log (id TEXT PRIMARY KEY, guardian_user_id TEXT NOT NULL, student_user_id TEXT NOT NULL, sent_at DATETIME, digest_data TEXT)`); } catch {}
-  try { await db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
-  // Session D: review_cards (SM-2 spaced repetition)
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
-  // Session H: student_avatars (cosmetic system)
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
-  // Session M: study_rooms
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS study_rooms (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject_id TEXT, host_user_id TEXT NOT NULL, max_participants INTEGER DEFAULT 8, is_public INTEGER DEFAULT 1, join_code TEXT UNIQUE, created_at DATETIME, expires_at DATETIME)`); } catch {}
-  // Session I: weekly XP snapshots + seasonal events
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS weekly_xp_snapshots (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, class_id TEXT, week_start TEXT NOT NULL, week_xp INTEGER DEFAULT 0, updated_at DATETIME, UNIQUE(student_user_id, week_start))`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS xp_seasons (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT DEFAULT '⭐', start_date TEXT NOT NULL, end_date TEXT NOT NULL, xp_multiplier REAL DEFAULT 1.0, description TEXT, active INTEGER DEFAULT 1)`); } catch {}
-  // Seed 4 default seasons (non-fatal if already seeded)
-  try {
-    const existingSeasonsRow = await db.get(`SELECT COUNT(*) as cnt FROM xp_seasons`) as { cnt: number };
-    if (existingSeasonsRow.cnt === 0) {
-      const seasons = [
-        { id: 'season-autumn-2026', name: 'Autumn Challenge', emoji: '🍂', start: '2026-09-01', end: '2026-11-30', mult: 1.5, desc: 'Back to school season — earn 50% bonus XP on all activities!' },
-        { id: 'season-winter-2026', name: 'Winter Sprint',   emoji: '❄️', start: '2026-12-01', end: '2027-02-28', mult: 2.0, desc: 'Winter double XP event — all XP doubled during the Christmas break study sprint!' },
-        { id: 'season-spring-2027', name: 'Spring Bloom',   emoji: '🌸', start: '2027-03-01', end: '2027-05-31', mult: 1.5, desc: 'Exam prep season — bonus XP for every practice session and review card!' },
-        { id: 'season-summer-2027', name: 'Summer Quest',   emoji: '☀️', start: '2027-06-01', end: '2027-08-31', mult: 1.25, desc: 'Keep learning through summer — 25% XP boost to stay sharp!' },
-      ];
-      for (const s of seasons) {
-        await db.run(`INSERT INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1) ON CONFLICT DO NOTHING`,
-          s.id, s.name, s.emoji, s.start, s.end, s.mult, s.desc);
-      }
+    // Load persisted model-tier override (if any). Stays here because it's
+    // route-state initialization, not schema evolution.
+    try {
+      const cfgRow = await db.get("SELECT value FROM school_admin_config WHERE key = 'model_tier'") as { value: string } | undefined;
+      if (cfgRow) _ollamaTierEnabled = cfgRow.value === 'C';
+    } catch (err) {
+      // school_admin_config is created by mig 204; tolerate races on first boot.
+      console.warn('[school] model_tier load deferred (mig 204 may not have run yet):', err instanceof Error ? err.message : err);
     }
-  } catch { /* non-fatal */ }
-  // School Enhancements: rich curriculum + lesson system
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_curricula (
-    id TEXT PRIMARY KEY,
-    subject_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    tier TEXT DEFAULT 'T2',
-    language TEXT DEFAULT 'en',
-    units TEXT DEFAULT '[]',
-    created_by TEXT DEFAULT 'system',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_lessons (
-    id TEXT PRIMARY KEY,
-    curriculum_id TEXT,
-    subject_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    content_blocks TEXT DEFAULT '[]',
-    estimated_minutes INTEGER DEFAULT 30,
-    bloom_level TEXT DEFAULT 'understand',
-    tier TEXT DEFAULT 'T2',
-    published INTEGER DEFAULT 0,
-    created_by TEXT DEFAULT 'teacher',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`); } catch {}
-  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_lesson_progress (
-    id TEXT PRIMARY KEY,
-    lesson_id TEXT NOT NULL,
-    student_user_id TEXT NOT NULL,
-    status TEXT DEFAULT 'not_started',
-    completed_blocks TEXT DEFAULT '[]',
-    score INTEGER,
-    time_spent_seconds INTEGER DEFAULT 0,
-    started_at DATETIME,
-    completed_at DATETIME,
-    UNIQUE(lesson_id, student_user_id)
-  )`); } catch {}
-  // Load persisted model-tier override (if any)
-  try {
-    const cfgRow = await db.get("SELECT value FROM school_admin_config WHERE key = 'model_tier'") as { value: string } | undefined;
-    if (cfgRow) _ollamaTierEnabled = cfgRow.value === 'C';
-  } catch {}
-  })(); // end of migrations IIFE
+  })();
 
   const router = Router();
 
@@ -2734,10 +2659,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     const cls = await db.all(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`, req.params.classId, teacherId);
     if (!cls) return res.status(403).json({ error: 'Forbidden' });
 
-    // Store override in student_class_enrollments (add columns if needed)
-    try { await db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN teacher_level_override TEXT`); } catch {}
-    try { await db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN sen_override TEXT`); } catch {}
-
+    // Columns added by mig 204 (teacher_level_override, sen_override).
     await db.run(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`, teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
 
     return res.json({ ok: true });

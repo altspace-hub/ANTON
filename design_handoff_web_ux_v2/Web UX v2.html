@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ANTON · Web UX v2 — Direction A refined</title>
+<meta name="viewport" content="width=1600, initial-scale=0.6" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #EAE8E2; font-family: 'Inter', system-ui, sans-serif; color: #1A1B2E; }
+  body { min-width: 1640px; }
+  * { box-sizing: border-box; }
+  .canvas-header { padding: 44px 60px 20px; max-width: 1680px; margin: 0 auto; }
+  .canvas-title { font-size: 34px; font-weight: 500; letter-spacing: -0.6px; margin: 0 0 8px; }
+  .canvas-sub   { font-size: 15px; color: #54566A; max-width: 880px; line-height: 1.55; margin: 0 0 18px; }
+  .canvas-meta  { display: inline-flex; gap: 10px; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #878999; letter-spacing: 0.3px; text-transform: uppercase; }
+  .canvas-section { max-width: 1680px; margin: 0 auto; padding: 0 60px 30px; }
+  .section-label { font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; color: #6D6F81; margin: 40px 0 6px; }
+  .section-title { font-size: 24px; font-weight: 500; letter-spacing: -0.3px; margin: 0 0 4px; }
+  .section-sub { font-size: 13.5px; color: #54566A; margin: 0 0 20px; max-width: 780px; line-height: 1.5; }
+  .frame-label { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.6px; text-transform: uppercase; color: #6D6F81; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .frame-label .dot { width: 6px; height: 6px; border-radius: 50%; background: #0D7D6C; }
+  .frame-row { display: flex; gap: 40px; margin-bottom: 44px; align-items: flex-start; flex-wrap: wrap; }
+  .frame-col { display: flex; flex-direction: column; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 10.5px; font-weight: 500; border-radius: 4px; background: #FFF; border: 1px solid #DDD9D2; color: #54566A; }
+  .pill.good { background: #EEF6F1; color: #1F8A5C; border-color: #DCEEE4; }
+  .divider { height: 1px; background: #D7D4CD; margin: 40px auto; max-width: 1680px; }
+  .tweak-panel { position: fixed; bottom: 24px; right: 24px; z-index: 999; width: 300px; background: #FFFFFF; border: 1px solid #DDD9D2; border-radius: 12px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); font-family: 'Inter', sans-serif; display: none; }
+  .tweak-panel.on { display: block; }
+  .tweak-title { font-size: 13px; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.2px; }
+  .tweak-row { margin-bottom: 12px; }
+  .tweak-label { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.4px; text-transform: uppercase; color: #6D6F81; margin-bottom: 5px; }
+  .swatch-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+  .swatch { width: 100%; aspect-ratio: 1; border-radius: 5px; cursor: pointer; border: 2px solid transparent; }
+  .swatch.active { border-color: #111; box-shadow: 0 0 0 2px #FFF inset; }
+  .seg { display: flex; gap: 1px; background: #EFECE5; border-radius: 6px; padding: 2px; }
+  .seg-btn { flex: 1; font-size: 11.5px; padding: 5px 6px; background: transparent; border: 0; border-radius: 4px; cursor: pointer; color: #3B3D50; }
+  .seg-btn.on { background: #fff; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+</style>
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%230D7D6C'/><text x='12' y='17' text-anchor='middle' font-family='Inter' font-size='14' font-weight='700' fill='white'>A</text></svg>" />
+</head>
+<body>
+
+<div class="canvas-header">
+  <div class="canvas-meta">
+    <span class="pill">Web</span>
+    <span>·</span>
+    <span>ANTON · Web UX · v2 — Direction A refined</span>
+    <span>·</span>
+    <span>Home ×3 · Sanctions ×2 · Shell states · Overlays</span>
+    <span class="pill good">Evolution tokens</span>
+  </div>
+  <h1 class="canvas-title">Direction A v2 — Sidebar cockpit, refined</h1>
+  <p class="canvas-sub">
+    Home combines <b>Activity</b> (digest) and <b>Agent status</b> as a toggleable right rail over the
+    editorial brief — you always see the brief, switch the side for inbox vs. what ANTON is doing right
+    now. Sanctions Advisory restores the full run configuration as a collapsible panel at the top and adds
+    a chat composer at the bottom for iteration. Shell extras: collapsed icon-rail sidebar, ⌘K command
+    palette, notifications dropdown, shortcuts overlay.
+  </p>
+</div>
+
+<!-- Home variants -->
+<div class="canvas-section">
+  <div class="section-label">Home · combined</div>
+  <h2 class="section-title">Activity + Agent on the side, toggleable</h2>
+  <p class="section-sub">
+    The brief-led editorial Home stays as the main column. The right rail is a small tab bar: <b>Activity</b>
+    (digest of recent reviews, mentions, radar alerts) vs. <b>Agent status</b> (live tasks, feeds being
+    monitored, session resources). Both stay one click apart.
+  </p>
+  <div id="home-frames"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Sanctions variants -->
+<div class="canvas-section">
+  <div class="section-label">Sanctions Advisory · full run</div>
+  <h2 class="section-title">Full configuration on top, chat composer on bottom</h2>
+  <p class="section-sub">
+    Run configuration sits in a collapsible panel just below the header — depth, model, precision, writing
+    style, persona, multi-agent mode, deliberation, output controls, knowledge/memory toggles, module task
+    type, sanctions regimes, situation context, uploaded documents. Output + right rail in the middle.
+    Bottom: a full chat composer with history strip to iterate on the document.
+  </p>
+  <div id="sanctions-frames"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Shell states -->
+<div class="canvas-section">
+  <div class="section-label">Shell states</div>
+  <h2 class="section-title">Collapsed sidebar, overlays</h2>
+  <p class="section-sub">
+    Sidebar collapses to a 56px icon rail — favorites only, active-state marker + notification dots. The
+    three overlays sit above the normal shell: <b>⌘K command palette</b> (jump-to + recents + Ask-ANTON
+    fallback), <b>notifications</b> panel (dropdown from the bell) and <b>shortcuts</b> (press <code>?</code>).
+  </p>
+  <div id="shell-frames"></div>
+</div>
+
+<!-- Tweak panel -->
+<div class="tweak-panel" id="tweakPanel">
+  <div class="tweak-title">Tweaks</div>
+  <div class="tweak-row">
+    <div class="tweak-label">Accent</div>
+    <div class="swatch-row" id="swatchRow"></div>
+  </div>
+  <div class="tweak-row">
+    <div class="tweak-label">Theme</div>
+    <div class="seg" id="themeSeg">
+      <button class="seg-btn" data-theme="light">Light</button>
+      <button class="seg-btn" data-theme="dark">Dark</button>
+      <button class="seg-btn" data-theme="corporate">Corporate</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <div class="tweak-label">Focus</div>
+    <div class="seg" id="focusSeg">
+      <button class="seg-btn" data-focus="all">All</button>
+      <button class="seg-btn" data-focus="home">Home</button>
+      <button class="seg-btn" data-focus="sanctions">Sanctions</button>
+      <button class="seg-btn" data-focus="shell">Shell</button>
+    </div>
+  </div>
+  <div style="font-size:10.5px;color:#878999;font-family:'JetBrains Mono',monospace;margin-top:8px;">
+    Toggle Tweaks from the toolbar.
+  </div>
+</div>
+
+<!-- React/Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="web/web-tokens.jsx"></script>
+<script type="text/babel" src="web/web-primitives.jsx"></script>
+<script type="text/babel" src="web/web-data.jsx"></script>
+<script type="text/babel" src="web/web-chrome.jsx"></script>
+<script type="text/babel" src="web/web-screens-1.jsx"></script>
+<script type="text/babel" src="web/web-screens-2.jsx"></script>
+<script type="text/babel" src="web/web-directions.jsx"></script>
+<script type="text/babel" src="web/web-shell-v2.jsx"></script>
+<script type="text/babel" src="web/web-overlays.jsx"></script>
+<script type="text/babel" src="web/web-v2-screens.jsx"></script>
+<script type="text/babel" src="web/web-v3-screens.jsx"></script>
+
+<script type="text/babel">
+// ═══════════════════════════════════════════════════════════════════
+//  CANVAS v2
+// ═══════════════════════════════════════════════════════════════════
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "emerald",
+  "theme": "light",
+  "focus": "all"
+}/*EDITMODE-END*/;
+
+// Wrapper: use v2 sidebar + topbar around a given screen content
+function DirAV2Frame({ tok, children, crumbs, activePillar = 'work', activeNav = 'home', collapsed = false, overlay = null }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      height: '100%', minHeight: 820, background: tok.bg, fontFamily: tok.font,
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <WTopbarV2 tok={tok} activePillar={activePillar} crumbs={crumbs} />
+      <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
+        <WSidebarV2 tok={tok} active={activeNav} collapsed={collapsed} />
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', position: 'relative' }}>
+          {children}
+        </div>
+      </div>
+      {overlay}
+    </div>
+  );
+}
+
+function FrameLabel({ tok, dot, label, sub }) {
+  return (
+    <div className="frame-label" style={{ color: tok.textMuted }}>
+      <span className="dot" style={{ background: dot || tok.accent }} />
+      <span>{label}</span>
+      {sub && <>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span style={{ opacity: 0.7, textTransform: 'none', letterSpacing: 0.2 }}>{sub}</span>
+      </>}
+    </div>
+  );
+}
+
+function Card({ tok, children, w = 1520, h = 820 }) {
+  return (
+    <div className="frame-col" style={{ width: w }}>
+      <WBrowserFrame tok={tok} url="http://localhost:5183/" zoom="100%">
+        <div style={{ height: h }}>{children}</div>
+      </WBrowserFrame>
+    </div>
+  );
+}
+
+// ─── Home section ───────────────────────────────────────
+function HomeSection({ tok }) {
+  return (
+    <>
+      <div data-screen-label="Home · Combined (Activity default)">
+        <FrameLabel tok={tok} label="Home · Combined — Activity tab" sub="Digest + Agent as toggleable right rail; Activity open." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home">
+            <WHomeCombined tok={tok} rightMode="digest" />
+          </DirAV2Frame>
+        </Card>
+      </div>
+      <div data-screen-label="Home · Combined (Agent status)" style={{ marginTop: 44 }}>
+        <FrameLabel tok={tok} label="Home · Combined — Agent status tab" sub="Same screen, Agent tab active: what ANTON is doing + session resources." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home">
+            <WHomeCombined tok={tok} rightMode="agent" />
+          </DirAV2Frame>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+// ─── Sanctions section ──────────────────────────────────
+function SanctionsSection({ tok }) {
+  return (
+    <>
+      <div data-screen-label="Sanctions · Full run">
+        <FrameLabel tok={tok} label="Sanctions · Full run" sub="Collapsible Run configuration (all settings) · output · right rail · bottom chat composer." />
+        <Card tok={tok} h={1080}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Financial crime', 'Sanctions Advisory']} activeNav="sanctions">
+            <WSanctionsFullRun tok={tok} />
+          </DirAV2Frame>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+// ─── Shell states section ───────────────────────────────
+function ShellSection({ tok }) {
+  return (
+    <>
+      <div data-screen-label="Shell · Collapsed sidebar">
+        <FrameLabel tok={tok} label="Shell · Collapsed sidebar" sub="56px icon-rail · favorites only · notification dots." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home" collapsed>
+            <WHomeEditorial tok={tok} />
+          </DirAV2Frame>
+        </Card>
+      </div>
+      <div data-screen-label="Shell · Command palette" style={{ marginTop: 44 }}>
+        <FrameLabel tok={tok} label="Shell · ⌘K command palette" sub="Jump-to + recents + Ask-ANTON fallback." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home"
+            overlay={<WCommandPalette tok={tok} query="sanctions policy v4" />}
+          >
+            <WHomeEditorial tok={tok} />
+          </DirAV2Frame>
+        </Card>
+      </div>
+      <div data-screen-label="Shell · Notifications" style={{ marginTop: 44 }}>
+        <FrameLabel tok={tok} label="Shell · Notifications dropdown" sub="Opens from the bell in the topbar." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home"
+            overlay={<WNotifPanel tok={tok} />}
+          >
+            <WHomeEditorial tok={tok} />
+          </DirAV2Frame>
+        </Card>
+      </div>
+      <div data-screen-label="Shell · Shortcuts overlay" style={{ marginTop: 44 }}>
+        <FrameLabel tok={tok} label="Shell · Shortcuts (press ?)" sub="Full keymap for navigation, actions, depth and view." />
+        <Card tok={tok}>
+          <DirAV2Frame tok={tok} crumbs={['Work', 'Home']} activeNav="home"
+            overlay={<WShortcutsOverlay tok={tok} />}
+          >
+            <WHomeEditorial tok={tok} />
+          </DirAV2Frame>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+// ─── Mount points ───────────────────────────────────────
+function Mount({ id, children }) {
+  const [el, setEl] = React.useState(null);
+  React.useEffect(() => setEl(document.getElementById(id)), [id]);
+  if (!el) return null;
+  return ReactDOM.createPortal(children, el);
+}
+
+function Root() {
+  const [accent, setAccent] = React.useState(TWEAK_DEFAULTS.accent);
+  const [theme, setTheme] = React.useState(TWEAK_DEFAULTS.theme);
+  const [focus, setFocus] = React.useState(TWEAK_DEFAULTS.focus);
+
+  const tok = buildWebTok(theme, accent);
+  tok.theme = theme;
+
+  React.useEffect(() => {
+    document.body.style.background = theme === 'dark' ? '#060A17' : (theme === 'corporate' ? '#E7EAF0' : '#EAE8E2');
+    document.body.style.color = tok.text;
+    document.querySelectorAll('.canvas-title, .section-title').forEach(el => el.style.color = tok.text);
+    document.querySelectorAll('.canvas-sub, .section-sub').forEach(el => el.style.color = tok.textBody);
+    document.querySelectorAll('.section-label, .canvas-meta').forEach(el => el.style.color = tok.textMuted);
+    document.querySelectorAll('.divider').forEach(el => el.style.background = tok.borderSoft);
+  }, [theme, accent]);
+
+  React.useEffect(() => {
+    const row = document.getElementById('swatchRow');
+    if (!row) return;
+    row.innerHTML = '';
+    Object.values(WEB_ACCENTS).forEach(a => {
+      const b = document.createElement('button');
+      b.className = 'swatch' + (a.id === accent ? ' active' : '');
+      b.style.background = a.accent;
+      b.title = a.label;
+      b.onclick = () => { setAccent(a.id); persistKey('accent', a.id); };
+      row.appendChild(b);
+    });
+    document.querySelectorAll('#themeSeg .seg-btn').forEach(b => {
+      b.classList.toggle('on', b.dataset.theme === theme);
+      b.onclick = () => { setTheme(b.dataset.theme); persistKey('theme', b.dataset.theme); };
+    });
+    document.querySelectorAll('#focusSeg .seg-btn').forEach(b => {
+      b.classList.toggle('on', b.dataset.focus === focus);
+      b.onclick = () => { setFocus(b.dataset.focus); persistKey('focus', b.dataset.focus); };
+    });
+  }, [accent, theme, focus]);
+
+  const showHome = focus === 'all' || focus === 'home';
+  const showSanctions = focus === 'all' || focus === 'sanctions';
+  const showShell = focus === 'all' || focus === 'shell';
+
+  // Hide section headers that are filtered out
+  React.useEffect(() => {
+    document.getElementById('home-frames').parentElement.style.display = showHome ? '' : 'none';
+    document.getElementById('sanctions-frames').parentElement.style.display = showSanctions ? '' : 'none';
+    document.getElementById('shell-frames').parentElement.style.display = showShell ? '' : 'none';
+  }, [focus]);
+
+  return (
+    <>
+      {showHome && <Mount id="home-frames"><HomeSection tok={tok} /></Mount>}
+      {showSanctions && <Mount id="sanctions-frames"><SanctionsSection tok={tok} /></Mount>}
+      {showShell && <Mount id="shell-frames"><ShellSection tok={tok} /></Mount>}
+    </>
+  );
+}
+
+function persistKey(k, v) {
+  try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*'); } catch (e) {}
+}
+
+// Tweaks contract
+window.addEventListener('message', (e) => {
+  if (!e || !e.data) return;
+  if (e.data.type === '__activate_edit_mode') document.getElementById('tweakPanel').classList.add('on');
+  else if (e.data.type === '__deactivate_edit_mode') document.getElementById('tweakPanel').classList.remove('on');
+});
+try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e) {}
+
+ReactDOM.createRoot(document.body.appendChild(document.createElement('div'))).render(<Root />);
+</script>
+
+</body>
+</html>

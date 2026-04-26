@@ -353,7 +353,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   // GET /api/community/connections/pending — pending connection requests (Q4)
   router.get('/community/connections/pending', async (req, res) => {
     try {
-      const pending = await db.all("SELECT * FROM community_connections WHERE status = 'pending' AND owner_user_id = 'default' ORDER BY connected_at DESC");
+      const pending = await db.all("SELECT * FROM community_connections WHERE status = 'pending' AND owner_user_id = 'default' ORDER BY connected_at DESC LIMIT 200");
       res.json(pending);
     } catch (err) { res.status(500).json({ error: 'Failed to get pending connections' }); }
   });
@@ -487,7 +487,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   router.get('/community/connections', async (req, res) => {
     try {
       res.json(
-        await db.all("SELECT * FROM community_connections WHERE owner_user_id = 'default' ORDER BY connected_at DESC")
+        await db.all("SELECT * FROM community_connections WHERE owner_user_id = 'default' ORDER BY connected_at DESC LIMIT 500")
       );
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
@@ -551,7 +551,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   // GET /api/community/groups
   router.get('/community/groups', async (_req, res) => {
     try {
-      const groups = await db.all('SELECT * FROM community_group_nodes ORDER BY created_at DESC') as Record<string, unknown>[];
+      const groups = await db.all('SELECT * FROM community_group_nodes ORDER BY created_at DESC LIMIT 500') as Record<string, unknown>[];
       const withCounts = [];
       for (const g of groups) {
         const countRow = await db.get('SELECT COUNT(*) as c FROM community_group_members WHERE group_id = ?', g.id) as { c: number };
@@ -594,7 +594,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       const group = await db.get('SELECT * FROM community_group_nodes WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!group) return res.status(404).json({ error: 'Group not found' });
-      const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC', req.params.id);
+      const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC LIMIT 500', req.params.id);
       return res.json({ ...group, members });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
@@ -662,7 +662,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
   // GET /api/community/groups/:id/members
   router.get('/community/groups/:id/members', async (req, res) => {
     try {
-      const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC', req.params.id);
+      const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC LIMIT 500', req.params.id);
       res.json(members);
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
@@ -830,7 +830,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const mail = await db.get('SELECT * FROM community_mail WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!mail) return res.status(404).json({ error: 'Mail not found' });
       const thread = mail.thread_id
-        ? await db.all('SELECT * FROM community_mail WHERE thread_id = ? ORDER BY COALESCE(sent_at, created_at) ASC', mail.thread_id as string)
+        ? await db.all('SELECT * FROM community_mail WHERE thread_id = ? ORDER BY COALESCE(sent_at, created_at) ASC LIMIT 500', mail.thread_id as string)
         : [];
       return res.json({ ...mail, thread });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
@@ -945,7 +945,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       const event = await db.get('SELECT * FROM community_events WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!event) return res.status(404).json({ error: 'Event not found' });
-      const rsvps = await db.all('SELECT * FROM community_event_rsvps WHERE event_id = ? ORDER BY responded_at ASC', req.params.id);
+      const rsvps = await db.all('SELECT * FROM community_event_rsvps WHERE event_id = ? ORDER BY responded_at ASC LIMIT 500', req.params.id);
       return res.json({ ...event, rsvps });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
@@ -1270,7 +1270,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       if (!identity) return res.status(403).json({ error: 'Identity not activated' });
 
       const peers = await db.all<{ contact_hash: string; endpoint: string; display_name: string }>(
-        "SELECT contact_hash, endpoint, display_name FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active')"
+        "SELECT contact_hash, endpoint, display_name FROM community_connections WHERE endpoint IS NOT NULL AND status IN ('accepted', 'active') LIMIT 500"
       );
 
       const results: Array<{ peer: string; peerName: string; atoms: Array<{ content: string; type: string; confidence: number }> }> = [];
@@ -1324,7 +1324,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const contactHash = getContactHash(req);
       if (!contactHash) return res.status(401).json({ error: 'Not activated' });
       // Prevent last admin from leaving
-      const admins = await db.all('SELECT contact_hash FROM community_group_members WHERE group_id = ? AND role = ?', req.params.id, 'admin') as unknown[];
+      const admins = await db.all('SELECT contact_hash FROM community_group_members WHERE group_id = ? AND role = ? LIMIT 500', req.params.id, 'admin') as unknown[];
       if (admins.length <= 1) {
         const isAdmin = await db.get('SELECT 1 FROM community_group_members WHERE group_id = ? AND contact_hash = ? AND role = ?', req.params.id, contactHash, 'admin');
         if (isAdmin) return res.status(400).json({ error: 'Cannot leave as the last admin. Transfer ownership first.' });
@@ -1376,7 +1376,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       const topic = await db.get('SELECT * FROM community_group_topics WHERE id = ? AND group_id = ?', req.params.topicId, req.params.id);
       if (!topic) return res.status(404).json({ error: 'Topic not found' });
-      const posts = await db.all('SELECT * FROM community_group_posts WHERE topic_id = ? ORDER BY posted_at ASC', req.params.topicId);
+      const posts = await db.all('SELECT * FROM community_group_posts WHERE topic_id = ? ORDER BY posted_at ASC LIMIT 500', req.params.topicId);
       res.json({ topic, posts });
     } catch (err) {
       res.status(500).json({ error: String(err) });

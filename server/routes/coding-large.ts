@@ -1810,7 +1810,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const project = parseProject(row);
 
       // Load releases
-      const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id);
+      const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number LIMIT 500', req.params.id);
 
       // Load recent tasks
       const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order LIMIT 50', req.params.id);
@@ -1819,7 +1819,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 20', req.params.id);
 
       // Load tech debt
-      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC", req.params.id);
+      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC LIMIT 500", req.params.id);
 
       res.json({
         ...project,
@@ -2148,7 +2148,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const row = await db.get('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?', req.params.rid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Release not found' });
 
-      const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_release_id = ? ORDER BY sort_order', req.params.rid);
+      const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_release_id = ? ORDER BY sort_order LIMIT 500', req.params.rid);
 
       res.json({ ...parseRelease(row), tasks: tasks.map(parseTask) });
     } catch (error) {
@@ -2543,7 +2543,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
   router.get('/coding/projects/:id/changes', async (req, res) => {
     try {
-      const changes = await db.all('SELECT * FROM coding_changes WHERE coding_project_id = ? ORDER BY created_at DESC', req.params.id);
+      const changes = await db.all('SELECT * FROM coding_changes WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 500', req.params.id);
       res.json(changes.map((c: any) => ({
         ...c,
         original_state: JSON.parse(c.original_state || '{}'),
@@ -2595,7 +2595,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const parsedProject = parseProject(project);
 
       // Load releases
-      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number LIMIT 500', req.params.id)).map(parseRelease);
 
       const systemPromptOverride = buildImpactAnalysisSystemPrompt(project.name);
       const impactPrompt = buildImpactAnalysisUserMessage(change, parsedProject, releases);
@@ -2669,13 +2669,13 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const parsedProject = parseProject(project);
 
       // Load tech debt
-      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC", req.params.id);
+      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC LIMIT 500", req.params.id);
 
       // Load releases
-      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number LIMIT 500', req.params.id)).map(parseRelease);
 
       // Load tasks
-      const tasks = (await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order', req.params.id)).map(parseTask);
+      const tasks = (await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order LIMIT 500', req.params.id)).map(parseTask);
 
       const systemPromptOverride = buildAlignmentCheckSystemPrompt(
         project.name,
@@ -2706,7 +2706,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const parsedProject = parseProject(project);
 
       // Load releases
-      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number LIMIT 500', req.params.id)).map(parseRelease);
 
       // Load test results
       const testResults = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);

@@ -7,7 +7,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Plus, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Target, Plus, RefreshCcw, AlertCircle, BookOpen } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import MissionCard, { type MissionSummary } from '../../components/missions/MissionCard';
 
@@ -86,6 +86,13 @@ export default function MissionsPage() {
             <RefreshCcw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
+          <Link
+            to="/missions/catalogue"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white inline-flex items-center gap-1.5"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Catalogue
+          </Link>
           <Link
             to="/missions/new"
             className={`rounded-lg bg-adv-teal px-4 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark inline-flex items-center gap-1.5 ${!identity ? 'pointer-events-none opacity-50' : ''}`}

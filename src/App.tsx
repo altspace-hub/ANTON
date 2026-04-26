@@ -103,6 +103,7 @@ const FillFormPage = lazy(() => import('./pages/FillFormPage'));
 const ChallengeThisPage = lazy(() => import('./pages/ChallengeThisPage'));
 const DualInterpretationPage = lazy(() => import('./pages/DualInterpretationPage'));
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage'));
+const AuditTrailPage = lazy(() => import('./pages/AuditTrailPage'));
 const ExchangePage = lazy(() => import('./pages/ExchangePage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const DataInsightsPage = lazy(() => import('./pages/DataInsightsPage'));
@@ -178,6 +179,8 @@ const PathfinderPage = lazy(() => import('./pages/PathfinderPage'));
 const PathfinderHistoryPage = lazy(() => import('./pages/PathfinderHistoryPage'));
 // Pathfinder Visitor UI (Visitor Layer v0.8)
 const PathfinderVisitorPage = lazy(() => import('./pages/pathfinder/PathfinderVisitorPage'));
+const PathfinderActionsPage = lazy(() => import('./pages/pathfinder/PathfinderActionsPage'));
+const PathfinderCalibrationPage = lazy(() => import('./pages/pathfinder/PathfinderCalibrationPage'));
 // Jobs — candidate side (Visitor Layer v0.8)
 const JobsHomePage = lazy(() => import('./pages/jobs/JobsHomePage'));
 const JobDetailPage = lazy(() => import('./pages/jobs/JobDetailPage'));
@@ -257,7 +260,11 @@ const CommunityProjectDetailPage = lazy(() => import('./pages/community/Communit
 const CommunityCapabilityCardPage = lazy(() => import('./pages/community/CommunityCapabilityCardPage'));
 const BeehivePage = lazy(() => import('./pages/community/BeehivePage'));
 const BeehiveSessionPage = lazy(() => import('./pages/community/BeehiveSessionPage'));
+const BeehivePeersPage = lazy(() => import('./pages/community/BeehivePeersPage'));
+const BeehiveQuorumPage = lazy(() => import('./pages/community/BeehiveQuorumPage'));
+const BeehiveSignalsPage = lazy(() => import('./pages/community/BeehiveSignalsPage'));
 const MissionsPage = lazy(() => import('./pages/missions/MissionsPage'));
+const MissionsCatalogPage = lazy(() => import('./pages/missions/MissionsCatalogPage'));
 const MissionCreatorPage = lazy(() => import('./pages/missions/MissionCreatorPage'));
 const MissionDashboardPage = lazy(() => import('./pages/missions/MissionDashboardPage'));
 const MissionInboxPage = lazy(() => import('./pages/missions/MissionInboxPage'));
@@ -266,6 +273,8 @@ const ServicePacksPage = lazy(() => import('./pages/missions/ServicePacksPage'))
 
 // Risk Atlas pages
 const RiskAtlasLandingPage = lazy(() => import('./pages/risk-atlas/RiskAtlasLandingPage'));
+const RiskAtlasAboutPage = lazy(() => import('./pages/risk-atlas/RiskAtlasAboutPage'));
+const ConsulCouncilPage = lazy(() => import('./pages/markets/ConsulCouncilPage'));
 const RiskAtlasSetupPage = lazy(() => import('./pages/risk-atlas/RiskAtlasSetupPage'));
 const RiskAtlasWorkspacePage = lazy(() => import('./pages/risk-atlas/RiskAtlasWorkspacePage'));
 const SmallBusinessDashboardPage = lazy(() => import('./pages/risk-atlas/SmallBusinessDashboardPage'));
@@ -314,13 +323,23 @@ const AppGatewayPage = lazy(() => import('./pages/AppGatewayPage'));
 // Procure Pillar pages
 const ProcurePage = lazy(() => import('./pages/procure/ProcurePage'));
 const ProcureCyclePage = lazy(() => import('./pages/procure/ProcureCyclePage'));
+const ProcureVendorDirectoryPage = lazy(() => import('./pages/procure/ProcureVendorDirectoryPage'));
+const ProcureBenchmarksPage = lazy(() => import('./pages/procure/ProcureBenchmarksPage'));
+const ProcureRfqTemplatesPage = lazy(() => import('./pages/procure/ProcureRfqTemplatesPage'));
 
 // Civic Pillar pages
 const CivicPage = lazy(() => import('./pages/civic/CivicPage'));
 const CivicEngagementPage = lazy(() => import('./pages/civic/CivicEngagementPage'));
+const CivicEligibilityCheckPage = lazy(() => import('./pages/civic/CivicEligibilityCheckPage'));
+const CivicProcessLibraryPage = lazy(() => import('./pages/civic/CivicProcessLibraryPage'));
+const CivicSubmissionsPage = lazy(() => import('./pages/civic/CivicSubmissionsPage'));
 
 // Specialized Agents
 const AgentHubPage = lazy(() => import('./pages/agents/AgentHubPage'));
+const AgentDirectoryPage = lazy(() => import('./pages/agents/AgentDirectoryPage'));
+const AgentEscalationsPage = lazy(() => import('./pages/agents/AgentEscalationsPage'));
+const AgentTelemetryPage = lazy(() => import('./pages/agents/AgentTelemetryPage'));
+const AgentKnowledgePage = lazy(() => import('./pages/agents/AgentKnowledgePage'));
 
 // Talent Discovery & Recruitment pages
 const TalentPage = lazy(() => import('./pages/talent/TalentPage'));
@@ -335,6 +354,8 @@ const GrowOpportunityPage = lazy(() => import('./pages/grow/GrowOpportunityPage'
 
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
+const LearningEvidencePage = lazy(() => import('./pages/school/LearningEvidencePage'));
+const CurriculumRegistryPage = lazy(() => import('./pages/school/CurriculumRegistryPage'));
 const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
 const SubjectsPage = lazy(() => import('./pages/school/SubjectsPage'));
 const StudentAssignmentsPage = lazy(() => import('./pages/school/StudentAssignmentsPage'));
@@ -538,6 +559,7 @@ export default function App() {
           <Route path="/evidence-packs/:id" element={<EvidencePackViewerPage />} />
           <Route path="/hardware/knowledge-packs" element={<HardwareKnowledgePacksPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
+          <Route path="/audit-trail" element={<AuditTrailPage />} />
           <Route path="/exchange" element={<ExchangePage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/insights" element={<DataInsightsPage />} />
@@ -633,8 +655,13 @@ export default function App() {
           <Route path="/community/capability-card" element={<CommunityCapabilityCardPage />} />
           <Route path="/community/beehive" element={<BeehivePage />} />
           <Route path="/community/beehive/:id" element={<BeehiveSessionPage />} />
+          <Route path="/community/beehive/peers" element={<BeehivePeersPage />} />
+          <Route path="/community/beehive/quorum" element={<BeehiveQuorumPage />} />
+          <Route path="/community/beehive/signals" element={<BeehiveSignalsPage />} />
           {/* Missions — autonomous multi-step work */}
           <Route path="/missions" element={<MissionsPage />} />
+          <Route path="/missions/catalogue" element={<MissionsCatalogPage />} />
+          <Route path="/missions/create" element={<MissionCreatorPage />} />
           <Route path="/missions/new" element={<MissionCreatorPage />} />
           <Route path="/missions/inbox" element={<MissionInboxPage />} />
           <Route path="/missions/credentials" element={<CredentialVaultPage />} />
@@ -642,6 +669,8 @@ export default function App() {
           <Route path="/missions/:id" element={<MissionDashboardPage />} />
           {/* Risk Atlas — universal seven-stage threat-path methodology */}
           <Route path="/atlas" element={<RiskAtlasLandingPage />} />
+          <Route path="/atlas/about" element={<RiskAtlasAboutPage />} />
+          <Route path="/risk-atlas" element={<RiskAtlasAboutPage />} />
           <Route path="/atlas/new" element={<RiskAtlasSetupPage />} />
           <Route path="/atlas/small-business" element={<SmallBusinessDashboardPage />} />
           <Route path="/atlas/:id" element={<RiskAtlasWorkspacePage />} />
@@ -700,6 +729,8 @@ export default function App() {
           <Route path="/video/playlists" element={<VideoPlaylistsPage />} />
           <Route path="/video/:id" element={<VideoPlayerPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
+          <Route path="/pathfinder/actions" element={<PathfinderActionsPage />} />
+          <Route path="/pathfinder/calibration" element={<PathfinderCalibrationPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />
           {/* App Gateway admin */}
@@ -707,6 +738,7 @@ export default function App() {
           <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
           {/* Markets Pillar */}
           <Route path="/markets" element={<MarketsPage />} />
+          <Route path="/markets/consul" element={<ConsulCouncilPage />} />
           <Route path="/markets/sources" element={<MarketDataSourcesPage />} />
           <Route path="/markets/theses" element={<MarketThesesPage />} />
           <Route path="/markets/theses/:id" element={<MarketThesisDetailPage />} />
@@ -733,13 +765,23 @@ export default function App() {
           {/* Procure Pillar — phased procurement pipeline */}
           <Route path="/procure" element={<ProcurePage />} />
           <Route path="/procure/cycle/:cycleId" element={<ProcureCyclePage />} />
+          <Route path="/procure/vendors" element={<ProcureVendorDirectoryPage />} />
+          <Route path="/procure/benchmarks" element={<ProcureBenchmarksPage />} />
+          <Route path="/procure/rfq-templates" element={<ProcureRfqTemplatesPage />} />
 
           {/* Civic Pillar — government & public institution navigator */}
           <Route path="/civic" element={<CivicPage />} />
           <Route path="/civic/engagement/:engagementId" element={<CivicEngagementPage />} />
+          <Route path="/civic/eligibility" element={<CivicEligibilityCheckPage />} />
+          <Route path="/civic/processes" element={<CivicProcessLibraryPage />} />
+          <Route path="/civic/submissions" element={<CivicSubmissionsPage />} />
 
           {/* Specialized Agents */}
           <Route path="/agents" element={<AgentHubPage />} />
+          <Route path="/agents/directory" element={<AgentDirectoryPage />} />
+          <Route path="/agents/escalations" element={<AgentEscalationsPage />} />
+          <Route path="/agents/telemetry" element={<AgentTelemetryPage />} />
+          <Route path="/agents/knowledge" element={<AgentKnowledgePage />} />
 
           {/* Talent Discovery & Recruitment */}
           <Route path="/talent" element={<TalentPage />} />
@@ -759,6 +801,8 @@ export default function App() {
         {/* School Mode — own layout (SchoolLayout), no MainLayout wrapper */}
         <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
           <Route path="/school" element={<SchoolDashboardPage />} />
+          <Route path="/school/evidence" element={<LearningEvidencePage />} />
+          <Route path="/school/curriculum" element={<CurriculumRegistryPage />} />
           <Route path="/school/onboarding" element={<SchoolOnboardingPage />} />
           <Route path="/school/chat" element={<SchoolChatPage />} />
           <Route path="/school/subjects" element={<SubjectsPage />} />

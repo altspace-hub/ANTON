@@ -626,9 +626,13 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // ── Owner: portal CRUD ────────────────────────────────────────────────────
 
-  router.get('/portals', requireAuth, async (req, res) => {
+  // Owner-portal list handler. Shared by GET /portals and GET /portals/mine
+  // so both URLs return the same payload. The /mine alias pins the historical
+  // regression (audit-notes §6 D7) where calling /api/portals/mine matched
+  // /portals/:id with id='mine' and PostgreSQL rejected "mine" as a UUID.
+  // See tests/routes/portals-mine.test.ts.
+  const listOwnedPortals: import('express').RequestHandler = async (req, res) => {
     try {
-      // Authenticated owner only — ownerId comes from the JWT, not query params.
       const ownerId = req.user!.id;
       const rows = await db.all(
         `SELECT id, name, namespace, category, display_title, description, status,
@@ -640,13 +644,16 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       );
       res.json({ portals: rows });
     } catch (err) {
-      // Log the underlying error so a server-log tail reveals the true
-      // cause — safeError() strips details before they reach the client.
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[portals] GET /api/portals failed:', msg, err);
       res.status(500).json({ error: safeError(err) });
     }
-  });
+  };
+
+  router.get('/portals', requireAuth, listOwnedPortals);
+  // /portals/mine alias — must be registered BEFORE /portals/:id so Express
+  // matches it first.
+  router.get('/portals/mine', requireAuth, listOwnedPortals);
 
   router.get('/portals/:id', requireAuth, requirePortalOwner, async (req, res) => {
     try {

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ANTON Companion App — Evolution + Personal Accent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: Inter, system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  button { font: inherit; cursor: pointer; }
+  #root { min-height: 100vh; }
+
+  .tweaks {
+    position: fixed; right: 20px; bottom: 20px; z-index: 9999;
+    width: 300px; background: #fff; border: 1px solid #d8d4cc;
+    border-radius: 14px; box-shadow: 0 14px 40px rgba(0,0,0,0.14);
+    font-family: Inter, system-ui, sans-serif; overflow: hidden; display: none;
+  }
+  .tweaks.open { display: block; }
+  .tweaks h3 { margin: 0; padding: 12px 14px; font-size: 12px; font-weight: 700;
+    background: #1a1b2e; color: #fff; letter-spacing: 0.4px; text-transform: uppercase;
+    display: flex; align-items: center; justify-content: space-between; }
+  .tweaks h3 button { background: transparent; border: 0; color: #fff; font-size: 18px; line-height: 1; }
+  .tweaks .section { padding: 12px 14px; border-bottom: 1px solid #ece9e2; }
+  .tweaks .section:last-child { border-bottom: 0; }
+  .tweaks label { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; }
+  .tweaks .chipgroup { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tweaks .chip { padding: 5px 10px; font-size: 12px; font-weight: 500; background: #f5f3ef; border: 1px solid #dcd8d0; border-radius: 999px; }
+  .tweaks .chip.active { background: var(--tw-accent, #0D7D6C); color: #fff; border-color: var(--tw-accent, #0D7D6C); }
+  .tweaks .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .tweaks .swatch { aspect-ratio: 1/1; border-radius: 8px; border: 2px solid transparent; cursor: pointer; position: relative; }
+  .tweaks .swatch.active { border-color: #1a1b2e; }
+  .tweaks .swatch::after { content: attr(data-l); position: absolute; bottom: 3px; left: 5px; font-size: 9px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <div class="tweaks" id="tweaks">
+    <h3>Tweaks <button id="tw-close">×</button></h3>
+    <div class="section">
+      <label>Your accent color</label>
+      <div class="swatches" id="tw-accent"></div>
+    </div>
+    <div class="section">
+      <label>Frame</label>
+      <div class="chipgroup" id="tw-frame"></div>
+    </div>
+    <div class="section">
+      <label>Connection</label>
+      <div class="chipgroup" id="tw-conn"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design/tokens.jsx"></script>
+  <script type="text/babel" src="design/primitives.jsx"></script>
+  <script type="text/babel" src="design/screens-auth.jsx"></script>
+  <script type="text/babel" src="design/screens-work.jsx"></script>
+  <script type="text/babel" src="design/screens-personalize.jsx"></script>
+  <script type="text/babel" src="design/screens-comms.jsx"></script>
+  <script type="text/babel" src="design/screens-finance.jsx"></script>
+  <script type="text/babel" src="design/screens-modules.jsx"></script>
+  <script type="text/babel" src="design/screens-standard.jsx"></script>
+  <script type="text/babel" src="design/ios-frame.jsx"></script>
+  <script type="text/babel" src="design/android-frame.jsx"></script>
+  <script type="text/babel" src="design/design-canvas.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAKS = /*EDITMODE-BEGIN*/{
+      "accent": "emerald",
+      "frame": "iphone",
+      "conn": "online"
+    }/*EDITMODE-END*/;
+
+    // iPhone/Android frame wrapper (same as before)
+    function ScreenInFrame({ frame, children }) {
+      if (frame === 'android') {
+        return (
+          <div style={{
+            width: 412, height: 892, borderRadius: 18, overflow: 'hidden',
+            background: '#000', border: '8px solid rgba(116,119,117,0.5)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
+            display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+          }}>
+            <AndroidStatusBar dark={false} />
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {children}
+            </div>
+            <AndroidNavBar dark={false} />
+          </div>
+        );
+      }
+      return (
+        <div style={{
+          width: 402, height: 874, borderRadius: 48, overflow: 'hidden',
+          position: 'relative', background: '#000',
+          boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+        }}>
+          <div style={{
+            position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+            width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+          }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, pointerEvents: 'none' }}>
+            <IOSStatusBar dark={false} />
+          </div>
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingTop: 54 }}>
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {children}
+            </div>
+          </div>
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+            height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+            paddingBottom: 8, pointerEvents: 'none',
+          }}>
+            <div style={{ width: 139, height: 5, borderRadius: 100, background: 'rgba(0,0,0,0.25)' }} />
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [accent, setAccent] = React.useState(TWEAKS.accent || 'emerald');
+      const [frame, setFrame]   = React.useState(TWEAKS.frame || 'iphone');
+      const [conn, setConn]     = React.useState(TWEAKS.conn || 'online');
+      const [tweaksOn, setTweaksOn] = React.useState(false);
+
+      const tok = withAccent(DIRECTIONS.evolution, accent);
+
+      React.useEffect(() => {
+        const onMsg = (e) => {
+          const d = e.data || {};
+          if (d.type === '__activate_edit_mode') setTweaksOn(true);
+          if (d.type === '__deactivate_edit_mode') setTweaksOn(false);
+        };
+        window.addEventListener('message', onMsg);
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+        return () => window.removeEventListener('message', onMsg);
+      }, []);
+
+      React.useEffect(() => {
+        const tw = document.getElementById('tweaks');
+        tw.classList.toggle('open', tweaksOn);
+        document.documentElement.style.setProperty('--tw-accent', ACCENTS[accent].accent);
+
+        const fill = (id, items, val, setter, key) => {
+          const el = document.getElementById(id);
+          el.innerHTML = '';
+          items.forEach(it => {
+            const b = document.createElement('button');
+            b.className = 'chip' + (it.v === val ? ' active' : '');
+            b.textContent = it.l;
+            b.onclick = () => {
+              setter(it.v);
+              window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: it.v } }, '*');
+            };
+            el.appendChild(b);
+          });
+        };
+        fill('tw-frame', [{ l: 'iPhone', v: 'iphone' }, { l: 'Android', v: 'android' }], frame, setFrame, 'frame');
+        fill('tw-conn',  [{ l: 'Online', v: 'online' }, { l: 'LAN', v: 'lan' }, { l: 'Offline', v: 'offline' }], conn, setConn, 'conn');
+
+        const accEl = document.getElementById('tw-accent');
+        accEl.innerHTML = '';
+        Object.keys(ACCENTS).forEach(k => {
+          const a = ACCENTS[k];
+          const b = document.createElement('button');
+          b.className = 'swatch' + (k === accent ? ' active' : '');
+          b.style.background = a.accent;
+          b.setAttribute('data-l', a.label);
+          b.onclick = () => {
+            setAccent(k);
+            window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { accent: k } }, '*');
+          };
+          accEl.appendChild(b);
+        });
+
+        document.getElementById('tw-close').onclick = () => {
+          setTweaksOn(false);
+          window.parent.postMessage({ type: '__deactivate_edit_mode' }, '*');
+        };
+      }, [tweaksOn, accent, frame, conn]);
+
+      // Accent-variant mini samples: show same Home screen in 4 accents
+      const MINI_ACCENTS = ['emerald', 'ocean', 'sunrise', 'plum'];
+
+      return (
+        <DesignCanvas>
+          <div data-screen-label="00 Intro" style={{ padding: '0 60px 36px', maxWidth: 1100 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: '#8a7c5e', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+              ANTON · Companion App · Pro + Standard
+            </div>
+            <div style={{ fontSize: 44, fontWeight: 700, color: '#1a1b2e', letterSpacing: -1.4, lineHeight: 1.05, marginTop: 6, textWrap: 'pretty' }}>
+              One app. Two modes. Your color.
+            </div>
+            <div style={{ fontSize: 16, color: '#5a5d72', lineHeight: 1.55, marginTop: 14, maxWidth: 860, textWrap: 'pretty' }}>
+              <b>ANTON Pro</b> is the full cockpit — unified Mail & Calendar, every module, Markets, Pathfinder, Horizon Radar.
+              <b> Standard</b> is the same ANTON for daily life — bigger type, plain language, no hashes or trust scores, just the essentials.
+              Every user also picks a <b>personal accent</b> — emerald is the default, but it's theirs to change.
+              Everything below is Evolution aesthetic. Flip accent, frame and mode in <b>Tweaks</b>.
+            </div>
+
+            {/* Accent row sample */}
+            <div style={{ marginTop: 28, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {Object.keys(ACCENTS).map(k => {
+                const a = ACCENTS[k];
+                const active = k === accent;
+                return (
+                  <button key={k} onClick={() => {
+                    setAccent(k);
+                    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { accent: k } }, '*');
+                  }} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 14px 8px 8px',
+                    background: '#fff', border: active ? `2px solid #1a1b2e` : `1px solid #d8d4cc`,
+                    borderRadius: 999, cursor: 'pointer',
+                    boxShadow: active ? `0 4px 14px ${a.accent}44` : 'none',
+                  }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: a.accent, boxShadow: active ? `0 0 0 3px ${a.accent}33` : 'none' }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1b2e' }}>{a.label}</span>
+                    <span style={{ fontSize: 11, color: '#888', marginLeft: -4 }}>· {a.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 1 — Accent picker (the personalization moment) */}
+          <div data-screen-label="01 Pick color" style={{ marginBottom: 72 }}>
+            <div style={{ padding: '0 60px 24px' }}>
+              <div style={{ fontSize: 22, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.3 }}>01 · Pick your color</div>
+              <div style={{ fontSize: 13, color: '#5a5d72', marginTop: 2 }}>Last step of pairing. Emerald is default. Choice is per-device and changeable.</div>
+            </div>
+            <div style={{ display: 'flex', gap: 48, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(60,50,40,0.7)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>
+                  Personalization sheet
+                </div>
+                <ScreenInFrame frame={frame}>
+                  <AccentPickerScreen tok={tok} selected={accent} setSelected={setAccent} accents={ACCENTS} />
+                </ScreenInFrame>
+              </div>
+              {/* Explanation post-it */}
+              <div style={{ width: 260, paddingTop: 80 }}>
+                <div style={{ fontSize: 14, color: '#5a5d72', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#1a1b2e', fontFamily: 'JetBrains Mono, monospace', marginBottom: 10 }}>
+                    Why this works
+                  </div>
+                  <p style={{ margin: '0 0 12px' }}><b>Emerald remains the brand.</b> It's what people see on the website, the server, the marketing. The picker opens with it pre-selected.</p>
+                  <p style={{ margin: '0 0 12px' }}><b>Your accent is yours.</b> A bank employee and an NGO volunteer might both use ANTON on their phone — but the approvals feel like <i>their</i> tool.</p>
+                  <p style={{ margin: 0 }}><b>Changeable.</b> Not a wizard-you-regret. Swap it in Settings any time. Try it now in Tweaks.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2 — 4 accent variants of the same Home screen */}
+          <div data-screen-label="02 Accent samples" style={{ marginBottom: 72 }}>
+            <div style={{ padding: '0 60px 24px' }}>
+              <div style={{ fontSize: 22, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.3 }}>02 · Same Home, four people</div>
+              <div style={{ fontSize: 13, color: '#5a5d72', marginTop: 2 }}>Identical app, identical data. The accent paints primary actions, live pulse, and section markers.</div>
+            </div>
+            <div style={{ display: 'flex', gap: 36, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+              {MINI_ACCENTS.map(k => {
+                const a = ACCENTS[k];
+                const tokV = withAccent(DIRECTIONS.evolution, k);
+                return (
+                  <div key={k} style={{ flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <span style={{ width: 14, height: 14, borderRadius: '50%', background: a.accent }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1b2e' }}>{a.label}</span>
+                      <span style={{ fontSize: 11, color: '#888' }}>· {a.sub}</span>
+                    </div>
+                    <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: 402, height: 874 }}>
+                      <ScreenInFrame frame={frame}>
+                        <HomeScreen_D tok={tokV} online={conn} />
+                      </ScreenInFrame>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 3+ — the full flow in the selected accent */}
+          <div style={{ padding: '0 60px 14px', marginTop: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#8a7c5e', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+              Part A · ANTON Pro
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.5, marginTop: 6 }}>03 · The full cockpit, in {ACCENTS[accent].label}</div>
+            <div style={{ fontSize: 14, color: '#5a5d72', marginTop: 4, maxWidth: 780 }}>
+              Pro gets everything. Flip accent or frame in Tweaks — every primary action, live dot and section marker recolors.
+            </div>
+          </div>
+
+          {(() => {
+            const groups = [
+              {
+                title: 'Core',
+                note: 'Pair · Home · Approvals · AI chat · Voice · Capture · Instances',
+                scrs: [
+                  { id: 'pair', label: 'Pair device', Comp: PairScreen },
+                  { id: 'home', label: 'Home', Comp: HomeScreen_D },
+                  { id: 'inbox', label: 'Approvals inbox', Comp: ApprovalsScreen_D },
+                  { id: 'detail', label: 'Approval detail', Comp: ApprovalDetail_D },
+                  { id: 'chat', label: 'AI chat', Comp: ChatScreen_D },
+                  { id: 'voice', label: 'Voice mode', Comp: VoiceScreen_D },
+                  { id: 'capture', label: 'Capture + intent', Comp: CaptureScreen_D },
+                  { id: 'instances', label: 'Instance switcher', Comp: InstanceSwitcher_D },
+                ],
+              },
+              {
+                title: 'ANTON Mail · unified',
+                note: 'One inbox — ANTON itself, P2P chat, connected providers (M365, Gmail). Filter by source.',
+                scrs: [
+                  { id: 'umail', label: 'Unified inbox', Comp: UnifiedMailScreen },
+                  { id: 'mailinbox', label: 'Email view · single source', Comp: EmailInboxScreen },
+                  { id: 'msgthread', label: 'Thread · P2P + ANTON', Comp: MessageThreadScreen },
+                  { id: 'mailsetup', label: 'Connect external provider', Comp: EmailSetupScreen },
+                ],
+              },
+              {
+                title: 'ANTON Calendar · unified',
+                note: 'Native ANTON events + iCloud / M365 / family calendars merged on one timeline.',
+                scrs: [
+                  { id: 'ucal', label: 'Unified day', Comp: UnifiedCalendarScreen },
+                  { id: 'events', label: 'Single-source view', Comp: EventsScreen },
+                  { id: 'eventdet', label: 'Event detail · ANTON prep', Comp: EventDetailScreen },
+                ],
+              },
+              {
+                title: 'Work · Modules',
+                note: '"Find the right module" helper at the top — describe what you\'re trying to do, ANTON routes you.',
+                scrs: [
+                  { id: 'work', label: 'Modules · grid', Comp: WorkModulesScreen },
+                ],
+              },
+              {
+                title: 'School',
+                note: 'Daily lesson feed — short, swipeable, offline-ready. Homework capture via camera. Primary for NGO deployments to schoolchildren in places with phones, not computers.',
+                scrs: [
+                  { id: 'school', label: 'Daily feed', Comp: SchoolFeedScreen },
+                ],
+              },
+              {
+                title: 'Markets',
+                note: 'Morning briefing · local ANTON analytics · your watchlist, not a public feed.',
+                scrs: [
+                  { id: 'markets', label: 'Briefing + tape', Comp: MarketsScreen },
+                ],
+              },
+              {
+                title: 'Pathfinder',
+                note: '"Search that thinks before it answers. You\'re never the product." Shows the thinking trace, cites your private knowledge alongside the web.',
+                scrs: [
+                  { id: 'path', label: 'Thinking search', Comp: PathfinderScreen },
+                ],
+              },
+              {
+                title: 'Horizon Radar',
+                note: 'You teach it what to watch — regulators, competitors, threats, trends. It scans your sources, scores relevance against your work, and pings you with a morning brief.',
+                scrs: [
+                  { id: 'radar', label: 'Signals + brief', Comp: HorizonRadarScreen },
+                ],
+              },
+              {
+                title: 'Money (Wallet)',
+                note: 'Balance · send · receive · the high-stakes ANTON payment request bottom-sheet.',
+                scrs: [
+                  { id: 'pay', label: 'Wallet · home', Comp: PaymentsHomeScreen },
+                  { id: 'paysend', label: 'Payment · send', Comp: PaymentSendScreen },
+                  { id: 'payrecv', label: 'Payment · receive', Comp: PaymentReceiveScreen },
+                  { id: 'payreq', label: 'ANTON payment request', Comp: ANTONPaymentApprovalScreen },
+                ],
+              },
+              {
+                title: 'Verification',
+                note: 'KYC / EDD flow for FutureChain accounts. Attestations, not raw docs.',
+                scrs: [
+                  { id: 'verify', label: 'Source of funds · step 4/6', Comp: VerificationScreen },
+                ],
+              },
+            ];
+
+            return groups.map(g => (
+              <div key={g.title} data-screen-label={`Pro · ${g.title}`} style={{ marginBottom: 56 }}>
+                <div style={{ padding: '0 60px 18px', maxWidth: 1100 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 3 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: ACCENTS[accent].accent }} />
+                    <div style={{ fontSize: 20, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.3 }}>{g.title}</div>
+                    <div style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: '#8a7c5e', letterSpacing: 0.3, textTransform: 'uppercase', fontWeight: 600 }}>
+                      {g.scrs.length} screen{g.scrs.length > 1 ? 's' : ''}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#5a5d72', lineHeight: 1.5, paddingLeft: 20 }}>{g.note}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 36, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+                  {g.scrs.map(scr => (
+                    <div key={scr.id} style={{ flexShrink: 0 }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 600, color: 'rgba(60,50,40,0.7)',
+                        fontFamily: 'JetBrains Mono, monospace', letterSpacing: 0.5,
+                        textTransform: 'uppercase', marginBottom: 10,
+                      }}>{scr.label}</div>
+                      <ScreenInFrame frame={frame}>
+                        <scr.Comp tok={tok} online={conn} />
+                      </ScreenInFrame>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
+
+          {/* ── Part B · Standard mode ─────────────────────────── */}
+          <div style={{ padding: '40px 60px 14px' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#8a7c5e', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+              Part B · ANTON Standard
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.5, marginTop: 6 }}>
+              04 · The same ANTON, simpler
+            </div>
+            <div style={{ fontSize: 14, color: '#5a5d72', marginTop: 6, lineHeight: 1.55, maxWidth: 860, textWrap: 'pretty' }}>
+              For partners, parents, older family members — and anyone who just wants the essentials. Bigger type, plain language,
+              <b> no hashes, no trust scores, no mono</b>. Four tabs: <b>Home · Messages · Ask · You</b>.
+              Advanced modules (Work, Markets, Pathfinder, Horizon Radar) are hidden. Switch any time in <b>You → App mode</b>.
+            </div>
+
+            {/* Pro vs Standard diff card */}
+            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, maxWidth: 900 }}>
+              <div style={{ padding: 16, background: '#fff', border: '1px solid #d8d4cc', borderRadius: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0D7D6C', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>Pro keeps</div>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#3B3D50', lineHeight: 1.7 }}>
+                  <li>Trust scores, citation counts, request IDs</li>
+                  <li>Mono font for keys, hashes, policy versions</li>
+                  <li>5 tabs · all modules · instance switcher</li>
+                  <li>Source chips on every mail + calendar event</li>
+                  <li>Wallet shows address, fees, chain</li>
+                </ul>
+              </div>
+              <div style={{ padding: 16, background: '#fff', border: '1px solid #d8d4cc', borderRadius: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0D7D6C', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>Standard drops</div>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#3B3D50', lineHeight: 1.7 }}>
+                  <li>All technical metadata — hashes, scores, IDs</li>
+                  <li>Mono typography everywhere</li>
+                  <li>Work, Markets, Pathfinder, Horizon Radar modules</li>
+                  <li>Density — one card, one action per view</li>
+                  <li>Crypto language — "Money", not "FutureChain 0xA7f…"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div data-screen-label="Std · Daily" style={{ marginBottom: 32 }}>
+            <div style={{ padding: '12px 60px 14px' }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.2 }}>Daily screens</div>
+            </div>
+            <div style={{ display: 'flex', gap: 36, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+              {[
+                { id: 'sh', label: 'Home', Comp: StdHomeScreen },
+                { id: 'sm', label: 'Messages', Comp: StdMailScreen },
+                { id: 'st', label: 'ANTON thread', Comp: StdThreadScreen },
+                { id: 'sc', label: 'Calendar · today', Comp: StdCalendarScreen },
+              ].map(scr => (
+                <div key={scr.id} style={{ flexShrink: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(60,50,40,0.7)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>{scr.label}</div>
+                  <ScreenInFrame frame={frame}>
+                    <scr.Comp tok={tok} online={conn} />
+                  </ScreenInFrame>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div data-screen-label="Std · Money+Voice+Settings" style={{ marginBottom: 48 }}>
+            <div style={{ padding: '12px 60px 14px' }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1b2e', letterSpacing: -0.2 }}>Money · Voice · Mode toggle</div>
+            </div>
+            <div style={{ display: 'flex', gap: 36, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+              {[
+                { id: 'sw', label: 'Money', Comp: StdWalletScreen },
+                { id: 'sv', label: 'Voice · hold to speak', Comp: StdVoiceScreen },
+                { id: 'ss', label: 'You · mode toggle', Comp: StdSettingsScreen },
+              ].map(scr => (
+                <div key={scr.id} style={{ flexShrink: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(60,50,40,0.7)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>{scr.label}</div>
+                  <ScreenInFrame frame={frame}>
+                    <scr.Comp tok={tok} online={conn} />
+                  </ScreenInFrame>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div data-screen-label="99 Notes" style={{ padding: '20px 60px 80px', maxWidth: 1000 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#1a1b2e', marginBottom: 10 }}>System rules</div>
+            <ul style={{ fontSize: 14, color: '#5a5d72', lineHeight: 1.7, paddingLeft: 20, margin: 0 }}>
+              <li><b>Mail & Calendar are ANTON-native.</b> Every instance gets a mailbox at <code>user@anton.&lt;org&gt;</code>; ANTON-generated messages land here automatically. External providers (M365, Gmail, iCloud) are optional overlays — shown as colored source stripes.</li>
+              <li><b>Find-the-right-module</b> sits at the top of Work, not buried. Describe the task in your own words; ANTON routes you to Sanctions / Counsel / Gap Assessment / Finance / etc.</li>
+              <li><b>Pathfinder</b> is search with a visible thinking trace. Your private knowledge (policies, past mails, instance docs) is cited <i>alongside</i> web sources, never mixed. "You're never the product" is the footer guarantee.</li>
+              <li><b>Markets</b> stays yours. The briefing is produced by <i>your</i> ANTON against <i>your</i> positions — no public newsfeed, no sponsored content, no data shipped off-device.</li>
+              <li><b>Horizon Radar</b> is how you follow the outside world without being farmed by it. You pick the sources (regulators, press, arXiv, your own docs) and the watch-terms; ANTON scans on your schedule, scores each hit against <i>your</i> work, and surfaces a short morning brief. No algorithmic feed, no sponsored signals, no third party sees your queries.</li>
+              <li><b>School</b> is designed for phone-first learners. Works offline. Voice + photo are primary inputs. Homework capture never just gives the answer — it teaches the steps.</li>
+              <li><b>Standard mode</b> hides Work, Markets, Pathfinder, Horizon Radar. Same data, same accounts, same ANTON — just the surface area fit for daily life. Toggle in <i>You → App mode</i>.</li>
+              <li><b>Emerald is still the brand.</b> Accent is personal colour; instance badge keeps org colour; red/gold/green status codes are locked.</li>
+            </ul>
+          </div>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

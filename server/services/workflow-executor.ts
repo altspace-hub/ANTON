@@ -18,35 +18,13 @@ const { Client: PgClient } = pkg;
 import mysql from 'mysql2/promise';
 import sql from 'mssql';
 
-// Step types that can run without user interaction
-const HEADLESS_STEP_TYPES = new Set([
-  'api_call',
-  'database_query',
-  'file_read',
-  'transform',
-  'wait',
-  'decision_gate',
-  'conditional',
-  'data_import',
-  'data_export',
-  'data_transform',
-  'data_merge',
-  'notification',
-  'email_send',
-  'messaging_notification',
-  'script',
-  'llm',
-  'parallel',
-  'approval',
-]);
-
-// Step types that require frontend/user interaction
-const INTERACTIVE_STEP_TYPES = new Set([
-  'claude',
-  'input',
-  'export',
-  'checkpoint',
-]);
+// Canonical step-type catalogue lives in workflow-step-registry.ts
+// (single source of truth — see /docs/architecture/24-workflow-engine.md).
+import {
+  HEADLESS_STEP_IDS as HEADLESS_STEP_TYPES,
+  INTERACTIVE_STEP_IDS as INTERACTIVE_STEP_TYPES,
+  isRegisteredStepType,
+} from './workflow-step-registry.js';
 
 interface ExecutionResult {
   success: boolean;

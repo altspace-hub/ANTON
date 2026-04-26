@@ -61,7 +61,7 @@ export default function RulesManager() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchRules();
+        await fetchRules();
       }
     } catch (error) {
       console.error('Failed to toggle rule:', error);
@@ -77,7 +77,7 @@ export default function RulesManager() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchRules();
+        await fetchRules();
       }
     } catch (error) {
       console.error('Failed to delete rule:', error);
