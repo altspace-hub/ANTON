@@ -34,6 +34,7 @@ import SettingsPage from './pages/SettingsPage';
 import WalletScreen from './pages/WalletScreen';
 import PortalsScreen from './pages/PortalsScreen';
 import CommunityScreen from './pages/CommunityScreen';
+import CommunityChatScreen from './pages/CommunityChatScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
 import CapturePage from './pages/CapturePage';
 import UnifiedMailScreen from './pages/UnifiedMailScreen';
@@ -56,7 +57,7 @@ import { Ico } from './components/ui';
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
 const PERSONALIZED_KEY = 'anton-companion-personalized';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community'
+type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community' | 'community_chat'
   // Standard-mode screens (selected when mode === 'standard')
   | 'std_mail' | 'std_thread' | 'std_calendar' | 'std_wallet' | 'std_voice' | 'std_settings';
 
@@ -100,6 +101,8 @@ export default function App() {
   const [openApprovalId, setOpenApprovalId] = useState<string | null>(null);
   // Standard-mode thread drilldown
   const [selectedMail, setSelectedMail] = useState<MailMessage | null>(null);
+  // Community chat drilldown — set when user taps a contact in CommunityScreen
+  const [chatContact, setChatContact] = useState<{ hash: string; name: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -223,12 +226,13 @@ export default function App() {
   const handleAndroidBack = useCallback((): AppBackResult => {
     if (showMore)                      { setShowMore(false);      return 'handled'; }
     if (selectedMail && activeTab === 'std_thread') { setActiveTab('std_mail'); return 'handled'; }
+    if (chatContact && activeTab === 'community_chat') { setChatContact(null); setActiveTab('community'); return 'handled'; }
     // Sub-screens that aren't a primary tab: bounce to home.
     // Includes both Pro-mode More-tile screens and Standard-mode std_* surfaces.
     const SUB_SCREENS: OrgTab[] = [
       'mail_setup', 'history', 'profile', 'settings', 'work', 'school',
       'calendar', 'mail', 'schedule', 'tasks', 'search', 'markets', 'radar', 'wallet',
-      'portals', 'community',
+      'portals', 'community', 'community_chat',
       'std_calendar', 'std_wallet', 'std_voice', 'std_settings',
     ];
     if (SUB_SCREENS.includes(activeTab)) { setActiveTab('home'); return 'handled'; }
@@ -238,7 +242,7 @@ export default function App() {
     if (activeTab === 'capture' || activeTab === 'approvals') { setActiveTab('home'); return 'handled'; }
     // On home (or any root state) → ask for exit-prompt
     return 'exit';
-  }, [showMore, activeTab, sessionId, selectedMail]);
+  }, [showMore, activeTab, sessionId, selectedMail, chatContact]);
 
   useAndroidBackButton({ onBack: handleAndroidBack });
 
@@ -337,7 +341,22 @@ export default function App() {
         <PortalsScreen orgId={selectedOrgId} onBack={() => setActiveTab('home')} />
       )}
       {activeTab === 'community' && (
-        <CommunityScreen orgId={selectedOrgId} onBack={() => setActiveTab('home')} />
+        <CommunityScreen
+          orgId={selectedOrgId}
+          onBack={() => setActiveTab('home')}
+          onOpenChat={(hash, name) => {
+            setChatContact({ hash, name });
+            setActiveTab('community_chat');
+          }}
+        />
+      )}
+      {activeTab === 'community_chat' && chatContact && (
+        <CommunityChatScreen
+          orgId={selectedOrgId}
+          contactHash={chatContact.hash}
+          contactName={chatContact.name}
+          onBack={() => setActiveTab('community')}
+        />
       )}
       {activeTab === 'history' && (
         <SessionHistoryPage
