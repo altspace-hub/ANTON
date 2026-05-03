@@ -204,7 +204,7 @@ export async function getOrgWallet(orgId: string, limit = 20) {
   return res.json() as Promise<{ wallets: Array<Record<string, unknown>>; transactions: Array<Record<string, unknown>> }>;
 }
 
-// ── Portals ──────────────────────────────────────────────────────
+// ── Portals (visitor view) ──────────────────────────────────────
 export interface PortalSummary {
   id: string;
   name: string;
@@ -218,10 +218,11 @@ export interface PortalSummary {
   created_at: string;
 }
 
-export async function getOrgPortals(orgId: string): Promise<{ portals: PortalSummary[] }> {
-  const res = await fetch(`${getApiBase()}/org/${orgId}/portals`, { headers: headers() });
+export async function discoverPortals(orgId: string, query?: string): Promise<{ portals: PortalSummary[]; query: string }> {
+  const qs = query && query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+  const res = await fetch(`${getApiBase()}/org/${orgId}/portals/discover${qs}`, { headers: headers() });
   if (!res.ok) throw new Error('Failed to load portals');
-  return res.json() as Promise<{ portals: PortalSummary[] }>;
+  return res.json() as Promise<{ portals: PortalSummary[]; query: string }>;
 }
 
 // ── Community ────────────────────────────────────────────────────
@@ -247,4 +248,83 @@ export async function getOrgCommunity(orgId: string): Promise<{
   const res = await fetch(`${getApiBase()}/org/${orgId}/community`, { headers: headers() });
   if (!res.ok) throw new Error('Failed to load community');
   return res.json() as Promise<{ identity: CommunityIdentity | null; connections: CommunityConnection[] }>;
+}
+
+// ── Community: QR + chat ────────────────────────────────────────
+export interface CommunityQr {
+  qrDataUrl: string;
+  contactHash: string;
+  displayName: string | null;
+  payload: string;
+}
+
+export async function getOrgCommunityQr(orgId: string): Promise<CommunityQr> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/community/qr`, { headers: headers() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || 'Failed to generate QR');
+  }
+  return res.json() as Promise<CommunityQr>;
+}
+
+export interface CommunityScannedConnection {
+  id: string;
+  contact_hash: string;
+  display_name: string | null;
+  status: string;
+  connected_at: string;
+}
+
+export async function scanCommunityContact(orgId: string, payload: string): Promise<{ connection: CommunityScannedConnection | null }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/community/connections/scan`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ payload }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || 'Failed to add contact');
+  }
+  return res.json() as Promise<{ connection: CommunityScannedConnection | null }>;
+}
+
+export async function respondToConnection(orgId: string, connId: string, decision: 'accept' | 'decline'): Promise<{ ok: boolean; status: string }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/community/connections/${connId}/respond`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ decision }),
+  });
+  if (!res.ok) throw new Error('Failed to update connection');
+  return res.json() as Promise<{ ok: boolean; status: string }>;
+}
+
+export interface CommunityMessage {
+  id: string;
+  from_hash: string;
+  is_me: boolean;
+  subject: string | null;
+  body: string | null;
+  timestamp: string;
+}
+
+export async function getCommunityMessages(orgId: string, withHash: string): Promise<{
+  me: string; with: string; messages: CommunityMessage[];
+}> {
+  const url = `${getApiBase()}/org/${orgId}/community/messages?with=${encodeURIComponent(withHash)}`;
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load messages');
+  return res.json() as Promise<{ me: string; with: string; messages: CommunityMessage[] }>;
+}
+
+export async function sendCommunityMessage(orgId: string, to: string, body: string): Promise<{ id: string; sent_at: string }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/community/messages`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ to, body }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || 'Failed to send message');
+  }
+  return res.json() as Promise<{ id: string; sent_at: string }>;
 }

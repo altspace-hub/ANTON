@@ -1712,32 +1712,219 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
-  // GET /api/app/org/:orgId/portals — list portals on this instance.
+  // GET /api/app/org/:orgId/portals/discover — visitor view of portals.
   //
-  // Mirrors the desktop's GET /api/portals (which filters by req.user.id).
-  // The companion app authenticates as the instance owner, so we surface
-  // all portals on this instance — single-tenant model in solo mode.
-  publicRouter.get('/org/:orgId/portals', appAuth, orgMember, async (_req, res) => {
+  // The companion app's purpose is to *visit other people's portals*, not
+  // to build them. This returns active+public_index portals from this
+  // instance's directory plus any cached remote portals (peers' portals
+  // discovered via LAN scan). Optional ?q text filter.
+  publicRouter.get('/org/:orgId/portals/discover', appAuth, orgMember, async (req, res) => {
     try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const params: unknown[] = [];
+      let whereExtras = '';
+      if (q.length > 0) {
+        // Case-insensitive LIKE across name + display_title + description
+        whereExtras = ` AND (lower(p.name) LIKE $1 OR lower(coalesce(p.display_title,'')) LIKE $1 OR lower(coalesce(p.description,'')) LIKE $1)`;
+        params.push(`%${q.toLowerCase()}%`);
+      }
       const rows = await db.all<{
         id: string; name: string; namespace: string | null; category: string | null;
         display_title: string | null; description: string | null; status: string;
-        public_index: boolean; descriptor_hash: string | null;
+        public_index: boolean;
         surface_mode: string | null; external_primary_url: string | null;
-        registered_at: string | null; created_at: string; updated_at: string;
+        registered_at: string | null; created_at: string;
       }>(
-        `SELECT id, name, namespace, category, display_title, description, status,
-                public_index, descriptor_hash,
-                surface_mode, external_primary_url,
-                registered_at, created_at, updated_at
-           FROM portals
-          ORDER BY created_at DESC
-          LIMIT 50`
+        `SELECT p.id, p.name, p.namespace, p.category, p.display_title, p.description, p.status,
+                p.public_index, p.surface_mode, p.external_primary_url,
+                p.registered_at, p.created_at
+           FROM portals p
+          WHERE p.status = 'active' AND p.public_index = TRUE${whereExtras}
+          ORDER BY p.created_at DESC
+          LIMIT 100`,
+        ...params
       );
-      res.json({ portals: rows });
+      res.json({ portals: rows, query: q });
     } catch (err) {
-      console.error('[app-gateway] portals error:', err);
+      console.error('[app-gateway] portals discover error:', err);
       res.status(500).json({ error: 'Failed to load portals' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/community/qr — your QR data for sharing.
+  // Companion app users show this so peers can scan it on their phones.
+  publicRouter.get('/org/:orgId/community/qr', appAuth, orgMember, async (_req, res) => {
+    try {
+      const identity = await db.get<{
+        contact_hash: string; display_name: string | null; public_key: string | null;
+      }>(
+        `SELECT contact_hash, display_name, public_key
+           FROM community_identity WHERE user_id = 'default' LIMIT 1`
+      );
+      if (!identity) return res.status(404).json({ error: 'Community not activated. Activate it from the Pro UI on your desktop ANTON.' });
+      // Serialise the contact card as a JSON envelope so a scanning client
+      // gets the contact_hash + public_key in one tap.
+      const payload = JSON.stringify({
+        kind: 'anton-contact',
+        contact_hash: identity.contact_hash,
+        display_name: identity.display_name,
+        public_key: identity.public_key,
+      });
+      // Use the same `qrcode` package the desktop uses, branded in ANTON green.
+      const qrcode = await import('qrcode');
+      const qrDataUrl = await (qrcode as { default: { toDataURL: (s: string, o: Record<string, unknown>) => Promise<string> } }).default.toDataURL(payload, {
+        width: 320, margin: 2, color: { dark: '#0D7D6C', light: '#F5F3EF' },
+      });
+      res.json({
+        qrDataUrl,
+        contactHash: identity.contact_hash,
+        displayName: identity.display_name,
+        payload,
+      });
+    } catch (err) {
+      console.error('[app-gateway] community qr error:', err);
+      res.status(500).json({ error: 'Failed to generate QR' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/community/connections/scan — add contact from
+  // a scanned QR payload. Body: { payload: string } — JSON string from QR.
+  publicRouter.post('/org/:orgId/community/connections/scan', appAuth, orgMember, async (req, res) => {
+    try {
+      const { payload } = req.body as { payload?: string };
+      if (typeof payload !== 'string' || payload.length === 0) {
+        return res.status(400).json({ error: 'payload required' });
+      }
+      let parsed: { kind?: string; contact_hash?: string; display_name?: string | null; public_key?: string | null };
+      try { parsed = JSON.parse(payload); }
+      catch { return res.status(400).json({ error: 'payload must be JSON from an ANTON contact QR' }); }
+      if (parsed.kind !== 'anton-contact' || !parsed.contact_hash || !parsed.public_key) {
+        return res.status(400).json({ error: 'Not a valid ANTON contact QR' });
+      }
+      const id = `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      await db.run(
+        `INSERT INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, status)
+         VALUES ($1, $2, $3, $4, $5, 'active')
+         ON CONFLICT DO NOTHING`,
+        id, 'default', parsed.contact_hash, parsed.display_name ?? 'Anonymous', parsed.public_key
+      );
+      // Return the (possibly pre-existing) connection
+      const conn = await db.get(
+        `SELECT id, contact_hash, display_name, status, connected_at
+           FROM community_connections
+          WHERE owner_user_id = 'default' AND contact_hash = $1
+          LIMIT 1`,
+        parsed.contact_hash
+      );
+      res.json({ connection: conn ?? null });
+    } catch (err) {
+      console.error('[app-gateway] community scan error:', err);
+      res.status(500).json({ error: 'Failed to add contact' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/community/connections/:connId/respond — accept or
+  // decline a pending request.
+  publicRouter.post('/org/:orgId/community/connections/:connId/respond', appAuth, orgMember, async (req, res) => {
+    try {
+      const { decision } = req.body as { decision?: 'accept' | 'decline' };
+      if (decision !== 'accept' && decision !== 'decline') {
+        return res.status(400).json({ error: 'decision must be "accept" or "decline"' });
+      }
+      const newStatus = decision === 'accept' ? 'accepted' : 'blocked';
+      await db.run(
+        `UPDATE community_connections SET status = $1
+          WHERE id = $2 AND owner_user_id = 'default'`,
+        newStatus, req.params.connId
+      );
+      res.json({ ok: true, status: newStatus });
+    } catch (err) {
+      console.error('[app-gateway] community respond error:', err);
+      res.status(500).json({ error: 'Failed to update connection' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/community/messages?with=<contactHash> — chat
+  // thread with one contact. Returns latest 50 messages (community_mail
+  // rows where I'm the sender or recipient with this contact).
+  publicRouter.get('/org/:orgId/community/messages', appAuth, orgMember, async (req, res) => {
+    try {
+      const withHash = typeof req.query.with === 'string' ? req.query.with : null;
+      if (!withHash) return res.status(400).json({ error: '`with` query param required' });
+      const me = await db.get<{ contact_hash: string }>(
+        `SELECT contact_hash FROM community_identity WHERE user_id = 'default'`
+      );
+      if (!me) return res.status(404).json({ error: 'Community not activated' });
+      const messages = await db.all<{
+        id: string; from_hash: string; to_hashes: string;
+        subject: string | null; body: string | null;
+        sent_at: string | null; created_at: string;
+      }>(
+        `SELECT id, from_hash, to_hashes, subject, body, sent_at, created_at
+           FROM community_mail
+          WHERE draft = 0
+            AND (
+              (from_hash = $1 AND to_hashes::text LIKE $2)
+              OR (from_hash = $3 AND to_hashes::text LIKE $4)
+            )
+          ORDER BY COALESCE(sent_at, created_at) DESC
+          LIMIT 50`,
+        me.contact_hash, `%${withHash}%`,
+        withHash, `%${me.contact_hash}%`
+      );
+      // Reverse so oldest first (chat-thread natural order)
+      const ordered = [...messages].reverse().map(m => ({
+        id: m.id,
+        from_hash: m.from_hash,
+        is_me: m.from_hash === me.contact_hash,
+        subject: m.subject,
+        body: m.body,
+        timestamp: m.sent_at || m.created_at,
+      }));
+      res.json({ me: me.contact_hash, with: withHash, messages: ordered });
+    } catch (err) {
+      console.error('[app-gateway] community messages error:', err);
+      res.status(500).json({ error: 'Failed to load messages' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/community/messages — send a message.
+  // Body: { to: string, body: string, subject?: string }
+  publicRouter.post('/org/:orgId/community/messages', appAuth, orgMember, async (req, res) => {
+    try {
+      const { to, body, subject } = req.body as { to?: string; body?: string; subject?: string };
+      if (!to || !body || !body.trim()) {
+        return res.status(400).json({ error: '`to` and `body` required' });
+      }
+      const me = await db.get<{ contact_hash: string }>(
+        `SELECT contact_hash FROM community_identity WHERE user_id = 'default'`
+      );
+      if (!me) return res.status(404).json({ error: 'Community not activated' });
+
+      const sentId = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const inboxId = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const now = new Date().toISOString();
+      const trimmedBody = body.trim();
+      const subj = (subject && subject.trim()) || (trimmedBody.length > 60 ? trimmedBody.slice(0, 57) + '...' : trimmedBody);
+
+      // Sender's "sent" copy
+      await db.run(
+        `INSERT INTO community_mail (id, from_hash, to_hashes, cc_hashes, subject, body, folder, draft, sent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'sent', 0, $7)`,
+        sentId, me.contact_hash, JSON.stringify([to]), '[]', subj, trimmedBody, now
+      );
+      // Recipient's "inbox" copy (local mirror — real P2P delivery happens
+      // in the desktop community route; the companion app reads/writes the
+      // same table so messages sync once both ANTONs are online).
+      await db.run(
+        `INSERT INTO community_mail (id, from_hash, to_hashes, cc_hashes, subject, body, folder, draft, sent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'inbox', 0, $7)`,
+        inboxId, me.contact_hash, JSON.stringify([to]), '[]', subj, trimmedBody, now
+      );
+      res.status(201).json({ id: sentId, sent_at: now });
+    } catch (err) {
+      console.error('[app-gateway] community send error:', err);
+      res.status(500).json({ error: 'Failed to send message' });
     }
   });
 
