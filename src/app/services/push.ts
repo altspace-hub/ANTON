@@ -52,16 +52,33 @@ export async function requestPushPermission(): Promise<'granted' | 'denied' | 'u
 }
 
 /** Ask for permission + register. Idempotent. */
+// AN2: de-dup cache. The App.tsx push effect re-fires on every instance
+// switch — without this cache the OS prompt + token POST run again every
+// time the user toggles between paired ANTONs. Key by device_id so cache
+// invalidates correctly when re-pairing the same instance.
+let lastRegistered: { deviceId: string; token: string; at: number } | null = null;
+const REGISTER_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 export async function registerPush(): Promise<RegisterOutcome> {
   const platform = Capacitor.getPlatform();
   const instance = getActiveInstance();
   if (!instance) return { ok: false, reason: 'no-instance' };
   if (!instance.device_id) return { ok: false, reason: 'no-device-id', detail: 'Pair via the Ed25519 enrollment flow first' };
 
-  if (platform === 'ios' || platform === 'android') {
-    return registerNative(platform, instance.device_id);
+  // De-dup: same device + recent successful registration → skip the round-trip.
+  if (lastRegistered
+      && lastRegistered.deviceId === instance.device_id
+      && Date.now() - lastRegistered.at < REGISTER_TTL_MS) {
+    return { ok: true, platform: platform === 'ios' ? 'apns' : platform === 'android' ? 'fcm' : 'web-push', token: lastRegistered.token };
   }
-  return registerWebPush(instance.device_id);
+
+  const result = platform === 'ios' || platform === 'android'
+    ? await registerNative(platform, instance.device_id)
+    : await registerWebPush(instance.device_id);
+  if (result.ok) {
+    lastRegistered = { deviceId: instance.device_id, token: result.token, at: Date.now() };
+  }
+  return result;
 }
 
 async function registerNative(platform: 'ios' | 'android', deviceId: string): Promise<RegisterOutcome> {

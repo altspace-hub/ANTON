@@ -27,7 +27,7 @@ export type { IcoProps, IcoName } from './Ico';
 export { PageHeader }            from './PageHeader';
 export type { PageHeaderProps }  from './PageHeader';
 
-export { MonogramTile, MODULE_GLYPH, getModuleGlyph } from './MonogramTile';
+export { MonogramTile, MODULE_GLYPH, getModuleGlyph, hasModuleGlyph } from './MonogramTile';
 export type { MonogramTileProps, MonogramTone } from './MonogramTile';
 
 export { PriorityCard }          from './PriorityCard';
@@ -41,6 +41,12 @@ export type { SpinnerProps, SpinnerSize, SpinnerTone } from './Spinner';
 
 export { ErrorPill }             from './ErrorPill';
 export type { ErrorPillProps }   from './ErrorPill';
+
+export { SheetTitle }            from './SheetTitle';
+export type { SheetTitleProps }  from './SheetTitle';
+
+export { QuickActionTile }       from './QuickActionTile';
+export type { QuickActionTileProps } from './QuickActionTile';
 
 export {
   PersonalizationProvider,

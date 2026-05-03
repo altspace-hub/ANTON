@@ -78,7 +78,9 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
             className="flex items-center gap-1 rounded-full px-2 py-1"
             style={{ background: 'var(--color-gold-dim)' }}
           >
-            <span style={{ color: 'var(--color-gold)', fontSize: 13 }}>🔥</span>
+            <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+              <Ico name="flame" color="var(--color-gold)" size={13} />
+            </span>
             <span
               className="font-bold"
               style={{ color: 'var(--color-gold)', fontSize: 12 }}
@@ -132,24 +134,30 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
                     <Pill
                       tone="neutral"
                       style={{
-                        background: 'rgba(255,255,255,0.18)',
+                        background: 'color-mix(in srgb, #fff 18%, transparent)',
                         color: '#fff',
-                        borderColor: 'rgba(255,255,255,0.3)',
+                        borderColor: 'color-mix(in srgb, #fff 30%, transparent)',
                       }}
                     >
-                      📶 Offline-ready
+                      <span className="mr-1 inline-flex align-middle">
+                        <Ico name="wifiOff" size={11} color="currentColor" />
+                      </span>
+                      Offline-ready
                     </Pill>
                   )}
                   {feed.today_lesson.audio_available && (
                     <Pill
                       tone="neutral"
                       style={{
-                        background: 'rgba(255,255,255,0.18)',
+                        background: 'color-mix(in srgb, #fff 18%, transparent)',
                         color: '#fff',
-                        borderColor: 'rgba(255,255,255,0.3)',
+                        borderColor: 'color-mix(in srgb, #fff 30%, transparent)',
                       }}
                     >
-                      🎧 Audio
+                      <span className="mr-1 inline-flex align-middle">
+                        <Ico name="headphones" size={11} color="currentColor" />
+                      </span>
+                      Audio
                     </Pill>
                   )}
                 </div>

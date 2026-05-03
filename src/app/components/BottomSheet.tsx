@@ -16,6 +16,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { registerBackHandler } from '../services/back-stack';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { SheetTitle } from './ui/SheetTitle';
 
 interface Props {
   open: boolean;
@@ -91,14 +92,7 @@ export default function BottomSheet({ open, onClose, title, dismissible = true, 
         </div>
         {title && (
           <div className="px-4 pb-2 pt-1">
-            {typeof title === 'string' ? (
-              <h2
-                className="text-[15px] font-bold"
-                style={{ color: 'var(--color-text)', letterSpacing: '-0.2px' }}
-              >
-                {title}
-              </h2>
-            ) : title}
+            {typeof title === 'string' ? <SheetTitle>{title}</SheetTitle> : title}
           </div>
         )}
         <div className="flex-1 overflow-y-auto px-4 py-3">

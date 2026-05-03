@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import {
   Btn, Card, Pill, SectionLabel, Ico,
-  PriorityCard, MonogramTile, getModuleGlyph, ErrorPill,
+  PriorityCard, MonogramTile, getModuleGlyph, ErrorPill, QuickActionTile,
 } from '../components/ui';
 import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
 import { activeServerBase, activeAuthHeaders } from '../services/instances';
@@ -230,62 +230,15 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
 
         {/* ── Quick actions ────────────────────────────────────── */}
         <div className="mt-5 grid grid-cols-2 gap-2.5">
-          {[
-            { id: 'voice',    icon: 'mic'      as const, label: 'Voice',    desc: 'Hold to talk',   onTap: () => onNavigate('voice') },
-            { id: 'capture',  icon: 'camera'   as const, label: 'Capture',  desc: 'Photo or share', onTap: () => onNavigate('capture') },
-            { id: 'ask',      icon: 'message'  as const, label: 'Ask',      desc: 'Text chat',      onTap: () => onNavigate('chat') },
-            {
-              id: 'missions',
-              icon: 'sparkles' as const,
-              label: 'Missions',
-              desc: pending.length > 0 ? `${pending.length} pending` : 'All clear',
-              onTap: () => onNavigate('approvals'),
-            },
-          ].map(a => (
-            <button
-              key={a.id}
-              onClick={a.onTap}
-              className="rounded-[var(--radius-r2)] text-left transition active:scale-[0.97]"
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                padding: 16,
-              }}
-            >
-              <div
-                className="flex items-center justify-center rounded-[var(--radius-r1)]"
-                style={{
-                  width: 30, height: 30,
-                  background: 'var(--color-surface-alt)',
-                  color: 'var(--color-text)',
-                }}
-              >
-                <Ico name={a.icon} color="currentColor" size={17} />
-              </div>
-              <div
-                style={{
-                  marginTop: 12,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: 'var(--color-text)',
-                  letterSpacing: '-0.1px',
-                  lineHeight: 1.2,
-                }}
-              >
-                {a.label}
-              </div>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 11.5,
-                  color: 'var(--color-text-muted)',
-                  lineHeight: 1.3,
-                }}
-              >
-                {a.desc}
-              </div>
-            </button>
-          ))}
+          <QuickActionTile icon="mic"      label="Voice"    desc="Hold to talk"   onClick={() => onNavigate('voice')} />
+          <QuickActionTile icon="camera"   label="Capture"  desc="Photo or share" onClick={() => onNavigate('capture')} />
+          <QuickActionTile icon="message"  label="Ask"      desc="Text chat"      onClick={() => onNavigate('chat')} />
+          <QuickActionTile
+            icon="sparkles"
+            label="Missions"
+            desc={pending.length > 0 ? `${pending.length} pending` : 'All clear'}
+            onClick={() => onNavigate('approvals')}
+          />
         </div>
 
         {/* ── Today (recent activity) — Claude Design rich rows ── */}

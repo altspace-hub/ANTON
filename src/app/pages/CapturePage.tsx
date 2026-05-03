@@ -96,6 +96,28 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
     };
   }, [capture]);
 
+  // AN8: Release the MediaStream when the app backgrounds — without this,
+  // the camera LED stays on after a user switches away and Android may
+  // count it as "currently using camera" in the system privacy indicators.
+  useEffect(() => {
+    let removeListener: (() => void) | null = null;
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.getPlatform() === 'web') return;
+        const { App } = await import('@capacitor/app');
+        const handle = await App.addListener('appStateChange', ({ isActive }) => {
+          if (!isActive) {
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+          }
+        });
+        removeListener = () => { void handle.remove(); };
+      } catch { /* not in Capacitor */ }
+    })();
+    return () => { removeListener?.(); };
+  }, []);
+
   // ── Actions ────────────────────────────────────────────────────────
 
   function shoot(): void {
