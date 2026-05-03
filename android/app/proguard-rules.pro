@@ -1,21 +1,65 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard / R8 rules for ANTON Companion (Capacitor 7).
+# Without these, release builds (minifyEnabled=true) strip plugin bridge
+# classes registered via @CapacitorPlugin annotation reflection.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Attributes needed by Capacitor + reflection ──────────────────────────
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-keepattributes Exceptions
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Capacitor core ──────────────────────────────────────────────────────
+-keep class com.getcapacitor.** { *; }
+-keep interface com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep @com.getcapacitor.PluginMethod class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod *;
+}
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    public <init>(...);
+}
+-keep public class * extends com.getcapacitor.BridgeActivity
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# JSObject + PluginCall reflective use
+-keepclassmembers class com.getcapacitor.JSObject { *; }
+-keepclassmembers class com.getcapacitor.PluginCall { *; }
+
+# Cordova fallback bridge
+-keep class org.apache.cordova.** { *; }
+
+# ── Capacitor official plugins ───────────────────────────────────────────
+-keep class com.capacitorjs.plugins.** { *; }
+
+# ── Community / vendor plugins (from capacitor.build.gradle) ─────────────
+-keep class com.aparajita.capacitor.securestorage.** { *; }
+-keep class com.getcapacitor.community.speechrecognition.** { *; }
+-keep class com.capgo.capacitor.nativebiometric.** { *; }
+-keep class com.whitestein.securestorage.** { *; }
+
+# ── ML Kit barcode scanning (used by QR pairing) ─────────────────────────
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.mlkit.**
+-dontwarn com.google.android.gms.**
+
+# ── AndroidX WebView + bridge (Capacitor depends on it for JS interop) ──
+-keep class androidx.webkit.** { *; }
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# ── Push notifications: keep FCM service classes if present ─────────────
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# ── Reflection-used model classes that get serialized to/from JSObject ──
+# Add app-specific model packages here if Java/Kotlin POJOs are introduced.
+
+# ── Suppress noisy warnings from optional deps ──────────────────────────
+-dontwarn javax.annotation.**
+-dontwarn org.codehaus.mojo.animal_sniffer.**
+-dontwarn java.lang.invoke.**

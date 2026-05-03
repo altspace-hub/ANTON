@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Btn, Pill, SectionLabel, StatusDot, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, StatusDot, Ico, Spinner } from '../components/ui';
 import {
   getRadarItems, getRadarSummary, getRadarSources, triggerRadarScan,
   timeAgo,
@@ -220,29 +220,40 @@ export default function RadarScreen(_props: Props): JSX.Element {
 
         {/* ── Category chips ────────────────────────────────── */}
         <div
-          className="flex gap-1.5 overflow-x-auto px-4 py-2.5"
+          className="flex gap-1.5 overflow-x-auto py-2.5"
           style={{
             background: 'var(--color-surface)',
             borderBottom: '1px solid var(--color-border-soft)',
+            paddingLeft: 16,
+            paddingRight: 16,
+            scrollbarWidth: 'none',
           }}
         >
-          {CATEGORIES.map(c => {
+          {CATEGORIES.map((c, i) => {
             const isActive = c === category;
             const n = counts.get(c.toLowerCase()) ?? 0;
             return (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold transition-colors"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full font-semibold transition-colors"
                 style={{
-                  fontSize: 11,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                  fontSize: 12,
                   background: isActive ? 'var(--color-text)'    : 'var(--color-surface-alt)',
                   color:      isActive ? 'var(--color-surface)' : 'var(--color-text-body)',
                   border: `1px solid ${isActive ? 'var(--color-text)' : 'var(--color-border)'}`,
+                  // Trailing spacer so the last chip clears the screen edge
+                  marginRight: i === CATEGORIES.length - 1 ? 4 : 0,
                 }}
               >
                 {c}
-                <span className="font-mono opacity-70" style={{ fontSize: 10 }}>{n}</span>
+                {n > 0 && (
+                  <span className="font-mono opacity-70" style={{ fontSize: 10 }}>{n}</span>
+                )}
               </button>
             );
           })}
@@ -278,39 +289,50 @@ export default function RadarScreen(_props: Props): JSX.Element {
             <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-text-body)]">
               {briefHeadlines.slice(1).join(' · ')}
             </p>
-            <div className="mt-2.5 flex gap-2">
-              <Btn size="sm" variant="primary" block icon={<Ico name="sparkles" color="currentColor" size={13} />}>
-                Read brief
-              </Btn>
-              <Btn
-                size="sm"
-                variant={speaking ? 'primary' : 'secondary'}
-                block
-                onClick={togglePlayBrief}
-                disabled={!ttsAvailable()}
-                icon={<Ico name={speaking ? 'x' : 'mic'} color="currentColor" size={13} />}
-              >
-                {speaking ? 'Stop' : 'Play brief'}
-              </Btn>
-            </div>
+            {ttsAvailable() && (
+              <div className="mt-2.5">
+                <Btn
+                  size="sm"
+                  variant={speaking ? 'primary' : 'secondary'}
+                  onClick={togglePlayBrief}
+                  icon={<Ico name={speaking ? 'x' : 'mic'} color="currentColor" size={13} />}
+                >
+                  {speaking ? 'Stop' : 'Play brief'}
+                </Btn>
+              </div>
+            )}
           </div>
         )}
 
         {/* ── Signal cards ──────────────────────────────────── */}
-        <SectionLabel className="px-[18px] pb-2 pt-4">Latest signals</SectionLabel>
+        <SectionLabel className="px-4 pb-2 pt-4">Latest signals</SectionLabel>
 
         {error && (
-          <div className="mx-4 mb-3 rounded-[var(--radius-r2)] border border-[var(--color-red-dim)] bg-[var(--color-red-dim)] px-3 py-2 text-xs text-[var(--color-red)]">
-            {error}
+          <div
+            className="mx-4 mb-3 flex items-center gap-2 rounded-[var(--radius-r2)]"
+            style={{
+              background: 'var(--color-red-dim)',
+              border: '1px solid var(--color-red-dim)',
+              color: 'var(--color-red)',
+              paddingLeft: 14,
+              paddingRight: 14,
+              paddingTop: 10,
+              paddingBottom: 10,
+              fontSize: 12.5,
+              lineHeight: 1.4,
+            }}
+          >
+            <span
+              className="block flex-shrink-0 rounded-full"
+              style={{ width: 6, height: 6, background: 'currentColor' }}
+            />
+            <span className="min-w-0 flex-1">{error}</span>
           </div>
         )}
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : items.length === 0 ? (
           <div className="px-6 py-12 text-center">

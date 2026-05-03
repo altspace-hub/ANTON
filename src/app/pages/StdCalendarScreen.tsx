@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Ico } from '../components/ui';
+import { Ico, Spinner } from '../components/ui';
 import { getCalendarToday, type CalendarToday, type CalendarColor } from '../services/calendar';
 
 interface Props {
@@ -73,7 +73,11 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
         className="flex items-start gap-3 px-[18px] py-3"
         style={{ background: 'var(--color-bg)' }}
       >
-        <button onClick={onBack} className="pt-0.5">
+        <button
+          onClick={onBack}
+          aria-label="Back"
+          className="-ml-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
+        >
           <Ico name="chevronLeft" color="var(--color-text)" size={26} />
         </button>
         <div className="flex-1">
@@ -85,7 +89,10 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
           </div>
           <div className="mt-1 text-sm text-[var(--color-text-muted)]">{headerSub}</div>
         </div>
-        <button className="pt-0.5">
+        <button
+          aria-label="Add event"
+          className="-mr-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
+        >
           <Ico name="plus" color="var(--color-text)" size={24} />
         </button>
       </div>
@@ -111,10 +118,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
       <div className="flex-1 overflow-y-auto px-4 pb-4 pt-1">
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : today && today.events.length > 0 ? (
           today.events.map(e => (

@@ -16,7 +16,7 @@ import { fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUr
 import { addInstance, listInstances } from '../services/instances';
 import { tick, success, error as hapticError } from '../services/haptics';
 import { isBiometricAvailable, verifyBiometric } from '../services/biometric';
-import { Btn, Pill, SectionLabel, StatusDot, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, StatusDot, Ico, Spinner } from '../components/ui';
 
 interface Props {
   onJoined: () => void;
@@ -174,21 +174,28 @@ export default function JoinPage({ onJoined, onBack }: Props) {
 
   async function doLegacyJoin(server: string, t: string): Promise<void> {
     let identity = getIdentity();
-    if (!identity) {
-      // Self-register before joining
-      if (!displayName.trim()) {
+    // Register if no identity OR identity exists but contactHash hasn't been
+    // server-issued yet. The latter is the Capacitor pre-pair state:
+    // WelcomePage saves name + language + locally-generated keypair without
+    // calling the server (no API origin known until we pick a server here).
+    if (!identity || !identity.contactHash) {
+      // Prefer the name + language captured in WelcomePage; fall back to the
+      // JoinPage state for first-time PWA users who skipped Welcome.
+      const nameForRegister = identity?.displayName?.trim() || displayName.trim();
+      if (!nameForRegister) {
         throw new Error('Display name is required for legacy invitations.');
       }
+      const langForRegister = identity?.preferredLanguage || navigator.language?.slice(0, 2) || 'en';
       setStatus('Registering…');
-      const reg = await registerSimple(displayName.trim(), navigator.language?.slice(0, 2) || 'en');
+      const reg = await registerSimple(nameForRegister, langForRegister);
       saveSessionToken(reg.sessionToken);
-      // Mirror public identity
+      // Mirror public identity, preserving any existing keypair material.
       const { saveIdentityPublic } = await import('../services/identity');
       saveIdentityPublic({
-        publicKeyHex: '',
+        publicKeyHex: identity?.publicKeyHex || '',
         contactHash: reg.contactHash,
-        displayName: displayName.trim(),
-        preferredLanguage: navigator.language?.slice(0, 2) || 'en',
+        displayName: nameForRegister,
+        preferredLanguage: langForRegister,
       });
       identity = getIdentity()!;
     }
@@ -326,8 +333,9 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         {mode === 'manual' && (
           <div className="mt-4 space-y-3.5">
             <div>
-              <SectionLabel className="mb-1.5">Server</SectionLabel>
+              <SectionLabel htmlFor="join-server" className="mb-1.5">Server</SectionLabel>
               <input
+                id="join-server"
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
                 placeholder="https://anton.example.com"
@@ -336,8 +344,9 @@ export default function JoinPage({ onJoined, onBack }: Props) {
               />
             </div>
             <div>
-              <SectionLabel className="mb-1.5">Pairing token</SectionLabel>
+              <SectionLabel htmlFor="join-token" className="mb-1.5">Pairing token</SectionLabel>
               <input
+                id="join-token"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="abcd…"
@@ -351,8 +360,9 @@ export default function JoinPage({ onJoined, onBack }: Props) {
               />
             </div>
             <div>
-              <SectionLabel className="mb-1.5">Device name (optional)</SectionLabel>
+              <SectionLabel htmlFor="join-device" className="mb-1.5">Device name (optional)</SectionLabel>
               <input
+                id="join-device"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="My iPhone"
@@ -412,10 +422,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
               border: '1px solid var(--color-accent-dim)',
             }}
           >
-            <span
-              className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="xs" />
             {status}
           </div>
         )}
@@ -447,7 +454,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           disabled={loading || !token.trim() || !serverUrl.trim()}
           onClick={() => void doPair(serverUrl, token)}
           icon={loading
-            ? <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ? <Spinner size="sm" tone="on-accent" />
             : <Ico name="shieldCheck" color="currentColor" size={15} />}
         >
           {loading ? 'Connecting…' : 'Pair'}

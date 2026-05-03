@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Ico } from '../components/ui';
+import { Ico, Spinner, ErrorPill } from '../components/ui';
 import { listMailInbox, inboxTime, type MailMessage } from '../services/mail';
 
 interface Props {
@@ -23,19 +23,25 @@ interface Props {
 export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Element {
   const [messages, setMessages] = useState<MailMessage[]>([]);
   const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     void (async () => {
       try {
         const list = await listMailInbox(orgId, { limit: 30 });
         if (!cancelled) setMessages(list);
+      } catch {
+        if (!cancelled) setError('Couldn\'t load your messages.');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, reloadTick]);
 
   const unread = messages.filter(m => !m.is_read).length;
 
@@ -57,19 +63,24 @@ export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Eleme
             {unread > 0 ? `You have ${unread} new` : 'All caught up'}
           </div>
         </div>
-        <button className="pt-1.5">
+        <button
+          aria-label="Search messages"
+          className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center"
+        >
           <Ico name="search" color="var(--color-text-muted)" size={22} />
         </button>
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto pb-2">
+        {error && (
+          <div className="px-[18px] pt-3">
+            <ErrorPill message={error} onRetry={() => setReloadTick(t => t + 1)} />
+          </div>
+        )}
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : messages.length === 0 ? (
           <div className="px-6 py-12 text-center">

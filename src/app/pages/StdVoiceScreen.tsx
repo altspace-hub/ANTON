@@ -60,10 +60,16 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
       className="flex flex-1 flex-col"
       style={{ background: 'var(--color-text)', color: '#fff' }}
     >
-      {/* Top bar */}
+      {/* Top bar — single Cancel; History action lives on Home */}
       <div className="flex items-center justify-between px-[18px] py-4">
-        <button onClick={onClose} className="opacity-75" style={{ fontSize: 15 }}>Cancel</button>
-        <button className="opacity-75" style={{ fontSize: 15 }}>History</button>
+        <button
+          onClick={onClose}
+          className="rounded-full px-3 py-1 transition active:opacity-50"
+          style={{ fontSize: 15, opacity: 0.85, color: '#fff' }}
+        >
+          Cancel
+        </button>
+        <span style={{ width: 60 }} />
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-start px-6 pt-10">

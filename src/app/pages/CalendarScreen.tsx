@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Pill, Ico } from '../components/ui';
+import { Pill, Ico, Spinner } from '../components/ui';
 import {
   getCalendarToday,
   type CalendarToday, type CalendarColor,
@@ -100,15 +100,29 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
             {headerDate}{today && ` · ${today.sources.length} sources`}
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Ico name="search" color="var(--color-text-muted)" size={18} />
-          <Ico name="plus"   color="var(--color-text)"       size={20} />
+        <div className="-mr-2.5 flex items-center">
+          <button
+            aria-label="Search events"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="search" color="var(--color-text-muted)" size={18} />
+          </button>
+          <button
+            aria-label="Add event"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="plus" color="var(--color-text)" size={20} />
+          </button>
         </div>
       </div>
 
-      {/* Source legend */}
+      {/* Source legend — pr-4 so the last chip (e.g. "Family") clears the
+          screen edge instead of bleeding off-screen with a half letter. */}
       {today && (
-        <div className="flex gap-1.5 overflow-x-auto px-3.5 pb-2 pt-1">
+        <div
+          className="flex gap-1.5 overflow-x-auto pb-2 pt-1"
+          style={{ paddingLeft: 14, paddingRight: 16, scrollbarWidth: 'none' }}
+        >
           {today.sources.map(s => (
             <div
               key={s.id}
@@ -173,10 +187,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : today && today.events.length > 0 ? (
           <div className="px-3.5 pb-4 pt-2">

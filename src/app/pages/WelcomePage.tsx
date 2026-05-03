@@ -10,11 +10,19 @@
 import { useState, useEffect } from 'react';
 import { generateKeypair, saveIdentity, getIdentity } from '../services/identity';
 import { register, registerSimple, getLanguages, saveSessionToken } from '../services/api';
-import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 
 interface Props { onComplete: () => void; }
 
 const hasCryptoSubtle = typeof crypto !== 'undefined' && !!crypto.subtle;
+
+// Capacitor detection — when running in the native WebView we have no API
+// origin yet (registration must wait for the QR pairing flow which knows
+// the server URL). Without this, register/registerSimple fire against
+// `https://localhost/api/app/...` and the service worker returns cached
+// HTML instead of JSON → "unexpected token '<'" error.
+const isNative = typeof window !== 'undefined'
+  && Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.());
 
 export default function WelcomePage({ onComplete }: Props): JSX.Element {
   const [name, setName]             = useState('');
@@ -25,7 +33,10 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
 
   useEffect(() => {
     if (getIdentity()) { onComplete(); return; }
-    getLanguages().then(setLanguages).catch(() => {});
+    // Skip the API call in Capacitor — there's no paired server yet, the
+    // request would 404 (or worse, hit the SW cache). The native flow
+    // collects language locally; richer language list arrives post-pair.
+    if (!isNative) getLanguages().then(setLanguages).catch(() => {});
   }, [onComplete]);
 
   async function handleStart() {
@@ -33,6 +44,21 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
     setLoading(true);
     setError(null);
     try {
+      // Capacitor path: no API origin yet — generate keypair locally, save a
+      // partial identity (contactHash empty), and let the QR enrollment flow
+      // populate contactHash + sessionToken against the paired server.
+      if (isNative) {
+        const { publicKeyHex, privateKeyHex } = await generateKeypair();
+        saveIdentity({
+          publicKeyHex,
+          privateKeyHex,
+          contactHash: '',
+          displayName: name.trim(),
+          preferredLanguage: language,
+        });
+        onComplete();
+        return;
+      }
       let registered = false;
       if (hasCryptoSubtle) {
         try {
@@ -145,7 +171,7 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
             disabled={loading || !name.trim()}
             onClick={() => void handleStart()}
             icon={loading
-              ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ? <Spinner size="md" tone="on-accent" />
               : undefined}
           >
             {loading ? 'Setting up…' : 'Get started'}

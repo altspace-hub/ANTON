@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import {
   getMarketBriefing, getMarketTape, getMarketPrediction,
   type MarketBriefing, type TapeRow, type MarketPrediction,
@@ -23,17 +23,22 @@ import { speak as ttsSpeak, stop as ttsStop, isAvailable as ttsAvailable } from 
 
 interface Props { orgId: string }
 
-function formatPrice(p: number | null): string {
+function formatPrice(p: number | string | null | undefined): string {
   if (p == null) return '—';
-  if (p >= 1000) return p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  if (p >= 10)   return p.toFixed(2);
-  return p.toFixed(4);
+  // Postgres NUMERIC fields ride through the wire as strings; coerce.
+  const n = typeof p === 'number' ? p : Number(p);
+  if (!Number.isFinite(n)) return '—';
+  if (n >= 1000) return n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (n >= 10)   return n.toFixed(2);
+  return n.toFixed(4);
 }
 
-function formatChange(c: number | null): string {
+function formatChange(c: number | string | null | undefined): string {
   if (c == null) return '—';
-  const sign = c >= 0 ? '+' : '';
-  return `${sign}${c.toFixed(2)}%`;
+  const n = typeof c === 'number' ? c : Number(c);
+  if (!Number.isFinite(n)) return '—';
+  const sign = n >= 0 ? '+' : '';
+  return `${sign}${n.toFixed(2)}%`;
 }
 
 /** Tiny SVG sparkline from a number[] series. Coloured by overall direction. */
@@ -135,19 +140,26 @@ export default function MarketsScreen(_props: Props): JSX.Element {
             {' · '}{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Ico name="search"   color="var(--color-text-muted)" size={18} />
-          <Ico name="sparkles" color="var(--color-accent)"     size={16} />
+        <div className="-mr-2.5 flex items-center">
+          <button
+            aria-label="Search markets"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="search" color="var(--color-text-muted)" size={18} />
+          </button>
+          <button
+            aria-label="Daily insights"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="sparkles" color="var(--color-accent)" size={16} />
+          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         )}
 
@@ -185,17 +197,12 @@ export default function MarketsScreen(_props: Props): JSX.Element {
               <Pill tone="blue">Your portfolio · {briefing.portfolio_size} positions</Pill>
               {briefing.flags > 0 && <Pill tone="gold">{briefing.flags} flag{briefing.flags === 1 ? '' : 's'}</Pill>}
             </div>
-            {briefing.available && (
-              <div className="mt-3 flex gap-2">
-                <Btn size="sm" variant="primary" block icon={<Ico name="arrowUp" color="currentColor" size={13} />}>
-                  Read full brief
-                </Btn>
+            {briefing.available && ttsAvailable() && (
+              <div className="mt-3">
                 <Btn
                   size="sm"
                   variant={speaking ? 'primary' : 'secondary'}
-                  block
                   onClick={togglePlayBriefing}
-                  disabled={!ttsAvailable()}
                   icon={<Ico name={speaking ? 'x' : 'mic'} color="currentColor" size={13} />}
                 >
                   {speaking ? 'Stop' : 'Play brief'}
@@ -208,18 +215,27 @@ export default function MarketsScreen(_props: Props): JSX.Element {
         {/* ── Tape — watchlist ──────────────────────────────── */}
         {!loading && tape.length > 0 && (
           <>
-            <SectionLabel className="px-[18px] pb-1.5 pt-4">Tape · your watchlist</SectionLabel>
+            <SectionLabel className="px-4 pb-1.5 pt-4">Tape · your watchlist</SectionLabel>
             <div
-              className="mx-4 mb-4 overflow-hidden rounded-[var(--radius-r2)]"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+              className="mb-4 overflow-hidden rounded-[var(--radius-r2)]"
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                marginLeft: 16,
+                marginRight: 16,
+              }}
             >
               {tape.map((r, i) => {
                 const up = (r.change_pct ?? 0) >= 0;
                 return (
                   <div
                     key={r.symbol}
-                    className="flex items-center gap-2.5 px-3 py-2.5"
+                    className="flex items-center gap-3"
                     style={{
+                      paddingLeft: 14,
+                      paddingRight: 14,
+                      paddingTop: 12,
+                      paddingBottom: 12,
                       borderBottom: i < tape.length - 1 ? '1px solid var(--color-border-soft)' : 'none',
                     }}
                   >

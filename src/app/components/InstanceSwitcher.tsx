@@ -10,12 +10,15 @@
  * list). Active card sits at the top, others stacked below.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   listInstances, getActiveInstance, setActiveInstanceAsync, removeInstance,
   type Instance,
 } from '../services/instances';
 import { tick, light } from '../services/haptics';
+import { registerBackHandler } from '../services/back-stack';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { Ico } from './ui';
 
 interface Props {
   open: boolean;
@@ -27,6 +30,8 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
   const [tick_, setTick] = useState(0);   // bump to re-render after mutations
   const instances = useMemo(() => listInstances(), [tick_]);
   const active = useMemo(() => getActiveInstance(), [tick_]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -35,6 +40,14 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [open]);
+
+  // Android hardware back closes the sheet instead of triggering the
+  // App-level exit prompt. (BottomSheet auto-registers; this component
+  // is a custom sheet, so it must register manually.)
+  useEffect(() => {
+    if (!open) return;
+    return registerBackHandler(onClose);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -56,20 +69,43 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Instance switcher">
+    <div ref={dialogRef} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Instance switcher">
       {/* Backdrop */}
-      <button onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Close" />
+      <button
+        onClick={onClose}
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ background: 'rgba(28, 26, 20, 0.55)' }}
+        aria-label="Close"
+      />
 
       {/* Sheet */}
-      <div className="relative w-full max-w-2xl rounded-t-2xl border-t border-border bg-adv-dark-2 pb-[env(safe-area-inset-bottom)] shadow-2xl animate-slideUp">
-        <div className="mx-auto h-1 w-10 rounded-full bg-adv-gray/40 mt-2 mb-3" />
+      <div
+        className="relative w-full max-w-2xl rounded-t-2xl pb-[env(safe-area-inset-bottom)] shadow-2xl animate-slideUp"
+        style={{
+          background: 'var(--color-surface)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          className="mx-auto h-1 w-10 rounded-full mt-2 mb-3"
+          style={{ background: 'var(--color-border)' }}
+        />
         <div className="px-4 pb-1 pt-1">
-          <h2 className="text-sm font-semibold text-adv-off-white">Instances</h2>
-          <p className="mt-0.5 text-[11px] text-adv-gray">Tap to switch which ANTON the app talks to.</p>
+          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>Instances</h2>
+          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+            Tap to switch which ANTON the app talks to.
+          </p>
         </div>
         <div className="max-h-[60dvh] overflow-y-auto px-3 py-3 space-y-2">
           {instances.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border bg-adv-card/40 px-4 py-6 text-center text-[12px] text-adv-gray">
+            <div
+              className="rounded-[var(--radius-r2)] px-4 py-6 text-center text-[12px]"
+              style={{
+                border: '1px dashed var(--color-border)',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text-muted)',
+              }}
+            >
               No instances paired yet.
             </div>
           )}
@@ -80,14 +116,30 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
             />
           ))}
         </div>
-        <div className="flex items-center gap-2 border-t border-border px-3 py-3">
+        <div
+          className="flex items-center gap-2 px-3 py-3"
+          style={{ borderTop: '1px solid var(--color-border-soft)' }}
+        >
           <button
             onClick={() => { onClose(); onAddInstance?.(); }}
-            className="flex-1 rounded-lg bg-adv-teal px-4 py-2.5 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark active:scale-[0.98]"
+            className="flex-1 rounded-[var(--radius-r2)] px-4 py-2.5 text-[13px] font-semibold transition active:scale-[0.98]"
+            style={{
+              background: 'var(--color-accent)',
+              color: 'var(--color-accent-fg)',
+              minHeight: 44,
+            }}
           >
             + Pair new instance
           </button>
-          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2.5 text-xs text-adv-gray hover:text-adv-off-white">
+          <button
+            onClick={onClose}
+            className="rounded-[var(--radius-r2)] px-4 py-2.5 text-[13px]"
+            style={{
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-muted)',
+              minHeight: 44,
+            }}
+          >
             Done
           </button>
         </div>
@@ -97,28 +149,58 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
 }
 
 function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instance; active: boolean; onPick: () => void; onUnpair: () => void }) {
-  const dot = instance.last_status === 'online' ? 'bg-adv-green' : instance.last_status === 'offline' ? 'bg-adv-red' : 'bg-adv-gray';
+  const dotColor =
+    instance.last_status === 'online' ? 'var(--color-green)' :
+    instance.last_status === 'offline' ? 'var(--color-red)' :
+    'var(--color-text-faint)';
   return (
-    <div className={`rounded-xl border p-3 transition ${active ? 'border-adv-teal bg-adv-teal/5' : 'border-border bg-adv-card hover:border-adv-gray'}`}>
+    <div
+      className="rounded-[var(--radius-r2)] p-3 transition"
+      style={{
+        border: active ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)',
+        background: active ? 'var(--color-accent-soft)' : 'var(--color-bg)',
+      }}
+    >
       <div className="flex items-start gap-3">
         <button onClick={onPick} className="flex-1 text-left">
           <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${dot}`} />
-            <span className="text-sm font-medium text-adv-off-white">{instance.display_name}</span>
-            {active && <span className="text-[10px] uppercase tracking-wider text-adv-teal">Active</span>}
+            <span className="h-2 w-2 rounded-full" style={{ background: dotColor }} />
+            <span className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              {instance.display_name}
+            </span>
+            {active && (
+              <span
+                className="font-mono text-[10px] uppercase"
+                style={{ color: 'var(--color-accent)', letterSpacing: '0.6px' }}
+              >
+                Active
+              </span>
+            )}
           </div>
-          <div className="mt-1 text-[11px] text-adv-gray break-all">{instance.server_base}</div>
+          <div className="mt-1 text-[11.5px] break-all" style={{ color: 'var(--color-text-muted)' }}>
+            {instance.server_base}
+          </div>
           {instance.org && (
-            <div className="mt-1 text-[11px] text-adv-gray">
+            <div className="mt-1 text-[11.5px]" style={{ color: 'var(--color-text-muted)' }}>
               {instance.org.name} · {instance.org.role}
             </div>
           )}
           {instance.contact_hash && (
-            <div className="mt-1 font-mono text-[10px] text-adv-gray/70">{instance.contact_hash}</div>
+            <div className="mt-1 font-mono text-[10px]" style={{ color: 'var(--color-text-faint)' }}>
+              {instance.contact_hash}
+            </div>
           )}
         </button>
-        <button onClick={onUnpair} aria-label="Unpair" className="rounded-lg p-1.5 text-adv-gray hover:bg-adv-dark hover:text-adv-red">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6l-12 12"/></svg>
+        <button
+          onClick={onUnpair}
+          aria-label="Unpair instance"
+          className="flex flex-shrink-0 items-center justify-center rounded-[var(--radius-r2)] transition active:scale-[0.95]"
+          style={{
+            width: 44, height: 44,
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          <Ico name="x" size={18} />
         </button>
       </div>
     </div>

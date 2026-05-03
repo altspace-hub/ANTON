@@ -12,8 +12,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pill, SectionLabel, StatusDot, Ico } from '../components/ui';
+import { Pill, SectionLabel, StatusDot, Ico, MonogramTile, getModuleGlyph, Spinner } from '../components/ui';
 import { listModules, type PinnedModule, type BrowseModule } from '../services/modules';
+import type { MonogramTone } from '../components/ui';
 
 interface Props {
   orgId: string;
@@ -38,6 +39,27 @@ const INTENT_CHIPS = [
 
 function initials(name: string): string {
   return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function browseModuleGlyph(m: BrowseModule): { letters: string; tone: MonogramTone } {
+  // Look up by stable id first; if unknown, derive 2-letter initials from
+  // the name and tone by domain heuristic on the description text.
+  const fromMap = getModuleGlyph(m.id, m.name);
+  if (fromMap.letters !== initials(m.name) || MODULE_GLYPH_HAS(m.id)) return fromMap;
+  const desc = (m.description || '').toLowerCase();
+  let tone: MonogramTone = 'slate';
+  if (/sanc|risk|threat|alert/.test(desc))                tone = 'red';
+  else if (/legal|compliance|finance|review|counsel/.test(desc)) tone = 'blue';
+  else if (/auto|invest|market|payment/.test(desc))       tone = 'gold';
+  else if (/research|knowledge|learn/.test(desc))         tone = 'teal';
+  else if (/draft|create|present/.test(desc))             tone = 'plum';
+  return { letters: initials(m.name), tone };
+}
+
+function MODULE_GLYPH_HAS(id: string): boolean {
+  // Lightweight check; importing the full record just for `in` would be ugly.
+  // The map is exported, but we keep this helper inline to avoid a re-export.
+  return getModuleGlyph(id).letters !== '??' && getModuleGlyph(id).letters !== id.slice(0, 2).toUpperCase();
 }
 
 export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Props): JSX.Element {
@@ -81,17 +103,32 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
         >
           Work
         </div>
-        <div className="flex items-center gap-2.5">
-          <Ico name="search" color="var(--color-text-muted)" size={18} />
-          <Ico name="grid"   color="var(--color-text)"       size={18} />
+        <div className="-mr-2.5 flex items-center">
+          <button
+            aria-label="Search modules"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="search" color="var(--color-text-muted)" size={18} />
+          </button>
+          <button
+            aria-label="Grid view"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="grid" color="var(--color-text)" size={18} />
+          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {/* ── Find-the-right-module hero ──────────────────── */}
         <div
-          className="mx-3.5 mt-2 mb-2.5 rounded-[var(--radius-r3)] p-3.5 text-white"
-          style={{ background: 'var(--color-accent)' }}
+          className="mt-2 mb-3 rounded-[var(--radius-r3)] text-white"
+          style={{
+            background: 'var(--color-accent)',
+            marginLeft: 16,
+            marginRight: 16,
+            padding: 16,
+          }}
         >
           <div className="mb-1 flex items-center gap-1.5 opacity-90">
             <Ico name="sparkles" color="#fff" size={13} />
@@ -157,24 +194,22 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : (
           <>
             {/* Pinned grid */}
             <SectionLabel className="px-4 pb-2 pt-1">Pinned · {pinned.length}</SectionLabel>
-            <div className="mx-3.5 mb-4 grid grid-cols-2 gap-2">
+            <div className="mb-4 grid grid-cols-2 gap-2.5" style={{ marginLeft: 16, marginRight: 16 }}>
               {pinned.map(m => (
                 <button
                   key={m.id}
                   onClick={() => onNavigate('chat')}
-                  className="rounded-[var(--radius-r2)] p-3 text-left"
+                  className="rounded-[var(--radius-r2)] text-left"
                   style={{
                     background: 'var(--color-surface)',
                     border: '1px solid var(--color-border)',
+                    padding: 14,
                   }}
                 >
                   <div className="mb-2 flex items-center gap-1.5">
@@ -208,46 +243,72 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
               ))}
             </div>
 
-            {/* Browse list */}
+            {/* Browse list — Claude-Design rows: colored monogram + title + meta + chevron */}
             <SectionLabel className="px-4 pb-2">Browse all · {browse.length}+</SectionLabel>
-            <div className="mx-3.5 mb-4 flex flex-col">
-              {browse.map((m, i) => (
-                <button
-                  key={m.id}
-                  onClick={() => onNavigate('chat')}
-                  className="flex items-center gap-3 px-2 py-2.5 text-left"
-                  style={{
-                    borderBottom: i < browse.length - 1 ? '1px solid var(--color-border-soft)' : 'none',
-                  }}
-                >
-                  <div
-                    className="flex flex-shrink-0 items-center justify-center rounded-[var(--radius-r1)] font-mono font-bold text-[var(--color-text)]"
+            <div
+              className="mb-4 overflow-hidden rounded-[var(--radius-r2)]"
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                marginLeft: 16,
+                marginRight: 16,
+              }}
+            >
+              {browse.map((m, i) => {
+                const glyph = browseModuleGlyph(m);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => onNavigate('chat')}
+                    className="flex w-full items-center text-left transition active:bg-[var(--color-surface-alt)]"
                     style={{
-                      width: 32, height: 32,
-                      background: 'var(--color-surface-alt)',
-                      fontSize: 12,
+                      gap: 12,
+                      paddingLeft: 14,
+                      paddingRight: 14,
+                      paddingTop: 12,
+                      paddingBottom: 12,
+                      borderTop: i > 0 ? '1px solid var(--color-border-soft)' : 'none',
                     }}
                   >
-                    {initials(m.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-semibold text-[var(--color-text)]">
-                      {m.name}
+                    <MonogramTile letters={glyph.letters} tone={glyph.tone} size={32} />
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className="truncate"
+                        style={{
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          color: 'var(--color-text)',
+                          letterSpacing: '-0.1px',
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {m.name}
+                      </div>
+                      <div
+                        className="mt-0.5 truncate"
+                        style={{ fontSize: 11, color: 'var(--color-text-muted)' }}
+                      >
+                        {m.description}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-[var(--color-text-muted)]">
-                      {m.description}
-                    </div>
-                  </div>
-                  <Ico name="chevronRight" color="var(--color-text-faint)" size={16} />
-                </button>
-              ))}
+                    <Ico name="chevronRight" color="var(--color-text-faint)" size={16} />
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Hint pill */}
+            {/* Hint */}
             <div className="mx-4 mb-6 text-center">
-              <Pill tone="neutral" mono>
+              <p
+                className="font-mono uppercase"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.5px',
+                  color: 'var(--color-text-faint)',
+                }}
+              >
                 Tap any module to open it on your ANTON instance
-              </Pill>
+              </p>
             </div>
           </>
         )}

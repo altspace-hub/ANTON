@@ -15,6 +15,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { tick, light, success, error as hapticError } from '../services/haptics';
 import * as TTS from '../services/tts';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { Ico } from './ui';
 
 export interface VoiceModeProps {
   /** Called with the final user transcript when the user releases the mic. */
@@ -32,6 +34,18 @@ const WebSpeech = typeof window !== 'undefined'
 
 export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
   const [phase, setPhase] = useState<Phase>('idle');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+
+  // Esc to close (web). Android hardware back is handled by App.tsx since
+  // VoiceMode renders inside the active tab tree.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const [partial, setPartial] = useState('');
   const [reply, setReply] = useState('');
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -151,27 +165,74 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-b from-adv-dark to-adv-dark-2 p-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] safe-top safe-bottom">
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] safe-top safe-bottom"
+      style={{ background: 'var(--color-bg)' }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Voice mode"
+    >
       <div className="w-full flex items-center justify-between">
-        <button onClick={onClose} aria-label="Close" className="rounded-full bg-adv-card p-2 text-adv-gray hover:text-adv-off-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6l-12 12"/></svg>
+        <button
+          onClick={onClose}
+          aria-label="Close voice mode"
+          className="flex items-center justify-center rounded-full transition active:scale-[0.95]"
+          style={{
+            width: 44, height: 44,
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <Ico name="x" size={20} />
         </button>
-        <span className="text-[11px] uppercase tracking-wider text-adv-gray">Voice mode</span>
-        <span aria-hidden="true" className="w-9" />
+        <span
+          className="font-mono text-[11px] uppercase"
+          style={{ color: 'var(--color-text-muted)', letterSpacing: '0.6px' }}
+        >
+          Voice mode
+        </span>
+        <span aria-hidden="true" className="w-11" />
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="text-[11px] uppercase tracking-wider text-adv-teal">{labelFor(phase)}</div>
+        <div
+          className="font-mono text-[11px] uppercase"
+          style={{ color: 'var(--color-accent)', letterSpacing: '0.6px' }}
+        >
+          {labelFor(phase)}
+        </div>
         {phase === 'listening' && partial && (
-          <div className="mt-4 max-w-md text-lg text-adv-off-white leading-relaxed">{partial}</div>
+          <div
+            className="mt-4 max-w-md text-[18px] leading-relaxed"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {partial}
+          </div>
         )}
         {phase === 'thinking' && (
-          <div className="mt-4 text-base text-adv-gray">Thinking…</div>
+          <div className="mt-4 text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
+            Thinking…
+          </div>
         )}
         {phase === 'speaking' && reply && (
-          <div className="mt-4 max-w-md text-base text-adv-off-white leading-relaxed">{reply}</div>
+          <div
+            className="mt-4 max-w-md text-[15px] leading-relaxed"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {reply}
+          </div>
         )}
-        {errMsg && <div className="mt-4 text-sm text-adv-red">{errMsg}</div>}
+        {errMsg && (
+          <div
+            role="alert"
+            className="mt-4 text-[13px]"
+            style={{ color: 'var(--color-red)' }}
+          >
+            {errMsg}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col items-center gap-3">
@@ -181,28 +242,36 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
           onPointerCancel={onUp}
           onPointerLeave={onUp}
           aria-label={phase === 'listening' ? 'Release to send' : 'Hold to talk'}
-          className={`relative flex h-24 w-24 items-center justify-center rounded-full transition-transform touch-none select-none ${
-            phase === 'listening'
-              ? 'scale-110 bg-adv-red text-white shadow-2xl shadow-adv-red/40 ring-8 ring-adv-red/20'
-              : 'bg-adv-teal text-adv-dark shadow-2xl shadow-adv-teal/30 hover:scale-105'
-          }`}
+          className="relative flex items-center justify-center rounded-full transition-transform touch-none select-none"
+          style={{
+            width: 96, height: 96,
+            background: phase === 'listening' ? 'var(--color-red)' : 'var(--color-accent)',
+            color: 'var(--color-accent-fg)',
+            transform: phase === 'listening' ? 'scale(1.1)' : 'scale(1)',
+            boxShadow: phase === 'listening'
+              ? '0 12px 32px color-mix(in srgb, var(--color-red) 35%, transparent)'
+              : '0 12px 32px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+          }}
         >
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-            <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M19 10v2a7 7 0 0 1-14 0v-2 M12 19v3 M8 22h8"/>
-          </svg>
-          {/* Animated waveform — three concentric pulses + bar-chart hint
-              (Phase H fix UX-H3 — single-ring ping read as "loading", not
-              the spec's "single animated waveform"). */}
+          <Ico name="mic" size={40} />
           {phase === 'listening' && (
             <>
-              <span className="absolute inset-0 rounded-full ring-2 ring-white/30 animate-ping" />
-              <span className="absolute -inset-2 rounded-full ring-2 ring-white/20 animate-ping" style={{ animationDelay: '120ms' }} />
-              <span className="absolute -inset-4 rounded-full ring-1 ring-white/10 animate-ping" style={{ animationDelay: '240ms' }} />
+              <span
+                className="absolute inset-0 rounded-full animate-ping"
+                style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.30) inset' }}
+              />
+              <span
+                className="absolute -inset-2 rounded-full animate-ping"
+                style={{ animationDelay: '120ms', boxShadow: '0 0 0 2px rgba(255,255,255,0.20) inset' }}
+              />
+              <span
+                className="absolute -inset-4 rounded-full animate-ping"
+                style={{ animationDelay: '240ms', boxShadow: '0 0 0 1px rgba(255,255,255,0.12) inset' }}
+              />
             </>
           )}
         </button>
-        <div className="text-[11px] text-adv-gray">
+        <div className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
           {phase === 'idle' && 'Hold to talk · Tap to toggle'}
           {phase === 'listening' && 'Release to send'}
           {phase === 'thinking' && 'Routing to ANTON…'}

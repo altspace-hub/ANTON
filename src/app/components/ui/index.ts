@@ -24,6 +24,24 @@ export type { AvatarProps }      from './Avatar';
 export { Ico }                   from './Ico';
 export type { IcoProps, IcoName } from './Ico';
 
+export { PageHeader }            from './PageHeader';
+export type { PageHeaderProps }  from './PageHeader';
+
+export { MonogramTile, MODULE_GLYPH, getModuleGlyph } from './MonogramTile';
+export type { MonogramTileProps, MonogramTone } from './MonogramTile';
+
+export { PriorityCard }          from './PriorityCard';
+export type { PriorityCardProps, PriorityTone } from './PriorityCard';
+
+export { StatTriplet }           from './StatTriplet';
+export type { StatTripletProps, Stat, StatTone } from './StatTriplet';
+
+export { Spinner }               from './Spinner';
+export type { SpinnerProps, SpinnerSize, SpinnerTone } from './Spinner';
+
+export { ErrorPill }             from './ErrorPill';
+export type { ErrorPillProps }   from './ErrorPill';
+
 export {
   PersonalizationProvider,
   usePersonalization,

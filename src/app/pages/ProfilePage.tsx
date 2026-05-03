@@ -1,44 +1,48 @@
 /**
- * ProfilePage — Identity, language, theme, and settings.
+ * ProfilePage — Identity, language, sign out (Evolution light theme).
+ *
+ * May-3 IRE pass:
+ *   • Removed dead theme picker (single-item array — pure dead code)
+ *   • Light-token migration (was bg-adv-dark + adv-* throughout)
+ *   • PageHeader primitive (was custom header markup)
+ *   • Ico for back button + check icons (was inline SVG + ✓ char)
  */
 
 import { useState, useEffect } from 'react';
 import { getIdentity, saveIdentity, clearIdentity } from '../services/identity';
 import { updateProfile, getLanguages, clearSession } from '../services/api';
-import { getTheme, setTheme, type AppTheme } from '../services/theme';
+import { Ico, PageHeader, SectionLabel, ErrorPill } from '../components/ui';
 
 interface Props { onBack: () => void; }
-
-// Themes were dropped in the Evolution redesign (light only). The picker
-// is replaced by the personal-accent picker in the Phase 5 settings refresh.
-const THEMES: { value: AppTheme; label: string; icon: string; desc: string }[] = [
-  { value: 'light', label: 'Light', icon: '☀️', desc: 'Warm linen' },
-];
 
 export default function ProfilePage({ onBack }: Props) {
   const identity = getIdentity();
   const [name, setName] = useState(identity?.displayName || '');
   const [language, setLanguage] = useState(identity?.preferredLanguage || 'en');
   const [languages, setLanguages] = useState<Record<string, string>>({});
-  const [currentTheme, setCurrentTheme] = useState<AppTheme>(getTheme());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => { getLanguages().then(setLanguages).catch(() => {}); }, []);
-
-  function handleThemeChange(theme: AppTheme) {
-    setTheme(theme);
-    setCurrentTheme(theme);
-  }
+  useEffect(() => {
+    let cancelled = false;
+    getLanguages()
+      .then(rows => { if (!cancelled) setLanguages(rows); })
+      .catch(() => { /* non-fatal: keep previous state, retry on next mount */ });
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleSave() {
     setSaving(true);
+    setSaveError(null);
     try {
       await updateProfile({ display_name: name.trim(), preferred_language: language });
       if (identity) saveIdentity({ ...identity, displayName: name.trim(), preferredLanguage: language });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch {}
+    } catch {
+      setSaveError('Couldn\'t save. Check your connection and try again.');
+    }
     setSaving(false);
   }
 
@@ -48,101 +52,132 @@ export default function ProfilePage({ onBack }: Props) {
     }
   }
 
-  return (
-    <div className="flex min-h-dvh flex-col bg-adv-dark safe-top safe-bottom">
-      {/* Header */}
-      <div className="border-b border-border bg-adv-dark-2">
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 py-4">
-        <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-lg bg-adv-card text-adv-gray transition hover:text-adv-off-white active:scale-95">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <h1 className="text-lg font-bold text-adv-off-white">Profile</h1>
-      </div>
+  const initial = (identity?.displayName || '?')[0].toUpperCase();
 
-      </div>
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)', minHeight: 0 }}>
+      <PageHeader title="Profile" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-2xl px-5 py-6 space-y-6">
-        {/* Identity card */}
-        <div className="rounded-2xl border border-border bg-adv-card p-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-adv-teal/20 to-adv-teal/5 border border-adv-teal/20">
-            <span className="text-2xl font-bold text-adv-teal">{(identity?.displayName || '?')[0].toUpperCase()}</span>
-          </div>
-          <p className="text-base font-semibold text-adv-off-white">{identity?.displayName}</p>
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-adv-dark px-3 py-1 border border-border">
-            <span className="h-1.5 w-1.5 rounded-full bg-adv-green" />
-            <span className="font-mono text-[10px] text-adv-gray">{identity?.contactHash}</span>
-          </div>
-        </div>
-
-        {/* Theme selector */}
-        <div>
-          <label className="mb-3 block text-xs font-medium uppercase tracking-wider text-adv-gray">Appearance</label>
-          <div className="grid grid-cols-3 gap-2">
-            {THEMES.map(t => (
-              <button
-                key={t.value}
-                onClick={() => handleThemeChange(t.value)}
-                className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all active:scale-95 ${
-                  currentTheme === t.value
-                    ? 'border-adv-teal bg-adv-teal/10 shadow-sm shadow-adv-teal/10'
-                    : 'border-border bg-adv-card hover:border-adv-gray/30'
-                }`}
+        <div className="mx-auto max-w-2xl space-y-6 px-4 pb-10 pt-5">
+          {/* Identity card */}
+          <div
+            className="flex items-center gap-4 rounded-[var(--radius-r2)] px-4 py-4"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div
+              className="flex flex-shrink-0 items-center justify-center rounded-full"
+              style={{
+                width: 56, height: 56,
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+                fontSize: 22, fontWeight: 700,
+                border: '1px solid var(--color-accent-dim)',
+              }}
+            >
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p
+                className="truncate text-[16px] font-semibold"
+                style={{ color: 'var(--color-text)' }}
               >
-                <span className="text-xl">{t.icon}</span>
-                <span className={`text-xs font-medium ${currentTheme === t.value ? 'text-adv-teal' : 'text-adv-off-white'}`}>{t.label}</span>
-                <span className="text-[10px] text-adv-gray">{t.desc}</span>
-              </button>
-            ))}
+                {identity?.displayName || 'Unnamed'}
+              </p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span
+                  className="block rounded-full"
+                  style={{ width: 6, height: 6, background: 'var(--color-green)' }}
+                />
+                <span
+                  className="truncate font-mono text-[10px]"
+                  style={{ color: 'var(--color-text-muted)', letterSpacing: '0.4px' }}
+                >
+                  {identity?.contactHash || '—'}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Edit form */}
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Display Name</label>
+          {/* Edit form */}
+          <section>
+            <SectionLabel htmlFor="profile-name" className="mb-2.5">Display name</SectionLabel>
             <input
+              id="profile-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white transition-colors focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal/30"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-[14px] focus:outline-none"
+              style={{
+                background: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                height: 48,
+              }}
             />
-          </div>
+          </section>
 
-          <div>
-            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-adv-gray">Language</label>
+          <section>
+            <SectionLabel htmlFor="profile-language" className="mb-2.5">Language</SectionLabel>
             <select
+              id="profile-language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white transition-colors focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal/30"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-[14px] focus:outline-none"
+              style={{
+                background: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                height: 48,
+              }}
             >
               {Object.entries(languages).map(([code, label]) => (
                 <option key={code} value={code}>{label}</option>
               ))}
             </select>
-          </div>
+          </section>
+
+          {saveError && (
+            <ErrorPill message={saveError} onRetry={() => void handleSave()} retryLabel="Try again" />
+          )}
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full rounded-lg bg-adv-teal py-3.5 text-sm font-semibold text-adv-dark transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-r2)] text-[14px] font-semibold transition active:scale-[0.99] disabled:opacity-50"
+            style={{
+              background: 'var(--color-accent)',
+              color: 'var(--color-accent-fg)',
+              height: 48,
+            }}
           >
-            {saved ? '✓ Saved' : saving ? 'Saving...' : 'Save Changes'}
+            {saved && <Ico name="check" size={16} />}
+            <span>{saved ? 'Saved' : saving ? 'Saving…' : 'Save changes'}</span>
           </button>
-        </div>
 
-        {/* Sign out */}
-        <div className="pt-4 border-t border-border">
-          <button
-            onClick={handleLogout}
-            className="w-full rounded-lg border border-adv-red/20 bg-adv-red/5 py-3 text-sm font-medium text-adv-red transition hover:bg-adv-red/10 active:scale-[0.98]"
-          >
-            Sign Out
-          </button>
-          <p className="mt-3 text-center text-[10px] text-adv-gray/40">
-            ANTON Companion v1.0
-          </p>
+          {/* Sign out */}
+          <div style={{ borderTop: '1px solid var(--color-border-soft)' }} className="pt-4">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center rounded-[var(--radius-r2)] text-[13px] font-semibold transition active:scale-[0.99]"
+              style={{
+                background: 'var(--color-red-dim)',
+                color: 'var(--color-red)',
+                height: 44,
+              }}
+            >
+              Sign out
+            </button>
+            <p
+              className="mt-3 text-center font-mono text-[10px]"
+              style={{ color: 'var(--color-text-faint)', letterSpacing: '0.4px' }}
+            >
+              ANTON COMPANION · v1.0
+            </p>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

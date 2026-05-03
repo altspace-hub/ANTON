@@ -15,7 +15,7 @@
  */
 
 import { useState } from 'react';
-import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import { runPathfinderQuery, splitAnswer, type PathfinderResult, type PathfinderSource } from '../services/pathfinder';
 
 interface Props { orgId: string }
@@ -123,7 +123,9 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
           className="mb-3 flex items-end gap-2 rounded-[var(--radius-r2)] p-2.5"
           style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
         >
+          <label htmlFor="search-query" className="sr-only">Search query</label>
           <textarea
+            id="search-query"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -143,7 +145,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             onClick={() => void ask()}
             disabled={running || !draft.trim()}
             icon={running
-              ? <span className="inline-block h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+              ? <Spinner size="xs" tone="on-accent" />
               : <Ico name="arrowUp" color="currentColor" size={14} />}
           >
             {running ? 'Thinking' : 'Ask'}
@@ -160,7 +162,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
         {running && !result && (
           <div className="rounded-[var(--radius-r2)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
             <div className="mb-2 flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+              <Spinner size="xs" />
               <span
                 className="font-mono font-bold uppercase"
                 style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}

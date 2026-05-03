@@ -705,6 +705,9 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         contact_hash: id.contact_hash,
         pubkey: id.pubkey,
         cert_fingerprint: id.cert_fingerprint,
+        // Optional: enables web-push (PWA) on instances that have configured
+        // a VAPID keypair. Native iOS / Android registration doesn't use this.
+        vapid_public_key: process.env.VAPID_PUBLIC_KEY || null,
       });
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load instance info' });
@@ -1603,6 +1606,110 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     radarFetcher.scanAllSources(category).catch((err: unknown) => {
       console.error('[app-gateway] radar scan error:', err);
     });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Tasks / Schedule / Wallet adapters (companion More-tab surfaces).
+  // Mirrors the desktop `/api/task-agent`, `/api/deadlines`, `/api/futurechain`
+  // endpoints but scoped to the companion's app session. The desktop owner
+  // and connected companion users see the same instance-level data
+  // (single-operator instance assumption).
+  // ──────────────────────────────────────────────────────────────────────
+
+  // GET /api/app/org/:orgId/tasks — list tasks for the instance owner
+  publicRouter.get('/org/:orgId/tasks', appAuth, orgMember, async (req, res) => {
+    try {
+      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
+      const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10) || 0, 0);
+
+      const where = status ? 'WHERE user_id = $1 AND status = $2' : 'WHERE user_id = $1';
+      const params: unknown[] = status ? ['default', status] : ['default'];
+      const tasks = await db.all(
+        `SELECT id, title, description, status, source, source_ref, priority, tags, due_date,
+                created_at, updated_at, chosen_approach_id, completed_at
+         FROM anton_tasks ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        ...params, limit, offset
+      ) as Array<Record<string, unknown>>;
+      const countRow = await db.get<{ count: number | string }>(
+        `SELECT COUNT(*) as count FROM anton_tasks ${where}`,
+        ...params
+      );
+      res.json({
+        tasks: tasks.map(t => ({
+          ...t,
+          tags: typeof t.tags === 'string'
+            ? (() => { try { return JSON.parse(t.tags as string); } catch { return []; } })()
+            : (t.tags ?? []),
+        })),
+        total: Number(countRow?.count ?? 0),
+      });
+    } catch (err) {
+      console.error('[app-gateway] tasks list error:', err);
+      res.status(500).json({ error: 'Failed to load tasks' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/tasks — quick-add a task
+  publicRouter.post('/org/:orgId/tasks', appAuth, orgMember, async (req, res) => {
+    try {
+      const { title, description, priority = 'normal', due_date } = req.body as {
+        title?: string; description?: string; priority?: string; due_date?: string;
+      };
+      if (!title || typeof title !== 'string') {
+        return res.status(400).json({ error: 'title is required' });
+      }
+      const { randomUUID } = await import('crypto');
+      const id = randomUUID();
+      const trimmedTitle = title.trim();
+      // anton_tasks.description is NOT NULL; fall back to title if client omits it.
+      const desc = (description && description.trim()) ? description.trim() : trimmedTitle;
+      await db.run(
+        `INSERT INTO anton_tasks (id, user_id, title, description, status, source, priority, tags, due_date, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'intake', 'companion', $5, $6, $7, NOW(), NOW())`,
+        id, 'default', trimmedTitle, desc, priority, '[]', due_date ?? null
+      );
+      const task = await db.get(
+        `SELECT id, title, description, status, source, priority, tags, due_date, created_at, updated_at FROM anton_tasks WHERE id = $1`,
+        id
+      );
+      res.status(201).json({ task });
+    } catch (err) {
+      console.error('[app-gateway] tasks create error:', err);
+      res.status(500).json({ error: 'Failed to create task' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/deadlines/morning-brief
+  publicRouter.get('/org/:orgId/deadlines/morning-brief', appAuth, orgMember, async (_req, res) => {
+    try {
+      const { createTimeIntelligence } = await import('../services/time-intelligence.js');
+      const ti = await createTimeIntelligence(db);
+      const brief = await ti.getMorningBrief('default');
+      res.json(brief);
+    } catch (err) {
+      console.error('[app-gateway] morning-brief error:', err);
+      res.status(500).json({ error: 'Failed to load morning brief' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/wallet — bundles wallets + recent transactions
+  publicRouter.get('/org/:orgId/wallet', appAuth, orgMember, async (req, res) => {
+    try {
+      const { createFCWalletService } = await import('../services/fc-wallet-service.js');
+      const { createFCTransactionService } = await import('../services/fc-transaction-service.js');
+      const wsvc = await createFCWalletService(db);
+      const tsvc = await createFCTransactionService(db);
+      const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
+      const [wallets, transactions] = await Promise.all([
+        wsvc.getWallets(),
+        tsvc.listTransactions({ limit }),
+      ]);
+      res.json({ wallets, transactions });
+    } catch (err) {
+      console.error('[app-gateway] wallet error:', err);
+      res.status(500).json({ error: 'Failed to load wallet' });
+    }
   });
 
   // ── Maintenance ────────────────────────────────────────────────────────

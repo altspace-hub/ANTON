@@ -4,12 +4,13 @@
  * Tabs: Home, Chat, Schedule, Tasks, More (Search, Markets, Radar, Docs, Profile, Settings)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getIdentity } from './services/identity';
 import { getSessionToken } from './services/api';
-import { onActiveInstanceChange, getActiveInstance } from './services/instances';
-import { registerPush, setNotificationRouter, startNativeNotificationListener } from './services/push';
+import { onActiveInstanceChange, getActiveInstance, getActiveInstanceId, getInstanceSessionToken } from './services/instances';
+import { registerPush, requestPushPermission, setNotificationRouter, startNativeNotificationListener } from './services/push';
 import { listPendingCheckpoints } from './services/checkpoints';
+import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 
 // Auth screens
 import WelcomePage from './pages/WelcomePage';
@@ -47,9 +48,8 @@ import StdSettingsScreen from './pages/StdSettingsScreen';
 import type { MailMessage } from './services/mail';
 import TabBar from './components/TabBar';
 import BottomSheet from './components/BottomSheet';
-import QuickActionsFab from './components/QuickActionsFab';
-import { fetchWithAuth } from './services/api';
 import { usePersonalization } from './components/ui/PersonalizationContext';
+import { Ico } from './components/ui';
 
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
@@ -64,8 +64,10 @@ type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' |
 const PRO_TABS = [
   { id: 'home',      label: 'Home',      icon: 'home' },
   { id: 'chat',      label: 'Chat',      icon: 'chat' },
-  { id: 'approvals', label: 'Approvals', icon: 'tasks' },
-  { id: 'capture',   label: 'Capture',   icon: 'schedule' },
+  // Way Forward §4 — Approve uses shieldCheck (was 'tasks' → inbox glyph,
+  // which collided with Capture). Capture uses the camera icon directly.
+  { id: 'approvals', label: 'Approvals', icon: 'shieldCheck' },
+  { id: 'capture',   label: 'Capture',   icon: 'camera' },
   { id: 'more',      label: 'More',      icon: 'more' },
 ];
 
@@ -98,13 +100,32 @@ export default function App() {
   const [selectedMail, setSelectedMail] = useState<MailMessage | null>(null);
 
   useEffect(() => {
-    const identity = getIdentity();
-    const token = getSessionToken();
-    if (identity && token) {
-      setAuthScreen('connections');
-    } else {
-      setAuthScreen('welcome');
-    }
+    let cancelled = false;
+    (async () => {
+      // Bridge the active instance's session token from secure storage into
+      // localStorage on cold start. The bridge is normally set when an
+      // instance is added or switched, but if the WebView's localStorage is
+      // wiped (Capacitor data clear, OS reclaim, etc.) while the secure
+      // store survives, getSessionToken() returns null and the user lands
+      // on Welcome despite still being paired. This restores the mirror.
+      try {
+        const activeId = getActiveInstanceId();
+        if (activeId && !getSessionToken()) {
+          const tok = await getInstanceSessionToken(activeId);
+          if (tok) localStorage.setItem('anton-companion-session', tok);
+        }
+      } catch { /* swallow — fall through to identity check */ }
+
+      if (cancelled) return;
+      const identity = getIdentity();
+      const token = getSessionToken();
+      if (identity && token) {
+        setAuthScreen('connections');
+      } else {
+        setAuthScreen('welcome');
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Switch instance → bump key → tab content remounts with the new server base
@@ -119,7 +140,18 @@ export default function App() {
   // Push registration + notification deep-link router (best-effort)
   useEffect(() => {
     const inst = getActiveInstance();
-    if (!inst?.device_id) return;          // legacy pair has no device_id; skip
+    if (!inst) return;
+    // Legacy-pair users (no device_id) can't register a token but we still
+    // request the OS notification permission — Play Store Data Safety
+    // expects a runtime prompt for every declared permission.
+    if (!inst.device_id) {
+      void requestPushPermission().catch(() => { /* swallow */ });
+      return;
+    }
+    // Modern Ed25519-paired users: gate registration on the session token
+    // being bridged into localStorage (App.tsx cold-start bridge can race
+    // this effect on first launch).
+    if (!getSessionToken()) return;
     void registerPush().catch(() => { /* swallow — silent by default per spec §8.7 */ });
     setNotificationRouter((deepLink, raw) => {
       // /approvals/:id deep links land us on the approvals tab with the detail open
@@ -183,6 +215,30 @@ export default function App() {
     setActiveTab(tabId as OrgTab);
   }
 
+  // ── Android hardware back button (Capacitor) ─────────────────
+  // Priority: BottomSheets register themselves and pop first; then this
+  // handler runs through More-menu → sub-screen → Home → exit-prompt.
+  const handleAndroidBack = useCallback((): AppBackResult => {
+    if (showMore)                      { setShowMore(false);      return 'handled'; }
+    if (selectedMail && activeTab === 'std_thread') { setActiveTab('std_mail'); return 'handled'; }
+    // Sub-screens that aren't a primary tab: bounce to home.
+    // Includes both Pro-mode More-tile screens and Standard-mode std_* surfaces.
+    const SUB_SCREENS: OrgTab[] = [
+      'mail_setup', 'history', 'profile', 'settings', 'work', 'school',
+      'calendar', 'mail', 'schedule', 'tasks', 'search', 'markets', 'radar', 'wallet',
+      'std_calendar', 'std_wallet', 'std_voice', 'std_settings',
+    ];
+    if (SUB_SCREENS.includes(activeTab)) { setActiveTab('home'); return 'handled'; }
+    // Chat with a session loaded → drop session + go home
+    if (activeTab === 'chat' && sessionId) { setSessionId(null); setActiveTab('home'); return 'handled'; }
+    // Capture / Approvals → home
+    if (activeTab === 'capture' || activeTab === 'approvals') { setActiveTab('home'); return 'handled'; }
+    // On home (or any root state) → ask for exit-prompt
+    return 'exit';
+  }, [showMore, activeTab, sessionId, selectedMail]);
+
+  useAndroidBackButton({ onBack: handleAndroidBack });
+
   // ── Auth screens ──────────────────────────────────────────────
   if (authScreen === 'welcome') {
     return <WelcomePage onComplete={() => setAuthScreen('join')} />;
@@ -229,9 +285,18 @@ export default function App() {
   }
 
   return (
-    <div className="safe-top flex min-h-dvh flex-col" style={{ background: 'var(--color-bg)' }}>
-      {/* Multi-instance top bar (spec §4.2 + §8.9) — Pro only */}
-      {!isStandard && <InstanceTopBar onAddInstance={() => setAuthScreen('join')} />}
+    <div className="safe-top flex flex-col overflow-hidden" style={{ height: '100dvh', background: 'var(--color-bg)' }}>
+      {/* Multi-instance top bar (spec §4.2 + §8.9) — Pro only.
+          Rendered only on Home; sub-screens carry their own page header
+          and stacking InstanceTopBar above them produces a double-bar
+          (regressed the May-3 single-header pass on Chat). */}
+      {!isStandard && activeTab === 'home' && (
+        <InstanceTopBar
+          onAddInstance={() => setAuthScreen('join')}
+          onOpenApprovals={() => { setActiveTab('approvals'); setShowMore(false); }}
+          pendingApprovals={pendingApprovals}
+        />
+      )}
 
       {/* Active tab content */}
       {activeTab === 'home' && (
@@ -247,6 +312,7 @@ export default function App() {
             orgName={selectedOrgName}
             orgType={selectedOrgType}
             onNavigate={navFromHome}
+            onOpenSession={(sid) => { setSessionId(sid); setActiveTab('chat'); }}
           />
         )
       )}
@@ -282,6 +348,7 @@ export default function App() {
         <CapturePage
           key={`capture-${instanceVersion}`}
           orgId={selectedOrgId}
+          orgName={selectedOrgName}
           onSent={(sid) => { if (sid) setSessionId(sid); setActiveTab('chat'); }}
           onBack={() => setActiveTab('home')}
         />
@@ -363,25 +430,27 @@ export default function App() {
         />
       )}
 
-      {/* More menu — bottom sheet (Phase I fix UX-H1, spec §9.3) — Pro only */}
-      {!isStandard && <BottomSheet open={showMore} onClose={() => setShowMore(false)} title="More" maxHeight="60dvh">
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { id: 'work',     icon: '💼', label: 'Work' },
-            { id: 'mail',     icon: '📧', label: 'Mail' },
-            { id: 'calendar', icon: '🗓️', label: 'Calendar' },
-            { id: 'school',   icon: '🎓', label: 'School' },
-            { id: 'schedule', icon: '📅', label: 'Schedule' },
-            { id: 'tasks',    icon: '☑️', label: 'Tasks' },
-            { id: 'search',   icon: '🔍', label: 'Pathfinder' },
-            { id: 'markets',  icon: '📊', label: 'Markets' },
-            { id: 'radar',    icon: '📡', label: 'Radar' },
-            { id: 'wallet',   icon: '💰', label: 'Wallet' },
-            { id: 'history',  icon: '💬', label: 'History' },
-            { id: 'profile',  icon: '👤', label: 'Profile' },
-            { id: 'settings', icon: '⚙️', label: 'Settings' },
-            { id: 'back',     icon: '🔙', label: 'Switch Org' },
-          ].map(item => (
+      {/* More menu — bottom sheet (Phase I fix UX-H1, spec §9.3) — Pro only.
+          Way Forward §06: monogram glyph system, no emoji. Each tile has its
+          own Ico from the design-system set + a stable accent colour cue. */}
+      {!isStandard && <BottomSheet open={showMore} onClose={() => setShowMore(false)} title="More" maxHeight="68dvh">
+        <div className="grid grid-cols-3 gap-2.5">
+          {([
+            { id: 'work',     icon: 'briefcase',   label: 'Work',       tint: 'var(--color-accent)' },
+            { id: 'mail',     icon: 'mail',        label: 'Mail',       tint: 'var(--color-blue)' },
+            { id: 'calendar', icon: 'calendar',    label: 'Calendar',   tint: 'var(--color-accent)' },
+            { id: 'school',   icon: 'graduation',  label: 'School',     tint: 'var(--color-blue)' },
+            { id: 'schedule', icon: 'schedule',    label: 'Schedule',   tint: 'var(--color-text)' },
+            { id: 'tasks',    icon: 'checkSquare', label: 'Tasks',      tint: 'var(--color-green)' },
+            { id: 'search',   icon: 'search',      label: 'Pathfinder', tint: 'var(--color-accent)' },
+            { id: 'markets',  icon: 'barChart',    label: 'Markets',    tint: 'var(--color-gold)' },
+            { id: 'radar',    icon: 'radar',       label: 'Radar',      tint: 'var(--color-accent)' },
+            { id: 'wallet',   icon: 'wallet',      label: 'Wallet',     tint: 'var(--color-text)' },
+            { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },
+            { id: 'profile',  icon: 'user',        label: 'Profile',    tint: 'var(--color-text)' },
+            { id: 'settings', icon: 'settings',    label: 'Settings',   tint: 'var(--color-text-muted)' },
+            { id: 'back',     icon: 'switchOrg',   label: 'Switch Org', tint: 'var(--color-text-body)' },
+          ] as const).map(item => (
             <button
               key={item.id}
               onClick={() => {
@@ -389,42 +458,37 @@ export default function App() {
                 if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
                 else setActiveTab(item.id as OrgTab);
               }}
-              className="flex flex-col items-center gap-1 rounded-xl border border-border bg-adv-card py-4 text-adv-gray transition hover:border-adv-teal/40 hover:text-adv-teal active:scale-[0.98]"
+              className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-r2)] py-3.5 transition hover:shadow-sm active:scale-[0.97]"
+              style={{
+                background: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                minHeight: 78,
+              }}
             >
-              <span className="text-2xl">{item.icon}</span>
-              <span className="text-[10px]">{item.label}</span>
+              <span
+                className="flex items-center justify-center rounded-[var(--radius-r1)]"
+                style={{
+                  width: 36, height: 36,
+                  background: 'var(--color-surface-alt)',
+                  color: item.tint,
+                }}
+              >
+                <Ico name={item.icon} size={20} />
+              </span>
+              <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-body)' }}>
+                {item.label}
+              </span>
             </button>
           ))}
         </div>
       </BottomSheet>}
 
-      {/* Quick actions FAB (spec §8.8) — Pro only; Standard relies on the Ask tab */}
-      {!isStandard && <QuickActionsFab
-        pendingApprovals={pendingApprovals}
-        onAsk={() => { setActiveTab('chat'); setShowMore(false); }}
-        onCapture={() => { setActiveTab('capture'); setShowMore(false); }}
-        onApprovals={() => { setActiveTab('approvals'); setShowMore(false); }}
-        onSwitchInstance={() => { /* InstanceTopBar already exposes the switcher; nothing else to do here */ }}
-        onVoiceSubmit={async (transcript: string) => {
-          if (!selectedOrgId) return null;
-          try {
-            const res = await fetchWithAuth(`/org/${selectedOrgId}/query-sync`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: transcript }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-            const reply = typeof data.assistant === 'string' ? data.assistant
-                       : typeof data.reply === 'string' ? data.reply
-                       : typeof data.text === 'string' ? data.text
-                       : (data.message?.content ?? '');
-            return { reply: String(reply || '(no reply)') };
-          } catch (e) {
-            return { reply: e instanceof Error ? e.message : 'Voice request failed' };
-          }
-        }}
-      />}
+      {/* QuickActionsFab REMOVED (May-3 IRE pass): world-class AI apps
+          (Claude, ChatGPT, Linear) ship zero FABs. The composer is the
+          primary action on Chat; Voice/Capture/Approvals are reachable via
+          tabs and the Home quick-action grid. The teal floating + read as
+          the strongest "not-Claude" signal in the entire app. */}
 
       {/* Tab bar — mode-aware. Pro carries the Approvals badge; Standard
           shows it on the Ask tab as a more general "things waiting" cue. */}

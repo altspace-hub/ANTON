@@ -1,9 +1,15 @@
 /**
- * ConnectionsPage — List of connected organisations.
- * Premium ANTON dark design.
+ * ConnectionsPage — list of paired ANTON instances / orgs (Evolution design).
+ *
+ * Per Way Forward §06: "wallet of modules, not a clip-art grid". Each org
+ * gets a coloured monogram tile (two letters, flat colour, rounded square)
+ * — the same visual language as the More menu. No emoji.
+ *
+ * Light theme (warm linen canvas), accent for primary action ("Join").
  */
 
 import { useState, useEffect } from 'react';
+import { Btn, Pill, SectionLabel, Ico, Spinner, ErrorPill } from '../components/ui';
 import { getConnections } from '../services/api';
 import { getIdentity } from '../services/identity';
 
@@ -14,111 +20,237 @@ interface Props {
 }
 
 interface Connection {
-  id: string; name: string; org_type: string; description: string | null;
-  welcome_message: string | null; role: string; joined_at: string;
+  id: string;
+  name: string;
+  org_type: string;
+  description: string | null;
+  welcome_message: string | null;
+  role: string;
+  joined_at: string;
 }
 
-const ORG_EMOJI: Record<string, string> = {
-  school: '🎓', ngo: '🌍', sports_club: '⚽', consulting: '💼', consulting_firm: '💼',
-  company: '🏢', community: '🤝', government: '🏛️', healthcare: '🏥', other: '📋',
+// Org-type → monogram colour. Stable per type so the user learns associations.
+// Uses status / accent colours; never tinted by personal accent.
+const ORG_TYPE_COLOUR: Record<string, string> = {
+  school:           'var(--color-blue)',
+  ngo:              'var(--color-green)',
+  sports_club:      'var(--color-gold)',
+  consulting:       'var(--color-accent)',
+  consulting_firm:  'var(--color-accent)',
+  company:          'var(--color-text)',
+  community:        '#6A3E8F',
+  government:       'var(--color-text)',
+  healthcare:       'var(--color-red)',
+  other:            'var(--color-text-muted)',
 };
+
+const ORG_TYPE_LABEL: Record<string, string> = {
+  school:           'School',
+  ngo:              'NGO',
+  sports_club:      'Sports club',
+  consulting:       'Consulting',
+  consulting_firm:  'Consulting',
+  company:          'Company',
+  community:        'Community',
+  government:       'Government',
+  healthcare:       'Healthcare',
+  other:            'Other',
+};
+
+function monogram(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .padEnd(2, ' ')
+    .slice(0, 2);
+}
 
 export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: Props) {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
   const identity = getIdentity();
+  const userInitial = (identity?.displayName || '?')[0]?.toUpperCase() ?? '?';
 
   useEffect(() => {
-    getConnections().then(setConnections).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getConnections()
+      .then(rows => { if (!cancelled) setConnections(Array.isArray(rows) ? rows : []); })
+      .catch(() => { if (!cancelled) setError('Couldn\'t load your organisations.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [reloadTick]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-adv-dark safe-top safe-bottom">
-      {/* Header */}
-      <div className="border-b border-border">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-adv-teal/10">
-              <span className="text-sm font-black text-adv-teal">A</span>
+    <div
+      className="safe-top safe-bottom flex min-h-dvh flex-col"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      {/* ── Header ─────────────────────────────────────────── */}
+      <header className="px-5 pb-4 pt-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex items-center justify-center rounded-[var(--radius-r1)]"
+              style={{
+                width: 32, height: 32,
+                background: 'var(--color-accent)',
+                color: 'var(--color-accent-fg)',
+                fontSize: 17, fontWeight: 800, letterSpacing: '-0.4px',
+              }}
+            >
+              A
             </div>
-            <h1 className="text-lg font-bold text-adv-off-white">ANTON</h1>
+            <div>
+              <h1
+                className="text-[var(--color-text)]"
+                style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.1 }}
+              >
+                ANTON
+              </h1>
+              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                Hello, {identity?.displayName || 'there'}
+              </p>
+            </div>
           </div>
-          <p className="mt-0.5 text-xs text-adv-gray">Hello, {identity?.displayName || 'User'}</p>
+          <button
+            onClick={onProfile}
+            aria-label="Profile"
+            className="flex items-center justify-center rounded-full transition active:scale-95"
+            style={{
+              width: 40, height: 40,
+              background: 'var(--color-accent-soft)',
+              color: 'var(--color-accent)',
+              border: '1px solid var(--color-accent-dim)',
+              fontSize: 14, fontWeight: 700,
+            }}
+          >
+            {userInitial}
+          </button>
         </div>
-        <button
-          onClick={onProfile}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-adv-teal/20 to-adv-teal/5 border border-adv-teal/20 text-sm font-bold text-adv-teal transition hover:border-adv-teal/40"
-        >
-          {(identity?.displayName || '?')[0].toUpperCase()}
-        </button>
-      </div>
+      </header>
 
-      {/* Content */}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-2xl px-5 py-5">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-adv-gray">Your Organisations</h2>
+      {/* ── Org list ───────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-5 pb-6">
+        <div className="mb-3 flex items-center justify-between">
+          <SectionLabel>Your organisations</SectionLabel>
           <button
             onClick={onJoinNew}
-            className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition hover:bg-adv-teal/20 active:scale-95"
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:scale-95"
+            style={{
+              background: 'var(--color-accent-soft)',
+              color: 'var(--color-accent)',
+              border: '1px solid var(--color-accent-dim)',
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <Ico name="plus" size={13} />
             Join
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <span className="h-7 w-7 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
-          </div>
-        ) : connections.length === 0 ? (
-          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-adv-card/20 py-16 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-adv-teal/10">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-adv-teal">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-            </div>
-            <p className="mb-1 text-sm font-medium text-adv-off-white">No organisations yet</p>
-            <p className="mb-5 text-xs text-adv-gray">Scan a QR code or enter an invitation token</p>
-            <button
-              onClick={onJoinNew}
-              className="rounded-xl bg-adv-teal px-8 py-3 text-sm font-semibold text-adv-dark transition hover:bg-adv-teal-dark active:scale-[0.98]"
-            >
-              Join Organisation
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {connections.map(conn => (
-              <button
-                key={conn.id}
-                onClick={() => onSelectOrg(conn.id, conn.name)}
-                className="flex w-full items-center gap-4 rounded-2xl border border-border bg-adv-card p-4 text-left transition-all hover:border-adv-teal/30 hover:shadow-lg hover:shadow-adv-teal/5 active:scale-[0.98]"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-adv-dark-2 text-2xl">
-                  {ORG_EMOJI[conn.org_type] || '📋'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-adv-off-white">{conn.name}</div>
-                  {conn.description && (
-                    <div className="mt-0.5 truncate text-xs text-adv-gray">{conn.description}</div>
-                  )}
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="rounded-full bg-adv-dark-2 px-2 py-0.5 text-[10px] text-adv-gray">{conn.org_type}</span>
-                    <span className="rounded-full bg-adv-teal/10 px-2 py-0.5 text-[10px] text-adv-teal">{conn.role}</span>
-                  </div>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-adv-gray/40 shrink-0"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            ))}
+        {error && (
+          <div className="mb-3">
+            <ErrorPill message={error} onRetry={() => setReloadTick(t => t + 1)} />
           </div>
         )}
-      </div>
+
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Spinner size="lg" />
+          </div>
+        ) : connections.length === 0 ? (
+          /* Empty state */
+          <div
+            className="rounded-[var(--radius-r3)] px-5 py-12 text-center"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px dashed var(--color-border)',
+            }}
+          >
+            <div
+              className="mx-auto mb-3 inline-flex rounded-full p-3"
+              style={{
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+              }}
+            >
+              <Ico name="qr" size={26} />
+            </div>
+            <div className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              No organisations yet
+            </div>
+            <div className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+              Scan a QR code or enter an invitation token to get started.
+            </div>
+            <div className="mt-4">
+              <Btn variant="primary" size="md" onClick={onJoinNew}>
+                Join organisation
+              </Btn>
+            </div>
+          </div>
+        ) : (
+          /* Connected orgs */
+          <div className="space-y-2.5">
+            {connections.map(conn => {
+              const c = ORG_TYPE_COLOUR[conn.org_type] ?? ORG_TYPE_COLOUR.other;
+              const typeLabel = ORG_TYPE_LABEL[conn.org_type] ?? conn.org_type;
+              return (
+                <button
+                  key={conn.id}
+                  onClick={() => onSelectOrg(conn.id, conn.name)}
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-r2)] p-3 text-left transition hover:shadow-sm active:scale-[0.99]"
+                  style={{
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  {/* Monogram tile */}
+                  <div
+                    className="flex flex-shrink-0 items-center justify-center rounded-[var(--radius-r1)] font-bold"
+                    style={{
+                      width: 44, height: 44,
+                      background: c,
+                      color: '#FFFFFF',
+                      fontSize: 16, letterSpacing: '-0.3px',
+                    }}
+                  >
+                    {monogram(conn.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className="truncate text-[14px] font-semibold"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      {conn.name}
+                    </div>
+                    {conn.description && (
+                      <div
+                        className="truncate text-[11px]"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      >
+                        {conn.description}
+                      </div>
+                    )}
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Pill tone="neutral" mono>{typeLabel.toUpperCase()}</Pill>
+                      <Pill tone="teal" mono>{conn.role.toUpperCase()}</Pill>
+                    </div>
+                  </div>
+                  <span style={{ color: 'var(--color-text-faint)' }}>
+                    <Ico name="chevronRight" size={16} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
