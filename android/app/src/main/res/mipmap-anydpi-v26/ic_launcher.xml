@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
-    <!-- 2026-05-03 v2: faithful recreation of original two-L design,
-         recoloured to ANTON greens. PNG mipmaps left as pre-Android-8
-         fallback. -->
-    <foreground android:drawable="@drawable/ic_launcher_foreground_vector"/>
+    <!-- 2026-05-03 v3: foreground is now a real PNG render of
+         public/anton-logo.svg through Inter Bold (via @resvg/resvg-js),
+         not a hand-traced vector approximation. Files in
+         res/mipmap-{m,h,x,xx,xxx}hdpi/ic_launcher_foreground.png. -->
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
