@@ -22,8 +22,12 @@ const path = require('path');
 const { Resvg } = require('@resvg/resvg-js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const baseSvg = fs.readFileSync(path.join(repoRoot, 'public', 'anton-logo.svg'), 'utf8');
-const interBold = fs.readFileSync(path.join(__dirname, 'Inter-Bold.ttf'));
+// Source: the official Claude Design logo (design_handoff_companion_app/logo/
+// 01-monolith.svg). Uses paths for the A — no font rasterization needed.
+const baseSvg = fs.readFileSync(
+  path.join(repoRoot, 'design_handoff_companion_app', 'logo', '01-monolith.svg'),
+  'utf8'
+);
 
 // Adaptive-icon foreground (and legacy launcher) sizes per density:
 //   mdpi (1×):    108px
@@ -56,11 +60,6 @@ for (const s of sizes) {
     `<svg width="${s.px}" height="${s.px}" `
   );
   const resvg = new Resvg(svg, {
-    font: {
-      fontBuffers: [interBold],
-      defaultFontFamily: 'Inter',
-      loadSystemFonts: false,
-    },
     background: 'transparent',
   });
   const png = resvg.render().asPng();
