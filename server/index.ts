@@ -243,9 +243,14 @@ app.use(
 
 // ── CORS — localhost only ─────────────────────────────────────
 // In dev, Vite may land on any port (5173, 5174, 5175…) if earlier ports are taken.
-// Allow any http://localhost:<port> origin so the proxy always works.
-// Allow localhost + LAN IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for companion app testing
-const isLocalhostOrigin = (origin: string) => /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
+// Allow any localhost port + LAN IPs over BOTH http and https so the proxy
+// always works AND the Capacitor companion app (whose WebView origin is
+// `https://localhost` because androidScheme/iosScheme = 'https') can reach
+// the API. The regex matches localhost, 127.0.0.1, RFC1918 LAN ranges,
+// and the Capacitor custom schemes (capacitor:// + ionic://) on Android/iOS.
+const isLocalhostOrigin = (origin: string) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin)
+  || /^(capacitor|ionic):\/\/localhost$/.test(origin);
 
 app.use(
   cors({

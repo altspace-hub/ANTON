@@ -20,6 +20,37 @@ export type RegisterOutcome =
   | { ok: true; platform: 'apns' | 'fcm' | 'web-push'; token: string }
   | { ok: false; reason: 'unsupported' | 'permission-denied' | 'server-error' | 'no-instance' | 'no-device-id'; detail?: string };
 
+/**
+ * Ask the user for notification permission only.
+ *
+ * Decoupled from token registration so legacy-pair users (no device_id)
+ * still see the prompt — required because POST_NOTIFICATIONS is declared
+ * in AndroidManifest.xml and Play Store Data Safety policy expects a
+ * runtime prompt for every declared permission.
+ */
+export async function requestPushPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
+  const platform = Capacitor.getPlatform();
+  if (platform === 'ios' || platform === 'android') {
+    try {
+      const mod = await import('@capacitor/push-notifications');
+      const PushNotifications = mod.PushNotifications;
+      const perm = await PushNotifications.checkPermissions();
+      let status = perm.receive;
+      if (status === 'prompt' || status === 'prompt-with-rationale') {
+        const r = await PushNotifications.requestPermissions();
+        status = r.receive;
+      }
+      return status === 'granted' ? 'granted' : 'denied';
+    } catch { return 'unsupported'; }
+  }
+  // Web
+  if (typeof Notification === 'undefined') return 'unsupported';
+  try {
+    const r = await Notification.requestPermission();
+    return r === 'granted' ? 'granted' : 'denied';
+  } catch { return 'unsupported'; }
+}
+
 /** Ask for permission + register. Idempotent. */
 export async function registerPush(): Promise<RegisterOutcome> {
   const platform = Capacitor.getPlatform();
@@ -46,20 +77,41 @@ async function registerNative(platform: 'ios' | 'android', deviceId: string): Pr
     }
     if (status !== 'granted') return { ok: false, reason: 'permission-denied' };
 
-    // 2. Token registration — wait for the registration event
+    // 2. Token registration — wait for the registration event.
+    //
+    // Capacitor's addListener returns a Promise<PluginListenerHandle>; the
+    // listener callback can fire BEFORE that Promise resolves. The previous
+    // implementation called `succHandler.then(h => h.remove())` from inside
+    // the callback, which (a) resolved the handle later, (b) wasn't awaited,
+    // and (c) left the listener attached for any duplicate event mid-tick.
+    // Now we await both handles up-front, then call .remove() synchronously
+    // on the resolved values.
+    type Handle = { remove: () => Promise<void> };
+    let succHandle: Handle | null = null;
+    let errHandle: Handle | null = null;
     const token = await new Promise<string>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Registration timed out')), 15_000);
-      const succHandler = PushNotifications.addListener('registration', (t: { value: string }) => {
+      const cleanup = () => {
         clearTimeout(timeout);
-        succHandler.then(h => h.remove()).catch(() => {});
-        resolve(t.value);
-      });
-      const errHandler = PushNotifications.addListener('registrationError', (e: { error?: string } | string) => {
-        clearTimeout(timeout);
-        errHandler.then(h => h.remove()).catch(() => {});
-        reject(new Error(typeof e === 'string' ? e : (e.error || 'Registration error')));
-      });
-      void PushNotifications.register();
+        succHandle?.remove().catch(() => {});
+        errHandle?.remove().catch(() => {});
+      };
+      void (async () => {
+        try {
+          succHandle = await PushNotifications.addListener('registration', (t: { value: string }) => {
+            cleanup();
+            resolve(t.value);
+          }) as unknown as Handle;
+          errHandle = await PushNotifications.addListener('registrationError', (e: { error?: string } | string) => {
+            cleanup();
+            reject(new Error(typeof e === 'string' ? e : (e.error || 'Registration error')));
+          }) as unknown as Handle;
+          await PushNotifications.register();
+        } catch (e) {
+          cleanup();
+          reject(e instanceof Error ? e : new Error(String(e)));
+        }
+      })();
     });
 
     // 3. Send to instance

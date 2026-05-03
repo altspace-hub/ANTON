@@ -16,6 +16,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
 
             <intent-filter>
@@ -37,6 +38,21 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="anton" android:host="join" />
+            </intent-filter>
+
+            <!-- HTTPS deep link: an instance can serve a pairing page at
+                 https://<host>/anton/enroll?server=...&token=... and that
+                 link will route into the app once installed. autoVerify
+                 makes the link "verified" without a chooser dialog when the
+                 instance hosts /.well-known/assetlinks.json (left to the
+                 instance operator). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:pathPrefix="/anton/enroll" />
+                <data android:pathPrefix="/anton/join" />
             </intent-filter>
 
             <!-- Share target — receive text / urls / images from the OS share sheet (spec §8.5) -->

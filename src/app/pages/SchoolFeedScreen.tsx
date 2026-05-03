@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pill, SectionLabel, Ico } from '../components/ui';
+import { Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import { getSchoolFeed, type SchoolFeed, type UpNextItem } from '../services/school';
 
 interface Props {
@@ -92,10 +92,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
       <div className="flex-1 overflow-y-auto px-4 pb-5 pt-2">
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : (
           <>

@@ -4,11 +4,18 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
+// In Capacitor, the WebView is served at https://localhost. The PWA
+// service worker would intercept failed API calls (e.g. before pairing
+// completes when there's no API origin yet) and serve the cached
+// index.html, causing the app to JSON.parse HTML and crash with
+// "unexpected token '<'". Skip PWA + SW entirely for native builds.
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === '1';
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    ...(isCapacitorBuild ? [] : [VitePWA({
       registerType: 'autoUpdate',
       devOptions: { enabled: false },
       includeAssets: ['anton-icon.svg'],
@@ -52,10 +59,15 @@ export default defineConfig({
           },
         ],
       },
-    }),
+    })]),
   ],
   root: 'src/app',
-  base: '/app/',
+  // Desktop PWA is served at /app/, so the default base is /app/.
+  // Capacitor serves bundled assets from the WebView root, so the
+  // build:android* scripts set CAPACITOR_BUILD=1 to switch to relative
+  // paths — otherwise index.html references /app/assets/... which 404
+  // inside the WebView and the app shows a black screen.
+  base: process.env.CAPACITOR_BUILD === '1' ? './' : '/app/',
   resolve: {
     alias: { '@app': path.resolve(__dirname, 'src/app') },
   },

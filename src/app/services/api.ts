@@ -170,3 +170,36 @@ export async function getLanguages() {
   const res = await fetch(`${getApiBase()}/languages`);
   return res.json() as Promise<Record<string, string>>;
 }
+
+// ── Tasks ────────────────────────────────────────────────────────
+export async function getOrgTasks(orgId: string, opts?: { status?: string; limit?: number }) {
+  const qs = new URLSearchParams();
+  if (opts?.status) qs.set('status', opts.status);
+  if (opts?.limit) qs.set('limit', String(opts.limit));
+  const url = `${getApiBase()}/org/${orgId}/tasks${qs.toString() ? `?${qs}` : ''}`;
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load tasks');
+  return res.json() as Promise<{ tasks: Array<Record<string, unknown>>; total: number }>;
+}
+
+export async function createOrgTask(orgId: string, body: { title: string; description?: string; priority?: string; due_date?: string }) {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/tasks`, {
+    method: 'POST', headers: headers(), body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Failed to create task');
+  return res.json() as Promise<{ task: Record<string, unknown> }>;
+}
+
+// ── Schedule ─────────────────────────────────────────────────────
+export async function getOrgMorningBrief(orgId: string) {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/deadlines/morning-brief`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load schedule');
+  return res.json() as Promise<{ overdue?: unknown[]; atRisk?: unknown[]; upcoming?: unknown[] }>;
+}
+
+// ── Wallet ───────────────────────────────────────────────────────
+export async function getOrgWallet(orgId: string, limit = 20) {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/wallet?limit=${limit}`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load wallet');
+  return res.json() as Promise<{ wallets: Array<Record<string, unknown>>; transactions: Array<Record<string, unknown>> }>;
+}

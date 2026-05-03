@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Btn, Pill, Ico } from '../components/ui';
+import { Btn, Pill, Ico, Spinner } from '../components/ui';
 import {
   listMailProviders, listMailInbox, inboxTime,
   type MailProvider, type MailMessage, type MailProviderKind,
@@ -85,7 +85,22 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
 
   const antonAddress = useMemo(() => {
     const anton = providers.find(p => p.provider === 'anton');
-    return anton?.email_address || `${firstName.toLowerCase()}@anton.local`;
+    const raw = anton?.email_address;
+    if (!raw) return `${firstName.toLowerCase()}@anton.local`;
+    // The server may emit `<orgUuid>@anton.<instanceUuid>` for unconfigured
+    // mailboxes — that's unreadable for a daily user. Replace any UUID-shaped
+    // local-part with the user's first name, and any UUID-shaped domain with
+    // `anton.local`, while preserving real configured addresses.
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const [localPart, domain] = raw.split('@');
+    const friendlyLocal = localPart && UUID.test(localPart) ? firstName.toLowerCase() : localPart;
+    const cleanDomain = (domain || '').replace(/^anton\./i, '');
+    const friendlyDomain = !domain
+      ? 'anton.local'
+      : UUID.test(cleanDomain)
+        ? 'anton.local'
+        : domain;
+    return `${friendlyLocal}@${friendlyDomain}`;
   }, [providers, firstName]);
 
   const externalConnected = providers.filter(p => p.provider !== 'anton' && p.status === 'active').length;
@@ -124,18 +139,32 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
             {antonAddress}{externalConnected > 0 && ` · +${externalConnected} connected`}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={onOpenSettings} className="flex items-center justify-center" aria-label="Mail setup">
+        <div className="-mr-2.5 flex items-center">
+          <button
+            onClick={onOpenSettings}
+            aria-label="Mail setup"
+            className="flex h-11 w-11 items-center justify-center"
+          >
             <Ico name="plus" color="var(--color-text-muted)" size={18} />
           </button>
-          <Ico name="search" color="var(--color-text-muted)" size={18} />
+          <button
+            aria-label="Search messages"
+            className="flex h-11 w-11 items-center justify-center"
+          >
+            <Ico name="search" color="var(--color-text-muted)" size={18} />
+          </button>
         </div>
       </div>
 
-      {/* ── Source filter chips ─────────────────────────────── */}
+      {/* ── Source filter chips ───────────────────────────────
+          pr-4 + scrollbarWidth:none so the last chip clears the screen
+          edge instead of clipping; matches CalendarScreen source legend. */}
       <div
-        className="flex gap-1.5 overflow-x-auto px-3.5 pb-2.5 pt-1"
-        style={{ borderBottom: '1px solid var(--color-border-soft)' }}
+        className="flex gap-1.5 overflow-x-auto pb-2.5 pt-1"
+        style={{
+          borderBottom: '1px solid var(--color-border-soft)',
+          paddingLeft: 14, paddingRight: 16, scrollbarWidth: 'none',
+        }}
       >
         {chips.map(chip => {
           const active = chip.id === filter;
@@ -193,10 +222,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex justify-center py-12">
-            <span
-              className="block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
-            />
+            <Spinner size="lg" />
           </div>
         ) : messages.length === 0 ? (
           <div className="px-6 py-12 text-center">

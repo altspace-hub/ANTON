@@ -43,7 +43,11 @@ export default function StdWalletScreen({ orgId: _orgId, onBack }: Props): JSX.E
         className="flex items-start gap-3 px-[18px] py-3"
         style={{ background: 'var(--color-bg)' }}
       >
-        <button onClick={onBack} className="pt-0.5">
+        <button
+          onClick={onBack}
+          aria-label="Back"
+          className="-ml-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
+        >
           <Ico name="chevronLeft" color="var(--color-text)" size={26} />
         </button>
         <div className="flex-1">

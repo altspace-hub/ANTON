@@ -1,31 +1,43 @@
 /**
- * InstanceTopBar — minimal top strip showing the active instance name
- * and a coloured status dot. Tap opens the InstanceSwitcher bottom sheet.
+ * InstanceTopBar — Top strip showing the active ANTON instance.
  *
- * Spec §9.2 — top bar is intentionally minimal (instance name + status
- * indicator only). All actions live in the bottom region.
+ * Claude-Design pattern (May-3 IRE deep pass):
+ *   ┌────────────────────────────────────────────────┐
+ *   │ [FC] FutureChain AB ⌄                       🔔 │
+ *   │      ● Connected · LAN                          │
+ *   └────────────────────────────────────────────────┘
+ *      ↑ Avatar tile        ↑ chevron     ↑ notifications
+ *
+ * Tapping the name area opens the InstanceSwitcher. Tapping the bell
+ * opens Approvals (badge bound from prop).
  */
 
 import { useEffect, useState } from 'react';
 import { getActiveInstance, listInstances, onActiveInstanceChange, markSeen } from '../services/instances';
 import InstanceSwitcher from './InstanceSwitcher';
+import { Ico } from './ui';
 
-export default function InstanceTopBar({ onAddInstance }: { onAddInstance?: () => void }) {
+interface Props {
+  onAddInstance?: () => void;
+  onOpenApprovals?: () => void;
+  pendingApprovals?: number;
+}
+
+function avatarFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pendingApprovals = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const active = getActiveInstance();
   const totalInstances = listInstances().length;
 
-  // Re-render when the active instance changes (e.g., user picked another)
   useEffect(() => onActiveInstanceChange(() => setTick(t => t + 1)), []);
 
-  // Reachability ping — tries LAN first (if defined), falls back to the
-  // canonical server_base (usually WAN). Records WHICH transport succeeded
-  // so the UI can tell the user why they're connected the way they are.
-  //
-  // Previously this was a single probe against server_base which silently
-  // retried WAN when LAN went dark — the user had no way to tell LAN was
-  // down (audit improvement #4).
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
@@ -54,29 +66,119 @@ export default function InstanceTopBar({ onAddInstance }: { onAddInstance?: () =
 
   const status = active.last_status;
   const transport = active.last_transport;
-  const dot = status === 'online' ? 'bg-adv-green' : status === 'offline' ? 'bg-adv-red' : 'bg-adv-gray';
-  const badge = status === 'online' && transport
-    ? transport.toUpperCase()
-    : status === 'offline' ? 'offline' : 'connecting';
+  const dotColor =
+    status === 'online'  ? 'var(--color-green)' :
+    status === 'offline' ? 'var(--color-red)' :
+                           'var(--color-text-muted)';
+  const statusLabel =
+    status === 'online'  ? `Connected · ${(transport ?? 'net').toUpperCase()}` :
+    status === 'offline' ? 'Offline' :
+                           'Connecting…';
+
+  const avatar = avatarFromName(active.display_name);
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 border-b border-border bg-adv-dark-2 px-4 py-2 text-left transition active:bg-adv-card"
-        aria-label={`Active instance: ${active.display_name}. Status: ${badge}. Tap to switch.`}
+      <div
+        className="safe-top flex w-full items-center gap-2.5 px-3 py-2"
+        style={{
+          background: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-border-soft)',
+        }}
       >
-        <span className={`h-2 w-2 rounded-full ${dot}`} />
-        <span className="flex-1 truncate text-xs font-medium text-adv-off-white">{active.display_name}</span>
-        <span className="text-[10px] uppercase tracking-wide text-adv-gray">{badge}</span>
-        {totalInstances > 1 && (
-          <span className="text-[10px] text-adv-gray">{totalInstances} instances</span>
+        <button
+          onClick={() => setOpen(true)}
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition active:opacity-70"
+          aria-label={`Active instance: ${active.display_name}. Tap to switch.`}
+        >
+          <span
+            className="flex flex-shrink-0 items-center justify-center font-semibold"
+            style={{
+              width: 32, height: 32,
+              borderRadius: 8,
+              background: 'var(--color-accent)',
+              color: 'var(--color-accent-fg)',
+              fontSize: 12,
+              letterSpacing: '-0.2px',
+              lineHeight: 1,
+            }}
+          >
+            {avatar}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              <span
+                className="truncate"
+                style={{
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  letterSpacing: '-0.15px',
+                  lineHeight: 1.2,
+                }}
+              >
+                {active.display_name}
+              </span>
+              <span style={{ color: 'var(--color-text-faint)' }}>
+                <Ico name="chevronDown" size={12} />
+              </span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span
+                className="block rounded-full"
+                style={{ width: 6, height: 6, background: dotColor }}
+              />
+              <span
+                className="truncate"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--color-text-muted)',
+                  letterSpacing: '-0.05px',
+                }}
+              >
+                {statusLabel}
+                {totalInstances > 1 && ` · ${totalInstances} instances`}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        {onOpenApprovals && (
+          <button
+            onClick={onOpenApprovals}
+            aria-label={pendingApprovals > 0 ? `${pendingApprovals} pending approvals` : 'Notifications'}
+            className="relative flex flex-shrink-0 items-center justify-center transition active:opacity-50"
+            style={{
+              width: 40, height: 40,
+              color: 'var(--color-text)',
+            }}
+          >
+            <Ico name="bell" size={20} />
+            {pendingApprovals > 0 && (
+              <span
+                className="absolute inline-flex items-center justify-center rounded-full font-bold text-white"
+                style={{
+                  background: 'var(--color-red)',
+                  border: '1.5px solid var(--color-surface)',
+                  top: 6,
+                  right: 6,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 4px',
+                  fontSize: 9,
+                  lineHeight: 1,
+                }}
+              >
+                {pendingApprovals > 99 ? '99+' : pendingApprovals}
+              </span>
+            )}
+          </button>
         )}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-adv-gray" aria-hidden="true">
-          <path d="M6 9l6 6 6-6"/>
-        </svg>
-      </button>
-      <InstanceSwitcher key={tick} open={open} onClose={() => setOpen(false)} onAddInstance={onAddInstance} />
+      </div>
+      {/* No `key={tick}` — the switcher reads instances on each render of
+          its own state; remounting on every status-tick was discarding
+          local state (open animation, scroll position) unnecessarily. */}
+      <InstanceSwitcher open={open} onClose={() => setOpen(false)} onAddInstance={onAddInstance} />
     </>
   );
 }

@@ -41,6 +41,9 @@ importers:
       '@capacitor/haptics':
         specifier: ^8.0.1
         version: 8.0.2(@capacitor/core@8.3.1)
+      '@capacitor/keyboard':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.3.1)
       '@capacitor/network':
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.3.1)

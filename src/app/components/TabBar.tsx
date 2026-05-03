@@ -1,14 +1,13 @@
 /**
  * TabBar — bottom navigation, Evolution design.
  *
- * Two visual variants driven by `mode`:
- *   • pro      — text-coloured active state, thin top indicator bar,
- *                tighter spacing (matches design/screens-auth.jsx
- *                BottomTabs).
- *   • standard — accent-coloured active state, bigger icons + labels,
- *                more breathing room (matches design/screens-standard.jsx
- *                SBottomTabs). Hits the looser-density rules of the
- *                Standard mode spec.
+ * Single visual language (no Pro/Standard fork — May 3 IRE):
+ *   • Active tab: text + icon use --color-text (full strength)
+ *   • Inactive: --color-text-muted
+ *   • No top-indicator bar (was a desktop-tab metaphor on mobile)
+ *   • Safe-area-inset-bottom respected so the bar clears the gesture
+ *     handle on edge-to-edge phones
+ *   • Standard mode keeps slightly larger icons/labels for daily-life users
  */
 
 import { Ico, type IcoName } from './ui/Ico';
@@ -17,7 +16,7 @@ import { usePersonalization } from './ui/PersonalizationContext';
 interface Tab {
   id: string;
   label: string;
-  icon: string;            // legacy string key (kept for App.tsx compat)
+  icon: string;
   badge?: number;
 }
 
@@ -27,29 +26,29 @@ interface Props {
   onTabChange: (tabId: string) => void;
 }
 
-/**
- * Map the legacy tab.icon string keys to Ico names. Keeps App.tsx's
- * existing tab definitions working without touching them. Anything
- * unknown falls back to the `more` (3-dot) icon.
- */
 const ICON_MAP: Record<string, IcoName> = {
   home: 'home',
   chat: 'message',
   message: 'message',
-  schedule: 'inbox',         // schedule → inbox-style icon
-  tasks: 'inbox',            // tasks → same
-  approvals: 'inbox',        // approvals always renders the inbox icon
+  schedule: 'calendar',
+  tasks: 'checkSquare',
+  approvals: 'shieldCheck',
+  shieldCheck: 'shieldCheck',
   capture: 'camera',
+  camera: 'camera',
   search: 'search',
   ask: 'sparkles',
+  sparkles: 'sparkles',
   voice: 'mic',
+  mic: 'mic',
   radar: 'radar',
-  markets: 'arrowUp',
-  wallet: 'qr',
+  markets: 'barChart',
+  wallet: 'wallet',
   more: 'more',
-  you: 'shield',
-  profile: 'shield',
-  settings: 'shield',
+  you: 'user',
+  profile: 'user',
+  settings: 'settings',
+  shield: 'shield',
 };
 
 export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
@@ -58,61 +57,57 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
 
   return (
     <nav
-      className="safe-bottom flex flex-shrink-0 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]"
+      className="flex flex-shrink-0"
       style={{
-        padding: isStandard ? '8px 6px 14px' : '6px 4px 10px',
+        background: 'var(--color-surface)',
+        borderTop: '1px solid var(--color-border-soft)',
+        paddingTop: isStandard ? 6 : 4,
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0) + 8px)',
       }}
     >
       {tabs.map(tab => {
         const active = tab.id === activeTab;
         const iconName = ICON_MAP[tab.icon] || ICON_MAP[tab.id] || 'more';
         const colour = active
-          ? (isStandard ? 'var(--color-accent)' : 'var(--color-text)')
+          ? 'var(--color-text)'
           : 'var(--color-text-muted)';
 
         return (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className="relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors"
-            style={{ padding: '6px 0', minHeight: 44 }}
+            aria-label={tab.label}
+            aria-current={active ? 'page' : undefined}
+            className="relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors active:opacity-70"
+            style={{ padding: '6px 0', minHeight: 48 }}
           >
-            {/* Pro mode top indicator bar */}
-            {!isStandard && active && (
-              <span
-                aria-hidden
-                className="absolute top-0 h-[2px] w-7 rounded-sm"
-                style={{ background: 'var(--color-text)' }}
-              />
-            )}
-
             <span className="relative inline-flex">
-              <Ico name={iconName} color={colour} size={isStandard ? 26 : 22} />
+              <Ico name={iconName} color={colour} size={isStandard ? 24 : 22} />
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
                   className="absolute inline-flex items-center justify-center rounded-full font-bold text-white"
                   style={{
                     background: 'var(--color-red)',
                     border: '1.5px solid var(--color-surface)',
-                    top: isStandard ? -4 : -3,
-                    right: isStandard ? -10 : -8,
-                    minWidth: isStandard ? 20 : 16,
-                    height: isStandard ? 20 : 16,
+                    top: -4,
+                    right: -8,
+                    minWidth: 16,
+                    height: 16,
                     padding: '0 4px',
-                    fontSize: isStandard ? 11 : 9,
+                    fontSize: 9,
+                    lineHeight: 1,
                   }}
                 >
                   {tab.badge > 99 ? '99+' : tab.badge}
                 </span>
               )}
             </span>
-
             <span
-              className={active ? 'font-semibold' : 'font-medium'}
               style={{
                 color: colour,
-                fontSize: isStandard ? 12 : 10,
-                letterSpacing: '-0.1px',
+                fontSize: isStandard ? 11 : 10,
+                fontWeight: active ? 600 : 500,
+                letterSpacing: '-0.05px',
               }}
             >
               {tab.label}

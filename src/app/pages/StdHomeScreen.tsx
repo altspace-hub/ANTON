@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Ico } from '../components/ui';
+import { Ico, ErrorPill } from '../components/ui';
 import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
 import { activeServerBase, activeAuthHeaders } from '../services/instances';
 import { getIdentity } from '../services/identity';
@@ -55,6 +55,8 @@ function plainTime(iso: string): string {
 export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
   const [pending,  setPending]  = useState<Checkpoint[]>([]);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
   const identity = getIdentity();
   const firstName = (identity?.displayName || '').split(/\s+/)[0] || '';
   const initials = (identity?.displayName || 'You')
@@ -62,11 +64,14 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError(null);
     void (async () => {
       try {
         const list = await listPendingCheckpoints({ orgId, limit: 5 });
         if (!cancelled) setPending(list);
-      } catch { /* silent */ }
+      } catch {
+        if (!cancelled) setLoadError('Couldn\'t reach your ANTON.');
+      }
 
       try {
         const base = activeServerBase();
@@ -76,10 +81,10 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
           const rows = (await r.json()) as SessionRow[];
           if (!cancelled) setSessions(Array.isArray(rows) ? rows.slice(0, 3) : []);
         }
-      } catch { /* silent */ }
+      } catch { /* secondary — sessions stays empty */ }
     })();
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, reloadTick]);
 
   const top = pending[0];
   const second = pending[1];
@@ -116,6 +121,12 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
       </div>
 
       <div className="mx-auto max-w-2xl px-4 pb-6 pt-1">
+        {loadError && (
+          <div className="mt-3">
+            <ErrorPill message={loadError} onRetry={() => setReloadTick(t => t + 1)} />
+          </div>
+        )}
+
         {/* ── Waiting for you (primary, only the top item) ─── */}
         {top ? (
           <div
@@ -162,19 +173,10 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                 {top.requires_biometric && <Ico name="fingerprint" color="#fff" size={18} />}
                 Review and approve
               </button>
-              <button
-                onClick={() => onNavigate('approvals')}
-                className="rounded-[var(--radius-r2)] font-semibold"
-                style={{
-                  background: 'transparent',
-                  color: 'var(--color-text-body)',
-                  border: '1px solid var(--color-border)',
-                  fontSize: 15,
-                  padding: '12px 0',
-                }}
-              >
-                Not now
-              </button>
+              {/* Standard mode = one action per card (screens-standard.jsx pattern).
+                  Removed the redundant "Not now" button — it routed to the same
+                  place as Review anyway, and added decision-noise the spec
+                  explicitly avoids. */}
             </div>
           </div>
         ) : (

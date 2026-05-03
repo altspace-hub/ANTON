@@ -213,6 +213,10 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
               </div>
             );
           }
+          // Non-functional informational rows — no chevron (the Settings
+          // sub-panels for text-size / mail / biometric / privacy / help
+          // ship in a later phase). The chevron previously promised tap
+          // behavior that didn't exist.
           return (
             <div
               key={r.id}
@@ -227,7 +231,6 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                   <div className="mt-0.5 text-[14px] text-[var(--color-text-muted)]">{r.sub}</div>
                 )}
               </div>
-              <Ico name="chevronRight" color="var(--color-text-faint)" size={20} />
             </div>
           );
         })}

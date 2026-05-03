@@ -1,7 +1,16 @@
 /**
- * ChatBubble.tsx — Message bubble with markdown rendering.
- * Supports user (teal, right-aligned) and assistant (card, left-aligned) messages.
- * Error messages get a red-tinted style.
+ * ChatBubble — Message rendering (Claude-style, May 3 IRE pass).
+ *
+ * The signature visual move of premium AI mobile apps (Claude, ChatGPT) is
+ * **asymmetric bubbles**: the assistant has NO bubble — just full-width
+ * prose that breathes — while the user gets a rounded right-aligned bubble.
+ * Symmetric bubbles read as a generic chat clone (WhatsApp/Telegram), not
+ * as a thinking partner.
+ *
+ * Inline timestamps are ALSO removed. Claude shows timestamps only on
+ * cluster boundaries (when more than ~5 minutes pass between turns) — the
+ * ChatPage handles that as date dividers between messages, not on every
+ * bubble.
  */
 
 import ReactMarkdown from 'react-markdown';
@@ -14,44 +23,58 @@ interface Props {
   isError?: boolean;
 }
 
-export default function ChatBubble({ role, content, timestamp, isError }: Props) {
-  const isUser = role === 'user';
-  const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+export default function ChatBubble({ role, content, isError }: Props) {
+  // Errors get their own treatment regardless of role
   if (isError) {
     return (
       <div className="flex justify-start">
-        <div className="max-w-[85%] rounded-2xl rounded-bl-lg border border-adv-red/30 bg-adv-red/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-adv-red text-xs font-medium">Error</span>
+        <div
+          className="max-w-[88%] rounded-[14px] px-4 py-3"
+          style={{
+            background: 'var(--color-red-dim)',
+            color: 'var(--color-red)',
+          }}
+        >
+          <div
+            className="mb-1 font-mono text-[10px] font-bold uppercase"
+            style={{ letterSpacing: '0.6px' }}
+          >
+            Error
           </div>
-          <p className="text-sm text-adv-red/80">{content.replace(/^Error:\s*/i, '')}</p>
-          <div className="mt-1.5 text-[10px] text-adv-red/40">{time}</div>
+          <p className="text-[14px] leading-relaxed">
+            {content.replace(/^Error:\s*/i, '')}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (isUser) {
+  // User: bubble, right-aligned, accent fill
+  if (role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl rounded-br-lg bg-adv-teal px-4 py-3 chat-user">
-          <p className="text-sm font-medium text-adv-dark leading-relaxed break-words">{content}</p>
-          <div className="mt-1 text-[10px] text-adv-dark/40">{time}</div>
+        <div
+          className="chat-user max-w-[85%] rounded-[16px] px-4 py-2.5"
+          style={{
+            background: 'var(--color-accent)',
+            color: 'var(--color-accent-fg)',
+          }}
+        >
+          <p className="break-words whitespace-pre-wrap text-[14.5px] leading-[1.5]">
+            {content}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Assistant bubble with markdown
+  // Assistant: NO bubble. Full-width prose, breathes naturally.
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] rounded-2xl rounded-bl-lg border border-border bg-adv-card px-4 py-3">
-        <div className="prose-app text-sm leading-relaxed text-adv-off-white break-words">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-        </div>
-        <div className="mt-1.5 text-[10px] text-adv-gray/40">{time}</div>
-      </div>
+    <div
+      className="prose-app w-full break-words text-[15px] leading-[1.55]"
+      style={{ color: 'var(--color-text)' }}
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   );
 }

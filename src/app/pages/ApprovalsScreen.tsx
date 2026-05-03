@@ -1,13 +1,21 @@
 /**
- * ApprovalsScreen — pending-checkpoint inbox per spec §8.6.
+ * ApprovalsScreen — pending-checkpoint inbox per spec §8.6, Evolution redesign.
  *
- * Lists every pending checkpoint sorted by severity (critical first),
- * shows ANTON's recommendation + rationale, and routes the user
- * through approve / modify / reject. High and critical severities
- * trigger biometric re-confirm before the response is signed.
+ * Way Forward §05 ("the enterprise wedge needs more weight"):
+ *   • Card border: 1.5 px in the severity colour (red for critical/high,
+ *     gold for normal, teal/accent for info)
+ *   • Severity label: mono uppercase tag at the TOP of the card
+ *     ("CRITICAL · BIOMETRIC REQUIRED"), not a corner pill
+ *   • ANTON's rationale: first-class, expanded by default
+ *     (previously hidden in a ReasoningDrawer)
+ *   • In-app pre-biometric context sheet (deferred to a follow-up)
+ *
+ * High and critical severities trigger biometric re-confirm before the
+ * response is signed.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
 import {
   listPendingCheckpoints, getCheckpoint, respondToCheckpoint,
   type Checkpoint, type CheckpointSeverity,
@@ -15,10 +23,26 @@ import {
 import { verifyBiometric } from '../services/biometric';
 import { light, success as hapticSuccess, warning, error as hapticError } from '../services/haptics';
 import { onActiveInstanceChange } from '../services/instances';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { registerBackHandler } from '../services/back-stack';
 
 interface Props {
   /** When set, auto-open this checkpoint on mount (deep link from a push). */
   initialCheckpointId?: string | null;
+}
+
+// Severity → colour mapping (status colours are LOCKED — never tinted by accent)
+function severityColour(s: CheckpointSeverity): string {
+  switch (s) {
+    case 'critical':
+    case 'high':    return 'var(--color-red)';
+    case 'normal':  return 'var(--color-gold)';
+    case 'low':     return 'var(--color-accent)';
+  }
+}
+
+function severityLabel(s: CheckpointSeverity): string {
+  return s.toUpperCase();
 }
 
 export default function ApprovalsScreen({ initialCheckpointId }: Props) {
@@ -38,10 +62,9 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
-  // Re-fetch when the user switches instance
   useEffect(() => onActiveInstanceChange(() => void refresh()), [refresh]);
 
-  // Deep-link handler — also accept `?approval=<id>` query string
+  // Deep-link handler — also accept ?approval=<id> query string
   useEffect(() => {
     if (!openId) {
       const params = new URLSearchParams(window.location.search);
@@ -61,9 +84,6 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
     const needsBio = c.requires_biometric || c.severity === 'critical' || c.severity === 'high';
     let biometricConfirmed = false;
     if (needsBio) {
-      // Phase H fix UX-H5 — no pre-prompt warning haptic. warning() is
-      // reserved for re-auth *failures* per spec §9.4. Cancel is a
-      // silent abort; failure emits warning + sets the error message.
       const r = await verifyBiometric({
         reason: decision === 'approved' ? `Approve: ${c.title}` : decision === 'rejected' ? `Reject: ${c.title}` : `Modify: ${c.title}`,
         title: 'Confirm response',
@@ -86,28 +106,76 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-adv-dark">
-      <header className="border-b border-border bg-adv-dark-2 px-4 py-3">
-        <div className="flex items-center justify-between">
+    <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)', minHeight: 0 }}>
+      {/* No safe-top — the App.tsx outer wrapper already pads the status-bar inset.
+          Doubling it pushed the TabBar off-screen. */}
+      <header className="px-4 py-3" style={{ background: 'var(--color-bg)' }}>
+        <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-base font-bold text-adv-off-white">Approvals</h1>
-            <p className="text-[11px] text-adv-gray">{items.length} pending</p>
+            <h1
+              className="text-[var(--color-text)]"
+              style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.1 }}
+            >
+              Approvals
+            </h1>
+            <p className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+              {items.length === 0 ? 'No pending approvals.'
+                : items.length === 1 ? '1 thing waiting for you.'
+                : `${items.length} things waiting for you.`}
+            </p>
           </div>
-          <button onClick={() => void refresh()} disabled={loading} className="rounded-lg border border-border px-3 py-1.5 text-[11px] text-adv-gray hover:text-adv-off-white disabled:opacity-50">
+          <button
+            onClick={() => void refresh()}
+            disabled={loading}
+            className="rounded-[var(--radius-r1)] px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50"
+            style={{
+              background: 'var(--color-surface)',
+              color: 'var(--color-text-body)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
       </header>
 
       {err && (
-        <div className="mx-3 mt-3 rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-[11px] text-adv-red">{err}</div>
+        <div
+          className="mx-4 mt-2 rounded-[var(--radius-r1)] px-3 py-2 text-[12px]"
+          style={{
+            background: 'var(--color-red-dim)',
+            color: 'var(--color-red)',
+            border: '1px solid var(--color-red-dim)',
+          }}
+        >
+          {err}
+        </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2 space-y-3">
         {!loading && items.length === 0 && (
-          <div className="rounded-xl border border-dashed border-border bg-adv-card/40 px-4 py-12 text-center">
-            <div className="text-base text-adv-off-white">All clear</div>
-            <div className="mt-1 text-[11px] text-adv-gray">No pending approvals on this instance.</div>
+          <div
+            className="mt-6 rounded-[var(--radius-r3)] px-5 py-12 text-center"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px dashed var(--color-border)',
+            }}
+          >
+            <div
+              className="mx-auto mb-3 inline-flex rounded-full p-3"
+              style={{
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+              }}
+            >
+              <Ico name="shieldCheck" size={26} />
+            </div>
+            <div className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              All clear.
+            </div>
+            <div className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+              No pending approvals on this instance.
+            </div>
           </div>
         )}
         {items.map(c => (
@@ -128,30 +196,56 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
   );
 }
 
+// ── Card — Way Forward §05: 1.5px severity border + mono severity tag at top ───
 function CheckpointCard({ c, onOpen }: { c: Checkpoint; onOpen: () => void }) {
+  const sevColour = severityColour(c.severity);
+  const tag = c.requires_biometric
+    ? `${severityLabel(c.severity)} · BIOMETRIC REQUIRED`
+    : severityLabel(c.severity);
   return (
-    <button onClick={onOpen} className={`block w-full rounded-xl border p-3 text-left transition active:scale-[0.99] ${severityCardClass(c.severity)}`}>
-      <div className="flex items-start gap-3">
-        <SeverityDot s={c.severity} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-adv-off-white truncate">{c.title}</span>
-            {c.requires_biometric && (
-              <span className="text-[9px] uppercase tracking-wider text-adv-teal">Biometric</span>
-            )}
-          </div>
-          {c.summary && <p className="mt-1 line-clamp-2 text-[12px] text-adv-gray">{c.summary}</p>}
-          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-adv-gray/70">
-            <span>{relativeTime(c.created_at)}</span>
-            {c.expires_at && <span>· expires {relativeTime(c.expires_at)}</span>}
-            {c.source_kind && <span>· {c.source_kind}</span>}
-          </div>
-        </div>
+    <button
+      onClick={onOpen}
+      className="block w-full rounded-[var(--radius-r3)] p-4 text-left transition hover:shadow-sm active:scale-[0.99]"
+      style={{
+        background: 'var(--color-surface)',
+        border: `1.5px solid ${sevColour}`,
+      }}
+    >
+      {/* Mono uppercase severity tag */}
+      <div
+        className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase"
+        style={{ color: sevColour, letterSpacing: '0.7px' }}
+      >
+        <span
+          aria-hidden
+          className="inline-block rounded-full"
+          style={{ width: 6, height: 6, background: sevColour }}
+        />
+        {tag}
+      </div>
+      {/* Title + summary */}
+      <div className="text-[14px] font-semibold leading-tight" style={{ color: 'var(--color-text)' }}>
+        {c.title}
+      </div>
+      {c.summary && (
+        <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+          {c.summary}
+        </p>
+      )}
+      {/* Meta row */}
+      <div
+        className="mt-2.5 flex items-center gap-2 font-mono text-[10px]"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        <span>{relativeTime(c.created_at)}</span>
+        {c.expires_at && <span>· expires {relativeTime(c.expires_at)}</span>}
+        {c.source_kind && <span>· {c.source_kind}</span>}
       </div>
     </button>
   );
 }
 
+// ── Detail sheet — rationale first-class, expanded by default ─────────────────
 function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
   c: Checkpoint;
   onClose: () => void;
@@ -160,6 +254,13 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
   onModify: (note?: string, modification?: Record<string, unknown>) => void;
 }) {
   const [note, setNote] = useState('');
+  const sevColour = severityColour(c.severity);
+  const sevTag = c.requires_biometric
+    ? `${severityLabel(c.severity)} · BIOMETRIC REQUIRED`
+    : severityLabel(c.severity);
+  const showPayload = Object.keys(c.payload).length > 0;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
 
   // Lock body scroll
   useEffect(() => {
@@ -168,85 +269,161 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
+  // Esc + Android hardware back close the sheet (matches BottomSheet primitive).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    const unregister = registerBackHandler(onClose);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      unregister();
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={c.title}>
-      <button onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Close" />
-      <div className="relative flex max-h-[88dvh] w-full max-w-2xl flex-col rounded-t-2xl border-t border-border bg-adv-dark-2 pb-[env(safe-area-inset-bottom)] shadow-2xl animate-slideUp">
-        <div className="mx-auto h-1 w-10 rounded-full bg-adv-gray/40 mt-2 mb-2" />
-        <div className="flex items-start gap-3 px-4 pb-2 pt-1">
-          <SeverityDot s={c.severity} />
-          <div className="min-w-0 flex-1">
-            <div className="text-base font-semibold text-adv-off-white">{c.title}</div>
-            {c.summary && <div className="mt-0.5 text-[12px] text-adv-gray">{c.summary}</div>}
-          </div>
+    <div ref={dialogRef} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={c.title}>
+      {/* Backdrop — Way Forward §04: 8% ink scrim + 4px blur */}
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute inset-0"
+        style={{
+          background: 'rgba(28, 26, 20, 0.32)',
+          backdropFilter: 'blur(4px) saturate(0.95)',
+        }}
+      />
+      <div
+        className="relative flex max-h-[88dvh] w-full max-w-2xl flex-col animate-slideUp shadow-2xl"
+        style={{
+          background: 'var(--color-surface)',
+          borderTop: `1.5px solid ${sevColour}`,
+          borderTopLeftRadius: 'var(--radius-r4)',
+          borderTopRightRadius: 'var(--radius-r4)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        {/* Drag handle — 3 × 36 px */}
+        <div className="flex justify-center pt-2.5 pb-1">
+          <div className="rounded-full" style={{ width: 36, height: 3, background: 'var(--color-border)' }} />
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3 text-[12px] text-adv-off-white">
+        {/* Severity tag */}
+        <div className="px-5 pt-2">
+          <div
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase"
+            style={{ color: sevColour, letterSpacing: '0.7px' }}
+          >
+            <span
+              aria-hidden
+              className="inline-block rounded-full"
+              style={{ width: 6, height: 6, background: sevColour }}
+            />
+            {sevTag}
+          </div>
+          <h2 className="mt-1.5 text-[18px] font-bold leading-tight" style={{ color: 'var(--color-text)' }}>
+            {c.title}
+          </h2>
+          {c.summary && (
+            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+              {c.summary}
+            </p>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 pb-4 pt-3 space-y-4">
+          {/* Rationale — first-class, expanded by default (Way Forward §05) */}
           {c.rationale && (
             <section>
-              <h3 className="text-[10px] uppercase tracking-wider text-adv-teal">ANTON's reasoning</h3>
-              <p className="mt-1 whitespace-pre-wrap leading-relaxed">{c.rationale}</p>
+              <SectionLabel>ANTON's reasoning</SectionLabel>
+              <p
+                className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {c.rationale}
+              </p>
             </section>
           )}
-          {Object.keys(c.payload).length > 0 && (
+
+          {showPayload && (
             <section>
-              <h3 className="text-[10px] uppercase tracking-wider text-adv-teal">Detail</h3>
-              <pre className="mt-1 max-h-64 overflow-auto rounded-lg border border-border bg-adv-dark p-2 text-[10px] text-adv-gray">{JSON.stringify(c.payload, null, 2)}</pre>
+              <SectionLabel>Detail</SectionLabel>
+              <pre
+                className="mt-2 max-h-64 overflow-auto rounded-[var(--radius-r1)] p-2.5 font-mono text-[10.5px] leading-snug"
+                style={{
+                  background: 'var(--color-surface-alt)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-body)',
+                }}
+              >
+                {JSON.stringify(c.payload, null, 2)}
+              </pre>
             </section>
           )}
+
           {c.expires_at && (
-            <div className="text-[11px] text-adv-gray">Expires {new Date(c.expires_at).toLocaleString()}</div>
-          )}
-          {c.requires_biometric && (
-            <div className="rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 py-2 text-[11px] text-adv-teal">
-              Biometric confirmation required to respond.
+            <div className="font-mono text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              Expires {new Date(c.expires_at).toLocaleString()}
             </div>
           )}
+
+          {c.requires_biometric && (
+            <div
+              className="flex items-start gap-2 rounded-[var(--radius-r2)] px-3 py-2.5 text-[12px]"
+              style={{
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+                border: '1px solid var(--color-accent-dim)',
+              }}
+            >
+              <Ico name="fingerprint" size={14} />
+              <span>Biometric confirmation required to respond.</span>
+            </div>
+          )}
+
           <label className="block">
-            <span className="text-[10px] uppercase tracking-wider text-adv-gray">Note (optional)</span>
+            <SectionLabel>Note (optional)</SectionLabel>
             <textarea
-              value={note} onChange={e => setNote(e.target.value)} maxLength={4000} rows={3}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              maxLength={4000}
+              rows={3}
               placeholder="Add context for the audit log…"
-              className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-[12px] text-adv-off-white placeholder-adv-gray/40 focus:border-adv-teal focus:outline-none"
+              className="mt-1.5 w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[13px] focus:outline-none"
+              style={{
+                background: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+              }}
             />
           </label>
+
           {c.deep_link && (
-            <a href={c.deep_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-adv-teal hover:text-adv-teal-dark">
+            <a
+              href={c.deep_link}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold"
+              style={{ color: 'var(--color-accent)' }}
+            >
               Open on desktop →
             </a>
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 border-t border-border px-3 py-3">
-          <button onClick={() => onReject(note || undefined)} className="rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2.5 text-xs font-semibold text-adv-red hover:bg-adv-red/20">
-            Reject
-          </button>
-          <button onClick={() => onModify(note || undefined)} className="rounded-lg border border-border bg-adv-card px-3 py-2.5 text-xs font-semibold text-adv-off-white hover:border-adv-gray">
-            Modify
-          </button>
-          <button onClick={() => onApprove(note || undefined)} className="rounded-lg bg-adv-teal px-3 py-2.5 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark active:scale-[0.98]">
-            Approve
-          </button>
+        {/* Action row — distinct visual hierarchy: Approve = primary, Modify = ghost, Reject = danger */}
+        <div
+          className="grid grid-cols-3 gap-2 px-4 py-3"
+          style={{ borderTop: '1px solid var(--color-border-soft)' }}
+        >
+          <Btn variant="danger" size="md" onClick={() => onReject(note || undefined)}>Reject</Btn>
+          <Btn variant="ghost" size="md" onClick={() => onModify(note || undefined)}>Modify</Btn>
+          <Btn variant="primary" size="md" onClick={() => onApprove(note || undefined)}>Approve</Btn>
         </div>
       </div>
     </div>
   );
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────
-
-function severityCardClass(s: CheckpointSeverity): string {
-  switch (s) {
-    case 'critical': return 'border-adv-red bg-adv-red/10';
-    case 'high':     return 'border-adv-red/40 bg-adv-red/5';
-    case 'normal':   return 'border-border bg-adv-card';
-    case 'low':      return 'border-border/60 bg-adv-card/60';
-  }
-}
-
-function SeverityDot({ s }: { s: CheckpointSeverity }) {
-  const cls = s === 'critical' ? 'bg-adv-red' : s === 'high' ? 'bg-adv-red/70' : s === 'normal' ? 'bg-adv-teal' : 'bg-adv-gray';
-  return <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${cls}`} aria-label={`Severity: ${s}`} />;
 }
 
 function relativeTime(iso: string): string {
@@ -260,3 +437,6 @@ function relativeTime(iso: string): string {
   const days = Math.round(abs / 86400);
   return future ? `in ${days}d` : `${days}d ago`;
 }
+
+// Pill not currently used in this file but exported in ui/index.ts; keep import via narrow re-export
+void Pill;
