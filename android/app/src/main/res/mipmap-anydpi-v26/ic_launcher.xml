@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background = a shade lighter than the foreground rounded square's
+         #0B6F5E. The launcher mask (circle/squircle/rounded square) fills
+         this whole area with the lighter green, and the foreground draws
+         the darker rounded square + A on top — producing a green halo
+         around the logo. -->
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
