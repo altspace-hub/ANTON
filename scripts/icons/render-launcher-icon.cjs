@@ -8,9 +8,9 @@
  * Usage:
  *   pnpm exec node scripts/icons/render-launcher-icon.js
  *
- * Writes: android/app/src/main/res/mipmap-*/ic_launcher_foreground.png
- *         android/app/src/main/res/mipmap-*/ic_launcher.png            (legacy fallback)
- *         android/app/src/main/res/mipmap-*/ic_launcher_round.png      (legacy fallback)
+ * Writes: android/app/src/main/res/mipmap-{m,h,x,xx,xxx}hdpi/ic_launcher_foreground.png
+ *         android/app/src/main/res/mipmap-{m,h,x,xx,xxx}hdpi/ic_launcher.png            (legacy fallback)
+ *         android/app/src/main/res/mipmap-{m,h,x,xx,xxx}hdpi/ic_launcher_round.png      (legacy fallback)
  *
  * Requires @resvg/resvg-js (install temporarily if not present:
  *   npm i --no-save @resvg/resvg-js
@@ -41,11 +41,22 @@ const sizes = [
 
 const resBase = path.join(repoRoot, 'android', 'app', 'src', 'main', 'res');
 
+// Launcher-icon-specific tweaks to the webgui SVG:
+//   - font-size 18 → 14 (smaller A; takes ~32% of icon height instead of 41%
+//     so it sits comfortably inside the launcher's circular mask)
+//   - y position 55% → 50% (true vertical centre, not the optical-text 55%
+//     bias the webgui uses for in-app rendering)
+// Webgui SVG is NOT modified — these transforms only apply to the launcher
+// render so the brand mark in the app keeps its current proportions.
+const launcherTweaks = (svg) => svg
+  .replace('font-size="18"', 'font-size="14"')
+  .replace('y="55%"', 'y="50%"');
+
 for (const s of sizes) {
   // Inject explicit width/height into the <svg> tag — without these,
   // resvg renders at the SVG's intrinsic 32×32 viewBox size and ignores
   // the fitTo option.
-  const svg = baseSvg.replace(
+  const svg = launcherTweaks(baseSvg).replace(
     '<svg ',
     `<svg width="${s.px}" height="${s.px}" `
   );
