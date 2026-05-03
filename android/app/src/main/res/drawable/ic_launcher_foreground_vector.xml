@@ -2,21 +2,27 @@
 <!--
   ANTON Companion launcher foreground (Android 8+ adaptive icon).
 
-  Matches the in-app brand mark (public/anton-logo.svg): a single white
-  "A" letterform centred on the green background.
+  Matches the in-app brand mark (public/anton-logo.svg) which renders the
+  letter "A" in Inter Bold (700) on the green tile. Earlier passes used a
+  hand-drawn triangular approximation; this pass uses the real Inter Bold
+  glyph extracted from the TTF Google Fonts ships and converted from font
+  coords to a Vector Drawable path.
 
-  The A is drawn as three subpaths combined with evenodd fill:
-    1. Outer triangle — the A's silhouette
-    2. Upper triangular hole — the negative space above the crossbar
-    3. Lower trapezoidal hole — the gap between the legs below the crossbar
+  Pipeline:
+    1. Pulled Inter-Bold from fonts.gstatic.com (units-per-em 2048,
+       glyph bbox x:[49,1480] y:[0,1490] in font Y-up coords).
+    2. opentype.js → glyph.getPath() → SVG `d` attribute.
+    3. Linear transform to Android Y-down 108×108 viewport:
+         scale = 70 / 1490
+         x_android = 20.39 + (x_font - 49) * scale
+         y_android = 19    + (1490 + y_font) * scale
+       Glyph height = 70 px, centred in the 72×72 safe zone with ~1 px
+       margin on every edge.
 
-  Where the three subpaths overlap with even parity, evenodd subtracts;
-  the remaining odd-parity area renders the legs + crossbar as a solid
-  white "A" shape.
-
-  Geometry mapped to the 108×108 adaptive-icon viewport. The whole "A"
-  fits inside the centred 72×72 safe zone the launcher guarantees not
-  to clip.
+  evenodd fill is required because the source glyph encodes both the
+  outer outline AND the crossbar as separate subpaths, expecting the
+  crossbar's overlap with the outer hole to add (visible solid) and the
+  inner hole region not covered by the crossbar to subtract (transparent).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -26,5 +32,5 @@
   <path
       android:fillColor="#FFFFFF"
       android:fillType="evenOdd"
-      android:pathData="M28,84 L54,24 L80,84 Z M44,58 L54,32 L64,58 Z M40,84 L44,66 L64,66 L68,84 Z" />
+      android:pathData="M36.22,89 L20.39,89 L44.3,19 L63.09,19 L87.61,89 L71.69,89 L60.46,55.22 Q58.44,48.69 56.35,40.92 Q54.26,33.14 51.96,23.93 L55.1,23.93 Q52.85,33.19 50.9,41.01 Q48.95,48.83 47.02,55.22 L36.22,89 Z M72.67,72.74 L35.32,72.74 L35.32,61.52 L72.67,61.52 Z" />
 </vector>
