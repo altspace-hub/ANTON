@@ -2,27 +2,19 @@
 <!--
   ANTON Companion launcher foreground (Android 8+ adaptive icon).
 
-  Matches the in-app brand mark (public/anton-logo.svg) which renders the
-  letter "A" in Inter Bold (700) on the green tile. Earlier passes used a
-  hand-drawn triangular approximation; this pass uses the real Inter Bold
-  glyph extracted from the TTF Google Fonts ships and converted from font
-  coords to a Vector Drawable path.
+  Faithful copy of public/anton-logo.svg's mark — Inter Bold "A" centred
+  on a green tile. The webgui SVG uses font-size=18 in a 32-unit viewBox
+  (Inter cap-height = 0.727 × em → A height ≈ 41% of box) with the A
+  centred at 50% × 55%.
 
-  Pipeline:
-    1. Pulled Inter-Bold from fonts.gstatic.com (units-per-em 2048,
-       glyph bbox x:[49,1480] y:[0,1490] in font Y-up coords).
-    2. opentype.js → glyph.getPath() → SVG `d` attribute.
-    3. Linear transform to Android Y-down 108×108 viewport:
-         scale = 70 / 1490
-         x_android = 20.39 + (x_font - 49) * scale
-         y_android = 19    + (1490 + y_font) * scale
-       Glyph height = 70 px, centred in the 72×72 safe zone with ~1 px
-       margin on every edge.
+  Scaled to the 108 launcher viewport that's:
+    A height = 44.21 px (0.41 × 108)
+    A width  ≈ 43 px (Inter Bold A width:cap-height ≈ 0.96)
+    Centred at (54, 59)
 
-  evenodd fill is required because the source glyph encodes both the
-  outer outline AND the crossbar as separate subpaths, expecting the
-  crossbar's overlap with the outer hole to add (visible solid) and the
-  inner hole region not covered by the crossbar to subtract (transparent).
+  Glyph extracted from the actual Inter-Bold.ttf Google Fonts serves
+  for inter@700, converted from font coords (Y-up, units-per-em 2048,
+  bbox x:[49,1480] y:[0,1490]) via opentype.js.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -32,5 +24,5 @@
   <path
       android:fillColor="#FFFFFF"
       android:fillType="evenOdd"
-      android:pathData="M36.22,89 L20.39,89 L44.3,19 L63.09,19 L87.61,89 L71.69,89 L60.46,55.22 Q58.44,48.69 56.35,40.92 Q54.26,33.14 51.96,23.93 L55.1,23.93 Q52.85,33.19 50.9,41.01 Q48.95,48.83 47.02,55.22 L36.22,89 Z M72.67,72.74 L35.32,72.74 L35.32,61.52 L72.67,61.52 Z" />
+      android:pathData="M42.77,81.5 L32.77,81.5 L47.87,37.29 L59.74,37.29 L75.23,81.5 L65.17,81.5 L58.08,60.17 Q56.8,56.04 55.48,51.13 Q54.16,46.22 52.71,40.41 L54.7,40.41 Q53.27,46.25 52.04,51.19 Q50.81,56.13 49.59,60.17 L42.77,81.5 Z M65.79,71.23 L42.21,71.23 L42.21,64.14 L65.79,64.14 Z" />
 </vector>
