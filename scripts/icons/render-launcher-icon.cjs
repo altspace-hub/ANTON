@@ -42,14 +42,15 @@ const sizes = [
 const resBase = path.join(repoRoot, 'android', 'app', 'src', 'main', 'res');
 
 // Launcher-icon-specific tweaks to the webgui SVG:
-//   - font-size 18 → 14 (smaller A; takes ~32% of icon height instead of 41%
-//     so it sits comfortably inside the launcher's circular mask)
-//   - y position 55% → 50% (true vertical centre, not the optical-text 55%
-//     bias the webgui uses for in-app rendering)
+//   - font-size 18 → 11 (cap-height drops from ~41% of icon to ~25%,
+//     so the A reads as a comfortably-sized glyph inside the launcher
+//     circle rather than an oversized letter pressing against the edges)
+//   - y position 55% → 50% (true vertical centre, not the optical-text
+//     bottom bias the webgui uses for in-app rendering)
 // Webgui SVG is NOT modified — these transforms only apply to the launcher
 // render so the brand mark in the app keeps its current proportions.
 const launcherTweaks = (svg) => svg
-  .replace('font-size="18"', 'font-size="14"')
+  .replace('font-size="18"', 'font-size="11"')
   .replace('y="55%"', 'y="50%"');
 
 for (const s of sizes) {
