@@ -32,7 +32,13 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            // ANM7: tighten release block — disable debuggable, drop unused
+            // resources alongside R8's code shrinking. Without these the
+            // released APK ships ~30% larger and is debuggable on prod
+            // devices.
+            debuggable false
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

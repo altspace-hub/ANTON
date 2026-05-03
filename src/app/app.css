@@ -41,6 +41,21 @@
   --color-green-dim:    #DCEEE4;
   --color-blue:         #3070C7;
   --color-blue-dim:     #DEE8F6;
+  --color-plum:         #6A3E8F;
+  --color-plum-dim:     #E0D0ED;
+
+  /* ── Surfaces (specialised) ─────────────────────────────────
+     Camera viewfinder needs true black (not warm-linen) so the
+     captured image preview reads accurately. */
+  --color-camera-bg:    #0A0A0A;
+
+  /* ── Modal overlays — single source of truth.
+     Soft scrim sits behind the sheet (visible page beneath); strong
+     scrim is for full-attention modals (BottomSheet, InstanceSwitcher).
+     Toast bg is the warm-ink at 92% so the white text reads cleanly. */
+  --color-scrim-soft:   rgba(28, 26, 20, 0.32);
+  --color-scrim-strong: rgba(28, 26, 20, 0.55);
+  --color-toast-bg:     rgba(28, 26, 20, 0.92);
 
   /* ── adv-* legacy aliases (remap to Evolution palette so
      existing screens inherit the light look automatically.

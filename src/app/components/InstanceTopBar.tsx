@@ -80,7 +80,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
   return (
     <>
       <div
-        className="safe-top flex w-full items-center gap-2.5 px-3 py-2"
+        className="flex w-full items-center gap-2.5 px-3 py-2"
         style={{
           background: 'var(--color-surface)',
           borderBottom: '1px solid var(--color-border-soft)',

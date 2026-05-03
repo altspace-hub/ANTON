@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { getOrgTasks, createOrgTask } from '../services/api';
-import { Ico, Pill, Spinner } from '../components/ui';
+import { Btn, Ico, Pill, Spinner } from '../components/ui';
 
 interface Props { orgId: string; }
 
@@ -86,18 +86,14 @@ export default function TaskScreen({ orgId }: Props) {
                 height: 44,
               }}
             />
-            <button
+            <Btn
+              variant="primary"
+              size="md"
               onClick={handleAdd}
               disabled={adding || !newTask.trim()}
-              className="rounded-[var(--radius-r2)] px-4 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40"
-              style={{
-                background: 'var(--color-accent)',
-                color: 'var(--color-accent-fg)',
-                height: 44,
-              }}
             >
               {adding ? '…' : 'Add'}
-            </button>
+            </Btn>
           </div>
 
           {error && (

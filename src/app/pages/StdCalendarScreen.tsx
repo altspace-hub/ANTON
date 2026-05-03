@@ -23,7 +23,7 @@ const COLOR_VAR: Record<CalendarColor, string> = {
   teal: 'var(--color-accent)',
   blue: 'var(--color-blue)',
   gold: 'var(--color-gold)',
-  plum: '#6A3E8F',
+  plum: 'var(--color-plum)',
   red:  'var(--color-red)',
 };
 

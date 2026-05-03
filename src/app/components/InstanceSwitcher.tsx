@@ -74,7 +74,7 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
       <button
         onClick={onClose}
         className="absolute inset-0 backdrop-blur-sm"
-        style={{ background: 'rgba(28, 26, 20, 0.55)' }}
+        style={{ background: 'var(--color-scrim-strong)' }}
         aria-label="Close"
       />
 

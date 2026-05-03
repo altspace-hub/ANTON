@@ -13,7 +13,7 @@
  * /api/app/markets/* adapter we just added to app-gateway.
  */
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import {
   getMarketBriefing, getMarketTape, getMarketPrediction,
@@ -41,8 +41,10 @@ function formatChange(c: number | string | null | undefined): string {
   return `${sign}${n.toFixed(2)}%`;
 }
 
-/** Tiny SVG sparkline from a number[] series. Coloured by overall direction. */
-function Sparkline({ data, up }: { data: number[]; up: boolean }) {
+/** Tiny SVG sparkline from a number[] series. Coloured by overall direction.
+ *  AP21: memoised so re-rendering the tape (every prediction tick) doesn't
+ *  recompute Math.min/max + the points string for every row. */
+const Sparkline = memo(function Sparkline({ data, up }: { data: number[]; up: boolean }) {
   if (data.length < 2) {
     return <svg width="50" height="20" />;
   }
@@ -64,7 +66,7 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
       />
     </svg>
   );
-}
+});
 
 function liveDot(): { label: string; color: string } {
   // CET market hours roughly 9-17:30. Treat 9:00-22:00 CET as "live" (US still open).
@@ -126,12 +128,12 @@ export default function MarketsScreen(_props: Props): JSX.Element {
         }}
       >
         <div>
-          <div
+          <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Markets
-          </div>
+          </h1>
           <div
             className="font-mono text-[10px] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
@@ -226,7 +228,10 @@ export default function MarketsScreen(_props: Props): JSX.Element {
               }}
             >
               {tape.map((r, i) => {
-                const up = (r.change_pct ?? 0) >= 0;
+                // change_pct can ride the wire as a Postgres NUMERIC string —
+                // a bare `>= 0` comparison would lexicographically compare
+                // strings ("-1.2" >= "0" === false but for the wrong reason).
+                const up = Number(r.change_pct ?? 0) >= 0;
                 return (
                   <div
                     key={r.symbol}

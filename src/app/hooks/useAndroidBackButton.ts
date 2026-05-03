@@ -84,7 +84,7 @@ function showExitToast(): void {
       left: 50%;
       bottom: calc(env(safe-area-inset-bottom, 0) + 88px);
       transform: translateX(-50%);
-      background: rgba(26, 27, 46, 0.92);
+      background: var(--color-toast-bg);
       color: #FFFFFF;
       padding: 10px 18px;
       border-radius: 999px;

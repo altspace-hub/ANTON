@@ -7,10 +7,41 @@
         </trust-anchors>
     </base-config>
 
-    <!-- Allow cleartext only for LAN addresses (development/LAN mode) -->
+    <!-- Allow cleartext over RFC1918 LAN ranges so a phone on the user's home
+         Wi-Fi can reach a paired ANTON instance running on a NAS / desktop.
+         Without these ranges the WebView throws ERR_CLEARTEXT_NOT_PERMITTED
+         on every API call to a 192.168.x.x / 10.x.x.x server. (ANM4) -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">localhost</domain>
         <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="true">local</domain>
+    </domain-config>
+
+    <!-- IP literal LAN ranges. Android wildcards aren't supported in <domain>
+         so each /16 lives in its own block. Covers all of RFC1918:
+         192.168.0.0/16, 10.0.0.0/8, 172.16.0.0 — 172.31.255.255. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- 10.0.0.0/8 -->
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <!-- 172.16.0.0 — 172.31.255.255 (16 /16 blocks) -->
+        <domain includeSubdomains="true">172.16.0.0</domain>
+        <domain includeSubdomains="true">172.17.0.0</domain>
+        <domain includeSubdomains="true">172.18.0.0</domain>
+        <domain includeSubdomains="true">172.19.0.0</domain>
+        <domain includeSubdomains="true">172.20.0.0</domain>
+        <domain includeSubdomains="true">172.21.0.0</domain>
+        <domain includeSubdomains="true">172.22.0.0</domain>
+        <domain includeSubdomains="true">172.23.0.0</domain>
+        <domain includeSubdomains="true">172.24.0.0</domain>
+        <domain includeSubdomains="true">172.25.0.0</domain>
+        <domain includeSubdomains="true">172.26.0.0</domain>
+        <domain includeSubdomains="true">172.27.0.0</domain>
+        <domain includeSubdomains="true">172.28.0.0</domain>
+        <domain includeSubdomains="true">172.29.0.0</domain>
+        <domain includeSubdomains="true">172.30.0.0</domain>
+        <domain includeSubdomains="true">172.31.0.0</domain>
+        <!-- 192.168.0.0/16 -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
     </domain-config>
 
     <!-- Debug builds: trust user-installed certificates -->

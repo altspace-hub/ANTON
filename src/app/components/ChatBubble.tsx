@@ -13,6 +13,7 @@
  * bubble.
  */
 
+import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -23,7 +24,7 @@ interface Props {
   isError?: boolean;
 }
 
-export default function ChatBubble({ role, content, isError }: Props) {
+function ChatBubbleImpl({ role, content, isError }: Props) {
   // Errors get their own treatment regardless of role
   if (isError) {
     return (
@@ -78,3 +79,9 @@ export default function ChatBubble({ role, content, isError }: Props) {
     </div>
   );
 }
+
+// APM21: ReactMarkdown re-parses on every render, even when the content
+// hasn't changed. Memoising the bubble prevents siblings' state changes
+// (auto-scroll, streaming flag toggles) from re-parsing all prior bubbles.
+const ChatBubble = memo(ChatBubbleImpl);
+export default ChatBubble;

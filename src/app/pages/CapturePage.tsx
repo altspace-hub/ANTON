@@ -231,7 +231,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
           min-h-0 lets the flex-1 child actually shrink below the video's
           intrinsic content size; without it the viewfinder pushes the
           mode chips + shutter button + tab bar off-screen on tall phones. */}
-      <div className="relative flex-1 overflow-hidden" style={{ background: '#0A0A0A', minHeight: 0 }}>
+      <div className="relative flex-1 overflow-hidden" style={{ background: 'var(--color-camera-bg)', minHeight: 0 }}>
         {!capture ? (
           <>
             <video

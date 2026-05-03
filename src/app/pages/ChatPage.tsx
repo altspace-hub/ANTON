@@ -126,10 +126,15 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId, sessionId, sessionReloadTick]);
 
-  // Auto-scroll
+  // Auto-scroll. APM20: smooth scroll on every stream chunk caused
+  // visible motion sickness — scroll instantly while streaming, then
+  // do one polished smooth-scroll on the final chunk.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: streaming ? 'auto' : 'smooth',
+    });
+  }, [messages, streaming]);
 
   // Auto-resize textarea
   useEffect(() => {
