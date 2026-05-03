@@ -99,16 +99,15 @@ export default function StdThreadScreen({ message, onBack, onOpenInPro }: Props)
               <div className="mt-1 text-sm text-[var(--color-text-muted)]">
                 Tap below to review and respond.
               </div>
-              <button
+              <Btn
+                variant="primary"
+                size="lg"
+                block
                 onClick={onOpenInPro}
-                className="mt-3.5 w-full rounded-[var(--radius-r2)] py-3 text-white"
-                style={{
-                  background: 'var(--color-accent)',
-                  fontSize: 16, fontWeight: 700, letterSpacing: '-0.1px',
-                }}
+                className="mt-3.5"
               >
                 Review and approve
-              </button>
+              </Btn>
             </div>
           </div>
         )}

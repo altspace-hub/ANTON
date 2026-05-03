@@ -70,7 +70,7 @@ export default function BottomSheet({ open, onClose, title, dismissible = true, 
         type="button"
         onClick={() => dismissible && onClose()}
         className="absolute inset-0 backdrop-blur-sm"
-        style={{ background: 'rgba(26, 27, 46, 0.55)' }}
+        style={{ background: 'var(--color-scrim-strong)' }}
         aria-label="Close"
       />
       <div

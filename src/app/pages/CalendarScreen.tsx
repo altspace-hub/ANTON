@@ -25,7 +25,7 @@ const COLOR_VAR: Record<CalendarColor, string> = {
   teal: 'var(--color-accent)',
   blue: 'var(--color-blue)',
   gold: 'var(--color-gold)',
-  plum: '#6A3E8F',
+  plum: 'var(--color-plum)',
   red:  'var(--color-red)',
 };
 
@@ -90,12 +90,12 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
         style={{ background: 'var(--color-surface-alt)', minHeight: 44 }}
       >
         <div>
-          <div
+          <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Calendar
-          </div>
+          </h1>
           <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
             {headerDate}{today && ` · ${today.sources.length} sources`}
           </div>

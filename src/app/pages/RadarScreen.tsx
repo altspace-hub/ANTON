@@ -104,7 +104,10 @@ export default function RadarScreen(_props: Props): JSX.Element {
     }
   }
 
-  // Category counts for chip badges (from summary if present, else 0)
+  // Category counts for chip badges (from summary if present, else 0).
+  // AP22: depend on `items` not `items.length` — categories also appear in
+  // each item's metadata, so a category-shifting update could leave length
+  // unchanged but require a recount.
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     if (summary?.category_counts) {
@@ -115,7 +118,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
     }
     map.set('all', items.length);
     return map;
-  }, [summary, items.length]);
+  }, [summary, items]);
 
   // Top 3 signals form the "morning brief" hero summary
   const briefHeadlines = items.slice(0, 3).map(i => i.title);

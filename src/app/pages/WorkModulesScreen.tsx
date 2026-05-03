@@ -97,12 +97,12 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
         className="flex items-center justify-between px-4 py-3"
         style={{ background: 'var(--color-surface-alt)', minHeight: 44 }}
       >
-        <div
+        <h1
           className="text-[var(--color-text)]"
           style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px' }}
         >
           Work
-        </div>
+        </h1>
         <div className="-mr-2.5 flex items-center">
           <button
             aria-label="Search modules"

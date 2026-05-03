@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ANM8: Android 12+ requires explicit data-extraction rules even when
+  android:allowBackup="false" — without these, transfer-to-new-device
+  silently includes app data instead of respecting the no-backup policy.
+  We exclude *everything* from both cloud-backup and device-transfer to
+  match the spec §5.4 promise that paired identity stays on this phone.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

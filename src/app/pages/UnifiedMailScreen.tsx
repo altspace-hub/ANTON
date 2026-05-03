@@ -126,12 +126,12 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
         style={{ background: 'var(--color-surface-alt)', minHeight: 44 }}
       >
         <div>
-          <div
+          <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Mail
-          </div>
+          </h1>
           <div
             className="font-mono text-[10px] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}

@@ -38,7 +38,7 @@ const ORG_TYPE_COLOUR: Record<string, string> = {
   consulting:       'var(--color-accent)',
   consulting_firm:  'var(--color-accent)',
   company:          'var(--color-text)',
-  community:        '#6A3E8F',
+  community:        'var(--color-plum)',
   government:       'var(--color-text)',
   healthcare:       'var(--color-red)',
   other:            'var(--color-text-muted)',

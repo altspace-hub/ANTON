@@ -137,7 +137,10 @@ export default function SettingsPage({ onBack }: Props) {
                 className="flex w-full items-center gap-3 rounded-[var(--radius-r2)] px-4 py-3.5 text-left transition active:scale-[0.99]"
                 style={{
                   background: 'var(--color-red-dim)',
-                  border: '1px solid var(--color-red-dim)',
+                  // UM7: was border-color === bg-color → invisible border, no
+                  // affordance separation. Tone the border to the red accent
+                  // so the destructive action reads as bounded.
+                  border: '1px solid color-mix(in srgb, var(--color-red) 30%, transparent)',
                 }}
               >
                 <span

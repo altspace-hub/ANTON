@@ -63,12 +63,12 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
         style={{ background: 'var(--color-surface-alt)', minHeight: 44 }}
       >
         <div>
-          <div
+          <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             School
-          </div>
+          </h1>
           <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
             {feed ? `${feed.day_label} · ${feed.course_label}` : 'Loading…'}
           </div>
@@ -202,7 +202,10 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
                   return (
                     <button
                       key={item.id}
-                      onClick={() => onNavigate(item.kind === 'ask' ? 'chat' : 'chat')}
+                      // FM9: both branches of the ternary navigated to the same
+                      // place — collapsed. When per-kind routing lands (e.g.
+                      // 'ask' → composer prefilled with item title), branch here.
+                      onClick={() => onNavigate('chat')}
                       className="mb-2 flex w-full items-center gap-3 rounded-[var(--radius-r2)] p-3 text-left"
                       style={{
                         background: 'var(--color-surface)',

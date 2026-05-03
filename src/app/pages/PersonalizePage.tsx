@@ -152,12 +152,15 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
           Continue
         </Btn>
 
-        <button
+        <Btn
+          variant="ghost"
+          size="sm"
+          block
           onClick={useOrgDefault}
-          className="mt-2.5 w-full text-center text-[12px] font-medium text-[var(--color-text-muted)]"
+          className="mt-2.5"
         >
           Use organisation default
-        </button>
+        </Btn>
       </div>
     </div>
   );

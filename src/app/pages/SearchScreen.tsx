@@ -101,12 +101,12 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
         }}
       >
         <div>
-          <div
+          <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.05 }}
           >
             Pathfinder
-          </div>
+          </h1>
           <div
             className="font-mono text-[10px] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}

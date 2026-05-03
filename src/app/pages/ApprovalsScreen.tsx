@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Btn, Pill, SectionLabel, Ico } from '../components/ui';
+import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import {
   listPendingCheckpoints, getCheckpoint, respondToCheckpoint,
   type Checkpoint, type CheckpointSeverity,
@@ -124,18 +124,14 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
                 : `${items.length} things waiting for you.`}
             </p>
           </div>
-          <button
+          <Btn
+            variant="ghost"
+            size="sm"
             onClick={() => void refresh()}
             disabled={loading}
-            className="rounded-[var(--radius-r1)] px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50"
-            style={{
-              background: 'var(--color-surface)',
-              color: 'var(--color-text-body)',
-              border: '1px solid var(--color-border)',
-            }}
           >
             {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+          </Btn>
         </div>
       </header>
 
@@ -153,6 +149,11 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
       )}
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2 space-y-3">
+        {loading && items.length === 0 && (
+          <div className="mt-12 flex justify-center">
+            <Spinner size="lg" />
+          </div>
+        )}
         {!loading && items.length === 0 && (
           <div
             className="mt-6 rounded-[var(--radius-r3)] px-5 py-12 text-center"
@@ -290,7 +291,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
         aria-label="Close"
         className="absolute inset-0"
         style={{
-          background: 'rgba(28, 26, 20, 0.32)',
+          background: 'var(--color-scrim-soft)',
           backdropFilter: 'blur(4px) saturate(0.95)',
         }}
       />

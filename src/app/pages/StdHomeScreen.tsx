@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Ico, ErrorPill } from '../components/ui';
+import { Btn, Ico, ErrorPill } from '../components/ui';
 import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
 import { activeServerBase, activeAuthHeaders } from '../services/instances';
 import { getIdentity } from '../services/identity';
@@ -109,9 +109,10 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
         </div>
         <button
           onClick={() => onNavigate('you')}
+          aria-label={`${identity?.displayName || 'Your'} profile`}
           className="flex items-center justify-center rounded-full font-bold text-white"
           style={{
-            width: 40, height: 40,
+            width: 44, height: 44,
             background: 'var(--color-accent)',
             fontSize: 15,
           }}
@@ -160,19 +161,15 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
               </p>
             )}
             <div className="mt-4 flex flex-col gap-2">
-              <button
+              <Btn
+                variant="primary"
+                size="lg"
+                block
                 onClick={() => onNavigate('approvals')}
-                className="flex items-center justify-center gap-2 rounded-[var(--radius-r2)] font-bold text-white"
-                style={{
-                  background: 'var(--color-accent)',
-                  fontSize: 16,
-                  padding: '14px 0',
-                  letterSpacing: '-0.2px',
-                }}
+                icon={top.requires_biometric ? <Ico name="fingerprint" color="currentColor" size={18} /> : undefined}
               >
-                {top.requires_biometric && <Ico name="fingerprint" color="#fff" size={18} />}
                 Review and approve
-              </button>
+              </Btn>
               {/* Standard mode = one action per card (screens-standard.jsx pattern).
                   Removed the redundant "Not now" button — it routed to the same
                   place as Review anyway, and added decision-noise the spec

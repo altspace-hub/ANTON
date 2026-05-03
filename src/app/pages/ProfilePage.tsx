@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react';
 import { getIdentity, saveIdentity, clearIdentity } from '../services/identity';
 import { updateProfile, getLanguages, clearSession } from '../services/api';
-import { Ico, PageHeader, SectionLabel, ErrorPill } from '../components/ui';
+import { Btn, Ico, PageHeader, SectionLabel, ErrorPill } from '../components/ui';
 
 interface Props { onBack: () => void; }
 
@@ -143,19 +143,16 @@ export default function ProfilePage({ onBack }: Props) {
             <ErrorPill message={saveError} onRetry={() => void handleSave()} retryLabel="Try again" />
           )}
 
-          <button
+          <Btn
+            variant="primary"
+            size="lg"
+            block
             onClick={handleSave}
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-r2)] text-[14px] font-semibold transition active:scale-[0.99] disabled:opacity-50"
-            style={{
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-fg)',
-              height: 48,
-            }}
+            icon={saved ? <Ico name="check" size={16} /> : undefined}
           >
-            {saved && <Ico name="check" size={16} />}
-            <span>{saved ? 'Saved' : saving ? 'Saving…' : 'Save changes'}</span>
-          </button>
+            {saved ? 'Saved' : saving ? 'Saving…' : 'Save changes'}
+          </Btn>
 
           {/* Sign out */}
           <div style={{ borderTop: '1px solid var(--color-border-soft)' }} className="pt-4">

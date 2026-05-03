@@ -57,6 +57,8 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
 
   return (
     <nav
+      role="tablist"
+      aria-label="Primary"
       className="flex flex-shrink-0"
       style={{
         background: 'var(--color-surface)',
@@ -76,8 +78,10 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
+            role="tab"
             aria-label={tab.label}
-            aria-current={active ? 'page' : undefined}
+            aria-selected={active}
+            tabIndex={active ? 0 : -1}
             className="relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors active:opacity-70"
             style={{ padding: '6px 0', minHeight: 48 }}
           >

@@ -96,6 +96,24 @@ Bonus: 💀 `services/socket.ts` deleted (FL1 — dead WebSocket client, ~110 li
 
 ---
 
+## MEDIUM CLUSTER COMPLETION (2026-05-03 IRE round 3)
+
+7 templates applied, ~50 of 91 MEDIUM items resolved:
+
+| Template | Coverage | Output |
+|---|---|---|
+| **I** Btn primitive sweep | UM2,UM5,UM6,UM8,UM10,UM11 | 6 inline buttons → `<Btn variant="...">` |
+| **J** Color token sweep | UM12,UM14,UM15,UM16,UM17 | 5 tokens added (plum, plum-dim, camera-bg, scrim-soft/strong, toast-bg); 8 hardcoded sites replaced |
+| **K** Defensive API coercion | FM1,FM4 | Number() wrap on NUMERIC strings, ApprovalsScreen first-render spinner |
+| **L** Android manifest hardening | ANM4,5,7,8,9,18,19,21 | RFC1918 cleartext, debuggable=false, shrinkResources, dataExtractionRules, queries element, removed unused boot-completed perm, installLocation=auto |
+| **M** Semantic HTML | APM1,APM3 | TabBar role=tablist + tab + aria-selected; 5 page titles div→h1 |
+| **N** Memoization & perf | APM20,21,22 + AP21 | ChatPage stream-aware scroll, ChatBubble memo, Sparkline memo, Radar counts deps fix |
+| **Individual** | UM7,FM9,APM17,ANM6 | Settings delete-data border contrast, SchoolFeed useless ternary collapse, StdHome avatar aria-label, InstanceTopBar safe-top double-pad fix |
+
+**Deferred MEDIUM** (~40 items): cosmetic typography drift (UM18-22), per-screen padding harmonisation (U22), aria-label gaps on decorative elements, server-side concerns (FM7 hardcoded modules list, ANM11 google-services.json missing, ANM17 unsigned-server header). All cosmetic; none block users.
+
+---
+
 ## HIGH (80)
 
 ### UX (23)
