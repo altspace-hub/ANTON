@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ANTON deep teal — matches public/anton-logo.svg's white-A-on-green -->
-    <color name="ic_launcher_background">#0D7D6C</color>
+    <!-- A shade lighter than the foreground rounded square's #0B6F5E
+         (Claude Design 01-monolith.svg). Halo around the inner darker
+         rounded square in the launcher icon — visibly distinct so the
+         layered look reads even at small icon sizes. -->
+    <color name="ic_launcher_background">#1FA08A</color>
 </resources>
