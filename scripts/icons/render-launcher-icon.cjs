@@ -41,15 +41,22 @@ const sizes = [
 
 const resBase = path.join(repoRoot, 'android', 'app', 'src', 'main', 'res');
 
-// Render public/anton-logo.svg verbatim — the launcher icon is now a
-// pixel-faithful copy of the webgui mark with no launcher-specific
-// tweaks (font-size, y position, etc.). What you see in the browser is
-// what you see on the launcher.
+// Match the user's target launcher look (slightly smaller than the
+// verbatim webgui SVG and geometrically centred):
+//   - font-size 18 → 16 (cap-height drops from ~41% to ~36% of icon)
+//   - y position 55% → 50% (true vertical centre instead of the
+//     optical-text bias the webgui uses for in-app rendering)
+// Webgui SVG itself is NOT modified — only the launcher render is
+// tweaked, so the in-app brand mark keeps its current proportions.
+const launcherTweaks = (svg) => svg
+  .replace('font-size="18"', 'font-size="16"')
+  .replace('y="55%"', 'y="50%"');
+
 for (const s of sizes) {
   // Inject explicit width/height into the <svg> tag — without these,
   // resvg renders at the SVG's intrinsic 32×32 viewBox size and ignores
   // the fitTo option.
-  const svg = baseSvg.replace(
+  const svg = launcherTweaks(baseSvg).replace(
     '<svg ',
     `<svg width="${s.px}" height="${s.px}" `
   );
