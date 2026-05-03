@@ -64,12 +64,15 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => onActiveInstanceChange(() => void refresh()), [refresh]);
 
-  // Deep-link handler — also accept ?approval=<id> query string
+  // Deep-link handler — also accept ?approval=<id> query string.
+  // AN5: validate the id against the cp_<32-hex> shape we issue server-side
+  // before opening; raw window.location.search lets a malicious notification
+  // (or a user-pasted URL) inject arbitrary strings into setOpenId.
   useEffect(() => {
     if (!openId) {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('approval');
-      if (id) setOpenId(id);
+      if (id && /^cp_[a-zA-Z0-9_-]{8,64}$/.test(id)) setOpenId(id);
     }
   }, [openId]);
 

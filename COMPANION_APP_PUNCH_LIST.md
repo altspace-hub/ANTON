@@ -114,6 +114,32 @@ Bonus: 💀 `services/socket.ts` deleted (FL1 — dead WebSocket client, ~110 li
 
 ---
 
+## FINAL CLUSTER COMPLETION (2026-05-03 IRE round 4 — full audit closeout)
+
+6 templates closing remaining HIGH/MEDIUM/LOW:
+
+| Template | Items | Output |
+|---|---|---|
+| **O** Unicode glyph → Ico | U2-U6, U23 | 7 sites: SchoolFeed 🔥📶🎧, Personalize+StdSettings ✓ swatches, EmailSetup ✓/✕, Search ✓ pill, StdSettings In-use labels. Added flame, headphones, wifiOff icons. |
+| **P** rgba → color-mix | U11-U13 | WorkModulesScreen find-module composer + 5 chip overlays, StdVoiceScreen text input. Modern syntax. |
+| **R** Functional one-offs | FM10, F24 | StdThreadScreen redundant mic removed; StdWalletScreen wired to real getOrgWallet adapter (balance + recent + loading + retry). F23 deferred (Std-mode approval routing UX). |
+| **S** Native security | AN5, AN8, AN2 | ?approval= regex validation; CapturePage MediaStream releases on background (Capacitor App.appStateChange); registerPush() de-dup cache (1h TTL keyed by device_id). |
+| **T** A11y polish | APM18 | Personalize + StdSettings accent swatches got bottom gradient so light accents (gold, sunrise) meet WCAG AA. |
+| **U** LOW sweep + primitives | UL1-3, UL5-6, ANL2, ANL11, ANL13 | 3 new primitives (QuickActionTile, ModeCard, SheetTitle); hasModuleGlyph exported; citeColour removed; JoinPage appUrlOpen listener; VoiceMode Android back handler; useAndroidBackButton ref-based callback (no re-attach storm). |
+
+**Cumulative across all 4 rounds:**
+- 22/22 BLOCKERS done + 1 NEW HIGH (B23) discovered+fixed
+- ~70 of 80 HIGH items resolved (8 templates A-H + Unicode/rgba refinements)
+- ~75 of 91 MEDIUM items resolved (7 templates I-N + individual + 4 FINAL)
+- ~14 of 28 LOW items resolved (8 in Template U + 4 already done by other templates)
+- **6 new primitives** total: Spinner, ErrorPill, SheetTitle, QuickActionTile, ModeCard (in-file), useFocusTrap hook
+- **3 new icons**: flame, headphones, wifiOff
+- **8 new design tokens**: --color-plum/-dim, --color-camera-bg, --color-scrim-soft/-strong, --color-toast-bg, --color-accent-soft
+
+**Permanently deferred** (~30 items): build-asset issues (splash density regen, gradle preBuild), per-screen typography drift (cosmetic), tab-mode PageHeader variant (would need design pass for HomeScreen rich greeting), server-side audits (FM7 hardcoded modules, ANM11 google-services.json packaging), pre-prompt rationale sheets (ANL12 — needs UX sheet design).
+
+---
+
 ## HIGH (80)
 
 ### UX (23)

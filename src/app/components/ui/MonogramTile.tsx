@@ -130,3 +130,10 @@ export function getModuleGlyph(key: string, fallbackLabel?: string): { letters: 
   }
   return { letters: '??', tone: 'slate' };
 }
+
+/** UL3: True if the module id has a curated glyph in MODULE_GLYPH (not a
+ *  derived fallback). Lets callers branch on "do we ship a designed tile
+ *  for this?" without poking at the map directly. */
+export function hasModuleGlyph(key: string): boolean {
+  return key in MODULE_GLYPH;
+}

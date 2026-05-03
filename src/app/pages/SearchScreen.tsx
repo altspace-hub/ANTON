@@ -20,10 +20,6 @@ import { runPathfinderQuery, splitAnswer, type PathfinderResult, type Pathfinder
 
 interface Props { orgId: string }
 
-function citeColour(_n: number): string {
-  return 'var(--color-accent)';
-}
-
 function SourceCard({ s }: { s: PathfinderSource }) {
   const isPrivate = s.type === 'private';
   return (
@@ -214,10 +210,10 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                   <div key={i} className="mb-1 flex gap-2.5">
                     <div className="flex w-4 flex-shrink-0 flex-col items-center">
                       <div
-                        className="flex h-3 w-3 items-center justify-center rounded-full font-bold text-white"
-                        style={{ background: 'var(--color-accent)', fontSize: 8 }}
+                        className="flex h-3 w-3 items-center justify-center rounded-full text-white"
+                        style={{ background: 'var(--color-accent)' }}
                       >
-                        ✓
+                        <Ico name="check" size={8} color="#fff" />
                       </div>
                       {i < result.thoughts.length - 1 && (
                         <div
@@ -249,7 +245,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                     : <sup
                         key={i}
                         className="font-bold"
-                        style={{ color: citeColour(seg.n), fontSize: 10, padding: '0 1px' }}
+                        style={{ color: 'var(--color-accent)', fontSize: 10, padding: '0 1px' }}
                       >[{seg.n}]</sup>
                 )) : result.answer}
               </div>

@@ -36,14 +36,36 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   const [showScanner, setShowScanner] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Deep-link / query-string handler
+  // Deep-link / query-string handler.
+  // ANL2: also subscribe to Capacitor's appUrlOpen so a deep link tapped
+  // while the app is already in memory still pre-fills the form. Without
+  // this listener, only the very first mount picks up the URL — a re-pair
+  // attempt from an existing install would silently land on a blank screen.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const srv = params.get('server');
-    const tok = params.get('token') || params.get('join');
-    if (srv) setServerUrl(decodeURIComponent(srv));
-    if (tok) setToken(tok);
-    if (srv && tok) setMode('manual');
+    function applyParams(url: string) {
+      try {
+        const u = new URL(url, 'http://placeholder.invalid');
+        const srv = u.searchParams.get('server');
+        const tok = u.searchParams.get('token') || u.searchParams.get('join');
+        if (srv) setServerUrl(decodeURIComponent(srv));
+        if (tok) setToken(tok);
+        if (srv && tok) setMode('manual');
+      } catch { /* malformed url — ignore */ }
+    }
+    // Initial parse from the page URL (PWA + first-launch deep link).
+    applyParams(window.location.href);
+
+    let removeListener: (() => void) | null = null;
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.getPlatform() === 'web') return;
+        const { App } = await import('@capacitor/app');
+        const handle = await App.addListener('appUrlOpen', ({ url }) => applyParams(url));
+        removeListener = () => { void handle.remove(); };
+      } catch { /* not in Capacitor */ }
+    })();
+    return () => { removeListener?.(); };
   }, []);
 
   // QR scanner lifecycle

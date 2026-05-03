@@ -133,9 +133,9 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
           placeholder="…or type a question"
           className="w-full max-w-[320px] rounded-full px-4 py-3 text-center"
           style={{
-            background: 'rgba(255,255,255,0.12)',
+            background: 'color-mix(in srgb, #fff 12%, transparent)',
             color: '#fff',
-            border: '1px solid rgba(255,255,255,0.2)',
+            border: '1px solid color-mix(in srgb, #fff 20%, transparent)',
             fontSize: 15,
           }}
         />

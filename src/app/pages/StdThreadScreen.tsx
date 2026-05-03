@@ -120,22 +120,17 @@ export default function StdThreadScreen({ message, onBack, onOpenInPro }: Props)
         </div>
       </div>
 
-      {/* Composer (hand-off to Pro chat) */}
+      {/* Composer (hand-off to Pro chat). FM10: removed the redundant mic
+          button — it routed to the same place as Open-in-chat, suggesting
+          a voice-input affordance that doesn't exist here. Voice lives in
+          the dedicated VoiceMode overlay, not in the thread footer. */}
       <div
         className="flex flex-shrink-0 items-center gap-3 px-3.5 py-3"
         style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}
       >
-        <Btn variant="secondary" size="md" block onClick={onOpenInPro}>
+        <Btn variant="primary" size="md" block onClick={onOpenInPro}>
           Open in chat
         </Btn>
-        <button
-          className="flex h-[44px] w-[44px] items-center justify-center rounded-full"
-          style={{ background: 'var(--color-accent)' }}
-          aria-label="Voice"
-          onClick={onOpenInPro}
-        >
-          <Ico name="mic" color="#fff" size={22} />
-        </button>
       </div>
     </div>
   );

@@ -33,6 +33,54 @@ const SETTINGS_ROWS = [
   { id: 'help',    title: 'Help & support',      sub: 'Chat, video call, or a person' },
 ] as const;
 
+/** UL5: extracted ModeCard primitive — was 30 lines duplicated for the
+ *  Standard / Pro app-mode toggle hero. Lives inline because no other
+ *  surface uses this pattern; promote to /components/ui if needed. */
+function ModeCard({
+  label,
+  description,
+  active,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  active: boolean;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 rounded-[var(--radius-r2)] p-3.5 text-left"
+      style={{
+        background: active ? 'var(--color-accent-soft)' : 'var(--color-surface)',
+        border: `2px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18, fontWeight: 700, letterSpacing: '-0.2px',
+          color: active ? 'var(--color-accent)' : 'var(--color-text)',
+        }}
+      >
+        {label}
+      </div>
+      <div className="mt-1 text-[13px] leading-snug text-[var(--color-text-muted)]">
+        {description}
+      </div>
+      <div
+        className="mt-2.5 flex items-center gap-1 font-bold"
+        style={{
+          fontSize: 13,
+          color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
+        }}
+      >
+        {active && <Ico name="check" size={14} color="currentColor" />}
+        {active ? 'In use' : 'Switch'}
+      </div>
+    </button>
+  );
+}
+
 export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Element {
   const { accent, mode, setAccent, setMode } = usePersonalization();
   const [expandAccent, setExpandAccent] = useState(false);
@@ -70,66 +118,19 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
             App mode
           </div>
           <div className="flex gap-2.5">
-            {/* Standard card */}
-            <button
+            {/* UL5: extracted ModeCard primitive (was 30 duplicated lines). */}
+            <ModeCard
+              label="Standard"
+              description="Simple. One thing at a time. For daily life."
+              active={mode === 'standard'}
               onClick={() => setMode('standard')}
-              className="flex-1 rounded-[var(--radius-r2)] p-3.5 text-left"
-              style={{
-                background: mode === 'standard' ? 'var(--color-accent-soft)' : 'var(--color-surface)',
-                border: `2px solid ${mode === 'standard' ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 18, fontWeight: 700, letterSpacing: '-0.2px',
-                  color: mode === 'standard' ? 'var(--color-accent)' : 'var(--color-text)',
-                }}
-              >
-                Standard
-              </div>
-              <div className="mt-1 text-[13px] leading-snug text-[var(--color-text-body)]">
-                Simple. One thing at a time. For daily life.
-              </div>
-              <div
-                className="mt-2.5 font-bold"
-                style={{
-                  fontSize: 13,
-                  color: mode === 'standard' ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                }}
-              >
-                {mode === 'standard' ? '✓ In use' : 'Switch'}
-              </div>
-            </button>
-            {/* Pro card */}
-            <button
+            />
+            <ModeCard
+              label="Pro"
+              description="All modules, more detail, advanced tools."
+              active={mode === 'pro'}
               onClick={() => setMode('pro')}
-              className="flex-1 rounded-[var(--radius-r2)] p-3.5 text-left"
-              style={{
-                background: mode === 'pro' ? 'var(--color-accent-soft)' : 'var(--color-surface)',
-                border: `2px solid ${mode === 'pro' ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 18, fontWeight: 700, letterSpacing: '-0.2px',
-                  color: mode === 'pro' ? 'var(--color-accent)' : 'var(--color-text)',
-                }}
-              >
-                Pro
-              </div>
-              <div className="mt-1 text-[13px] leading-snug text-[var(--color-text-muted)]">
-                All modules, more detail, advanced tools.
-              </div>
-              <div
-                className="mt-2.5 font-bold"
-                style={{
-                  fontSize: 13,
-                  color: mode === 'pro' ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                }}
-              >
-                {mode === 'pro' ? '✓ In use' : 'Switch'}
-              </div>
-            </button>
+            />
           </div>
           <div className="mt-3 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
             You can switch any time. Your data and connections stay the same.
@@ -187,15 +188,22 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                           >
                             {active && (
                               <span
-                                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full font-bold"
-                                style={{ background: '#fff', color: a.hex, fontSize: 12 }}
+                                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                                style={{ background: '#fff', color: a.hex }}
                               >
-                                ✓
+                                <Ico name="check" size={12} color="currentColor" />
                               </span>
                             )}
+                            {/* APM18: bottom gradient ensures label hits AA
+                                contrast on every swatch including light accents. */}
+                            <span
+                              className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-[12px]"
+                              style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))' }}
+                              aria-hidden="true"
+                            />
                             <span
                               className="absolute bottom-1.5 left-2 right-2 text-left font-semibold text-white"
-                              style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                              style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
                             >
                               {a.label}
                             </span>

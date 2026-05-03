@@ -140,14 +140,15 @@ export default function EmailSetupScreen({ orgId, onBack }: Props): JSX.Element 
           {PERMISSIONS.map((r, i) => (
             <div key={i} className="flex items-center gap-2 py-1 text-[12px]">
               <span
-                className="flex items-center justify-center rounded-full font-bold text-white"
+                className="flex items-center justify-center rounded-full text-white"
                 style={{
-                  width: 16, height: 16, fontSize: 10,
+                  width: 16, height: 16,
                   background: r.ok ? 'var(--color-green)' : 'var(--color-surface-muted)',
                   color: r.ok ? '#fff' : 'var(--color-text-faint)',
                 }}
+                aria-hidden="true"
               >
-                {r.ok ? '✓' : '✕'}
+                <Ico name={r.ok ? 'check' : 'x'} size={10} color="currentColor" />
               </span>
               <span className={r.ok ? 'text-[var(--color-text-body)]' : 'text-[var(--color-text-faint)]'}>
                 {r.text}

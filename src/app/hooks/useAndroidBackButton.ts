@@ -30,6 +30,13 @@ const EXIT_PROMPT_WINDOW_MS = 2000;
 
 export function useAndroidBackButton({ onBack }: Options): void {
   const lastExitPromptAt = useRef(0);
+  // ANL13: callers usually pass an inline function — without this ref, the
+  // useEffect re-fires every render, repeatedly attaching + removing the
+  // listener and producing a brief window where the back button has no
+  // handler. Read the live callback from a ref and keep useEffect's deps
+  // empty so we register exactly once per mount.
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +51,7 @@ export function useAndroidBackButton({ onBack }: Options): void {
           // 1. Transient surface
           if (hasBackHandler()) { popBack(); return; }
           // 2. Caller-defined navigation
-          const result = onBack();
+          const result = onBackRef.current();
           if (result === 'handled') return;
           // 3. Root — confirm exit
           const now = Date.now();
@@ -68,7 +75,7 @@ export function useAndroidBackButton({ onBack }: Options): void {
       cancelled = true;
       removeListener?.();
     };
-  }, [onBack]);
+  }, []);
 }
 
 let toastEl: HTMLDivElement | null = null;

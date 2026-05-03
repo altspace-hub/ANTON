@@ -126,15 +126,23 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
               >
                 {active && (
                   <span
-                    className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full font-bold"
-                    style={{ background: '#fff', color: a.hex, fontSize: 12 }}
+                    className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                    style={{ background: '#fff', color: a.hex }}
                   >
-                    ✓
+                    <Ico name="check" size={12} color="currentColor" />
                   </span>
                 )}
+                {/* APM18: bottom gradient ensures label hits AA contrast on
+                    every swatch, including the lighter accents (gold, sunrise)
+                    where pure-white-with-shadow falls below the threshold. */}
+                <span
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-[12px]"
+                  style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))' }}
+                  aria-hidden="true"
+                />
                 <span
                   className="absolute bottom-1.5 left-2 right-2 text-left font-semibold text-white"
-                  style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                  style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
                 >
                   {a.label}
                 </span>

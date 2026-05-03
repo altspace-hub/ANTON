@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { tick, light, success, error as hapticError } from '../services/haptics';
 import * as TTS from '../services/tts';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { registerBackHandler } from '../services/back-stack';
 import { Ico } from './ui';
 
 export interface VoiceModeProps {
@@ -37,14 +38,20 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, true);
 
-  // Esc to close (web). Android hardware back is handled by App.tsx since
-  // VoiceMode renders inside the active tab tree.
+  // Esc to close (web) + Android hardware back (ANL11). Without the
+  // back-stack registration, pressing Android back while VoiceMode is open
+  // falls through to the App-level handler and exits the app instead of
+  // dismissing the overlay.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
     }
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const unregister = registerBackHandler(onClose);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      unregister();
+    };
   }, [onClose]);
   const [partial, setPartial] = useState('');
   const [reply, setReply] = useState('');

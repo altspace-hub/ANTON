@@ -13,7 +13,9 @@
  * is visually complete; a follow-up phase wires a real wallet provider.
  */
 
-import { Ico } from '../components/ui';
+import { useEffect, useState } from 'react';
+import { Ico, Spinner, ErrorPill } from '../components/ui';
+import { getOrgWallet } from '../services/api';
 
 interface Props {
   orgId: string;
@@ -23,18 +25,78 @@ interface Props {
 interface RecentRow {
   who: string;
   sub: string;
-  amt: string;       // formatted with sign + €
+  amt: string;
   t: string;
   isIn: boolean;
 }
 
-const SAMPLE_RECENT: RecentRow[] = []; // empty until a wallet provider is wired
+interface WalletApi { balance_ftc?: number | string }
+interface TxApi {
+  id: string;
+  amount_ftc?: number | string;
+  direction?: 'in' | 'out';
+  counterparty?: string | null;
+  memo?: string | null;
+  created_at?: string;
+}
 
-export default function StdWalletScreen({ orgId: _orgId, onBack }: Props): JSX.Element {
-  // Real implementation: pull balance + recent from a wallet endpoint
-  // (e.g. /api/app/org/:orgId/wallet/today). v1 ships layout-complete
-  // with placeholder zeros so the screen is honest about its state.
-  const balance: string | null = null;
+function relativeTime(iso?: string): string {
+  if (!iso) return '';
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return '';
+  const diff = Date.now() - t;
+  if (diff < 60_000) return 'now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
+  return `${Math.floor(diff / 86_400_000)}d`;
+}
+
+function formatAmt(raw: number | string | undefined, isIn: boolean): string {
+  if (raw == null) return '—';
+  const n = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(n)) return '—';
+  return `${isIn ? '+' : '−'}€${Math.abs(n).toFixed(2)}`;
+}
+
+export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
+  // F24: wire to real /api/app/org/:orgId/wallet adapter (added in B5).
+  const [balance, setBalance] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getOrgWallet(orgId, 12)
+      .then(data => {
+        if (cancelled) return;
+        const wallets = (data.wallets ?? []) as unknown as WalletApi[];
+        const txs = (data.transactions ?? []) as unknown as TxApi[];
+        const totalRaw = wallets.reduce((sum, w) => {
+          const n = typeof w.balance_ftc === 'number' ? w.balance_ftc : Number(w.balance_ftc ?? 0);
+          return Number.isFinite(n) ? sum + n : sum;
+        }, 0);
+        setBalance(`€${totalRaw.toFixed(2)}`);
+        setRecent(
+          txs.map(t => {
+            const isIn = t.direction !== 'out';
+            return {
+              who: t.counterparty || (isIn ? 'Incoming' : 'Outgoing'),
+              sub: t.memo || (isIn ? 'Received' : 'Sent'),
+              amt: formatAmt(t.amount_ftc, isIn),
+              t: relativeTime(t.created_at),
+              isIn,
+            };
+          })
+        );
+      })
+      .catch(() => { if (!cancelled) setError('Couldn\'t reach your wallet.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [orgId, reloadTick]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
@@ -64,6 +126,12 @@ export default function StdWalletScreen({ orgId: _orgId, onBack }: Props): JSX.E
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2">
+        {error && (
+          <div className="mb-3">
+            <ErrorPill message={error} onRetry={() => setReloadTick(t => t + 1)} />
+          </div>
+        )}
+
         {/* Balance card */}
         <div
           className="mb-4 rounded-[var(--radius-r3)] p-5 text-white"
@@ -114,7 +182,11 @@ export default function StdWalletScreen({ orgId: _orgId, onBack }: Props): JSX.E
         >
           Recent
         </div>
-        {SAMPLE_RECENT.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        ) : recent.length === 0 ? (
           <div
             className="rounded-[var(--radius-r3)] p-4 text-center"
             style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
@@ -126,27 +198,27 @@ export default function StdWalletScreen({ orgId: _orgId, onBack }: Props): JSX.E
               No money activity yet.
             </div>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Connect your account on the main ANTON to see balance and recent transactions here.
+              Recent transactions will appear here as you use your FutureChain account.
             </p>
           </div>
         ) : (
-          SAMPLE_RECENT.map((r, i) => (
+          recent.map((r, i) => (
             <div
               key={`${r.who}-${i}`}
               className="flex items-center gap-3.5 px-1 py-3.5"
               style={{
-                borderBottom: i < SAMPLE_RECENT.length - 1 ? '1px solid var(--color-border-soft)' : 'none',
+                borderBottom: i < recent.length - 1 ? '1px solid var(--color-border-soft)' : 'none',
               }}
             >
               <div
-                className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full font-bold"
+                className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full"
                 style={{
                   background: r.isIn ? 'var(--color-green-dim)' : 'var(--color-surface-alt)',
                   color: r.isIn ? 'var(--color-green)' : 'var(--color-text)',
-                  fontSize: 20,
                 }}
+                aria-hidden="true"
               >
-                {r.isIn ? '↓' : '↑'}
+                <Ico name={r.isIn ? 'arrowUp' : 'arrowUp'} size={20} color="currentColor" />
               </div>
               <div className="flex-1">
                 <div className="text-[16px] font-semibold text-[var(--color-text)]">{r.who}</div>

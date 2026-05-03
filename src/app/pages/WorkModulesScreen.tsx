@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pill, SectionLabel, StatusDot, Ico, MonogramTile, getModuleGlyph, Spinner } from '../components/ui';
+import { Pill, SectionLabel, StatusDot, Ico, MonogramTile, getModuleGlyph, hasModuleGlyph, Spinner } from '../components/ui';
 import { listModules, type PinnedModule, type BrowseModule } from '../services/modules';
 import type { MonogramTone } from '../components/ui';
 
@@ -45,7 +45,7 @@ function browseModuleGlyph(m: BrowseModule): { letters: string; tone: MonogramTo
   // Look up by stable id first; if unknown, derive 2-letter initials from
   // the name and tone by domain heuristic on the description text.
   const fromMap = getModuleGlyph(m.id, m.name);
-  if (fromMap.letters !== initials(m.name) || MODULE_GLYPH_HAS(m.id)) return fromMap;
+  if (fromMap.letters !== initials(m.name) || hasModuleGlyph(m.id)) return fromMap;
   const desc = (m.description || '').toLowerCase();
   let tone: MonogramTone = 'slate';
   if (/sanc|risk|threat|alert/.test(desc))                tone = 'red';
@@ -54,12 +54,6 @@ function browseModuleGlyph(m: BrowseModule): { letters: string; tone: MonogramTo
   else if (/research|knowledge|learn/.test(desc))         tone = 'teal';
   else if (/draft|create|present/.test(desc))             tone = 'plum';
   return { letters: initials(m.name), tone };
-}
-
-function MODULE_GLYPH_HAS(id: string): boolean {
-  // Lightweight check; importing the full record just for `in` would be ugly.
-  // The map is exported, but we keep this helper inline to avoid a re-export.
-  return getModuleGlyph(id).letters !== '??' && getModuleGlyph(id).letters !== id.slice(0, 2).toUpperCase();
 }
 
 export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Props): JSX.Element {
@@ -147,8 +141,8 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
           <div
             className="mb-2 flex items-center gap-2 rounded-full px-3.5 py-2"
             style={{
-              background: 'rgba(255,255,255,0.18)',
-              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'color-mix(in srgb, #fff 18%, transparent)',
+              border: '1px solid color-mix(in srgb, #fff 30%, transparent)',
             }}
           >
             <Ico name="search" color="#fff" size={14} />
@@ -181,8 +175,8 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
                 onClick={() => handleAsk(chip)}
                 className="rounded-full px-2.5 py-1 text-[11px] font-medium"
                 style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.25)',
+                  background: 'color-mix(in srgb, #fff 15%, transparent)',
+                  border: '1px solid color-mix(in srgb, #fff 25%, transparent)',
                   color: '#fff',
                 }}
               >
