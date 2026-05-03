@@ -203,3 +203,48 @@ export async function getOrgWallet(orgId: string, limit = 20) {
   if (!res.ok) throw new Error('Failed to load wallet');
   return res.json() as Promise<{ wallets: Array<Record<string, unknown>>; transactions: Array<Record<string, unknown>> }>;
 }
+
+// ── Portals ──────────────────────────────────────────────────────
+export interface PortalSummary {
+  id: string;
+  name: string;
+  display_title: string | null;
+  description: string | null;
+  category: string | null;
+  status: string;
+  public_index: boolean;
+  surface_mode: string | null;
+  external_primary_url: string | null;
+  created_at: string;
+}
+
+export async function getOrgPortals(orgId: string): Promise<{ portals: PortalSummary[] }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/portals`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load portals');
+  return res.json() as Promise<{ portals: PortalSummary[] }>;
+}
+
+// ── Community ────────────────────────────────────────────────────
+export interface CommunityIdentity {
+  contact_hash: string | null;
+  display_name: string | null;
+  public_key: string | null;
+  activated_at: string | null;
+}
+
+export interface CommunityConnection {
+  id: string;
+  contact_hash: string;
+  display_name: string | null;
+  status: 'pending' | 'accepted';
+  connected_at: string;
+}
+
+export async function getOrgCommunity(orgId: string): Promise<{
+  identity: CommunityIdentity | null;
+  connections: CommunityConnection[];
+}> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/community`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load community');
+  return res.json() as Promise<{ identity: CommunityIdentity | null; connections: CommunityConnection[] }>;
+}

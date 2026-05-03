@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ANTON Companion launcher foreground (Android 8+ adaptive icon).
+  Two angular chevrons interlocking — symbolises two ANTON instances
+  reaching toward each other (the inter-instance interoperability that
+  the Portals + Community pillars enable). Recolored from the stock
+  Capacitor template's blue to ANTON's brand greens.
+
+  Viewport is the Android adaptive-icon standard 108×108. The safe
+  zone the launcher mask is guaranteed not to clip is the centred
+  72×72 box (margin = 18 on each side).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+
+  <!-- Back chevron — top-right, ANTON deep teal (#06655A). Thicker,
+       sits behind. Drawn as a thick "L" angle pointing down-left. -->
+  <path
+      android:fillColor="#06655A"
+      android:pathData="M58,38 L80,38 L80,58 L70,58 L70,48 L58,48 Z" />
+
+  <!-- Front chevron — bottom-left, ANTON brand green (#0D7D6C). Sits
+       in front, slightly larger, mirroring the back chevron through
+       the centre to read as "two parts coming together". -->
+  <path
+      android:fillColor="#0D7D6C"
+      android:pathData="M50,70 L28,70 L28,50 L38,50 L38,60 L50,60 Z" />
+
+  <!-- Connecting bar — runs through the centre at 45° to lock the two
+       chevrons together visually. Lighter green (#1FA08F) so it reads
+       as the "connection" between the two pieces, not just a join. -->
+  <path
+      android:fillColor="#1FA08F"
+      android:pathData="M36,72 L72,36 L78,42 L42,78 Z" />
+</vector>
