@@ -32,6 +32,8 @@ import SessionHistoryPage from './pages/SessionHistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import WalletScreen from './pages/WalletScreen';
+import PortalsScreen from './pages/PortalsScreen';
+import CommunityScreen from './pages/CommunityScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
 import CapturePage from './pages/CapturePage';
 import UnifiedMailScreen from './pages/UnifiedMailScreen';
@@ -54,7 +56,7 @@ import { Ico } from './components/ui';
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
 const PERSONALIZED_KEY = 'anton-companion-personalized';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar'
+type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community'
   // Standard-mode screens (selected when mode === 'standard')
   | 'std_mail' | 'std_thread' | 'std_calendar' | 'std_wallet' | 'std_voice' | 'std_settings';
 
@@ -226,6 +228,7 @@ export default function App() {
     const SUB_SCREENS: OrgTab[] = [
       'mail_setup', 'history', 'profile', 'settings', 'work', 'school',
       'calendar', 'mail', 'schedule', 'tasks', 'search', 'markets', 'radar', 'wallet',
+      'portals', 'community',
       'std_calendar', 'std_wallet', 'std_voice', 'std_settings',
     ];
     if (SUB_SCREENS.includes(activeTab)) { setActiveTab('home'); return 'handled'; }
@@ -330,6 +333,12 @@ export default function App() {
       {activeTab === 'markets' && <MarketsScreen orgId={selectedOrgId} />}
       {activeTab === 'radar' && <RadarScreen orgId={selectedOrgId} />}
       {activeTab === 'wallet' && <WalletScreen orgId={selectedOrgId} />}
+      {activeTab === 'portals' && (
+        <PortalsScreen orgId={selectedOrgId} onBack={() => setActiveTab('home')} />
+      )}
+      {activeTab === 'community' && (
+        <CommunityScreen orgId={selectedOrgId} onBack={() => setActiveTab('home')} />
+      )}
       {activeTab === 'history' && (
         <SessionHistoryPage
           orgId={selectedOrgId}
@@ -446,6 +455,8 @@ export default function App() {
             { id: 'markets',  icon: 'barChart',    label: 'Markets',    tint: 'var(--color-gold)' },
             { id: 'radar',    icon: 'radar',       label: 'Radar',      tint: 'var(--color-accent)' },
             { id: 'wallet',   icon: 'wallet',      label: 'Wallet',     tint: 'var(--color-text)' },
+            { id: 'portals',  icon: 'grid',        label: 'Portals',    tint: 'var(--color-accent)' },
+            { id: 'community',icon: 'user',        label: 'Community',  tint: 'var(--color-blue)' },
             { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },
             { id: 'profile',  icon: 'user',        label: 'Profile',    tint: 'var(--color-text)' },
             { id: 'settings', icon: 'settings',    label: 'Settings',   tint: 'var(--color-text-muted)' },

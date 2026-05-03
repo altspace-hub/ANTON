@@ -1712,6 +1712,73 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
+  // GET /api/app/org/:orgId/portals — list portals on this instance.
+  //
+  // Mirrors the desktop's GET /api/portals (which filters by req.user.id).
+  // The companion app authenticates as the instance owner, so we surface
+  // all portals on this instance — single-tenant model in solo mode.
+  publicRouter.get('/org/:orgId/portals', appAuth, orgMember, async (_req, res) => {
+    try {
+      const rows = await db.all<{
+        id: string; name: string; namespace: string | null; category: string | null;
+        display_title: string | null; description: string | null; status: string;
+        public_index: boolean; descriptor_hash: string | null;
+        surface_mode: string | null; external_primary_url: string | null;
+        registered_at: string | null; created_at: string; updated_at: string;
+      }>(
+        `SELECT id, name, namespace, category, display_title, description, status,
+                public_index, descriptor_hash,
+                surface_mode, external_primary_url,
+                registered_at, created_at, updated_at
+           FROM portals
+          ORDER BY created_at DESC
+          LIMIT 50`
+      );
+      res.json({ portals: rows });
+    } catch (err) {
+      console.error('[app-gateway] portals error:', err);
+      res.status(500).json({ error: 'Failed to load portals' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/community — bundle for the Community tile.
+  //
+  // Returns this instance's contact card (the "your ANTON" identity that
+  // peers connect to) + pending/accepted connections, so the companion app
+  // can show "this is you" + "people you know" in one round-trip.
+  publicRouter.get('/org/:orgId/community', appAuth, orgMember, async (_req, res) => {
+    try {
+      const identity = await db.get<{
+        contact_hash: string | null;
+        display_name: string | null;
+        public_key: string | null;
+        activated_at: string | null;
+      }>(
+        `SELECT contact_hash, display_name, public_key, activated_at
+           FROM community_identity
+          WHERE user_id = 'default'
+          LIMIT 1`
+      ).catch(() => null);
+      const connections = await db.all<{
+        id: string; contact_hash: string; display_name: string | null;
+        status: string; connected_at: string;
+      }>(
+        `SELECT id, contact_hash, display_name, status, connected_at
+           FROM community_connections
+          WHERE owner_user_id = 'default' AND status IN ('pending', 'accepted')
+          ORDER BY status ASC, connected_at DESC
+          LIMIT 50`
+      ).catch(() => []);
+      res.json({
+        identity: identity ?? null,
+        connections: Array.isArray(connections) ? connections : [],
+      });
+    } catch (err) {
+      console.error('[app-gateway] community error:', err);
+      res.status(500).json({ error: 'Failed to load community' });
+    }
+  });
+
   // ── Maintenance ────────────────────────────────────────────────────────
   // L4: Periodic cleanup — store interval ID for clean shutdown
   const cleanupInterval = setInterval(() => {
