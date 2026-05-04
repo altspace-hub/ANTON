@@ -185,41 +185,78 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
         )}
 
         {/* ── AI-generated daily briefing from the Orchestrator ─── */}
-        {brief && (
-          <button
-            onClick={() => setBriefExpanded(v => !v)}
-            className="mt-5 w-full rounded-[var(--radius-r3)] p-4 text-left transition active:scale-[0.99]"
-            style={{
-              background: 'var(--color-accent-soft)',
-              border: '1px solid var(--color-accent-dim)',
-            }}
-          >
-            <div className="flex items-center gap-1.5">
-              <Ico name="sparkles" color="var(--color-accent)" size={13} />
-              <span
-                className="font-mono font-bold uppercase"
-                style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+        {brief && (() => {
+          // Strip raw markdown so the preview reads as clean prose:
+          // - drop ATX headers (#, ##, …)
+          // - drop bold/italic markers
+          // - flatten pipe-separated metadata lines
+          // - collapse blank lines
+          // - take the first meaningful line as the headline, the next
+          //   sentence as the summary
+          const cleaned = brief.content
+            .replace(/^#+\s*/gm, '')                // ATX headers
+            .replace(/\*\*([^*]+)\*\*/g, '$1')      // bold
+            .replace(/\*([^*]+)\*/g, '$1')          // italic
+            .replace(/^\s*\|\s*/gm, '')             // pipe table prefix
+            .replace(/^\s*[-=*_]{3,}\s*$/gm, '')    // horizontal rules
+            .replace(/^\s*[-*•]\s+/gm, '')          // bullet markers
+            .split('\n').map(l => l.trim()).filter(Boolean);
+          const headline = cleaned[0] || 'ANTON briefing ready';
+          const summary  = cleaned.slice(1).join(' · ').slice(0, 280);
+          return (
+            <div className="mt-5">
+              <PriorityCard
+                tone="accent"
+                headerLeft={
+                  <span className="inline-flex items-center gap-1.5">
+                    <Ico name="sparkles" size={11} />
+                    ANTON DAILY BRIEF · {new Date(brief.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+                  </span>
+                }
+                headerRight={briefExpanded ? 'Hide ↑' : 'Read →'}
+                onClick={() => setBriefExpanded(v => !v)}
               >
-                ANTON daily brief · {new Date(brief.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}
-              </span>
-              <span className="ml-auto" style={{ color: 'var(--color-accent)' }}>
-                <Ico name={briefExpanded ? 'chevronDown' : 'chevronRight'} size={14} />
-              </span>
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    letterSpacing: '-0.2px',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {headline}
+                </div>
+                {!briefExpanded && summary && (
+                  <p
+                    className="mt-1.5 line-clamp-3"
+                    style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--color-text-muted)' }}
+                  >
+                    {summary}
+                  </p>
+                )}
+                {briefExpanded && (
+                  <div
+                    className="mt-2 text-[13.5px] leading-relaxed"
+                    style={{ color: 'var(--color-text-body)', whiteSpace: 'pre-wrap' }}
+                  >
+                    {brief.content}
+                  </div>
+                )}
+                {(brief.signals_read > 0 || brief.proposals_count > 0) && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {brief.signals_read > 0 && (
+                      <Pill tone="neutral" mono>{brief.signals_read} SIGNALS</Pill>
+                    )}
+                    {brief.proposals_count > 0 && (
+                      <Pill tone="teal" mono>{brief.proposals_count} PROPOSALS</Pill>
+                    )}
+                  </div>
+                )}
+              </PriorityCard>
             </div>
-            <div
-              className={`mt-2 text-[13.5px] leading-relaxed ${briefExpanded ? '' : 'line-clamp-3'}`}
-              style={{ color: 'var(--color-text-body)', whiteSpace: 'pre-wrap' }}
-            >
-              {brief.content}
-            </div>
-            {(brief.signals_read > 0 || brief.proposals_count > 0) && (
-              <div className="mt-2 flex items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                {brief.signals_read > 0 && <span>{brief.signals_read} signals</span>}
-                {brief.proposals_count > 0 && <span>{brief.proposals_count} proposals</span>}
-              </div>
-            )}
-          </button>
-        )}
+          );
+        })()}
 
         {/* ── Priority approval card (Claude Design pattern) ───── */}
         {top && (
