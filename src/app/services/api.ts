@@ -197,6 +197,50 @@ export async function getOrgMorningBrief(orgId: string) {
   return res.json() as Promise<{ overdue?: unknown[]; atRisk?: unknown[]; upcoming?: unknown[] }>;
 }
 
+// ── Deadlines (write) ───────────────────────────────────────────
+export async function createOrgDeadline(orgId: string, body: {
+  title: string; due_date: string; priority?: 'low' | 'medium' | 'high' | 'critical'; description?: string;
+}): Promise<{ deadline: Record<string, unknown> }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/deadlines`, {
+    method: 'POST', headers: headers(), body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || 'Failed to create deadline');
+  }
+  return res.json() as Promise<{ deadline: Record<string, unknown> }>;
+}
+
+export async function completeOrgDeadline(orgId: string, deadlineId: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/deadlines/${deadlineId}/complete`, {
+    method: 'POST', headers: headers(),
+  });
+  if (!res.ok) throw new Error('Failed to complete deadline');
+  return res.json() as Promise<{ ok: boolean }>;
+}
+
+// ── Tasks (update) ──────────────────────────────────────────────
+export async function patchOrgTask(orgId: string, taskId: string, patch: {
+  status?: string; title?: string; description?: string;
+}): Promise<{ task: Record<string, unknown> }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/tasks/${taskId}`, {
+    method: 'PATCH', headers: headers(), body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error('Failed to update task');
+  return res.json() as Promise<{ task: Record<string, unknown> }>;
+}
+
+// ── Sessions (rename/annotate) ──────────────────────────────────
+export async function patchOrgSession(orgId: string, sessionId: string, patch: {
+  title?: string; note?: string;
+}): Promise<{ ok: boolean }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/sessions/${sessionId}`, {
+    method: 'PATCH', headers: headers(), body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error('Failed to update session');
+  return res.json() as Promise<{ ok: boolean }>;
+}
+
 // ── Daily brief (AI Orchestrator) ───────────────────────────────
 export interface DailyBrief {
   id: string;

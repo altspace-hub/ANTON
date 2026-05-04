@@ -14,9 +14,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Ico, PageHeader, Pill, Spinner, ErrorPill, SectionLabel,
+  Btn, Ico, PageHeader, Pill, Spinner, ErrorPill, SectionLabel,
 } from '../components/ui';
-import { getOrgWork, type WorkSession } from '../services/api';
+import { getOrgWork, patchOrgSession, type WorkSession } from '../services/api';
+import { tick, success as hapticSuccess, error as hapticError } from '../services/haptics';
 
 interface Props {
   orgId: string;
@@ -199,7 +200,15 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
               )}
 
               {sessions.map(s => (
-                <SessionRow key={s.id} s={s} onTap={() => onOpenSession(s.id)} />
+                <SessionRow
+                  key={s.id}
+                  s={s}
+                  orgId={orgId}
+                  onTap={() => onOpenSession(s.id)}
+                  onUpdated={(patched) => {
+                    setSessions(prev => prev.map(x => x.id === patched.id ? { ...x, ...patched } : x));
+                  }}
+                />
               ))}
             </>
           )}
@@ -209,23 +218,111 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
   );
 }
 
-function SessionRow({ s, onTap }: { s: WorkSession; onTap: () => void }): JSX.Element {
+function SessionRow({ s, orgId, onTap, onUpdated }: {
+  s: WorkSession; orgId: string; onTap: () => void;
+  onUpdated: (patch: Partial<WorkSession> & { id: string }) => void;
+}): JSX.Element {
+  const [editing, setEditing] = useState<'none' | 'title' | 'note'>('none');
+  const [draftTitle, setDraftTitle] = useState(s.title || '');
+  const [draftNote,  setDraftNote]  = useState(s.note || '');
+  const [busy, setBusy] = useState(false);
   const meta: string[] = [];
   if (s.module_id) meta.push(s.module_id);
   if (s.message_count) meta.push(`${s.message_count} msg`);
   if (s.total_tokens && s.total_tokens > 0) {
     meta.push(s.total_tokens >= 1000 ? `${(s.total_tokens / 1000).toFixed(1)}k tok` : `${s.total_tokens} tok`);
   }
+
+  async function save(field: 'title' | 'note') {
+    if (busy) return;
+    const value = field === 'title' ? draftTitle.trim() : draftNote;
+    if (field === 'title' && value === (s.title || '')) { setEditing('none'); return; }
+    if (field === 'note'  && value === (s.note  || '')) { setEditing('none'); return; }
+    setBusy(true);
+    void tick();
+    try {
+      await patchOrgSession(orgId, s.id, { [field]: value });
+      void hapticSuccess();
+      onUpdated({ id: s.id, [field]: value });
+      setEditing('none');
+    } catch {
+      void hapticError();
+    }
+    setBusy(false);
+  }
+
+  if (editing !== 'none') {
+    return (
+      <div
+        className="flex flex-col gap-2 rounded-[var(--radius-r2)] p-3"
+        style={{
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-accent)',
+        }}
+      >
+        {editing === 'title' ? (
+          <>
+            <label htmlFor={`title-${s.id}`} className="sr-only">Edit title</label>
+            <input
+              id={`title-${s.id}`}
+              value={draftTitle}
+              onChange={e => setDraftTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') void save('title'); if (e.key === 'Escape') setEditing('none'); }}
+              autoFocus
+              placeholder="Title"
+              className="w-full rounded-[var(--radius-r2)] px-3 text-[14px] font-semibold focus:outline-none"
+              style={{
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                height: 40,
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <label htmlFor={`note-${s.id}`} className="sr-only">Edit note</label>
+            <textarea
+              id={`note-${s.id}`}
+              value={draftNote}
+              onChange={e => setDraftNote(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setEditing('none'); }}
+              autoFocus
+              placeholder="Add a note for context"
+              rows={3}
+              className="w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[13px] focus:outline-none"
+              style={{
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+              }}
+            />
+          </>
+        )}
+        <div className="flex gap-2">
+          <Btn variant="primary" size="sm" onClick={() => void save(editing as 'title' | 'note')} disabled={busy}>
+            Save
+          </Btn>
+          <Btn variant="ghost" size="sm" onClick={() => setEditing('none')} disabled={busy}>
+            Cancel
+          </Btn>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <button
-      onClick={onTap}
-      className="flex w-full items-start gap-3 rounded-[var(--radius-r2)] p-3 text-left transition active:scale-[0.99]"
+    <div
+      className="flex w-full items-start gap-3 rounded-[var(--radius-r2)] p-3 transition"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
       }}
     >
-      <div className="min-w-0 flex-1">
+      <button
+        onClick={onTap}
+        className="flex min-w-0 flex-1 flex-col items-start text-left active:scale-[0.99]"
+      >
         <div
           className="truncate text-[14px] font-semibold"
           style={{ color: 'var(--color-text)' }}
@@ -250,8 +347,27 @@ function SessionRow({ s, onTap }: { s: WorkSession; onTap: () => void }): JSX.El
             <span key={i}>{m}{i < meta.length - 1 ? ' ·' : ''}</span>
           ))}
         </div>
+      </button>
+      {/* Inline edit affordances — keep tap-to-open as the primary
+          gesture, edit + note as secondary chips. */}
+      <div className="flex flex-shrink-0 items-center gap-0.5">
+        <button
+          onClick={() => { setDraftTitle(s.title || ''); setEditing('title'); }}
+          aria-label="Rename session"
+          className="flex h-9 w-9 items-center justify-center rounded-full transition active:scale-90"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <Ico name="key" size={14} />
+        </button>
+        <button
+          onClick={() => { setDraftNote(s.note || ''); setEditing('note'); }}
+          aria-label="Edit note"
+          className="flex h-9 w-9 items-center justify-center rounded-full transition active:scale-90"
+          style={{ color: s.note ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+        >
+          <Ico name="message" size={14} />
+        </button>
       </div>
-      <Ico name="chevronRight" color="var(--color-text-faint)" size={18} />
-    </button>
+    </div>
   );
 }
