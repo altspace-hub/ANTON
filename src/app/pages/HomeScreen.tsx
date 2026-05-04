@@ -425,7 +425,10 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                     <div
                       style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}
                     >
-                      {a.title}
+                      {/* Defensive U+FFFD strip — some legacy seed rows have
+                          the replacement character where an em dash was lost
+                          during a non-UTF-8 insert. */}
+                      {a.title.replace(/�/g, '—')}
                     </div>
                     <p
                       className="mt-1 line-clamp-3"
@@ -434,7 +437,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                         color: 'var(--color-text-muted)',
                       }}
                     >
-                      {a.content}
+                      {a.content.replace(/�/g, '—')}
                     </p>
                     <p
                       className="mt-2"
