@@ -35,6 +35,8 @@ import WalletScreen from './pages/WalletScreen';
 import PortalsScreen from './pages/PortalsScreen';
 import CommunityScreen from './pages/CommunityScreen';
 import CommunityChatScreen from './pages/CommunityChatScreen';
+import MissionsScreen from './pages/MissionsScreen';
+import MyWorkScreen from './pages/MyWorkScreen';
 import ApprovalsScreen from './pages/ApprovalsScreen';
 import CapturePage from './pages/CapturePage';
 import UnifiedMailScreen from './pages/UnifiedMailScreen';
@@ -57,7 +59,7 @@ import { Ico } from './components/ui';
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
 const PERSONALIZED_KEY = 'anton-companion-personalized';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community' | 'community_chat'
+type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community' | 'community_chat' | 'missions' | 'mywork'
   // Standard-mode screens (selected when mode === 'standard')
   | 'std_mail' | 'std_thread' | 'std_calendar' | 'std_wallet' | 'std_voice' | 'std_settings';
 
@@ -232,7 +234,7 @@ export default function App() {
     const SUB_SCREENS: OrgTab[] = [
       'mail_setup', 'history', 'profile', 'settings', 'work', 'school',
       'calendar', 'mail', 'schedule', 'tasks', 'search', 'markets', 'radar', 'wallet',
-      'portals', 'community', 'community_chat',
+      'portals', 'community', 'community_chat', 'missions', 'mywork',
       'std_calendar', 'std_wallet', 'std_voice', 'std_settings',
     ];
     if (SUB_SCREENS.includes(activeTab)) { setActiveTab('home'); return 'handled'; }
@@ -358,6 +360,16 @@ export default function App() {
           onBack={() => setActiveTab('community')}
         />
       )}
+      {activeTab === 'missions' && (
+        <MissionsScreen orgId={selectedOrgId} onBack={() => setActiveTab('home')} />
+      )}
+      {activeTab === 'mywork' && (
+        <MyWorkScreen
+          orgId={selectedOrgId}
+          onBack={() => setActiveTab('home')}
+          onOpenSession={(sid) => { setSessionId(sid); setActiveTab('chat'); }}
+        />
+      )}
       {activeTab === 'history' && (
         <SessionHistoryPage
           orgId={selectedOrgId}
@@ -474,6 +486,8 @@ export default function App() {
             { id: 'markets',  icon: 'barChart',    label: 'Markets',    tint: 'var(--color-gold)' },
             { id: 'radar',    icon: 'radar',       label: 'Radar',      tint: 'var(--color-accent)' },
             { id: 'wallet',   icon: 'wallet',      label: 'Wallet',     tint: 'var(--color-text)' },
+            { id: 'missions', icon: 'sparkles',    label: 'Missions',   tint: 'var(--color-accent)' },
+            { id: 'mywork',   icon: 'briefcase',   label: 'My Work',    tint: 'var(--color-blue)' },
             { id: 'portals',  icon: 'grid',        label: 'Portals',    tint: 'var(--color-accent)' },
             { id: 'community',icon: 'user',        label: 'Community',  tint: 'var(--color-blue)' },
             { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },

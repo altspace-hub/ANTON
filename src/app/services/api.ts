@@ -197,6 +197,92 @@ export async function getOrgMorningBrief(orgId: string) {
   return res.json() as Promise<{ overdue?: unknown[]; atRisk?: unknown[]; upcoming?: unknown[] }>;
 }
 
+// ── Daily brief (AI Orchestrator) ───────────────────────────────
+export interface DailyBrief {
+  id: string;
+  period: 'heartbeat' | 'daily' | 'weekly' | 'on_demand';
+  signals_read: number;
+  proposals_count: number;
+  content: string;
+  status: 'unread' | 'read' | 'actioned' | 'dismissed';
+  created_at: string;
+}
+
+export async function getOrgDailyBrief(orgId: string): Promise<{ brief: DailyBrief | null }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/home/brief`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load brief');
+  return res.json() as Promise<{ brief: DailyBrief | null }>;
+}
+
+// ── Missions ────────────────────────────────────────────────────
+export interface MissionSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  status: 'draft' | 'briefed' | 'active' | 'paused' | 'review' | 'completed' | 'aborted';
+  task_total: number;
+  task_done: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MissionTask {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  order_index: number;
+  created_at: string;
+}
+
+export async function getOrgMissions(orgId: string): Promise<{ missions: MissionSummary[] }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/missions`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load missions');
+  return res.json() as Promise<{ missions: MissionSummary[] }>;
+}
+
+export async function getOrgMissionDetail(orgId: string, missionId: string): Promise<{
+  mission: Record<string, unknown>; tasks: MissionTask[];
+}> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/missions/${missionId}`, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load mission');
+  return res.json() as Promise<{ mission: Record<string, unknown>; tasks: MissionTask[] }>;
+}
+
+export async function missionAction(orgId: string, missionId: string, action: 'pause' | 'resume' | 'abort'): Promise<{ ok: boolean; status: string }> {
+  const res = await fetch(`${getApiBase()}/org/${orgId}/missions/${missionId}/${action}`, {
+    method: 'POST', headers: headers(),
+  });
+  if (!res.ok) throw new Error(`Failed to ${action} mission`);
+  return res.json() as Promise<{ ok: boolean; status: string }>;
+}
+
+// ── My Work (sessions browse) ───────────────────────────────────
+export interface WorkSession {
+  id: string;
+  title: string | null;
+  module_id: string | null;
+  note: string | null;
+  message_count: number | null;
+  total_tokens: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getOrgWork(orgId: string, opts?: {
+  q?: string; module?: string; since?: 'today' | 'week' | 'month' | 'all'; limit?: number;
+}): Promise<{ sessions: WorkSession[] }> {
+  const qs = new URLSearchParams();
+  if (opts?.q) qs.set('q', opts.q);
+  if (opts?.module) qs.set('module', opts.module);
+  if (opts?.since) qs.set('since', opts.since);
+  if (opts?.limit) qs.set('limit', String(opts.limit));
+  const url = `${getApiBase()}/org/${orgId}/work${qs.toString() ? `?${qs}` : ''}`;
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) throw new Error('Failed to load work');
+  return res.json() as Promise<{ sessions: WorkSession[] }>;
+}
+
 // ── Wallet ───────────────────────────────────────────────────────
 export async function getOrgWallet(orgId: string, limit = 20) {
   const res = await fetch(`${getApiBase()}/org/${orgId}/wallet?limit=${limit}`, { headers: headers() });
