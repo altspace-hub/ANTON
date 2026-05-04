@@ -19,6 +19,7 @@ import {
 import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
 import { activeServerBase, activeAuthHeaders } from '../services/instances';
 import { getIdentity } from '../services/identity';
+import { getOrgDailyBrief, type DailyBrief } from '../services/api';
 
 interface Props {
   orgId: string;
@@ -90,6 +91,8 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
   const [pending,        setPending]        = useState<Checkpoint[]>([]);
   const [sessions,       setSessions]       = useState<SessionRow[]>([]);
   const [announcements,  setAnnouncements]  = useState<Announcement[]>([]);
+  const [brief,          setBrief]          = useState<DailyBrief | null>(null);
+  const [briefExpanded,  setBriefExpanded]  = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
   const identity = getIdentity();
@@ -128,6 +131,14 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
           if (!cancelled) setAnnouncements(Array.isArray(rows) ? rows.slice(0, 3) : []);
         }
       } catch { /* secondary — announcements stay empty */ }
+
+      // AI-generated daily briefing from the orchestrator. Secondary —
+      // not every instance has the orchestrator running, and a fresh
+      // instance won't have any briefs yet.
+      try {
+        const data = await getOrgDailyBrief(orgId);
+        if (!cancelled) setBrief(data.brief);
+      } catch { /* silent — brief is optional */ }
     })();
     return () => { cancelled = true; };
   }, [orgId, reloadTick]);
@@ -171,6 +182,43 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
           <div className="mt-4">
             <ErrorPill message={loadError} onRetry={() => setReloadTick(t => t + 1)} />
           </div>
+        )}
+
+        {/* ── AI-generated daily briefing from the Orchestrator ─── */}
+        {brief && (
+          <button
+            onClick={() => setBriefExpanded(v => !v)}
+            className="mt-5 w-full rounded-[var(--radius-r3)] p-4 text-left transition active:scale-[0.99]"
+            style={{
+              background: 'var(--color-accent-soft)',
+              border: '1px solid var(--color-accent-dim)',
+            }}
+          >
+            <div className="flex items-center gap-1.5">
+              <Ico name="sparkles" color="var(--color-accent)" size={13} />
+              <span
+                className="font-mono font-bold uppercase"
+                style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              >
+                ANTON daily brief · {new Date(brief.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+              </span>
+              <span className="ml-auto" style={{ color: 'var(--color-accent)' }}>
+                <Ico name={briefExpanded ? 'chevronDown' : 'chevronRight'} size={14} />
+              </span>
+            </div>
+            <div
+              className={`mt-2 text-[13.5px] leading-relaxed ${briefExpanded ? '' : 'line-clamp-3'}`}
+              style={{ color: 'var(--color-text-body)', whiteSpace: 'pre-wrap' }}
+            >
+              {brief.content}
+            </div>
+            {(brief.signals_read > 0 || brief.proposals_count > 0) && (
+              <div className="mt-2 flex items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                {brief.signals_read > 0 && <span>{brief.signals_read} signals</span>}
+                {brief.proposals_count > 0 && <span>{brief.proposals_count} proposals</span>}
+              </div>
+            )}
+          </button>
         )}
 
         {/* ── Priority approval card (Claude Design pattern) ───── */}
@@ -236,8 +284,8 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
           <QuickActionTile
             icon="sparkles"
             label="Missions"
-            desc={pending.length > 0 ? `${pending.length} pending` : 'All clear'}
-            onClick={() => onNavigate('approvals')}
+            desc="Multi-step jobs"
+            onClick={() => onNavigate('missions')}
           />
         </div>
 

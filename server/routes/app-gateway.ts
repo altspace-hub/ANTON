@@ -1751,6 +1751,170 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
+  // GET /api/app/org/:orgId/home/brief — latest AI-generated daily briefing.
+  // Reads the most recent orchestrator_briefings row (the AI Orchestrator
+  // generates one per day on cron + any heartbeat-triggered ones in
+  // between). Returns null if the orchestrator hasn't produced one yet.
+  publicRouter.get('/org/:orgId/home/brief', appAuth, orgMember, async (_req, res) => {
+    try {
+      const row = await db.get<{
+        id: string; period: string; signals_read: number; proposals_count: number;
+        content: string; status: string; created_at: string;
+      }>(
+        `SELECT id, period, signals_read, proposals_count, content, status, created_at
+           FROM orchestrator_briefings
+          ORDER BY created_at DESC
+          LIMIT 1`
+      ).catch(() => null);
+      res.json({ brief: row ?? null });
+    } catch (err) {
+      console.error('[app-gateway] home/brief error:', err);
+      res.status(500).json({ error: 'Failed to load briefing' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/missions — active + recent missions list.
+  publicRouter.get('/org/:orgId/missions', appAuth, orgMember, async (_req, res) => {
+    try {
+      const rows = await db.all<{
+        id: string; title: string; description: string | null; status: string;
+        created_at: string; updated_at: string;
+      }>(
+        `SELECT id, title, description, status, created_at, updated_at
+           FROM missions
+          ORDER BY
+            CASE status
+              WHEN 'active' THEN 0
+              WHEN 'paused' THEN 1
+              WHEN 'review' THEN 2
+              WHEN 'briefed' THEN 3
+              WHEN 'draft' THEN 4
+              WHEN 'completed' THEN 5
+              WHEN 'aborted' THEN 6
+              ELSE 7
+            END,
+            updated_at DESC
+          LIMIT 50`
+      ).catch(() => []);
+      // Per-mission counts
+      const enriched = await Promise.all(rows.map(async m => {
+        const tc = await db.get<{ total: number; done: number }>(
+          `SELECT COUNT(*)::int AS total,
+                  COUNT(*) FILTER (WHERE status IN ('completed', 'approved'))::int AS done
+             FROM mission_tasks WHERE mission_id = $1`,
+          m.id
+        ).catch(() => ({ total: 0, done: 0 }));
+        return { ...m, task_total: tc?.total ?? 0, task_done: tc?.done ?? 0 };
+      }));
+      res.json({ missions: enriched });
+    } catch (err) {
+      console.error('[app-gateway] missions error:', err);
+      res.status(500).json({ error: 'Failed to load missions' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/missions/:missionId — single mission with tasks.
+  publicRouter.get('/org/:orgId/missions/:missionId', appAuth, orgMember, async (req, res) => {
+    try {
+      const m = await db.get(
+        `SELECT id, title, description, status, created_at, updated_at, metadata
+           FROM missions WHERE id = $1`,
+        req.params.missionId
+      );
+      if (!m) return res.status(404).json({ error: 'Mission not found' });
+      const tasks = await db.all<{
+        id: string; title: string; description: string | null; status: string;
+        order_index: number; created_at: string;
+      }>(
+        `SELECT id, title, description, status, order_index, created_at
+           FROM mission_tasks
+          WHERE mission_id = $1
+          ORDER BY order_index ASC, created_at ASC
+          LIMIT 100`,
+        req.params.missionId
+      ).catch(() => []);
+      res.json({ mission: m, tasks });
+    } catch (err) {
+      console.error('[app-gateway] mission detail error:', err);
+      res.status(500).json({ error: 'Failed to load mission' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/missions/:missionId/:action — pause/resume/abort.
+  // Server-only state transitions (no LLM cost). LLM-heavy actions
+  // (decompose, advance) stay in the desktop Pro UI.
+  publicRouter.post('/org/:orgId/missions/:missionId/:action', appAuth, orgMember, async (req, res) => {
+    try {
+      const action = req.params.action;
+      const allowed: Record<string, string> = {
+        pause: 'paused',
+        resume: 'active',
+        abort: 'aborted',
+      };
+      const newStatus = allowed[action];
+      if (!newStatus) return res.status(400).json({ error: `action must be one of ${Object.keys(allowed).join(', ')}` });
+      await db.run(
+        `UPDATE missions SET status = $1, updated_at = NOW() WHERE id = $2`,
+        newStatus, req.params.missionId
+      );
+      res.json({ ok: true, status: newStatus });
+    } catch (err) {
+      console.error('[app-gateway] mission action error:', err);
+      res.status(500).json({ error: 'Failed to update mission' });
+    }
+  });
+
+  // GET /api/app/org/:orgId/work — sessions with output (My Work browse).
+  // Mirrors the desktop MyWorkPage's fetchSessions() but companion-friendly.
+  // Filters: ?q=<text>&module=<id>&since=today|week|month|all
+  publicRouter.get('/org/:orgId/work', appAuth, orgMember, async (req, res) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
+      const moduleFilter = typeof req.query.module === 'string' ? req.query.module : '';
+      const since = typeof req.query.since === 'string' ? req.query.since : 'all';
+      const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 100);
+
+      const wheres: string[] = ['(message_count IS NULL OR message_count > 0)'];
+      const params: unknown[] = [];
+      if (q) {
+        wheres.push(`(lower(coalesce(title,'')) LIKE $${params.length + 1} OR lower(coalesce(note,'')) LIKE $${params.length + 1})`);
+        params.push(`%${q}%`);
+      }
+      if (moduleFilter) {
+        wheres.push(`module_id = $${params.length + 1}`);
+        params.push(moduleFilter);
+      }
+      if (since !== 'all') {
+        const intervalMap: Record<string, string> = {
+          today: '1 day',
+          week:  '7 days',
+          month: '30 days',
+        };
+        const interval = intervalMap[since];
+        if (interval) {
+          wheres.push(`updated_at > NOW() - INTERVAL '${interval}'`);
+        }
+      }
+      const whereClause = wheres.length ? 'WHERE ' + wheres.join(' AND ') : '';
+
+      const rows = await db.all<{
+        id: string; title: string | null; module_id: string | null; note: string | null;
+        message_count: number | null; total_tokens: number | null;
+        created_at: string; updated_at: string;
+      }>(
+        `SELECT id, title, module_id, note, message_count, total_tokens, created_at, updated_at
+           FROM sessions ${whereClause}
+          ORDER BY updated_at DESC NULLS LAST, created_at DESC
+          LIMIT ${limit}`,
+        ...params
+      ).catch(() => []);
+      res.json({ sessions: rows, query: q, module: moduleFilter, since });
+    } catch (err) {
+      console.error('[app-gateway] work error:', err);
+      res.status(500).json({ error: 'Failed to load work history' });
+    }
+  });
+
   // GET /api/app/org/:orgId/community/qr — your QR data for sharing.
   // Companion app users show this so peers can scan it on their phones.
   publicRouter.get('/org/:orgId/community/qr', appAuth, orgMember, async (_req, res) => {
