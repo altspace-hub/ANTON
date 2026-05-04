@@ -6,8 +6,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getOrgTasks, createOrgTask } from '../services/api';
+import { getOrgTasks, createOrgTask, patchOrgTask } from '../services/api';
 import { Btn, Ico, Pill, Spinner } from '../components/ui';
+import { tick, success as hapticSuccess, error as hapticError } from '../services/haptics';
 
 interface Props { orgId: string; }
 
@@ -26,6 +27,24 @@ export default function TaskScreen({ orgId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [newTask, setNewTask] = useState('');
   const [adding, setAdding] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  async function toggle(id: string, wasDone: boolean) {
+    setTogglingId(id);
+    void tick();
+    const newStatus = wasDone ? 'intake' : 'completed';
+    // Optimistic UI
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    try {
+      await patchOrgTask(orgId, id, { status: newStatus });
+      void hapticSuccess();
+    } catch {
+      // Revert on failure
+      void hapticError();
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, status: wasDone ? 'completed' : 'intake' } : t));
+    }
+    setTogglingId(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -142,6 +161,7 @@ export default function TaskScreen({ orgId }: Props) {
             >
               {tasks.map((t, i) => {
                 const done = t.status === 'completed';
+                const busy = togglingId === t.id;
                 return (
                   <div
                     key={t.id}
@@ -151,8 +171,11 @@ export default function TaskScreen({ orgId }: Props) {
                       opacity: done ? 0.55 : 1,
                     }}
                   >
-                    <span
-                      className="mt-0.5 flex flex-shrink-0 items-center justify-center rounded-full"
+                    <button
+                      onClick={() => void toggle(t.id, done)}
+                      disabled={busy}
+                      aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
+                      className="mt-0.5 flex flex-shrink-0 items-center justify-center rounded-full transition active:scale-90 disabled:opacity-50"
                       style={{
                         width: 20, height: 20,
                         background: done ? 'var(--color-green)' : 'transparent',
@@ -160,8 +183,9 @@ export default function TaskScreen({ orgId }: Props) {
                         color: 'var(--color-accent-fg)',
                       }}
                     >
-                      {done && <Ico name="check" size={12} />}
-                    </span>
+                      {done && !busy && <Ico name="check" size={12} />}
+                      {busy && <Spinner size="xs" tone={done ? 'on-accent' : 'accent'} />}
+                    </button>
                     <div className="min-w-0 flex-1">
                       <p
                         className="text-[14px] leading-tight"

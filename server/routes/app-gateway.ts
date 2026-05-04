@@ -1751,6 +1751,102 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
+  // POST /api/app/org/:orgId/deadlines — quick-add a deadline from the
+  // companion app. Mirrors the desktop's POST /api/deadlines but only
+  // accepts the minimal fields a phone user can comfortably enter.
+  publicRouter.post('/org/:orgId/deadlines', appAuth, orgMember, async (req, res) => {
+    try {
+      const { title, due_date, priority, description } = req.body as {
+        title?: string; due_date?: string; priority?: 'low' | 'medium' | 'high' | 'critical'; description?: string;
+      };
+      if (!title || !title.trim()) return res.status(400).json({ error: 'title required' });
+      if (!due_date) return res.status(400).json({ error: 'due_date required (ISO 8601)' });
+      const { randomUUID } = await import('crypto');
+      const id = randomUUID();
+      await db.run(
+        `INSERT INTO deadlines (id, title, description, due_date, source_type, priority, owner_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'manual', $5, 'default', NOW(), NOW())`,
+        id, title.trim(), description?.trim() || null, due_date, priority || 'medium'
+      );
+      const row = await db.get(
+        `SELECT id, title, description, due_date, priority, status, created_at FROM deadlines WHERE id = $1`,
+        id
+      );
+      res.status(201).json({ deadline: row });
+    } catch (err) {
+      console.error('[app-gateway] deadline create error:', err);
+      res.status(500).json({ error: 'Failed to create deadline' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/deadlines/:id/complete — mark a deadline done.
+  publicRouter.post('/org/:orgId/deadlines/:id/complete', appAuth, orgMember, async (req, res) => {
+    try {
+      await db.run(
+        `UPDATE deadlines SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = $1`,
+        req.params.id
+      );
+      res.json({ ok: true, status: 'completed' });
+    } catch (err) {
+      console.error('[app-gateway] deadline complete error:', err);
+      res.status(500).json({ error: 'Failed to complete deadline' });
+    }
+  });
+
+  // PATCH /api/app/org/:orgId/tasks/:id — mark complete / rename.
+  publicRouter.patch('/org/:orgId/tasks/:id', appAuth, orgMember, async (req, res) => {
+    try {
+      const { status, title, description } = req.body as {
+        status?: string; title?: string; description?: string;
+      };
+      const sets: string[] = [];
+      const params: unknown[] = [];
+      if (status) { params.push(status); sets.push(`status = $${params.length}`); }
+      if (title)  { params.push(title.trim()); sets.push(`title = $${params.length}`); }
+      if (description !== undefined) { params.push(description); sets.push(`description = $${params.length}`); }
+      if (sets.length === 0) return res.status(400).json({ error: 'no fields to update' });
+      // Toggle completed_at when transitioning to completed
+      if (status === 'completed') sets.push(`completed_at = NOW()`);
+      sets.push(`updated_at = NOW()`);
+      params.push(req.params.id);
+      await db.run(
+        `UPDATE anton_tasks SET ${sets.join(', ')} WHERE id = $${params.length} AND user_id = 'default'`,
+        ...params
+      );
+      const task = await db.get(
+        `SELECT id, title, description, status, priority, due_date, created_at, updated_at, completed_at
+           FROM anton_tasks WHERE id = $1`,
+        req.params.id
+      );
+      res.json({ task });
+    } catch (err) {
+      console.error('[app-gateway] task patch error:', err);
+      res.status(500).json({ error: 'Failed to update task' });
+    }
+  });
+
+  // PATCH /api/app/org/:orgId/sessions/:id — rename or annotate a session.
+  publicRouter.patch('/org/:orgId/sessions/:id', appAuth, orgMember, async (req, res) => {
+    try {
+      const { title, note } = req.body as { title?: string; note?: string };
+      const sets: string[] = [];
+      const params: unknown[] = [];
+      if (title !== undefined) { params.push(title.trim()); sets.push(`title = $${params.length}`); }
+      if (note  !== undefined) { params.push(note); sets.push(`note = $${params.length}`); }
+      if (sets.length === 0) return res.status(400).json({ error: 'no fields to update' });
+      sets.push(`updated_at = NOW()`);
+      params.push(req.params.id);
+      await db.run(
+        `UPDATE sessions SET ${sets.join(', ')} WHERE id = $${params.length}`,
+        ...params
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[app-gateway] session patch error:', err);
+      res.status(500).json({ error: 'Failed to update session' });
+    }
+  });
+
   // GET /api/app/org/:orgId/home/brief — latest AI-generated daily briefing.
   // Reads the most recent orchestrator_briefings row (the AI Orchestrator
   // generates one per day on cron + any heartbeat-triggered ones in
