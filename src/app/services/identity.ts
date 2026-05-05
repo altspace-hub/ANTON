@@ -23,6 +23,7 @@
 import * as ed25519 from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha512';
 import { sha256 } from '@noble/hashes/sha256';
+import { edwardsToMontgomeryPriv, edwardsToMontgomeryPub } from '@noble/curves/ed25519';
 import { setSecure, getSecure, removeSecure } from './secure-store';
 
 // ed25519 v2 needs SHA-512 wired explicitly for sync paths
@@ -128,6 +129,35 @@ export async function signBytes(bytes: Uint8Array): Promise<string> {
   if (!priv) throw new Error('No identity key on this device');
   const sig = await ed25519.signAsync(bytes, priv);
   return bytesToHex(sig);
+}
+
+// ── X25519 keypair derivation (Phase 5 — mesh transport) ───────────────
+//
+// Mesh transport (Noise IK initiator) needs an X25519 keypair on the phone
+// that's deterministically derived from the existing Ed25519 device key —
+// so the phone has ONE long-term identity, not two unrelated ones. The
+// derivation matches libsodium's `crypto_sign_ed25519_*_to_curve25519`.
+
+export interface X25519Keypair {
+  publicKey: Uint8Array;   // 32 bytes
+  privateKey: Uint8Array;  // 32 bytes
+}
+
+/**
+ * Get the X25519 keypair derived from the device's Ed25519 identity. Throws
+ * if the device has no Ed25519 keypair stored (caller must set up identity
+ * first; for legacy register-simple users without keys, mesh isn't supported).
+ */
+export async function getDeviceX25519Keypair(): Promise<X25519Keypair> {
+  const ed_priv = await loadPrivateKey();
+  if (!ed_priv) throw new Error('No Ed25519 device key — mesh transport requires identity setup');
+  const id = getIdentity();
+  if (!id) throw new Error('No device identity record');
+  const ed_pub = hexToBytes(id.publicKeyHex);
+  return {
+    publicKey: edwardsToMontgomeryPub(ed_pub),
+    privateKey: edwardsToMontgomeryPriv(ed_priv),
+  };
 }
 
 /** Verify a signature against a message — used in tests + envelope verification. */

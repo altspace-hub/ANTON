@@ -12,12 +12,27 @@
 
 import { setSecure, getSecure, removeSecure } from './secure-store';
 
+/**
+ * How this paired instance is reached. See docs/ANTON_MESH_SPEC.md.
+ *   - 'public_https': direct HTTPS to server_base / endpoints (current default)
+ *   - 'mesh':         Noise-IK over relay (Phase 4+; field accepted earlier so
+ *                     records survive a future schema flip without re-pairing)
+ *
+ * Treat absent / unknown as 'public_https' — every existing pairing pre-dates
+ * this field and must continue to work without migration.
+ */
+export type TransportKind = 'public_https' | 'mesh';
+
 export interface Instance {
   id: string;                       // local-only uuid
   display_name: string;             // user-visible name
   contact_hash: string | null;      // ANTON-XXXX-XXXX-XXXX-XXXX
-  server_base: string;              // canonical https / lan URL the app talks to
+  server_base: string;              // canonical https / lan URL the app talks to (public_https only)
   endpoints: { lan?: string; wan?: string; mdns_name?: string };
+  /** Which transport adapter the app uses for this instance. Default 'public_https'. */
+  transport?: TransportKind;
+  /** Ranked WSS relay URLs. Required when transport === 'mesh', ignored otherwise. */
+  relay_endpoints?: string[];
   device_id: string;                // server-issued device id
   pubkey_pinned: string;            // instance Ed25519 pubkey we trust
   cert_fp_pinned: string | null;    // TLS cert fingerprint we trust
@@ -29,6 +44,12 @@ export interface Instance {
   last_transport: 'lan' | 'wan' | null;
   notification_categories: string[]; // ['approval', 'radar', 'mission_complete']
   default_voice_language: string | null;
+}
+
+/** Resolve the effective transport for an Instance, defaulting to 'public_https'
+ *  when the field is absent on a pre-mesh-era pairing. */
+export function effectiveTransport(inst: Instance | null): TransportKind {
+  return inst?.transport === 'mesh' ? 'mesh' : 'public_https';
 }
 
 const KEY_INSTANCES = 'anton-companion-instances';
@@ -114,6 +135,8 @@ export async function addInstance(input: Omit<Instance, 'id' | 'paired_at' | 'la
     contact_hash: input.contact_hash,
     server_base: input.server_base,
     endpoints: input.endpoints,
+    transport: input.transport,
+    relay_endpoints: input.relay_endpoints,
     device_id: input.device_id,
     pubkey_pinned: input.pubkey_pinned,
     cert_fp_pinned: input.cert_fp_pinned,
