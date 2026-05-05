@@ -50,14 +50,12 @@ const config: CapacitorConfig = {
     // entitlements / strings.xml — no Capacitor-side options needed.
   },
   android: {
-    // Allow the HTTPS WebView to fetch http://lan-ip:port/api/...
-    // The network_security_config debug-overrides allow cleartext for
-    // dev builds, but the WebView's mixed-content guard is a separate
-    // layer — without this, fetch() to plain-HTTP LAN servers fails
-    // silently with no console hint. Production deployments should serve
-    // the ANTON instance over HTTPS (reverse-proxy or APP_GATEWAY_PUBLIC_URL=https://...)
-    // and can flip this back to false.
-    allowMixedContent: true,
+    // Phase 6 hardening — HTTPS-only. With the ANTON Mesh transport
+    // (docs/ANTON_MESH_SPEC.md) every paired instance is reached over
+    // wss:// through a relay; legacy public_https pairings should always
+    // use https:// against a real cert. Cleartext from the WebView is
+    // blocked at this layer AND at network_security_config.xml.
+    allowMixedContent: false,
     backgroundColor: '#F5F3EF',
     // Capacitor 8 default min/target SDKs are overridden in
     // android/variables.gradle (minSdk 26, targetSdk 36).

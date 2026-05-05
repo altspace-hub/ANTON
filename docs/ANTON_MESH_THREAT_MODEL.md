@@ -106,9 +106,12 @@ Anything explicitly out of scope is listed in §3 below.
 ### T11. Downgrade attack to plain HTTP / cleartext WebSocket
 
 - **Vector:** Active attacker tricks the phone into talking to a plain-HTTP impostor instead of the mesh relay, or supplies a `ws://` URL in a forged QR.
-- **Mitigation:** Capacitor `androidScheme: 'https'`, Android `network_security_config` blocks cleartext to non-localhost. Spec §1.3 requires phones to **reject pairing QRs whose `relay_endpoints` contain any non-`wss://` URL** at parse time — the relay list is validated before being persisted into the Instance record.
-- **Status:** Spec-locked in Phase 1; enforced in code in Phase 4 (phone-side mesh transport) + Phase 6 (network_security_config tightening).
-- **Test:** Phase 6 — feed a QR with a `ws://` relay; phone rejects pairing with a clear error.
+- **Mitigation:** Three layers, all closed in code:
+  1. Capacitor `androidScheme: 'https'` + `allowMixedContent: false` (Phase 6) — WebView refuses any HTTP fetch from the HTTPS-served app shell.
+  2. Android `network_security_config.xml` (Phase 6) — `cleartextTrafficPermitted=false` everywhere; only `localhost` / `127.0.0.1` / `10.0.2.2` whitelisted for dev `adb reverse` flows. The previous broken RFC1918 `<domain>` entries (which Android does NOT CIDR-match) were removed.
+  3. Phone-side QR validator (Phase 5.3) rejects any `relay_endpoint` whose URL fails `wss://` canonicalization — verified by 8 test cases (`ws://`, `http://`, `https://`, path, query, fragment, userinfo, malformed).
+- **Status:** **Closed** by the three layers above. Tested in `tests/services/mesh-validate.test.ts` (relay URLs) and the Android network_security_config rejects mixed traffic at the OS level.
+- **Test:** `tests/services/mesh-validate.test.ts > rejects each invalid relay URL form` — 8 cases × 1 explicit "one bad apple in the list" case.
 
 ### T12. Compromised relay correlates `instance_id` with operator identity
 
@@ -177,6 +180,36 @@ Phase 1 (with wire format): expert review required before merge.
 Phase 5 (default switch enabling): final security sign-off required.
 Phase 6 (hardening): external pen-test or paired senior review.
 
+### 4.1 Phase 6 status (2026-05-05)
+
+**Closed by automated regression tests in this commit:**
+
+| Threat | What proves it | Test file |
+|---|---|---|
+| T2 (relay tampering) | Faithful byte forwarding + AEAD detection | `relay/tests/threats/T02-tampering.test.ts` |
+| T6 (cross-tenant leak) | 20-pair concurrent isolation; forged session_id rejected | `relay/tests/threats/T06-cross-tenant.test.ts` |
+| T11 (cleartext downgrade) | Phone-side QR validator + Android NSC + Capacitor mixed-content | `tests/services/mesh-validate.test.ts` |
+| T14 (instance squatting) | Each of §3.2's 6 verification steps individually fails | `relay/tests/threats/T14-instance-squatting.test.ts` |
+| T16 (envelope misrouting) | from_role byte enforcement; non-member rejection | `relay/tests/threats/T16-envelope-misrouting.test.ts` |
+| T18 (IPv6 /64 bypass) | Bucket aggregation + rate-limit wiring | `relay/tests/threats/T18-ipv6-bypass.test.ts` |
+| Parser robustness | 35,000+ random byte sequences across all parsers — zero TypeError/RangeError crashes | `relay/tests/fuzz.test.ts`, `tests/services/mesh-fuzz.test.ts` |
+
+**Open / accepted:**
+
+| Threat | Why open | Plan |
+|---|---|---|
+| T8 (lost / rotated instance privkey) | Rotation procedure is spec'd (§7.1) but no rotation drill yet | Schedule end-to-end rotation drill before Phase 8. |
+| T15 (phone-static-key leak) | Documented limitation of Noise IK | Noise_IKpsk2 / XX migration tracked as v0.2 §12.3 item 12. |
+| T10, T12 (relay metadata correlation) | Out of scope by design | Onion routing tracked as v0.2 §12.3 item 11. |
+
+**Required before Phase 8 (default-switch on):**
+
+1. **External crypto review of the implemented Noise integration.** The spec sign-off is paper sign-off; live-code review is separate. Recommended reviewer: someone who's audited a Noise-based protocol before (snow / cacophony maintainers, or a senior security engineer with Noise spec familiarity).
+2. **End-to-end rotation drill** for T8.
+3. **Penetration test** — try every documented threat against a deployed relay + paired phone with hostile-relay-side tooling.
+
+Until those three close, mesh transport remains opt-in (operators must set `transport: 'mesh'` in `startEnrollment`); Phase 8 — flipping the default — does NOT happen on automated-test-only confidence.
+
 ---
 
 ## 5 · Change log
@@ -184,3 +217,4 @@ Phase 6 (hardening): external pen-test or paired senior review.
 - **2026-05-05** — Initial draft. Phase 0 scaffolding.
 - **2026-05-05** — Phase 1 review pass: T11 sharpened with the `wss://`-only requirement explicitly bound to the spec; added T13 (targeted instance_id enumeration — out of scope, documented assumption); added T14 (instance squatting at the relay — closed by §3.2 verification steps 1–5). No threat status regressions.
 - **2026-05-05** — Phase 1.8 expert-review hardening: T14 verification step list updated (§3.2 expanded from 5 to 6 steps); added T15 (phone-static-key leakage to anyone with instance pubkey — accepted in v0.1, IKpsk2/XX deferred to v0.2); T16 (relay misrouting closed by ENVELOPE direction tag); T17 (rotation advisory replay closed by epoch + not_after); T18 (IPv6 rate-limit bypass closed by /64 bucketing). Scope of v0.1 narrowed to household + NGO + self-hosting SME — mid-firm and enterprise threats are deferred to a v0.2 enterprise-profile threat model rather than papered over.
+- **2026-05-05** — Phase 6 hardening: T11 (cleartext downgrade) sharpened with three layered defences (Capacitor `allowMixedContent: false`, Android `network_security_config` with cleartext blocked except localhost/emulator, phone-side QR validator). Removed the broken RFC1918 `<domain>` entries from network_security_config (they were dead weight — Android `<domain>` doesn't CIDR-match). Added a fuzz suite covering all parsers — 35k+ random inputs, zero TypeError/RangeError crashes. Phase 6 sign-off section (§4.1) explicitly lists what's closed by tests vs what still requires HUMAN review (external crypto audit, rotation drill, pen test) before Phase 8 default-switch.
