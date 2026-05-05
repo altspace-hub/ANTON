@@ -46,6 +46,12 @@ export interface EnrollmentPackage {
   instance_display_name: string | null;
   /** True when the issuer required an out-of-band confirmation code */
   requires_confirmation_code?: boolean;
+  /** Phase 5 mesh fields — present iff the operator chose transport=mesh. */
+  transport?: 'public_https' | 'mesh';
+  relay_endpoints?: string[];
+  instance_ed_pk?: string;        // 64 hex chars
+  instance_x_pk?: string;         // 64 hex chars
+  binding_sig?: string;           // 128 hex chars
 }
 
 export interface EnrollmentResult {

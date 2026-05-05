@@ -1,0 +1,52 @@
+# ANTON Mesh Relay — minimal docker-compose for self-hosters.
+#
+# Variations:
+#   1. Behind a reverse proxy (Caddy / nginx / Cloudflare) that handles TLS:
+#        Set RELAY_INSECURE=1, omit cert mount, expose port behind proxy.
+#   2. Direct TLS termination at the relay:
+#        Mount cert + key, set RELAY_TLS_CERT / RELAY_TLS_KEY paths.
+#
+# Edit the .env file (not committed) for secrets and overrides.
+
+services:
+  relay:
+    build: .
+    image: anton-mesh-relay:0.1.0
+    container_name: anton-mesh-relay
+    restart: unless-stopped
+    environment:
+      # REQUIRED — canonical URL phones use to dial this relay.
+      # Mesh handshakes verify this matches; mismatch = MAC_FAIL.
+      RELAY_URL: ${RELAY_URL:?required}
+      RELAY_PORT: ${RELAY_PORT:-8443}
+      RELAY_HOST: 0.0.0.0
+      # Set to 1 if a reverse proxy in front handles TLS.
+      RELAY_INSECURE: ${RELAY_INSECURE:-}
+      # Direct-TLS mode: paths INSIDE the container.
+      RELAY_TLS_CERT: ${RELAY_TLS_CERT:-}
+      RELAY_TLS_KEY: ${RELAY_TLS_KEY:-}
+      # Per-instance concurrent-session ceiling (spec §3.10).
+      RELAY_MAX_SESSIONS_PER_INSTANCE: ${RELAY_MAX_SESSIONS_PER_INSTANCE:-32}
+      # Audit log destination (path inside container or stdout).
+      RELAY_AUDIT_LOG_PATH: ${RELAY_AUDIT_LOG_PATH:-}
+    ports:
+      - "${RELAY_PORT:-8443}:${RELAY_PORT:-8443}"
+    volumes:
+      # Mount certs read-only when running direct-TLS mode.
+      - ${RELAY_CERT_DIR:-/dev/null}:/certs:ro
+      # Persist audit log if RELAY_AUDIT_LOG_PATH points inside this dir.
+      - ./audit:/app/audit
+    # Read-only root filesystem — defense-in-depth. The container has no
+    # reason to write anywhere except the explicitly-mounted audit volume.
+    read_only: true
+    # tmpfs for any process scratch space (Node module load, /tmp).
+    tmpfs:
+      - /tmp:size=64M
+    # Bound resources so a malicious peer cannot exhaust the host.
+    mem_limit: 512m
+    cpus: 1.0
+    # Default capabilities are dropped except for what's strictly needed.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

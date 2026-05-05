@@ -16,7 +16,7 @@ export async function sendQueryREST(
   orgId: string,
   message: string,
   callbacks: StreamCallbacks,
-  options?: { sessionId?: string; outputLanguage?: string }
+  options?: { sessionId?: string; outputLanguage?: string; moduleId?: string; model?: string }
 ): Promise<void> {
   const token = getSessionToken();
   if (!token) { callbacks.onError?.('Not authenticated'); return; }
@@ -24,8 +24,8 @@ export async function sendQueryREST(
   try {
     callbacks.onStart?.();
 
-    const serverBase = localStorage.getItem('anton-companion-server') || '';
-    const res = await fetch(`${serverBase}/api/app/org/${orgId}/query-sync`, {
+    const { clientFetch } = await import('./api');
+    const res = await clientFetch(`/org/${orgId}/query-sync`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,6 +35,8 @@ export async function sendQueryREST(
         message,
         sessionId: options?.sessionId,
         outputLanguage: options?.outputLanguage,
+        moduleId: options?.moduleId,
+        model: options?.model,
       }),
     });
 

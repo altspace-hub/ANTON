@@ -158,19 +158,44 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       return;
     }
     setStatus(`Pairing with ${pkg.instance_display_name ?? 'instance'}…`);
+
+    // Phase 5.3 — when the QR specifies transport='mesh', validate the
+    // (ed_pk, x_pk, binding_sig) triple + canonicalize relay URLs BEFORE
+    // we sign the completion. If validation fails, the package is forged
+    // or corrupted and we MUST refuse to pair with it.
+    let meshValidated: { pubkeyPinnedJson: string; relayEndpoints: string[] } | null = null;
+    if (pkg.transport === 'mesh') {
+      const { validateMeshPackage, MeshValidationError } = await import('../services/mesh-validate');
+      try {
+        meshValidated = validateMeshPackage(pkg);
+      } catch (err) {
+        if (err instanceof MeshValidationError) {
+          setStatus(`Pairing refused — ${err.reason}`);
+        } else {
+          setStatus(`Pairing refused — invalid mesh package`);
+        }
+        return;
+      }
+    }
+
     const result = await completeEnrollment(server, pkg, {
       preferred_language: navigator.language?.slice(0, 2) || 'en',
       device_name: displayName || undefined,
       confirmation_code: confirmationCode.trim() || undefined,
     });
-    // Persist as a paired instance
+    // Persist as a paired instance. For mesh pairings, the pinned pubkey
+    // is the JSON triple {ed, x, binding_sig} — meshTransportForInstance
+    // parses it on first .fetch(). For public_https, keep the legacy
+    // single-pubkey form.
     await addInstance({
       display_name: pkg.instance_display_name ?? 'ANTON',
       contact_hash: pkg.instance_contact_hash,
       server_base: server,
       endpoints: pkg.endpoints,
+      transport: pkg.transport,
+      relay_endpoints: meshValidated?.relayEndpoints,
       device_id: result.device_id,
-      pubkey_pinned: pkg.instance_pubkey,
+      pubkey_pinned: meshValidated?.pubkeyPinnedJson ?? pkg.instance_pubkey,
       cert_fp_pinned: pkg.instance_cert_fp,
       org: result.org,
       session_token: result.session_token,

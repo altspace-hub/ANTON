@@ -24,12 +24,31 @@ export interface EnrollmentEndpoints {
   mdns_name?: string;
 }
 
+/**
+ * How the Companion App should reach the instance. See docs/ANTON_MESH_SPEC.md.
+ *   - 'public_https': direct HTTPS to endpoints.wan / endpoints.lan (current default)
+ *   - 'mesh':         Noise-IK over relay (Phase 4+; field accepted earlier for forward-compat)
+ *
+ * Absent / null is treated as 'public_https' everywhere — existing pairings keep working.
+ */
+export type TransportKind = 'public_https' | 'mesh';
+
 export interface EnrollmentPackage {
   token: string;
   nonce: string;
   instance_pubkey: string;
   instance_cert_fp: string | null;
   endpoints: EnrollmentEndpoints;
+  /** Forward-compat: which transport adapter the device should use. Default 'public_https'. */
+  transport?: TransportKind;
+  /** Required when transport === 'mesh'. Ranked WSS relay URLs the device tries in order. */
+  relay_endpoints?: string[];
+  /** Mesh-only (§8): raw 32-byte Ed25519 pubkey hex. Pinned by the phone alongside instance_x_pk. */
+  instance_ed_pk?: string;
+  /** Mesh-only (§8): raw 32-byte X25519 pubkey hex (= ed_pk_to_curve25519(ed_pk)). */
+  instance_x_pk?: string;
+  /** Mesh-only (§8.1): 64-byte Ed25519 sig over (BINDING_DOMAIN || ed_pk || x_pk). */
+  binding_sig?: string;
   intended_user_id: string | null;
   org_id: string | null;
   intended_role: string | null;
@@ -210,6 +229,39 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     return getOrCreateInstanceIdentity();   // re-read with the new row
   }
 
+  // ── Mesh-format identity cache (Phase 5.1) ──────────────────────────
+
+  async function loadCachedMeshFields(): Promise<{ ed_pk: string; x_pk: string; binding_sig: string } | null> {
+    type Row = { ed25519_pubkey_raw: string | null; x25519_pubkey: string | null; binding_sig: string | null };
+    const row = await db.get<Row>(
+      `SELECT ed25519_pubkey_raw, x25519_pubkey, binding_sig
+         FROM instance_identity WHERE singleton = 'singleton'`,
+    );
+    if (!row || !row.ed25519_pubkey_raw || !row.x25519_pubkey || !row.binding_sig) return null;
+    return { ed_pk: row.ed25519_pubkey_raw, x_pk: row.x25519_pubkey, binding_sig: row.binding_sig };
+  }
+
+  async function persistMeshFields(m: import('./mesh/identity.js').MeshIdentity): Promise<void> {
+    // Encrypt the X25519 privkey with the same KEK used for Ed25519.
+    const enc = encryptPrivkey(m.x25519PrivkeyHex);
+    await db.run(
+      `UPDATE instance_identity SET
+         ed25519_pubkey_raw = ?,
+         x25519_pubkey = ?,
+         x25519_privkey_encrypted = ?,
+         x25519_privkey_iv = ?,
+         binding_sig = ?,
+         mesh_instance_id = ?
+       WHERE singleton = 'singleton'`,
+      m.ed25519PubkeyHex,
+      m.x25519PubkeyHex,
+      enc?.encrypted ?? null,
+      enc?.iv ?? null,
+      m.bindingSigHex,
+      m.instanceIdHex,
+    );
+  }
+
   /** Sign a payload with the instance's Ed25519 privkey. */
   async function signWithInstanceKey(payload: string): Promise<string> {
     const id = await getOrCreateInstanceIdentity();
@@ -238,6 +290,11 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     display_name_hint?: string | null;
     language_hint?: string | null;
     endpoints: EnrollmentEndpoints;
+    /** Optional. When set, baked into the QR so the device knows which
+     *  transport adapter to use. Omit ⇒ legacy public_https path. */
+    transport?: TransportKind;
+    /** Required when transport === 'mesh'. Ignored otherwise. */
+    relay_endpoints?: string[];
     issued_by_user_id: string;
     /** Defaults: TRUE when intended_user_id is set (binding intent ⇒ OOB
      *  confirmation), FALSE for self-serve enrollments. */
@@ -251,13 +308,50 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     const wantCode = input.require_confirmation_code ?? !!input.intended_user_id;
     const code = wantCode ? makeConfirmationCode() : null;
 
+    // Mesh transport: pull relay endpoints from caller, then env, then fail.
+    // ANTON_MESH_RELAYS is comma-separated WSS URLs (the operator sets this
+    // once when configuring the instance — same value used by the dialer).
+    let relayEndpoints = input.relay_endpoints;
+    if (input.transport === 'mesh' && (!relayEndpoints || relayEndpoints.length === 0)) {
+      const envRelays = (process.env.ANTON_MESH_RELAYS ?? '')
+        .split(',').map(s => s.trim()).filter(s => s.length > 0);
+      if (envRelays.length > 0) relayEndpoints = envRelays;
+    }
+    if (input.transport === 'mesh' && (!relayEndpoints || relayEndpoints.length === 0)) {
+      throw new Error('mesh transport requires at least one relay endpoint (set ANTON_MESH_RELAYS or pass relay_endpoints)');
+    }
+    const relayJson = relayEndpoints && relayEndpoints.length > 0
+      ? JSON.stringify(relayEndpoints)
+      : null;
+
+    // Mesh transport: derive the (ed_pk, x_pk, binding_sig) triple from the
+    // existing Ed25519 identity. Cached on the instance_identity row.
+    let meshFields: { ed_pk: string; x_pk: string; binding_sig: string } | null = null;
+    if (input.transport === 'mesh') {
+      const cached = await loadCachedMeshFields();
+      if (cached) {
+        meshFields = cached;
+      } else {
+        const { rawFromDerKeypair, deriveMeshIdentity } = await import('./mesh/identity.js');
+        const raw = rawFromDerKeypair(identity.pubkey, identity.privkey);
+        const m = deriveMeshIdentity(raw.ed25519PubkeyHex, raw.ed25519PrivkeyHex);
+        await persistMeshFields(m);
+        meshFields = {
+          ed_pk: m.ed25519PubkeyHex,
+          x_pk: m.x25519PubkeyHex,
+          binding_sig: m.bindingSigHex,
+        };
+      }
+    }
+
     await db.run(
       `INSERT INTO app_enrollment_tokens
          (token, nonce, instance_pubkey, instance_cert_fp, endpoints,
           intended_user_id, org_id, intended_role,
           display_name_hint, language_hint,
-          expires_at, created_by_user_id, confirmation_code)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          expires_at, created_by_user_id, confirmation_code,
+          transport, relay_endpoints)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       token, nonce, identity.pubkey, identity.cert_fingerprint,
       JSON.stringify(input.endpoints),
       input.intended_user_id ?? null,
@@ -266,6 +360,7 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       input.display_name_hint ?? null,
       input.language_hint ?? null,
       expiresAt, input.issued_by_user_id, code,
+      input.transport ?? null, relayJson,
     );
 
     return {
@@ -273,6 +368,11 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       instance_pubkey: identity.pubkey,
       instance_cert_fp: identity.cert_fingerprint,
       endpoints: input.endpoints,
+      transport: input.transport,
+      relay_endpoints: relayEndpoints,
+      instance_ed_pk: meshFields?.ed_pk,
+      instance_x_pk: meshFields?.x_pk,
+      binding_sig: meshFields?.binding_sig,
       intended_user_id: input.intended_user_id ?? null,
       org_id: input.org_id ?? null,
       intended_role: input.intended_role ?? 'member',
@@ -295,12 +395,14 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
       intended_role: string | null; display_name_hint: string | null;
       language_hint: string | null; expires_at: string; used_at: string | null;
       confirmation_code: string | null;
+      transport: string | null; relay_endpoints: string | null;
     };
     const row = await db.get<Row>(
       `SELECT token, nonce, instance_pubkey, instance_cert_fp, endpoints,
               intended_user_id, org_id, intended_role,
               display_name_hint, language_hint, expires_at, used_at,
-              confirmation_code
+              confirmation_code,
+              transport, relay_endpoints
          FROM app_enrollment_tokens WHERE token = ?`,
       token,
     );
@@ -308,12 +410,35 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     if (row.used_at) return null;
     if (new Date(row.expires_at) < new Date()) return null;
     const identity = await getOrCreateInstanceIdentity();
+    // Parse relay_endpoints defensively — bad JSON should not 500 the
+    // pairing flow; treat it as "no relays" so the device falls back to
+    // public_https. We log nothing because the row is user-influenced.
+    let relayEndpoints: string[] | undefined;
+    if (row.relay_endpoints) {
+      try {
+        const parsed = JSON.parse(row.relay_endpoints);
+        if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string')) {
+          relayEndpoints = parsed;
+        }
+      } catch { /* ignore — leave undefined */ }
+    }
+    const transport: TransportKind | undefined =
+      row.transport === 'mesh' || row.transport === 'public_https' ? row.transport : undefined;
+    // For mesh pairings, surface the cached (ed_pk, x_pk, binding_sig) triple
+    // so the phone can pin them at QR-scan time. Skipped for public_https.
+    const meshFields = transport === 'mesh' ? await loadCachedMeshFields() : null;
+
     return {
       token: row.token,
       nonce: row.nonce,
       instance_pubkey: row.instance_pubkey,
       instance_cert_fp: row.instance_cert_fp,
       endpoints: typeof row.endpoints === 'string' ? JSON.parse(row.endpoints) : (row.endpoints as EnrollmentEndpoints),
+      transport,
+      relay_endpoints: relayEndpoints,
+      instance_ed_pk: meshFields?.ed_pk,
+      instance_x_pk: meshFields?.x_pk,
+      binding_sig: meshFields?.binding_sig,
       intended_user_id: row.intended_user_id,
       org_id: row.org_id,
       intended_role: row.intended_role,
