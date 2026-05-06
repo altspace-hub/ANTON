@@ -129,7 +129,7 @@ const ORG_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-const TABS = ['Organisations', 'Intents', 'Invitations', 'Users', 'Analytics'] as const;
+const TABS = ['Organisations', 'Intents', 'Pair Device', 'Invitations', 'Users', 'Analytics'] as const;
 
 export default function AppGatewayPage() {
   const [tab, setTab] = useState<typeof TABS[number]>('Organisations');
@@ -208,6 +208,7 @@ export default function AppGatewayPage() {
       {/* Tab Content */}
       {tab === 'Organisations' && <OrgsTab orgs={orgs} onRefresh={loadOrgs} />}
       {tab === 'Intents' && selectedOrgId && <IntentsTab orgId={selectedOrgId} />}
+      {tab === 'Pair Device' && selectedOrgId && <PairDeviceTab orgId={selectedOrgId} />}
       {tab === 'Invitations' && selectedOrgId && <InvitationsTab orgId={selectedOrgId} />}
       {tab === 'Users' && selectedOrgId && <UsersTab orgId={selectedOrgId} />}
       {tab === 'Analytics' && selectedOrgId && <AnalyticsTab orgId={selectedOrgId} />}
@@ -615,6 +616,258 @@ function IntentsTab({ orgId }: { orgId: string }) {
         ))}
         {intents.length === 0 && <p className="text-center py-8 text-adv-gray text-sm">No intent categories configured.</p>}
       </div>
+    </div>
+  );
+}
+
+// ── Pair Device Tab ──────────────────────────────────────────────────────────
+// Modern Ed25519 enrollment per docs/ANTON_MESH_SPEC.md. Generates a single-
+// use enrollment package with transport='mesh', renders the resulting
+// anton://enroll?... URL as a QR. The phone scans, the JoinPage validates
+// the binding_sig + relay URLs cryptographically, then signs a completion
+// challenge. Tokens expire in 60s — generate fresh per pair attempt.
+
+interface EnrollmentPackage {
+  token: string;
+  nonce: string;
+  expires_at: string;
+  transport?: 'public_https' | 'mesh';
+  relay_endpoints?: string[];
+  instance_ed_pk?: string;
+  instance_x_pk?: string;
+  binding_sig?: string;
+  instance_contact_hash: string | null;
+  instance_display_name: string | null;
+  requires_confirmation_code: boolean;
+  confirmation_code?: string | null;
+}
+
+function PairDeviceTab({ orgId }: { orgId: string }) {
+  const [transport, setTransport] = useState<'mesh' | 'public_https'>('mesh');
+  const [requireCode, setRequireCode] = useState(false);
+  const [pkg, setPkg] = useState<EnrollmentPackage | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [pairingUrl, setPairingUrl] = useState<string>('');
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'url' | 'token' | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+
+  // Countdown to expiry — refreshes every second so the admin sees the
+  // token age in real time.
+  useEffect(() => {
+    if (!pkg) return;
+    const expiresAtMs = new Date(pkg.expires_at).getTime();
+    const tick = (): void => {
+      const left = Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000));
+      setSecondsLeft(left);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pkg]);
+
+  async function generate(): Promise<void> {
+    setGenerating(true);
+    setError(null);
+    setPkg(null);
+    setQrDataUrl(null);
+    try {
+      const body = {
+        org_id: orgId,
+        intended_role: 'member',
+        transport,
+        require_confirmation_code: requireCode,
+      };
+      const result = await api.post('/enrollment/start', body) as EnrollmentPackage;
+      setPkg(result);
+
+      const serverUrl = window.location.origin;
+      const url = `anton://enroll?server=${encodeURIComponent(serverUrl)}&token=${encodeURIComponent(result.token)}`;
+      setPairingUrl(url);
+
+      const QRCode = await import('qrcode');
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 320,
+        margin: 1,
+        color: { dark: '#0B1426', light: '#FFFFFF' },
+      });
+      setQrDataUrl(dataUrl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate enrollment');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function copy(value: string, kind: 'url' | 'token'): void {
+    navigator.clipboard.writeText(value);
+    setCopied(kind);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  const expired = pkg && secondsLeft === 0;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-sm font-semibold text-adv-off-white flex items-center gap-2">
+          <Smartphone className="h-4 w-4 text-adv-teal" />
+          Pair a Companion App device
+        </h2>
+        <p className="mt-1 text-xs text-adv-gray">
+          Generates a single-use Ed25519 enrollment QR. The phone scans, the app validates the
+          relay binding cryptographically, the device cert is issued. Token expires in 60 seconds.
+        </p>
+      </div>
+
+      {/* Config */}
+      <div className="rounded-lg border border-border bg-adv-card p-4 space-y-3">
+        <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-adv-gray">Transport</label>
+            <select
+              value={transport}
+              onChange={(e) => setTransport(e.target.value as 'mesh' | 'public_https')}
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              <option value="mesh">Mesh (relay, E2E encrypted)</option>
+              <option value="public_https">Public HTTPS (direct to instance)</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-adv-gray">Confirmation code</label>
+            <label className="flex items-center gap-2 px-3 py-2 text-sm text-adv-off-white">
+              <input
+                type="checkbox"
+                checked={requireCode}
+                onChange={(e) => setRequireCode(e.target.checked)}
+                className="h-4 w-4 accent-adv-teal"
+              />
+              Require 6-digit code (read aloud)
+            </label>
+          </div>
+        </div>
+        <button
+          onClick={generate}
+          disabled={generating}
+          className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50"
+        >
+          <QrCode className="h-4 w-4" />
+          {generating ? 'Generating…' : pkg ? 'Generate New QR' : 'Generate Pairing QR'}
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-lg border border-adv-red/40 bg-adv-red/10 p-3 text-xs text-adv-red">
+          {error}
+          {error.toLowerCase().includes('relay') && (
+            <div className="mt-1 text-adv-gray">
+              Hint: ANTON_MESH_RELAYS env var is empty. Set it to your relay URLs (e.g.
+              <code className="mx-1 px-1 bg-adv-dark rounded">wss://relay.futurechain.eu</code>)
+              and restart the server.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* QR + token panel */}
+      {pkg && qrDataUrl && (
+        <div className="rounded-lg border border-adv-teal/30 bg-adv-card p-5 space-y-4">
+          <div className="flex flex-col items-center gap-3">
+            <img
+              src={qrDataUrl}
+              alt="Pairing QR"
+              className="h-[260px] w-[260px] rounded-lg bg-white p-2"
+              style={{ filter: expired ? 'grayscale(1) opacity(0.4)' : 'none' }}
+            />
+            <div className="text-center">
+              {expired ? (
+                <div className="text-sm text-adv-red font-semibold">⏱ Expired — generate a new QR</div>
+              ) : (
+                <div className="text-sm text-adv-teal font-semibold">
+                  ⏱ Expires in {secondsLeft}s
+                </div>
+              )}
+              <p className="mt-1 text-[11px] text-adv-gray">
+                Have the phone user open the Companion App → Join → scan
+              </p>
+            </div>
+          </div>
+
+          {/* Pairing details */}
+          <div className="space-y-2 border-t border-border pt-4">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-adv-gray">Pairing URL</span>
+              <button
+                onClick={() => copy(pairingUrl, 'url')}
+                className="flex items-center gap-1 text-adv-teal hover:text-adv-teal-dark"
+              >
+                {copied === 'url' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied === 'url' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <code className="block break-all rounded bg-adv-dark p-2 text-[10px] text-adv-off-white">
+              {pairingUrl}
+            </code>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <div className="text-adv-gray text-[10px] uppercase tracking-wider">Transport</div>
+              <div className="mt-1 text-adv-off-white font-mono">{pkg.transport ?? 'public_https'}</div>
+            </div>
+            <div>
+              <div className="text-adv-gray text-[10px] uppercase tracking-wider">Token (single-use)</div>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="text-[10px] text-adv-off-white">{pkg.token.slice(0, 16)}…</code>
+                <button onClick={() => copy(pkg.token, 'token')} className="text-adv-teal">
+                  {copied === 'token' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {pkg.transport === 'mesh' && pkg.relay_endpoints && pkg.relay_endpoints.length > 0 && (
+            <div className="text-xs">
+              <div className="text-adv-gray text-[10px] uppercase tracking-wider">Relay endpoints baked into QR</div>
+              <ul className="mt-1 space-y-0.5">
+                {pkg.relay_endpoints.map(r => (
+                  <li key={r} className="font-mono text-[11px] text-adv-off-white">{r}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {pkg.transport === 'mesh' && pkg.instance_ed_pk && (
+            <div className="text-xs">
+              <div className="text-adv-gray text-[10px] uppercase tracking-wider">
+                Instance identity pinned by phone
+              </div>
+              <div className="mt-1 space-y-1 font-mono text-[10px] text-adv-gray">
+                <div>ed_pk: {pkg.instance_ed_pk.slice(0, 32)}…</div>
+                <div>x_pk:  {pkg.instance_x_pk?.slice(0, 32)}…</div>
+                <div>sig:   {pkg.binding_sig?.slice(0, 32)}…</div>
+              </div>
+            </div>
+          )}
+
+          {pkg.confirmation_code && (
+            <div className="rounded-lg border border-adv-gold/40 bg-adv-gold/10 p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-adv-gold">
+                Confirmation code (read aloud)
+              </div>
+              <div className="mt-1 font-mono text-2xl font-bold tracking-widest text-adv-gold">
+                {pkg.confirmation_code}
+              </div>
+              <div className="mt-1 text-[11px] text-adv-gray">
+                Phone user types this code after scanning
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
