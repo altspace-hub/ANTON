@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ANTON Companion App — Launcher Icon Master
+  Skin A · Inverted Teal · 1024×1024
+  
+  Use for: Marketing site, social avatars, splash screens, splash art,
+  iOS app icon (iOS does not support adaptive icons, so this master ships).
+  
+  Geometry: Three chevrons rising in opacity (0.45 → 0.75 → 1.0)
+  Palette:  Background #2DD4A8 (teal-bright), strokes white
+  Corner:   230px radius (~22.5%) — OS will mask further as needed
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="230" ry="230" fill="#2DD4A8"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+    <polyline points="213,469 512,239 811,469" opacity="0.45"/>
+    <polyline points="213,640 512,410 811,640" opacity="0.75"/>
+    <polyline points="213,811 512,580 811,811"/>
+  </g>
+</svg>

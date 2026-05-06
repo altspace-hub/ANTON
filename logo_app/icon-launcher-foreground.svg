@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ANTON Companion App — Adaptive Icon Foreground
+  Skin A · Inverted Teal · 1024×1024
+  
+  Use for: Android adaptive icon foreground layer (Android 8.0+).
+  Pairs with icon-launcher-background.svg as the background layer.
+  
+  Geometry: Same three chevrons, scaled to 50% canvas width (centered)
+            — fits well inside the 66% safe zone with comfortable margin.
+  Palette:  Transparent background, white chevrons.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#FFFFFF" stroke-width="95" stroke-linejoin="miter" stroke-linecap="square">
+    <polyline points="256,465 512,268 768,465" opacity="0.45"/>
+    <polyline points="256,611 512,414 768,611" opacity="0.75"/>
+    <polyline points="256,757 512,560 768,757"/>
+  </g>
+</svg>

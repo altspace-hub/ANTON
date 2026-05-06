@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ANTON Companion App — Signature Mark
+  Skin B · Mono Navy · 1024×1024
+  
+  Use for: Whitepaper covers, deck title pages and footers,
+           letterheads, invoices, contracts, print materials,
+           co-branded contexts (next to Advisense, partners).
+  
+  Geometry: Identical chevron layout as launcher master.
+  Palette:  Background #F5F1EA (paper), strokes #0B1426 (navy).
+            Opacity ramp 0.22 → 0.55 → 1.0 — slightly more restrained
+            than the launcher's 0.45 → 0.75 → 1.0 to suit body-copy contexts.
+  Corner:   230px radius — drop entirely if used on already-shaped surfaces.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+  <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+    <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+    <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+    <polyline points="213,811 512,580 811,811"/>
+  </g>
+</svg>

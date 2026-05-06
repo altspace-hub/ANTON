@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { generateKeypair, saveIdentity, getIdentity } from '../services/identity';
 import { register, registerSimple, getLanguages, saveSessionToken } from '../services/api';
 import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
+import Logo from '../components/Logo';
 
 interface Props { onComplete: () => void; }
 
@@ -89,19 +90,7 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
       <div className="w-full max-w-sm space-y-9">
         {/* Logo + identity */}
         <div className="flex flex-col items-center text-center">
-          <div
-            className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-[var(--radius-r3)]"
-            style={{
-              background: 'var(--color-accent-soft)',
-              border: '1px solid var(--color-accent-dim)',
-            }}
-          >
-            <span
-              style={{ color: 'var(--color-accent)', fontSize: 34, fontWeight: 800, letterSpacing: '-0.5px' }}
-            >
-              A
-            </span>
-          </div>
+          <Logo size={72} className="mb-4" />
           <h1
             className="text-[var(--color-text)]"
             style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.6px' }}

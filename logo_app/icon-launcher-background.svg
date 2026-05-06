@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ANTON Companion App — Adaptive Icon Background
+  Skin A · Inverted Teal · 1024×1024
+  
+  Use for: Android adaptive icon background layer (Android 8.0+).
+  Pairs with icon-launcher-foreground.svg as the foreground layer.
+  
+  Geometry: Solid fill, no detail — the OS will animate parallax
+            between this and the foreground.
+  Palette:  Bright teal #2DD4A8, full canvas.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" fill="#2DD4A8"/>
+</svg>
