@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    ANTON Companion App — adaptive launcher icon (API 26+).
+
+    Background: drawable/ic_launcher_background.xml — solid #2DD4A8.
+    Foreground: drawable-v24/ic_launcher_foreground.xml — three white chevrons.
+
+    Both are vector drawables (no PNG fallback needed since minSdk=26
+    and adaptive icons are always available there).
+
+    Geometry source: logo_app/icon-launcher-master.svg.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background = a shade lighter than the foreground rounded square's
-         #0B6F5E. The launcher mask (circle/squircle/rounded square) fills
-         this whole area with the lighter green, and the foreground draws
-         the darker rounded square + A on top — producing a green halo
-         around the logo. -->
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+    <background android:drawable="@drawable/ic_launcher_background"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
 </adaptive-icon>
