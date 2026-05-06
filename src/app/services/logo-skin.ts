@@ -1,8 +1,8 @@
 /**
  * logo-skin.ts — runtime switch between the three Companion App brand marks.
  *
- *   - 'a-letter'      — original soft-teal tile with bold "A" letter
- *   - 'green-chevron' — solid teal tile, three white chevrons rising in opacity (default)
+ *   - 'a-letter'      — original soft-teal tile with bold "A" letter (default)
+ *   - 'green-chevron' — solid teal tile, three white chevrons rising in opacity
  *   - 'cream-chevron' — cream tile, three navy chevrons (signature / restrained)
  *
  * Persisted in localStorage so the choice survives reloads. The Settings
@@ -17,7 +17,7 @@
 
 export type LogoSkin = 'a-letter' | 'green-chevron' | 'cream-chevron';
 
-export const DEFAULT_LOGO_SKIN: LogoSkin = 'green-chevron';
+export const DEFAULT_LOGO_SKIN: LogoSkin = 'a-letter';
 
 const STORAGE_KEY = 'anton-companion-logo-skin';
 
