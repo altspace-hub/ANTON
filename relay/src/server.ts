@@ -66,6 +66,7 @@ import {
 } from './audit.js';
 import { canonicalizeRelayUrl } from './canonical-url.js';
 import { bytesToHex } from './primitives.js';
+import { MetricsRegistry } from './metrics.js';
 
 // ── Configuration ────────────────────────────────────────────────────
 
@@ -104,6 +105,13 @@ export interface RelayServerConfig {
    * fire. Default 1000ms.
    */
   reaperIntervalMs?: number;
+  /**
+   * Drain interval on stop() — RELAY_DRAINING is emitted to all clients,
+   * then the relay waits this many ms before closing the WSS so phones
+   * have a chance to fail over to another relay before their connection
+   * drops. Default 5000ms (5s). Set to 0 for tests / immediate shutdown.
+   */
+  drainIntervalMs?: number;
 }
 
 // ── Per-connection state ─────────────────────────────────────────────
@@ -169,6 +177,7 @@ export class RelayServer {
       audit,
       helloGraceSec: rawCfg.helloGraceSec ?? 30,
       reaperIntervalMs: rawCfg.reaperIntervalMs ?? 1000,
+      drainIntervalMs: rawCfg.drainIntervalMs ?? 5000,
     };
 
     this.match = new MatchTable(this.cfg.matchLimits);
@@ -176,12 +185,44 @@ export class RelayServer {
     this.envelopeRateLimiter = new RateLimiter(this.cfg.envelopeRateLimit);
   }
 
+  /** Operational counters — exposed at /metrics. */
+  private metrics = new MetricsRegistry();
+
   /** Start listening. Resolves once the port is bound. */
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
       const httpServer = this.cfg.tlsCert
         ? https.createServer({ cert: this.cfg.tlsCert, key: this.cfg.tlsKey })
         : http.createServer();
+
+      // ── HTTP routes for ops endpoints ───────────────────────────
+      // The 'request' handler runs for non-upgrade HTTP requests; the
+      // WSS attaches its own 'upgrade' listener so WS connections are
+      // unaffected. We expose /healthz + /metrics; everything else 404s.
+      httpServer.on('request', (req, res) => {
+        const url = req.url ?? '/';
+        if (req.method === 'GET' && (url === '/healthz' || url === '/healthz/')) {
+          const snap = this.metrics.snapshot(this.match.sessionCount(), this.match.instanceCount());
+          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            ok: true,
+            version: '0.1.0',
+            uptime_sec: snap.uptime_sec,
+            active_sessions: snap.active_sessions,
+            active_instances: snap.active_instances,
+            ws_connections: this.connections.size,
+          }));
+          return;
+        }
+        if (req.method === 'GET' && (url === '/metrics' || url === '/metrics/')) {
+          res.writeHead(200, { 'content-type': 'text/plain; version=0.0.4; charset=utf-8' });
+          res.end(this.metrics.renderProm(this.match.sessionCount(), this.match.instanceCount()));
+          return;
+        }
+        // Anything else is 404. Don't leak internals.
+        res.writeHead(404, { 'content-type': 'text/plain' });
+        res.end('not found\n');
+      });
 
       this.wss = new WebSocketServer({
         server: httpServer,
@@ -212,23 +253,47 @@ export class RelayServer {
     });
   }
 
-  /** Stop the server. Closes all connections; waits for graceful shutdown. */
+  /**
+   * Stop the server gracefully:
+   *   1. Stop the reaper.
+   *   2. Stop accepting new WS connections (httpServer.close()).
+   *   3. Emit RELAY_DRAINING to every live WS — phones use this signal to
+   *      pre-migrate to the next relay BEFORE their connection drops,
+   *      avoiding the thundering-herd on the failover relay.
+   *   4. Wait `drainIntervalMs` to give clients time to receive + react.
+   *   5. Close all WS connections + the HTTP server.
+   *
+   * Tests may pass `drainIntervalMs: 0` to skip the wait. Production should
+   * leave the default 5s.
+   */
   stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.reaperTimer) {
         clearInterval(this.reaperTimer);
         this.reaperTimer = null;
       }
-      // Send RELAY_DRAINING to every connection then close.
+      // 1. Stop accepting new connections immediately. In-flight handshakes
+      //    can still complete; new WS upgrades are refused.
+      this.wss?.close();
+
+      // 2. Notify every active leg that we're going away. Phones treat
+      //    RELAY_DRAINING as "try the next relay now, don't wait for me
+      //    to drop the connection."
       for (const conn of this.connections.values()) {
         try {
           conn.ws.send(encodeRelayError(RELAY_ERROR_CODE.RELAY_DRAINING, 'shutdown'));
-          conn.ws.close(1001, 'shutting down');
         } catch { /* connection already gone */ }
       }
-      this.wss?.close(() => {
+
+      // 3. Wait the drain interval (or 0 in tests) before tearing everyone
+      //    down. ref-tracked timeout so tests don't hang the event loop.
+      const drainTimer = setTimeout(() => {
+        for (const conn of this.connections.values()) {
+          try { conn.ws.close(1001, 'shutting down'); } catch { /* ignore */ }
+        }
         this.httpServer?.close(() => resolve());
-      });
+      }, this.cfg.drainIntervalMs);
+      drainTimer.unref?.();
     });
   }
 
@@ -262,6 +327,7 @@ export class RelayServer {
       acceptedAtSec: this.nowSec(),
     };
     this.connections.set(connId, state);
+    this.metrics.wsOpened();
     this.cfg.audit.emit({
       type: 'connect',
       conn_id: connId,
@@ -284,6 +350,7 @@ export class RelayServer {
   private handleClose(state: ConnState, reason: string): void {
     if (!this.connections.has(state.connId)) return; // already cleaned
     this.connections.delete(state.connId);
+    this.metrics.wsClosed();
     this.cfg.audit.emit({
       type: 'disconnect',
       conn_id: state.connId,
@@ -341,6 +408,7 @@ export class RelayServer {
       return;
     }
     if (!this.helloRateLimiter.consume(state.bucketKey)) {
+      this.metrics.rateLimited();
       this.cfg.audit.emit({
         type: 'rate_limited',
         conn_id: state.connId,
@@ -364,6 +432,7 @@ export class RelayServer {
       const code = he.code === HelloError.BAD_HELLO
         ? RELAY_ERROR_CODE.BAD_HELLO
         : RELAY_ERROR_CODE.INVALID_PROOF;
+      this.metrics.helloRejected(code);
       this.cfg.audit.emit({
         type: 'hello_instance_rejected',
         conn_id: state.connId,
@@ -377,6 +446,7 @@ export class RelayServer {
     }
 
     state.helloed = true;
+    this.metrics.helloAccepted();
     const instanceIdHex = bytesToHex(parsed.instance_id);
     this.cfg.audit.emit({
       type: 'hello_instance',
@@ -395,6 +465,7 @@ export class RelayServer {
       return;
     }
     if (!this.helloRateLimiter.consume(state.bucketKey)) {
+      this.metrics.rateLimited();
       this.cfg.audit.emit({
         type: 'rate_limited',
         conn_id: state.connId,
@@ -411,6 +482,7 @@ export class RelayServer {
       parsed = parseHelloPhone(payload);
     } catch (err) {
       const he = err as HelloVerificationError;
+      this.metrics.helloRejected(RELAY_ERROR_CODE.BAD_HELLO);
       this.cfg.audit.emit({
         type: 'hello_phone_rejected',
         conn_id: state.connId,
@@ -424,6 +496,7 @@ export class RelayServer {
     }
 
     state.helloed = true;
+    this.metrics.helloAccepted();
     this.cfg.audit.emit({
       type: 'hello_phone',
       conn_id: state.connId,
@@ -453,6 +526,7 @@ export class RelayServer {
 
     // Per-session ENVELOPE rate limit (§3.10).
     if (!this.envelopeRateLimiter.consume(bytesToHex(sessionIdBytes))) {
+      this.metrics.rateLimited();
       this.cfg.audit.emit({
         type: 'rate_limited',
         conn_id: state.connId,
@@ -465,6 +539,16 @@ export class RelayServer {
     }
 
     const actions = this.match.forwardEnvelope(state.connId, sessionIdBytes, inner);
+    // Forwarded vs rejected: an action of kind 'send' targeting a different
+    // conn means a successful forward; an ERROR back to the sender means
+    // we couldn't route. Cheap classification at the executeActions site
+    // would couple metrics to action shape — easier here.
+    let forwarded = false;
+    for (const a of actions) {
+      if (a.kind === 'send' && a.connId !== state.connId) { forwarded = true; break; }
+    }
+    if (forwarded) this.metrics.envelopeForwarded();
+    else this.metrics.envelopeRejected();
     this.executeActions(actions);
   }
 
