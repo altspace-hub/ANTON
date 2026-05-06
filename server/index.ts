@@ -177,6 +177,7 @@ import { logger } from './lib/logger.js';
 import { createMetricsRouter, incrementRequests, incrementErrors } from './routes/metrics.js';
 import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
 import { getTotalActiveStreams } from './services/stream-limiter.js';
+import { startMeshDialer } from './services/mesh/bootstrap.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -973,6 +974,17 @@ httpServer.listen(PORT, async () => {
     initOrchestratorHeartbeat(db, anthropic);
   } catch (err) {
     console.error('[orchestrator-heartbeat] Failed to start:', err);
+  }
+
+  // ── ANTON Mesh dialer ────────────────────────────────────────────
+  // When ANTON_MESH_RELAYS is set, dial out to each relay so paired
+  // Companion App phones can reach this instance via the mesh transport.
+  // Bridge wires inbound RPC frames into the existing Express app.
+  // See docs/ANTON_MESH_SPEC.md.
+  try {
+    await startMeshDialer(db, app);
+  } catch (err) {
+    console.error('[mesh] Failed to start dialer:', err);
   }
 
   // ── PG-specific: NOTIFY/LISTEN, partitions, materialized views ────────
