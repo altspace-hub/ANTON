@@ -8,16 +8,23 @@
  *   • Tighter card hierarchy, mono only for the contact hash itself
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getIdentity, clearIdentity } from '../services/identity';
 import { clearSession } from '../services/api';
 import { Ico, PageHeader, SectionLabel } from '../components/ui';
+import Logo from '../components/Logo';
+import {
+  getLogoSkin, setLogoSkin, onLogoSkinChange,
+  LOGO_SKIN_LABELS, type LogoSkin,
+} from '../services/logo-skin';
 
 interface Props { onBack: () => void; }
 
 export default function SettingsPage({ onBack }: Props) {
   const identity = getIdentity();
   const [copied, setCopied] = useState(false);
+  const [logoSkin, setLogoSkinState] = useState<LogoSkin>(getLogoSkin());
+  useEffect(() => onLogoSkinChange(setLogoSkinState), []);
 
   function handleExportIdentity() {
     if (!identity) return;
@@ -60,6 +67,57 @@ export default function SettingsPage({ onBack }: Props) {
       {/* ── Body ────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl space-y-6 px-4 pb-10 pt-5">
+          {/* Appearance — logo skin picker (Phase 8.A) */}
+          <section>
+            <SectionLabel className="mb-2.5">Appearance</SectionLabel>
+            <div
+              className="rounded-[var(--radius-r2)] p-4"
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div className="mb-2 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+                App logo
+              </div>
+              <div className="flex items-center gap-3">
+                {(['green-chevron', 'cream-chevron', 'a-letter'] as const).map((skin) => {
+                  const active = logoSkin === skin;
+                  return (
+                    <button
+                      key={skin}
+                      onClick={() => setLogoSkin(skin)}
+                      aria-label={`Set logo to ${LOGO_SKIN_LABELS[skin]}`}
+                      aria-pressed={active}
+                      className="flex flex-col items-center gap-1.5 transition active:scale-[0.97]"
+                      style={{
+                        padding: 8,
+                        borderRadius: 12,
+                        background: active ? 'var(--color-accent-soft)' : 'transparent',
+                        border: '1.5px solid',
+                        borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
+                      }}
+                    >
+                      <Logo size={48} skin={skin} />
+                      <span
+                        className="text-[10px]"
+                        style={{
+                          color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                          fontWeight: active ? 700 : 500,
+                        }}
+                      >
+                        {LOGO_SKIN_LABELS[skin]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                Changes apply immediately across the app. Affects in-app branding only — the home-screen launcher icon is fixed at install time.
+              </p>
+            </div>
+          </section>
+
           {/* Identity */}
           <section>
             <SectionLabel className="mb-2.5">Identity</SectionLabel>
