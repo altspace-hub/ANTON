@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getIdentity } from './services/identity';
 import { getSessionToken } from './services/api';
-import { onActiveInstanceChange, getActiveInstance, getActiveInstanceId, getInstanceSessionToken } from './services/instances';
+import { onActiveInstanceChange, getActiveInstance, getActiveInstanceId, getInstanceSessionToken, refreshInstanceInfo } from './services/instances';
 import { registerPush, requestPushPermission, setNotificationRouter, startNativeNotificationListener } from './services/push';
 import { listPendingCheckpoints } from './services/checkpoints';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
@@ -105,6 +105,9 @@ export default function App() {
   const [selectedMail, setSelectedMail] = useState<MailMessage | null>(null);
   // Community chat drilldown — set when user taps a contact in CommunityScreen
   const [chatContact, setChatContact] = useState<{ hash: string; name: string } | null>(null);
+  // Currently selected Work module — when set, ChatPage runs inside that
+  // module (system prompt + header label). Cleared on "Switch to free chat".
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +131,15 @@ export default function App() {
       const token = getSessionToken();
       if (identity && token) {
         setAuthScreen('connections');
+        // Track C Slice 1: refresh canonical relay list now that the
+        // session token is bridged. The push-registration effect below
+        // also calls this, but its empty-deps + getSessionToken() gate
+        // can race the bridge on cold start; calling here too is a
+        // belt-and-braces idempotent retry.
+        const activeId = getActiveInstanceId();
+        if (activeId) {
+          void refreshInstanceInfo(activeId).catch(() => { /* non-fatal */ });
+        }
       } else {
         setAuthScreen('welcome');
       }
@@ -160,6 +172,12 @@ export default function App() {
     // this effect on first launch).
     if (!getSessionToken()) return;
     void registerPush().catch(() => { /* swallow — silent by default per spec §8.7 */ });
+    // Track C Slice 1: refresh instance metadata (incl. relay_endpoints) on
+    // each launch / instance switch, so a relay rotation on the operator's
+    // side is picked up without re-pairing. relays_changed is set when the
+    // server's list differs from ours — a future iteration can drop the
+    // current mesh connection here to force reconnect onto the new relay.
+    void refreshInstanceInfo(inst.id).catch(() => { /* non-fatal */ });
     setNotificationRouter((deepLink, raw) => {
       // /approvals/:id deep links land us on the approvals tab with the detail open
       const m = deepLink.match(/^\/approvals\/([^/?]+)/);
@@ -329,7 +347,9 @@ export default function App() {
         <ChatPage
           orgId={selectedOrgId}
           sessionId={sessionId}
+          moduleId={selectedModuleId}
           onSessionCreated={setSessionId}
+          onClearModule={() => setSelectedModuleId(null)}
           onBack={() => setActiveTab('home')}
         />
       )}
@@ -412,6 +432,14 @@ export default function App() {
         <WorkModulesScreen
           orgId={selectedOrgId}
           onNavigate={(tab) => navFromHome(tab)}
+          onSelectModule={(moduleId) => {
+            // Tapping a module starts a fresh session inside that module —
+            // dropping prior sessionId so we don't graft a Sanctions Advisory
+            // run onto, say, an open free-chat thread.
+            setSelectedModuleId(moduleId);
+            setSessionId(null);
+            setActiveTab('chat');
+          }}
         />
       )}
       {activeTab === 'school' && (
@@ -436,6 +464,7 @@ export default function App() {
       )}
       {activeTab === 'std_thread' && selectedMail && (
         <StdThreadScreen
+          orgId={selectedOrgId}
           message={selectedMail}
           onBack={() => setActiveTab('std_mail')}
           onOpenInPro={() => {

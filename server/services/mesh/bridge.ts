@@ -252,6 +252,14 @@ function sendResponseFrame(
   headers: RpcHeader[],
   body: Uint8Array,
 ): void {
+  // TEMP DIAG — see what we're actually sending back on the wire. Remove
+  // once mesh pairing is verified end-to-end.
+  try {
+    const preview = new TextDecoder('utf-8', { fatal: false })
+      .decode(body.subarray(0, Math.min(body.length, 300)));
+    // eslint-disable-next-line no-console
+    console.log(`[mesh-bridge] resp seq=${seq} status=${status} bodyLen=${body.length} body[0..300]=${JSON.stringify(preview)}`);
+  } catch { /* noop */ }
   try {
     const frame = encodeRpc({ kind: RPC_KIND.RESPONSE, seq, status, headers, body } as RpcResponse);
     state.ctx.send(frame);
@@ -304,12 +312,39 @@ function makeSyntheticRequest(
   }
 
   // Attach IncomingMessage-shaped properties on the Readable.
-  // (Express + body-parser don't need a real net.Socket — just enough
-  // surface area on the request object.)
+  // Express runs `Object.setPrototypeOf(req, app.request)` (application.js
+  // L238) which chains our Readable up to `http.IncomingMessage.prototype`.
+  // After that, when the stream ends, Node calls IncomingMessage._destroy
+  // which calls `this.socket.destroy()`. Our fake socket therefore needs a
+  // real destroy() method (and a couple of other props middleware probes).
+  const fakeSocket: {
+    destroyed: boolean; readable: boolean; writable: boolean;
+    destroy: (err?: unknown) => void; setKeepAlive: () => void;
+    setNoDelay: () => void; setTimeout: () => void; ref: () => void;
+    unref: () => void; remoteAddress: string; remotePort: number;
+    localAddress: string; localPort: number; encrypted: boolean;
+  } = {
+    destroyed: false,
+    readable: true,
+    writable: true,
+    destroy(_err?: unknown): void { fakeSocket.destroyed = true; },
+    setKeepAlive(): void { /* noop */ },
+    setNoDelay(): void { /* noop */ },
+    setTimeout(): void { /* noop */ },
+    ref(): void { /* noop */ },
+    unref(): void { /* noop */ },
+    remoteAddress: '127.0.0.1',
+    remotePort: 0,
+    localAddress: '127.0.0.1',
+    localPort: 0,
+    encrypted: true, // mesh = E2E encrypted, treat as TLS-equivalent
+  };
+
   const reqObj = readable as Readable & {
     method?: string; url?: string; headers?: Record<string, string>;
     httpVersion?: string; httpVersionMajor?: number; httpVersionMinor?: number;
-    socket?: { destroyed?: boolean }; signal?: AbortSignal;
+    socket?: typeof fakeSocket; connection?: typeof fakeSocket;
+    signal?: AbortSignal; complete?: boolean;
   };
   reqObj.method = req.method.toUpperCase();
   reqObj.url = req.path;
@@ -317,8 +352,10 @@ function makeSyntheticRequest(
   reqObj.httpVersion = '1.1';
   reqObj.httpVersionMajor = 1;
   reqObj.httpVersionMinor = 1;
-  reqObj.socket = { destroyed: false };
+  reqObj.socket = fakeSocket;
+  reqObj.connection = fakeSocket; // Express checks both
   reqObj.signal = signal;
+  reqObj.complete = true;
 
   return reqObj as unknown as IncomingMessage;
 }
@@ -326,7 +363,11 @@ function makeSyntheticRequest(
 // ── Synthetic ServerResponse ─────────────────────────────────────────
 
 class SyntheticResponse {
-  private status = 200;
+  // Renamed from `status` — the bare name collided with Express's
+  // `res.status(code)` method on the prototype. After Express's
+  // setPrototypeOf, JS looked up `res.status` on our instance first,
+  // found this number, and "200(400)" threw "not a function".
+  private statusValue = 200;
   private headers: Record<string, string> = {};
   private headerSent = false;
   private chunks: Uint8Array[] = [];
@@ -344,7 +385,46 @@ class SyntheticResponse {
 
   constructor(_req: IncomingMessage) {
     void _req;
+    // Express calls Object.setPrototypeOf(res, app.response) at dispatch
+    // time (application.js L239). app.response chains up to
+    // http.ServerResponse.prototype, so AFTER that switch, calls like
+    // res.setHeader() resolve to Node's real _http_outgoing.setHeader,
+    // which expects internal Symbol-keyed slots ([kOutHeaders] etc.) we
+    // don't have — and crashes with "Cannot set properties of undefined".
+    //
+    // Defending against this: install our methods as OWN properties on the
+    // instance. Own properties win lookup over the prototype chain, so
+    // they survive Express's switcheroo. Without this, helmet's CSP
+    // middleware crashes the bridge before any route handler runs.
+    const own = (name: keyof SyntheticResponse): void => {
+      Object.defineProperty(this, name, {
+        value: (this[name] as unknown as Function).bind(this),
+        writable: true, configurable: true, enumerable: false,
+      });
+    };
+    own('setHeader');
+    own('getHeader');
+    own('removeHeader');
+    own('writeHead');
+    own('write');
+    own('end');
+    own('flushHeaders');
+    own('getHeaders');
+    own('hasHeader');
+    own('getHeaderNames');
+    own('on');
+    own('once');
+    own('emit');
+    own('addListener');
+    own('removeListener');
+    own('off');
   }
+
+  // Methods Express body-parsers / helmet probe but we just stub.
+  getHeaderNames(): string[] { return Object.keys(this.headers); }
+  addListener(_event: string, _listener: (...args: unknown[]) => void): this { return this; }
+  removeListener(_event: string, _listener: (...args: unknown[]) => void): this { return this; }
+  off(_event: string, _listener: (...args: unknown[]) => void): this { return this; }
 
   // Methods Express + middleware call.
 
@@ -362,7 +442,7 @@ class SyntheticResponse {
   }
 
   writeHead(statusCode: number, statusMessage?: string | Record<string, string | number>, headers?: Record<string, string | number>): this {
-    this.status = statusCode;
+    this.statusValue = statusCode;
     this.statusCode = statusCode;
     if (typeof statusMessage === 'string') {
       this.statusMessage = statusMessage;
@@ -396,7 +476,11 @@ class SyntheticResponse {
       headerArr.push({ name, value });
     }
     for (const cb of this.finishCallbacks) {
-      try { cb(this.status, headerArr, body); } catch { /* swallow */ }
+      // Express's res.status(code) sets this.statusCode (NOT statusValue).
+      // res.json/res.send don't go through writeHead, so statusValue stays
+      // at its initial 200. Read from statusCode — which is what Express
+      // and Node both update — so we capture the route's intended status.
+      try { cb(this.statusCode, headerArr, body); } catch { /* swallow */ }
     }
   }
 
@@ -418,7 +502,7 @@ class SyntheticResponse {
       const body = concatChunks(this.chunks);
       const headerArr: RpcHeader[] = [];
       for (const [name, value] of Object.entries(this.headers)) headerArr.push({ name, value });
-      cb(this.status, headerArr, body);
+      cb(this.statusCode, headerArr, body);
     } else {
       this.finishCallbacks.push(cb);
     }

@@ -24,14 +24,19 @@ import { rawFromDerKeypair, deriveMeshIdentity, type MeshIdentity } from './iden
 let activeDialer: MeshDialer | null = null;
 
 export async function startMeshDialer(db: DatabaseAdapter, app: Express): Promise<void> {
-  const raw = (process.env.ANTON_MESH_RELAYS ?? '').trim();
-  if (!raw) {
+  // Track C Slice 2: source of truth is mesh-config-service (DB override
+  // → env fallback). When the operator flips the override via the admin
+  // endpoint, the dialer picks it up on the next server restart; phones
+  // refresh sooner via /instance-info on next app launch.
+  const { getRelayEndpoints } = await import('../mesh-config-service.js');
+  const { endpoints: relayUrls, source } = await getRelayEndpoints(db);
+  if (relayUrls.length === 0) {
     // Mesh transport not configured — public_https only. Silent no-op.
     return;
   }
-
-  const relayUrls = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
-  if (relayUrls.length === 0) return;
+  if (source === 'db') {
+    console.log(`[mesh] Using ${relayUrls.length} relay(s) from DB override`);
+  }
 
   const mesh = await loadOrComputeMeshIdentity(db);
   if (!mesh) {

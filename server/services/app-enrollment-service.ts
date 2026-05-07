@@ -270,10 +270,25 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     return sig.toString('hex');
   }
 
-  /** Verify a payload signature with the device's Ed25519 pubkey. */
+  /**
+   * Verify a payload signature with the device's Ed25519 pubkey.
+   * Accepts the device pubkey in either:
+   *   - DER SPKI hex (88 chars, 44 bytes — what `crypto.createPublicKey` exports)
+   *   - Raw Ed25519 hex (64 chars, 32 bytes — what the Companion App produces
+   *     via `@noble/ed25519`'s `getPublicKeyAsync`)
+   * For raw input we prepend the fixed DER SPKI prefix for Ed25519
+   * (RFC 8410 §4): SEQUENCE { SEQUENCE { OID 1.3.101.112 } BIT STRING }.
+   */
   function verifyWithDeviceKey(devicePubkey: string, payload: string, signatureHex: string): boolean {
     try {
-      const pubKey = crypto.createPublicKey({ key: Buffer.from(devicePubkey, 'hex'), format: 'der', type: 'spki' });
+      const ED25519_SPKI_PREFIX = '302a300506032b6570032100';
+      let derHex: string;
+      if (devicePubkey.length === 64) {
+        derHex = ED25519_SPKI_PREFIX + devicePubkey;
+      } else {
+        derHex = devicePubkey;
+      }
+      const pubKey = crypto.createPublicKey({ key: Buffer.from(derHex, 'hex'), format: 'der', type: 'spki' });
       return crypto.verify(null, Buffer.from(payload, 'utf8'), pubKey, Buffer.from(signatureHex, 'hex'));
     } catch {
       return false;
@@ -308,17 +323,18 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     const wantCode = input.require_confirmation_code ?? !!input.intended_user_id;
     const code = wantCode ? makeConfirmationCode() : null;
 
-    // Mesh transport: pull relay endpoints from caller, then env, then fail.
-    // ANTON_MESH_RELAYS is comma-separated WSS URLs (the operator sets this
-    // once when configuring the instance — same value used by the dialer).
+    // Mesh transport: pull relay endpoints from caller, then mesh-config-service
+    // (DB override → env fallback), then fail. Track C Slice 2 routes through
+    // the service so admin-flipped relay lists are used by new enrollments
+    // without a server restart.
     let relayEndpoints = input.relay_endpoints;
     if (input.transport === 'mesh' && (!relayEndpoints || relayEndpoints.length === 0)) {
-      const envRelays = (process.env.ANTON_MESH_RELAYS ?? '')
-        .split(',').map(s => s.trim()).filter(s => s.length > 0);
-      if (envRelays.length > 0) relayEndpoints = envRelays;
+      const { getRelayEndpoints } = await import('./mesh-config-service.js');
+      const cfg = await getRelayEndpoints(db);
+      if (cfg.endpoints.length > 0) relayEndpoints = cfg.endpoints;
     }
     if (input.transport === 'mesh' && (!relayEndpoints || relayEndpoints.length === 0)) {
-      throw new Error('mesh transport requires at least one relay endpoint (set ANTON_MESH_RELAYS or pass relay_endpoints)');
+      throw new Error('mesh transport requires at least one relay endpoint (set ANTON_MESH_RELAYS, configure via PUT /api/admin/app/mesh/relays, or pass relay_endpoints)');
     }
     const relayJson = relayEndpoints && relayEndpoints.length > 0
       ? JSON.stringify(relayEndpoints)

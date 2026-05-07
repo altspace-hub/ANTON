@@ -14,15 +14,23 @@ import { useState, useRef, useEffect } from 'react';
 import { sendQueryREST } from '../services/query';
 import { getIdentity } from '../services/identity';
 import { getOrgProfile, getSessionDetail } from '../services/api';
+import { getModule, type ModuleDetail } from '../services/modules';
+import { getSelectedModel, setSelectedModel, listModels } from '../services/models';
 import { cacheSession, isOnline, queueMessage } from '../services/offline';
 import ChatBubble from '../components/ChatBubble';
 import SuggestionChips from '../components/SuggestionChips';
+import ModelPickerSheet from '../components/ModelPickerSheet';
 import { Ico, Spinner, ErrorPill } from '../components/ui';
 
 interface Props {
   orgId: string;
   sessionId: string | null;
+  /** When set, every query is routed through this module's system prompt
+   *  + area context (mirrors what desktop ModulePage does for that module). */
+  moduleId?: string | null;
   onSessionCreated: (id: string) => void;
+  /** Called when the user taps "Switch to free chat" in the module header. */
+  onClearModule?: () => void;
   onBack: () => void;
 }
 
@@ -46,7 +54,7 @@ interface SessionDetail {
   }>;
 }
 
-export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }: Props) {
+export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated, onClearModule, onBack }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -56,6 +64,10 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [orgName, setOrgName] = useState('');
   const [sessionTitle, setSessionTitle] = useState('');
+  const [moduleDetail, setModuleDetail] = useState<ModuleDetail | null>(null);
+  const [modelId, setModelIdState] = useState<string | null>(getSelectedModel());
+  const [modelLabel, setModelLabel] = useState<string>('Default');
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const identity = getIdentity();
@@ -78,6 +90,42 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
       document.documentElement.style.removeProperty('--org-brand-color');
     };
   }, [orgId]);
+
+  // Load module detail for the header label + empty-state pitch.
+  // Failing silently is fine — we just fall back to the org-name header.
+  useEffect(() => {
+    if (!moduleId) { setModuleDetail(null); return; }
+    let cancelled = false;
+    getModule(orgId, moduleId)
+      .then(d => { if (!cancelled) setModuleDetail(d); })
+      .catch(() => { if (!cancelled) setModuleDetail(null); });
+    return () => { cancelled = true; };
+  }, [orgId, moduleId]);
+
+  // Resolve the human label for the selected model id (or fall back to
+  // "Default" when the user hasn't picked one). Falls back silently if
+  // the models endpoint fails — the chip just shows "Default".
+  useEffect(() => {
+    let cancelled = false;
+    listModels(orgId).then(r => {
+      if (cancelled) return;
+      if (!modelId) {
+        const def = r.models.find(m => m.id === r.defaultModel);
+        setModelLabel(def?.label ?? 'Default');
+      } else {
+        const m = r.models.find(x => x.id === modelId);
+        setModelLabel(m?.label ?? 'Custom');
+      }
+    }).catch(() => { /* keep current label */ });
+    return () => { cancelled = true; };
+  }, [orgId, modelId]);
+
+  function applyModel(newId: string | null, label: string) {
+    setSelectedModel(newId);
+    setModelIdState(newId);
+    setModelLabel(label);
+    setModelPickerOpen(false);
+  }
 
   // Load existing session messages
   const loadedSessionRef = useRef<string | null>(null);
@@ -185,7 +233,12 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
         addMessage('assistant', err || 'Something went wrong', true);
         setStreaming(false);
       },
-    }, { sessionId: sessionId || undefined, outputLanguage: identity?.preferredLanguage });
+    }, {
+      sessionId: sessionId || undefined,
+      outputLanguage: identity?.preferredLanguage,
+      moduleId: moduleId || undefined,
+      model: modelId || undefined,
+    });
   }
 
   function addMessage(role: 'user' | 'assistant', content: string, isError?: boolean) {
@@ -203,7 +256,12 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
   }
 
   const hasInput = input.trim().length > 0;
-  const headerTitle = sessionTitle || orgName || 'Chat';
+  // Header priority: session title (you're inside an existing thread) → module
+  // label (you came from the Work tab) → org name → generic "Chat".
+  const headerTitle = sessionTitle || moduleDetail?.label || orgName || 'Chat';
+  const headerSub = moduleDetail
+    ? (moduleDetail.areaLabel ? `${moduleDetail.areaLabel} · module` : 'Module')
+    : null;
 
   return (
     <div
@@ -238,23 +296,36 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
           >
             {headerTitle}
           </h1>
-          {streaming && (
+          {streaming ? (
             <div className="mt-0.5 flex items-center gap-1.5">
               <span
                 className="block animate-pulse rounded-full"
                 style={{ width: 6, height: 6, background: 'var(--color-accent)' }}
               />
-              <span
-                className="text-[11px]"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
+              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
                 Thinking…
               </span>
             </div>
-          )}
+          ) : headerSub ? (
+            <div className="mt-0.5 truncate text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>
+              {headerSub}
+            </div>
+          ) : null}
         </div>
-        {/* Optional right-side action — kept empty by intent (single primary action lives in composer) */}
-        <div style={{ width: 44, height: 44 }} />
+        {/* Right-side action: only meaningful inside a module — exit back to free chat. */}
+        {moduleId && onClearModule ? (
+          <button
+            onClick={() => { onClearModule(); setMessages([]); setSuggestions([]); }}
+            aria-label="Switch to free chat"
+            title="Switch to free chat"
+            className="flex items-center justify-center transition active:opacity-50"
+            style={{ width: 44, height: 44, color: 'var(--color-text-muted)' }}
+          >
+            <Ico name="x" size={20} />
+          </button>
+        ) : (
+          <div style={{ width: 44, height: 44 }} />
+        )}
       </div>
 
       {/* ── Messages ─────────────────────────────────────────── */}
@@ -272,26 +343,136 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
             />
           )}
 
-          {!loadingSession && messages.length === 0 && !streaming && (
+          {!loadingSession && messages.length === 0 && !streaming && !moduleDetail && (
             <div className="flex flex-1 flex-col items-center justify-center py-24 text-center">
-              <span
-                className="mb-3 inline-flex"
-                style={{ color: 'var(--color-text-faint)' }}
-              >
+              <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p
-                className="text-[15px] font-semibold"
-                style={{ color: 'var(--color-text)' }}
-              >
+              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
                 Ask anything
               </p>
-              <p
-                className="mt-1 max-w-[280px] text-[13px]"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
+              <p className="mt-1 max-w-[300px] text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
                 {orgName ? `${orgName}'s ANTON is ready.` : 'Your ANTON is ready.'}
               </p>
+            </div>
+          )}
+
+          {/* Rich module intro — surfaces persona + role + output formats so
+              the user knows what they walked into and what kind of answer
+              this module produces. Only shown when a module is loaded and
+              the conversation hasn't started yet. */}
+          {!loadingSession && messages.length === 0 && !streaming && moduleDetail && (
+            <div className="flex flex-col gap-3 py-2">
+              {/* Header card — accent-bordered, mirrors the module's color */}
+              <div
+                className="rounded-[var(--radius-r3)] p-4"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderLeft: '4px solid var(--color-accent)',
+                }}
+              >
+                <div className="mb-1 flex items-center gap-1.5">
+                  <Ico name="sparkles" color="var(--color-accent)" size={14} />
+                  <span
+                    className="font-mono uppercase"
+                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-accent)' }}
+                  >
+                    {moduleDetail.areaLabel ? `${moduleDetail.areaLabel} module` : 'Module loaded'}
+                  </span>
+                </div>
+                <h2
+                  className="text-[var(--color-text)]"
+                  style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}
+                >
+                  {moduleDetail.label}
+                </h2>
+                <p
+                  className="mt-2 text-[13.5px] leading-relaxed"
+                  style={{ color: 'var(--color-text-body)' }}
+                >
+                  {moduleDetail.description}
+                </p>
+              </div>
+
+              {/* What ANTON is configured to do — persona + role from the
+                  underlying system prompt. Shown only when authored. */}
+              {(moduleDetail.persona || moduleDetail.roleObjective) && (
+                <div
+                  className="rounded-[var(--radius-r3)] p-4"
+                  style={{
+                    background: 'var(--color-surface-alt)',
+                    border: '1px solid var(--color-border-soft)',
+                  }}
+                >
+                  <div
+                    className="mb-2 font-mono uppercase"
+                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  >
+                    What ANTON does here
+                  </div>
+                  {moduleDetail.persona && (
+                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+                      {moduleDetail.persona}
+                    </p>
+                  )}
+                  {moduleDetail.roleObjective && (
+                    <p
+                      className="mt-2 text-[12.5px] leading-relaxed"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      {moduleDetail.roleObjective}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Output formats — chips show what shape of answer the module
+                  produces by default. Helps the user know what to expect. */}
+              {moduleDetail.defaults.outputFormatLabels.length > 0 && (
+                <div className="px-1">
+                  <div
+                    className="mb-1.5 font-mono uppercase"
+                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  >
+                    Produces
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {moduleDetail.defaults.outputFormatLabels.map(label => (
+                      <span
+                        key={label}
+                        className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                        style={{
+                          background: 'var(--color-accent-soft)',
+                          color: 'var(--color-accent)',
+                          border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+                        }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick-start chips — let the user step into the module
+                  without having to figure out what to type first. */}
+              <div className="px-1 pt-1">
+                <div
+                  className="mb-1.5 font-mono uppercase"
+                  style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                >
+                  Try asking
+                </div>
+                <SuggestionChips
+                  suggestions={[
+                    `What can you help me with in ${moduleDetail.shortLabel || moduleDetail.label}?`,
+                    'Walk me through your typical workflow',
+                    'Show me an example of what you produce',
+                  ]}
+                  onSelect={(s) => setInput(s)}
+                />
+              </div>
             </div>
           )}
 
@@ -340,8 +521,39 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
           borderTop: '1px solid var(--color-border-soft)',
         }}
       >
-        <div className="mx-auto max-w-2xl px-3 pt-2.5"
+        <div className="mx-auto max-w-2xl px-3 pt-2"
              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0) + 10px)' }}>
+          {/* Model chip — opens the picker. Placed above the composer so
+              the user knows which brain is about to answer before they hit
+              send. modelId null → showing the org default in the chip. */}
+          <div className="mb-2 flex items-center justify-between px-1">
+            <button
+              onClick={() => setModelPickerOpen(true)}
+              aria-label={`Model: ${modelLabel}. Tap to change.`}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition active:opacity-60"
+              style={{
+                background: 'var(--color-surface-alt)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-body)',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Ico name="sparkles" color={modelId ? 'var(--color-accent)' : 'var(--color-text-muted)'} size={11} />
+              <span>{modelLabel}</span>
+              <Ico name="chevronDown" color="var(--color-text-muted)" size={11} />
+            </button>
+            {modelId && (
+              <button
+                onClick={() => applyModel(null, 'Default')}
+                aria-label="Reset to default model"
+                className="text-[10.5px] underline"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
           <div
             className="flex items-end gap-1.5 rounded-[22px] pl-3.5 pr-1.5 py-1.5"
             style={{
@@ -383,6 +595,14 @@ export default function ChatPage({ orgId, sessionId, onSessionCreated, onBack }:
           </div>
         </div>
       </div>
+
+      <ModelPickerSheet
+        open={modelPickerOpen}
+        orgId={orgId}
+        selectedModelId={modelId}
+        onClose={() => setModelPickerOpen(false)}
+        onSelect={(id, label) => applyModel(id, label)}
+      />
     </div>
   );
 }

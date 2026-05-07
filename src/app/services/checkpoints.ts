@@ -2,8 +2,9 @@
  * checkpoints.ts — pending approvals client API per spec §8.6.
  */
 
-import { activeServerBase, activeAuthHeaders, getActiveInstance } from './instances';
+import { getActiveInstance } from './instances';
 import { hasPrivateKey, signEnvelope } from './identity';
+import { clientFetch } from './api';
 
 export type CheckpointSeverity = 'low' | 'normal' | 'high' | 'critical';
 export type CheckpointStatus = 'pending' | 'approved' | 'rejected' | 'modified' | 'expired';
@@ -27,27 +28,22 @@ export interface Checkpoint {
   updated_at: string;
 }
 
-async function authedFetch(path: string, init?: RequestInit): Promise<Response> {
-  const base = activeServerBase();
-  const headers = await activeAuthHeaders();
-  return fetch(`${base}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...headers, ...(init?.headers as Record<string, string> ?? {}) },
-  });
-}
+// `clientFetch` is mesh-aware: routes via the relay for mesh-paired
+// instances, falls back to native HTTP for public_https. Path passed in
+// is everything AFTER `/api/app` (so `/checkpoints` not `/api/app/checkpoints`).
 
 export async function listPendingCheckpoints(opts?: { orgId?: string; limit?: number }): Promise<Checkpoint[]> {
   const params = new URLSearchParams();
   if (opts?.orgId) params.set('orgId', opts.orgId);
   if (opts?.limit) params.set('limit', String(opts.limit));
   const q = params.toString() ? `?${params.toString()}` : '';
-  const res = await authedFetch(`/api/app/checkpoints${q}`);
+  const res = await clientFetch(`/checkpoints${q}`);
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to load checkpoints');
   return ((await res.json()).checkpoints ?? []) as Checkpoint[];
 }
 
 export async function getCheckpoint(id: string): Promise<Checkpoint> {
-  const res = await authedFetch(`/api/app/checkpoints/${encodeURIComponent(id)}`);
+  const res = await clientFetch(`/checkpoints/${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to load checkpoint');
   return ((await res.json()).checkpoint) as Checkpoint;
 }
@@ -71,8 +67,9 @@ export async function respondToCheckpoint(id: string, input: {
       body = { envelope: env };
     } catch { /* fall back to raw body */ }
   }
-  const res = await authedFetch(`/api/app/checkpoints/${encodeURIComponent(id)}/respond`, {
+  const res = await clientFetch(`/checkpoints/${encodeURIComponent(id)}/respond`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to respond');

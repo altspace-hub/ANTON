@@ -14,7 +14,7 @@
 
 import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { createModelAdapter, getProviderFromModelId, getCustomModelConfigs, type UnifiedLLMRequest } from './model-adapter.js';
+import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
@@ -91,7 +91,7 @@ async function resolveAzureConfig(modelId: string, db?: DatabaseAdapter): Promis
 function getApiKeyForModel(modelId: string, db?: DatabaseAdapter): string | undefined {
   // Check custom model slots for API key overrides
   if (db) {
-    const customModels = getCustomModelConfigs(db);
+    const customModels = getCustomModelConfigsSync(db);
     const match = customModels.find((m: { modelId: string }) => m.modelId === modelId);
     if (match) {
       // Custom API key override takes priority

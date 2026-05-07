@@ -15,6 +15,7 @@ import {
   getCalendarToday,
   type CalendarToday, type CalendarColor,
 } from '../services/calendar';
+import CalendarEventSheet from '../components/CalendarEventSheet';
 
 interface Props {
   orgId: string;
@@ -61,6 +62,9 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
   const [today,   setToday]   = useState<CalendarToday | null>(null);
   const [date,    setDate]    = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // Bumped after a new event is created so the day's events refetch
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +78,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
       }
     })();
     return () => { cancelled = true; };
-  }, [orgId, date]);
+  }, [orgId, date, refreshTick]);
 
   const week = useMemo(() => buildWeek(date ? new Date(date) : new Date()), [date]);
   const headerDate = useMemo(() => {
@@ -109,6 +113,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
           </button>
           <button
             aria-label="Add event"
+            onClick={() => setSheetOpen(true)}
             className="flex h-11 w-11 items-center justify-center"
           >
             <Ico name="plus" color="var(--color-text)" size={20} />
@@ -257,6 +262,14 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
           </div>
         )}
       </div>
+
+      <CalendarEventSheet
+        open={sheetOpen}
+        orgId={orgId}
+        defaultDate={date}
+        onClose={() => setSheetOpen(false)}
+        onCreated={() => setRefreshTick(t => t + 1)}
+      />
     </div>
   );
 }
