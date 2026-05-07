@@ -24,8 +24,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       const result = await orchestrator.runDailyIntelligence();
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -35,8 +34,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       const result = await orchestrator.runPredictionCheckpoints();
       res.json({ success: true, ...result });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -48,8 +46,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       const result = await orchestrator.runIndexRebalance(indexId);
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -60,8 +57,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       const result = await orchestrator.runPredictionValidation();
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -72,8 +68,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       const result = await orchestrator.runWeeklyPulse();
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -98,8 +93,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       );
       res.json({ runs });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -125,8 +119,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
       );
       res.json({ deadLetters });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -179,8 +172,7 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
 
       res.json({ retried: true, deadLetterId: deadLetter.id, result: retryResult });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

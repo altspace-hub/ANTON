@@ -18,8 +18,7 @@ export async function createMarketCrossPillarRoutes(db: DatabaseAdapter) {
       const ref = await service.linkEntities({ marketEntityType, marketEntityId, externalType, externalId, relationship, notes });
       res.json(ref);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -34,8 +33,7 @@ export async function createMarketCrossPillarRoutes(db: DatabaseAdapter) {
       await service.unlinkEntities(marketEntityId, externalId, relationship);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -45,8 +43,7 @@ export async function createMarketCrossPillarRoutes(db: DatabaseAdapter) {
       const refs = await service.getRefsWithDetails(req.params.type, req.params.id);
       res.json(refs);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -56,8 +53,7 @@ export async function createMarketCrossPillarRoutes(db: DatabaseAdapter) {
       const refs = await service.getRefsForExternal(req.params.type, req.params.id);
       res.json(refs);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

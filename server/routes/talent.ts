@@ -133,8 +133,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const campaigns = await service.listCampaigns({ status, limit, offset });
       res.json({ success: true, campaigns });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -151,8 +150,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       });
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -163,8 +161,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const stats = await service.getCampaignStats(req.params.id);
       res.json({ success: true, campaign, stats });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -192,8 +189,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.updateCampaign(req.params.id, parsed.data);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -202,8 +198,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.deleteCampaign(req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -216,8 +211,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const candidates = await service.listCandidates(req.params.id, { status, limit });
       res.json({ success: true, candidates });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -231,8 +225,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const id = await service.addCandidate({ campaignId: req.params.id, ...parsed.data });
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -243,8 +236,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const assessments = await service.getAssessments(req.params.id);
       res.json({ success: true, candidate, assessments });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -258,8 +250,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.updateCandidate(req.params.id, parsed.data);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -270,8 +261,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const dimensions = await service.listScoringDimensions(req.params.id);
       res.json({ success: true, dimensions });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -285,8 +275,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const id = await service.createScoringDimension({ campaignId: req.params.id, ...parsed.data });
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -300,8 +289,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.updateScoringDimension(req.params.id, parsed.data);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -310,8 +298,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.deleteScoringDimension(req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -323,8 +310,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const comms = await service.listCommunications(req.params.id, candidateId);
       res.json({ success: true, communications: comms });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -336,8 +322,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const plans = await service.listInterviewPlans(req.params.id, candidateId);
       res.json({ success: true, interviewPlans: plans });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -348,8 +333,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const shortlists = await service.listShortlists(req.params.id);
       res.json({ success: true, shortlists });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -364,8 +348,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const id = await service.createShortlist({ campaignId: req.params.id, ...parsed.data, createdBy: userId });
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -379,8 +362,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       );
       res.json({ success: true, questions });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -403,8 +385,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       }
       res.status(201).json({ success: true, ids });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -420,8 +401,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       `, ...(modifiedText ? [userId, modifiedText, req.params.id] : [userId, req.params.id]));
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -439,8 +419,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       }
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -469,8 +448,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       }
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -482,8 +460,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await service.updateCommunication(req.params.id, { status: 'approved', approved_by: userId });
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -503,8 +480,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       }
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -525,8 +501,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       });
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -540,8 +515,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const trail = await service.getAuditTrail(req.params.id, { candidateId, action, limit });
       res.json({ success: true, auditTrail: trail });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -554,8 +528,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const result = await aiService.generateAd(req.params.id, variant);
       res.json({ success: true, ...result });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -565,8 +538,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const dimensions = await aiService.generateScoringFramework(req.params.id);
       res.json({ success: true, dimensions });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -576,8 +548,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const result = await aiService.runBiasSimulation(req.params.id);
       res.json({ success: true, simulation: result });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -587,8 +558,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const result = await aiService.assessCandidate(req.params.id);
       res.json({ success: true, ...result });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -598,8 +568,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const planId = await aiService.generateInterviewPlan(req.params.campaignId, req.params.candidateId);
       res.json({ success: true, id: planId });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -610,8 +579,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const commId = await aiService.draftCommunication(req.params.id, commType);
       res.json({ success: true, id: commId });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -626,8 +594,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const rationale = await aiService.generateShortlistRationale(req.params.id, candidateIds);
       res.json({ success: true, rationale });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -645,8 +612,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       `, id, employeeId, currentRole ?? null, currentDepartment ?? null);
       res.status(201).json({ success: true, id });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -657,8 +623,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!profile) { res.status(404).json({ error: 'Profile not found' }); return; }
       res.json({ success: true, profile });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -687,8 +652,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await db.run(`UPDATE talent_aspiration_profiles SET ${fields.join(', ')} WHERE id = ?`, ...args);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -710,8 +674,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       await db.run('DELETE FROM talent_internal_applications WHERE aspiration_profile_id = ?', req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -727,8 +690,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       `, req.params.id);
       res.json({ success: true, matches });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -741,8 +703,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       `, req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -755,8 +716,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       `, req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -804,8 +764,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
         },
       });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -817,8 +776,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const failed = checks.filter(c => c.status === 'fail').length;
       res.json({ success: true, checks, summary: { total: checks.length, passed, failed } });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

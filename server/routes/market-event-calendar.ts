@@ -50,8 +50,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       const event = await service.addEvent({ eventType, title, description, symbol, entityId, scheduledAt, importance, preEventHours, metadata });
       res.json(event);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -67,8 +66,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       if (!event) { res.status(404).json({ error: 'Event not found' }); return; }
       res.json(event);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -78,8 +76,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       await service.deleteEvent(req.params.id);
       res.json({ success: true });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -90,8 +87,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       const events = await service.listUpcomingEvents(horizonHours);
       res.json(events);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -108,8 +104,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       if (!event) { res.status(404).json({ error: 'Event not found' }); return; }
       res.json(event);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -119,8 +114,7 @@ export async function createMarketEventCalendarRoutes(db: DatabaseAdapter) {
       const result = await service.checkAndFireTriggers();
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

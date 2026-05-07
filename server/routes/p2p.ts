@@ -267,8 +267,7 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
 
       res.json({ ok: true, localId, encrypted: !!encryptedPayload });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -344,8 +343,7 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
         totalResults: knowledgeAtoms.length + marketAtoms.length,
       });
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

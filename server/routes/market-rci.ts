@@ -16,8 +16,7 @@ export async function createMarketRCIRoutes(rciService: MarketRCIService) {
       const result = await rciService.reasonComputeInterpret(question, context);
       res.json(result);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -32,8 +31,7 @@ export async function createMarketRCIRoutes(rciService: MarketRCIService) {
       const suggestions = await rciService.suggestTemplates(question);
       res.json(suggestions);
     } catch (err) {
-      const { status, message } = safeError(err);
-      res.status(status).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
