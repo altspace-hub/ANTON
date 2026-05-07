@@ -44,6 +44,7 @@ import {
 import {
   parseHelloInstance,
   parseHelloPhone,
+  parseDialInstance,
   verifyHelloInstance,
   HelloVerificationError,
   HelloError,
@@ -381,6 +382,9 @@ export class RelayServer {
       case TYPE.HELLO_PHONE:
         this.handleHelloPhone(state, frame.payload);
         return;
+      case TYPE.DIAL_INSTANCE:
+        this.handleDialInstance(state, frame.payload);
+        return;
       case TYPE.ENVELOPE:
         this.handleEnvelope(state, frame.payload);
         return;
@@ -504,6 +508,43 @@ export class RelayServer {
       instance_id_prefix: shortId(bytesToHex(parsed.instance_id)),
     });
     const actions = this.match.registerPhoneRequest(state.connId, parsed);
+    this.executeActions(actions);
+  }
+
+  /**
+   * §3.11 — instance-to-instance dial. The dialer's connection MUST already
+   * have completed HELLO_INSTANCE; the matcher's role check enforces that.
+   * No fresh proof here — identity is inherited from the registered leg.
+   */
+  private handleDialInstance(state: ConnState, payload: Uint8Array): void {
+    if (!state.helloed) {
+      this.sendError(state, RELAY_ERROR_CODE.BAD_HELLO, 'DIAL_INSTANCE before HELLO_INSTANCE');
+      this.closeConn(state, 1002, 'dial_before_hello');
+      return;
+    }
+    let parsed;
+    try {
+      parsed = parseDialInstance(payload);
+    } catch (err) {
+      const he = err as HelloVerificationError;
+      this.cfg.audit.emit({
+        type: 'dial_instance_rejected',
+        conn_id: state.connId,
+        source: state.bucketKey,
+        error_code: RELAY_ERROR_CODE.BAD_HELLO,
+        reason: he.message,
+      });
+      this.sendError(state, RELAY_ERROR_CODE.BAD_HELLO, 'malformed');
+      this.closeConn(state, 1002, 'bad_dial_instance');
+      return;
+    }
+    this.cfg.audit.emit({
+      type: 'dial_instance',
+      conn_id: state.connId,
+      source: state.bucketKey,
+      instance_id_prefix: shortId(bytesToHex(parsed.target_instance_id)),
+    });
+    const actions = this.match.registerInstanceDial(state.connId, parsed);
     this.executeActions(actions);
   }
 

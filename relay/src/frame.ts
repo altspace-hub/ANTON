@@ -28,6 +28,10 @@ export const TYPE = {
   ACK_PHONE:      0x04,
   PING:           0x05,
   PONG:           0x06,
+  /** Spec §3.11 — instance dialing a peer instance. Sent on a connection
+   *  that already completed HELLO_INSTANCE. Carries the same shape as
+   *  HELLO_PHONE, plus the same matching semantics. */
+  DIAL_INSTANCE:  0x07,
   ERROR:          0x0F,
   ENVELOPE:       0x10,
 } as const;
