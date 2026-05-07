@@ -194,13 +194,40 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     }
   })();
 
-  // GET /api/community/status — activation check
+  // GET /api/community/status — activation check.
+  //
+  // Track A2: enriches the identity card with the local instance's mesh
+  // address (Ed25519 pubkey + canonical relay list) so the contact share
+  // mechanism (QR / JSON export) carries everything a peer needs to deliver
+  // mail / agent queries over the ANTON Mesh instead of plain HTTPS.
+  // mesh_pubkey is the raw 32-byte Ed25519 hex; the X25519 (Noise static)
+  // is derived deterministically by the peer via ed_pk_to_curve25519 — no
+  // need to ship two keys when one is a function of the other.
   router.get('/community/status', async (req, res) => {
     try {
-      const identity = await db.get(
+      const identity = await db.get<{
+        contact_hash: string; display_name: string; public_key: string;
+        x25519_public_key: string | null; activated_at: string;
+      }>(
         "SELECT contact_hash, display_name, public_key, x25519_public_key, activated_at FROM community_identity WHERE user_id = 'default'"
       );
-      res.json({ activated: !!identity, identity: identity ?? null });
+      let mesh: { mesh_pubkey: string; mesh_relay_endpoints: string[] } | null = null;
+      if (identity) {
+        try {
+          const inst = await db.get<{ ed25519_pubkey_raw: string | null }>(
+            "SELECT ed25519_pubkey_raw FROM instance_identity WHERE singleton = 'singleton'"
+          );
+          const { getRelayEndpoints } = await import('../services/mesh-config-service.js');
+          const relays = await getRelayEndpoints(db);
+          if (inst?.ed25519_pubkey_raw && relays.endpoints.length > 0) {
+            mesh = { mesh_pubkey: inst.ed25519_pubkey_raw, mesh_relay_endpoints: relays.endpoints };
+          }
+        } catch {
+          // Mesh fields are optional — pre-mesh deployments still get a
+          // valid identity card.
+        }
+      }
+      res.json({ activated: !!identity, identity: identity ? { ...identity, ...(mesh ?? {}) } : null });
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
@@ -492,25 +519,44 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
-  // POST /api/community/connections — add contact by hash + public key + X25519 key
+  // POST /api/community/connections — add contact by hash + public key + X25519 key.
+  //
+  // Track A2: also accepts the peer's mesh address fields (mesh_pubkey =
+  // peer instance Ed25519, mesh_relay_endpoints = ranked WSS URLs). When
+  // both are present the connection is mesh-eligible and peer-transport-service
+  // will prefer the mesh path; absent fields keep the connection on the
+  // legacy HTTPS path with no behaviour change.
   router.post('/community/connections', async (req, res) => {
     try {
-      const { contact_hash, display_name, public_key, x25519_public_key, endpoint } = req.body as {
+      const {
+        contact_hash, display_name, public_key, x25519_public_key, endpoint,
+        mesh_pubkey, mesh_relay_endpoints,
+      } = req.body as {
         contact_hash: string;
         display_name: string;
         public_key: string;
         x25519_public_key?: string;
         endpoint?: string;
+        mesh_pubkey?: string;
+        mesh_relay_endpoints?: string[];
       };
       if (!contact_hash || !public_key) {
         return res.status(400).json({ error: 'contact_hash and public_key required' });
       }
+      const meshReady = typeof mesh_pubkey === 'string' && mesh_pubkey.length > 0
+        && Array.isArray(mesh_relay_endpoints) && mesh_relay_endpoints.length > 0;
       const id = `conn_${Date.now()}`;
       await db.run(
-        `INSERT INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, x25519_public_key, endpoint, status) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`
+        `INSERT INTO community_connections (
+           id, owner_user_id, contact_hash, display_name, public_key, x25519_public_key,
+           endpoint, status, peer_instance_pubkey, peer_relay_endpoints, preferred_transport
+         ) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?) ON CONFLICT DO NOTHING`
       , id, 'default', contact_hash, display_name || 'Anonymous', public_key,
-        x25519_public_key ?? null, endpoint ?? null, 'active');
-      return res.json({ id, ok: true });
+        x25519_public_key ?? null, endpoint ?? null, 'active',
+        meshReady ? mesh_pubkey : null,
+        meshReady ? JSON.stringify(mesh_relay_endpoints) : null,
+        meshReady ? 'auto' : 'https');
+      return res.json({ id, ok: true, mesh_ready: meshReady });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 

@@ -1,33 +1,7 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
-/**
- * Validate a peer endpoint URL to prevent SSRF attacks.
- * Only allows http/https schemes, blocks localhost and private IP ranges
- * (except when ALLOW_PRIVATE_P2P=true for local development).
- */
-function validateEndpointUrl(endpoint: string): boolean {
-  try {
-    const parsed = new URL(endpoint);
-    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
-
-    // In production, block private networks. Allow for local dev.
-    if (process.env.ALLOW_PRIVATE_P2P === 'true') return true;
-
-    const hostname = parsed.hostname.toLowerCase();
-    // Block localhost
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return false;
-    // Block private IPv4 ranges
-    if (/^10\./.test(hostname)) return false;
-    if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return false;
-    if (/^192\.168\./.test(hostname)) return false;
-    // Block link-local
-    if (/^169\.254\./.test(hostname)) return false;
-
-    return true;
-  } catch {
-    return false;
-  }
-}
+// Track A5: SSRF guard moved into peer-transport-service alongside the
+// HTTPS dispatcher (the only place that opens fetch on a peer URL).
 
 export async function createMessageQueueService(db: DatabaseAdapter) {
 
@@ -41,71 +15,86 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
   }
 
   /**
-   * Resolve a contact hash to their P2P endpoint URL.
-   * Returns null if no endpoint configured (local-only contact).
+   * Resolve a contact hash to a deliverable connection. Track A5: returns
+   * the full connection row so peer-transport-service can pick mesh vs
+   * HTTPS, not just the endpoint URL. Null means local-only contact (no
+   * delivery attempt — mail is marked delivered locally).
+   *
+   * "deliverable" = (HTTPS endpoint set) OR (mesh address fields set).
+   * A connection with neither stays local-only.
    */
-  async function resolveEndpoint(recipientHash: string): Promise<string | null> {
-    const conn = await db.get<{ endpoint: string | null }>(
-      "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status IN ('accepted', 'active')",
-      recipientHash
+  async function resolveConnection(recipientHash: string): Promise<{
+    id: string;
+    endpoint: string | null;
+    peer_instance_pubkey: string | null;
+    peer_relay_endpoints: string | string[] | null;
+  } | null> {
+    const conn = await db.get<{
+      id: string; endpoint: string | null;
+      peer_instance_pubkey: string | null;
+      peer_relay_endpoints: string | string[] | null;
+    }>(
+      `SELECT id, endpoint, peer_instance_pubkey, peer_relay_endpoints
+         FROM community_connections
+        WHERE contact_hash = ? AND status IN ('accepted', 'active')`,
+      recipientHash,
     );
-    return conn?.endpoint ?? null;
+    if (!conn) return null;
+    const meshReady = !!conn.peer_instance_pubkey
+      && !!conn.peer_relay_endpoints;
+    if (!conn.endpoint && !meshReady) return null;
+    return conn;
   }
 
   /**
-   * Attempt HTTP delivery of a message to a peer ANTON instance.
-   * The peer exposes POST /api/p2p/receive for inbound messages.
+   * Deliver a queued mail message to its recipient. Track A5: routes
+   * through peer-transport-service which prefers mesh and falls back to
+   * HTTPS — the body construction (subject/body redaction when encrypted,
+   * payload metadata) is the same as before, just no longer tied to a
+   * specific transport.
+   *
+   * The legacy SSRF guard now lives inside peer-transport-service for the
+   * HTTPS path; this function trusts that and focuses on body shape.
    */
-  async function deliverViaHttp(
-    endpoint: string,
+  async function deliverMail(
+    connectionId: string,
     mailId: string,
-    recipientHash: string,
     encryptedPayload: string | null,
-  ): Promise<{ success: boolean; httpStatus: number }> {
-    // Validate endpoint URL to prevent SSRF
-    if (!validateEndpointUrl(endpoint)) {
-      console.warn(`[p2p] Blocked delivery to invalid/private endpoint: ${endpoint}`);
-      return { success: false, httpStatus: 0 };
+  ): Promise<{ success: boolean; httpStatus: number; transport: 'mesh' | 'https' | 'none' }> {
+    const mail = await db.get<Record<string, unknown>>(
+      'SELECT id, from_hash, to_hashes, subject, body, message_type, payload, payload_metadata, thread_id, parent_id FROM community_mail WHERE id = ?',
+      mailId,
+    );
+    if (!mail) return { success: false, httpStatus: 0, transport: 'none' };
+
+    // When the payload is end-to-end encrypted, the plaintext subject/body
+    // are redacted on the wire — the peer decrypts the envelope.
+    const hasEncryption = !!encryptedPayload;
+    const body = JSON.stringify({
+      mailId: mail.id,
+      fromHash: mail.from_hash,
+      toHashes: mail.to_hashes,
+      subject: hasEncryption ? '[encrypted]' : mail.subject,
+      body: hasEncryption ? '[encrypted]' : mail.body,
+      messageType: mail.message_type,
+      payload: hasEncryption ? null : mail.payload,
+      payloadMetadata: hasEncryption ? null : mail.payload_metadata,
+      threadId: mail.thread_id,
+      parentId: mail.parent_id,
+      encryptedPayload: encryptedPayload ?? undefined,
+    });
+
+    const { sendToPeer } = await import('./peer-transport-service.js');
+    const outcome = await sendToPeer(db, {
+      connectionId,
+      path: '/api/p2p/receive',
+      body,
+      totalTimeoutMs: 15_000,
+    });
+    if (!outcome.ok) {
+      console.error(`[p2p] delivery via ${outcome.transport} failed: ${outcome.error ?? `HTTP ${outcome.httpStatus}`}`);
     }
-
-    const url = `${endpoint.replace(/\/+$/, '')}/api/p2p/receive`;
-    try {
-      // Load the full mail record for delivery
-      const mail = await db.get<Record<string, unknown>>(
-        'SELECT id, from_hash, to_hashes, subject, body, message_type, payload, payload_metadata, thread_id, parent_id FROM community_mail WHERE id = ?',
-        mailId
-      );
-      if (!mail) return { success: false, httpStatus: 0 };
-
-      // If we have an encrypted payload, send it as the primary content
-      // The receiver will decrypt using X25519 DH + AES-256-GCM
-      // Plaintext subject/body are sent as empty when encrypted (peer decrypts from encryptedPayload)
-      const hasEncryption = !!encryptedPayload;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mailId: mail.id,
-          fromHash: mail.from_hash,
-          toHashes: mail.to_hashes,
-          subject: hasEncryption ? '[encrypted]' : mail.subject,
-          body: hasEncryption ? '[encrypted]' : mail.body,
-          messageType: mail.message_type,
-          payload: hasEncryption ? null : mail.payload,
-          payloadMetadata: hasEncryption ? null : mail.payload_metadata,
-          threadId: mail.thread_id,
-          parentId: mail.parent_id,
-          encryptedPayload: encryptedPayload ?? undefined,
-        }),
-        signal: AbortSignal.timeout(15_000), // 15s timeout
-      });
-
-      return { success: response.ok, httpStatus: response.status };
-    } catch (err) {
-      // Network error, timeout, DNS failure, etc.
-      console.error(`[p2p] HTTP delivery to ${url} failed:`, err instanceof Error ? err.message : err);
-      return { success: false, httpStatus: 0 };
-    }
+    return { success: outcome.ok, httpStatus: outcome.httpStatus, transport: outcome.transport };
   }
 
   /**
@@ -127,9 +116,9 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
 
     let sent = 0, failed = 0, local = 0;
     for (const msg of pending) {
-      const endpoint = await resolveEndpoint(msg.recipient_hash);
+      const conn = await resolveConnection(msg.recipient_hash);
 
-      if (!endpoint) {
+      if (!conn) {
         // Local-only contact — mark as delivered locally
         await db.run(
           "UPDATE community_message_queue SET status = 'sent', delivery_method = 'local', updated_at = NOW() WHERE id = ?",
@@ -144,13 +133,13 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
         continue;
       }
 
-      // Attempt HTTP delivery to peer
-      const result = await deliverViaHttp(endpoint, msg.mail_id, msg.recipient_hash, msg.payload_encrypted);
+      // Track A5: route through peer-transport-service (mesh-first, HTTPS-fallback)
+      const result = await deliverMail(conn.id, msg.mail_id, msg.payload_encrypted);
 
       if (result.success) {
         await db.run(
-          "UPDATE community_message_queue SET status = 'sent', delivery_method = 'http', last_http_status = ?, updated_at = NOW() WHERE id = ?",
-          result.httpStatus, msg.id
+          "UPDATE community_message_queue SET status = 'sent', delivery_method = ?, last_http_status = ?, updated_at = NOW() WHERE id = ?",
+          result.transport, result.httpStatus, msg.id
         );
         await db.run(
           "UPDATE community_mail SET delivery_status = 'delivered', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW(), delivered_at = NOW() WHERE id = ?",
@@ -350,7 +339,7 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     return { collected, processed };
   }
 
-  return { enqueueMessage, processQueue, getQueueStatus, retryFailed, resolveEndpoint, collectFromPeerRelays };
+  return { enqueueMessage, processQueue, getQueueStatus, retryFailed, collectFromPeerRelays };
 }
 
 export type MessageQueueService = Awaited<ReturnType<typeof createMessageQueueService>>;
