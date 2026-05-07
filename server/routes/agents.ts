@@ -46,14 +46,14 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         limit: req.query.limit ? Number(req.query.limit) : undefined,
       });
       res.json({ success: true, agents });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.get('/agents/templates', async (_req, res) => {
     try {
       const templates = await service.listTemplates();
       res.json({ success: true, templates });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.get('/agents/:id', async (req, res) => {
@@ -62,7 +62,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!agent) { res.status(404).json({ error: 'Agent not found' }); return; }
       const stats = await service.getAgentStats(agent.id);
       res.json({ success: true, agent, stats });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents', async (req, res) => {
@@ -71,35 +71,35 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
       const id = await service.createAgent(parsed.data);
       res.status(201).json({ success: true, id });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.patch('/agents/:id', async (req, res) => {
     try {
       await service.updateAgent(req.params.id, req.body);
       res.json({ success: true });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.delete('/agents/:id', async (req, res) => {
     try {
       await service.deleteAgent(req.params.id);
       res.json({ success: true });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents/:id/activate', async (req, res) => {
     try {
       await service.updateAgent(req.params.id, { status: 'active' });
       res.json({ success: true });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents/:id/pause', async (req, res) => {
     try {
       await service.updateAgent(req.params.id, { status: 'paused' });
       res.json({ success: true });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Connectors ─────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         req.params.id
       );
       res.json({ success: true, connectors });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents/:id/connectors', async (req, res) => {
@@ -137,14 +137,14 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
          JSON.stringify(config), encryptedAuth);
 
       res.status(201).json({ success: true, id });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.delete('/agents/:id/connectors/:connectorId', async (req, res) => {
     try {
       await db.run('DELETE FROM agent_connectors WHERE id = ? AND agent_id = ?', req.params.connectorId, req.params.id);
       res.json({ success: true });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // Test a connector
@@ -164,7 +164,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         params: req.body.params ?? {},
       });
       res.json({ success: true, result });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Conversations ──────────────────────────────────────────────────
@@ -173,7 +173,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const conversations = await service.listConversations(req.params.id, req.query.limit ? Number(req.query.limit) : 20);
       res.json({ success: true, conversations });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.get('/agents/conversations/:conversationId', async (req, res) => {
@@ -181,7 +181,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       const data = await service.getConversation(req.params.conversationId);
       if (!data) { res.status(404).json({ error: 'Conversation not found' }); return; }
       res.json({ success: true, ...data });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Query Agent ────────────────────────────────────────────────────
@@ -192,7 +192,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!message) { res.status(400).json({ error: 'message required' }); return; }
       const result = await processor.processQuery(req.params.id, message, { conversationId, source: 'direct' });
       res.json({ success: true, ...result });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Route Query to Best Agent ──────────────────────────────────────
@@ -203,7 +203,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!query) { res.status(400).json({ error: 'query required' }); return; }
       const match = await processor.routeQuery(query);
       res.json({ success: true, match });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Remote Agent Discovery & Query ──────────────────────────────────
@@ -215,7 +215,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       const client = await createRemoteAgentClient(db);
       const agents = await client.discoverRemoteAgents();
       res.json({ success: true, agents, count: agents.length });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // Smart query: find best remote agent and query it
@@ -238,7 +238,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         const result = await client.smartQuery(query);
         res.json({ success: true, result });
       }
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Agent Builder ──────────────────────────────────────────────────
@@ -249,7 +249,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!description) { res.status(400).json({ error: 'description required' }); return; }
       const config = await builder.generateFromDescription(description);
       res.json({ success: true, config });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents/builder/system-prompt', async (req, res) => {
@@ -258,7 +258,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!role) { res.status(400).json({ error: 'role required' }); return; }
       const prompt = await builder.generateSystemPrompt(role, context);
       res.json({ success: true, prompt });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/agents/builder/keywords', async (req, res) => {
@@ -267,7 +267,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (!role) { res.status(400).json({ error: 'role required' }); return; }
       const keywords = await builder.suggestKeywords(role, description ?? role);
       res.json({ success: true, keywords });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Public Storefront (no auth required — for external ANTONs) ──
@@ -288,7 +288,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
           keywords: typeof a.routing_keywords === 'string' ? JSON.parse(a.routing_keywords) : a.routing_keywords,
         }));
       res.json({ agents: directory, count: directory.length });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // POST /agents/public/query — external ANTON queries an agent (no mutual contact needed)
@@ -323,7 +323,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         conversationId: result.conversationId,
         escalated: result.escalated,
       });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // POST /agents/public/route — external ANTON asks "who can help with X?"
@@ -346,7 +346,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       } else {
         res.json({ success: true, match: null });
       }
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   // ── Stats ──────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const stats = await service.getAgentStats(req.params.id);
       res.json({ success: true, stats });
-    } catch (err) { const { status, message } = safeError(err); res.status(status).json({ error: message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   return router;

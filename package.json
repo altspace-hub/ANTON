@@ -2,6 +2,7 @@
   "name": "openexpert",
   "version": "0.7.5",
   "private": true,
+  "license": "Apache-2.0",
   "main": "dist/electron/main.js",
   "type": "module",
   "scripts": {

@@ -67,7 +67,15 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
 
   // GET /api/admin/usage — usage stats per user this month (admin only)
   router.get('/admin/usage', requireRole('admin'), async (_req, res) => {
-
+    const usage = await db.all(
+      `SELECT u.id, u.username, u.display_name,
+              COALESCE(m.input_tokens, 0) AS input_tokens,
+              COALESCE(m.output_tokens, 0) AS output_tokens,
+              COALESCE(m.input_tokens + m.output_tokens, 0) AS total_tokens
+       FROM users u
+       LEFT JOIN user_monthly_usage m ON u.id = m.user_id AND m.year_month = TO_CHAR(NOW(), 'YYYY-MM')
+       ORDER BY total_tokens DESC`
+    );
     res.json(usage);
   });
 

@@ -3,7 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { checkBudgetBeforeApiCall } from '../services/budget-manager.js';
 
 export function createBudgetMiddleware(db: DatabaseAdapter) {
-  return function checkBudget(req: Request, res: Response, next: NextFunction): void {
+  return async function checkBudget(req: Request, res: Response, next: NextFunction): Promise<void> {
     const userId = req.user?.id;
 
     // Skip budget check if no user (shouldn't happen with auth middleware)
@@ -16,7 +16,7 @@ export function createBudgetMiddleware(db: DatabaseAdapter) {
     const messageLength = JSON.stringify(req.body).length;
     const estimatedTokens = Math.ceil(messageLength / 3);
 
-    const budgetCheck = checkBudgetBeforeApiCall(db, userId, estimatedTokens);
+    const budgetCheck = await checkBudgetBeforeApiCall(db, userId, estimatedTokens);
 
     if (!budgetCheck.allowed) {
       res.status(429).json({
