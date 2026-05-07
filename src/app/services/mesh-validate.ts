@@ -24,6 +24,11 @@ export interface ValidatedMeshFields {
   /** Hex-encoded canonical (ed_pk, x_pk, binding_sig) triple — what the phone pins. */
   pubkeyPinnedJson: string;
   relayEndpoints: string[];
+  /** 16-byte instance_id = sha256(x_pk)[0..16). The phone needs this for the
+   *  HELLO_PHONE frame; returning it here avoids recomputing later. */
+  instanceId: Uint8Array;
+  /** Raw 32-byte instance_x_pk — what Noise IK pins as the responder static. */
+  instanceXPubkey: Uint8Array;
 }
 
 export class MeshValidationError extends Error {
@@ -88,12 +93,10 @@ export function validateMeshPackage(
     throw new MeshValidationError('binding_sig does not verify under instance_ed_pk');
   }
 
-  // Step 4 — instance_id check is implicit: the spec puts it in the QR for
-  // convenience, but it's deterministically derivable from x_pk so a
-  // mismatch never happens with a well-formed package. We compute it to
-  // confirm and stash for later use.
+  // Step 4 — instance_id is deterministically derivable from x_pk, so a
+  // mismatch never happens with a well-formed package. We compute it for
+  // the HELLO_PHONE frame.
   const instanceId = sha256(x_pk).slice(0, 16);
-  void instanceId;
 
   // Build the pinned-pubkey JSON the Instance record stores. This is what
   // mesh.ts → meshTransportForInstance reads at fetch time.
@@ -103,7 +106,12 @@ export function validateMeshPackage(
     binding_sig: pkg.binding_sig,
   });
 
-  return { pubkeyPinnedJson, relayEndpoints: validatedRelays };
+  return {
+    pubkeyPinnedJson,
+    relayEndpoints: validatedRelays,
+    instanceId,
+    instanceXPubkey: x_pk,
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

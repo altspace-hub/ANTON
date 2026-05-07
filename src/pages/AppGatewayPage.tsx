@@ -10,6 +10,9 @@ import {
   QrCode, Tag, Settings, Shield, Smartphone, ChevronDown,
 } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
+// PairDeviceTab uses this to encode the mesh enrollment package inline in
+// the QR — see the `transport === 'mesh'` branch in generate().
+import { encodeBase64UrlJson } from '../app/services/pairing-url';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -682,14 +685,42 @@ function PairDeviceTab({ orgId }: { orgId: string }) {
       const result = await api.post('/enrollment/start', body) as EnrollmentPackage;
       setPkg(result);
 
-      const serverUrl = window.location.origin;
-      const url = `anton://enroll?server=${encodeURIComponent(serverUrl)}&token=${encodeURIComponent(result.token)}`;
+      // For mesh transport, embed the full enrollment package as base64url
+      // JSON in the QR. The phone parses the package directly — no HTTP
+      // call to the instance is required pre-pair, so the operator's
+      // machine doesn't need to be reachable from the phone (cellular,
+      // Wi-Fi-isolated, etc.). The completion call goes via the relay.
+      //
+      // For public_https transport, keep the legacy ?server=&token= shape
+      // because the phone DOES need to reach the server directly.
+      let url: string;
+      if (result.transport === 'mesh') {
+        const inlinePkg = {
+          ...result,
+          // Optional human label so the UI can show "paired with X"
+          // before the completion succeeds. The phone never resolves it.
+          server_label: window.location.host,
+        };
+        const enc = encodeBase64UrlJson(inlinePkg);
+        url = `anton://enroll?pkg=${enc}`;
+      } else {
+        const serverUrl = window.location.origin;
+        url = `anton://enroll?server=${encodeURIComponent(serverUrl)}&token=${encodeURIComponent(result.token)}`;
+      }
       setPairingUrl(url);
 
       const QRCode = await import('qrcode');
+      // Mesh inline-package QRs carry the whole enrollment payload so they
+      // contain ~5x more data than a public_https URL → many more modules
+      // per side. At 320px each module is sub-millimetre on a typical
+      // monitor and most phone cameras can't resolve it. Render larger
+      // for mesh, with M-level error correction (denser modules but fits
+      // the data in fewer versions). Public_https stays at 320px.
+      const isMesh = result.transport === 'mesh';
       const dataUrl = await QRCode.toDataURL(url, {
-        width: 320,
-        margin: 1,
+        width: isMesh ? 640 : 320,
+        margin: 2,
+        errorCorrectionLevel: isMesh ? 'M' : 'M',
         color: { dark: '#0B1426', light: '#FFFFFF' },
       });
       setQrDataUrl(dataUrl);
@@ -779,7 +810,10 @@ function PairDeviceTab({ orgId }: { orgId: string }) {
             <img
               src={qrDataUrl}
               alt="Pairing QR"
-              className="h-[260px] w-[260px] rounded-lg bg-white p-2"
+              // Mesh QRs are dense (full enrollment package inside). 480px on
+              // screen gives each module ~1.5mm on a typical monitor — well
+              // above the camera-resolvable threshold for most phones.
+              className="h-[480px] w-[480px] rounded-lg bg-white p-3"
               style={{ filter: expired ? 'grayscale(1) opacity(0.4)' : 'none' }}
             />
             <div className="text-center">

@@ -22,6 +22,12 @@ import type { createRadarFetcher } from '../services/radar-fetcher.js';
 import { hybridSearch } from '../services/hybrid-search.js';
 import { callChat, resolveModel } from '../services/provider-router.js';
 import { createAppMailService, type MailProviderKind } from '../services/app-mail-service.js';
+import type { ModuleDefinition } from '../../src/lib/types.js';
+// MODULES + AREAS are loaded at boot via dynamic import — the existing
+// pattern across app-gateway.ts. A static import drags in src/lib/constants.ts
+// which has hundreds of relative imports without .js extensions, tripping
+// nodenext module resolution. Dynamic import sidesteps the static graph
+// while still letting us cache the catalog once.
 
 // ── Org membership check middleware ──────────────────────────────────────────
 function createOrgMembershipCheck(db: DatabaseAdapter) {
@@ -54,6 +60,18 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   const checkpoints = createAppCheckpointService(db);
   const radar = await createRegulatoryRadar(db);
   const mail = createAppMailService(db);
+
+  // Module catalog — loaded once at boot, then served from memory. Typed via
+  // ModuleDefinition (static import is fine for type-only) but loaded via
+  // dynamic import so nodenext doesn't choke on src/lib/constants.ts's
+  // extensionless relative imports.
+  type AreaEntry = { id: string; label: string; moduleIds: string[] };
+  const constantsMod = await import('../../src/lib/constants.js' as string) as {
+    MODULES: ModuleDefinition[];
+    AREAS: AreaEntry[];
+  };
+  const MODULES_CATALOG: ModuleDefinition[] = constantsMod.MODULES;
+  const AREAS_CATALOG: AreaEntry[] = constantsMod.AREAS;
 
   // ══════════════════════════════════════════════════════════════════════════
   // PUBLIC ROUTES (/api/app/*) — mounted BEFORE auth middleware
@@ -296,7 +314,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // Non-streaming query — returns JSON directly (works through any proxy)
   publicRouter.post('/org/:orgId/query-sync', appAuth, orgMember, async (req, res) => {
     try {
-      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage, capture } = req.body;
+      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage, capture, moduleId, model } = req.body;
       if (!message) return res.status(400).json({ error: 'message is required' });
       // Phase I fix Arch-3 — soft cap on inline capture payload size.
       // Spec §10.4 — keep per-screen usable at 200 kbps. 1MB is the
@@ -309,13 +327,17 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         }
       }
 
-      // Use a promise to capture the onComplete result
+      // Use a promise to capture the onComplete result. Forward the inline
+      // capture payload (image base64 or text share) so processQuery can
+      // wrap it in a content block — without this the photo never reaches
+      // the LLM and only the typed message gets answered.
       const queryResult = await new Promise<Record<string, unknown>>((resolve, reject) => {
         svc.processQuery(
           {
             orgId: String(req.params.orgId),
             userId: req.appUser!.id,
-            message, sessionId, intentCategoryId, voiceInput, outputLanguage,
+            message, sessionId, intentCategoryId, voiceInput, outputLanguage, moduleId, model,
+            capture,
           },
           () => {}, // Events not needed for sync
           (r) => { resolve(r as unknown as Record<string, unknown>); }
@@ -358,7 +380,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // REST query fallback (for clients that can't use WebSocket)
   publicRouter.post('/org/:orgId/query', appAuth, orgMember, async (req, res) => {
     try {
-      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage } = req.body;
+      const { message, sessionId, intentCategoryId, voiceInput, outputLanguage, moduleId, model } = req.body;
       if (!message) return res.status(400).json({ error: 'message is required' });
 
       // Set SSE headers for streaming
@@ -378,6 +400,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
           intentCategoryId,
           voiceInput,
           outputLanguage,
+          moduleId,
+          model,
         },
         (event) => {
           res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -401,6 +425,38 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // ══════════════════════════════════════════════════════════════════════════
   // ADMIN ROUTES (/api/admin/app/*) — uses ANTON session auth
   // ══════════════════════════════════════════════════════════════════════════
+
+  // ── Mesh relay override (Track C Slice 2) ──────────────────────────────
+  // Read / set the canonical mesh relay list. Empty array clears the
+  // override and reverts to ANTON_MESH_RELAYS env. Phones see the new list
+  // on next launch via /instance-info; the active dialer keeps using its
+  // boot-time list until the next server restart (acceptable since the
+  // pain we're fixing is "re-pair the fleet", not "restart the server").
+
+  adminRouter.get('/mesh/relays', async (_req, res) => {
+    try {
+      const { getRelayEndpoints } = await import('../services/mesh-config-service.js');
+      const cfg = await getRelayEndpoints(db);
+      res.json(cfg);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to read relay list' });
+    }
+  });
+
+  adminRouter.put('/mesh/relays', async (req, res) => {
+    try {
+      const body = req.body ?? {};
+      if (!Array.isArray(body.endpoints)) {
+        return res.status(400).json({ error: 'endpoints must be a string array' });
+      }
+      const { setRelayEndpoints, getRelayEndpoints } = await import('../services/mesh-config-service.js');
+      await setRelayEndpoints(db, body.endpoints);
+      const cfg = await getRelayEndpoints(db);
+      res.json(cfg);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to set relay list' });
+    }
+  });
 
   // ── Org Profiles ───────────────────────────────────────────────────────
 
@@ -696,15 +752,23 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
-  // Authenticated — get the instance's display info (used by Settings)
+  // Authenticated — get the instance's display info (used by Settings).
+  //
+  // Track C: publishes the canonical mesh relay list so paired phones can
+  // discover relay rotations without re-pairing. The list is sourced via
+  // mesh-config-service (DB override → env fallback), so an operator can
+  // flip the value through the admin endpoint without restarting.
   publicRouter.get('/instance-info', appAuth, async (_req, res) => {
     try {
       const id = await enrollment.getOrCreateInstanceIdentity();
+      const { getRelayEndpoints } = await import('../services/mesh-config-service.js');
+      const relays = await getRelayEndpoints(db);
       res.json({
         display_name: id.display_name,
         contact_hash: id.contact_hash,
         pubkey: id.pubkey,
         cert_fingerprint: id.cert_fingerprint,
+        relay_endpoints: relays.endpoints,
         // Optional: enables web-push (PWA) on instances that have configured
         // a VAPID keypair. Native iOS / Android registration doesn't use this.
         vapid_public_key: process.env.VAPID_PUBLIC_KEY || null,
@@ -728,6 +792,15 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const info = advertiser?.getInfo();
       const lan = info?.ip ? `http://${info.ip}:${port}` : undefined;
       const wan = process.env.APP_GATEWAY_PUBLIC_URL || undefined;
+      // Honour the caller's transport choice — without this the route
+      // silently downgrades every request to public_https because
+      // startEnrollment() defaults to that when transport is undefined.
+      const transport: 'mesh' | 'public_https' | undefined =
+        b.transport === 'mesh' || b.transport === 'public_https' ? b.transport : undefined;
+      const relayEndpoints: string[] | undefined =
+        Array.isArray(b.relay_endpoints) && b.relay_endpoints.every((x: unknown) => typeof x === 'string')
+          ? (b.relay_endpoints as string[])
+          : undefined;
       const pkg = await enrollment.startEnrollment({
         intended_user_id: typeof b.intended_user_id === 'string' ? b.intended_user_id : null,
         org_id: typeof b.org_id === 'string' ? b.org_id : null,
@@ -736,6 +809,9 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         language_hint: typeof b.language_hint === 'string' ? b.language_hint : null,
         endpoints: { lan, wan, mdns_name: info?.serviceName },
         issued_by_user_id: issuedBy,
+        transport,
+        relay_endpoints: relayEndpoints,
+        require_confirmation_code: b.require_confirmation_code === true,
       });
       res.json(pkg);
     } catch (err) {
@@ -929,7 +1005,21 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         userId, orgId, start.toISOString(), end.toISOString()
       ).catch(() => []);
 
-      const events = checkpoints.map(c => {
+      // Personal events: rows the user (or a linked community contact) added
+      // via POST /calendar/events. The companion-app create-event sheet writes
+      // here. Pulled for the same day window as checkpoints.
+      const personalEvents = await db.all<{
+        id: string; title: string; description: string | null; location: string | null;
+        start_at: string; end_at: string; all_day: number;
+      }>(
+        `SELECT id, title, description, location, start_at, end_at, all_day
+         FROM community_events
+         WHERE start_at >= $1 AND start_at <= $2
+         ORDER BY start_at ASC`,
+        start.toISOString(), end.toISOString()
+      ).catch(() => []);
+
+      const checkpointEvents = checkpoints.map(c => {
         const t = new Date(c.expires_at);
         return {
           id: `ck:${c.id}`,
@@ -948,17 +1038,44 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         };
       });
 
-      // Source legend — only ANTON is a "real" feed in v1; the other rows
-      // appear so the UI strip looks normal but their counts are 0.
+      const personalEventRows = personalEvents.map(e => {
+        const startD = new Date(e.start_at);
+        const endD = new Date(e.end_at);
+        const durMin = Math.max(15, Math.round((endD.getTime() - startD.getTime()) / 60000));
+        return {
+          id: `ev:${e.id}`,
+          time: e.all_day ? '—' : startD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+          duration_minutes: e.all_day ? 1440 : durMin,
+          title: e.title,
+          location: e.location || (e.description ?? ''),
+          source: 'personal' as const,
+          source_label: 'Personal',
+          color: 'gold' as const,
+          anton: false,
+          ext:   false,
+          personal: true,
+          anton_prep: null,
+          deep_link: null,
+        };
+      });
+
+      // Merge + sort chronologically (all-day events surface first).
+      const events = [...checkpointEvents, ...personalEventRows].sort((a, b) => {
+        if (a.time === '—' && b.time !== '—') return -1;
+        if (b.time === '—' && a.time !== '—') return 1;
+        return a.time.localeCompare(b.time);
+      });
+
+      // Source legend — ANTON + Personal are real; others are scaffolded.
       const sources = [
-        { id: 'anton',    label: 'ANTON',           count: events.length, color: 'teal'  as const },
-        { id: 'work',     label: 'Work · M365',     count: 0,             color: 'blue'  as const },
-        { id: 'personal', label: 'Personal',        count: 0,             color: 'gold'  as const },
-        { id: 'family',   label: 'Family',          count: 0,             color: 'plum'  as const },
+        { id: 'anton',    label: 'ANTON',           count: checkpointEvents.length, color: 'teal'  as const },
+        { id: 'personal', label: 'Personal',        count: personalEventRows.length, color: 'gold'  as const },
+        { id: 'work',     label: 'Work · M365',     count: 0,                       color: 'blue'  as const },
+        { id: 'family',   label: 'Family',          count: 0,                       color: 'plum'  as const },
       ];
 
       // ANTON prep banner — most pressing high/critical event today
-      const prepEvent = events.find(e => e.color === 'red');
+      const prepEvent = checkpointEvents.find(e => e.color === 'red');
       const prep = prepEvent ? {
         title: prepEvent.title,
         note: prepEvent.anton_prep || 'Brief ready · open to review.',
@@ -1034,26 +1151,203 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // tapping one can deep-link into the desktop UI on the connected ANTON.
   // ══════════════════════════════════════════════════════════════════════════
 
+  // Map desktop adv-* color tokens to the companion's compact palette.
+  // Unknown colours fall back to teal so a new module never crashes the UI.
+  const COMPANION_COLOR_MAP: Record<string, 'red' | 'blue' | 'teal' | 'gold' | 'green'> = {
+    'adv-red':   'red',
+    'adv-blue':  'blue',
+    'adv-teal':  'teal',
+    'adv-gold':  'gold',
+    'adv-green': 'green',
+  };
+  function companionColor(c: string | undefined): 'red' | 'blue' | 'teal' | 'gold' | 'green' {
+    return COMPANION_COLOR_MAP[c || ''] ?? 'teal';
+  }
+  // Curated 4-tile pinned set the phone home screen highlights. Anything not
+  // in MODULES is filtered out so a typo never ships an empty tile.
+  const PINNED_MODULE_IDS = ['sanctions-advisory', 'gap-analysis', 'document-creation', 'regulatory-monitor'] as const;
+
   publicRouter.get('/org/:orgId/modules', appAuth, orgMember, (_req, res) => {
-    const pinned = [
-      { id: 'sanctions-advisory',  name: 'Sanctions Advisory', description: 'Screen · advise · SAR',     color: 'red',    busy: false },
-      { id: 'counsels-desk',        name: "Counsel's Desk",     description: 'Draft · redline · cite',    color: 'blue',   busy: false },
-      { id: 'gap-analysis',         name: 'Gap Assessment',     description: 'Policy ↔ control',          color: 'teal',   busy: false },
-      { id: 'finance-autopilot',    name: 'Finance Autopilot',  description: 'AP · payments · approvals', color: 'gold',   busy: false },
-    ];
-    const browse = [
-      { id: 'markets-intelligence',  name: 'Markets Intelligence',  description: 'Tape · briefs · scenarios' },
-      { id: 'orchestrator',          name: 'Orchestrator',          description: 'Run, monitor missions' },
-      { id: 'knowledge-base',        name: 'Knowledge Base',        description: 'Docs · atoms · search' },
-      { id: 'presentation-builder',  name: 'Presentation Builder',  description: 'Deck from brief' },
-      { id: 'task-agent',            name: 'Task Agent',            description: 'Long-running jobs' },
-      { id: 'civic',                 name: 'Civic',                 description: 'Public affairs · NGO' },
-      { id: 'talent',                name: 'Talent',                description: 'Hiring · onboarding' },
-      { id: 'travel',                name: 'Travel',                description: 'Itineraries · expense' },
-      { id: 'risk-atlas',            name: 'Risk Atlas',            description: '7-stage threat paths' },
-      { id: 'horizon-radar',         name: 'Horizon Radar',         description: 'Reg + competitor scan' },
-    ];
+    const byId = new Map(MODULES_CATALOG.map(m => [m.id, m]));
+    const pinned = PINNED_MODULE_IDS
+      .map(id => byId.get(id))
+      .filter((m): m is ModuleDefinition => !!m)
+      .map(m => ({
+        id: m.id,
+        name: m.shortLabel || m.label,
+        description: m.description.split(/[.!?]/)[0].slice(0, 60),
+        color: companionColor(m.color),
+        busy: false,
+      }));
+
+    // Browse = full catalog minus what's already pinned, alphabetised by label.
+    const pinnedIds = new Set<string>(PINNED_MODULE_IDS as readonly string[]);
+    const browse = MODULES_CATALOG
+      .filter(m => !pinnedIds.has(m.id))
+      .map(m => ({
+        id: m.id,
+        name: m.shortLabel || m.label,
+        description: m.description.split(/[.!?]/)[0].slice(0, 80),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     res.json({ pinned, browse });
+  });
+
+  // Cache of parsed prompt previews (file → {persona, role}). Prompts are
+  // immutable at runtime, so a per-process Map is enough — no invalidation
+  // needed unless we hot-reload prompts (which we don't).
+  const promptPreviewCache = new Map<string, { persona: string | null; role: string | null }>();
+
+  async function loadModulePromptPreview(moduleId: string): Promise<{ persona: string | null; role: string | null }> {
+    if (promptPreviewCache.has(moduleId)) return promptPreviewCache.get(moduleId)!;
+    const result = { persona: null as string | null, role: null as string | null };
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const url = await import('url');
+      // Resolve relative to this source file so it works under both ts-node
+      // and the compiled dist tree.
+      const here = path.dirname(url.fileURLToPath(import.meta.url));
+      const promptPath = path.resolve(here, '..', 'prompts', `${moduleId}.md`);
+      const raw = await fs.readFile(promptPath, 'utf-8');
+      // Persona = first non-blank, non-heading paragraph after the H1
+      const lines = raw.split(/\r?\n/);
+      let i = 0;
+      // Skip H1 + blanks
+      while (i < lines.length && (lines[i].startsWith('# ') || lines[i].trim() === '')) i++;
+      const personaLines: string[] = [];
+      while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('#')) {
+        personaLines.push(lines[i].trim());
+        i++;
+      }
+      if (personaLines.length) result.persona = personaLines.join(' ').trim();
+      // Role = paragraph(s) under the first ## heading that mentions Role/Objective/Mission/Purpose
+      const roleHeadingIdx = lines.findIndex(l => /^##\s+(role|objective|mission|purpose)/i.test(l.trim()));
+      if (roleHeadingIdx >= 0) {
+        const roleLines: string[] = [];
+        for (let j = roleHeadingIdx + 1; j < lines.length; j++) {
+          if (lines[j].startsWith('#')) break;
+          roleLines.push(lines[j]);
+        }
+        const roleText = roleLines.join('\n').trim();
+        if (roleText) result.role = roleText;
+      }
+    } catch {
+      // Prompt file missing or unreadable — leave both null and the client
+      // will just show the catalog description. Common for some areas where
+      // prompts haven't been authored yet.
+    }
+    promptPreviewCache.set(moduleId, result);
+    return result;
+  }
+
+  // Pretty labels for the most common output-format ids. Anything not in
+  // the map falls back to a title-cased version of the id ("gap-scoring-matrix"
+  // → "Gap Scoring Matrix") so the UI never shows a slug.
+  const OUTPUT_FORMAT_LABELS: Record<string, string> = {
+    'executive-summary':       'Executive Summary',
+    'detailed-findings':       'Detailed Findings',
+    'gap-scoring-matrix':      'Gap Scoring Matrix',
+    'action-plan':             'Action Plan',
+    'policy-document':         'Policy Document',
+    'quick-briefing':          'Quick Briefing',
+    'impact-assessment':       'Impact Assessment',
+    'training-material':       'Training Material',
+    'data-readiness-scorecard':'Data Readiness Scorecard',
+    'risk-appetite-statement': 'Risk Appetite Statement',
+    'decision-memo':           'Decision Memo',
+    'regulatory-comparison':   'Regulatory Comparison',
+    'project-plan':            'Project Plan',
+    'raci-matrix':             'RACI Matrix',
+    'maturity-assessment':     'Maturity Assessment',
+    'compliance-calendar':     'Compliance Calendar',
+    'monitoring-plan':         'Monitoring Plan',
+    'budget-estimate':         'Budget Estimate',
+    'engagement-proposal':     'Engagement Proposal',
+    'board-deck':              'Board Deck',
+  };
+  function prettyFormatLabel(id: string): string {
+    return OUTPUT_FORMAT_LABELS[id]
+      ?? id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // GET /api/app/org/:orgId/modules/:moduleId — detailed config for the chat
+  // header + intro card. The full system prompt is composed server-side at
+  // run time (it pulls in atoms, org context, knowledge packs); we expose
+  // only the persona + role-objective summary so the user knows what they
+  // just walked into.
+  publicRouter.get('/org/:orgId/modules/:moduleId', appAuth, orgMember, async (req, res) => {
+    const moduleId = String(req.params.moduleId);
+    const m = MODULES_CATALOG.find(x => x.id === moduleId);
+    if (!m) return res.status(404).json({ error: 'Module not found' });
+    const area = AREAS_CATALOG.find(a => a.moduleIds.includes(moduleId));
+    const preview = await loadModulePromptPreview(moduleId);
+    const outputFormatLabels = (m.defaults.outputFormats || []).map(prettyFormatLabel);
+    res.json({
+      module: {
+        id: m.id,
+        label: m.label,
+        shortLabel: m.shortLabel,
+        description: m.description,
+        color: companionColor(m.color),
+        areaId: area?.id ?? null,
+        areaLabel: area?.label ?? null,
+        persona: preview.persona,
+        roleObjective: preview.role,
+        defaults: {
+          thinking: m.defaults.thinking,
+          creativity: m.defaults.creativity,
+          outputFormats: m.defaults.outputFormats,
+          outputFormatLabels,
+        },
+      },
+    });
+  });
+
+  // GET /api/app/org/:orgId/models — list of models the user can pick from
+  // in the chat composer. Curated short list (only the 4-5 most useful per
+  // provider), gated on the relevant API key being configured. The org's
+  // default_model is marked so the UI can flag it. Local Ollama models are
+  // discovered separately because they require a running daemon — for v1
+  // the phone only sees cloud providers.
+  publicRouter.get('/org/:orgId/models', appAuth, orgMember, async (req, res) => {
+    type Tier = 'fast' | 'balanced' | 'top';
+    const out: Array<{
+      id: string; label: string; provider: string; tier: Tier; description: string;
+    }> = [];
+    if (process.env.ANTHROPIC_API_KEY) {
+      out.push(
+        { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', provider: 'anthropic', tier: 'fast',     description: 'Fastest. Quick questions, drafts, summaries.' },
+        { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', provider: 'anthropic', tier: 'balanced', description: 'Balanced. Day-to-day work, most modules.' },
+        { id: 'claude-opus-4-7',           label: 'Claude Opus 4.7',   provider: 'anthropic', tier: 'top',      description: 'Most capable. Long, hard reasoning.' },
+      );
+    }
+    if (process.env.OPENAI_API_KEY) {
+      out.push(
+        { id: 'gpt-4o',  label: 'GPT-4o',  provider: 'openai', tier: 'balanced', description: 'OpenAI multimodal.' },
+      );
+    }
+    if (process.env.MISTRAL_API_KEY) {
+      out.push(
+        { id: 'mistral-large-latest', label: 'Mistral Large', provider: 'mistral', tier: 'top', description: 'European, strong reasoning.' },
+      );
+    }
+    if (process.env.GOOGLE_API_KEY) {
+      out.push(
+        { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', provider: 'google', tier: 'top', description: 'Google Gemini.' },
+      );
+    }
+    // Look up the org's default so the UI can highlight it. Table is
+    // org_profiles, not organisations — caught the rename late.
+    const orgRow = await db.get<{ default_model: string | null }>(
+      'SELECT default_model FROM org_profiles WHERE id = $1',
+      String(req.params.orgId)
+    ).catch(() => null);
+    res.json({
+      models: out,
+      defaultModel: orgRow?.default_model ?? null,
+    });
   });
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1751,6 +2045,106 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
+  // POST /api/app/org/:orgId/mail/:mailId/reply — reply to an ANTON-native
+  // message. Mirrors /api/community/mail/:id/reply but only handles the
+  // company's own community_mail table; provider mail (m365/gmail) needs
+  // its own send pipeline which doesn't exist yet.
+  publicRouter.post('/org/:orgId/mail/:mailId/reply', appAuth, orgMember, async (req, res) => {
+    try {
+      const { body } = req.body as { body?: string };
+      if (!body || !body.trim()) return res.status(400).json({ error: 'body required' });
+      const me = await db.get<{ contact_hash: string }>(
+        `SELECT contact_hash FROM community_identity WHERE user_id = 'default'`
+      );
+      if (!me) return res.status(403).json({ error: 'Community not activated' });
+      const parent = await db.get<{
+        id: string; thread_id: string | null; from_hash: string;
+        to_hashes: string; subject: string | null;
+      }>(
+        `SELECT id, thread_id, from_hash, to_hashes, subject FROM community_mail WHERE id = $1`,
+        req.params.mailId
+      );
+      if (!parent) return res.status(404).json({ error: 'Parent mail not found' });
+      const threadId = parent.thread_id || parent.id;
+      if (!parent.thread_id) {
+        await db.run(`UPDATE community_mail SET thread_id = $1 WHERE id = $2`, threadId, parent.id);
+      }
+      // Reply goes BACK to the original sender (and any other recipients
+      // minus self).
+      const originalRecips: string[] = (() => {
+        try { return JSON.parse(parent.to_hashes); } catch { return []; }
+      })();
+      const replyTo = Array.from(new Set([parent.from_hash, ...originalRecips])).filter(h => h !== me.contact_hash);
+      const id = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const now = new Date().toISOString();
+      await db.run(
+        `INSERT INTO community_mail (id, from_hash, to_hashes, cc_hashes, subject, body, thread_id, parent_id, folder, draft, sent_at)
+         VALUES ($1, $2, $3, '[]', $4, $5, $6, $7, 'sent', 0, $8)`,
+        id, me.contact_hash, JSON.stringify(replyTo),
+        `Re: ${parent.subject || '(no subject)'}`, body.trim(),
+        threadId, parent.id, now
+      );
+      // Mirror an inbox copy for each recipient so it shows in their list
+      for (const recip of replyTo) {
+        const inboxId = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        await db.run(
+          `INSERT INTO community_mail (id, from_hash, to_hashes, cc_hashes, subject, body, thread_id, parent_id, folder, draft, sent_at)
+           VALUES ($1, $2, $3, '[]', $4, $5, $6, $7, 'inbox', 0, $8)`,
+          inboxId, me.contact_hash, JSON.stringify(replyTo),
+          `Re: ${parent.subject || '(no subject)'}`, body.trim(),
+          threadId, parent.id, now
+        );
+      }
+      res.status(201).json({ id, sent_at: now });
+    } catch (err) {
+      console.error('[app-gateway] mail reply error:', err);
+      res.status(500).json({ error: 'Failed to send reply' });
+    }
+  });
+
+  // POST /api/app/org/:orgId/calendar/events — create a calendar event.
+  // Maps to community_events (the unified calendar pulls from there).
+  publicRouter.post('/org/:orgId/calendar/events', appAuth, orgMember, async (req, res) => {
+    try {
+      const { title, start_at, end_at, all_day, location, description } = req.body as {
+        title?: string; start_at?: string; end_at?: string;
+        all_day?: boolean; location?: string; description?: string;
+      };
+      if (!title || !title.trim()) return res.status(400).json({ error: 'title required' });
+      if (!start_at) return res.status(400).json({ error: 'start_at required (ISO 8601)' });
+      const me = await db.get<{ contact_hash: string }>(
+        `SELECT contact_hash FROM community_identity WHERE user_id = 'default'`
+      );
+      if (!me) return res.status(403).json({ error: 'Community not activated' });
+      // If end_at omitted, default to 1h after start (or end-of-day for all-day)
+      let resolvedEnd = end_at;
+      if (!resolvedEnd) {
+        const d = new Date(start_at);
+        if (all_day) d.setHours(23, 59, 0, 0);
+        else d.setHours(d.getHours() + 1);
+        resolvedEnd = d.toISOString();
+      }
+      const id = `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      await db.run(
+        `INSERT INTO community_events
+           (id, group_id, creator_hash, title, description, event_type, start_at, end_at,
+            all_day, location, meeting_link, recurrence, rsvp_required)
+         VALUES ($1, NULL, $2, $3, $4, 'event', $5, $6, $7, $8, NULL, 'none', 0)`,
+        id, me.contact_hash, title.trim(), description?.trim() || null,
+        start_at, resolvedEnd, all_day ? 1 : 0, location?.trim() || null
+      );
+      const event = await db.get(
+        `SELECT id, title, description, start_at, end_at, all_day, location, creator_hash
+           FROM community_events WHERE id = $1`,
+        id
+      );
+      res.status(201).json({ event });
+    } catch (err) {
+      console.error('[app-gateway] calendar event create error:', err);
+      res.status(500).json({ error: 'Failed to create event' });
+    }
+  });
+
   // POST /api/app/org/:orgId/deadlines — quick-add a deadline from the
   // companion app. Mirrors the desktop's POST /api/deadlines but only
   // accepts the minimal fields a phone user can comfortably enter.
@@ -1941,7 +2335,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // (decompose, advance) stay in the desktop Pro UI.
   publicRouter.post('/org/:orgId/missions/:missionId/:action', appAuth, orgMember, async (req, res) => {
     try {
-      const action = req.params.action;
+      const action = String(req.params.action);
       const allowed: Record<string, string> = {
         pause: 'paused',
         resume: 'active',
@@ -1969,15 +2363,24 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const moduleFilter = typeof req.query.module === 'string' ? req.query.module : '';
       const since = typeof req.query.since === 'string' ? req.query.since : 'all';
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 100);
+      const userId = req.appUser!.id;
+      const orgId = String(req.params.orgId);
 
-      const wheres: string[] = ['(message_count IS NULL OR message_count > 0)'];
-      const params: unknown[] = [];
+      // Companion-app sessions live in `app_sessions` (migration 094), NOT
+      // the desktop's `sessions` table — the previous query was always empty
+      // because it hit the wrong table. Filter by user + org so people only
+      // see their own work.
+      const wheres: string[] = [
+        'connected_user_id = $1', 'org_id = $2',
+        '(message_count IS NULL OR message_count > 0)',
+      ];
+      const params: unknown[] = [userId, orgId];
       if (q) {
-        wheres.push(`(lower(coalesce(title,'')) LIKE $${params.length + 1} OR lower(coalesce(note,'')) LIKE $${params.length + 1})`);
+        wheres.push(`lower(coalesce(title,'')) LIKE $${params.length + 1}`);
         params.push(`%${q}%`);
       }
       if (moduleFilter) {
-        wheres.push(`module_id = $${params.length + 1}`);
+        wheres.push(`resolved_module_id = $${params.length + 1}`);
         params.push(moduleFilter);
       }
       if (since !== 'all') {
@@ -1987,19 +2390,23 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
           month: '30 days',
         };
         const interval = intervalMap[since];
-        if (interval) {
-          wheres.push(`updated_at > NOW() - INTERVAL '${interval}'`);
-        }
+        if (interval) wheres.push(`updated_at > NOW() - INTERVAL '${interval}'`);
       }
-      const whereClause = wheres.length ? 'WHERE ' + wheres.join(' AND ') : '';
+      const whereClause = 'WHERE ' + wheres.join(' AND ');
 
       const rows = await db.all<{
         id: string; title: string | null; module_id: string | null; note: string | null;
         message_count: number | null; total_tokens: number | null;
         created_at: string; updated_at: string;
       }>(
-        `SELECT id, title, module_id, note, message_count, total_tokens, created_at, updated_at
-           FROM sessions ${whereClause}
+        `SELECT id,
+                title,
+                resolved_module_id AS module_id,
+                NULL::text AS note,
+                message_count,
+                (COALESCE(total_input_tokens,0) + COALESCE(total_output_tokens,0)) AS total_tokens,
+                created_at, updated_at
+           FROM app_sessions ${whereClause}
           ORDER BY updated_at DESC NULLS LAST, created_at DESC
           LIMIT ${limit}`,
         ...params

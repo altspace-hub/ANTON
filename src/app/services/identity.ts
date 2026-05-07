@@ -115,6 +115,22 @@ export async function generateAndStoreKeypair(): Promise<string> {
   return publicKeyHex;
 }
 
+/**
+ * Idempotent — return the public key hex of the existing device keypair, or
+ * generate one if it doesn't exist yet. The mesh-pair flow needs the
+ * Ed25519 key to exist before it derives the X25519 keypair for the Noise
+ * handshake; the completion call then signs with the same key. Calling
+ * generateAndStoreKeypair() twice would create two divergent keys.
+ */
+export async function ensureDeviceKeypair(): Promise<string> {
+  const priv = await loadPrivateKey();
+  if (priv) {
+    const pub = await ed25519.getPublicKeyAsync(priv);
+    return bytesToHex(pub);
+  }
+  return generateAndStoreKeypair();
+}
+
 /** Sign a UTF-8 string with the stored private key. Throws if no key. */
 export async function signMessage(message: string): Promise<string> {
   const priv = await loadPrivateKey();
@@ -147,13 +163,15 @@ export interface X25519Keypair {
  * Get the X25519 keypair derived from the device's Ed25519 identity. Throws
  * if the device has no Ed25519 keypair stored (caller must set up identity
  * first; for legacy register-simple users without keys, mesh isn't supported).
+ *
+ * Works without a populated identity record (the public key is derived from
+ * the stored private key) — the pre-pair mesh handshake fires before
+ * saveIdentityPublic() runs, so this can't depend on getIdentity().
  */
 export async function getDeviceX25519Keypair(): Promise<X25519Keypair> {
   const ed_priv = await loadPrivateKey();
   if (!ed_priv) throw new Error('No Ed25519 device key — mesh transport requires identity setup');
-  const id = getIdentity();
-  if (!id) throw new Error('No device identity record');
-  const ed_pub = hexToBytes(id.publicKeyHex);
+  const ed_pub = await ed25519.getPublicKeyAsync(ed_priv);
   return {
     publicKey: edwardsToMontgomeryPub(ed_pub),
     privateKey: edwardsToMontgomeryPriv(ed_priv),

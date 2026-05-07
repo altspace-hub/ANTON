@@ -11,6 +11,7 @@
  * See docs/ANTON_MESH_SPEC.md §4 (Noise IK), §5 (RPC framing), §3.6 (ENVELOPE).
  */
 
+import { sha256 } from '@noble/hashes/sha256';
 import {
   NoiseInitiator,
   NoiseTransport,
@@ -96,11 +97,13 @@ export function meshTransportForInstance(
   } catch {
     throw new Error('Mesh-paired Instance has malformed pubkey_pinned');
   }
-  const instanceIdHex = hexFromXPubkey(x_pk);
+  // instance_id = sha256(x_pk)[0..16) per spec §3.3 — 16 bytes, NOT the
+  // full x_pk (was a bug here pre-mesh-pairing; would corrupt HELLO_PHONE).
+  const instanceId = sha256(x_pk).slice(0, 16);
   return createMeshTransport({
     phoneStaticKeypair: opts.phoneStaticKeypair,
     instanceStaticPubkey: x_pk,
-    instanceId: hexToBytes(instanceIdHex),
+    instanceId,
     relayEndpoints: inst.relay_endpoints,
     WebSocketCtor: opts.WebSocketCtor,
     getAuthHeaders: opts.getAuthHeaders,
@@ -554,13 +557,3 @@ function hexToBytes(hex: string): Uint8Array {
   return out;
 }
 
-function hexFromXPubkey(x_pk: Uint8Array): string {
-  // instance_id_hex is sha256(x_pk)[0..16) hex; for our use here we just
-  // return the X pubkey hex when needed for prologue construction, since
-  // the prologue uses the instance_id_hex separately. This helper is
-  // kept for any caller that wants to derive instance_id from x_pk.
-  // Use Web Crypto for the hash.
-  // Note: this function is currently unused; sha256 is done in the factory
-  // path before construction.
-  return bytesToHexImpl(x_pk);
-}

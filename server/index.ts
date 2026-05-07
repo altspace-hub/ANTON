@@ -937,7 +937,11 @@ let pgNotifyService: Awaited<ReturnType<typeof createPgNotifyService>> | null = 
 httpServer.timeout = 0;              // No socket timeout
 httpServer.keepAliveTimeout = 620_000; // 10 min + 20s buffer
 
-httpServer.listen(PORT, async () => {
+// Bind to 0.0.0.0 so phones on the same LAN can reach the server via the
+// laptop's IPv4 address (e.g. http://192.168.1.134:5183). Without this Node
+// can default to IPv6 loopback only on Windows, which makes LAN-IP pairing
+// silently fail. Mesh pairing routes through the relay regardless.
+httpServer.listen(PORT, '0.0.0.0', async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 
   // mDNS advertising for companion app LAN discovery

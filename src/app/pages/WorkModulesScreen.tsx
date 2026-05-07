@@ -20,6 +20,8 @@ interface Props {
   orgId: string;
   onNavigate: (tab: string) => void;
   onAskWith?: (prompt: string) => void;
+  /** Open the chat tab with a specific module loaded (system prompt + header). */
+  onSelectModule?: (moduleId: string) => void;
 }
 
 const COLOR_VAR: Record<PinnedModule['color'], string> = {
@@ -56,7 +58,15 @@ function browseModuleGlyph(m: BrowseModule): { letters: string; tone: MonogramTo
   return { letters: initials(m.name), tone };
 }
 
-export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Props): JSX.Element {
+export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSelectModule }: Props): JSX.Element {
+  // Filter query for the Browse list. With 470+ modules a free-text filter
+  // is the only way to make the catalog navigable on a phone.
+  const [browseQuery, setBrowseQuery] = useState('');
+
+  function openModule(moduleId: string) {
+    if (onSelectModule) onSelectModule(moduleId);
+    else onNavigate('chat'); // Fallback for callers that haven't wired the new prop
+  }
   const [pinned,  setPinned]  = useState<PinnedModule[]>([]);
   const [browse,  setBrowse]  = useState<BrowseModule[]>([]);
   const [draft,   setDraft]   = useState('');
@@ -198,7 +208,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
               {pinned.map(m => (
                 <button
                   key={m.id}
-                  onClick={() => onNavigate('chat')}
+                  onClick={() => openModule(m.id)}
                   className="rounded-[var(--radius-r2)] text-left"
                   style={{
                     background: 'var(--color-surface)',
@@ -239,57 +249,113 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith }: Prop
 
             {/* Browse list — Claude-Design rows: colored monogram + title + meta + chevron */}
             <SectionLabel className="px-4 pb-2">Browse all · {browse.length}+</SectionLabel>
-            <div
-              className="mb-4 overflow-hidden rounded-[var(--radius-r2)]"
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                marginLeft: 16,
-                marginRight: 16,
-              }}
-            >
-              {browse.map((m, i) => {
-                const glyph = browseModuleGlyph(m);
-                return (
+
+            {/* Filter — name + description match, case-insensitive. With 470+ modules
+                this is how the catalog actually becomes usable on a phone. */}
+            <div className="mb-2 flex items-center gap-2 px-4">
+              <div
+                className="flex flex-1 items-center gap-2 rounded-[var(--radius-r2)] px-3"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  height: 40,
+                }}
+              >
+                <Ico name="search" color="var(--color-text-muted)" size={16} />
+                <input
+                  value={browseQuery}
+                  onChange={(e) => setBrowseQuery(e.target.value)}
+                  placeholder="Search modules…"
+                  className="flex-1 bg-transparent text-[13.5px] focus:outline-none"
+                  style={{ color: 'var(--color-text)' }}
+                  aria-label="Search modules"
+                />
+                {browseQuery && (
                   <button
-                    key={m.id}
-                    onClick={() => onNavigate('chat')}
-                    className="flex w-full items-center text-left transition active:bg-[var(--color-surface-alt)]"
-                    style={{
-                      gap: 12,
-                      paddingLeft: 14,
-                      paddingRight: 14,
-                      paddingTop: 12,
-                      paddingBottom: 12,
-                      borderTop: i > 0 ? '1px solid var(--color-border-soft)' : 'none',
-                    }}
+                    onClick={() => setBrowseQuery('')}
+                    aria-label="Clear search"
+                    className="flex h-7 w-7 items-center justify-center"
                   >
-                    <MonogramTile letters={glyph.letters} tone={glyph.tone} size={32} />
-                    <div className="min-w-0 flex-1">
-                      <div
-                        className="truncate"
+                    <Ico name="x" color="var(--color-text-muted)" size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {(() => {
+              const q = browseQuery.trim().toLowerCase();
+              const filtered = q
+                ? browse.filter(m =>
+                    m.name.toLowerCase().includes(q) ||
+                    m.description.toLowerCase().includes(q))
+                : browse;
+              if (filtered.length === 0) {
+                return (
+                  <div className="mx-4 mb-4 rounded-[var(--radius-r2)] border border-dashed px-4 py-8 text-center"
+                       style={{ borderColor: 'var(--color-border)' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                      No modules match "{browseQuery}"
+                    </p>
+                    <p className="mt-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                      Try a shorter query, or describe what you're trying to do in the search above.
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  className="mb-4 overflow-hidden rounded-[var(--radius-r2)]"
+                  style={{
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    marginLeft: 16,
+                    marginRight: 16,
+                  }}
+                >
+                  {filtered.map((m, i) => {
+                    const glyph = browseModuleGlyph(m);
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => openModule(m.id)}
+                        className="flex w-full items-center text-left transition active:bg-[var(--color-surface-alt)]"
                         style={{
-                          fontSize: 13.5,
-                          fontWeight: 600,
-                          color: 'var(--color-text)',
-                          letterSpacing: '-0.1px',
-                          lineHeight: 1.25,
+                          gap: 12,
+                          paddingLeft: 14,
+                          paddingRight: 14,
+                          paddingTop: 12,
+                          paddingBottom: 12,
+                          borderTop: i > 0 ? '1px solid var(--color-border-soft)' : 'none',
                         }}
                       >
-                        {m.name}
-                      </div>
-                      <div
-                        className="mt-0.5 truncate"
-                        style={{ fontSize: 11, color: 'var(--color-text-muted)' }}
-                      >
-                        {m.description}
-                      </div>
-                    </div>
-                    <Ico name="chevronRight" color="var(--color-text-faint)" size={16} />
-                  </button>
-                );
-              })}
-            </div>
+                        <MonogramTile letters={glyph.letters} tone={glyph.tone} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="truncate"
+                            style={{
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: 'var(--color-text)',
+                              letterSpacing: '-0.1px',
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            {m.name}
+                          </div>
+                          <div
+                            className="mt-0.5 truncate"
+                            style={{ fontSize: 11, color: 'var(--color-text-muted)' }}
+                          >
+                            {m.description}
+                          </div>
+                        </div>
+                        <Ico name="chevronRight" color="var(--color-text-faint)" size={16} />
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Hint */}
             <div className="mx-4 mb-6 text-center">

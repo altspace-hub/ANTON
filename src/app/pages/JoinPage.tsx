@@ -12,8 +12,14 @@ import { useState, useRef, useEffect } from 'react';
 import { getIdentity, signNonce } from '../services/identity';
 import { joinOrg, authChallenge, authVerify, saveSessionToken, getSessionToken, registerSimple } from '../services/api';
 import { saveServer, testServer } from '../services/discovery';
-import { fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUrl } from '../services/enrollment';
-import { addInstance, listInstances } from '../services/instances';
+import {
+  fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUrl,
+  type EnrollmentPackage,
+} from '../services/enrollment';
+import type { ParsedPairingLink } from '../services/pairing-url';
+import { createMeshTransport } from '../services/transports/mesh';
+import { getDeviceX25519Keypair, ensureDeviceKeypair } from '../services/identity';
+import { addInstance, listInstances, setActiveInstanceAsync } from '../services/instances';
 import { tick, success, error as hapticError } from '../services/haptics';
 import { isBiometricAvailable, verifyBiometric } from '../services/biometric';
 import { Btn, Pill, SectionLabel, StatusDot, Ico, Spinner } from '../components/ui';
@@ -38,19 +44,21 @@ export default function JoinPage({ onJoined, onBack }: Props) {
 
   // Deep-link / query-string handler.
   // ANL2: also subscribe to Capacitor's appUrlOpen so a deep link tapped
-  // while the app is already in memory still pre-fills the form. Without
-  // this listener, only the very first mount picks up the URL — a re-pair
-  // attempt from an existing install would silently land on a blank screen.
+  // while the app is already in memory still pre-fills the form.
+  // Inline-package URLs (anton://enroll?pkg=…) auto-pair without ever
+  // showing the form, since the package itself carries everything.
   useEffect(() => {
     function applyParams(url: string) {
-      try {
-        const u = new URL(url, 'http://placeholder.invalid');
-        const srv = u.searchParams.get('server');
-        const tok = u.searchParams.get('token') || u.searchParams.get('join');
-        if (srv) setServerUrl(decodeURIComponent(srv));
-        if (tok) setToken(tok);
-        if (srv && tok) setMode('manual');
-      } catch { /* malformed url — ignore */ }
+      const parsed = parsePairingLink(url);
+      if (!parsed) return;
+      if (parsed.inlinePackage) {
+        // Mesh inline-package URL — auto-pair right away.
+        void doPair(parsed);
+        return;
+      }
+      if (parsed.server) setServerUrl(parsed.server);
+      if (parsed.token) setToken(parsed.token);
+      if (parsed.server && parsed.token) setMode('manual');
     }
     // Initial parse from the page URL (PWA + first-launch deep link).
     applyParams(window.location.href);
@@ -95,10 +103,12 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   function handleScanResult(raw: string) {
     const parsed = parsePairingLink(raw);
     if (parsed) {
-      setServerUrl(parsed.server);
-      setToken(parsed.token);
+      if (!parsed.inlinePackage) {
+        setServerUrl(parsed.server);
+        setToken(parsed.token);
+      }
       // Auto-pair on scan
-      void doPair(parsed.server, parsed.token, parsed.kind);
+      void doPair(parsed);
       return;
     }
     // Bare token? Treat as legacy invitation token
@@ -108,9 +118,25 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     }
   }
 
-  async function doPair(rawServer: string, rawToken: string, kind?: 'enroll' | 'join') {
+  /** Pair using either a parsed link from a QR / deep-link OR a manual-entry
+   *  form. The latter wraps the form fields into a synthetic ParsedPairingLink. */
+  async function doPair(input: ParsedPairingLink | { server: string; token: string }) {
     setLoading(true); setError(null); setStatus(null);
     try {
+      // Inline-package path (mesh): the QR carried the entire enrollment
+      // package, so we don't need a reachable server URL — the phone routes
+      // the completion call through the relay using the pinned x_pk.
+      if ('inlinePackage' in input && input.inlinePackage) {
+        await doEnrollment('', input.inlinePackage as unknown as EnrollmentPackage);
+        await success();
+        setStatus('Connected ✓');
+        setTimeout(onJoined, 600);
+        return;
+      }
+
+      const rawServer = input.server;
+      const rawToken = input.token;
+      const kind = ('kind' in input ? input.kind : undefined) as 'enroll' | 'join' | undefined;
       const server = rawServer.trim().replace(/\/$/, '');
       validateServerUrl(server);
 
@@ -146,9 +172,14 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     }
   }
 
-  async function doEnrollment(server: string, t: string): Promise<void> {
+  async function doEnrollment(server: string, tOrPkg: string | EnrollmentPackage): Promise<void> {
     setStatus('Pairing securely…');
-    const pkg = await fetchEnrollment(server, t);
+    // The caller passes either a token (fetch the package from the server) or
+    // an already-resolved package (inline-package QR — mesh transport, no
+    // direct server reachability required).
+    const pkg = typeof tOrPkg === 'string'
+      ? await fetchEnrollment(server, tOrPkg)
+      : tOrPkg;
     // Phase H fix C2 — out-of-band confirmation code when admin pre-bound
     // the enrollment to a specific user. The admin reads the 6-digit code
     // aloud; the user enters it before the device cert is issued.
@@ -163,7 +194,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     // (ed_pk, x_pk, binding_sig) triple + canonicalize relay URLs BEFORE
     // we sign the completion. If validation fails, the package is forged
     // or corrupted and we MUST refuse to pair with it.
-    let meshValidated: { pubkeyPinnedJson: string; relayEndpoints: string[] } | null = null;
+    let meshValidated: import('../services/mesh-validate').ValidatedMeshFields | null = null;
     if (pkg.transport === 'mesh') {
       const { validateMeshPackage, MeshValidationError } = await import('../services/mesh-validate');
       try {
@@ -178,16 +209,44 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       }
     }
 
-    const result = await completeEnrollment(server, pkg, {
-      preferred_language: navigator.language?.slice(0, 2) || 'en',
-      device_name: displayName || undefined,
-      confirmation_code: confirmationCode.trim() || undefined,
-    });
+    // Mesh pairings route the completion call through the relay using a
+    // draft Noise IK session (no Instance record exists yet). The phone's
+    // X25519 keypair is needed for the handshake; we generate it now if
+    // it doesn't exist — it'll be the same one the post-pair mesh transport
+    // uses via getDeviceX25519Keypair().
+    let draftMeshTransport: Awaited<ReturnType<typeof createMeshTransport>> | null = null;
+    if (meshValidated) {
+      // Ensure the Ed25519 device key exists before deriving X25519. The
+      // signature in completeEnrollment will use the same key — they MUST
+      // match or the relay-routed completion fails.
+      await ensureDeviceKeypair();
+      const phoneStaticKeypair = await getDeviceX25519Keypair();
+      draftMeshTransport = createMeshTransport({
+        phoneStaticKeypair,
+        instanceStaticPubkey: meshValidated.instanceXPubkey,
+        instanceId: meshValidated.instanceId,
+        relayEndpoints: meshValidated.relayEndpoints,
+      });
+    }
+
+    let result;
+    try {
+      result = await completeEnrollment(server, pkg, {
+        preferred_language: navigator.language?.slice(0, 2) || 'en',
+        device_name: displayName || undefined,
+        confirmation_code: confirmationCode.trim() || undefined,
+        transport: draftMeshTransport ?? undefined,
+      });
+    } finally {
+      // Tear down the draft session — the post-pair transport will create
+      // a fresh one bound to the persisted Instance.
+      draftMeshTransport?.close();
+    }
     // Persist as a paired instance. For mesh pairings, the pinned pubkey
     // is the JSON triple {ed, x, binding_sig} — meshTransportForInstance
     // parses it on first .fetch(). For public_https, keep the legacy
     // single-pubkey form.
-    await addInstance({
+    const newInst = await addInstance({
       display_name: pkg.instance_display_name ?? 'ANTON',
       contact_hash: pkg.instance_contact_hash,
       server_base: server,
@@ -201,6 +260,13 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       session_token: result.session_token,
       device_certificate: result.device_certificate,
     });
+    // The user just paired this instance — they expect to be USING it.
+    // addInstance() only auto-sets active when it's the first instance, so
+    // re-pairs into a returning user's installed app would otherwise leave
+    // the legacy/old instance active and every API call would route there.
+    // setActiveInstanceAsync mirrors the per-instance session token before
+    // returning, so the next clientFetch picks up the right credentials.
+    await setActiveInstanceAsync(newInst.id);
     saveSessionToken(result.session_token);
     // Phase H fix UX-CRIT-1 — post-pair biometric setup. Spec §8.1 mandates.
     // Prompt the user to confirm with biometric so the device-cert gate is
@@ -499,7 +565,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           block
           className="mt-4"
           disabled={loading || !token.trim() || !serverUrl.trim()}
-          onClick={() => void doPair(serverUrl, token)}
+          onClick={() => void doPair({ server: serverUrl, token })}
           icon={loading
             ? <Spinner size="sm" tone="on-accent" />
             : <Ico name="shieldCheck" color="currentColor" size={15} />}

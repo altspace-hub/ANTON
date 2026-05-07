@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Ico, Spinner } from '../components/ui';
 import { getCalendarToday, type CalendarToday, type CalendarColor } from '../services/calendar';
+import CalendarEventSheet from '../components/CalendarEventSheet';
 
 interface Props {
   orgId: string;
@@ -45,6 +46,8 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
   const [today,   setToday]   = useState<CalendarToday | null>(null);
   const [date,    setDate]    = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +61,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
       }
     })();
     return () => { cancelled = true; };
-  }, [orgId, date]);
+  }, [orgId, date, refreshTick]);
 
   const week = useMemo(() => buildWeek(date ? new Date(date) : new Date()), [date]);
   const headerSub = useMemo(() => {
@@ -91,6 +94,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
         </div>
         <button
           aria-label="Add event"
+          onClick={() => setSheetOpen(true)}
           className="-mr-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
         >
           <Ico name="plus" color="var(--color-text)" size={24} />
@@ -165,6 +169,14 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
           </div>
         )}
       </div>
+
+      <CalendarEventSheet
+        open={sheetOpen}
+        orgId={orgId}
+        defaultDate={date}
+        onClose={() => setSheetOpen(false)}
+        onCreated={() => setRefreshTick(t => t + 1)}
+      />
     </div>
   );
 }

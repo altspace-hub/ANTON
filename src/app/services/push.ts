@@ -82,6 +82,16 @@ export async function registerPush(): Promise<RegisterOutcome> {
 }
 
 async function registerNative(platform: 'ios' | 'android', deviceId: string): Promise<RegisterOutcome> {
+  // Android: PushNotifications.register() calls FirebaseMessaging.getInstance()
+  // natively. If google-services.json isn't bundled, that throws
+  // IllegalStateException ON the CapacitorPlugins handler thread — uncaught,
+  // which crashes the entire process before our JS try/catch sees it.
+  // We don't have Firebase configured in this build (per the v0.7.5 release
+  // readiness audit, push dispatch is stubbed), so skip Android registration
+  // entirely until VITE_FIREBASE_ENABLED is wired.
+  if (platform === 'android' && !import.meta.env.VITE_FIREBASE_ENABLED) {
+    return { ok: false, reason: 'unsupported', detail: 'Firebase not configured in this build' };
+  }
   try {
     const mod = await import('@capacitor/push-notifications');
     const PushNotifications = mod.PushNotifications;

@@ -17,7 +17,7 @@ import {
   PriorityCard, MonogramTile, getModuleGlyph, ErrorPill, QuickActionTile,
 } from '../components/ui';
 import { listPendingCheckpoints, type Checkpoint } from '../services/checkpoints';
-import { activeServerBase, activeAuthHeaders } from '../services/instances';
+import { clientFetch } from '../services/api';
 import { getIdentity } from '../services/identity';
 import { getOrgDailyBrief, type DailyBrief } from '../services/api';
 
@@ -112,10 +112,11 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
         if (!cancelled) setLoadError('Couldn\'t load approvals.');
       }
 
+      // Both calls below now route through clientFetch so they work over
+      // the mesh transport (was direct fetch with empty server_base on
+      // mesh-paired instances → SPA HTML in response → silent failure).
       try {
-        const base = activeServerBase();
-        const headers = await activeAuthHeaders();
-        const r = await fetch(`${base}/api/app/org/${encodeURIComponent(orgId)}/sessions`, { headers });
+        const r = await clientFetch(`/org/${encodeURIComponent(orgId)}/sessions`);
         if (r.ok) {
           const rows = (await r.json()) as SessionRow[];
           if (!cancelled) setSessions(Array.isArray(rows) ? rows.slice(0, 4) : []);
@@ -123,9 +124,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
       } catch { /* secondary — sessions list stays empty */ }
 
       try {
-        const base = activeServerBase();
-        const headers = await activeAuthHeaders();
-        const r = await fetch(`${base}/api/app/org/${encodeURIComponent(orgId)}/announcements`, { headers });
+        const r = await clientFetch(`/org/${encodeURIComponent(orgId)}/announcements`);
         if (r.ok) {
           const rows = await r.json();
           if (!cancelled) setAnnouncements(Array.isArray(rows) ? rows.slice(0, 3) : []);

@@ -182,12 +182,66 @@ export async function removeInstance(id: string): Promise<void> {
   }
 }
 
-export function updateInstance(id: string, patch: Partial<Pick<Instance, 'display_name' | 'last_status' | 'last_transport' | 'last_sync_at' | 'notification_categories' | 'default_voice_language' | 'org'>>): void {
+export function updateInstance(id: string, patch: Partial<Pick<Instance, 'display_name' | 'last_status' | 'last_transport' | 'last_sync_at' | 'notification_categories' | 'default_voice_language' | 'org' | 'relay_endpoints'>>): void {
   const list = load();
   const idx = list.findIndex(i => i.id === id);
   if (idx < 0) return;
   list[idx] = { ...list[idx], ...patch };
   save(list);
+}
+
+/**
+ * refreshInstanceInfo — pull canonical instance metadata from the paired
+ * server and update the local row. Track C Slice 1: catches relay-list
+ * rotations so paired phones don't need to re-pair when the operator points
+ * the instance at a new relay (e.g. moving from relay.futurechain.eu to a
+ * corporate relay).
+ *
+ * Returns:
+ *  - updated:        any field changed
+ *  - relays_changed: relay_endpoints specifically changed (caller may want
+ *                    to drop any in-flight mesh connection and reconnect)
+ *
+ * Lazy-imported clientFetch to avoid an import cycle (api.ts imports from
+ * here for active-instance lookup).
+ */
+export async function refreshInstanceInfo(id: string): Promise<{ updated: boolean; relays_changed: boolean }> {
+  const inst = getInstance(id);
+  if (!inst) return { updated: false, relays_changed: false };
+  try {
+    // Use clientFetch so the call routes through whichever transport this
+    // instance is paired on (mesh or public_https).
+    const { clientFetch } = await import('./api');
+    const res = await clientFetch('/instance-info', { method: 'GET' });
+    if (!res.ok) return { updated: false, relays_changed: false };
+    const info = await res.json() as {
+      display_name?: string;
+      relay_endpoints?: string[];
+    };
+    const patch: Partial<Pick<Instance, 'display_name' | 'relay_endpoints'>> = {};
+    let relaysChanged = false;
+    if (Array.isArray(info.relay_endpoints)) {
+      const current = inst.relay_endpoints ?? [];
+      const next = info.relay_endpoints;
+      const sameLength = current.length === next.length;
+      const sameItems = sameLength && current.every((u, i) => u === next[i]);
+      if (!sameItems) {
+        patch.relay_endpoints = next;
+        relaysChanged = true;
+      }
+    }
+    if (typeof info.display_name === 'string' && info.display_name && info.display_name !== inst.display_name) {
+      patch.display_name = info.display_name;
+    }
+    if (Object.keys(patch).length > 0) {
+      updateInstance(id, patch);
+      return { updated: true, relays_changed: relaysChanged };
+    }
+    return { updated: false, relays_changed: false };
+  } catch {
+    // Network errors are non-fatal — phone just keeps its current copy.
+    return { updated: false, relays_changed: false };
+  }
 }
 
 export function markSeen(id: string, status: 'online' | 'offline' = 'online', transport: 'lan' | 'wan' | null = null): void {

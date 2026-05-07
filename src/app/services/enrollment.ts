@@ -16,9 +16,10 @@
  * compatibility — see legacyJoin().)
  */
 
-import { generateAndStoreKeypair, getIdentity, saveIdentityPublic } from './identity';
+import { ensureDeviceKeypair, getIdentity, saveIdentityPublic } from './identity';
 import { Capacitor } from '@capacitor/core';
 import { parsePairingLink, validateServerUrl } from './pairing-url';
+import type { Transport } from './transports';
 
 // Re-export pure helpers so existing callers keep importing from here.
 export { parsePairingLink, validateServerUrl };
@@ -107,16 +108,24 @@ export async function completeEnrollment(serverBase: string, pkg: EnrollmentPack
   preferred_language?: string;
   /** Required when pkg.requires_confirmation_code === true */
   confirmation_code?: string;
+  /** When provided, the completion call routes through this Transport instead
+   *  of plain fetch(). Used for mesh pairing where the phone reaches the
+   *  instance via relay, not over direct HTTP. */
+  transport?: Transport;
 }): Promise<EnrollmentResult> {
-  validateServerUrl(serverBase);
+  // serverBase is informational only when a transport is provided — the
+  // mesh transport routes via the relay using pinned keys, not via the URL.
+  if (!opts.transport) validateServerUrl(serverBase);
   const platform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
   const device_name = opts.device_name ?? defaultDeviceName(platform);
   const device_model = opts.device_model ?? platform;
   const device_os = opts.device_os ?? `${platform} ${navigator.userAgent.slice(0, 64)}`;
   const app_version = opts.app_version ?? '1.0.0';
 
-  // 1. Generate a fresh Ed25519 keypair on this device
-  const publicKeyHex = await generateAndStoreKeypair();
+  // 1. Generate (or reuse) the device's Ed25519 keypair. Idempotent — the
+  // mesh-pair flow may have already called this to derive the X25519
+  // keypair for the Noise handshake; signing must use the same key.
+  const publicKeyHex = await ensureDeviceKeypair();
 
   // 2. Sign the proof
   const { signMessage } = await import('./identity');
@@ -124,25 +133,43 @@ export async function completeEnrollment(serverBase: string, pkg: EnrollmentPack
   const signature = await signMessage(proof);
 
   // 3. POST the completion
-  const url = `${trimSlash(serverBase)}/api/app/enrollment/complete`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token: pkg.token, nonce: pkg.nonce,
-      device_pubkey: publicKeyHex,
-      device_name, device_model, device_os, app_version,
-      signature,
-      preferred_language: opts.preferred_language,
-      confirmation_code: opts.confirmation_code,
-    }),
-    signal: AbortSignal.timeout(15_000),
+  const body = JSON.stringify({
+    token: pkg.token, nonce: pkg.nonce,
+    device_pubkey: publicKeyHex,
+    device_name, device_model, device_os, app_version,
+    signature,
+    preferred_language: opts.preferred_language,
+    confirmation_code: opts.confirmation_code,
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Enrollment failed (${res.status})`);
+  const headers = { 'Content-Type': 'application/json' };
+  let result: EnrollmentResult;
+  if (opts.transport) {
+    const tr = await opts.transport.fetch({
+      path: '/api/app/enrollment/complete',
+      method: 'POST',
+      headers,
+      body,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!tr.ok) {
+      const errBody = await tr.json<{ error?: string }>().catch(() => ({} as { error?: string }));
+      throw new Error(errBody.error || `Enrollment failed (${tr.status})`);
+    }
+    result = await tr.json<EnrollmentResult>();
+  } else {
+    const url = `${trimSlash(serverBase)}/api/app/enrollment/complete`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || `Enrollment failed (${res.status})`);
+    }
+    result = await res.json() as EnrollmentResult;
   }
-  const result = await res.json() as EnrollmentResult;
 
   // 4. Persist
   saveIdentityPublic({

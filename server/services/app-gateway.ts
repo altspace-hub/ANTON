@@ -68,6 +68,34 @@ export interface QueryRequest {
   intentCategoryId?: string;
   voiceInput?: boolean;
   outputLanguage?: string;
+  /**
+   * Explicit module the user picked (e.g. tapping "Sanctions Advisory" in
+   * the companion-app Work tab). When set, intent routing is bypassed and
+   * the module's system prompt + area context are loaded directly. The
+   * desktop ModulePage uses POST /api/claude/message and assembles the
+   * prompt client-side; this is the equivalent for the phone path.
+   */
+  moduleId?: string;
+  /**
+   * Explicit model the user picked from the companion-app composer. When
+   * set, overrides the org's default_model. Falls back to default if the
+   * id isn't recognised by the provider router.
+   */
+  model?: string;
+  /**
+   * Inline capture payload from the Capture surface (spec §8.5). Either an
+   * image (kind=camera|library) carrying base64 + mimeType, or a text/URL
+   * share. Server resizes were already applied client-side; we just forward
+   * the bytes to the LLM as a content block.
+   */
+  capture?: {
+    kind?: string;
+    mimeType?: string;
+    filename?: string;
+    base64?: string;       // present for image captures
+    text?: string;         // present for text/URL captures
+    share_url?: string;    // present when shared from another app
+  };
 }
 
 export interface QueryResult {
@@ -516,7 +544,7 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
     onEvent: (event: object) => void,
     onComplete?: (result: QueryResult) => void
   ): Promise<void> {
-    const { orgId, userId, message, sessionId, intentCategoryId, voiceInput, outputLanguage } = request;
+    const { orgId, userId, message, sessionId, intentCategoryId, voiceInput, outputLanguage, moduleId, model, capture } = request;
 
     // H1: SEC: Validate message length before any processing
     if (!message || message.length === 0) throw new Error('Message is required');
@@ -564,8 +592,27 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
       }
     }
 
-    // Resolve intent
-    const intent = await intentRouter.resolveIntent(message, orgId, intentCategoryId);
+    // Resolve intent. When the caller passed an explicit moduleId (e.g. the
+    // companion app's Work tile flow) we honor it directly and look up the
+    // owning area from the static catalog — no LLM classification, no
+    // keyword guess, the user's pick wins.
+    let intent = await intentRouter.resolveIntent(message, orgId, intentCategoryId);
+    if (moduleId) {
+      // Dynamic import — see app-gateway.ts route file for the same pattern.
+      // Static import would drag the extensionless src/lib/constants.ts graph
+      // into nodenext resolution, which fails the typecheck.
+      const constantsMod = await import('../../src/lib/constants.js' as string) as {
+        AREAS: Array<{ id: string; moduleIds: string[] }>;
+      };
+      const ownerArea = constantsMod.AREAS.find(a => a.moduleIds.includes(moduleId));
+      intent = {
+        ...intent,
+        moduleId,
+        areaId: ownerArea?.id ?? intent.areaId ?? null,
+        confidence: 1.0,
+        reasoning: 'Explicit moduleId from companion app',
+      };
+    }
 
     // Load intent category for system prompt addon + knowledge scope
     let promptAddon = '';
@@ -706,9 +753,50 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
       knowledgeSystemAdditions: appContextLayer,
     });
 
-    const conversationMessages = [
+    // Build the user turn. If the request carries a capture, fold it in:
+    //   - Image (base64): prepend an Anthropic-format image content block so
+    //     vision-capable Claude models can see it. The Capture screen
+    //     resizes to ≤2048px @ 70% q before this point.
+    //   - Text/URL share: prepend the shared text/URL into the message
+    //     so the LLM has the source even when no image is attached.
+    // Non-Claude providers ignore image blocks (model-adapter typings are
+    // string-only); we still ship the text portion so the user gets *some*
+    // answer instead of a silent drop.
+    // Resolve model up-front so the vision branch sees the org default
+    // when CapturePage didn't pass an explicit model. Without this, a user
+    // on a Claude-default org takes a photo, no model in body → isClaude=false
+    // → image silently dropped with a "switch to Claude" warning.
+    const resolvedModel = (model || org.default_model) as import('../../src/lib/types.js').ModelId;
+    let userTurn: { role: 'user'; content: string | object[] };
+    const isClaude = String(resolvedModel || '').toLowerCase().startsWith('claude');
+    if (capture?.base64 && capture.mimeType?.startsWith('image/') && isClaude) {
+      userTurn = {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: capture.mimeType, data: capture.base64 },
+          },
+          { type: 'text', text: message },
+        ],
+      };
+    } else if (capture?.text || capture?.share_url) {
+      const sharePrefix = capture.share_url
+        ? `Shared link: ${capture.share_url}\n`
+        : '';
+      const shareBody = capture.text ? `Shared content:\n${capture.text}\n\n` : '';
+      userTurn = { role: 'user', content: `${sharePrefix}${shareBody}${message}` };
+    } else if (capture?.base64) {
+      // Image attached but the picked model isn't Claude — tell the LLM
+      // explicitly so the user understands why we ignored the picture.
+      userTurn = { role: 'user', content: `[An image was attached but the selected model can't read images. Please ask the user to switch to a Claude model.]\n\n${message}` };
+    } else {
+      userTurn = { role: 'user', content: message };
+    }
+
+    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string | object[] }> = [
       ...existingMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user' as const, content: message },
+      userTurn,
     ];
 
     // Determine thinking level (capped by org max, then intent max)
@@ -722,9 +810,12 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
     // Stream the response
     const { streamToHandler } = await import('./unified-llm-client.js');
 
+    // resolvedModel is computed above (right before userTurn) so the vision
+    // branch and the streamer agree on the same id.
+
     await streamToHandler(
       {
-        model: org.default_model as import('../../src/lib/types.js').ModelId,
+        model: resolvedModel,
         thinking: thinkingLevel,
         system: systemPrompt,
         messages: conversationMessages,
@@ -772,7 +863,7 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
             sessionId: currentSessionId!,
             moduleId: intent.moduleId || undefined,
             areaId: intent.areaId || undefined,
-            model: org.default_model,
+            model: resolvedModel,
             provider: 'anthropic',
             thinkingLevel: thinkingLevel,
             inputTokenCount: completion.inputTokens,

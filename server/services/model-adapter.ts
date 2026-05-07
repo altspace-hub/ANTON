@@ -605,6 +605,31 @@ export async function getCustomModelConfigs(db: DatabaseAdapter): Promise<Custom
   return configs;
 }
 
+// Sync accessor backed by a lazily-populated cache. Many provider-routing
+// helpers (getProviderFromModelId, getApiKeyForModel) are sync and called
+// from sync code paths — converting the whole chain to async would ripple
+// through ~10 call sites in unified-llm-client + provider-router. Instead,
+// we cache the slot lookup so the steady-state read is sync. First call
+// kicks off the async load and returns []; subsequent calls return the
+// cached array. Settings-mutation paths must call invalidateCustomModelConfigsCache().
+let customConfigsCache: CustomModelConfig[] | null = null;
+let customConfigsLoading: Promise<void> | null = null;
+export function getCustomModelConfigsSync(db: DatabaseAdapter): CustomModelConfig[] {
+  if (customConfigsCache !== null) return customConfigsCache;
+  if (!customConfigsLoading) {
+    customConfigsLoading = getCustomModelConfigs(db).then(configs => {
+      customConfigsCache = configs;
+    }).catch(() => {
+      customConfigsCache = [];
+    });
+  }
+  return [];
+}
+export function invalidateCustomModelConfigsCache(): void {
+  customConfigsCache = null;
+  customConfigsLoading = null;
+}
+
 export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): ModelProvider {
   if (modelId.startsWith('claude-')) return 'anthropic';
   if (modelId.startsWith('azure:')) return 'azure_openai';
@@ -615,7 +640,7 @@ export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): M
 
   // Fallback: check custom model slots in the database
   if (db) {
-    const customModels = getCustomModelConfigs(db);
+    const customModels = getCustomModelConfigsSync(db);
     const match = customModels.find((m) => m.modelId === modelId);
     if (match) return match.provider;
   }
