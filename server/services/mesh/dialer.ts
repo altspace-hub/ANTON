@@ -25,20 +25,22 @@
 import { WebSocket } from 'ws';
 import crypto from 'node:crypto';
 import { ed25519 } from '@noble/curves/ed25519';
-import { NoiseResponder, NoiseTransport, buildPrologue, type KeyPair } from './noise.js';
+import { NoiseInitiator, NoiseResponder, NoiseTransport, buildPrologue, type KeyPair } from './noise.js';
 
 // ── Wire-frame constants (mirrors relay/src/frame.ts §2) ─────────────
 
 const WIRE_VERSION = 0x01;
 const TYPE_HELLO_INSTANCE = 0x01;
 const TYPE_ACK_INSTANCE   = 0x03;
+const TYPE_ACK_PHONE      = 0x04;
 const TYPE_PING           = 0x05;
 const TYPE_PONG           = 0x06;
+const TYPE_DIAL_INSTANCE  = 0x07;  // §3.11 — instance dialing peer instance
 const TYPE_ERROR          = 0x0F;
 const TYPE_ENVELOPE       = 0x10;
 
-const ROLE_PHONE    = 0x01;
-const ROLE_INSTANCE = 0x02;
+const ROLE_PHONE    = 0x01;  // initiator side of a session
+const ROLE_INSTANCE = 0x02;  // responder side of a session
 
 // ── Public types ────────────────────────────────────────────────────
 
@@ -75,8 +77,10 @@ export interface SessionContext {
   send(plaintext: Uint8Array): void;
   /** Tear down the session locally (does not signal the peer; relay will PEER_GONE). */
   close(reason?: string): void;
-  /** The phone's static X25519 pubkey, recovered from the Noise handshake.
-   *  Application layer uses this to look up the device row in app_devices. */
+  /** The peer's static X25519 pubkey. For phone-initiated sessions this is
+   *  the phone's static (recovered from Noise IK msg 1). For instance-dialed
+   *  sessions this is the responder's static (known up-front from the
+   *  community contact card / pairing — we used it to construct msg 1). */
   phoneStaticPubkey: Uint8Array;
 }
 
@@ -85,7 +89,32 @@ interface ActiveSession {
   sessionIdHex: string;
   relayUrl: string;
   transport: NoiseTransport;
+  /** Peer's static X25519 — kept under the original name for ABI compat with
+   *  callers that introspect the field; see SessionContext.phoneStaticPubkey. */
   phoneStaticPubkey: Uint8Array;
+  /** §3.11 — this side's role in the session, for the envelope direction
+   *  check. 'responder' = we accept a phone or peer dial (existing path,
+   *  expect from_role=PHONE on incoming). 'initiator' = we dialed a peer
+   *  via DIAL_INSTANCE (expect from_role=INSTANCE on incoming). */
+  myRole: 'initiator' | 'responder';
+}
+
+/**
+ * §3.11 — state for a dial-out that is waiting for ACK_PHONE (and then for
+ * ENVELOPE carrying Noise msg 2). Indexed two ways:
+ *   - by relayUrl (FIFO queue) before ACK_PHONE arrives, so we can match
+ *     the next ACK_PHONE on that leg to the oldest pending dial
+ *   - by sessionIdHex after ACK_PHONE, so the next ENVELOPE on that session
+ *     drives the Noise initiator to msg 2 + transport
+ */
+interface PendingDial {
+  initiator: NoiseInitiator;
+  peerStaticPubkey: Uint8Array;
+  relayUrl: string;
+  resolve: (ctx: SessionContext) => void;
+  reject: (err: Error) => void;
+  timeoutTimer: ReturnType<typeof setTimeout>;
+  sessionIdHex?: string;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -174,6 +203,13 @@ export class MeshDialer {
   private sessions = new Map<string, ActiveSession>();
   /** Reverse map: sessionIdHex → which relay URL the session lives on. */
   private sessionRelay = new Map<string, string>();
+  /** §3.11 — dial-outs that have sent DIAL_INSTANCE and are awaiting
+   *  ACK_PHONE. FIFO per leg so we can match the next ACK_PHONE on a
+   *  given relayUrl to the oldest pending dial there. */
+  private pendingDialsByLeg = new Map<string, PendingDial[]>();
+  /** §3.11 — dial-outs that have received ACK_PHONE (so session_id is
+   *  known) but are still awaiting ENVELOPE with Noise msg 2. */
+  private pendingDialsBySession = new Map<string, PendingDial>();
   private stopping = false;
   private prevReachable = false;
 
@@ -221,6 +257,86 @@ export class MeshDialer {
     return this.sessions.size;
   }
 
+  // ── §3.11 dial-out (instance-to-instance) ──────────────────────────
+
+  /**
+   * Dial a peer instance over the mesh. Sends DIAL_INSTANCE on the first
+   * connected leg, awaits ACK_PHONE + the responder's Noise msg 2, and
+   * resolves with a SessionContext for sending application data.
+   *
+   * Caller MUST already know the peer's static X25519 pubkey — typically
+   * from the community contact card (community_connections.peer_instance_pubkey
+   * is the Ed25519, which the caller derives X25519 from via
+   * ed_pk_to_curve25519). This function does NOT do peer discovery.
+   */
+  async dialPeer(opts: {
+    /** 16-byte target instance_id = sha256(peer_x_pk)[0..16). */
+    peerInstanceId: Uint8Array;
+    /** 32-byte peer X25519 static pubkey (Noise responder static). */
+    peerStaticPubkey: Uint8Array;
+    /** Total time budget for ACK_PHONE + msg 2. Default 10s. */
+    timeoutMs?: number;
+  }): Promise<SessionContext> {
+    if (opts.peerInstanceId.length !== 16) throw new Error('peerInstanceId must be 16 bytes');
+    if (opts.peerStaticPubkey.length !== 32) throw new Error('peerStaticPubkey must be 32 bytes');
+
+    // Pick any connected leg. v0.1 strategy: first connected wins. A future
+    // iteration can rotate / pick by latency / spread sessions across relays.
+    let chosenLeg: RelayLeg | null = null;
+    for (const leg of this.legs.values()) {
+      if (leg.connected()) { chosenLeg = leg; break; }
+    }
+    if (!chosenLeg) throw new Error('dialPeer: no connected relay legs');
+
+    // Build NoiseInitiator + msg 1. The same prologue formula as the responder
+    // path so both sides agree on the binding (relay_url + target_instance_id).
+    const targetInstanceIdHex = bytesToHex(opts.peerInstanceId);
+    const prologue = buildPrologue(chosenLeg.url, targetInstanceIdHex);
+    const initiator = new NoiseInitiator({
+      staticKeypair: this.cfg.x25519,
+      responderStatic: opts.peerStaticPubkey,
+      prologue,
+    });
+    const noiseInitMsg = initiator.writeMessage1();
+
+    // The first 32 bytes of noiseInitMsg are the initiator ephemeral
+    // pubkey (NoiseInitiator's writeMessage1 layout — see noise.ts:333).
+    // The relay matcher mirrors this into ACK_INSTANCE for the target.
+    const initiatorEphemPk = noiseInitMsg.slice(0, 32);
+
+    // DIAL_INSTANCE payload: target_instance_id (16) | initiator_ephem_pk (32) | noise_init_msg
+    const payload = new Uint8Array(16 + 32 + noiseInitMsg.length);
+    payload.set(opts.peerInstanceId, 0);
+    payload.set(initiatorEphemPk, 16);
+    payload.set(noiseInitMsg, 16 + 32);
+
+    return new Promise<SessionContext>((resolve, reject) => {
+      const timeoutMs = opts.timeoutMs ?? 10_000;
+      const dial: PendingDial = {
+        initiator,
+        peerStaticPubkey: opts.peerStaticPubkey,
+        relayUrl: chosenLeg!.url,
+        resolve,
+        reject,
+        timeoutTimer: setTimeout(() => {
+          this.failPendingDial(dial, new Error('dialPeer: timeout waiting for peer'));
+        }, timeoutMs),
+      };
+      let queue = this.pendingDialsByLeg.get(chosenLeg!.url);
+      if (!queue) { queue = []; this.pendingDialsByLeg.set(chosenLeg!.url, queue); }
+      queue.push(dial);
+
+      // Send DIAL_INSTANCE last — between push and send the leg can't fire
+      // ACK_PHONE since we haven't asked yet. (Even if it did, our queue is
+      // already armed.)
+      try {
+        chosenLeg!.sendFrame(encodeFrame(TYPE_DIAL_INSTANCE, payload));
+      } catch (err) {
+        this.failPendingDial(dial, err instanceof Error ? err : new Error(String(err)));
+      }
+    });
+  }
+
   // ── Internal — called from RelayLeg ───────────────────────────────
 
   /** A relay leg connected. Send HELLO_INSTANCE down it. */
@@ -242,6 +358,20 @@ export class MeshDialer {
         this.sessionRelay.delete(sidHex);
       }
     }
+    // §3.11 — fail any in-flight dial-outs on this leg.
+    const pending = this.pendingDialsByLeg.get(leg.url);
+    if (pending) {
+      for (const dial of pending) this.failPendingDial(dial, new Error(`dial: leg closed (${reason})`));
+      this.pendingDialsByLeg.delete(leg.url);
+    }
+    for (const [sidHex, dial] of this.pendingDialsBySession) {
+      if (dial.relayUrl === leg.url) {
+        this.failPendingDial(dial, new Error(`dial: leg closed before msg 2 (${reason})`));
+        // failPendingDial deletes from pendingDialsBySession, so the iterator is
+        // safe to continue on the underlying Map (entries() is forgiving).
+        void sidHex;
+      }
+    }
     this.updateReachability();
   }
 
@@ -258,6 +388,10 @@ export class MeshDialer {
     switch (frame.type) {
       case TYPE_ACK_INSTANCE:
         this.handleAckInstance(leg, frame.payload);
+        return;
+      case TYPE_ACK_PHONE:
+        // §3.11 — relay confirms our DIAL_INSTANCE matched. Returns session_id.
+        this.handleAckPhone(leg, frame.payload);
         return;
       case TYPE_ENVELOPE:
         this.handleEnvelope(leg, frame.payload);
@@ -324,6 +458,7 @@ export class MeshDialer {
       relayUrl: leg.url,
       transport,
       phoneStaticPubkey,
+      myRole: 'responder',
     };
     this.sessions.set(sessionIdHex, session);
     this.sessionRelay.set(sessionIdHex, leg.url);
@@ -334,6 +469,34 @@ export class MeshDialer {
       phoneStaticPubkey,
     };
     this.cfg.onSessionOpen?.(sessionId, ctx);
+  }
+
+  // ── ACK_PHONE handler (§3.11 dial-out path) ────────────────────────
+
+  /**
+   * Relay confirms our DIAL_INSTANCE matched the target — payload is the
+   * 16-byte session_id. Match it to the oldest pending dial on this leg
+   * (FIFO) and move that dial into pendingDialsBySession so the next
+   * ENVELOPE on this session drives the Noise initiator to msg 2.
+   */
+  private handleAckPhone(leg: RelayLeg, payload: Uint8Array): void {
+    if (payload.length !== 16) {
+      leg.closeWithReason(1002, 'ack_phone_bad_size');
+      return;
+    }
+    const queue = this.pendingDialsByLeg.get(leg.url);
+    if (!queue || queue.length === 0) {
+      // ACK_PHONE without a pending dial — relay misbehaving or our state
+      // got out of sync. Close the leg; reconnect will resync.
+      leg.closeWithReason(1002, 'ack_phone_no_pending');
+      return;
+    }
+    const dial = queue.shift()!;
+    if (queue.length === 0) this.pendingDialsByLeg.delete(leg.url);
+    const sessionIdHex = bytesToHex(payload);
+    dial.sessionIdHex = sessionIdHex;
+    this.pendingDialsBySession.set(sessionIdHex, dial);
+    this.sessionRelay.set(sessionIdHex, leg.url);
   }
 
   // ── ENVELOPE handler — decrypt with Noise, dispatch plaintext ──────
@@ -349,17 +512,28 @@ export class MeshDialer {
     const fromRole = payload[16];
     const inner = payload.slice(17);
 
-    // Spec §3.6 — receiver MUST verify from_role is the *opposite* of its
-    // own role. The instance is ROLE_INSTANCE; inbound must be ROLE_PHONE.
-    if (fromRole !== ROLE_PHONE) {
-      // Misrouted by the relay (or relay is buggy). End the session.
-      this.closeSession(sessionId, 'wrong_direction_tag');
+    // §3.11 — pending dial-out finalization. The first ENVELOPE on a
+    // session we initiated carries Noise IK msg 2 from the responder.
+    const pendingDial = this.pendingDialsBySession.get(sessionIdHex);
+    if (pendingDial) {
+      this.finalizePendingDial(pendingDial, sessionId, fromRole, inner, leg);
       return;
     }
 
     const session = this.sessions.get(sessionIdHex);
     if (!session) {
       // No matching session — relay should have caught this, but defensive.
+      return;
+    }
+
+    // §3.11 — session-scoped direction check. Responder expects from_role=PHONE
+    // (peer is the initiator), initiator expects from_role=INSTANCE (peer is
+    // the responder). Pre-§3.11 dialer was responder-only and hard-coded
+    // ROLE_PHONE here.
+    const expected = session.myRole === 'responder' ? ROLE_PHONE : ROLE_INSTANCE;
+    if (fromRole !== expected) {
+      // Misrouted by the relay (or relay is buggy). End the session.
+      this.closeSession(sessionId, 'wrong_direction_tag');
       return;
     }
 
@@ -373,6 +547,73 @@ export class MeshDialer {
     }
 
     this.cfg.onSessionData?.(sessionId, plaintext);
+  }
+
+  /**
+   * §3.11 — finalize an outbound dial: the responder's Noise msg 2 just
+   * arrived as an ENVELOPE. Run readMessage2 to derive the transport
+   * keys, register an ActiveSession, and resolve the dialPeer() promise
+   * with a SessionContext.
+   */
+  private finalizePendingDial(
+    dial: PendingDial,
+    sessionId: Uint8Array,
+    fromRole: number | undefined,
+    inner: Uint8Array,
+    leg: RelayLeg,
+  ): void {
+    const sessionIdHex = bytesToHex(sessionId);
+    if (fromRole !== ROLE_INSTANCE) {
+      // We're the initiator; peer is the responder; relay must tag from_role=INSTANCE.
+      this.failPendingDial(dial, new Error('dial: wrong direction tag on msg 2'));
+      return;
+    }
+    let transport: NoiseTransport;
+    try {
+      const r = dial.initiator.readMessage2(inner);
+      transport = r.transport;
+    } catch (err) {
+      this.failPendingDial(dial, err instanceof Error ? err : new Error(String(err)));
+      return;
+    }
+
+    // Promote to an ActiveSession.
+    clearTimeout(dial.timeoutTimer);
+    this.pendingDialsBySession.delete(sessionIdHex);
+
+    const session: ActiveSession = {
+      sessionId,
+      sessionIdHex,
+      relayUrl: leg.url,
+      transport,
+      phoneStaticPubkey: dial.peerStaticPubkey,
+      myRole: 'initiator',
+    };
+    this.sessions.set(sessionIdHex, session);
+
+    const ctx: SessionContext = {
+      send: (plaintext: Uint8Array) => this.sendApplicationMessage(sessionId, plaintext),
+      close: (reason = 'closed_by_app') => this.closeSession(sessionId, reason),
+      phoneStaticPubkey: dial.peerStaticPubkey,
+    };
+    this.cfg.onSessionOpen?.(sessionId, ctx);
+    dial.resolve(ctx);
+  }
+
+  private failPendingDial(dial: PendingDial, err: Error): void {
+    clearTimeout(dial.timeoutTimer);
+    if (dial.sessionIdHex) {
+      this.pendingDialsBySession.delete(dial.sessionIdHex);
+      this.sessionRelay.delete(dial.sessionIdHex);
+    }
+    // Try to remove from per-leg queue too (in case ACK_PHONE never arrived).
+    const queue = this.pendingDialsByLeg.get(dial.relayUrl);
+    if (queue) {
+      const idx = queue.indexOf(dial);
+      if (idx >= 0) queue.splice(idx, 1);
+      if (queue.length === 0) this.pendingDialsByLeg.delete(dial.relayUrl);
+    }
+    dial.reject(err);
   }
 
   /** Encrypt + send an application-layer plaintext for a session. */
