@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 import {
   MatchTable,
   RELAY_ERROR_CODE,
@@ -8,10 +8,10 @@ import {
   type MatchTableLimits,
 } from '../src/match.js';
 import { TYPE, decodeFrame, decodeRelayErrorPayload } from '../src/frame.js';
-import type { ParsedHelloInstance, ParsedHelloPhone } from '../src/hello.js';
+import type { ParsedHelloInstance, ParsedHelloPhone, ParsedDialInstance } from '../src/hello.js';
 import { bytesToHex } from '../src/primitives.js';
 
-// ── Fixture builders ─────────────────────────────────────────────────
+// â”€â”€ Fixture builders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function makeInstanceHello(idByte = 0xAA): ParsedHelloInstance {
   const instance_id = new Uint8Array(16).fill(idByte);
@@ -35,6 +35,14 @@ function makePhoneHello(idByte = 0xAA, ephemByte = 0xCD): ParsedHelloPhone {
   };
 }
 
+function makeDialInstance(targetByte = 0xBB, ephemByte = 0xCD): ParsedDialInstance {
+  return {
+    target_instance_id: new Uint8Array(16).fill(targetByte),
+    initiator_ephem_pk: new Uint8Array(32).fill(ephemByte),
+    noise_init_msg: new TextEncoder().encode('mock-dial-noise-init'),
+  };
+}
+
 // Convenience: pull a typed action out of the list.
 function findSend(actions: Action[], connId: string): Action | undefined {
   return actions.find(a => a.kind === 'send' && a.connId === connId);
@@ -53,9 +61,9 @@ function decodeErrorCode(action: Action): number | null {
   return decodeRelayErrorPayload(f.payload).code;
 }
 
-// ── Happy-path: instance first, then phone ───────────────────────────
+// â”€â”€ Happy-path: instance first, then phone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — happy path', () => {
+describe('MatchTable â€” happy path', () => {
   it('matches a phone that arrives after the instance', () => {
     const t = new MatchTable();
     const instActions = t.registerInstance('inst-1', makeInstanceHello());
@@ -63,7 +71,7 @@ describe('MatchTable — happy path', () => {
     expect(t.instanceCount()).toBe(1);
 
     const phoneActions = t.registerPhoneRequest('phone-1', makePhoneHello());
-    // Should produce ACK_INSTANCE → instance and ACK_PHONE → phone
+    // Should produce ACK_INSTANCE â†’ instance and ACK_PHONE â†’ phone
     expect(phoneActions).toHaveLength(2);
 
     const ackInstance = findSend(phoneActions, 'inst-1');
@@ -135,9 +143,9 @@ describe('MatchTable — happy path', () => {
   });
 });
 
-// ── §3.9 — instance displacement ─────────────────────────────────────
+// â”€â”€ Â§3.9 â€” instance displacement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — instance displacement', () => {
+describe('MatchTable â€” instance displacement', () => {
   it('a second HELLO_INSTANCE for the same id displaces the first', () => {
     const t = new MatchTable();
     t.registerInstance('inst-1', makeInstanceHello());
@@ -170,7 +178,7 @@ describe('MatchTable — instance displacement', () => {
     expect(findClose(actions, 'phone-2')).toBeDefined();
   });
 
-  it('phones do NOT displace phones — concurrent phones get distinct sessions', () => {
+  it('phones do NOT displace phones â€” concurrent phones get distinct sessions', () => {
     const t = new MatchTable();
     t.registerInstance('inst-1', makeInstanceHello());
     t.registerPhoneRequest('phone-A', makePhoneHello(0xAA, 0x01));
@@ -179,9 +187,9 @@ describe('MatchTable — instance displacement', () => {
   });
 });
 
-// ── §3.10 — concurrent-session limit per instance ────────────────────
+// â”€â”€ Â§3.10 â€” concurrent-session limit per instance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — per-instance session limits (§3.10)', () => {
+describe('MatchTable â€” per-instance session limits (Â§3.10)', () => {
   it('rejects a phone with RATE_LIMITED when the cap is reached', () => {
     const limits: MatchTableLimits = { maxSessionsPerInstance: 2, pendingPhoneTimeoutSec: 30 };
     const t = new MatchTable(limits);
@@ -222,9 +230,9 @@ describe('MatchTable — per-instance session limits (§3.10)', () => {
   });
 });
 
-// ── §3.9 — disconnect handling ───────────────────────────────────────
+// â”€â”€ Â§3.9 â€” disconnect handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — disconnect handling', () => {
+describe('MatchTable â€” disconnect handling', () => {
   it('phone disconnect notifies its instance with PEER_GONE', () => {
     const t = new MatchTable();
     t.registerInstance('inst-1', makeInstanceHello());
@@ -266,9 +274,9 @@ describe('MatchTable — disconnect handling', () => {
   });
 });
 
-// ── §6.6.1 — pending-phone timeout (NO_MATCH) ────────────────────────
+// â”€â”€ Â§6.6.1 â€” pending-phone timeout (NO_MATCH) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — pending-phone timeout', () => {
+describe('MatchTable â€” pending-phone timeout', () => {
   it('reaps stale pending phones with NO_MATCH after the window', () => {
     let now = 1000;
     const t = new MatchTable(undefined, () => now);
@@ -295,7 +303,7 @@ describe('MatchTable — pending-phone timeout', () => {
     expect(t.pendingPhoneCount()).toBe(1);
   });
 
-  it('reap is idempotent — calling twice on the same state produces the same actions', () => {
+  it('reap is idempotent â€” calling twice on the same state produces the same actions', () => {
     let now = 1000;
     const t = new MatchTable(undefined, () => now);
     t.registerPhoneRequest('phone-1', makePhoneHello());
@@ -307,9 +315,9 @@ describe('MatchTable — pending-phone timeout', () => {
   });
 });
 
-// ── Multi-instance isolation (T6 cross-tenant test) ──────────────────
+// â”€â”€ Multi-instance isolation (T6 cross-tenant test) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('MatchTable — cross-instance isolation', () => {
+describe('MatchTable â€” cross-instance isolation', () => {
   it('phones for instance A never match instance B', () => {
     const t = new MatchTable();
     t.registerInstance('inst-A', makeInstanceHello(0xAA));
@@ -333,7 +341,107 @@ describe('MatchTable — cross-instance isolation', () => {
 
     // phone-A tries to forward into session-B's session_id
     const fwd = t.forwardEnvelope('phone-A', sessionIdB, new Uint8Array(8));
-    // Phone-A is not part of session-B → PEER_GONE / not_part_of_session
     expect(decodeErrorCode(fwd[0]!)).toBe(RELAY_ERROR_CODE.PEER_GONE);
   });
 });
+
+// â”€â”€ A4 Â§3.11 â€” instance dialing a peer instance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+describe('MatchTable â€” DIAL_INSTANCE (instance-to-instance)', () => {
+  it('rejects DIAL_INSTANCE from a connection that has not completed HELLO_INSTANCE first', () => {
+    const t = new MatchTable();
+    const actions = t.registerInstanceDial('rogue-conn', makeDialInstance(0xBB));
+    const err = findSend(actions, 'rogue-conn');
+    expect(err).toBeDefined();
+    expect(decodeErrorCode(err!)).toBe(RELAY_ERROR_CODE.BAD_HELLO);
+    expect(findClose(actions, 'rogue-conn')).toBeDefined();
+    expect(t.sessionCount()).toBe(0);
+  });
+
+  it('matches when target instance is already registered', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+    t.registerInstance('inst-B', makeInstanceHello(0xBB));
+
+    const actions = t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+    expect(t.sessionCount()).toBe(1);
+
+    const ackToB = findSend(actions, 'inst-B');
+    expect(ackToB).toBeDefined();
+    expect(decodeFrameType(ackToB!)).toBe(TYPE.ACK_INSTANCE);
+
+    const ackToA = findSend(actions, 'inst-A');
+    expect(ackToA).toBeDefined();
+    expect(decodeFrameType(ackToA!)).toBe(TYPE.ACK_PHONE);
+  });
+
+  it('queues DIAL_INSTANCE when target is not yet registered, then matches on arrival', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+
+    const dialActions = t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+    expect(dialActions).toEqual([]);
+    expect(t.pendingPhoneCount()).toBe(1);
+
+    const bActions = t.registerInstance('inst-B', makeInstanceHello(0xBB));
+    expect(t.sessionCount()).toBe(1);
+    expect(findSend(bActions, 'inst-B')).toBeDefined();
+    expect(findSend(bActions, 'inst-A')).toBeDefined();
+  });
+
+  it('forwards ENVELOPE from initiator to responder with from_role=PHONE', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+    t.registerInstance('inst-B', makeInstanceHello(0xBB));
+    const actions = t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+    const ackToA = findSend(actions, 'inst-A')!;
+    const sessionIdBytes = decodeFrame(ackToA.kind === 'send' ? ackToA.frame : new Uint8Array()).payload;
+
+    const fwd = t.forwardEnvelope('inst-A', sessionIdBytes, new TextEncoder().encode('init-to-resp'));
+    if (fwd[0]!.kind !== 'send') throw new Error('unreachable');
+    expect(fwd[0]!.connId).toBe('inst-B');
+    expect(decodeFrame(fwd[0]!.frame).payload[16]).toBe(ROLE.PHONE);
+  });
+
+  it('forwards ENVELOPE from responder to initiator with from_role=INSTANCE', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+    t.registerInstance('inst-B', makeInstanceHello(0xBB));
+    const actions = t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+    const ackToA = findSend(actions, 'inst-A')!;
+    const sessionIdBytes = decodeFrame(ackToA.kind === 'send' ? ackToA.frame : new Uint8Array()).payload;
+
+    const fwd = t.forwardEnvelope('inst-B', sessionIdBytes, new TextEncoder().encode('reply'));
+    if (fwd[0]!.kind !== 'send') throw new Error('unreachable');
+    expect(fwd[0]!.connId).toBe('inst-A');
+    expect(decodeFrame(fwd[0]!.frame).payload[16]).toBe(ROLE.INSTANCE);
+  });
+
+  it('disconnect of the dialing instance tears down its dial and notifies responder', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+    t.registerInstance('inst-B', makeInstanceHello(0xBB));
+    t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+    expect(t.sessionCount()).toBe(1);
+
+    const actions = t.handleDisconnect('inst-A');
+    expect(t.sessionCount()).toBe(0);
+    const errToB = findSend(actions, 'inst-B');
+    expect(errToB).toBeDefined();
+    expect(decodeErrorCode(errToB!)).toBe(RELAY_ERROR_CODE.PEER_GONE);
+  });
+
+  it('one instance can simultaneously accept phones AND dial peers', () => {
+    const t = new MatchTable();
+    t.registerInstance('inst-A', makeInstanceHello(0xAA));
+    t.registerInstance('inst-B', makeInstanceHello(0xBB));
+
+    t.registerPhoneRequest('phone-1', makePhoneHello(0xAA));
+    t.registerInstanceDial('inst-A', makeDialInstance(0xBB));
+
+    expect(t.sessionCount()).toBe(2);
+    expect(t.sessionsFor('bb'.repeat(16))).toBe(1);
+  });
+});
+
+// Marker so the appended block is uniquely anchored: A4_TESTS_END

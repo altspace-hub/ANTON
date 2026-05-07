@@ -254,6 +254,33 @@ export function parseHelloPhone(payload: Uint8Array): ParsedHelloPhone {
   return { instance_id, phone_ephem_pk, noise_init_msg };
 }
 
+// ── DIAL_INSTANCE (§3.11) ─────────────────────────────────────────
+// Same wire shape as HELLO_PHONE — instance_id is the peer the dialer
+// wants to reach, plus the Noise IK msg 1. Identity is established by
+// the dialer's pre-existing HELLO_INSTANCE registration on the same
+// WS connection, so no proof_sig here.
+
+export interface ParsedDialInstance {
+  target_instance_id: Uint8Array;     // 16 bytes — the peer the dialer wants
+  initiator_ephem_pk: Uint8Array;     // 32 bytes — X25519 ephemeral
+  noise_init_msg: Uint8Array;         // variable — opaque to relay
+}
+
+export function parseDialInstance(payload: Uint8Array): ParsedDialInstance {
+  const FIXED = 16 + 32;
+  if (payload.length < FIXED) {
+    throw new HelloVerificationError(
+      HelloError.BAD_HELLO,
+      0,
+      `DIAL_INSTANCE payload ${payload.length} < ${FIXED}`,
+    );
+  }
+  const target_instance_id = payload.slice(0, 16);
+  const initiator_ephem_pk = payload.slice(16, 48);
+  const noise_init_msg = payload.slice(48);
+  return { target_instance_id, initiator_ephem_pk, noise_init_msg };
+}
+
 // ── helpers ────────────────────────────────────────────────────────
 
 function concat(...parts: Uint8Array[]): Uint8Array {

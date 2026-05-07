@@ -30,7 +30,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { encodeFrame, encodeRelayError, TYPE } from './frame.js';
-import type { ParsedHelloInstance, ParsedHelloPhone } from './hello.js';
+import type { ParsedHelloInstance, ParsedHelloPhone, ParsedDialInstance } from './hello.js';
 import { bytesToHex } from './primitives.js';
 
 // ── Action types — what the server should do in response ─────────────
@@ -79,9 +79,21 @@ interface InstanceLeg {
 interface MatchedSession {
   sessionIdHex: string;
   sessionIdBytes: Uint8Array;
+  /** The responder side — receives Noise IK msg 1 and decrypts. For phone↔instance
+   *  this is the instance; for instance↔instance dial-outs (§3.11) it's the
+   *  *target* instance whose registered HELLO_INSTANCE accepted the dial. */
   instanceConnId: string;
+  /** The initiator side — sent Noise IK msg 1. For phone↔instance this is the
+   *  phone leg; for instance↔instance dial-outs it's the dialing instance's leg
+   *  (which simultaneously holds its own HELLO_INSTANCE registration). */
   phoneConnId: string;
+  /** The responder's instance_id (used for sessionsByInstance bookkeeping +
+   *  per-instance ceiling). */
   instanceIdHex: string;
+  /** §3.11 — when true, this session was started by DIAL_INSTANCE and the
+   *  initiator's connId is *also* a registered instance leg. Disconnect
+   *  cleanup walks sessionsByInitiator in addition to sessionsByInstance. */
+  dialerInitiated: boolean;
 }
 
 interface PendingPhone {
@@ -91,6 +103,10 @@ interface PendingPhone {
   noiseInitMsg: Uint8Array;
   /** Wall-clock seconds when this pending entry must time out (NO_MATCH). */
   expiresAtSec: number;
+  /** §3.11 — true when this pending entry came from DIAL_INSTANCE, so its
+   *  connId is also a registered instance leg and on match the resulting
+   *  session's `dialerInitiated` flag is set + sessionsByInitiator is updated. */
+  dialerInitiated: boolean;
 }
 
 // ── ROLE bytes for ENVELOPE.from_role (§3.6) ─────────────────────────
@@ -136,10 +152,20 @@ export class MatchTable {
   private sessions = new Map<string, MatchedSession>();         // sessionIdHex -> session
   private sessionsByInstance = new Map<string, Set<string>>();  // instanceIdHex -> sessionIdHex[]
   /**
-   * Pending phones by instance_id — multiple phones can wait for the same
-   * instance simultaneously. Stored in arrays in arrival order.
+   * Pending phones (and §3.11 dialing instances) by target instance_id —
+   * multiple initiators can wait for the same target simultaneously. Stored
+   * in arrival order. Both kinds queue here; the `dialerInitiated` flag on
+   * the entry distinguishes them at match time.
    */
   private pendingPhones = new Map<string, PendingPhone[]>();    // instanceIdHex -> phones
+  /**
+   * §3.11 — sessions where a registered instance leg is the *initiator*.
+   * Keyed on the initiator's connId so handleDisconnect can tear them down
+   * the same way it tears down responder-side sessions via sessionsByInstance.
+   * sessionsByInstance still tracks the responder's count for the §3.10
+   * per-instance ceiling.
+   */
+  private sessionsByInitiator = new Map<string, Set<string>>(); // initiatorConnId -> sessionIdHex[]
   /** Reverse lookup: connId → role + identifying key (so disconnect knows what to clean). */
   private connectionRoles = new Map<string, ConnectionRoleEntry>();
 
@@ -213,6 +239,7 @@ export class MatchTable {
         phoneEphemPk: hello.phone_ephem_pk,
         noiseInitMsg: hello.noise_init_msg,
         expiresAtSec: this.now() + this.limits.pendingPhoneTimeoutSec,
+        dialerInitiated: false,
       });
     }
 
@@ -228,8 +255,69 @@ export class MatchTable {
       phoneEphemPk: hello.phone_ephem_pk,
       noiseInitMsg: hello.noise_init_msg,
       expiresAtSec: this.now() + this.limits.pendingPhoneTimeoutSec,
+      dialerInitiated: false,
     });
     this.connectionRoles.set(connId, { role: 'phone_pending', instanceIdHex });
+    return [];
+  }
+
+  /**
+   * §3.11 — A registered instance leg is dialing a peer instance. The
+   * dialer's identity comes from its existing HELLO_INSTANCE registration
+   * (verified at connection setup), so DIAL_INSTANCE doesn't carry a fresh
+   * proof. The relay only checks:
+   *
+   *   1. The connId actually has a 'instance' role (i.e. completed HELLO_INSTANCE).
+   *   2. The target_instance_id is registered (or queue and wait, like phones).
+   *
+   * Match logic mirrors registerPhoneRequest exactly — the dialer plays the
+   * "initiator" role of the resulting session — except `dialerInitiated`
+   * is set so createSession knows not to overwrite the connection's role.
+   *
+   * Returns BAD_HELLO if the dialer hasn't completed HELLO_INSTANCE first.
+   */
+  registerInstanceDial(initiatorConnId: string, dial: ParsedDialInstance): Action[] {
+    const dialerRole = this.connectionRoles.get(initiatorConnId);
+    if (!dialerRole || dialerRole.role !== 'instance') {
+      return [{
+        kind: 'send',
+        connId: initiatorConnId,
+        frame: encodeRelayError(RELAY_ERROR_CODE.BAD_HELLO, 'DIAL_INSTANCE before HELLO_INSTANCE'),
+      }, { kind: 'close', connId: initiatorConnId, code: 1002, reason: 'protocol_violation' }];
+    }
+
+    const targetIdHex = bytesToHex(dial.target_instance_id);
+    const target = this.instances.get(targetIdHex);
+
+    if (target) {
+      // Immediate match — initiator's connId is also its registered instance leg.
+      return this.createSession(target.connId, targetIdHex, {
+        connId: initiatorConnId,
+        instanceIdHex: targetIdHex,
+        phoneEphemPk: dial.initiator_ephem_pk,
+        noiseInitMsg: dial.noise_init_msg,
+        expiresAtSec: this.now() + this.limits.pendingPhoneTimeoutSec,
+        dialerInitiated: true,
+      });
+    }
+
+    // Target not online — queue (same array as phone pending; dialerInitiated
+    // distinguishes them).
+    let queue = this.pendingPhones.get(targetIdHex);
+    if (!queue) {
+      queue = [];
+      this.pendingPhones.set(targetIdHex, queue);
+    }
+    queue.push({
+      connId: initiatorConnId,
+      instanceIdHex: targetIdHex,
+      phoneEphemPk: dial.initiator_ephem_pk,
+      noiseInitMsg: dial.noise_init_msg,
+      expiresAtSec: this.now() + this.limits.pendingPhoneTimeoutSec,
+      dialerInitiated: true,
+    });
+    // No connectionRoles update — initiator stays 'instance'. The pending
+    // entry is recovered on disconnect via the queue scan in handleDisconnect.
     return [];
   }
 
@@ -283,6 +371,13 @@ export class MatchTable {
     this.connectionRoles.delete(connId);
 
     if (role.role === 'instance') {
+      // §3.11 — also drop any pending dial-outs queued by this leg (its
+      // connId may sit in pendingPhones[targetIdHex] with dialerInitiated=true).
+      for (const [targetIdHex, queue] of this.pendingPhones) {
+        const filtered = queue.filter(p => p.connId !== connId);
+        if (filtered.length === 0) this.pendingPhones.delete(targetIdHex);
+        else if (filtered.length !== queue.length) this.pendingPhones.set(targetIdHex, filtered);
+      }
       return this.evictInstance(role.instanceIdHex, RELAY_ERROR_CODE.PEER_GONE, 'instance disconnected');
     }
 
@@ -391,6 +486,7 @@ export class MatchTable {
       instanceConnId,
       phoneConnId: phone.connId,
       instanceIdHex,
+      dialerInitiated: phone.dialerInitiated,
     };
     this.sessions.set(sessionIdHex, session);
     let set = this.sessionsByInstance.get(instanceIdHex);
@@ -398,8 +494,17 @@ export class MatchTable {
     set.add(sessionIdHex);
 
     // Update reverse lookups.
-    this.connectionRoles.set(phone.connId, { role: 'phone_matched', sessionIdHex });
-    // Instance role is already 'instance' from registerInstance.
+    if (phone.dialerInitiated) {
+      // §3.11 — the initiator is a registered instance leg; don't overwrite
+      // its 'instance' role with 'phone_matched'. Track the session under
+      // sessionsByInitiator so disconnect cleanup can tear it down.
+      let initSet = this.sessionsByInitiator.get(phone.connId);
+      if (!initSet) { initSet = new Set(); this.sessionsByInitiator.set(phone.connId, initSet); }
+      initSet.add(sessionIdHex);
+    } else {
+      this.connectionRoles.set(phone.connId, { role: 'phone_matched', sessionIdHex });
+    }
+    // Responder's role is already 'instance' from registerInstance.
 
     // Send ACK_INSTANCE to the instance (so it can feed noise_init_msg into Noise responder).
     actions.push({
@@ -440,7 +545,8 @@ export class MatchTable {
     actions.push({ kind: 'close', connId: inst.connId, code: 1000, reason: closeReason });
     this.connectionRoles.delete(inst.connId);
 
-    // Tear down all sessions that pointed at this instance.
+    // Tear down all sessions where this instance is the responder
+    // (sessionsByInstance keys on responder-side instance_id).
     const sessionIds = this.sessionsByInstance.get(instanceIdHex);
     if (sessionIds) {
       for (const sid of sessionIds) {
@@ -457,10 +563,42 @@ export class MatchTable {
           code: 1000,
           reason: 'peer_gone',
         });
-        this.connectionRoles.delete(session.phoneConnId);
+        // For phone↔instance sessions the initiator is a phone; clean its
+        // role entry. For dialer-initiated sessions, the initiator's
+        // 'instance' role belongs to a *different* instance leg — leave it.
+        if (!session.dialerInitiated) {
+          this.connectionRoles.delete(session.phoneConnId);
+        } else {
+          // Trim the stale session id off the initiator's tracking set.
+          const initSet = this.sessionsByInitiator.get(session.phoneConnId);
+          initSet?.delete(sid);
+          if (initSet && initSet.size === 0) this.sessionsByInitiator.delete(session.phoneConnId);
+        }
         this.sessions.delete(sid);
       }
       this.sessionsByInstance.delete(instanceIdHex);
+    }
+
+    // §3.11 — also tear down sessions where this leg was the *initiator*.
+    // The instance leg's own connId may sit in sessionsByInitiator with
+    // sessions whose responder is some *other* instance. Notify those
+    // responders + free state.
+    const initSessions = this.sessionsByInitiator.get(inst.connId);
+    if (initSessions) {
+      for (const sid of initSessions) {
+        const session = this.sessions.get(sid);
+        if (!session) continue;
+        actions.push({
+          kind: 'send',
+          connId: session.instanceConnId,
+          frame: encodeRelayError(RELAY_ERROR_CODE.PEER_GONE, 'peer initiator gone'),
+        });
+        // Don't close the responder's WS — it may have other sessions.
+        const respSet = this.sessionsByInstance.get(session.instanceIdHex);
+        respSet?.delete(sid);
+        this.sessions.delete(sid);
+      }
+      this.sessionsByInitiator.delete(inst.connId);
     }
 
     this.instances.delete(instanceIdHex);

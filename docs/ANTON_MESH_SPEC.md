@@ -151,10 +151,11 @@ Big-endian everywhere. Matches Noise spec, matches network byte order, matches e
 |---|---|---|---|
 | `0x01` | HELLO_INSTANCE | instance → relay | §3.2 |
 | `0x02` | HELLO_PHONE | phone → relay | §3.3 |
-| `0x03` | ACK_INSTANCE | relay → instance | §3.4 |
+| `0x03` | ACK_INSTANCE | relay → instance (responder side) | §3.4 |
 | `0x04` | ACK_PHONE | relay → phone | §3.5 |
 | `0x05` | PING | either → relay | empty |
 | `0x06` | PONG | relay → either | empty |
+| `0x07` | DIAL_INSTANCE | instance → relay (peer dial-out) | §3.11 |
 | `0x0F` | ERROR | any → any | §6 |
 | `0x10` | ENVELOPE | bidirectional via relay | §3.6 |
 
@@ -327,6 +328,58 @@ This avoids both (a) IPv6 bypass via low-bits rotation and (b) shared-NAT false-
 The previous default of 8 concurrent sessions per instance_id was too low for a household with multiple phones × multiple relays. New default 32 covers ~16 active phones with one redundant connection each. An instance can advertise an expected device count via the `caps` bitfield (Phase 2 use); the relay scales the limit per declaration up to the hard ceiling.
 
 Exceeding triggers ERROR `RATE_LIMITED` and a 60-second source-bucket cooldown for HELLO floods. Phones treat `RATE_LIMITED` as "try the next configured relay" before backing off (§6.6.1).
+
+### 3.11 DIAL_INSTANCE — instance-to-instance peer dial
+
+v0.1 framed every match as phone↔instance. v0.2 introduces **instance↔instance** so an ANTON instance can deliver A2A traffic (community mail, cross-instance agent queries, portal-to-portal calls) over the same Noise IK transport its phones already use.
+
+#### Wire format
+
+```
+DIAL_INSTANCE payload:
+  [ target_instance_id  : 16 bytes      ]   // who I want to reach
+  [ initiator_ephem_pk  : 32 bytes      ]   // X25519 ephemeral, mirrors HELLO_PHONE
+  [ noise_init_msg      : variable      ]   // Noise IK message 1, opaque to relay
+```
+
+The dialing instance MUST already have a registered HELLO_INSTANCE leg on the same WS connection — the relay derives "who's dialing" from `connectionRoles[connId]`, so the dial-out frame doesn't need to re-authenticate. Sending DIAL_INSTANCE on a connection that hasn't completed HELLO_INSTANCE first ⇒ `BAD_HELLO`.
+
+#### Matching
+
+The relay handles DIAL_INSTANCE almost identically to HELLO_PHONE:
+
+1. Look up `target_instance_id` in the registered-instances table.
+2. If found and within the per-instance session ceiling:
+   - Allocate a 16-byte `session_id`.
+   - Send **ACK_INSTANCE** to the target's leg with `(initiator_ephem_pk, noise_init_msg, session_id)`.
+   - Send **ACK_PHONE** to the *initiator's* leg (the same connection that holds its HELLO_INSTANCE registration) with `(session_id)`.
+3. If the target is not currently registered, queue the DIAL_INSTANCE for `pendingPhoneTimeoutSec` (default 30s) the same way HELLO_PHONE is queued. If the target connects within the window, drain the queue and create the session; otherwise return `NO_MATCH` and close the dial.
+
+The same connection can hold its HELLO_INSTANCE registration *and* be a dial-initiator on multiple sessions simultaneously. The relay tracks dial-initiated sessions in a separate map keyed on the initiator's connId; a disconnect tears down both the registration AND every dial-initiated session on that connection.
+
+#### ENVELOPE direction tag for instance↔instance
+
+`from_role` keeps the wire bytes unchanged: `0x01` = the **session's initiator**, `0x02` = the **session's responder**. For instance↔instance:
+
+- The dialing instance receives ENVELOPE → `from_role` MUST be `0x02` (peer is the responder of *this* session).
+- The dialed instance receives ENVELOPE → `from_role` MUST be `0x01` (peer is the initiator of *this* session).
+
+The receiver's expected `from_role` is now **session-scoped**, not connection-scoped: a single instance can be Bob (responder, expecting `from_role=0x01`) for sessions phones initiated, and Alice (initiator, expecting `from_role=0x02`) for sessions it dialed itself. Implementations MUST track per-session role.
+
+Spec §3.6's "phone receives → from_role=0x02 / instance receives → from_role=0x01" rule still holds for phone↔instance traffic; it's a special case of the session-scoped rule (phones are always initiators).
+
+#### Identity propagation to the responder application layer
+
+The Noise transcript already binds the initiator's static X25519 key (Noise IK uses initiator's static in the IK pattern), so the responder learns the dialer's instance_id from the recovered static. Before processing application bytes the responder MUST:
+
+1. `peer_instance_id = sha256(recovered_static_pk)[0..16)`
+2. Check that `peer_instance_id` matches a known peer in `community_connections.peer_instance_pubkey` (or accept-policy if open peering is enabled).
+
+This is the A2A analogue of the phone-side "device cert pinned at pairing" check. The relay does NOT learn the peer relationship — only the initiator and responder do.
+
+#### Limits
+
+DIAL_INSTANCE counts against the *target's* `maxSessionsPerInstance` ceiling (the same one that bounds phone fan-in), not the initiator's. New `caps` bit `0x00000001 = ALLOW_PEER_DIAL` lets an instance opt out of accepting peer dials; relay rejects DIAL_INSTANCE with `RATE_LIMITED` when the target's caps don't include this bit.
 
 ---
 

@@ -31,6 +31,8 @@ export interface AuditEvent {
     | 'hello_instance_rejected'
     | 'hello_phone'       // a HELLO_PHONE was accepted (queued or matched)
     | 'hello_phone_rejected'
+    | 'dial_instance'     // §3.11 — instance dialed a peer instance
+    | 'dial_instance_rejected'
     | 'match'             // a session was created
     | 'session_end'       // a session ended (peer gone, replaced, no_match, draining)
     | 'envelope'          // an ENVELOPE was forwarded — counted, not logged with payload
