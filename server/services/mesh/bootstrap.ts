@@ -23,6 +23,17 @@ import { rawFromDerKeypair, deriveMeshIdentity, type MeshIdentity } from './iden
 
 let activeDialer: MeshDialer | null = null;
 
+/**
+ * Return the running MeshDialer if one was started, else null.
+ *
+ * Used by peer-transport-service (Track A4b) to dial out to peer instances.
+ * Null when ANTON_MESH_RELAYS isn't configured — callers should fall back
+ * to HTTPS or surface "no transport available" depending on policy.
+ */
+export function getActiveDialer(): MeshDialer | null {
+  return activeDialer;
+}
+
 export async function startMeshDialer(db: DatabaseAdapter, app: Express): Promise<void> {
   // Track C Slice 2: source of truth is mesh-config-service (DB override
   // → env fallback). When the operator flips the override via the admin
