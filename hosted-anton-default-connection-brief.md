@@ -163,6 +163,8 @@ Decisions 1, 7, and 9 are critical-path. Decision 9 in particular precedes every
 
 **Acceptance** — every gate in §16 of the compliance plan closed. Counsel sign-off converts the plan from Draft to Active.
 
+**Critical-path dependency.** DPO appointment → DPIA drafting → DPIA sign-off → Phase 2 production unblock. Even with an external DPO firm engaged immediately, this chain is plausibly 6–10 weeks elapsed time. Plan the schedule around this: kick off DPO selection on **day one** of Phase 0.5, in parallel with Decision 9 (legal entity), not sequentially after entity registration completes. Otherwise Phase 2 sits ready and shipping-blocked while the legal sequence catches up.
+
 **Blocks** — Phase 2 production rollout. Phase 2 staging-internal work can proceed in parallel.
 
 ---
@@ -280,7 +282,8 @@ Decisions 1, 7, and 9 are critical-path. Decision 9 in particular precedes every
 
 - New message types serialise and deserialise correctly across both transports
 - Wallet binding persists per identity
-- Compliance metadata fields exist and are documented (even if unused), so the future payments build does not require schema migration during the regulatory build
+- AMLR-scope tables (reserved in Phase 1 per compliance plan §15.2) verified to match the documented field-level retention and access annotations; access controls enforced and tested
+- Article 30 record for AMLR-scope processing populated and reviewed by the DPO before any real payment operation can wire
 - Hooks for compliance event emission (e.g. `onPaymentInitiated`, `onCounterpartyResolved`) exist as no-ops
 
 ---
