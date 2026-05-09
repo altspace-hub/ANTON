@@ -135,8 +135,9 @@ These must be answered by Daniel before the corresponding phase begins. The inve
 | 6 | Pricing posture for the hosted default (free forever, eventually tiered) | Phase 1 (abuse limits, quota config) | Pure product decision |
 | 7 | Written scope rule: what the hosted instance runs and does not run | Phase 1 | Where AI/Work module binding currently sits |
 | 8 | Private mesh-only portals as a future seam (in scope or out for v1)? | Phase 4 | Visitor-layer architecture |
+| 9 | Operator legal entity: FutureChain itself, or a dedicated subsidiary? | Phase 0.5 (the whole phase) | Existing FutureChain corporate structure; AMLR-obligated-entity exposure if FutureChain takes both communications-controller and payments-rail roles; tax/jurisdiction implications; supervisory-authority venue (Sweden vs elsewhere) |
 
-Decisions 1 and 7 are critical-path. The others can be flagged when their phase begins.
+Decisions 1, 7, and 9 are critical-path. Decision 9 in particular precedes every other Phase 0.5 task — without a named entity there is no controller to register, no DPO to appoint, no party to sign sub-processor DPAs. The others can be flagged when their phase begins.
 
 ---
 
@@ -173,10 +174,10 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 - A deployable ANTON configuration that runs only the hosted-minimal subset: identity registry, AAP routing, group key coordination, Portals visitor layer, encrypted blob storage, payment-message transport stub
 - AI and Work modules disabled by configuration (per Decision 7) — without code branches in the AAP / chat / Portals paths
 - DNS and endpoint provisioned (per Decision 5); placeholder `connect.anton.network`
-- PostgreSQL: dedicated schema or feature flag — investigation determines which is correct
+- PostgreSQL schema for the hosted-minimal subset (dedicated schema or feature flag — investigation determines which is correct). **AMLR-scope tables (counterparty, amount, timestamp, KYC inputs, sanctions-screening results) reserved now even if empty**, per compliance plan §15.2 — this is the only way to avoid migrating live identity rows in Phase 6
 - Relay binding to `relay.futurechain.eu` confirmed working from the hosted instance
 
-**Affected files** — emerge from investigation; expect deployment configs, module loader, AAP routing layer, possibly the schema migration directory.
+**Affected files** — emerge from investigation; expect deployment configs, module loader, AAP routing layer, the schema migration directory (including the AMLR-reservation migration).
 
 **Acceptance**
 
@@ -185,6 +186,7 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 - AI/Work module endpoints return feature-flagged-disabled responses
 - Portals visitor layer serves public content over HTTPS
 - Operational basics in place: structured logs, metrics, abuse rate-limits, uptime monitoring
+- AMLR-scope tables exist in the schema (empty until Phase 6) and are documented in the Article 30 records and compliance plan
 - Documented runbook for restart, schema migration, key rotation
 
 ### Phase 2 — Default connection in the Companion App
@@ -192,10 +194,12 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 **Scope**
 
 - First-run onboarding: generate identity on-device (Ed25519 / X25519), derive `ANTON-XXXX-XXXX-XXXX-XXXX`, register with hosted instance, persist locally
-- Connection management UI extended: hosted default appears as a non-removable but supplementable connection
+- Connection management UI extended: hosted is the **default first connection but is fully demotable** (per §1). A user with at least one other working connection (local or organisation ANTON) can disconnect from hosted entirely and operate purely peer-to-peer
 - Hosted endpoint stored as configurable, with a sensible compiled-in default
+- Push-notification registration: APNs (iOS) and FCM (Android). Push tokens are personal data and APNs/FCM dispatch flows to US infrastructure — covered by SCCs / adequacy paperwork in Phase 0.5 (compliance plan §10). Payload contains only an opaque event identifier + severity, never message content (Companion App spec §8.7)
+- First-launch privacy-summary surface (per compliance plan §4.2) shown before identity is generated
 
-**Affected files** — Companion App onboarding screens, connection store, identity module.
+**Affected files** — Companion App onboarding screens, connection store, identity module, first-launch privacy surface, push registration adaptor.
 
 **Acceptance**
 
@@ -204,6 +208,9 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 - Contact hash is visible to the user and shareable via copy / QR
 - A second connection (e.g. a local ANTON on the LAN) can be added alongside the default
 - Switching between connections is non-destructive — no state loss
+- A user with at least one other working connection can fully remove the hosted default; identity, contacts, and history persist
+- Push tokens registered and stored per identity, never logged in plaintext, payloads carry no message content
+- First-launch privacy-summary surface is shown and acknowledged before identity registration
 
 ### Phase 3 — Chat over hosted (1:1, groups, media)
 
@@ -244,13 +251,18 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 
 ### Phase 5 — Identity recovery
 
-**Scope** — blocked on Decision 4. Implementation flows from the chosen recovery model.
+**Scope** — blocked on Decision 4. Implementation flows from the chosen recovery model. If Decision 4 = "neither," Phase 5 is a no-op and the privacy notice plus first-launch surface state plainly that device loss = identity loss.
 
-**Acceptance**
+**Acceptance — applies if Decision 4 ≠ "neither":**
 
-- A user can lose their device, install the Companion App on a new device, and recover identity and message history
-- The recovery flow does not require trust assumptions inconsistent with the privacy posture (i.e. if the recovery model relies on the hosted instance, the privacy posture says so explicitly)
+- A user can lose their device, install the Companion App on a new device, and recover identity and message history per the chosen model
+- The recovery flow does not require trust assumptions inconsistent with the privacy posture — if the recovery model relies on the hosted instance, the privacy notice says so explicitly
 - Recovery is testable end-to-end in CI
+
+**Acceptance — applies if Decision 4 = "neither":**
+
+- Both the first-launch surface and the privacy notice state explicitly that device loss = permanent identity loss
+- No recovery-related affordances exist in the UI that could mislead users into believing recovery is available
 
 ### Phase 6 — Payment seam stubs
 
@@ -292,7 +304,7 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 - Marketplace functionality beyond the future-payment-seam preparation
 - Full Beehive participation from a hosted-only client
 - Private mesh-only portals (Decision 8 may move this in or out for a future brief)
-- Migration of existing local-only Companion App users onto a hosted default — separate UX brief
+- Migration of existing local-only Companion App users onto a hosted default — UX is a separate brief, but the *legal* mechanics under Article 26 (joint controllership) apply from the moment such a user connects to the hosted relay, regardless of when the UX brief lands. See compliance plan §8
 
 ---
 
