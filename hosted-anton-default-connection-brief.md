@@ -144,39 +144,25 @@ Decisions 1 and 7 are critical-path. The others can be flagged when their phase 
 
 ### Phase 0.5 — Compliance and legal entity
 
-**Not optional and not "writing this between sprints."** Operating `connect.anton.network` and `relay.futurechain.eu` makes the operator a GDPR controller for connection metadata on both transports. The "mere-conduit" defence in the e-Commerce Directive is a liability shield, not a data-protection one — CJEU *Breyer* (C-582/14) and *La Quadrature du Net* (C-511/18) make that unavailable here. Status assumption: controller for connection metadata on mesh and HTTPS, not controller for E2E message content because it cannot decrypt. Confirm with EU data-protection counsel before staging — this brief is not legal advice.
+**Working document:** `docs/HOSTED_ANTON_COMPLIANCE_PLAN.md` — the full plan with controller-status analysis, lawful bases per operation, DPIA scope, Article 30 records framework, DPO options, Article 26 joint-controller template, Article 32 TOMs, retention rules designed into code, and the GDPR/AMLR conflict resolution. Read that document for detail; what follows is the summary.
 
-**Scope**
+**Not optional and not "writing this between sprints."** Operating `connect.anton.network` and `relay.futurechain.eu` makes the operator a GDPR controller for connection metadata on both transports. CJEU *Breyer* (C-582/14) and *La Quadrature du Net* (C-511/18) make the e-Commerce Directive "mere conduit" defence unavailable for data protection. Status: controller for connection metadata on mesh and HTTPS, not controller for E2E content because it cannot decrypt. Confirm with EU data-protection counsel before staging — this brief is not legal advice.
 
-- Establish the legal operator entity for `connect.anton.network` and `relay.futurechain.eu` (likely FutureChain or a dedicated subsidiary). Privacy notice and Article 30 records require a named, registered controller with a real address — a project name is not sufficient
-- Article 35 DPIA — large-scale messaging routing triggers it. Document data flows, lawful bases, risks, mitigations
-- Privacy notice with Article 13 disclosures, including an honest disclosure that access requests for E2E content cannot be fulfilled because the operator cannot decrypt
-- Article 30 records of processing activities — internal but mandatory
-- DPO appointment under Article 37 — "regular and systematic monitoring of data subjects on a large scale" applies once a messaging service hits non-trivial usage
-- Article 26 joint-controller arrangement template for users running self-hosted ANTONs that route through the hosted relay
-- Sub-processor agreements with Bahnhof and any other infrastructure providers
-- Operational policies designed *into the code*, not just documented:
-  - Metadata retention: minutes–hours for routing, then dropped. No telco-style retention
-  - Logging discipline: no IPs in logs after routing completes, no peer identifiers in error logs, encrypted logs at rest
-  - No content scanning under any pretext — once you scan, you have changed the controller relationship for content and lost the conduit posture
-- Identity registry minimisation: server-side stores `ANTON-XXXX-XXXX-XXXX-XXXX` ↔ pubkey only. No display names, phone numbers, or avatars unless absolutely required
-- AMLR/GDPR retention conflict surfaced and resolved on paper: GDPR demands minimisation; AMLR will demand 5-year retention for in-scope payment data when Phase 6 wires real payments. Document which data falls under which regime and how schemas separate them, so Phase 6 does not require schema migration
+**Scope (summary)**
 
-**Affected files** — privacy-notice page, ToS, `docs/compliance/`, schema retention metadata, logging middleware, relay configuration. Mostly policy and operations; the code touches are limited but real.
+- Legal entity: registered operator for `connect.anton.network` and `relay.futurechain.eu`, with registered address and DPO contact published
+- DPIA (Article 35), Article 30 records, DPO appointment, Article 26 joint-controller template, Article 28 sub-processor DPAs (Bahnhof + others)
+- Privacy notice with Article 13 disclosures including honest "we cannot decrypt your content" statement
+- First-launch privacy summary in the Companion App before identity is generated
+- Retention and logging policies enforced *in code* with automated tests — not just documented
+- Phase 1 schema must reserve AMLR-scope tables now, so Phase 6 doesn't migrate live data
+- Joint GDPR + AMLR compliance plan, not two separate plans
 
-**Acceptance**
+**Affected files** — `docs/HOSTED_ANTON_COMPLIANCE_PLAN.md`, privacy-notice page, ToS, schema retention metadata, logging middleware, relay configuration, Companion App first-launch surface.
 
-- Named legal operator entity registered, with a registered address and a DPO contact published
-- Privacy notice and ToS live at the hosted-instance domain before the first production user touches it
-- DPIA signed off by the DPO or external counsel
-- Article 30 records exist and are kept current
-- Sub-processor agreements with infrastructure providers in place
-- Article 26 joint-controller agreement template ready for self-hosted ANTON operators
-- Logging and retention policies enforced in code (not just documented), with tests covering the non-retention paths
-- Joint GDPR + AMLR compliance plan exists — not two separate plans
-- Sign-off from EU data-protection counsel before Phase 2 ships to production users
+**Acceptance** — every gate in §16 of the compliance plan closed. Counsel sign-off converts the plan from Draft to Active.
 
-**Blocks** — Phase 2 (Companion App default connection reaching production users)
+**Blocks** — Phase 2 production rollout. Phase 2 staging-internal work can proceed in parallel.
 
 ---
 
