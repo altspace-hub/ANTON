@@ -32,6 +32,7 @@ This is a material change from the platform's prior posture. `docs/DATA-AND-LEGA
 | E2E message plaintext | Sender + recipient devices only | **Not a controller** | Operator cannot decrypt. Keys never leave the device. |
 | Local ANTON content for users running their own instance | User's own machine | **Not a controller** | Position unchanged from `DATA-AND-LEGAL.md`. |
 | Hosted-routed traffic for users running a self-hosted ANTON paired through hosted | FutureChain servers | **Joint controller with the user under Article 26** | User decides what to send to whom; operator decides how to route. Article 26 arrangement required. |
+| Group session key material (stored/distributed for chat groups) | Hosted instance database | **Controller** | Operator stores and distributes the cryptographic state for the group but cannot read message content (keys are for group members). Same posture as encrypted blobs — controller status applies because storing the material plus its association with group identity is processing of personal data, even though it is opaque to the operator. The exact shape depends on Decision 2 (MLS / Sender Keys / constrained); regardless of protocol, the operator handles encrypted key material. |
 
 ### 2.2 Why "mere conduit" does not apply
 
@@ -51,6 +52,7 @@ GDPR Article 6 requires a lawful basis for every processing operation. One basis
 | Routing user's outbound messages | Article 6(1)(b) — performance of contract | Clean. |
 | Routing inbound messages to user from non-hosted peers | Article 6(1)(f) — legitimate interest, with balancing test | The third-party recipient never agreed to FutureChain processing. Balancing test must be documented. |
 | Storing encrypted media blobs | Article 6(1)(b) — performance of contract | Clean for the user who uploaded. |
+| Group key coordination (storing + distributing group session keys) | Article 6(1)(b) — performance of contract | Operator handles cryptographic key material on behalf of group members but cannot decrypt content. Distinct from pure transport. Lawful basis follows the contract with the user joining the group. |
 | Connection-metadata logging (transient, for routing) | Article 6(1)(f) — legitimate interest | Time-bounded. Balancing test documented. |
 | Abuse / anti-spam analysis | Article 6(1)(f) — legitimate interest | Balancing test must address risk to legitimate users. |
 | Security-incident investigation | Article 6(1)(f) — legitimate interest | Standard. |
@@ -302,9 +304,15 @@ This section is the most architecture-coupled and the most often skipped in comp
 
 ### 14.3 Identity registry
 
-- Stored: `ANTON-XXXX-XXXX-XXXX-XXXX`, public key, registration timestamp
+- Stored: `ANTON-XXXX-XXXX-XXXX-XXXX`, public key, registration timestamp, last-active timestamp
 - **Not stored:** display name, phone number, email, avatar, biographical data
-- Retention: indefinite while the account is active; deleted on erasure request
+- Retention: while the account is active; deleted on erasure request
+- **"Active" definition:** at least one successful authentication event (connection establishment, message send/receive, push token refresh, identity-record read) within the rolling inactivity window
+- **Inactivity window:** 24 months default. Configurable but **must be ≤ 36 months** to remain defensible under Article 5(1)(e) storage limitation
+- **Deletion process:** at the inactivity trigger, send a warning notification (push if push token still valid; email if known and consented); 6-month grace period during which any successful auth event resets the clock. After grace expires without auth, delete identity record + associated encrypted blobs + sub-processor-held data
+- **Reversibility:** during the grace period, the user can return and continue without action. After deletion, identity is irrecoverable — same posture as Article 17 erasure
+
+**Counsel:** Confirm 24 months default is defensible under Article 5(1)(e) for a sovereign messenger where loss of identity = loss of all contacts. Validate the warning + grace-period sequence. Confirm whether ePrivacy obligations affect the warning channel (push/email) selection.
 
 ### 14.4 Encrypted media blobs
 
@@ -397,3 +405,4 @@ This plan is the authoritative compliance roadmap for hosted ANTON. Updates requ
 | Version | Date | Status | Notes |
 |---|---|---|---|
 | 0.1 | 2026-05-09 | Draft | Initial extraction from brief Phase 0.5 |
+| 0.2 | 2026-05-09 | Draft | Added group key coordination to §2.1 controller table and §3 lawful-basis table. Defined identity-registry inactivity trigger (24-month default, 6-month grace, defensible ≤36 months) per §14.3. |
