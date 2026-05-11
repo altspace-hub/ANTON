@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   ANTON Communication App — design system
+   Light theme. Warm linen canvas + deep teal accent.
+   Mirrors the Companion App tokens so brand stays consistent;
+   diverges where the social-context UX warrants.
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Canvas ─────────────────────────────────────────────── */
+  --color-bg:           #F5F3EF;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFAF8;
+  --color-surface-muted:#EFECE5;
+
+  /* ── Text ───────────────────────────────────────────────── */
+  --color-text:         #1A1B2E;
+  --color-text-body:    #3B3D50;
+  --color-text-muted:   #636577;
+  --color-text-faint:   #878999;
+
+  /* ── Lines ──────────────────────────────────────────────── */
+  --color-border:       #DDD9D2;
+  --color-border-soft:  #EAE7E0;
+
+  /* ── Brand accent (deep teal) ───────────────────────────── */
+  --color-accent:       #0D7D6C;
+  --color-accent-dark:  #06655A;
+  --color-accent-dim:   #D5F0EB;
+  --color-accent-soft:  #E5F5F2;
+  --color-accent-fg:    #FFFFFF;
+
+  /* ── Status (LOCKED) ────────────────────────────────────── */
+  --color-gold:         #C8842B;
+  --color-gold-dim:     #F7ECD9;
+  --color-red:          #C7361F;
+  --color-red-dim:      #F9E2DD;
+  --color-green:        #1F8A5C;
+  --color-green-dim:    #DCEEE4;
+  --color-blue:         #3070C7;
+  --color-blue-dim:     #DEE8F6;
+  --color-plum:         #6A3E8F;
+  --color-plum-dim:     #E0D0ED;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* ── Base reset ───────────────────────────────────────────── */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* iOS safe-area handling for the tab bar */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Disable iOS tap-highlight on interactive elements */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
