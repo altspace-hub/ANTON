@@ -5,6 +5,8 @@ import ChatListScreen from './pages/ChatListScreen';
 import ChatThreadScreen from './pages/ChatThreadScreen';
 import AddContactScreen from './pages/AddContactScreen';
 import EventsScreen from './pages/EventsScreen';
+import EventCreateScreen from './pages/EventCreateScreen';
+import EventDetailScreen from './pages/EventDetailScreen';
 import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
 import WalletScreen from './pages/WalletScreen';
 import TabBar, { type TabId } from './components/TabBar';
@@ -15,14 +17,23 @@ import { startRelayClient, stopRelayClient } from './services/relay-client';
 const RELAY_URL = (import.meta.env.VITE_COMM_RELAY_URL as string | undefined)
   ?? 'wss://relay.futurechain.eu/comm/v0.1/';
 
-type View = 'onboarding' | 'tabs' | 'profile' | 'add-contact' | 'chat-thread';
+type View =
+  | 'onboarding'
+  | 'tabs'
+  | 'profile'
+  | 'add-contact'
+  | 'chat-thread'
+  | 'event-create'
+  | 'event-detail';
 
 export default function App() {
   const [view, setView] = useState<View>(hasIdentity() ? 'tabs' : 'onboarding');
   const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [identityVersion, setIdentityVersion] = useState(0);
   const [contactsVersion, setContactsVersion] = useState(0);
+  const [eventsVersion, setEventsVersion] = useState(0);
   const [openChatHash, setOpenChatHash] = useState<string | null>(null);
+  const [openEventId, setOpenEventId] = useState<string | null>(null);
 
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
@@ -33,7 +44,10 @@ export default function App() {
     if (!hasIdentity()) return;
     startRelayClient({
       relayUrl: RELAY_URL,
-      onMessage: () => setContactsVersion((v) => v + 1),
+      onMessage: () => {
+        setContactsVersion((v) => v + 1);
+        setEventsVersion((v) => v + 1);
+      },
     });
     return () => stopRelayClient();
   }, [identityVersion]);
@@ -80,6 +94,33 @@ export default function App() {
       <ChatThreadScreen
         peerContactHash={openChatHash}
         onBack={() => { setOpenChatHash(null); setView('tabs'); }}
+        onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
+      />
+    );
+  }
+
+  if (view === 'event-create') {
+    return (
+      <EventCreateScreen
+        onCancel={() => setView('tabs')}
+        onCreated={() => {
+          setEventsVersion((v) => v + 1);
+          setView('tabs');
+          setActiveTab('events');
+        }}
+      />
+    );
+  }
+
+  if (view === 'event-detail' && openEventId) {
+    return (
+      <EventDetailScreen
+        eventId={openEventId}
+        onBack={() => {
+          setEventsVersion((v) => v + 1);
+          setOpenEventId(null);
+          setView('tabs');
+        }}
       />
     );
   }
@@ -95,7 +136,13 @@ export default function App() {
             onOpenChat={(hash) => { setOpenChatHash(hash); setView('chat-thread'); }}
           />
         )}
-        {activeTab === 'events' && <EventsScreen />}
+        {activeTab === 'events' && (
+          <EventsScreen
+            refreshKey={eventsVersion}
+            onCreate={() => setView('event-create')}
+            onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
+          />
+        )}
         {activeTab === 'portals' && <PortalsBrowseScreen />}
         {activeTab === 'wallet' && <WalletScreen />}
       </main>

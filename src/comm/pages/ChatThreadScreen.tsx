@@ -3,13 +3,16 @@ import { listThread, type ChatMessage } from '../services/messages';
 import { sendMessage, ChatError } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
+import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
+import { EVENT_TYPE_ICONS, EVENT_TYPE_LABELS } from '../services/events';
 
 interface Props {
   peerContactHash: string;
   onBack: () => void;
+  onOpenEvent?: (id: string) => void;
 }
 
-export default function ChatThreadScreen({ peerContactHash, onBack }: Props) {
+export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent }: Props) {
   const me = getIdentity();
   const [contact, setContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -94,7 +97,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack }: Props) {
             </p>
           </div>
         ) : (
-          messages.map((m) => <Bubble key={m.id} message={m} isMine={m.fromHash === me?.contactHash} />)
+          messages.map((m) => <Bubble key={m.id} message={m} isMine={m.fromHash === me?.contactHash} onOpenEvent={onOpenEvent} />)
         )}
       </div>
 
@@ -130,7 +133,21 @@ export default function ChatThreadScreen({ peerContactHash, onBack }: Props) {
   );
 }
 
-function Bubble({ message, isMine }: { message: ChatMessage; isMine: boolean }) {
+function Bubble({ message, isMine, onOpenEvent }: { message: ChatMessage; isMine: boolean; onOpenEvent?: (id: string) => void }) {
+  const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+  if (message.kind === 'event_invite') {
+    return (
+      <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />
+    );
+  }
+  if (message.kind === 'event_rsvp') {
+    return <EventRsvpBubble message={message} isMine={isMine} time={time} />;
+  }
+  if (message.kind === 'event_cancel') {
+    return <EventCancelBubble message={message} isMine={isMine} time={time} />;
+  }
+
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -142,13 +159,78 @@ function Bubble({ message, isMine }: { message: ChatMessage; isMine: boolean }) 
         }}
       >
         <div className="whitespace-pre-wrap break-words">{message.plaintext}</div>
-        <div
-          className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1"
-        >
-          <time>{new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</time>
+        <div className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1">
+          <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
         </div>
       </div>
+    </div>
+  );
+}
+
+function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
+  message: ChatMessage; isMine: boolean; time: string; onOpenEvent?: (id: string) => void;
+}) {
+  let data: EventInvitePayload | null = null;
+  try { data = JSON.parse(message.plaintext) as EventInvitePayload; } catch { /* ignore */ }
+  if (!data) return null;
+  const start = new Date(data.startAt);
+  return (
+    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+      <button
+        onClick={() => onOpenEvent?.(data!.id)}
+        className="max-w-[85%] text-left rounded-2xl overflow-hidden border"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
+        <div className="px-4 py-3" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            <span>{EVENT_TYPE_ICONS[data.eventType]}</span>
+            <span>{isMine ? 'You invited' : 'Event invite'} · {EVENT_TYPE_LABELS[data.eventType]}</span>
+          </div>
+          <div className="mt-1 text-base font-semibold text-[var(--color-text)]">{data.title}</div>
+        </div>
+        <div className="px-4 py-2 text-xs text-[var(--color-text-body)]">
+          {start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+          {!data.allDay && (
+            <> · {start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</>
+          )}
+          {data.location && <> · {data.location}</>}
+        </div>
+        <div className="px-4 py-2 text-[10px] font-medium text-[var(--color-text-faint)] flex justify-between">
+          <span>Tap to view & RSVP</span>
+          <time>{time}</time>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function EventRsvpBubble({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  let data: EventRsvpPayload | null = null;
+  try { data = JSON.parse(message.plaintext) as EventRsvpPayload; } catch { /* ignore */ }
+  if (!data) return null;
+  const label = data.status === 'going' ? 'going' : data.status === 'maybe' ? 'might come' : 'can\'t make it';
+  return (
+    <div className="flex justify-center">
+      <span className="px-3 py-1 rounded-full text-xs text-[var(--color-text-muted)] bg-[var(--color-surface-muted)]">
+        {isMine ? 'You\'re ' : ''}{label} · {time}
+      </span>
+    </div>
+  );
+}
+
+function EventCancelBubble({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  let data: EventCancelPayload | null = null;
+  try { data = JSON.parse(message.plaintext) as EventCancelPayload; } catch { /* ignore */ }
+  void data;
+  return (
+    <div className="flex justify-center">
+      <span className="px-3 py-1 rounded-full text-xs text-[var(--color-red)] bg-[var(--color-red-dim)]">
+        Event canceled · {time}{isMine ? ' (by you)' : ''}
+      </span>
     </div>
   );
 }

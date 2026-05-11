@@ -24,7 +24,7 @@
  */
 
 const DB_NAME = 'anton-comm';
-const DB_VERSION = 2; // bumped from contacts.ts's v1
+const DB_VERSION = 3; // v1 contacts, v2 messages, v3 events
 const STORE_CONTACTS = 'contacts';
 const STORE_MESSAGES = 'messages';
 const INDEX_BY_THREAD = 'by_thread';
@@ -32,6 +32,17 @@ const INDEX_BY_STATUS = 'by_status';
 
 export type MessageDirection = 'out' | 'in';
 export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'received';
+
+/**
+ * Kind of payload carried in `plaintext`:
+ *   - 'text'         : plain user text (most common)
+ *   - 'event_invite' : plaintext is JSON of EventInvitePayload (events.ts)
+ *   - 'event_rsvp'   : plaintext is JSON of EventRsvpPayload
+ *   - 'event_cancel' : plaintext is JSON of EventCancelPayload
+ *
+ * Old messages without a `kind` field are treated as 'text'.
+ */
+export type ContentKind = 'text' | 'event_invite' | 'event_rsvp' | 'event_cancel';
 
 export interface ChatMessage {
   id: string;
@@ -42,6 +53,7 @@ export interface ChatMessage {
   plaintext: string;
   ts: string;
   status: MessageStatus;
+  kind?: ContentKind;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -62,7 +74,7 @@ function openDb(): Promise<IDBDatabase> {
         store.createIndex(INDEX_BY_THREAD, ['threadHash', 'ts'], { unique: false });
         store.createIndex(INDEX_BY_STATUS, 'status', { unique: false });
       }
-      // Migration touch — silence the unused-var lint
+      // From v2 to v3: events store — created in events.ts on first openDb call there
       void ev;
     };
     req.onsuccess = () => resolve(req.result);
@@ -106,6 +118,7 @@ export async function appendMessage(
     direction: input.direction,
     plaintext: input.plaintext,
     status: input.status,
+    kind: input.kind ?? 'text',
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

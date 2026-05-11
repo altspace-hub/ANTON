@@ -17,9 +17,9 @@ import { sha256 } from '@noble/hashes/sha2';
 import { getSecure } from './secure-store';
 import { getIdentity, deriveRoutingId } from './identity';
 import { listContacts } from './contacts';
-import { listQueued, updateStatus, appendMessage } from './messages';
+import { listQueued, updateStatus } from './messages';
 import { openFromPeer, type EncryptedEnvelope } from './crypto';
-import { sealForPeerFromQueued } from './chat';
+import { sealForPeerFromQueued, applyInboundMessage, parseWirePayload } from './chat';
 
 ed25519.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed25519.etc.concatBytes(...m));
 
@@ -299,15 +299,9 @@ export class RelayClient {
       }
       const me = getIdentity();
       if (!me) return;
-      const plaintext = await openFromPeer(envelope, sender.publicKeyHex, sender.contactHash, me.contactHash);
-      await appendMessage({
-        threadHash: sender.contactHash,
-        fromHash: sender.contactHash,
-        toHash: me.contactHash,
-        direction: 'in',
-        plaintext,
-        status: 'received',
-      });
+      const wireJson = await openFromPeer(envelope, sender.publicKeyHex, sender.contactHash, me.contactHash);
+      const wire = parseWirePayload(wireJson);
+      await applyInboundMessage(sender.contactHash, wire);
       this.cfg.onMessage?.(sender.contactHash);
     } catch (err) {
       console.warn('[relay-client] decrypt failed', err);
