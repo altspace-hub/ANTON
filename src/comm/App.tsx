@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import ChatListScreen from './pages/ChatListScreen';
+import AddContactScreen from './pages/AddContactScreen';
 import EventsScreen from './pages/EventsScreen';
 import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
 import WalletScreen from './pages/WalletScreen';
@@ -9,12 +10,14 @@ import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
 
-type View = 'onboarding' | 'tabs' | 'profile';
+type View = 'onboarding' | 'tabs' | 'profile' | 'add-contact' | 'chat-thread';
 
 export default function App() {
   const [view, setView] = useState<View>(hasIdentity() ? 'tabs' : 'onboarding');
   const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [identityVersion, setIdentityVersion] = useState(0);
+  const [contactsVersion, setContactsVersion] = useState(0);
+  const [openChatHash, setOpenChatHash] = useState<string | null>(null);
 
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
@@ -44,16 +47,65 @@ export default function App() {
     );
   }
 
+  if (view === 'add-contact') {
+    return (
+      <AddContactScreen
+        onBack={() => setView('tabs')}
+        onAdded={() => {
+          setContactsVersion((v) => v + 1);
+          setView('tabs');
+          setActiveTab('chat');
+        }}
+      />
+    );
+  }
+
+  if (view === 'chat-thread' && openChatHash) {
+    return (
+      <ChatThreadPlaceholder
+        contactHash={openChatHash}
+        onBack={() => { setOpenChatHash(null); setView('tabs'); }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-dvh bg-[var(--color-bg)] text-[var(--color-text)]">
       <TopBar onProfile={() => setView('profile')} />
       <main key={identityVersion} className="flex-1 overflow-y-auto">
-        {activeTab === 'chat' && <ChatListScreen />}
+        {activeTab === 'chat' && (
+          <ChatListScreen
+            refreshKey={contactsVersion}
+            onAddContact={() => setView('add-contact')}
+            onOpenChat={(hash) => { setOpenChatHash(hash); setView('chat-thread'); }}
+          />
+        )}
         {activeTab === 'events' && <EventsScreen />}
         {activeTab === 'portals' && <PortalsBrowseScreen />}
         {activeTab === 'wallet' && <WalletScreen />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>
+  );
+}
+
+// Phase 1C will replace this with the real ChatThreadScreen — message store +
+// X25519/AES-GCM E2E + mesh send/receive.
+function ChatThreadPlaceholder({ contactHash, onBack }: { contactHash: string; onBack: () => void }) {
+  return (
+    <section className="flex flex-col min-h-dvh safe-top safe-bottom">
+      <header className="flex items-center gap-3 h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
+        <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← Back</button>
+        <h1 className="text-base font-semibold text-[var(--color-text)] truncate">{contactHash}</h1>
+      </header>
+      <div className="flex-1 flex items-center justify-center px-6 text-center">
+        <div>
+          <p className="text-sm text-[var(--color-text-body)]">Chat coming in Phase 1C.</p>
+          <p className="mt-2 text-xs text-[var(--color-text-faint)]">
+            Mesh transport, E2E crypto and message store land in the next commit.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
