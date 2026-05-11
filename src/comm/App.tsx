@@ -8,6 +8,7 @@ import EventsScreen from './pages/EventsScreen';
 import EventCreateScreen from './pages/EventCreateScreen';
 import EventDetailScreen from './pages/EventDetailScreen';
 import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
+import PortalDetailScreen from './pages/PortalDetailScreen';
 import WalletScreen from './pages/WalletScreen';
 import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
@@ -24,7 +25,8 @@ type View =
   | 'add-contact'
   | 'chat-thread'
   | 'event-create'
-  | 'event-detail';
+  | 'event-detail'
+  | 'portal-detail';
 
 export default function App() {
   const [view, setView] = useState<View>(hasIdentity() ? 'tabs' : 'onboarding');
@@ -34,6 +36,7 @@ export default function App() {
   const [eventsVersion, setEventsVersion] = useState(0);
   const [openChatHash, setOpenChatHash] = useState<string | null>(null);
   const [openEventId, setOpenEventId] = useState<string | null>(null);
+  const [openPortalAddress, setOpenPortalAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
@@ -125,6 +128,15 @@ export default function App() {
     );
   }
 
+  if (view === 'portal-detail' && openPortalAddress) {
+    return (
+      <PortalDetailScreen
+        portalAddress={openPortalAddress}
+        onBack={() => { setOpenPortalAddress(null); setView('tabs'); }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-dvh bg-[var(--color-bg)] text-[var(--color-text)]">
       <TopBar onProfile={() => setView('profile')} />
@@ -143,7 +155,11 @@ export default function App() {
             onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
           />
         )}
-        {activeTab === 'portals' && <PortalsBrowseScreen />}
+        {activeTab === 'portals' && (
+          <PortalsBrowseScreen
+            onOpenPortal={(addr) => { setOpenPortalAddress(addr); setView('portal-detail'); }}
+          />
+        )}
         {activeTab === 'wallet' && <WalletScreen />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
