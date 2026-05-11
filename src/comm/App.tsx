@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import ChatListScreen from './pages/ChatListScreen';
+import ChatThreadScreen from './pages/ChatThreadScreen';
 import AddContactScreen from './pages/AddContactScreen';
 import EventsScreen from './pages/EventsScreen';
 import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
@@ -62,8 +63,8 @@ export default function App() {
 
   if (view === 'chat-thread' && openChatHash) {
     return (
-      <ChatThreadPlaceholder
-        contactHash={openChatHash}
+      <ChatThreadScreen
+        peerContactHash={openChatHash}
         onBack={() => { setOpenChatHash(null); setView('tabs'); }}
       />
     );
@@ -89,23 +90,3 @@ export default function App() {
   );
 }
 
-// Phase 1C will replace this with the real ChatThreadScreen — message store +
-// X25519/AES-GCM E2E + mesh send/receive.
-function ChatThreadPlaceholder({ contactHash, onBack }: { contactHash: string; onBack: () => void }) {
-  return (
-    <section className="flex flex-col min-h-dvh safe-top safe-bottom">
-      <header className="flex items-center gap-3 h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← Back</button>
-        <h1 className="text-base font-semibold text-[var(--color-text)] truncate">{contactHash}</h1>
-      </header>
-      <div className="flex-1 flex items-center justify-center px-6 text-center">
-        <div>
-          <p className="text-sm text-[var(--color-text-body)]">Chat coming in Phase 1C.</p>
-          <p className="mt-2 text-xs text-[var(--color-text-faint)]">
-            Mesh transport, E2E crypto and message store land in the next commit.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}

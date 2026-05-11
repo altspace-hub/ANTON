@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listContacts, type Contact } from '../services/contacts';
+import { getLatestPerThread, type ChatMessage } from '../services/messages';
 
 interface Props {
   onAddContact: () => void;
@@ -9,12 +10,27 @@ interface Props {
 
 export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [lastByThread, setLastByThread] = useState<Map<string, ChatMessage>>(new Map());
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    listContacts()
-      .then((rows) => { if (!cancelled) { setContacts(rows); setLoaded(true); } })
+    Promise.all([listContacts(), getLatestPerThread()])
+      .then(([rows, latest]) => {
+        if (cancelled) return;
+        // Sort by most-recent thread activity, then by name as fallback
+        rows.sort((a, b) => {
+          const la = latest.get(a.contactHash)?.ts ?? '';
+          const lb = latest.get(b.contactHash)?.ts ?? '';
+          if (la && lb) return lb.localeCompare(la);
+          if (la) return -1;
+          if (lb) return 1;
+          return a.displayName.localeCompare(b.displayName);
+        });
+        setContacts(rows);
+        setLastByThread(latest);
+        setLoaded(true);
+      })
       .catch(() => { if (!cancelled) setLoaded(true); });
     return () => { cancelled = true; };
   }, [refreshKey]);
@@ -66,8 +82,15 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
                   <div className="text-base font-medium text-[var(--color-text)] truncate">
                     {c.displayName}
                   </div>
-                  <div className="text-xs font-mono text-[var(--color-text-faint)] truncate">
-                    {c.contactHash}
+                  <div className="text-xs text-[var(--color-text-muted)] truncate">
+                    {(() => {
+                      const last = lastByThread.get(c.contactHash);
+                      if (last) {
+                        const prefix = last.direction === 'out' ? 'You: ' : '';
+                        return prefix + last.plaintext;
+                      }
+                      return c.contactHash;
+                    })()}
                   </div>
                 </div>
                 {!c.publicKeyHex && (
