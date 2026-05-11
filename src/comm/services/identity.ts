@@ -81,6 +81,16 @@ export function isValidContactHash(s: string): boolean {
   return /^ANTON-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(s);
 }
 
+/**
+ * Derive the 16-byte routing_id used on the relay wire from a raw Ed25519
+ * pubkey (hex). Matches `relay/src/primitives.ts §deriveInstanceId` and
+ * `docs/COMM_RELAY_PROTOCOL_v0_1.md §2`: first 16 bytes of sha256(pubkey).
+ */
+export function deriveRoutingId(publicKeyHex: string): Uint8Array {
+  const pubKeyBytes = hexToBytes(publicKeyHex);
+  return sha256(pubKeyBytes).slice(0, 16);
+}
+
 // ── Identity creation ───────────────────────────────────────────────────
 
 /**

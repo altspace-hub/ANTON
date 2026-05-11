@@ -16,6 +16,7 @@ import { getIdentity } from './identity';
 import { getContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
 import { appendMessage, type ChatMessage } from './messages';
+import { getRelayClient } from './relay-client';
 
 export class ChatError extends Error {
   constructor(message: string, public readonly code: string) {
@@ -61,12 +62,29 @@ export async function sendMessage(
     status: 'queued',
   });
 
-  // Phase 1C-2 transport hook — tag the message id so the queue knows
-  // which envelope to flush. For now this is just persisted alongside
-  // the plaintext in the same store via a sibling table (Phase 1C-2).
-  void envelope; // keep reference so tsc doesn't strip the call
+  // Envelope is built eagerly here to surface crypto errors early; the
+  // transport rebuilds at flush time (fresh salt = fresh per-message key).
+  void envelope;
+
+  // Kick the relay client to flush the outbox if it's open. If not, the
+  // message stays in status='queued' until the next connect.
+  void getRelayClient()?.flushOutbox();
 
   return message;
+}
+
+/**
+ * Helper used by relay-client.ts to re-seal a queued message at flush time.
+ * Returns null if the peer pubkey isn't available (manual-add contact whose
+ * key hasn't arrived yet); the client should leave the message queued in
+ * that case.
+ */
+export async function sealForPeerFromQueued(msg: ChatMessage): Promise<EncryptedEnvelope | null> {
+  const me = getIdentity();
+  if (!me) return null;
+  const peer = await getContact(msg.toHash);
+  if (!peer?.publicKeyHex) return null;
+  return sealForPeer(msg.plaintext, peer.publicKeyHex, me.contactHash, msg.toHash);
 }
 
 /**

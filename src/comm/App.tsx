@@ -10,6 +10,10 @@ import WalletScreen from './pages/WalletScreen';
 import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
+import { startRelayClient, stopRelayClient } from './services/relay-client';
+
+const RELAY_URL = (import.meta.env.VITE_COMM_RELAY_URL as string | undefined)
+  ?? 'wss://relay.futurechain.eu/comm/v0.1/';
 
 type View = 'onboarding' | 'tabs' | 'profile' | 'add-contact' | 'chat-thread';
 
@@ -23,6 +27,16 @@ export default function App() {
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
   }, [view]);
+
+  // Relay client lifecycle — start when identity exists, stop on sign-out.
+  useEffect(() => {
+    if (!hasIdentity()) return;
+    startRelayClient({
+      relayUrl: RELAY_URL,
+      onMessage: () => setContactsVersion((v) => v + 1),
+    });
+    return () => stopRelayClient();
+  }, [identityVersion]);
 
   if (view === 'onboarding') {
     return (
