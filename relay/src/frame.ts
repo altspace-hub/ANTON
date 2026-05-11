@@ -34,6 +34,17 @@ export const TYPE = {
   DIAL_INSTANCE:  0x07,
   ERROR:          0x0F,
   ENVELOPE:       0x10,
+  // ── Comm-to-Comm extension (docs/COMM_RELAY_PROTOCOL_v0_1.md) ──
+  /** Comm App registers by its routing_id (sha256(ed25519_pubkey)[0..16]). */
+  HELLO_COMM:     0x20,
+  /** Relay acknowledges Comm App registration; carries session_id + pending mailbox count. */
+  ACK_COMM:       0x21,
+  /** Comm App sends a ciphertext to a target routing_id. */
+  SEND_COMM:      0x22,
+  /** Relay delivers a ciphertext to the recipient Comm App. */
+  DELIVER_COMM:   0x23,
+  /** Recipient Comm App acks a delivered message (best-effort). */
+  ACK_DELIVERY:   0x24,
 } as const;
 
 export type FrameType = typeof TYPE[keyof typeof TYPE];

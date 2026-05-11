@@ -61,6 +61,19 @@ import {
   type RateLimitConfig,
 } from './limits.js';
 import {
+  verifyHelloComm,
+  CommHelloVerificationError,
+  CommHelloError,
+} from './comm-hello.js';
+import {
+  ContactRegistry,
+  parseSendComm,
+  parseAckDelivery,
+  DEFAULT_COMM_LIMITS,
+  type CommRegistryLimits,
+  type Action as CommAction,
+} from './comm-registry.js';
+import {
   createAuditLogger,
   shortId,
   type AuditLogger,
@@ -90,6 +103,9 @@ export interface RelayServerConfig {
   insecure?: boolean;
   /** Match-table limits. Defaults applied if not provided (§3.10). */
   matchLimits?: MatchTableLimits;
+  /** Comm-to-Comm registry limits. Defaults applied if not provided
+   *  (docs/COMM_RELAY_PROTOCOL_v0_1.md §7). */
+  commLimits?: CommRegistryLimits;
   /** HELLO rate-limit config. Default: 5/s, capacity 5 (matches §3.10). */
   helloRateLimit?: RateLimitConfig;
   /** ENVELOPE per-session rate-limit config. Default: 200/s, capacity 200. */
@@ -136,6 +152,7 @@ export class RelayServer {
   private httpServer: http.Server | https.Server | null = null;
   private wss: WebSocketServer | null = null;
   private match: MatchTable;
+  private commRegistry: ContactRegistry;
   private helloRateLimiter: RateLimiter;
   private envelopeRateLimiter: RateLimiter;
   private connections = new Map<string, ConnState>();
@@ -173,6 +190,7 @@ export class RelayServer {
       tlsKey,
       insecure,
       matchLimits: rawCfg.matchLimits ?? { maxSessionsPerInstance: 32, pendingPhoneTimeoutSec: 30 },
+      commLimits: rawCfg.commLimits ?? DEFAULT_COMM_LIMITS,
       helloRateLimit: rawCfg.helloRateLimit ?? { capacity: 5, refillPerSec: 5 },
       envelopeRateLimit: rawCfg.envelopeRateLimit ?? { capacity: 200, refillPerSec: 200 },
       audit,
@@ -182,6 +200,7 @@ export class RelayServer {
     };
 
     this.match = new MatchTable(this.cfg.matchLimits);
+    this.commRegistry = new ContactRegistry(this.cfg.commLimits);
     this.helloRateLimiter = new RateLimiter(this.cfg.helloRateLimit);
     this.envelopeRateLimiter = new RateLimiter(this.cfg.envelopeRateLimit);
   }
@@ -359,6 +378,9 @@ export class RelayServer {
     });
     const actions = this.match.handleDisconnect(state.connId);
     this.executeActions(actions);
+    // Also clean up any Comm-side session bound to this connection.
+    const commActions = this.commRegistry.handleDisconnect(state.connId);
+    this.executeCommActions(commActions);
   }
 
   // ── Inbound message dispatch ──────────────────────────────────────
@@ -388,6 +410,15 @@ export class RelayServer {
       case TYPE.ENVELOPE:
         this.handleEnvelope(state, frame.payload);
         return;
+      case TYPE.HELLO_COMM:
+        this.handleHelloComm(state, frame.payload);
+        return;
+      case TYPE.SEND_COMM:
+        this.handleSendComm(state, frame.payload);
+        return;
+      case TYPE.ACK_DELIVERY:
+        this.handleAckDelivery(state, frame.payload);
+        return;
       case TYPE.PING:
         // Respond with PONG, no further state mutation.
         this.send(state.ws, encodeFrame(TYPE.PONG, new Uint8Array(0)));
@@ -403,6 +434,104 @@ export class RelayServer {
         this.closeConn(state, 1002, 'bad_type');
         return;
     }
+  }
+
+  // ── Comm-to-Comm handlers (docs/COMM_RELAY_PROTOCOL_v0_1.md) ────────
+
+  private handleHelloComm(state: ConnState, payload: Uint8Array): void {
+    if (state.helloed) {
+      this.sendError(state, RELAY_ERROR_CODE.BAD_HELLO, 'already HELLO\'d');
+      this.closeConn(state, 1002, 'double_hello');
+      return;
+    }
+    if (!this.helloRateLimiter.consume(state.bucketKey)) {
+      this.metrics.rateLimited();
+      this.cfg.audit.emit({
+        type: 'rate_limited',
+        conn_id: state.connId,
+        source: state.bucketKey,
+        reason: 'hello_comm',
+      });
+      this.sendError(state, RELAY_ERROR_CODE.RATE_LIMITED, 'hello flood');
+      this.closeConn(state, 1008, 'rate_limited');
+      return;
+    }
+
+    let routing_id: Uint8Array;
+    try {
+      const result = verifyHelloComm(payload, {
+        ownCanonicalUrl: this.cfg.ownUrl,
+        recordProof: (key) => this.recordProofKey(key),
+        now: () => this.nowSec(),
+      });
+      routing_id = result.routing_id;
+    } catch (err) {
+      const he = err as CommHelloVerificationError;
+      const code = he.code === CommHelloError.BAD_HELLO
+        ? RELAY_ERROR_CODE.BAD_HELLO
+        : RELAY_ERROR_CODE.INVALID_PROOF;
+      this.metrics.helloRejected(code);
+      this.cfg.audit.emit({
+        type: 'hello_instance_rejected', // reuse existing audit type — kind extracted in 'reason'
+        conn_id: state.connId,
+        source: state.bucketKey,
+        error_code: code,
+        reason: `comm step ${he.step}`,
+      });
+      this.sendError(state, code, `step ${he.step}`);
+      this.closeConn(state, 1002, 'bad_hello_comm');
+      return;
+    }
+
+    state.helloed = true;
+    this.metrics.helloAccepted();
+    const actions = this.commRegistry.registerComm(state.connId, routing_id);
+    this.executeCommActions(actions);
+  }
+
+  private handleSendComm(state: ConnState, payload: Uint8Array): void {
+    if (!state.helloed) {
+      this.sendError(state, RELAY_ERROR_CODE.BAD_HELLO, 'SEND_COMM before HELLO_COMM');
+      this.closeConn(state, 1002, 'send_before_hello');
+      return;
+    }
+    let parsed;
+    try {
+      parsed = parseSendComm(payload);
+    } catch (err) {
+      this.sendError(state, RELAY_ERROR_CODE.BAD_HELLO, (err as Error).message);
+      return;
+    }
+    const actions = this.commRegistry.routeSend(
+      state.connId,
+      parsed.session_id,
+      parsed.target_routing_id,
+      parsed.message_id,
+      parsed.ciphertext,
+    );
+    this.executeCommActions(actions);
+  }
+
+  private handleAckDelivery(state: ConnState, payload: Uint8Array): void {
+    if (!state.helloed) return; // best-effort, ignore stray acks
+    let parsed;
+    try {
+      parsed = parseAckDelivery(payload);
+    } catch {
+      return; // best-effort; malformed ack is silently dropped
+    }
+    // The recipient knows the original sender's routing_id from the
+    // DELIVER_COMM's from_routing_id field. We don't carry it on the wire
+    // for ACK_DELIVERY (clients echo just message_id+kind). For the v0.1
+    // best-effort delivery-ack flow this is acceptable — sender state-tick
+    // updates depend on the client side correlating message_id.
+    // Future: include from_routing_id explicitly. For now, no-op.
+    void parsed;
+  }
+
+  private executeCommActions(actions: CommAction[]): void {
+    // ContactRegistry.Action has the same shape as MatchTable.Action.
+    this.executeActions(actions as unknown as Action[]);
   }
 
   private handleHelloInstance(state: ConnState, payload: Uint8Array): void {
@@ -620,6 +749,9 @@ export class RelayServer {
     this.helloRateLimiter.reap(60);
     this.envelopeRateLimiter.reap(60);
     this.reapProofReplayCache(now);
+
+    // 4. Reap stale Comm-mailbox entries (7-day TTL).
+    this.commRegistry.reapStaleMailbox();
   }
 
   // ── Internal helpers ──────────────────────────────────────────────
