@@ -15,8 +15,11 @@ import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
 
+// Canonical relay URLs have no path component (spec §4.2.1). Frame routing
+// inside the relay is by frame-type byte — instance/phone vs comm — so a
+// single relay process handles both protocols on the same WS endpoint.
 const RELAY_URL = (import.meta.env.VITE_COMM_RELAY_URL as string | undefined)
-  ?? 'wss://relay.futurechain.eu/comm/v0.1/';
+  ?? 'wss://relay.futurechain.eu';
 
 type View =
   | 'onboarding'

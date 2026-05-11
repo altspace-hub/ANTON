@@ -27,10 +27,7 @@
  *   }
  */
 
-const DB_NAME = 'anton-comm';
-const DB_VERSION = 3; // v1 contacts, v2 messages, v3 events
-const STORE_EVENTS = 'events';
-const INDEX_BY_START = 'by_start';
+import { openDb, STORE_EVENTS } from './db';
 
 export type EventType =
   | 'dinner'
@@ -79,28 +76,6 @@ export interface CommEvent {
   createdAt: string;
   updatedAt: string;
   canceled: boolean;
-}
-
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      // Add events store at v3 (idempotent for upgrades from any earlier version)
-      if (!db.objectStoreNames.contains(STORE_EVENTS)) {
-        const store = db.createObjectStore(STORE_EVENTS, { keyPath: 'id' });
-        store.createIndex(INDEX_BY_START, 'startAt', { unique: false });
-      }
-      // Note: events.ts owns v3 of the schema; contacts.ts and messages.ts
-      // are already created in v1/v2 and are no-ops here.
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
 }
 
 // ── ID generation (ULID-ish) ─────────────────────────────────────────

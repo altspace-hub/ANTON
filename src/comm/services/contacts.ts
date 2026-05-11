@@ -16,9 +16,7 @@
  * identity (Phase 2+).
  */
 
-const DB_NAME = 'anton-comm';
-const DB_VERSION = 1;
-const STORE_CONTACTS = 'contacts';
+import { openDb, STORE_CONTACTS } from './db';
 
 export interface Contact {
   contactHash: string;        // ANTON-XXXX-XXXX-XXXX-XXXX (primary key)
@@ -27,24 +25,6 @@ export interface Contact {
   source: 'qr' | 'manual';    // how the contact was added
   addedAt: string;            // ISO timestamp
   note?: string;              // user note (e.g. "Anna from work")
-}
-
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_CONTACTS)) {
-        db.createObjectStore(STORE_CONTACTS, { keyPath: 'contactHash' });
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
 }
 
 export async function listContacts(): Promise<Contact[]> {

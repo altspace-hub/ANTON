@@ -148,9 +148,11 @@ export function verifyHelloComm(
     );
   }
 
-  // Step 4 — replay check
+  // Step 4 — replay check. recordProof returns true if the key is new
+  // (accept) or false if already seen (reject as replay) — same contract
+  // as hello.ts:222.
   const replayKey = `${bytesToHex(parsed.ed25519_pubkey)}|${parsed.timestamp}|${parsed.relay_url}`;
-  if (opts.recordProof(replayKey)) {
+  if (!opts.recordProof(replayKey)) {
     throw new CommHelloVerificationError(
       CommHelloError.INVALID_PROOF,
       4,

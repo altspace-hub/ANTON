@@ -23,12 +23,12 @@
  * underneath that.
  */
 
-const DB_NAME = 'anton-comm';
-const DB_VERSION = 3; // v1 contacts, v2 messages, v3 events
-const STORE_CONTACTS = 'contacts';
-const STORE_MESSAGES = 'messages';
-const INDEX_BY_THREAD = 'by_thread';
-const INDEX_BY_STATUS = 'by_status';
+import {
+  openDb,
+  STORE_MESSAGES,
+  INDEX_MSG_BY_THREAD as INDEX_BY_THREAD,
+  INDEX_MSG_BY_STATUS as INDEX_BY_STATUS,
+} from './db';
 
 export type MessageDirection = 'out' | 'in';
 export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'received';
@@ -54,33 +54,6 @@ export interface ChatMessage {
   ts: string;
   status: MessageStatus;
   kind?: ContentKind;
-}
-
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (ev) => {
-      const db = req.result;
-      // From v0 to v1: contacts store
-      if (!db.objectStoreNames.contains(STORE_CONTACTS)) {
-        db.createObjectStore(STORE_CONTACTS, { keyPath: 'contactHash' });
-      }
-      // From v1 to v2: messages store
-      if (!db.objectStoreNames.contains(STORE_MESSAGES)) {
-        const store = db.createObjectStore(STORE_MESSAGES, { keyPath: 'id' });
-        store.createIndex(INDEX_BY_THREAD, ['threadHash', 'ts'], { unique: false });
-        store.createIndex(INDEX_BY_STATUS, 'status', { unique: false });
-      }
-      // From v2 to v3: events store — created in events.ts on first openDb call there
-      void ev;
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
