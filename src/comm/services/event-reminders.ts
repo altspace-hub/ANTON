@@ -18,6 +18,15 @@ const CHANNEL_ID = 'event-reminders';
 let permissionPromise: Promise<boolean> | null = null;
 const webTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+/** P2-5 audit fix: tear down module-level state on sign-out so a new
+ *  identity doesn't inherit the old user's cached permission decision
+ *  or any web-tier pending setTimeout handles. */
+export function clearReminderCaches(): void {
+  permissionPromise = null;
+  for (const t of webTimers.values()) clearTimeout(t);
+  webTimers.clear();
+}
+
 /** Lazy-load the plugin so the web build doesn't pull a useless dep. */
 async function loadPlugin(): Promise<typeof import('@capacitor/local-notifications').LocalNotifications | null> {
   if (Capacitor.getPlatform() === 'web') return null;

@@ -433,7 +433,9 @@ export async function sendLocationUpdate(
   await applyLocationUpdate(parentMsgId, { ...patch, ts }, me.contactHash);
   const wire: WirePayload = { kind: 'location_update', data: { parentMsgId, ...patch, ts } };
   const client = getRelayClient();
-  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
+  // Best-effort: a stale live-location update is worse than no update,
+  // so we drop on offline rather than queue.
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire), { persistent: false });
 }
 
 /**
@@ -453,7 +455,9 @@ export async function sendReadReceipt(peerContactHash: string, lastMsgId: string
   if (!contact?.publicKeyHex) return;
   const wire: WirePayload = { kind: 'presence_read', data: { lastMsgId } };
   const client = getRelayClient();
-  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
+  // Best-effort: read receipts are presence info; stale ones are worse
+  // than missing ones, so we drop instead of queuing.
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire), { persistent: false });
 }
 
 /**
@@ -469,7 +473,8 @@ export async function sendTypingState(peerContactHash: string, isTyping: boolean
   if (!contact?.publicKeyHex) return;
   const wire: WirePayload = { kind: 'presence_typing', data: { isTyping } };
   const client = getRelayClient();
-  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
+  // Best-effort: typing state is volatile presence info; drop on offline.
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire), { persistent: false });
 }
 
 /**
@@ -679,18 +684,32 @@ export async function publishWassupPost(input: { text: string; image?: WassupMed
     commentCount: 0,
   });
 
-  // Fan out to all contacts with a known publicKey
+  // Fan out to all contacts with a known publicKey.
+  // P2-3 audit fix: jitter individual sends across 0-30 s so the relay
+  // operator can't read a one-shot contact-graph snapshot off the timing.
+  // sendInlinePayload itself queues into the inline outbox if the
+  // connection isn't open, so a flaky link doesn't drop posts.
   const contacts = (await listContacts()).filter(c => !!c.publicKeyHex).slice(0, WASSUP_MAX_RECIPIENTS);
   const wireJson = JSON.stringify({ kind: 'wassup_post', data: wire });
+  const client = getRelayClient();
+  if (!client) return;
 
-  await Promise.all(contacts.map(async (c) => {
-    try {
-      const client = getRelayClient();
-      if (client) await client.sendInlinePayload(c.contactHash, wireJson);
-    } catch (err) {
-      console.warn('[wassup] post fanout failed for', c.contactHash, err);
-    }
-  }));
+  // Shuffle recipients so order doesn't carry contact-list-position info either.
+  const shuffled = contacts.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const FANOUT_WINDOW_MS = 30_000;
+  for (const c of shuffled) {
+    const delay = Math.floor(Math.random() * FANOUT_WINDOW_MS);
+    setTimeout(() => {
+      void client.sendInlinePayload(c.contactHash, wireJson).catch((err) => {
+        // Logged once via the redact helper to avoid full-hash leakage.
+        console.warn('[wassup] post fanout failed', err);
+      });
+    }, delay);
+  }
 }
 
 /** Toggle like on a post: write locally + notify the post's author (only). */

@@ -19,7 +19,10 @@ interface LivePlugin {
 }
 
 let permissionPromise: Promise<boolean> | null = null;
-const activeShares = new Map<string, { stop: () => void; liveUntil: string }>();
+const activeShares = new Map<string, { stop: () => void; liveUntil: string; peerContactHash: string }>();
+let appStateListener: { remove: () => Promise<void> } | null = null;
+type LiveShareListener = (parentMsgId: string, state: 'started' | 'paused' | 'resumed' | 'stopped') => void;
+const stateListeners = new Set<LiveShareListener>();
 
 async function loadPlugin(): Promise<LivePlugin | null> {
   // Web has navigator.geolocation; only pull in the Capacitor plugin
@@ -105,6 +108,7 @@ export function startLiveShare(
     if (handle.stopped) return;
     if (new Date().toISOString() >= liveUntilIso) {
       stopLiveShare(parentMsgId);
+      emitState(parentMsgId, 'stopped');
       return;
     }
     try {
@@ -121,13 +125,71 @@ export function startLiveShare(
   const entry = {
     stop: () => { handle.stopped = true; clearInterval(t); activeShares.delete(parentMsgId); },
     liveUntil: liveUntilIso,
+    peerContactHash,
   };
   activeShares.set(parentMsgId, entry);
+  emitState(parentMsgId, 'started');
+  // Set up the app-state listener once. When the app backgrounds, the
+  // JS setInterval will be throttled or paused by Android Doze — we mark
+  // the share as paused so the UI can warn the user, and emit no tick.
+  void ensureAppStateListener();
   return { stop: entry.stop };
 }
 
+let appBackgrounded = false;
+
+async function ensureAppStateListener(): Promise<void> {
+  if (appStateListener) return;
+  if (Capacitor.getPlatform() === 'web') return;
+  try {
+    const mod = await import('@capacitor/app');
+    appStateListener = await mod.App.addListener('appStateChange', (state) => {
+      const wasBackgrounded = appBackgrounded;
+      appBackgrounded = !state.isActive;
+      // On background: tell every active share's listener to render the
+      // "paused" banner. On foreground: ask listeners to re-render fresh.
+      if (appBackgrounded && !wasBackgrounded) {
+        for (const id of activeShares.keys()) emitState(id, 'paused');
+      }
+      if (!appBackgrounded && wasBackgrounded) {
+        for (const id of activeShares.keys()) emitState(id, 'resumed');
+      }
+    });
+  } catch {
+    /* not native; ignore */
+  }
+}
+
+export function isAppBackgrounded(): boolean { return appBackgrounded; }
+
+export function subscribeLiveShareState(listener: LiveShareListener): () => void {
+  stateListeners.add(listener);
+  return () => { stateListeners.delete(listener); };
+}
+
+function emitState(parentMsgId: string, state: 'started' | 'paused' | 'resumed' | 'stopped'): void {
+  for (const l of stateListeners) {
+    try { l(parentMsgId, state); } catch { /* ignore listener errors */ }
+  }
+}
+
 export function stopLiveShare(parentMsgId: string): void {
-  activeShares.get(parentMsgId)?.stop();
+  const entry = activeShares.get(parentMsgId);
+  if (!entry) return;
+  entry.stop();
+  emitState(parentMsgId, 'stopped');
+}
+
+/** Stop every active share. Called from clearIdentity / sign-out so a
+ *  signed-out tab doesn't keep firing GPS polls under the old identity. */
+export function stopAllLiveShares(): void {
+  for (const id of Array.from(activeShares.keys())) stopLiveShare(id);
+  if (appStateListener) {
+    void appStateListener.remove().catch(() => {});
+    appStateListener = null;
+  }
+  stateListeners.clear();
+  appBackgrounded = false;
 }
 
 export function isLiveSharing(parentMsgId: string): boolean {

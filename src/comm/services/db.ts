@@ -13,13 +13,16 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
 export const STORE_EVENTS = 'events';
 export const STORE_WASSUP_POSTS = 'wassup_posts';
 export const STORE_WASSUP_INTERACTIONS = 'wassup_interactions';
+/** v5 — persistent queue for ephemeral inline wires (edit/delete/poll_vote)
+ *  so they survive an offline peer + reconnect (Phase 2 audit fix). */
+export const STORE_INLINE_OUTBOX = 'inline_outbox';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -27,6 +30,7 @@ export const INDEX_EVT_BY_START = 'by_start';
 export const INDEX_POST_BY_CREATED = 'by_created';
 export const INDEX_POST_BY_EXPIRES = 'by_expires';
 export const INDEX_INT_BY_POST = 'by_post';
+export const INDEX_INLINE_BY_PEER = 'by_peer';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -60,6 +64,13 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_WASSUP_INTERACTIONS)) {
         const store = db.createObjectStore(STORE_WASSUP_INTERACTIONS, { keyPath: 'id' });
         store.createIndex(INDEX_INT_BY_POST, 'postId', { unique: false });
+      }
+      // v5 — inline outbox (Phase 2): persistent queue for ephemeral
+      // wire kinds (edit / delete / poll_vote / wassup_*) so they don't
+      // silently drop when the peer is offline at send time.
+      if (!db.objectStoreNames.contains(STORE_INLINE_OUTBOX)) {
+        const store = db.createObjectStore(STORE_INLINE_OUTBOX, { keyPath: 'id' });
+        store.createIndex(INDEX_INLINE_BY_PEER, 'peerContactHash', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

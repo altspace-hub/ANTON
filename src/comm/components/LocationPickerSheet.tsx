@@ -9,7 +9,6 @@ import { useEffect, useState } from 'react';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 import { getCurrentPosition, ensureGeoPermission, type GeoFix } from '../services/geo';
-import { osmStaticTileUrl } from './LocationBubble';
 
 interface Props {
   open: boolean;
@@ -85,12 +84,20 @@ export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
           <>
             <div className="mx-5 mt-2 rounded-2xl overflow-hidden border border-[var(--color-border-soft)] bg-[var(--color-surface-alt)]">
               <div className="relative" style={{ aspectRatio: '16 / 10', backgroundColor: '#e9e3d6' }}>
-                <img
-                  src={osmStaticTileUrl(fix.lat, fix.lng, 15)}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-                />
+                {/* P2-4 audit fix: no third-party tile fetch. Generated
+                    SVG minimap conveys "this is a location" without any
+                    network request that would leak coords. */}
+                <svg aria-hidden="true" viewBox="0 0 160 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                  <defs>
+                    <pattern id="pickerGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d8cfb9" strokeWidth="0.5" />
+                    </pattern>
+                  </defs>
+                  <rect width="160" height="100" fill="#ece5d2" />
+                  <rect width="160" height="100" fill="url(#pickerGrid)" />
+                  <path d="M -10 40 Q 80 20 170 60" fill="none" stroke="#cfc6ad" strokeWidth="6" strokeLinecap="round" />
+                  <path d="M -10 70 Q 60 50 80 60 T 170 35" fill="none" stroke="#cfc6ad" strokeWidth="4" strokeLinecap="round" />
+                </svg>
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl drop-shadow">📍</span>
               </div>
               <div className="px-3 py-2 text-[12px] text-[var(--color-text-muted)] flex items-center justify-between">

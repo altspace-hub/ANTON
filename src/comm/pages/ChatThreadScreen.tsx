@@ -68,6 +68,9 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   /** R9 — am I currently typing? Track locally so we don't spam the wire. */
   const typingActiveRef = useRef(false);
   const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** P2-6 audit fix: debounce floor before the first typing=true ping
+   *  so the operator can't keystroke-time us within ~50ms of a tap. */
+  const typingStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** R9 — auto-clear inbound typing if the sender never sends a stop ping. */
   const peerTypingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** R10 — schedule UI state */
@@ -246,36 +249,64 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   }
 
   /**
-   * R9 — typing debouncer. First keystroke fires `true`; we then schedule
-   * a stop ping 3s after the most recent keystroke. Empty draft fires
-   * stop immediately. Skips wire emission if the user disabled the
-   * indicator (sendTypingState itself gates on the setting too).
+   * R9 — typing debouncer with P2-6 privacy hardening.
+   *
+   * The audit flagged that firing presence_typing=true on the FIRST
+   * keystroke leaks ~50ms keystroke-timing to the relay operator.
+   * Mitigation:
+   *   - Don't dispatch typing=true until the user has been composing
+   *     for at least 500ms (debounce floor). Tap-and-cancel within
+   *     500ms emits nothing at all.
+   *   - Don't dispatch typing=false until the draft has been empty for
+   *     ≥1s (avoids revealing "typed and then deleted" patterns).
+   *   - 3s post-last-keystroke timer still applies for the auto-stop.
+   *
+   * Skips wire emission entirely if the user disabled the indicator
+   * (sendTypingState itself gates on the setting too).
    */
   function handleTypingPing(currentDraft: string) {
     const hasContent = currentDraft.trim().length > 0;
     if (!hasContent) {
+      // Don't emit stop instantly; wait 1s to coalesce typed-then-deleted.
+      if (typingStartTimerRef.current) { clearTimeout(typingStartTimerRef.current); typingStartTimerRef.current = null; }
       if (typingActiveRef.current) {
-        typingActiveRef.current = false;
-        if (typingStopTimerRef.current) { clearTimeout(typingStopTimerRef.current); typingStopTimerRef.current = null; }
-        void sendTypingState(peerContactHash, false);
+        if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+        typingStopTimerRef.current = setTimeout(() => {
+          typingActiveRef.current = false;
+          typingStopTimerRef.current = null;
+          void sendTypingState(peerContactHash, false);
+        }, 1000);
       }
       return;
     }
-    if (!typingActiveRef.current) {
+    // Has content. If we've already dispatched true, just refresh the
+    // 3s stop timer. Otherwise schedule the 500ms start-debounce.
+    if (typingActiveRef.current) {
+      if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+      typingStopTimerRef.current = setTimeout(() => {
+        typingActiveRef.current = false;
+        typingStopTimerRef.current = null;
+        void sendTypingState(peerContactHash, false);
+      }, 3000);
+      return;
+    }
+    if (typingStartTimerRef.current) return; // already pending
+    typingStartTimerRef.current = setTimeout(() => {
+      typingStartTimerRef.current = null;
       typingActiveRef.current = true;
       void sendTypingState(peerContactHash, true);
-    }
-    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
-    typingStopTimerRef.current = setTimeout(() => {
-      typingActiveRef.current = false;
-      typingStopTimerRef.current = null;
-      void sendTypingState(peerContactHash, false);
-    }, 3000);
+      typingStopTimerRef.current = setTimeout(() => {
+        typingActiveRef.current = false;
+        typingStopTimerRef.current = null;
+        void sendTypingState(peerContactHash, false);
+      }, 3000);
+    }, 500);
   }
 
   // Clean up the typing timer if the user leaves the thread.
   useEffect(() => () => {
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    if (typingStartTimerRef.current) clearTimeout(typingStartTimerRef.current);
     if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
     if (typingActiveRef.current) void sendTypingState(peerContactHash, false);
   }, [peerContactHash]);

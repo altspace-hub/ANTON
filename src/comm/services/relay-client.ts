@@ -18,6 +18,8 @@ import { getSecure } from './secure-store';
 import { getIdentity, deriveRoutingId } from './identity';
 import { listContacts } from './contacts';
 import { listQueued, updateStatus } from './messages';
+import { listReadyInline, markInlineAttempt, enqueueInline } from './inline-outbox';
+import { redactHash, devLog } from './log-redact';
 import { openFromPeer, sealForPeer, type EncryptedEnvelope } from './crypto';
 import { sealForPeerFromQueued, applyInboundMessage, parseWirePayload } from './chat';
 import { getContact } from './contacts';
@@ -147,7 +149,7 @@ export class RelayClient {
         await this.sendSendComm(msg.id, msg.toHash, env);
         await updateStatus(msg.id, 'sent');
       } catch (err) {
-        console.warn('[relay-client] flush failed for', msg.id, err);
+        devLog('[relay-client] flush failed', redactHash(msg.id), err);
         await updateStatus(msg.id, 'failed');
       }
     }
@@ -157,20 +159,51 @@ export class RelayClient {
 
   /**
    * Send a one-shot wire payload to a peer without persisting it as a
-   * ChatMessage. Used for ephemeral signals (R2 reactions, future R9
-   * read receipts + typing indicators). Returns silently if the connection
-   * isn't open — these signals are best-effort.
+   * ChatMessage. Two modes:
+   *   - persistent=true (default for state-mutating wires like edit /
+   *     delete / poll_vote / wassup_*) — if the connection isn't open
+   *     or sealing fails, the payload is enqueued in the inline outbox
+   *     and re-attempted on the next flush cycle.
+   *   - persistent=false (presence wires: read receipts / typing /
+   *     location_update) — best-effort, drops if not connected.
    */
-  async sendInlinePayload(peerContactHash: string, wireJson: string): Promise<void> {
-    if (this.status !== 'open' || !this.sessionId) return;
+  async sendInlinePayload(
+    peerContactHash: string,
+    wireJson: string,
+    opts: { persistent?: boolean } = {},
+  ): Promise<void> {
+    const persistent = opts.persistent !== false;
+    if (this.status !== 'open' || !this.sessionId) {
+      if (persistent) await enqueueInline(peerContactHash, wireJson);
+      return;
+    }
     const me = getIdentity();
     if (!me) return;
     const peer = await getContact(peerContactHash);
-    if (!peer?.publicKeyHex) return;
+    if (!peer?.publicKeyHex) {
+      if (persistent) await enqueueInline(peerContactHash, wireJson);
+      return;
+    }
 
-    const envelope = await sealForPeer(wireJson, peer.publicKeyHex, me.contactHash, peerContactHash);
+    try {
+      await this.dispatchInline(peerContactHash, wireJson, peer.publicKeyHex, me.contactHash);
+    } catch (err) {
+      if (persistent) await enqueueInline(peerContactHash, wireJson);
+      else devLog('[relay-client] inline send failed', err);
+    }
+  }
+
+  /** Internal: actually encrypt + frame + send one inline payload. */
+  private async dispatchInline(
+    peerContactHash: string,
+    wireJson: string,
+    peerPubkeyHex: string,
+    myContactHash: string,
+  ): Promise<void> {
+    if (!this.sessionId) throw new Error('no session');
+    const envelope = await sealForPeer(wireJson, peerPubkeyHex, myContactHash, peerContactHash);
     const ephemeralMsgId = `inline-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const targetRoutingId = (await import('./identity')).deriveRoutingId(peer.publicKeyHex);
+    const targetRoutingId = (await import('./identity')).deriveRoutingId(peerPubkeyHex);
     const ciphertext = new TextEncoder().encode(JSON.stringify(envelope));
     const payload = new Uint8Array(16 + 16 + 16 + ciphertext.length);
     payload.set(this.sessionId, 0);
@@ -178,6 +211,32 @@ export class RelayClient {
     payload.set(messageIdToBytesInline(ephemeralMsgId), 32);
     payload.set(ciphertext, 48);
     this.send(TYPE_SEND_COMM, payload);
+  }
+
+  /**
+   * Drain any inline payloads ready for retry. Called on register + on
+   * the periodic 20s tick. Backoff + max-attempts logic lives in
+   * `listReadyInline()` / `markInlineAttempt()`.
+   */
+  async flushInlineOutbox(): Promise<void> {
+    if (this.status !== 'open' || !this.sessionId) return;
+    const me = getIdentity();
+    if (!me) return;
+    const ready = await listReadyInline();
+    for (const row of ready) {
+      try {
+        const peer = await getContact(row.peerContactHash);
+        if (!peer?.publicKeyHex) {
+          // Contact deleted — burn the row.
+          await markInlineAttempt(row.id, true);
+          continue;
+        }
+        await this.dispatchInline(row.peerContactHash, row.wireJson, peer.publicKeyHex, me.contactHash);
+        await markInlineAttempt(row.id, true);
+      } catch {
+        await markInlineAttempt(row.id, false);
+      }
+    }
   }
 
   // ── Internals ────────────────────────────────────────────────────────
@@ -309,9 +368,16 @@ export class RelayClient {
     this.pingTimer = setInterval(() => this.send(TYPE_PING, new Uint8Array(0)), 30_000);
     // R10 — flush every 20s so scheduled-for-future messages auto-send
     // once their time passes. flushOutbox itself filters by scheduledFor.
+    // Phase 2 P2-1 — same cadence drains the inline outbox for any
+    // ephemeral wires (edit / delete / poll_vote / etc.) that piled up
+    // while we were offline.
     if (this.scheduleFlushTimer) clearInterval(this.scheduleFlushTimer);
-    this.scheduleFlushTimer = setInterval(() => void this.flushOutbox(), 20_000);
+    this.scheduleFlushTimer = setInterval(() => {
+      void this.flushOutbox();
+      void this.flushInlineOutbox();
+    }, 20_000);
     void this.flushOutbox();
+    void this.flushInlineOutbox();
   }
 
   private async handleDeliverComm(payload: Uint8Array): Promise<void> {
@@ -329,7 +395,7 @@ export class RelayClient {
       if (!sender || !sender.publicKeyHex) {
         // Unknown sender — could be someone whose QR you haven't scanned.
         // v0.1 drops; v0.2 should write to a "requests" tray instead.
-        console.warn('[relay-client] DELIVER_COMM from unknown contact, dropping');
+        devLog('[relay-client] DELIVER_COMM from unknown contact, dropping');
         return;
       }
       const me = getIdentity();
@@ -344,7 +410,7 @@ export class RelayClient {
         // the relay's mailbox-redelivery story noise-free.
         return;
       }
-      console.warn('[relay-client] decrypt failed', err);
+      devLog('[relay-client] decrypt failed', err);
     }
   }
 

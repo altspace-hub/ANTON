@@ -51,6 +51,22 @@ function saveIdentityPublic(identity: CommIdentity): void {
 }
 
 export async function clearIdentity(): Promise<void> {
+  // P2-5 audit fix: tear down every module-level cache or active timer
+  // attached to the old identity BEFORE we wipe the storage. Otherwise
+  // a sign-out leaves stale live-share intervals, cached permission
+  // promises, and replay-cache entries from the previous user.
+  try {
+    const [{ stopAllLiveShares }, { clearReminderCaches }, { clearReplayCache }, { stopRelayClient }] = await Promise.all([
+      import('./geo'),
+      import('./event-reminders'),
+      import('./replay-cache'),
+      import('./relay-client'),
+    ]);
+    try { stopAllLiveShares(); } catch { /* ignore */ }
+    try { clearReminderCaches(); } catch { /* ignore */ }
+    try { clearReplayCache(); } catch { /* ignore */ }
+    try { stopRelayClient(); } catch { /* ignore */ }
+  } catch { /* dynamic import failures shouldn't block sign-out */ }
   localStorage.removeItem(STORAGE_KEY_IDENTITY);
   await removeSecure(SECURE_KEY_PRIVKEY);
 }
