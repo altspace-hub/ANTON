@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   getEvent,
+  putEvent,
   setMyRsvp,
   type CommEvent,
   type RsvpStatus,
@@ -11,6 +12,7 @@ import { Ico, type IcoName } from '../components/Ico';
 import { sendEventRsvp } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { listContacts, type Contact } from '../services/contacts';
+import { scheduleEventReminder, cancelEventReminder, ensureNotificationPermission } from '../services/event-reminders';
 
 interface Props {
   eventId: string;
@@ -36,6 +38,27 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
       .catch(() => { /* swallow */ });
     return () => { cancelled = true; };
   }, [eventId]);
+
+  async function handleToggleReminder() {
+    if (!event) return;
+    const wantOn = !event.reminderMinutesBefore;
+    if (wantOn) {
+      const granted = await ensureNotificationPermission();
+      if (!granted) {
+        setError('Notifications are off for the app. Enable them in system settings to use reminders.');
+        return;
+      }
+    }
+    const next: CommEvent = {
+      ...event,
+      reminderMinutesBefore: wantOn ? 60 : null,
+      updatedAt: new Date().toISOString(),
+    };
+    await putEvent(next);
+    setEvent(next);
+    if (wantOn) await scheduleEventReminder(next);
+    else await cancelEventReminder(next.id);
+  }
 
   async function handleRsvp(status: RsvpStatus) {
     if (!event) return;
@@ -134,6 +157,42 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
               <RsvpButton label="Can't go" active={event.myStatus === 'declined'} onClick={() => void handleRsvp('declined')} disabled={busy} />
             </div>
             {error && <p className="mt-2 text-xs text-[var(--color-red)]">{error}</p>}
+          </div>
+        )}
+
+        {!event.canceled && new Date(event.startAt).getTime() > Date.now() && (
+          <div className="px-5 py-5 border-b border-[var(--color-border-soft)]">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
+              Reminders
+            </p>
+            <button
+              onClick={() => void handleToggleReminder()}
+              aria-pressed={!!event.reminderMinutesBefore}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border"
+              style={{
+                borderColor: event.reminderMinutesBefore ? 'var(--color-accent)' : 'var(--color-border-soft)',
+                backgroundColor: event.reminderMinutesBefore ? 'var(--color-accent-dim)' : 'var(--color-surface)',
+              }}
+            >
+              <Ico name="clock" size={20} color={event.reminderMinutesBefore ? 'var(--color-accent-dark)' : 'var(--color-text-muted)'} />
+              <div className="flex-1 text-left">
+                <div className="text-[14px] font-medium text-[var(--color-text)]">Remind me 1 hour before</div>
+                <div className="text-[11px] text-[var(--color-text-muted)]">
+                  {event.reminderMinutesBefore
+                    ? 'A local notification will fire on this device.'
+                    : 'Off — tap to get a local reminder one hour before the start.'}
+                </div>
+              </div>
+              <span
+                className="w-10 h-6 rounded-full p-0.5 flex-shrink-0"
+                style={{ backgroundColor: event.reminderMinutesBefore ? 'var(--color-accent)' : 'var(--color-border)' }}
+              >
+                <span
+                  className="block w-5 h-5 rounded-full bg-white transition-transform"
+                  style={{ transform: event.reminderMinutesBefore ? 'translateX(16px)' : 'translateX(0)' }}
+                />
+              </span>
+            </button>
           </div>
         )}
 

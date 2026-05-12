@@ -78,6 +78,9 @@ export interface CommEvent {
   createdAt: string;
   updatedAt: string;
   canceled: boolean;
+  /** R11 — minutes before startAt to fire a local notification.
+   *  undefined/null = no reminder. */
+  reminderMinutesBefore?: number | null;
 }
 
 // ── ID generation (ULID-ish) ─────────────────────────────────────────

@@ -17,6 +17,7 @@ import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
+import { reconcileAllReminders } from './services/event-reminders';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
@@ -82,6 +83,9 @@ export default function App() {
         setWassupVersion((v) => v + 1);
       },
     });
+    // R11 — sync local notifications for any events with reminders set.
+    // Survives process restart because the events store has the source of truth.
+    void reconcileAllReminders();
     return () => stopRelayClient();
   }, [identityVersion]);
 
