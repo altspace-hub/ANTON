@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for ANTON Communication — iOS native shell.
+
+  Every privacy-sensitive API used by the app needs a usage description
+  string. Missing or vague strings are the #1 App Store rejection
+  reason for messaging apps.
+
+  After `npx cap add ios` (see ios-templates-comm/README.md), MERGE
+  the keys below into the generated ios-comm/App/App/Info.plist. Do
+  NOT replace the whole file — Capacitor's template includes other
+  keys (CFBundleVersion, etc.) we shouldn't overwrite.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>ANTON Communication</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+
+  <!-- ── Usage descriptions ────────────────────────────────────────────── -->
+  <key>NSCameraUsageDescription</key>
+  <string>Scan a contact's QR code to add them, or take a photo to send in a chat.</string>
+
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Pick photos and videos to send in chats or post to your Wassup feed.</string>
+
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Save received photos and videos to your photo library.</string>
+
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Record voice notes to send in chats and Wassup posts.</string>
+
+  <key>NSFaceIDUsageDescription</key>
+  <string>Use Face ID to unlock your ANTON identity and confirm sensitive actions.</string>
+
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Share your location with a contact in a chat. Sharing stops automatically when you close the app.</string>
+
+  <!-- ── Export compliance — using only standard TLS + Apple crypto ───── -->
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+
+  <!-- ── Background modes — only remote-notification for push ──────────── -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>remote-notification</string>
+  </array>
+
+  <!-- ── Custom URL scheme for deep linking ────────────────────────────── -->
+  <!-- DIFFERENT from the Companion App (anton://) so installing both on
+       the same device doesn't conflict on URL handlers. -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.futurechain.anton.communication</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>anton-comm</string>
+      </array>
+    </dict>
+  </array>
+
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>https</string>
+  </array>
+
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+  <key>UIMainStoryboardFile</key>
+  <string>Main</string>
+  <key>UIRequiredDeviceCapabilities</key>
+  <array>
+    <string>armv7</string>
+  </array>
+  <key>UIRequiresFullScreen</key>
+  <false/>
+  <key>UIStatusBarStyle</key>
+  <string>UIStatusBarStyleDefault</string>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UIViewControllerBasedStatusBarAppearance</key>
+  <true/>
+</dict>
+</plist>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App.entitlements — capabilities the app needs from iOS.
+
+  Minimal set. We don't use iCloud, HealthKit, HomeKit, Game Center,
+  or any of the other big-ticket entitlements. Just APS-environment
+  for push notifications (development for sandbox/TestFlight,
+  production for App Store).
+
+  Copy to ios-comm/App/App/App.entitlements after `npx cap add ios`.
+-->
+<plist version="1.0">
+<dict>
+  <key>aps-environment</key>
+  <string>development</string>
+</dict>
+</plist>
