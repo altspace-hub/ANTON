@@ -9,10 +9,14 @@ interface Props {
   onPickImageLibrary: () => void;
   onPickVideoCamera: () => void;
   onPickVideoLibrary: () => void;
+  /** R6 — current view-once state, owned by the parent. */
+  viewOnce: boolean;
+  onToggleViewOnce: () => void;
 }
 
 export default function AttachmentSheet({
   open, onClose, onPickImageCamera, onPickImageLibrary, onPickVideoCamera, onPickVideoLibrary,
+  viewOnce, onToggleViewOnce,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -33,7 +37,46 @@ export default function AttachmentSheet({
         onClick={(e) => e.stopPropagation()}
         className="bg-[var(--color-surface)] rounded-t-3xl pt-2 pb-6 safe-bottom"
       >
-        <div className="w-10 h-1 rounded-full bg-[var(--color-border)] mx-auto mb-4" />
+        <div className="w-10 h-1 rounded-full bg-[var(--color-border)] mx-auto mb-3" />
+
+        {/* R6 — View-once pill, sticks above the tiles */}
+        <div className="px-5 mb-3">
+          <button
+            onClick={onToggleViewOnce}
+            aria-pressed={viewOnce}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left"
+            style={{
+              borderColor: viewOnce ? 'var(--color-accent)' : 'var(--color-border-soft)',
+              backgroundColor: viewOnce ? 'var(--color-accent-dim)' : 'var(--color-surface-alt)',
+            }}
+          >
+            <span
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{
+                backgroundColor: viewOnce ? 'var(--color-accent)' : 'var(--color-surface)',
+                color: viewOnce ? 'var(--color-accent-fg)' : 'var(--color-accent-dark)',
+              }}
+            >
+              <Ico name="clock" size={18} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-[14px] font-medium text-[var(--color-text)]">View once</span>
+              <span className="block text-[11px] text-[var(--color-text-muted)]">
+                {viewOnce ? 'Will disappear after they view it.' : 'Recipient can save your media. Tap to limit it.'}
+              </span>
+            </span>
+            <span
+              className="w-10 h-6 rounded-full p-0.5 transition-colors flex-shrink-0"
+              style={{ backgroundColor: viewOnce ? 'var(--color-accent)' : 'var(--color-border)' }}
+            >
+              <span
+                className="block w-5 h-5 rounded-full bg-white transition-transform"
+                style={{ transform: viewOnce ? 'translateX(16px)' : 'translateX(0)' }}
+              />
+            </span>
+          </button>
+        </div>
+
         <div className="px-5 grid grid-cols-2 gap-3">
           <Tile icon="camera" label="Camera"  onClick={() => { onClose(); onPickImageCamera(); }} />
           <Tile icon="image"  label="Photos"  onClick={() => { onClose(); onPickImageLibrary(); }} />

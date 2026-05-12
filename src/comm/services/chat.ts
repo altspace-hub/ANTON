@@ -15,7 +15,7 @@
 import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, applyReaction, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { appendMessage, applyReaction, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
@@ -62,6 +62,10 @@ export interface MediaPayload {
   durationSec?: number;
   /** Optional caption text alongside the media */
   caption?: string;
+  /** R6 — view-once media: recipient deletes the local copy after viewing
+   *  once. Sender's local copy persists with `viewed` set when the peer
+   *  confirms. */
+  viewOnce?: boolean;
 }
 
 /** R2 — emoji reaction payload (does NOT carry messageId; doesn't itself
@@ -92,12 +96,19 @@ export interface SystemTimerChangePayload {
   timerSec: number;
 }
 
+/** R6 — recipient → sender notification that a view-once media message
+ *  has been viewed + dismissed. Sender flips that bubble to "Viewed". */
+export interface ViewOnceViewedPayload {
+  targetMsgId: string;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'react';         data: ReactPayload }
+  | { kind: 'view_once_viewed'; data: ViewOnceViewedPayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -189,7 +200,7 @@ export async function sendStructuredMessage(
   // bypass sendStructuredMessage and send inline via the relay client.
   if (wire.kind === 'wassup_post' || wire.kind === 'wassup_like'
       || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
-      || wire.kind === 'react') {
+      || wire.kind === 'react' || wire.kind === 'view_once_viewed') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -249,6 +260,23 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R6 — confirm to the sender that we've viewed + dismissed a view-once
+ * media. The sender's bubble flips to "Viewed". Inline send via the
+ * relay client (same pattern as reactions); does not produce a visible
+ * message on either side.
+ */
+export async function sendViewOnceViewed(peerContactHash: string, targetMsgId: string): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return; // best-effort; no key means no peer to notify
+  const wire: WirePayload = { kind: 'view_once_viewed', data: { targetMsgId } };
+  const wireJson = JSON.stringify(wire);
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, wireJson);
 }
 
 /**
@@ -482,6 +510,9 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'react' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'react', data: obj.data as ReactPayload };
       }
+      if (obj.kind === 'view_once_viewed' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'view_once_viewed', data: obj.data as ViewOnceViewedPayload };
+      }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
       }
@@ -528,6 +559,13 @@ export async function applyInboundMessage(
   // R2 — reactions don't create a visible message; just mutate the target.
   if (wire.kind === 'react') {
     await applyReaction(wire.data.targetMsgId, wire.data.emoji, fromHash, wire.data.op);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R6 — sender-side: the recipient just viewed our view-once media. Flip
+  // the bubble to "Viewed" and drop the payload bytes.
+  if (wire.kind === 'view_once_viewed') {
+    await markViewed(wire.data.targetMsgId);
     return { kind: 'text', threadHash: fromHash };
   }
 

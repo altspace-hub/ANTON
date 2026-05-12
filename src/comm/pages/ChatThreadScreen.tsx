@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { listThread, sweepExpiredInThread, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { listThread, sweepExpiredInThread, deleteMessage, type ChatMessage, type ReplyContext } from '../services/messages';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -21,6 +21,7 @@ import VoiceRecorder from '../components/VoiceRecorder';
 import VoicePlayer from '../components/VoicePlayer';
 import DisappearingTimerSheet, { formatTimerLabel } from '../components/DisappearingTimerSheet';
 import { useLongPress } from '../hooks/useLongPress';
+import { registerBackHandler } from '../services/back-stack';
 
 interface Props {
   peerContactHash: string;
@@ -42,6 +43,10 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [actionTarget, setActionTarget] = useState<ChatMessage | null>(null);
   /** R5 — disappearing-timer settings sheet visibility */
   const [timerSheetOpen, setTimerSheetOpen] = useState(false);
+  /** R6 — view-once toggle in the attachment sheet (one-shot, resets on send). */
+  const [viewOnceArmed, setViewOnceArmed] = useState(false);
+  /** R6 — message currently being shown fullscreen for one-time view. */
+  const [viewingOnce, setViewingOnce] = useState<ChatMessage | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
@@ -67,6 +72,16 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
     return () => clearInterval(t);
   }, []);
+
+  async function handleViewOnceDismiss(msg: ChatMessage) {
+    setViewingOnce(null);
+    try {
+      // Notify sender (best-effort), then wipe local copy.
+      await sendViewOnceViewed(peerContactHash, msg.id);
+      await deleteMessage(msg.id);
+      setRefreshTick((v) => v + 1);
+    } catch { /* swallow — local delete still happens */ }
+  }
 
   async function handleTimerChange(timerSec: number) {
     try {
@@ -156,11 +171,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         width: capture.width,
         height: capture.height,
         durationSec: capture.durationSec,
+        viewOnce: viewOnceArmed || undefined,
       };
       const msg = capture.mediaType === 'image'
         ? await sendImage(peerContactHash, payload)
         : await sendVideo(peerContactHash, payload);
       setMessages((prev) => [...prev, msg]);
+      // R6 — one-shot, reset after send
+      if (viewOnceArmed) setViewOnceArmed(false);
     } catch (e) {
       setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to attach'));
     } finally {
@@ -225,6 +243,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
               onOpenEvent={onOpenEvent}
               onLongPress={() => setActionTarget(m)}
               onReactionTap={(emoji) => void handleReaction(m, emoji)}
+              onOpenViewOnce={(msg) => setViewingOnce(msg)}
               myHash={me?.contactHash}
             />
           ))
@@ -307,7 +326,11 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onPickImageLibrary={() => void handleAttachment(captureImageFromLibrary)}
         onPickVideoCamera={() => void handleAttachment(captureVideoFromCamera)}
         onPickVideoLibrary={() => void handleAttachment(captureVideoFromLibrary)}
+        viewOnce={viewOnceArmed}
+        onToggleViewOnce={() => setViewOnceArmed((v) => !v)}
       />
+
+      {viewingOnce && <ViewOnceViewer message={viewingOnce} onDismiss={() => void handleViewOnceDismiss(viewingOnce)} />}
 
       <MessageActionSheet
         open={actionTarget !== null}
@@ -367,10 +390,11 @@ interface BubbleProps {
   onOpenEvent?: (id: string) => void;
   onLongPress: () => void;
   onReactionTap: (emoji: string) => void;
+  onOpenViewOnce: (message: ChatMessage) => void;
   myHash?: string;
 }
 
-function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHash }: BubbleProps) {
+function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, myHash }: BubbleProps) {
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   const longPress = useLongPress(onLongPress);
 
@@ -385,7 +409,14 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHa
   if (message.kind === 'event_invite') {
     body = <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />;
   } else if (message.kind === 'image' || message.kind === 'video') {
-    body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} />;
+    // R6 — branch to the view-once bubble when the payload is marked
+    let p: MediaPayload | null = null;
+    try { p = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+    if (p?.viewOnce) {
+      body = <ViewOnceMediaBubble message={message} isMine={isMine} time={time} onOpen={() => onOpenViewOnce(message)} />;
+    } else {
+      body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} />;
+    }
   } else if (message.kind === 'voice') {
     body = <VoiceBubble message={message} isMine={isMine} time={time} />;
   } else {
@@ -641,3 +672,124 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+// ── R6: view-once media bubble + fullscreen viewer ────────────────────
+
+function ViewOnceMediaBubble({ message, isMine, time, onOpen }: {
+  message: ChatMessage; isMine: boolean; time: string; onOpen: () => void;
+}) {
+  let payload: MediaPayload | null = null;
+  try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+  const viewed = !!message.viewed;
+  const isVideo = message.kind === 'video';
+
+  // Sender side, not yet viewed: small "waiting" placeholder; we never
+  // re-display the bytes after send.
+  const senderUnviewed = isMine && !viewed;
+  // Recipient side, not yet viewed: blurred placeholder, tap to reveal.
+  const recipientUnviewed = !isMine && !viewed;
+
+  return (
+    <button
+      type="button"
+      onClick={() => { if (recipientUnviewed) onOpen(); }}
+      disabled={!recipientUnviewed}
+      className={`max-w-[78%] rounded-2xl overflow-hidden text-left ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${recipientUnviewed ? 'active:opacity-80' : ''}`}
+      style={{
+        backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
+        border: isMine ? 'none' : '1px solid var(--color-border-soft)',
+      }}
+    >
+      <div
+        className="flex items-center gap-3 px-4 py-4 min-w-[200px]"
+        style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)' }}
+      >
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{
+            backgroundColor: isMine ? 'rgba(255,255,255,0.18)' : 'var(--color-accent-dim)',
+            color: isMine ? '#FFFFFF' : 'var(--color-accent-dark)',
+          }}
+        >
+          <Ico name={isVideo ? 'video' : 'image'} size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-semibold">
+            {viewed
+              ? 'Viewed'
+              : senderUnviewed
+                ? (isVideo ? 'Video · view once' : 'Photo · view once')
+                : (isVideo ? 'Tap to view video once' : 'Tap to view photo once')}
+          </div>
+          <div className="text-[11px] opacity-80">
+            {viewed
+              ? (isMine ? 'Recipient viewed' : 'You viewed this')
+              : senderUnviewed
+                ? `Waiting · ${payload ? formatBytes(payload.size) : '—'}`
+                : 'Opens once, then disappears'}
+          </div>
+        </div>
+        <Ico name="clock" size={16} color={isMine ? 'rgba(255,255,255,0.85)' : 'var(--color-text-muted)'} />
+      </div>
+      <div
+        className="px-4 py-1.5 text-[10px] font-medium opacity-80 flex items-center justify-end gap-1 border-t"
+        style={{
+          color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
+          borderColor: isMine ? 'rgba(255,255,255,0.15)' : 'var(--color-border-soft)',
+        }}
+      >
+        {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
+        <time>{time}</time>
+        {isMine && <StatusTick status={message.status} />}
+      </div>
+    </button>
+  );
+}
+
+function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismiss: () => void }) {
+  let payload: MediaPayload | null = null;
+  try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+  useEffect(() => registerBackHandler(onDismiss), [onDismiss]);
+
+  if (!payload) {
+    onDismiss();
+    return null;
+  }
+  const dataUrl = `data:${payload.mimeType};base64,${payload.data}`;
+  const isVideo = message.kind === 'video';
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="View once"
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+    >
+      <header className="flex items-center justify-between px-4 h-12 safe-top">
+        <span className="text-xs text-white/80 uppercase tracking-wide flex items-center gap-2">
+          <Ico name="clock" size={14} color="rgba(255,255,255,0.85)" />
+          View once
+        </span>
+        <button
+          onClick={onDismiss}
+          aria-label="Close — will wipe this media"
+          className="w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFFFFF' }}
+        >
+          <Ico name="x" size={20} color="#FFFFFF" />
+        </button>
+      </header>
+      <div className="flex-1 flex items-center justify-center px-2 py-2">
+        {isVideo ? (
+          <video src={dataUrl} controls autoPlay className="max-w-full max-h-full" />
+        ) : (
+          <img src={dataUrl} alt="" className="max-w-full max-h-full object-contain" />
+        )}
+      </div>
+      <footer className="px-4 py-3 text-center text-xs text-white/70 safe-bottom">
+        Close to delete. The sender will see "Viewed".
+      </footer>
+    </div>
+  );
+}
+

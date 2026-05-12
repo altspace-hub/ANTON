@@ -77,6 +77,10 @@ export interface ChatMessage {
   reactions?: ReactionsMap;
   /** R5 — ISO timestamp when this message should be locally deleted. */
   disappearsAt?: string;
+  /** R6 — sender-side marker that the recipient has viewed a view-once
+   *  media message. Recipients delete the message locally on view, so on
+   *  their side this field is irrelevant. */
+  viewed?: boolean;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
@@ -118,6 +122,7 @@ export async function appendMessage(
     replyTo: input.replyTo,
     reactions: input.reactions,
     disappearsAt: input.disappearsAt,
+    viewed: input.viewed,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -237,6 +242,48 @@ export async function deleteThread(threadHash: string): Promise<void> {
       const cursor = req.result;
       if (cursor) { cursor.delete(); cursor.continue(); }
     };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R6 — mark a sent view-once message as viewed (sender-side). Called when
+ * the recipient's `view_once_viewed` signal arrives. Returns the updated
+ * message, or null if the id wasn't found.
+ */
+export async function markViewed(id: string): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row) { resolve(null); return; }
+      row.viewed = true;
+      // Strip the media bytes — sender has confirmation, no need to keep
+      // the encrypted payload around once viewed. Keep the kind so the
+      // bubble still renders the "Viewed" placeholder.
+      try {
+        const parsed = JSON.parse(row.plaintext) as Record<string, unknown>;
+        if ('data' in parsed && typeof parsed.data === 'string') {
+          row.plaintext = JSON.stringify({ ...parsed, data: '' });
+        }
+      } catch { /* ignore non-JSON plaintexts */ }
+      store.put(row);
+      resolve(row);
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** R6 — delete a single message by id (used after recipient views a view-once). */
+export async function deleteMessage(id: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    tx.objectStore(STORE_MESSAGES).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
