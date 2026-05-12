@@ -81,6 +81,12 @@ export interface ChatMessage {
    *  media message. Recipients delete the message locally on view, so on
    *  their side this field is irrelevant. */
   viewed?: boolean;
+  /** R8 — ISO timestamp of the last text-message edit. Present on both
+   *  sides after an edit round-trip. */
+  editedAt?: string;
+  /** R8 — set by delete-for-everyone. plaintext is cleared; reactions /
+   *  replyTo are dropped so the placeholder renders cleanly. */
+  deletedForEveryone?: boolean;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
@@ -123,6 +129,8 @@ export async function appendMessage(
     reactions: input.reactions,
     disappearsAt: input.disappearsAt,
     viewed: input.viewed,
+    editedAt: input.editedAt,
+    deletedForEveryone: input.deletedForEveryone,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -132,6 +140,18 @@ export async function appendMessage(
     tx.onerror = () => reject(tx.error);
   });
   return record;
+}
+
+/** Look up a single message by id. Used by R8 forward to read the
+ *  source payload and by other helpers. */
+export async function getMessage(id: string): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readonly');
+    const req = tx.objectStore(STORE_MESSAGES).get(id);
+    req.onsuccess = () => resolve((req.result as ChatMessage | undefined) ?? null);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export async function listThread(threadHash: string, limit = 200): Promise<ChatMessage[]> {
@@ -275,6 +295,54 @@ export async function applyPollVote(
       else votes[voterHash] = optionIdx.slice();
       parsed.votes = votes;
       row.plaintext = JSON.stringify(parsed);
+      store.put(row);
+      resolve(row);
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R8 — apply an edit to a text message. Updates the plaintext + stamps
+ * editedAt. No-op if the target id isn't in the store or it isn't a
+ * text message (edits only target plain text per the spec).
+ */
+export async function applyEdit(targetMsgId: string, newText: string): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(targetMsgId);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row || (row.kind && row.kind !== 'text')) { resolve(null); return; }
+      row.plaintext = newText;
+      row.editedAt = new Date().toISOString();
+      store.put(row);
+      resolve(row);
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R8 — apply delete-for-everyone to a target message. Clears plaintext +
+ * reactions + replyTo and flags `deletedForEveryone`. Bubble renderer
+ * then shows a placeholder.
+ */
+export async function applyDeleteForEveryone(targetMsgId: string): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(targetMsgId);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row) { resolve(null); return; }
+      row.deletedForEveryone = true;
+      row.plaintext = '';
+      row.reactions = undefined;
+      row.replyTo = undefined;
       store.put(row);
       resolve(row);
     };

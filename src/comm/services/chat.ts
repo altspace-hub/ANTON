@@ -15,7 +15,7 @@
 import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, applyReaction, applyPollVote, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, getMessage, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
@@ -123,6 +123,17 @@ export interface PollVotePayload {
   optionIdx: number[];
 }
 
+/** R8 — edit payload. Only text messages are editable. */
+export interface EditPayload {
+  targetMsgId: string;
+  newText: string;
+}
+
+/** R8 — delete-for-everyone payload. Both sides clear the bubble. */
+export interface DeletePayload {
+  targetMsgId: string;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -132,6 +143,8 @@ export type WirePayload =
   | { kind: 'view_once_viewed'; data: ViewOnceViewedPayload }
   | { kind: 'poll';          messageId: string; data: PollPayload }
   | { kind: 'poll_vote';     data: PollVotePayload }
+  | { kind: 'edit';          data: EditPayload }
+  | { kind: 'delete';        data: DeletePayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -224,7 +237,7 @@ export async function sendStructuredMessage(
   if (wire.kind === 'wassup_post' || wire.kind === 'wassup_like'
       || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
       || wire.kind === 'react' || wire.kind === 'view_once_viewed'
-      || wire.kind === 'poll_vote') {
+      || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -287,6 +300,103 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R8 — Edit a previously-sent text message. Applies locally first
+ * (instant UI), then fires the edit envelope to the peer so they
+ * mirror the change on their copy. No-op if the target isn't a text
+ * message in our store.
+ */
+export async function sendEdit(
+  peerContactHash: string,
+  targetMsgId: string,
+  newText: string,
+): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return;
+
+  const updated = await applyEdit(targetMsgId, newText);
+  if (!updated) return;
+
+  const wire: WirePayload = { kind: 'edit', data: { targetMsgId, newText } };
+  const wireJson = JSON.stringify(wire);
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, wireJson);
+}
+
+/**
+ * R8 — Delete-for-everyone: clear our local copy and tell the peer to
+ * do the same. Both sides show the "Message deleted" placeholder.
+ */
+export async function sendDeleteForEveryone(
+  peerContactHash: string,
+  targetMsgId: string,
+): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) {
+    // No peer key yet — still delete locally so the user isn't confused.
+    await applyDeleteForEveryone(targetMsgId);
+    return;
+  }
+  await applyDeleteForEveryone(targetMsgId);
+
+  const wire: WirePayload = { kind: 'delete', data: { targetMsgId } };
+  const wireJson = JSON.stringify(wire);
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, wireJson);
+}
+
+/**
+ * R8 — Forward an existing message to another contact. Reads the source
+ * message's kind + plaintext from the store, copies it into a new
+ * outbound message addressed to the target. No new wire kind needed —
+ * it's just a normal send with the same payload bytes.
+ */
+export async function sendForward(
+  sourceMsgId: string,
+  targetContactHash: string,
+): Promise<ChatMessage | null> {
+  const source = await getMessage(sourceMsgId);
+  if (!source) return null;
+  if (source.deletedForEveryone) return null;
+  const kind = source.kind ?? 'text';
+
+  if (kind === 'text') {
+    return sendMessage(targetContactHash, source.plaintext);
+  }
+  if (kind === 'image') {
+    const payload = JSON.parse(source.plaintext) as MediaPayload;
+    // Clear viewOnce on forward — forwarding a one-time view defeats its purpose.
+    payload.viewOnce = undefined;
+    return sendImage(targetContactHash, payload);
+  }
+  if (kind === 'video') {
+    const payload = JSON.parse(source.plaintext) as MediaPayload;
+    payload.viewOnce = undefined;
+    return sendVideo(targetContactHash, payload);
+  }
+  if (kind === 'voice') {
+    const payload = JSON.parse(source.plaintext) as VoicePayload;
+    return sendVoice(targetContactHash, payload);
+  }
+  if (kind === 'poll') {
+    // Forwarding a poll creates a new poll with the same question and
+    // fresh tally. Clear the votes map so the target's bubble starts clean.
+    const stored = JSON.parse(source.plaintext) as PollPayload & { votes?: Record<string, number[]> };
+    return sendPoll(targetContactHash, {
+      question: stored.question,
+      options: stored.options,
+      multiSelect: stored.multiSelect,
+      expiresAt: stored.expiresAt,
+    });
+  }
+  // Event / system kinds aren't forwardable per spec — silently skip.
+  return null;
 }
 
 /**
@@ -598,6 +708,12 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'poll_vote' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'poll_vote', data: obj.data as PollVotePayload };
       }
+      if (obj.kind === 'edit' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'edit', data: obj.data as EditPayload };
+      }
+      if (obj.kind === 'delete' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'delete', data: obj.data as DeletePayload };
+      }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
       }
@@ -658,6 +774,18 @@ export async function applyInboundMessage(
   // bubble of its own (the existing poll bubble re-renders with the new tally).
   if (wire.kind === 'poll_vote') {
     await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R8 — peer edited a previously-sent text message. Apply locally.
+  if (wire.kind === 'edit') {
+    await applyEdit(wire.data.targetMsgId, wire.data.newText);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R8 — peer requested delete-for-everyone. Clear our local copy.
+  if (wire.kind === 'delete') {
+    await applyDeleteForEveryone(wire.data.targetMsgId);
     return { kind: 'text', threadHash: fromHash };
   }
 

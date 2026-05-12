@@ -10,11 +10,17 @@ interface Props {
   onReact: (emoji: string) => void;
   onReply: () => void;
   onCopy?: () => void;
+  /** R8 — forward to a different contact */
+  onForward?: () => void;
+  /** R8 — edit (own text only) */
+  onEdit?: () => void;
+  /** R8 — delete-for-everyone (own message) */
+  onDelete?: () => void;
   /** Show extra actions when this is the user's own message. */
   isMine?: boolean;
 }
 
-export default function MessageActionSheet({ open, onClose, onReact, onReply, onCopy, isMine }: Props) {
+export default function MessageActionSheet({ open, onClose, onReact, onReply, onCopy, onForward, onEdit, onDelete, isMine }: Props) {
   useEffect(() => {
     if (!open) return;
     return registerBackHandler(onClose);
@@ -53,22 +59,25 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
         {/* Action rows */}
         <div className="px-4 space-y-1">
           <Row icon="reply" label="Reply" onClick={() => { onClose(); onReply(); }} />
+          {onForward && <Row icon="share" label="Forward" onClick={() => { onClose(); onForward(); }} />}
           {onCopy && <Row icon="share" label="Copy" onClick={() => { onClose(); onCopy(); }} />}
-          {isMine && <Row icon="trash" label="Delete (coming in R8)" disabled />}
+          {isMine && onEdit && <Row icon="reply" label="Edit" onClick={() => { onClose(); onEdit(); }} />}
+          {isMine && onDelete && <Row icon="trash" label="Delete for everyone" onClick={() => { onClose(); onDelete(); }} destructive />}
         </div>
       </div>
     </div>
   );
 }
 
-function Row({ icon, label, onClick, disabled }: { icon: IcoName; label: string; onClick?: () => void; disabled?: boolean }) {
+function Row({ icon, label, onClick, disabled, destructive }: { icon: IcoName; label: string; onClick?: () => void; disabled?: boolean; destructive?: boolean }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)] disabled:opacity-40"
+      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] active:bg-[var(--color-surface-muted)] disabled:opacity-40"
+      style={{ color: destructive ? 'var(--color-red)' : 'var(--color-text)' }}
     >
-      <Ico name={icon} size={20} color="var(--color-text-muted)" />
+      <Ico name={icon} size={20} color={destructive ? 'var(--color-red)' : 'var(--color-text-muted)'} />
       <span>{label}</span>
     </button>
   );

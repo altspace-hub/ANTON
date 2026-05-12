@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, sweepExpiredInThread, deleteMessage, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -20,6 +20,7 @@ import MessageActionSheet from '../components/MessageActionSheet';
 import VoiceRecorder from '../components/VoiceRecorder';
 import VoicePlayer from '../components/VoicePlayer';
 import DisappearingTimerSheet, { formatTimerLabel } from '../components/DisappearingTimerSheet';
+import ForwardSheet from '../components/ForwardSheet';
 import PollBubble from '../components/PollBubble';
 import PollComposeScreen from './PollComposeScreen';
 import { useLongPress } from '../hooks/useLongPress';
@@ -51,6 +52,10 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [viewingOnce, setViewingOnce] = useState<ChatMessage | null>(null);
   /** R7 — poll-compose overlay visibility */
   const [pollComposing, setPollComposing] = useState(false);
+  /** R8 — text message currently being edited; composer pre-fills its text */
+  const [editingTarget, setEditingTarget] = useState<ChatMessage | null>(null);
+  /** R8 — source message id for the forward picker; null when picker is closed */
+  const [forwardSource, setForwardSource] = useState<ChatMessage | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
@@ -116,15 +121,49 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     setSending(true);
     setError(null);
     try {
-      const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
-      const msg = await sendMessage(peerContactHash, text, replyCtx);
-      setMessages((prev) => [...prev, msg]);
-      setDraft('');
-      setReplyingTo(null);
+      if (editingTarget) {
+        // R8 — edit mode replaces the source bubble's text in place.
+        await sendEdit(peerContactHash, editingTarget.id, text);
+        setEditingTarget(null);
+        setDraft('');
+        setRefreshTick((v) => v + 1);
+      } else {
+        const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
+        const msg = await sendMessage(peerContactHash, text, replyCtx);
+        setMessages((prev) => [...prev, msg]);
+        setDraft('');
+        setReplyingTo(null);
+      }
     } catch (e) {
       setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send'));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleEditStart(target: ChatMessage) {
+    setEditingTarget(target);
+    setDraft(target.plaintext);
+    setReplyingTo(null);
+  }
+
+  async function handleDeleteForEveryone(target: ChatMessage) {
+    try {
+      await sendDeleteForEveryone(peerContactHash, target.id);
+      setRefreshTick((v) => v + 1);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to delete'));
+    }
+  }
+
+  async function handleForwardPick(targetContactHash: string) {
+    const src = forwardSource;
+    setForwardSource(null);
+    if (!src) return;
+    try {
+      await sendForward(src.id, targetContactHash);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to forward'));
     }
   }
 
@@ -306,6 +345,23 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         </div>
       )}
 
+      {editingTarget && (
+        <div className="flex items-center gap-2 px-3 py-2 border-t border-[var(--color-border-soft)] bg-[var(--color-surface-alt)]">
+          <Ico name="reply" size={18} color="var(--color-accent)" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-medium text-[var(--color-accent-dark)]">Editing message</div>
+            <div className="text-xs text-[var(--color-text-muted)] truncate">{editingTarget.plaintext}</div>
+          </div>
+          <button
+            onClick={() => { setEditingTarget(null); setDraft(''); }}
+            aria-label="Cancel edit"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)]"
+          >
+            <Ico name="x" size={18} />
+          </button>
+        </div>
+      )}
+
       <div className="relative flex items-end gap-2 p-3 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]">
         <button
           onClick={() => setAttachmentOpen(true)}
@@ -368,6 +424,21 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onCopy={actionTarget?.kind === 'text' ? () => {
           if (actionTarget) void navigator.clipboard?.writeText(actionTarget.plaintext).catch(() => {});
         } : undefined}
+        onForward={actionTarget && !actionTarget.deletedForEveryone && actionTarget.kind !== 'event_invite'
+          && actionTarget.kind !== 'event_rsvp' && actionTarget.kind !== 'event_cancel'
+          && actionTarget.kind !== 'system_timer_change'
+          ? () => actionTarget && setForwardSource(actionTarget) : undefined}
+        onEdit={actionTarget?.fromHash === me?.contactHash && (actionTarget?.kind ?? 'text') === 'text' && !actionTarget?.deletedForEveryone
+          ? () => actionTarget && void handleEditStart(actionTarget) : undefined}
+        onDelete={actionTarget?.fromHash === me?.contactHash && !actionTarget?.deletedForEveryone
+          ? () => actionTarget && void handleDeleteForEveryone(actionTarget) : undefined}
+      />
+
+      <ForwardSheet
+        open={forwardSource !== null}
+        onClose={() => setForwardSource(null)}
+        excludeContactHash={peerContactHash}
+        onPick={(hash) => void handleForwardPick(hash)}
       />
 
       <DisappearingTimerSheet
@@ -437,6 +508,9 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
   if (message.kind === 'event_cancel')        return <EventCancelBubble message={message} isMine={isMine} time={time} />;
   if (message.kind === 'system_timer_change') return <TimerChangeChip   message={message} isMine={isMine} time={time} />;
 
+  // R8 — delete-for-everyone placeholder (skip long-press too)
+  if (message.deletedForEveryone)             return <DeletedBubble     isMine={isMine} time={time} />;
+
   const wrapperBase = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
 
   let body: JSX.Element;
@@ -468,6 +542,7 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
         {message.replyTo && <ReplyStrip ctx={message.replyTo} isMine={isMine} />}
         <div className="whitespace-pre-wrap break-words">{message.plaintext}</div>
         <div className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1">
+          {message.editedAt && <span className="italic">edited</span>}
           {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
@@ -673,6 +748,25 @@ function EventCancelBubble({ message, isMine, time }: { message: ChatMessage; is
       <span className="px-3 py-1 rounded-full text-xs text-[var(--color-red)] bg-[var(--color-red-dim)]">
         Event canceled · {time}{isMine ? ' (by you)' : ''}
       </span>
+    </div>
+  );
+}
+
+function DeletedBubble({ isMine, time }: { isMine: boolean; time: string }) {
+  return (
+    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[14px] italic ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} flex items-center gap-2`}
+        style={{
+          backgroundColor: 'var(--color-surface-muted)',
+          color: 'var(--color-text-faint)',
+          border: '1px dashed var(--color-border)',
+        }}
+      >
+        <Ico name="trash" size={14} color="var(--color-text-faint)" />
+        <span>Message deleted</span>
+        <time className="ml-2 not-italic text-[10px]">{time}</time>
+      </div>
     </div>
   );
 }
