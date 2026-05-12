@@ -73,10 +73,24 @@ export interface ReactPayload {
   op: 'add' | 'remove';
 }
 
+/** R4 — voice note payload. Audio bytes (base64), MIME, duration, and a
+ *  small waveform array for the bubble player's bars. */
+export interface VoicePayload {
+  /** Base64 (no data-URL prefix) */
+  audio: string;
+  mimeType: string;
+  durationSec: number;
+  /** Per-bucket RMS amplitude in [0, 1], length ≤ 64 */
+  waveform: number[];
+  /** Bytes (decoded) */
+  size: number;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
   | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
+  | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext }
   | { kind: 'react';         data: ReactPayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
@@ -165,10 +179,11 @@ export async function sendStructuredMessage(
 
   const localPlaintext = wire.kind === 'text' ? wire.text : JSON.stringify((wire as { data: unknown }).data);
   // R1 — extract replyTo so the local store has it too (round-trip parity).
-  const replyTo = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video') ? wire.replyTo : undefined;
-  const messageId = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video')
+  const replyTo = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice')
+    ? wire.replyTo : undefined;
+  const messageId = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice')
     ? wire.messageId : undefined;
-  const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video'
+  const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
     ? wire.kind
     : 'text';
@@ -212,6 +227,11 @@ export async function sendImage(peerContactHash: string, payload: MediaPayload, 
 /** Send a video attachment (base64 already in the payload). */
 export async function sendVideo(peerContactHash: string, payload: MediaPayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'video', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/** R4 — Send a voice note (base64 audio + waveform in the payload). */
+export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
 }
 
 // ── R3 — Wassup feed: client-fanout send paths ────────────────────────
@@ -392,6 +412,8 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
     wire = { kind: 'image', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
   } else if (msg.kind === 'video') {
     wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
+  } else if (msg.kind === 'voice') {
+    wire = { kind: 'voice', messageId: msg.id, data: JSON.parse(msg.plaintext) as VoicePayload, replyTo: msg.replyTo };
   } else {
     wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo };
   }
@@ -419,6 +441,9 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'video' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'video', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo };
+      }
+      if (obj.kind === 'voice' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'voice', messageId: id, data: obj.data as VoicePayload, replyTo: obj.replyTo };
       }
       if (obj.kind === 'react' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'react', data: obj.data as ReactPayload };
@@ -510,6 +535,12 @@ export async function applyInboundMessage(
     case 'video':
       plaintext = JSON.stringify(wire.data);
       kind = 'video';
+      messageId = wire.messageId || undefined;
+      replyTo = wire.replyTo;
+      break;
+    case 'voice':
+      plaintext = JSON.stringify(wire.data);
+      kind = 'voice';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
       break;

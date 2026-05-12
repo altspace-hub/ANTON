@@ -38,13 +38,14 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
  *   - 'text'         : plain user text
  *   - 'image'        : plaintext is JSON of MediaPayload (base64 + mime + dims)
  *   - 'video'        : plaintext is JSON of MediaPayload
+ *   - 'voice'        : plaintext is JSON of VoicePayload (R4)
  *   - 'event_invite' : plaintext is JSON of EventInvitePayload (events.ts)
  *   - 'event_rsvp'   : plaintext is JSON of EventRsvpPayload
  *   - 'event_cancel' : plaintext is JSON of EventCancelPayload
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'image' | 'video' | 'event_invite' | 'event_rsvp' | 'event_cancel';
+export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel';
 
 /** R1 — quoted-reply context, attached to text/image/video messages. */
 export interface ReplyContext {

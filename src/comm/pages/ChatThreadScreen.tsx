@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendReaction, ChatError, type MediaPayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, ChatError, type MediaPayload, type VoicePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -13,9 +13,12 @@ import {
   isWithinRelayCap,
   type Capture,
 } from '../services/capture';
+import type { VoiceRecording } from '../services/voice';
 import { Ico, type IcoName } from '../components/Ico';
 import AttachmentSheet from '../components/AttachmentSheet';
 import MessageActionSheet from '../components/MessageActionSheet';
+import VoiceRecorder from '../components/VoiceRecorder';
+import VoicePlayer from '../components/VoicePlayer';
 import { useLongPress } from '../hooks/useLongPress';
 
 interface Props {
@@ -91,6 +94,28 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       setRefreshTick((v) => v + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to react');
+    }
+  }
+
+  async function handleSendVoice(rec: VoiceRecording) {
+    setError(null);
+    setSending(true);
+    try {
+      const payload: VoicePayload = {
+        audio: rec.audio,
+        mimeType: rec.mimeType,
+        durationSec: rec.durationSec,
+        waveform: rec.waveform,
+        size: rec.size,
+      };
+      const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
+      const msg = await sendVoice(peerContactHash, payload, replyCtx);
+      setMessages((prev) => [...prev, msg]);
+      setReplyingTo(null);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send voice'));
+    } finally {
+      setSending(false);
     }
   }
 
@@ -214,7 +239,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-3 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]">
+      <div className="relative flex items-end gap-2 p-3 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]">
         <button
           onClick={() => setAttachmentOpen(true)}
           disabled={sending || !hasPeerKey}
@@ -234,15 +259,23 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           className="flex-1 px-3 py-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-base text-[var(--color-text)] placeholder-[var(--color-text-faint)] resize-none max-h-32 focus:outline-none focus:ring-2"
           style={{ outlineColor: 'var(--color-accent)' }}
         />
-        <button
-          onClick={() => void handleSend()}
-          disabled={sending || draft.trim().length === 0 || !hasPeerKey}
-          aria-label="Send"
-          className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-        >
-          <Ico name="arrowUp" size={20} />
-        </button>
+        {draft.trim().length > 0 ? (
+          <button
+            onClick={() => void handleSend()}
+            disabled={sending || !hasPeerKey}
+            aria-label="Send"
+            className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
+          >
+            <Ico name="arrowUp" size={20} />
+          </button>
+        ) : (
+          <VoiceRecorder
+            onSend={handleSendVoice}
+            onError={setError}
+            disabled={sending || !hasPeerKey}
+          />
+        )}
       </div>
 
       <AttachmentSheet
@@ -280,10 +313,23 @@ function buildReplyContext(msg: ChatMessage): ReplyContext {
 function replySnippetOf(msg: ChatMessage): string {
   if (msg.kind === 'image') return '📷 Photo';
   if (msg.kind === 'video') return '🎬 Video';
+  if (msg.kind === 'voice') {
+    try {
+      const v = JSON.parse(msg.plaintext) as { durationSec?: number };
+      const d = Math.max(1, Math.floor(v.durationSec ?? 0));
+      return `🎙 Voice · ${formatVoiceSnippetDur(d)}`;
+    } catch { return '🎙 Voice'; }
+  }
   if (msg.kind === 'event_invite') return '📅 Event';
   if (msg.kind === 'event_rsvp') return 'RSVP';
   const text = msg.plaintext.replace(/\s+/g, ' ').trim();
   return text.length > 80 ? text.slice(0, 77) + '…' : text;
+}
+
+function formatVoiceSnippetDur(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 interface BubbleProps {
@@ -310,6 +356,8 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHa
     body = <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />;
   } else if (message.kind === 'image' || message.kind === 'video') {
     body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} />;
+  } else if (message.kind === 'voice') {
+    body = <VoiceBubble message={message} isMine={isMine} time={time} />;
   } else {
     body = (
       <div
@@ -434,6 +482,32 @@ function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; is
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function VoiceBubble({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  let payload: VoicePayload | null = null;
+  try { payload = JSON.parse(message.plaintext) as VoicePayload; } catch { /* ignore */ }
+  if (!payload) return null;
+  return (
+    <div
+      className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+      style={{
+        backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
+        color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)',
+        border: isMine ? 'none' : '1px solid var(--color-border-soft)',
+      }}
+    >
+      {message.replyTo && <ReplyStrip ctx={message.replyTo} isMine={isMine} />}
+      <VoicePlayer payload={payload} mine={isMine} />
+      <div
+        className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1"
+        style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}
+      >
+        <time>{time}</time>
+        {isMine && <StatusTick status={message.status} />}
       </div>
     </div>
   );
