@@ -13,15 +13,20 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
 export const STORE_EVENTS = 'events';
+export const STORE_WASSUP_POSTS = 'wassup_posts';
+export const STORE_WASSUP_INTERACTIONS = 'wassup_interactions';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
 export const INDEX_EVT_BY_START = 'by_start';
+export const INDEX_POST_BY_CREATED = 'by_created';
+export const INDEX_POST_BY_EXPIRES = 'by_expires';
+export const INDEX_INT_BY_POST = 'by_post';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -45,6 +50,16 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_EVENTS)) {
         const store = db.createObjectStore(STORE_EVENTS, { keyPath: 'id' });
         store.createIndex(INDEX_EVT_BY_START, 'startAt', { unique: false });
+      }
+      // v4 — Wassup (R3): posts + interactions (likes + comments)
+      if (!db.objectStoreNames.contains(STORE_WASSUP_POSTS)) {
+        const store = db.createObjectStore(STORE_WASSUP_POSTS, { keyPath: 'id' });
+        store.createIndex(INDEX_POST_BY_CREATED, 'createdAt', { unique: false });
+        store.createIndex(INDEX_POST_BY_EXPIRES, 'expiresAt', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(STORE_WASSUP_INTERACTIONS)) {
+        const store = db.createObjectStore(STORE_WASSUP_INTERACTIONS, { keyPath: 'id' });
+        store.createIndex(INDEX_INT_BY_POST, 'postId', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

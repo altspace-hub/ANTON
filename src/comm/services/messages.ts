@@ -46,6 +46,19 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
  */
 export type ContentKind = 'text' | 'image' | 'video' | 'event_invite' | 'event_rsvp' | 'event_cancel';
 
+/** R1 — quoted-reply context, attached to text/image/video messages. */
+export interface ReplyContext {
+  msgId: string;
+  /** Snippet of the original ≤80 chars for display without re-fetching */
+  snippet: string;
+  kind: ContentKind;
+  /** From-hash of the original author (for "Replying to {name}" header) */
+  fromHash: string;
+}
+
+/** R2 — reactions map: emoji → list of contact-hashes who reacted with it. */
+export type ReactionsMap = Record<string, string[]>;
+
 export interface ChatMessage {
   id: string;
   threadHash: string;
@@ -56,6 +69,10 @@ export interface ChatMessage {
   ts: string;
   status: MessageStatus;
   kind?: ContentKind;
+  /** R1 — quoted-reply context if this message was sent as a reply */
+  replyTo?: ReplyContext;
+  /** R2 — reactions on this message (emoji → reactor contact-hashes) */
+  reactions?: ReactionsMap;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
@@ -94,6 +111,8 @@ export async function appendMessage(
     plaintext: input.plaintext,
     status: input.status,
     kind: input.kind ?? 'text',
+    replyTo: input.replyTo,
+    reactions: input.reactions,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -152,6 +171,40 @@ export async function updateStatus(id: string, status: MessageStatus): Promise<v
       store.put(row);
     };
     tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R2 — apply a reaction add/remove from a peer.
+ * Updates the target message's `reactions` map. No-op if the target id
+ * isn't in this device's store (we may have purged it, or never received it).
+ */
+export async function applyReaction(
+  targetMsgId: string,
+  emoji: string,
+  reactorHash: string,
+  op: 'add' | 'remove',
+): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(targetMsgId);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row) { resolve(null); return; }
+      const reactions: ReactionsMap = { ...(row.reactions ?? {}) };
+      const list = reactions[emoji] ? [...reactions[emoji]] : [];
+      const idx = list.indexOf(reactorHash);
+      if (op === 'add' && idx === -1) list.push(reactorHash);
+      if (op === 'remove' && idx >= 0) list.splice(idx, 1);
+      if (list.length > 0) reactions[emoji] = list;
+      else delete reactions[emoji];
+      row.reactions = reactions;
+      store.put(row);
+      resolve(row);
+    };
     tx.onerror = () => reject(tx.error);
   });
 }

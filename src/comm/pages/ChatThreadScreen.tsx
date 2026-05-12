@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { listThread, type ChatMessage } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, ChatError, type MediaPayload } from '../services/chat';
+import { listThread, type ChatMessage, type ReplyContext } from '../services/messages';
+import { sendMessage, sendImage, sendVideo, sendReaction, ChatError, type MediaPayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -15,6 +15,8 @@ import {
 } from '../services/capture';
 import { Ico, type IcoName } from '../components/Ico';
 import AttachmentSheet from '../components/AttachmentSheet';
+import MessageActionSheet from '../components/MessageActionSheet';
+import { useLongPress } from '../hooks/useLongPress';
 
 interface Props {
   peerContactHash: string;
@@ -30,7 +32,13 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
+  /** R1 — message being replied to; clears on send or cancel */
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  /** R1/R2 — message currently selected for actions (long-press target) */
+  const [actionTarget, setActionTarget] = useState<ChatMessage | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  /** Force re-fetch when reactions update so chips re-render. */
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +50,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       })
       .catch(() => { /* swallow — empty state */ });
     return () => { cancelled = true; };
-  }, [peerContactHash]);
+  }, [peerContactHash, refreshTick]);
+
+  // Re-fetch thread every 2s while open — picks up reactions arriving
+  // via the relay client (which writes to IDB directly).
+  useEffect(() => {
+    const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -55,13 +70,27 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     setSending(true);
     setError(null);
     try {
-      const msg = await sendMessage(peerContactHash, text);
+      const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
+      const msg = await sendMessage(peerContactHash, text, replyCtx);
       setMessages((prev) => [...prev, msg]);
       setDraft('');
+      setReplyingTo(null);
     } catch (e) {
       setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send'));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleReaction(target: ChatMessage, emoji: string) {
+    const me = getIdentity();
+    if (!me) return;
+    const alreadyReacted = !!target.reactions?.[emoji]?.includes(me.contactHash);
+    try {
+      await sendReaction(peerContactHash, target.id, emoji, alreadyReacted ? 'remove' : 'add');
+      setRefreshTick((v) => v + 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to react');
     }
   }
 
@@ -141,13 +170,47 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
             </p>
           </div>
         ) : (
-          messages.map((m) => <Bubble key={m.id} message={m} isMine={m.fromHash === me?.contactHash} onOpenEvent={onOpenEvent} />)
+          messages.map((m) => (
+            <Bubble
+              key={m.id}
+              message={m}
+              isMine={m.fromHash === me?.contactHash}
+              onOpenEvent={onOpenEvent}
+              onLongPress={() => setActionTarget(m)}
+              onReactionTap={(emoji) => void handleReaction(m, emoji)}
+              myHash={me?.contactHash}
+            />
+          ))
         )}
       </div>
 
       {error && (
         <div className="px-4 py-2 text-xs text-[var(--color-red)] bg-[var(--color-red-dim)]">
           {error}
+        </div>
+      )}
+
+      {replyingTo && (
+        <div className="flex items-center gap-2 px-3 py-2 border-t border-[var(--color-border-soft)] bg-[var(--color-surface-alt)]">
+          <div
+            className="w-1 h-10 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'var(--color-accent)' }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-medium text-[var(--color-accent-dark)]">
+              Replying to {replyingTo.fromHash === me?.contactHash ? 'yourself' : (contact?.displayName ?? 'them')}
+            </div>
+            <div className="text-xs text-[var(--color-text-muted)] truncate">
+              {replySnippetOf(replyingTo)}
+            </div>
+          </div>
+          <button
+            onClick={() => setReplyingTo(null)}
+            aria-label="Cancel reply"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)]"
+          >
+            <Ico name="x" size={18} />
+          </button>
         </div>
       )}
 
@@ -190,21 +253,65 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onPickVideoCamera={() => void handleAttachment(captureVideoFromCamera)}
         onPickVideoLibrary={() => void handleAttachment(captureVideoFromLibrary)}
       />
+
+      <MessageActionSheet
+        open={actionTarget !== null}
+        onClose={() => setActionTarget(null)}
+        isMine={actionTarget?.fromHash === me?.contactHash}
+        onReact={(emoji) => actionTarget && void handleReaction(actionTarget, emoji)}
+        onReply={() => actionTarget && setReplyingTo(actionTarget)}
+        onCopy={actionTarget?.kind === 'text' ? () => {
+          if (actionTarget) void navigator.clipboard?.writeText(actionTarget.plaintext).catch(() => {});
+        } : undefined}
+      />
     </section>
   );
 }
 
-function Bubble({ message, isMine, onOpenEvent }: { message: ChatMessage; isMine: boolean; onOpenEvent?: (id: string) => void }) {
-  const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+function buildReplyContext(msg: ChatMessage): ReplyContext {
+  return {
+    msgId: msg.id,
+    snippet: replySnippetOf(msg),
+    kind: msg.kind ?? 'text',
+    fromHash: msg.fromHash,
+  };
+}
 
-  if (message.kind === 'event_invite') return <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />;
+function replySnippetOf(msg: ChatMessage): string {
+  if (msg.kind === 'image') return '📷 Photo';
+  if (msg.kind === 'video') return '🎬 Video';
+  if (msg.kind === 'event_invite') return '📅 Event';
+  if (msg.kind === 'event_rsvp') return 'RSVP';
+  const text = msg.plaintext.replace(/\s+/g, ' ').trim();
+  return text.length > 80 ? text.slice(0, 77) + '…' : text;
+}
+
+interface BubbleProps {
+  message: ChatMessage;
+  isMine: boolean;
+  onOpenEvent?: (id: string) => void;
+  onLongPress: () => void;
+  onReactionTap: (emoji: string) => void;
+  myHash?: string;
+}
+
+function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHash }: BubbleProps) {
+  const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const longPress = useLongPress(onLongPress);
+
+  // Bubbles that are non-actionable (rsvp / cancel chips) skip long-press
   if (message.kind === 'event_rsvp')   return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
   if (message.kind === 'event_cancel') return <EventCancelBubble message={message} isMine={isMine} time={time} />;
-  if (message.kind === 'image')        return <MediaBubble       message={message} isMine={isMine} time={time} kind="image" />;
-  if (message.kind === 'video')        return <MediaBubble       message={message} isMine={isMine} time={time} kind="video" />;
 
-  return (
-    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+  const wrapperBase = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+
+  let body: JSX.Element;
+  if (message.kind === 'event_invite') {
+    body = <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />;
+  } else if (message.kind === 'image' || message.kind === 'video') {
+    body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} />;
+  } else {
+    body = (
       <div
         className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[15px] leading-snug ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
         style={{
@@ -213,12 +320,81 @@ function Bubble({ message, isMine, onOpenEvent }: { message: ChatMessage; isMine
           border: isMine ? 'none' : '1px solid var(--color-border-soft)',
         }}
       >
+        {message.replyTo && <ReplyStrip ctx={message.replyTo} isMine={isMine} />}
         <div className="whitespace-pre-wrap break-words">{message.plaintext}</div>
         <div className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1">
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={wrapperBase}>
+      <div
+        className="flex flex-col items-stretch"
+        style={{ alignItems: isMine ? 'flex-end' : 'flex-start', maxWidth: '85%' }}
+        {...longPress}
+      >
+        {body}
+        {message.reactions && Object.keys(message.reactions).length > 0 && (
+          <ReactionChips reactions={message.reactions} myHash={myHash} onTap={onReactionTap} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReplyStrip({ ctx, isMine }: { ctx: ReplyContext; isMine: boolean }) {
+  return (
+    <div
+      className="flex items-stretch gap-2 mb-1.5 -mt-0.5 px-2 py-1.5 rounded-lg"
+      style={{
+        backgroundColor: isMine ? 'rgba(255,255,255,0.18)' : 'var(--color-surface-muted)',
+        borderLeft: `3px solid ${isMine ? 'rgba(255,255,255,0.6)' : 'var(--color-accent)'}`,
+      }}
+    >
+      <div className="flex-1 min-w-0">
+        <div
+          className="text-[11px] font-semibold opacity-80"
+          style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-accent-dark)' }}
+        >
+          Reply
+        </div>
+        <div className="text-xs opacity-90 truncate" style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}>
+          {ctx.snippet}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReactionChips({ reactions, myHash, onTap }: {
+  reactions: Record<string, string[]>;
+  myHash?: string;
+  onTap: (emoji: string) => void;
+}) {
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {Object.entries(reactions).map(([emoji, hashes]) => {
+        const mine = !!myHash && hashes.includes(myHash);
+        return (
+          <button
+            key={emoji}
+            onClick={(e) => { e.stopPropagation(); onTap(emoji); }}
+            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[12px] border"
+            style={{
+              backgroundColor: mine ? 'var(--color-accent-dim)' : 'var(--color-surface)',
+              borderColor: mine ? 'var(--color-accent)' : 'var(--color-border-soft)',
+              color: 'var(--color-text)',
+            }}
+          >
+            <span>{emoji}</span>
+            <span className="font-medium text-[11px] text-[var(--color-text-muted)]">{hashes.length}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

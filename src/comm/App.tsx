@@ -9,6 +9,9 @@ import EventCreateScreen from './pages/EventCreateScreen';
 import EventDetailScreen from './pages/EventDetailScreen';
 import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
 import PortalDetailScreen from './pages/PortalDetailScreen';
+import WassupFeedScreen from './pages/WassupFeedScreen';
+import WassupComposeScreen from './pages/WassupComposeScreen';
+import WassupPostDetailScreen from './pages/WassupPostDetailScreen';
 import WalletScreen from './pages/WalletScreen';
 import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
@@ -30,7 +33,9 @@ type View =
   | 'chat-thread'
   | 'event-create'
   | 'event-detail'
-  | 'portal-detail';
+  | 'portal-detail'
+  | 'wassup-compose'
+  | 'wassup-post';
 
 export default function App() {
   const [view, setView] = useState<View>(hasIdentity() ? 'tabs' : 'onboarding');
@@ -41,6 +46,8 @@ export default function App() {
   const [openChatHash, setOpenChatHash] = useState<string | null>(null);
   const [openEventId, setOpenEventId] = useState<string | null>(null);
   const [openPortalAddress, setOpenPortalAddress] = useState<string | null>(null);
+  const [openPostId, setOpenPostId] = useState<string | null>(null);
+  const [wassupVersion, setWassupVersion] = useState(0);
 
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
@@ -54,6 +61,8 @@ export default function App() {
       if (view === 'event-detail') { setOpenEventId(null); setView('tabs'); return 'handled'; }
       if (view === 'portal-detail') { setOpenPortalAddress(null); setView('tabs'); return 'handled'; }
       if (view === 'event-create') { setView('tabs'); return 'handled'; }
+      if (view === 'wassup-compose') { setView('tabs'); return 'handled'; }
+      if (view === 'wassup-post') { setOpenPostId(null); setView('tabs'); return 'handled'; }
       if (view === 'add-contact') { setView('tabs'); return 'handled'; }
       if (view === 'profile') { setView('tabs'); return 'handled'; }
       // At root tabs — if not on chat, bounce to chat first; else exit
@@ -70,6 +79,7 @@ export default function App() {
       onMessage: () => {
         setContactsVersion((v) => v + 1);
         setEventsVersion((v) => v + 1);
+        setWassupVersion((v) => v + 1);
       },
     });
     return () => stopRelayClient();
@@ -157,6 +167,32 @@ export default function App() {
     );
   }
 
+  if (view === 'wassup-compose') {
+    return (
+      <WassupComposeScreen
+        onCancel={() => setView('tabs')}
+        onPosted={() => {
+          setWassupVersion((v) => v + 1);
+          setView('tabs');
+          setActiveTab('wassup');
+        }}
+      />
+    );
+  }
+
+  if (view === 'wassup-post' && openPostId) {
+    return (
+      <WassupPostDetailScreen
+        postId={openPostId}
+        onBack={() => {
+          setWassupVersion((v) => v + 1);
+          setOpenPostId(null);
+          setView('tabs');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-dvh bg-[var(--color-bg)] text-[var(--color-text)]">
       <TopBar onProfile={() => setView('profile')} />
@@ -166,6 +202,13 @@ export default function App() {
             refreshKey={contactsVersion}
             onAddContact={() => setView('add-contact')}
             onOpenChat={(hash) => { setOpenChatHash(hash); setView('chat-thread'); }}
+          />
+        )}
+        {activeTab === 'wassup' && (
+          <WassupFeedScreen
+            refreshKey={wassupVersion}
+            onCompose={() => setView('wassup-compose')}
+            onOpenPost={(id) => { setOpenPostId(id); setView('wassup-post'); }}
           />
         )}
         {activeTab === 'events' && (

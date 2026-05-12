@@ -13,9 +13,9 @@
  */
 
 import { getIdentity } from './identity';
-import { getContact } from './contacts';
+import { getContact, listContacts } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, type ChatMessage, type ContentKind } from './messages';
+import { appendMessage, applyReaction, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
@@ -24,6 +24,25 @@ import {
   type EventRsvpPayload,
   type EventCancelPayload,
 } from './events';
+import {
+  applyInboundPost,
+  applyInboundLike,
+  applyInboundComment,
+  applyInboundDelete,
+  putPost,
+  type WassupPostWire,
+  type WassupLikeWire,
+  type WassupCommentWire,
+  type WassupDeleteWire,
+  type WassupMedia,
+  defaultExpiryFromNow,
+  generatePostId,
+  putInteraction,
+  generateInteractionId,
+  refreshPostCounters,
+  removeLike,
+  hasLiked,
+} from './wassup';
 
 // ── Wire payload — JSON-tagged envelope inside the encrypted ciphertext ──
 //
@@ -45,13 +64,27 @@ export interface MediaPayload {
   caption?: string;
 }
 
+/** R2 — emoji reaction payload (does NOT carry messageId; doesn't itself
+ *  produce a visible message — it just mutates the target message's
+ *  reactions map). */
+export interface ReactPayload {
+  targetMsgId: string;
+  emoji: string;
+  op: 'add' | 'remove';
+}
+
 export type WirePayload =
-  | { kind: 'text'; text: string }
-  | { kind: 'image'; data: MediaPayload }
-  | { kind: 'video'; data: MediaPayload }
-  | { kind: 'event_invite'; data: EventInvitePayload }
-  | { kind: 'event_rsvp'; data: EventRsvpPayload }
-  | { kind: 'event_cancel'; data: EventCancelPayload };
+  | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext }
+  | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
+  | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
+  | { kind: 'react';         data: ReactPayload }
+  | { kind: 'event_invite';  data: EventInvitePayload }
+  | { kind: 'event_rsvp';    data: EventRsvpPayload }
+  | { kind: 'event_cancel';  data: EventCancelPayload }
+  | { kind: 'wassup_post';   data: WassupPostWire }
+  | { kind: 'wassup_like';   data: WassupLikeWire }
+  | { kind: 'wassup_comment'; data: WassupCommentWire }
+  | { kind: 'wassup_delete'; data: WassupDeleteWire };
 
 export class ChatError extends Error {
   constructor(message: string, public readonly code: string) {
@@ -64,12 +97,31 @@ export class ChatError extends Error {
  * Send a plaintext text message to a peer. Convenience wrapper for the
  * default kind='text' case. Encrypts with the peer's X25519 key, stores
  * locally as status='queued', kicks the relay client to flush.
+ *
+ * R1: optional `replyTo` to send as a quoted reply to a prior message.
  */
 export async function sendMessage(
   peerContactHash: string,
   plaintext: string,
+  replyTo?: ReplyContext,
 ): Promise<ChatMessage> {
-  return sendStructuredMessage(peerContactHash, { kind: 'text', text: plaintext });
+  const messageId = generateMsgId();
+  return sendStructuredMessage(peerContactHash, { kind: 'text', messageId, text: plaintext, replyTo });
+}
+
+/** Generate an explicit message id that travels on the wire. Both sender
+ *  and recipient use the same id to refer to the same message (required
+ *  for R1 reply lookups and R2 reaction targeting). */
+function generateMsgId(): string {
+  const ts = Date.now();
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let prefix = '';
+  let n = ts;
+  for (let i = 0; i < 10; i++) { prefix = CHARS[n & 31] + prefix; n = Math.floor(n / 32); }
+  const rnd = crypto.getRandomValues(new Uint8Array(10));
+  let suffix = '';
+  for (let i = 0; i < 10; i++) suffix += CHARS[rnd[i] & 31];
+  return prefix + suffix;
 }
 
 /**
@@ -102,15 +154,34 @@ export async function sendStructuredMessage(
   const envelope = await sealForPeer(wireJson, contact.publicKeyHex, me.contactHash, peerContactHash);
   void envelope;
 
-  const localPlaintext = wire.kind === 'text' ? wire.text : JSON.stringify(wire.data);
+  // Wassup wire payloads don't create visible chat messages and don't go
+  // through this path. publishWassupPost / toggleWassupLike / postWassupComment
+  // bypass sendStructuredMessage and send inline via the relay client.
+  if (wire.kind === 'wassup_post' || wire.kind === 'wassup_like'
+      || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
+      || wire.kind === 'react') {
+    throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
+  }
+
+  const localPlaintext = wire.kind === 'text' ? wire.text : JSON.stringify((wire as { data: unknown }).data);
+  // R1 — extract replyTo so the local store has it too (round-trip parity).
+  const replyTo = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video') ? wire.replyTo : undefined;
+  const messageId = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video')
+    ? wire.messageId : undefined;
+  const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video'
+    || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
+    ? wire.kind
+    : 'text';
   const message = await appendMessage({
+    id: messageId,
     threadHash: peerContactHash,
     fromHash: me.contactHash,
     toHash: peerContactHash,
     direction: 'out',
     plaintext: localPlaintext,
     status: 'queued',
-    kind: wire.kind,
+    kind,
+    replyTo,
   });
 
   void getRelayClient()?.flushOutbox();
@@ -134,13 +205,168 @@ export async function sendEventCancel(toHash: string, payload: EventCancelPayloa
 }
 
 /** Send an image attachment (base64 already in the payload). */
-export async function sendImage(peerContactHash: string, payload: MediaPayload): Promise<ChatMessage> {
-  return sendStructuredMessage(peerContactHash, { kind: 'image', data: payload });
+export async function sendImage(peerContactHash: string, payload: MediaPayload, replyTo?: ReplyContext): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'image', messageId: generateMsgId(), data: payload, replyTo });
 }
 
 /** Send a video attachment (base64 already in the payload). */
-export async function sendVideo(peerContactHash: string, payload: MediaPayload): Promise<ChatMessage> {
-  return sendStructuredMessage(peerContactHash, { kind: 'video', data: payload });
+export async function sendVideo(peerContactHash: string, payload: MediaPayload, replyTo?: ReplyContext): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'video', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+// ── R3 — Wassup feed: client-fanout send paths ────────────────────────
+
+const WASSUP_MAX_RECIPIENTS = 256;
+
+/**
+ * Publish a Wassup post: persist locally, then fan out a wassup_post
+ * payload to every contact that has a public key. Audience defaults to
+ * all contacts (v1 — circles deferred).
+ */
+export async function publishWassupPost(input: { text: string; image?: WassupMedia }): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+
+  const postId = generatePostId();
+  const createdAt = new Date().toISOString();
+  const expiresAt = defaultExpiryFromNow();
+  const wire: WassupPostWire = {
+    postId,
+    authorHash: me.contactHash,
+    authorName: me.displayName,
+    text: input.text,
+    image: input.image,
+    createdAt,
+    expiresAt,
+  };
+
+  // Persist locally first so the feed updates instantly
+  await putPost({
+    id: postId,
+    authorHash: me.contactHash,
+    authorName: me.displayName,
+    text: input.text,
+    image: input.image,
+    createdAt,
+    expiresAt,
+    likeCount: 0,
+    commentCount: 0,
+  });
+
+  // Fan out to all contacts with a known publicKey
+  const contacts = (await listContacts()).filter(c => !!c.publicKeyHex).slice(0, WASSUP_MAX_RECIPIENTS);
+  const wireJson = JSON.stringify({ kind: 'wassup_post', data: wire });
+
+  await Promise.all(contacts.map(async (c) => {
+    try {
+      const client = getRelayClient();
+      if (client) await client.sendInlinePayload(c.contactHash, wireJson);
+    } catch (err) {
+      console.warn('[wassup] post fanout failed for', c.contactHash, err);
+    }
+  }));
+}
+
+/** Toggle like on a post: write locally + notify the post's author (only). */
+export async function toggleWassupLike(post: { id: string; authorHash: string }): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+
+  const already = await hasLiked(post.id, me.contactHash);
+  const op: 'add' | 'remove' = already ? 'remove' : 'add';
+
+  // Apply locally for instant feedback
+  if (op === 'add') {
+    await putInteraction({
+      id: generateInteractionId(),
+      postId: post.id,
+      kind: 'like',
+      fromHash: me.contactHash,
+      fromName: me.displayName,
+      ts: new Date().toISOString(),
+    });
+  } else {
+    await removeLike(post.id, me.contactHash);
+  }
+  await refreshPostCounters(post.id);
+
+  // Notify the author only (likes don't fan out to the whole audience —
+  // per the design spec, author re-broadcasts counts periodically). v1
+  // skips the meta re-broadcast.
+  if (post.authorHash === me.contactHash) return; // own post
+  const wire: WassupLikeWire = {
+    postId: post.id,
+    reactorHash: me.contactHash,
+    reactorName: me.displayName,
+    op,
+  };
+  const wireJson = JSON.stringify({ kind: 'wassup_like', data: wire });
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(post.authorHash, wireJson);
+}
+
+/** Post a comment on a post: write locally + notify the post's author. */
+export async function postWassupComment(post: { id: string; authorHash: string }, text: string): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+
+  const ts = new Date().toISOString();
+  await putInteraction({
+    id: generateInteractionId(),
+    postId: post.id,
+    kind: 'comment',
+    fromHash: me.contactHash,
+    fromName: me.displayName,
+    text,
+    ts,
+  });
+  await refreshPostCounters(post.id);
+
+  if (post.authorHash === me.contactHash) return;
+  const wire: WassupCommentWire = {
+    postId: post.id,
+    commenterHash: me.contactHash,
+    commenterName: me.displayName,
+    text,
+    ts,
+  };
+  const wireJson = JSON.stringify({ kind: 'wassup_comment', data: wire });
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(post.authorHash, wireJson);
+}
+
+/**
+ * R2 — send an emoji reaction to a target message. The reaction does NOT
+ * appear as a visible message on either side; it mutates the target
+ * message's `reactions` map locally and is sent to the peer so they can
+ * mutate their copy too.
+ */
+export async function sendReaction(
+  peerContactHash: string,
+  targetMsgId: string,
+  emoji: string,
+  op: 'add' | 'remove',
+): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) throw new ChatError('No peer key', 'NO_PEER_KEY');
+
+  // Apply locally first so the UI updates instantly
+  await applyReaction(targetMsgId, emoji, me.contactHash, op);
+
+  const wire: WirePayload = { kind: 'react', data: { targetMsgId, emoji, op } };
+  const wireJson = JSON.stringify(wire);
+  const envelope = await sealForPeer(wireJson, contact.publicKeyHex, me.contactHash, peerContactHash);
+  // Reactions go over the wire but we don't persist them as visible
+  // messages. The relay-client transport flushes outbound envelopes,
+  // not ChatMessage records — so we need an alternative path here: send
+  // it inline via the relay client (the transport will deliver from its
+  // queue if open, otherwise drop). For v1, send through the live
+  // connection only — reactions don't queue if offline.
+  void envelope;
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, wireJson);
 }
 
 /**
@@ -163,11 +389,11 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
   } else if (msg.kind === 'event_cancel') {
     wire = { kind: 'event_cancel', data: JSON.parse(msg.plaintext) as EventCancelPayload };
   } else if (msg.kind === 'image') {
-    wire = { kind: 'image', data: JSON.parse(msg.plaintext) as MediaPayload };
+    wire = { kind: 'image', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
   } else if (msg.kind === 'video') {
-    wire = { kind: 'video', data: JSON.parse(msg.plaintext) as MediaPayload };
+    wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
   } else {
-    wire = { kind: 'text', text: msg.plaintext };
+    wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo };
   }
   const wireJson = JSON.stringify(wire);
   return sealForPeer(wireJson, peer.publicKeyHex, me.contactHash, msg.toHash);
@@ -182,31 +408,47 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
  */
 export function parseWirePayload(raw: string): WirePayload {
   try {
-    const obj = JSON.parse(raw) as Partial<WirePayload>;
-    if (obj && typeof obj === 'object' && 'kind' in obj) {
-      if (obj.kind === 'text' && typeof (obj as { text?: unknown }).text === 'string') {
-        return { kind: 'text', text: (obj as { text: string }).text };
+    const obj = JSON.parse(raw) as { kind?: string; text?: string; data?: unknown; messageId?: string; replyTo?: ReplyContext };
+    if (obj && typeof obj === 'object' && obj.kind) {
+      const id = obj.messageId ?? '';
+      if (obj.kind === 'text' && typeof obj.text === 'string') {
+        return { kind: 'text', messageId: id, text: obj.text, replyTo: obj.replyTo };
       }
-      if (obj.kind === 'event_invite' && typeof (obj as { data?: unknown }).data === 'object') {
-        return { kind: 'event_invite', data: (obj as { data: EventInvitePayload }).data };
+      if (obj.kind === 'image' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'image', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo };
       }
-      if (obj.kind === 'event_rsvp' && typeof (obj as { data?: unknown }).data === 'object') {
-        return { kind: 'event_rsvp', data: (obj as { data: EventRsvpPayload }).data };
+      if (obj.kind === 'video' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'video', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo };
       }
-      if (obj.kind === 'event_cancel' && typeof (obj as { data?: unknown }).data === 'object') {
-        return { kind: 'event_cancel', data: (obj as { data: EventCancelPayload }).data };
+      if (obj.kind === 'react' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'react', data: obj.data as ReactPayload };
       }
-      if (obj.kind === 'image' && typeof (obj as { data?: unknown }).data === 'object') {
-        return { kind: 'image', data: (obj as { data: MediaPayload }).data };
+      if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_invite', data: obj.data as EventInvitePayload };
       }
-      if (obj.kind === 'video' && typeof (obj as { data?: unknown }).data === 'object') {
-        return { kind: 'video', data: (obj as { data: MediaPayload }).data };
+      if (obj.kind === 'event_rsvp' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_rsvp', data: obj.data as EventRsvpPayload };
+      }
+      if (obj.kind === 'event_cancel' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_cancel', data: obj.data as EventCancelPayload };
+      }
+      if (obj.kind === 'wassup_post' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'wassup_post', data: obj.data as WassupPostWire };
+      }
+      if (obj.kind === 'wassup_like' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'wassup_like', data: obj.data as WassupLikeWire };
+      }
+      if (obj.kind === 'wassup_comment' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'wassup_comment', data: obj.data as WassupCommentWire };
+      }
+      if (obj.kind === 'wassup_delete' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'wassup_delete', data: obj.data as WassupDeleteWire };
       }
     }
   } catch {
     /* fall through */
   }
-  return { kind: 'text', text: raw };
+  return { kind: 'text', messageId: '', text: raw };
 }
 
 /**
@@ -221,12 +463,29 @@ export async function applyInboundMessage(
   const me = getIdentity();
   if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
 
+  // R2 — reactions don't create a visible message; just mutate the target.
+  if (wire.kind === 'react') {
+    await applyReaction(wire.data.targetMsgId, wire.data.emoji, fromHash, wire.data.op);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R3 — Wassup feed messages don't appear in the chat thread; they
+  // update the feed store + interactions.
+  if (wire.kind === 'wassup_post')    { await applyInboundPost(wire.data);    return { kind: 'text', threadHash: fromHash }; }
+  if (wire.kind === 'wassup_like')    { await applyInboundLike(wire.data);    return { kind: 'text', threadHash: fromHash }; }
+  if (wire.kind === 'wassup_comment') { await applyInboundComment(wire.data); return { kind: 'text', threadHash: fromHash }; }
+  if (wire.kind === 'wassup_delete')  { await applyInboundDelete(wire.data);  return { kind: 'text', threadHash: fromHash }; }
+
   let plaintext: string;
   let kind: ContentKind;
+  let messageId: string | undefined;
+  let replyTo: ReplyContext | undefined;
   switch (wire.kind) {
     case 'text':
       plaintext = wire.text;
       kind = 'text';
+      messageId = wire.messageId || undefined;
+      replyTo = wire.replyTo;
       break;
     case 'event_invite':
       await applyInboundInvite(wire.data, fromHash);
@@ -245,13 +504,18 @@ export async function applyInboundMessage(
     case 'image':
       plaintext = JSON.stringify(wire.data);
       kind = 'image';
+      messageId = wire.messageId || undefined;
+      replyTo = wire.replyTo;
       break;
     case 'video':
       plaintext = JSON.stringify(wire.data);
       kind = 'video';
+      messageId = wire.messageId || undefined;
+      replyTo = wire.replyTo;
       break;
   }
   await appendMessage({
+    id: messageId,
     threadHash: fromHash,
     fromHash,
     toHash: me.contactHash,
@@ -259,6 +523,7 @@ export async function applyInboundMessage(
     plaintext,
     status: 'received',
     kind,
+    replyTo,
   });
   return { kind, threadHash: fromHash };
 }

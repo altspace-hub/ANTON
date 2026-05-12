@@ -18,8 +18,9 @@ import { getSecure } from './secure-store';
 import { getIdentity, deriveRoutingId } from './identity';
 import { listContacts } from './contacts';
 import { listQueued, updateStatus } from './messages';
-import { openFromPeer, type EncryptedEnvelope } from './crypto';
+import { openFromPeer, sealForPeer, type EncryptedEnvelope } from './crypto';
 import { sealForPeerFromQueued, applyInboundMessage, parseWirePayload } from './chat';
+import { getContact } from './contacts';
 
 ed25519.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed25519.etc.concatBytes(...m));
 
@@ -148,6 +149,31 @@ export class RelayClient {
   }
 
   getStatus(): RelayStatus { return this.status; }
+
+  /**
+   * Send a one-shot wire payload to a peer without persisting it as a
+   * ChatMessage. Used for ephemeral signals (R2 reactions, future R9
+   * read receipts + typing indicators). Returns silently if the connection
+   * isn't open — these signals are best-effort.
+   */
+  async sendInlinePayload(peerContactHash: string, wireJson: string): Promise<void> {
+    if (this.status !== 'open' || !this.sessionId) return;
+    const me = getIdentity();
+    if (!me) return;
+    const peer = await getContact(peerContactHash);
+    if (!peer?.publicKeyHex) return;
+
+    const envelope = await sealForPeer(wireJson, peer.publicKeyHex, me.contactHash, peerContactHash);
+    const ephemeralMsgId = `inline-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const targetRoutingId = (await import('./identity')).deriveRoutingId(peer.publicKeyHex);
+    const ciphertext = new TextEncoder().encode(JSON.stringify(envelope));
+    const payload = new Uint8Array(16 + 16 + 16 + ciphertext.length);
+    payload.set(this.sessionId, 0);
+    payload.set(targetRoutingId, 16);
+    payload.set(messageIdToBytesInline(ephemeralMsgId), 32);
+    payload.set(ciphertext, 48);
+    this.send(TYPE_SEND_COMM, payload);
+  }
 
   // ── Internals ────────────────────────────────────────────────────────
 
@@ -380,6 +406,10 @@ function decodeEnvelopeFromBytes(bytes: Uint8Array): EncryptedEnvelope {
 function messageIdToBytes(idStr: string): Uint8Array {
   // The IDB id is a base32-ish 20-char string. We hash it to a stable 16-byte
   // ID for the relay wire (the relay just echoes it; no semantic meaning).
+  return sha256(new TextEncoder().encode(idStr)).slice(0, 16);
+}
+
+function messageIdToBytesInline(idStr: string): Uint8Array {
   return sha256(new TextEncoder().encode(idStr)).slice(0, 16);
 }
 

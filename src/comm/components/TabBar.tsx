@@ -1,11 +1,12 @@
 import { Ico, type IcoName } from './Ico';
 
-export type TabId = 'chat' | 'events' | 'portals' | 'wallet';
+export type TabId = 'chat' | 'wassup' | 'events' | 'portals' | 'wallet';
 
 type Tab = { id: TabId; label: string; icon: IcoName };
 
 const TABS: Tab[] = [
   { id: 'chat',    label: 'Chat',    icon: 'message'  },
+  { id: 'wassup',  label: 'Wassup',  icon: 'sparkles' },
   { id: 'events',  label: 'Events',  icon: 'calendar' },
   { id: 'portals', label: 'Portals', icon: 'grid'     },
   { id: 'wallet',  label: 'Wallet',  icon: 'wallet'   },
