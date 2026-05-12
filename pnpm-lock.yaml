@@ -38,6 +38,9 @@ importers:
       '@capacitor/core':
         specifier: ^8.3.0
         version: 8.3.1
+      '@capacitor/geolocation':
+        specifier: ^8.2.0
+        version: 8.2.0(@capacitor/core@8.3.1)
       '@capacitor/haptics':
         specifier: ^8.0.1
         version: 8.0.2(@capacitor/core@8.3.1)
@@ -1119,6 +1122,11 @@ packages:
   '@capacitor/core@8.3.1':
     resolution: {integrity: sha512-UF8ItlHguU1Z6GXfPTeT2gakf+ctNI8pAS1kwSBQlsJMlfD4OPoto/SmKnOxKCQvnF4WRcdWeg6C0zREUNaAQg==}
 
+  '@capacitor/geolocation@8.2.0':
+    resolution: {integrity: sha512-N29QcoIPmme0xSxRkm7+3hjoHp6mBAOarxecvtCCZKyOBeKiJsFUq981cezg2XWBa6fhCXJMCCjQPngKK/dIag==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/haptics@8.0.2':
     resolution: {integrity: sha512-c2hZzRR5Fk1tbTvhG1jhh2XBAf3EhnIerMIb2sl7Mt41Gxx1fhBJFDa0/BI1IbY4loVepyyuqNC9820/GZuoWQ==}
     peerDependencies:
@@ -1163,6 +1171,9 @@ packages:
     resolution: {integrity: sha512-OR59dlbwvmrV5dKsC9lvwv48QaGbqcbSTBpk+9/WXWxXYSdXXdzJZU9p8oyNPAkuJhCdnSa3XmU43fZRPBJJ5w==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
 
   '@capgo/capacitor-native-biometric@8.4.2':
     resolution: {integrity: sha512-mue8KmjtOO3l4vymwM34tHGt6NVg0Wg3GqdOPsjqoFAGrZC+tRPa4Xzn5n0B2XzDtAeMtfynxSJOhl8l1c2X0Q==}
@@ -9018,6 +9029,11 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@capacitor/geolocation@8.2.0(@capacitor/core@8.3.1)':
+    dependencies:
+      '@capacitor/core': 8.3.1
+      '@capacitor/synapse': 1.0.4
+
   '@capacitor/haptics@8.0.2(@capacitor/core@8.3.1)':
     dependencies:
       '@capacitor/core': 8.3.1
@@ -9053,6 +9069,8 @@ snapshots:
   '@capacitor/status-bar@8.0.1(@capacitor/core@8.3.1)':
     dependencies:
       '@capacitor/core': 8.3.1
+
+  '@capacitor/synapse@1.0.4': {}
 
   '@capgo/capacitor-native-biometric@8.4.2(@capacitor/core@8.3.1)':
     dependencies:
