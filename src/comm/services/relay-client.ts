@@ -93,6 +93,7 @@ export class RelayClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private explicitClose = false;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
+  private scheduleFlushTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private cfg: RelayClientConfig) {}
 
@@ -124,6 +125,7 @@ export class RelayClient {
     this.explicitClose = true;
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
+    if (this.scheduleFlushTimer) { clearInterval(this.scheduleFlushTimer); this.scheduleFlushTimer = null; }
     this.setStatus('closing');
     try { this.ws?.close(); } catch { /* ignore */ }
     this.ws = null;
@@ -135,7 +137,10 @@ export class RelayClient {
   async flushOutbox(): Promise<void> {
     if (this.status !== 'open' || !this.sessionId) return;
     const queued = await listQueued();
+    const nowIso = new Date().toISOString();
     for (const msg of queued) {
+      // R10 — scheduled-for-future messages stay queued until their time.
+      if (msg.scheduledFor && msg.scheduledFor > nowIso) continue;
       try {
         const env = await sealForPeerFromQueued(msg);
         if (!env) continue; // peer key missing; leave queued
@@ -302,6 +307,10 @@ export class RelayClient {
     // Start a 30s ping to keep NAT mappings warm.
     if (this.pingTimer) clearInterval(this.pingTimer);
     this.pingTimer = setInterval(() => this.send(TYPE_PING, new Uint8Array(0)), 30_000);
+    // R10 — flush every 20s so scheduled-for-future messages auto-send
+    // once their time passes. flushOutbox itself filters by scheduledFor.
+    if (this.scheduleFlushTimer) clearInterval(this.scheduleFlushTimer);
+    this.scheduleFlushTimer = setInterval(() => void this.flushOutbox(), 20_000);
     void this.flushOutbox();
   }
 

@@ -87,6 +87,10 @@ export interface ChatMessage {
   /** R8 — set by delete-for-everyone. plaintext is cleared; reactions /
    *  replyTo are dropped so the placeholder renders cleanly. */
   deletedForEveryone?: boolean;
+  /** R10 — ISO timestamp when a queued message should be released to the
+   *  transport. While `scheduledFor > now`, the relay client's flush
+   *  skips this row; once the time arrives, the next flush picks it up. */
+  scheduledFor?: string;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
@@ -131,6 +135,7 @@ export async function appendMessage(
     viewed: input.viewed,
     editedAt: input.editedAt,
     deletedForEveryone: input.deletedForEveryone,
+    scheduledFor: input.scheduledFor,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -295,6 +300,39 @@ export async function applyPollVote(
       else votes[voterHash] = optionIdx.slice();
       parsed.votes = votes;
       row.plaintext = JSON.stringify(parsed);
+      store.put(row);
+      resolve(row);
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R10 — list pending scheduled messages for a thread (scheduledFor > now,
+ * status='queued'). Used by the badge + Scheduled list sheet.
+ */
+export async function listScheduled(threadHash: string): Promise<ChatMessage[]> {
+  const all = await listThread(threadHash);
+  const now = new Date().toISOString();
+  return all.filter((m) => m.scheduledFor && m.scheduledFor > now && m.status === 'queued');
+}
+
+/** R10 — cancel a scheduled send by deleting the row from the queue. */
+export async function cancelScheduled(id: string): Promise<void> {
+  return deleteMessage(id);
+}
+
+/** R10 — change the scheduledFor on a pending scheduled message. */
+export async function rescheduleMessage(id: string, newScheduledFor: string): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row || row.status !== 'queued') { resolve(null); return; }
+      row.scheduledFor = newScheduledFor;
       store.put(row);
       resolve(row);
     };

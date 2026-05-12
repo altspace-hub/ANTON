@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { listThread, sweepExpiredInThread, deleteMessage, type ChatMessage, type ReplyContext } from '../services/messages';
+import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type ChatMessage, type ReplyContext } from '../services/messages';
 import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
@@ -21,6 +21,8 @@ import VoiceRecorder from '../components/VoiceRecorder';
 import VoicePlayer from '../components/VoicePlayer';
 import DisappearingTimerSheet, { formatTimerLabel } from '../components/DisappearingTimerSheet';
 import ForwardSheet from '../components/ForwardSheet';
+import ScheduleSheet from '../components/ScheduleSheet';
+import ScheduledListSheet from '../components/ScheduledListSheet';
 import PollBubble from '../components/PollBubble';
 import PollComposeScreen from './PollComposeScreen';
 import { useLongPress } from '../hooks/useLongPress';
@@ -63,6 +65,17 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** R9 — auto-clear inbound typing if the sender never sends a stop ping. */
   const peerTypingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** R10 — schedule UI state */
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduledListOpen, setScheduledListOpen] = useState(false);
+  const [scheduledCount, setScheduledCount] = useState(0);
+  /** R10 — when set, we're scheduling rather than sending immediately. */
+  const [reschedulingTarget, setReschedulingTarget] = useState<ChatMessage | null>(null);
+  /** R10 — long-press send menu visibility */
+  const [sendMenuOpen, setSendMenuOpen] = useState(false);
+  /** R10 — true for ~400ms after a long-press fires, so the subsequent
+   *  click on the send button doesn't ALSO trigger an immediate send. */
+  const justLongPressedRef = useRef(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
@@ -101,6 +114,11 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       }
     });
   }, [peerContactHash]);
+
+  // R10 — refresh scheduled count whenever the thread refreshes
+  useEffect(() => {
+    void listScheduled(peerContactHash).then((rows) => setScheduledCount(rows.length)).catch(() => setScheduledCount(0));
+  }, [peerContactHash, refreshTick]);
 
   // R9 — fire a read receipt when we open the thread or get a new inbound message
   useEffect(() => {
@@ -142,7 +160,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  async function handleSend() {
+  async function handleSend(scheduledFor?: string) {
     const text = draft.trim();
     if (!text || sending) return;
     setSending(true);
@@ -156,8 +174,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         setRefreshTick((v) => v + 1);
       } else {
         const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
-        const msg = await sendMessage(peerContactHash, text, replyCtx);
-        setMessages((prev) => [...prev, msg]);
+        const msg = await sendMessage(peerContactHash, text, replyCtx, scheduledFor);
+        if (!scheduledFor) {
+          // Immediate send: append to live bubble flow
+          setMessages((prev) => [...prev, msg]);
+        } else {
+          // R10 — scheduled: increment badge instead of cluttering the bubble list
+          setScheduledCount((c) => c + 1);
+        }
         setDraft('');
         setReplyingTo(null);
       }
@@ -166,6 +190,18 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleScheduleApply(iso: string) {
+    if (reschedulingTarget) {
+      // R10 — moving an existing scheduled message to a new time
+      const { rescheduleMessage } = await import('../services/messages');
+      await rescheduleMessage(reschedulingTarget.id, iso);
+      setReschedulingTarget(null);
+      setRefreshTick((v) => v + 1);
+      return;
+    }
+    await handleSend(iso);
   }
 
   /**
@@ -358,27 +394,34 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         ref={scrollerRef}
         className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
       >
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-[var(--color-text-faint)] text-center max-w-xs">
-              Start the conversation — messages here are end-to-end encrypted.
-            </p>
-          </div>
-        ) : (
-          messages.map((m) => (
-            <Bubble
-              key={m.id}
-              message={m}
-              isMine={m.fromHash === me?.contactHash}
-              onOpenEvent={onOpenEvent}
-              onLongPress={() => setActionTarget(m)}
-              onReactionTap={(emoji) => void handleReaction(m, emoji)}
-              onOpenViewOnce={(msg) => setViewingOnce(msg)}
-              onPollVote={(pollId, optionIdx) => void handlePollVote(pollId, optionIdx)}
-              myHash={me?.contactHash}
-            />
-          ))
-        )}
+        {(() => {
+          // R10 — hide scheduled-for-future messages from the bubble flow.
+          // They live in the "Scheduled (N)" sheet instead.
+          const visibleMessages = messages.filter(
+            (m) => !(m.scheduledFor && m.scheduledFor > new Date().toISOString() && m.status === 'queued'),
+          );
+          return visibleMessages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-[var(--color-text-faint)] text-center max-w-xs">
+                Start the conversation — messages here are end-to-end encrypted.
+              </p>
+            </div>
+          ) : (
+            visibleMessages.map((m) => (
+              <Bubble
+                key={m.id}
+                message={m}
+                isMine={m.fromHash === me?.contactHash}
+                onOpenEvent={onOpenEvent}
+                onLongPress={() => setActionTarget(m)}
+                onReactionTap={(emoji) => void handleReaction(m, emoji)}
+                onOpenViewOnce={(msg) => setViewingOnce(msg)}
+                onPollVote={(pollId, optionIdx) => void handlePollVote(pollId, optionIdx)}
+                myHash={me?.contactHash}
+              />
+            ))
+          );
+        })()}
       </div>
 
       {error && (
@@ -409,6 +452,18 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
             <Ico name="x" size={18} />
           </button>
         </div>
+      )}
+
+      {scheduledCount > 0 && (
+        <button
+          onClick={() => setScheduledListOpen(true)}
+          className="flex items-center gap-2 mx-3 mb-1 mt-2 px-3 py-2 rounded-full text-[12px] font-medium self-start"
+          style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
+        >
+          <Ico name="clock" size={14} color="var(--color-accent-dark)" />
+          {scheduledCount} scheduled
+          <Ico name="chevronRight" size={12} color="var(--color-accent-dark)" />
+        </button>
       )}
 
       {editingTarget && (
@@ -449,15 +504,15 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           style={{ outlineColor: 'var(--color-accent)' }}
         />
         {draft.trim().length > 0 ? (
-          <button
-            onClick={() => void handleSend()}
+          <SendButton
+            onSendNow={() => { if (justLongPressedRef.current) return; void handleSend(); }}
+            onLongPress={() => {
+              justLongPressedRef.current = true;
+              setSendMenuOpen(true);
+              setTimeout(() => { justLongPressedRef.current = false; }, 400);
+            }}
             disabled={sending || !hasPeerKey}
-            aria-label="Send"
-            className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >
-            <Ico name="arrowUp" size={20} />
-          </button>
+          />
         ) : (
           <VoiceRecorder
             onSend={handleSendVoice}
@@ -513,7 +568,90 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         currentSec={contact?.disappearingTimerSec ?? 0}
         onSelect={(s) => void handleTimerChange(s)}
       />
+
+      <SendMenu
+        open={sendMenuOpen}
+        onClose={() => setSendMenuOpen(false)}
+        onSendNow={() => { setSendMenuOpen(false); void handleSend(); }}
+        onSchedule={() => { setSendMenuOpen(false); setScheduleOpen(true); }}
+      />
+
+      <ScheduleSheet
+        open={scheduleOpen || reschedulingTarget !== null}
+        onClose={() => { setScheduleOpen(false); setReschedulingTarget(null); }}
+        initialIso={reschedulingTarget?.scheduledFor ?? null}
+        onSchedule={(iso) => void handleScheduleApply(iso)}
+      />
+
+      <ScheduledListSheet
+        open={scheduledListOpen}
+        onClose={() => setScheduledListOpen(false)}
+        peerContactHash={peerContactHash}
+        onChange={() => setRefreshTick((v) => v + 1)}
+        onReschedule={(target) => { setScheduledListOpen(false); setReschedulingTarget(target); }}
+      />
     </section>
+  );
+}
+
+// ── R10: send button with long-press detection ────────────────────────
+
+function SendButton({ onSendNow, onLongPress, disabled }: {
+  onSendNow: () => void; onLongPress: () => void; disabled?: boolean;
+}) {
+  const longPress = useLongPress(onLongPress);
+  return (
+    <button
+      onClick={onSendNow}
+      disabled={disabled}
+      aria-label="Send — hold to schedule"
+      className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+      style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
+      {...longPress}
+    >
+      <Ico name="arrowUp" size={20} />
+    </button>
+  );
+}
+
+// ── R10: small bottom sheet shown on long-press of send ───────────────
+
+function SendMenu({ open, onClose, onSendNow, onSchedule }: {
+  open: boolean; onClose: () => void; onSendNow: () => void; onSchedule: () => void;
+}) {
+  useEffect(() => { if (!open) return; return registerBackHandler(onClose); }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ background: 'rgba(28, 26, 20, 0.55)' }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[var(--color-surface)] rounded-t-3xl pt-3 pb-6 safe-bottom"
+      >
+        <div className="w-10 h-1 rounded-full bg-[var(--color-border)] mx-auto mb-4" />
+        <div className="px-4 space-y-1">
+          <button
+            onClick={onSendNow}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)]"
+          >
+            <Ico name="arrowUp" size={20} color="var(--color-text-muted)" />
+            <span>Send now</span>
+          </button>
+          <button
+            onClick={onSchedule}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)]"
+          >
+            <Ico name="clock" size={20} color="var(--color-text-muted)" />
+            <span>Schedule…</span>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

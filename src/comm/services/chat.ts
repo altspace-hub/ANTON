@@ -202,14 +202,17 @@ function emitTyping(fromHash: string, isTyping: boolean): void {
  * locally as status='queued', kicks the relay client to flush.
  *
  * R1: optional `replyTo` to send as a quoted reply to a prior message.
+ * R10: optional `scheduledFor` (ISO) keeps the message queued until that
+ * time, then the relay client's periodic flush sends it.
  */
 export async function sendMessage(
   peerContactHash: string,
   plaintext: string,
   replyTo?: ReplyContext,
+  scheduledFor?: string,
 ): Promise<ChatMessage> {
   const messageId = generateMsgId();
-  return sendStructuredMessage(peerContactHash, { kind: 'text', messageId, text: plaintext, replyTo });
+  return sendStructuredMessage(peerContactHash, { kind: 'text', messageId, text: plaintext, replyTo }, { scheduledFor });
 }
 
 /** Generate an explicit message id that travels on the wire. Both sender
@@ -238,6 +241,7 @@ function generateMsgId(): string {
 export async function sendStructuredMessage(
   peerContactHash: string,
   wire: WirePayload,
+  opts: { scheduledFor?: string } = {},
 ): Promise<ChatMessage> {
   const me = getIdentity();
   if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
@@ -301,9 +305,14 @@ export async function sendStructuredMessage(
     kind,
     replyTo,
     disappearsAt,
+    scheduledFor: opts.scheduledFor,
   });
 
-  void getRelayClient()?.flushOutbox();
+  // R10 — flush right away unless this is a future-dated scheduled send;
+  // the periodic flusher inside relay-client will pick it up at its time.
+  if (!opts.scheduledFor || opts.scheduledFor <= new Date().toISOString()) {
+    void getRelayClient()?.flushOutbox();
+  }
 
   return message;
 }
