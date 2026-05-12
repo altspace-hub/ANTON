@@ -4,6 +4,7 @@ import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerCh
 import { startLiveShare, type GeoFix } from '../services/geo';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
+import { getTypingIndicatorEnabled } from '../services/settings';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
 import { EVENT_TYPE_ICONS, EVENT_TYPE_LABELS } from '../services/events';
 import {
@@ -115,9 +116,16 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   }, []);
 
   // R9 — subscribe to inbound presence_typing events for this peer.
+  //
+  // P3-4 audit fix: mutual gating. Even if the peer sends typing pings,
+  // we only render them when the local user has opted into typing
+  // indicators. This makes the preference symmetric — your "I don't
+  // want to see typing" choice can't be bypassed by a peer who has it
+  // enabled on their side.
   useEffect(() => {
     return subscribeTyping((fromHash, isTyping) => {
       if (fromHash !== peerContactHash) return;
+      if (!getTypingIndicatorEnabled()) return;
       setPeerTyping(isTyping);
       if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
       if (isTyping) {

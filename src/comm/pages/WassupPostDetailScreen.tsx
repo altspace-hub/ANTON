@@ -3,6 +3,7 @@ import { getPost, listInteractions, type WassupPost, type WassupInteraction } fr
 import { toggleWassupLike, postWassupComment } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { Ico } from '../components/Ico';
+import VoicePlayer from '../components/VoicePlayer';
 
 interface Props {
   postId: string;
@@ -120,6 +121,12 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
                   : '4 / 3',
               }}
             />
+          )}
+
+          {post.voice && (
+            <div className="mt-3">
+              <VoicePlayer payload={post.voice} mine={post.authorHash === me?.contactHash} />
+            </div>
           )}
 
           <div className="mt-3 flex items-center gap-5">

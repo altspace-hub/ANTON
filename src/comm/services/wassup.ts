@@ -35,6 +35,8 @@ export interface WassupPost {
   authorName: string;
   text: string;
   image?: WassupMedia;
+  /** R3 P3-3: optional voice attachment (mutually exclusive with image is preferred but not enforced). */
+  voice?: WassupVoice;
   createdAt: string;   // ISO
   /** When the post should be hidden locally. null = no expiry. */
   expiresAt: string | null;
@@ -54,6 +56,17 @@ export interface WassupMedia {
   mimeType: string;
   width?: number;
   height?: number;
+}
+
+export interface WassupVoice {
+  /** Base64 audio (no data-URL prefix) */
+  audio: string;
+  mimeType: string;
+  durationSec: number;
+  /** Per-bucket RMS amplitude in [0, 1], length ≤ 64. */
+  waveform: number[];
+  /** Bytes (decoded) */
+  size: number;
 }
 
 export type InteractionKind = 'like' | 'comment';
@@ -225,6 +238,7 @@ export interface WassupPostWire {
   authorName: string;
   text: string;
   image?: WassupMedia;
+  voice?: WassupVoice;
   createdAt: string;
   expiresAt: string | null;
 }
@@ -261,6 +275,7 @@ export async function applyInboundPost(payload: WassupPostWire): Promise<void> {
     authorName: payload.authorName,
     text: payload.text,
     image: payload.image,
+    voice: payload.voice,
     createdAt: payload.createdAt,
     expiresAt: payload.expiresAt,
     seen: false,

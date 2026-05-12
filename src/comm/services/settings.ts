@@ -20,13 +20,20 @@ export function setReadReceiptsEnabled(enabled: boolean): void {
   catch { /* ignore */ }
 }
 
+/**
+ * P3-4 audit fix: defaults to OFF.
+ *
+ * Why: this preference is symmetrically applied — the relay-client only
+ * SENDS typing pings if we've opted in, and the chat surface only
+ * RENDERS inbound typing if we've opted in too. So the user's choice
+ * gates both directions and a one-sided "spy on typing" is impossible.
+ * Conservative-by-default matches the read-receipts behaviour and the
+ * file-header promise about privacy defaults.
+ */
 export function getTypingIndicatorEnabled(): boolean {
-  // Defaults to ON — typing pings are far less revealing than read
-  // receipts and most chat apps treat them as expected behaviour.
   try {
-    const v = localStorage.getItem(KEY_TYPING_INDICATOR);
-    return v === null ? true : v === '1';
-  } catch { return true; }
+    return localStorage.getItem(KEY_TYPING_INDICATOR) === '1';
+  } catch { return false; }
 }
 
 export function setTypingIndicatorEnabled(enabled: boolean): void {

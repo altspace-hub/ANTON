@@ -3,6 +3,7 @@ import { listPosts, sweepExpired, type WassupPost } from '../services/wassup';
 import { toggleWassupLike } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { Ico } from '../components/Ico';
+import VoicePlayer from '../components/VoicePlayer';
 
 interface Props {
   onCompose: () => void;
@@ -123,6 +124,12 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
                 }}
               />
             </button>
+          )}
+
+          {post.voice && (
+            <div className="mt-2">
+              <VoicePlayer payload={post.voice} mine={post.authorHash === me?.contactHash} />
+            </div>
           )}
 
           <div className="mt-2 flex items-center gap-4">

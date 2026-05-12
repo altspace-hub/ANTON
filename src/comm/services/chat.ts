@@ -36,6 +36,7 @@ import {
   type WassupCommentWire,
   type WassupDeleteWire,
   type WassupMedia,
+  type WassupVoice,
   defaultExpiryFromNow,
   generatePostId,
   putInteraction,
@@ -650,52 +651,89 @@ export async function sendTimerChange(peerContactHash: string, timerSec: number)
 const WASSUP_MAX_RECIPIENTS = 256;
 
 /**
- * Publish a Wassup post: persist locally, then fan out a wassup_post
- * payload to every contact that has a public key. Audience defaults to
- * all contacts (v1 — circles deferred).
+ * P3-1/P3-2/P3-3: audience picker, custom expiry, and post-type extensions.
+ *
+ *   - audience: { mode: 'everyone' } | { mode: 'specific', contactHashes }.
+ *     Defaults to 'everyone'. 'specific' restricts the fanout to the named
+ *     contacts and is also persisted on the local post so the composer can
+ *     show "shared with N people".
+ *   - expiresInHours: null = forever, 1/6/24/168 are the picker presets.
+ *     Defaults to 24h to preserve v1 behaviour for callers that omit it.
+ *   - voice: optional voice-note attachment. Image and voice are both
+ *     allowed today; the renderer can decide what to show first.
  */
-export async function publishWassupPost(input: { text: string; image?: WassupMedia }): Promise<void> {
+export interface PublishWassupInput {
+  text: string;
+  image?: WassupMedia;
+  voice?: WassupVoice;
+  audience?: WassupAudienceInput;
+  /** Hours from publish time until the post disappears. null = forever. Default 24. */
+  expiresInHours?: number | null;
+}
+
+export type WassupAudienceInput =
+  | { mode: 'everyone' }
+  | { mode: 'specific'; contactHashes: string[] };
+
+/**
+ * Publish a Wassup post: persist locally, then fan out a wassup_post
+ * payload to the chosen audience. Audience defaults to all contacts.
+ */
+export async function publishWassupPost(input: PublishWassupInput): Promise<void> {
   const me = getIdentity();
   if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
 
   const postId = generatePostId();
   const createdAt = new Date().toISOString();
-  const expiresAt = defaultExpiryFromNow();
+  const expiresAt = resolveExpiresAt(input.expiresInHours);
+
+  // Resolve the audience hashes BEFORE persisting so we can record them
+  // on the local row (the composer chip reads back from this).
+  const allContacts = (await listContacts()).filter((c) => !!c.publicKeyHex);
+  const audienceMode = input.audience?.mode ?? 'everyone';
+  let targets = allContacts;
+  if (input.audience?.mode === 'specific') {
+    const allow = new Set(input.audience.contactHashes);
+    targets = allContacts.filter((c) => allow.has(c.contactHash));
+  }
+  targets = targets.slice(0, WASSUP_MAX_RECIPIENTS);
+
   const wire: WassupPostWire = {
     postId,
     authorHash: me.contactHash,
     authorName: me.displayName,
     text: input.text,
     image: input.image,
+    voice: input.voice,
     createdAt,
     expiresAt,
   };
 
-  // Persist locally first so the feed updates instantly
+  // Persist locally first so the feed updates instantly.
   await putPost({
     id: postId,
     authorHash: me.contactHash,
     authorName: me.displayName,
     text: input.text,
     image: input.image,
+    voice: input.voice,
     createdAt,
     expiresAt,
+    audience: audienceMode === 'specific' ? targets.map((c) => c.contactHash) : undefined,
     likeCount: 0,
     commentCount: 0,
   });
 
-  // Fan out to all contacts with a known publicKey.
   // P2-3 audit fix: jitter individual sends across 0-30 s so the relay
   // operator can't read a one-shot contact-graph snapshot off the timing.
   // sendInlinePayload itself queues into the inline outbox if the
   // connection isn't open, so a flaky link doesn't drop posts.
-  const contacts = (await listContacts()).filter(c => !!c.publicKeyHex).slice(0, WASSUP_MAX_RECIPIENTS);
   const wireJson = JSON.stringify({ kind: 'wassup_post', data: wire });
   const client = getRelayClient();
   if (!client) return;
 
   // Shuffle recipients so order doesn't carry contact-list-position info either.
-  const shuffled = contacts.slice();
+  const shuffled = targets.slice();
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -710,6 +748,13 @@ export async function publishWassupPost(input: { text: string; image?: WassupMed
       });
     }, delay);
   }
+}
+
+/** Map an hours-or-null value to an absolute ISO expiry (or null). */
+function resolveExpiresAt(hours: number | null | undefined): string | null {
+  if (hours === undefined) return defaultExpiryFromNow();
+  if (hours === null) return null;
+  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 }
 
 /** Toggle like on a post: write locally + notify the post's author (only). */

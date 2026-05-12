@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Ico, type IcoName } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
+import EmojiPickerSheet from './EmojiPickerSheet';
 
 const REACTION_EMOJI = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
 
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export default function MessageActionSheet({ open, onClose, onReact, onReply, onCopy, onForward, onEdit, onDelete, isMine }: Props) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     return registerBackHandler(onClose);
@@ -42,7 +45,7 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
       >
         <div className="w-10 h-1 rounded-full bg-[var(--color-border)] mx-auto mb-4" />
 
-        {/* Emoji shelf */}
+        {/* P3-5 — quick row + open-picker affordance */}
         <div className="px-4 mb-4 flex items-center gap-2 overflow-x-auto">
           {REACTION_EMOJI.map((e) => (
             <button
@@ -54,6 +57,13 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
               {e}
             </button>
           ))}
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="w-12 h-12 rounded-full flex items-center justify-center bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-muted)]"
+            aria-label="More emojis"
+          >
+            <Ico name="plus" size={20} color="var(--color-text-muted)" />
+          </button>
         </div>
 
         {/* Action rows */}
@@ -65,6 +75,16 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
           {isMine && onDelete && <Row icon="trash" label="Delete for everyone" onClick={() => { onClose(); onDelete(); }} destructive />}
         </div>
       </div>
+
+      <EmojiPickerSheet
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(emoji) => {
+          setPickerOpen(false);
+          onClose();
+          onReact(emoji);
+        }}
+      />
     </div>
   );
 }

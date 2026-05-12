@@ -174,8 +174,8 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
           />
           <div className="border-t border-[var(--color-border-soft)]" />
           <PrivacyToggle
-            label="Send typing indicator"
-            description="Lets peers see “typing…” while you compose a message."
+            label="Typing indicator"
+            description="Symmetric — when on, you send typing pings AND see peers'. When off, neither side does."
             value={typingIndicator}
             onChange={(v) => { setTypingIndicator(v); setTypingIndicatorEnabled(v); }}
           />
