@@ -40,7 +40,23 @@ export default function BottomSheet({
 }: Props) {
   useEffect(() => {
     if (!open) return;
-    return registerBackHandler(onClose);
+    // Android hardware back + browser/desktop Esc both close the sheet.
+    // Esc is a no-op on mobile devices that don't have a physical
+    // keyboard, but doesn't cost anything — and it lets a tester
+    // driving the app via adb keyevent or a connected BT keyboard
+    // dismiss without tapping the backdrop.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    const unsub = registerBackHandler(onClose);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      unsub();
+    };
   }, [open, onClose]);
 
   if (!open) return null;

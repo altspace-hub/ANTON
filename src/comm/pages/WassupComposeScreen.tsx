@@ -153,7 +153,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
             />
             <button
               onClick={() => setImage(null)}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/55 text-white flex items-center justify-center"
+              className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center"
               aria-label="Remove image"
             >
               <Ico name="x" size={18} color="#FFFFFF" />
@@ -174,7 +174,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
             </div>
             <button
               onClick={() => setVoice(null)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)]"
+              className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
               aria-label="Remove voice note"
             >
               <Ico name="x" size={18} />

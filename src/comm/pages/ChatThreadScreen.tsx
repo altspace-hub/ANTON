@@ -534,7 +534,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           <button
             onClick={() => setReplyingTo(null)}
             aria-label="Cancel reply"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)]"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="x" size={18} />
           </button>
@@ -563,7 +563,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           <button
             onClick={() => { setEditingTarget(null); setDraft(''); }}
             aria-label="Cancel edit"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)]"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="x" size={18} />
           </button>

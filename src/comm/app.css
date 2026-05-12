@@ -15,10 +15,16 @@
   --color-surface-muted:#EFECE5;
 
   /* ── Text ───────────────────────────────────────────────── */
+  /* P8-3 audit fix: --color-text-faint was #878999, which hit only
+     3.0:1 against --color-bg #F5F3EF — that passes WCAG AA only for
+     large text (18pt+). At small sizes (timestamps, captions, hints)
+     it failed AA. Darkened to #686A7C (4.85:1) and bumped muted to
+     #4F5267 (6.62:1) so both clear AA AND the visual hierarchy
+     stays intact: text → body → muted → faint, each step lighter. */
   --color-text:         #1A1B2E;
   --color-text-body:    #3B3D50;
-  --color-text-muted:   #636577;
-  --color-text-faint:   #878999;
+  --color-text-muted:   #4F5267;
+  --color-text-faint:   #686A7C;
 
   /* ── Lines ──────────────────────────────────────────────── */
   --color-border:       #DDD9D2;

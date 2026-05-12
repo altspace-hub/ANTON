@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { listPosts, sweepExpired, type WassupPost } from '../services/wassup';
 import { toggleWassupLike } from '../services/chat';
 import { getIdentity } from '../services/identity';
@@ -88,72 +88,94 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
   // every card's image was re-decoded from base64 each tick.
   const imageBlobUrl = useBlobUrl(post.image?.data, post.image?.mimeType);
 
+  // P8-5 audit fix: the whole card body opens the post detail.
+  // Previously only the image was tappable, which felt weird —
+  // text-only or voice-only posts had no way in. Now author area,
+  // text, image, and voice all delegate to onOpenPost. Like + comment
+  // buttons keep their own onClick and stopPropagation so a like
+  // doesn't accidentally open the post.
+  function stopAndLike(e: MouseEvent) {
+    e.stopPropagation();
+    onLike();
+  }
+  function stopAndOpen(e: MouseEvent) {
+    e.stopPropagation();
+    onOpenPost();
+  }
+
   return (
-    <li className="px-5 py-4">
-      <div className="flex items-start gap-3">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
-        >
-          {post.authorName.slice(0, 1).toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-[var(--color-text)] truncate">
-              {isMine ? 'You' : post.authorName}
-            </span>
-            <span className="text-xs text-[var(--color-text-faint)]">·</span>
-            <span className="text-xs text-[var(--color-text-faint)]">{when}</span>
+    <li>
+      <button
+        onClick={onOpenPost}
+        className="w-full text-left px-5 py-4 active:bg-[var(--color-surface-muted)]"
+        aria-label={`Open post by ${isMine ? 'you' : post.authorName}`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+            style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
+          >
+            {post.authorName.slice(0, 1).toUpperCase()}
           </div>
-
-          {post.text && (
-            <p className="mt-1 text-[15px] leading-snug text-[var(--color-text)] whitespace-pre-wrap break-words">
-              {post.text}
-            </p>
-          )}
-
-          {post.image && imageBlobUrl && (
-            <button
-              onClick={onOpenPost}
-              className="mt-2 block w-full rounded-2xl overflow-hidden border border-[var(--color-border-soft)]"
-            >
-              <img
-                src={imageBlobUrl}
-                alt=""
-                className="w-full block"
-                style={{
-                  aspectRatio: post.image.width && post.image.height
-                    ? `${post.image.width} / ${post.image.height}`
-                    : '4 / 3',
-                }}
-              />
-            </button>
-          )}
-
-          {post.voice && (
-            <div className="mt-2">
-              <VoicePlayer payload={post.voice} mine={post.authorHash === me?.contactHash} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-semibold text-[var(--color-text)] truncate">
+                {isMine ? 'You' : post.authorName}
+              </span>
+              <span className="text-xs text-[var(--color-text-faint)]">·</span>
+              <span className="text-xs text-[var(--color-text-faint)]">{when}</span>
             </div>
-          )}
 
-          <div className="mt-2 flex items-center gap-4">
-            <button
-              onClick={onLike}
-              className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] active:text-[var(--color-accent)]"
-            >
-              <span className="text-base">❤️</span>
-              <span>{post.likeCount}</span>
-            </button>
-            <button
-              onClick={onOpenPost}
-              className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] active:text-[var(--color-accent)]"
-            >
-              <Ico name="message" size={14} />
-              <span>{post.commentCount}</span>
-            </button>
+            {post.text && (
+              <p className="mt-1 text-[15px] leading-snug text-[var(--color-text)] whitespace-pre-wrap break-words">
+                {post.text}
+              </p>
+            )}
+
+            {post.image && imageBlobUrl && (
+              <div
+                className="mt-2 block w-full rounded-2xl overflow-hidden border border-[var(--color-border-soft)]"
+              >
+                <img
+                  src={imageBlobUrl}
+                  alt=""
+                  className="w-full block"
+                  style={{
+                    aspectRatio: post.image.width && post.image.height
+                      ? `${post.image.width} / ${post.image.height}`
+                      : '4 / 3',
+                  }}
+                />
+              </div>
+            )}
+
+            {post.voice && (
+              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                {/* VoicePlayer has its own play button — stop propagation
+                    so tapping play doesn't open the detail. */}
+                <VoicePlayer payload={post.voice} mine={post.authorHash === me?.contactHash} />
+              </div>
+            )}
+
+            <div className="mt-2 flex items-center gap-4">
+              <button
+                onClick={stopAndLike}
+                className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] active:text-[var(--color-accent)]"
+              >
+                <span className="text-base">❤️</span>
+                <span>{post.likeCount}</span>
+              </button>
+              <button
+                onClick={stopAndOpen}
+                className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] active:text-[var(--color-accent)]"
+              >
+                <Ico name="message" size={14} />
+                <span>{post.commentCount}</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </button>
     </li>
   );
 }
