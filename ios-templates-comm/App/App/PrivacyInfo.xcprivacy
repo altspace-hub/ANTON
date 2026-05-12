@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy — Apple's privacy manifest. Mandatory for any
+  app submitted after May 2024. Declares the app's data collection
+  posture + which "required reason" APIs it uses.
+
+  ANTON Communication collects nothing server-side. The only required-reason
+  API in use is UserDefaults for app settings (allowed reason CA92.1).
+  No tracking domains, no third-party SDKs that touch user data.
+
+  Copy this file to ios-comm/App/App/PrivacyInfo.xcprivacy after
+  `npx cap add ios`. Xcode picks it up automatically at build time.
+-->
+<plist version="1.0">
+<dict>
+  <!-- We collect zero data linkable to the user. The server side of
+       the relay protocol is metadata-only (routing hashes + ciphertext)
+       and is not "data collection" under Apple's definition. -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+
+  <key>NSPrivacyTracking</key>
+  <false/>
+
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+
+  <!-- Required-reason APIs we use + the approved reason code. -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- CA92.1: Access user defaults to read/write information that is only
+             accessible to the app itself. We use UserDefaults via Capacitor's
+             Preferences plugin for theme + minor UI prefs only. -->
+        <string>CA92.1</string>
+      </array>
+    </dict>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- C617.1: Display file timestamps to the user. Voice note +
+             attachment timestamps in the chat thread. -->
+        <string>C617.1</string>
+      </array>
+    </dict>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- 35F9.1: Measure the amount of time the app has been running.
+             Used by the voice-note recording timer. -->
+        <string>35F9.1</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

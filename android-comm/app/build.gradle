@@ -16,8 +16,16 @@ android {
         applicationId "com.futurechain.anton.communication"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // P7-1 version policy:
+        //   versionCode  — strictly monotonic integer. Bump by +1 on every
+        //                  build uploaded to Play Console. NEVER reuse a
+        //                  previous code, even for an internal-track build.
+        //   versionName  — semver string shown to users. 0.x.y until we
+        //                  call the app "production-ready" externally.
+        //                  Bump MINOR for new features, PATCH for fixes.
+        // Current state: first Play upload coming, app is pre-1.0.
         versionCode 1
-        versionName "1.0"
+        versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
