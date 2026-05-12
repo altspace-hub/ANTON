@@ -25,6 +25,8 @@ export interface Contact {
   source: 'qr' | 'manual';    // how the contact was added
   addedAt: string;            // ISO timestamp
   note?: string;              // user note (e.g. "Anna from work")
+  /** R5 — per-chat disappearing-message timer in seconds. 0 / undefined = Off. */
+  disappearingTimerSec?: number;
 }
 
 export async function listContacts(): Promise<Contact[]> {
@@ -81,7 +83,7 @@ export async function addContact(input: Omit<Contact, 'addedAt'>): Promise<Conta
 
 export async function updateContact(
   contactHash: string,
-  patch: Partial<Pick<Contact, 'displayName' | 'note' | 'publicKeyHex'>>
+  patch: Partial<Pick<Contact, 'displayName' | 'note' | 'publicKeyHex' | 'disappearingTimerSec'>>
 ): Promise<Contact | null> {
   const existing = await getContact(contactHash);
   if (!existing) return null;

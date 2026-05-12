@@ -35,17 +35,18 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
 
 /**
  * Kind of payload carried in `plaintext`:
- *   - 'text'         : plain user text
- *   - 'image'        : plaintext is JSON of MediaPayload (base64 + mime + dims)
- *   - 'video'        : plaintext is JSON of MediaPayload
- *   - 'voice'        : plaintext is JSON of VoicePayload (R4)
- *   - 'event_invite' : plaintext is JSON of EventInvitePayload (events.ts)
- *   - 'event_rsvp'   : plaintext is JSON of EventRsvpPayload
- *   - 'event_cancel' : plaintext is JSON of EventCancelPayload
+ *   - 'text'                 : plain user text
+ *   - 'image'                : plaintext is JSON of MediaPayload (base64 + mime + dims)
+ *   - 'video'                : plaintext is JSON of MediaPayload
+ *   - 'voice'                : plaintext is JSON of VoicePayload (R4)
+ *   - 'event_invite'         : plaintext is JSON of EventInvitePayload (events.ts)
+ *   - 'event_rsvp'           : plaintext is JSON of EventRsvpPayload
+ *   - 'event_cancel'         : plaintext is JSON of EventCancelPayload
+ *   - 'system_timer_change'  : R5 — plaintext is JSON { timerSec }, rendered as a centered chip
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel';
+export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change';
 
 /** R1 — quoted-reply context, attached to text/image/video messages. */
 export interface ReplyContext {
@@ -74,6 +75,8 @@ export interface ChatMessage {
   replyTo?: ReplyContext;
   /** R2 — reactions on this message (emoji → reactor contact-hashes) */
   reactions?: ReactionsMap;
+  /** R5 — ISO timestamp when this message should be locally deleted. */
+  disappearsAt?: string;
 }
 
 // ── ID generation ───────────────────────────────────────────────────────
@@ -114,6 +117,7 @@ export async function appendMessage(
     kind: input.kind ?? 'text',
     replyTo: input.replyTo,
     reactions: input.reactions,
+    disappearsAt: input.disappearsAt,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -236,4 +240,35 @@ export async function deleteThread(threadHash: string): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+/**
+ * R5 — sweep messages in this thread whose `disappearsAt` has passed.
+ * Returns the number of messages deleted so the caller can decide whether
+ * to re-render. Idempotent and safe to call frequently.
+ */
+export async function sweepExpiredInThread(threadHash: string): Promise<number> {
+  const db = await openDb();
+  const nowIso = new Date().toISOString();
+  let deleted = 0;
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const index = store.index(INDEX_BY_THREAD);
+    const range = IDBKeyRange.bound([threadHash, ''], [threadHash, '￿']);
+    const req = index.openCursor(range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return;
+      const row = cursor.value as ChatMessage;
+      if (row.disappearsAt && row.disappearsAt <= nowIso) {
+        cursor.delete();
+        deleted++;
+      }
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  return deleted;
 }

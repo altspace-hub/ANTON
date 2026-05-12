@@ -13,7 +13,7 @@
  */
 
 import { getIdentity } from './identity';
-import { getContact, listContacts } from './contacts';
+import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
 import { appendMessage, applyReaction, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getRelayClient } from './relay-client';
@@ -86,15 +86,22 @@ export interface VoicePayload {
   size: number;
 }
 
+/** R5 — peer-side notification that the disappearing-messages timer was
+ *  changed by the other party. `timerSec === 0` means Off. */
+export interface SystemTimerChangePayload {
+  timerSec: number;
+}
+
 export type WirePayload =
-  | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext }
-  | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
-  | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext }
-  | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext }
+  | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
+  | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
+  | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
+  | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'react';         data: ReactPayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
+  | { kind: 'system_timer_change'; data: SystemTimerChangePayload }
   | { kind: 'wassup_post';   data: WassupPostWire }
   | { kind: 'wassup_like';   data: WassupLikeWire }
   | { kind: 'wassup_comment'; data: WassupCommentWire }
@@ -162,6 +169,15 @@ export async function sendStructuredMessage(
     );
   }
 
+  // R5 — auto-stamp disappearsAt on stampable kinds when the chat has a
+  // timer set. Caller-supplied value wins. Stamping happens before sealing
+  // so the recipient gets the same timestamp.
+  const stampable = wire.kind === 'text' || wire.kind === 'image'
+    || wire.kind === 'video' || wire.kind === 'voice';
+  if (stampable && !wire.disappearsAt && contact.disappearingTimerSec && contact.disappearingTimerSec > 0) {
+    wire.disappearsAt = new Date(Date.now() + contact.disappearingTimerSec * 1000).toISOString();
+  }
+
   // Encrypt eagerly to surface crypto errors at send time. Transport re-seals
   // at flush time (fresh salt = fresh per-message key).
   const wireJson = JSON.stringify(wire);
@@ -179,12 +195,12 @@ export async function sendStructuredMessage(
 
   const localPlaintext = wire.kind === 'text' ? wire.text : JSON.stringify((wire as { data: unknown }).data);
   // R1 — extract replyTo so the local store has it too (round-trip parity).
-  const replyTo = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice')
-    ? wire.replyTo : undefined;
-  const messageId = (wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice')
-    ? wire.messageId : undefined;
+  const replyTo = stampable ? wire.replyTo : undefined;
+  const messageId = stampable ? wire.messageId : undefined;
+  const disappearsAt = stampable ? wire.disappearsAt : undefined;
   const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
+    || wire.kind === 'system_timer_change'
     ? wire.kind
     : 'text';
   const message = await appendMessage({
@@ -197,6 +213,7 @@ export async function sendStructuredMessage(
     status: 'queued',
     kind,
     replyTo,
+    disappearsAt,
   });
 
   void getRelayClient()?.flushOutbox();
@@ -232,6 +249,21 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R5 — Update this chat's disappearing-messages timer.
+ *
+ * Updates the Contact's `disappearingTimerSec` locally and sends a
+ * system_timer_change envelope to the peer so they update their own
+ * Contact. A system chip is persisted on both sides so the change is
+ * visible in the thread history (Signal-style).
+ *
+ * `timerSec` of 0 means "Off". Subsequent messages stop being stamped.
+ */
+export async function sendTimerChange(peerContactHash: string, timerSec: number): Promise<void> {
+  await updateContact(peerContactHash, { disappearingTimerSec: timerSec });
+  await sendStructuredMessage(peerContactHash, { kind: 'system_timer_change', data: { timerSec } });
 }
 
 // ── R3 — Wassup feed: client-fanout send paths ────────────────────────
@@ -408,14 +440,16 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
     wire = { kind: 'event_rsvp', data: JSON.parse(msg.plaintext) as EventRsvpPayload };
   } else if (msg.kind === 'event_cancel') {
     wire = { kind: 'event_cancel', data: JSON.parse(msg.plaintext) as EventCancelPayload };
+  } else if (msg.kind === 'system_timer_change') {
+    wire = { kind: 'system_timer_change', data: JSON.parse(msg.plaintext) as SystemTimerChangePayload };
   } else if (msg.kind === 'image') {
-    wire = { kind: 'image', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
+    wire = { kind: 'image', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'video') {
-    wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo };
+    wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'voice') {
-    wire = { kind: 'voice', messageId: msg.id, data: JSON.parse(msg.plaintext) as VoicePayload, replyTo: msg.replyTo };
+    wire = { kind: 'voice', messageId: msg.id, data: JSON.parse(msg.plaintext) as VoicePayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else {
-    wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo };
+    wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   }
   const wireJson = JSON.stringify(wire);
   return sealForPeer(wireJson, peer.publicKeyHex, me.contactHash, msg.toHash);
@@ -430,20 +464,20 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
  */
 export function parseWirePayload(raw: string): WirePayload {
   try {
-    const obj = JSON.parse(raw) as { kind?: string; text?: string; data?: unknown; messageId?: string; replyTo?: ReplyContext };
+    const obj = JSON.parse(raw) as { kind?: string; text?: string; data?: unknown; messageId?: string; replyTo?: ReplyContext; disappearsAt?: string };
     if (obj && typeof obj === 'object' && obj.kind) {
       const id = obj.messageId ?? '';
       if (obj.kind === 'text' && typeof obj.text === 'string') {
-        return { kind: 'text', messageId: id, text: obj.text, replyTo: obj.replyTo };
+        return { kind: 'text', messageId: id, text: obj.text, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
       }
       if (obj.kind === 'image' && typeof obj.data === 'object' && obj.data) {
-        return { kind: 'image', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo };
+        return { kind: 'image', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
       }
       if (obj.kind === 'video' && typeof obj.data === 'object' && obj.data) {
-        return { kind: 'video', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo };
+        return { kind: 'video', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
       }
       if (obj.kind === 'voice' && typeof obj.data === 'object' && obj.data) {
-        return { kind: 'voice', messageId: id, data: obj.data as VoicePayload, replyTo: obj.replyTo };
+        return { kind: 'voice', messageId: id, data: obj.data as VoicePayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
       }
       if (obj.kind === 'react' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'react', data: obj.data as ReactPayload };
@@ -456,6 +490,9 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'event_cancel' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_cancel', data: obj.data as EventCancelPayload };
+      }
+      if (obj.kind === 'system_timer_change' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'system_timer_change', data: obj.data as SystemTimerChangePayload };
       }
       if (obj.kind === 'wassup_post' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'wassup_post', data: obj.data as WassupPostWire };
@@ -505,12 +542,14 @@ export async function applyInboundMessage(
   let kind: ContentKind;
   let messageId: string | undefined;
   let replyTo: ReplyContext | undefined;
+  let disappearsAt: string | undefined;
   switch (wire.kind) {
     case 'text':
       plaintext = wire.text;
       kind = 'text';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
+      disappearsAt = wire.disappearsAt;
       break;
     case 'event_invite':
       await applyInboundInvite(wire.data, fromHash);
@@ -531,18 +570,27 @@ export async function applyInboundMessage(
       kind = 'image';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
+      disappearsAt = wire.disappearsAt;
       break;
     case 'video':
       plaintext = JSON.stringify(wire.data);
       kind = 'video';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
+      disappearsAt = wire.disappearsAt;
       break;
     case 'voice':
       plaintext = JSON.stringify(wire.data);
       kind = 'voice';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
+      disappearsAt = wire.disappearsAt;
+      break;
+    case 'system_timer_change':
+      // R5 — update our Contact to mirror the peer's setting + persist a chip
+      await updateContact(fromHash, { disappearingTimerSec: wire.data.timerSec });
+      plaintext = JSON.stringify(wire.data);
+      kind = 'system_timer_change';
       break;
   }
   await appendMessage({
@@ -555,6 +603,7 @@ export async function applyInboundMessage(
     status: 'received',
     kind,
     replyTo,
+    disappearsAt,
   });
   return { kind, threadHash: fromHash };
 }

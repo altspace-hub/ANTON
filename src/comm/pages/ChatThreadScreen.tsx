@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { listThread, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, ChatError, type MediaPayload, type VoicePayload } from '../services/chat';
+import { listThread, sweepExpiredInThread, type ChatMessage, type ReplyContext } from '../services/messages';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -19,6 +19,7 @@ import AttachmentSheet from '../components/AttachmentSheet';
 import MessageActionSheet from '../components/MessageActionSheet';
 import VoiceRecorder from '../components/VoiceRecorder';
 import VoicePlayer from '../components/VoicePlayer';
+import DisappearingTimerSheet, { formatTimerLabel } from '../components/DisappearingTimerSheet';
 import { useLongPress } from '../hooks/useLongPress';
 
 interface Props {
@@ -39,12 +40,16 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   /** R1/R2 — message currently selected for actions (long-press target) */
   const [actionTarget, setActionTarget] = useState<ChatMessage | null>(null);
+  /** R5 — disappearing-timer settings sheet visibility */
+  const [timerSheetOpen, setTimerSheetOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    // R5 — sweep expired messages on each refresh, then list what remains.
+    void sweepExpiredInThread(peerContactHash);
     Promise.all([getContact(peerContactHash), listThread(peerContactHash)])
       .then(([c, msgs]) => {
         if (cancelled) return;
@@ -56,11 +61,21 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   }, [peerContactHash, refreshTick]);
 
   // Re-fetch thread every 2s while open — picks up reactions arriving
-  // via the relay client (which writes to IDB directly).
+  // via the relay client (which writes to IDB directly). Also runs the
+  // R5 sweep so expired messages disappear without the user navigating.
   useEffect(() => {
     const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
     return () => clearInterval(t);
   }, []);
+
+  async function handleTimerChange(timerSec: number) {
+    try {
+      await sendTimerChange(peerContactHash, timerSec);
+      setRefreshTick((v) => v + 1);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to update timer'));
+    }
+  }
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -176,6 +191,13 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           <div className="text-base font-semibold text-[var(--color-text)] truncate">{displayName}</div>
           <div className="text-[10px] font-mono text-[var(--color-text-faint)] truncate">{peerContactHash}</div>
         </div>
+        <button
+          onClick={() => setTimerSheetOpen(true)}
+          aria-label="Disappearing messages"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
+        >
+          <Ico name="clock" size={20} color={(contact?.disappearingTimerSec ?? 0) > 0 ? 'var(--color-accent)' : undefined} />
+        </button>
       </header>
 
       {!hasPeerKey && (
@@ -297,6 +319,13 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           if (actionTarget) void navigator.clipboard?.writeText(actionTarget.plaintext).catch(() => {});
         } : undefined}
       />
+
+      <DisappearingTimerSheet
+        open={timerSheetOpen}
+        onClose={() => setTimerSheetOpen(false)}
+        currentSec={contact?.disappearingTimerSec ?? 0}
+        onSelect={(s) => void handleTimerChange(s)}
+      />
     </section>
   );
 }
@@ -345,9 +374,10 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHa
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   const longPress = useLongPress(onLongPress);
 
-  // Bubbles that are non-actionable (rsvp / cancel chips) skip long-press
-  if (message.kind === 'event_rsvp')   return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
-  if (message.kind === 'event_cancel') return <EventCancelBubble message={message} isMine={isMine} time={time} />;
+  // Bubbles that are non-actionable (rsvp / cancel / timer-change chips) skip long-press
+  if (message.kind === 'event_rsvp')          return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
+  if (message.kind === 'event_cancel')        return <EventCancelBubble message={message} isMine={isMine} time={time} />;
+  if (message.kind === 'system_timer_change') return <TimerChangeChip   message={message} isMine={isMine} time={time} />;
 
   const wrapperBase = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
 
@@ -371,6 +401,7 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, myHa
         {message.replyTo && <ReplyStrip ctx={message.replyTo} isMine={isMine} />}
         <div className="whitespace-pre-wrap break-words">{message.plaintext}</div>
         <div className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1">
+          {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
         </div>
@@ -479,6 +510,7 @@ function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; is
           className="px-3 py-1.5 text-[10px] font-medium opacity-80 flex items-center justify-end gap-1"
           style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}
         >
+          {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
         </div>
@@ -506,6 +538,7 @@ function VoiceBubble({ message, isMine, time }: { message: ChatMessage; isMine: 
         className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1"
         style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}
       >
+        {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
         <time>{time}</time>
         {isMine && <StatusTick status={message.status} />}
       </div>
@@ -572,6 +605,24 @@ function EventCancelBubble({ message, isMine, time }: { message: ChatMessage; is
     <div className="flex justify-center">
       <span className="px-3 py-1 rounded-full text-xs text-[var(--color-red)] bg-[var(--color-red-dim)]">
         Event canceled · {time}{isMine ? ' (by you)' : ''}
+      </span>
+    </div>
+  );
+}
+
+function TimerChangeChip({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  let data: SystemTimerChangePayload | null = null;
+  try { data = JSON.parse(message.plaintext) as SystemTimerChangePayload; } catch { /* ignore */ }
+  if (!data) return null;
+  const who = isMine ? 'You' : 'They';
+  const label = data.timerSec === 0
+    ? `${who} turned disappearing messages off`
+    : `${who} set disappearing messages to ${formatTimerLabel(data.timerSec)}`;
+  return (
+    <div className="flex justify-center">
+      <span className="px-3 py-1 rounded-full text-[11px] text-[var(--color-text-muted)] bg-[var(--color-surface-muted)] inline-flex items-center gap-1.5">
+        <Ico name="clock" size={12} color="var(--color-text-muted)" />
+        {label} · {time}
       </span>
     </div>
   );
