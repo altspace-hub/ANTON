@@ -281,6 +281,9 @@ export async function deleteThread(threadHash: string): Promise<void> {
 export async function applyLocationUpdate(
   parentMsgId: string,
   patch: { lat: number; lng: number; accuracyM: number; ts: string },
+  /** Authorship guard. Inbound: the relay-stamped fromHash. Local: own hash.
+   *  Refuses to mutate unless this matches the parent row's fromHash. */
+  expectedOwnerHash?: string,
 ): Promise<ChatMessage | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -290,6 +293,7 @@ export async function applyLocationUpdate(
     getReq.onsuccess = () => {
       const row = getReq.result as ChatMessage | undefined;
       if (!row || row.kind !== 'location') { resolve(null); return; }
+      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
       let parsed: Record<string, unknown> = {};
       try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
       parsed.lat = patch.lat;
@@ -378,7 +382,13 @@ export async function rescheduleMessage(id: string, newScheduledFor: string): Pr
  * messages with id ≤ lastMsgId that are currently 'sent' or 'delivered'.
  * Returns the count that flipped.
  */
-export async function markReadUpTo(threadHash: string, lastMsgId: string): Promise<number> {
+export async function markReadUpTo(
+  threadHash: string,
+  lastMsgId: string,
+  /** Authorship guard. The peer claiming to have read must equal toHash
+   *  on the outbound rows being flipped. */
+  expectedReaderHash?: string,
+): Promise<number> {
   const db = await openDb();
   let flipped = 0;
   await new Promise<void>((resolve, reject) => {
@@ -391,7 +401,8 @@ export async function markReadUpTo(threadHash: string, lastMsgId: string): Promi
       const cursor = req.result;
       if (!cursor) return;
       const row = cursor.value as ChatMessage;
-      if (row.direction === 'out' && row.id <= lastMsgId
+      const ownerOk = !expectedReaderHash || row.toHash === expectedReaderHash;
+      if (ownerOk && row.direction === 'out' && row.id <= lastMsgId
           && (row.status === 'sent' || row.status === 'delivered' || row.status === 'queued')) {
         row.status = 'read';
         cursor.update(row);
@@ -410,7 +421,13 @@ export async function markReadUpTo(threadHash: string, lastMsgId: string): Promi
  * editedAt. No-op if the target id isn't in the store or it isn't a
  * text message (edits only target plain text per the spec).
  */
-export async function applyEdit(targetMsgId: string, newText: string): Promise<ChatMessage | null> {
+export async function applyEdit(
+  targetMsgId: string,
+  newText: string,
+  /** Authorship guard. Edits are only valid from the message's original
+   *  sender — anyone else's edit must be refused. */
+  expectedOwnerHash?: string,
+): Promise<ChatMessage | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_MESSAGES, 'readwrite');
@@ -419,6 +436,7 @@ export async function applyEdit(targetMsgId: string, newText: string): Promise<C
     getReq.onsuccess = () => {
       const row = getReq.result as ChatMessage | undefined;
       if (!row || (row.kind && row.kind !== 'text')) { resolve(null); return; }
+      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
       row.plaintext = newText;
       row.editedAt = new Date().toISOString();
       store.put(row);
@@ -433,7 +451,12 @@ export async function applyEdit(targetMsgId: string, newText: string): Promise<C
  * reactions + replyTo and flags `deletedForEveryone`. Bubble renderer
  * then shows a placeholder.
  */
-export async function applyDeleteForEveryone(targetMsgId: string): Promise<ChatMessage | null> {
+export async function applyDeleteForEveryone(
+  targetMsgId: string,
+  /** Authorship guard. Only the message's original sender can delete it
+   *  for everyone — required to stop peers wiping each other's history. */
+  expectedOwnerHash?: string,
+): Promise<ChatMessage | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_MESSAGES, 'readwrite');
@@ -442,6 +465,7 @@ export async function applyDeleteForEveryone(targetMsgId: string): Promise<ChatM
     getReq.onsuccess = () => {
       const row = getReq.result as ChatMessage | undefined;
       if (!row) { resolve(null); return; }
+      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
       row.deletedForEveryone = true;
       row.plaintext = '';
       row.reactions = undefined;
@@ -458,7 +482,12 @@ export async function applyDeleteForEveryone(targetMsgId: string): Promise<ChatM
  * the recipient's `view_once_viewed` signal arrives. Returns the updated
  * message, or null if the id wasn't found.
  */
-export async function markViewed(id: string): Promise<ChatMessage | null> {
+export async function markViewed(
+  id: string,
+  /** Authorship guard. Only the recipient of a view-once message can
+   *  mark it viewed — i.e. expectedViewerHash must equal row.toHash. */
+  expectedViewerHash?: string,
+): Promise<ChatMessage | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_MESSAGES, 'readwrite');
@@ -467,6 +496,7 @@ export async function markViewed(id: string): Promise<ChatMessage | null> {
     getReq.onsuccess = () => {
       const row = getReq.result as ChatMessage | undefined;
       if (!row) { resolve(null); return; }
+      if (expectedViewerHash && row.toHash !== expectedViewerHash) { resolve(null); return; }
       row.viewed = true;
       // Strip the media bytes — sender has confirmation, no need to keep
       // the encrypted payload around once viewed. Keep the kind so the

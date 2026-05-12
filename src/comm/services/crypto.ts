@@ -22,6 +22,7 @@ import { hkdf } from '@noble/hashes/hkdf';
 import { sha256 } from '@noble/hashes/sha2';
 import { getSecure } from './secure-store';
 import { getIdentity } from './identity';
+import { recordOrReject, ReplayError } from './replay-cache';
 
 const SECURE_KEY_PRIVKEY = 'identity-private-key';
 
@@ -162,6 +163,12 @@ export async function openFromPeer(
   fromHash: string,
   toHash: string,
 ): Promise<string> {
+  // Replay guard: reject if we've already accepted an envelope with the
+  // same (fromHash, salt, iv) within the TTL window. Done BEFORE the
+  // crypto work so a flooded peer can't burn CPU on us.
+  if (!recordOrReject(fromHash, envelope.salt, envelope.iv)) {
+    throw new ReplayError();
+  }
   const own = await getOwnX25519Keypair();
   const peerX = peerEd25519ToX25519(peerEd25519PubkeyHex);
   const shared = deriveSharedSecret(own.privateKey, peerX);

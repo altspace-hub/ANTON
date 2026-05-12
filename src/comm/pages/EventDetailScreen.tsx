@@ -39,24 +39,38 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
     return () => { cancelled = true; };
   }, [eventId]);
 
-  async function handleToggleReminder() {
+  /**
+   * R11 — set the lead-time in minutes. 0 / null disables. If the chosen
+   * lead-time is longer than the actual time-to-event we clamp to "1 min
+   * before" so the user still gets a notification (otherwise the trigger
+   * would be in the past and silently never fire — the R11 acceptance
+   * test "5-min-out event reminds 1 min before" used to fail this way).
+   */
+  async function handleSetReminder(rawMinutesBefore: number | null) {
     if (!event) return;
-    const wantOn = !event.reminderMinutesBefore;
-    if (wantOn) {
+    let minutesBefore = rawMinutesBefore;
+    if (minutesBefore && minutesBefore > 0) {
       const granted = await ensureNotificationPermission();
       if (!granted) {
         setError('Notifications are off for the app. Enable them in system settings to use reminders.');
         return;
       }
+      const minutesToEvent = Math.floor((new Date(event.startAt).getTime() - Date.now()) / 60_000);
+      if (minutesBefore >= minutesToEvent) {
+        // Clamp to the latest sensible value: 1 min before the start.
+        minutesBefore = Math.max(1, minutesToEvent - 1);
+      }
+    } else {
+      minutesBefore = null;
     }
     const next: CommEvent = {
       ...event,
-      reminderMinutesBefore: wantOn ? 60 : null,
+      reminderMinutesBefore: minutesBefore,
       updatedAt: new Date().toISOString(),
     };
     await putEvent(next);
     setEvent(next);
-    if (wantOn) await scheduleEventReminder(next);
+    if (minutesBefore && minutesBefore > 0) await scheduleEventReminder(next);
     else await cancelEventReminder(next.id);
   }
 
@@ -163,36 +177,33 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
         {!event.canceled && new Date(event.startAt).getTime() > Date.now() && (
           <div className="px-5 py-5 border-b border-[var(--color-border-soft)]">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
-              Reminders
+              Reminder
             </p>
-            <button
-              onClick={() => void handleToggleReminder()}
-              aria-pressed={!!event.reminderMinutesBefore}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border"
-              style={{
-                borderColor: event.reminderMinutesBefore ? 'var(--color-accent)' : 'var(--color-border-soft)',
-                backgroundColor: event.reminderMinutesBefore ? 'var(--color-accent-dim)' : 'var(--color-surface)',
-              }}
-            >
-              <Ico name="clock" size={20} color={event.reminderMinutesBefore ? 'var(--color-accent-dark)' : 'var(--color-text-muted)'} />
-              <div className="flex-1 text-left">
-                <div className="text-[14px] font-medium text-[var(--color-text)]">Remind me 1 hour before</div>
-                <div className="text-[11px] text-[var(--color-text-muted)]">
-                  {event.reminderMinutesBefore
-                    ? 'A local notification will fire on this device.'
-                    : 'Off — tap to get a local reminder one hour before the start.'}
-                </div>
-              </div>
-              <span
-                className="w-10 h-6 rounded-full p-0.5 flex-shrink-0"
-                style={{ backgroundColor: event.reminderMinutesBefore ? 'var(--color-accent)' : 'var(--color-border)' }}
-              >
-                <span
-                  className="block w-5 h-5 rounded-full bg-white transition-transform"
-                  style={{ transform: event.reminderMinutesBefore ? 'translateX(16px)' : 'translateX(0)' }}
-                />
-              </span>
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {REMINDER_OPTIONS.map((opt) => {
+                const active = (event.reminderMinutesBefore ?? null) === opt.value;
+                return (
+                  <button
+                    key={opt.label}
+                    onClick={() => void handleSetReminder(opt.value)}
+                    aria-pressed={active}
+                    className="px-3 py-1.5 rounded-full text-[13px] font-medium border"
+                    style={{
+                      borderColor: active ? 'var(--color-accent)' : 'var(--color-border-soft)',
+                      backgroundColor: active ? 'var(--color-accent-dim)' : 'var(--color-surface)',
+                      color: active ? 'var(--color-accent-dark)' : 'var(--color-text)',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+              {event.reminderMinutesBefore
+                ? `Local notification ${formatLead(event.reminderMinutesBefore)} before the start.`
+                : 'Off — pick a lead-time to get a local notification on this device.'}
+            </p>
           </div>
         )}
 
@@ -208,6 +219,23 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
       </div>
     </section>
   );
+}
+
+// R11 — reminder lead-time presets. null = Off; clamp-to-1-min logic in
+// handleSetReminder handles "5 min before" being chosen on a 3-min-out event.
+const REMINDER_OPTIONS: Array<{ label: string; value: number | null }> = [
+  { label: 'Off',     value: null },
+  { label: '5 min',   value: 5 },
+  { label: '15 min',  value: 15 },
+  { label: '30 min',  value: 30 },
+  { label: '1 hour',  value: 60 },
+  { label: '1 day',   value: 60 * 24 },
+];
+
+function formatLead(min: number): string {
+  if (min < 60) return `${min} min`;
+  if (min < 60 * 24) return `${Math.round(min / 60)} hr`;
+  return `${Math.round(min / (60 * 24))} day`;
 }
 
 function RsvpButton({ label, active, onClick, disabled }: {

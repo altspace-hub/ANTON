@@ -27,6 +27,12 @@ to_git_repo/
 # Local-only scratch files and scripts (not for the repo)
 not_to_git/
 
+# Release signing — keystores + their properties stay off the repo.
+# Keep `keystore.properties.example` (no real values) tracked.
+*.keystore
+*.jks
+keystore.properties
+
 # Loose dev screenshots and generated output files in root
 pic_*.png
 anton_gui.png

@@ -339,6 +339,11 @@ export class RelayClient {
       await applyInboundMessage(sender.contactHash, wire);
       this.cfg.onMessage?.(sender.contactHash);
     } catch (err) {
+      if ((err as Error)?.name === 'ReplayError') {
+        // Already-seen envelope; drop quietly. Don't log content to keep
+        // the relay's mailbox-redelivery story noise-free.
+        return;
+      }
       console.warn('[relay-client] decrypt failed', err);
     }
   }

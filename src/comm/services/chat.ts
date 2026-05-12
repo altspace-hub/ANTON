@@ -429,7 +429,8 @@ export async function sendLocationUpdate(
   const contact = await getContact(peerContactHash);
   if (!contact?.publicKeyHex) return;
   const ts = new Date().toISOString();
-  await applyLocationUpdate(parentMsgId, { ...patch, ts });
+  // Local self-update: pass our own hash so the authorship guard accepts.
+  await applyLocationUpdate(parentMsgId, { ...patch, ts }, me.contactHash);
   const wire: WirePayload = { kind: 'location_update', data: { parentMsgId, ...patch, ts } };
   const client = getRelayClient();
   if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
@@ -487,7 +488,7 @@ export async function sendEdit(
   const contact = await getContact(peerContactHash);
   if (!contact?.publicKeyHex) return;
 
-  const updated = await applyEdit(targetMsgId, newText);
+  const updated = await applyEdit(targetMsgId, newText, me.contactHash);
   if (!updated) return;
 
   const wire: WirePayload = { kind: 'edit', data: { targetMsgId, newText } };
@@ -509,10 +510,10 @@ export async function sendDeleteForEveryone(
   const contact = await getContact(peerContactHash);
   if (!contact?.publicKeyHex) {
     // No peer key yet — still delete locally so the user isn't confused.
-    await applyDeleteForEveryone(targetMsgId);
+    await applyDeleteForEveryone(targetMsgId, me.contactHash);
     return;
   }
-  await applyDeleteForEveryone(targetMsgId);
+  await applyDeleteForEveryone(targetMsgId, me.contactHash);
 
   const wire: WirePayload = { kind: 'delete', data: { targetMsgId } };
   const wireJson = JSON.stringify(wire);
@@ -959,34 +960,45 @@ export async function applyInboundMessage(
 
   // R6 — sender-side: the recipient just viewed our view-once media. Flip
   // the bubble to "Viewed" and drop the payload bytes.
+  // SECURITY: gate on `row.toHash === fromHash` so a non-recipient cannot
+  // burn the local copy of a view-once message they were never sent.
   if (wire.kind === 'view_once_viewed') {
-    await markViewed(wire.data.targetMsgId);
+    await markViewed(wire.data.targetMsgId, fromHash);
     return { kind: 'text', threadHash: fromHash };
   }
 
   // R7 — peer voted on a poll. Update the poll's votes map; no visible
   // bubble of its own (the existing poll bubble re-renders with the new tally).
+  // SECURITY: only accept votes from the chat peer this poll belongs to
+  // (i.e. the poll's threadHash) to stop cross-thread vote injection.
   if (wire.kind === 'poll_vote') {
-    await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
+    const poll = await getMessage(wire.data.pollId);
+    if (poll && poll.kind === 'poll' && (poll.threadHash === fromHash || poll.fromHash === fromHash)) {
+      await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
+    }
     return { kind: 'text', threadHash: fromHash };
   }
 
   // R8 — peer edited a previously-sent text message. Apply locally.
+  // SECURITY: only the original sender (row.fromHash === fromHash) can
+  // edit. Anyone else's edit is silently dropped.
   if (wire.kind === 'edit') {
-    await applyEdit(wire.data.targetMsgId, wire.data.newText);
+    await applyEdit(wire.data.targetMsgId, wire.data.newText, fromHash);
     return { kind: 'text', threadHash: fromHash };
   }
 
   // R8 — peer requested delete-for-everyone. Clear our local copy.
+  // SECURITY: same ownership rule as edit.
   if (wire.kind === 'delete') {
-    await applyDeleteForEveryone(wire.data.targetMsgId);
+    await applyDeleteForEveryone(wire.data.targetMsgId, fromHash);
     return { kind: 'text', threadHash: fromHash };
   }
 
   // R9 — peer read our messages up to `lastMsgId`. Flip our outbound
   // status to 'read' for matching rows in the thread keyed by their hash.
+  // SECURITY: only flip rows whose `toHash` matches the reader.
   if (wire.kind === 'presence_read') {
-    await markReadUpTo(fromHash, wire.data.lastMsgId);
+    await markReadUpTo(fromHash, wire.data.lastMsgId, fromHash);
     return { kind: 'text', threadHash: fromHash };
   }
 
@@ -999,22 +1011,40 @@ export async function applyInboundMessage(
 
   // R13 — live location update for an existing location bubble. Mutate
   // the parent's stored coordinates; no new bubble.
+  // SECURITY: only the original location-sharer (row.fromHash === fromHash)
+  // can push updates. Other peers cannot rewrite someone else's pin.
   if (wire.kind === 'location_update') {
     await applyLocationUpdate(wire.data.parentMsgId, {
       lat: wire.data.lat,
       lng: wire.data.lng,
       accuracyM: wire.data.accuracyM,
       ts: wire.data.ts,
-    });
+    }, fromHash);
     return { kind: 'text', threadHash: fromHash };
   }
 
   // R3 — Wassup feed messages don't appear in the chat thread; they
   // update the feed store + interactions.
-  if (wire.kind === 'wassup_post')    { await applyInboundPost(wire.data);    return { kind: 'text', threadHash: fromHash }; }
-  if (wire.kind === 'wassup_like')    { await applyInboundLike(wire.data);    return { kind: 'text', threadHash: fromHash }; }
-  if (wire.kind === 'wassup_comment') { await applyInboundComment(wire.data); return { kind: 'text', threadHash: fromHash }; }
-  if (wire.kind === 'wassup_delete')  { await applyInboundDelete(wire.data);  return { kind: 'text', threadHash: fromHash }; }
+  // SECURITY: override identity fields with the relay-stamped fromHash
+  // so a peer cannot like / comment / post / delete AS someone else.
+  // For wassup_delete, refuse outright if the wire's authorHash doesn't
+  // match fromHash — only the original author can delete their post.
+  if (wire.kind === 'wassup_post') {
+    await applyInboundPost({ ...wire.data, authorHash: fromHash });
+    return { kind: 'text', threadHash: fromHash };
+  }
+  if (wire.kind === 'wassup_like') {
+    await applyInboundLike({ ...wire.data, reactorHash: fromHash });
+    return { kind: 'text', threadHash: fromHash };
+  }
+  if (wire.kind === 'wassup_comment') {
+    await applyInboundComment({ ...wire.data, commenterHash: fromHash });
+    return { kind: 'text', threadHash: fromHash };
+  }
+  if (wire.kind === 'wassup_delete') {
+    if (wire.data.authorHash === fromHash) await applyInboundDelete(wire.data);
+    return { kind: 'text', threadHash: fromHash };
+  }
 
   let plaintext: string;
   let kind: ContentKind;
