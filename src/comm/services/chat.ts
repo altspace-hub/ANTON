@@ -1009,6 +1009,12 @@ export function parseWirePayload(raw: string): WirePayload {
  * the ChatMessage record. Called by relay-client.ts after decryption.
  * Returns the kind so the caller can route UI notifications appropriately.
  */
+/** Helper: never-returning sentinel so the compiler flags any
+ *  wire.kind the switch below forgot to handle. P6-4. */
+function assertNever(x: never): never {
+  throw new Error(`unhandled wire kind: ${JSON.stringify(x)}`);
+}
+
 export async function applyInboundMessage(
   fromHash: string,
   wire: WirePayload,
@@ -1016,126 +1022,99 @@ export async function applyInboundMessage(
   const me = getIdentity();
   if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
 
-  // R2 — reactions don't create a visible message; just mutate the target.
-  if (wire.kind === 'react') {
-    await applyReaction(wire.data.targetMsgId, wire.data.emoji, fromHash, wire.data.op);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R6 — sender-side: the recipient just viewed our view-once media. Flip
-  // the bubble to "Viewed" and drop the payload bytes.
-  // SECURITY: gate on `row.toHash === fromHash` so a non-recipient cannot
-  // burn the local copy of a view-once message they were never sent.
-  if (wire.kind === 'view_once_viewed') {
-    await markViewed(wire.data.targetMsgId, fromHash);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R7 — peer voted on a poll. Update the poll's votes map; no visible
-  // bubble of its own (the existing poll bubble re-renders with the new tally).
-  // SECURITY: only accept votes from the chat peer this poll belongs to
-  // (i.e. the poll's threadHash) to stop cross-thread vote injection.
-  if (wire.kind === 'poll_vote') {
-    const poll = await getMessage(wire.data.pollId);
-    if (poll && poll.kind === 'poll' && (poll.threadHash === fromHash || poll.fromHash === fromHash)) {
-      await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
-    }
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R8 — peer edited a previously-sent text message. Apply locally.
-  // SECURITY: only the original sender (row.fromHash === fromHash) can
-  // edit. Anyone else's edit is silently dropped.
-  if (wire.kind === 'edit') {
-    await applyEdit(wire.data.targetMsgId, wire.data.newText, fromHash);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R8 — peer requested delete-for-everyone. Clear our local copy.
-  // SECURITY: same ownership rule as edit.
-  if (wire.kind === 'delete') {
-    await applyDeleteForEveryone(wire.data.targetMsgId, fromHash);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R9 — peer read our messages up to `lastMsgId`. Flip our outbound
-  // status to 'read' for matching rows in the thread keyed by their hash.
-  // SECURITY: only flip rows whose `toHash` matches the reader.
-  if (wire.kind === 'presence_read') {
-    await markReadUpTo(fromHash, wire.data.lastMsgId, fromHash);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R9 — peer typing state. No IDB write — surface via the in-process
-  // event bus so an open ChatThreadScreen can subscribe.
-  if (wire.kind === 'presence_typing') {
-    emitTyping(fromHash, wire.data.isTyping);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R13 — live location update for an existing location bubble. Mutate
-  // the parent's stored coordinates; no new bubble.
-  // SECURITY: only the original location-sharer (row.fromHash === fromHash)
-  // can push updates. Other peers cannot rewrite someone else's pin.
-  if (wire.kind === 'location_update') {
-    await applyLocationUpdate(wire.data.parentMsgId, {
-      lat: wire.data.lat,
-      lng: wire.data.lng,
-      accuracyM: wire.data.accuracyM,
-      ts: wire.data.ts,
-    }, fromHash);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
-  // R3 — Wassup feed messages don't appear in the chat thread; they
-  // update the feed store + interactions.
-  // SECURITY: override identity fields with the relay-stamped fromHash
-  // so a peer cannot like / comment / post / delete AS someone else.
-  // For wassup_delete, refuse outright if the wire's authorHash doesn't
-  // match fromHash — only the original author can delete their post.
-  if (wire.kind === 'wassup_post') {
-    await applyInboundPost({ ...wire.data, authorHash: fromHash });
-    return { kind: 'text', threadHash: fromHash };
-  }
-  if (wire.kind === 'wassup_like') {
-    await applyInboundLike({ ...wire.data, reactorHash: fromHash });
-    return { kind: 'text', threadHash: fromHash };
-  }
-  if (wire.kind === 'wassup_comment') {
-    await applyInboundComment({ ...wire.data, commenterHash: fromHash });
-    return { kind: 'text', threadHash: fromHash };
-  }
-  if (wire.kind === 'wassup_delete') {
-    if (wire.data.authorHash === fromHash) await applyInboundDelete(wire.data);
-    return { kind: 'text', threadHash: fromHash };
-  }
-
+  // P6-4: one exhaustive switch over wire.kind. Each branch either:
+  //   - completes its own side effects and returns directly (mutator
+  //     wires that don't produce a visible message bubble); or
+  //   - falls through with `(plaintext, kind, messageId, replyTo,
+  //     disappearsAt)` filled in, after which the tail appendMessage
+  //     call lands the row.
+  //
+  // The trailing `assertNever(wire)` at the bottom is the safety net —
+  // adding a new wire kind to the WirePayload union without handling it
+  // here becomes a TS compile error rather than a silent dropped
+  // message in production.
   let plaintext: string;
   let kind: ContentKind;
   let messageId: string | undefined;
   let replyTo: ReplyContext | undefined;
   let disappearsAt: string | undefined;
+
   switch (wire.kind) {
+    // ── Mutator wires (no visible bubble) ─────────────────────────────
+    case 'react':
+      // R2 — reactions don't create a visible message; just mutate the target.
+      await applyReaction(wire.data.targetMsgId, wire.data.emoji, fromHash, wire.data.op);
+      return { kind: 'text', threadHash: fromHash };
+    case 'view_once_viewed':
+      // R6 — sender-side: the recipient viewed our view-once media. Flip
+      // to "Viewed" and drop the payload. SECURITY: markViewed gates on
+      // `row.toHash === fromHash` so a non-recipient cannot burn it.
+      await markViewed(wire.data.targetMsgId, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'poll_vote': {
+      // R7 — peer voted on a poll. SECURITY: only accept votes from
+      // the chat peer this poll belongs to.
+      const poll = await getMessage(wire.data.pollId);
+      if (poll && poll.kind === 'poll' && (poll.threadHash === fromHash || poll.fromHash === fromHash)) {
+        await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
+      }
+      return { kind: 'text', threadHash: fromHash };
+    }
+    case 'edit':
+      // R8 — peer edited a previously-sent text message. SECURITY:
+      // applyEdit gates on row.fromHash === fromHash so only the
+      // original sender can edit.
+      await applyEdit(wire.data.targetMsgId, wire.data.newText, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'delete':
+      // R8 — peer requested delete-for-everyone. Same ownership rule.
+      await applyDeleteForEveryone(wire.data.targetMsgId, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'presence_read':
+      // R9 — peer read our messages. SECURITY: markReadUpTo flips only
+      // rows whose toHash matches the reader.
+      await markReadUpTo(fromHash, wire.data.lastMsgId, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'presence_typing':
+      // R9 — surface via the in-process bus; no IDB write.
+      emitTyping(fromHash, wire.data.isTyping);
+      return { kind: 'text', threadHash: fromHash };
+    case 'location_update':
+      // R13 — mutate the parent location bubble in place. SECURITY:
+      // applyLocationUpdate gates on row.fromHash === fromHash.
+      await applyLocationUpdate(wire.data.parentMsgId, {
+        lat: wire.data.lat,
+        lng: wire.data.lng,
+        accuracyM: wire.data.accuracyM,
+        ts: wire.data.ts,
+      }, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+
+    // ── Wassup wires (feed store, not chat bubbles) ───────────────────
+    // SECURITY: override identity fields with the relay-stamped
+    // fromHash so a peer cannot like / comment / post / delete AS
+    // someone else. wassup_delete refuses outright unless the wire's
+    // authorHash matches fromHash.
+    case 'wassup_post':
+      await applyInboundPost({ ...wire.data, authorHash: fromHash });
+      return { kind: 'text', threadHash: fromHash };
+    case 'wassup_like':
+      await applyInboundLike({ ...wire.data, reactorHash: fromHash });
+      return { kind: 'text', threadHash: fromHash };
+    case 'wassup_comment':
+      await applyInboundComment({ ...wire.data, commenterHash: fromHash });
+      return { kind: 'text', threadHash: fromHash };
+    case 'wassup_delete':
+      if (wire.data.authorHash === fromHash) await applyInboundDelete(wire.data);
+      return { kind: 'text', threadHash: fromHash };
+
+    // ── Bubble-producing wires ────────────────────────────────────────
     case 'text':
       plaintext = wire.text;
       kind = 'text';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
       disappearsAt = wire.disappearsAt;
-      break;
-    case 'event_invite':
-      await applyInboundInvite(wire.data, fromHash);
-      plaintext = JSON.stringify(wire.data);
-      kind = 'event_invite';
-      break;
-    case 'event_rsvp':
-      await applyInboundRsvp(wire.data, fromHash);
-      plaintext = JSON.stringify(wire.data);
-      kind = 'event_rsvp';
-      break;
-    case 'event_cancel':
-      plaintext = JSON.stringify(wire.data);
-      kind = 'event_cancel';
       break;
     case 'image':
       plaintext = JSON.stringify(wire.data);
@@ -1158,33 +1137,52 @@ export async function applyInboundMessage(
       replyTo = wire.replyTo;
       disappearsAt = wire.disappearsAt;
       break;
+    case 'event_invite':
+      await applyInboundInvite(wire.data, fromHash);
+      plaintext = JSON.stringify(wire.data);
+      kind = 'event_invite';
+      break;
+    case 'event_rsvp':
+      await applyInboundRsvp(wire.data, fromHash);
+      plaintext = JSON.stringify(wire.data);
+      kind = 'event_rsvp';
+      break;
+    case 'event_cancel':
+      plaintext = JSON.stringify(wire.data);
+      kind = 'event_cancel';
+      break;
     case 'system_timer_change':
-      // R5 — update our Contact to mirror the peer's setting + persist a chip
+      // R5 — mirror the peer's setting on our Contact + persist a chip.
       await updateContact(fromHash, { disappearingTimerSec: wire.data.timerSec });
       plaintext = JSON.stringify(wire.data);
       kind = 'system_timer_change';
       break;
     case 'poll':
-      // R7 — persist with an empty votes map; subsequent poll_vote
-      // wires from either side mutate it via applyPollVote.
+      // R7 — empty votes map; later poll_vote wires mutate it.
       plaintext = JSON.stringify({ ...wire.data, votes: {} });
       kind = 'poll';
       messageId = wire.messageId || wire.data.pollId || undefined;
       break;
     case 'location':
-      // R13 — persist with the initial fix; subsequent location_update
-      // wires mutate lat/lng/accuracyM/lastUpdateAt in place.
+      // R13 — initial fix; later location_update wires mutate in place.
       plaintext = JSON.stringify({ ...wire.data, lastUpdateAt: new Date().toISOString() });
       kind = 'location';
       messageId = wire.messageId || undefined;
       break;
     case 'sticker':
-      // R12 — only the pack/sticker ids travel; bytes resolved client-side.
+      // R12 — only pack/sticker ids travel; bytes resolved client-side.
       plaintext = JSON.stringify(wire.data);
       kind = 'sticker';
       messageId = wire.messageId || undefined;
       break;
+
+    default:
+      // If you see this fire at runtime, someone added a new wire kind
+      // to WirePayload without handling it here. The compile-time
+      // assertion in assertNever should have caught it first.
+      return assertNever(wire);
   }
+
   await appendMessage({
     id: messageId,
     threadHash: fromHash,

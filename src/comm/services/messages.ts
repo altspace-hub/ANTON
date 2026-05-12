@@ -115,6 +115,53 @@ function generateId(): string {
   return prefix + suffix;
 }
 
+// ── Internal helpers ───────────────────────────────────────────────────
+
+/**
+ * P6-3: every single-row mutator (applyReaction / applyEdit /
+ * applyDeleteForEveryone / applyLocationUpdate / applyPollVote /
+ * markViewed / rescheduleMessage) repeated the same five lines:
+ *
+ *   const db = await openDb();
+ *   return new Promise((resolve, reject) => {
+ *     const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+ *     const store = tx.objectStore(STORE_MESSAGES);
+ *     const getReq = store.get(id);
+ *     getReq.onsuccess = () => {
+ *       const row = getReq.result as ChatMessage | undefined;
+ *       if (!row) { resolve(null); return; }
+ *       // ...mutate row, store.put, emitChatChanged, resolve(row)
+ *     };
+ *     tx.onerror = () => reject(tx.error);
+ *   });
+ *
+ * withMessage abstracts that pattern. The `mutate` callback receives
+ * the loaded row and returns either:
+ *   - the mutated row (will be put + emitted)
+ *   - null (no-op — row is left untouched, function resolves null)
+ */
+async function withMessage(
+  id: string,
+  mutate: (row: ChatMessage) => ChatMessage | null,
+): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row) { resolve(null); return; }
+      const mutated = mutate(row);
+      if (!mutated) { resolve(null); return; }
+      store.put(mutated);
+      emitChatChanged(mutated.threadHash);
+      resolve(mutated);
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 // ── CRUD ────────────────────────────────────────────────────────────────
 
 export async function appendMessage(
@@ -223,27 +270,16 @@ export async function applyReaction(
   reactorHash: string,
   op: 'add' | 'remove',
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(targetMsgId);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row) { resolve(null); return; }
-      const reactions: ReactionsMap = { ...(row.reactions ?? {}) };
-      const list = reactions[emoji] ? [...reactions[emoji]] : [];
-      const idx = list.indexOf(reactorHash);
-      if (op === 'add' && idx === -1) list.push(reactorHash);
-      if (op === 'remove' && idx >= 0) list.splice(idx, 1);
-      if (list.length > 0) reactions[emoji] = list;
-      else delete reactions[emoji];
-      row.reactions = reactions;
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(targetMsgId, (row) => {
+    const reactions: ReactionsMap = { ...(row.reactions ?? {}) };
+    const list = reactions[emoji] ? [...reactions[emoji]] : [];
+    const idx = list.indexOf(reactorHash);
+    if (op === 'add' && idx === -1) list.push(reactorHash);
+    if (op === 'remove' && idx >= 0) list.splice(idx, 1);
+    if (list.length > 0) reactions[emoji] = list;
+    else delete reactions[emoji];
+    row.reactions = reactions;
+    return row;
   });
 }
 
@@ -288,27 +324,17 @@ export async function applyLocationUpdate(
    *  Refuses to mutate unless this matches the parent row's fromHash. */
   expectedOwnerHash?: string,
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(parentMsgId);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row || row.kind !== 'location') { resolve(null); return; }
-      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
-      let parsed: Record<string, unknown> = {};
-      try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
-      parsed.lat = patch.lat;
-      parsed.lng = patch.lng;
-      parsed.accuracyM = patch.accuracyM;
-      parsed.lastUpdateAt = patch.ts;
-      row.plaintext = JSON.stringify(parsed);
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(parentMsgId, (row) => {
+    if (row.kind !== 'location') return null;
+    if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) return null;
+    let parsed: Record<string, unknown> = {};
+    try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
+    parsed.lat = patch.lat;
+    parsed.lng = patch.lng;
+    parsed.accuracyM = patch.accuracyM;
+    parsed.lastUpdateAt = patch.ts;
+    row.plaintext = JSON.stringify(parsed);
+    return row;
   });
 }
 
@@ -325,26 +351,16 @@ export async function applyPollVote(
   voterHash: string,
   optionIdx: number[],
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(pollId);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row || row.kind !== 'poll') { resolve(null); return; }
-      let parsed: { votes?: Record<string, number[]> } & Record<string, unknown> = {};
-      try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
-      const votes = { ...(parsed.votes ?? {}) };
-      if (optionIdx.length === 0) delete votes[voterHash];
-      else votes[voterHash] = optionIdx.slice();
-      parsed.votes = votes;
-      row.plaintext = JSON.stringify(parsed);
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(pollId, (row) => {
+    if (row.kind !== 'poll') return null;
+    let parsed: { votes?: Record<string, number[]> } & Record<string, unknown> = {};
+    try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
+    const votes = { ...(parsed.votes ?? {}) };
+    if (optionIdx.length === 0) delete votes[voterHash];
+    else votes[voterHash] = optionIdx.slice();
+    parsed.votes = votes;
+    row.plaintext = JSON.stringify(parsed);
+    return row;
   });
 }
 
@@ -365,20 +381,10 @@ export async function cancelScheduled(id: string): Promise<void> {
 
 /** R10 — change the scheduledFor on a pending scheduled message. */
 export async function rescheduleMessage(id: string, newScheduledFor: string): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(id);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row || row.status !== 'queued') { resolve(null); return; }
-      row.scheduledFor = newScheduledFor;
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(id, (row) => {
+    if (row.status !== 'queued') return null;
+    row.scheduledFor = newScheduledFor;
+    return row;
   });
 }
 
@@ -435,22 +441,12 @@ export async function applyEdit(
    *  sender — anyone else's edit must be refused. */
   expectedOwnerHash?: string,
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(targetMsgId);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row || (row.kind && row.kind !== 'text')) { resolve(null); return; }
-      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
-      row.plaintext = newText;
-      row.editedAt = new Date().toISOString();
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(targetMsgId, (row) => {
+    if (row.kind && row.kind !== 'text') return null;
+    if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) return null;
+    row.plaintext = newText;
+    row.editedAt = new Date().toISOString();
+    return row;
   });
 }
 
@@ -465,24 +461,13 @@ export async function applyDeleteForEveryone(
    *  for everyone — required to stop peers wiping each other's history. */
   expectedOwnerHash?: string,
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(targetMsgId);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row) { resolve(null); return; }
-      if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) { resolve(null); return; }
-      row.deletedForEveryone = true;
-      row.plaintext = '';
-      row.reactions = undefined;
-      row.replyTo = undefined;
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(targetMsgId, (row) => {
+    if (expectedOwnerHash && row.fromHash !== expectedOwnerHash) return null;
+    row.deletedForEveryone = true;
+    row.plaintext = '';
+    row.reactions = undefined;
+    row.replyTo = undefined;
+    return row;
   });
 }
 
@@ -497,30 +482,19 @@ export async function markViewed(
    *  mark it viewed — i.e. expectedViewerHash must equal row.toHash. */
   expectedViewerHash?: string,
 ): Promise<ChatMessage | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
-    const store = tx.objectStore(STORE_MESSAGES);
-    const getReq = store.get(id);
-    getReq.onsuccess = () => {
-      const row = getReq.result as ChatMessage | undefined;
-      if (!row) { resolve(null); return; }
-      if (expectedViewerHash && row.toHash !== expectedViewerHash) { resolve(null); return; }
-      row.viewed = true;
-      // Strip the media bytes — sender has confirmation, no need to keep
-      // the encrypted payload around once viewed. Keep the kind so the
-      // bubble still renders the "Viewed" placeholder.
-      try {
-        const parsed = JSON.parse(row.plaintext) as Record<string, unknown>;
-        if ('data' in parsed && typeof parsed.data === 'string') {
-          row.plaintext = JSON.stringify({ ...parsed, data: '' });
-        }
-      } catch { /* ignore non-JSON plaintexts */ }
-      store.put(row);
-      emitChatChanged(row.threadHash);
-      resolve(row);
-    };
-    tx.onerror = () => reject(tx.error);
+  return withMessage(id, (row) => {
+    if (expectedViewerHash && row.toHash !== expectedViewerHash) return null;
+    row.viewed = true;
+    // Strip the media bytes — sender has confirmation, no need to keep
+    // the encrypted payload around once viewed. Keep the kind so the
+    // bubble still renders the "Viewed" placeholder.
+    try {
+      const parsed = JSON.parse(row.plaintext) as Record<string, unknown>;
+      if ('data' in parsed && typeof parsed.data === 'string') {
+        row.plaintext = JSON.stringify({ ...parsed, data: '' });
+      }
+    } catch { /* ignore non-JSON plaintexts */ }
+    return row;
   });
 }
 
