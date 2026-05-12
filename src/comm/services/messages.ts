@@ -46,7 +46,7 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change';
+export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change' | 'poll';
 
 /** R1 — quoted-reply context, attached to text/image/video messages. */
 export interface ReplyContext {
@@ -243,6 +243,41 @@ export async function deleteThread(threadHash: string): Promise<void> {
       if (cursor) { cursor.delete(); cursor.continue(); }
     };
     tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R7 — apply a poll vote from a peer (or self). Looks up the persisted
+ * poll message by id, parses its plaintext, mutates the `votes` map under
+ * a voter-contact-hash key, persists. The bubble renders directly off
+ * this state.
+ *
+ * Returns the updated message, or null if no poll with that id is stored.
+ */
+export async function applyPollVote(
+  pollId: string,
+  voterHash: string,
+  optionIdx: number[],
+): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(pollId);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row || row.kind !== 'poll') { resolve(null); return; }
+      let parsed: { votes?: Record<string, number[]> } & Record<string, unknown> = {};
+      try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
+      const votes = { ...(parsed.votes ?? {}) };
+      if (optionIdx.length === 0) delete votes[voterHash];
+      else votes[voterHash] = optionIdx.slice();
+      parsed.votes = votes;
+      row.plaintext = JSON.stringify(parsed);
+      store.put(row);
+      resolve(row);
+    };
     tx.onerror = () => reject(tx.error);
   });
 }

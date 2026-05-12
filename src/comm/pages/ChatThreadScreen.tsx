@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, sweepExpiredInThread, deleteMessage, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -20,6 +20,8 @@ import MessageActionSheet from '../components/MessageActionSheet';
 import VoiceRecorder from '../components/VoiceRecorder';
 import VoicePlayer from '../components/VoicePlayer';
 import DisappearingTimerSheet, { formatTimerLabel } from '../components/DisappearingTimerSheet';
+import PollBubble from '../components/PollBubble';
+import PollComposeScreen from './PollComposeScreen';
 import { useLongPress } from '../hooks/useLongPress';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -47,6 +49,8 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [viewOnceArmed, setViewOnceArmed] = useState(false);
   /** R6 — message currently being shown fullscreen for one-time view. */
   const [viewingOnce, setViewingOnce] = useState<ChatMessage | null>(null);
+  /** R7 — poll-compose overlay visibility */
+  const [pollComposing, setPollComposing] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
@@ -72,6 +76,15 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
     return () => clearInterval(t);
   }, []);
+
+  async function handlePollVote(pollId: string, optionIdx: number[]) {
+    try {
+      await sendPollVote(peerContactHash, pollId, optionIdx);
+      setRefreshTick((v) => v + 1);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to vote'));
+    }
+  }
 
   async function handleViewOnceDismiss(msg: ChatMessage) {
     setViewingOnce(null);
@@ -189,6 +202,18 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const displayName = contact?.displayName ?? peerContactHash;
   const hasPeerKey = !!contact?.publicKeyHex;
 
+  // R7 — poll compose takes over the screen while open
+  if (pollComposing) {
+    return (
+      <PollComposeScreen
+        peerContactHash={peerContactHash}
+        peerName={displayName}
+        onCancel={() => setPollComposing(false)}
+        onCreated={() => { setPollComposing(false); setRefreshTick((v) => v + 1); }}
+      />
+    );
+  }
+
   return (
     <section className="flex flex-col min-h-dvh max-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center gap-3 h-14 px-3 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] flex-shrink-0">
@@ -244,6 +269,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
               onLongPress={() => setActionTarget(m)}
               onReactionTap={(emoji) => void handleReaction(m, emoji)}
               onOpenViewOnce={(msg) => setViewingOnce(msg)}
+              onPollVote={(pollId, optionIdx) => void handlePollVote(pollId, optionIdx)}
               myHash={me?.contactHash}
             />
           ))
@@ -326,6 +352,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onPickImageLibrary={() => void handleAttachment(captureImageFromLibrary)}
         onPickVideoCamera={() => void handleAttachment(captureVideoFromCamera)}
         onPickVideoLibrary={() => void handleAttachment(captureVideoFromLibrary)}
+        onPickPoll={() => setPollComposing(true)}
         viewOnce={viewOnceArmed}
         onToggleViewOnce={() => setViewOnceArmed((v) => !v)}
       />
@@ -365,6 +392,12 @@ function buildReplyContext(msg: ChatMessage): ReplyContext {
 function replySnippetOf(msg: ChatMessage): string {
   if (msg.kind === 'image') return '📷 Photo';
   if (msg.kind === 'video') return '🎬 Video';
+  if (msg.kind === 'poll') {
+    try {
+      const p = JSON.parse(msg.plaintext) as { question?: string };
+      return `🗳 Poll · ${(p.question ?? '').slice(0, 60)}`;
+    } catch { return '🗳 Poll'; }
+  }
   if (msg.kind === 'voice') {
     try {
       const v = JSON.parse(msg.plaintext) as { durationSec?: number };
@@ -391,10 +424,11 @@ interface BubbleProps {
   onLongPress: () => void;
   onReactionTap: (emoji: string) => void;
   onOpenViewOnce: (message: ChatMessage) => void;
+  onPollVote: (pollId: string, optionIdx: number[]) => void;
   myHash?: string;
 }
 
-function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, myHash }: BubbleProps) {
+function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, onPollVote, myHash }: BubbleProps) {
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   const longPress = useLongPress(onLongPress);
 
@@ -419,6 +453,8 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
     }
   } else if (message.kind === 'voice') {
     body = <VoiceBubble message={message} isMine={isMine} time={time} />;
+  } else if (message.kind === 'poll') {
+    body = <PollBubble message={message} isMine={isMine} myHash={myHash} time={time} onVote={onPollVote} />;
   } else {
     body = (
       <div

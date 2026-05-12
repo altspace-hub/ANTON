@@ -9,6 +9,8 @@ interface Props {
   onPickImageLibrary: () => void;
   onPickVideoCamera: () => void;
   onPickVideoLibrary: () => void;
+  /** R7 — opens the PollComposeScreen flow. */
+  onPickPoll: () => void;
   /** R6 — current view-once state, owned by the parent. */
   viewOnce: boolean;
   onToggleViewOnce: () => void;
@@ -16,7 +18,7 @@ interface Props {
 
 export default function AttachmentSheet({
   open, onClose, onPickImageCamera, onPickImageLibrary, onPickVideoCamera, onPickVideoLibrary,
-  viewOnce, onToggleViewOnce,
+  onPickPoll, viewOnce, onToggleViewOnce,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -82,13 +84,14 @@ export default function AttachmentSheet({
           <Tile icon="image"  label="Photos"  onClick={() => { onClose(); onPickImageLibrary(); }} />
           <Tile icon="video"  label="Record video" onClick={() => { onClose(); onPickVideoCamera(); }} />
           <Tile icon="video"  label="Video library" onClick={() => { onClose(); onPickVideoLibrary(); }} />
+          <Tile icon="grid"   label="Poll"    onClick={() => { onClose(); onPickPoll(); }} />
         </div>
       </div>
     </div>
   );
 }
 
-function Tile({ icon, label, onClick }: { icon: 'camera' | 'image' | 'video'; label: string; onClick: () => void }) {
+function Tile({ icon, label, onClick }: { icon: 'camera' | 'image' | 'video' | 'grid'; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}

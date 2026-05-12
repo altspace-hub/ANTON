@@ -15,7 +15,7 @@
 import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, applyReaction, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { appendMessage, applyReaction, applyPollVote, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
@@ -102,6 +102,27 @@ export interface ViewOnceViewedPayload {
   targetMsgId: string;
 }
 
+/** R7 — poll payload. `pollId` equals the wire-level messageId of the
+ *  poll itself, so vote payloads can refer to it. The local poll
+ *  ChatMessage also persists a `votes: Record<voterHash, optionIdx[]>`
+ *  map inside its JSON plaintext, mutated by applyPollVote. */
+export interface PollPayload {
+  pollId: string;
+  question: string;
+  options: string[];
+  multiSelect: boolean;
+  /** Optional ISO expiry — past this time, the bubble disables voting. */
+  expiresAt?: string;
+}
+
+/** R7 — vote payload. `optionIdx` is an array so multi-select polls can
+ *  carry multiple choices; single-select sends a 1-element array.
+ *  Empty array clears the voter's vote. */
+export interface PollVotePayload {
+  pollId: string;
+  optionIdx: number[];
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -109,6 +130,8 @@ export type WirePayload =
   | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'react';         data: ReactPayload }
   | { kind: 'view_once_viewed'; data: ViewOnceViewedPayload }
+  | { kind: 'poll';          messageId: string; data: PollPayload }
+  | { kind: 'poll_vote';     data: PollVotePayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -200,18 +223,22 @@ export async function sendStructuredMessage(
   // bypass sendStructuredMessage and send inline via the relay client.
   if (wire.kind === 'wassup_post' || wire.kind === 'wassup_like'
       || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
-      || wire.kind === 'react' || wire.kind === 'view_once_viewed') {
+      || wire.kind === 'react' || wire.kind === 'view_once_viewed'
+      || wire.kind === 'poll_vote') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
   const localPlaintext = wire.kind === 'text' ? wire.text : JSON.stringify((wire as { data: unknown }).data);
   // R1 — extract replyTo so the local store has it too (round-trip parity).
   const replyTo = stampable ? wire.replyTo : undefined;
-  const messageId = stampable ? wire.messageId : undefined;
+  // R7 — polls carry their own messageId so both sides reference the
+  // poll by the same id (votes target it). For other non-stampable
+  // kinds, messageId comes from the stampable branch.
+  const messageId = stampable ? wire.messageId : (wire.kind === 'poll' ? wire.messageId : undefined);
   const disappearsAt = stampable ? wire.disappearsAt : undefined;
   const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
-    || wire.kind === 'system_timer_change'
+    || wire.kind === 'system_timer_change' || wire.kind === 'poll'
     ? wire.kind
     : 'text';
   const message = await appendMessage({
@@ -260,6 +287,45 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R7 — Create + send a poll. Generates the pollId locally; both sides
+ * use it as the bubble's ChatMessage.id so votes target the same record.
+ */
+export async function sendPoll(
+  peerContactHash: string,
+  payload: Omit<PollPayload, 'pollId'>,
+): Promise<ChatMessage> {
+  const pollId = generateMsgId();
+  const full: PollPayload = { ...payload, pollId };
+  return sendStructuredMessage(peerContactHash, { kind: 'poll', messageId: pollId, data: full });
+}
+
+/**
+ * R7 — Cast a vote on a peer's poll (or our own — both sides apply
+ * locally + send the wire to keep the other tally in sync).
+ *
+ * `optionIdx` is the FULL current selection (not a delta). An empty
+ * array clears this voter's vote.
+ */
+export async function sendPollVote(
+  peerContactHash: string,
+  pollId: string,
+  optionIdx: number[],
+): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return; // best-effort
+
+  // Apply locally first for instant UI
+  await applyPollVote(pollId, me.contactHash, optionIdx);
+
+  const wire: WirePayload = { kind: 'poll_vote', data: { pollId, optionIdx } };
+  const wireJson = JSON.stringify(wire);
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, wireJson);
 }
 
 /**
@@ -476,6 +542,19 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
     wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'voice') {
     wire = { kind: 'voice', messageId: msg.id, data: JSON.parse(msg.plaintext) as VoicePayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
+  } else if (msg.kind === 'poll') {
+    // R7 — when re-sealing a queued poll, strip the local `votes` map so
+    // the recipient gets a clean PollPayload. Votes are applied via the
+    // separate poll_vote wire kind.
+    const stored = JSON.parse(msg.plaintext) as PollPayload & { votes?: Record<string, number[]> };
+    const clean: PollPayload = {
+      pollId: stored.pollId,
+      question: stored.question,
+      options: stored.options,
+      multiSelect: stored.multiSelect,
+      expiresAt: stored.expiresAt,
+    };
+    wire = { kind: 'poll', messageId: msg.id, data: clean };
   } else {
     wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   }
@@ -512,6 +591,12 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'view_once_viewed' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'view_once_viewed', data: obj.data as ViewOnceViewedPayload };
+      }
+      if (obj.kind === 'poll' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'poll', messageId: id, data: obj.data as PollPayload };
+      }
+      if (obj.kind === 'poll_vote' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'poll_vote', data: obj.data as PollVotePayload };
       }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
@@ -566,6 +651,13 @@ export async function applyInboundMessage(
   // the bubble to "Viewed" and drop the payload bytes.
   if (wire.kind === 'view_once_viewed') {
     await markViewed(wire.data.targetMsgId);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R7 — peer voted on a poll. Update the poll's votes map; no visible
+  // bubble of its own (the existing poll bubble re-renders with the new tally).
+  if (wire.kind === 'poll_vote') {
+    await applyPollVote(wire.data.pollId, fromHash, wire.data.optionIdx);
     return { kind: 'text', threadHash: fromHash };
   }
 
@@ -629,6 +721,13 @@ export async function applyInboundMessage(
       await updateContact(fromHash, { disappearingTimerSec: wire.data.timerSec });
       plaintext = JSON.stringify(wire.data);
       kind = 'system_timer_change';
+      break;
+    case 'poll':
+      // R7 — persist with an empty votes map; subsequent poll_vote
+      // wires from either side mutate it via applyPollVote.
+      plaintext = JSON.stringify({ ...wire.data, votes: {} });
+      kind = 'poll';
+      messageId = wire.messageId || wire.data.pollId || undefined;
       break;
   }
   await appendMessage({
