@@ -17,10 +17,13 @@ const config: CapacitorConfig = {
   // will scaffold this directory; subsequent syncs honour it.
   android: {
     path: 'android-comm',
-    // Allow cleartext (ws://) inside the WebView so we can reach the
-    // local dev relay during development. Production builds should be
-    // re-hardened to allowMixedContent: false before App Store / Play.
-    allowMixedContent: true,
+    // Phase 1 security audit (B8): mixed-content is OFF by default to
+    // match production posture. The bundled `xml/network_security_config`
+    // still allows cleartext to localhost / 10.0.2.2 / 192.168.* for the
+    // debug build's local-relay flow — that's the supported dev path.
+    // If you need ws:// from a non-local origin during dev, flip this to
+    // true LOCALLY and do not commit.
+    allowMixedContent: false,
     backgroundColor: '#F5F3EF',
   },
   ios: {
