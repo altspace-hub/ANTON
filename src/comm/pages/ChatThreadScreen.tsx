@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, sweepExpiredInThread, deleteMessage, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -56,6 +56,13 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [editingTarget, setEditingTarget] = useState<ChatMessage | null>(null);
   /** R8 — source message id for the forward picker; null when picker is closed */
   const [forwardSource, setForwardSource] = useState<ChatMessage | null>(null);
+  /** R9 — peer is currently typing (volatile, no IDB) */
+  const [peerTyping, setPeerTyping] = useState(false);
+  /** R9 — am I currently typing? Track locally so we don't spam the wire. */
+  const typingActiveRef = useRef(false);
+  const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** R9 — auto-clear inbound typing if the sender never sends a stop ping. */
+  const peerTypingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   /** Force re-fetch when reactions update so chips re-render. */
   const [refreshTick, setRefreshTick] = useState(0);
@@ -81,6 +88,26 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
     return () => clearInterval(t);
   }, []);
+
+  // R9 — subscribe to inbound presence_typing events for this peer.
+  useEffect(() => {
+    return subscribeTyping((fromHash, isTyping) => {
+      if (fromHash !== peerContactHash) return;
+      setPeerTyping(isTyping);
+      if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
+      if (isTyping) {
+        // Safety net — clear after 5s even if the peer forgets to send stop
+        peerTypingClearRef.current = setTimeout(() => setPeerTyping(false), 5000);
+      }
+    });
+  }, [peerContactHash]);
+
+  // R9 — fire a read receipt when we open the thread or get a new inbound message
+  useEffect(() => {
+    const lastInbound = [...messages].reverse().find((m) => m.direction === 'in' && !m.deletedForEveryone);
+    if (!lastInbound) return;
+    void sendReadReceipt(peerContactHash, lastInbound.id);
+  }, [peerContactHash, messages.length]);
 
   async function handlePollVote(pollId: string, optionIdx: number[]) {
     try {
@@ -140,6 +167,41 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       setSending(false);
     }
   }
+
+  /**
+   * R9 — typing debouncer. First keystroke fires `true`; we then schedule
+   * a stop ping 3s after the most recent keystroke. Empty draft fires
+   * stop immediately. Skips wire emission if the user disabled the
+   * indicator (sendTypingState itself gates on the setting too).
+   */
+  function handleTypingPing(currentDraft: string) {
+    const hasContent = currentDraft.trim().length > 0;
+    if (!hasContent) {
+      if (typingActiveRef.current) {
+        typingActiveRef.current = false;
+        if (typingStopTimerRef.current) { clearTimeout(typingStopTimerRef.current); typingStopTimerRef.current = null; }
+        void sendTypingState(peerContactHash, false);
+      }
+      return;
+    }
+    if (!typingActiveRef.current) {
+      typingActiveRef.current = true;
+      void sendTypingState(peerContactHash, true);
+    }
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      typingActiveRef.current = false;
+      typingStopTimerRef.current = null;
+      void sendTypingState(peerContactHash, false);
+    }, 3000);
+  }
+
+  // Clean up the typing timer if the user leaves the thread.
+  useEffect(() => () => {
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
+    if (typingActiveRef.current) void sendTypingState(peerContactHash, false);
+  }, [peerContactHash]);
 
   async function handleEditStart(target: ChatMessage) {
     setEditingTarget(target);
@@ -271,7 +333,11 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold text-[var(--color-text)] truncate">{displayName}</div>
-          <div className="text-[10px] font-mono text-[var(--color-text-faint)] truncate">{peerContactHash}</div>
+          {peerTyping ? (
+            <div className="text-[11px] font-medium truncate" style={{ color: 'var(--color-accent)' }}>typing…</div>
+          ) : (
+            <div className="text-[10px] font-mono text-[var(--color-text-faint)] truncate">{peerContactHash}</div>
+          )}
         </div>
         <button
           onClick={() => setTimerSheetOpen(true)}
@@ -373,7 +439,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         </button>
         <textarea
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => { setDraft(e.target.value); handleTypingPing(e.target.value); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
           }}
@@ -793,6 +859,9 @@ function StatusTick({ status }: { status: ChatMessage['status'] }) {
   if (status === 'queued') return <span title="Queued — awaiting transport">⋯</span>;
   if (status === 'sent') return <span title="Sent">✓</span>;
   if (status === 'delivered') return <span title="Delivered">✓✓</span>;
+  if (status === 'read') {
+    return <span title="Read" style={{ color: 'var(--color-accent)' }}>✓✓</span>;
+  }
   if (status === 'failed') return <span title="Failed">!</span>;
   return null;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { getIdentity, updateDisplayName, clearIdentity, type CommIdentity } from '../services/identity';
+import { getReadReceiptsEnabled, setReadReceiptsEnabled, getTypingIndicatorEnabled, setTypingIndicatorEnabled } from '../services/settings';
 
 interface Props {
   onBack: () => void;
@@ -13,6 +14,8 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(identity?.displayName ?? '');
   const [copied, setCopied] = useState(false);
+  const [readReceipts, setReadReceipts] = useState(getReadReceiptsEnabled());
+  const [typingIndicator, setTypingIndicator] = useState(getTypingIndicatorEnabled());
 
   useEffect(() => {
     if (!identity) return;
@@ -160,6 +163,25 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
         </div>
       </div>
 
+      <div className="mt-8">
+        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] px-1">Privacy</p>
+        <div className="mt-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] overflow-hidden">
+          <PrivacyToggle
+            label="Send read receipts"
+            description="When off, your peers can't tell when you read their messages. Both sides need this on for either to see receipts."
+            value={readReceipts}
+            onChange={(v) => { setReadReceipts(v); setReadReceiptsEnabled(v); }}
+          />
+          <div className="border-t border-[var(--color-border-soft)]" />
+          <PrivacyToggle
+            label="Send typing indicator"
+            description="Lets peers see “typing…” while you compose a message."
+            value={typingIndicator}
+            onChange={(v) => { setTypingIndicator(v); setTypingIndicatorEnabled(v); }}
+          />
+        </div>
+      </div>
+
       <div className="mt-8 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-alt)] p-5 text-xs text-[var(--color-text-muted)]">
         <p>
           Identity created {new Date(identity.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}.
@@ -174,5 +196,31 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
         Delete identity & sign out
       </button>
     </section>
+  );
+}
+
+function PrivacyToggle({ label, description, value, onChange }: {
+  label: string; description: string; value: boolean; onChange: (next: boolean) => void;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      aria-pressed={value}
+      className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-[var(--color-surface-muted)]"
+    >
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-medium text-[var(--color-text)]">{label}</div>
+        <div className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">{description}</div>
+      </div>
+      <span
+        className="w-10 h-6 rounded-full p-0.5 flex-shrink-0 transition-colors"
+        style={{ backgroundColor: value ? 'var(--color-accent)' : 'var(--color-border)' }}
+      >
+        <span
+          className="block w-5 h-5 rounded-full bg-white transition-transform"
+          style={{ transform: value ? 'translateX(16px)' : 'translateX(0)' }}
+        />
+      </span>
+    </button>
   );
 }

@@ -31,7 +31,7 @@ import {
 } from './db';
 
 export type MessageDirection = 'out' | 'in';
-export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'received';
+export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'received' | 'read';
 
 /**
  * Kind of payload carried in `plaintext`:
@@ -300,6 +300,39 @@ export async function applyPollVote(
     };
     tx.onerror = () => reject(tx.error);
   });
+}
+
+/**
+ * R9 — mark outbound messages in this thread as read up to and
+ * including `lastMsgId`. Bumps status to 'read' on any out-direction
+ * messages with id ≤ lastMsgId that are currently 'sent' or 'delivered'.
+ * Returns the count that flipped.
+ */
+export async function markReadUpTo(threadHash: string, lastMsgId: string): Promise<number> {
+  const db = await openDb();
+  let flipped = 0;
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const index = store.index(INDEX_BY_THREAD);
+    const range = IDBKeyRange.bound([threadHash, ''], [threadHash, '￿']);
+    const req = index.openCursor(range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return;
+      const row = cursor.value as ChatMessage;
+      if (row.direction === 'out' && row.id <= lastMsgId
+          && (row.status === 'sent' || row.status === 'delivered' || row.status === 'queued')) {
+        row.status = 'read';
+        cursor.update(row);
+        flipped++;
+      }
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  return flipped;
 }
 
 /**

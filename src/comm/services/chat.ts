@@ -15,7 +15,8 @@
 import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, getMessage, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, getMessage, markReadUpTo, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { getReadReceiptsEnabled, getTypingIndicatorEnabled } from './settings';
 import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
@@ -134,6 +135,20 @@ export interface DeletePayload {
   targetMsgId: string;
 }
 
+/** R9 — read-receipt envelope. Recipient announces the latest message
+ *  id they have seen in this thread; sender bumps any of its outbound
+ *  messages up to and including `lastMsgId` to status='read'. */
+export interface PresenceReadPayload {
+  lastMsgId: string;
+}
+
+/** R9 — typing indicator. Lives entirely in volatile state on the
+ *  recipient (no IDB write). Auto-clears after 5s as a safety net even
+ *  if the sender forgets to send the matching `isTyping: false`. */
+export interface PresenceTypingPayload {
+  isTyping: boolean;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -145,6 +160,8 @@ export type WirePayload =
   | { kind: 'poll_vote';     data: PollVotePayload }
   | { kind: 'edit';          data: EditPayload }
   | { kind: 'delete';        data: DeletePayload }
+  | { kind: 'presence_read'; data: PresenceReadPayload }
+  | { kind: 'presence_typing'; data: PresenceTypingPayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -158,6 +175,24 @@ export class ChatError extends Error {
   constructor(message: string, public readonly code: string) {
     super(message);
     this.name = 'ChatError';
+  }
+}
+
+// ── R9: in-process typing event bus ─────────────────────────────────────
+// Inbound presence_typing wires emit a notification; an open
+// ChatThreadScreen subscribes to learn when the peer is typing.
+
+type TypingListener = (fromHash: string, isTyping: boolean) => void;
+const typingListeners = new Set<TypingListener>();
+
+export function subscribeTyping(listener: TypingListener): () => void {
+  typingListeners.add(listener);
+  return () => typingListeners.delete(listener);
+}
+
+function emitTyping(fromHash: string, isTyping: boolean): void {
+  for (const l of typingListeners) {
+    try { l(fromHash, isTyping); } catch { /* ignore listener errors */ }
   }
 }
 
@@ -237,7 +272,8 @@ export async function sendStructuredMessage(
   if (wire.kind === 'wassup_post' || wire.kind === 'wassup_like'
       || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
       || wire.kind === 'react' || wire.kind === 'view_once_viewed'
-      || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete') {
+      || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete'
+      || wire.kind === 'presence_read' || wire.kind === 'presence_typing') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -300,6 +336,42 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R9 — Tell a peer that we've read up to `lastMsgId` in their thread.
+ * Gated on the user's privacy setting: if read receipts are off, this
+ * is a no-op. Inline ephemeral send via the relay client.
+ *
+ * Per the spec, the *recipient* (us) controls whether receipts go out;
+ * the *original sender* (the peer) then sees status='read' on their
+ * outbound bubbles only if we opted in.
+ */
+export async function sendReadReceipt(peerContactHash: string, lastMsgId: string): Promise<void> {
+  if (!getReadReceiptsEnabled()) return;
+  const me = getIdentity();
+  if (!me) return;
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return;
+  const wire: WirePayload = { kind: 'presence_read', data: { lastMsgId } };
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
+}
+
+/**
+ * R9 — Announce typing state to the peer. Caller is expected to debounce:
+ * fire `true` once on first keystroke, fire `false` ~3s after the last
+ * keystroke. Gated on the typing-indicator setting.
+ */
+export async function sendTypingState(peerContactHash: string, isTyping: boolean): Promise<void> {
+  if (!getTypingIndicatorEnabled()) return;
+  const me = getIdentity();
+  if (!me) return;
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return;
+  const wire: WirePayload = { kind: 'presence_typing', data: { isTyping } };
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
 }
 
 /**
@@ -714,6 +786,12 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'delete' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'delete', data: obj.data as DeletePayload };
       }
+      if (obj.kind === 'presence_read' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'presence_read', data: obj.data as PresenceReadPayload };
+      }
+      if (obj.kind === 'presence_typing' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'presence_typing', data: obj.data as PresenceTypingPayload };
+      }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
       }
@@ -786,6 +864,20 @@ export async function applyInboundMessage(
   // R8 — peer requested delete-for-everyone. Clear our local copy.
   if (wire.kind === 'delete') {
     await applyDeleteForEveryone(wire.data.targetMsgId);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R9 — peer read our messages up to `lastMsgId`. Flip our outbound
+  // status to 'read' for matching rows in the thread keyed by their hash.
+  if (wire.kind === 'presence_read') {
+    await markReadUpTo(fromHash, wire.data.lastMsgId);
+    return { kind: 'text', threadHash: fromHash };
+  }
+
+  // R9 — peer typing state. No IDB write — surface via the in-process
+  // event bus so an open ChatThreadScreen can subscribe.
+  if (wire.kind === 'presence_typing') {
+    emitTyping(fromHash, wire.data.isTyping);
     return { kind: 'text', threadHash: fromHash };
   }
 
