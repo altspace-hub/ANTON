@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { startLiveShare, type GeoFix } from '../services/geo';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
@@ -25,6 +26,8 @@ import ScheduleSheet from '../components/ScheduleSheet';
 import ScheduledListSheet from '../components/ScheduledListSheet';
 import PollBubble from '../components/PollBubble';
 import PollComposeScreen from './PollComposeScreen';
+import LocationBubble from '../components/LocationBubble';
+import LocationPickerSheet from '../components/LocationPickerSheet';
 import { useLongPress } from '../hooks/useLongPress';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -73,6 +76,8 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [reschedulingTarget, setReschedulingTarget] = useState<ChatMessage | null>(null);
   /** R10 — long-press send menu visibility */
   const [sendMenuOpen, setSendMenuOpen] = useState(false);
+  /** R13 — location picker sheet visibility */
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   /** R10 — true for ~400ms after a long-press fires, so the subsequent
    *  click on the send button doesn't ALSO trigger an immediate send. */
   const justLongPressedRef = useRef(false);
@@ -126,6 +131,25 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     if (!lastInbound) return;
     void sendReadReceipt(peerContactHash, lastInbound.id);
   }, [peerContactHash, messages.length]);
+
+  async function handleShareLocation(fix: GeoFix, liveDurationMin: number) {
+    setError(null);
+    setSending(true);
+    try {
+      const liveUntil = liveDurationMin > 0
+        ? new Date(Date.now() + liveDurationMin * 60 * 1000).toISOString()
+        : undefined;
+      const msg = await sendLocation(peerContactHash, {
+        lat: fix.lat, lng: fix.lng, accuracyM: fix.accuracyM, liveUntil,
+      });
+      setMessages((prev) => [...prev, msg]);
+      if (liveUntil) startLiveShare(peerContactHash, msg.id, liveUntil);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to share location'));
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function handlePollVote(pollId: string, optionIdx: number[]) {
     try {
@@ -530,8 +554,15 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onPickVideoCamera={() => void handleAttachment(captureVideoFromCamera)}
         onPickVideoLibrary={() => void handleAttachment(captureVideoFromLibrary)}
         onPickPoll={() => setPollComposing(true)}
+        onPickLocation={() => setLocationPickerOpen(true)}
         viewOnce={viewOnceArmed}
         onToggleViewOnce={() => setViewOnceArmed((v) => !v)}
+      />
+
+      <LocationPickerSheet
+        open={locationPickerOpen}
+        onClose={() => setLocationPickerOpen(false)}
+        onShare={(fix, mins) => void handleShareLocation(fix, mins)}
       />
 
       {viewingOnce && <ViewOnceViewer message={viewingOnce} onDismiss={() => void handleViewOnceDismiss(viewingOnce)} />}
@@ -673,6 +704,7 @@ function replySnippetOf(msg: ChatMessage): string {
       return `🗳 Poll · ${(p.question ?? '').slice(0, 60)}`;
     } catch { return '🗳 Poll'; }
   }
+  if (msg.kind === 'location') return '📍 Location';
   if (msg.kind === 'voice') {
     try {
       const v = JSON.parse(msg.plaintext) as { durationSec?: number };
@@ -733,6 +765,8 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
     body = <VoiceBubble message={message} isMine={isMine} time={time} />;
   } else if (message.kind === 'poll') {
     body = <PollBubble message={message} isMine={isMine} myHash={myHash} time={time} onVote={onPollVote} />;
+  } else if (message.kind === 'location') {
+    body = <LocationBubble message={message} isMine={isMine} time={time} />;
   } else {
     body = (
       <div

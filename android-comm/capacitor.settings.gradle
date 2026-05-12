@@ -17,6 +17,9 @@ project(':capacitor-app').projectDir = new File('../node_modules/.pnpm/@capacito
 include ':capacitor-camera'
 project(':capacitor-camera').projectDir = new File('../node_modules/.pnpm/@capacitor+camera@8.0.2_@capacitor+core@8.3.1/node_modules/@capacitor/camera/android')
 
+include ':capacitor-geolocation'
+project(':capacitor-geolocation').projectDir = new File('../node_modules/.pnpm/@capacitor+geolocation@8.2.0_@capacitor+core@8.3.1/node_modules/@capacitor/geolocation/android')
+
 include ':capacitor-haptics'
 project(':capacitor-haptics').projectDir = new File('../node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.3.1/node_modules/@capacitor/haptics/android')
 

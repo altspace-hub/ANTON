@@ -15,7 +15,7 @@
 import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
-import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, getMessage, markReadUpTo, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, applyLocationUpdate, getMessage, markReadUpTo, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
 import { getReadReceiptsEnabled, getTypingIndicatorEnabled } from './settings';
 import { getRelayClient } from './relay-client';
 import {
@@ -149,6 +149,29 @@ export interface PresenceTypingPayload {
   isTyping: boolean;
 }
 
+/** R13 — location share payload. One-shot if `liveUntil` is absent;
+ *  live-sharing otherwise (sender follows up with location_update wires
+ *  until `liveUntil`). */
+export interface LocationPayload {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  label?: string;
+  /** ISO; absent for one-shot pins. */
+  liveUntil?: string;
+}
+
+/** R13 — incremental position update for a live share. Carries the
+ *  parent location message id so the recipient can mutate the right
+ *  bubble in place. */
+export interface LocationUpdatePayload {
+  parentMsgId: string;
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  ts: string;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -162,6 +185,8 @@ export type WirePayload =
   | { kind: 'delete';        data: DeletePayload }
   | { kind: 'presence_read'; data: PresenceReadPayload }
   | { kind: 'presence_typing'; data: PresenceTypingPayload }
+  | { kind: 'location';      messageId: string; data: LocationPayload }
+  | { kind: 'location_update'; data: LocationUpdatePayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -277,7 +302,8 @@ export async function sendStructuredMessage(
       || wire.kind === 'wassup_comment' || wire.kind === 'wassup_delete'
       || wire.kind === 'react' || wire.kind === 'view_once_viewed'
       || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete'
-      || wire.kind === 'presence_read' || wire.kind === 'presence_typing') {
+      || wire.kind === 'presence_read' || wire.kind === 'presence_typing'
+      || wire.kind === 'location_update') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -287,11 +313,14 @@ export async function sendStructuredMessage(
   // R7 — polls carry their own messageId so both sides reference the
   // poll by the same id (votes target it). For other non-stampable
   // kinds, messageId comes from the stampable branch.
-  const messageId = stampable ? wire.messageId : (wire.kind === 'poll' ? wire.messageId : undefined);
+  // R13 — same pattern for location messages: parent id is the shared
+  // anchor that subsequent location_update wires target.
+  const messageId = stampable ? wire.messageId
+    : (wire.kind === 'poll' || wire.kind === 'location' ? wire.messageId : undefined);
   const disappearsAt = stampable ? wire.disappearsAt : undefined;
   const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
-    || wire.kind === 'system_timer_change' || wire.kind === 'poll'
+    || wire.kind === 'system_timer_change' || wire.kind === 'poll' || wire.kind === 'location'
     ? wire.kind
     : 'text';
   const message = await appendMessage({
@@ -345,6 +374,39 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R13 — Share a location pin. One-shot when `liveUntil` is absent; the
+ * caller drives live updates via `sendLocationUpdate` against the
+ * returned message id.
+ */
+export async function sendLocation(
+  peerContactHash: string,
+  payload: LocationPayload,
+): Promise<ChatMessage> {
+  const messageId = generateMsgId();
+  return sendStructuredMessage(peerContactHash, { kind: 'location', messageId, data: payload });
+}
+
+/**
+ * R13 — push a new fix into a live-share bubble on both sides. Applies
+ * locally first for instant UI; inline-sends the update to the peer.
+ */
+export async function sendLocationUpdate(
+  peerContactHash: string,
+  parentMsgId: string,
+  patch: { lat: number; lng: number; accuracyM: number },
+): Promise<void> {
+  const me = getIdentity();
+  if (!me) return;
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return;
+  const ts = new Date().toISOString();
+  await applyLocationUpdate(parentMsgId, { ...patch, ts });
+  const wire: WirePayload = { kind: 'location_update', data: { parentMsgId, ...patch, ts } };
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire));
 }
 
 /**
@@ -746,6 +808,14 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
       expiresAt: stored.expiresAt,
     };
     wire = { kind: 'poll', messageId: msg.id, data: clean };
+  } else if (msg.kind === 'location') {
+    // R13 — strip local-only lastUpdateAt; recipient regenerates on receive.
+    const stored = JSON.parse(msg.plaintext) as LocationPayload & { lastUpdateAt?: string };
+    const clean: LocationPayload = {
+      lat: stored.lat, lng: stored.lng, accuracyM: stored.accuracyM,
+      label: stored.label, liveUntil: stored.liveUntil,
+    };
+    wire = { kind: 'location', messageId: msg.id, data: clean };
   } else {
     wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   }
@@ -800,6 +870,12 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'presence_typing' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'presence_typing', data: obj.data as PresenceTypingPayload };
+      }
+      if (obj.kind === 'location' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'location', messageId: id, data: obj.data as LocationPayload };
+      }
+      if (obj.kind === 'location_update' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'location_update', data: obj.data as LocationUpdatePayload };
       }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
@@ -890,6 +966,18 @@ export async function applyInboundMessage(
     return { kind: 'text', threadHash: fromHash };
   }
 
+  // R13 — live location update for an existing location bubble. Mutate
+  // the parent's stored coordinates; no new bubble.
+  if (wire.kind === 'location_update') {
+    await applyLocationUpdate(wire.data.parentMsgId, {
+      lat: wire.data.lat,
+      lng: wire.data.lng,
+      accuracyM: wire.data.accuracyM,
+      ts: wire.data.ts,
+    });
+    return { kind: 'text', threadHash: fromHash };
+  }
+
   // R3 — Wassup feed messages don't appear in the chat thread; they
   // update the feed store + interactions.
   if (wire.kind === 'wassup_post')    { await applyInboundPost(wire.data);    return { kind: 'text', threadHash: fromHash }; }
@@ -957,6 +1045,13 @@ export async function applyInboundMessage(
       plaintext = JSON.stringify({ ...wire.data, votes: {} });
       kind = 'poll';
       messageId = wire.messageId || wire.data.pollId || undefined;
+      break;
+    case 'location':
+      // R13 — persist with the initial fix; subsequent location_update
+      // wires mutate lat/lng/accuracyM/lastUpdateAt in place.
+      plaintext = JSON.stringify({ ...wire.data, lastUpdateAt: new Date().toISOString() });
+      kind = 'location';
+      messageId = wire.messageId || undefined;
       break;
   }
   await appendMessage({

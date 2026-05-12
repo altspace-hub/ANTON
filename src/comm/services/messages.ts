@@ -46,7 +46,7 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change' | 'poll';
+export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change' | 'poll' | 'location';
 
 /** R1 — quoted-reply context, attached to text/image/video messages. */
 export interface ReplyContext {
@@ -268,6 +268,38 @@ export async function deleteThread(threadHash: string): Promise<void> {
       if (cursor) { cursor.delete(); cursor.continue(); }
     };
     tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * R13 — apply an inbound location_update to the parent location message.
+ * Mutates the stored lat / lng / accuracyM / lastUpdateAt in the parent
+ * row's plaintext JSON. No-op if the parent isn't found or isn't a
+ * location message.
+ */
+export async function applyLocationUpdate(
+  parentMsgId: string,
+  patch: { lat: number; lng: number; accuracyM: number; ts: string },
+): Promise<ChatMessage | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MESSAGES, 'readwrite');
+    const store = tx.objectStore(STORE_MESSAGES);
+    const getReq = store.get(parentMsgId);
+    getReq.onsuccess = () => {
+      const row = getReq.result as ChatMessage | undefined;
+      if (!row || row.kind !== 'location') { resolve(null); return; }
+      let parsed: Record<string, unknown> = {};
+      try { parsed = JSON.parse(row.plaintext); } catch { parsed = {}; }
+      parsed.lat = patch.lat;
+      parsed.lng = patch.lng;
+      parsed.accuracyM = patch.accuracyM;
+      parsed.lastUpdateAt = patch.ts;
+      row.plaintext = JSON.stringify(parsed);
+      store.put(row);
+      resolve(row);
+    };
     tx.onerror = () => reject(tx.error);
   });
 }

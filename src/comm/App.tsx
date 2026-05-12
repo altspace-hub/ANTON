@@ -18,6 +18,7 @@ import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
 import { reconcileAllReminders } from './services/event-reminders';
+import { reconcileLiveShares } from './services/geo';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
@@ -86,6 +87,9 @@ export default function App() {
     // R11 — sync local notifications for any events with reminders set.
     // Survives process restart because the events store has the source of truth.
     void reconcileAllReminders();
+    // R13 — resume live-share tickers for any of our outgoing location
+    // bubbles whose liveUntil is still in the future.
+    void reconcileLiveShares();
     return () => stopRelayClient();
   }, [identityVersion]);
 
