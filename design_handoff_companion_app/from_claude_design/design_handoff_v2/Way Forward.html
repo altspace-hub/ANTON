@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ANTON Companion App — Way Forward</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0ECE2;
+    --paper: #FBF8F1;
+    --paper-2: #F5F1E6;
+    --ink: #1C1A14;
+    --ink-2: #3C382C;
+    --muted: #6B6456;
+    --faint: #9A9380;
+    --line: #D8D2C0;
+    --line-soft: #E5DFCD;
+    --teal: #0B6F5E;
+    --teal-dark: #055447;
+    --teal-soft: #E4F1EC;
+    --teal-dim: #D1EAE2;
+    --gold: #B07326;
+    --gold-soft: #F1E3C8;
+    --red: #B82E1A;
+    --red-soft: #F4DAD2;
+    --green: #1F7A50;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink-2);
+    font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.2px; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 56px 32px 96px; }
+
+  /* ── header ─────────────────────────────────────────── */
+  .hero { padding: 28px 0 36px; border-bottom: 1px solid var(--line); margin-bottom: 48px; }
+  .crumb { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; color: var(--muted);
+    text-transform: uppercase; display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .crumb .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+  h1 { font-family: Inter, sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -1.6px;
+    line-height: 1.02; color: var(--ink); margin: 0 0 18px; max-width: 880px; text-wrap: balance; }
+  .lede { font-size: 19px; line-height: 1.55; color: var(--ink-2); max-width: 760px; }
+  .meta-row { display: flex; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
+  .meta-row > div { font-size: 13px; }
+  .meta-row .label { font-size: 10px; letter-spacing: 1px; color: var(--muted);
+    text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+  .meta-row .v { color: var(--ink); font-weight: 500; }
+
+  /* ── section + card ─────────────────────────────────── */
+  section { margin: 64px 0 0; }
+  .section-tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--teal); text-transform: uppercase; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; }
+  h2 { font-size: 36px; font-weight: 700; letter-spacing: -0.8px; color: var(--ink);
+    margin: 0 0 14px; line-height: 1.1; max-width: 820px; text-wrap: balance; }
+  h2 + p { font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: 720px; margin: 0 0 32px; }
+  h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: var(--ink); margin: 0 0 10px; }
+  h4 { font-size: 13px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted);
+    text-transform: uppercase; margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px;
+    padding: 28px; }
+
+  /* ── diagnosis grid (problem cards) ─────────────────── */
+  .diag-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .diag { background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 22px 20px; position: relative; }
+  .diag .num { font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--red); letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; display: block; }
+  .diag .ttl { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px;
+    margin-bottom: 6px; line-height: 1.25; }
+  .diag .body { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+  .diag .fix { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line);
+    font-size: 13px; color: var(--ink); display: flex; gap: 8px; }
+  .diag .fix b { color: var(--teal-dark); flex-shrink: 0; }
+
+  /* ── compare row (current vs. proposed) ─────────────── */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+  .col-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace; }
+  .col-head.now { color: var(--red); }
+  .col-head.next { color: var(--teal); }
+  .col-head .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .col-head.now .dot { background: var(--red); }
+  .col-head.next .dot { background: var(--teal); }
+
+  /* ── phone shell ────────────────────────────────────── */
+  .stage { background: linear-gradient(180deg, #E8E2D2, #E0DAC8); border-radius: 24px;
+    padding: 32px; display: flex; justify-content: center; min-height: 760px; }
+  .stage.dim { background: linear-gradient(180deg, #EBE6D6, #DFD9C5); }
+  .phone { width: 320px; height: 700px; background: #fff; border-radius: 36px;
+    border: 8px solid #1A1B2E; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.25);
+    overflow: hidden; display: flex; flex-direction: column; position: relative;
+    font-family: Inter, sans-serif; }
+  .phone .sb { height: 26px; padding: 6px 18px 0; display: flex; justify-content: space-between;
+    align-items: center; font-size: 11px; color: var(--ink); flex-shrink: 0;
+    background: var(--paper); }
+  .phone .sb.ed { background: var(--paper); }
+  .phone .body { flex: 1; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; }
+  .phone .nav { height: 18px; background: var(--paper); display: flex; justify-content: center;
+    align-items: center; flex-shrink: 0; }
+  .phone .nav::before { content: ''; width: 100px; height: 4px; background: var(--ink);
+    border-radius: 4px; opacity: 0.4; }
+
+  /* ── current (ugly) phone reproduction ──────────────── */
+  .curr { background: #f0eee9; }
+  .curr .top { padding: 8px 14px 6px; background: #f0eee9; }
+  .curr .topbar { font-size: 11px; color: #555; display: flex; gap: 4px; flex-wrap: wrap; }
+  .curr .name { font-size: 11px; color: var(--green); font-weight: 600; }
+  .curr h1c { font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; line-height: 1.1; margin: 8px 0 4px; display: block; }
+  .curr .greet-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .curr .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px; }
+  .curr .qa { background: #fff; border: 1px solid #e0ddd5; border-radius: 8px; padding: 10px; min-height: 70px; }
+  .curr .qa .ic { width: 18px; height: 18px; border: 1.4px solid #555; margin-bottom: 4px; }
+  .curr .qa .l { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .curr .qa .s { font-size: 11px; color: var(--muted); }
+  .curr .feed { padding: 14px 14px 0; }
+  .curr .feed-row { display: flex; gap: 12px; padding: 8px 0; }
+  .curr .feed-time { font-size: 11px; color: var(--muted); width: 40px; }
+  .curr .feed-bod { flex: 1; }
+  .curr .feed-t { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .curr .feed-d { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .curr .feed-r { font-size: 10px; color: var(--green); font-weight: 600; letter-spacing: 0.5px; }
+  .curr .fab { position: absolute; bottom: 78px; left: 50%; transform: translateX(-50%);
+    width: 52px; height: 52px; background: var(--teal); border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; color: #fff; font-size: 26px; font-weight: 300; }
+  .curr .tabs { display: flex; padding: 6px 0 8px; background: #fff; border-top: 1px solid #ddd; flex-shrink: 0; }
+  .curr .tab { flex: 1; text-align: center; }
+  .curr .tab .ic { width: 20px; height: 20px; border: 1.4px solid var(--muted); margin: 0 auto 2px; border-radius: 3px; }
+  .curr .tab.a .ic { border-color: var(--ink); }
+  .curr .tab .l { font-size: 10px; color: var(--muted); }
+  .curr .tab.a .l { color: var(--ink); font-weight: 600; }
+  .curr .empty-flag { background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(184,46,26,0.07) 6px, rgba(184,46,26,0.07) 12px);
+    padding: 8px 14px; margin: 14px; border: 1px dashed var(--red); border-radius: 6px;
+    font-size: 10px; color: var(--red); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── proposed (good) phone ──────────────────────────── */
+  .next { background: var(--paper); }
+  .next .ssb { padding: 6px 18px; display: flex; justify-content: space-between; font-size: 11px; color: var(--ink); flex-shrink: 0; }
+  .next .ssb .l { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+  .next .ssb .l .lg { width: 14px; height: 14px; border-radius: 4px; background: var(--ink);
+    color: var(--paper); font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: -0.5px; }
+  .next .header { padding: 14px 20px 18px; background: var(--paper); flex-shrink: 0; }
+  .next .greet-meta { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .next .greet-meta .live { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .next .greet { font-size: 28px; font-weight: 700; letter-spacing: -0.8px; color: var(--ink); line-height: 1.1; }
+  .next .greet .sub { display: block; font-size: 14px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-top: 4px; }
+  .next .scroll { flex: 1; overflow: auto; padding: 0 16px 16px; }
+  .next .hero-card { background: var(--paper); border: 1.5px solid var(--teal); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 0 var(--line-soft); }
+  .next .hero-card .lab { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1.2px; color: var(--teal); font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .next .hero-card .lab .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 3px rgba(11,111,94,0.2); }
+  .next .hero-card .ttl { font-size: 18px; font-weight: 700; color: var(--ink); letter-spacing: -0.3px; line-height: 1.25; margin-bottom: 6px; text-wrap: pretty; }
+  .next .hero-card .desc { font-size: 13px; color: var(--ink-2); line-height: 1.45; margin-bottom: 12px; }
+  .next .hero-card .btn { display: block; padding: 11px 0; background: var(--teal); color: #fff; border-radius: 10px; text-align: center; font-size: 14px; font-weight: 600; }
+  .next .qa-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .next .qa { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 12px; }
+  .next .qa .gl { width: 28px; height: 28px; border-radius: 8px; background: var(--paper-2); border: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .next .qa .l { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.1px; }
+  .next .qa .s { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .next .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 8px; }
+  .next .sec-h .l { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+  .next .sec-h .r { font-size: 11px; color: var(--teal); font-weight: 600; }
+  .next .sess { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+  .next .sess:last-child { border-bottom: 0; }
+  .next .sess .t { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); width: 38px; flex-shrink: 0; padding-top: 2px; }
+  .next .sess .b { flex: 1; min-width: 0; }
+  .next .sess .b .ttl { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.1px; line-height: 1.3; }
+  .next .sess .b .meta { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px; }
+  .next .tabs { display: flex; padding: 6px 4px 8px; background: var(--paper); border-top: 1px solid var(--line-soft); flex-shrink: 0; }
+  .next .tabs .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; position: relative; }
+  .next .tabs .tab .l { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.3px; }
+  .next .tabs .tab.a .l { color: var(--ink); font-weight: 700; }
+  .next .tabs .tab .badge { position: absolute; top: 2px; right: 28%; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; min-width: 14px; height: 14px; padding: 0 4px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+  .icobox { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+  .icobox svg { display: block; }
+
+  /* ── monogram + brand mark ──────────────────────────── */
+  .mark-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+  .mark-cell { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 22px; text-align: center; }
+  .mark-cell .label { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-top: 14px; }
+  .mark-cell .desc { font-size: 11px; color: var(--ink-2); margin-top: 4px; line-height: 1.4; }
+  .mono-svg { display: inline-block; }
+
+  .module-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 14px; }
+  .module-grid .m { aspect-ratio: 1/1; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; }
+  .module-grid .m .gl { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
+  .module-grid .m .l { font-size: 10px; color: var(--ink); font-weight: 600; text-align: center; line-height: 1.1; }
+
+  /* ── implementation table ───────────────────────────── */
+  table.spec { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  table.spec th { text-align: left; padding: 12px 14px; background: var(--paper-2); border-bottom: 1px solid var(--line); font-size: 11px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+  table.spec td { padding: 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  table.spec td.f { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--teal-dark); white-space: nowrap; }
+  table.spec td.was { color: var(--red); }
+  table.spec td.now { color: var(--teal-dark); font-weight: 500; }
+
+  /* ── footer / next steps ────────────────────────────── */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
+  .step { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .step .n { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--teal); letter-spacing: -1px; margin-bottom: 6px; }
+  .step .t { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.1px; }
+  .step .d { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+
+  .pillrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .pillrow .p { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.6px;
+    padding: 3px 9px; border-radius: 999px; background: var(--paper-2); border: 1px solid var(--line); color: var(--ink-2); font-weight: 600; }
+  .pillrow .p.t { background: var(--teal-soft); border-color: var(--teal-dim); color: var(--teal-dark); }
+  .pillrow .p.r { background: var(--red-soft); border-color: var(--red-soft); color: var(--red); }
+
+  /* annotation arrows on phone */
+  .annot { position: absolute; font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; color: var(--red); font-weight: 600; line-height: 1.3; max-width: 130px; }
+  .annot.r { right: -150px; text-align: left; }
+  .annot.l { left: -150px; text-align: right; }
+  .annot::after, .annot::before { content: ''; position: absolute; top: 6px; width: 24px; border-top: 1px dashed var(--red); }
+  .annot.r::before { left: -28px; }
+  .annot.l::after { right: -28px; }
+  .annot.next { color: var(--teal-dark); }
+  .annot.next::before, .annot.next::after { border-color: var(--teal); }
+
+  .stagewrap { position: relative; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="crumb"><span class="dot"></span> Companion App · Visual Evolution v2 · for Claude Code</div>
+    <h1>The bones are right. The build isn't matching the design yet.</h1>
+    <p class="lede">Looking at the rendered Android screenshots side-by-side with the v3 design files in the repo, the gap is implementation, not direction. Status bar collisions, raster emoji icons standing in for the custom Ico set, weak hierarchy on Home, half-empty Capture, and a logo system that hasn't been drawn yet — these are all fixable in one focused pass. This document pairs each problem in the screenshots with the exact target it should hit.</p>
+    <div class="meta-row">
+      <div><div class="label">Author</div><div class="v">Claude Design</div></div>
+      <div><div class="label">Target</div><div class="v">Claude Code · src/app/</div></div>
+      <div><div class="label">Direction</div><div class="v">Editorial (warm linen, calmer teal)</div></div>
+      <div><div class="label">Scope</div><div class="v">Visual polish · no new features</div></div>
+    </div>
+  </header>
+
+  <!-- ─── 1. DIAGNOSIS ─────────────────────────────────── -->
+  <section>
+    <div class="section-tag">01 · What the screenshots show</div>
+    <h2>Eight concrete problems, ranked.</h2>
+    <p>Every issue below is visible in the six screenshots you sent. Each one has a single, small fix.</p>
+
+    <div class="diag-grid">
+      <div class="diag">
+        <span class="num">01 · Top of every screen</span>
+        <div class="ttl">The instance name collides with the Android status bar.</div>
+        <div class="body">"Anton Test 12:51" overlaps the system clock and notification glyphs. The app is drawing edge-to-edge but isn't honoring <span class="mono">env(safe-area-inset-top)</span>. The status dot floats outside the box. It looks broken before the user has even read a word.</div>
+        <div class="fix"><b>Fix →</b> Add <span class="mono">padding-top: max(12px, env(safe-area-inset-top))</span> to <span class="mono">InstanceTopBar</span>; never let it draw under the system area.</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">02 · More menu, Quick Actions, Capture</span>
+        <div class="ttl">Stock emoji are standing in for the icon system.</div>
+        <div class="body">The 13-tile More grid uses raster emoji (briefcase, calendar, satellite, money bag). Quick Actions has a microphone emoji and a green check. Capture uses a camera emoji and a framed-picture emoji. The design system specifies a custom 1.75-stroke <span class="mono">Ico</span> set — emoji break the linework and look like clip-art on a serious tool.</div>
+        <div class="fix"><b>Fix →</b> Replace every emoji with its <span class="mono">Ico</span> twin. Render module tiles as monogram glyphs (see §3).</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">03 · Home greeting</span>
+        <div class="ttl">The greeting card has nothing to lead with.</div>
+        <div class="body">"Good afternoon, Daniel" hangs alone above four flat tiles, then a single chat session, then a wall of empty linen. The most-used surface in the app gives the user no clear next action — and pending approvals (the entire reason this app exists) aren't surfaced.</div>
+        <div class="fix"><b>Fix →</b> Replace the greeting block with a <em>"Waiting for you"</em> hero card. Demote quick actions to a 2×2 below it.</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">04 · Capture screen</span>
+        <div class="ttl">Two emoji-tiles in a 92% empty canvas.</div>
+        <div class="body">"Take photo" and "Pick from library" sit at the top of a near-blank screen. Nothing tells the user what the capture is <em>for</em>, where it lands, or what ANTON will do with it. This is the highest-leverage interaction in the app and currently feels like a default Android picker.</div>
+        <div class="fix"><b>Fix →</b> Live camera viewfinder fills the screen; preset chips above (Receipt · Whiteboard · Document · Voice note); destination is named ("Goes to your ANTON · Sanctions Advisory").</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">05 · Chat with ANTON</span>
+        <div class="ttl">The first reply is a wall of bullet questions.</div>
+        <div class="body">ANTON's first response is a generic "what are you working on" / "what context matters" / "what format do you need" interrogation. It feels like a meta-prompt. Plus the message bubble has no avatar, no timestamp on the right, and the composer is glued to the keyboard with a pale unreadable disabled state.</div>
+        <div class="fix"><b>Fix →</b> Replace the cold-start template with a contextual greeting using the user's recent activity. Add a small ANTON avatar dot. Compose as a card, not a wall of text.</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">06 · Bottom nav (Pro)</span>
+        <div class="ttl">Two tabs share the same icon.</div>
+        <div class="body">"Approvals" and "Capture" both render with a tray-style inbox glyph. The active-tab indicator is a thin top line on Home and Capture but the labels still read identically-weighted. With the FAB punching through the nav, visual hierarchy is muddy.</div>
+        <div class="fix"><b>Fix →</b> Approvals = shield-check; Capture = camera-aperture. FAB sits above the tab row with a clear shadow gap, not flush with it.</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">07 · Bottom sheets</span>
+        <div class="ttl">Sheets cover content with a flat grey wash.</div>
+        <div class="body">When the More menu or Quick Actions opens, the backdrop is a uniform grey that blurs nothing and reveals nothing. The sheet itself is corner-rounded but has no drag-handle visible against the background, no shadow, no separation. Looks like a debug overlay.</div>
+        <div class="fix"><b>Fix →</b> Backdrop becomes a 8% ink scrim with subtle backdrop-blur(4px). Sheet gets a 1px hairline + 22px top radius + a 3px × 36px gray drag handle.</div>
+      </div>
+
+      <div class="diag">
+        <span class="num">08 · Brand mark</span>
+        <div class="ttl">There is no companion-app logo yet — only "ANTON" set in the body font.</div>
+        <div class="body">The instance-pill in the top-left ("● Anton Test") is the only branding visible, and it's a status dot plus a name string. There's nothing for splash, push notif badge, app icon, share-sheet thumbnail, or the empty-state glyph in the share target. Claude Code will need a real mark.</div>
+        <div class="fix"><b>Fix →</b> Use a single-letter monogram system: bold "A" in a rounded-square, teal on linen. Works at 16px (favicon) through 1024px (app icon). Spec in §3.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 2. SIDE-BY-SIDE: HOME ────────────────────────── -->
+  <section>
+    <div class="section-tag">02 · The redesigns</div>
+    <h2>Home — give the user one clear thing.</h2>
+    <p>The current Home is a stack of equally-weighted blocks. The proposed Home leads with the single most important moment (an approval waiting), demotes quick actions, and ties the recent-session row to a clear "see all" affordance.</p>
+
+    <div class="compare">
+      <div>
+        <div class="col-head now"><span class="dot"></span>Current build · what shipped</div>
+        <div class="stage">
+          <div class="phone curr">
+            <div class="sb">
+              <span style="font-size:10px;color:#666">12:51</span>
+              <span class="mono" style="font-size:9px;color:#888">🔕 ▼ 🔋 46%</span>
+            </div>
+            <div class="body">
+              <div class="top">
+                <div class="name">● Anton Test</div>
+              </div>
+              <div style="padding:0 14px;">
+                <h1c style="font-size:22px;font-weight:700;color:#1A1B2E;letter-spacing:-0.5px;line-height:1.1;margin:8px 0 4px;display:block;">Good afternoon, Daniel.</h1c>
+                <div class="greet-sub">Connected to Anton Test.</div>
+              </div>
+              <div class="qa-grid">
+                <div class="qa"><div class="ic"></div><div class="l">Voice</div><div class="s">Hold to talk</div></div>
+                <div class="qa"><div class="ic"></div><div class="l">Capture</div><div class="s">Photo or share</div></div>
+                <div class="qa"><div class="ic"></div><div class="l">Ask</div><div class="s">Text chat</div></div>
+                <div class="qa"><div class="ic"></div><div class="l">Missions</div><div class="s">0 pending</div></div>
+              </div>
+              <div class="feed">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;font-weight:600">
+                  <span>TODAY</span><span style="color:var(--teal)">SEE ALL</span>
+                </div>
+                <div class="feed-row">
+                  <div class="feed-time mono">12:51</div>
+                  <div class="feed-bod">
+                    <div class="feed-t">Hello</div>
+                    <div class="feed-d">2.1k tokens · 2 msg</div>
+                  </div>
+                  <div class="feed-r">ACTIVE</div>
+                </div>
+              </div>
+              <div class="empty-flag">↓ 380 PX OF EMPTY CANVAS BELOW THIS LINE</div>
+              <div style="flex:1"></div>
+              <div class="fab">+</div>
+              <div class="tabs">
+                <div class="tab a"><div class="ic"></div><div class="l">Home</div></div>
+                <div class="tab"><div class="ic"></div><div class="l">Chat</div></div>
+                <div class="tab"><div class="ic"></div><div class="l">Approvals</div></div>
+                <div class="tab"><div class="ic"></div><div class="l">Capture</div></div>
+                <div class="tab"><div class="ic">⋯</div><div class="l">More</div></div>
+              </div>
+            </div>
+            <div class="nav"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="col-head next"><span class="dot"></span>Target · what to build</div>
+        <div class="stage dim">
+          <div class="phone next">
+            <div class="ssb">
+              <div class="l"><div class="lg">A</div> Anton Test · LAN</div>
+              <div class="mono" style="font-size:10px;color:var(--muted)">12:51 · 46%</div>
+            </div>
+            <div class="body">
+              <div class="header">
+                <div class="greet-meta"><span class="live"></span> Connected · Thu 17 Apr · 12:51</div>
+                <div class="greet">Good afternoon, Daniel.<span class="sub">2 things waiting · 14 min to next meeting</span></div>
+              </div>
+              <div class="scroll">
+                <!-- HERO -->
+                <div class="hero-card">
+                  <div class="lab"><span class="pulse"></span>Waiting for you · Approval</div>
+                  <div class="ttl">ANTON wants to pay an invoice — €180,000 to Orion Holdings.</div>
+                  <div class="desc">11th payment to this supplier · matches the contract · ANTON sees nothing unusual.</div>
+                  <div class="btn">Review and approve</div>
+                </div>
+                <!-- QA -->
+                <div class="qa-row">
+                  <div class="qa">
+                    <div class="gl">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6F5E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+                    </div>
+                    <div class="l">Voice</div>
+                    <div class="s">Hold to talk</div>
+                  </div>
+                  <div class="qa">
+                    <div class="gl">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6F5E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                    <div class="l">Capture</div>
+                    <div class="s">Photo or share</div>
+                  </div>
+                  <div class="qa">
+                    <div class="gl">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6F5E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H8l-4 4V5a2 2 0 012-2h13a2 2 0 012 2z"/></svg>
+                    </div>
+                    <div class="l">Ask</div>
+                    <div class="s">Text chat</div>
+                  </div>
+                  <div class="qa">
+                    <div class="gl">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6F5E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+                    </div>
+                    <div class="l">Missions</div>
+                    <div class="s">3 running · 1 done</div>
+                  </div>
+                </div>
+                <!-- TODAY -->
+                <div class="sec-h">
+                  <div class="l">Today · 3 sessions</div>
+                  <div class="r">See all</div>
+                </div>
+                <div class="sess">
+                  <div class="t">12:51</div>
+                  <div class="b">
+                    <div class="ttl">Hello — getting started</div>
+                    <div class="meta">2 msg · 2.1K tokens · active now</div>
+                  </div>
+                </div>
+                <div class="sess">
+                  <div class="t">10:22</div>
+                  <div class="b">
+                    <div class="ttl">Sanctions: Tehran case handover</div>
+                    <div class="meta">14 msg · SAR drafted · review pending</div>
+                  </div>
+                </div>
+                <div class="sess">
+                  <div class="t">09:08</div>
+                  <div class="b">
+                    <div class="ttl">EU AI Act — Article 52 read-through</div>
+                    <div class="meta">7 msg · 3 citations saved</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabs">
+                <div class="tab a">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1C1A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+                  <div class="l">Home</div>
+                </div>
+                <div class="tab">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6456" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H8l-4 4V5a2 2 0 012-2h13a2 2 0 012 2z"/></svg>
+                  <div class="l">Chat</div>
+                </div>
+                <div class="tab">
+                  <span class="badge">2</span>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6456" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                  <div class="l">Approve</div>
+                </div>
+                <div class="tab">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6456" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <div class="l">Capture</div>
+                </div>
+                <div class="tab">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6456" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5" fill="#6B6456" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="#6B6456" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="#6B6456" stroke="none"/></svg>
+                  <div class="l">More</div>
+                </div>
+              </div>
+            </div>
+            <div class="nav"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>What changed, line by line</h4>
+      <table class="spec">
+        <thead><tr><th>Element</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">.InstanceTopBar</td><td class="was">Overlaps status bar; status dot floats</td><td class="now">Honors safe-area-inset-top; dot inline with name; mono "LAN" badge to the right</td></tr>
+          <tr><td class="f">Greeting</td><td class="was">Greeting + "Connected to" sub-line</td><td class="now">Greeting + ambient sub: "2 things waiting · 14 min to next meeting"</td></tr>
+          <tr><td class="f">Hero card</td><td class="was">Doesn't exist</td><td class="now">Single approval card · teal border · monospace label · primary CTA</td></tr>
+          <tr><td class="f">Quick actions</td><td class="was">2×2 grid above the fold, no icons</td><td class="now">2×2 below the hero · 1.75-stroke Ico in 28px rounded-square glyph well</td></tr>
+          <tr><td class="f">Recent sessions</td><td class="was">"TODAY · 12:51 · Hello · 2.1k tokens · 2 msg · ACTIVE" jammed onto one row, the word ACTIVE wraps under SEE ALL</td><td class="now">Mono time on the left, title on its own line, meta in monospace under it; section header carries the count</td></tr>
+          <tr><td class="f">FAB</td><td class="was">Bare green disc with "+" floating into the tab row</td><td class="now">Removed. The tab bar gets a 5th tab; quick-actions live in their own card on Home</td></tr>
+          <tr><td class="f">Tab bar</td><td class="was">Approvals + Capture share inbox glyph; labels uneven</td><td class="now">Distinct icons (shield-check / camera); badges on tabs; thin top indicator on active</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 3. LOGO + ICON SYSTEM ─────────────────────────── -->
+  <section>
+    <div class="section-tag">03 · Mark + module glyphs</div>
+    <h2>One letter. Drawn once. Used everywhere.</h2>
+    <p>You don't need an illustrated logo for a remote-control app. A geometric monogram is sturdy at every size, holds the brand teal cleanly, and replaces every emoji-tile in one stroke. Same construction logic generates module glyphs (MI, KB, RA…) so the More grid stops looking like a clip-art page.</p>
+
+    <h4>App mark — three weights, one shape</h4>
+    <div class="mark-grid">
+      <div class="mark-cell">
+        <svg class="mono-svg" width="120" height="120" viewBox="0 0 120 120">
+          <rect x="6" y="6" width="108" height="108" rx="26" fill="#0B6F5E"/>
+          <path d="M40 88 L60 32 L80 88" fill="none" stroke="#FBF8F1" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M48 70 L72 70" stroke="#FBF8F1" stroke-width="9" stroke-linecap="round"/>
+        </svg>
+        <div class="label">App icon · 1024 px</div>
+        <div class="desc">Brand teal on warm linen — counter to OS icon noise</div>
+      </div>
+      <div class="mark-cell" style="background:var(--ink)">
+        <svg class="mono-svg" width="120" height="120" viewBox="0 0 120 120">
+          <rect x="6" y="6" width="108" height="108" rx="26" fill="none" stroke="#FBF8F1" stroke-width="3"/>
+          <path d="M40 88 L60 32 L80 88" fill="none" stroke="#FBF8F1" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M48 70 L72 70" stroke="#FBF8F1" stroke-width="9" stroke-linecap="round"/>
+        </svg>
+        <div class="label" style="color:#9A9380">Splash · dark</div>
+        <div class="desc" style="color:#D8D2C0">First paint while the WebView boots</div>
+      </div>
+      <div class="mark-cell">
+        <svg class="mono-svg" width="64" height="64" viewBox="0 0 64 64" style="margin-top:28px;margin-bottom:28px">
+          <rect x="2" y="2" width="60" height="60" rx="14" fill="#0B6F5E"/>
+          <path d="M22 48 L32 18 L42 48" fill="none" stroke="#FBF8F1" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M26 38 L38 38" stroke="#FBF8F1" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <div class="label">Status bar · 22 px</div>
+        <div class="desc">Pairs with the instance name in the top-bar</div>
+      </div>
+      <div class="mark-cell">
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:18px 0">
+          <svg class="mono-svg" width="44" height="44" viewBox="0 0 64 64">
+            <rect x="2" y="2" width="60" height="60" rx="14" fill="#0B6F5E"/>
+            <path d="M22 48 L32 18 L42 48" fill="none" stroke="#FBF8F1" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M26 38 L38 38" stroke="#FBF8F1" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+          <div style="text-align:left">
+            <div style="font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.5px">ANTON</div>
+            <div class="mono" style="font-size:10px;color:var(--muted);letter-spacing:1.4px">COMPANION</div>
+          </div>
+        </div>
+        <div class="label">Wordmark lockup</div>
+        <div class="desc">For onboarding, settings header, share-sheet thumbnail</div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:32px">Module glyph system — replaces every emoji tile</h4>
+    <p style="font-size:14px;margin-top:0">Each module gets a 2-letter monogram in a flat-color rounded-square. Color comes from the module's domain (red = sanctions/risk, blue = counsel/finance review, gold = autopilot/markets, teal = research/knowledge, plum = creative, slate = utility). No drawn icons; the letters carry the load and stay legible at 24px.</p>
+    <div class="module-grid">
+      <div class="m"><div class="gl" style="background:#0B6F5E">MI</div><div class="l">Markets</div></div>
+      <div class="m"><div class="gl" style="background:#B82E1A">SA</div><div class="l">Sanctions</div></div>
+      <div class="m"><div class="gl" style="background:#29609E">CD</div><div class="l">Counsel</div></div>
+      <div class="m"><div class="gl" style="background:#0B6F5E">KB</div><div class="l">Knowledge</div></div>
+      <div class="m"><div class="gl" style="background:#B07326">FA</div><div class="l">Finance</div></div>
+      <div class="m"><div class="gl" style="background:#0B6F5E">GA</div><div class="l">Gap</div></div>
+      <div class="m"><div class="gl" style="background:#6A3E8F">PB</div><div class="l">Presentation</div></div>
+      <div class="m"><div class="gl" style="background:#1C1A14">OR</div><div class="l">Orchestrator</div></div>
+      <div class="m"><div class="gl" style="background:#3E6B3A">TA</div><div class="l">Tasks</div></div>
+      <div class="m"><div class="gl" style="background:#B82E1A">RA</div><div class="l">Risk Atlas</div></div>
+      <div class="m"><div class="gl" style="background:#1F5FAE">HR</div><div class="l">Horizon</div></div>
+      <div class="m"><div class="gl" style="background:#1C1A14">CV</div><div class="l">Civic</div></div>
+    </div>
+  </section>
+
+  <!-- ─── 4. CAPTURE + MORE + SHEET ─────────────────────── -->
+  <section>
+    <div class="section-tag">04 · The other broken screens</div>
+    <h2>Capture, More, and the sheets all need the same treatment.</h2>
+    <p>Same diagnosis pattern: emoji icons + half-empty canvas + no clear end-state. Same fix pattern: live preview surfaces, monogram tiles, named destinations.</p>
+
+    <div class="card">
+      <h3>Capture — live viewfinder, named destination</h3>
+      <table class="spec">
+        <thead><tr><th>Element</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">Header</td><td class="was">"&lt; Capture" + status bar</td><td class="now">Live camera viewfinder fills 60% of the screen, with a soft vignette and 4-corner reticle</td></tr>
+          <tr><td class="f">Mode chips</td><td class="was">Doesn't exist</td><td class="now">Horizontal scroller above the shutter: Receipt · Whiteboard · Document · ID · Voice note · Free</td></tr>
+          <tr><td class="f">Tile row</td><td class="was">Two emoji tiles ("📷 Take photo", "🖼 Pick from library")</td><td class="now">Removed. Shutter is a single 64px disc, library is a 44px thumbnail to its left, flash to its right</td></tr>
+          <tr><td class="f">Footer</td><td class="was">Empty 60% canvas</td><td class="now">"Goes to your ANTON · routed to Sanctions Advisory" — destination always named</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>More menu — a wallet of modules, not a clip-art grid</h3>
+      <table class="spec">
+        <thead><tr><th>Element</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">Tile glyph</td><td class="was">Raster emoji at native resolution (briefcase, calendar, sat-dish, money bag)</td><td class="now">Two-letter monogram on a flat color rounded-square (see §3) — same logic everywhere</td></tr>
+          <tr><td class="f">Tile layout</td><td class="was">3-up grid, equal weight, no grouping</td><td class="now">Grouped sections with mono labels: COMMS · KNOWLEDGE · FINANCE · ACCOUNT</td></tr>
+          <tr><td class="f">Switch Org</td><td class="was">A tile in the grid, no different from "Calendar"</td><td class="now">A row at the bottom: instance name · status dot · "switch" link. Distinct from modules.</td></tr>
+          <tr><td class="f">Drag handle</td><td class="was">Not visible against backdrop</td><td class="now">3px × 36px gray pill, 8px above the section title, visible on every sheet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>Bottom sheet primitive — apply once, fix everywhere</h3>
+      <table class="spec">
+        <thead><tr><th>Token</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">backdrop</td><td class="was">flat #888 50%</td><td class="now">rgba(28, 26, 20, 0.32) + backdrop-filter: blur(4px) saturate(0.95)</td></tr>
+          <tr><td class="f">sheet bg</td><td class="was">#fff</td><td class="now">var(--paper) · 1px hairline border-top: var(--line)</td></tr>
+          <tr><td class="f">corner radius</td><td class="was">12px top corners</td><td class="now">22px top corners (token r4) · 0 bottom</td></tr>
+          <tr><td class="f">handle</td><td class="was">none / off-screen</td><td class="now">3 × 36 px, color var(--line), 10px gap above title</td></tr>
+          <tr><td class="f">elevation</td><td class="was">none</td><td class="now">box-shadow: 0 -8px 32px -12px rgba(0,0,0,0.18)</td></tr>
+          <tr><td class="f">animation</td><td class="was">slide 220ms cubic-bezier · ✓ (keep)</td><td class="now">unchanged · this part is right today</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 5. CHAT + APPROVALS ──────────────────────────── -->
+  <section>
+    <div class="section-tag">05 · The big two</div>
+    <h2>Chat and Approvals — these are why the app exists.</h2>
+    <p>Both surfaces are competent today. Both need to <em>feel</em> serious. The fixes here are smaller in code-volume but bigger in perceived quality.</p>
+
+    <div class="card">
+      <h3>Chat — replace the cold-start interrogation</h3>
+      <p style="font-size:14px;color:var(--ink-2);margin:0 0 14px">The first message from ANTON should not be a four-bullet questionnaire. It should be a one-line greeting that uses what ANTON already knows about the user's day.</p>
+      <table class="spec">
+        <thead><tr><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="was" style="white-space:normal">
+              "ANTON — Ready to assist<br><br>Good. I'm initialized and ready to help you produce professional-quality work across analysis, strategy, compliance, and operations. To get started, I'll need to understand: <b>What are you working on?</b> <b>What context matters?</b> <b>What format do you need?</b> <b>Any constraints?</b>"
+            </td>
+            <td class="now" style="white-space:normal">
+              "Hi Daniel. I see you have an invoice waiting and the Tehran handover from this morning. Want to start there, or is something else on your mind?"<br><br>
+              <span class="mono" style="font-size:11px;color:var(--muted)">SUGGESTIONS BELOW: "Open the invoice" · "Resume Tehran handover" · "Something else"</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>Approvals — the enterprise wedge needs more weight</h3>
+      <table class="spec">
+        <thead><tr><th>Element</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">Card border</td><td class="was">1px var(--line)</td><td class="now">1.5px var(--severity) — red for critical, gold for normal, teal for info</td></tr>
+          <tr><td class="f">Severity label</td><td class="was">Pill in the top-right</td><td class="now">Mono uppercase tag at the top: <span class="mono">CRITICAL · BIOMETRIC REQUIRED</span></td></tr>
+          <tr><td class="f">Rationale</td><td class="was">Hidden in ReasoningDrawer, rarely opened</td><td class="now">First-class · expanded by default · "ANTON checked these 4 things" with each line citing</td></tr>
+          <tr><td class="f">Counter-offer</td><td class="was">"Modify" button that opens a generic chat</td><td class="now">"Approve at lower amount", "Defer until Friday", "Ask ANTON to redo with…" — concrete options</td></tr>
+          <tr><td class="f">Biometric prompt</td><td class="was">Native Android prompt, no app context</td><td class="now">In-app sheet first: "ANTON wants to confirm it's you" + amount + supplier; native prompt fires on tap</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 6. WORK MODULES TIDY ─────────────────────────── -->
+  <section>
+    <div class="section-tag">06 · Work tab</div>
+    <h2>Work modules screen — already good, two small fixes.</h2>
+    <p>The Work screen in screenshot 6 is the closest to its design intent. Two things still need to land:</p>
+    <div class="card">
+      <table class="spec">
+        <thead><tr><th>Element</th><th>Was</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="f">"Find the right module"</td><td class="was">Teal hero with white-on-white search field — placeholder is barely visible against the teal</td><td class="now">Search field becomes white pill (var(--paper)), placeholder var(--muted), ANTON sparkle inside the field on the left</td></tr>
+          <tr><td class="f">Pinned cards</td><td class="was">Color dot · title · MONO sub — fine</td><td class="now">Replace the colored corner-dot with the same monogram glyph used in More (so the visual language is one system, not two)</td></tr>
+          <tr><td class="f">Browse list</td><td class="was">2-letter monogram in a gray well — already good</td><td class="now">Apply the colored monogram from §3. No further changes.</td></tr>
+          <tr><td class="f">Footer</td><td class="was">"Tap any module to open it on your ANTON instance" in mono</td><td class="now">Keep — this is good. Add a small lock glyph before it: data stays on your instance.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 7. IMPLEMENTATION ORDER ───────────────────────── -->
+  <section>
+    <div class="section-tag">07 · For Claude Code</div>
+    <h2>Ship it in four commits.</h2>
+    <p>Each commit is one PR. Each PR is reviewable in under 30 minutes.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div>
+        <div class="t">Foundations</div>
+        <div class="d">Safe-area on InstanceTopBar. Replace every emoji with Ico. Apply the new bottom-sheet primitive (handle + scrim + radius). One commit.</div>
+        <div class="pillrow">
+          <span class="p">~6 files</span>
+          <span class="p t">no logic change</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <div class="t">Brand mark + monograms</div>
+        <div class="d">Drop the SVG mark into <span class="mono">public/anton-companion.svg</span>. Generate the 12 module-monogram components from one factory. Update splash + favicon + push badge.</div>
+        <div class="pillrow">
+          <span class="p">~3 files</span>
+          <span class="p t">visible win</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <div class="t">Home rebuild</div>
+        <div class="d">Hero card replaces greeting. Quick actions demoted. Recent-sessions row reformatted. Remove the FAB; add 5th tab. Standard mode mirrors the rebuild.</div>
+        <div class="pillrow">
+          <span class="p">HomeScreen.tsx</span>
+          <span class="p">StdHomeScreen.tsx</span>
+          <span class="p">TabBar.tsx</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">04</div>
+        <div class="t">Capture + Chat + Approvals</div>
+        <div class="d">Live viewfinder + named destination on Capture. Cold-start template killed on Chat (use recent activity). Approval card gets severity border + first-class rationale.</div>
+        <div class="pillrow">
+          <span class="p">CapturePage.tsx</span>
+          <span class="p">ChatPage.tsx</span>
+          <span class="p">ApprovalsScreen.tsx</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 8. THINGS NOT TO TOUCH ────────────────────────── -->
+  <section>
+    <div class="section-tag">08 · Hands off</div>
+    <h2>What to leave alone.</h2>
+    <p>The redesign should not pretend everything is broken. Several things are right — and changing them now would be churn.</p>
+    <div class="diag-grid">
+      <div class="diag" style="border-color:var(--teal-dim);background:var(--teal-soft)">
+        <span class="num" style="color:var(--teal-dark)">KEEP</span>
+        <div class="ttl">The Editorial direction.</div>
+        <div class="body">Warm linen canvas, restricted teal, mono labels for metadata — this is the right direction. The redesign here amplifies it; it doesn't replace it.</div>
+      </div>
+      <div class="diag" style="border-color:var(--teal-dim);background:var(--teal-soft)">
+        <span class="num" style="color:var(--teal-dark)">KEEP</span>
+        <div class="ttl">Pro / Standard mode split.</div>
+        <div class="body">Two modes, two densities, one data layer — this is the headline a11y feature. Standard still needs its own visual rhythm (calendar-style time-blocks on Home, mailbox-style messages) but the framework is right.</div>
+      </div>
+      <div class="diag" style="border-color:var(--teal-dim);background:var(--teal-soft)">
+        <span class="num" style="color:var(--teal-dark)">KEEP</span>
+        <div class="ttl">8 personal accent colors.</div>
+        <div class="body">Locked status colors + runtime-swappable accent is the right model. The accent applies to the hero card border, primary CTAs, live dots, and section markers — never to status (red/gold/green/blue stay locked).</div>
+      </div>
+      <div class="diag" style="border-color:var(--teal-dim);background:var(--teal-soft)">
+        <span class="num" style="color:var(--teal-dark)">KEEP</span>
+        <div class="ttl">Monospace-for-metadata rule.</div>
+        <div class="body">JetBrains Mono on timestamps, hashes, instance IDs, transport ("LAN"), token counts, severity labels. Inter on everything else. Don't relax this — it's what makes ANTON look like an instrument and not a chat app.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="margin-top:80px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;display:flex;justify-content:space-between">
+    <span>ANTON · COMPANION APP · WAY-FORWARD V2</span>
+    <span>Light theme · Editorial direction · 2026-05-03</span>
+  </footer>
+
+</div>
+</body>
+</html>

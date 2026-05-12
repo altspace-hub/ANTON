@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ANTON · The AI workspace for regulated professionals</title>
+<meta name="description" content="ANTON is the AI-powered expert workspace for compliance, financial-crime, legal and risk teams. A web cockpit, a companion app, and a suite of pro modules from Sanctions Advisory to Horizon Radar." />
+<link rel="stylesheet" href="css/base.css?v=1777230001" />
+<link rel="stylesheet" href="css/anton.css?v=1777230001" />
+</head>
+<body class="anton">
+
+<header class="topbar">
+  <div class="container topbar-row">
+    <a href="index.html" class="brand-mark" aria-label="FutureChain">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" stroke="#047857" stroke-width="1.5"/>
+        <path d="M2 16h28M16 2c4 4 6 9 6 14s-2 10-6 14M16 2c-4 4-6 9-6 14s2 10 6 14" stroke="#047857" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="2.5" fill="#047857"/>
+      </svg>
+      <span>Future<span class="accent">Chain</span></span>
+    </a>
+
+    <div class="switcher hide-mobile" role="tablist">
+      <a href="index.html">Overview</a>
+      <a href="anton.html" class="is-active">ANTON</a>
+      <a href="futurechain.html">FutureChain</a>
+    </div>
+
+    <nav class="hide-mobile">
+      <a href="#apci">APCI</a>
+      <a href="#modules">Modules</a>
+      <a href="#network">Network</a>
+      <a href="#companion">Companion</a>
+      <a href="#demo" class="btn btn-primary-an" style="padding:10px 18px;font-size:13px;">Book a demo</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="anton-hero">
+    <div class="container grid-wrap">
+      <div>
+        <span class="kicker"><span class="dot"></span> Live · Built on Claude</span>
+        <h1>The AI workspace for <em>regulated professionals.</em></h1>
+        <p class="lede">
+          ANTON gives compliance, financial-crime, legal and risk teams an expert workspace —
+          not another chat box. A web cockpit on your laptop, a companion on your phone, and
+          a suite of professional modules that know your domain.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary-an" href="#demo">Book a demo <span class="arrow">→</span></a>
+          <a class="btn btn-ghost-an" href="#cockpit">See the cockpit</a>
+        </div>
+      </div>
+
+      <!-- Real cockpit screenshot -->
+      <div aria-label="ANTON cockpit · Home with Activity tab">
+        <img class="shot" src="assets/anton-shots/home-activity.png" alt="ANTON cockpit Home view: sidebar with favorites, daily brief, continue-your-work, Activity feed on the right." />
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT IT IS -->
+  <section id="overview">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">What ANTON is</span>
+        <h2>An expert workspace, not a chat box.</h2>
+        <p>
+          AI in your browser is great for prose. But a regulated professional doesn't write prose —
+          they investigate, decide, document and defend. ANTON is built around that workflow:
+          modules that know what a sanctions review or a SAR actually contains, runs that capture
+          every decision, and an audit trail you can hand to a regulator.
+        </p>
+      </div>
+
+      <div class="grid grid-3">
+        <div>
+          <div class="eyebrow" style="color:var(--an-emerald);margin-bottom:10px;">For who</div>
+          <p style="font-size:16px;line-height:1.6;color:var(--ink-soft);">
+            Compliance and financial-crime teams in banks, PSPs, EMIs, MiCA-authorized CASPs.
+            Legal and risk teams in obliged entities. Auditors and consultants who live in their work.
+          </p>
+        </div>
+        <div>
+          <div class="eyebrow" style="color:var(--an-emerald);margin-bottom:10px;">What it does</div>
+          <p style="font-size:16px;line-height:1.6;color:var(--ink-soft);">
+            Hosts a library of professional modules — Sanctions Advisory, Pathfinder, Horizon Radar,
+            Markets, Adverse Media, SARs &amp; reports — each with its own configuration, sources and output.
+          </p>
+        </div>
+        <div>
+          <div class="eyebrow" style="color:var(--an-emerald);margin-bottom:10px;">Why it works</div>
+          <p style="font-size:16px;line-height:1.6;color:var(--ink-soft);">
+            Built by people who lived the workflow at SEB, the Riksbank, EY and Advisense.
+            Powered by Claude. Designed so the trail of every decision is one click away.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APCI THESIS -->
+  <section id="apci" style="background:#fff;border-top:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The thesis</span>
+        <h2>The bottleneck isn't intelligence. It's context.</h2>
+        <p>
+          Everyone is racing toward AGI. ANTON took the other road. Intelligence is now a
+          commodity — three API calls and you're done. What compounds is professional context:
+          the regulations a team works under, the controls already in place, the questions
+          a regulator asked last quarter, the way <em>this</em> firm writes a SAR.
+          That's what a colleague learns over years. We built a system that learns it on purpose.
+        </p>
+      </div>
+
+      <div class="thesis">
+        <div class="thesis-card is-old">
+          <span class="lab">The race everyone is running</span>
+          <h3>AGI</h3>
+          <span class="expand">Artificial General Intelligence</span>
+          <p>
+            Make the model smarter, more general, more capable of any task. The bet:
+            sufficiently advanced reasoning replaces the expert. The reality: the model
+            still doesn't know your firm, your regulators, your last six engagements,
+            or what a "good" deliverable looks like in your industry.
+          </p>
+        </div>
+        <div class="thesis-card is-new">
+          <span class="lab">The road we took</span>
+          <h3>APCI</h3>
+          <span class="expand">Artificial Professional Context Intelligence</span>
+          <p>
+            Take the smartest model available and give it a proper professional education:
+            seven layers of prompt architecture, a knowledge graph that grows with every run,
+            forty domain personas, and a trust score on every output. The result: expert
+            results from a non-expert workflow. ANTON doesn't replace your colleague — it
+            <b>becomes</b> one.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREE PILLARS -->
+  <section id="pillars">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Three pillars · one foundation</span>
+        <h2>Work. School. Life.</h2>
+        <p>
+          The same architecture serves a compliance officer drafting a SAR, a graduate student
+          structuring a thesis, and a citizen reading a contract before they sign. Different
+          modules, same engine — same audit trail, same trust score, same control over what
+          ANTON sees and remembers.
+        </p>
+      </div>
+
+      <div class="pillars">
+        <div class="pillar">
+          <span class="pl-num">01</span>
+          <span class="pl-tag">Work</span>
+          <h3>The professional cockpit.</h3>
+          <p class="pl-sub">For regulated industries — banks, PSPs, EMIs, CASPs, law firms, advisors. The flagship surface, and where most of this site lives.</p>
+          <ul>
+            <li>Sanctions Advisory · SAR Drafting · Adverse Media · Horizon Radar · Pathfinder</li>
+            <li>Engagement scoping, deliverables tracking, scope agreements</li>
+            <li>Six-dimensional trust score on every output</li>
+          </ul>
+        </div>
+        <div class="pillar">
+          <span class="pl-num">02</span>
+          <span class="pl-tag">School</span>
+          <h3>The student's tutor.</h3>
+          <p class="pl-sub">For learners at any stage — from secondary school to doctoral research. Not a homework machine. A patient, structured, transparent collaborator.</p>
+          <ul>
+            <li>Topic explainers, concept maps, research scaffolding</li>
+            <li>Thesis structuring, source critique, citation hygiene</li>
+            <li>Trust score teaches what makes a claim defensible</li>
+          </ul>
+        </div>
+        <div class="pillar">
+          <span class="pl-num">03</span>
+          <span class="pl-tag">Life</span>
+          <h3>The citizen's advocate.</h3>
+          <p class="pl-sub">For everyday decisions that deserve more care than a chat tab — contracts, tenancy, benefits, healthcare, taxes. Plain language. Sources cited.</p>
+          <ul>
+            <li>Document understanding with rights and obligations called out</li>
+            <li>Letter and form drafting that holds up under scrutiny</li>
+            <li>Local-first by default — your life stays on your machine</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COCKPIT -->
+  <section id="cockpit" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The cockpit</span>
+        <h2>Your laptop becomes the workbench.</h2>
+        <p>
+          Sidebar with favorites and modules pinned. ⌘K command palette to jump anywhere.
+          Run header that captures the configuration, model and depth used. Right rail with
+          trust score, citations and timeline. Bottom composer to iterate on the document.
+          Light, dark and corporate themes. Eight accent colours.
+        </p>
+      </div>
+
+      <div class="surfaces">
+        <div class="surface">
+          <span class="surf-tag">Shell</span>
+          <h3>One workspace, every module.</h3>
+          <p>Switch from a sanctions review to a horizon scan to an open chat without leaving the cockpit. Recents, favorites and search travel with you.</p>
+          <ul>
+            <li><b>Collapsible sidebar</b> with favorites pinned and sections you can fold</li>
+            <li><b>⌘K command palette</b> to jump to any module, run, or recent session</li>
+            <li><b>Notifications &amp; shortcuts overlay</b> always one keystroke away</li>
+            <li><b>Three themes, eight accents</b> — make it yours, keep it professional</li>
+          </ul>
+        </div>
+        <div class="surface">
+          <span class="surf-tag">Run-based</span>
+          <h3>Every output is a run.</h3>
+          <p>A run captures the question, the configuration, the sources, the output and the trail. Iterate via chat, fork into a new version, export as DOCX, PDF or Markdown.</p>
+          <ul>
+            <li><b>Run header</b> with model, depth, precision, persona, word count</li>
+            <li><b>Collapsible config panel</b> with every dial: Think Hard, Multi-agent, Deliberation, Knowledge Memory, Sanctions Regimes</li>
+            <li><b>Trust score &amp; citations</b> on the right rail of every run</li>
+            <li><b>Chat composer</b> at the bottom to refine without losing the version history</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Cockpit gallery -->
+      <div class="shot-grid-2">
+        <div class="shot-frame">
+          <img class="shot" src="assets/anton-shots/sanctions-run.png" alt="ANTON Sanctions Advisory: full run with configuration panel, output document and trust score on the right rail." />
+          <div class="meta">
+            <h4>Sanctions Advisory · Full run</h4>
+            <p>Run header, configuration panel (depth, model, persona, regimes), output document, right-rail trust score and citations.</p>
+          </div>
+        </div>
+        <div class="shot-frame">
+          <img class="shot" src="assets/anton-shots/command-palette.png" alt="ANTON command palette overlay showing jump-to actions, recent sessions and ⌘K shortcuts." />
+          <div class="meta">
+            <h4>⌘K command palette</h4>
+            <p>Jump to any module, recent session, or fall back to "Ask ANTON" — same keystroke, every screen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRO MODULES -->
+  <section id="modules">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Pro modules · 400+ across 50+ domains</span>
+        <h2>Modules that know your domain.</h2>
+        <p>
+          Each module is more than a prompt — it has its own configuration surface, its own sources,
+          its own output template and its own seat in the audit trail. The modules below are the ones
+          most regulated teams reach for; the library covers another four hundred across compliance,
+          legal, finance, audit, risk, data and operations.
+        </p>
+      </div>
+
+      <div class="pro-modules">
+        <div class="pro-module">
+          <div class="pm-icon">SA</div>
+          <h4>Sanctions Advisory</h4>
+          <p>Generate audit-grade sanctions analyses across EU, UK, US and FATF regimes — with citations.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">PF</div>
+          <h4>Pathfinder</h4>
+          <p>Find the right module for the question you're holding. Suggests configuration and sources.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">HR</div>
+          <h4>Horizon Radar</h4>
+          <p>Continuous scanning of regulations, news and supervisory communications you've subscribed to.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">MK</div>
+          <h4>Markets</h4>
+          <p>Morning brief plus on-demand analysis of price action, flows and counterparty exposure.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">AM</div>
+          <h4>Adverse Media</h4>
+          <p>Multilingual, cited adverse-media checks tied to your case file — not a separate tab.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">SC</div>
+          <h4>Screening</h4>
+          <p>Real-time payment screening with explainable reason codes per hit, on every regime.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">SR</div>
+          <h4>Reports &amp; SARs</h4>
+          <p>Pre-formatted SARs for FI, FIU, goAML and equivalents. Generated, reviewed, signed.</p>
+        </div>
+        <div class="pro-module">
+          <div class="pm-icon">AT</div>
+          <h4>Audit Trail</h4>
+          <p>Immutable timeline of every query, decision and override. Export to PDF or evidence vault.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HEADLINE MODULES (Pathfinder · Discover · Markets) -->
+  <section style="background:#fff;border-top:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Three modules worth a closer look</span>
+        <h2>Search that thinks. Discovery that maps. Markets that score themselves.</h2>
+        <p>
+          Most modules do their job and step back. These three earn their own real-estate because
+          they reshape how a team works between the discrete tasks — they are how you start a session,
+          how you scope an engagement, and how you keep ANTON honest under pressure.
+        </p>
+      </div>
+
+      <div class="headline-mods">
+        <div class="h-mod">
+          <span class="h-tag">Pathfinder</span>
+          <h3>The search engine that thinks before it answers.</h3>
+          <p>Seven search modes. Source-quality framework. Two-step reasoning trail visible inline. Domain-aware query enrichment. Cost transparent on every run.</p>
+          <ul>
+            <li>Quick · Standard · Comprehensive · Deep · Specialist · Critical · Iterative</li>
+            <li>"Improve my search" wizard turns a one-liner into a precise brief</li>
+            <li>Pipe any result straight into a Pro module with context preserved</li>
+          </ul>
+        </div>
+        <div class="h-mod">
+          <span class="h-tag">Discovery</span>
+          <h3>Find where AI actually creates value for your firm.</h3>
+          <p>The hardest problem in AI adoption isn't the technology — it's knowing where to start. Discovery maps your workflows to the modules that fit, with four depth levels.</p>
+          <ul>
+            <li>Lite (15–30 min) for a quick orientation</li>
+            <li>Standard (1–2 h) and Professional (3–4 h) for engagement scoping</li>
+            <li>Expert (full day) for an enterprise-wide AI adoption plan</li>
+          </ul>
+        </div>
+        <div class="h-mod">
+          <span class="h-tag">Markets</span>
+          <h3>The honesty machine: predictions that get a verdict.</h3>
+          <p>Markets is APCI under maximum pressure. Five expert personas form a Consul Council, debate, and synthesise a position. Every prediction is tracked against the outcome.</p>
+          <ul>
+            <li>Five-perspective Consul Council with named reasoning trails</li>
+            <li>Public ANTON Indexes — accuracy is a scoreboard, not a claim</li>
+            <li>Morning brief, on-demand analysis, prediction tracking</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIG QUOTE -->
+  <section class="bigq">
+    <div class="container">
+      <blockquote>
+        AI is not here to replace your colleagues. It's here to <em>become</em> one.
+      </blockquote>
+      <cite>— ANTON design principle №1</cite>
+    </div>
+  </section>
+
+  <!-- HORIZON RADAR FEATURE -->
+  <section style="padding-block: 0 !important;">
+    <div class="container">
+      <div class="radar">
+        <div>
+          <span class="eyebrow" style="font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;display:block;margin-bottom:14px;">Horizon Radar</span>
+          <h2>The regulator just published. ANTON already read it.</h2>
+          <p>
+            Set up a radar around the topics you care about — sanctions amendments, supervisory letters,
+            new MiCA guidance, ESG taxonomy updates — and ANTON scans continuously. New, relevant,
+            action-suggested. Three colours, one glance.
+          </p>
+          <ul style="list-style:none;padding:0;margin:0 0 24px;display:grid;gap:8px;font-size:14px;color:rgba(255,255,255,0.85);">
+            <li>● Live scanning across feeds you subscribe to</li>
+            <li>● Daily traffic-light digest: new · high-relevance · action-suggested</li>
+            <li>● One-click follow-up: open a Pathfinder run on any item</li>
+            <li>● Pushes to the Companion app so you see it on the train</li>
+          </ul>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;">
+          <img src="assets/anton-shots/companion-radar.png" alt="Horizon Radar in the ANTON Companion app: scanning, traffic-light digest, action-suggested items." style="display:block;max-width:100%;height:auto;border-radius:14px;box-shadow:0 30px 60px -15px rgba(0,0,0,0.4);background:#fff;" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APCI ARCHITECTURE -->
+  <section id="architecture">
+    <div class="container">
+      <div class="apci">
+        <div class="apci-side">
+          <span class="eyebrow" style="font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;display:block;margin-bottom:14px;color:var(--an-emerald);">The APCI engine</span>
+          <h3>Seven layers turn raw intelligence into professional context.</h3>
+          <p>
+            Underneath every module is the same architecture: knowledge atoms with confidence
+            scores and source trails, a knowledge graph that links clients, regulations, controls
+            and risks, a feedback loop that sharpens with every correction, and a pattern engine
+            that surfaces what no single run could see. The longer ANTON works alongside a team,
+            the more it is theirs.
+          </p>
+          <div class="stat-row">
+            <div class="stat">
+              <div class="num">7</div>
+              <div class="lab">Layers in the prompt assembly system</div>
+            </div>
+            <div class="stat">
+              <div class="num">6</div>
+              <div class="lab">Dimensions in every Trust Score</div>
+            </div>
+            <div class="stat">
+              <div class="num">40+</div>
+              <div class="lab">Domain expert personas to ask from</div>
+            </div>
+            <div class="stat">
+              <div class="num">30+</div>
+              <div class="lab">Consulting-grade output formats</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="apci-stack">
+          <div class="apci-layer">
+            <div class="num">L1</div>
+            <div class="body">
+              <h4>Knowledge atoms</h4>
+              <p>Discrete facts, insights and conclusions. Every atom carries a confidence score, a source trail and a temporal validity window.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L2</div>
+            <div class="body">
+              <h4>Knowledge graph</h4>
+              <p>Typed relationships between clients, regulations, controls, risks, people and systems. The same entity threads across every run.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L3</div>
+            <div class="body">
+              <h4>Domain-aware retrieval</h4>
+              <p>Ranking that understands compliance is not law is not finance. Each module gets the right context, not just the closest match.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L4</div>
+            <div class="body">
+              <h4>Feedback loop</h4>
+              <p>Every accept, edit and reject is a signal. The next run is sharper than the last. This is how compounding looks in practice.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L5</div>
+            <div class="body">
+              <h4>Pattern engine</h4>
+              <p>Temporal correlations, entity convergences, cascade sequences, coverage gaps. The things no single review would catch.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L6</div>
+            <div class="body">
+              <h4>Intelligence dashboard</h4>
+              <p>The accumulated knowledge made visible. Browse atoms, walk the graph, audit the pattern detections that drove a decision.</p>
+            </div>
+          </div>
+          <div class="apci-layer">
+            <div class="num">L7</div>
+            <div class="body">
+              <h4>Prompt assembly</h4>
+              <p>The final layer. The model gets exactly the context it needs to answer like a colleague who has been here for years.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NETWORK: when ANTONs connect -->
+  <section id="network" style="background:var(--an-paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The network</span>
+        <h2>What happens when ANTONs connect.</h2>
+        <p>
+          Each ANTON is sovereign. It runs on your machine, learns your context, never phones
+          home. But sovereignty doesn't mean isolation. The ANTON Agent Protocol lets two
+          instances identify each other, establish trust and exchange knowledge atoms — with
+          provenance preserved and your consent at every step. Individual intelligence becomes
+          collaborative.
+        </p>
+      </div>
+
+      <div class="network">
+        <div class="network-vis">
+          <svg viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <radialGradient id="netNode" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="60%" stop-color="#047857"/>
+                <stop offset="100%" stop-color="#064e3b"/>
+              </radialGradient>
+              <linearGradient id="netLine" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#047857" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#047857" stop-opacity="0.15"/>
+              </linearGradient>
+            </defs>
+            <!-- center node -->
+            <line x1="240" y1="240" x2="120" y2="100" stroke="url(#netLine)" stroke-width="1.5"/>
+            <line x1="240" y1="240" x2="380" y2="120" stroke="url(#netLine)" stroke-width="1.5"/>
+            <line x1="240" y1="240" x2="100" y2="280" stroke="url(#netLine)" stroke-width="1.5"/>
+            <line x1="240" y1="240" x2="380" y2="320" stroke="url(#netLine)" stroke-width="1.5"/>
+            <line x1="240" y1="240" x2="200" y2="400" stroke="url(#netLine)" stroke-width="1.5"/>
+            <!-- inter-node lines -->
+            <line x1="120" y1="100" x2="380" y2="120" stroke="url(#netLine)" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="100" y1="280" x2="200" y2="400" stroke="url(#netLine)" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="380" y1="320" x2="200" y2="400" stroke="url(#netLine)" stroke-width="1" stroke-dasharray="3 4"/>
+            <!-- nodes -->
+            <circle cx="240" cy="240" r="36" fill="url(#netNode)"/>
+            <circle cx="120" cy="100" r="22" fill="url(#netNode)" opacity="0.85"/>
+            <circle cx="380" cy="120" r="22" fill="url(#netNode)" opacity="0.85"/>
+            <circle cx="100" cy="280" r="18" fill="url(#netNode)" opacity="0.7"/>
+            <circle cx="380" cy="320" r="20" fill="url(#netNode)" opacity="0.8"/>
+            <circle cx="200" cy="400" r="16" fill="url(#netNode)" opacity="0.7"/>
+            <!-- ring outline -->
+            <circle cx="240" cy="240" r="200" fill="none" stroke="#047857" stroke-opacity="0.18" stroke-width="1" stroke-dasharray="2 6"/>
+            <!-- center label -->
+            <text x="240" y="244" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="11" font-weight="700" fill="#fff" letter-spacing="0.16em">YOU</text>
+          </svg>
+        </div>
+        <div>
+          <div class="surface" style="background:#fff;border-color:var(--line);">
+            <span class="surf-tag">ANTON Agent Protocol</span>
+            <h3>Knowledge that travels with consent.</h3>
+            <p>Two ANTONs identify each other, verify trust, and exchange atoms across the boundary. No central server. No silent sync. Provenance preserved at every hop.</p>
+            <ul>
+              <li><b>Companion app gateway</b> — your phone is the bridge between instances</li>
+              <li><b>Specialized agents</b> — a public agent storefront for niche expertise</li>
+              <li><b>The .anton bundle</b> — knowledge as a network good, ratings and curation included</li>
+              <li><b>Markets indexes &amp; community tab</b> — the proving ground meets the people</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPANION APP -->
+  <section id="companion" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Companion app · iOS &amp; Android</span>
+        <h2>ANTON in your pocket. Same expertise, one tap away.</h2>
+        <p>
+          Pair your phone to your cockpit by QR. Pick your accent colour. Approve actions on the move,
+          read the morning brief, run Pathfinder when an email lands. Unified Mail and Calendar, P2P
+          messages with people you've connected to, ANTON Pay for invoices, KYC verification all
+          inside the app.
+        </p>
+      </div>
+
+      <div class="surfaces">
+        <div class="companion-shot">
+          <img src="assets/anton-shots/companion-accents.png" alt="ANTON Companion app shown in two accent colours — same Home, different people." />
+        </div>
+        <div class="surface">
+          <span class="surf-tag">In your pocket</span>
+          <h3>Everything you need on the move.</h3>
+          <ul>
+            <li><b>Daily brief</b> — what changed, what's pending, what to approve</li>
+            <li><b>Approvals inbox</b> — sign off on documents from your phone, audit trail intact</li>
+            <li><b>Unified Mail &amp; Calendar</b> — ANTON Mail by default, connect Gmail / Outlook / iCloud</li>
+            <li><b>Messaging</b> — P2P chat with people you've connected to, plus AI threads</li>
+            <li><b>ANTON Pay</b> — send, receive, request, with verification built in</li>
+            <li><b>Pathfinder &amp; Horizon Radar</b> — find a module or scan the latest, one tap</li>
+            <li><b>Eight accent colours</b> — pick yours, applies across the cockpit too</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Companion modules screenshot -->
+      <div class="shot-grid-2" style="grid-template-columns: 1fr; max-width: 720px; margin-left: auto; margin-right: auto;">
+        <div class="shot-frame">
+          <img class="shot" src="assets/anton-shots/companion-modules.png" alt="ANTON Companion · Work tab showing Find-the-right-module helper and pinned modules." />
+          <div class="meta">
+            <h4>Work · Modules</h4>
+            <p>"What are you trying to do?" Pathfinder routes you to the right module. Pinned modules below — Sanctions Advisory, Counsel's Desk, Markets and the rest, one tap each.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STANDARD vs PRO -->
+  <section id="modes">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Two modes</span>
+        <h2>Standard for clarity. Pro for depth.</h2>
+        <p>
+          The same workspace serves a non-technical user who wants a clear answer and a compliance
+          officer who wants every dial. Switch modes per workspace; everyone speaks the same audit trail.
+        </p>
+      </div>
+
+      <div class="modes">
+        <div class="mode">
+          <span class="mode-tag">Standard</span>
+          <h3>Standard</h3>
+          <div class="mode-sub">Clear language. Bigger type. Plain-English defaults. No knobs in your face.</div>
+          <ul>
+            <li>Pathfinder picks the right module behind the scenes</li>
+            <li>One configuration: ask the question, get the answer</li>
+            <li>Citations and trust score still attached — just unobtrusive</li>
+            <li>Designed for busy adults, not power users</li>
+          </ul>
+          <div class="for">For: clients, executives, board members, occasional users.</div>
+        </div>
+        <div class="mode is-pro">
+          <span class="mode-tag">Pro</span>
+          <h3>Pro</h3>
+          <div class="mode-sub">Every dial exposed. Mono labels. Trust hashes. Multi-agent on demand.</div>
+          <ul>
+            <li>Full run-configuration panel: depth, model, precision, persona, deliberation</li>
+            <li>Knowledge memory toggles — use prior, build &amp; update</li>
+            <li>Module-specific surfaces: Sanctions Regimes, situation context, uploads</li>
+            <li>Right rail with citations, timeline, trust hash for every claim</li>
+          </ul>
+          <div class="for">For: compliance officers, analysts, investigators, lawyers.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY & SOVEREIGNTY -->
+  <section id="privacy" style="background:var(--an-paper);border-top:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Privacy by architecture · not by policy</span>
+        <h2>Local-first. Model-portable. Open source.</h2>
+        <p>
+          Most AI products treat privacy as a checkbox. ANTON treats it as a foundation. The
+          embedding layer runs on Ollama on your machine. Cloud LLM calls are an informed
+          trade-off you make, not a default you live with. GDPR Controller / Processor analysis
+          is built into the workflow. The whole codebase is Apache 2.0.
+        </p>
+      </div>
+
+      <div class="privacy">
+        <div class="privacy-cell">
+          <span class="lab">Local-first</span>
+          <h4>Embeddings stay home.</h4>
+          <p>The vector layer runs on Ollama on your laptop. Your knowledge graph never leaves the device unless you tell it to.</p>
+        </div>
+        <div class="privacy-cell">
+          <span class="lab">Model-portable</span>
+          <h4>Five families, one engine.</h4>
+          <p>Claude · Mistral · GPT · Gemini · local Ollama. Switch per module, per run, per tenant. Your context comes with you.</p>
+        </div>
+        <div class="privacy-cell">
+          <span class="lab">Open source</span>
+          <h4>Apache 2.0.</h4>
+          <p>github.com/altspace-hub/ANTON. Audit the architecture. Self-host. Fork it. Built by Daniel Bardun &amp; FutureChain AB.</p>
+        </div>
+        <div class="privacy-cell">
+          <span class="lab">Regulator-ready</span>
+          <h4>GDPR + DORA, in the workflow.</h4>
+          <p>Controller / Processor analysis on every data flow. Operational resilience controls baked in, not bolted on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section id="cases" style="background:#fff;border-top:1px solid var(--line);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Use cases</span>
+        <h2>Built for the obligation, not the buzzword.</h2>
+      </div>
+
+      <div class="cases">
+        <div class="case">
+          <span class="who">Mid-size bank</span>
+          <h4>Replace three screening tools with one workspace.</h4>
+          <p>Sanctions, PEP and adverse-media checks consolidated. Analysts stop tab-juggling; reviewers stop re-explaining.</p>
+          <div class="meta"><span>Banking</span><span>10–500 FTE</span></div>
+        </div>
+        <div class="case">
+          <span class="who">Payment institution</span>
+          <h4>Survive an audit without a war room.</h4>
+          <p>Auditor asks for the trail behind a decision; ANTON produces the timestamped chain in one click — no archeology needed.</p>
+          <div class="meta"><span>PSP / EMI</span><span>Audit-ready</span></div>
+        </div>
+        <div class="case">
+          <span class="who">CASP under MiCA</span>
+          <h4>Stand up a compliant ops function from day one.</h4>
+          <p>New MiCA license, new obligations. ANTON ships with templates, watchlists and reports tuned for crypto-asset service providers.</p>
+          <div class="meta"><span>Crypto · MiCA</span><span>Day-one</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO CTA -->
+  <section id="demo">
+    <div class="container">
+      <div class="anton-cta">
+        <h2>See ANTON in 30 minutes. Bring questions, not data.</h2>
+        <p>We walk through your scenario, show the cockpit and the modules that match, demo the companion app, and answer the regulator-shaped questions you actually care about. No pre-work required.</p>
+        <a class="btn btn-on-em" href="mailto:daniel.bardun@futurechain.solutions?subject=ANTON%20demo">
+          Schedule a demo <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-row">
+      <div>
+        <div class="brand-mark" style="color:#fff;margin-bottom:14px;font-size:18px;">
+          Future<span class="accent">Chain</span>
+        </div>
+        <p style="color:rgba(255,255,255,0.55);max-width:36ch;font-size:13px;line-height:1.55;">
+          ANTON is built and operated by Futurechain AB, Stockholm.
+          Reg. 559566-7572 · Competent authority: Finansinspektionen.
+        </p>
+      </div>
+      <div>
+        <h5>ANTON</h5>
+        <ul>
+          <li><a href="#cockpit">Cockpit</a></li>
+          <li><a href="#modules">Modules</a></li>
+          <li><a href="#companion">Companion app</a></li>
+          <li><a href="#demo">Book a demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Company</h5>
+        <ul>
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="futurechain.html">FutureChain rails</a></li>
+          <li><a href="mailto:daniel.bardun@futurechain.solutions">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">DPA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <span>© 2026 Futurechain AB.</span>
+      <span>Stockholm · Sweden</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
