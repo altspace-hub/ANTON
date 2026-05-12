@@ -5,6 +5,8 @@ import { startLiveShare, type GeoFix } from '../services/geo';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import { getTypingIndicatorEnabled } from '../services/settings';
+import { subscribeChatChanged } from '../services/chat-events';
+import { useBlobUrl } from '../hooks/useBlobUrl';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
 import { EVENT_TYPE_ICONS, EVENT_TYPE_LABELS } from '../services/events';
 import {
@@ -107,13 +109,18 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     return () => { cancelled = true; };
   }, [peerContactHash, refreshTick]);
 
-  // Re-fetch thread every 2s while open — picks up reactions arriving
-  // via the relay client (which writes to IDB directly). Also runs the
-  // R5 sweep so expired messages disappear without the user navigating.
+  // P4-4: event-driven refresh.
+  //
+  // Previously this polled every 2 s. Every mutator in messages.ts now
+  // emits a chat-changed event tagged with the affected threadHash, and
+  // subscribeChatChanged() filters to just this thread. The 30 s
+  // interval below is a safety net for any future code path that
+  // forgets to emit — the screen still recovers within a usage window.
   useEffect(() => {
-    const t = setInterval(() => setRefreshTick((v) => v + 1), 2000);
-    return () => clearInterval(t);
-  }, []);
+    const unsub = subscribeChatChanged(peerContactHash, () => setRefreshTick((v) => v + 1));
+    const t = setInterval(() => setRefreshTick((v) => v + 1), 30_000);
+    return () => { unsub(); clearInterval(t); };
+  }, [peerContactHash]);
 
   // R9 — subscribe to inbound presence_typing events for this peer.
   //
@@ -927,8 +934,12 @@ function ReactionChips({ reactions, myHash, onTap }: {
 function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; isMine: boolean; time: string; kind: 'image' | 'video' }) {
   let payload: MediaPayload | null = null;
   try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+  // P4-3: memoize the blob URL so a thread re-render doesn't re-decode
+  // every image / video on every poll tick. dataUrl is null when payload
+  // is missing or base64 fails to decode — the early return below
+  // handles that.
+  const blobUrl = useBlobUrl(payload?.data, payload?.mimeType);
   if (!payload) return null;
-  const dataUrl = `data:${payload.mimeType};base64,${payload.data}`;
   const aspect = (payload.width && payload.height) ? payload.width / payload.height : 4 / 3;
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
@@ -940,9 +951,9 @@ function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; is
         }}
       >
         {kind === 'image' ? (
-          <img src={dataUrl} alt={payload.filename} className="block w-full" style={{ aspectRatio: aspect }} />
+          blobUrl && <img src={blobUrl} alt={payload.filename} className="block w-full" style={{ aspectRatio: aspect }} />
         ) : (
-          <video src={dataUrl} controls preload="metadata" className="block w-full" style={{ aspectRatio: aspect }} />
+          blobUrl && <video src={blobUrl} controls preload="metadata" className="block w-full" style={{ aspectRatio: aspect }} />
         )}
         {payload.caption && (
           <div
@@ -1188,11 +1199,15 @@ function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismis
   try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
   useEffect(() => registerBackHandler(onDismiss), [onDismiss]);
 
+  // P4-3: same blob-URL memoization as MediaBubble. View-once is a
+  // single render so the win is smaller, but keeping the pattern
+  // consistent removes the one remaining data:base64,... in this file.
+  const blobUrl = useBlobUrl(payload?.data, payload?.mimeType);
+
   if (!payload) {
     onDismiss();
     return null;
   }
-  const dataUrl = `data:${payload.mimeType};base64,${payload.data}`;
   const isVideo = message.kind === 'video';
 
   return (
@@ -1218,9 +1233,9 @@ function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismis
       </header>
       <div className="flex-1 flex items-center justify-center px-2 py-2">
         {isVideo ? (
-          <video src={dataUrl} controls autoPlay className="max-w-full max-h-full" />
+          blobUrl && <video src={blobUrl} controls autoPlay className="max-w-full max-h-full" />
         ) : (
-          <img src={dataUrl} alt="" className="max-w-full max-h-full object-contain" />
+          blobUrl && <img src={blobUrl} alt="" className="max-w-full max-h-full object-contain" />
         )}
       </div>
       <footer className="px-4 py-3 text-center text-xs text-white/70 safe-bottom">

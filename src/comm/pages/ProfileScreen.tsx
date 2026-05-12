@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { getIdentity, updateDisplayName, clearIdentity, type CommIdentity } from '../services/identity';
 import { getReadReceiptsEnabled, setReadReceiptsEnabled, getTypingIndicatorEnabled, setTypingIndicatorEnabled } from '../services/settings';
 
@@ -19,6 +18,7 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
 
   useEffect(() => {
     if (!identity) return;
+    let cancelled = false;
     const sharePayload = JSON.stringify({
       v: 1,
       t: 'anton-comm-contact',
@@ -26,14 +26,24 @@ export default function ProfileScreen({ onBack, onSignedOut }: Props) {
       name: identity.displayName,
       pub: identity.publicKeyHex,
     });
-    QRCode.toDataURL(sharePayload, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 280,
-      color: { dark: '#1A1B2E', light: '#FFFFFF' },
-    })
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(null));
+    // P4-2: qrcode is only used here. Dynamic import keeps it out of the
+    // main bundle for users who never visit the share QR surface.
+    void (async () => {
+      try {
+        const { default: QRCode } = await import('qrcode');
+        if (cancelled) return;
+        const url = await QRCode.toDataURL(sharePayload, {
+          errorCorrectionLevel: 'M',
+          margin: 1,
+          width: 280,
+          color: { dark: '#1A1B2E', light: '#FFFFFF' },
+        });
+        if (!cancelled) setQrDataUrl(url);
+      } catch {
+        if (!cancelled) setQrDataUrl(null);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [identity]);
 
   if (!identity) {

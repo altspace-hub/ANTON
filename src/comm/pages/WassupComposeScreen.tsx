@@ -7,6 +7,7 @@ import { getIdentity } from '../services/identity';
 import WassupAudienceSheet, { type WassupAudience } from '../components/WassupAudienceSheet';
 import WassupExpirySheet, { type WassupExpiryHours } from '../components/WassupExpirySheet';
 import VoiceRecorder from '../components/VoiceRecorder';
+import { useBlobUrl } from '../hooks/useBlobUrl';
 
 interface Props {
   onCancel: () => void;
@@ -24,6 +25,10 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const me = getIdentity();
+  // P4-3: even the in-progress compose preview gets the blob-URL
+  // treatment so re-renders driven by chip state changes don't
+  // re-decode the image bytes.
+  const imageBlobUrl = useBlobUrl(image?.data, image?.mimeType);
 
   async function handleAttach(grabber: () => Promise<Capture | null>) {
     setError(null);
@@ -136,10 +141,10 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
           />
         </div>
 
-        {image && (
+        {image && imageBlobUrl && (
           <div className="mt-4 rounded-2xl overflow-hidden border border-[var(--color-border-soft)] relative">
             <img
-              src={`data:${image.mimeType};base64,${image.data}`}
+              src={imageBlobUrl}
               alt=""
               className="w-full block"
               style={{

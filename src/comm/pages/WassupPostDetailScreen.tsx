@@ -4,6 +4,7 @@ import { toggleWassupLike, postWassupComment } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { Ico } from '../components/Ico';
 import VoicePlayer from '../components/VoicePlayer';
+import { useBlobUrl } from '../hooks/useBlobUrl';
 
 interface Props {
   postId: string;
@@ -17,6 +18,10 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(0);
   const me = getIdentity();
+  // P4-3: same memoization pattern as the feed card. The detail screen
+  // polls listInteractions() every 2 s so without this every poll
+  // rebuilt a multi-hundred-KB base64 string for the image render.
+  const imageBlobUrl = useBlobUrl(post?.image?.data, post?.image?.mimeType);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,9 +115,9 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
             </p>
           )}
 
-          {post.image && (
+          {post.image && imageBlobUrl && (
             <img
-              src={`data:${post.image.mimeType};base64,${post.image.data}`}
+              src={imageBlobUrl}
               alt=""
               className="mt-3 w-full block rounded-2xl border border-[var(--color-border-soft)]"
               style={{

@@ -29,6 +29,7 @@ import {
   INDEX_MSG_BY_THREAD as INDEX_BY_THREAD,
   INDEX_MSG_BY_STATUS as INDEX_BY_STATUS,
 } from './db';
+import { emitChatChanged } from './chat-events';
 
 export type MessageDirection = 'out' | 'in';
 export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'received' | 'read';
@@ -144,6 +145,7 @@ export async function appendMessage(
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  emitChatChanged(record.threadHash);
   return record;
 }
 
@@ -238,6 +240,7 @@ export async function applyReaction(
       else delete reactions[emoji];
       row.reactions = reactions;
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -302,6 +305,7 @@ export async function applyLocationUpdate(
       parsed.lastUpdateAt = patch.ts;
       row.plaintext = JSON.stringify(parsed);
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -337,6 +341,7 @@ export async function applyPollVote(
       parsed.votes = votes;
       row.plaintext = JSON.stringify(parsed);
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -370,6 +375,7 @@ export async function rescheduleMessage(id: string, newScheduledFor: string): Pr
       if (!row || row.status !== 'queued') { resolve(null); return; }
       row.scheduledFor = newScheduledFor;
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -413,6 +419,7 @@ export async function markReadUpTo(
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  if (flipped > 0) emitChatChanged(threadHash);
   return flipped;
 }
 
@@ -440,6 +447,7 @@ export async function applyEdit(
       row.plaintext = newText;
       row.editedAt = new Date().toISOString();
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -471,6 +479,7 @@ export async function applyDeleteForEveryone(
       row.reactions = undefined;
       row.replyTo = undefined;
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -508,6 +517,7 @@ export async function markViewed(
         }
       } catch { /* ignore non-JSON plaintexts */ }
       store.put(row);
+      emitChatChanged(row.threadHash);
       resolve(row);
     };
     tx.onerror = () => reject(tx.error);
@@ -553,5 +563,6 @@ export async function sweepExpiredInThread(threadHash: string): Promise<number> 
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  if (deleted > 0) emitChatChanged(threadHash);
   return deleted;
 }

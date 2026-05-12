@@ -4,6 +4,7 @@ import { toggleWassupLike } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { Ico } from '../components/Ico';
 import VoicePlayer from '../components/VoicePlayer';
+import { useBlobUrl } from '../hooks/useBlobUrl';
 
 interface Props {
   onCompose: () => void;
@@ -83,6 +84,9 @@ interface PostCardProps {
 function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
   const isMine = post.authorHash === myHash;
   const when = relativeTime(post.createdAt);
+  // P4-3: feed re-renders every 3s (poll for new posts) — without this
+  // every card's image was re-decoded from base64 each tick.
+  const imageBlobUrl = useBlobUrl(post.image?.data, post.image?.mimeType);
 
   return (
     <li className="px-5 py-4">
@@ -108,13 +112,13 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
             </p>
           )}
 
-          {post.image && (
+          {post.image && imageBlobUrl && (
             <button
               onClick={onOpenPost}
               className="mt-2 block w-full rounded-2xl overflow-hidden border border-[var(--color-border-soft)]"
             >
               <img
-                src={`data:${post.image.mimeType};base64,${post.image.data}`}
+                src={imageBlobUrl}
                 alt=""
                 className="w-full block"
                 style={{

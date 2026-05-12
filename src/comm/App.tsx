@@ -1,25 +1,33 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import OnboardingScreen from './pages/OnboardingScreen';
-import ProfileScreen from './pages/ProfileScreen';
 import ChatListScreen from './pages/ChatListScreen';
-import ChatThreadScreen from './pages/ChatThreadScreen';
-import AddContactScreen from './pages/AddContactScreen';
-import EventsScreen from './pages/EventsScreen';
-import EventCreateScreen from './pages/EventCreateScreen';
-import EventDetailScreen from './pages/EventDetailScreen';
-import PortalsBrowseScreen from './pages/PortalsBrowseScreen';
-import PortalDetailScreen from './pages/PortalDetailScreen';
-import WassupFeedScreen from './pages/WassupFeedScreen';
-import WassupComposeScreen from './pages/WassupComposeScreen';
-import WassupPostDetailScreen from './pages/WassupPostDetailScreen';
-import WalletScreen from './pages/WalletScreen';
 import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
+import LoadingShell from './components/LoadingShell';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
 import { reconcileAllReminders } from './services/event-reminders';
 import { reconcileLiveShares } from './services/geo';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
+
+// P4-1: every screen the user can navigate to but doesn't see on cold
+// boot is lazy-loaded. The "default landing" (ChatListScreen + TopBar +
+// TabBar + Onboarding for first-run) stays in the main chunk so the
+// app paints instantly. Switching tabs or pushing a detail view fetches
+// its chunk on demand — every chunk is a single .js file in the
+// Capacitor bundle so the WebView reads it from disk in <50 ms.
+const ProfileScreen = lazy(() => import('./pages/ProfileScreen'));
+const AddContactScreen = lazy(() => import('./pages/AddContactScreen'));
+const ChatThreadScreen = lazy(() => import('./pages/ChatThreadScreen'));
+const EventsScreen = lazy(() => import('./pages/EventsScreen'));
+const EventCreateScreen = lazy(() => import('./pages/EventCreateScreen'));
+const EventDetailScreen = lazy(() => import('./pages/EventDetailScreen'));
+const PortalsBrowseScreen = lazy(() => import('./pages/PortalsBrowseScreen'));
+const PortalDetailScreen = lazy(() => import('./pages/PortalDetailScreen'));
+const WassupFeedScreen = lazy(() => import('./pages/WassupFeedScreen'));
+const WassupComposeScreen = lazy(() => import('./pages/WassupComposeScreen'));
+const WassupPostDetailScreen = lazy(() => import('./pages/WassupPostDetailScreen'));
+const WalletScreen = lazy(() => import('./pages/WalletScreen'));
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
 // inside the relay is by frame-type byte — instance/phone vs comm — so a
@@ -106,98 +114,114 @@ export default function App() {
 
   if (view === 'profile') {
     return (
-      <ProfileScreen
-        onBack={() => setView('tabs')}
-        onSignedOut={() => {
-          setIdentityVersion((v) => v + 1);
-          setView('onboarding');
-          setActiveTab('chat');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <ProfileScreen
+          onBack={() => setView('tabs')}
+          onSignedOut={() => {
+            setIdentityVersion((v) => v + 1);
+            setView('onboarding');
+            setActiveTab('chat');
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'add-contact') {
     return (
-      <AddContactScreen
-        onBack={() => setView('tabs')}
-        onAdded={() => {
-          setContactsVersion((v) => v + 1);
-          setView('tabs');
-          setActiveTab('chat');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <AddContactScreen
+          onBack={() => setView('tabs')}
+          onAdded={() => {
+            setContactsVersion((v) => v + 1);
+            setView('tabs');
+            setActiveTab('chat');
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'chat-thread' && openChatHash) {
     return (
-      <ChatThreadScreen
-        peerContactHash={openChatHash}
-        onBack={() => { setOpenChatHash(null); setView('tabs'); }}
-        onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <ChatThreadScreen
+          peerContactHash={openChatHash}
+          onBack={() => { setOpenChatHash(null); setView('tabs'); }}
+          onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'event-create') {
     return (
-      <EventCreateScreen
-        onCancel={() => setView('tabs')}
-        onCreated={() => {
-          setEventsVersion((v) => v + 1);
-          setView('tabs');
-          setActiveTab('events');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <EventCreateScreen
+          onCancel={() => setView('tabs')}
+          onCreated={() => {
+            setEventsVersion((v) => v + 1);
+            setView('tabs');
+            setActiveTab('events');
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'event-detail' && openEventId) {
     return (
-      <EventDetailScreen
-        eventId={openEventId}
-        onBack={() => {
-          setEventsVersion((v) => v + 1);
-          setOpenEventId(null);
-          setView('tabs');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <EventDetailScreen
+          eventId={openEventId}
+          onBack={() => {
+            setEventsVersion((v) => v + 1);
+            setOpenEventId(null);
+            setView('tabs');
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'portal-detail' && openPortalAddress) {
     return (
-      <PortalDetailScreen
-        portalAddress={openPortalAddress}
-        onBack={() => { setOpenPortalAddress(null); setView('tabs'); }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <PortalDetailScreen
+          portalAddress={openPortalAddress}
+          onBack={() => { setOpenPortalAddress(null); setView('tabs'); }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'wassup-compose') {
     return (
-      <WassupComposeScreen
-        onCancel={() => setView('tabs')}
-        onPosted={() => {
-          setWassupVersion((v) => v + 1);
-          setView('tabs');
-          setActiveTab('wassup');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <WassupComposeScreen
+          onCancel={() => setView('tabs')}
+          onPosted={() => {
+            setWassupVersion((v) => v + 1);
+            setView('tabs');
+            setActiveTab('wassup');
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'wassup-post' && openPostId) {
     return (
-      <WassupPostDetailScreen
-        postId={openPostId}
-        onBack={() => {
-          setWassupVersion((v) => v + 1);
-          setOpenPostId(null);
-          setView('tabs');
-        }}
-      />
+      <Suspense fallback={<LoadingShell />}>
+        <WassupPostDetailScreen
+          postId={openPostId}
+          onBack={() => {
+            setWassupVersion((v) => v + 1);
+            setOpenPostId(null);
+            setView('tabs');
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -213,28 +237,37 @@ export default function App() {
           />
         )}
         {activeTab === 'wassup' && (
-          <WassupFeedScreen
-            refreshKey={wassupVersion}
-            onCompose={() => setView('wassup-compose')}
-            onOpenPost={(id) => { setOpenPostId(id); setView('wassup-post'); }}
-          />
+          <Suspense fallback={<LoadingShell />}>
+            <WassupFeedScreen
+              refreshKey={wassupVersion}
+              onCompose={() => setView('wassup-compose')}
+              onOpenPost={(id) => { setOpenPostId(id); setView('wassup-post'); }}
+            />
+          </Suspense>
         )}
         {activeTab === 'events' && (
-          <EventsScreen
-            refreshKey={eventsVersion}
-            onCreate={() => setView('event-create')}
-            onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
-          />
+          <Suspense fallback={<LoadingShell />}>
+            <EventsScreen
+              refreshKey={eventsVersion}
+              onCreate={() => setView('event-create')}
+              onOpenEvent={(id) => { setOpenEventId(id); setView('event-detail'); }}
+            />
+          </Suspense>
         )}
         {activeTab === 'portals' && (
-          <PortalsBrowseScreen
-            onOpenPortal={(addr) => { setOpenPortalAddress(addr); setView('portal-detail'); }}
-          />
+          <Suspense fallback={<LoadingShell />}>
+            <PortalsBrowseScreen
+              onOpenPortal={(addr) => { setOpenPortalAddress(addr); setView('portal-detail'); }}
+            />
+          </Suspense>
         )}
-        {activeTab === 'wallet' && <WalletScreen />}
+        {activeTab === 'wallet' && (
+          <Suspense fallback={<LoadingShell />}>
+            <WalletScreen />
+          </Suspense>
+        )}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>
   );
 }
-

@@ -160,12 +160,24 @@ export function getSticker(packId: string, stickerId: string): Sticker | null {
   return PACKS.get(packId)?.stickers.find((s) => s.id === stickerId) ?? null;
 }
 
+/**
+ * P4-5: stickers are immutable inside their pack so we can cache the
+ * computed data-URL forever. Without this every StickerBubble render
+ * (every poll tick, every reaction, every typing-state change) ran
+ * encodeURIComponent → unescape → btoa over the full SVG string,
+ * about ~2 KB per sticker.
+ */
+const dataUrlCache = new Map<string, string>();
+
 export function stickerToDataUrl(sticker: Sticker): string {
-  // base64-encode the SVG so it works in <img src="…"> without inline-SVG cost.
+  const cached = dataUrlCache.get(sticker.id);
+  if (cached) return cached;
   const b64 = typeof btoa !== 'undefined'
     ? btoa(unescape(encodeURIComponent(sticker.svg)))
     : Buffer.from(sticker.svg, 'utf-8').toString('base64');
-  return `data:image/svg+xml;base64,${b64}`;
+  const url = `data:image/svg+xml;base64,${b64}`;
+  dataUrlCache.set(sticker.id, url);
+  return url;
 }
 
 export { CREAM as STICKER_CANVAS_FALLBACK };
