@@ -46,7 +46,7 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change' | 'poll' | 'location';
+export type ContentKind = 'text' | 'image' | 'video' | 'voice' | 'event_invite' | 'event_rsvp' | 'event_cancel' | 'system_timer_change' | 'poll' | 'location' | 'sticker';
 
 /** R1 — quoted-reply context, attached to text/image/video messages. */
 export interface ReplyContext {

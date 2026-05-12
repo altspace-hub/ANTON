@@ -172,6 +172,15 @@ export interface LocationUpdatePayload {
   ts: string;
 }
 
+/** R12 — sticker. Both sides resolve the actual bytes from their
+ *  bundled pack — wire stays tiny so no PNG re-download per send.
+ *  `packUrl` is reserved for the future user-imported pack flow. */
+export interface StickerPayload {
+  packId: string;
+  stickerId: string;
+  packUrl?: string;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -187,6 +196,7 @@ export type WirePayload =
   | { kind: 'presence_typing'; data: PresenceTypingPayload }
   | { kind: 'location';      messageId: string; data: LocationPayload }
   | { kind: 'location_update'; data: LocationUpdatePayload }
+  | { kind: 'sticker';       messageId: string; data: StickerPayload }
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
@@ -315,12 +325,15 @@ export async function sendStructuredMessage(
   // kinds, messageId comes from the stampable branch.
   // R13 — same pattern for location messages: parent id is the shared
   // anchor that subsequent location_update wires target.
+  // R12 — stickers carry messageId so future "react to sticker" /
+  // delete-for-everyone can target them by id like other persistent kinds.
   const messageId = stampable ? wire.messageId
-    : (wire.kind === 'poll' || wire.kind === 'location' ? wire.messageId : undefined);
+    : (wire.kind === 'poll' || wire.kind === 'location' || wire.kind === 'sticker' ? wire.messageId : undefined);
   const disappearsAt = stampable ? wire.disappearsAt : undefined;
   const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
     || wire.kind === 'system_timer_change' || wire.kind === 'poll' || wire.kind === 'location'
+    || wire.kind === 'sticker'
     ? wire.kind
     : 'text';
   const message = await appendMessage({
@@ -374,6 +387,19 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/**
+ * R12 — Send a sticker. Bytes never travel — both sides resolve the
+ * SVG from the bundled pack with packId + stickerId.
+ */
+export async function sendSticker(
+  peerContactHash: string,
+  packId: string,
+  stickerId: string,
+): Promise<ChatMessage> {
+  const messageId = generateMsgId();
+  return sendStructuredMessage(peerContactHash, { kind: 'sticker', messageId, data: { packId, stickerId } });
 }
 
 /**
@@ -816,6 +842,8 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
       label: stored.label, liveUntil: stored.liveUntil,
     };
     wire = { kind: 'location', messageId: msg.id, data: clean };
+  } else if (msg.kind === 'sticker') {
+    wire = { kind: 'sticker', messageId: msg.id, data: JSON.parse(msg.plaintext) as StickerPayload };
   } else {
     wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   }
@@ -876,6 +904,9 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'location_update' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'location_update', data: obj.data as LocationUpdatePayload };
+      }
+      if (obj.kind === 'sticker' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'sticker', messageId: id, data: obj.data as StickerPayload };
       }
       if (obj.kind === 'event_invite' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_invite', data: obj.data as EventInvitePayload };
@@ -1051,6 +1082,12 @@ export async function applyInboundMessage(
       // wires mutate lat/lng/accuracyM/lastUpdateAt in place.
       plaintext = JSON.stringify({ ...wire.data, lastUpdateAt: new Date().toISOString() });
       kind = 'location';
+      messageId = wire.messageId || undefined;
+      break;
+    case 'sticker':
+      // R12 — only the pack/sticker ids travel; bytes resolved client-side.
+      plaintext = JSON.stringify(wire.data);
+      kind = 'sticker';
       messageId = wire.messageId || undefined;
       break;
   }
