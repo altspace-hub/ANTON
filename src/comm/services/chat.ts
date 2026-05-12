@@ -30,8 +30,25 @@ import {
 // Backward-compatible: if the decrypted JSON is malformed or missing `kind`,
 // the receiver falls back to treating the whole plaintext as text.
 
+export interface MediaPayload {
+  /** Base64 (no data-URL prefix) — image bytes or video bytes */
+  data: string;
+  mimeType: string;
+  filename: string;
+  /** Bytes (decoded size) */
+  size: number;
+  width?: number;
+  height?: number;
+  /** Video duration in seconds (best-effort) */
+  durationSec?: number;
+  /** Optional caption text alongside the media */
+  caption?: string;
+}
+
 export type WirePayload =
   | { kind: 'text'; text: string }
+  | { kind: 'image'; data: MediaPayload }
+  | { kind: 'video'; data: MediaPayload }
   | { kind: 'event_invite'; data: EventInvitePayload }
   | { kind: 'event_rsvp'; data: EventRsvpPayload }
   | { kind: 'event_cancel'; data: EventCancelPayload };
@@ -116,6 +133,16 @@ export async function sendEventCancel(toHash: string, payload: EventCancelPayloa
   return sendStructuredMessage(toHash, { kind: 'event_cancel', data: payload });
 }
 
+/** Send an image attachment (base64 already in the payload). */
+export async function sendImage(peerContactHash: string, payload: MediaPayload): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'image', data: payload });
+}
+
+/** Send a video attachment (base64 already in the payload). */
+export async function sendVideo(peerContactHash: string, payload: MediaPayload): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'video', data: payload });
+}
+
 /**
  * Helper used by relay-client.ts to re-seal a queued message at flush time.
  * Rebuilds the wire JSON from the stored ChatMessage's kind + plaintext.
@@ -135,6 +162,10 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
     wire = { kind: 'event_rsvp', data: JSON.parse(msg.plaintext) as EventRsvpPayload };
   } else if (msg.kind === 'event_cancel') {
     wire = { kind: 'event_cancel', data: JSON.parse(msg.plaintext) as EventCancelPayload };
+  } else if (msg.kind === 'image') {
+    wire = { kind: 'image', data: JSON.parse(msg.plaintext) as MediaPayload };
+  } else if (msg.kind === 'video') {
+    wire = { kind: 'video', data: JSON.parse(msg.plaintext) as MediaPayload };
   } else {
     wire = { kind: 'text', text: msg.plaintext };
   }
@@ -164,6 +195,12 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'event_cancel' && typeof (obj as { data?: unknown }).data === 'object') {
         return { kind: 'event_cancel', data: (obj as { data: EventCancelPayload }).data };
+      }
+      if (obj.kind === 'image' && typeof (obj as { data?: unknown }).data === 'object') {
+        return { kind: 'image', data: (obj as { data: MediaPayload }).data };
+      }
+      if (obj.kind === 'video' && typeof (obj as { data?: unknown }).data === 'object') {
+        return { kind: 'video', data: (obj as { data: MediaPayload }).data };
       }
     }
   } catch {
@@ -204,6 +241,14 @@ export async function applyInboundMessage(
     case 'event_cancel':
       plaintext = JSON.stringify(wire.data);
       kind = 'event_cancel';
+      break;
+    case 'image':
+      plaintext = JSON.stringify(wire.data);
+      kind = 'image';
+      break;
+    case 'video':
+      plaintext = JSON.stringify(wire.data);
+      kind = 'video';
       break;
   }
   await appendMessage({

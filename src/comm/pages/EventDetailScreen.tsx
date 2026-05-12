@@ -7,6 +7,7 @@ import {
   EVENT_TYPE_LABELS,
   EVENT_TYPE_ICONS,
 } from '../services/events';
+import { Ico, type IcoName } from '../components/Ico';
 import { sendEventRsvp } from '../services/chat';
 import { getIdentity } from '../services/identity';
 import { listContacts, type Contact } from '../services/contacts';
@@ -98,7 +99,12 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
           className="px-6 py-8 text-center"
           style={{ backgroundColor: 'var(--color-accent-soft)' }}
         >
-          <div className="text-5xl mb-2">{EVENT_TYPE_ICONS[event.eventType]}</div>
+          <div
+            className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-2"
+            style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-accent-dark)' }}
+          >
+            <Ico name={EVENT_TYPE_ICONS[event.eventType] as IcoName} size={32} />
+          </div>
           <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
             {EVENT_TYPE_LABELS[event.eventType]}
           </div>

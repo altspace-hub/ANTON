@@ -14,6 +14,7 @@ import TabBar, { type TabId } from './components/TabBar';
 import TopBar from './components/TopBar';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
+import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
 // inside the relay is by frame-type byte — instance/phone vs comm — so a
@@ -44,6 +45,22 @@ export default function App() {
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
   }, [view]);
+
+  // Android hardware back button — first close overlays (back-stack), then
+  // step out of nested views, then ask "exit?" at the root.
+  useAndroidBackButton({
+    onBack(): AppBackResult {
+      if (view === 'chat-thread') { setOpenChatHash(null); setView('tabs'); return 'handled'; }
+      if (view === 'event-detail') { setOpenEventId(null); setView('tabs'); return 'handled'; }
+      if (view === 'portal-detail') { setOpenPortalAddress(null); setView('tabs'); return 'handled'; }
+      if (view === 'event-create') { setView('tabs'); return 'handled'; }
+      if (view === 'add-contact') { setView('tabs'); return 'handled'; }
+      if (view === 'profile') { setView('tabs'); return 'handled'; }
+      // At root tabs — if not on chat, bounce to chat first; else exit
+      if (view === 'tabs' && activeTab !== 'chat') { setActiveTab('chat'); return 'handled'; }
+      return 'exit';
+    },
+  });
 
   // Relay client lifecycle — start when identity exists, stop on sign-out.
   useEffect(() => {

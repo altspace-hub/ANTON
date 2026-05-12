@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listEvents, type CommEvent, EVENT_TYPE_ICONS } from '../services/events';
+import { Ico, type IcoName } from '../components/Ico';
 
 interface Props {
   onCreate: () => void;
@@ -112,10 +113,10 @@ function EventRow({ event, onClick }: { event: CommEvent; onClick: () => void })
       <button onClick={onClick}
               className="w-full flex items-center gap-3 px-5 py-3 text-left active:bg-[var(--color-surface-muted)]">
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-accent-dim)' }}
+          className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
         >
-          {EVENT_TYPE_ICONS[event.eventType]}
+          <Ico name={EVENT_TYPE_ICONS[event.eventType] as IcoName} size={24} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold text-[var(--color-text)] truncate">{event.title}</div>

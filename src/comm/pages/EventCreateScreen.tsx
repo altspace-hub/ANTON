@@ -6,6 +6,7 @@ import {
   EVENT_TYPE_LABELS,
   EVENT_TYPE_ICONS,
 } from '../services/events';
+import { Ico, type IcoName } from '../components/Ico';
 import { listContacts, type Contact } from '../services/contacts';
 import { sendEventInvite } from '../services/chat';
 import { getIdentity } from '../services/identity';
@@ -112,7 +113,7 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
                     borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
                   }}
                 >
-                  <span>{EVENT_TYPE_ICONS[t]}</span>
+                  <Ico name={EVENT_TYPE_ICONS[t] as IcoName} size={16} />
                   <span>{EVENT_TYPE_LABELS[t]}</span>
                 </button>
               );

@@ -48,14 +48,16 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   other: 'Other',
 };
 
+/** Ico names — see components/Ico.tsx. Avoid emoji so glyphs render
+ *  consistently across Android / iOS / web. */
 export const EVENT_TYPE_ICONS: Record<EventType, string> = {
-  dinner: '🍽',
-  drinks: '🥂',
-  concert: '🎵',
-  travel: '✈',
-  party: '🎉',
-  birthday: '🎂',
-  other: '📅',
+  dinner: 'dinner',
+  drinks: 'drinks',
+  concert: 'concert',
+  travel: 'travel',
+  party: 'party',
+  birthday: 'birthday',
+  other: 'calendar',
 };
 
 export type RsvpStatus = 'pending' | 'going' | 'maybe' | 'declined';

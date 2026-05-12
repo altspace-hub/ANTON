@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createIdentity } from '../services/identity';
+import Logo from '../components/Logo';
 
 type Step = 'welcome' | 'name' | 'creating';
 
@@ -37,12 +38,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
     return (
       <div className="flex flex-col min-h-dvh px-6 py-12 safe-top safe-bottom">
         <div className="flex-1 flex flex-col items-center justify-center">
-          <div
-            className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
-            style={{ backgroundColor: 'var(--color-accent)' }}
-          >
-            <span className="text-3xl font-bold" style={{ color: 'var(--color-accent-fg)' }}>A</span>
-          </div>
+          <Logo size={80} rounded="lg" className="mb-6" />
           <h1 className="text-3xl font-semibold text-[var(--color-text)] text-center">
             ANTON
           </h1>

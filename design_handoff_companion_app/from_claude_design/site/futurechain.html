@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FutureChain · Compliance-first blockchain rails</title>
+<meta name="description" content="FutureChain is a Swedish blockchain platform engineered so illegal transactions never reach the chain. Pre-mempool screening · native ISO 20022 · MiCA-aligned." />
+<link rel="stylesheet" href="css/base.css?v=1777222785802" />
+<link rel="stylesheet" href="css/futurechain.css?v=1777222785802" />
+</head>
+<body class="fchain">
+
+<header class="topbar">
+  <div class="container topbar-row">
+    <a href="index.html" class="brand-mark" aria-label="FutureChain">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" stroke="#FFD700" stroke-width="1.5"/>
+        <path d="M2 16h28M16 2c4 4 6 9 6 14s-2 10-6 14M16 2c-4 4-6 9-6 14s2 10 6 14" stroke="#FFD700" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="2.5" fill="#FFD700"/>
+      </svg>
+      <span>Future<span class="accent">Chain</span></span>
+    </a>
+
+    <div class="switcher hide-mobile" role="tablist">
+      <a href="index.html">Overview</a>
+      <a href="anton.html">ANTON</a>
+      <a href="futurechain.html" class="is-active">FutureChain</a>
+    </div>
+
+    <nav class="hide-mobile">
+      <a href="#how">How it works</a>
+      <a href="#whitepaper">Whitepaper</a>
+      <a href="#waitlist" class="btn btn-primary-fc" style="padding:10px 18px;font-size:13px;">Partner list</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="fc-hero">
+    <div class="container fc-hero-grid">
+      <div>
+        <span class="kicker"><span class="dot"></span> Whitepaper · Vision stage · MiCA Article 6</span>
+        <h1>Prevent, <em>don't detect.</em></h1>
+        <p class="lede">
+          Traditional blockchains record transactions permanently before any compliance check.
+          FutureChain inverts that. Every transaction passes through Heimdall — our pre-mempool
+          compliance engine — before it can ever reach the chain. Reject at the gate, not after the fact.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary-fc" href="#whitepaper">Read whitepaper <span class="arrow">→</span></a>
+          <a class="btn btn-ghost-fc" href="#waitlist">Join the partner list</a>
+        </div>
+      </div>
+
+      <div class="fc-hero-art">
+        <img src="assets/fc-globe.png" alt="" aria-hidden="true" />
+        <div class="orbit" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT IT IS -->
+  <section id="what">
+    <div class="container">
+      <div class="section-head" style="color:#fff;">
+        <span class="eyebrow" style="color:var(--fc-gold);">What FutureChain is</span>
+        <h2 style="color:#fff;">A blockchain that speaks bank.</h2>
+        <p style="color:rgba(247,247,242,0.7);">
+          Built in Stockholm by people who spent fourteen years inside the financial system.
+          Three architectural decisions distinguish it from every other chain.
+        </p>
+      </div>
+
+      <div class="fc-pillars">
+        <div class="pillar">
+          <div class="num">01</div>
+          <h3>Pre-mempool compliance</h3>
+          <p>The Heimdall engine screens every transaction before it enters the mempool. Sanctions, AML, jurisdiction — all checked at the gate. Failed transactions never become permanent.</p>
+        </div>
+        <div class="pillar">
+          <div class="num">02</div>
+          <h3>Native ISO 20022</h3>
+          <p>Banks submit full PACS.008 messages — the same format SWIFT moved to in 2025. Hashes go on-chain (800 bytes); encrypted full messages live off-chain. Travel-Rule data preserved end to end.</p>
+        </div>
+        <div class="pillar">
+          <div class="num">03</div>
+          <h3>Two-tier storage · GDPR-safe</h3>
+          <p>99.5% storage reduction on-chain. Personal data remains erasable off-chain — solving the "right to erasure" conflict that makes most blockchains legally radioactive in Europe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="fc-section-alt">
+    <div class="container">
+      <div class="section-head" style="color:#fff;">
+        <span class="eyebrow" style="color:var(--fc-gold);">How it works</span>
+        <h2 style="color:#fff;">Four steps. Five hundred milliseconds.</h2>
+        <p style="color:rgba(247,247,242,0.7);">From a bank's PACS.008 to a settled, audit-ready transaction.</p>
+      </div>
+
+      <div class="fc-flow">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h4>Submit PACS.008</h4>
+          <p>Bank submits the full ISO 20022 payment message — same format already in use for SWIFT.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h4>Heimdall screens</h4>
+          <p>Sanctions, PEP, jurisdiction, AML and Travel-Rule checks run before the mempool sees it.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h4>Compliance proof</h4>
+          <p>Cleared transactions carry a cryptographic proof of the compliance decision, signed and immutable.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">→</div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <h4>Settle &amp; store</h4>
+          <p>Hash on-chain (800 bytes); encrypted message off-chain. Auditable forever, deletable where the law requires.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECHNICAL HIGHLIGHTS -->
+  <section id="tech">
+    <div class="container">
+      <div class="section-head" style="color:#fff;">
+        <span class="eyebrow" style="color:var(--fc-gold);">Under the hood</span>
+        <h2 style="color:#fff;">Engineered for institutions, not speculation.</h2>
+        <p style="color:rgba(247,247,242,0.7);">
+          Hybrid Proof-of-Authority for normal operations, with Proof-of-Work fallback if centralized
+          infrastructure is disrupted. Same chain, different posture, by design.
+        </p>
+      </div>
+
+      <div class="fc-specs">
+        <div class="spec"><span class="lbl">Consensus</span><span class="val">PoA + PoW fallback</span></div>
+        <div class="spec"><span class="lbl">Settlement</span><span class="val">~ 500 ms</span></div>
+        <div class="spec"><span class="lbl">Messaging</span><span class="val">ISO 20022 PACS.008.001.13</span></div>
+        <div class="spec"><span class="lbl">On-chain payload</span><span class="val">800 bytes / tx</span></div>
+        <div class="spec"><span class="lbl">Storage reduction</span><span class="val">99.5 %</span></div>
+        <div class="spec"><span class="lbl">Token</span><span class="val">FTC · MiCA Art. 3(1)(5) utility</span></div>
+        <div class="spec"><span class="lbl">Jurisdiction</span><span class="val">Sweden · Finansinspektionen</span></div>
+        <div class="spec"><span class="lbl">IP</span><span class="val">Patent pending · PRV</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANTON + FUTURECHAIN -->
+  <section id="bridge" class="fc-bridge">
+    <div class="container">
+      <div class="section-head" style="color:#fff;">
+        <span class="eyebrow" style="color:var(--fc-gold);">ANTON × FutureChain</span>
+        <h2 style="color:#fff;">The product on top, the rails underneath.</h2>
+        <p style="color:rgba(247,247,242,0.7);">
+          ANTON is the compliance workspace risk teams use today. FutureChain is the
+          settlement layer it will run on tomorrow — and that any PSP can license independently.
+        </p>
+      </div>
+
+      <div class="fc-bridge-grid">
+        <a class="bridge-card an" href="anton.html">
+          <div class="bridge-tag"><span class="dot"></span> ANTON · Live product</div>
+          <h3>Where the decisions get made</h3>
+          <p>Screening, case management, audit-ready documentation. Used by risk teams in regulated institutions today.</p>
+          <span class="bridge-go">Try ANTON <span class="arrow">→</span></span>
+        </a>
+        <a class="bridge-card fc-card" href="#whitepaper">
+          <div class="bridge-tag"><span class="dot"></span> FutureChain · The rails</div>
+          <h3>Where the value moves</h3>
+          <p>Pre-mempool screening, ISO 20022 messages, MiCA-aligned settlement. Licensable by banks, PSPs &amp; CASPs.</p>
+          <span class="bridge-go">Read whitepaper <span class="arrow">→</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHITEPAPER -->
+  <section id="whitepaper" class="fc-section-alt">
+    <div class="container fc-paper">
+      <div>
+        <span class="eyebrow" style="color:var(--fc-gold);">Whitepaper · v1.0.0</span>
+        <h2 style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(32px,4vw,48px);letter-spacing:-0.025em;line-height:1.05;margin:14px 0 16px;color:#fff;">
+          26 pages. Prepared per MiCA Article 6.
+        </h2>
+        <p style="color:rgba(247,247,242,0.7);font-size:18px;max-width:50ch;line-height:1.55;margin-bottom:32px;">
+          Issuer information, technical architecture, consensus, transaction model, ISO 20022 integration,
+          compliance framework, security architecture, FTC token rights &amp; obligations, tokenomics,
+          risk factors, environmental impact, governance, roadmap.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a class="btn btn-primary-fc" href="assets/FutureChain-Whitepaper.pdf" download>
+            Download PDF <span class="arrow">↓</span>
+          </a>
+          <a class="btn btn-ghost-fc" href="#waitlist">Talk to the team</a>
+        </div>
+      </div>
+
+      <div class="paper-card" aria-hidden="true">
+        <div class="paper-meta">v1.0.0 · 31 Jan 2026 · Production Ready</div>
+        <div class="paper-title">FutureChain<br/>Technical Whitepaper</div>
+        <ol class="paper-toc">
+          <li>Issuer Information</li>
+          <li>Project Description</li>
+          <li>Problem Statement</li>
+          <li>Solution Overview</li>
+          <li>Technical Architecture</li>
+          <li>Consensus Mechanism</li>
+          <li>Transaction Model</li>
+          <li>ISO 20022 Integration</li>
+          <li>Compliance Framework</li>
+          <li>Security Architecture</li>
+          <li>FTC Token: Rights &amp; Obligations</li>
+          <li>Tokenomics</li>
+          <li>Risk Factors</li>
+        </ol>
+        <div class="paper-foot">Futurechain AB · Stockholm · MiCA-aligned</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section id="team">
+    <div class="container">
+      <div class="section-head" style="color:#fff;">
+        <span class="eyebrow" style="color:var(--fc-gold);">Team</span>
+        <h2 style="color:#fff;">Fourteen years inside the system.</h2>
+        <p style="color:rgba(247,247,242,0.7);">FutureChain is built by people who lived the problem before they tried to solve it.</p>
+      </div>
+
+      <div class="fc-team">
+        <div class="member">
+          <div class="avatar" aria-hidden="true">DB</div>
+          <div>
+            <h4>Daniel Bardun</h4>
+            <div class="role">Founder &amp; CEO · Chairman</div>
+            <p>14+ years in banking and financial-crime prevention. Former: SEB · Sveriges Riksbank · EY · Advisense. Chairs cross-bank AML collaboration forums; member of SWIFT Nordic groups.</p>
+          </div>
+        </div>
+        <div class="member">
+          <div class="avatar" aria-hidden="true">FC</div>
+          <div>
+            <h4>Fredrik Cumlin</h4>
+            <div class="role">Board Alternate</div>
+            <p>Board oversight and governance. Supports MiCA-aligned operations and Finansinspektionen engagement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITLIST -->
+  <section id="waitlist">
+    <div class="container">
+      <div class="fc-cta">
+        <div>
+          <span class="eyebrow" style="color:var(--fc-gold);">Partner list</span>
+          <h2>Banks, PSPs, EMIs &amp; CASPs:<br/>get on the early-integrator list.</h2>
+          <p>Whitepaper, briefing call with Daniel, MiCA briefing pack, integrator slot when testnet opens.</p>
+        </div>
+        <form class="fc-form" onsubmit="event.preventDefault(); window.location='mailto:daniel.bardun@futurechain.solutions?subject=FutureChain%20partner%20list&body='+encodeURIComponent('Name: '+this.name.value+'%0AOrg: '+this.org.value+'%0AEmail: '+this.email.value+'%0ARole: '+this.role.value);">
+          <label>
+            <span>Name</span>
+            <input name="name" required />
+          </label>
+          <label>
+            <span>Organization</span>
+            <input name="org" required />
+          </label>
+          <label>
+            <span>Work email</span>
+            <input name="email" type="email" required />
+          </label>
+          <label>
+            <span>Role</span>
+            <select name="role">
+              <option>Bank</option>
+              <option>PSP / EMI</option>
+              <option>CASP (MiCA)</option>
+              <option>Investor</option>
+              <option>Press</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary-fc" style="grid-column:1/-1;justify-content:center;">
+            Request access <span class="arrow">→</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-row">
+      <div>
+        <div class="brand-mark" style="color:#fff;margin-bottom:14px;font-size:18px;">
+          Future<span class="accent" style="color:var(--fc-gold);">Chain</span>
+        </div>
+        <p style="color:rgba(247,247,242,0.55);max-width:36ch;font-size:13px;line-height:1.55;">
+          Futurechain AB · Stockholm, Sweden · Reg. 559566-7572 ·
+          Competent authority: Finansinspektionen. FTC is a utility token under MiCA Article 3(1)(5).
+        </p>
+      </div>
+      <div>
+        <h5>FutureChain</h5>
+        <ul>
+          <li><a href="#what">What it is</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#whitepaper">Whitepaper</a></li>
+          <li><a href="#waitlist">Partner list</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Company</h5>
+        <ul>
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="anton.html">ANTON product</a></li>
+          <li><a href="#team">Team</a></li>
+          <li><a href="mailto:daniel.bardun@futurechain.solutions">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">MiCA disclosures</a></li>
+          <li><a href="#">Risk warnings</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <span>© 2026 Futurechain AB. All rights reserved.</span>
+      <span>Stockholm · Sweden · Patent pending (PRV)</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

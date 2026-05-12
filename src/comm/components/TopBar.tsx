@@ -1,4 +1,5 @@
 import { getIdentity } from '../services/identity';
+import Logo from './Logo';
 
 interface Props {
   onProfile: () => void;
@@ -11,7 +12,10 @@ export default function TopBar({ onProfile }: Props) {
   return (
     <header className="safe-top">
       <div className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <span className="text-base font-semibold text-[var(--color-text)]">ANTON</span>
+        <div className="flex items-center gap-2">
+          <Logo size={24} rounded="sm" />
+          <span className="text-base font-semibold text-[var(--color-text)]">ANTON</span>
+        </div>
         <button
           onClick={onProfile}
           aria-label="Open profile"

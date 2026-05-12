@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { listThread, type ChatMessage } from '../services/messages';
-import { sendMessage, ChatError } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, ChatError, type MediaPayload } from '../services/chat';
 import { getContact, type Contact } from '../services/contacts';
 import { getIdentity } from '../services/identity';
 import type { EventInvitePayload, EventRsvpPayload, EventCancelPayload } from '../services/events';
 import { EVENT_TYPE_ICONS, EVENT_TYPE_LABELS } from '../services/events';
+import {
+  captureImageFromCamera,
+  captureImageFromLibrary,
+  captureVideoFromCamera,
+  captureVideoFromLibrary,
+  isWithinRelayCap,
+  type Capture,
+} from '../services/capture';
+import { Ico, type IcoName } from '../components/Ico';
+import AttachmentSheet from '../components/AttachmentSheet';
 
 interface Props {
   peerContactHash: string;
@@ -19,6 +29,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [attachmentOpen, setAttachmentOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +45,6 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   }, [peerContactHash]);
 
   useEffect(() => {
-    // Auto-scroll to bottom whenever the message list grows
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
@@ -49,11 +59,41 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       setMessages((prev) => [...prev, msg]);
       setDraft('');
     } catch (e) {
-      if (e instanceof ChatError) {
-        setError(e.message);
-      } else {
-        setError(e instanceof Error ? e.message : 'Failed to send');
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send'));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleAttachment(grabber: () => Promise<Capture | null>) {
+    setError(null);
+    setSending(true);
+    try {
+      const capture = await grabber();
+      if (!capture) return;
+      if (!isWithinRelayCap(capture)) {
+        setError(
+          capture.mediaType === 'video'
+            ? `Video is too big (${formatBytes(capture.size)}). Try a shorter clip — the limit is roughly 700 KB after compression.`
+            : `Image is too big (${formatBytes(capture.size)}). Try a smaller photo.`,
+        );
+        return;
       }
+      const payload: MediaPayload = {
+        data: capture.data,
+        mimeType: capture.mimeType,
+        filename: capture.filename,
+        size: capture.size,
+        width: capture.width,
+        height: capture.height,
+        durationSec: capture.durationSec,
+      };
+      const msg = capture.mediaType === 'image'
+        ? await sendImage(peerContactHash, payload)
+        : await sendVideo(peerContactHash, payload);
+      setMessages((prev) => [...prev, msg]);
+    } catch (e) {
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to attach'));
     } finally {
       setSending(false);
     }
@@ -65,8 +105,12 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   return (
     <section className="flex flex-col min-h-dvh max-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center gap-3 h-14 px-3 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] flex-shrink-0">
-        <button onClick={onBack} className="text-sm text-[var(--color-text-muted)] px-2 py-1" aria-label="Back">
-          ←
+        <button
+          onClick={onBack}
+          className="px-2 py-1 text-[var(--color-text-muted)]"
+          aria-label="Back"
+        >
+          <Ico name="arrowLeft" size={22} />
         </button>
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
@@ -108,6 +152,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       )}
 
       <div className="flex items-end gap-2 p-3 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)]">
+        <button
+          onClick={() => setAttachmentOpen(true)}
+          disabled={sending || !hasPeerKey}
+          aria-label="Attach"
+          className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0 text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
+        >
+          <Ico name="paperclip" size={22} />
+        </button>
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -123,12 +175,21 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           onClick={() => void handleSend()}
           disabled={sending || draft.trim().length === 0 || !hasPeerKey}
           aria-label="Send"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-semibold disabled:opacity-40 flex-shrink-0"
+          className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          ↑
+          <Ico name="arrowUp" size={20} />
         </button>
       </div>
+
+      <AttachmentSheet
+        open={attachmentOpen}
+        onClose={() => setAttachmentOpen(false)}
+        onPickImageCamera={() => void handleAttachment(captureImageFromCamera)}
+        onPickImageLibrary={() => void handleAttachment(captureImageFromLibrary)}
+        onPickVideoCamera={() => void handleAttachment(captureVideoFromCamera)}
+        onPickVideoLibrary={() => void handleAttachment(captureVideoFromLibrary)}
+      />
     </section>
   );
 }
@@ -136,17 +197,11 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
 function Bubble({ message, isMine, onOpenEvent }: { message: ChatMessage; isMine: boolean; onOpenEvent?: (id: string) => void }) {
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
-  if (message.kind === 'event_invite') {
-    return (
-      <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />
-    );
-  }
-  if (message.kind === 'event_rsvp') {
-    return <EventRsvpBubble message={message} isMine={isMine} time={time} />;
-  }
-  if (message.kind === 'event_cancel') {
-    return <EventCancelBubble message={message} isMine={isMine} time={time} />;
-  }
+  if (message.kind === 'event_invite') return <EventInviteBubble message={message} isMine={isMine} time={time} onOpenEvent={onOpenEvent} />;
+  if (message.kind === 'event_rsvp')   return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
+  if (message.kind === 'event_cancel') return <EventCancelBubble message={message} isMine={isMine} time={time} />;
+  if (message.kind === 'image')        return <MediaBubble       message={message} isMine={isMine} time={time} kind="image" />;
+  if (message.kind === 'video')        return <MediaBubble       message={message} isMine={isMine} time={time} kind="video" />;
 
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
@@ -168,6 +223,46 @@ function Bubble({ message, isMine, onOpenEvent }: { message: ChatMessage; isMine
   );
 }
 
+function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; isMine: boolean; time: string; kind: 'image' | 'video' }) {
+  let payload: MediaPayload | null = null;
+  try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+  if (!payload) return null;
+  const dataUrl = `data:${payload.mimeType};base64,${payload.data}`;
+  const aspect = (payload.width && payload.height) ? payload.width / payload.height : 4 / 3;
+  return (
+    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`max-w-[78%] rounded-2xl overflow-hidden ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+        style={{
+          backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
+          border: isMine ? 'none' : '1px solid var(--color-border-soft)',
+        }}
+      >
+        {kind === 'image' ? (
+          <img src={dataUrl} alt={payload.filename} className="block w-full" style={{ aspectRatio: aspect }} />
+        ) : (
+          <video src={dataUrl} controls preload="metadata" className="block w-full" style={{ aspectRatio: aspect }} />
+        )}
+        {payload.caption && (
+          <div
+            className="px-3 pt-2 pb-1 text-[14px] leading-snug"
+            style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)' }}
+          >
+            {payload.caption}
+          </div>
+        )}
+        <div
+          className="px-3 py-1.5 text-[10px] font-medium opacity-80 flex items-center justify-end gap-1"
+          style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}
+        >
+          <time>{time}</time>
+          {isMine && <StatusTick status={message.status} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
   message: ChatMessage; isMine: boolean; time: string; onOpenEvent?: (id: string) => void;
 }) {
@@ -180,14 +275,11 @@ function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
       <button
         onClick={() => onOpenEvent?.(data!.id)}
         className="max-w-[85%] text-left rounded-2xl overflow-hidden border"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-border)',
-        }}
+        style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
       >
         <div className="px-4 py-3" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-            <span>{EVENT_TYPE_ICONS[data.eventType]}</span>
+            <Ico name={EVENT_TYPE_ICONS[data.eventType] as IcoName} size={16} />
             <span>{isMine ? 'You invited' : 'Event invite'} · {EVENT_TYPE_LABELS[data.eventType]}</span>
           </div>
           <div className="mt-1 text-base font-semibold text-[var(--color-text)]">{data.title}</div>
@@ -241,4 +333,10 @@ function StatusTick({ status }: { status: ChatMessage['status'] }) {
   if (status === 'delivered') return <span title="Delivered">✓✓</span>;
   if (status === 'failed') return <span title="Failed">!</span>;
   return null;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

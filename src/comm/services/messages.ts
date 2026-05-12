@@ -35,14 +35,16 @@ export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'receiv
 
 /**
  * Kind of payload carried in `plaintext`:
- *   - 'text'         : plain user text (most common)
+ *   - 'text'         : plain user text
+ *   - 'image'        : plaintext is JSON of MediaPayload (base64 + mime + dims)
+ *   - 'video'        : plaintext is JSON of MediaPayload
  *   - 'event_invite' : plaintext is JSON of EventInvitePayload (events.ts)
  *   - 'event_rsvp'   : plaintext is JSON of EventRsvpPayload
  *   - 'event_cancel' : plaintext is JSON of EventCancelPayload
  *
  * Old messages without a `kind` field are treated as 'text'.
  */
-export type ContentKind = 'text' | 'event_invite' | 'event_rsvp' | 'event_cancel';
+export type ContentKind = 'text' | 'image' | 'video' | 'event_invite' | 'event_rsvp' | 'event_cancel';
 
 export interface ChatMessage {
   id: string;
