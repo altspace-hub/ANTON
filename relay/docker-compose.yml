@@ -11,9 +11,13 @@
 services:
   relay:
     build: .
-    image: anton-mesh-relay:0.1.0
+    image: anton-mesh-relay:0.2.0
     container_name: anton-mesh-relay
     restart: unless-stopped
+    depends_on:
+      registry-db:
+        condition: service_healthy
+        required: false
     environment:
       # REQUIRED — canonical URL phones use to dial this relay.
       # Mesh handshakes verify this matches; mismatch = MAC_FAIL.
@@ -29,6 +33,12 @@ services:
       RELAY_MAX_SESSIONS_PER_INSTANCE: ${RELAY_MAX_SESSIONS_PER_INSTANCE:-32}
       # Audit log destination (path inside container or stdout).
       RELAY_AUDIT_LOG_PATH: ${RELAY_AUDIT_LOG_PATH:-}
+      # ── Portal registry (v0.2+) ────────────────────────────────────
+      # All three together enable /v1/portals/*. Leave unset to keep
+      # the relay WS-only — /v1/* will respond 503.
+      RELAY_REGISTRY_DATABASE_URL: ${RELAY_REGISTRY_DATABASE_URL:-}
+      RELAY_OPERATOR_PASSWORD: ${RELAY_OPERATOR_PASSWORD:-}
+      RELAY_OPERATOR_JWT_SECRET: ${RELAY_OPERATOR_JWT_SECRET:-}
     ports:
       - "${RELAY_PORT:-8443}:${RELAY_PORT:-8443}"
     volumes:
@@ -50,3 +60,41 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+
+  # ── Postgres for the portal registry (v0.2+) ──────────────────────
+  #
+  # Optional: only used when RELAY_REGISTRY_DATABASE_URL is set AND
+  # points at this service (recommended URL:
+  #   postgresql://relay:${POSTGRES_PASSWORD}@registry-db:5432/relay_registry
+  # ).
+  #
+  # If you already run Postgres elsewhere (managed service, separate
+  # box, etc.), comment this whole service out and point
+  # RELAY_REGISTRY_DATABASE_URL at the external host. The relay needs
+  # superuser-level perms only for the initial CREATE EXTENSION
+  # pgcrypto in migration 001 — after that, a least-privileged
+  # role is enough.
+  registry-db:
+    image: postgres:16-alpine
+    container_name: anton-relay-registry-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-relay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required when using bundled DB}
+      POSTGRES_DB: ${POSTGRES_DB:-relay_registry}
+    volumes:
+      - registry-db-data:/var/lib/postgresql/data
+    # Bind only to localhost on the host so the DB is not exposed to
+    # the public internet — only the relay container reaches it on
+    # the docker-compose network.
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-relay} -d ${POSTGRES_DB:-relay_registry}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 512m
+
+volumes:
+  registry-db-data:

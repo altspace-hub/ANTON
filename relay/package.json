@@ -1,6 +1,6 @@
 {
   "name": "@anton/mesh-relay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ANTON Mesh — reference relay implementation. Phase 2 of docs/ANTON_MESH_SPEC.md.",
   "type": "module",
   "license": "Apache-2.0",
