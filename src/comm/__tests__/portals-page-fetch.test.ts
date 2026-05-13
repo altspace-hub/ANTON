@@ -18,6 +18,7 @@ import {
   fetchPortalPages,
   type PortalDescriptor,
 } from '../services/portals';
+import { clearPortal } from '../services/portal-cache';
 
 function descriptor(over: Partial<PortalDescriptor['portal']> = {}): PortalDescriptor {
   return {
@@ -34,9 +35,14 @@ function descriptor(over: Partial<PortalDescriptor['portal']> = {}): PortalDescr
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   (globalThis.fetch as unknown as Mock | undefined)?.mockReset?.();
   globalThis.fetch = vi.fn() as unknown as typeof fetch;
+  // Phase 5 added an IndexedDB cache that the fetch functions fall back
+  // to on 5xx / network throw. Without this clear, fake-indexeddb's
+  // shared-across-tests factory leaks earlier 200-success writes into
+  // these cases, masking the "throws on 5xx" assertions.
+  await clearPortal('dog-sitter-sthlm.global.portal');
 });
 
 describe('fetchPortalPage', () => {

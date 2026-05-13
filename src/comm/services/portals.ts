@@ -26,6 +26,14 @@
  */
 
 import { getIdentity } from './identity';
+import {
+  readDescriptor as cacheReadDescriptor,
+  writeDescriptor as cacheWriteDescriptor,
+  readPage as cacheReadPage,
+  writePage as cacheWritePage,
+  readPages as cacheReadPages,
+  writePages as cacheWritePages,
+} from './portal-cache';
 
 const PORTALS_BASE = (import.meta.env.VITE_COMM_PORTALS_BASE as string | undefined) ?? 'https://relay.futurechain.eu';
 
@@ -128,12 +136,29 @@ interface ResolveResponseBody {
 }
 
 export async function fetchPortalDescriptor(address: string): Promise<PortalDescriptor | null> {
-  const res = await fetch(url(`/v1/portals/resolve/${encodeURIComponent(address)}`));
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Descriptor fetch failed (${res.status})`);
-  const body = (await res.json()) as ResolveResponseBody;
-  if (!body.found || !body.descriptor) return null;
-  return body.descriptor;
+  // Network-first. A 404 from the relay means the portal really doesn't
+  // exist (or was unpublished) — we treat that as authoritative and
+  // don't fall back to a stale cached descriptor. Anything else (fetch
+  // throw, 5xx) is "publisher reachable but registry flaky" → cache.
+  try {
+    const res = await fetch(url(`/v1/portals/resolve/${encodeURIComponent(address)}`));
+    if (res.status === 404) return null;
+    if (res.status >= 500) {
+      const cached = await cacheReadDescriptor<PortalDescriptor>(address);
+      if (cached) return cached;
+      throw new Error(`Descriptor fetch failed (${res.status})`);
+    }
+    if (!res.ok) throw new Error(`Descriptor fetch failed (${res.status})`);
+    const body = (await res.json()) as ResolveResponseBody;
+    if (!body.found || !body.descriptor) return null;
+    await cacheWriteDescriptor(address, body.descriptor);
+    return body.descriptor;
+  } catch (err) {
+    // fetch() throws on network failure (no DNS, no route, TLS error).
+    const cached = await cacheReadDescriptor<PortalDescriptor>(address);
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 // ── Page fetch ───────────────────────────────────────────────────────────
@@ -169,7 +194,11 @@ function originAddress(descriptor: PortalDescriptor): { origin: string; address:
 }
 
 /** Fetch a single page from the publisher's ANTON. Returns null if
- *  the descriptor has no originEndpoint or the page is not found. */
+ *  the descriptor has no originEndpoint or the page is not found.
+ *
+ *  Same network-first / stale-on-failure rule as fetchPortalDescriptor:
+ *  a real 404 is authoritative (page was removed), but any network
+ *  failure or 5xx falls back to the last cached copy if one exists. */
 export async function fetchPortalPage(
   descriptor: PortalDescriptor,
   path: string,
@@ -179,12 +208,25 @@ export async function fetchPortalPage(
   const pageUrl =
     `${oa.origin}/api/portals/visit/${encodeURIComponent(oa.address)}/page` +
     `?path=${encodeURIComponent(path || '/')}`;
-  const res = await fetch(pageUrl);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Page fetch failed (${res.status})`);
-  const body = (await res.json()) as { kind?: string; html?: string; title?: string | null };
-  if (body.kind !== 'page' || typeof body.html !== 'string') return null;
-  return { html: body.html, title: body.title ?? null };
+  try {
+    const res = await fetch(pageUrl);
+    if (res.status === 404) return null;
+    if (res.status >= 500) {
+      const cached = await cacheReadPage<PortalPage>(oa.address, path || '/');
+      if (cached) return cached;
+      throw new Error(`Page fetch failed (${res.status})`);
+    }
+    if (!res.ok) throw new Error(`Page fetch failed (${res.status})`);
+    const body = (await res.json()) as { kind?: string; html?: string; title?: string | null };
+    if (body.kind !== 'page' || typeof body.html !== 'string') return null;
+    const page: PortalPage = { html: body.html, title: body.title ?? null };
+    await cacheWritePage(oa.address, path || '/', page);
+    return page;
+  } catch (err) {
+    const cached = await cacheReadPage<PortalPage>(oa.address, path || '/');
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 /** List visible pages for a portal. Returns null when origin isn't set;
@@ -195,11 +237,24 @@ export async function fetchPortalPages(
   const oa = originAddress(descriptor);
   if (!oa) return null;
   const listUrl = `${oa.origin}/api/portals/visit/${encodeURIComponent(oa.address)}/pages`;
-  const res = await fetch(listUrl);
-  if (res.status === 404) return [];
-  if (!res.ok) throw new Error(`Pages list failed (${res.status})`);
-  const body = (await res.json()) as { pages?: PortalPageMeta[] };
-  return Array.isArray(body.pages) ? body.pages : [];
+  try {
+    const res = await fetch(listUrl);
+    if (res.status === 404) return [];
+    if (res.status >= 500) {
+      const cached = await cacheReadPages<PortalPageMeta[]>(oa.address);
+      if (cached) return cached;
+      throw new Error(`Pages list failed (${res.status})`);
+    }
+    if (!res.ok) throw new Error(`Pages list failed (${res.status})`);
+    const body = (await res.json()) as { pages?: PortalPageMeta[] };
+    const pages = Array.isArray(body.pages) ? body.pages : [];
+    await cacheWritePages(oa.address, pages);
+    return pages;
+  } catch (err) {
+    const cached = await cacheReadPages<PortalPageMeta[]>(oa.address);
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 // ── Invoke ───────────────────────────────────────────────────────────────

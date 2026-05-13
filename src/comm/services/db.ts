@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -23,6 +23,11 @@ export const STORE_WASSUP_INTERACTIONS = 'wassup_interactions';
 /** v5 — persistent queue for ephemeral inline wires (edit/delete/poll_vote)
  *  so they survive an offline peer + reconnect (Phase 2 audit fix). */
 export const STORE_INLINE_OUTBOX = 'inline_outbox';
+/** v6 — Portals offline cache (Phase 5 of in-app viewer plan). Stores
+ *  descriptors, page lists, and individual page HTML keyed by kind+address
+ *  so a flaky network falls back to the last good copy instead of an
+ *  empty viewer. */
+export const STORE_PORTAL_CACHE = 'portal_cache';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -31,6 +36,7 @@ export const INDEX_POST_BY_CREATED = 'by_created';
 export const INDEX_POST_BY_EXPIRES = 'by_expires';
 export const INDEX_INT_BY_POST = 'by_post';
 export const INDEX_INLINE_BY_PEER = 'by_peer';
+export const INDEX_PORTAL_BY_CACHED_AT = 'by_cached_at';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -71,6 +77,13 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_INLINE_OUTBOX)) {
         const store = db.createObjectStore(STORE_INLINE_OUTBOX, { keyPath: 'id' });
         store.createIndex(INDEX_INLINE_BY_PEER, 'peerContactHash', { unique: false });
+      }
+      // v6 — Portals offline cache. Keys are namespaced
+      // (`desc:<addr>` / `pages:<addr>` / `page:<addr>:<path>`); the
+      // cachedAt index drives TTL eviction.
+      if (!db.objectStoreNames.contains(STORE_PORTAL_CACHE)) {
+        const store = db.createObjectStore(STORE_PORTAL_CACHE, { keyPath: 'key' });
+        store.createIndex(INDEX_PORTAL_BY_CACHED_AT, 'cachedAt', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
