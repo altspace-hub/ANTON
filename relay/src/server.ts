@@ -81,6 +81,9 @@ import {
 import { canonicalizeRelayUrl } from './canonical-url.js';
 import { bytesToHex } from './primitives.js';
 import { MetricsRegistry } from './metrics.js';
+import { createRegistryDb, type RegistryDb } from './registry/db.js';
+import { dispatch as dispatchRegistry } from './registry/routes.js';
+import { pino, type Logger } from 'pino';
 
 // ── Configuration ────────────────────────────────────────────────────
 
@@ -208,6 +211,13 @@ export class RelayServer {
   /** Operational counters — exposed at /metrics. */
   private metrics = new MetricsRegistry();
 
+  /** Portal registry DB handle. Null when RELAY_REGISTRY_DATABASE_URL is unset
+   *  (or registryDb wasn't injected via config) — /v1/* routes return 503. */
+  private registryDb: RegistryDb | null = null;
+
+  /** Shared logger for registry routes. */
+  private registryLogger: Logger = pino({ name: 'relay-registry' });
+
   /** Start listening. Resolves once the port is bound. */
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -215,10 +225,16 @@ export class RelayServer {
         ? https.createServer({ cert: this.cfg.tlsCert, key: this.cfg.tlsKey })
         : http.createServer();
 
-      // ── HTTP routes for ops endpoints ───────────────────────────
+      // ── HTTP routes for ops + portal registry ───────────────────
       // The 'request' handler runs for non-upgrade HTTP requests; the
       // WSS attaches its own 'upgrade' listener so WS connections are
-      // unaffected. We expose /healthz + /metrics; everything else 404s.
+      // unaffected. We expose:
+      //   /healthz, /metrics — relay ops (always on)
+      //   /v1/*             — portal registry (only if RELAY_REGISTRY_DATABASE_URL is set)
+      //
+      // Spawn the registry DB lazily on first request so the relay can
+      // start without Postgres in dev / no-registry deployments.
+      this.registryDb = createRegistryDb({ logger: this.registryLogger });
       httpServer.on('request', (req, res) => {
         const url = req.url ?? '/';
         if (req.method === 'GET' && (url === '/healthz' || url === '/healthz/')) {
@@ -231,12 +247,30 @@ export class RelayServer {
             active_sessions: snap.active_sessions,
             active_instances: snap.active_instances,
             ws_connections: this.connections.size,
+            registry_enabled: this.registryDb !== null,
           }));
           return;
         }
         if (req.method === 'GET' && (url === '/metrics' || url === '/metrics/')) {
           res.writeHead(200, { 'content-type': 'text/plain; version=0.0.4; charset=utf-8' });
           res.end(this.metrics.renderProm(this.match.sessionCount(), this.match.instanceCount()));
+          return;
+        }
+        // /v1/* → portal registry dispatcher. Returns false when path
+        // is not under /v1/, in which case we fall through to 404.
+        if (url.startsWith('/v1/')) {
+          void dispatchRegistry(req, res, {
+            db: this.registryDb,
+            logger: this.registryLogger,
+          }).catch((err: unknown) => {
+            // Defensive — handlers should never throw synchronously,
+            // but if one does we don't want the connection to hang.
+            this.registryLogger.error({ err: (err as Error)?.message }, 'registry dispatch failed');
+            if (!res.writableEnded) {
+              res.writeHead(500, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ error: 'internal_error' }));
+            }
+          });
           return;
         }
         // Anything else is 404. Don't leak internals.
@@ -311,7 +345,14 @@ export class RelayServer {
         for (const conn of this.connections.values()) {
           try { conn.ws.close(1001, 'shutting down'); } catch { /* ignore */ }
         }
-        this.httpServer?.close(() => resolve());
+        // 4. Close the registry DB pool if it was opened. Done after WS
+        //    teardown so in-flight HTTP requests have a chance to finish.
+        const closeServer = () => this.httpServer?.close(() => resolve());
+        if (this.registryDb) {
+          this.registryDb.end().then(closeServer).catch(closeServer);
+        } else {
+          closeServer();
+        }
       }, this.cfg.drainIntervalMs);
       drainTimer.unref?.();
     });
