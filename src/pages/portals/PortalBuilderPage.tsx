@@ -7,10 +7,11 @@
  * reuses generatePhasePrompt + the existing unified-llm-client.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X, Sparkles } from 'lucide-react';
+import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X, Sparkles, Smartphone, Monitor } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { wrapForSandbox } from '../../comm/lib/portal-sandbox';
 
 const PHASES = [
   { id: 'intent', label: 'Intent' },
@@ -421,6 +422,9 @@ function PhaseForm({
   }
   if (phase === 'content_generation') {
     const pages = (draft.pages as Array<{ path: string; html: string }>) ?? [];
+    const identity = (accumulatedState.identity ?? {}) as { display_title?: string };
+    const previewPages = pages.map((p) => ({ path: p.path, title: null }));
+    const previewCaps = ((accumulatedState.capabilities as { capabilities?: Array<{ id: string; verb: string; title: string }> } | undefined)?.capabilities) ?? [];
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Content</h2>
@@ -437,6 +441,17 @@ function PhaseForm({
             />
           </div>
         ))}
+        {previewPages.length > 0 && (
+          <div>
+            <div className="text-xs uppercase tracking-wide text-adv-gray mb-1.5 mt-2">Live preview</div>
+            <PortalPreview
+              sessionId={sessionId}
+              pages={previewPages}
+              displayTitle={identity.display_title ?? null}
+              capabilities={previewCaps}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -488,6 +503,8 @@ function PhaseForm({
     const score = typeof draft.quality_score === 'number' ? draft.quality_score : null;
     const issues = (draft.flagged_issues as string[] | undefined) ?? [];
     const generationPages = ((accumulatedState.content_generation as { pages?: Array<{ path: string }> } | undefined)?.pages) ?? [];
+    const identity = (accumulatedState.identity ?? {}) as { display_title?: string };
+    const previewCaps = ((accumulatedState.capabilities as { capabilities?: Array<{ id: string; verb: string; title: string }> } | undefined)?.capabilities) ?? [];
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Review</h2>
@@ -495,7 +512,12 @@ function PhaseForm({
           Confirm the portal looks right before publishing.
           {' '}Click <span className="text-adv-teal">Suggest with AI</span> for an honest critique.
         </p>
-        <PortalPreview sessionId={sessionId} pages={generationPages} />
+        <PortalPreview
+          sessionId={sessionId}
+          pages={generationPages}
+          displayTitle={identity.display_title ?? null}
+          capabilities={previewCaps}
+        />
         {score !== null && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-adv-gray">Quality score:</span>
@@ -582,11 +604,33 @@ function CenterMsg({ children }: { children: React.ReactNode }) {
 // Auth tokens are embedded into the URL via the existing fetchWithAuth flow:
 // since iframe.src can't carry headers, we fetch the HTML ourselves and
 // stuff it into srcdoc.
-function PortalPreview({ sessionId, pages }: { sessionId: string; pages: Array<{ path: string }> }) {
+interface PortalPreviewCapability {
+  id: string;
+  verb: string;
+  title: string;
+}
+
+function PortalPreview({
+  sessionId,
+  pages,
+  displayTitle,
+  capabilities,
+  initialMode,
+}: {
+  sessionId: string;
+  pages: Array<{ path: string; title?: string | null }>;
+  /** Portal display title to mock into the phone-frame header. */
+  displayTitle?: string | null;
+  /** Capabilities to mock into the phone-frame action bar. */
+  capabilities?: PortalPreviewCapability[];
+  /** Default view mode. Defaults to 'mobile' since this is what visitors see. */
+  initialMode?: 'desktop' | 'mobile';
+}) {
   const [activePath, setActivePath] = useState(pages[0]?.path ?? '/');
   const [html, setHtml] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(initialMode ?? 'mobile');
 
   useEffect(() => {
     let cancelled = false;
@@ -607,6 +651,18 @@ function PortalPreview({ sessionId, pages }: { sessionId: string; pages: Array<{
     return () => { cancelled = true; };
   }, [sessionId, activePath]);
 
+  // Mobile mode wraps the page body in the Comm App's mobile CSS reset
+  // (wrapForSandbox from src/comm/lib/portal-sandbox). The /preview endpoint
+  // returns a full HTML document with desktop styling — we strip the body
+  // out and re-wrap with the mobile reset to get an apples-to-apples view
+  // of how the Comm App's PortalPageScreen will render this content.
+  const mobileSrcDoc = useMemo(() => {
+    if (viewMode !== 'mobile' || !html) return '';
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const bodyContent = bodyMatch ? bodyMatch[1] : html;
+    return wrapForSandbox(bodyContent ?? '', { title: displayTitle ?? 'Preview' });
+  }, [html, viewMode, displayTitle]);
+
   if (pages.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-adv-card p-4 text-xs text-adv-gray">
@@ -615,34 +671,146 @@ function PortalPreview({ sessionId, pages }: { sessionId: string; pages: Array<{
     );
   }
 
-  return (
-    <div className="rounded-lg border border-border bg-adv-card overflow-hidden">
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border bg-adv-dark/40 overflow-x-auto">
-        <span className="text-xs text-adv-gray pr-2">Preview:</span>
-        {pages.map((p) => (
-          <button
-            key={p.path}
-            onClick={() => setActivePath(p.path)}
-            className={`px-2 py-1 rounded text-xs font-mono transition ${
-              p.path === activePath ? 'bg-adv-teal/20 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
-            }`}
-          >{p.path}</button>
-        ))}
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-gray ml-2" aria-label="Loading preview" />}
+  const toolbar = (
+    <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border bg-adv-dark/40 overflow-x-auto">
+      <span className="text-xs text-adv-gray pr-2">Preview:</span>
+      {pages.map((p) => (
+        <button
+          key={p.path}
+          onClick={() => setActivePath(p.path)}
+          className={`px-2 py-1 rounded text-xs font-mono transition ${
+            p.path === activePath ? 'bg-adv-teal/20 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+          }`}
+        >{p.path}</button>
+      ))}
+      {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-gray ml-2" aria-label="Loading preview" />}
+      <div className="flex-1" />
+      <div className="inline-flex rounded border border-border overflow-hidden text-xs">
+        <button
+          type="button"
+          onClick={() => setViewMode('mobile')}
+          className={`px-2 py-1 flex items-center gap-1 ${
+            viewMode === 'mobile' ? 'bg-adv-teal/20 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+          }`}
+          aria-pressed={viewMode === 'mobile'}
+          title="See it the way Comm App users will"
+        >
+          <Smartphone className="h-3 w-3" /> Mobile
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('desktop')}
+          className={`px-2 py-1 flex items-center gap-1 ${
+            viewMode === 'desktop' ? 'bg-adv-teal/20 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+          }`}
+          aria-pressed={viewMode === 'desktop'}
+          title="Raw page as rendered by the desktop preview endpoint"
+        >
+          <Monitor className="h-3 w-3" /> Desktop
+        </button>
       </div>
-      {err ? (
+    </div>
+  );
+
+  if (err) {
+    return (
+      <div className="rounded-lg border border-border bg-adv-card overflow-hidden">
+        {toolbar}
         <div className="p-4 text-xs text-adv-red flex items-start gap-2">
           <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {err}
         </div>
-      ) : (
+      </div>
+    );
+  }
+
+  if (viewMode === 'desktop') {
+    return (
+      <div className="rounded-lg border border-border bg-adv-card overflow-hidden">
+        {toolbar}
         <iframe
-          title="Portal preview"
+          title="Portal preview (desktop)"
           sandbox=""
           srcDoc={html}
           className="w-full bg-white"
           style={{ height: 360 }}
         />
-      )}
+      </div>
+    );
+  }
+
+  // Mobile preview — mocks the Comm App's PortalPageScreen chrome around the
+  // iframe so publishers see the EXACT visitor experience (header + page tabs
+  // + sandboxed page body + capability action bar) before publishing.
+  const showTabs = pages.length > 1;
+  const phoneTitle = displayTitle ?? 'Portal';
+  const caps = capabilities ?? [];
+
+  // Phone body height is iframe area = total - header - (tabs?) - capability bar.
+  const PHONE_HEIGHT = 600;
+  const HEADER_H = 36;
+  const TABS_H = showTabs ? 36 : 0;
+  const BAR_H = caps.length > 0 ? 52 : 0;
+  const IFRAME_H = PHONE_HEIGHT - HEADER_H - TABS_H - BAR_H;
+
+  return (
+    <div className="rounded-lg border border-border bg-adv-card overflow-hidden">
+      {toolbar}
+      <div className="flex justify-center bg-adv-dark/40 p-6">
+        <div
+          className="rounded-[2rem] border-[10px] border-gray-900 shadow-2xl overflow-hidden bg-[#F5F3EF] flex flex-col"
+          style={{ width: 320, height: PHONE_HEIGHT }}
+        >
+          {/* Mock Comm App header */}
+          <div className="h-9 px-3 flex items-center justify-between bg-white border-b border-gray-200 flex-shrink-0">
+            <span className="text-xs text-gray-500">← Back</span>
+            <span className="text-xs font-semibold text-gray-900 truncate">{phoneTitle}</span>
+            <span className="w-8" />
+          </div>
+
+          {/* Mock page-tab rail (only when >1 page) */}
+          {showTabs && (
+            <div className="h-9 px-2 py-1.5 flex items-center gap-1 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
+              {pages.map((p) => (
+                <span
+                  key={p.path}
+                  className={`flex-shrink-0 px-2 py-0.5 text-[10px] rounded-full ${
+                    p.path === activePath ? 'bg-[#0D7D6C] text-white' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {p.title ?? p.path}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Iframe body — wrapped with Comm App's wrapForSandbox */}
+          <iframe
+            title="Portal preview (mobile)"
+            sandbox=""
+            srcDoc={mobileSrcDoc}
+            className="w-full bg-[#F5F3EF] border-0 flex-1"
+            style={{ height: IFRAME_H }}
+          />
+
+          {/* Mock capability bar */}
+          {caps.length > 0 && (
+            <div className="h-13 px-2 py-2 flex items-center gap-1.5 bg-white border-t border-gray-200 overflow-x-auto flex-shrink-0" style={{ height: BAR_H }}>
+              {caps.map((c) => (
+                <span
+                  key={c.id}
+                  className="flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-medium"
+                  style={{ backgroundColor: '#0D7D6C', color: '#FFFFFF' }}
+                >
+                  {c.title}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="px-3 py-1.5 text-[10px] text-adv-gray border-t border-border">
+        Mobile preview · 320×{PHONE_HEIGHT} viewport · Comm App CSS reset applied
+      </div>
     </div>
   );
 }
