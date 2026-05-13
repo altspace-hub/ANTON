@@ -6,24 +6,22 @@
  * false if the path doesn't match a registry route (so the relay's
  * default 404 handler runs).
  *
- * Routes (each lives in its own file):
- *   GET  /v1/healthz              — registry-DB ping, separate from relay /healthz
- *   POST /v1/portals/submit       — Step 8
- *   GET  /v1/portals/submissions/:id/status
- *   GET  /v1/portals/search       — Step 8
- *   GET  /v1/portals/resolve/:name.:namespace
- *   GET  /v1/admin/submissions    — Step 9, JWT-auth
- *   POST /v1/admin/submissions/:id/approve
- *   POST /v1/admin/submissions/:id/reject
- *
- * This file is the routing skeleton. Step 6 lands the dispatcher and a
- * single /v1/healthz endpoint to prove the wiring works. Steps 8 + 9
- * fill in the rest.
+ * Routes:
+ *   GET  /v1/healthz                                  — registry-DB ping
+ *   POST /v1/portals/submit                           — submit for review
+ *   GET  /v1/portals/submissions/:id/status           — owner status poll
+ *   GET  /v1/portals/search                           — full-text search
+ *   GET  /v1/portals/resolve/:address                 — exact-name lookup
+ *   /v1/admin/*                                       — Step 9 (operator API)
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RegistryDb } from './db.js';
 import type { Logger } from 'pino';
+import { handleSubmit } from './handlers/submit.js';
+import { handleSubmissionStatus } from './handlers/submissions.js';
+import { handleSearch } from './handlers/search.js';
+import { handleResolve } from './handlers/resolve.js';
 
 export interface RegistryRouterDeps {
   db: RegistryDb | null;
@@ -42,7 +40,6 @@ export function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(payload);
 }
 
-/** 503 helper — used when the registry is disabled (no DB) but a /v1/* route was hit. */
 function registryDisabled(res: ServerResponse): void {
   json(res, 503, {
     error: 'registry_not_configured',
@@ -50,6 +47,11 @@ function registryDisabled(res: ServerResponse): void {
       'This relay has no portal registry configured. ' +
       'Set RELAY_REGISTRY_DATABASE_URL to enable /v1/portals/*.',
   });
+}
+
+function methodNotAllowed(res: ServerResponse, allowed: string): void {
+  res.setHeader('allow', allowed);
+  json(res, 405, { error: 'method_not_allowed', message: `Allowed: ${allowed}` });
 }
 
 /**
@@ -62,35 +64,61 @@ export async function dispatch(
   deps: RegistryRouterDeps,
 ): Promise<boolean> {
   const rawUrl = req.url ?? '/';
-  // Strip query string for path matching; URL parsing happens per-route.
   const qIndex = rawUrl.indexOf('?');
   const path = qIndex >= 0 ? rawUrl.slice(0, qIndex) : rawUrl;
 
   if (!path.startsWith('/v1/')) return false;
   const method = req.method ?? 'GET';
 
-  // /v1/healthz is the only route enabled in Step 6. It works even
-  // when no DB is configured (returns ok:false with a clear reason).
-  if (method === 'GET' && (path === '/v1/healthz' || path === '/v1/healthz/')) {
+  // ── /v1/healthz: works even without DB ────────────────────────────────
+  if (path === '/v1/healthz' || path === '/v1/healthz/') {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
     if (!deps.db) {
       json(res, 200, { ok: false, reason: 'registry_disabled' });
       return true;
     }
     const dbOk = await deps.db.ping();
-    json(res, dbOk ? 200 : 503, {
-      ok: dbOk,
-      reason: dbOk ? null : 'db_unreachable',
-    });
+    json(res, dbOk ? 200 : 503, { ok: dbOk, reason: dbOk ? null : 'db_unreachable' });
     return true;
   }
 
-  // Everything else under /v1/* lands here until Steps 8 + 9 wire in
-  // the real handlers. Refuse with a structured 503 if the registry
-  // is disabled, otherwise 501 (route exists, not implemented yet).
+  // Everything below needs a DB.
   if (!deps.db) {
     registryDisabled(res);
     return true;
   }
+
+  // ── /v1/portals/submit ────────────────────────────────────────────────
+  if (path === '/v1/portals/submit') {
+    if (method !== 'POST') { methodNotAllowed(res, 'POST'); return true; }
+    await handleSubmit(req, res, deps.db, deps.logger);
+    return true;
+  }
+
+  // ── /v1/portals/submissions/:id/status ───────────────────────────────
+  const statusMatch = path.match(/^\/v1\/portals\/submissions\/([^/]+)\/status\/?$/);
+  if (statusMatch && statusMatch[1]) {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleSubmissionStatus(req, res, deps.db, deps.logger, statusMatch[1]);
+    return true;
+  }
+
+  // ── /v1/portals/search ────────────────────────────────────────────────
+  if (path === '/v1/portals/search' || path === '/v1/portals/search/') {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleSearch(req, res, deps.db, deps.logger);
+    return true;
+  }
+
+  // ── /v1/portals/resolve/:address ─────────────────────────────────────
+  const resolveMatch = path.match(/^\/v1\/portals\/resolve\/([^/]+)\/?$/);
+  if (resolveMatch && resolveMatch[1]) {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleResolve(req, res, deps.db, deps.logger, resolveMatch[1]);
+    return true;
+  }
+
+  // Future: /v1/admin/* in Step 9. Fall through to 501.
   json(res, 501, {
     error: 'not_implemented',
     message: `Route ${method} ${path} is not yet implemented at this relay.`,
