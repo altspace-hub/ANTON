@@ -1,0 +1,58 @@
+[package]
+name = "merchant-backend"
+version = "0.0.1"
+edition = "2021"
+description = "ANTON Business merchant backend — settlement orchestration, email kvitto, KYB lookup."
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+# Web framework + async runtime
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors", "limit", "timeout"] }
+
+# Serde stack
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# DB
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "bigdecimal"] }
+
+# Crypto — must match the SDK byte-for-byte
+secp256k1 = { version = "0.30", features = ["recovery", "rand-std"] }
+sha2 = "0.10"
+sha3 = "0.10"   # keccak256 for PACS.008 hashing
+hex = "0.4"
+
+# Time, UUIDs, decimals
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+bigdecimal = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Errors
+thiserror = "2"
+anyhow = "1"
+
+# Config / env
+dotenvy = "0.15"
+
+# HTTP client (for Safello + FutureChain RPC)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+[dev-dependencies]
+# Snapshot tests for the SDK parity contract
+insta = { version = "1", features = ["json"] }
+# Spin up an ephemeral Postgres for integration tests
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "macros"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

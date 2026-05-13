@@ -1,0 +1,32 @@
+# Node / pnpm
+node_modules/
+dist/
+.turbo/
+.cache/
+
+# Expo / RN
+.expo/
+*.tsbuildinfo
+ios/
+android/
+web-build/
+
+# Rust
+target/
+**/*.rs.bk
+
+# sqlx offline mode cache (auto-generated, but committed for CI builds
+# without a live DB — keep this gitignore line OFF if you commit it)
+# .sqlx/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store

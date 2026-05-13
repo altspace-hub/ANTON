@@ -1,0 +1,14 @@
+{
+  "name": "@anton-business/shared-types",
+  "version": "0.0.1",
+  "description": "Cross-cutting TypeScript types for the ANTON Business app and the merchant-backend HTTP contract.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

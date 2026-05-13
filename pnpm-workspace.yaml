@@ -1,1 +1,3 @@
-packages: []
+packages:
+  - 'anton-business/apps/anton-business-app'
+  - 'anton-business/packages/*'
