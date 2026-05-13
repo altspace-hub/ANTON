@@ -413,6 +413,14 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
         paymentCoupling: c.payment_required ? { required: true } : undefined,
         tags: c.tags,
       }));
+      // Publisher's publicly-reachable origin URL — visitors (the Comm App,
+      // remote ANTON instances) join with /api/portals/visit/<address>/... to
+      // fetch pages + invoke capabilities. Read from the same env var the
+      // Companion App enrollment QR already uses (APP_GATEWAY_PUBLIC_URL).
+      // Falls back to undefined → descriptor builder simply omits the field,
+      // and visitors fall through to local/LAN-only behaviour.
+      const originEndpoint = (process.env.APP_GATEWAY_PUBLIC_URL ?? '').trim().replace(/\/+$/, '') || undefined;
+
       const built = buildDescriptor({
         portal: {
           name: identity.name,
@@ -421,6 +429,7 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
           category: identity.category as (typeof PORTAL_CATEGORIES)[number],
           contactHash: kp.contactHash,
           publicKeyHex: kp.publicKeyHex,
+          originEndpoint,
           surface: publish.surface_mode === 'external' && publish.external_primary_url
             ? { mode: 'external', url: publish.external_primary_url }
             : { mode: 'managed' },

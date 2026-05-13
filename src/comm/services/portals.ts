@@ -205,17 +205,42 @@ export async function fetchPortalPages(
 // ── Invoke ───────────────────────────────────────────────────────────────
 
 export interface InvokeResponse {
-  kind: 'invoke_response' | 'capability_not_found' | 'portal_offline' | 'invalid_input' | 'rate_limited' | 'not_supported';
+  kind:
+    | 'invoke_response'
+    | 'capability_not_found'
+    | 'portal_offline'
+    | 'invalid_input'
+    | 'rate_limited'
+    | 'not_supported'
+    | 'trust_required';
   inboxId?: string;
   output?: Record<string, unknown>;
   message?: string;
 }
 
+/** Server-side wire shape for the 200 path (matches portal-handler.ts
+ *  `CapabilityInvokeResponse` of kind `invoke_accepted`). The Comm App
+ *  translates it into `invoke_response` so the UI doesn't need to know
+ *  about the two naming conventions. */
+interface ServerInvokeAccepted {
+  kind: 'invoke_accepted';
+  responseId: string;
+  invocationId: string;
+  verb: string;
+  output: Record<string, unknown>;
+}
+
 /**
  * Invoke a capability on the portal owner's ANTON. The relay only does
- * discovery — this call goes directly to the descriptor's `aapEndpoint`
- * for the chosen capability. Caller passes the full PortalDescriptor
- * (from fetchPortalDescriptor) and the capability id.
+ * discovery — this call goes directly to the publisher's ANTON via the
+ * descriptor's `portal.originEndpoint`. URL pattern matches the existing
+ * server route (server/routes/portals.ts line 1183):
+ *
+ *   POST {originEndpoint}/api/portals/visit/{address}/capabilities/{capId}/invoke
+ *
+ * Note that `cap.aapEndpoint` is a SLUG (e.g. "messages"), not a full URL —
+ * we never fetch against it directly. It's an authoring hint for the
+ * publisher's own routing; visitors always use the address+capId pattern.
  *
  * The visitor's contact hash is added to the body so the portal owner's
  * inbox can attribute the invocation; no authentication is otherwise
@@ -230,10 +255,11 @@ export async function invokeCapability(
   if (!cap) {
     return { kind: 'capability_not_found', message: `No capability with id "${capabilityId}".` };
   }
-  if (!cap.aapEndpoint) {
+  const oa = originAddress(descriptor);
+  if (!oa) {
     return {
       kind: 'not_supported',
-      message: 'This capability has no aapEndpoint declared — direct invocation is not available yet.',
+      message: 'This portal has no originEndpoint declared — direct invocation is not available yet.',
     };
   }
 
@@ -241,22 +267,45 @@ export async function invokeCapability(
   const body = {
     input,
     visitorContactHash: me?.contactHash,
-    capabilityId,
   };
 
+  const invokeUrl =
+    `${oa.origin}/api/portals/visit/${encodeURIComponent(oa.address)}` +
+    `/capabilities/${encodeURIComponent(capabilityId)}/invoke`;
+
   try {
-    const res = await fetch(cap.aapEndpoint, {
+    const res = await fetch(invokeUrl, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok && res.status < 500) {
-      return (await res.json()) as InvokeResponse;
+    // 429 → server's express-rate-limit middleware. No JSON body guaranteed.
+    if (res.status === 429) {
+      return { kind: 'rate_limited', message: 'Too many requests. Try again later.' };
     }
+    // 4xx — server returns a structured response; pass through.
+    if (!res.ok && res.status < 500) {
+      const parsed = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+      if (parsed && typeof parsed.kind === 'string') {
+        return parsed as unknown as InvokeResponse;
+      }
+      return { kind: 'invalid_input', message: `Portal returned ${res.status}.` };
+    }
+    // 5xx / unreachable.
     if (!res.ok) {
       return { kind: 'portal_offline', message: `Portal returned ${res.status}.` };
     }
-    return (await res.json()) as InvokeResponse;
+    // 200 — translate the server's invoke_accepted into the Comm App's
+    // invoke_response shape so the existing CapabilityForm rendering works.
+    const parsed = (await res.json()) as ServerInvokeAccepted | InvokeResponse;
+    if (parsed.kind === 'invoke_accepted') {
+      return {
+        kind: 'invoke_response',
+        inboxId: parsed.invocationId,
+        output: parsed.output,
+      };
+    }
+    return parsed as InvokeResponse;
   } catch (err) {
     return { kind: 'portal_offline', message: (err as Error).message };
   }
