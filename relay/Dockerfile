@@ -42,6 +42,10 @@ USER node
 COPY --from=build --chown=node:node /build/node_modules ./node_modules
 COPY --from=build --chown=node:node /build/dist ./dist
 COPY --chown=node:node package.json ./
+# Migrations are plain SQL — copy them in so the registry migrate
+# runner can find them at /app/migrations. Run with:
+#   docker compose run --rm relay node dist/registry/migrate.js
+COPY --chown=node:node migrations ./migrations
 
 ENV NODE_ENV=production
 

@@ -312,9 +312,143 @@ If SSH itself is down (host is wedged), failover relay should already be handlin
 
 ---
 
+## 11 · Portal registry (v0.2+) — first-time setup
+
+Brings the `/v1/portals/*` HTTP endpoints online on a relay that's
+previously been WS-only. Adds a Postgres dependency. Pure-WS relays
+that don't want to host a directory should leave the registry env
+vars unset — the relay's `/v1/*` returns a structured 503 and
+nothing else changes.
+
+### 11.1 · Generate secrets (locally, on your dev box)
+
+Three values that NEVER cross the wire as plaintext:
+
+```bash
+openssl rand -hex 32   # POSTGRES_PASSWORD
+openssl rand -hex 32   # RELAY_OPERATOR_PASSWORD
+openssl rand -hex 32   # RELAY_OPERATOR_JWT_SECRET
+```
+
+Save them in a password manager. They go into the `.env` file on the
+server (§11.3).
+
+### 11.2 · Provision Postgres
+
+**Option A — bundled Postgres via docker-compose (recommended for first deploy):**
+The `registry-db` service in `docker-compose.yml` runs Postgres 16
+alpine bound only to `127.0.0.1:5432`. Data persists in a docker
+volume.
+
+**Option B — external Postgres:**
+Comment out the `registry-db` service in `docker-compose.yml` and
+point `RELAY_REGISTRY_DATABASE_URL` at your existing instance.
+First migration runs `CREATE EXTENSION pgcrypto` — either grant the
+relay's role superuser temporarily or pre-create it.
+
+### 11.3 · Drop in the env file on the server
+
+```bash
+cd /opt/anton-mesh-relay   # or wherever docker-compose.yml lives
+cp .env.example .env
+chmod 600 .env
+vi .env
+# Paste the three secrets from §11.1.
+```
+
+### 11.4 · Pull the new image + bring up the stack
+
+```bash
+# 0. Fetch the new code.
+git pull   # or docker pull <your-registry>/anton-mesh-relay:0.2.0
+
+# 1. Build the image (Dockerfile now copies migrations).
+docker compose build relay
+
+# 2. Bring up Postgres first; relay's depends_on waits for healthy.
+docker compose up -d registry-db
+
+# 3. Apply the schema migrations.
+docker compose run --rm relay node dist/registry/migrate.js
+# Expect: "migrations: applied=1 skipped=0"
+
+# 4. Bring up the relay. Graceful drain on the OLD container fires
+#    automatically; phones treat RELAY_DRAINING as "try the next
+#    relay now". With only 1 active session today, this is invisible.
+docker compose up -d relay
+
+# 5. Verify.
+curl -s https://relay.futurechain.eu/healthz | jq .
+# Look for: { ok:true, version:"0.2.0", registry_enabled:true, ... }
+curl -s https://relay.futurechain.eu/v1/healthz | jq .
+# Look for: { ok:true, reason:null }
+```
+
+### 11.5 · First operator login (smoke test)
+
+```bash
+# From your laptop, NOT the relay host:
+curl -s -X POST https://relay.futurechain.eu/v1/admin/login \
+  -H 'content-type: application/json' \
+  -d '{"password":"<RELAY_OPERATOR_PASSWORD>","operatorId":"op-daniel"}' | jq .
+# Expected: { token:"eyJ...", expiresAt:"...", operatorId:"op-daniel" }
+
+TOKEN="<the JWT>"
+curl -s -H "Authorization: Bearer $TOKEN" \
+  https://relay.futurechain.eu/v1/admin/submissions | jq .
+# Expected: { submissions: [], total: 0 }
+```
+
+### 11.6 · Wire ANTON Local
+
+On every ANTON Local instance that should publish to this registry:
+
+```bash
+# In the ANTON Local production env:
+RELAY_PORTAL_SUBMIT_URL=https://relay.futurechain.eu/v1
+```
+
+Then restart ANTON Local. New portals from the walkthrough will queue
+at the relay; existing portals stay local-only until re-finalized.
+
+### 11.7 · Rotate the JWT signing secret
+
+If `RELAY_OPERATOR_JWT_SECRET` is ever leaked:
+
+```bash
+# 1. Generate a new secret (§11.1).
+# 2. Edit .env, replace RELAY_OPERATOR_JWT_SECRET.
+# 3. docker compose up -d relay     # picks up the new env.
+# All existing operator tokens are invalidated; operators re-login.
+```
+
+### 11.8 · Registry DB backup
+
+Daily logical dump (cron on the relay host):
+
+```bash
+# /etc/cron.daily/anton-relay-registry-backup
+#!/bin/sh
+set -e
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+docker exec anton-relay-registry-db pg_dump -U relay -d relay_registry \
+  | gzip > /var/backups/relay-registry/relay-registry-$TS.sql.gz
+find /var/backups/relay-registry -name '*.sql.gz' -mtime +30 -delete
+```
+
+Restore:
+
+```bash
+gunzip -c /var/backups/relay-registry/relay-registry-*.sql.gz \
+  | docker exec -i anton-relay-registry-db psql -U relay -d relay_registry
+```
+
+---
+
 ## Reference
 
 - Spec: `docs/ANTON_MESH_SPEC.md`
 - Threat model: `docs/ANTON_MESH_THREAT_MODEL.md`
 - Self-host guide for SMEs/orgs: `docs/RELAY_OPERATOR_GUIDE.md`
 - DPIA template: `docs/RELAY_DPIA_TEMPLATE.md`
+- Portals discovery roadmap: `docs/PORTALS_DISCOVERY_ROADMAP.md`
