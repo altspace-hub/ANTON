@@ -6,6 +6,7 @@ import {
   type CapabilitySpec,
   type InvokeResponse,
 } from '../services/portals';
+import PortalPageScreen from './PortalPageScreen';
 
 interface Props {
   portalAddress: string;
@@ -30,9 +31,15 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
     return () => { cancelled = true; };
   }, [portalAddress]);
 
+  // Decide which sub-screen to render. The page-view branch uses a fixed
+  // flex layout (iframe + sticky capability bar), so it needs an
+  // overflow-hidden wrapper. The overview/form branches scroll vertically.
+  const inPageView = !!descriptor?.portal.originEndpoint && !activeCap;
+  const bodyClass = inPageView ? 'flex-1 min-h-0 overflow-hidden' : 'flex-1 overflow-y-auto';
+
   return (
-    <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
-      <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
+    <section className="flex flex-col h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
+      <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] flex-shrink-0">
         <button onClick={activeCap ? () => setActiveCap(null) : onBack} className="text-sm text-[var(--color-text-muted)]">
           ← Back
         </button>
@@ -42,7 +49,7 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
         <span className="w-12" />
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className={bodyClass}>
         {loading ? (
           <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Loading…</div>
         ) : error ? (
@@ -56,6 +63,8 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
           </div>
         ) : activeCap ? (
           <CapabilityForm descriptor={descriptor} capability={activeCap} onClose={() => setActiveCap(null)} />
+        ) : descriptor.portal.originEndpoint ? (
+          <PortalPageScreen descriptor={descriptor} onSelectCapability={setActiveCap} />
         ) : (
           <PortalOverview descriptor={descriptor} portalAddress={portalAddress} onSelectCapability={setActiveCap} />
         )}
