@@ -77,7 +77,7 @@ describe('/healthz', () => {
       ws_connections: number;
     };
     expect(body.ok).toBe(true);
-    expect(body.version).toBe('0.1.0');
+    expect(body.version).toBe('0.2.0');
     expect(typeof body.uptime_sec).toBe('number');
     expect(body.uptime_sec).toBeGreaterThanOrEqual(0);
     expect(body.active_sessions).toBe(0);
@@ -95,11 +95,21 @@ describe('/healthz', () => {
   });
 
   it('returns 404 for unknown paths (no info leak)', async () => {
-    const res = await fetch(`http://127.0.0.1:${port}/admin`);
+    // /admin is now a real route in v0.2.0 (operator UI). Use a
+    // genuinely unknown path so the 404 path is still exercised.
+    const res = await fetch(`http://127.0.0.1:${port}/no-such-path`);
     expect(res.status).toBe(404);
     const body = await res.text();
     // Body is just "not found\n" — no relay internals.
     expect(body).toBe('not found\n');
+  });
+
+  it('/admin returns 503 when registry is not configured', async () => {
+    // Without RELAY_REGISTRY_DATABASE_URL, the operator UI page is
+    // gated off — no point showing a login form against a registry
+    // that doesn't exist. Same gate as /v1/portals/*.
+    const res = await fetch(`http://127.0.0.1:${port}/admin`);
+    expect(res.status).toBe(503);
   });
 });
 

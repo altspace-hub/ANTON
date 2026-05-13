@@ -83,6 +83,7 @@ import { bytesToHex } from './primitives.js';
 import { MetricsRegistry } from './metrics.js';
 import { createRegistryDb, type RegistryDb } from './registry/db.js';
 import { dispatch as dispatchRegistry } from './registry/routes.js';
+import { ADMIN_UI_HTML } from './admin-ui.js';
 import { pino, type Logger } from 'pino';
 
 // ── Configuration ────────────────────────────────────────────────────
@@ -254,6 +255,30 @@ export class RelayServer {
         if (req.method === 'GET' && (url === '/metrics' || url === '/metrics/')) {
           res.writeHead(200, { 'content-type': 'text/plain; version=0.0.4; charset=utf-8' });
           res.end(this.metrics.renderProm(this.match.sessionCount(), this.match.instanceCount()));
+          return;
+        }
+        // /admin or /admin/ → single-page operator UI. Only served when
+        // the registry is configured (no point showing a login form
+        // that can't authenticate). The HTML is a static string from
+        // admin-ui.ts; all dynamic data comes from /v1/admin/* fetches
+        // the page makes after login.
+        if (req.method === 'GET' && (url === '/admin' || url === '/admin/')) {
+          if (!this.registryDb) {
+            res.writeHead(503, { 'content-type': 'text/plain' });
+            res.end('registry not configured on this relay\n');
+            return;
+          }
+          res.writeHead(200, {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'no-store',
+            // The page only talks to same-origin /v1/admin/*; lock that down.
+            'content-security-policy':
+              "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'",
+            'x-content-type-options': 'nosniff',
+            'x-frame-options': 'DENY',
+            'referrer-policy': 'no-referrer',
+          });
+          res.end(ADMIN_UI_HTML);
           return;
         }
         // /v1/* → portal registry dispatcher. Returns false when path
