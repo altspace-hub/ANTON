@@ -39,6 +39,7 @@ import { scanLan, listKnownNeighbors } from '../services/portals/portal-lan-disc
 import { rebuildPortalDescriptor, readCurrentCapabilities } from '../services/portals/portal-capabilities-editor.js';
 import { verifyAndPersist } from '../services/portals/external-url-verifier.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
+import { fetchSubmissionStatus, RelaySubmitError } from '../services/registry-client/relay-submit.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
 // Used on /portals/:id/* mutations after requireAuth. Verifies that the
@@ -368,7 +369,14 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.post('/portals/walkthroughs/:id/finalize', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const result = await walkthroughs.finalizeSession(req.params.id);
+      // Step 11: caller may pass kyc fields in the body to trigger
+      // relay submission. The walkthrough engine validates the shape
+      // by passing it through to submitToRelay; we don't double-validate
+      // here so the relay's error codes propagate verbatim.
+      const kyc = (req.body && typeof req.body === 'object' && 'kyc' in req.body)
+        ? (req.body as { kyc?: unknown }).kyc as never
+        : undefined;
+      const result = await walkthroughs.finalizeSession(req.params.id, { kyc });
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -673,6 +681,69 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
         db.get<{ n: number }>(`SELECT COUNT(*)::int AS n FROM portal_capability_invocations WHERE portal_id = ? AND status = 'pending'`, req.params.id),
       ]);
       res.json({ portal, pageCount: pageCount?.n ?? 0, inboxPending: inboxPending?.n ?? 0 });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Step 11: poll the relay for the current submission status of this
+  // portal. The portal row's metadata.relayStatus is whatever was last
+  // observed; this endpoint refreshes it by hitting the relay's
+  // /v1/portals/submissions/:id/status, then persists the result so
+  // subsequent reads don't need a round-trip.
+  //
+  // Returns 200 with the current status even if the relay can't be
+  // reached — the caller gets stale-but-known state plus a 'syncOk'
+  // field so the UI can show "last refreshed at" honestly.
+  router.get('/portals/:id/relay-status', requireAuth, requirePortalOwner, async (req, res) => {
+    try {
+      const row = await db.get<{ metadata: Record<string, unknown> | string | null }>(
+        `SELECT metadata FROM portals WHERE id = ?`,
+        req.params.id,
+      );
+      if (!row) return res.status(404).json({ error: 'Portal not found' });
+      const meta = typeof row.metadata === 'string'
+        ? (JSON.parse(row.metadata) as Record<string, unknown>)
+        : (row.metadata ?? {});
+      const submissionId = meta.relaySubmissionId as string | undefined;
+      const baseUrl = meta.relayBaseUrl as string | undefined;
+      if (!submissionId || !baseUrl) {
+        return res.json({
+          syncOk: true,
+          submitted: false,
+          message: 'Portal has not been submitted to the relay.',
+        });
+      }
+      try {
+        const status = await fetchSubmissionStatus(baseUrl, submissionId);
+        // Patch metadata if anything changed.
+        const patch: Record<string, unknown> = {
+          relayStatus: status.status,
+          relayReviewedAt: status.reviewedAt,
+          relayRejectionReason: status.rejectionReason,
+          relayLastSyncedAt: new Date().toISOString(),
+        };
+        await db.run(
+          `UPDATE portals SET metadata = metadata || ?::jsonb WHERE id = ?`,
+          JSON.stringify(patch),
+          req.params.id,
+        );
+        res.json({ syncOk: true, submitted: true, ...status });
+      } catch (err) {
+        // Network / 5xx — return stale state from metadata with a
+        // signal that the sync failed.
+        const errorCode = err instanceof RelaySubmitError ? err.code : 'sync_failed';
+        res.json({
+          syncOk: false,
+          submitted: true,
+          submissionId,
+          stale: true,
+          stickyStatus: meta.relayStatus ?? null,
+          stickyReviewedAt: meta.relayReviewedAt ?? null,
+          stickyRejectionReason: meta.relayRejectionReason ?? null,
+          syncError: errorCode,
+        });
+      }
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }

@@ -37,6 +37,11 @@ import { encryptPortalKey } from '../../lib/portal-key-cipher.js';
 import { buildDescriptor, type CapabilityDeclaration } from '../capability-descriptor/builder.js';
 import { createPortalDatabaseService } from './portal-database-service.js';
 import { createRegistryClient, RegistryError } from '../registry-client/index.js';
+import {
+  submitToRelay,
+  RelaySubmitError,
+  type RelayKycFields,
+} from '../registry-client/relay-submit.js';
 
 const log = childLogger('portal-walkthrough');
 import {
@@ -212,10 +217,33 @@ export interface AdvanceResult {
 export interface FinalizeResult {
   portalId: string;
   portalAddress: string;
-  /** True only if PORTAL_REGISTRY_URL is set AND the registry accepted the register op. */
+  /** True only if PORTAL_REGISTRY_URL is set AND the legacy registry
+   *  protocol accepted the register op. The legacy path stays around
+   *  for any future federation with a stand-alone registry server. */
   registeredOk: boolean;
-  /** Populated when registry submission failed; the local portal is still usable. */
+  /** Populated when legacy registry submission failed. */
   registerError?: string;
+  /** Step 11: when RELAY_PORTAL_SUBMIT_URL is set AND kyc fields were
+   *  provided, this is the UUID returned by the relay's
+   *  /v1/portals/submit endpoint. The portal sits in the relay's
+   *  review queue until an operator approves it. */
+  relaySubmissionId?: string;
+  /** Status reported by the relay at submit time. Always 'pending' on
+   *  success; the management UI polls /v1/portals/submissions/:id
+   *  /status to track approval. */
+  relayStatus?: 'pending' | 'in_review' | 'approved' | 'rejected';
+  /** Populated when the relay submission failed (network, validation,
+   *  reserved-name collision, etc.). The local portal is still usable
+   *  — relay submission is best-effort. */
+  relayError?: string;
+}
+
+export interface FinalizeOptions {
+  /** KYC fields for Tier 3 self-service submission to the relay.
+   *  When omitted, the relay submission is skipped (logged + the
+   *  local portal still ships). Required for any portal that should
+   *  be publicly discoverable via the relay's search. */
+  kyc?: RelayKycFields;
 }
 
 // ── Engine ─────────────────────────────────────────────────────────────────
@@ -226,7 +254,7 @@ export interface WalkthroughEngine {
   generatePhasePrompt(sessionId: string): Promise<PhasePrompt>;
   advanceSession(sessionId: string, phaseOutput: unknown): Promise<AdvanceResult>;
   abandonSession(sessionId: string): Promise<void>;
-  finalizeSession(sessionId: string): Promise<FinalizeResult>;
+  finalizeSession(sessionId: string, options?: FinalizeOptions): Promise<FinalizeResult>;
 }
 
 export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine {
@@ -356,7 +384,7 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
       );
     },
 
-    async finalizeSession(sessionId) {
+    async finalizeSession(sessionId, options = {}) {
       const session = await loadSession(sessionId);
       if (!session) throw new Error(`Session ${sessionId} not found`);
       if (session.status !== 'active') {
@@ -552,7 +580,78 @@ export function createWalkthroughEngine(db: DatabaseAdapter): WalkthroughEngine 
         log.info({ portalId, portalAddress }, 'PORTAL_REGISTRY_URL not set — local portal created, registry submission skipped');
       }
 
-      return { portalId, portalAddress, registeredOk, registerError };
+      // Step 11: relay submission. Same best-effort posture as the
+      // legacy registry path above — a failure here never undoes the
+      // local portal insert, just logs and lets the user retry.
+      //
+      // Gated by:
+      //   1. RELAY_PORTAL_SUBMIT_URL env var (e.g. https://relay.futurechain.eu/v1)
+      //   2. KYC fields passed to finalizeSession (Tier 3 self-service
+      //      requires them; the relay rejects without)
+      //
+      // Both missing → log + skip (local-only portal).
+      let relaySubmissionId: string | undefined;
+      let relayStatus: FinalizeResult['relayStatus'];
+      let relayError: string | undefined;
+      const relayBaseUrl = process.env.RELAY_PORTAL_SUBMIT_URL;
+      if (relayBaseUrl && options.kyc) {
+        try {
+          const result = await submitToRelay({
+            relayBaseUrl,
+            name: identity.name,
+            namespace: identity.namespace,
+            descriptorJson: built.descriptor as Record<string, unknown>,
+            publicKeyHex: kp.publicKeyHex,
+            privateKeyPem: kp.privateKeyPem,
+            kyc: options.kyc,
+          });
+          relaySubmissionId = result.submissionId;
+          relayStatus = result.status;
+          // Patch the portal's metadata with relay state so the
+          // management UI can render a status badge without polling
+          // the relay just to know "did we even submit?".
+          await db.run(
+            `UPDATE portals
+             SET metadata = metadata || ?::jsonb
+             WHERE id = ?`,
+            JSON.stringify({
+              relayStatus: result.status,
+              relaySubmissionId: result.submissionId,
+              relaySubmittedAt: result.submittedAt,
+              relayBaseUrl,
+            }),
+            portalId,
+          );
+          log.info({ portalId, portalAddress, submissionId: result.submissionId },
+            'portal submitted to relay; awaiting operator review');
+        } catch (err) {
+          relayError = err instanceof RelaySubmitError
+            ? `${err.code}: ${err.message}`
+            : err instanceof Error ? err.message : String(err);
+          await db.run(
+            `UPDATE portals
+             SET metadata = metadata || ?::jsonb
+             WHERE id = ?`,
+            JSON.stringify({ relayError, relayBaseUrl }),
+            portalId,
+          );
+          log.warn({ portalId, portalAddress, error: relayError },
+            'relay submission failed (local portal still usable)');
+        }
+      } else if (relayBaseUrl && !options.kyc) {
+        relayError = 'kyc_fields_missing';
+        log.warn({ portalId, portalAddress },
+          'RELAY_PORTAL_SUBMIT_URL is set but no KYC provided to finalize — relay submission skipped');
+      } else {
+        log.info({ portalId, portalAddress },
+          'RELAY_PORTAL_SUBMIT_URL not set — relay submission skipped (local-only portal)');
+      }
+
+      return {
+        portalId, portalAddress,
+        registeredOk, registerError,
+        relaySubmissionId, relayStatus, relayError,
+      };
     },
   };
 }
