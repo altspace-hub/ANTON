@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { searchPortals, type PortalSearchResult } from '../services/portals';
+import { Ico } from '../components/Ico';
+import PortalHelpSheet from '../components/PortalHelpSheet';
 
 interface Props {
   onOpenPortal: (address: string) => void;
@@ -20,6 +22,7 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
   const [results, setResults] = useState<PortalSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reqIdRef = useRef(0);
 
@@ -57,12 +60,28 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
 
   return (
     <section className="flex flex-col">
-      <div className="px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Portals</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Browse and visit ANTON portals.
-        </p>
+      <div className="px-5 pt-6 pb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Portals</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Browse and visit ANTON portals.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          aria-label="How to publish a portal"
+          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <Ico name="helpCircle" size={20} color="var(--color-text-muted)" />
+        </button>
       </div>
+
+      <PortalHelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       <div className="px-5 pb-3">
         <input
