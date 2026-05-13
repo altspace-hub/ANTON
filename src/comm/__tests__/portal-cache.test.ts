@@ -249,3 +249,59 @@ describe('fetchPortalPage with cache', () => {
     expect((await readPage(a, '/about') as { html: string }).html).toBe('B');
   });
 });
+
+// Staleness callback contract — feeds the "Offline · showing cached copy"
+// banner in PortalPageScreen. Fires when (and only when) the result came
+// from cache because the network call failed.
+describe('onCacheHit callback', () => {
+  it('does NOT fire on a fresh 200 response', async () => {
+    const a = addr();
+    const desc = baseDescriptor(a);
+    (globalThis.fetch as Mock).mockResolvedValueOnce(
+      new Response(JSON.stringify({ kind: 'page', html: 'fresh', title: null }), { status: 200 }),
+    );
+    const onCacheHit = vi.fn();
+    await fetchPortalPage(desc, '/', onCacheHit);
+    expect(onCacheHit).not.toHaveBeenCalled();
+  });
+
+  it('fires when a 5xx falls back to cache', async () => {
+    const a = addr();
+    const desc = baseDescriptor(a);
+    await writePage(a, '/', { html: 'cached', title: null });
+    (globalThis.fetch as Mock).mockResolvedValueOnce(new Response('', { status: 502 }));
+    const onCacheHit = vi.fn();
+    await fetchPortalPage(desc, '/', onCacheHit);
+    expect(onCacheHit).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires when a network throw falls back to cache', async () => {
+    const a = addr();
+    const desc = baseDescriptor(a);
+    await writePage(a, '/', { html: 'cached', title: null });
+    (globalThis.fetch as Mock).mockRejectedValueOnce(new TypeError('NetworkError'));
+    const onCacheHit = vi.fn();
+    await fetchPortalPage(desc, '/', onCacheHit);
+    expect(onCacheHit).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT fire when the network throws and there is no cache', async () => {
+    const a = addr();
+    const desc = baseDescriptor(a);
+    (globalThis.fetch as Mock).mockRejectedValueOnce(new TypeError('NetworkError'));
+    const onCacheHit = vi.fn();
+    await expect(fetchPortalPage(desc, '/', onCacheHit)).rejects.toThrow();
+    expect(onCacheHit).not.toHaveBeenCalled();
+  });
+
+  it('fetchPortalPages also exposes onCacheHit', async () => {
+    const a = addr();
+    const desc = baseDescriptor(a);
+    await writePages(a, [{ path: '/', title: 'Home', sortOrder: 0 }]);
+    (globalThis.fetch as Mock).mockRejectedValueOnce(new TypeError('NetworkError'));
+    const onCacheHit = vi.fn();
+    const out = await fetchPortalPages(desc, onCacheHit);
+    expect(out).toEqual([{ path: '/', title: 'Home', sortOrder: 0 }]);
+    expect(onCacheHit).toHaveBeenCalledTimes(1);
+  });
+});

@@ -60,12 +60,20 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
   const [page, setPage] = useState<PortalPage | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
+  // `stale` is true when the current `page` came from the IndexedDB
+  // cache because the publisher's origin was unreachable. Cleared on
+  // every new fetch attempt and only re-set if the cache fallback
+  // actually fires. The page-list cache is tracked separately because
+  // either source of staleness justifies the banner.
+  const [pageStale, setPageStale] = useState(false);
+  const [pagesStale, setPagesStale] = useState(false);
 
   // List the visible pages once per descriptor. Failure is benign — we
   // fall back to assuming there's a single page at "/" and proceed.
   useEffect(() => {
     let cancelled = false;
-    fetchPortalPages(descriptor)
+    setPagesStale(false);
+    fetchPortalPages(descriptor, () => { if (!cancelled) setPagesStale(true); })
       .then((list) => { if (!cancelled) setPages(list ?? []); })
       .catch(() => { if (!cancelled) setPages([]); });
     return () => { cancelled = true; };
@@ -76,7 +84,8 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
     let cancelled = false;
     setPageLoading(true);
     setPageError(null);
-    fetchPortalPage(descriptor, currentPath)
+    setPageStale(false);
+    fetchPortalPage(descriptor, currentPath, () => { if (!cancelled) setPageStale(true); })
       .then((p) => {
         if (cancelled) return;
         setPage(p);
@@ -89,6 +98,8 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
       });
     return () => { cancelled = true; };
   }, [descriptor, currentPath]);
+
+  const isStale = pageStale || pagesStale;
 
   const capabilities = descriptor.capabilities ?? [];
   const showTabs = (pages?.length ?? 0) > 1;
@@ -118,6 +129,17 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
             );
           })}
         </nav>
+      )}
+
+      {isStale && !pageLoading && !pageError && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-medium border-b border-[#E5B07A]/40 bg-[#FDF4E7] text-[#8A5A1E]"
+        >
+          <span aria-hidden="true">●</span>
+          <span>Offline — showing the last cached copy. Publisher is unreachable.</span>
+        </div>
       )}
 
       <div className="flex-1 min-h-0 bg-[var(--color-bg)]">

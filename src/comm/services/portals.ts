@@ -198,10 +198,16 @@ function originAddress(descriptor: PortalDescriptor): { origin: string; address:
  *
  *  Same network-first / stale-on-failure rule as fetchPortalDescriptor:
  *  a real 404 is authoritative (page was removed), but any network
- *  failure or 5xx falls back to the last cached copy if one exists. */
+ *  failure or 5xx falls back to the last cached copy if one exists.
+ *
+ *  `onCacheHit` is an optional side-channel for the UI to learn that
+ *  this call was served from cache (i.e. publisher was unreachable).
+ *  Kept as a callback rather than baked into the return type so existing
+ *  callers and tests don't need to be re-typed. */
 export async function fetchPortalPage(
   descriptor: PortalDescriptor,
   path: string,
+  onCacheHit?: () => void,
 ): Promise<PortalPage | null> {
   const oa = originAddress(descriptor);
   if (!oa) return null;
@@ -213,7 +219,7 @@ export async function fetchPortalPage(
     if (res.status === 404) return null;
     if (res.status >= 500) {
       const cached = await cacheReadPage<PortalPage>(oa.address, path || '/');
-      if (cached) return cached;
+      if (cached) { onCacheHit?.(); return cached; }
       throw new Error(`Page fetch failed (${res.status})`);
     }
     if (!res.ok) throw new Error(`Page fetch failed (${res.status})`);
@@ -224,15 +230,18 @@ export async function fetchPortalPage(
     return page;
   } catch (err) {
     const cached = await cacheReadPage<PortalPage>(oa.address, path || '/');
-    if (cached) return cached;
+    if (cached) { onCacheHit?.(); return cached; }
     throw err;
   }
 }
 
 /** List visible pages for a portal. Returns null when origin isn't set;
- *  empty array when origin is set but the portal exposes no pages. */
+ *  empty array when origin is set but the portal exposes no pages.
+ *  `onCacheHit` mirrors fetchPortalPage — fires when the network call
+ *  fails and a cached page list is returned instead. */
 export async function fetchPortalPages(
   descriptor: PortalDescriptor,
+  onCacheHit?: () => void,
 ): Promise<PortalPageMeta[] | null> {
   const oa = originAddress(descriptor);
   if (!oa) return null;
@@ -242,7 +251,7 @@ export async function fetchPortalPages(
     if (res.status === 404) return [];
     if (res.status >= 500) {
       const cached = await cacheReadPages<PortalPageMeta[]>(oa.address);
-      if (cached) return cached;
+      if (cached) { onCacheHit?.(); return cached; }
       throw new Error(`Pages list failed (${res.status})`);
     }
     if (!res.ok) throw new Error(`Pages list failed (${res.status})`);
@@ -252,7 +261,7 @@ export async function fetchPortalPages(
     return pages;
   } catch (err) {
     const cached = await cacheReadPages<PortalPageMeta[]>(oa.address);
-    if (cached) return cached;
+    if (cached) { onCacheHit?.(); return cached; }
     throw err;
   }
 }
