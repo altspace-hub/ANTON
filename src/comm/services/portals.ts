@@ -1,26 +1,36 @@
 /**
- * portals.ts — client for the ANTON Portals visitor surface.
+ * portals.ts — client for the ANTON Portals relay registry.
  *
- * All endpoints here are public (no auth) on any ANTON instance running
- * Visitor Layer v0.8+. The Comm App points at whatever hosted ANTON
- * exposes the public portal surface (via VITE_COMM_PORTALS_BASE), or
- * proxies through Vite to a local heavy ANTON in dev.
+ * Step 12 wired the Comm App against relay.futurechain.eu's /v1/*
+ * endpoints (the Step 8 + 9 work). Two responsibilities the relay
+ * owns:
  *
- * Endpoints used:
- *   GET  /api/portals/search?text=&verbs=&categories=
- *   GET  /api/portals/visit/{address}/capabilities
- *   POST /api/portals/visit/{address}/capabilities/{capId}/inquire
- *   POST /api/portals/visit/{address}/capabilities/{capId}/invoke
+ *   - Search (`searchPortals`) — calls GET /v1/portals/search. Returns
+ *     approved, public-indexed portals.
+ *   - Resolve (`fetchPortalDescriptor`) — calls GET
+ *     /v1/portals/resolve/:address. Returns the canonical descriptor +
+ *     capability summary in a single round-trip; no separate
+ *     descriptor fetch.
  *
- * Server reference: server/routes/portals.ts §605, §1080-1140.
+ * Capability invocation is NOT routed through the relay — the relay
+ * does discovery only. `invokeCapability` reads the per-capability
+ * `aapEndpoint` from the descriptor and POSTs directly to it. That
+ * endpoint is the portal owner's hosted ANTON; the descriptor's
+ * Ed25519 signature is the trust root.
+ *
+ * Base URL is taken from VITE_COMM_PORTALS_BASE at build time. For a
+ * production Comm App APK, this is the relay's HTTPS origin (e.g.
+ * `https://relay.futurechain.eu`). For local dev, point it at
+ * `http://10.0.2.2:8443` for an Android emulator hitting the
+ * developer's localhost relay.
  */
 
 import { getIdentity } from './identity';
 
-const PORTALS_BASE = (import.meta.env.VITE_COMM_PORTALS_BASE as string | undefined) ?? '';
+const PORTALS_BASE = (import.meta.env.VITE_COMM_PORTALS_BASE as string | undefined) ?? 'https://relay.futurechain.eu';
 
 function url(path: string): string {
-  return `${PORTALS_BASE}${path}`;
+  return `${PORTALS_BASE.replace(/\/+$/, '')}${path}`;
 }
 
 // ── Search ───────────────────────────────────────────────────────────────
@@ -30,16 +40,20 @@ export interface PortalSearchResult {
   displayTitle: string;
   description?: string;
   category?: string;
+  contactHash?: string;
+  signingPubkeyHex?: string;
   capabilityVerbs?: string[];
   tags?: string[];
   serviceAreas?: string[];
   languages?: string[];
-  lastSeenAt?: string;
+  tier?: 'tier2_claimed' | 'tier3_selfservice';
+  approvedAt?: string;
+  relevanceScore?: number | null;
 }
 
 export interface PortalSearchResponse {
   results: PortalSearchResult[];
-  total?: number;
+  total: number;
 }
 
 export interface PortalSearchOpts {
@@ -58,7 +72,7 @@ export async function searchPortals(opts: PortalSearchOpts = {}): Promise<Portal
   if (opts.limit) params.set('limit', String(opts.limit));
   if (opts.offset) params.set('offset', String(opts.offset));
   const qs = params.toString();
-  const res = await fetch(url(`/api/portals/search${qs ? '?' + qs : ''}`));
+  const res = await fetch(url(`/v1/portals/search${qs ? '?' + qs : ''}`));
   if (!res.ok) throw new Error(`Search failed (${res.status})`);
   return res.json() as Promise<PortalSearchResponse>;
 }
@@ -78,7 +92,7 @@ export interface CapabilitySpec {
 }
 
 export interface PortalDescriptor {
-  schemaVersion: string;
+  schemaVersion?: string;
   descriptorId?: string;
   issuedAt?: string;
   portal: {
@@ -94,45 +108,82 @@ export interface PortalDescriptor {
   payment?: Record<string, unknown>;
 }
 
+interface ResolveResponseBody {
+  found: boolean;
+  portalAddress?: string;
+  contactHash?: string;
+  signingPubkeyHex?: string;
+  descriptor?: PortalDescriptor;
+  capabilitySummary?: Record<string, unknown>;
+  tier?: string;
+  approvedAt?: string;
+}
+
 export async function fetchPortalDescriptor(address: string): Promise<PortalDescriptor | null> {
-  const res = await fetch(url(`/api/portals/visit/${encodeURIComponent(address)}/capabilities`));
+  const res = await fetch(url(`/v1/portals/resolve/${encodeURIComponent(address)}`));
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Descriptor fetch failed (${res.status})`);
-  const body = await res.json() as { descriptor: PortalDescriptor };
+  const body = (await res.json()) as ResolveResponseBody;
+  if (!body.found || !body.descriptor) return null;
   return body.descriptor;
 }
 
 // ── Invoke ───────────────────────────────────────────────────────────────
 
 export interface InvokeResponse {
-  kind: 'invoke_response' | 'capability_not_found' | 'portal_offline' | 'invalid_input' | 'rate_limited';
+  kind: 'invoke_response' | 'capability_not_found' | 'portal_offline' | 'invalid_input' | 'rate_limited' | 'not_supported';
   inboxId?: string;
   output?: Record<string, unknown>;
   message?: string;
 }
 
+/**
+ * Invoke a capability on the portal owner's ANTON. The relay only does
+ * discovery — this call goes directly to the descriptor's `aapEndpoint`
+ * for the chosen capability. Caller passes the full PortalDescriptor
+ * (from fetchPortalDescriptor) and the capability id.
+ *
+ * The visitor's contact hash is added to the body so the portal owner's
+ * inbox can attribute the invocation; no authentication is otherwise
+ * required at v0.1.
+ */
 export async function invokeCapability(
-  portalAddress: string,
+  descriptor: PortalDescriptor,
   capabilityId: string,
   input: Record<string, unknown>,
 ): Promise<InvokeResponse> {
+  const cap = descriptor.capabilities?.find((c) => c.id === capabilityId);
+  if (!cap) {
+    return { kind: 'capability_not_found', message: `No capability with id "${capabilityId}".` };
+  }
+  if (!cap.aapEndpoint) {
+    return {
+      kind: 'not_supported',
+      message: 'This capability has no aapEndpoint declared — direct invocation is not available yet.',
+    };
+  }
+
   const me = getIdentity();
   const body = {
     input,
     visitorContactHash: me?.contactHash,
+    capabilityId,
   };
-  const res = await fetch(
-    url(`/api/portals/visit/${encodeURIComponent(portalAddress)}/capabilities/${encodeURIComponent(capabilityId)}/invoke`),
-    {
+
+  try {
+    const res = await fetch(cap.aapEndpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
-    },
-  );
-  if (!res.ok && res.status < 500) {
-    // 400/404/429/503 return structured kind in the body
-    return res.json() as Promise<InvokeResponse>;
+    });
+    if (!res.ok && res.status < 500) {
+      return (await res.json()) as InvokeResponse;
+    }
+    if (!res.ok) {
+      return { kind: 'portal_offline', message: `Portal returned ${res.status}.` };
+    }
+    return (await res.json()) as InvokeResponse;
+  } catch (err) {
+    return { kind: 'portal_offline', message: (err as Error).message };
   }
-  if (!res.ok) throw new Error(`Invoke failed (${res.status})`);
-  return res.json() as Promise<InvokeResponse>;
 }

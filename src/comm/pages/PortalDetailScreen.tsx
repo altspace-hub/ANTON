@@ -55,7 +55,7 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
             </div>
           </div>
         ) : activeCap ? (
-          <CapabilityForm portalAddress={portalAddress} capability={activeCap} onClose={() => setActiveCap(null)} />
+          <CapabilityForm descriptor={descriptor} capability={activeCap} onClose={() => setActiveCap(null)} />
         ) : (
           <PortalOverview descriptor={descriptor} portalAddress={portalAddress} onSelectCapability={setActiveCap} />
         )}
@@ -124,8 +124,8 @@ function PortalOverview({ descriptor, portalAddress, onSelectCapability }: {
   );
 }
 
-function CapabilityForm({ portalAddress, capability, onClose }: {
-  portalAddress: string;
+function CapabilityForm({ descriptor, capability, onClose }: {
+  descriptor: PortalDescriptor;
   capability: CapabilitySpec;
   onClose: () => void;
 }) {
@@ -145,7 +145,7 @@ function CapabilityForm({ portalAddress, capability, onClose }: {
         const v = values[f.name];
         if (v !== undefined && v !== '') input[f.name] = v;
       }
-      const r = await invokeCapability(portalAddress, capability.id, input);
+      const r = await invokeCapability(descriptor, capability.id, input);
       setResult(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invoke failed');
