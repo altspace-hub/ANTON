@@ -109,6 +109,10 @@ export const DESCRIPTOR_SCHEMA = {
         category: { enum: PORTAL_CATEGORIES },
         contactHash: { type: 'string', pattern: '^ANTON-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$' },
         publicKey: { type: 'string', minLength: 40 },
+        // Publisher's publicly-reachable HTTPS origin (no trailing slash). Visitors join with
+        // /api/portals/visit/<address>/page?path=... to fetch pages and /capabilities/<id>/invoke
+        // to invoke capabilities. Signed into the descriptor so a relay can't tamper with it.
+        originEndpoint: { type: 'string', format: 'uri', maxLength: 500 },
         // Optional surface block — describes where the human-facing HTML
         // lives. AAP capability endpoints remain on ANTON regardless of
         // surface.mode so the trust chain is preserved.

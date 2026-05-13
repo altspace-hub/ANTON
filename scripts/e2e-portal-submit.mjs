@@ -67,6 +67,10 @@ async function main() {
       category: 'personal',
       contactHash,
       publicKey: rawHex,
+      // Phase-1 page-fetch: Comm App joins this with /api/portals/visit/...
+      // For the e2e test we point at a stub URL — there's no real publisher
+      // running. Override with PUBLISHER_ORIGIN if you have one online.
+      originEndpoint: process.env.PUBLISHER_ORIGIN ?? 'https://publisher-stub.example.com',
     },
     identity: {
       humanContact: { available: true, displayName: 'Daniel (E2E)' },

@@ -103,6 +103,14 @@ export interface PortalDescriptor {
     category?: string;
     contactHash?: string;
     publicKey?: string;
+    /** Publisher's publicly-reachable HTTPS origin (no trailing slash).
+     *  Required for the Comm App to fetch pages + invoke capabilities. */
+    originEndpoint?: string;
+    surface?: {
+      mode: 'managed' | 'external';
+      url?: string;
+      verifiedAt?: string;
+    };
   };
   capabilities?: CapabilitySpec[];
   payment?: Record<string, unknown>;
@@ -126,6 +134,72 @@ export async function fetchPortalDescriptor(address: string): Promise<PortalDesc
   const body = (await res.json()) as ResolveResponseBody;
   if (!body.found || !body.descriptor) return null;
   return body.descriptor;
+}
+
+// ── Page fetch ───────────────────────────────────────────────────────────
+//
+// Pages live on the publisher's ANTON, NOT the relay (relay does discovery
+// only — preserves DSA Art. 4-5 safe harbor). The descriptor declares
+// `portal.originEndpoint` which is the publisher's publicly-reachable
+// HTTPS base URL. We join with /api/portals/visit/<address>/page(s).
+//
+// Failures are split:
+//   - `null` from fetchPortalPage:    no originEndpoint declared, or 404
+//   - throw from fetchPortalPage:     network error or 5xx
+// The Comm App's PortalPageScreen surfaces these as either "Capabilities
+// only" (no surface declared) or "Publisher offline" (origin unreachable).
+
+export interface PortalPage {
+  html: string;
+  title: string | null;
+}
+
+export interface PortalPageMeta {
+  path: string;
+  title: string | null;
+  sortOrder: number;
+}
+
+function originAddress(descriptor: PortalDescriptor): { origin: string; address: string } | null {
+  const origin = descriptor.portal.originEndpoint?.trim().replace(/\/+$/, '');
+  if (!origin) return null;
+  const address = descriptor.portal.name;
+  if (!address) return null;
+  return { origin, address };
+}
+
+/** Fetch a single page from the publisher's ANTON. Returns null if
+ *  the descriptor has no originEndpoint or the page is not found. */
+export async function fetchPortalPage(
+  descriptor: PortalDescriptor,
+  path: string,
+): Promise<PortalPage | null> {
+  const oa = originAddress(descriptor);
+  if (!oa) return null;
+  const pageUrl =
+    `${oa.origin}/api/portals/visit/${encodeURIComponent(oa.address)}/page` +
+    `?path=${encodeURIComponent(path || '/')}`;
+  const res = await fetch(pageUrl);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Page fetch failed (${res.status})`);
+  const body = (await res.json()) as { kind?: string; html?: string; title?: string | null };
+  if (body.kind !== 'page' || typeof body.html !== 'string') return null;
+  return { html: body.html, title: body.title ?? null };
+}
+
+/** List visible pages for a portal. Returns null when origin isn't set;
+ *  empty array when origin is set but the portal exposes no pages. */
+export async function fetchPortalPages(
+  descriptor: PortalDescriptor,
+): Promise<PortalPageMeta[] | null> {
+  const oa = originAddress(descriptor);
+  if (!oa) return null;
+  const listUrl = `${oa.origin}/api/portals/visit/${encodeURIComponent(oa.address)}/pages`;
+  const res = await fetch(listUrl);
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`Pages list failed (${res.status})`);
+  const body = (await res.json()) as { pages?: PortalPageMeta[] };
+  return Array.isArray(body.pages) ? body.pages : [];
 }
 
 // ── Invoke ───────────────────────────────────────────────────────────────

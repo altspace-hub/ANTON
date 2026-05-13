@@ -31,6 +31,12 @@ export interface PortalFacts {
   category: (typeof PORTAL_CATEGORIES)[number];
   contactHash: string;
   publicKeyHex: string;
+  /** Publisher's publicly-reachable HTTPS origin (no trailing slash). Optional but
+   *  required for cross-internet visitors (Comm App, remote ANTON) to fetch pages
+   *  + invoke capabilities. Joined with `/api/portals/visit/<address>/page` or
+   *  `/capabilities/<id>/invoke`. Signed into the descriptor so a relay can't
+   *  tamper with it. */
+  originEndpoint?: string;
   /** Optional surface block — only set when the portal points at an
    *  externally-hosted HTML site. AAP endpoints stay on ANTON so the
    *  trust chain (Ed25519 signature + transparency log) is preserved. */
@@ -116,6 +122,7 @@ export function buildDescriptor(input: BuilderInput, privateKeyPem: string): Bui
       category: input.portal.category,
       contactHash: input.portal.contactHash,
       publicKey: publicKeyHexToWire(input.portal.publicKeyHex),
+      ...(input.portal.originEndpoint ? { originEndpoint: input.portal.originEndpoint } : {}),
       ...(input.portal.surface ? { surface: input.portal.surface } : {}),
     },
     identity: input.identity,
