@@ -65,7 +65,11 @@ CREATE TABLE kyc_submissions (
   address_street           TEXT NOT NULL,
   submitted_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   verified_at              TIMESTAMPTZ,
-  verifier_id              UUID,
+  -- Operator identifier (self-declared, e.g. 'op-daniel'). TEXT not UUID
+  -- because v0.1 uses a shared-password admin login that doesn't issue
+  -- per-operator UUIDs. When a real user table lands in Phase E we'll
+  -- migrate this to FK against operators(id).
+  verifier_id              TEXT,
   retention_until          TIMESTAMPTZ NOT NULL
 );
 
@@ -97,7 +101,11 @@ CREATE TABLE portal_submissions (
                            ('pending','in_review','approved','rejected','withdrawn')),
   tier                     TEXT NOT NULL DEFAULT 'tier3_selfservice'
                            CHECK (tier IN ('tier2_claimed','tier3_selfservice')),
-  reviewer_id              UUID,
+  -- Operator identifier (self-declared, e.g. 'op-daniel'). TEXT not UUID
+  -- because v0.1 uses a shared-password admin login that doesn't issue
+  -- per-operator UUIDs. When a real user table lands in Phase E we'll
+  -- migrate this to FK against operators(id).
+  reviewer_id              TEXT,
   reviewed_at              TIMESTAMPTZ,
   rejection_reason         TEXT,                     -- visible to submitter
   internal_notes           TEXT                      -- operator-only
