@@ -35,6 +35,21 @@ export interface RegistryRouterDeps {
   logger: Logger;
 }
 
+/** CORS headers added to every /v1/* response.
+ *
+ *  The Comm App's webview origin is `https://localhost` (Capacitor's
+ *  androidScheme=https). Without CORS the browser blocks the fetch
+ *  before the relay even sees it. v0.1 is permissive:
+ *    - Origin: *   (public discovery; no cookies, no credentials)
+ *    - Methods/Headers cover the admin Authorization header
+ *  When we add per-origin allowlisting (Phase E), tighten this. */
+export const CORS_HEADERS: Record<string, string> = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, OPTIONS',
+  'access-control-allow-headers': 'authorization, content-type',
+  'access-control-max-age': '86400',
+};
+
 /** Tiny JSON response helper — every registry route uses this. */
 export function json(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
@@ -43,6 +58,7 @@ export function json(res: ServerResponse, status: number, body: unknown): void {
     'content-length': Buffer.byteLength(payload),
     // Don't let intermediaries cache identity-bearing responses.
     'cache-control': 'no-store',
+    ...CORS_HEADERS,
   });
   res.end(payload);
 }
@@ -76,6 +92,15 @@ export async function dispatch(
 
   if (!path.startsWith('/v1/')) return false;
   const method = req.method ?? 'GET';
+
+  // CORS preflight — browsers send this before any cross-origin POST
+  // or any request with a non-simple header (Authorization, etc.).
+  // 204 with the headers; no body. Works for every /v1/* route.
+  if (method === 'OPTIONS') {
+    res.writeHead(204, { ...CORS_HEADERS, 'content-length': '0' });
+    res.end();
+    return true;
+  }
 
   // ── /v1/healthz: works even without DB ────────────────────────────────
   if (path === '/v1/healthz' || path === '/v1/healthz/') {
