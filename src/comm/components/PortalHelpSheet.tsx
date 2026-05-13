@@ -11,6 +11,7 @@
  * for visitors, so the help text is a pointer to the right place,
  * not a launcher for it.
  */
+import { useState } from 'react';
 import BottomSheet from './BottomSheet';
 import { Ico } from './Ico';
 
@@ -18,6 +19,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
+
+const DESKTOP_URL = 'http://localhost:3001/portals';
 
 interface Step {
   n: number;
@@ -69,6 +72,38 @@ const STEPS: Step[] = [
 ];
 
 export default function PortalHelpSheet({ open, onClose }: Props) {
+  // Copy-to-clipboard is the honest CTA here. Tapping a localhost:3001
+  // link from the phone can't actually work — the phone isn't the same
+  // machine the user's desktop ANTON runs on. Capacitor's WebView would
+  // either block (mixed content) or navigate-in-place (allowNavigation
+  // includes 'localhost'), neither of which is useful. Instead we copy
+  // the URL so the user can paste it into their desktop browser.
+  const [copied, setCopied] = useState(false);
+  function copyUrl() {
+    // Flip the UI state FIRST so the user sees the "Copied" affirmation
+    // regardless of whether the clipboard write itself succeeded. The
+    // actual copy is a best-effort side-effect; the URL is also visible
+    // in the helper line beneath the button if the clipboard fails.
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+
+    // Try modern API first, then fall back to the selection-based hack
+    // for WebViews where navigator.clipboard is undefined / throws.
+    try {
+      void navigator.clipboard?.writeText(DESKTOP_URL);
+    } catch { /* fallback below */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = DESKTOP_URL;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch { /* give up — banner is still useful */ }
+  }
+
   return (
     <BottomSheet
       open={open}
@@ -110,8 +145,35 @@ export default function PortalHelpSheet({ open, onClose }: Props) {
           ))}
         </ol>
 
+        <button
+          type="button"
+          onClick={copyUrl}
+          aria-label="Copy desktop ANTON Portals URL to clipboard"
+          className="mt-6 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl text-sm font-semibold active:scale-[0.98] transition-transform"
+          style={{
+            backgroundColor: copied ? 'var(--color-accent-dim)' : 'var(--color-accent)',
+            color: copied ? 'var(--color-accent-dark)' : 'var(--color-accent-fg)',
+          }}
+        >
+          {copied ? (
+            <>
+              <Ico name="check" size={16} color="var(--color-accent-dark)" />
+              {"Copied — paste in your computer's browser"}
+            </>
+          ) : (
+            <>
+              Try it now
+              <span aria-hidden="true">→</span>
+            </>
+          )}
+        </button>
+        <p className="mt-2 text-[11px] text-[var(--color-text-faint)] text-center">
+          Copies <span className="font-mono">localhost:3001/portals</span>.
+          Open that on the computer where ANTON is running.
+        </p>
+
         <div
-          className="mt-6 rounded-2xl p-4 text-xs"
+          className="mt-5 rounded-2xl p-4 text-xs"
           style={{
             backgroundColor: 'var(--color-surface-alt)',
             color: 'var(--color-text-muted)',
@@ -122,10 +184,7 @@ export default function PortalHelpSheet({ open, onClose }: Props) {
             Why the KYC step?
           </p>
           <p className="mt-1.5 leading-snug">
-            The relay is operated under EU DSA rules. Portal operators
-            must be identifiable so the network stays open without
-            becoming a phishing or impersonation surface. Your KYC isn\'t
-            shared with visitors — only the relay operator sees it.
+            {"The relay is operated under EU DSA rules. Portal operators must be identifiable so the network stays open without becoming a phishing or impersonation surface. Your KYC isn't shared with visitors — only the relay operator sees it."}
           </p>
         </div>
 
