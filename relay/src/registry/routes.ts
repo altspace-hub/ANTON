@@ -22,6 +22,13 @@ import { handleSubmit } from './handlers/submit.js';
 import { handleSubmissionStatus } from './handlers/submissions.js';
 import { handleSearch } from './handlers/search.js';
 import { handleResolve } from './handlers/resolve.js';
+import { handleAdminLogin } from './handlers/admin-login.js';
+import {
+  handleAdminList,
+  handleAdminDetail,
+  handleAdminApprove,
+  handleAdminReject,
+} from './handlers/admin-submissions.js';
 
 export interface RegistryRouterDeps {
   db: RegistryDb | null;
@@ -118,7 +125,44 @@ export async function dispatch(
     return true;
   }
 
-  // Future: /v1/admin/* in Step 9. Fall through to 501.
+  // ── /v1/admin/login ─────────────────────────────────────────────────
+  if (path === '/v1/admin/login' || path === '/v1/admin/login/') {
+    if (method !== 'POST') { methodNotAllowed(res, 'POST'); return true; }
+    await handleAdminLogin(req, res, deps.logger);
+    return true;
+  }
+
+  // ── /v1/admin/submissions ───────────────────────────────────────────
+  if (path === '/v1/admin/submissions' || path === '/v1/admin/submissions/') {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleAdminList(req, res, deps.db, deps.logger);
+    return true;
+  }
+
+  // ── /v1/admin/submissions/:id ───────────────────────────────────────
+  const detailMatch = path.match(/^\/v1\/admin\/submissions\/([^/]+)\/?$/);
+  if (detailMatch && detailMatch[1]) {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleAdminDetail(req, res, deps.db, deps.logger, detailMatch[1]);
+    return true;
+  }
+
+  // ── /v1/admin/submissions/:id/approve ───────────────────────────────
+  const approveMatch = path.match(/^\/v1\/admin\/submissions\/([^/]+)\/approve\/?$/);
+  if (approveMatch && approveMatch[1]) {
+    if (method !== 'POST') { methodNotAllowed(res, 'POST'); return true; }
+    await handleAdminApprove(req, res, deps.db, deps.logger, approveMatch[1]);
+    return true;
+  }
+
+  // ── /v1/admin/submissions/:id/reject ────────────────────────────────
+  const rejectMatch = path.match(/^\/v1\/admin\/submissions\/([^/]+)\/reject\/?$/);
+  if (rejectMatch && rejectMatch[1]) {
+    if (method !== 'POST') { methodNotAllowed(res, 'POST'); return true; }
+    await handleAdminReject(req, res, deps.db, deps.logger, rejectMatch[1]);
+    return true;
+  }
+
   json(res, 501, {
     error: 'not_implemented',
     message: `Route ${method} ${path} is not yet implemented at this relay.`,
