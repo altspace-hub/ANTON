@@ -28,11 +28,11 @@ Three open decisions from the spec are closed via the ADRs in `docs/adr/`:
 | [ADR-001](docs/adr/ADR-001-rn-first.md) | React Native + Expo for v1.0 (not PWA) | Native secure storage + biometric from day 1 |
 | [ADR-002](docs/adr/ADR-002-rust-backend.md) | Rust + Axum (not Node + Hono) | Type-level alignment with the FutureChain core; settlement reconciliation perf |
 | [ADR-003](docs/adr/ADR-003-subdirectory-layout.md) | Subdirectory of the ANTON repo (not separate repo) | Single source of truth during early build; can split later if `@futurechain/sdk` graduates |
+| [ADR-004](docs/adr/ADR-004-reference-encoding.md) | Versioned envelope (`v1:` merchant-bearing, `v2:` operational) | Lets the new Business schema and the existing fc-* schema coexist without ambiguity |
 
-Two ADRs still open and blocking SDK work:
+One ADR still open and blocking settlement work:
 
-- [ADR-004 — Reference field encoding](docs/adr/ADR-004-reference-encoding.md) (stub)
-- [ADR-005 — Delegation envelope format](docs/adr/ADR-005-delegation-envelope.md) (stub)
+- [ADR-005 — Delegation envelope format](docs/adr/ADR-005-delegation-envelope.md) (recommendation: Option 4, domain-separated SHA-256)
 
 ## Setup
 
