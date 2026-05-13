@@ -242,7 +242,7 @@ export class RelayServer {
           res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({
             ok: true,
-            version: '0.1.0',
+            version: '0.2.0',
             uptime_sec: snap.uptime_sec,
             active_sessions: snap.active_sessions,
             active_instances: snap.active_instances,
