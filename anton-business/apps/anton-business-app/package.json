@@ -1,0 +1,41 @@
+{
+  "name": "anton-business-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ANTON Business — merchant-facing React Native + Expo app for FTC payment acceptance.",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anton-business/shared-types": "workspace:*",
+    "@futurechain/sdk": "workspace:*",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "expo": "~52.0.20",
+    "expo-camera": "~16.0.10",
+    "expo-haptics": "~14.0.0",
+    "expo-local-authentication": "~15.0.1",
+    "expo-router": "~4.0.13",
+    "expo-secure-store": "~14.0.0",
+    "expo-sqlite": "~15.0.3",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-qrcode-svg": "^6.3.12",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.1.0",
+    "react-native-svg": "15.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.12",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

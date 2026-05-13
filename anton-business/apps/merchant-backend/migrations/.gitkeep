@@ -1,0 +1,4 @@
+# sqlx migrations live here.
+# Create with: cargo install sqlx-cli && sqlx migrate add <name>
+# Apply with:  sqlx migrate run
+# Spec §4.1: separate Postgres from the ANTON Local DB.

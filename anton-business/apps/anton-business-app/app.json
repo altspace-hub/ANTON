@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "ANTON Business",
+    "slug": "anton-business",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "antonbusiness",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0B1426"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.futurechain.antonbusiness",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scan customer QR codes for refunds.",
+        "NSFaceIDUsageDescription": "Authenticate transactions and refunds."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1426"
+      },
+      "package": "com.futurechain.antonbusiness",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.INTERNET"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ANTON Business to access your camera for refund-by-scan."
+        }
+      ]
+    ]
+  }
+}
