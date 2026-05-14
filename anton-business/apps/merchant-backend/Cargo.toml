@@ -6,50 +6,56 @@ description = "ANTON Business merchant backend — settlement orchestration, ema
 license = "UNLICENSED"
 publish = false
 
-[dependencies]
-# Web framework + async runtime
-axum = { version = "0.7", features = ["macros"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors", "limit", "timeout"] }
+[features]
+default = ["server"]
+# `server` pulls in axum + sqlx + tokio runtime. Disable for fast unit
+# tests of pure modules (reference, delegation, wallet) via:
+#   cargo test --lib --no-default-features --features test-pure
+server = [
+  "dep:axum", "dep:tower", "dep:tower-http", "dep:sqlx",
+  "dep:reqwest", "dep:dotenvy", "dep:tracing-subscriber",
+  "tokio/full",
+]
+test-pure = []
 
-# Serde stack
+[lib]
+name = "merchant_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "merchant-backend"
+path = "src/main.rs"
+required-features = ["server"]
+
+[dependencies]
+# ── Always-on: pure-logic deps used by reference/delegation/wallet ──
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
-# DB
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "bigdecimal"] }
-
-# Crypto — must match the SDK byte-for-byte
-secp256k1 = { version = "0.30", features = ["recovery", "rand-std"] }
+secp256k1 = { version = "0.30", features = ["recovery"] }
 sha2 = "0.10"
-sha3 = "0.10"   # keccak256 for PACS.008 hashing
+sha3 = "0.10"
 hex = "0.4"
-
-# Time, UUIDs, decimals
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 bigdecimal = { version = "0.4", features = ["serde"] }
-
-# Logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# Errors
 thiserror = "2"
 anyhow = "1"
+# Used as a typed runtime by both server and non-server code; keep
+# non-optional but feature-gate the `full` set behind `server`.
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 
-# Config / env
-dotenvy = "0.15"
-
-# HTTP client (for Safello + FutureChain RPC)
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# ── Optional: HTTP server stack ─────────────────────────────────────
+axum = { version = "0.7", features = ["macros"], optional = true }
+tower = { version = "0.5", optional = true }
+tower-http = { version = "0.6", features = ["trace", "cors", "limit", "timeout"], optional = true }
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "bigdecimal"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
+dotenvy = { version = "0.15", optional = true }
 
 [dev-dependencies]
-# Snapshot tests for the SDK parity contract
 insta = { version = "1", features = ["json"] }
-# Spin up an ephemeral Postgres for integration tests
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "macros"] }
 
 [profile.release]
 opt-level = 3
