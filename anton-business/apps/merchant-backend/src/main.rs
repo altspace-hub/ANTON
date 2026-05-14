@@ -1,38 +1,30 @@
 //! ANTON Business merchant backend — entry point.
 //!
-//! Scaffold for sprint 1. The shape of `main` matches the standard
-//! axum-with-tracing pattern: read env, build the app, bind the
-//! listener, hand off to tokio.
-//!
-//! What's NOT here yet:
-//!   - Real route handlers (only /health)
-//!   - DB pool wiring
-//!   - Settlement orchestration loop
-//!   - Safello client
-//! Those land in sprint 1 task 2 alongside the SDK.
+//! Loads env, initialises tracing, builds the shared AppState, and
+//! hands the router off to axum::serve. Graceful shutdown on Ctrl+C
+//! and SIGTERM.
 
 use std::net::SocketAddr;
 
-use axum::{routing::get, Router};
+use merchant_backend::routes::build_router;
+use merchant_backend::state::AppState;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-mod routes;
-mod services;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| "merchant_backend=debug,tower_http=info".into()))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "merchant_backend=debug,tower_http=info".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = Router::new()
-        .route("/health", get(routes::health::handler))
-        .layer(TraceLayer::new_for_http());
+    let state = AppState::new();
+    let app = build_router(state).layer(TraceLayer::new_for_http());
 
     let port: u16 = std::env::var("PORT")
         .ok()
