@@ -52,6 +52,8 @@ export interface NewReceiptInput {
   status: ReceiptStatus;
 }
 
+export type SaleMode = 'simple' | 'extended';
+
 export interface MerchantConfig {
   legalName: string;
   orgNr: string;
@@ -60,8 +62,14 @@ export interface MerchantConfig {
   postcode: string;
   vatRegistered: boolean;
   defaultVatRate: 0 | 6 | 12 | 25;
+  /** Empty string until the merchant connects a wallet in Settings.
+   *  Sale flows that need a payment QR check for this and prompt
+   *  the merchant to connect a wallet if it's blank. */
   safelloReceiveAddress: string;
   kvittoEmail?: string;
+  /** Merchant's preferred sale mode (picked during onboarding). The
+   *  Home screen promotes this button; the other is still accessible. */
+  defaultMode: SaleMode;
   nextKvittoNumber: number;
   configuredAt: number;
   ftcPerSek: number;

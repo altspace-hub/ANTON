@@ -27,6 +27,10 @@ export async function loadConfig(): Promise<MerchantConfig | null> {
       ...(parsed as MerchantConfig),
       ftcPerSek: parsed.ftcPerSek ?? DEFAULT_FTC_PER_SEK,
       lastBackupAt: parsed.lastBackupAt ?? 0,
+      // Pre-defaultMode configs default to 'simple' on read so older
+      // onboarding flows keep working without a re-onboard.
+      defaultMode: parsed.defaultMode ?? 'simple',
+      safelloReceiveAddress: parsed.safelloReceiveAddress ?? '',
     };
   } catch {
     return null;

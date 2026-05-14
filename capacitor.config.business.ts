@@ -18,11 +18,11 @@ const config: CapacitorConfig = {
   android: {
     path: 'android-business',
     allowMixedContent: false,
-    backgroundColor: '#0F1B2D',
+    backgroundColor: '#F5F3EF',
   },
   ios: {
     contentInset: 'automatic',
-    backgroundColor: '#0F1B2D',
+    backgroundColor: '#F5F3EF',
     scheme: 'ANTON Business',
     limitsNavigationsToAppBoundDomains: false,
     path: 'ios-business',
@@ -50,17 +50,17 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 600,
-      backgroundColor: '#0F1B2D',
+      backgroundColor: '#F5F3EF',
       androidSplashResourceName: 'splash',
       showSpinner: false,
     },
     StatusBar: {
-      style: 'DARK',
-      backgroundColor: '#0F1B2D',
+      style: 'LIGHT',
+      backgroundColor: '#F5F3EF',
     },
     Keyboard: {
       resize: 'native',
-      style: 'DARK',
+      style: 'LIGHT',
       resizeOnFullScreen: true,
     },
   },

@@ -1,24 +1,31 @@
 /**
  * App shell — state-machine routing, no react-router.
  *
- * On mount we check whether a merchant config exists. If yes → home;
- * if no → onboarding/welcome. Inside onboarding, each step calls
- * onContinue() to advance. The Simple/Extended sale flows + Settings
- * arrive as new states in the follow-on tasks.
+ * Onboarding order: Welcome → Mode choice → Business details →
+ * (if Extended) Items → Done. Wallet generation is intentionally
+ * NOT here; it lives in Settings → Connect wallet, post-onboarding.
+ * This lets the merchant configure the app and try the sale flow
+ * before committing to crypto.
+ *
+ * On mount, hasConfig() decides between resuming Home or starting
+ * onboarding-welcome.
  */
 import { useEffect, useState } from 'react';
 import HomeScreen from './pages/HomeScreen';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
-import GenerateScreen from './pages/onboarding/GenerateScreen';
+import ModeChoiceScreen from './pages/onboarding/ModeChoiceScreen';
 import RegisterScreen from './pages/onboarding/RegisterScreen';
+import ItemsSetupScreen from './pages/onboarding/ItemsSetupScreen';
 import DoneScreen from './pages/onboarding/DoneScreen';
 import { hasConfig } from './services/merchant';
+import type { SaleMode } from './services/types';
 
 type Screen =
   | 'loading'
   | 'onboarding-welcome'
-  | 'onboarding-generate'
+  | 'onboarding-mode'
   | 'onboarding-register'
+  | 'onboarding-items'
   | 'onboarding-done'
   | 'home'
   | 'simple'      // task #5
@@ -27,11 +34,9 @@ type Screen =
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
+  const [pendingMode, setPendingMode] = useState<SaleMode>('simple');
 
   useEffect(() => {
-    // Configured merchant → straight to home. Otherwise start onboarding.
-    // hasConfig() probes secure-store; in dev the tier resolution adds
-    // ~50ms before it answers.
     (async () => {
       setScreen((await hasConfig()) ? 'home' : 'onboarding-welcome');
     })();
@@ -47,13 +52,31 @@ export default function App() {
   }
 
   if (screen === 'onboarding-welcome') {
-    return <WelcomeScreen onContinue={() => setScreen('onboarding-generate')} />;
+    return <WelcomeScreen onContinue={() => setScreen('onboarding-mode')} />;
   }
-  if (screen === 'onboarding-generate') {
-    return <GenerateScreen onContinue={() => setScreen('onboarding-register')} />;
+  if (screen === 'onboarding-mode') {
+    return (
+      <ModeChoiceScreen
+        initial={pendingMode}
+        onContinue={(mode) => {
+          setPendingMode(mode);
+          setScreen('onboarding-register');
+        }}
+      />
+    );
   }
   if (screen === 'onboarding-register') {
-    return <RegisterScreen onContinue={() => setScreen('onboarding-done')} />;
+    return (
+      <RegisterScreen
+        pendingMode={pendingMode}
+        onContinue={() =>
+          setScreen(pendingMode === 'extended' ? 'onboarding-items' : 'onboarding-done')
+        }
+      />
+    );
+  }
+  if (screen === 'onboarding-items') {
+    return <ItemsSetupScreen onContinue={() => setScreen('onboarding-done')} />;
   }
   if (screen === 'onboarding-done') {
     return <DoneScreen onContinue={() => setScreen('home')} />;
@@ -68,22 +91,26 @@ export default function App() {
     );
   }
 
-  // Sale + Settings screens land in tasks #5–#7. Until then, fall back
-  // to a "Coming soon" stub so the navigation still feels alive.
+  // Sale + Settings screens land in tasks #5–#7.
   return (
     <div className="flex flex-col h-full p-6 safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
-      <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>Coming soon</h2>
+      <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+        Coming soon
+      </h2>
       <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
         The <strong>{screen}</strong> screen is not built yet. The
-        underlying services are wired — it&apos;s just the UI that
-        comes in the next port phase.
+        services are wired — only the UI is pending.
       </p>
       <button
         type="button"
         onClick={() => setScreen('home')}
         className="self-start px-4 py-2 rounded-lg"
-        style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text)',
+          border: '1px solid var(--color-border)',
+        }}
       >
         ← Back home
       </button>

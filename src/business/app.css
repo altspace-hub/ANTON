@@ -3,36 +3,58 @@
 /* ═══════════════════════════════════════════════════════════════
    ANTON Business — design system
 
-   Dark theme. The merchant uses this in low-light bar/café settings
-   where dark mode reduces glare. The same colour tokens the Expo
-   draft used carry over: deep navy canvas, teal accent for action,
-   amber for warnings, red for destructive.
+   Light theme, matched to ANTON Communication so the merchant's
+   phone has visual consistency across our app suite. Warm-linen
+   canvas + white surfaces. Brand teal stays as the primary accent;
+   #3070C7 blue is the Business signature (chevron logo, primary
+   CTA) so the merchant can tell at a glance which app they're in.
    ═══════════════════════════════════════════════════════════════ */
 
 @theme {
-  --color-bg:           #0F1B2D;
-  --color-surface:      #152238;
-  --color-surface-alt:  #1F2D44;
-  --color-surface-muted: #19243A;
+  /* ── Canvas ─────────────────────────────────────────────── */
+  --color-bg:           #F5F3EF;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFAF8;
+  --color-surface-muted: #EFECE5;
 
-  --color-text:         #E0E0E0;
-  --color-text-body:    #C8CCD6;
-  --color-text-muted:   #B0B0B0;
-  --color-text-faint:   #7F8A9C;
-  --color-text-dim:     #4F5267;
+  /* ── Text ───────────────────────────────────────────────── */
+  --color-text:         #1A1B2E;
+  --color-text-body:    #3B3D50;
+  --color-text-muted:   #4F5267;
+  --color-text-faint:   #686A7C;
+  --color-text-dim:     #9CA0AE;
 
-  --color-accent:       #2DD4A8;
-  --color-accent-dim:   #1BA882;
-  --color-accent-dark:  #0D7D6C;
-  --color-accent-fg:    #0B1426;
+  /* ── Lines ──────────────────────────────────────────────── */
+  --color-border:       #DDD9D2;
+  --color-border-soft:  #EAE7E0;
 
-  --color-warning:      #F5A623;
-  --color-warning-bg:   #3B2A0F;
-  --color-error:        #E74C3C;
-  --color-success:      #27AE60;
+  /* ── Brand accent ───────────────────────────────────────── */
+  /* Business signature blue. Used for the chevron logo + primary CTA.
+   * Distinguishes the Business app from Communication (teal) so the
+   * merchant's icon tray is unambiguous. */
+  --color-accent:       #3070C7;
+  --color-accent-dark:  #245598;
+  --color-accent-dim:   #DEE8F6;
+  --color-accent-soft:  #EFF3FB;
+  --color-accent-fg:    #FFFFFF;
 
-  --color-border:       #3B3D50;
-  --color-border-soft:  #2A3144;
+  /* The corporate teal stays available for ANTON-suite consistency
+   * (e.g. a footer "Powered by ANTON" mark). Mostly unused in the
+   * Business app proper. */
+  --color-teal:         #0D7D6C;
+  --color-teal-dark:    #06655A;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --color-warning:      #C8842B;
+  --color-warning-bg:   #F7ECD9;
+  --color-error:        #C7361F;
+  --color-error-bg:     #F9E2DD;
+  --color-success:      #1F8A5C;
+  --color-success-bg:   #DCEEE4;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 * {
@@ -45,8 +67,9 @@ html, body, #app {
   padding: 0;
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
 }
 
@@ -55,19 +78,13 @@ html, body, #app {
   flex-direction: column;
 }
 
-/* Honour iPhone notches + Android cutouts where the WebView surfaces
- * the env() values. */
 .safe-top    { padding-top:    env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 .safe-left   { padding-left:   env(safe-area-inset-left); }
 .safe-right  { padding-right:  env(safe-area-inset-right); }
 
-/* Tabular numerals for amounts so the layout doesn't jitter when
- * digits change width. */
 .tabular { font-variant-numeric: tabular-nums; }
-
-/* Mono font hook for codes / addresses / refs. */
-.mono { font-family: 'JetBrains Mono', ui-monospace, 'Courier New', monospace; }
+.mono { font-family: var(--font-mono); }
 
 input, textarea, button, select {
   font-family: inherit;
@@ -83,7 +100,7 @@ button {
 input[type="text"], input[type="email"], input[type="number"], input[type="tel"], textarea {
   background-color: var(--color-surface);
   color: var(--color-text);
-  border: 1px solid var(--color-border-soft);
+  border: 1px solid var(--color-border);
   padding: 0.75rem 0.875rem;
   border-radius: 0.625rem;
   font-size: 1rem;
