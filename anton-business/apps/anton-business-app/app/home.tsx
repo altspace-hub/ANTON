@@ -21,13 +21,27 @@ export default function Home() {
 
   return (
     <View style={s.container}>
-      <Text style={s.title}>Home</Text>
-      {config ? (
-        <Text style={s.welcome}>Welcome back, <Text style={s.welcomeBold}>{config.legalName}</Text>.</Text>
-      ) : null}
-      <Text style={s.body}>
-        Onboarding done. Simple-mode keypad and Extended-mode cart land in sprint 2.
-      </Text>
+      {config && (
+        <Text style={s.welcome}>
+          Welcome back, <Text style={s.welcomeBold}>{config.legalName}</Text>.
+        </Text>
+      )}
+
+      <Pressable style={s.primary} onPress={() => router.push('/simple')}>
+        <Text style={s.primaryText}>Take payment</Text>
+        <Text style={s.primarySub}>Simple mode · keypad → QR</Text>
+      </Pressable>
+
+      <Pressable style={s.secondary} disabled>
+        <Text style={s.secondaryText}>Extended mode</Text>
+        <Text style={s.secondarySub}>Sprint 2 — coming next</Text>
+      </Pressable>
+
+      <Pressable style={s.secondary} disabled>
+        <Text style={s.secondaryText}>Transactions</Text>
+        <Text style={s.secondarySub}>Needs FutureChain RPC unblocked</Text>
+      </Pressable>
+
       {addr && (
         <View style={s.idBox}>
           <Text style={s.label}>Identity wallet</Text>
@@ -40,6 +54,7 @@ export default function Home() {
           <Text style={s.idText} selectable>{config.safelloReceiveAddress}</Text>
         </View>
       )}
+
       <Pressable style={s.reset} onPress={reset}>
         <Text style={s.resetText}>Reset wallet + config (dev)</Text>
       </Pressable>
@@ -49,13 +64,34 @@ export default function Home() {
 
 const s = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: '#0F1B2D' },
-  title: { fontSize: 24, fontWeight: '700', color: '#E0E0E0', marginVertical: 16 },
-  welcome: { color: '#E0E0E0', fontSize: 16, marginBottom: 8 },
+  welcome: { color: '#E0E0E0', fontSize: 16, marginBottom: 20 },
   welcomeBold: { fontWeight: '700' },
-  body: { color: '#B0B0B0', fontSize: 15, lineHeight: 22, marginBottom: 24 },
-  idBox: { backgroundColor: '#152238', padding: 16, borderRadius: 10, marginBottom: 12 },
-  label: { color: '#7F8A9C', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
-  idText: { color: '#2DD4A8', fontFamily: 'Courier', fontSize: 13 },
+
+  primary: {
+    backgroundColor: '#2DD4A8',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  primaryText: { color: '#0B1426', fontSize: 22, fontWeight: '700' },
+  primarySub: { color: '#0B1426', fontSize: 13, opacity: 0.7, marginTop: 4 },
+
+  secondary: {
+    backgroundColor: '#152238',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    marginBottom: 12,
+    opacity: 0.6,
+  },
+  secondaryText: { color: '#E0E0E0', fontSize: 17, fontWeight: '600' },
+  secondarySub: { color: '#7F8A9C', fontSize: 12, marginTop: 4 },
+
+  idBox: { backgroundColor: '#152238', padding: 14, borderRadius: 10, marginBottom: 10 },
+  label: { color: '#7F8A9C', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  idText: { color: '#2DD4A8', fontFamily: 'Courier', fontSize: 12 },
+
   reset: { paddingVertical: 12, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#3B3D50', marginTop: 'auto' },
-  resetText: { color: '#B0B0B0', fontSize: 14 },
+  resetText: { color: '#7F8A9C', fontSize: 13 },
 });
