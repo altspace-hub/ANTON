@@ -1,38 +1,91 @@
+/**
+ * WalletScreen — wallet tab root.
+ *
+ * State-machine router (no react-router; same pattern as the
+ * App-level shell). On mount we read `hasWallet()`; if no wallet
+ * exists yet we land on the Connect screen, otherwise on Balance.
+ *
+ * Sub-screens live under ./wallet/ and are eagerly imported here.
+ * The bundle hit is moderate (qrcode + secp256k1 + sdk wallet),
+ * acceptable because the wallet tab is rarely the cold-start entry
+ * point and the imports are tree-shaken into the existing wallet
+ * chunk if Vite splits.
+ */
+import { useEffect, useState } from 'react';
+import { hasWallet, loadWallet } from '../services/wallet';
+import WalletConnectScreen from './wallet/WalletConnectScreen';
+import WalletBalanceScreen from './wallet/WalletBalanceScreen';
+import WalletReceiveScreen from './wallet/WalletReceiveScreen';
+import WalletSendScreen from './wallet/WalletSendScreen';
+import WalletHistoryScreen from './wallet/WalletHistoryScreen';
+
+type View = 'loading' | 'connect' | 'balance' | 'receive' | 'send' | 'history';
+
 export default function WalletScreen() {
+  const [view, setView] = useState<View>('loading');
+  const [address, setAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    void refresh();
+  }, []);
+
+  async function refresh() {
+    if (await hasWallet()) {
+      const w = await loadWallet();
+      setAddress(w?.address ?? null);
+      setView('balance');
+    } else {
+      setView('connect');
+    }
+  }
+
+  if (view === 'loading') {
+    return (
+      <section className="flex flex-col items-center justify-center h-full">
+        <span className="text-sm text-[var(--color-text-faint)]">Loading…</span>
+      </section>
+    );
+  }
+
+  if (view === 'connect') {
+    return (
+      <WalletConnectScreen
+        onConnected={(addr) => {
+          setAddress(addr);
+          setView('balance');
+        }}
+      />
+    );
+  }
+
+  if (!address) {
+    // Defensive: hasWallet() returned true but loadWallet() failed.
+    // Route back to connect to re-create.
+    return <WalletConnectScreen onConnected={(addr) => { setAddress(addr); setView('balance'); }} />;
+  }
+
+  if (view === 'receive') {
+    return <WalletReceiveScreen address={address} onBack={() => setView('balance')} />;
+  }
+  if (view === 'send') {
+    return (
+      <WalletSendScreen
+        onBack={() => setView('balance')}
+        onSent={() => setView('history')}
+      />
+    );
+  }
+  if (view === 'history') {
+    return <WalletHistoryScreen onBack={() => setView('balance')} />;
+  }
+
+  // balance
   return (
-    <section className="px-5 pt-6 pb-4">
-      <h1 className="text-2xl font-semibold text-[var(--color-text)]">Wallet</h1>
-      <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-        Your FutureChain wallet.
-      </p>
-
-      <div className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-6">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium text-[var(--color-text-muted)]">Balance</span>
-          <span className="text-xs font-mono text-[var(--color-text-faint)]">FTC</span>
-        </div>
-        <div className="mt-2 text-3xl font-semibold text-[var(--color-text)] tabular-nums">
-          —
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-accent-soft)] p-5">
-        <p className="text-sm font-medium text-[var(--color-text)]">
-          Coming soon — FutureChain wallet
-        </p>
-        <p className="mt-1 text-xs text-[var(--color-text-body)] leading-relaxed">
-          Wallet setup, balance, payments and history will appear here once the
-          FutureChain integration lands. Compliance, fraud detection and AML
-          checks are handled by Heimdall on the network side.
-        </p>
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-[var(--color-text)]">Recent activity</h2>
-        <p className="mt-2 text-xs text-[var(--color-text-faint)]">
-          No transactions yet.
-        </p>
-      </div>
-    </section>
+    <WalletBalanceScreen
+      address={address}
+      onReceive={() => setView('receive')}
+      onSend={() => setView('send')}
+      onHistory={() => setView('history')}
+    />
   );
 }

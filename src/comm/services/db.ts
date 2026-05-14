@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -28,6 +28,12 @@ export const STORE_INLINE_OUTBOX = 'inline_outbox';
  *  so a flaky network falls back to the last good copy instead of an
  *  empty viewer. */
 export const STORE_PORTAL_CACHE = 'portal_cache';
+/** v7 — FutureChain wallet transaction ledger. Every FTC transaction
+ *  the user makes (send / receive / swap / refund) lands here so the
+ *  tax engine in @futurechain/sdk/tax (Phase 1+) can compute the
+ *  per-tx ledger + annual position. Per FUTURECHAIN_TAX_RULES.md the
+ *  ledger MUST stay on-device — no syncing to the server side. */
+export const STORE_WALLET_TXS = 'wallet_txs';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -37,6 +43,8 @@ export const INDEX_POST_BY_EXPIRES = 'by_expires';
 export const INDEX_INT_BY_POST = 'by_post';
 export const INDEX_INLINE_BY_PEER = 'by_peer';
 export const INDEX_PORTAL_BY_CACHED_AT = 'by_cached_at';
+export const INDEX_WALLET_BY_TS = 'by_ts';
+export const INDEX_WALLET_BY_REF = 'by_ref';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -84,6 +92,14 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_PORTAL_CACHE)) {
         const store = db.createObjectStore(STORE_PORTAL_CACHE, { keyPath: 'key' });
         store.createIndex(INDEX_PORTAL_BY_CACHED_AT, 'cachedAt', { unique: false });
+      }
+      // v7 — wallet transaction ledger. Primary key is the generated
+      // tx id; by_ts powers the chronological history; by_ref lets the
+      // tax engine link an FTC payment to its merchant order ref.
+      if (!db.objectStoreNames.contains(STORE_WALLET_TXS)) {
+        const store = db.createObjectStore(STORE_WALLET_TXS, { keyPath: 'id' });
+        store.createIndex(INDEX_WALLET_BY_TS, 'ts', { unique: false });
+        store.createIndex(INDEX_WALLET_BY_REF, 'ref', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
