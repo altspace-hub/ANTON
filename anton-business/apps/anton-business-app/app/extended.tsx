@@ -32,6 +32,7 @@ import {
   generateOrderId,
   type BuiltQr,
 } from '../src/services/qr';
+import { persistReceipt } from '../src/services/receipts';
 import { loadWallet } from '../src/services/wallet';
 
 type Phase = 'cart' | 'qr';
@@ -124,6 +125,33 @@ export default function Extended() {
     );
   }
 
+  async function confirmPayment() {
+    if (!built || !merchantId) return;
+    try {
+      const r = await persistReceipt({
+        orderId: built.inv,
+        merchantId,
+        mode: 'extended',
+        purpose: 'RESTAURANT',
+        amountSek: totals.totalSek,
+        amountMicroFtc: built.amountMicroFtc,
+        ftcPerSek: config!.ftcPerSek,
+        vatSek: totals.totalVatSek,
+        discountSek: totals.discountSek,
+        itemCount: totals.itemCount,
+        lines: cart.lines,
+        vatBreakdown: totals.vatBreakdown,
+        qrUri: built.uri,
+        ref: built.ref,
+        status: 'confirmed',
+      });
+      clear();
+      router.replace(`/receipts/${r.kvittoNumber}`);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   if (phase === 'qr' && built) {
     return (
       <QrPhase
@@ -132,7 +160,7 @@ export default function Extended() {
         merchantName={config.legalName}
         built={built}
         onCancel={clear}
-        onNext={() => { clear(); router.replace('/home'); }}
+        onConfirm={confirmPayment}
       />
     );
   }
@@ -237,14 +265,14 @@ export default function Extended() {
 }
 
 function QrPhase({
-  totals, cart, merchantName, built, onCancel, onNext,
+  totals, merchantName, built, onCancel, onConfirm,
 }: {
   totals: ReturnType<typeof computeTotals>;
   cart: Cart;
   merchantName: string;
   built: BuiltQr;
   onCancel: () => void;
-  onNext: () => void;
+  onConfirm: () => void;
 }) {
   const amountFtc = Number(built.amountMicroFtc) / 1_000_000;
   return (
@@ -264,8 +292,8 @@ function QrPhase({
         <Pressable style={s.qrCancel} onPress={onCancel}>
           <Text style={s.qrCancelText}>Cancel</Text>
         </Pressable>
-        <Pressable style={s.qrNext} onPress={onNext}>
-          <Text style={s.qrNextText}>Done</Text>
+        <Pressable style={s.qrNext} onPress={onConfirm}>
+          <Text style={s.qrNextText}>Paid ✓</Text>
         </Pressable>
       </View>
     </View>
