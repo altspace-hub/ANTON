@@ -78,6 +78,11 @@ export { applyLossOffset } from './loss-offset.js';
 export type { LossOffsetInput, LossOffsetResult } from './loss-offset.js';
 export { applyHoldingPeriod } from './holding-period.js';
 export type { HeldEntry } from './holding-period.js';
+export {
+  applyRefundTagging,
+  DEFAULT_REFUND_WINDOW_DAYS,
+} from './refund-tagging.js';
+export type { RefundTagResult } from './refund-tagging.js';
 
 export {
   computeTaxPosition,

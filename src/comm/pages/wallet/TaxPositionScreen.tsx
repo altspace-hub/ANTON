@@ -21,6 +21,11 @@ import {
   currentTaxYear,
   toTaxInputTxs,
 } from '../../services/tax-bridge';
+import {
+  loadFtcClassification,
+  saveFtcClassification,
+  type FtcClassification,
+} from '../../services/ftc-classification';
 
 interface Props {
   onBack: () => void;
@@ -78,10 +83,12 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
     const { fromTs, toTs } = calendarYearBounds(year);
     const walletTxs = await listTxsByRange(fromTs, toTs);
     const taxInputs = toTaxInputTxs(walletTxs);
+    const ftcClassification = await loadFtcClassification();
 
     const result = tax.computeTaxPosition({
       rule,
       transactions: taxInputs,
+      options: { ftc_classification: ftcClassification },
       adviserReferralThresholdFiat: ADVISER_THRESHOLD_SEK,
       locale: residency.jurisdictionCode === 'SE' ? 'sv' : 'en',
     });
@@ -227,9 +234,16 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
           )}
         </div>
 
-        <p className="mt-2 text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
-          FTC classification: {result.ftcClassification.replace('_', ' ')}
-        </p>
+        <FtcClassificationToggle
+          current={result.ftcClassification}
+          emtEnabledHere={hasEmtCarveOut(result)}
+          onToggle={async (next) => {
+            await saveFtcClassification(next);
+            // Re-run the computation so the rates flip live.
+            setLoad({ state: 'loading' });
+            await compute();
+          }}
+        />
 
         <PerTxSection entries={result.perTransaction} ccy={a.fiatCurrency} />
 
@@ -377,4 +391,61 @@ function humaniseReason(raw: string): string {
     return raw.slice('review_flag_'.length).replace(/_/g, ' ');
   }
   return raw;
+}
+
+/** Does the user's current jurisdiction rule have the EMT carve-out
+ *  enabled? Italy is the canonical case today. When false, flipping
+ *  the toggle won't change the rate — the toggle still works (it
+ *  affects future jurisdictions automatically), but we surface that
+ *  fact so the user isn't surprised. */
+function hasEmtCarveOut(result: tax.TaxComputationResult): boolean {
+  const rule = tax.getBundledRule(result.jurisdictionCode);
+  return !!rule?.exemptions_and_reliefs.emt_special_treatment.enabled;
+}
+
+function FtcClassificationToggle({
+  current,
+  emtEnabledHere,
+  onToggle,
+}: {
+  current: FtcClassification;
+  emtEnabledHere: boolean;
+  onToggle: (next: FtcClassification) => void;
+}) {
+  const next: FtcClassification = current === 'utility_token' ? 'emt' : 'utility_token';
+  const isEmt = current === 'emt';
+  return (
+    <div className="mt-3 p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-soft)]">
+      <div className="flex items-center justify-between">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
+            FTC classification
+          </div>
+          <div className="text-sm font-medium text-[var(--color-text)]">
+            {isEmt ? 'E-money token (EMT)' : 'Utility token'}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onToggle(next)}
+          className="text-xs text-[var(--color-accent)] font-semibold ml-3 shrink-0"
+        >
+          Switch to {next === 'emt' ? 'EMT' : 'utility'}
+        </button>
+      </div>
+      {emtEnabledHere ? (
+        <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+          Your jurisdiction has an EMT carve-out — flipping this toggle
+          changes the rate applied to your disposals (per §7.2 of
+          FutureChain&apos;s tax policy).
+        </p>
+      ) : (
+        <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-faint)]">
+          Your jurisdiction has no published EMT carve-out, so flipping
+          this toggle won&apos;t change today&apos;s rate. The classification
+          still rides with the report so an adviser can argue for relief.
+        </p>
+      )}
+    </div>
+  );
 }

@@ -29,6 +29,7 @@ import {
   toTaxInputTxs,
 } from '../../services/tax-bridge';
 import { shareFile } from '../../services/share';
+import { loadFtcClassification } from '../../services/ftc-classification';
 
 interface Props {
   onBack: () => void;
@@ -70,9 +71,11 @@ export default function TaxReportScreen({ onBack }: Props) {
     const { fromTs, toTs } = calendarYearBounds(year);
     const walletTxs = await listTxsByRange(fromTs, toTs);
     const taxInputs = toTaxInputTxs(walletTxs);
+    const ftcClassification = await loadFtcClassification();
     const result = tax.computeTaxPosition({
       rule,
       transactions: taxInputs,
+      options: { ftc_classification: ftcClassification },
       adviserReferralThresholdFiat: ADVISER_THRESHOLD_SEK,
       locale: residency.jurisdictionCode === 'SE' ? 'sv' : 'en',
     });
