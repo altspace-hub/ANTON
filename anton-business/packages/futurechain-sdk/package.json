@@ -10,8 +10,7 @@
     "./pacs008": "./src/pacs008/index.ts",
     "./wallet": "./src/wallet/index.ts",
     "./rpc": "./src/rpc/index.ts",
-    "./reference": "./src/reference/index.ts",
-    "./delegation": "./src/delegation/index.ts"
+    "./reference": "./src/reference/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

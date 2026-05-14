@@ -1,26 +1,32 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { loadConfig, type MerchantConfig } from '../../src/services/merchant';
 
 export default function Done() {
-  const { merchantId } = useLocalSearchParams<{ merchantId?: string }>();
+  const [config, setConfig] = useState<MerchantConfig | null>(null);
+
+  useEffect(() => {
+    loadConfig().then(setConfig);
+  }, []);
 
   return (
     <View style={s.container}>
       <Text style={s.check}>✓</Text>
-      <Text style={s.title}>You&apos;re registered</Text>
-      {merchantId && (
+      <Text style={s.title}>You&apos;re set up</Text>
+      {config && (
         <View style={s.idBox}>
-          <Text style={s.label}>Your merchant ID</Text>
-          <Text style={s.idText} selectable>{merchantId}</Text>
+          <Text style={s.label}>Business</Text>
+          <Text style={s.idText}>{config.legalName}</Text>
+          <Text style={s.org}>{config.orgNr}</Text>
         </View>
       )}
       <Text style={s.body}>
-        Next steps (sprint 1 ships these):
-      </Text>
-      <Text style={s.body}>
-        • Authorise auto-convert (sign a delegation){'\n'}
-        • Take your first payment with Simple mode{'\n'}
-        • View transactions and issue refunds
+        Coming next (sprint 2):{'\n'}
+        • Simple-mode keypad → QR{'\n'}
+        • Extended-mode item catalogue{'\n'}
+        • Receipt rendering + email{'\n'}
+        • Refunds
       </Text>
       <Pressable style={s.cta} onPress={() => router.replace('/')}>
         <Text style={s.ctaText}>Go home</Text>
@@ -41,7 +47,8 @@ const s = StyleSheet.create({
     marginBottom: 24,
   },
   label: { color: '#7F8A9C', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
-  idText: { color: '#2DD4A8', fontFamily: 'Courier', fontSize: 20, fontWeight: '700' },
+  idText: { color: '#E0E0E0', fontSize: 20, fontWeight: '600' },
+  org: { color: '#B0B0B0', fontSize: 14, marginTop: 4, fontFamily: 'Courier' },
   body: { color: '#B0B0B0', fontSize: 15, lineHeight: 22, marginBottom: 14, alignSelf: 'flex-start' },
   cta: {
     backgroundColor: '#2DD4A8',
