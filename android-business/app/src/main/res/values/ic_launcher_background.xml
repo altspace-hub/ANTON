@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ANTON Communication App launcher icon background — cream linen.
+         Matches the cream-chevron skin (#F5F1EA) from Logo.tsx. -->
+    <color name="ic_launcher_background">#F5F1EA</color>
+</resources>

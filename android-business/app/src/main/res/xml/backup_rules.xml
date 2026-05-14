@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  R11 (security audit) — disallow ALL app data in cloud backup.
+
+  ANTON Comm stores plaintext messages, contacts, and the Ed25519 private
+  key in WebView IndexedDB and Capacitor secure storage. Backing this up
+  to Google Drive would defeat the end-to-end encryption story — Google
+  (or anyone with the user's Google account) would gain plaintext access.
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>

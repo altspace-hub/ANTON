@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ANTON Business</string>
+    <string name="title_activity_main">ANTON Business</string>
+    <string name="package_name">com.futurechain.anton.business</string>
+    <string name="custom_url_scheme">com.futurechain.anton.business</string>
+</resources>

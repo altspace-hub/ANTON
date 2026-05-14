@@ -1,0 +1,30 @@
+// ANTON Business — slimmed Capacitor build config.
+// Cloned from android-comm; trimmed to the plugins this app actually
+// uses so unused native modules don't initialise. Unused plugins fire
+// JS bridge callbacks at startup, and if their JS counterparts aren't
+// in the Vite bundle the page crashes with "Cannot read properties of
+// undefined (reading 'triggerEvent')". This file is not regenerated
+// from `cap sync` because we maintain android-business/ manually.
+
+android {
+  compileOptions {
+      sourceCompatibility JavaVersion.VERSION_21
+      targetCompatibility JavaVersion.VERSION_21
+  }
+}
+
+apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
+dependencies {
+    implementation project(':aparajita-capacitor-secure-storage')
+    implementation project(':capacitor-app')
+    implementation project(':capacitor-haptics')
+    implementation project(':capacitor-keyboard')
+    implementation project(':capacitor-share')
+    implementation project(':capacitor-splash-screen')
+    implementation project(':capacitor-status-bar')
+}
+
+
+if (hasProperty('postBuildExtras')) {
+  postBuildExtras()
+}

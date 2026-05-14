@@ -1,0 +1,5 @@
+Initial 0.1.0 release.
+
+The full feature set of the R1–R13 roadmap is in: 1-to-1 E2E chat, voice notes, view-once media, disappearing messages, reactions and replies, forwarding, edit and delete-for-everyone, read receipts and typing (both default OFF), scheduled messages, polls, event invites with local reminders, live location, stickers, and the Wassup feed with audience and expiry pickers.
+
+This is a pre-1.0 build. Expect rough edges in non-chat surfaces (Portals and Wallet are early scaffolds). Please report issues via the in-app feedback channel.

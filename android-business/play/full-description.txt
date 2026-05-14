@@ -1,0 +1,30 @@
+ANTON Communication is the consumer messaging side of the ANTON ecosystem — built for people, not enterprises.
+
+Every message is end-to-end encrypted with X25519 + AES-256-GCM. Your private key never leaves this device. There is no server-side address book, no phone-number harvest, no analytics SDK reading your taps.
+
+Features
+• 1-to-1 chat with text, images, video, voice notes, and stickers
+• Disappearing messages — set a timer that both sides honour
+• View-once media — the recipient sees it once, then the bytes are wiped
+• Reactions, replies, forwarding, edit, delete-for-everyone
+• Read receipts and typing indicators — both default OFF, symmetric opt-in
+• Scheduled messages — compose now, send later, even after closing the app
+• Polls — quick yes/no or multi-option votes inside a chat
+• Live location sharing — recipient sees the dot move, sender gets a "paused" badge when the app backgrounds
+• Events — invite contacts, RSVP, set local reminders, no cloud calendar
+• Wassup feed — short status posts to a chosen audience, default 24-hour expiry, optional voice or image attachments
+• Encrypted profile QR + paste-a-contact-code — no phone number, no email, no signup
+
+What ANTON Communication does NOT do
+• No phone number, email, or social account required
+• No cloud sync of plaintext anywhere
+• No ads, no analytics, no third-party SDKs that read your chats
+• No address book scraping or contact-graph upload
+
+Identity
+Your ANTON contact hash (ANTON-XXXX-XXXX-XXXX-XXXX) is derived locally from a key you generate on first launch. Share it as a QR code, paste it in plain text, or hand it over via any channel — adding a contact is a peer-to-peer handshake, not a server lookup.
+
+Open ecosystem
+ANTON Communication is one app in a family that includes ANTON Companion (instance pairing for power users) and ANTON Workspace (web). They interoperate over the same encrypted protocol; you don't need them, but you can grow into them.
+
+Built with privacy as the default, not the upgrade.
