@@ -39,8 +39,8 @@ export default function Home() {
         <Text style={s.primarySub}>Cart with items + VAT breakdown</Text>
       </Pressable>
 
-      <Pressable style={s.tertiary} onPress={() => router.push('/settings/items')}>
-        <Text style={s.tertiaryText}>Manage items</Text>
+      <Pressable style={s.tertiary} onPress={() => router.push('/settings')}>
+        <Text style={s.tertiaryText}>Settings</Text>
       </Pressable>
 
       <Pressable style={s.secondary} disabled>
