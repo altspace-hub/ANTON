@@ -25,7 +25,7 @@ import type { TaxInputTx } from '../transaction.js';
 import type { CostBasisFn, GainLossEntry, GainLossLedger } from './types.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MATCHING_WINDOW_MS = 30 * DAY_MS;
+export const DEFAULT_MATCHING_WINDOW_DAYS = 30; // UK Section 105
 
 interface Acquisition {
   ts: number;
@@ -38,12 +38,23 @@ interface Acquisition {
   consumedIntoPool: boolean;
 }
 
-export const sharePooling: CostBasisFn = (txs: TaxInputTx[]): GainLossLedger => {
-  // The 30-day rule needs lookahead, so we use two passes:
-  //   Pass 1: walk events forward, building a list of acquisitions
-  //           and disposals in chronological order.
-  //   Pass 2: process each disposal against same-day + 30-day +
-  //           pool, in that order.
+/** Factory: produces a share-pooling CostBasisFn with the given
+ *  forward matching window. UK uses 30 days (default); Ireland's
+ *  4-week rule uses 28; any jurisdiction with a comparable rule
+ *  can dial in its own window via rule.cost_basis_method
+ *  .matching_window_days. */
+export function makeSharePooling(matchingWindowDays = DEFAULT_MATCHING_WINDOW_DAYS): CostBasisFn {
+  const matchingWindowMs = matchingWindowDays * DAY_MS;
+  return (txs: TaxInputTx[]): GainLossLedger => sharePoolingImpl(txs, matchingWindowMs);
+}
+
+/** Default export — 30-day UK matching, backwards compatible with
+ *  callers that didn't configure a window. The engine prefers
+ *  makeSharePooling(rule.cost_basis_method.matching_window_days)
+ *  for accurate per-jurisdiction behaviour. */
+export const sharePooling: CostBasisFn = makeSharePooling(DEFAULT_MATCHING_WINDOW_DAYS);
+
+function sharePoolingImpl(txs: TaxInputTx[], matchingWindowMs: number): GainLossLedger {
   const events = [...txs].sort((a, b) => a.ts - b.ts);
   const acquisitions: Acquisition[] = [];
   const eventOrder: Array<
@@ -130,7 +141,7 @@ export const sharePooling: CostBasisFn = (txs: TaxInputTx[]): GainLossLedger => 
     if (remaining > 0n) {
       const windowLots = acquisitions
         .filter((a) => !a.consumedIntoPool && a.remainingAtomic > 0n
-                && a.ts > tx.ts && (a.ts - tx.ts) <= MATCHING_WINDOW_MS)
+                && a.ts > tx.ts && (a.ts - tx.ts) <= matchingWindowMs)
         .sort((a, b) => a.ts - b.ts);
       for (const lot of windowLots) {
         if (remaining === 0n) break;
@@ -192,7 +203,7 @@ export const sharePooling: CostBasisFn = (txs: TaxInputTx[]): GainLossLedger => 
     remainingAtomic: poolQtyAtomic.toString(),
     remainingBasisFiat: poolBasisFiat,
   };
-};
+}
 
 function isAcquisition(tx: TaxInputTx): boolean {
   return tx.kind === 'buy_with_fiat' || tx.kind === 'receive_as_payment' || tx.kind === 'gift_received';

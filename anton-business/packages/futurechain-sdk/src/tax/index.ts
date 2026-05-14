@@ -98,6 +98,15 @@ export {
 } from './engine.js';
 
 export {
+  computeWealthTaxPosition,
+  isWealthTaxResult,
+} from './wealth-tax.js';
+export type {
+  WealthTaxInput,
+  WealthTaxResult,
+} from './wealth-tax.js';
+
+export {
   getBundledRule,
   bundledJurisdictionCodes,
   activeJurisdictionCodes,

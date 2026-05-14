@@ -17,7 +17,17 @@ export const NL: JurisdictionRule = {
   jurisdiction_name: 'Netherlands',
   authority: 'Belastingdienst',
   authority_url: 'https://www.belastingdienst.nl/',
-  status: 'unsupported',
+  status: 'active',
+  taxation_model: 'wealth',
+  wealth_tax_params: {
+    // Approximate 2024 figures per §6.1 NL — verify annually.
+    // ~€57k tax-free wealth allowance per person, 1.97% deemed return,
+    // 36% Box 3 rate = ~0.71% effective on holdings above the
+    // allowance.
+    allowance: 57000,
+    deemed_return_rate: 0.0197,
+    box_rate: 0.36,
+  },
   classification: { asset_type: 'other_specific', recognised_as_currency: false, legal_status: 'legal' },
   taxable_events: {
     buy_with_fiat: false, hold: true, // unique among supported jurisdictions
@@ -50,8 +60,8 @@ export const NL: JurisdictionRule = {
     verification_source: ['FUTURECHAIN_TAX_RULES.md §6.1 NL'],
     confidence: 'high',
     review_flags: [
-      'wealth_tax_model_needs_separate_engine_path',
-      'phase_5_unblocks_nl_calculation',
+      'box_3_rates_published_annually_verify_current_year',
+      'wealth_tax_balance_uses_running_fiat_value_not_year_end_rate_oracle',
     ],
   },
 };

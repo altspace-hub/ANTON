@@ -20,7 +20,15 @@ export const IE: JurisdictionRule = {
     spend_on_goods_services: true, receive_as_payment: true,
     gift_to_non_spouse: false, lend_or_stake: 'taxable',
   },
-  cost_basis_method: { permitted: ['FIFO'], default: 'FIFO', optimization_allowed: false },
+  cost_basis_method: {
+    // Ireland's 4-week rule is a forward-matching "bed-and-breakfast"
+    // mirror of UK Section 105 with a shorter window. Phase 8 wires
+    // SHARE_POOLING with matching_window_days = 28 so it's enforced.
+    permitted: ['SHARE_POOLING'],
+    default: 'SHARE_POOLING',
+    optimization_allowed: false,
+    matching_window_days: 28,
+  },
   rates: {
     capital_gains: { type: 'flat', structure: { type: 'flat', rate: 0.33 } },
     income: { applies_to: ['mining', 'staking', 'salary'], structure: { type: 'flat', rate: 0.40 } },
@@ -43,6 +51,6 @@ export const IE: JurisdictionRule = {
     last_verified: '2026-05-12',
     verification_source: ['FUTURECHAIN_TAX_RULES.md §6.2 IE'],
     confidence: 'medium',
-    review_flags: ['4_week_matching_rule_not_yet_enforced'],
+    review_flags: [],
   },
 };
