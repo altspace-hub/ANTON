@@ -19,6 +19,8 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ title: 'ANTON Business' }} />
         <Stack.Screen name="simple" options={{ title: 'Take payment' }} />
+        <Stack.Screen name="extended" options={{ title: 'Extended mode' }} />
+        <Stack.Screen name="settings/items" options={{ title: 'Items' }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>
     </>

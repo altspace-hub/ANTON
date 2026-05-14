@@ -7,6 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  buildExtendedQr,
   buildSimpleQr,
   computeMerchantId,
   generateOrderId,
@@ -141,5 +142,54 @@ describe('buildSimpleQr', () => {
     // Merchant id too short → reference.encodeV1 throws → buildSimpleQr
     // propagates.
     expect(() => buildSimpleQr({ ...base, merchantId: 'short' })).toThrow();
+  });
+});
+
+describe('buildExtendedQr', () => {
+  const base = {
+    toAddress: 'fc_safelloaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    merchantId: 'KTH00001',
+    orderId: 'A1B2C3D4E5F6',
+    amountSek: 100,
+    ftcPerSek: 0.1,
+    itemCount: 3,
+    vatSek: 20,
+    now: 1_700_000_000,
+  };
+
+  it('emits I and V tokens in the v1 reference', () => {
+    const { ref } = buildExtendedQr(base);
+    // 20 SEK * 0.1 rate * 1e6 = 2_000_000 micro-FTC
+    expect(ref).toBe('v1: M:KTH00001 O:A1B2C3D4E5F6 P:RESTAURANT I:3 V:2000000');
+  });
+
+  it('emits D token only when discount > 0', () => {
+    const { ref } = buildExtendedQr({ ...base, discountSek: 10 });
+    // 10 SEK * 0.1 rate * 1e6 = 1_000_000 micro-FTC
+    expect(ref).toBe('v1: M:KTH00001 O:A1B2C3D4E5F6 P:RESTAURANT I:3 V:2000000 D:1000000');
+  });
+
+  it('omits D token when discount is 0 or undefined', () => {
+    const noDiscount = buildExtendedQr(base);
+    expect(noDiscount.ref).not.toContain('D:');
+    const zeroDiscount = buildExtendedQr({ ...base, discountSek: 0 });
+    expect(zeroDiscount.ref).not.toContain('D:');
+  });
+
+  it('defaults purpose to RESTAURANT', () => {
+    const { ref } = buildExtendedQr(base);
+    expect(ref).toContain('P:RESTAURANT');
+  });
+
+  it('allows overriding the purpose to EVENT or SERVICE', () => {
+    expect(buildExtendedQr({ ...base, purpose: 'EVENT' }).ref).toContain('P:EVENT');
+    expect(buildExtendedQr({ ...base, purpose: 'SERVICE' }).ref).toContain('P:SERVICE');
+  });
+
+  it('builds an amount-payment URI just like the simple builder', () => {
+    const { uri } = buildExtendedQr(base);
+    expect(uri.startsWith('futurechain:pay?')).toBe(true);
+    expect(uri).toContain('amount=10000000'); // 100 SEK * 0.1 * 1e6
+    expect(uri).toContain('v=1');
   });
 });
