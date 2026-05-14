@@ -445,15 +445,18 @@ pnpm install                                              # workspace deps
 pnpm --filter @futurechain/sdk test                       # reference + wallet
 node anton-business/tests/fixtures/generate.mjs           # regenerate parity fixtures
 
-# Run the app
-cd anton-business/apps/anton-business-app
-npx expo start                                            # dev server + QR for Expo Go
-npx expo run:android --device                             # build + install on phone
+# Run the app (Capacitor + Vite — Expo cut archived 2026-05-14)
+pnpm dev:business                                         # Vite HMR for fast iteration
+pnpm build:business:cap                                   # production bundle → dist/business/
+cp -r dist/business android-business/app/src/main/assets/public
+cd android-business && ./gradlew assembleDebug            # build APK
+adb install -r app/build/outputs/apk/debug/app-debug.apk  # install on phone
 ```
 
-Phone install on Windows currently needs `Add-MpPreference
--ExclusionPath "C:\ANTON_PostgreSQLv2"` from admin PowerShell first
-(Defender vs Gradle conflict — see `anton-business/README.md`).
+App source: `src/business/` (React + Vite + Tailwind). Native shell:
+`android-business/` (Capacitor 8.3). The original Expo / RN cut is
+preserved at `anton-business/_archive/expo-attempt/` — see that dir's
+README for the toolchain rationale.
 
 ---
 

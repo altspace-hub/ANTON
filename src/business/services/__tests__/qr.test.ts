@@ -2,8 +2,7 @@
  * qr.test.ts — coverage for the QR URI builder + ID helpers.
  *
  * Run via:
- *   cd anton-business/apps/anton-business-app
- *   pnpm vitest run
+ *   pnpm test:business     (from the repo root)
  */
 import { describe, it, expect } from 'vitest';
 import {
