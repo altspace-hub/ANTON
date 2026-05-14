@@ -13,11 +13,14 @@
 import { useEffect, useState } from 'react';
 import HomeScreen from './pages/HomeScreen';
 import SimpleScreen from './pages/SimpleScreen';
+import ExtendedScreen from './pages/ExtendedScreen';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
 import ModeChoiceScreen from './pages/onboarding/ModeChoiceScreen';
 import RegisterScreen from './pages/onboarding/RegisterScreen';
 import ItemsSetupScreen from './pages/onboarding/ItemsSetupScreen';
 import DoneScreen from './pages/onboarding/DoneScreen';
+import SettingsScreen from './pages/settings/SettingsScreen';
+import ConnectWalletScreen from './pages/settings/ConnectWalletScreen';
 import { hasConfig } from './services/merchant';
 import type { SaleMode } from './services/types';
 
@@ -29,9 +32,10 @@ type Screen =
   | 'onboarding-items'
   | 'onboarding-done'
   | 'home'
-  | 'simple'      // task #5
-  | 'extended'    // task #6
-  | 'settings';   // task #7
+  | 'simple'
+  | 'extended'
+  | 'settings'
+  | 'settings-wallet';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
@@ -94,30 +98,21 @@ export default function App() {
   if (screen === 'simple') {
     return <SimpleScreen onBack={() => setScreen('home')} />;
   }
+  if (screen === 'extended') {
+    return <ExtendedScreen onBack={() => setScreen('home')} />;
+  }
+  if (screen === 'settings') {
+    return (
+      <SettingsScreen
+        onBack={() => setScreen('home')}
+        onConnectWallet={() => setScreen('settings-wallet')}
+      />
+    );
+  }
+  if (screen === 'settings-wallet') {
+    return <ConnectWalletScreen onBack={() => setScreen('settings')} />;
+  }
 
-  // Extended + Settings screens land in tasks #6–#7.
-  return (
-    <div className="flex flex-col h-full p-6 safe-top safe-bottom"
-         style={{ backgroundColor: 'var(--color-bg)' }}>
-      <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-        Coming soon
-      </h2>
-      <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
-        The <strong>{screen}</strong> screen is not built yet. The
-        services are wired — only the UI is pending.
-      </p>
-      <button
-        type="button"
-        onClick={() => setScreen('home')}
-        className="self-start px-4 py-2 rounded-lg"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          color: 'var(--color-text)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        ← Back home
-      </button>
-    </div>
-  );
+  // Should never reach — all states above covered.
+  return null;
 }
