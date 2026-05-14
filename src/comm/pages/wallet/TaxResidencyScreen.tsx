@@ -48,6 +48,14 @@ const PICKER: Array<{ code: string; name: string; emoji: string }> = [
   { code: 'AE', name: 'UAE',            emoji: '🇦🇪' },
   { code: 'ZA', name: 'South Africa',   emoji: '🇿🇦' },
   { code: 'NG', name: 'Nigeria',        emoji: '🇳🇬' },
+  { code: 'KE', name: 'Kenya',          emoji: '🇰🇪' },
+  // Phase 6 additions
+  { code: 'CY', name: 'Cyprus',         emoji: '🇨🇾' },
+  { code: 'MT', name: 'Malta',          emoji: '🇲🇹' },
+  { code: 'PL', name: 'Poland',         emoji: '🇵🇱' },
+  { code: 'KR', name: 'South Korea',    emoji: '🇰🇷' },
+  { code: 'IL', name: 'Israel',         emoji: '🇮🇱' },
+  { code: 'BR', name: 'Brazil',         emoji: '🇧🇷' },
 ];
 
 interface Props {

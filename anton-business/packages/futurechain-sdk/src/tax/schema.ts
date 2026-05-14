@@ -80,6 +80,13 @@ export interface CapitalGainsRates {
   type: 'flat' | 'progressive' | 'bracket_dependent';
   /** Structured per §4 — varies by rate type. */
   structure: RateStructure;
+  /** Fraction of the gain that's taxable BEFORE rate application —
+   *  defaults to 1.0 (full inclusion). Canada's 50% inclusion rate
+   *  is the canonical lower value: only half the gain is brought
+   *  into income, then taxed at the marginal rate. Distinct from
+   *  long-term-holding `discount_fraction` because Canada's
+   *  inclusion applies regardless of holding period. */
+  inclusion_rate?: number;
 }
 
 /** §4 `rates.income.applies_to` taxonomy. */

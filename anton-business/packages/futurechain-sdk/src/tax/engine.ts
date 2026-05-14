@@ -195,13 +195,20 @@ export function computeTaxPosition(
     if (e.effectiveGainLossFiat <= 0) {
       return { ...e, taxFiat: 0 };
     }
+    // Canada's 50% inclusion rate (and any future jurisdiction with
+    // partial inclusion) applies BEFORE the rate. Default 1.0 = full
+    // inclusion. Multiplies into the *effective* gain (already past
+    // long-term discount, if any).
+    const inclusion = rule.rates.capital_gains.inclusion_rate ?? 1.0;
+    const taxableGain = e.effectiveGainLossFiat * inclusion;
+
     let taxFiat: number;
     if (useEmtRate) {
-      taxFiat = e.effectiveGainLossFiat * (emt.reduced_rate ?? 0);
+      taxFiat = taxableGain * (emt.reduced_rate ?? 0);
     } else if (e.longTerm && ltReducedRate !== undefined) {
-      taxFiat = e.effectiveGainLossFiat * ltReducedRate;
+      taxFiat = taxableGain * ltReducedRate;
     } else {
-      taxFiat = applyRate(e.effectiveGainLossFiat, rule.rates.capital_gains.structure);
+      taxFiat = applyRate(taxableGain, rule.rates.capital_gains.structure);
     }
     return { ...e, taxFiat };
   });
@@ -233,10 +240,13 @@ export function computeTaxPosition(
 
   // 8. Final tax on the netted figure. Re-apply the rate to the net
   //    so progressive brackets see the *real* taxable base, not the
-  //    per-entry slices.
+  //    per-entry slices. Inclusion rate (Canada 50%) applies before
+  //    the rate just like in the per-tx loop above.
+  const inclusionRate = rule.rates.capital_gains.inclusion_rate ?? 1.0;
+  const taxableBase = offset.netTaxableGainsFiat * inclusionRate;
   const finalTax = useEmtRate
-    ? offset.netTaxableGainsFiat * (emt.reduced_rate ?? 0)
-    : applyRate(offset.netTaxableGainsFiat, rule.rates.capital_gains.structure);
+    ? taxableBase * (emt.reduced_rate ?? 0)
+    : applyRate(taxableBase, rule.rates.capital_gains.structure);
 
   const annual: AnnualSummary = {
     totalGainsFiat: totalGains,
