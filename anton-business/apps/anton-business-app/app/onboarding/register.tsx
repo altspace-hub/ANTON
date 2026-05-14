@@ -1,11 +1,18 @@
+/**
+ * Onboarding step 3 — local merchant configuration.
+ *
+ * v2.0 phone-first model: no HTTP call to a backend. We save the
+ * config to `expo-secure-store` and continue. The Safello receive
+ * address the merchant enters is the only external dependency, and
+ * it's set up bilaterally with Safello before they reach this screen.
+ */
 import { router } from 'expo-router';
-import { sha256 } from '@noble/hashes/sha2';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable,
-  ScrollView, StyleSheet, Switch, Text, TextInput, View,
+  KeyboardAvoidingView, Platform, Pressable, ScrollView,
+  StyleSheet, Switch, Text, TextInput, View,
 } from 'react-native';
-import { HttpError, api } from '../../src/services/api';
+import { saveConfig, type MerchantConfig } from '../../src/services/merchant';
 import { loadWallet } from '../../src/services/wallet';
 
 interface Form {
@@ -15,6 +22,9 @@ interface Form {
   street: string;
   postcode: string;
   vatRegistered: boolean;
+  defaultVatRate: 0 | 6 | 12 | 25;
+  safelloReceiveAddress: string;
+  kvittoEmail: string;
 }
 
 export default function Register() {
@@ -26,8 +36,10 @@ export default function Register() {
     street: '',
     postcode: '',
     vatRegistered: true,
+    defaultVatRate: 25,
+    safelloReceiveAddress: '',
+    kvittoEmail: '',
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,6 +48,10 @@ export default function Register() {
         setError('No wallet on device — generate one first.');
       } else {
         setWalletAddress(w.address);
+        // Default the Safello receive field to the merchant's own
+        // wallet address; the merchant overrides if Safello gave
+        // them a different sweep address.
+        setForm((f) => ({ ...f, safelloReceiveAddress: w.address }));
       }
     });
   }, []);
@@ -45,46 +61,35 @@ export default function Register() {
   }
 
   async function submit() {
-    if (!walletAddress) return;
-    if (!form.legalName || !form.orgNr || !form.city || !form.street || !form.postcode) {
-      setError('Fill all fields before submitting.');
+    const required: Array<keyof Form> = [
+      'legalName', 'orgNr', 'city', 'street', 'postcode', 'safelloReceiveAddress',
+    ];
+    for (const k of required) {
+      if (typeof form[k] === 'string' && !(form[k] as string).trim()) {
+        setError(`Fill ${k} before continuing.`);
+        return;
+      }
+    }
+    if (!walletAddress) {
+      setError('Wallet missing — generate one first.');
       return;
     }
-    setSubmitting(true);
     setError(null);
-    try {
-      // The kybMetadataHash is a placeholder: in the real flow this
-      // would be a hash of the KYB documents submitted via the
-      // off-app onboarding portal. For the beta we hash the form
-      // fields themselves so it's verifiable but not document-bound.
-      const enc = new TextEncoder();
-      const blob = enc.encode(JSON.stringify(form));
-      const hashBytes = sha256(blob);
-      let hashHex = '';
-      for (const b of hashBytes) hashHex += b.toString(16).padStart(2, '0');
-
-      const res = await api.registerMerchant({
-        walletAddress,
-        kybMetadataHash: hashHex,
-        legalName: form.legalName,
-        orgNr: form.orgNr,
-        city: form.city,
-        street: form.street,
-        postcode: form.postcode,
-        vatRegistered: form.vatRegistered,
-      });
-      router.replace({
-        pathname: '/onboarding/done',
-        params: { merchantId: res.merchantId },
-      });
-    } catch (err) {
-      if (err instanceof HttpError) {
-        setError(`${err.body.code}: ${err.body.message}`);
-      } else {
-        setError((err as Error).message);
-      }
-      setSubmitting(false);
-    }
+    const config: MerchantConfig = {
+      legalName: form.legalName.trim(),
+      orgNr: form.orgNr.trim(),
+      city: form.city.trim(),
+      street: form.street.trim(),
+      postcode: form.postcode.trim(),
+      vatRegistered: form.vatRegistered,
+      defaultVatRate: form.defaultVatRate,
+      safelloReceiveAddress: form.safelloReceiveAddress.trim(),
+      kvittoEmail: form.kvittoEmail.trim() || undefined,
+      nextKvittoNumber: 1,
+      configuredAt: Date.now(),
+    };
+    await saveConfig(config);
+    router.replace('/onboarding/done');
   }
 
   return (
@@ -93,10 +98,10 @@ export default function Register() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={s.heading}>Register</Text>
+        <Text style={s.heading}>Business details</Text>
         <Text style={s.body}>
-          KYB details. These are sent to the merchant backend and signed
-          off as part of operator approval.
+          These appear on every kvitto. Everything is stored locally on
+          this device — no servers involved.
         </Text>
 
         <Field label="Legal name" value={form.legalName} onChange={bind('legalName')} placeholder="Karl's Café AB" />
@@ -115,9 +120,49 @@ export default function Register() {
           />
         </View>
 
+        {form.vatRegistered && (
+          <View style={s.field}>
+            <Text style={s.label}>Default VAT rate</Text>
+            <View style={s.vatRow}>
+              {[0, 6, 12, 25].map((r) => (
+                <Pressable
+                  key={r}
+                  onPress={() => bind('defaultVatRate')(r as 0 | 6 | 12 | 25)}
+                  style={[s.vatChip, form.defaultVatRate === r && s.vatChipActive]}
+                >
+                  <Text style={[s.vatChipText, form.defaultVatRate === r && s.vatChipTextActive]}>{r}%</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <Text style={s.section}>Settlement</Text>
+        <Text style={s.bodySmall}>
+          Customer FTC payments will land at this address. If you have a
+          Safello sweep agreement, use the address Safello gave you.
+          Otherwise leave this as your own wallet address and manage
+          conversion yourself.
+        </Text>
+        <Field
+          label="Receive address"
+          value={form.safelloReceiveAddress}
+          onChange={bind('safelloReceiveAddress')}
+          placeholder="fc_..."
+        />
+
+        <Text style={s.section}>Receipts</Text>
+        <Field
+          label="Email for kvitto (optional)"
+          value={form.kvittoEmail}
+          onChange={bind('kvittoEmail')}
+          placeholder="receipts@karls-cafe.se"
+          keyboardType="email-address"
+        />
+
         {walletAddress && (
           <View style={s.walletBox}>
-            <Text style={s.label}>Wallet</Text>
+            <Text style={s.label}>Your wallet (identity)</Text>
             <Text style={s.walletText} selectable>{walletAddress}</Text>
           </View>
         )}
@@ -125,15 +170,11 @@ export default function Register() {
         {error && <Text style={s.err}>{error}</Text>}
 
         <Pressable
-          style={[s.cta, (submitting || !walletAddress) && s.ctaDisabled]}
-          disabled={submitting || !walletAddress}
+          style={[s.cta, !walletAddress && s.ctaDisabled]}
+          disabled={!walletAddress}
           onPress={submit}
         >
-          {submitting ? (
-            <ActivityIndicator color="#0B1426" />
-          ) : (
-            <Text style={s.ctaText}>Submit</Text>
-          )}
+          <Text style={s.ctaText}>Save and continue</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -147,7 +188,7 @@ function Field({
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'numeric';
+  keyboardType?: 'default' | 'numeric' | 'email-address';
 }) {
   return (
     <View style={s.field}>
@@ -159,7 +200,7 @@ function Field({
         placeholder={placeholder}
         placeholderTextColor="#4F5267"
         keyboardType={keyboardType ?? 'default'}
-        autoCapitalize="words"
+        autoCapitalize={keyboardType === 'email-address' ? 'none' : 'words'}
         autoCorrect={false}
       />
     </View>
@@ -170,6 +211,8 @@ const s = StyleSheet.create({
   scroll: { padding: 24, paddingBottom: 48 },
   heading: { fontSize: 24, fontWeight: '700', color: '#E0E0E0', marginBottom: 8 },
   body: { color: '#B0B0B0', fontSize: 14, lineHeight: 20, marginBottom: 20 },
+  bodySmall: { color: '#B0B0B0', fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  section: { color: '#2DD4A8', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginTop: 24, marginBottom: 12 },
   field: { marginBottom: 14 },
   label: { color: '#7F8A9C', fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 },
   input: {
@@ -180,18 +223,13 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 14,
-  },
-  walletBox: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#152238',
-    borderRadius: 10,
-  },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 14 },
+  vatRow: { flexDirection: 'row', gap: 8 },
+  vatChip: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#152238' },
+  vatChipActive: { backgroundColor: '#2DD4A8' },
+  vatChipText: { color: '#B0B0B0', fontWeight: '600' },
+  vatChipTextActive: { color: '#0B1426' },
+  walletBox: { marginTop: 16, padding: 12, backgroundColor: '#152238', borderRadius: 10 },
   walletText: { color: '#2DD4A8', fontFamily: 'Courier', fontSize: 13 },
   err: { color: '#E74C3C', fontSize: 14, marginTop: 12 },
   cta: {

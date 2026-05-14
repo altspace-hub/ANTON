@@ -1,6 +1,14 @@
 # ADR-002 — Rust + Axum for merchant-backend
 
-**Status:** Accepted (2026-05-14)
+**Status:** SUPERSEDED (2026-05-14) — there is no merchant-backend in
+the v2.0 phone-first architecture. See `anton-business/_archive/` for
+the working Rust + Axum + sqlx code if a hosted SKU is revived later.
+
+The text below preserves the original ADR for historical reference.
+
+---
+
+**Original Status:** Accepted (2026-05-14)
 **Closes:** Spec §19 OD-07
 
 ## Decision

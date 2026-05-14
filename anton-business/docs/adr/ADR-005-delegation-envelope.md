@@ -1,6 +1,17 @@
 # ADR-005 — Settlement delegation envelope format
 
-**Status:** Accepted (2026-05-14)
+**Status:** SUPERSEDED (2026-05-14) — rolled back as part of the v2.0
+architecture pivot away from a merchant-backend. The phone never signs
+a server-held delegation in the new model; merchants arrange Safello
+sweep authority bilaterally with Safello. The TS + Rust implementations
+of this envelope live in `anton-business/_archive/` if we ever revive
+a hosted-ANTON-Business SKU.
+
+The text below preserves the original ADR for historical reference.
+
+---
+
+**Original Status:** Accepted (2026-05-14)
 **Closes:** Spec §12.3 (settlement delegation), §19 OD-?? (envelope format)
 **Decision:** Option 4 — Custom domain-separated SHA-256 envelope, signed
 with the merchant's secp256k1 key. Deliberately distinct from PACS.008

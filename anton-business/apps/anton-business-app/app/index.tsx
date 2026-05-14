@@ -2,12 +2,21 @@ import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { hasWallet } from '../src/services/wallet';
+import { hasConfig } from '../src/services/merchant';
 
 export default function Index() {
-  const [state, setState] = useState<'loading' | 'gen' | 'home'>('loading');
+  const [state, setState] = useState<'loading' | 'gen' | 'setup' | 'home'>('loading');
 
   useEffect(() => {
-    hasWallet().then((b) => setState(b ? 'home' : 'gen'));
+    (async () => {
+      if (!(await hasWallet())) {
+        setState('gen');
+      } else if (!(await hasConfig())) {
+        setState('setup');
+      } else {
+        setState('home');
+      }
+    })();
   }, []);
 
   if (state === 'loading') {
@@ -17,9 +26,8 @@ export default function Index() {
       </View>
     );
   }
-  if (state === 'gen') {
-    return <Redirect href="/onboarding/welcome" />;
-  }
+  if (state === 'gen') return <Redirect href="/onboarding/welcome" />;
+  if (state === 'setup') return <Redirect href="/onboarding/register" />;
   return <Redirect href="/home" />;
 }
 
