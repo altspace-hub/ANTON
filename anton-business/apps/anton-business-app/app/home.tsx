@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { loadConfig, type MerchantConfig, wipeConfig } from '../src/services/merchant';
 import { wipeItems } from '../src/services/items';
 import { wipeDb } from '../src/services/db';
+import { isBackupOverdue } from '../src/services/backup';
 import { loadWallet, wipeWallet } from '../src/services/wallet';
 
 export default function Home() {
@@ -29,6 +30,16 @@ export default function Home() {
         <Text style={s.welcome}>
           Welcome back, <Text style={s.welcomeBold}>{config.legalName}</Text>.
         </Text>
+      )}
+
+      {isBackupOverdue(config) && (
+        <Pressable style={s.banner} onPress={() => router.push('/settings/backup')}>
+          <Text style={s.bannerTitle}>⚠ Backup overdue</Text>
+          <Text style={s.bannerBody}>
+            It&apos;s been a while since you exported your kvitto archive.
+            Tap to back up now (Bokföringslagen retention).
+          </Text>
+        </Pressable>
       )}
 
       <Pressable style={s.primary} onPress={() => router.push('/simple')}>
@@ -73,6 +84,18 @@ const s = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: '#0F1B2D' },
   welcome: { color: '#E0E0E0', fontSize: 16, marginBottom: 20 },
   welcomeBold: { fontWeight: '700' },
+
+  banner: {
+    backgroundColor: '#3B2A0F',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F5A623',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginBottom: 14,
+  },
+  bannerTitle: { color: '#F5A623', fontSize: 13, fontWeight: '700' },
+  bannerBody: { color: '#B0B0B0', fontSize: 12, marginTop: 4, lineHeight: 16 },
 
   primary: {
     backgroundColor: '#2DD4A8',

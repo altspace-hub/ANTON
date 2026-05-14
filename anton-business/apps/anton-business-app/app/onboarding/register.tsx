@@ -90,6 +90,7 @@ export default function Register() {
       // v0 placeholder rate; merchant edits in Settings → Pricing
       // when that screen lands in sprint 2.
       ftcPerSek: 0.1,
+      lastBackupAt: 0,
     };
     await saveConfig(config);
     router.replace('/onboarding/done');

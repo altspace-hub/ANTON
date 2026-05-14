@@ -43,6 +43,12 @@ export interface MerchantConfig {
    *  Loaded configs without this field migrate to the default on next
    *  save via loadConfig(). */
   ftcPerSek: number;
+  /** Unix ms timestamp of the most recent successful kvitto archive
+   *  export. Drives the "back up your records" reminder banner on
+   *  Home. 0 if never exported. Bookföringslagen 5 kap. requires
+   *  7-year retention; this banner is a polite nudge, not a hard
+   *  enforcement — the on-device SQLite store is the source of truth. */
+  lastBackupAt: number;
 }
 
 const DEFAULT_FTC_PER_SEK = 0.1;
@@ -57,6 +63,7 @@ export async function loadConfig(): Promise<MerchantConfig | null> {
     return {
       ...(parsed as MerchantConfig),
       ftcPerSek: parsed.ftcPerSek ?? DEFAULT_FTC_PER_SEK,
+      lastBackupAt: parsed.lastBackupAt ?? 0,
     };
   } catch {
     return null;
