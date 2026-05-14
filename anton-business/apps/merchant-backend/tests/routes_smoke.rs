@@ -75,7 +75,7 @@ fn get(uri: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn health_returns_ok() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app.oneshot(get("/health")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
     let body = body_json(resp).await;
@@ -86,7 +86,7 @@ async fn health_returns_ok() {
 
 #[tokio::test]
 async fn register_then_lookup_by_id_and_address() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
 
     let resp = app
@@ -135,7 +135,7 @@ async fn register_then_lookup_by_id_and_address() {
 
 #[tokio::test]
 async fn register_rejects_duplicate_wallet_address() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let body = json!({
         "walletAddress": test_address(),
         "kybMetadataHash": "b".repeat(64),
@@ -156,7 +156,7 @@ async fn register_rejects_duplicate_wallet_address() {
 
 #[tokio::test]
 async fn register_rejects_bad_kyb_hash() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app
         .oneshot(post(
             "/merchant/register",
@@ -179,7 +179,7 @@ async fn register_rejects_bad_kyb_hash() {
 
 #[tokio::test]
 async fn merchant_lookup_404_when_missing() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app.oneshot(get("/merchant/XXXXXXXX")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
@@ -188,7 +188,7 @@ async fn merchant_lookup_404_when_missing() {
 
 #[tokio::test]
 async fn delegate_full_happy_path() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     let payload = baseline_delegation(
         addr.clone(),
@@ -223,7 +223,7 @@ async fn delegate_full_happy_path() {
 
 #[tokio::test]
 async fn delegate_rejects_address_mismatch() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     let payload = baseline_delegation(
         addr.clone(),
@@ -243,7 +243,7 @@ async fn delegate_rejects_address_mismatch() {
 
 #[tokio::test]
 async fn delegate_rejects_signer_mismatch() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     let mut payload = baseline_delegation(
         addr.clone(),
@@ -266,7 +266,7 @@ async fn delegate_rejects_signer_mismatch() {
 
 #[tokio::test]
 async fn delegate_rejects_expired() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     let payload = baseline_delegation(
         addr.clone(),
@@ -285,7 +285,7 @@ async fn delegate_rejects_expired() {
 
 #[tokio::test]
 async fn delegate_rejects_nonce_replay() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     let payload = baseline_delegation(
         addr.clone(),
@@ -313,7 +313,7 @@ async fn delegate_supersedes_with_new_nonce() {
     // ADR-005: a new delegation (new nonce) supersedes the prior one
     // for the same merchant. The replay nonce check is per-merchant,
     // so two different nonces should both be accepted.
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
 
     let p1 = baseline_delegation(addr.clone(), "550e8400-e29b-41d4-a716-446655440000", 2_147_483_647);
@@ -347,7 +347,7 @@ async fn delegate_supersedes_with_new_nonce() {
 
 #[tokio::test]
 async fn transactions_returns_empty_stub_for_registered_merchant() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let addr = test_address();
     // Register first so the lookup doesn't 404.
     let _ = app
@@ -380,14 +380,14 @@ async fn transactions_returns_empty_stub_for_registered_merchant() {
 
 #[tokio::test]
 async fn transactions_404_for_unknown_merchant() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app.oneshot(get("/merchant/fc_unknown/transactions")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn transaction_status_validates_uetr_length() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app.oneshot(get("/transaction/short/status")).await.unwrap();
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(body_json(resp).await["code"], "invalid_uetr");
@@ -395,7 +395,7 @@ async fn transaction_status_validates_uetr_length() {
 
 #[tokio::test]
 async fn transaction_status_accepts_valid_uetr() {
-    let app = build_router(AppState::new());
+    let app = build_router(AppState::in_memory());
     let resp = app
         .oneshot(get("/transaction/550e8400-e29b-41d4-a716-446655440000/status"))
         .await

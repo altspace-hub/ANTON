@@ -1072,6 +1072,7 @@ name = "merchant-backend"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum",
  "bigdecimal",
  "chrono",

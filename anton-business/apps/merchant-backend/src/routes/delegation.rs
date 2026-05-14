@@ -75,14 +75,21 @@ pub async fn put_delegation(
     }
 
     // Replay protection: a nonce can only be used once per merchant.
-    if !state.record_nonce(&address, &env.payload.nonce) {
+    let fresh = state
+        .record_nonce(&address, &env.payload.nonce)
+        .await
+        .map_err(|e| ApiError::internal(format!("storage: {e}")))?;
+    if !fresh {
         return Err(ApiError::conflict(
             "nonce_reused",
             "this nonce has already been consumed for this merchant",
         ));
     }
 
-    state.save_delegation(&address, env.clone());
+    state
+        .save_delegation(&address, env.clone())
+        .await
+        .map_err(|e| ApiError::internal(format!("storage: {e}")))?;
     Ok((StatusCode::CREATED, Json(env)))
 }
 
@@ -91,7 +98,9 @@ pub async fn get_delegation(
     Path(address): Path<String>,
 ) -> Result<Json<SignedDelegation>, ApiError> {
     state
-        .delegation(&address)
+        .current_delegation(&address)
+        .await
+        .map_err(|e| ApiError::internal(format!("storage: {e}")))?
         .map(Json)
         .ok_or_else(|| ApiError::not_found("no_active_delegation", format!("no active delegation for {address}")))
 }

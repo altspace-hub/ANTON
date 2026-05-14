@@ -1,13 +1,15 @@
 //! ANTON Business merchant backend — entry point.
 //!
-//! Loads env, initialises tracing, builds the shared AppState, and
-//! hands the router off to axum::serve. Graceful shutdown on Ctrl+C
-//! and SIGTERM.
+//! Reads DATABASE_URL, opens a Postgres pool, runs pending migrations,
+//! and serves on PORT (default 8787). Graceful shutdown on Ctrl+C and
+//! SIGTERM.
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use merchant_backend::routes::build_router;
-use merchant_backend::state::AppState;
+use merchant_backend::state::{AppState, pg::PostgresStorage};
+use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -23,7 +25,18 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let state = AppState::new();
+    let db_url = std::env::var("DATABASE_URL")
+        .map_err(|_| anyhow::anyhow!("DATABASE_URL must be set — see .env.example"))?;
+    let pool = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&db_url)
+        .await?;
+
+    let storage = PostgresStorage::new(pool);
+    storage.migrate().await?;
+    tracing::info!("migrations applied");
+
+    let state = AppState::from_storage(Arc::new(storage));
     let app = build_router(state).layer(TraceLayer::new_for_http());
 
     let port: u16 = std::env::var("PORT")
