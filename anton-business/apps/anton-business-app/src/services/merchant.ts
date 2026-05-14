@@ -35,13 +35,29 @@ export interface MerchantConfig {
   nextKvittoNumber: number;
   /** Unix ms timestamp of when the merchant first completed setup. */
   configuredAt: number;
+  /** Merchant-configured FTC-per-SEK rate (v0 placeholder).
+   *  1.0 means 1 SEK = 1 FTC. Lower means FTC is more valuable.
+   *  Real implementation pulls from a rate oracle or live feed at QR
+   *  generation time; v0 uses this static value the merchant edits in
+   *  Settings. Defaulted to 0.1 (1 SEK = 0.1 FTC, i.e. 1 FTC = 10 SEK).
+   *  Loaded configs without this field migrate to the default on next
+   *  save via loadConfig(). */
+  ftcPerSek: number;
 }
+
+const DEFAULT_FTC_PER_SEK = 0.1;
 
 export async function loadConfig(): Promise<MerchantConfig | null> {
   const raw = await SecureStore.getItemAsync(KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as MerchantConfig;
+    const parsed = JSON.parse(raw) as Partial<MerchantConfig>;
+    // Forward-compat: older configs lack ftcPerSek. Backfill with the
+    // default so callers always get a complete object.
+    return {
+      ...(parsed as MerchantConfig),
+      ftcPerSek: parsed.ftcPerSek ?? DEFAULT_FTC_PER_SEK,
+    };
   } catch {
     return null;
   }

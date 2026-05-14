@@ -87,6 +87,9 @@ export default function Register() {
       kvittoEmail: form.kvittoEmail.trim() || undefined,
       nextKvittoNumber: 1,
       configuredAt: Date.now(),
+      // v0 placeholder rate; merchant edits in Settings → Pricing
+      // when that screen lands in sprint 2.
+      ftcPerSek: 0.1,
     };
     await saveConfig(config);
     router.replace('/onboarding/done');
