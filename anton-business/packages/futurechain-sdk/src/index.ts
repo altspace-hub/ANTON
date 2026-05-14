@@ -17,6 +17,7 @@ export * as wallet from './wallet/index.js';
 export * as pacs008 from './pacs008/index.js';
 export * as rpc from './rpc/index.js';
 export * as reference from './reference/index.js';
+export * as tax from './tax/index.js';
 
 /** Thrown by stub functions that depend on the FutureChain Rust core
  *  being vendored. The message always names the blocking artifact so
