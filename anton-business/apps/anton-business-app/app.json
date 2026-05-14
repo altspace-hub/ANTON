@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "antonbusiness",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "backgroundColor": "#0B1426"
     },
