@@ -61,6 +61,10 @@ export interface CostBasisRule {
   default: CostBasisMethod;
   /** Per §4 — can the user override the default to minimize tax? */
   optimization_allowed: boolean;
+  /** For SHARE_POOLING jurisdictions, the forward matching window
+   *  ("bed-and-breakfast" rule). UK = 30, Ireland 4-week rule = 28.
+   *  Defaults to 30 if SHARE_POOLING is used without this set. */
+  matching_window_days?: number;
 }
 
 /** Flat-rate or progressive-bracket structure. */
@@ -199,6 +203,28 @@ export type JurisdictionStatus =
   | 'unsupported'       // refusal pattern §8.3 — engine offers raw export only
   | 'banned';           // banned-in-jurisdiction (e.g. CN per §6.5)
 
+/** Different jurisdictions compute on different bases. Most are
+ *  transaction-based: disposals trigger gain/loss, cost-basis pool
+ *  applies. Some — Netherlands Box 3, parts of Switzerland — tax
+ *  the year-end balance directly (wealth tax). Future: Kenya's
+ *  fee-based excise. */
+export type TaxationModel =
+  | 'transaction'
+  | 'wealth';
+
+/** Parameters for wealth-tax computation. Used when JurisdictionRule
+ *  .taxation_model === 'wealth'. */
+export interface WealthTaxParams {
+  /** Tax-free wealth allowance in local currency. e.g. NL ~€57,000. */
+  allowance: number;
+  /** Deemed return rate applied to the (balance − allowance). NL Box 3
+   *  uses ~1.97% for 2024 — published annually. */
+  deemed_return_rate: number;
+  /** Headline rate applied to the deemed return. NL Box 3 = 36% for
+   *  2024. */
+  box_rate: number;
+}
+
 /** The complete jurisdiction rule block. One `.yaml` file per
  *  jurisdiction populates one of these. */
 export interface JurisdictionRule {
@@ -208,6 +234,11 @@ export interface JurisdictionRule {
   authority_url: string;
   /** Spec §4 'status' — used for refusal pattern in §8.3. */
   status: JurisdictionStatus;
+  /** Defaults to 'transaction'. NL sets this to 'wealth' and
+   *  populates wealth_tax_params. */
+  taxation_model?: TaxationModel;
+  /** Required when taxation_model === 'wealth'. */
+  wealth_tax_params?: WealthTaxParams;
 
   classification: Classification;
   taxable_events: TaxableEvents;

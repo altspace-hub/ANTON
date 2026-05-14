@@ -292,13 +292,9 @@ describe('Japan — 55% top bracket + no loss deduction', () => {
   });
 });
 
-describe('Netherlands — refused (Box 3 wealth-tax model)', () => {
-  it('returns RefusalResult per §8.3', () => {
+describe('Netherlands — Box 3 wealth-tax engine (Phase 8 activated)', () => {
+  it('no longer returns RefusalResult — engine computes via wealth-tax dispatch', () => {
     const r = computeTaxPosition({ rule: NL, transactions: [] });
-    expect(isRefused(r)).toBe(true);
-    if (isRefused(r)) {
-      expect(r.message).toContain('Netherlands');
-      expect(r.message).toContain('local tax adviser');
-    }
+    expect(isRefused(r)).toBe(false);
   });
 });

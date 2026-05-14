@@ -32,12 +32,13 @@
  * Every output carries the §3 disclaimer or this function throws.
  * That's a hard rule per §2 of the spec.
  */
-import { resolveCostBasis, type GainLossEntry } from './cost-basis/index.js';
+import { resolveCostBasisForRule, type GainLossEntry } from './cost-basis/index.js';
 import { buildDisclaimer, type DisclaimerLocale } from './disclaimer.js';
 import { applyHoldingPeriod, type HeldEntry } from './holding-period.js';
 import { applyLossOffset, type LossOffsetResult } from './loss-offset.js';
 import { applyRate } from './rates.js';
 import { applyRefundTagging, DEFAULT_REFUND_WINDOW_DAYS } from './refund-tagging.js';
+import { computeWealthTaxPosition, type WealthTaxResult } from './wealth-tax.js';
 import type {
   ComputeOptions,
   FtcClassification,
@@ -138,13 +139,30 @@ export function computeTaxPosition(
     };
   }
 
+  // 0. Dispatch by taxation model. Wealth-tax jurisdictions (NL Box 3
+  //    today; possibly CH cantonal later) compute on year-end balance
+  //    rather than per-disposal. We adapt the result into the
+  //    TaxComputationResult shape so callers don't need a separate
+  //    UI path — the "disposals" section will be empty (no taxable
+  //    events to render) and the headline figures map straight across.
+  if (rule.taxation_model === 'wealth') {
+    return adaptWealthTaxToTaxResult(
+      computeWealthTaxPosition({
+        rule,
+        transactions: input.transactions,
+        locale: input.locale,
+        adviserReferralThresholdFiat: input.adviserReferralThresholdFiat,
+      }),
+    );
+  }
+
   // 1. Pick cost-basis method. Default unless the rule allows
   //    optimization AND the user picked one.
   const chosenMethod =
     rule.cost_basis_method.optimization_allowed && input.options?.cost_basis_override
       ? input.options.cost_basis_override
       : rule.cost_basis_method.default;
-  const costBasisFn = resolveCostBasis(chosenMethod);
+  const costBasisFn = resolveCostBasisForRule(chosenMethod, rule.cost_basis_method);
 
   // 1a. Refund-tagging pre-processor (§7.4). Pairs an original
   //     disposal with its tagged refund inside the configured window
@@ -289,4 +307,37 @@ export function computeTaxPosition(
 
 function sum(xs: number[]): number {
   return xs.reduce((a, b) => a + b, 0);
+}
+
+/** Map a WealthTaxResult into the TaxComputationResult shape so the
+ *  UI doesn't need a separate render path. Wealth-tax-specific
+ *  semantics (no disposals, no loss offset, no EMT toggle) collapse
+ *  into the existing fields:
+ *    - estimatedTaxFiat → annual.estimatedTaxFiat
+ *    - taxableBalanceFiat → annual.netTaxableGainsFiat
+ *    - allowanceApplied → annual.exemptionApplied
+ *    - perTransaction = [] (no taxable events)
+ *  The user sees a meaningful number; the adviser-facing export
+ *  needs its own renderer (lands when reporting/box3.ts ships). */
+function adaptWealthTaxToTaxResult(w: WealthTaxResult): TaxComputationResult {
+  return {
+    jurisdictionCode: w.jurisdictionCode,
+    jurisdictionName: w.jurisdictionName,
+    perTransaction: [],
+    annual: {
+      totalGainsFiat: w.taxableBalanceFiat,
+      totalLossesFiat: 0,
+      netTaxableGainsFiat: w.taxableBalanceFiat,
+      estimatedTaxFiat: w.estimatedTaxFiat,
+      carryForwardLossesFiat: 0,
+      exemptionApplied: w.allowanceApplied,
+      longTermExemptGainsFiat: 0,
+      fiatCurrency: w.fiatCurrency,
+    },
+    disclaimer: w.disclaimer,
+    ruleVersion: w.ruleVersion,
+    reviewRequired: w.reviewRequired,
+    reviewReasons: w.reviewReasons,
+    ftcClassification: 'utility_token',
+  };
 }
