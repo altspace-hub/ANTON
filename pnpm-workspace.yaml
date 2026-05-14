@@ -1,3 +1,6 @@
 packages:
-  - 'anton-business/apps/anton-business-app'
+  # anton-business/apps/anton-business-app moved to _archive/expo-attempt/
+  # on 2026-05-14 after the Capacitor pivot. See that dir's README for the
+  # full story. The futurechain-sdk package below stays — src/business/
+  # imports it as @futurechain/sdk.
   - 'anton-business/packages/*'
