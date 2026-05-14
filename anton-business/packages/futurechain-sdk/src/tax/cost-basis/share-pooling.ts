@@ -1,27 +1,213 @@
 /**
- * cost-basis/share-pooling.ts — UK Section 104 share pool.
+ * cost-basis/share-pooling.ts — UK Section 104 + same-day + 30-day
+ * matching ("bed-and-breakfast" rule). Phase 7 rewrite.
  *
- * HMRC's rule for fungible chargeable assets including crypto. Per
- * the spec §6.2 GB block: "Section 104 share pooling + same-day rule
- * + 30-day 'bed-and-breakfast' rule".
+ * HMRC's three-step matching for fungible chargeable assets including
+ * crypto (§6.2 GB):
  *
- * v1 implementation: **Section 104 pool only**. Disposals draw at
- * the running pool average — same arithmetic shape as AVERAGE.
+ *   1. SAME-DAY rule: disposal matched against any acquisitions on
+ *      the same UTC day first. Multiple same-day acquisitions are
+ *      pooled proportionally.
+ *   2. 30-DAY ("bed-and-breakfast"): remainder matched against
+ *      acquisitions in the NEXT 30 days, oldest-first within the
+ *      window. The rule is meant to stop wash sales — if you sell
+ *      at a loss then re-buy within 30 days, the matched basis
+ *      comes from the new lot, not the long-held pool.
+ *   3. SECTION 104 POOL: anything still unmatched draws from the
+ *      pool at the running average.
  *
- * The same-day + 30-day matching rules are NOT yet implemented.
- * Their absence is surfaced as a `review_flag` on the GB rule block
- * so the engine's `reviewRequired` triggers and the UI shows the
- * "consult an adviser" callout.
- *
- * Why deferred: same-day + 30-day matching require lookahead from
- * each disposal, which crosses the streaming-cost-basis abstraction
- * the other methods use. A clean rewrite lands in Phase 5 alongside
- * SA's 45-day bed-and-breakfast rule (which has the same shape).
+ * Acquisitions inside the 30-day window are CONSUMED by the disposal
+ * — they don't enter the Section 104 pool. Acquisitions outside any
+ * window go into the pool once their 30-day matching opportunity
+ * has passed.
  */
-import { average } from './average.js';
-import type { CostBasisFn } from './types.js';
+import type { TaxInputTx } from '../transaction.js';
+import type { CostBasisFn, GainLossEntry, GainLossLedger } from './types.js';
 
-/** v1 — share pooling = Section 104 pool only (no same-day / 30-day
- *  matching). The engine's review_flag mechanism surfaces this gap
- *  in the GB rule block. */
-export const sharePooling: CostBasisFn = average;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MATCHING_WINDOW_MS = 30 * DAY_MS;
+
+interface Acquisition {
+  ts: number;
+  remainingAtomic: bigint;
+  remainingFiat: number;
+  originalAtomic: bigint;
+  originalFiat: number;
+  /** Once an acquisition feeds the Section 104 pool, this flips true
+   *  so we don't double-match against it on later passes. */
+  consumedIntoPool: boolean;
+}
+
+export const sharePooling: CostBasisFn = (txs: TaxInputTx[]): GainLossLedger => {
+  // The 30-day rule needs lookahead, so we use two passes:
+  //   Pass 1: walk events forward, building a list of acquisitions
+  //           and disposals in chronological order.
+  //   Pass 2: process each disposal against same-day + 30-day +
+  //           pool, in that order.
+  const events = [...txs].sort((a, b) => a.ts - b.ts);
+  const acquisitions: Acquisition[] = [];
+  const eventOrder: Array<
+    | { kind: 'acq'; tx: TaxInputTx }
+    | { kind: 'disp'; tx: TaxInputTx }
+  > = [];
+
+  for (const tx of events) {
+    if (isAcquisition(tx)) {
+      acquisitions.push({
+        ts: tx.ts,
+        remainingAtomic: BigInt(tx.amount),
+        remainingFiat: tx.fiatValueAtTx,
+        originalAtomic: BigInt(tx.amount),
+        originalFiat: tx.fiatValueAtTx,
+        consumedIntoPool: false,
+      });
+      eventOrder.push({ kind: 'acq', tx });
+    } else if (isDisposal(tx)) {
+      eventOrder.push({ kind: 'disp', tx });
+    }
+  }
+
+  const entries: GainLossEntry[] = [];
+  let poolQtyAtomic = 0n;
+  let poolBasisFiat = 0;
+
+  /** Move all acquisitions whose UTC day is STRICTLY before the
+   *  current event's UTC day into the Section 104 pool, provided
+   *  they still have unmatched quantity.
+   *
+   *  Reasoning: an unmatched acquisition A is pool-bound when no
+   *  more rules can claim it. The same-day rule needs a disposal on
+   *  A's UTC day (past disposals already had their chance; future
+   *  events past A's day cannot satisfy same-day). The forward-30
+   *  rule needs a PAST disposal D with A ∈ (D, D+30] (past disposals
+   *  already had their chance). So once we observe an event on a
+   *  later UTC day, A is settled. */
+  function flushIntoPoolBefore(nowTs: number): void {
+    for (const acq of acquisitions) {
+      if (acq.consumedIntoPool) continue;
+      if (acq.remainingAtomic <= 0n) continue;
+      if (utcDayIndex(acq.ts) < utcDayIndex(nowTs)) {
+        poolQtyAtomic += acq.remainingAtomic;
+        poolBasisFiat += acq.remainingFiat;
+        acq.remainingAtomic = 0n;
+        acq.remainingFiat = 0;
+        acq.consumedIntoPool = true;
+      }
+    }
+  }
+
+  for (const ev of eventOrder) {
+    if (ev.kind === 'acq') continue;
+    const tx = ev.tx;
+    let remaining = BigInt(tx.amount);
+    let totalBasis = 0;
+    let acquiredTs: number | null = null;
+
+    flushIntoPoolBefore(tx.ts);
+
+    // (1) Same-day matching, pooled proportionally.
+    const sameDayLots = acquisitions.filter(
+      (a) => !a.consumedIntoPool && a.remainingAtomic > 0n && sameUtcDay(a.ts, tx.ts),
+    );
+    if (sameDayLots.length > 0 && remaining > 0n) {
+      const totalSameDayAtomic = sameDayLots.reduce((a, l) => a + l.remainingAtomic, 0n);
+      const totalSameDayFiat = sameDayLots.reduce((a, l) => a + l.remainingFiat, 0);
+      const take = remaining < totalSameDayAtomic ? remaining : totalSameDayAtomic;
+      const fraction = Number(take) / Number(totalSameDayAtomic);
+      totalBasis += totalSameDayFiat * fraction;
+      for (const lot of sameDayLots) {
+        const lotFraction = Number(lot.remainingAtomic) / Number(totalSameDayAtomic);
+        const lotTakeAtomic = BigInt(Math.floor(Number(take) * lotFraction));
+        const lotTakeFiat = lot.remainingFiat * fraction;
+        lot.remainingAtomic -= lotTakeAtomic;
+        lot.remainingFiat -= lotTakeFiat;
+      }
+      remaining -= take;
+      if (acquiredTs === null) acquiredTs = tx.ts;
+    }
+
+    // (2) 30-day forward match — oldest first within window.
+    if (remaining > 0n) {
+      const windowLots = acquisitions
+        .filter((a) => !a.consumedIntoPool && a.remainingAtomic > 0n
+                && a.ts > tx.ts && (a.ts - tx.ts) <= MATCHING_WINDOW_MS)
+        .sort((a, b) => a.ts - b.ts);
+      for (const lot of windowLots) {
+        if (remaining === 0n) break;
+        if (lot.remainingAtomic <= remaining) {
+          totalBasis += lot.remainingFiat;
+          remaining -= lot.remainingAtomic;
+          if (acquiredTs === null) acquiredTs = lot.ts;
+          lot.remainingAtomic = 0n;
+          lot.remainingFiat = 0;
+        } else {
+          const fraction = Number(remaining) / Number(lot.originalAtomic);
+          const basisSlice = lot.originalFiat * fraction;
+          totalBasis += basisSlice;
+          lot.remainingAtomic -= remaining;
+          lot.remainingFiat -= basisSlice;
+          if (acquiredTs === null) acquiredTs = lot.ts;
+          remaining = 0n;
+        }
+      }
+    }
+
+    // (3) Section 104 pool — running average.
+    if (remaining > 0n && poolQtyAtomic > 0n) {
+      const take = remaining < poolQtyAtomic ? remaining : poolQtyAtomic;
+      const fiatPerAtomic = poolBasisFiat / Number(poolQtyAtomic);
+      const basis = fiatPerAtomic * Number(take);
+      totalBasis += basis;
+      poolQtyAtomic -= take;
+      poolBasisFiat -= basis;
+      if (poolQtyAtomic <= 0n) {
+        poolQtyAtomic = 0n;
+        poolBasisFiat = 0;
+      }
+      remaining -= take;
+    }
+
+    // Anything still unmatched is a zero-basis disposal (sold more
+    // than the pool held — the user's adviser will catch this).
+
+    entries.push({
+      txId: tx.id,
+      ts: tx.ts,
+      amountAtomic: tx.amount,
+      proceedsFiat: tx.fiatValueAtTx,
+      costBasisFiat: totalBasis,
+      gainLossFiat: tx.fiatValueAtTx - totalBasis,
+      acquiredTs,
+      fiatCurrency: tx.fiatCurrency,
+    });
+  }
+
+  // Sweep any remaining acquisitions whose 30-day window has now
+  // also passed into the pool — these are tail-end purchases past
+  // the last disposal.
+  flushIntoPoolBefore(Number.POSITIVE_INFINITY);
+
+  return {
+    entries,
+    remainingAtomic: poolQtyAtomic.toString(),
+    remainingBasisFiat: poolBasisFiat,
+  };
+};
+
+function isAcquisition(tx: TaxInputTx): boolean {
+  return tx.kind === 'buy_with_fiat' || tx.kind === 'receive_as_payment' || tx.kind === 'gift_received';
+}
+function isDisposal(tx: TaxInputTx): boolean {
+  return tx.kind === 'sell_to_fiat' || tx.kind === 'spend' || tx.kind === 'swap' || tx.kind === 'gift_sent';
+}
+
+/** True if a and b fall on the same UTC calendar day. */
+function sameUtcDay(a: number, b: number): boolean {
+  return utcDayIndex(a) === utcDayIndex(b);
+}
+
+/** Integer day-since-epoch in UTC — comparison-friendly. */
+function utcDayIndex(ts: number): number {
+  if (!Number.isFinite(ts)) return Number.MAX_SAFE_INTEGER;
+  return Math.floor(ts / DAY_MS);
+}

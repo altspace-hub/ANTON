@@ -105,7 +105,6 @@ export const AU: JurisdictionRule = {
     confidence: 'high',
     review_flags: [
       'rate_uses_47pct_top_marginal_approximation',
-      'au_fiscal_year_window_handling_uses_calendar_in_v1',
       'personal_use_asset_exemption_fact_specific',
     ],
   },
