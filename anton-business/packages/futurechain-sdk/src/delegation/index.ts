@@ -1,55 +1,83 @@
 /**
- * delegation/ — Settlement delegation envelope: encode, sign, verify.
+ * delegation/ — Settlement delegation: encode, sign, verify.
  *
- * Status: BLOCKED on ADR-005. The envelope format (EIP-712 vs domain-
- * separated SHA-256 vs PACS.008-as-envelope) is not yet decided.
- * Recommendation is Option 4 (custom domain-separated SHA-256). See
- * docs/adr/ADR-005-delegation-envelope.md.
+ * Status: UNBLOCKED. ADR-005 closed 2026-05-14 with Option 4 (domain-
+ * separated SHA-256 envelope, recoverable secp256k1 signature).
  *
- * Once ADR-005 is closed, this module gets:
- *   1. encode(payload): Uint8Array — canonical bytes to sign
- *   2. sign(payload, wallet): Uint8Array — full signed envelope
- *   3. verify(envelope, expectedAddress): boolean
- * The Rust counterpart in apps/merchant-backend/src/services/delegation.rs
- * must produce bit-identical bytes for the same payload.
+ * The verifier in apps/merchant-backend/src/services/delegation.rs MUST
+ * produce bit-identical canonical JSON for the same payload. Parity
+ * test fixtures land in sprint 1 task 2 at
+ * anton-business/tests/fixtures/delegation/.
+ *
+ * See docs/adr/ADR-005-delegation-envelope.md for the full envelope spec.
  */
 import { NotImplementedError } from '../index.js';
 
+/** Domain separation tag from ADR-005. Bumped to `v2` if the envelope
+ *  format (NOT the payload schema) changes — see the ADR for the
+ *  distinction. */
+export const DELEGATION_DOMAIN = 'anton-business:settlement-delegation:v1';
+
+/** The signed payload — spec §12.3. */
 export interface SettlementDelegation {
+  /** 8-char merchant ID per ADR-004 v1 allocation. */
   merchantId: string;
+  /** Merchant's FutureChain address. The recovered signer MUST match. */
   walletAddress: string;
   /** Pre-authorised receiving address — usually a Safello sub-account. */
   safelloReceivingAddress: string;
-  /** Daily settlement cap in micro-FTC. */
+  /** Daily settlement cap in micro-FTC. Set to 0n to revoke. */
   maxPerDayMicroFtc: bigint;
-  /** Unix timestamp after which the delegation is invalid. Rotate every 90d. */
+  /** Unix timestamp (seconds) after which the delegation is invalid.
+   *  Spec §12.3: rotate every 90 days. */
   validUntil: number;
-  /** Unique per delegation; prevents replay. */
+  /** Unique per delegation; replay-protection. UUIDv4 recommended. */
   nonce: string;
 }
 
+/** The wire envelope. `signature` is `0x`-prefixed hex of a 65-byte
+ *  recoverable signature (64 bytes r||s plus 1 byte recovery id). */
 export interface SignedDelegation {
+  schemaVersion: 'v1';
   payload: SettlementDelegation;
-  signature: Uint8Array;
-  /** Optional copy of the signer's address for debug/audit; the
-   *  signature itself is the only source of truth. */
-  signerAddress?: string;
+  signature: string;
 }
 
-export function encode(_payload: SettlementDelegation): Uint8Array {
-  throw new NotImplementedError('delegation.encode()', 'ADR-005');
+/** Errors from the verify path. */
+export type DelegationError =
+  | { kind: 'schema_unknown'; got: string }
+  | { kind: 'malformed_signature'; reason: string }
+  | { kind: 'malformed_payload'; field: string; reason: string }
+  | { kind: 'signer_mismatch'; expected: string; recovered: string }
+  | { kind: 'expired'; validUntil: number; now: number };
+
+/** Build the bytes that get hashed. Exported for testing + parity
+ *  fixture generation. Combines DELEGATION_DOMAIN, a 0x0a separator,
+ *  and the canonical JSON of the payload. */
+export function buildHashInput(_payload: SettlementDelegation): Uint8Array {
+  throw new NotImplementedError('delegation.buildHashInput()');
 }
 
+/** Sign a SettlementDelegation. Returns the full wire envelope. The
+ *  private key must be a 32-byte secp256k1 scalar. Caller is
+ *  responsible for zeroing the key buffer after this returns. */
 export function sign(
   _payload: SettlementDelegation,
   _privateKey: Uint8Array,
 ): SignedDelegation {
-  throw new NotImplementedError('delegation.sign()', 'ADR-005');
+  throw new NotImplementedError('delegation.sign()');
 }
 
-export function verify(
-  _envelope: SignedDelegation,
-  _expectedSignerAddress: string,
-): boolean {
-  throw new NotImplementedError('delegation.verify()', 'ADR-005');
+/** Recover the signer's FutureChain address from a SignedDelegation.
+ *  Does NOT check expiry or nonce-reuse — those are policy decisions
+ *  the caller (merchant-backend) makes against its DB. */
+export function recoverSigner(_envelope: SignedDelegation): { address: string } | DelegationError {
+  throw new NotImplementedError('delegation.recoverSigner()');
+}
+
+/** Verify that `envelope` is a well-formed signature over its payload
+ *  AND that the recovered signer matches `payload.walletAddress`.
+ *  Returns true | DelegationError. Does NOT check expiry / nonce. */
+export function verifySignature(_envelope: SignedDelegation): true | DelegationError {
+  throw new NotImplementedError('delegation.verifySignature()');
 }
