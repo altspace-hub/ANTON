@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { loadConfig, type MerchantConfig, wipeConfig } from '../src/services/merchant';
 import { wipeItems } from '../src/services/items';
+import { wipeDb } from '../src/services/db';
 import { loadWallet, wipeWallet } from '../src/services/wallet';
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
     await wipeWallet();
     await wipeConfig();
     await wipeItems();
+    await wipeDb();
     router.replace('/');
   }
 
@@ -43,9 +45,8 @@ export default function Home() {
         <Text style={s.tertiaryText}>Settings</Text>
       </Pressable>
 
-      <Pressable style={s.secondary} disabled>
-        <Text style={s.secondaryText}>Transactions</Text>
-        <Text style={s.secondarySub}>Needs FutureChain RPC unblocked</Text>
+      <Pressable style={s.tertiary} onPress={() => router.push('/transactions')}>
+        <Text style={s.tertiaryText}>Transactions</Text>
       </Pressable>
 
       {addr && (
