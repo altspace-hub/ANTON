@@ -61,7 +61,10 @@ export default function TaxResidencyScreen({ onDeclared, onBack }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setBundled(new Set(tax.bundledJurisdictionCodes().map((c) => c.toUpperCase())));
+    // "Supported" badge maps to status='active' jurisdictions, not the
+    // wider bundled set (which includes unsupported entries like NL's
+    // wealth-tax model that the engine can't compute against in v1).
+    setBundled(new Set(tax.activeJurisdictionCodes().map((c) => c.toUpperCase())));
   }, []);
 
   const visible = filter.trim()

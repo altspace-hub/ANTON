@@ -103,7 +103,8 @@ export interface Rates {
 
 export type LongTermHoldingTreatment =
   | 'tax_free'
-  | 'reduced_rate'
+  | 'discounted'        // AU 50% CGT discount — the *gain* is reduced
+  | 'reduced_rate'      // a different rate replaces the standard one
   | 'unchanged';
 
 export interface LongTermHoldingRelief {
@@ -111,7 +112,14 @@ export interface LongTermHoldingRelief {
   /** e.g. 365 for DE/PT/AU/MT. */
   period_days: number;
   treatment_after: LongTermHoldingTreatment;
-  /** If `reduced_rate`, what rate applies after the holding period? */
+  /** Used when `treatment_after === 'discounted'`. The fraction of
+   *  the gain that becomes EXEMPT after the holding period —
+   *  e.g. 0.5 for AU's 50% CGT discount means 50% of the gain is
+   *  removed before tax application. */
+  discount_fraction?: number;
+  /** Used when `treatment_after === 'reduced_rate'`. Explicit flat
+   *  rate that replaces the jurisdiction's standard one for long-
+   *  term entries. */
   reduced_rate?: number;
 }
 
@@ -179,6 +187,11 @@ export interface Metadata {
   review_flags: string[];
 }
 
+export type JurisdictionStatus =
+  | 'active'            // engine computes against this rule
+  | 'unsupported'       // refusal pattern §8.3 — engine offers raw export only
+  | 'banned';           // banned-in-jurisdiction (e.g. CN per §6.5)
+
 /** The complete jurisdiction rule block. One `.yaml` file per
  *  jurisdiction populates one of these. */
 export interface JurisdictionRule {
@@ -187,7 +200,7 @@ export interface JurisdictionRule {
   authority: string;
   authority_url: string;
   /** Spec §4 'status' — used for refusal pattern in §8.3. */
-  status: 'active' | 'unsupported' | 'banned';
+  status: JurisdictionStatus;
 
   classification: Classification;
   taxable_events: TaxableEvents;
