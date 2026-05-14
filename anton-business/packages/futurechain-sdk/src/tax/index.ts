@@ -93,7 +93,9 @@ export {
   getBundledRule,
   bundledJurisdictionCodes,
   activeJurisdictionCodes,
-  SE, DE, FR, IT, GB, US, ES, PT, NL, ZA, NG, JP, SG, AE, AU, CH,
+  SE,
+  DE, FR, IT, GB, US, ES, PT, NL, ZA, NG, JP, SG, AE, AU, CH,
+  CY, MT, BE, IE, PL, CA, KR, IL, BR, KE,
 } from './rules/index.js';
 
 export {
