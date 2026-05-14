@@ -14,10 +14,11 @@ interface Props {
   onReceive: () => void;
   onSend: () => void;
   onHistory: () => void;
+  onTax: () => void;
 }
 
 export default function WalletBalanceScreen({
-  address, onReceive, onSend, onHistory,
+  address, onReceive, onSend, onHistory, onTax,
 }: Props) {
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
   const [recent, setRecent] = useState<WalletTx[]>([]);
@@ -62,10 +63,11 @@ export default function WalletBalanceScreen({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-4 gap-2">
           <ActionButton label="Receive" onClick={onReceive} />
           <ActionButton label="Send" onClick={onSend} />
           <ActionButton label="History" onClick={onHistory} />
+          <ActionButton label="Tax" onClick={onTax} />
         </div>
 
         <div className="mt-6">
@@ -88,8 +90,9 @@ export default function WalletBalanceScreen({
         </div>
 
         <p className="mt-6 text-[11px] leading-relaxed text-[var(--color-text-faint)]">
-          Tax calculation lands in a follow-up phase. Until then, this
-          ledger is the source the tax engine will consume.
+          Tap Tax for an estimated position based on your declared
+          residency. Per FutureChain&apos;s tax policy this is an
+          estimate only — see the disclaimer on the tax screen.
         </p>
       </div>
     </section>

@@ -13,13 +13,24 @@
  */
 import { useEffect, useState } from 'react';
 import { hasWallet, loadWallet } from '../services/wallet';
+import { needsResidencyPrompt } from '../services/tax-residency';
 import WalletConnectScreen from './wallet/WalletConnectScreen';
 import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
 import WalletSendScreen from './wallet/WalletSendScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
+import TaxResidencyScreen from './wallet/TaxResidencyScreen';
+import TaxPositionScreen from './wallet/TaxPositionScreen';
 
-type View = 'loading' | 'connect' | 'balance' | 'receive' | 'send' | 'history';
+type View =
+  | 'loading'
+  | 'connect'
+  | 'balance'
+  | 'receive'
+  | 'send'
+  | 'history'
+  | 'tax-residency'
+  | 'tax-position';
 
 export default function WalletScreen() {
   const [view, setView] = useState<View>('loading');
@@ -78,6 +89,22 @@ export default function WalletScreen() {
   if (view === 'history') {
     return <WalletHistoryScreen onBack={() => setView('balance')} />;
   }
+  if (view === 'tax-residency') {
+    return (
+      <TaxResidencyScreen
+        onBack={() => setView('balance')}
+        onDeclared={() => setView('tax-position')}
+      />
+    );
+  }
+  if (view === 'tax-position') {
+    return (
+      <TaxPositionScreen
+        onBack={() => setView('balance')}
+        onChangeResidency={() => setView('tax-residency')}
+      />
+    );
+  }
 
   // balance
   return (
@@ -86,6 +113,15 @@ export default function WalletScreen() {
       onReceive={() => setView('receive')}
       onSend={() => setView('send')}
       onHistory={() => setView('history')}
+      onTax={async () => {
+        // First tap routes to residency capture; subsequent taps land
+        // straight on the computed position screen.
+        if (await needsResidencyPrompt()) {
+          setView('tax-residency');
+        } else {
+          setView('tax-position');
+        }
+      }}
     />
   );
 }
