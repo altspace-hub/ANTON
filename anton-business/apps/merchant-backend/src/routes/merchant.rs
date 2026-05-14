@@ -73,13 +73,14 @@ fn random_token() -> String {
     hex::encode(hasher.finalize())
 }
 
+fn store_err(e: crate::state::StorageError) -> ApiError {
+    ApiError::internal(format!("storage: {e}"))
+}
+
 pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterMerchantRequest>,
 ) -> Result<(StatusCode, Json<RegisterMerchantResponse>), ApiError> {
-    // Basic field validation. The TS wire types already constrain
-    // shape; this guards the few invariants the type system can't
-    // express.
     if req.org_nr.is_empty() {
         return Err(ApiError::bad_request("invalid_org_nr", "orgNr must not be empty"));
     }
@@ -92,7 +93,7 @@ pub async fn register(
             "kybMetadataHash must be 64 lowercase hex chars",
         ));
     }
-    if state.merchant_by_address(&req.wallet_address).is_some() {
+    if state.merchant_by_address(&req.wallet_address).await.map_err(store_err)?.is_some() {
         return Err(ApiError::conflict(
             "already_registered",
             "this walletAddress is already registered",
@@ -101,23 +102,26 @@ pub async fn register(
 
     // Allocate merchant_id with collision retry per ADR-004.
     let base = candidate_merchant_id(&req.org_nr, &req.wallet_address);
-    let merchant_id = (0..36)
-        .map(|i| {
-            if i == 0 {
-                base.clone()
-            } else {
-                // Replace the last char with i (0-9, A-Z = base36) for
-                // a 36-slot collision recovery window. Beyond 36 the
-                // spec says regenerate from a different deterministic
-                // input — but in practice this almost never trips.
-                let mut id = base.clone();
-                id.pop();
-                let suffix = std::char::from_digit(i, 36).unwrap().to_ascii_uppercase();
-                id.push(suffix);
-                id
-            }
-        })
-        .find(|id| !state.merchant_id_taken(id))
+    let mut merchant_id: Option<String> = None;
+    for i in 0..36 {
+        let candidate = if i == 0 {
+            base.clone()
+        } else {
+            // Replace the last char with i (0-9, A-Z = base36) for a
+            // 36-slot collision recovery window. Beyond that the spec
+            // says regenerate from a different deterministic input,
+            // but in practice this never trips.
+            let mut id = base.clone();
+            id.pop();
+            id.push(std::char::from_digit(i, 36).unwrap().to_ascii_uppercase());
+            id
+        };
+        if !state.merchant_id_taken(&candidate).await.map_err(store_err)? {
+            merchant_id = Some(candidate);
+            break;
+        }
+    }
+    let merchant_id = merchant_id
         .ok_or_else(|| ApiError::internal("merchant id collision space exhausted"))?;
 
     let merchant = Merchant {
@@ -132,7 +136,7 @@ pub async fn register(
         vat_registered: req.vat_registered,
         approved_at: Utc::now(),
     };
-    state.insert_merchant(merchant);
+    state.insert_merchant(merchant).await.map_err(store_err)?;
 
     Ok((
         StatusCode::CREATED,
@@ -149,6 +153,8 @@ pub async fn get_by_id(
 ) -> Result<Json<Merchant>, ApiError> {
     state
         .merchant_by_id(&id)
+        .await
+        .map_err(store_err)?
         .map(Json)
         .ok_or_else(|| ApiError::not_found("not_found", format!("no merchant with id {id}")))
 }
@@ -159,6 +165,8 @@ pub async fn get_by_address(
 ) -> Result<Json<Merchant>, ApiError> {
     state
         .merchant_by_address(&address)
+        .await
+        .map_err(store_err)?
         .map(Json)
         .ok_or_else(|| ApiError::not_found("not_found", format!("no merchant at address {address}")))
 }

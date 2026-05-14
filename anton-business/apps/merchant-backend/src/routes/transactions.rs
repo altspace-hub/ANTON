@@ -34,9 +34,12 @@ pub async fn list_for_merchant(
     State(state): State<AppState>,
     Path(address): Path<String>,
 ) -> Result<Json<ListTransactionsResponse>, ApiError> {
-    // Verify the merchant exists; 404 otherwise. (Lets the client
-    // distinguish "no merchant" from "merchant has no transactions".)
-    if state.merchant_by_address(&address).is_none() {
+    if state
+        .merchant_by_address(&address)
+        .await
+        .map_err(|e| ApiError::internal(format!("storage: {e}")))?
+        .is_none()
+    {
         return Err(ApiError::not_found("not_found", format!("no merchant at {address}")));
     }
     Ok(Json(ListTransactionsResponse {
