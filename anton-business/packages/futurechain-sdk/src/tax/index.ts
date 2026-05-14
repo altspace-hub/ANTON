@@ -65,7 +65,13 @@ export type {
   GainLossLedger,
   CostBasisFn,
 } from './cost-basis/index.js';
-export { average, fifo, resolveCostBasis } from './cost-basis/index.js';
+export {
+  average,
+  fifo,
+  specificId,
+  sharePooling,
+  resolveCostBasis,
+} from './cost-basis/index.js';
 
 export { applyRate } from './rates.js';
 export { applyLossOffset } from './loss-offset.js';
@@ -81,7 +87,8 @@ export {
 export {
   getBundledRule,
   bundledJurisdictionCodes,
-  SE,
+  activeJurisdictionCodes,
+  SE, DE, FR, IT, GB, US, ES, PT, NL, ZA, NG, JP, SG, AE, AU, CH,
 } from './rules/index.js';
 
 export {

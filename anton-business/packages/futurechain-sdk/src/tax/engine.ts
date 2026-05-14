@@ -144,26 +144,50 @@ export function computeTaxPosition(
   // 2. Build the gain/loss ledger.
   const ledger = costBasisFn(input.transactions);
 
+  // 2a. Build a tx-kind lookup so post-ledger steps can filter by
+  //     the original taxable-event flag (France: swap_crypto_to_crypto
+  //     is non-taxable — disposal still affects the pool, but the
+  //     gain is exempt).
+  const kindById = new Map(input.transactions.map((t) => [t.id, t.kind]));
+  const isExemptSwap = (txId: string): boolean =>
+    !rule.taxable_events.swap_crypto_to_crypto && kindById.get(txId) === 'swap';
+
   // 3. Apply long-term-holding relief.
   const heldEntries = applyHoldingPeriod(
     ledger.entries,
     rule.exemptions_and_reliefs.long_term_holding,
-  );
+  ).map((e) => isExemptSwap(e.txId) ? { ...e, effectiveGainLossFiat: 0 } : e);
 
-  // 4. Apply rates per entry. EMT carve-out: if the user has flagged
-  //    FTC as EMT and this jurisdiction has an EMT special treatment,
-  //    use the reduced rate. Italy is the only `enabled` case today.
+  // 4. Apply rates per entry.
+  //    Three rate paths in priority order:
+  //      a) EMT carve-out — when the user flags FTC=EMT and the
+  //         jurisdiction has emt.enabled (Italy 26% today)
+  //      b) Long-term reduced-rate — when long_term_holding.treatment_after
+  //         is 'reduced_rate' and the entry is long-term (US-style
+  //         preferential long-term rate, abstracted to a single
+  //         flat rate; bracketed long-term lands in Phase 5)
+  //      c) Standard rate per rule.rates.capital_gains
   const ftcClassification = input.options?.ftc_classification ?? 'utility_token';
   const emt = rule.exemptions_and_reliefs.emt_special_treatment;
   const useEmtRate = ftcClassification === 'emt' && emt.enabled && emt.reduced_rate !== undefined;
+  const ltRelief = rule.exemptions_and_reliefs.long_term_holding;
+  const ltReducedRate =
+    ltRelief.enabled && ltRelief.treatment_after === 'reduced_rate'
+      ? ltRelief.reduced_rate
+      : undefined;
 
   const perTx: PerTxResult[] = heldEntries.map((e) => {
     if (e.effectiveGainLossFiat <= 0) {
       return { ...e, taxFiat: 0 };
     }
-    const taxFiat = useEmtRate
-      ? e.effectiveGainLossFiat * (emt.reduced_rate ?? 0)
-      : applyRate(e.effectiveGainLossFiat, rule.rates.capital_gains.structure);
+    let taxFiat: number;
+    if (useEmtRate) {
+      taxFiat = e.effectiveGainLossFiat * (emt.reduced_rate ?? 0);
+    } else if (e.longTerm && ltReducedRate !== undefined) {
+      taxFiat = e.effectiveGainLossFiat * ltReducedRate;
+    } else {
+      taxFiat = applyRate(e.effectiveGainLossFiat, rule.rates.capital_gains.structure);
+    }
     return { ...e, taxFiat };
   });
 

@@ -55,9 +55,26 @@ export function applyHoldingPeriod(
     if (rule.treatment_after === 'tax_free') {
       return { ...e, longTerm: true, effectiveGainLossFiat: 0 };
     }
+    if (rule.treatment_after === 'discounted') {
+      // AU 50% CGT discount and similar: a fraction of the gain is
+      // EXEMPT after the holding period. e.g. discount_fraction=0.5
+      // means 50% of the gain falls out, the rest is taxed at the
+      // normal rate.
+      const discount = rule.discount_fraction ?? 0;
+      if (e.gainLossFiat > 0) {
+        return {
+          ...e,
+          longTerm: true,
+          effectiveGainLossFiat: e.gainLossFiat * (1 - discount),
+        };
+      }
+      // Losses: don't discount — they remain fully available for
+      // offset (per AU convention; some jurisdictions vary).
+      return { ...e, longTerm: true, effectiveGainLossFiat: e.gainLossFiat };
+    }
     // 'reduced_rate' and 'unchanged' both keep the gain in scope —
     // the orchestrator picks the rate at apply-rate time using the
-    // `longTerm` flag.
+    // `longTerm` flag + rule.long_term_holding.reduced_rate.
     return { ...e, longTerm: true, effectiveGainLossFiat: e.gainLossFiat };
   });
 }
