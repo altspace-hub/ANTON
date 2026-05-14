@@ -21,6 +21,7 @@ import WalletSendScreen from './wallet/WalletSendScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
 import TaxResidencyScreen from './wallet/TaxResidencyScreen';
 import TaxPositionScreen from './wallet/TaxPositionScreen';
+import TaxReportScreen from './wallet/TaxReportScreen';
 
 type View =
   | 'loading'
@@ -30,7 +31,8 @@ type View =
   | 'send'
   | 'history'
   | 'tax-residency'
-  | 'tax-position';
+  | 'tax-position'
+  | 'tax-report';
 
 export default function WalletScreen() {
   const [view, setView] = useState<View>('loading');
@@ -102,8 +104,12 @@ export default function WalletScreen() {
       <TaxPositionScreen
         onBack={() => setView('balance')}
         onChangeResidency={() => setView('tax-residency')}
+        onExportReport={() => setView('tax-report')}
       />
     );
+  }
+  if (view === 'tax-report') {
+    return <TaxReportScreen onBack={() => setView('tax-position')} />;
   }
 
   // balance

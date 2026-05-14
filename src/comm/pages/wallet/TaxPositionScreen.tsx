@@ -25,6 +25,7 @@ import {
 interface Props {
   onBack: () => void;
   onChangeResidency: () => void;
+  onExportReport: () => void;
 }
 
 type LoadState =
@@ -40,7 +41,7 @@ const STALE_MS = STALE_DAYS * 24 * 60 * 60 * 1000;
  *  with a conservative 50_000 SEK ≈ €4.5k threshold. */
 const ADVISER_THRESHOLD_SEK = 50_000;
 
-export default function TaxPositionScreen({ onBack, onChangeResidency }: Props) {
+export default function TaxPositionScreen({ onBack, onChangeResidency, onExportReport }: Props) {
   const [load, setLoad] = useState<LoadState>({ state: 'loading' });
 
   useEffect(() => {
@@ -240,6 +241,14 @@ export default function TaxPositionScreen({ onBack, onChangeResidency }: Props) 
             {result.disclaimer}
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={onExportReport}
+          className="mt-4 w-full py-3 rounded-xl font-semibold text-sm bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] active:scale-[0.99] transition-transform"
+        >
+          Export report for adviser
+        </button>
       </div>
     </section>
   );

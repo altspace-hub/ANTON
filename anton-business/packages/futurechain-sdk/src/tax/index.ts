@@ -83,6 +83,17 @@ export {
   bundledJurisdictionCodes,
   SE,
 } from './rules/index.js';
+
+export {
+  buildK4Dataset,
+  buildK4Csv,
+  buildLedgerCsv,
+} from './reporting/index.js';
+export type {
+  K4BuildOptions,
+  K4Dataset,
+  K4Row,
+} from './reporting/index.js';
 export type {
   AnnualSummary,
   PerTxResult,
