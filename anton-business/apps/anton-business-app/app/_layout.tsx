@@ -1,9 +1,6 @@
 /**
- * Root layout for the Expo Router stack.
- *
- * Placeholder for sprint 1. Will host: theme provider, query client,
- * auth gate (redirect to /onboarding if no wallet exists), session
- * timeout watcher.
+ * Root layout. Onboarding lives under /onboarding/* and is reached
+ * from the index redirect when no wallet is on device.
  */
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -19,7 +16,9 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#0F1B2D' },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'ANTON Business' }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="home" options={{ title: 'ANTON Business' }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>
     </>
   );
