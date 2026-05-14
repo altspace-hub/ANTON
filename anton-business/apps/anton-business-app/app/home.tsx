@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { loadConfig, type MerchantConfig, wipeConfig } from '../src/services/merchant';
+import { wipeItems } from '../src/services/items';
 import { loadWallet, wipeWallet } from '../src/services/wallet';
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
   async function reset() {
     await wipeWallet();
     await wipeConfig();
+    await wipeItems();
     router.replace('/');
   }
 
@@ -32,9 +34,13 @@ export default function Home() {
         <Text style={s.primarySub}>Simple mode · keypad → QR</Text>
       </Pressable>
 
-      <Pressable style={s.secondary} disabled>
-        <Text style={s.secondaryText}>Extended mode</Text>
-        <Text style={s.secondarySub}>Sprint 2 — coming next</Text>
+      <Pressable style={s.primary} onPress={() => router.push('/extended')}>
+        <Text style={s.primaryText}>Extended mode</Text>
+        <Text style={s.primarySub}>Cart with items + VAT breakdown</Text>
+      </Pressable>
+
+      <Pressable style={s.tertiary} onPress={() => router.push('/settings/items')}>
+        <Text style={s.tertiaryText}>Manage items</Text>
       </Pressable>
 
       <Pressable style={s.secondary} disabled>
@@ -87,6 +93,17 @@ const s = StyleSheet.create({
   },
   secondaryText: { color: '#E0E0E0', fontSize: 17, fontWeight: '600' },
   secondarySub: { color: '#7F8A9C', fontSize: 12, marginTop: 4 },
+
+  tertiary: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3B3D50',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tertiaryText: { color: '#B0B0B0', fontSize: 15, fontWeight: '600' },
 
   idBox: { backgroundColor: '#152238', padding: 14, borderRadius: 10, marginBottom: 10 },
   label: { color: '#7F8A9C', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },

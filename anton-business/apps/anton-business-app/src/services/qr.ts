@@ -44,6 +44,18 @@ export interface SimpleOrder {
   now?: number;
 }
 
+/** Extended-mode order — same shape as a Simple order plus the v1
+ *  reference's optional tokens. Per ADR-004:
+ *    I: item count           (sum of cart line quantities)
+ *    V: VAT in micro-FTC     (post-discount VAT, converted via ftcPerSek)
+ *    D: discount in micro-FTC (the SEK discount converted via ftcPerSek)
+ */
+export interface ExtendedOrder extends SimpleOrder {
+  itemCount: number;
+  vatSek: number;
+  discountSek?: number;
+}
+
 export interface BuiltQr {
   uri: string;
   amountMicroFtc: bigint;
@@ -52,19 +64,47 @@ export interface BuiltQr {
   expUnixSeconds: number;
 }
 
-/** Construct the QR payload + the encoded URI. Throws if any field
- *  fails ADR-004 validation. */
+/** Construct the Simple-mode QR. */
 export function buildSimpleQr(order: SimpleOrder): BuiltQr {
+  return buildQr({
+    ...order,
+    purpose: order.purpose ?? 'RETAIL',
+  });
+}
+
+/** Construct the Extended-mode QR. Adds I/V/D tokens to the v1 ref. */
+export function buildExtendedQr(order: ExtendedOrder): BuiltQr {
+  return buildQr({
+    ...order,
+    purpose: order.purpose ?? 'RESTAURANT',
+    itemCount: order.itemCount,
+    vatMicroUnits: sekToMicroFtc(order.vatSek, order.ftcPerSek),
+    discountMicroUnits: order.discountSek !== undefined && order.discountSek > 0
+      ? sekToMicroFtc(order.discountSek, order.ftcPerSek)
+      : undefined,
+  });
+}
+
+interface InternalOrder extends SimpleOrder {
+  itemCount?: number;
+  vatMicroUnits?: bigint;
+  discountMicroUnits?: bigint;
+}
+
+function buildQr(order: InternalOrder): BuiltQr {
   const purpose = order.purpose ?? 'RETAIL';
   const ref = reference.encodeV1({
     merchantId: order.merchantId,
     orderId: order.orderId,
     purpose,
+    itemCount: order.itemCount,
+    vatMicroUnits: order.vatMicroUnits,
+    discountMicroUnits: order.discountMicroUnits,
   });
   const amountMicroFtc = sekToMicroFtc(order.amountSek, order.ftcPerSek);
   const now = order.now ?? Math.floor(Date.now() / 1000);
   const exp = now + QR_EXPIRY_SECONDS;
-  const inv = order.orderId; // spec §9: `inv` is the 12-char invoice id
+  const inv = order.orderId;
   const params = new URLSearchParams({
     to: order.toAddress,
     amount: amountMicroFtc.toString(),
