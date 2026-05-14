@@ -1,0 +1,99 @@
+{
+  "schemaNote": "Each case: encode the `input` and assert the result equals `encoded`. Decode `encoded` and assert it matches `input`.",
+  "encodeV1": [
+    {
+      "name": "simple-retail",
+      "input": {
+        "merchantId": "KTH00001",
+        "orderId": "A1B2C3D4E5F6",
+        "purpose": "RETAIL"
+      },
+      "encoded": "v1: M:KTH00001 O:A1B2C3D4E5F6 P:RETAIL"
+    },
+    {
+      "name": "restaurant-with-vat",
+      "input": {
+        "merchantId": "KTH00001",
+        "orderId": "A1B2C3D4E5F7",
+        "purpose": "RESTAURANT",
+        "itemCount": 3,
+        "vatMicroUnits": "12500000"
+      },
+      "encoded": "v1: M:KTH00001 O:A1B2C3D4E5F7 P:RESTAURANT I:3 V:12500000"
+    },
+    {
+      "name": "all-optional-tokens",
+      "input": {
+        "merchantId": "STU00001",
+        "orderId": "ABCDEFGHIJKL",
+        "purpose": "EVENT",
+        "itemCount": 5,
+        "vatMicroUnits": "25000000",
+        "discountMicroUnits": "5000000"
+      },
+      "encoded": "v1: M:STU00001 O:ABCDEFGHIJKL P:EVENT I:5 V:25000000 D:5000000"
+    },
+    {
+      "name": "refund",
+      "input": {
+        "merchantId": "KTH00001",
+        "orderId": "A1B2C3D4E5F8",
+        "purpose": "REFUND",
+        "refundOf": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "encoded": "v1: M:KTH00001 O:A1B2C3D4E5F8 P:REFUND R:550e8400-e29b-41d4-a716-446655440000"
+    },
+    {
+      "name": "edge-zero-vat",
+      "input": {
+        "merchantId": "AAAAAAAA",
+        "orderId": "BBBBBBBBBBBB",
+        "purpose": "SERVICE",
+        "vatMicroUnits": "0"
+      },
+      "encoded": "v1: M:AAAAAAAA O:BBBBBBBBBBBB P:SERVICE V:0"
+    }
+  ],
+  "decode": [
+    {
+      "name": "v1-retail",
+      "input": "v1: M:KTH00001 O:A1B2C3D4E5F6 P:RETAIL",
+      "expectedKind": "v1"
+    },
+    {
+      "name": "v2-versioned",
+      "input": "v2: P:OTHR N:agent-payment G:service",
+      "expectedKind": "v2"
+    },
+    {
+      "name": "v2-with-task",
+      "input": "v2: P:GDDS N:purchase G:item T:task_abc",
+      "expectedKind": "v2"
+    },
+    {
+      "name": "unversioned-v2",
+      "input": "P:OTHR N:agent-payment G:service",
+      "expectedKind": "unversioned-v2"
+    },
+    {
+      "name": "free-text",
+      "input": "Coffee, large, oat milk",
+      "expectedKind": "unknown"
+    },
+    {
+      "name": "invalid-order",
+      "input": "v1: O:A1B2C3D4E5F6 M:KTH00001 P:RETAIL",
+      "expectedKind": "invalid"
+    },
+    {
+      "name": "invalid-purpose",
+      "input": "v1: M:KTH00001 O:A1B2C3D4E5F6 P:UNKNOWN",
+      "expectedKind": "invalid"
+    },
+    {
+      "name": "invalid-refund-tag",
+      "input": "v1: M:KTH00001 O:A1B2C3D4E5F6 P:RETAIL R:550e8400-e29b-41d4-a716-446655440000",
+      "expectedKind": "invalid"
+    }
+  ]
+}
