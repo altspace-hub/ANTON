@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings/profile" options={{ title: 'Profile' }} />
         <Stack.Screen name="settings/items" options={{ title: 'Items' }} />
         <Stack.Screen name="settings/pricing" options={{ title: 'Pricing' }} />
+        <Stack.Screen name="settings/backup" options={{ title: 'Backup' }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>
     </>
