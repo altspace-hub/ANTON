@@ -68,6 +68,7 @@ export type {
 export {
   average,
   fifo,
+  lifo,
   specificId,
   sharePooling,
   resolveCostBasis,
@@ -78,6 +79,13 @@ export { applyLossOffset } from './loss-offset.js';
 export type { LossOffsetInput, LossOffsetResult } from './loss-offset.js';
 export { applyHoldingPeriod } from './holding-period.js';
 export type { HeldEntry } from './holding-period.js';
+export {
+  taxYearBoundsForRule,
+  taxYearBoundsForTaxYear,
+  currentTaxYearForRule,
+  currentTaxYear,
+} from './tax-year.js';
+export type { TaxYearBounds } from './tax-year.js';
 export {
   applyRefundTagging,
   DEFAULT_REFUND_WINDOW_DAYS,

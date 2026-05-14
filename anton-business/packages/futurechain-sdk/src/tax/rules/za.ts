@@ -45,7 +45,6 @@ export const ZA: JurisdictionRule = {
     confidence: 'high',
     review_flags: [
       'investor_vs_trader_status_fact_specific',
-      'sa_fiscal_year_window_handling_uses_calendar_in_v1',
       'bed_and_breakfast_45_day_rule_not_yet_enforced',
     ],
   },

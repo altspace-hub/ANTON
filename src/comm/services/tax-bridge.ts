@@ -13,7 +13,7 @@
  *      jurisdiction's calendar (calendar vs fiscal). Sweden = calendar
  *      so this is trivial for v1.
  */
-import type { tax } from '@futurechain/sdk';
+import { tax } from '@futurechain/sdk';
 import type { WalletTx, WalletTxKind } from './transactions';
 
 /** Inline reference so dependent files don't need the namespace
@@ -53,9 +53,27 @@ export function toTaxInputTxs(walletTxs: WalletTx[]): tax.TaxInputTx[] {
   }));
 }
 
-/** Calendar-year window helpers. Sweden + most v1 jurisdictions use
- *  calendar; UK and AU use fiscal years which Phase 4 will pivot on
- *  when those rules activate. */
+/** Tax-year window for a given rule (calendar OR fiscal). Returns
+ *  the [fromTs, toTs] range to feed into listTxsByRange. Phase 7
+ *  replaced the old calendarYearBounds: GB/AU/ZA now use their real
+ *  fiscal year (Apr 6 – Apr 5 / Jul 1 – Jun 30 / Mar 1 – end Feb).
+ */
+export function taxYearBoundsForRule(
+  rule: tax.JurisdictionRule,
+  year: number,
+): { fromTs: number; toTs: number; label: string } {
+  return tax.taxYearBoundsForRule(rule, year);
+}
+
+/** Current tax-year label for a given rule + reference date. Used by
+ *  the position / report screens to default to "this year". */
+export function currentTaxYearForRule(rule: tax.JurisdictionRule, date = new Date()): number {
+  return tax.currentTaxYearForRule(rule, date);
+}
+
+/** Legacy calendar-only helpers — kept for any caller that still
+ *  expects calendar bounds. New callers should prefer
+ *  taxYearBoundsForRule so fiscal-year jurisdictions work correctly. */
 export function calendarYearBounds(year: number): { fromTs: number; toTs: number } {
   return {
     fromTs: Date.UTC(year, 0, 1, 0, 0, 0, 0),

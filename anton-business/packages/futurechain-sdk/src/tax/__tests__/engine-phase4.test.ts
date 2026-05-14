@@ -123,9 +123,9 @@ describe('UK — share pooling + £3k annual exemption', () => {
     expect(r.annual.netTaxableGainsFiat).toBe(0);
   });
 
-  it('surfaces the 30-day-matching review flag', () => {
+  it('no longer carries the deferred-matching review flag (Phase 7 implemented same-day + 30-day)', () => {
     const r = computeTaxPosition({ rule: GB, transactions: [] }) as TaxComputationResult;
-    expect(r.reviewReasons).toContain(
+    expect(r.reviewReasons).not.toContain(
       'review_flag_same_day_and_30_day_matching_not_yet_implemented',
     );
   });

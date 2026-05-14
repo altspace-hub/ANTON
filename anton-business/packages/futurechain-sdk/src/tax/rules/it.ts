@@ -41,11 +41,12 @@ export const IT: JurisdictionRule = {
   },
 
   cost_basis_method: {
-    // LIFO is explicitly permitted; we ship AVERAGE in v1 (LIFO
-    // lands in Phase 5 when the cost-basis registry adds it).
-    permitted: ['AVERAGE'],
+    // Italy explicitly permits LIFO as an alternative to weighted
+    // average (§6.1 IT). optimization_allowed = true so a user can
+    // elect LIFO via cost_basis_override.
+    permitted: ['AVERAGE', 'LIFO'],
     default: 'AVERAGE',
-    optimization_allowed: false,
+    optimization_allowed: true,
   },
 
   rates: {
@@ -106,7 +107,6 @@ export const IT: JurisdictionRule = {
     confidence: 'high',
     review_flags: [
       'wealth_tax_0_2pct_handled_outside_transaction_engine',
-      'lifo_method_permitted_but_only_average_implemented',
     ],
   },
 };

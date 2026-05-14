@@ -24,8 +24,8 @@ import { tax } from '@futurechain/sdk';
 import { loadResidency, type TaxResidency } from '../../services/tax-residency';
 import { listTxsByRange } from '../../services/transactions';
 import {
-  calendarYearBounds,
-  currentTaxYear,
+  currentTaxYearForRule,
+  taxYearBoundsForRule,
   toTaxInputTxs,
 } from '../../services/tax-bridge';
 import { shareFile } from '../../services/share';
@@ -59,7 +59,6 @@ export default function TaxReportScreen({ onBack }: Props) {
       return;
     }
     const rule = tax.getBundledRule(residency.jurisdictionCode);
-    const year = currentTaxYear();
     if (!rule) {
       setLoad({
         state: 'unsupported',
@@ -68,7 +67,8 @@ export default function TaxReportScreen({ onBack }: Props) {
       });
       return;
     }
-    const { fromTs, toTs } = calendarYearBounds(year);
+    const year = currentTaxYearForRule(rule);
+    const { fromTs, toTs } = taxYearBoundsForRule(rule, year);
     const walletTxs = await listTxsByRange(fromTs, toTs);
     const taxInputs = toTaxInputTxs(walletTxs);
     const ftcClassification = await loadFtcClassification();

@@ -97,8 +97,6 @@ export const GB: JurisdictionRule = {
     confidence: 'high',
     review_flags: [
       'rate_uses_24pct_higher_band_approximation',
-      'same_day_and_30_day_matching_not_yet_implemented',
-      'uk_fiscal_year_window_handling_uses_calendar_in_v1',
     ],
   },
 };
