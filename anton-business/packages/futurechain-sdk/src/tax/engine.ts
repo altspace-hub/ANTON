@@ -37,6 +37,7 @@ import { buildDisclaimer, type DisclaimerLocale } from './disclaimer.js';
 import { applyHoldingPeriod, type HeldEntry } from './holding-period.js';
 import { applyLossOffset, type LossOffsetResult } from './loss-offset.js';
 import { applyRate } from './rates.js';
+import { applyRefundTagging, DEFAULT_REFUND_WINDOW_DAYS } from './refund-tagging.js';
 import type {
   ComputeOptions,
   FtcClassification,
@@ -57,6 +58,10 @@ export interface TaxComputationInput {
   adviserReferralThresholdFiat?: number;
   /** §3 disclaimer locale. */
   locale?: DisclaimerLocale;
+  /** Per §7.4 — `refund_*` txs tagged with `refundOf` and falling
+   *  within this window cancel their original tx for tax purposes.
+   *  Set to 0 to disable refund cancellation entirely. */
+  refundWindowDays?: number;
 }
 
 export interface PerTxResult extends HeldEntry {
@@ -141,14 +146,24 @@ export function computeTaxPosition(
       : rule.cost_basis_method.default;
   const costBasisFn = resolveCostBasis(chosenMethod);
 
+  // 1a. Refund-tagging pre-processor (§7.4). Pairs an original
+  //     disposal with its tagged refund inside the configured window
+  //     and cancels both before cost-basis sees them. Surfaces a
+  //     review_flag so the user knows the treatment isn't legally
+  //     settled.
+  const refundWindow = input.refundWindowDays ?? DEFAULT_REFUND_WINDOW_DAYS;
+  const refundResult = refundWindow > 0
+    ? applyRefundTagging(input.transactions, refundWindow)
+    : { filtered: input.transactions, cancelledPairCount: 0 };
+
   // 2. Build the gain/loss ledger.
-  const ledger = costBasisFn(input.transactions);
+  const ledger = costBasisFn(refundResult.filtered);
 
   // 2a. Build a tx-kind lookup so post-ledger steps can filter by
   //     the original taxable-event flag (France: swap_crypto_to_crypto
   //     is non-taxable — disposal still affects the pool, but the
   //     gain is exempt).
-  const kindById = new Map(input.transactions.map((t) => [t.id, t.kind]));
+  const kindById = new Map(refundResult.filtered.map((t) => [t.id, t.kind]));
   const isExemptSwap = (txId: string): boolean =>
     !rule.taxable_events.swap_crypto_to_crypto && kindById.get(txId) === 'swap';
 
@@ -240,6 +255,9 @@ export function computeTaxPosition(
   if (finalTax > threshold) reasons.push(`estimated_tax_above_threshold_${threshold}`);
   if (rule.metadata.confidence !== 'high') reasons.push(`rule_confidence_${rule.metadata.confidence}`);
   if (rule.metadata.review_flags.length > 0) reasons.push(...rule.metadata.review_flags.map((f) => `review_flag_${f}`));
+  if (refundResult.cancelledPairCount > 0) {
+    reasons.push(`refund_pairs_cancelled_${refundResult.cancelledPairCount}_treatment_not_legally_settled`);
+  }
   const reviewRequired = reasons.length > 0;
 
   return {
