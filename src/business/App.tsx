@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from 'react';
 import HomeScreen from './pages/HomeScreen';
+import SimpleScreen from './pages/SimpleScreen';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
 import ModeChoiceScreen from './pages/onboarding/ModeChoiceScreen';
 import RegisterScreen from './pages/onboarding/RegisterScreen';
@@ -90,8 +91,11 @@ export default function App() {
       />
     );
   }
+  if (screen === 'simple') {
+    return <SimpleScreen onBack={() => setScreen('home')} />;
+  }
 
-  // Sale + Settings screens land in tasks #5–#7.
+  // Extended + Settings screens land in tasks #6–#7.
   return (
     <div className="flex flex-col h-full p-6 safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
