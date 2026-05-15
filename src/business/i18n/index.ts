@@ -1,7 +1,7 @@
 /**
  * i18n/index.ts — Business App internationalization.
  *
- * react-i18next with all 34 catalogues bundled. Any string missing
+ * react-i18next with all 38 catalogues bundled. Any string missing
  * from a catalogue falls back to English transparently via fallbackLng.
  *
  * Language choice is persisted to localStorage. On first run we detect
@@ -48,11 +48,15 @@ import ru from './locales/ru.json';
 import ms from './locales/ms.json';
 import tl from './locales/tl.json';
 import sk from './locales/sk.json';
+import ta from './locales/ta.json';
+import te from './locales/te.json';
+import pa from './locales/pa.json';
+import sw from './locales/sw.json';
 import { isRtl, LANGUAGES } from './languages.js';
 
 const STORAGE_KEY = 'anton-business-language';
 
-/** All 34 catalogues bundled in the app. New languages drop a
+/** All 38 catalogues bundled in the app. New languages drop a
  *  JSON file in ./locales/ and register here. */
 const RESOURCES = {
   en: { translation: en },
@@ -89,6 +93,10 @@ const RESOURCES = {
   ms: { translation: ms },
   tl: { translation: tl },
   sk: { translation: sk },
+  ta: { translation: ta },
+  te: { translation: te },
+  pa: { translation: pa },
+  sw: { translation: sw },
 } as const;
 
 function detectInitialLanguage(): string {
