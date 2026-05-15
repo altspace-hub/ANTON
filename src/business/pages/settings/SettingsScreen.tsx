@@ -1,35 +1,60 @@
 /**
  * SettingsScreen — main settings hub.
  *
- * v1 surface: Connect wallet, Backup, Language, About. Profile + Items
- * editing are accessible via re-onboarding for now; deeper Settings
- * sub-screens land in a follow-up.
+ * Sections: Wallet · Business · Appearance · Backup · Language ·
+ * Storage · About · Danger zone. Appearance/Storage/Danger-zone are
+ * ported from the Comm App's settings; the rest are Business-native.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
 import { runBackupExport, isBackupOverdue } from '../../services/backup';
-import { loadConfig } from '../../services/merchant';
+import { loadConfig, wipeConfig } from '../../services/merchant';
 import type { MerchantConfig } from '../../services/types';
-import { hasWallet, loadWallet } from '../../services/wallet';
+import { hasWallet, loadWallet, wipeWallet } from '../../services/wallet';
+import { wipeReceipts } from '../../services/db';
+import { wipeItems } from '../../services/items';
 import { getLanguage, setLanguage } from '../../i18n';
 import { LANGUAGES, languageOption } from '../../i18n/languages';
+import {
+  ACCENTS, getAccent, setAccent, getMode, setMode,
+  type AccentKey, type AppMode,
+} from '../../services/personalization';
 
 interface Props {
   onBack: () => void;
   onConnectWallet: () => void;
+  onReset: () => void;
 }
 
-export default function SettingsScreen({ onBack, onConnectWallet }: Props) {
+const APP_VERSION = '0.0.1';
+const BUILD_DATE = '2026-05-16';
+
+export default function SettingsScreen({ onBack, onConnectWallet, onReset }: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
+  const [accent, setAccentState] = useState<AccentKey>(getAccent());
+  const [mode, setModeState] = useState<AppMode>(getMode());
+  const [storageText, setStorageText] = useState<string>('…');
 
   useEffect(() => {
     refresh();
-  }, []);
+    void (async () => {
+      try {
+        if (navigator.storage?.estimate) {
+          const est = await navigator.storage.estimate();
+          setStorageText(formatBytes(est.usage ?? 0));
+        } else {
+          setStorageText(t('settings.storageUnknown'));
+        }
+      } catch {
+        setStorageText(t('settings.storageUnknown'));
+      }
+    })();
+  }, [t]);
 
   async function refresh() {
     const cfg = await loadConfig();
@@ -51,6 +76,12 @@ export default function SettingsScreen({ onBack, onConnectWallet }: Props) {
     } catch (err) {
       setBackupStatus((err as Error).message);
     }
+  }
+
+  async function handleReset() {
+    if (!confirm(t('settings.resetConfirm'))) return;
+    await Promise.all([wipeConfig(), wipeWallet(), wipeReceipts(), wipeItems()]);
+    onReset();
   }
 
   const overdue = isBackupOverdue(config);
@@ -148,6 +179,64 @@ export default function SettingsScreen({ onBack, onConnectWallet }: Props) {
           </div>
         )}
 
+        {/* Appearance */}
+        <div className="rounded-xl p-4"
+             style={{
+               backgroundColor: 'var(--color-surface)',
+               border: '1px solid var(--color-border)',
+             }}>
+          <h3 className="font-bold mb-1" style={{ color: 'var(--color-text)' }}>{t('settings.appearance')}</h3>
+          <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
+            {t('settings.appearanceHelp')}
+          </p>
+          <div className="text-xs uppercase tracking-wider mb-2"
+               style={{ color: 'var(--color-text-faint)' }}>
+            {t('settings.accent')}
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {ACCENTS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { setAccent(a.id); setAccentState(a.id); }}
+                aria-label={a.label}
+                className="flex flex-col items-center gap-1"
+              >
+                <span
+                  className="w-10 h-10 rounded-full"
+                  style={{
+                    backgroundColor: a.hex,
+                    outline: accent === a.id
+                      ? '3px solid var(--color-text)'
+                      : '1px solid var(--color-border)',
+                    outlineOffset: '2px',
+                  }}
+                />
+                <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{a.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="text-xs uppercase tracking-wider mt-4 mb-2"
+               style={{ color: 'var(--color-text-faint)' }}>
+            {t('settings.mode')}
+          </div>
+          <div className="flex gap-2">
+            {(['light', 'dark'] as AppMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => { setMode(m); setModeState(m); }}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold"
+                style={mode === m
+                  ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }
+                  : { backgroundColor: 'var(--color-surface-muted)', color: 'var(--color-text-muted)' }}
+              >
+                {m === 'light' ? t('settings.modeLight') : t('settings.modeDark')}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Backup */}
         <div className="rounded-xl p-4"
              style={{
@@ -196,18 +285,64 @@ export default function SettingsScreen({ onBack, onConnectWallet }: Props) {
           </svg>
         </button>
 
-        {/* About */}
-        <div className="rounded-xl p-4 text-center"
+        {/* Storage */}
+        <div className="rounded-xl p-4"
              style={{
                backgroundColor: 'var(--color-surface)',
                border: '1px solid var(--color-border)',
              }}>
-          <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            {t('settings.about')}
+          <h3 className="font-bold mb-1" style={{ color: 'var(--color-text)' }}>{t('settings.storage')}</h3>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              {t('settings.storageUsed')}
+            </span>
+            <span className="mono text-sm" style={{ color: 'var(--color-text)' }}>{storageText}</span>
           </div>
-          <div className="text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
+        </div>
+
+        {/* About */}
+        <div className="rounded-xl p-4"
+             style={{
+               backgroundColor: 'var(--color-surface)',
+               border: '1px solid var(--color-border)',
+             }}>
+          <h3 className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>{t('settings.aboutTitle')}</h3>
+          <div className="flex justify-between items-center py-0.5">
+            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{t('settings.version')}</span>
+            <span className="mono text-sm" style={{ color: 'var(--color-text)' }}>{APP_VERSION}</span>
+          </div>
+          <div className="flex justify-between items-center py-0.5">
+            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{t('settings.buildDate')}</span>
+            <span className="mono text-sm" style={{ color: 'var(--color-text)' }}>{BUILD_DATE}</span>
+          </div>
+          <div className="text-xs mt-2 pt-2"
+               style={{
+                 color: 'var(--color-text-faint)',
+                 borderTop: '1px solid var(--color-border-soft)',
+               }}>
             {t('settings.aboutPhoneOnly')}
           </div>
+        </div>
+
+        {/* Danger zone */}
+        <div className="rounded-xl p-4"
+             style={{
+               backgroundColor: 'var(--color-error-bg)',
+               border: '1px solid var(--color-error)',
+             }}>
+          <h3 className="font-bold mb-1" style={{ color: 'var(--color-error)' }}>{t('settings.dangerZone')}</h3>
+          <p className="text-sm mb-3" style={{ color: 'var(--color-text-body)' }}>
+            {t('settings.resetHelp')}
+          </p>
+          <button type="button" onClick={handleReset}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-error)',
+                    border: '1px solid var(--color-error)',
+                  }}>
+            {t('settings.resetApp')}
+          </button>
         </div>
       </div>
 
@@ -218,6 +353,13 @@ export default function SettingsScreen({ onBack, onConnectWallet }: Props) {
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 /** Full-screen language list. en + sv ship complete catalogues; the

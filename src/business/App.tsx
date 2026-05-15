@@ -108,6 +108,10 @@ export default function App() {
       <SettingsScreen
         onBack={() => setScreen('home')}
         onConnectWallet={() => setScreen('settings-wallet')}
+        onReset={() => {
+          setPendingMode('simple');
+          setScreen('onboarding-welcome');
+        }}
       />
     );
   }
