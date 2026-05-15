@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isValidContactHash, deriveContactHash, getIdentity } from '../services/identity';
 import { addContact, parseSharePayload } from '../services/contacts';
 
@@ -10,21 +11,22 @@ interface Props {
 type Tab = 'scan' | 'paste';
 
 export default function AddContactScreen({ onBack, onAdded }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('scan');
 
   return (
     <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
         <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">
-          Cancel
+          {t('common.cancel')}
         </button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">Add contact</h1>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('chat.addContact')}</h1>
         <span className="w-12" />
       </header>
 
       <div className="flex border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <TabButton active={tab === 'scan'} onClick={() => setTab('scan')}>Scan QR</TabButton>
-        <TabButton active={tab === 'paste'} onClick={() => setTab('paste')}>Paste code</TabButton>
+        <TabButton active={tab === 'scan'} onClick={() => setTab('scan')}>{t('chat.scanQr')}</TabButton>
+        <TabButton active={tab === 'paste'} onClick={() => setTab('paste')}>{t('chat.pasteCode')}</TabButton>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -54,6 +56,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -72,17 +75,17 @@ function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
           try {
             const payload = parseSharePayload(result.data);
             if (!payload) {
-              throw new Error('Not a valid ANTON contact code');
+              throw new Error(t('chat.errNotContactCode'));
             }
             if (!isValidContactHash(payload.hash)) {
-              throw new Error('Contact code format is invalid');
+              throw new Error(t('chat.errCodeFormat'));
             }
             const derived = deriveContactHash(payload.pub);
             if (derived !== payload.hash) {
-              throw new Error('Contact code does not match the embedded key');
+              throw new Error(t('chat.errCodeMismatch'));
             }
             if (ownIdentity && payload.hash === ownIdentity.contactHash) {
-              throw new Error("That's your own contact code");
+              throw new Error(t('chat.errOwnCode'));
             }
             await addContact({
               contactHash: payload.hash,
@@ -93,14 +96,14 @@ function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
             scanner?.stop();
             onAdded(payload.hash);
           } catch (e) {
-            setError(e instanceof Error ? e.message : 'Scan failed');
+            setError(e instanceof Error ? e.message : t('chat.errScanFailed'));
             setBusy(false);
           }
         }, { returnDetailedScanResult: true, highlightScanRegion: true });
         await scanner.start();
       } catch {
         if (!cancelled) {
-          setError('Camera not available. Try the "Paste code" tab instead.');
+          setError(t('chat.cameraUnavailable'));
         }
       }
     })();
@@ -115,7 +118,7 @@ function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
         <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
       </div>
       <p className="mt-6 text-sm text-[var(--color-text-muted)] text-center max-w-xs">
-        Hold the camera over a friend's ANTON contact QR.
+        {t('chat.scanHelp')}
       </p>
       {error && (
         <div className="mt-6 w-full max-w-sm rounded-xl bg-[var(--color-red-dim)] px-4 py-3 text-sm text-[var(--color-red)]">
@@ -127,6 +130,7 @@ function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
 }
 
 function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
+  const { t } = useTranslation();
   const [hash, setHash] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -137,11 +141,11 @@ function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
     setError(null);
     const trimmed = hash.trim().toUpperCase();
     if (!isValidContactHash(trimmed)) {
-      setError('That doesn\'t look like a valid ANTON contact code (ANTON-XXXX-XXXX-XXXX-XXXX).');
+      setError(t('chat.errInvalidCode'));
       return;
     }
     if (ownIdentity && trimmed === ownIdentity.contactHash) {
-      setError("That's your own contact code.");
+      setError(t('chat.errOwnCode'));
       return;
     }
     setBusy(true);
@@ -154,7 +158,7 @@ function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
       });
       onAdded(trimmed);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to add contact');
+      setError(e instanceof Error ? e.message : t('chat.errAddFailed'));
       setBusy(false);
     }
   }
@@ -162,7 +166,7 @@ function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
   return (
     <div className="px-5 py-6">
       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
-        Contact code
+        {t('chat.contactCode')}
       </label>
       <input
         type="text"
@@ -177,13 +181,13 @@ function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
       />
 
       <label className="mt-6 block text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
-        Name (optional)
+        {t('chat.nameOptional')}
       </label>
       <input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="How you'll see them in your chat list"
+        placeholder={t('chat.namePlaceholder')}
         maxLength={64}
         className="mt-2 w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)] placeholder-[var(--color-text-faint)] focus:outline-none focus:ring-2"
         style={{ outlineColor: 'var(--color-accent)' }}
@@ -199,12 +203,11 @@ function PasteTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
         className="mt-8 w-full py-4 rounded-2xl text-base font-medium transition-colors disabled:opacity-50"
         style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
       >
-        {busy ? 'Adding…' : 'Add contact'}
+        {busy ? t('chat.adding') : t('chat.addContact')}
       </button>
 
       <p className="mt-6 text-xs text-[var(--color-text-faint)] leading-relaxed">
-        Adding by code alone doesn't include the friend's public key.
-        Their key will be fetched automatically the first time you message them.
+        {t('chat.addByCodeNote')}
       </p>
     </div>
   );

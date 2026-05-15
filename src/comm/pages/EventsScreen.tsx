@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listEvents, type CommEvent, EVENT_TYPE_ICONS } from '../services/events';
 import { Ico, type IcoName } from '../components/Ico';
 
@@ -11,6 +12,7 @@ interface Props {
 type Tab = 'today' | 'upcoming' | 'past';
 
 export default function EventsScreen({ onCreate, onOpenEvent, refreshKey }: Props) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<CommEvent[]>([]);
   const [tab, setTab] = useState<Tab>('upcoming');
   const [loaded, setLoaded] = useState(false);
@@ -40,10 +42,10 @@ export default function EventsScreen({ onCreate, onOpenEvent, refreshKey }: Prop
   return (
     <section className="flex flex-col">
       <div className="flex items-center justify-between px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Events</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('events.title')}</h1>
         <button
           onClick={onCreate}
-          aria-label="Create event"
+          aria-label={t('events.createEvent')}
           className="w-10 h-10 rounded-full flex items-center justify-center text-xl font-medium"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
@@ -52,23 +54,23 @@ export default function EventsScreen({ onCreate, onOpenEvent, refreshKey }: Prop
       </div>
 
       <div className="flex border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] px-2">
-        <TabButton active={tab === 'today'} onClick={() => setTab('today')}>Today</TabButton>
-        <TabButton active={tab === 'upcoming'} onClick={() => setTab('upcoming')}>Upcoming</TabButton>
-        <TabButton active={tab === 'past'} onClick={() => setTab('past')}>Past</TabButton>
+        <TabButton active={tab === 'today'} onClick={() => setTab('today')}>{t('events.tabToday')}</TabButton>
+        <TabButton active={tab === 'upcoming'} onClick={() => setTab('upcoming')}>{t('events.tabUpcoming')}</TabButton>
+        <TabButton active={tab === 'past'} onClick={() => setTab('past')}>{t('events.tabPast')}</TabButton>
       </div>
 
       {!loaded ? (
-        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Loading…</div>
+        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">{t('common.loading')}</div>
       ) : filtered.length === 0 ? (
         <div className="px-5 mt-6">
           <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
             <p className="text-sm text-[var(--color-text-body)]">
-              {tab === 'today' ? 'Nothing on the calendar for today.'
-                : tab === 'upcoming' ? 'No upcoming events.'
-                : 'No past events.'}
+              {tab === 'today' ? t('events.emptyToday')
+                : tab === 'upcoming' ? t('events.emptyUpcoming')
+                : t('events.emptyPast')}
             </p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-              Tap + to create one and invite friends.
+              {t('events.emptyHelp')}
             </p>
           </div>
         </div>
@@ -98,12 +100,13 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 function EventRow({ event, onClick }: { event: CommEvent; onClick: () => void }) {
+  const { t } = useTranslation();
   const start = new Date(event.startAt);
   const dateLabel = start.toLocaleDateString(undefined, {
     weekday: 'short', month: 'short', day: 'numeric',
   });
   const timeLabel = event.allDay
-    ? 'All day'
+    ? t('events.allDay')
     : start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
   const goingCount = Object.values(event.rsvps).filter(s => s === 'going').length;
@@ -129,16 +132,16 @@ function EventRow({ event, onClick }: { event: CommEvent; onClick: () => void })
           {event.myStatus === 'going' && (
             <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded"
                   style={{ backgroundColor: 'var(--color-green-dim)', color: 'var(--color-green)' }}>
-              Going
+              {t('events.going')}
             </span>
           )}
           {event.myStatus === 'pending' && (
             <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded"
                   style={{ backgroundColor: 'var(--color-gold-dim)', color: 'var(--color-gold)' }}>
-              Reply
+              {t('events.reply')}
             </span>
           )}
-          <span className="text-[10px] text-[var(--color-text-faint)]">{goingCount} going</span>
+          <span className="text-[10px] text-[var(--color-text-faint)]">{t('events.goingCount', { count: goingCount })}</span>
         </div>
       </button>
     </li>

@@ -7,6 +7,7 @@
  * feels coherent on the same phone.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../components/Logo';
 import { createAndStoreWallet } from '../../services/wallet';
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function WalletConnectScreen({ onConnected }: Props) {
+  const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -34,9 +36,9 @@ export default function WalletConnectScreen({ onConnected }: Props) {
 
   return (
     <section className="flex flex-col h-full px-5 pt-6 pb-6 safe-bottom">
-      <h1 className="text-2xl font-semibold text-[var(--color-text)]">Wallet</h1>
+      <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('wallet.title')}</h1>
       <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-        Set up your FutureChain wallet.
+        {t('wallet.setupTitle')}
       </p>
 
       <div className="flex flex-col items-center mt-10 mb-2">
@@ -46,20 +48,17 @@ export default function WalletConnectScreen({ onConnected }: Props) {
       {state === 'idle' && (
         <>
           <p className="mt-6 text-[15px] leading-relaxed text-center text-[var(--color-text-body)]">
-            We&apos;ll generate a secp256k1 keypair on this device. The
-            private key never leaves your phone — it lives in the device
-            keychain.
+            {t('wallet.setupExplain')}
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-center text-[var(--color-text-muted)]">
-            Your address is what merchants scan to charge you. It&apos;s
-            public — share freely.
+            {t('wallet.setupAddressNote')}
           </p>
           <button
             type="button"
             onClick={generate}
             className="mt-auto w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] bg-[var(--color-accent)]"
           >
-            Create wallet
+            {t('wallet.createWallet')}
           </button>
         </>
       )}
@@ -73,21 +72,21 @@ export default function WalletConnectScreen({ onConnected }: Props) {
               borderTopColor: 'var(--color-accent)',
             }}
           />
-          <p className="text-sm text-[var(--color-text-muted)]">Generating…</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{t('wallet.generating')}</p>
         </div>
       )}
 
       {state === 'error' && (
         <>
           <p className="mt-6 text-[15px] text-center text-[var(--color-red)]">
-            {error ?? 'Unknown error'}
+            {error ?? t('common.errUnknown')}
           </p>
           <button
             type="button"
             onClick={() => setState('idle')}
             className="mt-auto w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] bg-[var(--color-accent)]"
           >
-            Try again
+            {t('common.retry')}
           </button>
         </>
       )}

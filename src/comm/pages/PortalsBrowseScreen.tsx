@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchPortals, type PortalSearchResult } from '../services/portals';
 import { Ico } from '../components/Ico';
 import PortalHelpSheet from '../components/PortalHelpSheet';
@@ -8,15 +9,16 @@ interface Props {
 }
 
 const POPULAR_VERBS = [
-  { value: 'contact', label: 'Contact' },
-  { value: 'book',    label: 'Book' },
-  { value: 'order',   label: 'Order' },
-  { value: 'inquire', label: 'Inquire' },
-  { value: 'request', label: 'Request' },
-  { value: 'pay',     label: 'Pay' },
+  { value: 'contact', label: 'portals.verbContact' },
+  { value: 'book',    label: 'portals.verbBook' },
+  { value: 'order',   label: 'portals.verbOrder' },
+  { value: 'inquire', label: 'portals.verbInquire' },
+  { value: 'request', label: 'portals.verbRequest' },
+  { value: 'pay',     label: 'portals.verbPay' },
 ];
 
 export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [selectedVerbs, setSelectedVerbs] = useState<string[]>([]);
   const [results, setResults] = useState<PortalSearchResult[]>([]);
@@ -47,7 +49,7 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
       setResults(res.results ?? []);
     } catch (err) {
       if (id !== reqIdRef.current) return;
-      setError(err instanceof Error ? err.message : 'Search failed');
+      setError(err instanceof Error ? err.message : t('portals.errSearchFailed'));
       setResults([]);
     } finally {
       if (id === reqIdRef.current) setLoading(false);
@@ -62,15 +64,15 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
     <section className="flex flex-col">
       <div className="px-5 pt-6 pb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Portals</h1>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('portals.title')}</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Browse and visit ANTON portals.
+            {t('portals.subtitle')}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setHelpOpen(true)}
-          aria-label="How to publish a portal"
+          aria-label={t('portals.helpPublish')}
           className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
           style={{
             backgroundColor: 'var(--color-surface)',
@@ -88,7 +90,7 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, tag or area"
+          placeholder={t('portals.searchPlaceholder')}
           className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)] placeholder-[var(--color-text-faint)] focus:outline-none focus:ring-2"
           style={{ outlineColor: 'var(--color-accent)' }}
         />
@@ -108,7 +110,7 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
                 borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
               }}
             >
-              {v.label}
+              {t(v.label)}
             </button>
           );
         })}
@@ -121,13 +123,13 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
       )}
 
       {loading && results.length === 0 ? (
-        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Searching…</div>
+        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">{t('portals.searching')}</div>
       ) : results.length === 0 ? (
         <div className="px-5 mt-2">
           <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
-            <p className="text-sm text-[var(--color-text-body)]">No portals found.</p>
+            <p className="text-sm text-[var(--color-text-body)]">{t('portals.noPortals')}</p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-              Try a different search term or clear the filter chips.
+              {t('portals.noPortalsHelp')}
             </p>
           </div>
         </div>

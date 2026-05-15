@@ -39,6 +39,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wrapForSandbox } from '../lib/portal-sandbox';
 import {
   fetchPortalPage,
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export default function PortalPageScreen({ descriptor, onSelectCapability }: Props) {
+  const { t } = useTranslation();
   const [pages, setPages] = useState<PortalPageMeta[] | null>(null);
   const [currentPath, setCurrentPath] = useState<string>('/');
   const [page, setPage] = useState<PortalPage | null>(null);
@@ -93,7 +95,7 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
       })
       .catch((err) => {
         if (cancelled) return;
-        setPageError(err instanceof Error ? err.message : 'Publisher offline');
+        setPageError(err instanceof Error ? err.message : t('portals.publisherOffline'));
         setPageLoading(false);
       });
     return () => { cancelled = true; };
@@ -109,7 +111,7 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
     <div className="flex flex-col h-full bg-[var(--color-bg)]">
       {showTabs && pages && (
         <nav
-          aria-label="Portal pages"
+          aria-label={t('portals.pagesNav')}
           className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]"
         >
           {pages.map((p) => {
@@ -138,24 +140,24 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
           className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-medium border-b border-[#E5B07A]/40 bg-[#FDF4E7] text-[#8A5A1E]"
         >
           <span aria-hidden="true">●</span>
-          <span>Offline — showing the last cached copy. Publisher is unreachable.</span>
+          <span>{t('portals.offlineCached')}</span>
         </div>
       )}
 
       <div className="flex-1 min-h-0 bg-[var(--color-bg)]">
         {pageLoading ? (
-          <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Loading page…</div>
+          <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">{t('portals.loadingPage')}</div>
         ) : pageError ? (
           <div className="mx-5 mt-6 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
-            <p className="text-sm font-medium text-[var(--color-text)]">Publisher offline</p>
+            <p className="text-sm font-medium text-[var(--color-text)]">{t('portals.publisherOffline')}</p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">{pageError}</p>
             <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-              You can still use the actions below.
+              {t('portals.useActionsBelow')}
             </p>
           </div>
         ) : !srcDoc ? (
           <div className="mx-5 mt-6 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
-            <p className="text-sm text-[var(--color-text-body)]">No page published yet.</p>
+            <p className="text-sm text-[var(--color-text-body)]">{t('portals.noPagePublished')}</p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">{currentPath}</p>
           </div>
         ) : (
@@ -174,7 +176,7 @@ export default function PortalPageScreen({ descriptor, onSelectCapability }: Pro
 
       {capabilities.length > 0 && (
         <nav
-          aria-label="Portal actions"
+          aria-label={t('portals.actionsNav')}
           className="flex gap-2 px-3 py-3 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)] overflow-x-auto safe-bottom"
         >
           {capabilities.map((c) => (

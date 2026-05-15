@@ -7,6 +7,7 @@
  * `futurechain:pay` URI themselves; that's a follow-up.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import QrCode from '../../components/QrCode';
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function WalletReceiveScreen({ address, onBack }: Props) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -30,12 +32,11 @@ export default function WalletReceiveScreen({ address, onBack }: Props) {
 
   return (
     <section className="flex flex-col h-full safe-bottom">
-      <Header title="Receive" onBack={onBack} />
+      <Header title={t('wallet.receiveTitle')} onBack={onBack} />
 
       <div className="flex flex-col items-center px-5 pt-2 pb-6 overflow-y-auto">
         <p className="text-sm text-center text-[var(--color-text-muted)] mb-5 max-w-[280px]">
-          Show this code to whoever&apos;s paying you. They scan it
-          with their wallet to pick the amount.
+          {t('wallet.receiveHelp')}
         </p>
 
         <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)]">
@@ -44,7 +45,7 @@ export default function WalletReceiveScreen({ address, onBack }: Props) {
 
         <div className="mt-5 w-full px-2">
           <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)] mb-1">
-            Your address
+            {t('wallet.yourAddress')}
           </div>
           <div className="font-mono text-[12px] break-all text-[var(--color-accent)] select-all">
             {address}
@@ -56,7 +57,7 @@ export default function WalletReceiveScreen({ address, onBack }: Props) {
           onClick={copy}
           className="mt-4 w-full py-3 rounded-xl font-semibold text-sm bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)]"
         >
-          {copied ? 'Copied ✓' : 'Copy address'}
+          {copied ? `${t('common.copied')} ✓` : t('wallet.copyAddress')}
         </button>
       </div>
     </section>

@@ -13,6 +13,8 @@
  *     no numbers shown
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { tax } from '@futurechain/sdk';
 import { loadResidency, type TaxResidency } from '../../services/tax-residency';
 import { listTxsByRange } from '../../services/transactions';
@@ -47,6 +49,7 @@ const STALE_MS = STALE_DAYS * 24 * 60 * 60 * 1000;
 const ADVISER_THRESHOLD_SEK = 50_000;
 
 export default function TaxPositionScreen({ onBack, onChangeResidency, onExportReport }: Props) {
+  const { t } = useTranslation();
   const [load, setLoad] = useState<LoadState>({ state: 'loading' });
 
   useEffect(() => {
@@ -104,7 +107,7 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
   if (load.state === 'loading') {
     return (
       <section className="flex flex-col h-full items-center justify-center">
-        <span className="text-sm text-[var(--color-text-faint)]">Computing…</span>
+        <span className="text-sm text-[var(--color-text-faint)]">{t('tax.computing')}</span>
       </section>
     );
   }
@@ -112,17 +115,17 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
   if (load.state === 'no-residency') {
     return (
       <section className="flex flex-col h-full safe-bottom">
-        <Header title="Tax" onBack={onBack} />
+        <Header title={t('tax.title')} onBack={onBack} />
         <div className="px-5 pt-2">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Set your tax residency to see your position.
+            {t('tax.setResidencyPrompt')}
           </p>
           <button
             type="button"
             onClick={onChangeResidency}
             className="mt-4 w-full py-3 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent-fg)] font-semibold"
           >
-            Set tax residency
+            {t('tax.setResidency')}
           </button>
         </div>
       </section>
@@ -132,21 +135,19 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
   if (load.state === 'unsupported') {
     return (
       <section className="flex flex-col h-full safe-bottom overflow-y-auto">
-        <Header title="Tax" onBack={onBack} />
+        <Header title={t('tax.title')} onBack={onBack} />
         <div className="px-5 pt-2 pb-5">
           <ResidencyChip residency={load.residency} onChange={onChangeResidency} />
           <div className="mt-4 p-4 rounded-xl border border-[var(--color-gold)] bg-[var(--color-gold-dim)]">
             <div className="text-xs uppercase tracking-wider mb-1 text-[var(--color-gold)] font-bold">
-              Refer to a local adviser
+              {t('tax.referLocalAdviser')}
             </div>
             <p className="text-sm leading-relaxed text-[var(--color-text-body)]">
               {load.message}
             </p>
           </div>
           <p className="mt-4 text-[11px] text-[var(--color-text-faint)] leading-relaxed">
-            Your transaction history is still available on the wallet History
-            tab. A CSV export landing soon will let you hand the raw ledger to
-            your adviser.
+            {t('tax.unsupportedHistoryNote')}
           </p>
         </div>
       </section>
@@ -160,7 +161,7 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
 
   return (
     <section className="flex flex-col h-full overflow-y-auto safe-bottom">
-      <Header title="Tax" onBack={onBack} />
+      <Header title={t('tax.title')} onBack={onBack} />
 
       <div className="px-5 pt-1 pb-3">
         <ResidencyChip residency={residency} onChange={onChangeResidency} />
@@ -168,7 +169,7 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
         <div className="mt-4 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-5">
           <div className="flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-              Estimated tax · {year}
+              {t('tax.estimatedTaxYear', { year })}
             </span>
             <span className="text-[10px] font-mono text-[var(--color-text-faint)]">
               {a.fiatCurrency}
@@ -178,36 +179,36 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
             {fmt(a.estimatedTaxFiat)}
           </div>
           <p className="mt-2 text-[11px] text-[var(--color-text-faint)] italic">
-            Estimate only — not a tax bill. See disclaimer below.
+            {t('tax.estimateOnly')}
           </p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <StatCard label="Gains"        value={fmt(a.totalGainsFiat)} ccy={a.fiatCurrency} />
-          <StatCard label="Losses"       value={fmt(a.totalLossesFiat)} ccy={a.fiatCurrency} />
-          <StatCard label="Net taxable"  value={fmt(a.netTaxableGainsFiat)} ccy={a.fiatCurrency} />
-          <StatCard label="Long-term exempt" value={fmt(a.longTermExemptGainsFiat)} ccy={a.fiatCurrency} />
+          <StatCard label={t('tax.gains')}          value={fmt(a.totalGainsFiat)} ccy={a.fiatCurrency} />
+          <StatCard label={t('tax.losses')}         value={fmt(a.totalLossesFiat)} ccy={a.fiatCurrency} />
+          <StatCard label={t('tax.netTaxable')}     value={fmt(a.netTaxableGainsFiat)} ccy={a.fiatCurrency} />
+          <StatCard label={t('tax.longTermExempt')} value={fmt(a.longTermExemptGainsFiat)} ccy={a.fiatCurrency} />
         </div>
 
         {a.exemptionApplied > 0 && (
           <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-            Annual exemption applied: {fmt(a.exemptionApplied)} {a.fiatCurrency}.
+            {t('tax.exemptionApplied', { amount: fmt(a.exemptionApplied), ccy: a.fiatCurrency })}
           </p>
         )}
         {a.carryForwardLossesFiat > 0 && (
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            Carry-forward losses: {fmt(a.carryForwardLossesFiat)} {a.fiatCurrency}.
+            {t('tax.carryForward', { amount: fmt(a.carryForwardLossesFiat), ccy: a.fiatCurrency })}
           </p>
         )}
 
         {result.reviewRequired && (
           <div className="mt-4 p-3 rounded-lg border border-[var(--color-gold)] bg-[var(--color-gold-dim)]">
             <div className="text-xs font-semibold text-[var(--color-gold)] mb-1">
-              Review recommended
+              {t('tax.reviewRecommended')}
             </div>
             <ul className="text-[12px] leading-relaxed text-[var(--color-text-body)] list-disc pl-4">
               {result.reviewReasons.map((r) => (
-                <li key={r} className="font-mono break-words">{humaniseReason(r)}</li>
+                <li key={r} className="font-mono break-words">{humaniseReason(r, t)}</li>
               ))}
             </ul>
           </div>
@@ -216,20 +217,18 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
         <div className="mt-4 p-3 rounded-lg bg-[var(--color-surface-muted)] border border-[var(--color-border-soft)]">
           <div className="flex justify-between items-center">
             <span className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-              Rule version
+              {t('tax.ruleVersion')}
             </span>
             <span
               className="text-[11px] font-mono"
               style={{ color: ruleStale ? 'var(--color-gold)' : 'var(--color-text-muted)' }}
             >
-              {result.ruleVersion}{ruleStale ? ' · stale' : ''}
+              {result.ruleVersion}{ruleStale ? ` · ${t('tax.stale')}` : ''}
             </span>
           </div>
           {ruleStale && (
             <p className="mt-1 text-[11px] text-[var(--color-text-body)]">
-              These rules were last verified more than {STALE_DAYS} days ago.
-              Re-verification is overdue — surfaced numbers may not reflect
-              current law.
+              {t('tax.staleNote', { days: STALE_DAYS })}
             </p>
           )}
         </div>
@@ -249,7 +248,7 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
 
         <div className="mt-6 p-4 rounded-xl border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)] mb-2 font-bold">
-            Disclaimer
+            {t('tax.disclaimer')}
           </div>
           <p className="text-[12px] leading-relaxed text-[var(--color-text-body)]">
             {result.disclaimer}
@@ -261,7 +260,7 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
           onClick={onExportReport}
           className="mt-4 w-full py-3 rounded-xl font-semibold text-sm bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] active:scale-[0.99] transition-transform"
         >
-          Export report for adviser
+          {t('tax.exportReport')}
         </button>
       </div>
     </section>
@@ -271,17 +270,18 @@ export default function TaxPositionScreen({ onBack, onChangeResidency, onExportR
 function PerTxSection({
   entries, ccy,
 }: { entries: tax.PerTxResult[]; ccy: string }) {
+  const { t } = useTranslation();
   if (entries.length === 0) {
     return (
       <p className="mt-4 text-sm text-[var(--color-text-faint)] text-center">
-        No taxable events this year.
+        {t('tax.noTaxableEvents')}
       </p>
     );
   }
   return (
     <div className="mt-4">
       <h3 className="text-sm font-semibold text-[var(--color-text)] mb-2">
-        Disposals ({entries.length})
+        {t('tax.disposals', { count: entries.length })}
       </h3>
       <ul className="flex flex-col gap-1.5">
         {entries.map((e) => (
@@ -304,12 +304,12 @@ function PerTxSection({
               </span>
             </div>
             <div className="mt-1 flex justify-between text-[11px] text-[var(--color-text-muted)] font-mono">
-              <span>basis {fmt(e.costBasisFiat)} → proceeds {fmt(e.proceedsFiat)}</span>
-              <span>tax {fmt(e.taxFiat)}</span>
+              <span>{t('tax.basisProceeds', { basis: fmt(e.costBasisFiat), proceeds: fmt(e.proceedsFiat) })}</span>
+              <span>{t('tax.taxLabel', { amount: fmt(e.taxFiat) })}</span>
             </div>
             {e.longTerm && (
               <div className="mt-1 text-[10px] uppercase tracking-wider text-[var(--color-green)]">
-                Long-term
+                {t('tax.longTerm')}
               </div>
             )}
           </li>
@@ -336,6 +336,7 @@ function StatCard({ label, value, ccy }: { label: string; value: string; ccy: st
 function ResidencyChip({
   residency, onChange,
 }: { residency: TaxResidency; onChange: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -344,13 +345,13 @@ function ResidencyChip({
     >
       <div className="text-left">
         <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
-          Tax residency
+          {t('tax.residency')}
         </div>
         <div className="text-sm font-medium text-[var(--color-text)]">
           {residency.jurisdictionName} <span className="font-mono text-[var(--color-text-muted)]">({residency.jurisdictionCode})</span>
         </div>
       </div>
-      <span className="text-xs text-[var(--color-accent)]">Change</span>
+      <span className="text-xs text-[var(--color-accent)]">{t('common.change')}</span>
     </button>
   );
 }
@@ -379,13 +380,13 @@ function isStale(isoDate: string): boolean {
   return Date.now() - t > STALE_MS;
 }
 
-function humaniseReason(raw: string): string {
+function humaniseReason(raw: string, t: TFunction): string {
   if (raw.startsWith('estimated_tax_above_threshold_')) {
     const threshold = raw.slice('estimated_tax_above_threshold_'.length);
-    return `Estimated tax is above ${threshold} — consult an adviser before filing.`;
+    return t('tax.reasonAboveThreshold', { threshold });
   }
   if (raw.startsWith('rule_confidence_')) {
-    return `Rule confidence: ${raw.slice('rule_confidence_'.length)}.`;
+    return t('tax.reasonConfidence', { level: raw.slice('rule_confidence_'.length) });
   }
   if (raw.startsWith('review_flag_')) {
     return raw.slice('review_flag_'.length).replace(/_/g, ' ');
@@ -412,6 +413,7 @@ function FtcClassificationToggle({
   emtEnabledHere: boolean;
   onToggle: (next: FtcClassification) => void;
 }) {
+  const { t } = useTranslation();
   const next: FtcClassification = current === 'utility_token' ? 'emt' : 'utility_token';
   const isEmt = current === 'emt';
   return (
@@ -419,10 +421,10 @@ function FtcClassificationToggle({
       <div className="flex items-center justify-between">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
-            FTC classification
+            {t('tax.ftcClassification')}
           </div>
           <div className="text-sm font-medium text-[var(--color-text)]">
-            {isEmt ? 'E-money token (EMT)' : 'Utility token'}
+            {isEmt ? t('tax.emtToken') : t('tax.utilityToken')}
           </div>
         </div>
         <button
@@ -430,20 +432,16 @@ function FtcClassificationToggle({
           onClick={() => onToggle(next)}
           className="text-xs text-[var(--color-accent)] font-semibold ml-3 shrink-0"
         >
-          Switch to {next === 'emt' ? 'EMT' : 'utility'}
+          {next === 'emt' ? t('tax.switchToEmt') : t('tax.switchToUtility')}
         </button>
       </div>
       {emtEnabledHere ? (
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-          Your jurisdiction has an EMT carve-out — flipping this toggle
-          changes the rate applied to your disposals (per §7.2 of
-          FutureChain&apos;s tax policy).
+          {t('tax.emtEnabledNote')}
         </p>
       ) : (
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-faint)]">
-          Your jurisdiction has no published EMT carve-out, so flipping
-          this toggle won&apos;t change today&apos;s rate. The classification
-          still rides with the report so an adviser can argue for relief.
+          {t('tax.emtDisabledNote')}
         </p>
       )}
     </div>

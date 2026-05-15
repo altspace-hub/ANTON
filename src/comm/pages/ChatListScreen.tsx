@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listContacts, type Contact } from '../services/contacts';
 import { getLatestPerThread, type ChatMessage } from '../services/messages';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }: Props) {
+  const { t } = useTranslation();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lastByThread, setLastByThread] = useState<Map<string, ChatMessage>>(new Map());
   const [loaded, setLoaded] = useState(false);
@@ -38,10 +40,10 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
   return (
     <section className="flex flex-col">
       <div className="flex items-center justify-between px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Chat</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('chat.title')}</h1>
         <button
           onClick={onAddContact}
-          aria-label="Add contact"
+          aria-label={t('chat.addContact')}
           className="w-10 h-10 rounded-full flex items-center justify-center text-xl font-medium"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
@@ -51,16 +53,16 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
 
       {!loaded ? (
         <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">
-          Loading…
+          {t('common.loading')}
         </div>
       ) : contacts.length === 0 ? (
         <div className="px-5 mt-4">
           <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
             <p className="text-sm text-[var(--color-text-body)]">
-              No contacts yet.
+              {t('chat.noContacts')}
             </p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-              Tap + to add a friend by scanning their QR or pasting their contact code.
+              {t('chat.noContactsHelp')}
             </p>
           </div>
         </div>
@@ -86,7 +88,7 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
                     {(() => {
                       const last = lastByThread.get(c.contactHash);
                       if (last) {
-                        const prefix = last.direction === 'out' ? 'You: ' : '';
+                        const prefix = last.direction === 'out' ? t('chat.youPrefix') : '';
                         return prefix + last.plaintext;
                       }
                       return c.contactHash;
@@ -98,7 +100,7 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
                     className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded"
                     style={{ backgroundColor: 'var(--color-gold-dim)', color: 'var(--color-gold)' }}
                   >
-                    Key pending
+                    {t('chat.keyPending')}
                   </span>
                 )}
               </button>

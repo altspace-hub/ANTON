@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type ChatMessage, type ReplyContext } from '../services/messages';
 import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, sendSticker, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { startLiveShare, type GeoFix } from '../services/geo';
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent }: Props) {
+  const { t } = useTranslation();
   const me = getIdentity();
   const [contact, setContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -161,7 +163,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       const msg = await sendSticker(peerContactHash, packId, stickerId);
       setMessages((prev) => [...prev, msg]);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send sticker'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errSendSticker')));
     } finally {
       setSending(false);
     }
@@ -180,7 +182,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       setMessages((prev) => [...prev, msg]);
       if (liveUntil) startLiveShare(peerContactHash, msg.id, liveUntil);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to share location'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errShareLocation')));
     } finally {
       setSending(false);
     }
@@ -191,7 +193,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       await sendPollVote(peerContactHash, pollId, optionIdx);
       setRefreshTick((v) => v + 1);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to vote'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errVote')));
     }
   }
 
@@ -210,7 +212,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       await sendTimerChange(peerContactHash, timerSec);
       setRefreshTick((v) => v + 1);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to update timer'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errUpdateTimer')));
     }
   }
 
@@ -245,7 +247,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         setReplyingTo(null);
       }
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errSend')));
     } finally {
       setSending(false);
     }
@@ -337,7 +339,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       await sendDeleteForEveryone(peerContactHash, target.id);
       setRefreshTick((v) => v + 1);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to delete'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errDelete')));
     }
   }
 
@@ -348,7 +350,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     try {
       await sendForward(src.id, targetContactHash);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to forward'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errForward')));
     }
   }
 
@@ -360,7 +362,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       await sendReaction(peerContactHash, target.id, emoji, alreadyReacted ? 'remove' : 'add');
       setRefreshTick((v) => v + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to react');
+      setError(e instanceof Error ? e.message : t('chat.errReact'));
     }
   }
 
@@ -380,7 +382,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       setMessages((prev) => [...prev, msg]);
       setReplyingTo(null);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to send voice'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errSendVoice')));
     } finally {
       setSending(false);
     }
@@ -395,8 +397,8 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       if (!isWithinRelayCap(capture)) {
         setError(
           capture.mediaType === 'video'
-            ? `Video is too big (${formatBytes(capture.size)}). Try a shorter clip — the limit is roughly 700 KB after compression.`
-            : `Image is too big (${formatBytes(capture.size)}). Try a smaller photo.`,
+            ? t('chat.videoTooBig', { size: formatBytes(capture.size) })
+            : t('chat.imageTooBig', { size: formatBytes(capture.size) }),
         );
         return;
       }
@@ -417,7 +419,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       // R6 — one-shot, reset after send
       if (viewOnceArmed) setViewOnceArmed(false);
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to attach'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errAttach')));
     } finally {
       setSending(false);
     }
@@ -444,7 +446,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         <button
           onClick={onBack}
           className="px-2 py-1 text-[var(--color-text-muted)]"
-          aria-label="Back"
+          aria-label={t('common.back')}
         >
           <Ico name="arrowLeft" size={22} />
         </button>
@@ -457,14 +459,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold text-[var(--color-text)] truncate">{displayName}</div>
           {peerTyping ? (
-            <div className="text-[11px] font-medium truncate" style={{ color: 'var(--color-accent)' }}>typing…</div>
+            <div className="text-[11px] font-medium truncate" style={{ color: 'var(--color-accent)' }}>{t('chat.typing')}</div>
           ) : (
             <div className="text-[10px] font-mono text-[var(--color-text-faint)] truncate">{peerContactHash}</div>
           )}
         </div>
         <button
           onClick={() => setTimerSheetOpen(true)}
-          aria-label="Disappearing messages"
+          aria-label={t('chat.disappearingMessages')}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
         >
           <Ico name="clock" size={20} color={(contact?.disappearingTimerSec ?? 0) > 0 ? 'var(--color-accent)' : undefined} />
@@ -473,7 +475,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
 
       {!hasPeerKey && (
         <div className="px-4 py-2 text-xs text-[var(--color-text-muted)] bg-[var(--color-gold-dim)] border-b border-[var(--color-border-soft)]">
-          You don't have this contact's public key yet. Ask them to share their QR.
+          {t('chat.noPeerKey')}
         </div>
       )}
 
@@ -490,7 +492,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           return visibleMessages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-[var(--color-text-faint)] text-center max-w-xs">
-                Start the conversation — messages here are end-to-end encrypted.
+                {t('chat.startConversation')}
               </p>
             </div>
           ) : (
@@ -525,7 +527,9 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           />
           <div className="flex-1 min-w-0">
             <div className="text-[11px] font-medium text-[var(--color-accent-dark)]">
-              Replying to {replyingTo.fromHash === me?.contactHash ? 'yourself' : (contact?.displayName ?? 'them')}
+              {replyingTo.fromHash === me?.contactHash
+                ? t('chat.replyingToYourself')
+                : t('chat.replyingTo', { name: contact?.displayName ?? t('chat.them') })}
             </div>
             <div className="text-xs text-[var(--color-text-muted)] truncate">
               {replySnippetOf(replyingTo)}
@@ -533,7 +537,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           </div>
           <button
             onClick={() => setReplyingTo(null)}
-            aria-label="Cancel reply"
+            aria-label={t('chat.cancelReply')}
             className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="x" size={18} />
@@ -548,7 +552,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
         >
           <Ico name="clock" size={14} color="var(--color-accent-dark)" />
-          {scheduledCount} scheduled
+          {t('chat.scheduledCount', { count: scheduledCount })}
           <Ico name="chevronRight" size={12} color="var(--color-accent-dark)" />
         </button>
       )}
@@ -557,12 +561,12 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         <div className="flex items-center gap-2 px-3 py-2 border-t border-[var(--color-border-soft)] bg-[var(--color-surface-alt)]">
           <Ico name="reply" size={18} color="var(--color-accent)" />
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-medium text-[var(--color-accent-dark)]">Editing message</div>
+            <div className="text-[11px] font-medium text-[var(--color-accent-dark)]">{t('chat.editingMessage')}</div>
             <div className="text-xs text-[var(--color-text-muted)] truncate">{editingTarget.plaintext}</div>
           </div>
           <button
             onClick={() => { setEditingTarget(null); setDraft(''); }}
-            aria-label="Cancel edit"
+            aria-label={t('chat.cancelEdit')}
             className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="x" size={18} />
@@ -574,7 +578,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         <button
           onClick={() => setAttachmentOpen(true)}
           disabled={sending || !hasPeerKey}
-          aria-label="Attach"
+          aria-label={t('chat.attach')}
           className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0 text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
         >
           <Ico name="paperclip" size={22} />
@@ -585,7 +589,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
           }}
-          placeholder="Message"
+          placeholder={t('chat.messagePlaceholder')}
           rows={1}
           className="flex-1 px-3 py-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-base text-[var(--color-text)] placeholder-[var(--color-text-faint)] resize-none max-h-32 focus:outline-none focus:ring-2"
           style={{ outlineColor: 'var(--color-accent)' }}
@@ -700,12 +704,13 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
 function SendButton({ onSendNow, onLongPress, disabled }: {
   onSendNow: () => void; onLongPress: () => void; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const longPress = useLongPress(onLongPress);
   return (
     <button
       onClick={onSendNow}
       disabled={disabled}
-      aria-label="Send — hold to schedule"
+      aria-label={t('chat.sendHoldHint')}
       className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 flex-shrink-0"
       style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
       {...longPress}
@@ -720,6 +725,7 @@ function SendButton({ onSendNow, onLongPress, disabled }: {
 function SendMenu({ open, onClose, onSendNow, onSchedule }: {
   open: boolean; onClose: () => void; onSendNow: () => void; onSchedule: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => { if (!open) return; return registerBackHandler(onClose); }, [open, onClose]);
   if (!open) return null;
   return (
@@ -741,14 +747,14 @@ function SendMenu({ open, onClose, onSendNow, onSchedule }: {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="arrowUp" size={20} color="var(--color-text-muted)" />
-            <span>Send now</span>
+            <span>{t('chat.sendNow')}</span>
           </button>
           <button
             onClick={onSchedule}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)]"
           >
             <Ico name="clock" size={20} color="var(--color-text-muted)" />
-            <span>Schedule…</span>
+            <span>{t('chat.schedule')}</span>
           </button>
         </div>
       </div>
@@ -807,6 +813,7 @@ interface BubbleProps {
 }
 
 function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, onPollVote, myHash }: BubbleProps) {
+  const { t } = useTranslation();
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   const longPress = useLongPress(onLongPress);
 
@@ -853,7 +860,7 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
         {message.replyTo && <ReplyStrip ctx={message.replyTo} isMine={isMine} />}
         <div className="whitespace-pre-wrap break-words">{message.plaintext}</div>
         <div className="mt-1 text-[10px] font-medium opacity-70 flex items-center justify-end gap-1">
-          {message.editedAt && <span className="italic">edited</span>}
+          {message.editedAt && <span className="italic">{t('chat.edited')}</span>}
           {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
           <time>{time}</time>
           {isMine && <StatusTick status={message.status} />}
@@ -879,6 +886,7 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
 }
 
 function ReplyStrip({ ctx, isMine }: { ctx: ReplyContext; isMine: boolean }) {
+  const { t } = useTranslation();
   return (
     <div
       className="flex items-stretch gap-2 mb-1.5 -mt-0.5 px-2 py-1.5 rounded-lg"
@@ -892,7 +900,7 @@ function ReplyStrip({ ctx, isMine }: { ctx: ReplyContext; isMine: boolean }) {
           className="text-[11px] font-semibold opacity-80"
           style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-accent-dark)' }}
         >
-          Reply
+          {t('chat.reply')}
         </div>
         <div className="text-xs opacity-90 truncate" style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}>
           {ctx.snippet}
@@ -1006,6 +1014,7 @@ function VoiceBubble({ message, isMine, time }: { message: ChatMessage; isMine: 
 function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
   message: ChatMessage; isMine: boolean; time: string; onOpenEvent?: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   let data: EventInvitePayload | null = null;
   try { data = JSON.parse(message.plaintext) as EventInvitePayload; } catch { /* ignore */ }
   if (!data) return null;
@@ -1020,7 +1029,7 @@ function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
         <div className="px-4 py-3" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
             <Ico name={EVENT_TYPE_ICONS[data.eventType] as IcoName} size={16} />
-            <span>{isMine ? 'You invited' : 'Event invite'} · {EVENT_TYPE_LABELS[data.eventType]}</span>
+            <span>{isMine ? t('chat.youInvited') : t('chat.eventInvite')} · {EVENT_TYPE_LABELS[data.eventType]}</span>
           </div>
           <div className="mt-1 text-base font-semibold text-[var(--color-text)]">{data.title}</div>
         </div>
@@ -1032,7 +1041,7 @@ function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
           {data.location && <> · {data.location}</>}
         </div>
         <div className="px-4 py-2 text-[10px] font-medium text-[var(--color-text-faint)] flex justify-between">
-          <span>Tap to view & RSVP</span>
+          <span>{t('chat.tapToRsvp')}</span>
           <time>{time}</time>
         </div>
       </button>
@@ -1041,33 +1050,39 @@ function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
 }
 
 function EventRsvpBubble({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  const { t } = useTranslation();
   let data: EventRsvpPayload | null = null;
   try { data = JSON.parse(message.plaintext) as EventRsvpPayload; } catch { /* ignore */ }
   if (!data) return null;
-  const label = data.status === 'going' ? 'going' : data.status === 'maybe' ? 'might come' : 'can\'t make it';
+  const status = data.status;
+  const label = isMine
+    ? (status === 'going' ? t('chat.youreGoing') : status === 'maybe' ? t('chat.youreMaybe') : t('chat.youreNo'))
+    : (status === 'going' ? t('chat.rsvpGoing') : status === 'maybe' ? t('chat.rsvpMaybe') : t('chat.rsvpNo'));
   return (
     <div className="flex justify-center">
       <span className="px-3 py-1 rounded-full text-xs text-[var(--color-text-muted)] bg-[var(--color-surface-muted)]">
-        {isMine ? 'You\'re ' : ''}{label} · {time}
+        {label} · {time}
       </span>
     </div>
   );
 }
 
 function EventCancelBubble({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  const { t } = useTranslation();
   let data: EventCancelPayload | null = null;
   try { data = JSON.parse(message.plaintext) as EventCancelPayload; } catch { /* ignore */ }
   void data;
   return (
     <div className="flex justify-center">
       <span className="px-3 py-1 rounded-full text-xs text-[var(--color-red)] bg-[var(--color-red-dim)]">
-        Event canceled · {time}{isMine ? ' (by you)' : ''}
+        {t('chat.eventCanceled')} · {time}{isMine ? t('chat.byYou') : ''}
       </span>
     </div>
   );
 }
 
 function DeletedBubble({ isMine, time }: { isMine: boolean; time: string }) {
+  const { t } = useTranslation();
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -1079,7 +1094,7 @@ function DeletedBubble({ isMine, time }: { isMine: boolean; time: string }) {
         }}
       >
         <Ico name="trash" size={14} color="var(--color-text-faint)" />
-        <span>Message deleted</span>
+        <span>{t('chat.messageDeleted')}</span>
         <time className="ml-2 not-italic text-[10px]">{time}</time>
       </div>
     </div>
@@ -1087,13 +1102,15 @@ function DeletedBubble({ isMine, time }: { isMine: boolean; time: string }) {
 }
 
 function TimerChangeChip({ message, isMine, time }: { message: ChatMessage; isMine: boolean; time: string }) {
+  const { t } = useTranslation();
   let data: SystemTimerChangePayload | null = null;
   try { data = JSON.parse(message.plaintext) as SystemTimerChangePayload; } catch { /* ignore */ }
   if (!data) return null;
-  const who = isMine ? 'You' : 'They';
   const label = data.timerSec === 0
-    ? `${who} turned disappearing messages off`
-    : `${who} set disappearing messages to ${formatTimerLabel(data.timerSec)}`;
+    ? (isMine ? t('chat.timerOffYou') : t('chat.timerOffThey'))
+    : (isMine
+        ? t('chat.timerSetYou', { label: formatTimerLabel(data.timerSec) })
+        : t('chat.timerSetThey', { label: formatTimerLabel(data.timerSec) }));
   return (
     <div className="flex justify-center">
       <span className="px-3 py-1 rounded-full text-[11px] text-[var(--color-text-muted)] bg-[var(--color-surface-muted)] inline-flex items-center gap-1.5">
@@ -1105,13 +1122,14 @@ function TimerChangeChip({ message, isMine, time }: { message: ChatMessage; isMi
 }
 
 function StatusTick({ status }: { status: ChatMessage['status'] }) {
-  if (status === 'queued') return <span title="Queued — awaiting transport">⋯</span>;
-  if (status === 'sent') return <span title="Sent">✓</span>;
-  if (status === 'delivered') return <span title="Delivered">✓✓</span>;
+  const { t } = useTranslation();
+  if (status === 'queued') return <span title={t('chat.statusQueued')}>⋯</span>;
+  if (status === 'sent') return <span title={t('chat.statusSent')}>✓</span>;
+  if (status === 'delivered') return <span title={t('chat.statusDelivered')}>✓✓</span>;
   if (status === 'read') {
-    return <span title="Read" style={{ color: 'var(--color-accent)' }}>✓✓</span>;
+    return <span title={t('chat.statusRead')} style={{ color: 'var(--color-accent)' }}>✓✓</span>;
   }
-  if (status === 'failed') return <span title="Failed">!</span>;
+  if (status === 'failed') return <span title={t('chat.statusFailed')}>!</span>;
   return null;
 }
 
@@ -1126,6 +1144,7 @@ function formatBytes(bytes: number): string {
 function ViewOnceMediaBubble({ message, isMine, time, onOpen }: {
   message: ChatMessage; isMine: boolean; time: string; onOpen: () => void;
 }) {
+  const { t } = useTranslation();
   let payload: MediaPayload | null = null;
   try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
   const viewed = !!message.viewed;
@@ -1164,17 +1183,17 @@ function ViewOnceMediaBubble({ message, isMine, time, onOpen }: {
         <div className="flex-1 min-w-0">
           <div className="text-[14px] font-semibold">
             {viewed
-              ? 'Viewed'
+              ? t('chat.viewed')
               : senderUnviewed
-                ? (isVideo ? 'Video · view once' : 'Photo · view once')
-                : (isVideo ? 'Tap to view video once' : 'Tap to view photo once')}
+                ? (isVideo ? t('chat.videoViewOnce') : t('chat.photoViewOnce'))
+                : (isVideo ? t('chat.tapViewVideoOnce') : t('chat.tapViewPhotoOnce'))}
           </div>
           <div className="text-[11px] opacity-80">
             {viewed
-              ? (isMine ? 'Recipient viewed' : 'You viewed this')
+              ? (isMine ? t('chat.recipientViewed') : t('chat.youViewedThis'))
               : senderUnviewed
-                ? `Waiting · ${payload ? formatBytes(payload.size) : '—'}`
-                : 'Opens once, then disappears'}
+                ? t('chat.waiting', { size: payload ? formatBytes(payload.size) : '—' })
+                : t('chat.opensOnce')}
           </div>
         </div>
         <Ico name="clock" size={16} color={isMine ? 'rgba(255,255,255,0.85)' : 'var(--color-text-muted)'} />
@@ -1195,6 +1214,7 @@ function ViewOnceMediaBubble({ message, isMine, time, onOpen }: {
 }
 
 function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismiss: () => void }) {
+  const { t } = useTranslation();
   let payload: MediaPayload | null = null;
   try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
   useEffect(() => registerBackHandler(onDismiss), [onDismiss]);
@@ -1220,11 +1240,11 @@ function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismis
       <header className="flex items-center justify-between px-4 h-12 safe-top">
         <span className="text-xs text-white/80 uppercase tracking-wide flex items-center gap-2">
           <Ico name="clock" size={14} color="rgba(255,255,255,0.85)" />
-          View once
+          {t('chat.viewOnce')}
         </span>
         <button
           onClick={onDismiss}
-          aria-label="Close — will wipe this media"
+          aria-label={t('chat.closeWillWipe')}
           className="w-9 h-9 rounded-full flex items-center justify-center"
           style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFFFFF' }}
         >
@@ -1239,7 +1259,7 @@ function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismis
         )}
       </div>
       <footer className="px-4 py-3 text-center text-xs text-white/70 safe-bottom">
-        Close to delete. The sender will see "Viewed".
+        {t('chat.closeToDelete')}
       </footer>
     </div>
   );

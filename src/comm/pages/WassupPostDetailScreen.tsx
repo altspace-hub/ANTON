@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getPost, listInteractions, type WassupPost, type WassupInteraction } from '../services/wassup';
 import { toggleWassupLike, postWassupComment } from '../services/chat';
 import { getIdentity } from '../services/identity';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function WassupPostDetailScreen({ postId, onBack }: Props) {
+  const { t } = useTranslation();
   const [post, setPost] = useState<WassupPost | null>(null);
   const [interactions, setInteractions] = useState<WassupInteraction[]>([]);
   const [commentDraft, setCommentDraft] = useState('');
@@ -66,12 +68,12 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
     return (
       <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
         <header className="flex items-center gap-3 h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-          <button onClick={onBack} className="text-[var(--color-text-muted)]" aria-label="Back">
+          <button onClick={onBack} className="text-[var(--color-text-muted)]" aria-label={t('common.back')}>
             <Ico name="arrowLeft" size={22} />
           </button>
         </header>
         <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-faint)]">
-          Post not found.
+          {t('wassup.postNotFound')}
         </div>
       </section>
     );
@@ -84,10 +86,10 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
   return (
     <section className="flex flex-col min-h-dvh max-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center gap-3 h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onBack} className="text-[var(--color-text-muted)]" aria-label="Back">
+        <button onClick={onBack} className="text-[var(--color-text-muted)]" aria-label={t('common.back')}>
           <Ico name="arrowLeft" size={22} />
         </button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">Post</h1>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('wassup.postTitle')}</h1>
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -101,7 +103,7 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-[var(--color-text)]">
-                {isMine ? 'You' : post.authorName}
+                {isMine ? t('wassup.you') : post.authorName}
               </div>
               <div className="text-xs text-[var(--color-text-faint)]">
                 {new Date(post.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
@@ -154,7 +156,7 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
         <div className="px-5 pt-3">
           {comments.length === 0 ? (
             <p className="text-xs text-[var(--color-text-faint)] py-4">
-              No comments yet. Be the first.
+              {t('wassup.noComments')}
             </p>
           ) : (
             <ul className="space-y-3 py-3">
@@ -168,7 +170,7 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
                   </div>
                   <div className="flex-1 min-w-0 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-soft)] px-3 py-2">
                     <div className="text-xs font-medium text-[var(--color-text)]">
-                      {c.fromHash === me?.contactHash ? 'You' : c.fromName}
+                      {c.fromHash === me?.contactHash ? t('wassup.you') : c.fromName}
                     </div>
                     <div className="text-sm text-[var(--color-text-body)] whitespace-pre-wrap break-words">
                       {c.text}
@@ -185,7 +187,7 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
         <textarea
           value={commentDraft}
           onChange={(e) => setCommentDraft(e.target.value)}
-          placeholder="Add a comment"
+          placeholder={t('wassup.commentPlaceholder')}
           rows={1}
           className="flex-1 px-3 py-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-base text-[var(--color-text)] placeholder-[var(--color-text-faint)] resize-none max-h-32 focus:outline-none focus:ring-2"
           style={{ outlineColor: 'var(--color-accent)' }}
@@ -196,7 +198,7 @@ export default function WassupPostDetailScreen({ postId, onBack }: Props) {
         <button
           onClick={() => void handleComment()}
           disabled={busy || commentDraft.trim().length === 0}
-          aria-label="Send comment"
+          aria-label={t('wassup.sendComment')}
           className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >

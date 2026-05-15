@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   fetchPortalDescriptor,
   invokeCapability,
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
+  const { t } = useTranslation();
   const [descriptor, setDescriptor] = useState<PortalDescriptor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
       .then((d) => { if (!cancelled) { setDescriptor(d); setLoading(false); } })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load');
+        setError(err instanceof Error ? err.message : t('portals.errLoadFailed'));
         setLoading(false);
       });
     return () => { cancelled = true; };
@@ -41,23 +43,23 @@ export default function PortalDetailScreen({ portalAddress, onBack }: Props) {
     <section className="flex flex-col h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] flex-shrink-0">
         <button onClick={activeCap ? () => setActiveCap(null) : onBack} className="text-sm text-[var(--color-text-muted)]">
-          ← Back
+          ← {t('common.back')}
         </button>
         <h1 className="text-base font-semibold text-[var(--color-text)] truncate px-2">
-          {activeCap ? activeCap.title : descriptor?.portal.displayTitle ?? 'Portal'}
+          {activeCap ? activeCap.title : descriptor?.portal.displayTitle ?? t('portals.portal')}
         </h1>
         <span className="w-12" />
       </header>
 
       <div className={bodyClass}>
         {loading ? (
-          <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Loading…</div>
+          <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">{t('common.loading')}</div>
         ) : error ? (
           <div className="mx-5 mt-6 rounded-xl bg-[var(--color-red-dim)] px-4 py-3 text-sm text-[var(--color-red)]">{error}</div>
         ) : !descriptor ? (
           <div className="px-5 mt-6">
             <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
-              <p className="text-sm text-[var(--color-text-body)]">Portal not available.</p>
+              <p className="text-sm text-[var(--color-text-body)]">{t('portals.portalNotAvailable')}</p>
               <p className="mt-1 text-xs text-[var(--color-text-faint)]">{portalAddress}</p>
             </div>
           </div>
@@ -78,6 +80,7 @@ function PortalOverview({ descriptor, portalAddress, onSelectCapability }: {
   portalAddress: string;
   onSelectCapability: (c: CapabilitySpec) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="pb-8">
       <div className="px-6 py-6 text-center" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
@@ -101,10 +104,10 @@ function PortalOverview({ descriptor, portalAddress, onSelectCapability }: {
 
       <div className="px-5 py-5">
         <h3 className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
-          Actions
+          {t('portals.actions')}
         </h3>
         {!descriptor.capabilities || descriptor.capabilities.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No capabilities advertised.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{t('portals.noCapabilities')}</p>
         ) : (
           <ul className="space-y-2">
             {descriptor.capabilities.map((c) => (
@@ -138,6 +141,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
   capability: CapabilitySpec;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const fields = extractFields(capability.inputSchema);
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -157,7 +161,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
       const r = await invokeCapability(descriptor, capability.id, input);
       setResult(r);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invoke failed');
+      setError(err instanceof Error ? err.message : t('portals.errInvokeFailed'));
     } finally {
       setBusy(false);
     }
@@ -173,7 +177,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
 
       <div className="mt-6 space-y-4">
         {fields.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No input required.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{t('portals.noInputRequired')}</p>
         ) : (
           fields.map((f) => (
             <div key={f.name}>
@@ -206,7 +210,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
         <div className="mt-5 p-4 rounded-xl border border-[var(--color-border-soft)] bg-[var(--color-surface)]">
           {result.kind === 'invoke_response' ? (
             <>
-              <p className="text-sm font-medium text-[var(--color-green)]">Submitted ✓</p>
+              <p className="text-sm font-medium text-[var(--color-green)]">{t('portals.submitted')}</p>
               {result.inboxId && (
                 <p className="mt-1 text-xs font-mono text-[var(--color-text-faint)] break-all">{result.inboxId}</p>
               )}
@@ -218,11 +222,11 @@ function CapabilityForm({ descriptor, capability, onClose }: {
             </>
           ) : (
             <p className="text-sm text-[var(--color-text-body)]">
-              {result.kind === 'capability_not_found' ? 'Capability not found.'
-                : result.kind === 'portal_offline' ? 'Portal offline — try again later.'
-                : result.kind === 'invalid_input' ? `Invalid input. ${result.message ?? ''}`
-                : result.kind === 'rate_limited' ? 'Too many requests. Try again later.'
-                : `Response: ${result.kind}`}
+              {result.kind === 'capability_not_found' ? t('portals.capabilityNotFound')
+                : result.kind === 'portal_offline' ? t('portals.portalOffline')
+                : result.kind === 'invalid_input' ? t('portals.invalidInput', { message: result.message ?? '' })
+                : result.kind === 'rate_limited' ? t('portals.rateLimited')
+                : t('portals.responseKind', { kind: result.kind })}
             </p>
           )}
         </div>
@@ -233,7 +237,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
           onClick={onClose}
           className="flex-1 py-3 rounded-2xl text-sm font-medium border border-[var(--color-border)] text-[var(--color-text-body)]"
         >
-          Close
+          {t('common.close')}
         </button>
         <button
           onClick={() => void handleInvoke()}
@@ -241,7 +245,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
           className="flex-1 py-3 rounded-2xl text-sm font-medium disabled:opacity-50"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          {busy ? 'Sending…' : 'Send'}
+          {busy ? t('portals.sending') : t('portals.send')}
         </button>
       </div>
     </div>

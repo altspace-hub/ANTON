@@ -20,6 +20,8 @@
  * the user's adviser-facing CSV is the same shape.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { tax } from '@futurechain/sdk';
 import { loadResidency, type TaxResidency } from '../../services/tax-residency';
 import { listTxsByRange } from '../../services/transactions';
@@ -44,6 +46,7 @@ type LoadState =
 const ADVISER_THRESHOLD_SEK = 50_000;
 
 export default function TaxReportScreen({ onBack }: Props) {
+  const { t } = useTranslation();
   const [load, setLoad] = useState<LoadState>({ state: 'loading' });
   const [exporting, setExporting] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -63,7 +66,7 @@ export default function TaxReportScreen({ onBack }: Props) {
       setLoad({
         state: 'unsupported',
         residency,
-        message: `Tax calculation for ${residency.jurisdictionName} is not currently supported in this version. You can still export the raw transaction ledger below for your adviser.`,
+        message: t('tax.reportUnsupported', { name: residency.jurisdictionName }),
       });
       return;
     }
@@ -98,7 +101,7 @@ export default function TaxReportScreen({ onBack }: Props) {
         { filename, mimeType: 'text/csv', body: csv },
         { title: `K4 · ${load.year}` },
       );
-      setStatus(`Exported ${filename} (${ds.rows.length} disposal${ds.rows.length === 1 ? '' : 's'}).`);
+      setStatus(t('tax.reportExportedK4', { filename, count: ds.rows.length }));
     } catch (err) {
       setStatus((err as Error).message);
     } finally {
@@ -117,7 +120,7 @@ export default function TaxReportScreen({ onBack }: Props) {
         { filename, mimeType: 'text/csv', body: csv },
         { title: `Tax ledger · ${load.year}` },
       );
-      setStatus(`Exported ${filename}.`);
+      setStatus(t('tax.reportExported', { filename }));
     } catch (err) {
       setStatus((err as Error).message);
     } finally {
@@ -128,7 +131,7 @@ export default function TaxReportScreen({ onBack }: Props) {
   if (load.state === 'loading') {
     return (
       <section className="flex flex-col h-full items-center justify-center">
-        <span className="text-sm text-[var(--color-text-faint)]">Preparing report…</span>
+        <span className="text-sm text-[var(--color-text-faint)]">{t('tax.computing')}</span>
       </section>
     );
   }
@@ -136,10 +139,10 @@ export default function TaxReportScreen({ onBack }: Props) {
   if (load.state === 'no-residency') {
     return (
       <section className="flex flex-col h-full safe-bottom">
-        <Header title="Report" onBack={onBack} />
+        <Header title={t('tax.reportTitle')} onBack={onBack} />
         <div className="px-5 pt-2">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Declare your tax residency first.
+            {t('tax.reportNoResidency')}
           </p>
         </div>
       </section>
@@ -149,21 +152,19 @@ export default function TaxReportScreen({ onBack }: Props) {
   if (load.state === 'unsupported') {
     return (
       <section className="flex flex-col h-full overflow-y-auto safe-bottom">
-        <Header title="Report" onBack={onBack} />
+        <Header title={t('tax.reportTitle')} onBack={onBack} />
         <div className="px-5 pt-2 pb-5">
           <ResidencyChip residency={load.residency} />
           <div className="mt-4 p-4 rounded-xl border border-[var(--color-gold)] bg-[var(--color-gold-dim)]">
             <div className="text-xs uppercase tracking-wider mb-1 text-[var(--color-gold)] font-bold">
-              Refer to a local adviser
+              {t('tax.referLocalAdviser')}
             </div>
             <p className="text-sm leading-relaxed text-[var(--color-text-body)]">
               {load.message}
             </p>
           </div>
           <p className="mt-4 text-[11px] text-[var(--color-text-faint)] leading-relaxed">
-            We can still export a CSV of your transactions so your adviser
-            can compute the position offline. This is the §8.3 fallback
-            from FutureChain&apos;s tax policy.
+            {t('tax.unsupportedHistoryNote')}
           </p>
           {/* No engine result for unsupported jurisdictions — the raw
               ledger comes from a Phase 4 CSV-only path. */}
@@ -179,23 +180,24 @@ export default function TaxReportScreen({ onBack }: Props) {
 
   return (
     <section className="flex flex-col h-full overflow-y-auto safe-bottom">
-      <Header title="Report" onBack={onBack} />
+      <Header title={t('tax.reportTitle')} onBack={onBack} />
 
       <div className="px-5 pt-1 pb-5">
         <ResidencyChip residency={residency} />
 
         <div className="mt-4 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-5">
           <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-            {isSE ? 'K4 section D · ' : 'Adviser ledger · '}{year}
+            {isSE
+              ? t('tax.reportK4Label', { year })
+              : t('tax.reportLedgerLabel', { year })}
           </div>
           <div className="mt-2 text-base text-[var(--color-text-body)] leading-relaxed">
             {disposalCount === 0
-              ? 'No disposals this year — exports will contain a header and the §3 disclaimer only.'
-              : `${disposalCount} disposal${disposalCount === 1 ? '' : 's'} · estimated tax ${fmt(a.estimatedTaxFiat)} ${a.fiatCurrency}.`}
+              ? t('tax.reportNoDisposals')
+              : t('tax.reportSummary', { count: disposalCount, tax: fmt(a.estimatedTaxFiat), ccy: a.fiatCurrency })}
           </div>
           <div className="mt-3 pt-3 border-t border-[var(--color-border-soft)] text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-            Hand the CSV to your tax adviser as a pre-filing draft.
-            Every export carries the §3 disclaimer at the top.
+            {t('tax.reportHandOff')}
           </div>
         </div>
 
@@ -207,7 +209,7 @@ export default function TaxReportScreen({ onBack }: Props) {
             className="mt-4 w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] bg-[var(--color-accent)] transition-opacity"
             style={{ opacity: exporting === 'k4' ? 0.5 : 1 }}
           >
-            {exporting === 'k4' ? 'Exporting…' : 'Export K4 CSV'}
+            {exporting === 'k4' ? t('tax.exporting') : t('tax.exportK4Csv')}
           </button>
         )}
         <button
@@ -217,7 +219,9 @@ export default function TaxReportScreen({ onBack }: Props) {
           className="mt-2 w-full py-3 rounded-xl font-semibold text-sm bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] transition-opacity"
           style={{ opacity: exporting === 'ledger' ? 0.5 : 1 }}
         >
-          {exporting === 'ledger' ? 'Exporting…' : isSE ? 'Export raw ledger CSV' : 'Export ledger CSV'}
+          {exporting === 'ledger'
+            ? t('tax.exporting')
+            : isSE ? t('tax.exportRawLedgerCsv') : t('tax.exportLedgerCsv')}
         </button>
 
         {status && (
@@ -227,11 +231,11 @@ export default function TaxReportScreen({ onBack }: Props) {
         {result.reviewRequired && (
           <div className="mt-4 p-3 rounded-lg border border-[var(--color-gold)] bg-[var(--color-gold-dim)]">
             <div className="text-xs font-semibold text-[var(--color-gold)] mb-1">
-              Review recommended before filing
+              {t('tax.reviewBeforeFiling')}
             </div>
             <ul className="text-[12px] leading-relaxed text-[var(--color-text-body)] list-disc pl-4">
               {result.reviewReasons.map((r) => (
-                <li key={r} className="font-mono break-words">{humaniseReason(r)}</li>
+                <li key={r} className="font-mono break-words">{humaniseReason(r, t)}</li>
               ))}
             </ul>
           </div>
@@ -240,7 +244,7 @@ export default function TaxReportScreen({ onBack }: Props) {
         <div className="mt-4 p-3 rounded-lg bg-[var(--color-surface-muted)] border border-[var(--color-border-soft)]">
           <div className="flex justify-between items-center">
             <span className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-              Rule version
+              {t('tax.ruleVersion')}
             </span>
             <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
               {result.ruleVersion}
@@ -250,7 +254,7 @@ export default function TaxReportScreen({ onBack }: Props) {
 
         <div className="mt-4 p-4 rounded-xl border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)] mb-2 font-bold">
-            Disclaimer (included in every export)
+            {t('tax.disclaimerInExport')}
           </div>
           <p className="text-[12px] leading-relaxed text-[var(--color-text-body)]">
             {result.disclaimer}
@@ -262,11 +266,12 @@ export default function TaxReportScreen({ onBack }: Props) {
 }
 
 function ResidencyChip({ residency }: { residency: TaxResidency }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-soft)]">
       <div>
         <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
-          Tax residency
+          {t('tax.residency')}
         </div>
         <div className="text-sm font-medium text-[var(--color-text)]">
           {residency.jurisdictionName}{' '}
@@ -295,12 +300,12 @@ function fmt(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function humaniseReason(raw: string): string {
+function humaniseReason(raw: string, t: TFunction): string {
   if (raw.startsWith('estimated_tax_above_threshold_')) {
-    return `Estimated tax is above ${raw.slice('estimated_tax_above_threshold_'.length)} — consult an adviser before filing.`;
+    return t('tax.reasonAboveThreshold', { threshold: raw.slice('estimated_tax_above_threshold_'.length) });
   }
   if (raw.startsWith('rule_confidence_')) {
-    return `Rule confidence: ${raw.slice('rule_confidence_'.length)}.`;
+    return t('tax.reasonConfidence', { level: raw.slice('rule_confidence_'.length) });
   }
   if (raw.startsWith('review_flag_')) {
     return raw.slice('review_flag_'.length).replace(/_/g, ' ');

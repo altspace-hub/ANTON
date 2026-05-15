@@ -14,6 +14,7 @@
  * §7.1 — the screen surfaces this if the user asks about it.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { tax } from '@futurechain/sdk';
 import { saveResidency } from '../../services/tax-residency';
 
@@ -64,6 +65,7 @@ interface Props {
 }
 
 export default function TaxResidencyScreen({ onDeclared, onBack }: Props) {
+  const { t } = useTranslation();
   const [bundled, setBundled] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState('');
   const [saving, setSaving] = useState(false);
@@ -91,24 +93,20 @@ export default function TaxResidencyScreen({ onDeclared, onBack }: Props) {
 
   return (
     <section className="flex flex-col h-full safe-bottom">
-      <Header title="Tax residency" onBack={onBack} />
+      <Header title={t('tax.residencyTitle')} onBack={onBack} />
 
       <div className="px-5 pt-1 pb-3">
         <p className="text-sm text-[var(--color-text-muted)]">
-          Pick the country you&apos;re tax resident in. We use this to
-          apply the right rules — it stays on this device.
+          {t('tax.residencyHelp')}
         </p>
         <p className="mt-2 text-[11px] text-[var(--color-text-faint)] leading-relaxed">
-          Per FutureChain&apos;s tax policy, residency is declared, not
-          inferred from your location. Re-confirm yearly or whenever it
-          changes. If you live in multiple countries during the year,
-          talk to a tax adviser — Anton doesn&apos;t split jurisdictions.
+          {t('tax.residencyDeclared')}
         </p>
         <input
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Search…"
+          placeholder={t('common.search')}
           className="mt-3 w-full p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text)]"
           autoCapitalize="none"
           autoCorrect="off"
@@ -146,7 +144,7 @@ export default function TaxResidencyScreen({ onDeclared, onBack }: Props) {
                         : { backgroundColor: 'var(--color-gold-dim)', color: 'var(--color-gold)' }
                     }
                   >
-                    {supported ? 'Supported' : 'Refer to adviser'}
+                    {supported ? t('tax.supported') : t('tax.referToAdviser')}
                   </span>
                 </button>
               </li>
@@ -154,7 +152,7 @@ export default function TaxResidencyScreen({ onDeclared, onBack }: Props) {
           })}
           {visible.length === 0 && (
             <p className="text-center text-sm text-[var(--color-text-faint)] mt-4">
-              No matches.
+              {t('tax.noMatches')}
             </p>
           )}
         </ul>

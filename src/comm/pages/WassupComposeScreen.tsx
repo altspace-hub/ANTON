@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { publishWassupPost } from '../services/chat';
 import { captureImageFromCamera, captureImageFromLibrary, isWithinRelayCap, type Capture } from '../services/capture';
 import { isVoiceWithinRelayCap, type VoiceRecording } from '../services/voice';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [image, setImage] = useState<Capture | null>(null);
   const [voice, setVoice] = useState<VoiceRecording | null>(null);
@@ -36,7 +38,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
       const c = await grabber();
       if (!c) return;
       if (!isWithinRelayCap(c)) {
-        setError('Image is too big after compression — try a smaller photo.');
+        setError(t('wassup.errImageTooBig'));
         return;
       }
       setImage(c);
@@ -44,13 +46,13 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
       // chip + composer surface stays clear of clutter.
       setVoice(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Couldn\'t attach image');
+      setError(e instanceof Error ? e.message : t('wassup.errAttachImage'));
     }
   }
 
   function handleVoice(rec: VoiceRecording) {
     if (!isVoiceWithinRelayCap(rec)) {
-      setError('Voice note is too long — try keeping it under a minute.');
+      setError(t('wassup.errVoiceTooLong'));
       return;
     }
     setError(null);
@@ -61,7 +63,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
   async function handlePost() {
     const body = text.trim();
     if (!body && !image && !voice) {
-      setError('Add some text, a photo, or a voice note.');
+      setError(t('wassup.errEmptyPost'));
       return;
     }
     setBusy(true);
@@ -89,35 +91,37 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
       });
       onPosted();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to post');
+      setError(e instanceof Error ? e.message : t('wassup.errPostFailed'));
       setBusy(false);
     }
   }
 
   const audienceLabel = audience.mode === 'everyone'
-    ? 'Everyone'
+    ? t('wassup.audienceEveryone')
     : audience.contactHashes.length === 0
-      ? 'No-one yet'
-      : `${audience.contactHashes.length} ${audience.contactHashes.length === 1 ? 'person' : 'people'}`;
+      ? t('wassup.audienceNoOne')
+      : audience.contactHashes.length === 1
+        ? t('wassup.audiencePerson', { count: 1 })
+        : t('wassup.audiencePeople', { count: audience.contactHashes.length });
 
   const expiryLabel = expiryHours === null
-    ? 'Never expires'
+    ? t('wassup.expiryNever')
     : expiryHours >= 24
-      ? `${expiryHours / 24}d`
-      : `${expiryHours}h`;
+      ? t('wassup.expiryDays', { n: expiryHours / 24 })
+      : t('wassup.expiryHours', { n: expiryHours });
 
   return (
     <section className="flex flex-col min-h-dvh max-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>Cancel</button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">New post</h1>
+        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>{t('common.cancel')}</button>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('wassup.compose')}</h1>
         <button
           onClick={() => void handlePost()}
           disabled={busy || (text.trim().length === 0 && !image && !voice)}
           className="text-sm font-semibold disabled:opacity-40"
           style={{ color: 'var(--color-accent)' }}
         >
-          {busy ? 'Posting…' : 'Post'}
+          {busy ? t('wassup.posting') : t('wassup.post')}
         </button>
       </header>
 
@@ -132,7 +136,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="What's up?"
+            placeholder={t('wassup.composePlaceholder')}
             rows={4}
             maxLength={500}
             autoFocus
@@ -154,7 +158,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
             <button
               onClick={() => setImage(null)}
               className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center"
-              aria-label="Remove image"
+              aria-label={t('wassup.removeImage')}
             >
               <Ico name="x" size={18} color="#FFFFFF" />
             </button>
@@ -170,12 +174,12 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
               <Ico name="mic" size={18} />
             </div>
             <div className="flex-1 text-sm text-[var(--color-text)]">
-              Voice note · {Math.round(voice.durationSec)}s
+              {t('wassup.voiceNote', { sec: Math.round(voice.durationSec) })}
             </div>
             <button
               onClick={() => setVoice(null)}
               className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
-              aria-label="Remove voice note"
+              aria-label={t('wassup.removeVoice')}
             >
               <Ico name="x" size={18} />
             </button>
@@ -219,7 +223,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
         <button
           onClick={() => void handleAttach(captureImageFromCamera)}
           disabled={busy}
-          aria-label="Take photo"
+          aria-label={t('wassup.takePhoto')}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)] disabled:opacity-40"
         >
           <Ico name="camera" size={22} />
@@ -227,7 +231,7 @@ export default function WassupComposeScreen({ onCancel, onPosted }: Props) {
         <button
           onClick={() => void handleAttach(captureImageFromLibrary)}
           disabled={busy}
-          aria-label="Choose photo"
+          aria-label={t('wassup.choosePhoto')}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)] disabled:opacity-40"
         >
           <Ico name="image" size={22} />

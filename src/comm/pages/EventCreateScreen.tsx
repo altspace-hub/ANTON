@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   createLocalEvent,
   eventToInvitePayload,
@@ -19,6 +20,7 @@ interface Props {
 const TYPES: EventType[] = ['dinner', 'drinks', 'concert', 'travel', 'party', 'birthday', 'other'];
 
 export default function EventCreateScreen({ onCancel, onCreated }: Props) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [eventType, setEventType] = useState<EventType>('dinner');
   const [dateStr, setDateStr] = useState(defaultDateStr());
@@ -41,10 +43,10 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
 
   async function handleCreate() {
     const me = getIdentity();
-    if (!me) { setError('No identity'); return; }
-    if (!title.trim()) { setError('Please enter a title'); return; }
+    if (!me) { setError(t('events.errNoIdentity')); return; }
+    if (!title.trim()) { setError(t('events.errNoTitle')); return; }
     const startAt = buildIso(dateStr, allDay ? '00:00' : timeStr);
-    if (!startAt) { setError('Please pick a valid date'); return; }
+    if (!startAt) { setError(t('events.errNoDate')); return; }
 
     setBusy(true);
     setError(null);
@@ -71,7 +73,7 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
 
       onCreated(event.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create event');
+      setError(err instanceof Error ? err.message : t('events.errCreateFailed'));
       setBusy(false);
     }
   }
@@ -79,18 +81,18 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
   return (
     <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>Cancel</button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">New event</h1>
+        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>{t('common.cancel')}</button>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('events.newEvent')}</h1>
         <span className="w-12" />
       </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-        <Field label="Title">
+        <Field label={t('events.fieldTitle')}>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="What's the occasion?"
+            placeholder={t('events.titlePlaceholder')}
             maxLength={120}
             autoFocus
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)] focus:outline-none focus:ring-2"
@@ -98,14 +100,14 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
           />
         </Field>
 
-        <Field label="Type">
+        <Field label={t('events.fieldType')}>
           <div className="flex flex-wrap gap-2">
-            {TYPES.map((t) => {
-              const active = t === eventType;
+            {TYPES.map((type) => {
+              const active = type === eventType;
               return (
                 <button
-                  key={t}
-                  onClick={() => setEventType(t)}
+                  key={type}
+                  onClick={() => setEventType(type)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border"
                   style={{
                     backgroundColor: active ? 'var(--color-accent)' : 'var(--color-surface)',
@@ -113,15 +115,15 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
                     borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
                   }}
                 >
-                  <Ico name={EVENT_TYPE_ICONS[t] as IcoName} size={16} />
-                  <span>{EVENT_TYPE_LABELS[t]}</span>
+                  <Ico name={EVENT_TYPE_ICONS[type] as IcoName} size={16} />
+                  <span>{EVENT_TYPE_LABELS[type]}</span>
                 </button>
               );
             })}
           </div>
         </Field>
 
-        <Field label="When">
+        <Field label={t('events.fieldWhen')}>
           <div className="flex items-center gap-2">
             <input
               type="date"
@@ -145,36 +147,36 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
               onChange={(e) => setAllDay(e.target.checked)}
               className="rounded"
             />
-            All day
+            {t('events.allDay')}
           </label>
         </Field>
 
-        <Field label="Where (optional)">
+        <Field label={t('events.fieldWhere')}>
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Restaurant, address, or note"
+            placeholder={t('events.wherePlaceholder')}
             maxLength={200}
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)]"
           />
         </Field>
 
-        <Field label="Description (optional)">
+        <Field label={t('events.fieldDescription')}>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add details for your guests"
+            placeholder={t('events.descriptionPlaceholder')}
             rows={3}
             maxLength={1000}
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)] resize-none"
           />
         </Field>
 
-        <Field label={`Invite (${invitees.length}/${contacts.length})`}>
+        <Field label={t('events.fieldInvite', { selected: invitees.length, total: contacts.length })}>
           {contacts.length === 0 ? (
             <p className="text-sm text-[var(--color-text-faint)]">
-              No contacts to invite yet. Add a friend first to invite them.
+              {t('events.noContactsToInvite')}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -219,7 +221,11 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
           className="w-full py-4 rounded-2xl text-base font-medium disabled:opacity-50"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          {busy ? 'Creating…' : `Create${invitees.length > 0 ? ` & invite ${invitees.length}` : ''}`}
+          {busy
+            ? t('events.creating')
+            : invitees.length > 0
+              ? t('events.createAndInvite', { count: invitees.length })
+              : t('events.create')}
         </button>
       </div>
     </section>

@@ -16,6 +16,7 @@
  * the tax ledger."
  */
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { recordTx } from '../../services/transactions';
 
 interface ParsedPayUri {
@@ -26,9 +27,14 @@ interface ParsedPayUri {
   inv: string | null;
   expUnix: number | null;
 }
+/** Parse errors carry an i18n key (not a literal string) so the
+ *  parser stays pure and the component owns the translation. */
+type ParseErrorKey =
+  | 'bareAddress' | 'notPayLink' | 'parseFailed'
+  | 'missingTo' | 'missingAmount' | 'badAmount' | 'expired';
 interface ParseErr {
   ok: false;
-  error: string;
+  errorKey: ParseErrorKey;
 }
 type Parsed = ParsedPayUri | ParseErr;
 
@@ -38,6 +44,7 @@ interface Props {
 }
 
 export default function WalletSendScreen({ onBack, onSent }: Props) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,12 +84,11 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
 
   return (
     <section className="flex flex-col h-full safe-bottom">
-      <Header title="Send" onBack={onBack} />
+      <Header title={t('wallet.sendTitle')} onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pt-2 pb-5">
         <p className="text-sm text-[var(--color-text-muted)] mb-4">
-          Paste a merchant&apos;s <span className="font-mono text-[12px]">futurechain:pay</span> link,
-          or a recipient&apos;s address.
+          {t('wallet.sendHelp')}
         </p>
 
         <textarea
@@ -99,7 +105,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
           <div className="mt-4 p-4 rounded-xl bg-[var(--color-accent-soft)] border border-[var(--color-accent-dim)]">
             <div className="flex justify-between items-baseline">
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-                Amount
+                {t('wallet.amount')}
               </div>
               <div className="text-2xl font-semibold tabular-nums text-[var(--color-accent)]">
                 {(Number(parsed.amountMicroFtc) / 1_000_000).toFixed(4)} FTC
@@ -107,7 +113,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
             </div>
             <div className="mt-3 pt-3 border-t border-[var(--color-accent-dim)]">
               <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-                To
+                {t('wallet.to')}
               </div>
               <div className="mt-1 font-mono text-[12px] text-[var(--color-text)] break-all">
                 {parsed.to}
@@ -115,14 +121,16 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
             </div>
             {parsed.inv && (
               <div className="mt-2 text-[11px] text-[var(--color-text-muted)] font-mono">
-                Order {parsed.inv}
+                {t('wallet.order', { id: parsed.inv })}
               </div>
             )}
           </div>
         )}
 
         {parsed && !parsed.ok && (
-          <p className="mt-3 text-sm text-[var(--color-red)]">{parsed.error}</p>
+          <p className="mt-3 text-sm text-[var(--color-red)]">
+            {t(`wallet.sendErr.${parsed.errorKey}`)}
+          </p>
         )}
 
         {error && (
@@ -138,11 +146,10 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
           className="w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] bg-[var(--color-accent)] transition-opacity"
           style={{ opacity: (!parsed || !parsed.ok || submitting) ? 0.5 : 1 }}
         >
-          {submitting ? 'Recording…' : 'Confirm & record'}
+          {submitting ? t('wallet.recording') : t('wallet.confirmRecord')}
         </button>
         <p className="mt-2 text-center text-[11px] text-[var(--color-text-faint)]">
-          v0: this records the tx for your ledger. Network broadcast
-          lands with the FutureChain RPC client.
+          {t('wallet.sendV0Note')}
         </p>
       </div>
     </section>
@@ -163,13 +170,14 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
-/** Parse a `futurechain:pay?...` URI or a bare `fc_...` address. */
+/** Parse a `futurechain:pay?...` URI or a bare `fc_...` address.
+ *  Pure — returns an i18n error KEY, not a translated string. */
 function parsePayUri(raw: string): Parsed {
   if (raw.startsWith('fc_')) {
-    return { ok: false, error: 'Bare addresses need an amount. Paste a futurechain:pay link.' };
+    return { ok: false, errorKey: 'bareAddress' };
   }
   if (!raw.startsWith('futurechain:pay')) {
-    return { ok: false, error: 'Not a futurechain:pay link.' };
+    return { ok: false, errorKey: 'notPayLink' };
   }
   let url: URL;
   try {
@@ -177,28 +185,28 @@ function parsePayUri(raw: string): Parsed {
     // to a parseable form.
     url = new URL(raw.replace('futurechain:pay', 'https://x/pay'));
   } catch {
-    return { ok: false, error: 'Could not parse the link.' };
+    return { ok: false, errorKey: 'parseFailed' };
   }
   const params = url.searchParams;
   const to = params.get('to');
   const amount = params.get('amount');
   if (!to || !to.startsWith('fc_')) {
-    return { ok: false, error: 'Missing or invalid `to` address.' };
+    return { ok: false, errorKey: 'missingTo' };
   }
   if (!amount) {
-    return { ok: false, error: 'Missing `amount`.' };
+    return { ok: false, errorKey: 'missingAmount' };
   }
   let amountMicroFtc: bigint;
   try {
     amountMicroFtc = BigInt(amount);
     if (amountMicroFtc <= 0n) throw new Error('non-positive');
   } catch {
-    return { ok: false, error: 'Amount must be a positive integer (micro-FTC).' };
+    return { ok: false, errorKey: 'badAmount' };
   }
   const exp = params.get('exp');
   const expUnix = exp ? Number.parseInt(exp, 10) : null;
   if (expUnix && expUnix * 1000 < Date.now()) {
-    return { ok: false, error: 'This payment link has expired.' };
+    return { ok: false, errorKey: 'expired' };
   }
   return {
     ok: true,

@@ -1,4 +1,6 @@
 import { useEffect, useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { listPosts, sweepExpired, type WassupPost } from '../services/wassup';
 import { toggleWassupLike } from '../services/chat';
 import { getIdentity } from '../services/identity';
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default function WassupFeedScreen({ onCompose, onOpenPost, refreshKey }: Props) {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<WassupPost[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [tick, setTick] = useState(0);
@@ -35,10 +38,10 @@ export default function WassupFeedScreen({ onCompose, onOpenPost, refreshKey }: 
   return (
     <section className="flex flex-col">
       <div className="flex items-center justify-between px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Wassup</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('wassup.title')}</h1>
         <button
           onClick={onCompose}
-          aria-label="New post"
+          aria-label={t('wassup.newPost')}
           className="w-10 h-10 rounded-full flex items-center justify-center"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
@@ -47,13 +50,13 @@ export default function WassupFeedScreen({ onCompose, onOpenPost, refreshKey }: 
       </div>
 
       {!loaded ? (
-        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">Loading…</div>
+        <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">{t('common.loading')}</div>
       ) : posts.length === 0 ? (
         <div className="px-5 mt-2">
           <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 text-center">
-            <p className="text-sm text-[var(--color-text-body)]">No posts yet.</p>
+            <p className="text-sm text-[var(--color-text-body)]">{t('wassup.noPosts')}</p>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-              Tap + to share something with your contacts. Posts disappear after 24 hours by default.
+              {t('wassup.noPostsHelp')}
             </p>
           </div>
         </div>
@@ -82,8 +85,9 @@ interface PostCardProps {
 }
 
 function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
+  const { t } = useTranslation();
   const isMine = post.authorHash === myHash;
-  const when = relativeTime(post.createdAt);
+  const when = relativeTime(post.createdAt, t);
   // P4-3: feed re-renders every 3s (poll for new posts) — without this
   // every card's image was re-decoded from base64 each tick.
   const imageBlobUrl = useBlobUrl(post.image?.data, post.image?.mimeType);
@@ -108,7 +112,7 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
       <button
         onClick={onOpenPost}
         className="w-full text-left px-5 py-4 active:bg-[var(--color-surface-muted)]"
-        aria-label={`Open post by ${isMine ? 'you' : post.authorName}`}
+        aria-label={t('wassup.openPostBy', { name: isMine ? t('wassup.you') : post.authorName })}
       >
         <div className="flex items-start gap-3">
           <div
@@ -120,7 +124,7 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="text-sm font-semibold text-[var(--color-text)] truncate">
-                {isMine ? 'You' : post.authorName}
+                {isMine ? t('wassup.you') : post.authorName}
               </span>
               <span className="text-xs text-[var(--color-text-faint)]">·</span>
               <span className="text-xs text-[var(--color-text-faint)]">{when}</span>
@@ -180,12 +184,12 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
   );
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: TFunction): string {
   const then = new Date(iso).getTime();
   const now = Date.now();
   const sec = Math.floor((now - then) / 1000);
-  if (sec < 60) return 'just now';
-  if (sec < 3600) return `${Math.floor(sec / 60)}m`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h`;
-  return `${Math.floor(sec / 86400)}d`;
+  if (sec < 60) return t('wassup.justNow');
+  if (sec < 3600) return t('wassup.minutesShort', { n: Math.floor(sec / 60) });
+  if (sec < 86400) return t('wassup.hoursShort', { n: Math.floor(sec / 3600) });
+  return t('wassup.daysShort', { n: Math.floor(sec / 86400) });
 }

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   getEvent,
   putEvent,
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export default function EventDetailScreen({ eventId, onBack }: Props) {
+  const { t } = useTranslation();
   const [event, setEvent] = useState<CommEvent | null>(null);
   const [contacts, setContacts] = useState<Map<string, Contact>>(new Map());
   const [busy, setBusy] = useState(false);
@@ -52,7 +55,7 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
     if (minutesBefore && minutesBefore > 0) {
       const granted = await ensureNotificationPermission();
       if (!granted) {
-        setError('Notifications are off for the app. Enable them in system settings to use reminders.');
+        setError(t('events.errNotifOff'));
         return;
       }
       const minutesToEvent = Math.floor((new Date(event.startAt).getTime() - Date.now()) / 60_000);
@@ -89,7 +92,7 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
         catch (err) { console.warn('[event-detail] rsvp send failed', err); }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update RSVP');
+      setError(err instanceof Error ? err.message : t('events.errRsvpFailed'));
     } finally {
       setBusy(false);
     }
@@ -99,10 +102,10 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
     return (
       <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
         <header className="flex items-center gap-3 h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-          <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← Back</button>
+          <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← {t('common.back')}</button>
         </header>
         <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-faint)]">
-          Event not found.
+          {t('events.eventNotFound')}
         </div>
       </section>
     );
@@ -115,7 +118,7 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
   const timeLabel = event.allDay
-    ? 'All day'
+    ? t('events.allDay')
     : start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
   const goingHashes = Object.entries(event.rsvps).filter(([, s]) => s === 'going').map(([h]) => h);
@@ -126,8 +129,8 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
   return (
     <section className="flex flex-col min-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← Back</button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">Event</h1>
+        <button onClick={onBack} className="text-sm text-[var(--color-text-muted)]">← {t('common.back')}</button>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('events.event')}</h1>
         <span className="w-12" />
       </header>
 
@@ -163,12 +166,12 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
         {!isCreator && (
           <div className="px-5 py-5 border-b border-[var(--color-border-soft)]">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
-              Your RSVP
+              {t('events.yourRsvp')}
             </p>
             <div className="flex gap-2">
-              <RsvpButton label="Going" active={event.myStatus === 'going'} onClick={() => void handleRsvp('going')} disabled={busy} />
-              <RsvpButton label="Maybe" active={event.myStatus === 'maybe'} onClick={() => void handleRsvp('maybe')} disabled={busy} />
-              <RsvpButton label="Can't go" active={event.myStatus === 'declined'} onClick={() => void handleRsvp('declined')} disabled={busy} />
+              <RsvpButton label={t('events.rsvpGoing')} active={event.myStatus === 'going'} onClick={() => void handleRsvp('going')} disabled={busy} />
+              <RsvpButton label={t('events.rsvpMaybe')} active={event.myStatus === 'maybe'} onClick={() => void handleRsvp('maybe')} disabled={busy} />
+              <RsvpButton label={t('events.rsvpCantGo')} active={event.myStatus === 'declined'} onClick={() => void handleRsvp('declined')} disabled={busy} />
             </div>
             {error && <p className="mt-2 text-xs text-[var(--color-red)]">{error}</p>}
           </div>
@@ -177,7 +180,7 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
         {!event.canceled && new Date(event.startAt).getTime() > Date.now() && (
           <div className="px-5 py-5 border-b border-[var(--color-border-soft)]">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
-              Reminder
+              {t('events.reminder')}
             </p>
             <div className="flex flex-wrap gap-2">
               {REMINDER_OPTIONS.map((opt) => {
@@ -194,27 +197,27 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
                       color: active ? 'var(--color-accent-dark)' : 'var(--color-text)',
                     }}
                   >
-                    {opt.label}
+                    {t(opt.label)}
                   </button>
                 );
               })}
             </div>
             <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
               {event.reminderMinutesBefore
-                ? `Local notification ${formatLead(event.reminderMinutesBefore)} before the start.`
-                : 'Off — pick a lead-time to get a local notification on this device.'}
+                ? t('events.reminderSet', { lead: formatLead(event.reminderMinutesBefore, t) })
+                : t('events.reminderUnset')}
             </p>
           </div>
         )}
 
         <div className="px-5 py-5">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-3">
-            Attendees
+            {t('events.attendees')}
           </p>
-          <AttendeeSection title="Going" hashes={goingHashes} contacts={contacts} color="green" me={me?.contactHash} />
-          {maybeHashes.length > 0 && <AttendeeSection title="Maybe" hashes={maybeHashes} contacts={contacts} color="gold" me={me?.contactHash} />}
-          {declinedHashes.length > 0 && <AttendeeSection title="Can't go" hashes={declinedHashes} contacts={contacts} color="muted" me={me?.contactHash} />}
-          {pendingHashes.length > 0 && <AttendeeSection title="No reply yet" hashes={pendingHashes} contacts={contacts} color="faint" me={me?.contactHash} />}
+          <AttendeeSection title={t('events.attGoing')} hashes={goingHashes} contacts={contacts} color="green" me={me?.contactHash} />
+          {maybeHashes.length > 0 && <AttendeeSection title={t('events.attMaybe')} hashes={maybeHashes} contacts={contacts} color="gold" me={me?.contactHash} />}
+          {declinedHashes.length > 0 && <AttendeeSection title={t('events.attCantGo')} hashes={declinedHashes} contacts={contacts} color="muted" me={me?.contactHash} />}
+          {pendingHashes.length > 0 && <AttendeeSection title={t('events.attNoReply')} hashes={pendingHashes} contacts={contacts} color="faint" me={me?.contactHash} />}
         </div>
       </div>
     </section>
@@ -224,18 +227,18 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
 // R11 — reminder lead-time presets. null = Off; clamp-to-1-min logic in
 // handleSetReminder handles "5 min before" being chosen on a 3-min-out event.
 const REMINDER_OPTIONS: Array<{ label: string; value: number | null }> = [
-  { label: 'Off',     value: null },
-  { label: '5 min',   value: 5 },
-  { label: '15 min',  value: 15 },
-  { label: '30 min',  value: 30 },
-  { label: '1 hour',  value: 60 },
-  { label: '1 day',   value: 60 * 24 },
+  { label: 'events.reminderOff', value: null },
+  { label: 'events.reminder5',   value: 5 },
+  { label: 'events.reminder15',  value: 15 },
+  { label: 'events.reminder30',  value: 30 },
+  { label: 'events.reminder1h',  value: 60 },
+  { label: 'events.reminder1d',  value: 60 * 24 },
 ];
 
-function formatLead(min: number): string {
-  if (min < 60) return `${min} min`;
-  if (min < 60 * 24) return `${Math.round(min / 60)} hr`;
-  return `${Math.round(min / (60 * 24))} day`;
+function formatLead(min: number, t: TFunction): string {
+  if (min < 60) return t('events.leadMin', { n: min });
+  if (min < 60 * 24) return t('events.leadHr', { n: Math.round(min / 60) });
+  return t('events.leadDay', { n: Math.round(min / (60 * 24)) });
 }
 
 function RsvpButton({ label, active, onClick, disabled }: {
@@ -266,6 +269,7 @@ function AttendeeSection({
   color: 'green' | 'gold' | 'muted' | 'faint';
   me?: string;
 }) {
+  const { t } = useTranslation();
   const colors = {
     green: 'var(--color-green)',
     gold: 'var(--color-gold)',
@@ -280,7 +284,7 @@ function AttendeeSection({
       <ul className="mt-1.5 space-y-1">
         {hashes.map((h) => {
           const c = contacts.get(h);
-          const label = h === me ? 'You' : (c?.displayName ?? h);
+          const label = h === me ? t('events.you') : (c?.displayName ?? h);
           return (
             <li key={h} className="flex items-center gap-2 text-sm text-[var(--color-text-body)]">
               <div
