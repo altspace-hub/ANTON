@@ -11,6 +11,7 @@
  * onboarding-welcome.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import HomeScreen from './pages/HomeScreen';
 import SimpleScreen from './pages/SimpleScreen';
 import ExtendedScreen from './pages/ExtendedScreen';
@@ -38,6 +39,7 @@ type Screen =
   | 'settings-wallet';
 
 export default function App() {
+  const { t } = useTranslation();
   const [screen, setScreen] = useState<Screen>('loading');
   const [pendingMode, setPendingMode] = useState<SaleMode>('simple');
 
@@ -51,7 +53,7 @@ export default function App() {
     return (
       <div className="flex flex-col items-center justify-center h-full"
            style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading…</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{t('common.loading')}</div>
       </div>
     );
   }

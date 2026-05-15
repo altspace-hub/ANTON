@@ -7,17 +7,19 @@
  * without committing to a crypto wallet; the FTC payment path is
  * unlocked later in Settings → Connect wallet.
  */
+import { useTranslation } from 'react-i18next';
 import Logo from '../../components/Logo';
 import PrimaryButton from '../../components/PrimaryButton';
 
-const BULLETS = [
-  'Set up your business details',
-  'Pick Simple or Extended sales',
-  'Issue Skatteverket-compliant kvittos',
-  'Connect a wallet later to accept FTC',
-];
-
 export default function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
+  const bullets = [
+    t('welcome.bullet1'),
+    t('welcome.bullet2'),
+    t('welcome.bullet3'),
+    t('welcome.bullet4'),
+  ];
+
   return (
     <div className="flex flex-col h-full p-6 safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -26,16 +28,16 @@ export default function WelcomeScreen({ onContinue }: { onContinue: () => void }
       </div>
       <h1 className="text-3xl font-bold text-center"
           style={{ color: 'var(--color-accent)' }}>
-        ANTON Business
+        {t('welcome.title')}
       </h1>
       <p className="mt-2 mb-8 text-center text-base"
          style={{ color: 'var(--color-text-muted)' }}>
-        Run sales, issue kvittos, optionally accept FTC.
+        {t('welcome.subtitle')}
       </p>
 
       <ul className="flex flex-col gap-3.5 mb-auto"
           style={{ color: 'var(--color-text-body)' }}>
-        {BULLETS.map((b) => (
+        {bullets.map((b) => (
           <li key={b} className="flex gap-3 items-start">
             <span className="text-lg leading-snug"
                   style={{ color: 'var(--color-accent)' }}>•</span>
@@ -44,11 +46,11 @@ export default function WelcomeScreen({ onContinue }: { onContinue: () => void }
         ))}
       </ul>
 
-      <PrimaryButton onClick={onContinue}>Get started</PrimaryButton>
+      <PrimaryButton onClick={onContinue}>{t('welcome.getStarted')}</PrimaryButton>
 
       <p className="text-center text-xs mt-4"
          style={{ color: 'var(--color-text-faint)' }}>
-        Everything stays on this device until you decide otherwise.
+        {t('welcome.footer')}
       </p>
     </div>
   );

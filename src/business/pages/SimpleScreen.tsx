@@ -11,6 +11,7 @@
  * the app before committing to FTC.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Keypad from '../components/Keypad';
 import { KvittoView } from '../components/KvittoView';
 import PrimaryButton from '../components/PrimaryButton';
@@ -24,6 +25,7 @@ import { loadWallet } from '../services/wallet';
 type Phase = 'entry' | 'qr' | 'done';
 
 export default function SimpleScreen({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [walletConnected, setWalletConnected] = useState(false);
@@ -68,8 +70,8 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
   }
 
   function generateQr() {
-    if (!config || !merchantId) return setError('Merchant not configured.');
-    if (amountSek <= 0) return setError('Enter an amount.');
+    if (!config || !merchantId) return setError(t('sale.errMerchant'));
+    if (amountSek <= 0) return setError(t('simple.errEnterAmount'));
     try {
       const b = buildSimpleQr({
         toAddress: config.safelloReceiveAddress || 'fc_pending_wallet',
@@ -121,7 +123,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col h-full items-center justify-center"
            style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading…</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{t('common.loading')}</div>
       </div>
     );
   }
@@ -141,7 +143,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col h-full p-6 items-center safe-top safe-bottom"
            style={{ backgroundColor: 'var(--color-bg)' }}>
-        <Header title="Show this to the customer" onBack={() => setPhase('entry')} />
+        <Header title={t('sale.showToCustomer')} onBack={() => setPhase('entry')} />
         <div className="text-4xl font-light tabular mt-2"
              style={{ color: 'var(--color-text)' }}>
           {amountSek.toFixed(2)} SEK
@@ -155,10 +157,10 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
         </div>
         <p className="text-sm mt-5 text-center"
            style={{ color: 'var(--color-text-muted)' }}>
-          Customer scans with ANTON Communication to pay.
+          {t('sale.customerScans')}
         </p>
         <p className="mono text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
-          Order {built.inv}
+          {t('simple.order', { id: built.inv })}
         </p>
         <div className="flex gap-3 mt-auto w-full">
           <button
@@ -170,13 +172,13 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
               color: 'var(--color-text-muted)',
               border: '1px solid var(--color-border)',
             }}
-          >Cancel</button>
+          >{t('common.cancel')}</button>
           <button
             type="button"
             onClick={() => issueKvitto(built)}
             className="flex-1 py-4 rounded-xl font-bold"
             style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >Paid ✓</button>
+          >{t('sale.paid')}</button>
         </div>
       </div>
     );
@@ -185,7 +187,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
   return (
     <div className="flex flex-col h-full p-6 safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
-      <Header title="Simple sale" onBack={onBack} />
+      <Header title={t('simple.title')} onBack={onBack} />
 
       <div className="flex flex-col items-center py-4">
         <div className="uppercase tracking-wider text-xs"
@@ -197,7 +199,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
           {amountStr}
         </div>
         <div className="mono text-base mt-1" style={{ color: 'var(--color-accent)' }}>
-          ≈ {amountFtc.toFixed(4)} FTC
+          {t('simple.ftcApprox', { amount: amountFtc.toFixed(4) })}
         </div>
       </div>
 
@@ -213,7 +215,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
           disabled={amountSek <= 0}
           marginTopAuto={false}
         >
-          Generate QR
+          {t('simple.generateQr')}
         </PrimaryButton>
       ) : (
         <div className="flex flex-col gap-2">
@@ -222,11 +224,11 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
             disabled={amountSek <= 0}
             marginTopAuto={false}
           >
-            Issue kvitto (no QR)
+            {t('simple.issueKvittoNoQr')}
           </PrimaryButton>
           <p className="text-center text-xs"
              style={{ color: 'var(--color-text-faint)' }}>
-            Connect a wallet in Settings to show a payment QR.
+            {t('sale.connectWalletHint')}
           </p>
         </div>
       )}
@@ -237,18 +239,19 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
 function ReceiptIssuedView({
   receipt, merchant, onAnother, onBack,
 }: { receipt: Receipt; merchant: MerchantConfig; onAnother: () => void; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full overflow-y-auto safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="p-6 pb-3">
-        <Header title="Kvitto issued" onBack={onBack} />
+        <Header title={t('sale.kvittoIssued')} onBack={onBack} />
       </div>
       <div className="px-6">
         <KvittoView receipt={receipt} merchant={merchant} />
       </div>
       <div className="p-6 flex flex-col gap-2 mt-auto">
         <PrimaryButton onClick={onAnother} marginTopAuto={false}>
-          New sale
+          {t('sale.newSale')}
         </PrimaryButton>
         <button
           type="button"
@@ -259,20 +262,21 @@ function ReceiptIssuedView({
             color: 'var(--color-text-muted)',
             border: '1px solid var(--color-border)',
           }}
-        >Done</button>
+        >{t('common.done')}</button>
       </div>
     </div>
   );
 }
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3 -ml-2">
       <button
         type="button"
         onClick={onBack}
         className="p-2 rounded-lg"
-        aria-label="Back"
+        aria-label={t('common.back')}
         style={{ color: 'var(--color-text-muted)' }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

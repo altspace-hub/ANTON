@@ -6,6 +6,7 @@
  * merchant picked during onboarding by making it the larger card.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
 import { loadConfig } from '../services/merchant';
 import type { MerchantConfig } from '../services/types';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) 
           type="button"
           onClick={onSettings}
           className="p-2 -mr-2 rounded-lg"
-          aria-label="Settings"
+          aria-label={t('home.settings')}
           style={{ color: 'var(--color-text-muted)' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -68,26 +70,25 @@ export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) 
              }}>
           <div className="text-xs font-semibold mb-0.5"
                style={{ color: 'var(--color-warning)' }}>
-            No wallet connected
+            {t('home.noWalletTitle')}
           </div>
           <div className="text-xs leading-snug"
                style={{ color: 'var(--color-text-body)' }}>
-            You can issue kvittos, but customers can&apos;t pay with FTC yet.
-            Go to Settings → Connect wallet.
+            {t('home.noWalletBody')}
           </div>
         </div>
       )}
 
       <div className="flex flex-col gap-3 mt-6">
         <SaleCard
-          title="Simple sale"
-          body="One amount → kvitto."
+          title={t('home.simpleSale')}
+          body={t('home.simpleSaleBody')}
           onClick={onSimple}
           large={defaultMode === 'simple'}
         />
         <SaleCard
-          title="Extended sale"
-          body="Cart with line items + VAT breakdown."
+          title={t('home.extendedSale')}
+          body={t('home.extendedSaleBody')}
           onClick={onExtended}
           large={defaultMode === 'extended'}
         />
@@ -95,7 +96,7 @@ export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) 
 
       <div className="mt-auto text-center text-[11px]"
            style={{ color: 'var(--color-text-faint)' }}>
-        ANTON Business v0.0.1 · phone-only
+        {t('home.version')}
       </div>
     </div>
   );
@@ -104,6 +105,7 @@ export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) 
 function SaleCard({
   title, body, onClick, large,
 }: { title: string; body: string; onClick: () => void; large: boolean }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -126,7 +128,7 @@ function SaleCard({
                  backgroundColor: 'rgba(255,255,255,0.18)',
                  color: 'var(--color-accent-fg)',
                }}>
-            Default
+            {t('home.default')}
           </div>
         )}
       </div>

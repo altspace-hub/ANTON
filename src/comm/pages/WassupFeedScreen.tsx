@@ -157,7 +157,7 @@ function PostCard({ post, myHash, onOpenPost, onLike }: PostCardProps) {
               <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                 {/* VoicePlayer has its own play button — stop propagation
                     so tapping play doesn't open the detail. */}
-                <VoicePlayer payload={post.voice} mine={post.authorHash === me?.contactHash} />
+                <VoicePlayer payload={post.voice} mine={post.authorHash === myHash} />
               </div>
             )}
 

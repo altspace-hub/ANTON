@@ -11,6 +11,7 @@
  * issue a no-QR kvitto with the full VAT breakdown intact.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KvittoView } from '../components/KvittoView';
 import PrimaryButton from '../components/PrimaryButton';
 import QrDisplay from '../components/QrDisplay';
@@ -28,6 +29,7 @@ import { loadWallet } from '../services/wallet';
 type Phase = 'cart' | 'review' | 'qr' | 'done';
 
 export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [walletConnected, setWalletConnected] = useState(false);
@@ -69,8 +71,8 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
   }
 
   function generateQrOrIssue() {
-    if (!config || !merchantId) return setError('Merchant not configured.');
-    if (totals.totalSek <= 0) return setError('Cart is empty.');
+    if (!config || !merchantId) return setError(t('sale.errMerchant'));
+    if (totals.totalSek <= 0) return setError(t('extended.errCartEmpty'));
     if (walletConnected) {
       try {
         const b = buildExtendedQr({
@@ -133,7 +135,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col h-full items-center justify-center"
            style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading…</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{t('common.loading')}</div>
       </div>
     );
   }
@@ -153,7 +155,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col h-full p-6 items-center safe-top safe-bottom"
            style={{ backgroundColor: 'var(--color-bg)' }}>
-        <Header title="Show this to the customer" onBack={() => setPhase('cart')} />
+        <Header title={t('sale.showToCustomer')} onBack={() => setPhase('cart')} />
         <div className="text-4xl font-light tabular mt-2"
              style={{ color: 'var(--color-text)' }}>
           {totals.totalSek.toFixed(2)} SEK
@@ -167,10 +169,10 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
         </div>
         <p className="text-sm mt-5 text-center"
            style={{ color: 'var(--color-text-muted)' }}>
-          Customer scans with ANTON Communication to pay.
+          {t('sale.customerScans')}
         </p>
         <p className="mono text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
-          Order {built.inv} · {totals.itemCount} item(s)
+          {t('extended.orderItems', { id: built.inv, count: totals.itemCount })}
         </p>
         <div className="flex gap-3 mt-auto w-full">
           <button
@@ -182,13 +184,13 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
               color: 'var(--color-text-muted)',
               border: '1px solid var(--color-border)',
             }}
-          >Back to cart</button>
+          >{t('extended.backToCart')}</button>
           <button
             type="button"
             onClick={() => issueKvitto(built)}
             className="flex-1 py-4 rounded-xl font-bold"
             style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >Paid ✓</button>
+          >{t('sale.paid')}</button>
         </div>
       </div>
     );
@@ -199,11 +201,11 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
     <div className="flex flex-col h-full safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="px-6 pt-6 pb-3 flex justify-between items-center">
-        <Header title="Extended sale" onBack={onBack} />
+        <Header title={t('extended.title')} onBack={onBack} />
         <div className="text-right">
           <div className="text-xs uppercase tracking-wider"
                style={{ color: 'var(--color-text-faint)' }}>
-            Cart
+            {t('extended.cart')}
           </div>
           <div className="text-lg font-bold tabular" style={{ color: 'var(--color-text)' }}>
             {totals.totalSek.toFixed(2)}
@@ -253,7 +255,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                           onClick={() => setCart((c) => removeLine(c, line.itemId))}
                           className="w-7 h-7 rounded-full text-xs"
                           style={{ color: 'var(--color-error)' }}
-                          aria-label={`Remove ${line.name}`}>×</button>
+                          aria-label={t('items.removeAria', { name: line.name })}>×</button>
                 </div>
               </div>
             ))}
@@ -264,7 +266,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
       <div className="flex-1 overflow-y-auto px-6 pt-3 pb-2">
         <div className="text-xs uppercase tracking-wider mb-2"
              style={{ color: 'var(--color-text-faint)' }}>
-          {items.length > 0 ? 'Tap to add to cart' : 'No items in catalogue'}
+          {items.length > 0 ? t('extended.tapToAdd') : t('extended.noItemsLabel')}
         </div>
         {items.length === 0 ? (
           <div className="p-4 rounded-lg text-center text-sm"
@@ -273,7 +275,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                  color: 'var(--color-text-muted)',
                  border: '1px dashed var(--color-border)',
                }}>
-            Add items in Settings → Items first, then come back here.
+            {t('extended.noItemsHint')}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
@@ -298,7 +300,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="text-[10px] mt-0.5"
                      style={{ color: 'var(--color-text-faint)' }}>
-                  VAT {item.vatRate}%
+                  {t('extended.vatPercent', { rate: item.vatRate })}
                 </div>
               </button>
             ))}
@@ -316,12 +318,14 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
           disabled={totals.totalSek <= 0}
           marginTopAuto={false}
         >
-          {walletConnected ? `Charge ${totals.totalSek.toFixed(2)} SEK` : `Issue kvitto · ${totals.totalSek.toFixed(2)} SEK`}
+          {walletConnected
+            ? t('extended.charge', { amount: totals.totalSek.toFixed(2) })
+            : t('extended.issueKvitto', { amount: totals.totalSek.toFixed(2) })}
         </PrimaryButton>
         {!walletConnected && totals.totalSek > 0 && (
           <p className="text-center text-xs mt-2"
              style={{ color: 'var(--color-text-faint)' }}>
-            Connect a wallet in Settings to show a payment QR.
+            {t('sale.connectWalletHint')}
           </p>
         )}
       </div>
@@ -332,18 +336,19 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
 function ReceiptIssued({
   receipt, merchant, onAnother, onBack,
 }: { receipt: Receipt; merchant: MerchantConfig; onAnother: () => void; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full overflow-y-auto safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="p-6 pb-3">
-        <Header title="Kvitto issued" onBack={onBack} />
+        <Header title={t('sale.kvittoIssued')} onBack={onBack} />
       </div>
       <div className="px-6">
         <KvittoView receipt={receipt} merchant={merchant} />
       </div>
       <div className="p-6 flex flex-col gap-2 mt-auto">
         <PrimaryButton onClick={onAnother} marginTopAuto={false}>
-          New sale
+          {t('sale.newSale')}
         </PrimaryButton>
         <button
           type="button"
@@ -354,16 +359,17 @@ function ReceiptIssued({
             color: 'var(--color-text-muted)',
             border: '1px solid var(--color-border)',
           }}
-        >Done</button>
+        >{t('common.done')}</button>
       </div>
     </div>
   );
 }
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3 -ml-2">
-      <button type="button" onClick={onBack} className="p-2 rounded-lg" aria-label="Back"
+      <button type="button" onClick={onBack} className="p-2 rounded-lg" aria-label={t('common.back')}
               style={{ color: 'var(--color-text-muted)' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

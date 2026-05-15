@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import './i18n';
 import './app.css';
 
 createRoot(document.getElementById('app')!).render(<App />);

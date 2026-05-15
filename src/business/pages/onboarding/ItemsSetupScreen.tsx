@@ -12,6 +12,7 @@
  * screens read them.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
 import Field from '../../components/Field';
 import {
@@ -23,6 +24,7 @@ import {
 } from '../../services/items';
 
 export default function ItemsSetupScreen({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CatalogueItem[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -62,12 +64,11 @@ export default function ItemsSetupScreen({ onContinue }: { onContinue: () => voi
         <div>
           <h2 className="text-2xl font-bold mb-1"
               style={{ color: 'var(--color-text)' }}>
-            Add your items
+            {t('items.title')}
           </h2>
           <p className="text-sm leading-snug"
              style={{ color: 'var(--color-text-muted)' }}>
-            Add a few items to get started. You can edit, add more, or
-            remove them later in Settings.
+            {t('items.subtitle')}
           </p>
         </div>
 
@@ -82,11 +83,10 @@ export default function ItemsSetupScreen({ onContinue }: { onContinue: () => voi
             }}
           >
             <div className="font-semibold" style={{ color: 'var(--color-accent)' }}>
-              + Add starter items
+              {t('items.addStarter')}
             </div>
             <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-              Drops in 6 sample items (Coffee, Tea, Bun, Sandwich, Beer,
-              Wine) so you can try Extended mode immediately.
+              {t('items.addStarterDesc')}
             </div>
           </button>
         )}
@@ -114,9 +114,9 @@ export default function ItemsSetupScreen({ onContinue }: { onContinue: () => voi
                   onClick={() => remove(item.id)}
                   className="px-2 py-1 text-xs rounded"
                   style={{ color: 'var(--color-error)' }}
-                  aria-label={`Remove ${item.name}`}
+                  aria-label={t('items.removeAria', { name: item.name })}
                 >
-                  Remove
+                  {t('items.remove')}
                 </button>
               </div>
             ))}
@@ -130,14 +130,14 @@ export default function ItemsSetupScreen({ onContinue }: { onContinue: () => voi
              }}>
           <div className="uppercase tracking-wider text-xs mb-2"
                style={{ color: 'var(--color-text-faint)' }}>
-            Add a new item
+            {t('items.addNewItem')}
           </div>
-          <Field label="Name" value={name} onChange={setName} placeholder="Coffee" />
-          <Field label="Price (SEK)" value={price} onChange={setPrice}
+          <Field label={t('items.name')} value={name} onChange={setName} placeholder="Coffee" />
+          <Field label={t('items.priceSek')} value={price} onChange={setPrice}
                  placeholder="35" inputMode="decimal" autoCapitalize="none" />
           <div className="uppercase tracking-wider text-xs mb-1.5 mt-1"
                style={{ color: 'var(--color-text-faint)' }}>
-            VAT rate
+            {t('items.vatRate')}
           </div>
           <div className="flex gap-2">
             {([0, 6, 12, 25] as const).map((r) => {
@@ -169,18 +169,18 @@ export default function ItemsSetupScreen({ onContinue }: { onContinue: () => voi
               border: '1px solid var(--color-accent-dim)',
             }}
           >
-            Add item
+            {t('items.addItem')}
           </button>
         </div>
 
         <div className="flex flex-col gap-2 mt-4">
           <PrimaryButton onClick={onContinue} marginTopAuto={false}>
-            {items.length === 0 ? 'Skip for now' : 'Continue'}
+            {items.length === 0 ? t('items.skipForNow') : t('items.continue')}
           </PrimaryButton>
           {items.length === 0 && (
             <p className="text-center text-xs"
                style={{ color: 'var(--color-text-faint)' }}>
-              You can add items later from Settings → Items.
+              {t('items.addLater')}
             </p>
           )}
         </div>

@@ -7,6 +7,7 @@
  * Settings. Until then, sale flows persist kvittos without a QR.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Field from '../../components/Field';
 import PrimaryButton from '../../components/PrimaryButton';
 import { saveConfig } from '../../services/merchant';
@@ -30,6 +31,7 @@ export default function RegisterScreen({
   onContinue: () => void;
   pendingMode: SaleMode;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<FormState>({
     legalName: '',
     orgNr: '',
@@ -50,7 +52,7 @@ export default function RegisterScreen({
     const required: Array<keyof FormState> = ['legalName', 'orgNr', 'city', 'street', 'postcode'];
     for (const k of required) {
       if (typeof form[k] === 'string' && !(form[k] as string).trim()) {
-        setError(`Fill ${k} before continuing.`);
+        setError(t('register.fillError', { field: t(`register.${k}`) }));
         return;
       }
     }
@@ -82,24 +84,23 @@ export default function RegisterScreen({
          style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="p-6 pb-12">
         <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-          Business details
+          {t('register.title')}
         </h2>
         <p className="text-sm leading-snug mb-5"
            style={{ color: 'var(--color-text-muted)' }}>
-          These appear on every kvitto. Everything is stored locally on
-          this device — no servers involved.
+          {t('register.subtitle')}
         </p>
 
-        <Field label="Legal name" value={form.legalName} onChange={bind('legalName')} placeholder="Karl's Café AB" />
-        <Field label="Org. nr." value={form.orgNr} onChange={bind('orgNr')} placeholder="SE556000-0000" autoCapitalize="characters" />
-        <Field label="Street" value={form.street} onChange={bind('street')} placeholder="Drottninggatan 1" />
-        <Field label="Postcode" value={form.postcode} onChange={bind('postcode')} placeholder="11151" inputMode="numeric" />
-        <Field label="City" value={form.city} onChange={bind('city')} placeholder="Stockholm" />
+        <Field label={t('register.legalName')} value={form.legalName} onChange={bind('legalName')} placeholder="Karl's Café AB" />
+        <Field label={t('register.orgNr')} value={form.orgNr} onChange={bind('orgNr')} placeholder="SE556000-0000" autoCapitalize="characters" />
+        <Field label={t('register.street')} value={form.street} onChange={bind('street')} placeholder="Drottninggatan 1" />
+        <Field label={t('register.postcode')} value={form.postcode} onChange={bind('postcode')} placeholder="11151" inputMode="numeric" />
+        <Field label={t('register.city')} value={form.city} onChange={bind('city')} placeholder="Stockholm" />
 
         <div className="flex justify-between items-center my-4 px-1">
           <span className="uppercase tracking-wider text-xs"
                 style={{ color: 'var(--color-text-faint)' }}>
-            VAT registered
+            {t('register.vatRegistered')}
           </span>
           <Toggle on={form.vatRegistered} onChange={bind('vatRegistered')} />
         </div>
@@ -108,7 +109,7 @@ export default function RegisterScreen({
           <div className="mb-3">
             <div className="uppercase tracking-wider text-xs mb-1.5"
                  style={{ color: 'var(--color-text-faint)' }}>
-              Default VAT rate
+              {t('register.defaultVatRate')}
             </div>
             <div className="flex gap-2">
               {([0, 6, 12, 25] as const).map((r) => {
@@ -132,9 +133,9 @@ export default function RegisterScreen({
         )}
 
         <h3 className="uppercase tracking-wider text-xs font-bold mt-6 mb-3"
-            style={{ color: 'var(--color-accent)' }}>Receipts</h3>
+            style={{ color: 'var(--color-accent)' }}>{t('register.receipts')}</h3>
         <Field
-          label="Email for kvitto (optional)"
+          label={t('register.kvittoEmail')}
           value={form.kvittoEmail}
           onChange={bind('kvittoEmail')}
           placeholder="receipts@karls-cafe.se"
@@ -148,7 +149,7 @@ export default function RegisterScreen({
 
         <div className="mt-6">
           <PrimaryButton onClick={submit} marginTopAuto={false}>
-            Save and continue
+            {t('register.saveAndContinue')}
           </PrimaryButton>
         </div>
       </div>

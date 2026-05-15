@@ -9,6 +9,7 @@
 import type { SaleMode } from '../../services/types';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onContinue: (mode: SaleMode) => void;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function ModeChoiceScreen({ onContinue, initial = 'simple' }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<SaleMode>(initial);
 
   return (
@@ -23,32 +25,31 @@ export default function ModeChoiceScreen({ onContinue, initial = 'simple' }: Pro
          style={{ backgroundColor: 'var(--color-bg)' }}>
       <h2 className="text-2xl font-bold mt-4 mb-2"
           style={{ color: 'var(--color-text)' }}>
-        How do you sell?
+        {t('mode.title')}
       </h2>
       <p className="text-sm mb-6"
          style={{ color: 'var(--color-text-muted)' }}>
-        You can change this later. We use it to set up your default
-        sale screen.
+        {t('mode.subtitle')}
       </p>
 
       <div className="flex flex-col gap-3 mb-auto">
         <ModeCard
-          title="Simple"
-          subtitle="One amount per sale."
-          body="Tap a price on the keypad, show a kvitto, done. Best for street stalls, kiosks, or one-product sales."
+          title={t('mode.simpleTitle')}
+          subtitle={t('mode.simpleSubtitle')}
+          body={t('mode.simpleBody')}
           active={mode === 'simple'}
           onClick={() => setMode('simple')}
         />
         <ModeCard
-          title="Extended"
-          subtitle="Cart with line items."
-          body="Add items from a catalogue, automatic VAT breakdown across rates, optional discount. Best for cafés, restaurants, retail."
+          title={t('mode.extendedTitle')}
+          subtitle={t('mode.extendedSubtitle')}
+          body={t('mode.extendedBody')}
           active={mode === 'extended'}
           onClick={() => setMode('extended')}
         />
       </div>
 
-      <PrimaryButton onClick={() => onContinue(mode)}>Continue</PrimaryButton>
+      <PrimaryButton onClick={() => onContinue(mode)}>{t('mode.continue')}</PrimaryButton>
     </div>
   );
 }
@@ -56,6 +57,7 @@ export default function ModeChoiceScreen({ onContinue, initial = 'simple' }: Pro
 function ModeCard({
   title, subtitle, body, active, onClick,
 }: { title: string; subtitle: string; body: string; active: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -73,7 +75,7 @@ function ModeCard({
         </div>
         <div className="text-xs uppercase tracking-wider"
              style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-faint)' }}>
-          {active ? '● Selected' : 'Tap to pick'}
+          {active ? t('mode.selected') : t('mode.tapToPick')}
         </div>
       </div>
       <div className="text-sm mt-1 mb-2 font-medium"

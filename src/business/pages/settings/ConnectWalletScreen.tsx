@@ -9,6 +9,7 @@
  * can override it later if Safello gives them a sweep address).
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../components/Logo';
 import PrimaryButton from '../../components/PrimaryButton';
 import { loadConfig, saveConfig } from '../../services/merchant';
@@ -17,6 +18,7 @@ import { createAndStoreWallet, hasWallet, loadWallet } from '../../services/wall
 type State = 'idle' | 'creating' | 'done' | 'existing' | 'error';
 
 export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [address, setAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
   return (
     <div className="flex flex-col h-full p-6 safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
-      <Header title="Connect wallet" onBack={onBack} />
+      <Header title={t('wallet.title')} onBack={onBack} />
 
       <div className="flex flex-col items-center mt-6 mb-4">
         <Logo size={72} rounded="lg" />
@@ -65,16 +67,13 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
         <>
           <p className="text-[15px] leading-snug mb-3 text-center"
              style={{ color: 'var(--color-text-body)' }}>
-            Generate a secp256k1 keypair on this device. The private
-            key never leaves your phone — it lives in the device&apos;s
-            secure keychain.
+            {t('wallet.generateDesc1')}
           </p>
           <p className="text-[13px] leading-snug mb-6 text-center"
              style={{ color: 'var(--color-text-muted)' }}>
-            Once connected, your Simple and Extended sales will show a
-            payment QR for customers to scan with ANTON Communication.
+            {t('wallet.generateDesc2')}
           </p>
-          <PrimaryButton onClick={generate}>Generate wallet</PrimaryButton>
+          <PrimaryButton onClick={generate}>{t('wallet.generateWallet')}</PrimaryButton>
         </>
       )}
 
@@ -82,7 +81,7 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
         <div className="flex flex-col items-center gap-3 py-12">
           <Spinner />
           <p className="text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
-            Generating…
+            {t('wallet.generating')}
           </p>
         </div>
       )}
@@ -92,18 +91,18 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
           {state === 'done' && (
             <p className="text-center mb-3 text-base font-semibold"
                style={{ color: 'var(--color-accent)' }}>
-              Wallet connected
+              {t('wallet.walletConnected')}
             </p>
           )}
           {state === 'existing' && (
             <p className="text-center text-sm mb-3"
                style={{ color: 'var(--color-warning)' }}>
-              A wallet already exists on this device.
+              {t('wallet.walletExists')}
             </p>
           )}
           <div className="uppercase tracking-wider text-xs mb-1.5"
                style={{ color: 'var(--color-text-faint)' }}>
-            Your merchant address
+            {t('wallet.yourAddress')}
           </div>
           <div className="p-4 rounded-lg mono text-[13px] leading-snug break-all"
                style={{
@@ -115,19 +114,18 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
           </div>
           <p className="text-[13px] leading-snug mt-4"
              style={{ color: 'var(--color-text-muted)' }}>
-            This is what customers scan to pay you. It&apos;s public —
-            share freely.
+            {t('wallet.addressPublic')}
           </p>
-          <PrimaryButton onClick={onBack}>Done</PrimaryButton>
+          <PrimaryButton onClick={onBack}>{t('wallet.done')}</PrimaryButton>
         </>
       )}
 
       {state === 'error' && (
         <>
           <p className="text-[15px] mb-4 text-center" style={{ color: 'var(--color-error)' }}>
-            {error ?? 'Unknown error'}
+            {error ?? t('wallet.unknownError')}
           </p>
-          <PrimaryButton onClick={() => setState('idle')}>Try again</PrimaryButton>
+          <PrimaryButton onClick={() => setState('idle')}>{t('common.tryAgain')}</PrimaryButton>
         </>
       )}
     </div>
@@ -135,9 +133,10 @@ export default function ConnectWalletScreen({ onBack }: { onBack: () => void }) 
 }
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3 -ml-2">
-      <button type="button" onClick={onBack} className="p-2 rounded-lg" aria-label="Back"
+      <button type="button" onClick={onBack} className="p-2 rounded-lg" aria-label={t('common.back')}
               style={{ color: 'var(--color-text-muted)' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

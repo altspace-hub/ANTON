@@ -6,12 +6,14 @@
  * payments when ready.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../components/Logo';
 import PrimaryButton from '../../components/PrimaryButton';
 import { loadConfig } from '../../services/merchant';
 import type { MerchantConfig } from '../../services/types';
 
 export default function DoneScreen({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
 
   useEffect(() => {
@@ -25,10 +27,10 @@ export default function DoneScreen({ onContinue }: { onContinue: () => void }) {
         <Logo size={80} rounded="lg" />
       </div>
       <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-        You&apos;re set up
+        {t('done.title')}
       </h2>
       <p className="text-sm mb-5" style={{ color: 'var(--color-text-muted)' }}>
-        Ready to issue your first kvitto.
+        {t('done.subtitle')}
       </p>
 
       {config && (
@@ -39,7 +41,7 @@ export default function DoneScreen({ onContinue }: { onContinue: () => void }) {
              }}>
           <div className="uppercase tracking-wider text-xs mb-1"
                style={{ color: 'var(--color-text-faint)' }}>
-            Business
+            {t('done.business')}
           </div>
           <div className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
             {config.legalName}
@@ -52,9 +54,9 @@ export default function DoneScreen({ onContinue }: { onContinue: () => void }) {
                  color: 'var(--color-text-muted)',
                  borderTop: '1px solid var(--color-border-soft)',
                }}>
-            Default mode: <span className="font-semibold capitalize"
+            {t('done.defaultMode')} <span className="font-semibold"
                                 style={{ color: 'var(--color-accent)' }}>
-              {config.defaultMode}
+              {t(config.defaultMode === 'simple' ? 'mode.simpleTitle' : 'mode.extendedTitle')}
             </span>
           </div>
         </div>
@@ -66,17 +68,15 @@ export default function DoneScreen({ onContinue }: { onContinue: () => void }) {
              border: '1px solid var(--color-accent-dim)',
            }}>
         <div className="font-semibold mb-1" style={{ color: 'var(--color-accent)' }}>
-          Next: connect a wallet
+          {t('done.nextTitle')}
         </div>
         <div className="text-xs leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-          You can already issue kvittos and try the sale flow. To accept
-          FTC payments via QR, head to Settings → Connect wallet when
-          you&apos;re ready.
+          {t('done.nextBody')}
         </div>
       </div>
 
       <div className="w-full mt-auto">
-        <PrimaryButton onClick={onContinue}>Go to home</PrimaryButton>
+        <PrimaryButton onClick={onContinue}>{t('done.goToHome')}</PrimaryButton>
       </div>
     </div>
   );
