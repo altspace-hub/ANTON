@@ -309,6 +309,13 @@
   },
   "events": {
     "title": "Events",
+    "typeDinner": "Dinner",
+    "typeDrinks": "Drinks",
+    "typeConcert": "Concert",
+    "typeTravel": "Travel",
+    "typeParty": "Party",
+    "typeBirthday": "Birthday",
+    "typeOther": "Other",
     "createEvent": "Create event",
     "tabToday": "Today",
     "tabUpcoming": "Upcoming",

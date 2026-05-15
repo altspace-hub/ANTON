@@ -116,7 +116,7 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
                   }}
                 >
                   <Ico name={EVENT_TYPE_ICONS[type] as IcoName} size={16} />
-                  <span>{EVENT_TYPE_LABELS[type]}</span>
+                  <span>{t(EVENT_TYPE_LABELS[type])}</span>
                 </button>
               );
             })}

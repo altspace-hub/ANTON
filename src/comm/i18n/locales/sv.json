@@ -309,6 +309,13 @@
   },
   "events": {
     "title": "Händelser",
+    "typeDinner": "Middag",
+    "typeDrinks": "Drinkar",
+    "typeConcert": "Konsert",
+    "typeTravel": "Resa",
+    "typeParty": "Fest",
+    "typeBirthday": "Födelsedag",
+    "typeOther": "Annat",
     "createEvent": "Skapa händelse",
     "tabToday": "Idag",
     "tabUpcoming": "Kommande",

@@ -146,7 +146,7 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
             <Ico name={EVENT_TYPE_ICONS[event.eventType] as IcoName} size={32} />
           </div>
           <div className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-            {EVENT_TYPE_LABELS[event.eventType]}
+            {t(EVENT_TYPE_LABELS[event.eventType])}
           </div>
           <h2 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{event.title}</h2>
           <p className="mt-3 text-sm text-[var(--color-text-body)]">

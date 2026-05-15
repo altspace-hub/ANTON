@@ -1029,7 +1029,7 @@ function EventInviteBubble({ message, isMine, time, onOpenEvent }: {
         <div className="px-4 py-3" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
             <Ico name={EVENT_TYPE_ICONS[data.eventType] as IcoName} size={16} />
-            <span>{isMine ? t('chat.youInvited') : t('chat.eventInvite')} · {EVENT_TYPE_LABELS[data.eventType]}</span>
+            <span>{isMine ? t('chat.youInvited') : t('chat.eventInvite')} · {t(EVENT_TYPE_LABELS[data.eventType])}</span>
           </div>
           <div className="mt-1 text-base font-semibold text-[var(--color-text)]">{data.title}</div>
         </div>

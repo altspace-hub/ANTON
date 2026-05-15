@@ -38,14 +38,15 @@ export type EventType =
   | 'birthday'
   | 'other';
 
+// i18n keys — resolve with t() at the call site.
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  dinner: 'Dinner',
-  drinks: 'Drinks',
-  concert: 'Concert',
-  travel: 'Travel',
-  party: 'Party',
-  birthday: 'Birthday',
-  other: 'Other',
+  dinner: 'events.typeDinner',
+  drinks: 'events.typeDrinks',
+  concert: 'events.typeConcert',
+  travel: 'events.typeTravel',
+  party: 'events.typeParty',
+  birthday: 'events.typeBirthday',
+  other: 'events.typeOther',
 };
 
 /** Ico names — see components/Ico.tsx. Avoid emoji so glyphs render
