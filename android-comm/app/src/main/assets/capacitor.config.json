@@ -4,7 +4,7 @@
 	"webDir": "dist/comm",
 	"android": {
 		"path": "android-comm",
-		"allowMixedContent": true,
+		"allowMixedContent": false,
 		"backgroundColor": "#F5F3EF"
 	},
 	"ios": {
