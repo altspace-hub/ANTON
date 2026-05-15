@@ -119,7 +119,7 @@ function SaleCard({
       }}
     >
       <div className="flex justify-between items-start">
-        <div className={large ? 'text-2xl font-bold' : 'text-lg font-semibold'}>
+        <div className={large ? 'text-xl font-bold' : 'text-base font-semibold'}>
           {title}
         </div>
         {large && (
