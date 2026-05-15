@@ -1,9 +1,8 @@
 /**
  * i18n/index.ts — Business App internationalization.
  *
- * react-i18next with two bundled catalogues (en, sv). The other 27
- * languages in languages.ts are selectable; until their catalogue is
- * filled they fall back to English transparently via fallbackLng.
+ * react-i18next with all 29 catalogues bundled. Any string missing
+ * from a catalogue falls back to English transparently via fallbackLng.
  *
  * Language choice is persisted to localStorage. On first run we detect
  * from navigator.language, but never silently override an explicit
@@ -17,15 +16,69 @@ import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import sv from './locales/sv.json';
+import de from './locales/de.json';
+import fr from './locales/fr.json';
+import es from './locales/es.json';
+import it from './locales/it.json';
+import pt from './locales/pt.json';
+import nl from './locales/nl.json';
+import da from './locales/da.json';
+import no from './locales/no.json';
+import fi from './locales/fi.json';
+import pl from './locales/pl.json';
+import cs from './locales/cs.json';
+import hu from './locales/hu.json';
+import ro from './locales/ro.json';
+import el from './locales/el.json';
+import tr from './locales/tr.json';
+import uk from './locales/uk.json';
+import ar from './locales/ar.json';
+import he from './locales/he.json';
+import fa from './locales/fa.json';
+import ur from './locales/ur.json';
+import hi from './locales/hi.json';
+import bn from './locales/bn.json';
+import id from './locales/id.json';
+import vi from './locales/vi.json';
+import th from './locales/th.json';
+import ja from './locales/ja.json';
+import ko from './locales/ko.json';
 import { isRtl, LANGUAGES } from './languages.js';
 
 const STORAGE_KEY = 'anton-business-language';
 
-/** The catalogues bundled in the app today. New languages drop a
+/** All 29 catalogues bundled in the app. New languages drop a
  *  JSON file in ./locales/ and register here. */
 const RESOURCES = {
   en: { translation: en },
   sv: { translation: sv },
+  de: { translation: de },
+  fr: { translation: fr },
+  es: { translation: es },
+  it: { translation: it },
+  pt: { translation: pt },
+  nl: { translation: nl },
+  da: { translation: da },
+  no: { translation: no },
+  fi: { translation: fi },
+  pl: { translation: pl },
+  cs: { translation: cs },
+  hu: { translation: hu },
+  ro: { translation: ro },
+  el: { translation: el },
+  tr: { translation: tr },
+  uk: { translation: uk },
+  ar: { translation: ar },
+  he: { translation: he },
+  fa: { translation: fa },
+  ur: { translation: ur },
+  hi: { translation: hi },
+  bn: { translation: bn },
+  id: { translation: id },
+  vi: { translation: vi },
+  th: { translation: th },
+  ja: { translation: ja },
+  ko: { translation: ko },
 } as const;
 
 function detectInitialLanguage(): string {

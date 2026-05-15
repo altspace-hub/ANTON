@@ -5,10 +5,9 @@
  * language's own name (shown to the user — a Swede looking for Swedish
  * scans for "Svenska", not "Swedish"). `english` is the fallback label.
  *
- * Mirrors the 29-language set the Comm App ships. en + sv ship complete
- * Business App translations today; the rest fall back to en until their
- * catalogue is filled in (the i18n config's fallbackLng handles this
- * transparently).
+ * Mirrors the 29-language set the Comm App ships. All 29 ship complete
+ * Business App catalogues; any individual missing string still falls
+ * back to en via the i18n config's fallbackLng.
  */
 
 export interface LanguageOption {
@@ -51,9 +50,9 @@ export const LANGUAGES: LanguageOption[] = [
   { code: 'ko', native: '한국어',              english: 'Korean' },
 ];
 
-/** Languages with a complete Business App translation bundled today.
- *  Everything else falls back to English (i18next fallbackLng). */
-export const COMPLETE_LOCALES = new Set(['en', 'sv']);
+/** Languages with a complete Business App translation bundled today —
+ *  all 29. Any individual missing string falls back to English. */
+export const COMPLETE_LOCALES = new Set(LANGUAGES.map((l) => l.code));
 
 export function isRtl(code: string): boolean {
   return LANGUAGES.find((l) => l.code === code)?.rtl ?? false;
