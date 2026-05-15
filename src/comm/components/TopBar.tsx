@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { getIdentity } from '../services/identity';
 import Logo from './Logo';
 
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function TopBar({ onProfile }: Props) {
+  const { t } = useTranslation();
   const id = getIdentity();
   const initial = (id?.displayName || '?').slice(0, 1).toUpperCase();
 
@@ -22,7 +24,7 @@ export default function TopBar({ onProfile }: Props) {
             avatar; the tap target reaches Material/iOS 44 dp. */}
         <button
           onClick={onProfile}
-          aria-label="Open profile"
+          aria-label={t('topbar.openProfile')}
           className="p-1.5 -m-1.5 flex items-center justify-center"
         >
           <span

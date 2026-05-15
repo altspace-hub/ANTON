@@ -1,15 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { Ico, type IcoName } from './Ico';
 
 export type TabId = 'chat' | 'wassup' | 'events' | 'portals' | 'wallet';
 
-type Tab = { id: TabId; label: string; icon: IcoName };
+type Tab = { id: TabId; icon: IcoName };
 
 const TABS: Tab[] = [
-  { id: 'chat',    label: 'Chat',    icon: 'message'  },
-  { id: 'wassup',  label: 'Wassup',  icon: 'sparkles' },
-  { id: 'events',  label: 'Events',  icon: 'calendar' },
-  { id: 'portals', label: 'Portals', icon: 'grid'     },
-  { id: 'wallet',  label: 'Wallet',  icon: 'wallet'   },
+  { id: 'chat',    icon: 'message'  },
+  { id: 'wassup',  icon: 'sparkles' },
+  { id: 'events',  icon: 'calendar' },
+  { id: 'portals', icon: 'grid'     },
+  { id: 'wallet',  icon: 'wallet'   },
 ];
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function TabBar({ active, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <nav
       className="border-t border-[var(--color-border-soft)] bg-[var(--color-surface)] safe-bottom"
@@ -40,7 +42,7 @@ export default function TabBar({ active, onChange }: Props) {
               }}
             >
               <Ico name={tab.icon} size={isActive ? 24 : 22} />
-              <span>{tab.label}</span>
+              <span>{t(`tabs.${tab.id}`)}</span>
             </button>
           );
         })}

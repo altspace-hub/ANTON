@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createIdentity } from '../services/identity';
+import { getLanguage } from '../i18n';
 import Logo from '../components/Logo';
 
 type Step = 'welcome' | 'name' | 'creating';
@@ -9,6 +11,7 @@ interface Props {
 }
 
 export default function OnboardingScreen({ onComplete }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('welcome');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,20 +19,22 @@ export default function OnboardingScreen({ onComplete }: Props) {
   async function handleCreate() {
     const trimmed = name.trim();
     if (trimmed.length < 1) {
-      setError('Please enter a name');
+      setError(t('onboarding.errEmptyName'));
       return;
     }
     if (trimmed.length > 64) {
-      setError('Name is too long');
+      setError(t('onboarding.errLongName'));
       return;
     }
     setError(null);
     setStep('creating');
     try {
-      await createIdentity(trimmed, navigator.language?.slice(0, 2) || 'en');
+      // The user's chosen app language (from i18n) becomes their
+      // identity's preferredLanguage — not the raw navigator locale.
+      await createIdentity(trimmed, getLanguage());
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create identity');
+      setError(err instanceof Error ? err.message : t('onboarding.errCreateFailed'));
       setStep('name');
     }
   }
@@ -40,14 +45,13 @@ export default function OnboardingScreen({ onComplete }: Props) {
         <div className="flex-1 flex flex-col items-center justify-center">
           <Logo size={80} rounded="lg" className="mb-6" />
           <h1 className="text-3xl font-semibold text-[var(--color-text)] text-center">
-            ANTON
+            {t('onboarding.appName')}
           </h1>
           <p className="mt-2 text-base text-[var(--color-text-muted)] text-center">
-            Chat, plan and share with the people you trust.
+            {t('onboarding.tagline')}
           </p>
           <p className="mt-8 text-sm text-[var(--color-text-faint)] text-center max-w-xs leading-relaxed">
-            End-to-end encrypted. No phone number required.
-            Your identity stays on this device.
+            {t('onboarding.privacyNote')}
           </p>
         </div>
         <button
@@ -55,7 +59,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
           className="w-full py-4 rounded-2xl text-base font-medium transition-colors"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          Get started
+          {t('onboarding.getStarted')}
         </button>
       </div>
     );
@@ -69,20 +73,20 @@ export default function OnboardingScreen({ onComplete }: Props) {
           className="self-start text-sm text-[var(--color-text-muted)]"
           disabled={step === 'creating'}
         >
-          ← Back
+          ← {t('common.back')}
         </button>
         <div className="flex-1 flex flex-col justify-center">
           <h1 className="text-2xl font-semibold text-[var(--color-text)]">
-            What should we call you?
+            {t('onboarding.namePrompt')}
           </h1>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            This is what your friends will see. You can change it later.
+            {t('onboarding.nameHelp')}
           </p>
           <input
             type="text"
             value={name}
             onChange={(e) => { setName(e.target.value); setError(null); }}
-            placeholder="Your name"
+            placeholder={t('onboarding.namePlaceholder')}
             autoFocus
             maxLength={64}
             disabled={step === 'creating'}
@@ -103,7 +107,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
           className="w-full py-4 rounded-2xl text-base font-medium transition-colors disabled:opacity-50"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          {step === 'creating' ? 'Creating identity…' : 'Create my identity'}
+          {step === 'creating' ? t('onboarding.creating') : t('onboarding.createIdentity')}
         </button>
       </div>
     );

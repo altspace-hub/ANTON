@@ -40,3 +40,34 @@ export function setTypingIndicatorEnabled(enabled: boolean): void {
   try { localStorage.setItem(KEY_TYPING_INDICATOR, enabled ? '1' : '0'); }
   catch { /* ignore */ }
 }
+
+// ── Notification channels ────────────────────────────────────────────
+//
+// Three independent channels the user can mute. These gate whether the
+// app raises an OS notification — the OS-level permission is a separate
+// prerequisite (see the Settings screen's Notifications section).
+// Default ON: a messaging app silent by default is broken; the user
+// opted into the app, so notifications are expected. They mute
+// per-channel here.
+
+export type NotificationChannel = 'dms' | 'events' | 'portals';
+
+const CHANNEL_KEYS: Record<NotificationChannel, string> = {
+  dms: 'anton-comm-notif-dms',
+  events: 'anton-comm-notif-events',
+  portals: 'anton-comm-notif-portals',
+};
+
+export function getNotificationChannelEnabled(channel: NotificationChannel): boolean {
+  try {
+    // Default ON — only an explicit '0' mutes the channel.
+    return localStorage.getItem(CHANNEL_KEYS[channel]) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function setNotificationChannelEnabled(channel: NotificationChannel, enabled: boolean): void {
+  try { localStorage.setItem(CHANNEL_KEYS[channel], enabled ? '1' : '0'); }
+  catch { /* ignore */ }
+}

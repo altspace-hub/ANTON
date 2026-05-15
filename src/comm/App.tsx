@@ -16,7 +16,7 @@ import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBack
 // app paints instantly. Switching tabs or pushing a detail view fetches
 // its chunk on demand — every chunk is a single .js file in the
 // Capacitor bundle so the WebView reads it from disk in <50 ms.
-const ProfileScreen = lazy(() => import('./pages/ProfileScreen'));
+const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const AddContactScreen = lazy(() => import('./pages/AddContactScreen'));
 const ChatThreadScreen = lazy(() => import('./pages/ChatThreadScreen'));
 const EventsScreen = lazy(() => import('./pages/EventsScreen'));
@@ -115,7 +115,7 @@ export default function App() {
   if (view === 'profile') {
     return (
       <Suspense fallback={<LoadingShell />}>
-        <ProfileScreen
+        <SettingsScreen
           onBack={() => setView('tabs')}
           onSignedOut={() => {
             setIdentityVersion((v) => v + 1);
