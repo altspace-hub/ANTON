@@ -96,7 +96,9 @@
     "paymentDetails": "Payment details",
     "paymentDetailsSub": "Your name and address for payment records",
     "moneyProfile": "Money profile",
-    "moneyProfileSub": "Your usual money pattern — helps spot unusual payments"
+    "moneyProfileSub": "Your usual money pattern — helps spot unusual payments",
+    "activityReview": "Activity review",
+    "activityReviewSub": "Your spending pattern and any flagged payments"
   },
   "paymentDetails": {
     "title": "Payment details",
@@ -132,6 +134,39 @@
     "typicalPayment": "Typical payment size (FTC)",
     "privacyNote": "This is a personal record kept only on this phone. ANTON never sends it anywhere. It is not an identity check — it is the baseline the app compares new payments against.",
     "save": "Save"
+  },
+  "fraud": {
+    "title": {
+      "warning": "This looks unusual",
+      "caution": "Worth a look",
+      "info": "Worth knowing"
+    },
+    "payAnyway": "Pay anyway",
+    "payAnywayHint": "Tap again only if you're sure this payment is right.",
+    "signal": {
+      "amount-anomaly": "About {{factor}}× larger than your usual payment.",
+      "above-typical": "About {{factor}}× larger than the typical payment size you set.",
+      "new-counterparty": "You've never paid this recipient before.",
+      "new-counterparty-large": "A large payment to a recipient you've never paid before.",
+      "velocity": "{{count}} payments already in the last 24 hours.",
+      "monthly-cap": "This pushes your 30-day spending past the {{expected}} FTC you expect to spend in a month.",
+      "odd-hour": "You don't usually make payments at this time of day.",
+      "expiring-qr": "This code is about to expire — don't let anyone rush you.",
+      "dormancy-break": "Your first payment in {{days}} days, and a large one."
+    }
+  },
+  "activityReview": {
+    "title": "Activity review",
+    "subtitle": "A look back at your spending pattern and any payments ANTON flagged as unusual for you.",
+    "patternHeading": "Your usual pattern",
+    "payments": "Payments made",
+    "median": "Typical amount",
+    "largest": "Largest payment",
+    "merchants": "Recipients paid",
+    "lastPayment": "Last payment",
+    "flaggedHeading": "Flagged payments",
+    "empty": "Nothing flagged",
+    "emptyBody": "Payments that look unusual for you will show up here."
   },
   "wallet": {
     "title": "Wallet",

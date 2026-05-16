@@ -23,10 +23,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { pacs008 } from '@futurechain/sdk';
-import { recordTx } from '../../services/transactions';
+import { recordTx, loadBehaviorProfile } from '../../services/transactions';
 import { loadWallet } from '../../services/wallet';
 import { loadPayerIdentity } from '../../services/payment-identity';
+import { loadMoneyProfile } from '../../services/money-profile';
 import { assembleDraft, type CreditorParty } from '../../services/pacs008-draft';
+import { assessPayment, type FraudAssessment } from '../../services/fraud-engine';
 
 interface ParsedPayUri {
   ok: true;
@@ -61,6 +63,8 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
   const [isoOpen, setIsoOpen] = useState(false);
+  const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
+  const [armed, setArmed] = useState(false);
 
   const parsed = useMemo<Parsed | null>(() => {
     const trimmed = input.trim();
@@ -101,8 +105,53 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
     return () => { cancelled = true; };
   }, [parsed]);
 
+  // Light fraud-engine assessment whenever a valid pay URI is parsed.
+  // Compares the pending payment against the self-declared money
+  // profile + the derived behaviour profile. Advisory only — it never
+  // blocks a send, it just surfaces signals and (on a warning) asks
+  // for a deliberate second tap.
+  useEffect(() => {
+    let cancelled = false;
+    if (!parsed || !parsed.ok) {
+      setAssessment(null);
+      setArmed(false);
+      return;
+    }
+    const uri = parsed;
+    setArmed(false);
+    void (async () => {
+      try {
+        const [money, behavior] = await Promise.all([
+          loadMoneyProfile(),
+          loadBehaviorProfile(),
+        ]);
+        if (cancelled) return;
+        setAssessment(assessPayment(
+          {
+            amountMicroFtc: uri.amountMicroFtc,
+            counterparty: uri.to,
+            purpose: '', // Comm wallet txs carry no ADR-004 purpose
+            expUnixSeconds: uri.expUnix ?? 0,
+            now: Date.now(),
+          },
+          money,
+          behavior,
+        ));
+      } catch {
+        if (!cancelled) setAssessment(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [parsed]);
+
   async function confirm() {
     if (!parsed || !parsed.ok) return;
+    // A 'warning'-level assessment takes a deliberate second tap — the
+    // engine is advisory, never a hard block.
+    if (assessment?.level === 'warning' && !armed) {
+      setArmed(true);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -121,6 +170,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
         jurisdictionAtTx: null,
         note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
         pacs008: draft ?? undefined,
+        risk: assessment ?? undefined,
       });
       onSent();
     } catch (err) {
@@ -203,6 +253,39 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
           </div>
         )}
 
+        {parsed && parsed.ok && assessment && assessment.signals.length > 0 && (() => {
+          const top = assessment.signals.some((s) => s.severity === 'warning') ? 'warning'
+            : assessment.signals.some((s) => s.severity === 'caution') ? 'caution'
+            : 'info';
+          const tone = {
+            warning: { bg: 'var(--color-red-dim)', line: 'var(--color-red)', fg: 'var(--color-red)' },
+            caution: { bg: 'var(--color-gold-dim)', line: 'var(--color-gold)', fg: 'var(--color-gold)' },
+            info:    { bg: 'var(--color-accent-soft)', line: 'var(--color-accent-dim)', fg: 'var(--color-text)' },
+          }[top];
+          return (
+            <div className="mt-3 rounded-xl p-4"
+                 style={{ backgroundColor: tone.bg, border: `1px solid ${tone.line}` }}>
+              <div className="text-sm font-bold mb-2" style={{ color: tone.fg }}>
+                {t(`fraud.title.${top}`)}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {assessment.signals.map((s) => (
+                  <div key={s.id} className="flex gap-2 items-start">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor:
+                            s.severity === 'warning' ? 'var(--color-red)'
+                            : s.severity === 'caution' ? 'var(--color-gold)'
+                            : 'var(--color-text-faint)' }} />
+                    <span className="text-sm text-[var(--color-text)]">
+                      {t(s.messageKey, s.params)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {parsed && !parsed.ok && (
           <p className="mt-3 text-sm text-[var(--color-red)]">
             {t(`wallet.sendErr.${parsed.errorKey}`)}
@@ -219,14 +302,25 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
           type="button"
           disabled={!parsed || !parsed.ok || submitting}
           onClick={confirm}
-          className="w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] bg-[var(--color-accent)] transition-opacity"
-          style={{ opacity: (!parsed || !parsed.ok || submitting) ? 0.5 : 1 }}
+          className="w-full py-4 rounded-xl font-bold text-base text-[var(--color-accent-fg)] transition-opacity"
+          style={{
+            opacity: (!parsed || !parsed.ok || submitting) ? 0.5 : 1,
+            backgroundColor: armed ? 'var(--color-error)' : 'var(--color-accent)',
+          }}
         >
-          {submitting ? t('wallet.recording') : t('wallet.confirmRecord')}
+          {submitting ? t('wallet.recording')
+            : armed ? t('fraud.payAnyway')
+            : t('wallet.confirmRecord')}
         </button>
-        <p className="mt-2 text-center text-[11px] text-[var(--color-text-faint)]">
-          {t('wallet.sendV0Note')}
-        </p>
+        {armed ? (
+          <p className="mt-2 text-center text-[11px] text-[var(--color-red)]">
+            {t('fraud.payAnywayHint')}
+          </p>
+        ) : (
+          <p className="mt-2 text-center text-[11px] text-[var(--color-text-faint)]">
+            {t('wallet.sendV0Note')}
+          </p>
+        )}
       </div>
     </section>
   );

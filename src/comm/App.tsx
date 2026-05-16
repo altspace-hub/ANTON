@@ -30,6 +30,7 @@ const WassupPostDetailScreen = lazy(() => import('./pages/WassupPostDetailScreen
 const WalletScreen = lazy(() => import('./pages/WalletScreen'));
 const PaymentDetailsScreen = lazy(() => import('./pages/PaymentDetailsScreen'));
 const MoneyProfileScreen = lazy(() => import('./pages/MoneyProfileScreen'));
+const ActivityReviewScreen = lazy(() => import('./pages/ActivityReviewScreen'));
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
 // inside the relay is by frame-type byte — instance/phone vs comm — so a
@@ -43,6 +44,7 @@ type View =
   | 'profile'
   | 'payment-details'
   | 'money-profile'
+  | 'activity-review'
   | 'add-contact'
   | 'chat-thread'
   | 'event-create'
@@ -80,6 +82,7 @@ export default function App() {
       if (view === 'add-contact') { setView('tabs'); return 'handled'; }
       if (view === 'payment-details') { setView('profile'); return 'handled'; }
       if (view === 'money-profile') { setView('profile'); return 'handled'; }
+      if (view === 'activity-review') { setView('profile'); return 'handled'; }
       if (view === 'profile') { setView('tabs'); return 'handled'; }
       // At root tabs — if not on chat, bounce to chat first; else exit
       if (view === 'tabs' && activeTab !== 'chat') { setActiveTab('chat'); return 'handled'; }
@@ -125,6 +128,7 @@ export default function App() {
           onBack={() => setView('tabs')}
           onPaymentDetails={() => setView('payment-details')}
           onMoneyProfile={() => setView('money-profile')}
+          onActivityReview={() => setView('activity-review')}
           onSignedOut={() => {
             setIdentityVersion((v) => v + 1);
             setView('onboarding');
@@ -147,6 +151,14 @@ export default function App() {
     return (
       <Suspense fallback={<LoadingShell />}>
         <MoneyProfileScreen onBack={() => setView('profile')} />
+      </Suspense>
+    );
+  }
+
+  if (view === 'activity-review') {
+    return (
+      <Suspense fallback={<LoadingShell />}>
+        <ActivityReviewScreen onBack={() => setView('profile')} />
       </Suspense>
     );
   }

@@ -20,6 +20,7 @@ import { assembleDraft } from './pacs008-draft';
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
+import type { FraudAssessment } from './fraud-engine';
 
 /** 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000;
@@ -168,8 +169,12 @@ export function formatSek(sek: number): string {
 
 /** Persist a confirmed payment as a local receipt. Assembles and
  *  snapshots the ISO 20022 PACS.008 draft from the payer's saved
- *  identity + the scanned creditor party. */
-export async function recordPayment(decoded: DecodedPayment): Promise<PaymentRecord> {
+ *  identity + the scanned creditor party. The optional `risk` is the
+ *  fraud-engine assessment computed by the Review screen. */
+export async function recordPayment(
+  decoded: DecodedPayment,
+  risk?: FraudAssessment,
+): Promise<PaymentRecord> {
   const [identity, wallet] = await Promise.all([loadPayerIdentity(), loadWallet()]);
   const record: PaymentRecord = {
     id: newId(),
@@ -183,6 +188,7 @@ export async function recordPayment(decoded: DecodedPayment): Promise<PaymentRec
     status: 'recorded',
     paidAt: Date.now(),
     pacs008: wallet ? assembleDraft(identity, wallet.address, decoded) : undefined,
+    risk,
   };
   await putPayment(record);
   return record;

@@ -110,6 +110,8 @@
     "paymentDetailsSub": "Ditt namn och adress för betalningsregister",
     "moneyProfile": "Ekonomisk profil",
     "moneyProfileSub": "Ditt vanliga betalningsmönster — hjälper till att upptäcka ovanliga betalningar",
+    "activityReview": "Aktivitetsgranskning",
+    "activityReviewSub": "Ditt betalningsmönster och eventuella flaggade betalningar",
     "appearance": "Utseende",
     "appearanceHelp": "Välj en accentfärg och ett ljust eller mörkt tema.",
     "accent": "Accentfärg",
@@ -176,5 +178,38 @@
     "typicalPayment": "Typisk betalningsstorlek (FTC)",
     "privacyNote": "Det här är ett personligt register som bara finns på den här telefonen. ANTON Pay skickar det aldrig någonstans. Det är ingen identitetskontroll — det är referensvärdet som appen jämför nya betalningar mot.",
     "save": "Spara"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Det här ser ovanligt ut",
+      "caution": "Värt att kolla",
+      "info": "Bra att veta"
+    },
+    "payAnyway": "Betala ändå",
+    "payAnywayHint": "Tryck igen bara om du är säker på att betalningen stämmer.",
+    "signal": {
+      "amount-anomaly": "Ungefär {{factor}}× större än din vanliga betalning.",
+      "above-typical": "Ungefär {{factor}}× större än den typiska betalningsstorlek du angav.",
+      "new-counterparty": "Du har aldrig betalat den här handlaren förut.",
+      "new-counterparty-large": "En stor betalning till en handlare du aldrig betalat förut.",
+      "velocity": "{{count}} betalningar redan under de senaste 24 timmarna.",
+      "monthly-cap": "Det här tar din spendering över 30 dagar förbi de {{expected}} FTC du förväntar dig att spendera på en månad.",
+      "odd-hour": "Du brukar inte göra betalningar vid den här tiden på dygnet.",
+      "expiring-qr": "Den här koden håller på att gå ut — låt ingen stressa dig.",
+      "dormancy-break": "Din första betalning på {{days}} dagar, och en stor sådan."
+    }
+  },
+  "activityReview": {
+    "title": "Aktivitetsgranskning",
+    "subtitle": "En tillbakablick på ditt betalningsmönster och betalningar som ANTON Pay flaggade som ovanliga för dig.",
+    "patternHeading": "Ditt vanliga mönster",
+    "payments": "Gjorda betalningar",
+    "median": "Typiskt belopp",
+    "largest": "Största betalning",
+    "merchants": "Betalda handlare",
+    "lastPayment": "Senaste betalning",
+    "flaggedHeading": "Flaggade betalningar",
+    "empty": "Inget flaggat",
+    "emptyBody": "Betalningar som ser ovanliga ut för dig visas här."
   }
 }

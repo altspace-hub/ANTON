@@ -11,12 +11,14 @@ import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
 import {
   estimateSek, formatFtc, formatSek, isExpired,
-  recordPayment, secondsUntilExpiry,
+  loadBehaviorProfile, recordPayment, secondsUntilExpiry,
 } from '../services/payment';
 import { loadProfile } from '../services/profile';
 import { loadPayerIdentity } from '../services/payment-identity';
+import { loadMoneyProfile } from '../services/money-profile';
 import { loadWallet } from '../services/wallet';
 import { assembleDraft } from '../services/pacs008-draft';
+import { assessPayment, type FraudAssessment } from '../services/fraud-engine';
 import type { pacs008 } from '@futurechain/sdk';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
@@ -40,14 +42,28 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
   const [isoOpen, setIsoOpen] = useState(false);
+  const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
+  const [armed, setArmed] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const [profile, identity, wallet] = await Promise.all([
+      const [profile, identity, wallet, money, behavior] = await Promise.all([
         loadProfile(), loadPayerIdentity(), loadWallet(),
+        loadMoneyProfile(), loadBehaviorProfile(),
       ]);
       if (profile) setFtcPerSek(profile.ftcPerSek);
       if (wallet) setDraft(assembleDraft(identity, wallet.address, payment));
+      setAssessment(assessPayment(
+        {
+          amountMicroFtc: payment.amountMicroFtc,
+          counterparty: payment.merchantId,
+          purpose: payment.purpose,
+          expUnixSeconds: payment.expUnixSeconds,
+          now: Date.now(),
+        },
+        money,
+        behavior,
+      ));
     })();
   }, [payment]);
 
@@ -64,9 +80,15 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
 
   async function confirm() {
     if (expired || busy) return;
+    // A 'warning'-level assessment takes a deliberate second tap — the
+    // engine is advisory, never a hard block.
+    if (assessment?.level === 'warning' && !armed) {
+      setArmed(true);
+      return;
+    }
     setBusy(true);
     try {
-      const record = await recordPayment(payment);
+      const record = await recordPayment(payment, assessment ?? undefined);
       onConfirmed(record);
     } catch {
       setBusy(false);
@@ -176,6 +198,40 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           </div>
         )}
 
+        {/* Light fraud-engine assessment */}
+        {assessment && assessment.signals.length > 0 && (() => {
+          const top = assessment.signals.some((s) => s.severity === 'warning') ? 'warning'
+            : assessment.signals.some((s) => s.severity === 'caution') ? 'caution'
+            : 'info';
+          const tone = {
+            warning: { bg: 'var(--color-error-bg)', line: 'var(--color-error)', fg: 'var(--color-error)' },
+            caution: { bg: 'var(--color-warning-bg)', line: 'var(--color-warning)', fg: 'var(--color-warning)' },
+            info:    { bg: 'var(--color-accent-soft)', line: 'var(--color-accent-dim)', fg: 'var(--color-text)' },
+          }[top];
+          return (
+            <div className="rounded-xl p-4 mb-3"
+                 style={{ backgroundColor: tone.bg, border: `1px solid ${tone.line}` }}>
+              <div className="font-bold text-sm mb-2" style={{ color: tone.fg }}>
+                {t(`fraud.title.${top}`)}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {assessment.signals.map((s) => (
+                  <div key={s.id} className="flex gap-2 items-start">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor:
+                            s.severity === 'warning' ? 'var(--color-error)'
+                            : s.severity === 'caution' ? 'var(--color-warning)'
+                            : 'var(--color-text-dim)' }} />
+                    <span className="text-sm" style={{ color: 'var(--color-text-body)' }}>
+                      {t(s.messageKey, s.params)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Expiry / status */}
         {expired ? (
           <div className="rounded-xl p-4 mb-2"
@@ -194,9 +250,17 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           </div>
         ) : null}
 
-        <PrimaryButton onClick={confirm} disabled={expired || busy}>
-          {busy ? t('review.confirming') : t('review.confirm')}
+        <PrimaryButton onClick={confirm} disabled={expired || busy}
+                       style={armed ? { backgroundColor: 'var(--color-error)' } : undefined}>
+          {busy ? t('review.confirming')
+            : armed ? t('fraud.payAnyway')
+            : t('review.confirm')}
         </PrimaryButton>
+        {armed && (
+          <p className="text-center text-xs mt-2" style={{ color: 'var(--color-error)' }}>
+            {t('fraud.payAnywayHint')}
+          </p>
+        )}
       </div>
     </div>
   );

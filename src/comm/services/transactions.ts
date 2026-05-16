@@ -42,6 +42,7 @@ import {
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
+import type { FraudAssessment } from './fraud-engine';
 
 /** Taxable-event taxonomy mirroring FUTURECHAIN_TAX_RULES.md §4. */
 export type WalletTxKind =
@@ -84,6 +85,12 @@ export interface WalletTx {
    *  with no ADR-004 v1 reference, omit it. Schemaless-safe: adding an
    *  optional record field needs no IndexedDB version bump. */
   pacs008?: pacs008.Pacs008Draft;
+  /** Light fraud-engine assessment computed at send time from the
+   *  money + behaviour baselines. Advisory only — the engine never
+   *  blocked this send. Optional: receives + txs recorded before the
+   *  fraud engine omit it. Schemaless-safe — no IndexedDB version
+   *  bump needed for an added optional record field. */
+  risk?: FraudAssessment;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -107,6 +114,7 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     note: input.note,
     refundOf: input.refundOf,
     pacs008: input.pacs008,
+    risk: input.risk,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

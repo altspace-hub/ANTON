@@ -5,6 +5,7 @@
  * import these shapes without reaching the Capacitor / IndexedDB layer.
  */
 import type { pacs008 } from '@futurechain/sdk';
+import type { FraudAssessment } from './fraud-engine';
 
 export type PaymentPurpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
 
@@ -93,4 +94,7 @@ export interface PaymentRecord {
    *  payments recorded before the identity feature, or with no payer
    *  identity set, omit it. */
   pacs008?: pacs008.Pacs008Draft;
+  /** Light-fraud-engine assessment captured at confirmation time.
+   *  Optional — payments recorded before the fraud engine omit it. */
+  risk?: FraudAssessment;
 }

@@ -21,6 +21,7 @@ import SettingsScreen from './pages/settings/SettingsScreen';
 import WalletScreen from './pages/settings/WalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
+import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
 import { hasProfile } from './services/profile';
 import type { DecodedPayment, PaymentRecord } from './services/types';
 
@@ -36,7 +37,8 @@ type Screen =
   | 'settings'
   | 'settings-wallet'
   | 'settings-payment'
-  | 'settings-money';
+  | 'settings-money'
+  | 'settings-activity';
 
 export default function App() {
   const { t } = useTranslation();
@@ -133,6 +135,7 @@ export default function App() {
         onWallet={() => setScreen('settings-wallet')}
         onPaymentDetails={() => setScreen('settings-payment')}
         onMoneyProfile={() => setScreen('settings-money')}
+        onActivityReview={() => setScreen('settings-activity')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
@@ -145,6 +148,9 @@ export default function App() {
   }
   if (screen === 'settings-money') {
     return <MoneyProfileScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-activity') {
+    return <ActivityReviewScreen onBack={() => setScreen('settings')} />;
   }
 
   // Should never reach — all states above covered.
