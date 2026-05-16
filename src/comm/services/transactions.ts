@@ -33,6 +33,7 @@
  * privacy-sensitive; computation is local; export to advisers is the
  * only egress path.
  */
+import type { pacs008 } from '@futurechain/sdk';
 import {
   openDb,
   STORE_WALLET_TXS,
@@ -74,6 +75,12 @@ export interface WalletTx {
   note?: string;
   /** Optional link back to the originating tx for refunds. */
   refundOf?: string;
+  /** ISO 20022 PACS.008 draft assembled at confirmation time from the
+   *  payer's saved identity + the scanned creditor party. Optional —
+   *  txs recorded before the payment-identity feature, or from a QR
+   *  with no ADR-004 v1 reference, omit it. Schemaless-safe: adding an
+   *  optional record field needs no IndexedDB version bump. */
+  pacs008?: pacs008.Pacs008Draft;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -96,6 +103,7 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     jurisdictionAtTx: input.jurisdictionAtTx,
     note: input.note,
     refundOf: input.refundOf,
+    pacs008: input.pacs008,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

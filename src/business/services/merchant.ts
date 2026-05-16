@@ -31,6 +31,8 @@ export async function loadConfig(): Promise<MerchantConfig | null> {
       // onboarding flows keep working without a re-onboard.
       defaultMode: parsed.defaultMode ?? 'simple',
       safelloReceiveAddress: parsed.safelloReceiveAddress ?? '',
+      // Pre-country configs default to Sweden — the app's home market.
+      country: parsed.country ?? 'SE',
     };
   } catch {
     return null;

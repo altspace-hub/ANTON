@@ -39,6 +39,7 @@
     "street": "Street",
     "postcode": "Postcode",
     "city": "City",
+    "country": "Country (ISO code)",
     "vatRegistered": "VAT registered",
     "defaultVatRate": "Default VAT rate",
     "receipts": "Receipts",

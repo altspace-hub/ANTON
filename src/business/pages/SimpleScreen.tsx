@@ -18,6 +18,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import QrDisplay from '../components/QrDisplay';
 import { loadConfig } from '../services/merchant';
 import { buildSimpleQr, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
+import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
 import type { MerchantConfig, Receipt } from '../services/types';
 import { loadWallet } from '../services/wallet';
@@ -80,6 +81,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
         amountSek,
         ftcPerSek: config.ftcPerSek,
         purpose: 'RETAIL',
+        creditor: merchantToCreditorParty(config),
       });
       setBuilt(b);
       setPhase('qr');

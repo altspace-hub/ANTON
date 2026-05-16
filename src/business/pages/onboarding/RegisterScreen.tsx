@@ -19,6 +19,7 @@ interface FormState {
   city: string;
   street: string;
   postcode: string;
+  country: string;
   vatRegistered: boolean;
   defaultVatRate: 0 | 6 | 12 | 25;
   kvittoEmail: string;
@@ -38,6 +39,7 @@ export default function RegisterScreen({
     city: '',
     street: '',
     postcode: '',
+    country: 'SE',
     vatRegistered: true,
     defaultVatRate: 25,
     kvittoEmail: '',
@@ -63,6 +65,7 @@ export default function RegisterScreen({
       city: form.city.trim(),
       street: form.street.trim(),
       postcode: form.postcode.trim(),
+      country: form.country.trim().toUpperCase() || 'SE',
       vatRegistered: form.vatRegistered,
       defaultVatRate: form.defaultVatRate,
       // Empty until "Connect wallet" runs in Settings — sale screens
@@ -96,6 +99,7 @@ export default function RegisterScreen({
         <Field label={t('register.street')} value={form.street} onChange={bind('street')} placeholder="Drottninggatan 1" />
         <Field label={t('register.postcode')} value={form.postcode} onChange={bind('postcode')} placeholder="11151" inputMode="numeric" />
         <Field label={t('register.city')} value={form.city} onChange={bind('city')} placeholder="Stockholm" />
+        <Field label={t('register.country')} value={form.country} onChange={bind('country')} placeholder="SE" autoCapitalize="characters" />
 
         <div className="flex justify-between items-center my-4 px-1">
           <span className="uppercase tracking-wider text-xs"

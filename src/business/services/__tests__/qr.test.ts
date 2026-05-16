@@ -137,6 +137,41 @@ describe('buildSimpleQr', () => {
     expect(uri).toContain('amount=1250000');
   });
 
+  it('omits creditor params when no creditor is supplied', () => {
+    const { uri } = buildSimpleQr(base);
+    expect(uri).not.toContain('cn=');
+    expect(uri).not.toContain('cc=');
+  });
+
+  it('embeds the ISO 20022 creditor party when supplied', () => {
+    const { uri } = buildSimpleQr({
+      ...base,
+      creditor: {
+        name: 'Karl Café AB',
+        country: 'SE',
+        city: 'Stockholm',
+        street: 'Drottninggatan 1',
+        postcode: '11151',
+      },
+    });
+    const params = new URLSearchParams(uri.slice(uri.indexOf('?') + 1));
+    expect(params.get('cn')).toBe('Karl Café AB');
+    expect(params.get('cc')).toBe('SE');
+    expect(params.get('cct')).toBe('Stockholm');
+    expect(params.get('cst')).toBe('Drottninggatan 1');
+    expect(params.get('cpc')).toBe('11151');
+  });
+
+  it('omits optional creditor address parts that are absent', () => {
+    const { uri } = buildSimpleQr({
+      ...base,
+      creditor: { name: 'Karl Café AB', country: 'SE' },
+    });
+    const params = new URLSearchParams(uri.slice(uri.indexOf('?') + 1));
+    expect(params.get('cn')).toBe('Karl Café AB');
+    expect(params.get('cct')).toBeNull();
+  });
+
   it('throws on bad inputs that the encoder would reject', () => {
     // Merchant id too short → reference.encodeV1 throws → buildSimpleQr
     // propagates.

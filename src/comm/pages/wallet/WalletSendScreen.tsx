@@ -14,10 +14,19 @@
  * lives behind the FutureChain RPC client which is also a follow-up —
  * until then "send" means "the user paid out-of-band; record it for
  * the tax ledger."
+ *
+ * Phase 1: when a valid pay URI is parsed, an ISO 20022 PACS.008 draft
+ * is assembled from the saved payer identity + the wallet address +
+ * the QR's creditor party. The draft is shown in a collapsible block
+ * and snapshotted on the recorded tx.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { pacs008 } from '@futurechain/sdk';
 import { recordTx } from '../../services/transactions';
+import { loadWallet } from '../../services/wallet';
+import { loadPayerIdentity } from '../../services/payment-identity';
+import { assembleDraft, type CreditorParty } from '../../services/pacs008-draft';
 
 interface ParsedPayUri {
   ok: true;
@@ -26,6 +35,8 @@ interface ParsedPayUri {
   ref: string | null;
   inv: string | null;
   expUnix: number | null;
+  /** Optional ISO 20022 creditor party (QR `cn/cc/cct/cst/cpc`). */
+  creditor: CreditorParty | null;
 }
 /** Parse errors carry an i18n key (not a literal string) so the
  *  parser stays pure and the component owns the translation. */
@@ -48,12 +59,47 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
+  const [isoOpen, setIsoOpen] = useState(false);
 
   const parsed = useMemo<Parsed | null>(() => {
     const trimmed = input.trim();
     if (!trimmed) return null;
     return parsePayUri(trimmed);
   }, [input]);
+
+  // Assemble the ISO 20022 PACS.008 draft whenever a valid pay URI is
+  // parsed. Reads the saved payer identity (debtor) + wallet address.
+  useEffect(() => {
+    let cancelled = false;
+    if (!parsed || !parsed.ok) {
+      setDraft(null);
+      return;
+    }
+    const uri = parsed;
+    void (async () => {
+      try {
+        const [identity, wallet] = await Promise.all([
+          loadPayerIdentity(),
+          loadWallet(),
+        ]);
+        if (cancelled) return;
+        if (!wallet) {
+          setDraft(null);
+          return;
+        }
+        setDraft(assembleDraft(identity, wallet.address, {
+          to: uri.to,
+          amountMicroFtc: uri.amountMicroFtc,
+          ref: uri.ref,
+          creditor: uri.creditor,
+        }));
+      } catch {
+        if (!cancelled) setDraft(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [parsed]);
 
   async function confirm() {
     if (!parsed || !parsed.ok) return;
@@ -74,6 +120,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
         txHash: null,
         jurisdictionAtTx: null,
         note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
+        pacs008: draft ?? undefined,
       });
       onSent();
     } catch (err) {
@@ -127,6 +174,35 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
           </div>
         )}
 
+        {parsed && parsed.ok && draft && (
+          <div className="mt-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsoOpen((o) => !o)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left active:bg-[var(--color-surface-muted)]"
+              aria-expanded={isoOpen}
+            >
+              <span className="text-[13px] font-medium text-[var(--color-text)]">
+                {t('wallet.iso.title')}
+              </span>
+              <span className="text-xs text-[var(--color-accent)]">
+                {isoOpen ? t('common.close') : t('common.show')}
+              </span>
+            </button>
+            {isoOpen && (
+              <div className="px-4 pb-4 -mt-1">
+                <IsoParty label={t('wallet.iso.debtor')} party={draft.debtor} />
+                <IsoParty label={t('wallet.iso.creditor')} party={draft.creditor} />
+                <IsoRow label={t('wallet.iso.purpose')} value={draft.purpose} mono />
+                <IsoRow label={t('wallet.iso.reference')} value={draft.reference} mono />
+                <p className="mt-3 text-[11px] text-[var(--color-text-faint)] leading-snug">
+                  {t('wallet.iso.note')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {parsed && !parsed.ok && (
           <p className="mt-3 text-sm text-[var(--color-red)]">
             {t(`wallet.sendErr.${parsed.errorKey}`)}
@@ -170,6 +246,45 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
+/** A single label/value row inside the ISO 20022 block. */
+function IsoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="mt-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
+        {label}
+      </div>
+      <div className={`mt-0.5 text-[12px] text-[var(--color-text)] break-all${mono ? ' font-mono' : ''}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+/** Render a PACS.008 party — name plus any address lines present. */
+function IsoParty({ label, party }: {
+  label: string;
+  party: { name: string; address: string; country: string; city?: string; street?: string; postcode?: string };
+}) {
+  const addressLine = [party.street, party.postcode, party.city]
+    .filter((p) => p && p.trim().length > 0)
+    .join(', ');
+  return (
+    <div className="mt-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
+        {label}
+      </div>
+      <div className="mt-0.5 text-[12px] text-[var(--color-text)]">{party.name}</div>
+      {addressLine && (
+        <div className="text-[11px] text-[var(--color-text-muted)]">{addressLine}</div>
+      )}
+      <div className="text-[11px] text-[var(--color-text-muted)]">{party.country}</div>
+      <div className="mt-0.5 font-mono text-[11px] text-[var(--color-text-faint)] break-all">
+        {party.address}
+      </div>
+    </div>
+  );
+}
+
 /** Parse a `futurechain:pay?...` URI or a bare `fc_...` address.
  *  Pure — returns an i18n error KEY, not a translated string. */
 function parsePayUri(raw: string): Parsed {
@@ -208,6 +323,19 @@ function parsePayUri(raw: string): Parsed {
   if (expUnix && expUnix * 1000 < Date.now()) {
     return { ok: false, errorKey: 'expired' };
   }
+  // Optional ISO 20022 creditor party (cn/cc/cct/cst/cpc). Present only
+  // on QRs from a creditor-aware merchant app; absent on older QRs.
+  let creditor: CreditorParty | null = null;
+  const cn = params.get('cn');
+  if (cn) {
+    creditor = {
+      name: cn,
+      country: params.get('cc') ?? 'SE',
+      city: params.get('cct') ?? undefined,
+      street: params.get('cst') ?? undefined,
+      postcode: params.get('cpc') ?? undefined,
+    };
+  }
   return {
     ok: true,
     to,
@@ -215,5 +343,6 @@ function parsePayUri(raw: string): Parsed {
     ref: params.get('ref'),
     inv: params.get('inv'),
     expUnix,
+    creditor,
   };
 }

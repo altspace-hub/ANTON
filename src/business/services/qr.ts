@@ -26,6 +26,21 @@ export const QR_EXPIRY_SECONDS = 15 * 60;
 /** Per-SEK micro-FTC conversion. 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000n;
 
+/**
+ * The merchant's ISO 20022 creditor party, carried compactly in the QR
+ * so the payer's app can populate a full PACS.008 from a scan alone.
+ * All fields optional on the wire — older payers ignore them.
+ */
+export interface CreditorParty {
+  /** Merchant legal name. */
+  name: string;
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string;
+  city?: string;
+  street?: string;
+  postcode?: string;
+}
+
 export interface SimpleOrder {
   /** Merchant's Safello-arranged receive address. */
   toAddress: string;
@@ -42,6 +57,9 @@ export interface SimpleOrder {
   purpose?: reference.V1Purpose;
   /** Generation timestamp; used to compute `exp`. Defaults to now. */
   now?: number;
+  /** ISO 20022 creditor party. When present, the QR carries `cn/cc/
+   *  cct/cst/cpc` params so the payer can assemble a complete PACS.008. */
+  creditor?: CreditorParty;
 }
 
 /** Extended-mode order — same shape as a Simple order plus the v1
@@ -114,6 +132,15 @@ function buildQr(order: InternalOrder): BuiltQr {
     exp: exp.toString(),
     v: '1',
   });
+  // Optional ISO 20022 creditor party — lets the payer's app assemble
+  // a complete PACS.008 from the scan. Additive: old payers ignore it.
+  if (order.creditor) {
+    params.set('cn', order.creditor.name);
+    params.set('cc', order.creditor.country);
+    if (order.creditor.city) params.set('cct', order.creditor.city);
+    if (order.creditor.street) params.set('cst', order.creditor.street);
+    if (order.creditor.postcode) params.set('cpc', order.creditor.postcode);
+  }
   return {
     uri: `futurechain:pay?${params.toString()}`,
     amountMicroFtc,

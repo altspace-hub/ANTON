@@ -39,6 +39,7 @@
     "street": "Gatuadress",
     "postcode": "Postnummer",
     "city": "Ort",
+    "country": "Land (ISO-kod)",
     "vatRegistered": "Momsregistrerad",
     "defaultVatRate": "Standardmomssats",
     "receipts": "Kvitton",

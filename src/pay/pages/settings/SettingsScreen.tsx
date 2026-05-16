@@ -20,13 +20,14 @@ import { wipeAllPayments } from '../../services/payment';
 interface Props {
   onBack: () => void;
   onWallet: () => void;
+  onPaymentDetails: () => void;
   onReset: () => void;
 }
 
 const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
-export default function SettingsScreen({ onBack, onWallet, onReset }: Props) {
+export default function SettingsScreen({ onBack, onWallet, onPaymentDetails, onReset }: Props) {
   const { t } = useTranslation();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
@@ -97,6 +98,26 @@ export default function SettingsScreen({ onBack, onWallet, onReset }: Props) {
                 {walletAddress
                   ? `${walletAddress.slice(0, 12)}…${walletAddress.slice(-6)}`
                   : t('settings.walletConnected')}
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 style={{ color: 'var(--color-text-dim)' }}>
+              <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Payment details */}
+          <button type="button" onClick={onPaymentDetails}
+                  className="rounded-xl p-4 flex items-center justify-between text-left"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)' }}>
+            <div>
+              <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+                {t('settings.paymentDetails')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('settings.paymentDetailsSub')}
               </div>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

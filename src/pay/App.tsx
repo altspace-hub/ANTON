@@ -19,6 +19,7 @@ import PaymentDoneScreen from './pages/PaymentDoneScreen';
 import HistoryScreen from './pages/HistoryScreen';
 import SettingsScreen from './pages/settings/SettingsScreen';
 import WalletScreen from './pages/settings/WalletScreen';
+import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
 import { hasProfile } from './services/profile';
 import type { DecodedPayment, PaymentRecord } from './services/types';
 
@@ -32,7 +33,8 @@ type Screen =
   | 'payment-done'
   | 'history'
   | 'settings'
-  | 'settings-wallet';
+  | 'settings-wallet'
+  | 'settings-payment';
 
 export default function App() {
   const { t } = useTranslation();
@@ -127,12 +129,16 @@ export default function App() {
       <SettingsScreen
         onBack={() => setScreen('home')}
         onWallet={() => setScreen('settings-wallet')}
+        onPaymentDetails={() => setScreen('settings-payment')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
   }
   if (screen === 'settings-wallet') {
     return <WalletScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-payment') {
+    return <PaymentDetailsScreen onBack={() => setScreen('settings')} />;
   }
 
   // Should never reach — all states above covered.

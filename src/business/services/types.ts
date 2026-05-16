@@ -60,6 +60,9 @@ export interface MerchantConfig {
   city: string;
   street: string;
   postcode: string;
+  /** ISO 3166-1 alpha-2 country code (e.g. 'SE'). Feeds the creditor
+   *  party of the ISO 20022 PACS.008 carried by every sale QR. */
+  country: string;
   vatRegistered: boolean;
   defaultVatRate: 0 | 6 | 12 | 25;
   /** Empty string until the merchant connects a wallet in Settings.

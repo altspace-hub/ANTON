@@ -28,6 +28,7 @@ const WassupFeedScreen = lazy(() => import('./pages/WassupFeedScreen'));
 const WassupComposeScreen = lazy(() => import('./pages/WassupComposeScreen'));
 const WassupPostDetailScreen = lazy(() => import('./pages/WassupPostDetailScreen'));
 const WalletScreen = lazy(() => import('./pages/WalletScreen'));
+const PaymentDetailsScreen = lazy(() => import('./pages/PaymentDetailsScreen'));
 
 // Canonical relay URLs have no path component (spec §4.2.1). Frame routing
 // inside the relay is by frame-type byte — instance/phone vs comm — so a
@@ -39,6 +40,7 @@ type View =
   | 'onboarding'
   | 'tabs'
   | 'profile'
+  | 'payment-details'
   | 'add-contact'
   | 'chat-thread'
   | 'event-create'
@@ -74,6 +76,7 @@ export default function App() {
       if (view === 'wassup-compose') { setView('tabs'); return 'handled'; }
       if (view === 'wassup-post') { setOpenPostId(null); setView('tabs'); return 'handled'; }
       if (view === 'add-contact') { setView('tabs'); return 'handled'; }
+      if (view === 'payment-details') { setView('profile'); return 'handled'; }
       if (view === 'profile') { setView('tabs'); return 'handled'; }
       // At root tabs — if not on chat, bounce to chat first; else exit
       if (view === 'tabs' && activeTab !== 'chat') { setActiveTab('chat'); return 'handled'; }
@@ -117,12 +120,21 @@ export default function App() {
       <Suspense fallback={<LoadingShell />}>
         <SettingsScreen
           onBack={() => setView('tabs')}
+          onPaymentDetails={() => setView('payment-details')}
           onSignedOut={() => {
             setIdentityVersion((v) => v + 1);
             setView('onboarding');
             setActiveTab('chat');
           }}
         />
+      </Suspense>
+    );
+  }
+
+  if (view === 'payment-details') {
+    return (
+      <Suspense fallback={<LoadingShell />}>
+        <PaymentDetailsScreen onBack={() => setView('profile')} />
       </Suspense>
     );
   }

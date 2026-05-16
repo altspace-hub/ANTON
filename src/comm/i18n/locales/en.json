@@ -12,6 +12,7 @@
     "retry": "Try again",
     "remove": "Remove",
     "change": "Change",
+    "show": "Show",
     "search": "Search…",
     "errUnknown": "Something went wrong"
   },
@@ -91,7 +92,20 @@
     "aboutPrivacyPolicy": "Privacy policy",
     "dangerZone": "Danger zone",
     "deleteIdentity": "Delete identity & sign out",
-    "deleteConfirm": "Sign out? This will permanently delete your identity and all messages on this device. This cannot be undone."
+    "deleteConfirm": "Sign out? This will permanently delete your identity and all messages on this device. This cannot be undone.",
+    "paymentDetails": "Payment details",
+    "paymentDetailsSub": "Your name and address for payment records"
+  },
+  "paymentDetails": {
+    "title": "Payment details",
+    "subtitle": "Your name and address are added to the ISO 20022 record of every payment you make. All fields are optional.",
+    "name": "Full name",
+    "street": "Street address",
+    "postcode": "Postcode",
+    "city": "City",
+    "country": "Country (ISO code)",
+    "privacyNote": "These details stay on this phone. They are only used to fill the payment record — ANTON never sends them anywhere on its own.",
+    "save": "Save"
   },
   "wallet": {
     "title": "Wallet",
@@ -150,7 +164,15 @@
     "histPending": "(pending)",
     "histJurisdiction": "jurisdiction",
     "histRefundOf": "refund of",
-    "histNote": "note"
+    "histNote": "note",
+    "iso": {
+      "title": "ISO 20022 payment details",
+      "debtor": "From (you)",
+      "creditor": "To (recipient)",
+      "purpose": "Purpose code",
+      "reference": "Reference",
+      "note": "This payment maps to an ISO 20022 PACS.008 credit transfer. Add your details in Settings → Payment details."
+    }
   },
   "tax": {
     "title": "Tax",

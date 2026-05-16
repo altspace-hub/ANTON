@@ -134,6 +134,39 @@ describe('decodePaymentUri — rejections', () => {
   });
 });
 
+describe('decodePaymentUri — creditor party', () => {
+  it('decodes the ISO 20022 creditor party when the QR carries one', () => {
+    const r = decodePaymentUri(buildUri({
+      cn: 'Karl Café AB', cc: 'SE', cct: 'Stockholm',
+      cst: 'Drottninggatan 1', cpc: '11151',
+    }), NOW);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.payment.creditor).toEqual({
+      name: 'Karl Café AB',
+      country: 'SE',
+      city: 'Stockholm',
+      street: 'Drottninggatan 1',
+      postcode: '11151',
+    });
+  });
+
+  it('leaves creditor null on a QR with no creditor params', () => {
+    const r = decodePaymentUri(buildUri(), NOW);
+    expect(r.ok && r.payment.creditor).toBeNull();
+  });
+
+  it('defaults creditor country to SE when only the name is present', () => {
+    const r = decodePaymentUri(buildUri({ cn: 'Karl Café AB' }), NOW);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.payment.creditor).toEqual({
+      name: 'Karl Café AB', country: 'SE',
+      city: undefined, street: undefined, postcode: undefined,
+    });
+  });
+});
+
 describe('isExpired / secondsUntilExpiry', () => {
   it('no-expiry QR is never expired', () => {
     expect(isExpired({ expUnixSeconds: 0 }, NOW)).toBe(false);

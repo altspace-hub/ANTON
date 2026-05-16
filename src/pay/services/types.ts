@@ -4,8 +4,23 @@
  * Kept storage-free so pure-logic modules (payment URI decode) can
  * import these shapes without reaching the Capacitor / IndexedDB layer.
  */
+import type { pacs008 } from '@futurechain/sdk';
 
 export type PaymentPurpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
+
+/**
+ * The merchant's ISO 20022 creditor party, decoded from the optional
+ * `cn/cc/cct/cst/cpc` QR params. Null when the QR predates the
+ * creditor-party extension.
+ */
+export interface DecodedCreditor {
+  name: string;
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string;
+  city?: string;
+  street?: string;
+  postcode?: string;
+}
 
 /**
  * The customer's local profile. A private person needs almost nothing
@@ -48,6 +63,8 @@ export interface DecodedPayment {
   discountMicroFtc: bigint | null;
   /** Unix-seconds expiry. 0 means the QR carried no expiry. */
   expUnixSeconds: number;
+  /** Merchant ISO 20022 creditor party, if the QR carried one. */
+  creditor: DecodedCreditor | null;
   /** The full scanned URI, kept verbatim on the payment record. */
   qrUri: string;
 }
@@ -71,4 +88,9 @@ export interface PaymentRecord {
   status: 'recorded';
   /** Epoch ms the customer confirmed the payment. */
   paidAt: number;
+  /** ISO 20022 PACS.008 draft assembled at confirmation time from the
+   *  payer's saved identity + the scanned creditor party. Optional —
+   *  payments recorded before the identity feature, or with no payer
+   *  identity set, omit it. */
+  pacs008?: pacs008.Pacs008Draft;
 }

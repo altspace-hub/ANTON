@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurant",
     "purposeEVENT": "Event",
     "purposeSERVICE": "Service",
-    "purposeREFUND": "Refund"
+    "purposeREFUND": "Refund",
+    "iso": {
+      "title": "ISO 20022 payment details",
+      "debtor": "From (you)",
+      "creditor": "To (merchant)",
+      "purpose": "Purpose code",
+      "reference": "Reference",
+      "note": "This payment maps to an ISO 20022 PACS.008 credit transfer. Add your details in Settings → Payment details."
+    }
   },
   "paymentDone": {
     "title": "Payment recorded",
@@ -98,6 +106,8 @@
     "walletConnected": "Wallet ready",
     "walletAddress": "Address",
     "viewWallet": "View wallet",
+    "paymentDetails": "Payment details",
+    "paymentDetailsSub": "Your name and address for payment records",
     "appearance": "Appearance",
     "appearanceHelp": "Pick an accent colour and a light or dark theme.",
     "accent": "Accent colour",
@@ -129,5 +139,16 @@
     "noWallet": "No wallet yet",
     "noWalletBody": "Create a wallet to start paying merchants.",
     "createWallet": "Create wallet"
+  },
+  "paymentDetails": {
+    "title": "Payment details",
+    "subtitle": "Your name and address are added to the ISO 20022 record of every payment you make. All fields are optional.",
+    "name": "Full name",
+    "street": "Street address",
+    "postcode": "Postcode",
+    "city": "City",
+    "country": "Country (ISO code)",
+    "privacyNote": "These details stay on this phone. They are only used to fill the payment record — ANTON Pay never sends them anywhere on its own.",
+    "save": "Save"
   }
 }

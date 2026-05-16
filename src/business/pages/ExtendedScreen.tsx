@@ -22,6 +22,7 @@ import {
   type Cart,
 } from '../services/cart';
 import { buildExtendedQr, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
+import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
 import type { MerchantConfig, Receipt } from '../services/types';
 import { loadWallet } from '../services/wallet';
@@ -85,6 +86,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
           discountSek: totals.discountSek,
           itemCount: totals.itemCount,
           purpose: 'RESTAURANT',
+          creditor: merchantToCreditorParty(config),
         });
         setBuilt(b);
         setPhase('qr');

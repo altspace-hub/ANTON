@@ -14,6 +14,10 @@ import {
   recordPayment, secondsUntilExpiry,
 } from '../services/payment';
 import { loadProfile } from '../services/profile';
+import { loadPayerIdentity } from '../services/payment-identity';
+import { loadWallet } from '../services/wallet';
+import { assembleDraft } from '../services/pacs008-draft';
+import type { pacs008 } from '@futurechain/sdk';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
 interface Props {
@@ -34,13 +38,18 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [secsLeft, setSecsLeft] = useState<number | null>(() => secondsUntilExpiry(payment));
   const [expired, setExpired] = useState(() => isExpired(payment));
   const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
+  const [isoOpen, setIsoOpen] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const profile = await loadProfile();
+      const [profile, identity, wallet] = await Promise.all([
+        loadProfile(), loadPayerIdentity(), loadWallet(),
+      ]);
       if (profile) setFtcPerSek(profile.ftcPerSek);
+      if (wallet) setDraft(assembleDraft(identity, wallet.address, payment));
     })();
-  }, []);
+  }, [payment]);
 
   // Live expiry countdown.
   useEffect(() => {
@@ -130,6 +139,43 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           ))}
         </div>
 
+        {/* ISO 20022 / PACS.008 details */}
+        {draft && (
+          <div className="rounded-xl overflow-hidden mb-4"
+               style={{ backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setIsoOpen((o) => !o)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                {t('review.iso.title')}
+              </span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   style={{ color: 'var(--color-text-dim)',
+                            transform: isoOpen ? 'rotate(90deg)' : 'none' }}>
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                      strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {isoOpen && (
+              <div className="px-4 pb-3 pt-1"
+                   style={{ borderTop: '1px solid var(--color-border-soft)' }}>
+                <IsoRow label={t('review.iso.debtor')}
+                        value={`${draft.debtor.name} · ${draft.debtor.country}`} />
+                <IsoRow label={t('review.iso.creditor')}
+                        value={`${draft.creditor.name} · ${draft.creditor.country}`} />
+                <IsoRow label={t('review.iso.purpose')} value={draft.purpose} />
+                <IsoRow label={t('review.iso.reference')} value={draft.reference} wrap />
+                <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
+                  {t('review.iso.note')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Expiry / status */}
         {expired ? (
           <div className="rounded-xl p-4 mb-2"
@@ -152,6 +198,18 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           {busy ? t('review.confirming') : t('review.confirm')}
         </PrimaryButton>
       </div>
+    </div>
+  );
+}
+
+function IsoRow({ label, value, wrap }: { label: string; value: string; wrap?: boolean }) {
+  return (
+    <div className="flex justify-between gap-4 py-1.5">
+      <span className="text-xs shrink-0" style={{ color: 'var(--color-text-faint)' }}>{label}</span>
+      <span className={`mono text-xs text-right ${wrap ? 'break-all' : ''}`}
+            style={{ color: 'var(--color-text-body)' }}>
+        {value}
+      </span>
     </div>
   );
 }

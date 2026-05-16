@@ -12,6 +12,7 @@
     "retry": "Försök igen",
     "remove": "Ta bort",
     "change": "Ändra",
+    "show": "Visa",
     "search": "Sök…",
     "errUnknown": "Något gick fel"
   },
@@ -91,7 +92,20 @@
     "aboutPrivacyPolicy": "Integritetspolicy",
     "dangerZone": "Farozon",
     "deleteIdentity": "Radera identitet och logga ut",
-    "deleteConfirm": "Logga ut? Detta raderar permanent din identitet och alla meddelanden på den här enheten. Det går inte att ångra."
+    "deleteConfirm": "Logga ut? Detta raderar permanent din identitet och alla meddelanden på den här enheten. Det går inte att ångra.",
+    "paymentDetails": "Betalningsuppgifter",
+    "paymentDetailsSub": "Ditt namn och din adress för betalningsregister"
+  },
+  "paymentDetails": {
+    "title": "Betalningsuppgifter",
+    "subtitle": "Ditt namn och din adress läggs till i ISO 20022-registret för varje betalning du gör. Alla fält är valfria.",
+    "name": "Fullständigt namn",
+    "street": "Gatuadress",
+    "postcode": "Postnummer",
+    "city": "Ort",
+    "country": "Land (ISO-kod)",
+    "privacyNote": "Dessa uppgifter stannar på den här telefonen. De används endast för att fylla i betalningsregistret — ANTON skickar dem aldrig någonstans på egen hand.",
+    "save": "Spara"
   },
   "wallet": {
     "title": "Plånbok",
@@ -150,7 +164,15 @@
     "histPending": "(väntar)",
     "histJurisdiction": "jurisdiktion",
     "histRefundOf": "återbetalning av",
-    "histNote": "anteckning"
+    "histNote": "anteckning",
+    "iso": {
+      "title": "ISO 20022-betalningsuppgifter",
+      "debtor": "Från (du)",
+      "creditor": "Till (mottagare)",
+      "purpose": "Ändamålskod",
+      "reference": "Referens",
+      "note": "Den här betalningen motsvarar en ISO 20022 PACS.008-kreditöverföring. Lägg till dina uppgifter i Inställningar → Betalningsuppgifter."
+    }
   },
   "tax": {
     "title": "Skatt",

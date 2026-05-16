@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurang",
     "purposeEVENT": "Evenemang",
     "purposeSERVICE": "Tjänst",
-    "purposeREFUND": "Återbetalning"
+    "purposeREFUND": "Återbetalning",
+    "iso": {
+      "title": "ISO 20022-betalningsuppgifter",
+      "debtor": "Från (du)",
+      "creditor": "Till (handlare)",
+      "purpose": "Ändamålskod",
+      "reference": "Referens",
+      "note": "Den här betalningen motsvarar en ISO 20022 PACS.008-överföring. Lägg till dina uppgifter i Inställningar → Betalningsuppgifter."
+    }
   },
   "paymentDone": {
     "title": "Betalning registrerad",
@@ -98,6 +106,8 @@
     "walletConnected": "Plånbok redo",
     "walletAddress": "Adress",
     "viewWallet": "Visa plånbok",
+    "paymentDetails": "Betalningsuppgifter",
+    "paymentDetailsSub": "Ditt namn och adress för betalningsregister",
     "appearance": "Utseende",
     "appearanceHelp": "Välj en accentfärg och ett ljust eller mörkt tema.",
     "accent": "Accentfärg",
@@ -129,5 +139,16 @@
     "noWallet": "Ingen plånbok än",
     "noWalletBody": "Skapa en plånbok för att börja betala handlare.",
     "createWallet": "Skapa plånbok"
+  },
+  "paymentDetails": {
+    "title": "Betalningsuppgifter",
+    "subtitle": "Ditt namn och din adress läggs till i ISO 20022-registret för varje betalning du gör. Alla fält är valfria.",
+    "name": "Fullständigt namn",
+    "street": "Gatuadress",
+    "postcode": "Postnummer",
+    "city": "Ort",
+    "country": "Land (ISO-kod)",
+    "privacyNote": "De här uppgifterna stannar på den här telefonen. De används bara för att fylla i betalningsregistret — ANTON Pay skickar dem aldrig någonstans på egen hand.",
+    "save": "Spara"
   }
 }

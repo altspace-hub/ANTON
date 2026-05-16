@@ -38,6 +38,7 @@ function merchant(over: Partial<MerchantConfig> = {}): MerchantConfig {
     city: 'Stockholm',
     street: 'Drottninggatan 1',
     postcode: '11151',
+    country: 'SE',
     vatRegistered: true,
     defaultVatRate: 12,
     safelloReceiveAddress: 'fc_safello',
