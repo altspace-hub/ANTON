@@ -39,6 +39,9 @@ import {
   STORE_WALLET_TXS,
   INDEX_WALLET_BY_TS,
 } from './db';
+import {
+  deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
+} from './behavior-profile';
 
 /** Taxable-event taxonomy mirroring FUTURECHAIN_TAX_RULES.md §4. */
 export type WalletTxKind =
@@ -155,6 +158,26 @@ export async function listTxs(limit = 100): Promise<WalletTx[]> {
     };
     req.onerror = () => reject(req.error);
   });
+}
+
+/** Normalise an outbound wallet tx into a behaviour event. */
+function txToEvent(tx: WalletTx): BehaviorEvent {
+  let amountMicroFtc = 0n;
+  try { amountMicroFtc = BigInt(tx.amountMicroFtc); } catch { /* keep 0n */ }
+  return {
+    amountMicroFtc,
+    counterparty: tx.counterparty,
+    purpose: '', // Comm wallet txs carry no ADR-004 purpose
+    at: tx.ts,
+  };
+}
+
+/** Derive the user's behaviour profile from their outbound wallet
+ *  history. `now` is injectable for tests; defaults to the wall clock. */
+export async function loadBehaviorProfile(now?: number): Promise<BehaviorProfile> {
+  const txs = await listTxs(1000);
+  const events = txs.filter((t) => t.kind === 'send').map(txToEvent);
+  return deriveBehaviorProfile(events, now);
 }
 
 /** All txs in a closed [from, to] inclusive ts range. Used by the

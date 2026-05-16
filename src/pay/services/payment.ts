@@ -17,6 +17,9 @@ import { getAllPayments, putPayment, wipePayments } from './db';
 import { loadPayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
 import { assembleDraft } from './pacs008-draft';
+import {
+  deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
+} from './behavior-profile';
 
 /** 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000;
@@ -188,6 +191,23 @@ export async function recordPayment(decoded: DecodedPayment): Promise<PaymentRec
 /** Every recorded payment, newest first. */
 export async function listPayments(): Promise<PaymentRecord[]> {
   return getAllPayments();
+}
+
+/** Normalise a stored payment into a behaviour event. */
+function recordToEvent(r: PaymentRecord): BehaviorEvent {
+  return {
+    amountMicroFtc: r.amountMicroFtc,
+    counterparty: r.merchantId,
+    purpose: r.purpose,
+    at: r.paidAt,
+  };
+}
+
+/** Derive the customer's behaviour profile from their payment history.
+ *  `now` is injectable for tests; defaults to the wall clock. */
+export async function loadBehaviorProfile(now?: number): Promise<BehaviorProfile> {
+  const records = await getAllPayments();
+  return deriveBehaviorProfile(records.map(recordToEvent), now);
 }
 
 /** Erase all payment records (Settings → Reset app). */
