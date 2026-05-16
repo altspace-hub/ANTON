@@ -2,7 +2,8 @@
 <!--
     ANTON Companion App — adaptive launcher foreground.
 
-    Three white chevrons rising in opacity (0.45 → 0.75 → 1.0).
+    Three teal chevrons (#0D7D6C) rising in opacity (0.22 → 0.55 → 1.0)
+    on a cream background — the shared ANTON "cream-chevron" mark.
     Geometry mirrors logo_app/icon-launcher-master.svg (1024 canvas)
     scaled to the 108dp adaptive-icon canvas. Chevrons span 22.5→85.5dp
     horizontally — within the 66dp safe zone Android masks against, so
@@ -18,29 +19,29 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Top chevron, opacity 0.45 -->
+    <!-- Top chevron, opacity 0.22 -->
     <path
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#0D7D6C"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"
-        android:strokeAlpha="0.45"
+        android:strokeAlpha="0.22"
         android:fillColor="#00000000"
         android:pathData="M22.5,49.5 L54,25 L85.5,49.5" />
 
-    <!-- Middle chevron, opacity 0.75 -->
+    <!-- Middle chevron, opacity 0.55 -->
     <path
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#0D7D6C"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"
-        android:strokeAlpha="0.75"
+        android:strokeAlpha="0.55"
         android:fillColor="#00000000"
         android:pathData="M22.5,67.5 L54,43 L85.5,67.5" />
 
     <!-- Bottom chevron, full opacity -->
     <path
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#0D7D6C"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"

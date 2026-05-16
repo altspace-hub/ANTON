@@ -2,8 +2,8 @@
 <!--
     ANTON Companion App — adaptive launcher icon (API 26+).
 
-    Background: drawable/ic_launcher_background.xml — solid #2DD4A8.
-    Foreground: drawable-v24/ic_launcher_foreground.xml — three white chevrons.
+    Background: drawable/ic_launcher_background.xml — solid cream #F5F1EA.
+    Foreground: drawable-v24/ic_launcher_foreground.xml — three teal chevrons.
 
     Both are vector drawables (no PNG fallback needed since minSdk=26
     and adaptive icons are always available there).
