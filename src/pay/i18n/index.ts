@@ -1,9 +1,8 @@
 /**
  * i18n/index.ts — Pay App internationalization.
  *
- * react-i18next. en + sv ship complete catalogues; every other
- * language in languages.ts is selectable and falls back to English
- * transparently via fallbackLng until its catalogue is filled.
+ * react-i18next with all 38 catalogues bundled. Any string missing
+ * from a catalogue falls back to English transparently via fallbackLng.
  *
  * Language choice is persisted to localStorage. On first run we detect
  * from navigator.language, but never silently override an explicit
@@ -17,15 +16,87 @@ import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import sv from './locales/sv.json';
+import de from './locales/de.json';
+import fr from './locales/fr.json';
+import es from './locales/es.json';
+import it from './locales/it.json';
+import pt from './locales/pt.json';
+import nl from './locales/nl.json';
+import da from './locales/da.json';
+import no from './locales/no.json';
+import fi from './locales/fi.json';
+import pl from './locales/pl.json';
+import cs from './locales/cs.json';
+import hu from './locales/hu.json';
+import ro from './locales/ro.json';
+import el from './locales/el.json';
+import tr from './locales/tr.json';
+import uk from './locales/uk.json';
+import ar from './locales/ar.json';
+import he from './locales/he.json';
+import fa from './locales/fa.json';
+import ur from './locales/ur.json';
+import hi from './locales/hi.json';
+import bn from './locales/bn.json';
+import id from './locales/id.json';
+import vi from './locales/vi.json';
+import th from './locales/th.json';
+import ja from './locales/ja.json';
+import ko from './locales/ko.json';
+import zh from './locales/zh.json';
+import ru from './locales/ru.json';
+import ms from './locales/ms.json';
+import tl from './locales/tl.json';
+import sk from './locales/sk.json';
+import ta from './locales/ta.json';
+import te from './locales/te.json';
+import pa from './locales/pa.json';
+import sw from './locales/sw.json';
 import { isRtl, LANGUAGES } from './languages.js';
 
 const STORAGE_KEY = 'anton-pay-language';
 
-/** Catalogues bundled in the app. New languages drop a JSON file in
- *  ./locales/ and register here. */
+/** All 38 catalogues bundled in the app. New languages drop a JSON
+ *  file in ./locales/ and register here. */
 const RESOURCES = {
   en: { translation: en },
   sv: { translation: sv },
+  de: { translation: de },
+  fr: { translation: fr },
+  es: { translation: es },
+  it: { translation: it },
+  pt: { translation: pt },
+  nl: { translation: nl },
+  da: { translation: da },
+  no: { translation: no },
+  fi: { translation: fi },
+  pl: { translation: pl },
+  cs: { translation: cs },
+  hu: { translation: hu },
+  ro: { translation: ro },
+  el: { translation: el },
+  tr: { translation: tr },
+  uk: { translation: uk },
+  ar: { translation: ar },
+  he: { translation: he },
+  fa: { translation: fa },
+  ur: { translation: ur },
+  hi: { translation: hi },
+  bn: { translation: bn },
+  id: { translation: id },
+  vi: { translation: vi },
+  th: { translation: th },
+  ja: { translation: ja },
+  ko: { translation: ko },
+  zh: { translation: zh },
+  ru: { translation: ru },
+  ms: { translation: ms },
+  tl: { translation: tl },
+  sk: { translation: sk },
+  ta: { translation: ta },
+  te: { translation: te },
+  pa: { translation: pa },
+  sw: { translation: sw },
 } as const;
 
 function detectInitialLanguage(): string {

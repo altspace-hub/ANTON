@@ -5,9 +5,9 @@
  * language's own name (shown to the user). `english` is the fallback
  * label.
  *
- * Mirrors the 38-language set the Business app ships. en + sv ship
- * complete Pay catalogues today; the rest fall back to English
- * transparently via the i18n config's fallbackLng.
+ * Mirrors the 38-language set the Business app ships. All 38 ship
+ * complete Pay catalogues; any individual missing string still falls
+ * back to English via the i18n config's fallbackLng.
  */
 
 export interface LanguageOption {
@@ -59,10 +59,9 @@ export const LANGUAGES: LanguageOption[] = [
   { code: 'ko', native: '한국어',              english: 'Korean' },
 ];
 
-/** Languages with a complete Pay app translation bundled today. The
- *  picker still lists every language above; non-complete ones fall
- *  back to English (i18next fallbackLng). */
-export const COMPLETE_LOCALES = new Set(['en', 'sv']);
+/** Languages with a complete Pay app translation bundled today —
+ *  all 38. Any individual missing string falls back to English. */
+export const COMPLETE_LOCALES = new Set(LANGUAGES.map((l) => l.code));
 
 export function isRtl(code: string): boolean {
   return LANGUAGES.find((l) => l.code === code)?.rtl ?? false;

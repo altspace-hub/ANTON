@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    ANTON Communication App — adaptive launcher icon (API 26+).
+    ANTON Pay — adaptive launcher icon (API 26+).
 
     Background: drawable/ic_launcher_background.xml — solid cream #F5F1EA.
     Foreground: drawable-v24/ic_launcher_foreground.xml — three dark-navy
