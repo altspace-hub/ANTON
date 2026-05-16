@@ -41,6 +41,7 @@ function merchant(over: Partial<MerchantConfig> = {}): MerchantConfig {
     vatRegistered: true,
     defaultVatRate: 12,
     safelloReceiveAddress: 'fc_safello',
+    defaultMode: 'simple',
     nextKvittoNumber: 1,
     configuredAt: Date.now(),
     ftcPerSek: 0.1,
