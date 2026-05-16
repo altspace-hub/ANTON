@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   ANTON Pay — design system
+
+   Light theme, matched to ANTON Business + Communication so a
+   customer's phone has visual consistency across the ANTON suite.
+   Warm-linen canvas + white surfaces. ANTON brand teal (#0D7D6C)
+   is the Pay signature (chevron logo, primary CTA) so the customer
+   can tell at a glance which app they're in — Business is blue,
+   Pay is teal.
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Canvas ─────────────────────────────────────────────── */
+  --color-bg:           #F5F3EF;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFAF8;
+  --color-surface-muted: #EFECE5;
+
+  /* ── Text ───────────────────────────────────────────────── */
+  --color-text:         #1A1B2E;
+  --color-text-body:    #3B3D50;
+  --color-text-muted:   #4F5267;
+  --color-text-faint:   #686A7C;
+  --color-text-dim:     #9CA0AE;
+
+  /* ── Lines ──────────────────────────────────────────────── */
+  --color-border:       #DDD9D2;
+  --color-border-soft:  #EAE7E0;
+
+  /* ── Brand accent ───────────────────────────────────────── */
+  /* Pay signature teal. Used for the chevron logo + primary CTA.
+   * Distinguishes Pay from Business (blue) so the customer's icon
+   * tray is unambiguous. */
+  --color-accent:       #0D7D6C;
+  --color-accent-dark:  #06655A;
+  --color-accent-dim:   #D2E9E5;
+  --color-accent-soft:  #E8F3F1;
+  --color-accent-fg:    #FFFFFF;
+
+  /* The Business blue stays available for ANTON-suite consistency. */
+  --color-blue:         #3070C7;
+  --color-blue-dark:    #245598;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --color-warning:      #C8842B;
+  --color-warning-bg:   #F7ECD9;
+  --color-error:        #C7361F;
+  --color-error-bg:     #F9E2DD;
+  --color-success:      #1F8A5C;
+  --color-success-bg:   #DCEEE4;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Personalization — accent + mode
+
+   Driven by <html data-accent="…" data-mode="…">, set by
+   src/pay/services/personalization.ts before first paint.
+
+   Each accent block sets only the saturated colours. The tinted
+   surfaces (--color-accent-dim / -soft) are DERIVED with color-mix()
+   so they auto-adapt to both the accent AND the light/dark canvas.
+   Status colours are LOCKED — never touched here.
+
+   These rules are unlayered, so they beat Tailwind's @theme defaults.
+   ═══════════════════════════════════════════════════════════════ */
+
+html[data-accent="teal"]    { --color-accent: #0D7D6C; --color-accent-dark: #06655A; }
+html[data-accent="blue"]    { --color-accent: #3070C7; --color-accent-dark: #245598; }
+html[data-accent="ocean"]   { --color-accent: #1F5FAE; --color-accent-dark: #174880; }
+html[data-accent="sunrise"] { --color-accent: #C97220; --color-accent-dark: #A15A15; }
+html[data-accent="ember"]   { --color-accent: #B02E3B; --color-accent-dark: #8A1F2A; }
+html[data-accent="plum"]    { --color-accent: #6A3E8F; --color-accent-dark: #522D71; }
+html[data-accent="slate"]   { --color-accent: #2D3142; --color-accent-dark: #1A1C2A; }
+html[data-accent="forest"]  { --color-accent: #3E6B3A; --color-accent-dark: #2C4F2A; }
+
+/* Accent-tinted surfaces — derived so they track accent + mode. */
+html {
+  --color-accent-dim:  color-mix(in srgb, var(--color-accent) 20%, var(--color-surface));
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface));
+}
+
+/* Dark mode — overrides the neutral canvas / text / line tokens.
+   The accent stays saturated; the derived dim/soft above re-mix
+   against the dark surface automatically. */
+html[data-mode="dark"] {
+  --color-bg:            #0F1B2D;
+  --color-surface:       #152238;
+  --color-surface-alt:   #1B2A40;
+  --color-surface-muted: #0B1426;
+
+  --color-text:       #E8EAF0;
+  --color-text-body:  #C8CCD6;
+  --color-text-muted: #9BA0B0;
+  --color-text-faint: #767C90;
+  --color-text-dim:   #5C6275;
+
+  --color-border:      #2C3852;
+  --color-border-soft: #212C42;
+
+  --color-warning-bg: #3A2E14;
+  --color-error-bg:   #3A1E18;
+  --color-success-bg: #14301F;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+/* safe-top folds the 1.5rem design padding back in on top of the
+   status-bar inset — otherwise headers hug the status bar. */
+.safe-top    { padding-top:    calc(env(safe-area-inset-top, 0px) + 1.5rem); }
+.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
+.safe-left   { padding-left:   env(safe-area-inset-left); }
+.safe-right  { padding-right:  env(safe-area-inset-right); }
+
+.tabular { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); }
+
+input, textarea, button, select {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+input[type="text"], input[type="email"], input[type="number"], input[type="tel"], textarea {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+}
+input:focus, textarea:focus {
+  border-color: var(--color-accent);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-dim);
+}

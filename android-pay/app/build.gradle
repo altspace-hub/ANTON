@@ -1,0 +1,90 @@
+apply plugin: 'com.android.application'
+
+// Load release-signing config from keystore.properties (gitignored).
+// To build a signed release: copy keystore.properties.example and fill in.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.futurechain.anton.pay"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.futurechain.anton.pay"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // P7-1 version policy:
+        //   versionCode  — strictly monotonic integer. Bump by +1 on every
+        //                  build uploaded to Play Console. NEVER reuse a
+        //                  previous code, even for an internal-track build.
+        //   versionName  — semver string shown to users. 0.x.y until we
+        //                  call the app "production-ready" externally.
+        //                  Bump MINOR for new features, PATCH for fixes.
+        // Current state: first Play upload coming, app is pre-1.0.
+        versionCode 1
+        versionName "0.0.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                storeFile rootProject.file(keystoreProperties['storeFile'] as String)
+                storePassword keystoreProperties['storePassword'] as String
+                keyAlias keystoreProperties['keyAlias'] as String
+                keyPassword keystoreProperties['keyPassword'] as String
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            // Keep cleartext + non-minified for adb-install dev flow.
+            minifyEnabled false
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

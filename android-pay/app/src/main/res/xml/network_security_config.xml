@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Phase 6 hardening — production builds block ALL cleartext traffic.
+        With the mesh transport (docs/ANTON_MESH_SPEC.md) every paired
+        instance is reached over wss:// through a relay, so cleartext
+        anywhere is a security regression, not a convenience.
+
+        Earlier configs whitelisted RFC1918 ranges via <domain> entries
+        like "192.168.0.0" with includeSubdomains. Android does NOT
+        CIDR-match <domain> — those entries only matched the literal
+        host "192.168.0.0", which never appears in real traffic. They
+        were dead weight, not security. Removing them.
+
+        localhost remains whitelisted ONLY for the dev `adb reverse` flow
+        (the phone's localhost:port tunnels over USB to the dev machine).
+        10.0.2.2 stays for the Android emulator host shortcut.
+    -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Dev-only: localhost via adb reverse + emulator host shortcut. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+
+    <!-- Debug builds: trust user-installed certificates so a developer can
+         pin a self-signed cert during local relay testing. Production
+         builds (release) ignore this block. -->
+    <debug-overrides cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>
