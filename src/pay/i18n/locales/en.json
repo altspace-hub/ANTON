@@ -108,6 +108,8 @@
     "viewWallet": "View wallet",
     "paymentDetails": "Payment details",
     "paymentDetailsSub": "Your name and address for payment records",
+    "moneyProfile": "Money profile",
+    "moneyProfileSub": "Your usual money pattern — helps spot unusual payments",
     "appearance": "Appearance",
     "appearanceHelp": "Pick an accent colour and a light or dark theme.",
     "accent": "Accent colour",
@@ -149,6 +151,30 @@
     "city": "City",
     "country": "Country (ISO code)",
     "privacyNote": "These details stay on this phone. They are only used to fill the payment record — ANTON Pay never sends them anywhere on its own.",
+    "save": "Save"
+  },
+  "moneyProfile": {
+    "title": "Money profile",
+    "subtitle": "A private picture of who you are and what your normal money pattern looks like. ANTON Pay uses it to flag payments that look unusual for you. Every field is optional.",
+    "identitySection": "About you",
+    "dateOfBirth": "Date of birth",
+    "nationality": "Nationality (ISO code)",
+    "occupation": "Occupation",
+    "occupationPlaceholder": "e.g. Teacher",
+    "moneySection": "Your money pattern",
+    "sourceOfFunds": "Where your money mainly comes from",
+    "source": {
+      "salary": "Salary",
+      "business": "Business",
+      "savings": "Savings",
+      "investments": "Investments",
+      "pension": "Pension",
+      "gift": "Gift",
+      "other": "Other"
+    },
+    "expectedMonthly": "Expected FTC spent per month",
+    "typicalPayment": "Typical payment size (FTC)",
+    "privacyNote": "This is a personal record kept only on this phone. ANTON Pay never sends it anywhere. It is not an identity check — it is the baseline the app compares new payments against.",
     "save": "Save"
   }
 }

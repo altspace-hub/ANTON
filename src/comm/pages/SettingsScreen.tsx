@@ -30,12 +30,14 @@ interface Props {
   onSignedOut: () => void;
   /** Open the ISO 20022 payer-identity form. */
   onPaymentDetails: () => void;
+  /** Open the self-declared money-profile form. */
+  onMoneyProfile: () => void;
 }
 
 const APP_VERSION = '0.7.5';
 const BUILD_DATE = '2026-05-15';
 
-export default function SettingsScreen({ onBack, onSignedOut, onPaymentDetails }: Props) {
+export default function SettingsScreen({ onBack, onSignedOut, onPaymentDetails, onMoneyProfile }: Props) {
   const { t } = useTranslation();
   const [identity, setIdentity] = useState<CommIdentity | null>(getIdentity());
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -252,6 +254,26 @@ export default function SettingsScreen({ onBack, onSignedOut, onPaymentDetails }
           </div>
           <div className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">
             {t('settings.paymentDetailsSub')}
+          </div>
+        </div>
+        <span className="text-[var(--color-text-faint)]" aria-hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+
+      <button
+        onClick={onMoneyProfile}
+        className="mt-2 w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] text-left active:bg-[var(--color-surface-muted)]"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-medium text-[var(--color-text)]">
+            {t('settings.moneyProfile')}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">
+            {t('settings.moneyProfileSub')}
           </div>
         </div>
         <span className="text-[var(--color-text-faint)]" aria-hidden>

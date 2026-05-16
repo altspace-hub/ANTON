@@ -94,7 +94,9 @@
     "deleteIdentity": "Radera identitet och logga ut",
     "deleteConfirm": "Logga ut? Detta raderar permanent din identitet och alla meddelanden på den här enheten. Det går inte att ångra.",
     "paymentDetails": "Betalningsuppgifter",
-    "paymentDetailsSub": "Ditt namn och din adress för betalningsregister"
+    "paymentDetailsSub": "Ditt namn och din adress för betalningsregister",
+    "moneyProfile": "Ekonomisk profil",
+    "moneyProfileSub": "Ditt vanliga betalningsmönster — hjälper till att upptäcka ovanliga betalningar"
   },
   "paymentDetails": {
     "title": "Betalningsuppgifter",
@@ -105,6 +107,30 @@
     "city": "Ort",
     "country": "Land (ISO-kod)",
     "privacyNote": "Dessa uppgifter stannar på den här telefonen. De används endast för att fylla i betalningsregistret — ANTON skickar dem aldrig någonstans på egen hand.",
+    "save": "Spara"
+  },
+  "moneyProfile": {
+    "title": "Ekonomisk profil",
+    "subtitle": "En privat bild av vem du är och hur ditt normala betalningsmönster ser ut. ANTON använder den för att flagga betalningar som ser ovanliga ut för dig. Alla fält är valfria.",
+    "identitySection": "Om dig",
+    "dateOfBirth": "Födelsedatum",
+    "nationality": "Nationalitet (ISO-kod)",
+    "occupation": "Yrke",
+    "occupationPlaceholder": "t.ex. Lärare",
+    "moneySection": "Ditt betalningsmönster",
+    "sourceOfFunds": "Var dina pengar huvudsakligen kommer från",
+    "source": {
+      "salary": "Lön",
+      "business": "Företag",
+      "savings": "Sparande",
+      "investments": "Investeringar",
+      "pension": "Pension",
+      "gift": "Gåva",
+      "other": "Annat"
+    },
+    "expectedMonthly": "Förväntad FTC spenderad per månad",
+    "typicalPayment": "Typisk betalningsstorlek (FTC)",
+    "privacyNote": "Det här är ett personligt register som bara finns på den här telefonen. ANTON skickar det aldrig någonstans. Det är ingen identitetskontroll — det är referensvärdet som appen jämför nya betalningar mot.",
     "save": "Spara"
   },
   "wallet": {

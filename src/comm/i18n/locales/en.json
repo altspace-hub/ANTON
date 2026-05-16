@@ -94,7 +94,9 @@
     "deleteIdentity": "Delete identity & sign out",
     "deleteConfirm": "Sign out? This will permanently delete your identity and all messages on this device. This cannot be undone.",
     "paymentDetails": "Payment details",
-    "paymentDetailsSub": "Your name and address for payment records"
+    "paymentDetailsSub": "Your name and address for payment records",
+    "moneyProfile": "Money profile",
+    "moneyProfileSub": "Your usual money pattern — helps spot unusual payments"
   },
   "paymentDetails": {
     "title": "Payment details",
@@ -105,6 +107,30 @@
     "city": "City",
     "country": "Country (ISO code)",
     "privacyNote": "These details stay on this phone. They are only used to fill the payment record — ANTON never sends them anywhere on its own.",
+    "save": "Save"
+  },
+  "moneyProfile": {
+    "title": "Money profile",
+    "subtitle": "A private picture of who you are and what your normal money pattern looks like. ANTON uses it to flag payments that look unusual for you. Every field is optional.",
+    "identitySection": "About you",
+    "dateOfBirth": "Date of birth",
+    "nationality": "Nationality (ISO code)",
+    "occupation": "Occupation",
+    "occupationPlaceholder": "e.g. Teacher",
+    "moneySection": "Your money pattern",
+    "sourceOfFunds": "Where your money mainly comes from",
+    "source": {
+      "salary": "Salary",
+      "business": "Business",
+      "savings": "Savings",
+      "investments": "Investments",
+      "pension": "Pension",
+      "gift": "Gift",
+      "other": "Other"
+    },
+    "expectedMonthly": "Expected FTC spent per month",
+    "typicalPayment": "Typical payment size (FTC)",
+    "privacyNote": "This is a personal record kept only on this phone. ANTON never sends it anywhere. It is not an identity check — it is the baseline the app compares new payments against.",
     "save": "Save"
   },
   "wallet": {

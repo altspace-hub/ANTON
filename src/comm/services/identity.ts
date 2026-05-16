@@ -56,16 +56,24 @@ export async function clearIdentity(): Promise<void> {
   // a sign-out leaves stale live-share intervals, cached permission
   // promises, and replay-cache entries from the previous user.
   try {
-    const [{ stopAllLiveShares }, { clearReminderCaches }, { clearReplayCache }, { stopRelayClient }] = await Promise.all([
+    const [
+      { stopAllLiveShares }, { clearReminderCaches }, { clearReplayCache }, { stopRelayClient },
+      { wipePayerIdentity }, { wipeMoneyProfile },
+    ] = await Promise.all([
       import('./geo'),
       import('./event-reminders'),
       import('./replay-cache'),
       import('./relay-client'),
+      import('./payment-identity'),
+      import('./money-profile'),
     ]);
     try { stopAllLiveShares(); } catch { /* ignore */ }
     try { clearReminderCaches(); } catch { /* ignore */ }
     try { clearReplayCache(); } catch { /* ignore */ }
     try { stopRelayClient(); } catch { /* ignore */ }
+    // Wipe the on-device payment stores so a sign-out leaves nothing behind.
+    try { await wipePayerIdentity(); } catch { /* ignore */ }
+    try { await wipeMoneyProfile(); } catch { /* ignore */ }
   } catch { /* dynamic import failures shouldn't block sign-out */ }
   localStorage.removeItem(STORAGE_KEY_IDENTITY);
   await removeSecure(SECURE_KEY_PRIVKEY);
