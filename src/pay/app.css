@@ -5,10 +5,10 @@
 
    Light theme, matched to ANTON Business + Communication so a
    customer's phone has visual consistency across the ANTON suite.
-   Warm-linen canvas + white surfaces. ANTON brand teal (#0D7D6C)
+   Warm-linen canvas + white surfaces. Sunrise orange (#C97220)
    is the Pay signature (chevron logo, primary CTA) so the customer
    can tell at a glance which app they're in — Business is blue,
-   Pay is teal.
+   Pay is sunrise orange.
    ═══════════════════════════════════════════════════════════════ */
 
 @theme {
@@ -30,13 +30,13 @@
   --color-border-soft:  #EAE7E0;
 
   /* ── Brand accent ───────────────────────────────────────── */
-  /* Pay signature teal. Used for the chevron logo + primary CTA.
-   * Distinguishes Pay from Business (blue) so the customer's icon
-   * tray is unambiguous. */
-  --color-accent:       #0D7D6C;
-  --color-accent-dark:  #06655A;
-  --color-accent-dim:   #D2E9E5;
-  --color-accent-soft:  #E8F3F1;
+  /* Pay signature sunrise orange. Used for the chevron logo + primary
+   * CTA. Distinguishes Pay from Business (blue) and Companion (teal)
+   * so the customer's icon tray is unambiguous. */
+  --color-accent:       #C97220;
+  --color-accent-dark:  #A15A15;
+  --color-accent-dim:   #F4E0CB;
+  --color-accent-soft:  #FBF1E5;
   --color-accent-fg:    #FFFFFF;
 
   /* The Business blue stays available for ANTON-suite consistency. */

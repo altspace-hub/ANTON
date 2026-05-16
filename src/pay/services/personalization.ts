@@ -4,7 +4,7 @@
  * Mirrors the Business app's personalization service so the ANTON
  * suite shares one mental model. Two runtime axes, both persisted to
  * localStorage:
- *   • accent — one of 8 swatches (teal = Pay signature default).
+ *   • accent — one of 8 swatches (sunrise = Pay signature default).
  *   • mode   — 'light' (warm-linen canvas) or 'dark' (deep-navy canvas).
  *
  * Applied as <html data-accent="…" data-mode="…"> attributes that
@@ -13,10 +13,10 @@
  */
 
 export const ACCENTS = [
+  { id: 'sunrise', label: 'Sunrise', hex: '#C97220' },
   { id: 'teal',    label: 'Teal',    hex: '#0D7D6C' },
   { id: 'blue',    label: 'Blue',    hex: '#3070C7' },
   { id: 'ocean',   label: 'Ocean',   hex: '#1F5FAE' },
-  { id: 'sunrise', label: 'Sunrise', hex: '#C97220' },
   { id: 'ember',   label: 'Ember',   hex: '#B02E3B' },
   { id: 'plum',    label: 'Plum',    hex: '#6A3E8F' },
   { id: 'slate',   label: 'Slate',   hex: '#2D3142' },
@@ -36,7 +36,7 @@ function readAccent(): AccentKey {
     const v = localStorage.getItem(ACCENT_KEY);
     if (v && ACCENT_IDS.has(v)) return v as AccentKey;
   } catch { /* localStorage may be unavailable */ }
-  return 'teal';
+  return 'sunrise';
 }
 
 function readMode(): AppMode {

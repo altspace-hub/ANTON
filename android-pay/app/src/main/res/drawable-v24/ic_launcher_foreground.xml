@@ -15,7 +15,7 @@
     android:viewportHeight="108">
 
     <path
-        android:strokeColor="#0D7D6C"
+        android:strokeColor="#C97220"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"
@@ -24,7 +24,7 @@
         android:pathData="M22.5,49.5 L54,25 L85.5,49.5" />
 
     <path
-        android:strokeColor="#0D7D6C"
+        android:strokeColor="#C97220"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"
@@ -33,7 +33,7 @@
         android:pathData="M22.5,67.5 L54,43 L85.5,67.5" />
 
     <path
-        android:strokeColor="#0D7D6C"
+        android:strokeColor="#C97220"
         android:strokeWidth="11.7"
         android:strokeLineCap="square"
         android:strokeLineJoin="miter"

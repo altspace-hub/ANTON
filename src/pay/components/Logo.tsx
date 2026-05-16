@@ -1,10 +1,9 @@
 /**
  * Logo — ANTON Pay brand mark.
  *
- * Three-chevron geometry shared with ANTON Business, coloured with
- * the Pay signature teal (#0D7D6C) instead of the Business blue.
- * White rounded-rect tile so it reads well on the cream canvas and
- * on the Android splash.
+ * Three-chevron geometry shared across the ANTON suite, coloured with
+ * the Pay signature sunrise orange (#C97220). White rounded-rect tile
+ * so it reads well on the cream canvas and on the Android splash.
  */
 interface LogoProps {
   /** Pixel size of the square. Default 72. */
@@ -12,7 +11,7 @@ interface LogoProps {
   /** Corner-radius scale. */
   rounded?: 'lg' | 'md' | 'sm' | 'full' | 'none';
   className?: string;
-  /** Override the chevron stroke colour. Default = teal accent. */
+  /** Override the chevron stroke colour. Default = sunrise accent. */
   color?: string;
   /** Override the tile background colour. Default = white. */
   tileColor?: string;
@@ -22,7 +21,7 @@ export default function Logo({
   size = 72,
   rounded = 'lg',
   className,
-  color = '#0D7D6C',
+  color = '#C97220',
   tileColor = '#FFFFFF',
 }: LogoProps) {
   const radius =
