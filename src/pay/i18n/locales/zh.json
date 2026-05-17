@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "餐饮",
     "purposeEVENT": "活动",
     "purposeSERVICE": "服务",
-    "purposeREFUND": "退款"
+    "purposeREFUND": "退款",
+    "iso": {
+      "title": "ISO 20022 付款详情",
+      "debtor": "付款方（您）",
+      "creditor": "收款方（商家）",
+      "purpose": "用途代码",
+      "reference": "参考编号",
+      "note": "此付款对应一笔 ISO 20022 PACS.008 贷记转账。请在 设置 → 付款详情 中添加您的信息。"
+    }
   },
   "paymentDone": {
     "title": "付款已记录",
@@ -117,7 +125,13 @@
     "resetConfirm": "确定要重置应用吗？此操作将永久抹除本设备上的钱包和所有付款记录，且无法撤销。",
     "language": "语言",
     "languagePick": "选择语言",
-    "backToHome": "返回首页"
+    "backToHome": "返回首页",
+    "paymentDetails": "付款详情",
+    "paymentDetailsSub": "用于付款记录的姓名和地址",
+    "moneyProfile": "资金概况",
+    "moneyProfileSub": "您日常的资金模式 — 有助于发现异常付款",
+    "activityReview": "活动审查",
+    "activityReviewSub": "您的消费模式及任何被标记的付款"
   },
   "wallet": {
     "title": "您的钱包",
@@ -129,5 +143,73 @@
     "noWallet": "暂无钱包",
     "noWalletBody": "创建钱包即可开始向商家付款。",
     "createWallet": "创建钱包"
+  },
+  "paymentDetails": {
+    "title": "付款详情",
+    "subtitle": "您的姓名和地址将添加到您每笔付款的 ISO 20022 记录中。所有字段均为可选。",
+    "name": "全名",
+    "street": "街道地址",
+    "postcode": "邮政编码",
+    "city": "城市",
+    "country": "国家/地区（ISO 代码）",
+    "privacyNote": "这些信息保留在本手机上。它们仅用于填写付款记录 — ANTON Pay 绝不会自行将其发送至任何地方。",
+    "save": "保存"
+  },
+  "moneyProfile": {
+    "title": "资金概况",
+    "subtitle": "一份关于您是谁以及您正常资金模式的私人记录。ANTON Pay 用它来标记对您而言看起来异常的付款。每个字段均为可选。",
+    "identitySection": "关于您",
+    "dateOfBirth": "出生日期",
+    "nationality": "国籍（ISO 代码）",
+    "occupation": "职业",
+    "occupationPlaceholder": "例如：教师",
+    "moneySection": "您的资金模式",
+    "sourceOfFunds": "您的资金主要来源",
+    "source": {
+      "salary": "工资",
+      "business": "经营所得",
+      "savings": "储蓄",
+      "investments": "投资",
+      "pension": "养老金",
+      "gift": "赠予",
+      "other": "其他"
+    },
+    "expectedMonthly": "每月预计花费的 FTC",
+    "typicalPayment": "典型付款金额（FTC）",
+    "privacyNote": "这是一份仅保存在本手机上的个人记录。ANTON Pay 绝不会将其发送至任何地方。它不是身份核查 — 而是应用用来对比新付款的基准。",
+    "save": "保存"
+  },
+  "fraud": {
+    "title": {
+      "warning": "这看起来不寻常",
+      "caution": "值得查看",
+      "info": "值得了解"
+    },
+    "payAnyway": "仍然付款",
+    "payAnywayHint": "只有在您确定此付款无误时才再次点按。",
+    "signal": {
+      "amount-anomaly": "约为您日常付款的 {{factor}}× 之大。",
+      "above-typical": "约为您设定的典型付款金额的 {{factor}}× 之大。",
+      "new-counterparty": "您此前从未向此商家付款。",
+      "new-counterparty-large": "向一家您此前从未付款的商家进行的大额付款。",
+      "velocity": "过去 24 小时内已有 {{count}} 笔付款。",
+      "monthly-cap": "这将使您 30 天内的消费超过您预计每月花费的 {{expected}} FTC。",
+      "odd-hour": "您通常不会在一天中的此时间付款。",
+      "expiring-qr": "此 QR 码即将过期 — 不要让任何人催促您。",
+      "dormancy-break": "这是您 {{days}} 天来的首次付款，且金额较大。"
+    }
+  },
+  "activityReview": {
+    "title": "活动审查",
+    "subtitle": "回顾您的消费模式以及 ANTON Pay 标记为对您而言异常的任何付款。",
+    "patternHeading": "您的日常模式",
+    "payments": "已完成付款",
+    "median": "典型金额",
+    "largest": "最大笔付款",
+    "merchants": "已付款商家",
+    "lastPayment": "最近一笔付款",
+    "flaggedHeading": "被标记的付款",
+    "empty": "没有被标记的项目",
+    "emptyBody": "对您而言看起来异常的付款将显示在此处。"
   }
 }

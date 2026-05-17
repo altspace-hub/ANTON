@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restoran",
     "purposeEVENT": "Acara",
     "purposeSERVICE": "Layanan",
-    "purposeREFUND": "Pengembalian dana"
+    "purposeREFUND": "Pengembalian dana",
+    "iso": {
+      "title": "Detail pembayaran ISO 20022",
+      "debtor": "Dari (Anda)",
+      "creditor": "Kepada (pedagang)",
+      "purpose": "Kode tujuan",
+      "reference": "Referensi",
+      "note": "Pembayaran ini sesuai dengan transfer kredit ISO 20022 PACS.008. Tambahkan detail Anda di Pengaturan → Detail pembayaran."
+    }
   },
   "paymentDone": {
     "title": "Pembayaran tercatat",
@@ -117,7 +125,13 @@
     "resetConfirm": "Setel ulang aplikasi? Ini akan menghapus dompet Anda dan semua catatan pembayaran di perangkat ini secara permanen. Ini tidak dapat dibatalkan.",
     "language": "Bahasa",
     "languagePick": "Pilih bahasa",
-    "backToHome": "Kembali ke beranda"
+    "backToHome": "Kembali ke beranda",
+    "paymentDetails": "Detail pembayaran",
+    "paymentDetailsSub": "Nama dan alamat Anda untuk catatan pembayaran",
+    "moneyProfile": "Profil keuangan",
+    "moneyProfileSub": "Pola keuangan biasa Anda — membantu mendeteksi pembayaran tidak biasa",
+    "activityReview": "Tinjauan aktivitas",
+    "activityReviewSub": "Pola pengeluaran Anda dan pembayaran apa pun yang ditandai"
   },
   "wallet": {
     "title": "Dompet Anda",
@@ -129,5 +143,73 @@
     "noWallet": "Belum ada dompet",
     "noWalletBody": "Buat dompet untuk mulai membayar merchant.",
     "createWallet": "Buat dompet"
+  },
+  "paymentDetails": {
+    "title": "Detail pembayaran",
+    "subtitle": "Nama dan alamat Anda ditambahkan ke catatan ISO 20022 dari setiap pembayaran yang Anda lakukan. Semua kolom bersifat opsional.",
+    "name": "Nama lengkap",
+    "street": "Alamat jalan",
+    "postcode": "Kode pos",
+    "city": "Kota",
+    "country": "Negara (kode ISO)",
+    "privacyNote": "Detail ini tetap berada di ponsel ini. Detail ini hanya digunakan untuk mengisi catatan pembayaran — ANTON Pay tidak pernah mengirimkannya ke mana pun dengan sendirinya.",
+    "save": "Simpan"
+  },
+  "moneyProfile": {
+    "title": "Profil keuangan",
+    "subtitle": "Gambaran pribadi tentang siapa Anda dan seperti apa pola keuangan normal Anda. ANTON Pay menggunakannya untuk menandai pembayaran yang tampak tidak biasa bagi Anda. Setiap kolom bersifat opsional.",
+    "identitySection": "Tentang Anda",
+    "dateOfBirth": "Tanggal lahir",
+    "nationality": "Kewarganegaraan (kode ISO)",
+    "occupation": "Pekerjaan",
+    "occupationPlaceholder": "mis. Guru",
+    "moneySection": "Pola keuangan Anda",
+    "sourceOfFunds": "Dari mana sumber utama uang Anda",
+    "source": {
+      "salary": "Gaji",
+      "business": "Bisnis",
+      "savings": "Tabungan",
+      "investments": "Investasi",
+      "pension": "Pensiun",
+      "gift": "Hadiah",
+      "other": "Lainnya"
+    },
+    "expectedMonthly": "FTC yang diperkirakan dibelanjakan per bulan",
+    "typicalPayment": "Ukuran pembayaran umum (FTC)",
+    "privacyNote": "Ini adalah catatan pribadi yang hanya disimpan di ponsel ini. ANTON Pay tidak pernah mengirimkannya ke mana pun. Ini bukan pemeriksaan identitas — ini adalah patokan yang dibandingkan aplikasi dengan pembayaran baru.",
+    "save": "Simpan"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Ini tampak tidak biasa",
+      "caution": "Perlu dicermati",
+      "info": "Perlu diketahui"
+    },
+    "payAnyway": "Tetap bayar",
+    "payAnywayHint": "Ketuk lagi hanya jika Anda yakin pembayaran ini benar.",
+    "signal": {
+      "amount-anomaly": "Sekitar {{factor}}× lebih besar dari pembayaran biasa Anda.",
+      "above-typical": "Sekitar {{factor}}× lebih besar dari ukuran pembayaran umum yang Anda tetapkan.",
+      "new-counterparty": "Anda belum pernah membayar pedagang ini sebelumnya.",
+      "new-counterparty-large": "Pembayaran besar kepada pedagang yang belum pernah Anda bayar sebelumnya.",
+      "velocity": "Sudah {{count}} pembayaran dalam 24 jam terakhir.",
+      "monthly-cap": "Ini mendorong pengeluaran 30 hari Anda melewati {{expected}} FTC yang Anda perkirakan akan dibelanjakan dalam sebulan.",
+      "odd-hour": "Anda biasanya tidak melakukan pembayaran pada waktu ini.",
+      "expiring-qr": "Kode ini hampir kedaluwarsa — jangan biarkan siapa pun terburu-buru.",
+      "dormancy-break": "Pembayaran pertama Anda dalam {{days}} hari, dan jumlahnya besar."
+    }
+  },
+  "activityReview": {
+    "title": "Tinjauan aktivitas",
+    "subtitle": "Melihat kembali pola pengeluaran Anda dan pembayaran apa pun yang ditandai ANTON Pay sebagai tidak biasa bagi Anda.",
+    "patternHeading": "Pola biasa Anda",
+    "payments": "Pembayaran dilakukan",
+    "median": "Jumlah umum",
+    "largest": "Pembayaran terbesar",
+    "merchants": "Pedagang yang dibayar",
+    "lastPayment": "Pembayaran terakhir",
+    "flaggedHeading": "Pembayaran yang ditandai",
+    "empty": "Tidak ada yang ditandai",
+    "emptyBody": "Pembayaran yang tampak tidak biasa bagi Anda akan muncul di sini."
   }
 }

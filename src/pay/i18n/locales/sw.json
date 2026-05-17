@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Mkahawa",
     "purposeEVENT": "Tukio",
     "purposeSERVICE": "Huduma",
-    "purposeREFUND": "Marejesho"
+    "purposeREFUND": "Marejesho",
+    "iso": {
+      "title": "Maelezo ya malipo ya ISO 20022",
+      "debtor": "Kutoka kwa (wewe)",
+      "creditor": "Kwenda kwa (mfanyabiashara)",
+      "purpose": "Msimbo wa madhumuni",
+      "reference": "Rejea",
+      "note": "Malipo haya yanaendana na uhamishaji wa mkopo wa ISO 20022 PACS.008. Ongeza maelezo yako katika Mipangilio → Maelezo ya malipo."
+    }
   },
   "paymentDone": {
     "title": "Malipo yamerekodiwa",
@@ -117,7 +125,13 @@
     "resetConfirm": "Weka upya programu? Hili linafuta kabisa pochi yako na rekodi zote za malipo kwenye kifaa hiki. Haliwezi kutenduliwa.",
     "language": "Lugha",
     "languagePick": "Chagua lugha",
-    "backToHome": "Rudi mwanzo"
+    "backToHome": "Rudi mwanzo",
+    "paymentDetails": "Maelezo ya malipo",
+    "paymentDetailsSub": "Jina lako na anwani kwa rekodi za malipo",
+    "moneyProfile": "Wasifu wa fedha",
+    "moneyProfileSub": "Mtindo wako wa kawaida wa fedha — husaidia kugundua malipo yasiyo ya kawaida",
+    "activityReview": "Mapitio ya shughuli",
+    "activityReviewSub": "Mtindo wako wa matumizi na malipo yoyote yaliyowekewa alama"
   },
   "wallet": {
     "title": "Pochi yako",
@@ -129,5 +143,73 @@
     "noWallet": "Bado hakuna pochi",
     "noWalletBody": "Tengeneza pochi ili kuanza kuwalipa wafanyabiashara.",
     "createWallet": "Tengeneza pochi"
+  },
+  "paymentDetails": {
+    "title": "Maelezo ya malipo",
+    "subtitle": "Jina lako na anwani huongezwa kwenye rekodi ya ISO 20022 ya kila malipo unayofanya. Sehemu zote ni za hiari.",
+    "name": "Jina kamili",
+    "street": "Anwani ya mtaa",
+    "postcode": "Msimbo wa posta",
+    "city": "Jiji",
+    "country": "Nchi (msimbo wa ISO)",
+    "privacyNote": "Maelezo haya yanabaki kwenye simu hii. Yanatumika tu kujaza rekodi ya malipo — ANTON Pay haiyatumi popote yenyewe.",
+    "save": "Hifadhi"
+  },
+  "moneyProfile": {
+    "title": "Wasifu wa fedha",
+    "subtitle": "Picha ya faragha ya wewe ni nani na jinsi mtindo wako wa kawaida wa fedha unavyoonekana. ANTON Pay huutumia kuweka alama malipo yanayoonekana yasiyo ya kawaida kwako. Kila sehemu ni ya hiari.",
+    "identitySection": "Kuhusu wewe",
+    "dateOfBirth": "Tarehe ya kuzaliwa",
+    "nationality": "Uraia (msimbo wa ISO)",
+    "occupation": "Kazi",
+    "occupationPlaceholder": "k.m. Mwalimu",
+    "moneySection": "Mtindo wako wa fedha",
+    "sourceOfFunds": "Fedha zako hutoka wapi zaidi",
+    "source": {
+      "salary": "Mshahara",
+      "business": "Biashara",
+      "savings": "Akiba",
+      "investments": "Uwekezaji",
+      "pension": "Pensheni",
+      "gift": "Zawadi",
+      "other": "Nyingine"
+    },
+    "expectedMonthly": "FTC inayotarajiwa kutumika kwa mwezi",
+    "typicalPayment": "Ukubwa wa malipo wa kawaida (FTC)",
+    "privacyNote": "Hii ni rekodi ya kibinafsi inayohifadhiwa kwenye simu hii tu. ANTON Pay haiitumi popote. Si ukaguzi wa utambulisho — ni msingi ambao programu hulinganisha malipo mapya nao.",
+    "save": "Hifadhi"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Hili linaonekana lisilo la kawaida",
+      "caution": "Inafaa kuangalia",
+      "info": "Inafaa kujua"
+    },
+    "payAnyway": "Lipa hata hivyo",
+    "payAnywayHint": "Gusa tena tu ikiwa una uhakika malipo haya ni sahihi.",
+    "signal": {
+      "amount-anomaly": "Karibu mara {{factor}}× kubwa kuliko malipo yako ya kawaida.",
+      "above-typical": "Karibu mara {{factor}}× kubwa kuliko ukubwa wa malipo wa kawaida uliouweka.",
+      "new-counterparty": "Hujawahi kumlipa mfanyabiashara huyu hapo awali.",
+      "new-counterparty-large": "Malipo makubwa kwa mfanyabiashara ambaye hujawahi kumlipa hapo awali.",
+      "velocity": "Tayari malipo {{count}} katika saa 24 zilizopita.",
+      "monthly-cap": "Hili linasukuma matumizi yako ya siku 30 kupita FTC {{expected}} unayotarajia kutumia kwa mwezi.",
+      "odd-hour": "Kwa kawaida hufanyi malipo wakati huu wa siku.",
+      "expiring-qr": "Msimbo huu unakaribia kuisha muda — usiruhusu mtu yeyote akuharakishe.",
+      "dormancy-break": "Malipo yako ya kwanza katika siku {{days}}, na ni makubwa."
+    }
+  },
+  "activityReview": {
+    "title": "Mapitio ya shughuli",
+    "subtitle": "Mtazamo wa nyuma wa mtindo wako wa matumizi na malipo yoyote ambayo ANTON Pay iliyaweka alama kuwa yasiyo ya kawaida kwako.",
+    "patternHeading": "Mtindo wako wa kawaida",
+    "payments": "Malipo yaliyofanywa",
+    "median": "Kiasi cha kawaida",
+    "largest": "Malipo makubwa zaidi",
+    "merchants": "Wafanyabiashara waliolipwa",
+    "lastPayment": "Malipo ya mwisho",
+    "flaggedHeading": "Malipo yaliyowekewa alama",
+    "empty": "Hakuna kilichowekewa alama",
+    "emptyBody": "Malipo yanayoonekana yasiyo ya kawaida kwako yataonekana hapa."
   }
 }

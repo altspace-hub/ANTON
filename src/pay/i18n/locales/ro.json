@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurant",
     "purposeEVENT": "Eveniment",
     "purposeSERVICE": "Serviciu",
-    "purposeREFUND": "Rambursare"
+    "purposeREFUND": "Rambursare",
+    "iso": {
+      "title": "Detalii de plată ISO 20022",
+      "debtor": "De la (tu)",
+      "creditor": "Către (comerciant)",
+      "purpose": "Cod scop",
+      "reference": "Referință",
+      "note": "Această plată corespunde unui transfer credit ISO 20022 PACS.008. Adaugă datele tale în Setări → Detalii de plată."
+    }
   },
   "paymentDone": {
     "title": "Plată înregistrată",
@@ -117,7 +125,13 @@
     "resetConfirm": "Resetezi aplicația? Aceasta șterge definitiv portofelul și toate înregistrările de plăți de pe acest dispozitiv. Această acțiune nu poate fi anulată.",
     "language": "Limbă",
     "languagePick": "Alege limba",
-    "backToHome": "Înapoi la pagina principală"
+    "backToHome": "Înapoi la pagina principală",
+    "paymentDetails": "Detalii de plată",
+    "paymentDetailsSub": "Numele și adresa ta pentru evidența plăților",
+    "moneyProfile": "Profil financiar",
+    "moneyProfileSub": "Tiparul tău obișnuit de bani — ajută la depistarea plăților neobișnuite",
+    "activityReview": "Examinarea activității",
+    "activityReviewSub": "Tiparul tău de cheltuieli și eventualele plăți semnalate"
   },
   "wallet": {
     "title": "Portofelul tău",
@@ -129,5 +143,73 @@
     "noWallet": "Încă niciun portofel",
     "noWalletBody": "Creează un portofel pentru a începe să plătești comercianții.",
     "createWallet": "Creează portofel"
+  },
+  "paymentDetails": {
+    "title": "Detalii de plată",
+    "subtitle": "Numele și adresa ta sunt adăugate în înregistrarea ISO 20022 a fiecărei plăți pe care o faci. Toate câmpurile sunt opționale.",
+    "name": "Nume complet",
+    "street": "Adresă (stradă)",
+    "postcode": "Cod poștal",
+    "city": "Oraș",
+    "country": "Țară (cod ISO)",
+    "privacyNote": "Aceste date rămân pe acest telefon. Sunt folosite doar pentru a completa înregistrarea plății — ANTON Pay nu le trimite niciodată nicăieri din proprie inițiativă.",
+    "save": "Salvează"
+  },
+  "moneyProfile": {
+    "title": "Profil financiar",
+    "subtitle": "O imagine privată a cine ești și cum arată tiparul tău obișnuit de bani. ANTON Pay îl folosește pentru a semnala plățile care par neobișnuite pentru tine. Fiecare câmp este opțional.",
+    "identitySection": "Despre tine",
+    "dateOfBirth": "Data nașterii",
+    "nationality": "Naționalitate (cod ISO)",
+    "occupation": "Ocupație",
+    "occupationPlaceholder": "ex. Profesor",
+    "moneySection": "Tiparul tău de bani",
+    "sourceOfFunds": "De unde provin în principal banii tăi",
+    "source": {
+      "salary": "Salariu",
+      "business": "Afacere",
+      "savings": "Economii",
+      "investments": "Investiții",
+      "pension": "Pensie",
+      "gift": "Cadou",
+      "other": "Altele"
+    },
+    "expectedMonthly": "FTC estimați cheltuiți pe lună",
+    "typicalPayment": "Mărimea tipică a unei plăți (FTC)",
+    "privacyNote": "Aceasta este o înregistrare personală păstrată doar pe acest telefon. ANTON Pay nu o trimite niciodată nicăieri. Nu este o verificare a identității — este valoarea de referință cu care aplicația compară plățile noi.",
+    "save": "Salvează"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Asta pare neobișnuit",
+      "caution": "Merită o privire",
+      "info": "Bine de știut"
+    },
+    "payAnyway": "Plătește oricum",
+    "payAnywayHint": "Apasă din nou doar dacă ești sigur că această plată este corectă.",
+    "signal": {
+      "amount-anomaly": "Cu aproximativ {{factor}}× mai mare decât plata ta obișnuită.",
+      "above-typical": "Cu aproximativ {{factor}}× mai mare decât mărimea tipică a plății pe care ai setat-o.",
+      "new-counterparty": "Nu ai mai plătit niciodată acestui comerciant.",
+      "new-counterparty-large": "O plată mare către un comerciant căruia nu i-ai mai plătit niciodată.",
+      "velocity": "Deja {{count}} plăți în ultimele 24 de ore.",
+      "monthly-cap": "Aceasta duce cheltuielile tale pe 30 de zile peste cei {{expected}} FTC pe care te aștepți să-i cheltuiești într-o lună.",
+      "odd-hour": "De obicei nu faci plăți la această oră din zi.",
+      "expiring-qr": "Acest cod este pe cale să expire — nu lăsa pe nimeni să te grăbească.",
+      "dormancy-break": "Prima ta plată după {{days}} zile, și încă una mare."
+    }
+  },
+  "activityReview": {
+    "title": "Examinarea activității",
+    "subtitle": "O privire înapoi asupra tiparului tău de cheltuieli și a plăților pe care ANTON Pay le-a semnalat ca neobișnuite pentru tine.",
+    "patternHeading": "Tiparul tău obișnuit",
+    "payments": "Plăți efectuate",
+    "median": "Sumă tipică",
+    "largest": "Cea mai mare plată",
+    "merchants": "Comercianți plătiți",
+    "lastPayment": "Ultima plată",
+    "flaggedHeading": "Plăți semnalate",
+    "empty": "Nimic semnalat",
+    "emptyBody": "Plățile care par neobișnuite pentru tine vor apărea aici."
   }
 }

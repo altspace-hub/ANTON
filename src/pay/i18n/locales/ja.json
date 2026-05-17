@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "レストラン",
     "purposeEVENT": "イベント",
     "purposeSERVICE": "サービス",
-    "purposeREFUND": "返金"
+    "purposeREFUND": "返金",
+    "iso": {
+      "title": "ISO 20022 支払い詳細",
+      "debtor": "支払元（あなた）",
+      "creditor": "支払先（加盟店）",
+      "purpose": "目的コード",
+      "reference": "参照番号",
+      "note": "この支払いは ISO 20022 PACS.008 の信用振替に対応します。設定 → 支払い詳細 で情報を追加してください。"
+    }
   },
   "paymentDone": {
     "title": "支払いを記録しました",
@@ -117,7 +125,13 @@
     "resetConfirm": "アプリをリセットしますか？この操作はこの端末上のウォレットとすべての支払い記録を完全に消去し、元に戻すことはできません。",
     "language": "言語",
     "languagePick": "言語を選択",
-    "backToHome": "ホームに戻る"
+    "backToHome": "ホームに戻る",
+    "paymentDetails": "支払い詳細",
+    "paymentDetailsSub": "支払い記録用のお名前とご住所",
+    "moneyProfile": "マネープロファイル",
+    "moneyProfileSub": "あなたの通常のお金のパターン — 異常な支払いの検出に役立ちます",
+    "activityReview": "アクティビティ確認",
+    "activityReviewSub": "あなたの支出パターンとフラグ付けされた支払い"
   },
   "wallet": {
     "title": "あなたのウォレット",
@@ -129,5 +143,73 @@
     "noWallet": "ウォレットがまだありません",
     "noWalletBody": "ウォレットを作成して加盟店への支払いを始めましょう。",
     "createWallet": "ウォレットを作成"
+  },
+  "paymentDetails": {
+    "title": "支払い詳細",
+    "subtitle": "お名前とご住所は、あなたが行うすべての支払いの ISO 20022 記録に追加されます。すべての項目は任意です。",
+    "name": "氏名",
+    "street": "番地・建物名",
+    "postcode": "郵便番号",
+    "city": "市区町村",
+    "country": "国（ISO コード）",
+    "privacyNote": "これらの情報はこの端末内に保存されます。支払い記録の入力にのみ使用され — ANTON Pay が独自にどこかへ送信することは一切ありません。",
+    "save": "保存"
+  },
+  "moneyProfile": {
+    "title": "マネープロファイル",
+    "subtitle": "あなたが誰であるか、そして通常のお金のパターンがどのようなものかを示すプライベートな記録です。ANTON Pay はこれを使って、あなたにとって異常に見える支払いをフラグ付けします。すべての項目は任意です。",
+    "identitySection": "あなたについて",
+    "dateOfBirth": "生年月日",
+    "nationality": "国籍（ISO コード）",
+    "occupation": "職業",
+    "occupationPlaceholder": "例：教師",
+    "moneySection": "あなたのお金のパターン",
+    "sourceOfFunds": "お金の主な出どころ",
+    "source": {
+      "salary": "給与",
+      "business": "事業",
+      "savings": "貯蓄",
+      "investments": "投資",
+      "pension": "年金",
+      "gift": "贈与",
+      "other": "その他"
+    },
+    "expectedMonthly": "月あたりの予想 FTC 支出額",
+    "typicalPayment": "通常の支払い額（FTC）",
+    "privacyNote": "これはこの端末内にのみ保存される個人的な記録です。ANTON Pay がどこかへ送信することは一切ありません。これは本人確認ではなく — アプリが新しい支払いを比較するための基準値です。",
+    "save": "保存"
+  },
+  "fraud": {
+    "title": {
+      "warning": "これは通常と異なるようです",
+      "caution": "確認をおすすめします",
+      "info": "知っておくとよいこと"
+    },
+    "payAnyway": "それでも支払う",
+    "payAnywayHint": "この支払いが正しいと確信できる場合のみ、もう一度タップしてください。",
+    "signal": {
+      "amount-anomaly": "あなたの通常の支払いの約 {{factor}}× の大きさです。",
+      "above-typical": "設定した通常の支払い額の約 {{factor}}× の大きさです。",
+      "new-counterparty": "この加盟店に支払ったことは一度もありません。",
+      "new-counterparty-large": "これまで支払ったことのない加盟店への高額な支払いです。",
+      "velocity": "過去 24 時間ですでに {{count}} 件の支払いがあります。",
+      "monthly-cap": "これにより、30 日間の支出が、ひと月に使う見込みの {{expected}} FTC を超えます。",
+      "odd-hour": "あなたは通常、この時間帯に支払いをしません。",
+      "expiring-qr": "この QR コードはまもなく期限切れになります — 誰にも急かされないでください。",
+      "dormancy-break": "{{days}} 日ぶりの初めての支払いで、しかも高額です。"
+    }
+  },
+  "activityReview": {
+    "title": "アクティビティ確認",
+    "subtitle": "あなたの支出パターンと、ANTON Pay があなたにとって異常としてフラグ付けした支払いを振り返ります。",
+    "patternHeading": "あなたの通常のパターン",
+    "payments": "行った支払い",
+    "median": "通常の金額",
+    "largest": "最高額の支払い",
+    "merchants": "支払った加盟店",
+    "lastPayment": "直近の支払い",
+    "flaggedHeading": "フラグ付けされた支払い",
+    "empty": "フラグ付けされた項目はありません",
+    "emptyBody": "あなたにとって異常に見える支払いがここに表示されます。"
   }
 }

@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Ristorante",
     "purposeEVENT": "Evento",
     "purposeSERVICE": "Servizio",
-    "purposeREFUND": "Rimborso"
+    "purposeREFUND": "Rimborso",
+    "iso": {
+      "title": "Dettagli di pagamento ISO 20022",
+      "debtor": "Da (tu)",
+      "creditor": "A (esercente)",
+      "purpose": "Codice causale",
+      "reference": "Riferimento",
+      "note": "Questo pagamento corrisponde a un bonifico ISO 20022 PACS.008. Aggiungi i tuoi dati in Impostazioni → Dati di pagamento."
+    }
   },
   "paymentDone": {
     "title": "Pagamento registrato",
@@ -117,7 +125,13 @@
     "resetConfirm": "Reimpostare l'app? Questo cancella definitivamente il tuo portafoglio e tutti i registri dei pagamenti su questo dispositivo. L'operazione non può essere annullata.",
     "language": "Lingua",
     "languagePick": "Scegli la lingua",
-    "backToHome": "Torna alla home"
+    "backToHome": "Torna alla home",
+    "paymentDetails": "Dati di pagamento",
+    "paymentDetailsSub": "Il tuo nome e indirizzo per le ricevute di pagamento",
+    "moneyProfile": "Profilo finanziario",
+    "moneyProfileSub": "Le tue abitudini di pagamento — aiuta a individuare pagamenti insoliti",
+    "activityReview": "Riepilogo attività",
+    "activityReviewSub": "Le tue abitudini di spesa ed eventuali pagamenti segnalati"
   },
   "wallet": {
     "title": "Il tuo portafoglio",
@@ -129,5 +143,73 @@
     "noWallet": "Ancora nessun portafoglio",
     "noWalletBody": "Crea un portafoglio per iniziare a pagare gli esercenti.",
     "createWallet": "Crea portafoglio"
+  },
+  "paymentDetails": {
+    "title": "Dati di pagamento",
+    "subtitle": "Il tuo nome e indirizzo vengono aggiunti al record ISO 20022 di ogni pagamento che effettui. Tutti i campi sono facoltativi.",
+    "name": "Nome completo",
+    "street": "Indirizzo",
+    "postcode": "CAP",
+    "city": "Città",
+    "country": "Paese (codice ISO)",
+    "privacyNote": "Questi dati restano su questo telefono. Vengono usati solo per compilare il record di pagamento — ANTON Pay non li invia mai da nessuna parte di propria iniziativa.",
+    "save": "Salva"
+  },
+  "moneyProfile": {
+    "title": "Profilo finanziario",
+    "subtitle": "Un'immagine privata di chi sei e di come appaiono le tue abitudini di pagamento normali. ANTON Pay la usa per segnalare pagamenti che sembrano insoliti per te. Ogni campo è facoltativo.",
+    "identitySection": "Su di te",
+    "dateOfBirth": "Data di nascita",
+    "nationality": "Nazionalità (codice ISO)",
+    "occupation": "Professione",
+    "occupationPlaceholder": "es. Insegnante",
+    "moneySection": "Le tue abitudini di pagamento",
+    "sourceOfFunds": "Da dove proviene principalmente il tuo denaro",
+    "source": {
+      "salary": "Stipendio",
+      "business": "Attività",
+      "savings": "Risparmi",
+      "investments": "Investimenti",
+      "pension": "Pensione",
+      "gift": "Regalo",
+      "other": "Altro"
+    },
+    "expectedMonthly": "FTC che prevedi di spendere al mese",
+    "typicalPayment": "Importo di pagamento abituale (FTC)",
+    "privacyNote": "Questo è un record personale conservato solo su questo telefono. ANTON Pay non lo invia mai da nessuna parte. Non è una verifica dell'identità — è il riferimento con cui l'app confronta i nuovi pagamenti.",
+    "save": "Salva"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Questo sembra insolito",
+      "caution": "Da controllare",
+      "info": "Utile da sapere"
+    },
+    "payAnyway": "Paga comunque",
+    "payAnywayHint": "Tocca di nuovo solo se sei sicuro che questo pagamento sia corretto.",
+    "signal": {
+      "amount-anomaly": "Circa {{factor}}× più grande del tuo pagamento abituale.",
+      "above-typical": "Circa {{factor}}× più grande dell'importo di pagamento abituale che hai impostato.",
+      "new-counterparty": "Non hai mai pagato questo esercente prima d'ora.",
+      "new-counterparty-large": "Un pagamento ingente a un esercente che non hai mai pagato prima.",
+      "velocity": "{{count}} pagamenti già nelle ultime 24 ore.",
+      "monthly-cap": "Questo porta la tua spesa degli ultimi 30 giorni oltre i {{expected}} FTC che prevedi di spendere in un mese.",
+      "odd-hour": "Di solito non effettui pagamenti a quest'ora del giorno.",
+      "expiring-qr": "Questo codice sta per scadere — non lasciare che nessuno ti metta fretta.",
+      "dormancy-break": "Il tuo primo pagamento da {{days}} giorni, e per giunta ingente."
+    }
+  },
+  "activityReview": {
+    "title": "Riepilogo attività",
+    "subtitle": "Uno sguardo alle tue abitudini di spesa e ai pagamenti che ANTON Pay ha segnalato come insoliti per te.",
+    "patternHeading": "Le tue abitudini consuete",
+    "payments": "Pagamenti effettuati",
+    "median": "Importo abituale",
+    "largest": "Pagamento più alto",
+    "merchants": "Esercenti pagati",
+    "lastPayment": "Ultimo pagamento",
+    "flaggedHeading": "Pagamenti segnalati",
+    "empty": "Niente segnalato",
+    "emptyBody": "I pagamenti che sembrano insoliti per te compariranno qui."
   }
 }

@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurante",
     "purposeEVENT": "Evento",
     "purposeSERVICE": "Serviço",
-    "purposeREFUND": "Reembolso"
+    "purposeREFUND": "Reembolso",
+    "iso": {
+      "title": "Detalhes de pagamento ISO 20022",
+      "debtor": "De (você)",
+      "creditor": "Para (comerciante)",
+      "purpose": "Código de finalidade",
+      "reference": "Referência",
+      "note": "Este pagamento corresponde a uma transferência ISO 20022 PACS.008. Adicione os seus dados em Definições → Dados de pagamento."
+    }
   },
   "paymentDone": {
     "title": "Pagamento registado",
@@ -117,7 +125,13 @@
     "resetConfirm": "Repor a aplicação? Isto apaga permanentemente a sua carteira e todos os registos de pagamento neste dispositivo. Esta ação não pode ser anulada.",
     "language": "Idioma",
     "languagePick": "Escolher idioma",
-    "backToHome": "Voltar ao início"
+    "backToHome": "Voltar ao início",
+    "paymentDetails": "Dados de pagamento",
+    "paymentDetailsSub": "O seu nome e morada para os registos de pagamento",
+    "moneyProfile": "Perfil financeiro",
+    "moneyProfileSub": "O seu padrão de pagamento habitual — ajuda a detetar pagamentos invulgares",
+    "activityReview": "Revisão de atividade",
+    "activityReviewSub": "O seu padrão de gastos e quaisquer pagamentos assinalados"
   },
   "wallet": {
     "title": "A sua carteira",
@@ -129,5 +143,73 @@
     "noWallet": "Ainda sem carteira",
     "noWalletBody": "Crie uma carteira para começar a pagar a comerciantes.",
     "createWallet": "Criar carteira"
+  },
+  "paymentDetails": {
+    "title": "Dados de pagamento",
+    "subtitle": "O seu nome e morada são adicionados ao registo ISO 20022 de cada pagamento que faz. Todos os campos são opcionais.",
+    "name": "Nome completo",
+    "street": "Morada",
+    "postcode": "Código postal",
+    "city": "Cidade",
+    "country": "País (código ISO)",
+    "privacyNote": "Estes dados permanecem neste telemóvel. São usados apenas para preencher o registo de pagamento — o ANTON Pay nunca os envia para lado nenhum por iniciativa própria.",
+    "save": "Guardar"
+  },
+  "moneyProfile": {
+    "title": "Perfil financeiro",
+    "subtitle": "Uma imagem privada de quem você é e de como é o seu padrão de pagamento normal. O ANTON Pay usa-a para assinalar pagamentos que parecem invulgares para si. Todos os campos são opcionais.",
+    "identitySection": "Sobre você",
+    "dateOfBirth": "Data de nascimento",
+    "nationality": "Nacionalidade (código ISO)",
+    "occupation": "Profissão",
+    "occupationPlaceholder": "ex. Professor",
+    "moneySection": "O seu padrão de pagamento",
+    "sourceOfFunds": "De onde vem principalmente o seu dinheiro",
+    "source": {
+      "salary": "Salário",
+      "business": "Negócio",
+      "savings": "Poupanças",
+      "investments": "Investimentos",
+      "pension": "Pensão",
+      "gift": "Oferta",
+      "other": "Outro"
+    },
+    "expectedMonthly": "FTC que espera gastar por mês",
+    "typicalPayment": "Valor de pagamento habitual (FTC)",
+    "privacyNote": "Este é um registo pessoal guardado apenas neste telemóvel. O ANTON Pay nunca o envia para lado nenhum. Não é uma verificação de identidade — é a referência com que a aplicação compara os novos pagamentos.",
+    "save": "Guardar"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Isto parece invulgar",
+      "caution": "Vale a pena verificar",
+      "info": "Bom saber"
+    },
+    "payAnyway": "Pagar mesmo assim",
+    "payAnywayHint": "Toque novamente apenas se tiver a certeza de que este pagamento está correto.",
+    "signal": {
+      "amount-anomaly": "Cerca de {{factor}}× maior do que o seu pagamento habitual.",
+      "above-typical": "Cerca de {{factor}}× maior do que o valor de pagamento habitual que definiu.",
+      "new-counterparty": "Nunca pagou a este comerciante antes.",
+      "new-counterparty-large": "Um pagamento elevado a um comerciante a quem nunca pagou antes.",
+      "velocity": "{{count}} pagamentos já nas últimas 24 horas.",
+      "monthly-cap": "Isto leva os seus gastos dos últimos 30 dias para além dos {{expected}} FTC que espera gastar num mês.",
+      "odd-hour": "Normalmente não faz pagamentos a esta hora do dia.",
+      "expiring-qr": "Este código está prestes a expirar — não deixe ninguém apressá-lo.",
+      "dormancy-break": "O seu primeiro pagamento em {{days}} dias, e um pagamento elevado."
+    }
+  },
+  "activityReview": {
+    "title": "Revisão de atividade",
+    "subtitle": "Um olhar sobre o seu padrão de gastos e quaisquer pagamentos que o ANTON Pay assinalou como invulgares para si.",
+    "patternHeading": "O seu padrão habitual",
+    "payments": "Pagamentos feitos",
+    "median": "Valor habitual",
+    "largest": "Maior pagamento",
+    "merchants": "Comerciantes pagos",
+    "lastPayment": "Último pagamento",
+    "flaggedHeading": "Pagamentos assinalados",
+    "empty": "Nada assinalado",
+    "emptyBody": "Os pagamentos que parecerem invulgares para si aparecerão aqui."
   }
 }

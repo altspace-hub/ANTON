@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restauracja",
     "purposeEVENT": "Wydarzenie",
     "purposeSERVICE": "Usługa",
-    "purposeREFUND": "Zwrot"
+    "purposeREFUND": "Zwrot",
+    "iso": {
+      "title": "Szczegóły płatności ISO 20022",
+      "debtor": "Od (Ty)",
+      "creditor": "Do (sprzedawca)",
+      "purpose": "Kod celu",
+      "reference": "Numer referencyjny",
+      "note": "Ta płatność odpowiada przelewowi ISO 20022 PACS.008. Dodaj swoje dane w Ustawienia → Dane płatności."
+    }
   },
   "paymentDone": {
     "title": "Płatność zapisana",
@@ -117,7 +125,13 @@
     "resetConfirm": "Zresetować aplikację? Spowoduje to trwałe usunięcie Twojego portfela i wszystkich zapisów płatności z tego urządzenia. Tej operacji nie można cofnąć.",
     "language": "Język",
     "languagePick": "Wybierz język",
-    "backToHome": "Powrót do strony głównej"
+    "backToHome": "Powrót do strony głównej",
+    "paymentDetails": "Dane płatności",
+    "paymentDetailsSub": "Twoje imię, nazwisko i adres do rejestru płatności",
+    "moneyProfile": "Profil finansowy",
+    "moneyProfileSub": "Twój typowy wzorzec finansowy — pomaga wykryć nietypowe płatności",
+    "activityReview": "Przegląd aktywności",
+    "activityReviewSub": "Twój wzorzec wydatków i wszelkie oznaczone płatności"
   },
   "wallet": {
     "title": "Twój portfel",
@@ -129,5 +143,73 @@
     "noWallet": "Brak portfela",
     "noWalletBody": "Utwórz portfel, aby zacząć płacić sprzedawcom.",
     "createWallet": "Utwórz portfel"
+  },
+  "paymentDetails": {
+    "title": "Dane płatności",
+    "subtitle": "Twoje imię, nazwisko i adres są dodawane do rekordu ISO 20022 każdej dokonanej płatności. Wszystkie pola są opcjonalne.",
+    "name": "Imię i nazwisko",
+    "street": "Adres (ulica)",
+    "postcode": "Kod pocztowy",
+    "city": "Miasto",
+    "country": "Kraj (kod ISO)",
+    "privacyNote": "Te dane pozostają w tym telefonie. Służą wyłącznie do wypełnienia rekordu płatności — ANTON Pay nigdy nie wysyła ich nigdzie samodzielnie.",
+    "save": "Zapisz"
+  },
+  "moneyProfile": {
+    "title": "Profil finansowy",
+    "subtitle": "Prywatny obraz tego, kim jesteś i jak wygląda Twój typowy wzorzec finansowy. ANTON Pay używa go do oznaczania płatności, które wyglądają nietypowo dla Ciebie. Każde pole jest opcjonalne.",
+    "identitySection": "O Tobie",
+    "dateOfBirth": "Data urodzenia",
+    "nationality": "Narodowość (kod ISO)",
+    "occupation": "Zawód",
+    "occupationPlaceholder": "np. Nauczyciel",
+    "moneySection": "Twój wzorzec finansowy",
+    "sourceOfFunds": "Skąd głównie pochodzą Twoje pieniądze",
+    "source": {
+      "salary": "Wynagrodzenie",
+      "business": "Działalność gospodarcza",
+      "savings": "Oszczędności",
+      "investments": "Inwestycje",
+      "pension": "Emerytura",
+      "gift": "Darowizna",
+      "other": "Inne"
+    },
+    "expectedMonthly": "Spodziewane FTC wydane miesięcznie",
+    "typicalPayment": "Typowa wysokość płatności (FTC)",
+    "privacyNote": "To prywatny zapis przechowywany wyłącznie w tym telefonie. ANTON Pay nigdy nie wysyła go nigdzie. To nie jest weryfikacja tożsamości — to wartość bazowa, z którą aplikacja porównuje nowe płatności.",
+    "save": "Zapisz"
+  },
+  "fraud": {
+    "title": {
+      "warning": "To wygląda nietypowo",
+      "caution": "Warto sprawdzić",
+      "info": "Warto wiedzieć"
+    },
+    "payAnyway": "Zapłać mimo to",
+    "payAnywayHint": "Naciśnij ponownie tylko wtedy, gdy masz pewność, że ta płatność jest poprawna.",
+    "signal": {
+      "amount-anomaly": "Około {{factor}}× większa niż Twoja typowa płatność.",
+      "above-typical": "Około {{factor}}× większa niż ustawiona przez Ciebie typowa wysokość płatności.",
+      "new-counterparty": "Nigdy wcześniej nie płaciłeś temu sprzedawcy.",
+      "new-counterparty-large": "Duża płatność do sprzedawcy, któremu nigdy wcześniej nie płaciłeś.",
+      "velocity": "Już {{count}} płatności w ciągu ostatnich 24 godzin.",
+      "monthly-cap": "To sprawia, że Twoje wydatki z 30 dni przekraczają {{expected}} FTC, które planujesz wydać w miesiącu.",
+      "odd-hour": "Zwykle nie dokonujesz płatności o tej porze dnia.",
+      "expiring-qr": "Ten kod wkrótce wygaśnie — nie pozwól nikomu Cię ponaglać.",
+      "dormancy-break": "Twoja pierwsza płatność od {{days}} dni, i to duża."
+    }
+  },
+  "activityReview": {
+    "title": "Przegląd aktywności",
+    "subtitle": "Spojrzenie wstecz na Twój wzorzec wydatków i płatności, które ANTON Pay oznaczył jako nietypowe dla Ciebie.",
+    "patternHeading": "Twój typowy wzorzec",
+    "payments": "Dokonane płatności",
+    "median": "Typowa kwota",
+    "largest": "Największa płatność",
+    "merchants": "Opłaceni sprzedawcy",
+    "lastPayment": "Ostatnia płatność",
+    "flaggedHeading": "Oznaczone płatności",
+    "empty": "Nic nie oznaczono",
+    "emptyBody": "Płatności, które wyglądają nietypowo dla Ciebie, pojawią się tutaj."
   }
 }

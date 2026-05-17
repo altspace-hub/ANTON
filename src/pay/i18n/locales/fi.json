@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Ravintola",
     "purposeEVENT": "Tapahtuma",
     "purposeSERVICE": "Palvelu",
-    "purposeREFUND": "Hyvitys"
+    "purposeREFUND": "Hyvitys",
+    "iso": {
+      "title": "ISO 20022 -maksutiedot",
+      "debtor": "Lähettäjä (sinä)",
+      "creditor": "Saaja (kauppias)",
+      "purpose": "Tarkoituskoodi",
+      "reference": "Viite",
+      "note": "Tämä maksu vastaa ISO 20022 PACS.008 -tilisiirtoa. Lisää tietosi kohdassa Asetukset → Maksutiedot."
+    }
   },
   "paymentDone": {
     "title": "Maksu tallennettu",
@@ -117,7 +125,13 @@
     "resetConfirm": "Nollataanko sovellus? Tämä poistaa pysyvästi lompakkosi ja kaikki maksutiedot tältä laitteelta. Tätä ei voi kumota.",
     "language": "Kieli",
     "languagePick": "Valitse kieli",
-    "backToHome": "Takaisin etusivulle"
+    "backToHome": "Takaisin etusivulle",
+    "paymentDetails": "Maksutiedot",
+    "paymentDetailsSub": "Nimesi ja osoitteesi maksutietueita varten",
+    "moneyProfile": "Talousprofiili",
+    "moneyProfileSub": "Tavanomainen rahankäyttötapasi — auttaa havaitsemaan epätavalliset maksut",
+    "activityReview": "Toiminnan katsaus",
+    "activityReviewSub": "Rahankäyttötapasi ja mahdolliset merkityt maksut"
   },
   "wallet": {
     "title": "Lompakkosi",
@@ -129,5 +143,73 @@
     "noWallet": "Ei vielä lompakkoa",
     "noWalletBody": "Luo lompakko aloittaaksesi kauppiaiden maksamisen.",
     "createWallet": "Luo lompakko"
+  },
+  "paymentDetails": {
+    "title": "Maksutiedot",
+    "subtitle": "Nimesi ja osoitteesi lisätään jokaisen tekemäsi maksun ISO 20022 -tietueeseen. Kaikki kentät ovat valinnaisia.",
+    "name": "Koko nimi",
+    "street": "Katuosoite",
+    "postcode": "Postinumero",
+    "city": "Kaupunki",
+    "country": "Maa (ISO-koodi)",
+    "privacyNote": "Nämä tiedot pysyvät tässä puhelimessa. Niitä käytetään vain maksutietueen täyttämiseen — ANTON Pay ei koskaan lähetä niitä mihinkään itsestään.",
+    "save": "Tallenna"
+  },
+  "moneyProfile": {
+    "title": "Talousprofiili",
+    "subtitle": "Yksityinen kuva siitä, kuka olet ja miltä tavanomainen rahankäyttötapasi näyttää. ANTON Pay käyttää sitä merkitäkseen maksut, jotka näyttävät sinulle epätavallisilta. Jokainen kenttä on valinnainen.",
+    "identitySection": "Tietoja sinusta",
+    "dateOfBirth": "Syntymäaika",
+    "nationality": "Kansalaisuus (ISO-koodi)",
+    "occupation": "Ammatti",
+    "occupationPlaceholder": "esim. Opettaja",
+    "moneySection": "Rahankäyttötapasi",
+    "sourceOfFunds": "Mistä rahasi pääasiassa tulevat",
+    "source": {
+      "salary": "Palkka",
+      "business": "Yritystoiminta",
+      "savings": "Säästöt",
+      "investments": "Sijoitukset",
+      "pension": "Eläke",
+      "gift": "Lahja",
+      "other": "Muu"
+    },
+    "expectedMonthly": "Odotettu FTC-kulutus kuukaudessa",
+    "typicalPayment": "Tavanomainen maksun suuruus (FTC)",
+    "privacyNote": "Tämä on henkilökohtainen tietue, joka säilytetään vain tässä puhelimessa. ANTON Pay ei koskaan lähetä sitä minnekään. Se ei ole henkilöllisyyden tarkistus — se on vertailuarvo, johon sovellus vertaa uusia maksuja.",
+    "save": "Tallenna"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Tämä näyttää epätavalliselta",
+      "caution": "Kannattaa tarkistaa",
+      "info": "Hyvä tietää"
+    },
+    "payAnyway": "Maksa silti",
+    "payAnywayHint": "Napauta uudelleen vain, jos olet varma, että tämä maksu on oikein.",
+    "signal": {
+      "amount-anomaly": "Noin {{factor}}× suurempi kuin tavanomainen maksusi.",
+      "above-typical": "Noin {{factor}}× suurempi kuin asettamasi tavanomainen maksun suuruus.",
+      "new-counterparty": "Et ole koskaan aiemmin maksanut tälle kauppiaalle.",
+      "new-counterparty-large": "Suuri maksu kauppiaalle, jolle et ole koskaan aiemmin maksanut.",
+      "velocity": "Jo {{count}} maksua viimeisen 24 tunnin aikana.",
+      "monthly-cap": "Tämä nostaa 30 päivän kulutuksesi yli {{expected}} FTC:n, jonka odotat käyttäväsi kuukaudessa.",
+      "odd-hour": "Et yleensä tee maksuja tähän vuorokaudenaikaan.",
+      "expiring-qr": "Tämä koodi on vanhenemassa — älä anna kenenkään hoputtaa sinua.",
+      "dormancy-break": "Ensimmäinen maksusi {{days}} päivään, ja vielä suuri."
+    }
+  },
+  "activityReview": {
+    "title": "Toiminnan katsaus",
+    "subtitle": "Katsaus rahankäyttötapaasi ja maksuihin, jotka ANTON Pay merkitsi sinulle epätavallisiksi.",
+    "patternHeading": "Tavanomainen tapasi",
+    "payments": "Tehdyt maksut",
+    "median": "Tavanomainen summa",
+    "largest": "Suurin maksu",
+    "merchants": "Maksetut kauppiaat",
+    "lastPayment": "Viimeisin maksu",
+    "flaggedHeading": "Merkityt maksut",
+    "empty": "Ei mitään merkittyä",
+    "emptyBody": "Sinulle epätavallisilta näyttävät maksut näkyvät tässä."
   }
 }

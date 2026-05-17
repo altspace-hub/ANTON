@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurant",
     "purposeEVENT": "Begivenhed",
     "purposeSERVICE": "Service",
-    "purposeREFUND": "Refundering"
+    "purposeREFUND": "Refundering",
+    "iso": {
+      "title": "ISO 20022-betalingsoplysninger",
+      "debtor": "Fra (dig)",
+      "creditor": "Til (forhandler)",
+      "purpose": "Formålskode",
+      "reference": "Reference",
+      "note": "Denne betaling svarer til en ISO 20022 PACS.008-kreditoverførsel. Tilføj dine oplysninger i Indstillinger → Betalingsoplysninger."
+    }
   },
   "paymentDone": {
     "title": "Betaling registreret",
@@ -117,7 +125,13 @@
     "resetConfirm": "Nulstil appen? Dette sletter permanent din wallet og alle betalingsregistreringer på denne enhed. Dette kan ikke fortrydes.",
     "language": "Sprog",
     "languagePick": "Vælg sprog",
-    "backToHome": "Tilbage til start"
+    "backToHome": "Tilbage til start",
+    "paymentDetails": "Betalingsoplysninger",
+    "paymentDetailsSub": "Dit navn og adresse til betalingsregistre",
+    "moneyProfile": "Økonomisk profil",
+    "moneyProfileSub": "Dit sædvanlige betalingsmønster — hjælper med at opdage usædvanlige betalinger",
+    "activityReview": "Aktivitetsgennemgang",
+    "activityReviewSub": "Dit forbrugsmønster og eventuelle markerede betalinger"
   },
   "wallet": {
     "title": "Din wallet",
@@ -129,5 +143,73 @@
     "noWallet": "Ingen wallet endnu",
     "noWalletBody": "Opret en wallet for at begynde at betale forhandlere.",
     "createWallet": "Opret wallet"
+  },
+  "paymentDetails": {
+    "title": "Betalingsoplysninger",
+    "subtitle": "Dit navn og din adresse tilføjes til ISO 20022-registret for hver betaling, du foretager. Alle felter er valgfri.",
+    "name": "Fulde navn",
+    "street": "Gadeadresse",
+    "postcode": "Postnummer",
+    "city": "By",
+    "country": "Land (ISO-kode)",
+    "privacyNote": "Disse oplysninger forbliver på denne telefon. De bruges kun til at udfylde betalingsregistret — ANTON Pay sender dem aldrig nogen steder på egen hånd.",
+    "save": "Gem"
+  },
+  "moneyProfile": {
+    "title": "Økonomisk profil",
+    "subtitle": "Et privat billede af, hvem du er, og hvordan dit normale betalingsmønster ser ud. ANTON Pay bruger det til at markere betalinger, der ser usædvanlige ud for dig. Alle felter er valgfri.",
+    "identitySection": "Om dig",
+    "dateOfBirth": "Fødselsdato",
+    "nationality": "Nationalitet (ISO-kode)",
+    "occupation": "Beskæftigelse",
+    "occupationPlaceholder": "f.eks. Lærer",
+    "moneySection": "Dit betalingsmønster",
+    "sourceOfFunds": "Hvor dine penge hovedsageligt kommer fra",
+    "source": {
+      "salary": "Løn",
+      "business": "Virksomhed",
+      "savings": "Opsparing",
+      "investments": "Investeringer",
+      "pension": "Pension",
+      "gift": "Gave",
+      "other": "Andet"
+    },
+    "expectedMonthly": "Forventet FTC brugt pr. måned",
+    "typicalPayment": "Typisk betalingsstørrelse (FTC)",
+    "privacyNote": "Dette er et personligt register, der kun findes på denne telefon. ANTON Pay sender det aldrig nogen steder. Det er ikke en identitetskontrol — det er referenceværdien, som appen sammenligner nye betalinger med.",
+    "save": "Gem"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Dette ser usædvanligt ud",
+      "caution": "Værd at se nærmere på",
+      "info": "Værd at vide"
+    },
+    "payAnyway": "Betal alligevel",
+    "payAnywayHint": "Tryk igen, kun hvis du er sikker på, at denne betaling er korrekt.",
+    "signal": {
+      "amount-anomaly": "Cirka {{factor}}× større end din sædvanlige betaling.",
+      "above-typical": "Cirka {{factor}}× større end den typiske betalingsstørrelse, du har angivet.",
+      "new-counterparty": "Du har aldrig betalt denne forhandler før.",
+      "new-counterparty-large": "En stor betaling til en forhandler, du aldrig har betalt før.",
+      "velocity": "{{count}} betalinger allerede inden for de seneste 24 timer.",
+      "monthly-cap": "Dette skubber dit forbrug over 30 dage forbi de {{expected}} FTC, du forventer at bruge på en måned.",
+      "odd-hour": "Du foretager normalt ikke betalinger på dette tidspunkt af døgnet.",
+      "expiring-qr": "Denne kode er ved at udløbe — lad ingen stresse dig.",
+      "dormancy-break": "Din første betaling i {{days}} dage, og en stor en."
+    }
+  },
+  "activityReview": {
+    "title": "Aktivitetsgennemgang",
+    "subtitle": "Et tilbageblik på dit forbrugsmønster og betalinger, som ANTON Pay markerede som usædvanlige for dig.",
+    "patternHeading": "Dit sædvanlige mønster",
+    "payments": "Foretagne betalinger",
+    "median": "Typisk beløb",
+    "largest": "Største betaling",
+    "merchants": "Betalte forhandlere",
+    "lastPayment": "Seneste betaling",
+    "flaggedHeading": "Markerede betalinger",
+    "empty": "Intet markeret",
+    "emptyBody": "Betalinger, der ser usædvanlige ud for dig, vises her."
   }
 }

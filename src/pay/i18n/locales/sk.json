@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Reštaurácia",
     "purposeEVENT": "Podujatie",
     "purposeSERVICE": "Služba",
-    "purposeREFUND": "Vrátenie peňazí"
+    "purposeREFUND": "Vrátenie peňazí",
+    "iso": {
+      "title": "Platobné údaje ISO 20022",
+      "debtor": "Od (vy)",
+      "creditor": "Komu (obchodník)",
+      "purpose": "Kód účelu",
+      "reference": "Referencia",
+      "note": "Táto platba zodpovedá úhrade ISO 20022 PACS.008. Svoje údaje pridajte v Nastaveniach → Platobné údaje."
+    }
   },
   "paymentDone": {
     "title": "Platba zaznamenaná",
@@ -117,7 +125,13 @@
     "resetConfirm": "Obnoviť aplikáciu? Týmto sa natrvalo vymaže vaša peňaženka a všetky záznamy o platbách v tomto zariadení. Túto akciu nie je možné vrátiť späť.",
     "language": "Jazyk",
     "languagePick": "Vyberte jazyk",
-    "backToHome": "Späť na domovskú obrazovku"
+    "backToHome": "Späť na domovskú obrazovku",
+    "paymentDetails": "Platobné údaje",
+    "paymentDetailsSub": "Vaše meno a adresa pre platobné záznamy",
+    "moneyProfile": "Finančný profil",
+    "moneyProfileSub": "Váš bežný platobný vzorec — pomáha odhaliť nezvyčajné platby",
+    "activityReview": "Prehľad aktivity",
+    "activityReviewSub": "Váš výdavkový vzorec a všetky označené platby"
   },
   "wallet": {
     "title": "Vaša peňaženka",
@@ -129,5 +143,73 @@
     "noWallet": "Zatiaľ žiadna peňaženka",
     "noWalletBody": "Vytvorte si peňaženku a začnite platiť obchodníkom.",
     "createWallet": "Vytvoriť peňaženku"
+  },
+  "paymentDetails": {
+    "title": "Platobné údaje",
+    "subtitle": "Vaše meno a adresa sa pridávajú do záznamu ISO 20022 ku každej platbe, ktorú vykonáte. Všetky polia sú voliteľné.",
+    "name": "Celé meno",
+    "street": "Ulica a číslo",
+    "postcode": "PSČ",
+    "city": "Mesto",
+    "country": "Krajina (ISO kód)",
+    "privacyNote": "Tieto údaje zostávajú v tomto telefóne. Používajú sa len na vyplnenie platobného záznamu — ANTON Pay ich nikdy nikam neposiela sám od seba.",
+    "save": "Uložiť"
+  },
+  "moneyProfile": {
+    "title": "Finančný profil",
+    "subtitle": "Súkromný obraz toho, kto ste a ako vyzerá váš bežný platobný vzorec. ANTON Pay ho používa na označenie platieb, ktoré sa pre vás javia ako nezvyčajné. Každé pole je voliteľné.",
+    "identitySection": "O vás",
+    "dateOfBirth": "Dátum narodenia",
+    "nationality": "Štátna príslušnosť (ISO kód)",
+    "occupation": "Povolanie",
+    "occupationPlaceholder": "napr. Učiteľ",
+    "moneySection": "Váš platobný vzorec",
+    "sourceOfFunds": "Odkiaľ pochádzajú vaše peniaze prevažne",
+    "source": {
+      "salary": "Mzda",
+      "business": "Podnikanie",
+      "savings": "Úspory",
+      "investments": "Investície",
+      "pension": "Dôchodok",
+      "gift": "Dar",
+      "other": "Iné"
+    },
+    "expectedMonthly": "Očakávané FTC minuté za mesiac",
+    "typicalPayment": "Typická veľkosť platby (FTC)",
+    "privacyNote": "Toto je osobný záznam uchovávaný len v tomto telefóne. ANTON Pay ho nikdy nikam neposiela. Nie je to overenie totožnosti — je to referenčná hodnota, s ktorou aplikácia porovnáva nové platby.",
+    "save": "Uložiť"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Toto vyzerá nezvyčajne",
+      "caution": "Stojí za pozretie",
+      "info": "Dobré vedieť"
+    },
+    "payAnyway": "Aj tak zaplatiť",
+    "payAnywayHint": "Ťuknite znova len vtedy, ak ste si istí, že platba je správna.",
+    "signal": {
+      "amount-anomaly": "Približne {{factor}}× väčšia než vaša bežná platba.",
+      "above-typical": "Približne {{factor}}× väčšia než typická veľkosť platby, ktorú ste nastavili.",
+      "new-counterparty": "Tomuto obchodníkovi ste ešte nikdy nezaplatili.",
+      "new-counterparty-large": "Veľká platba obchodníkovi, ktorému ste ešte nikdy nezaplatili.",
+      "velocity": "{{count}} platieb už za posledných 24 hodín.",
+      "monthly-cap": "Týmto vaše výdavky za 30 dní presiahnu {{expected}} FTC, ktoré očakávate minúť za mesiac.",
+      "odd-hour": "Zvyčajne nerobíte platby v tomto čase dňa.",
+      "expiring-qr": "Tento kód čoskoro vyprší — nenechajte sa nikým ponáhľať.",
+      "dormancy-break": "Vaša prvá platba za {{days}} dní, a hneď veľká."
+    }
+  },
+  "activityReview": {
+    "title": "Prehľad aktivity",
+    "subtitle": "Ohliadnutie sa za vaším výdavkovým vzorcom a platbami, ktoré ANTON Pay označil ako nezvyčajné pre vás.",
+    "patternHeading": "Váš bežný vzorec",
+    "payments": "Vykonané platby",
+    "median": "Typická suma",
+    "largest": "Najväčšia platba",
+    "merchants": "Zaplatení obchodníci",
+    "lastPayment": "Posledná platba",
+    "flaggedHeading": "Označené platby",
+    "empty": "Nič neoznačené",
+    "emptyBody": "Platby, ktoré sa pre vás javia ako nezvyčajné, sa zobrazia tu."
   }
 }

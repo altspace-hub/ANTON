@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurant",
     "purposeEVENT": "Evenement",
     "purposeSERVICE": "Dienst",
-    "purposeREFUND": "Terugbetaling"
+    "purposeREFUND": "Terugbetaling",
+    "iso": {
+      "title": "ISO 20022-betalingsgegevens",
+      "debtor": "Van (jij)",
+      "creditor": "Aan (verkoper)",
+      "purpose": "Doelcode",
+      "reference": "Referentie",
+      "note": "Deze betaling komt overeen met een ISO 20022 PACS.008-overboeking. Voeg je gegevens toe bij Instellingen → Betalingsgegevens."
+    }
   },
   "paymentDone": {
     "title": "Betaling vastgelegd",
@@ -117,7 +125,13 @@
     "resetConfirm": "App resetten? Hiermee worden je wallet en alle betalingsgegevens op dit apparaat permanent gewist. Dit kan niet ongedaan worden gemaakt.",
     "language": "Taal",
     "languagePick": "Taal kiezen",
-    "backToHome": "Terug naar start"
+    "backToHome": "Terug naar start",
+    "paymentDetails": "Betalingsgegevens",
+    "paymentDetailsSub": "Je naam en adres voor betalingsoverzichten",
+    "moneyProfile": "Geldprofiel",
+    "moneyProfileSub": "Je gebruikelijke betalingspatroon — helpt ongebruikelijke betalingen te herkennen",
+    "activityReview": "Activiteitsoverzicht",
+    "activityReviewSub": "Je uitgavenpatroon en eventuele gemarkeerde betalingen"
   },
   "wallet": {
     "title": "Je wallet",
@@ -129,5 +143,73 @@
     "noWallet": "Nog geen wallet",
     "noWalletBody": "Maak een wallet aan om verkopers te betalen.",
     "createWallet": "Wallet aanmaken"
+  },
+  "paymentDetails": {
+    "title": "Betalingsgegevens",
+    "subtitle": "Je naam en adres worden toegevoegd aan het ISO 20022-record van elke betaling die je doet. Alle velden zijn optioneel.",
+    "name": "Volledige naam",
+    "street": "Adres",
+    "postcode": "Postcode",
+    "city": "Plaats",
+    "country": "Land (ISO-code)",
+    "privacyNote": "Deze gegevens blijven op deze telefoon. Ze worden alleen gebruikt om het betalingsrecord in te vullen — ANTON Pay verstuurt ze nooit uit zichzelf ergens naartoe.",
+    "save": "Opslaan"
+  },
+  "moneyProfile": {
+    "title": "Geldprofiel",
+    "subtitle": "Een privébeeld van wie je bent en hoe je normale betalingspatroon eruitziet. ANTON Pay gebruikt het om betalingen te markeren die ongebruikelijk lijken voor jou. Elk veld is optioneel.",
+    "identitySection": "Over jou",
+    "dateOfBirth": "Geboortedatum",
+    "nationality": "Nationaliteit (ISO-code)",
+    "occupation": "Beroep",
+    "occupationPlaceholder": "bijv. Leraar",
+    "moneySection": "Je betalingspatroon",
+    "sourceOfFunds": "Waar je geld voornamelijk vandaan komt",
+    "source": {
+      "salary": "Salaris",
+      "business": "Onderneming",
+      "savings": "Spaargeld",
+      "investments": "Beleggingen",
+      "pension": "Pensioen",
+      "gift": "Schenking",
+      "other": "Anders"
+    },
+    "expectedMonthly": "Verwachte FTC-uitgaven per maand",
+    "typicalPayment": "Gebruikelijke betalingsgrootte (FTC)",
+    "privacyNote": "Dit is een persoonlijk record dat alleen op deze telefoon wordt bewaard. ANTON Pay verstuurt het nooit ergens naartoe. Het is geen identiteitscontrole — het is de referentie waarmee de app nieuwe betalingen vergelijkt.",
+    "save": "Opslaan"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Dit lijkt ongebruikelijk",
+      "caution": "De moeite van het controleren waard",
+      "info": "Goed om te weten"
+    },
+    "payAnyway": "Toch betalen",
+    "payAnywayHint": "Tik alleen opnieuw als je zeker weet dat deze betaling klopt.",
+    "signal": {
+      "amount-anomaly": "Ongeveer {{factor}}× groter dan je gebruikelijke betaling.",
+      "above-typical": "Ongeveer {{factor}}× groter dan de gebruikelijke betalingsgrootte die je hebt ingesteld.",
+      "new-counterparty": "Je hebt deze verkoper nog nooit eerder betaald.",
+      "new-counterparty-large": "Een grote betaling aan een verkoper die je nog nooit eerder hebt betaald.",
+      "velocity": "{{count}} betalingen al in de afgelopen 24 uur.",
+      "monthly-cap": "Hiermee komen je uitgaven over 30 dagen boven de {{expected}} FTC die je per maand verwacht uit te geven.",
+      "odd-hour": "Je doet normaal gesproken geen betalingen op dit tijdstip van de dag.",
+      "expiring-qr": "Deze code verloopt bijna — laat je door niemand opjagen.",
+      "dormancy-break": "Je eerste betaling in {{days}} dagen, en meteen een grote."
+    }
+  },
+  "activityReview": {
+    "title": "Activiteitsoverzicht",
+    "subtitle": "Een terugblik op je uitgavenpatroon en alle betalingen die ANTON Pay als ongebruikelijk voor jou heeft gemarkeerd.",
+    "patternHeading": "Je gebruikelijke patroon",
+    "payments": "Gedane betalingen",
+    "median": "Gebruikelijk bedrag",
+    "largest": "Grootste betaling",
+    "merchants": "Betaalde verkopers",
+    "lastPayment": "Laatste betaling",
+    "flaggedHeading": "Gemarkeerde betalingen",
+    "empty": "Niets gemarkeerd",
+    "emptyBody": "Betalingen die ongebruikelijk lijken voor jou verschijnen hier."
   }
 }

@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurante",
     "purposeEVENT": "Evento",
     "purposeSERVICE": "Servicio",
-    "purposeREFUND": "Reembolso"
+    "purposeREFUND": "Reembolso",
+    "iso": {
+      "title": "Detalles de pago ISO 20022",
+      "debtor": "De (tú)",
+      "creditor": "Para (comercio)",
+      "purpose": "Código de finalidad",
+      "reference": "Referencia",
+      "note": "Este pago corresponde a una transferencia ISO 20022 PACS.008. Añade tus datos en Ajustes → Datos de pago."
+    }
   },
   "paymentDone": {
     "title": "Pago registrado",
@@ -117,7 +125,13 @@
     "resetConfirm": "¿Restablecer la app? Esto borra permanentemente tu cartera y todos los registros de pago de este dispositivo. Esto no se puede deshacer.",
     "language": "Idioma",
     "languagePick": "Elegir idioma",
-    "backToHome": "Volver al inicio"
+    "backToHome": "Volver al inicio",
+    "paymentDetails": "Datos de pago",
+    "paymentDetailsSub": "Tu nombre y dirección para los registros de pago",
+    "moneyProfile": "Perfil financiero",
+    "moneyProfileSub": "Tu patrón de pago habitual — ayuda a detectar pagos inusuales",
+    "activityReview": "Revisión de actividad",
+    "activityReviewSub": "Tu patrón de gasto y cualquier pago marcado"
   },
   "wallet": {
     "title": "Tu cartera",
@@ -129,5 +143,73 @@
     "noWallet": "Aún no hay cartera",
     "noWalletBody": "Crea una cartera para empezar a pagar a comercios.",
     "createWallet": "Crear cartera"
+  },
+  "paymentDetails": {
+    "title": "Datos de pago",
+    "subtitle": "Tu nombre y dirección se añaden al registro ISO 20022 de cada pago que realizas. Todos los campos son opcionales.",
+    "name": "Nombre completo",
+    "street": "Dirección",
+    "postcode": "Código postal",
+    "city": "Ciudad",
+    "country": "País (código ISO)",
+    "privacyNote": "Estos datos permanecen en este teléfono. Solo se usan para completar el registro de pago — ANTON Pay nunca los envía a ningún sitio por su cuenta.",
+    "save": "Guardar"
+  },
+  "moneyProfile": {
+    "title": "Perfil financiero",
+    "subtitle": "Una imagen privada de quién eres y de cómo es tu patrón de pago normal. ANTON Pay lo usa para marcar pagos que parecen inusuales para ti. Todos los campos son opcionales.",
+    "identitySection": "Sobre ti",
+    "dateOfBirth": "Fecha de nacimiento",
+    "nationality": "Nacionalidad (código ISO)",
+    "occupation": "Ocupación",
+    "occupationPlaceholder": "p. ej. Profesor",
+    "moneySection": "Tu patrón de pago",
+    "sourceOfFunds": "De dónde proviene principalmente tu dinero",
+    "source": {
+      "salary": "Salario",
+      "business": "Negocio",
+      "savings": "Ahorros",
+      "investments": "Inversiones",
+      "pension": "Pensión",
+      "gift": "Regalo",
+      "other": "Otro"
+    },
+    "expectedMonthly": "FTC que esperas gastar al mes",
+    "typicalPayment": "Importe de pago habitual (FTC)",
+    "privacyNote": "Este es un registro personal guardado solo en este teléfono. ANTON Pay nunca lo envía a ningún sitio. No es una verificación de identidad — es la referencia con la que la app compara los pagos nuevos.",
+    "save": "Guardar"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Esto parece inusual",
+      "caution": "Conviene revisarlo",
+      "info": "Conviene saberlo"
+    },
+    "payAnyway": "Pagar de todos modos",
+    "payAnywayHint": "Toca de nuevo solo si estás seguro de que este pago es correcto.",
+    "signal": {
+      "amount-anomaly": "Aproximadamente {{factor}}× mayor que tu pago habitual.",
+      "above-typical": "Aproximadamente {{factor}}× mayor que el importe de pago habitual que estableciste.",
+      "new-counterparty": "Nunca has pagado a este comercio antes.",
+      "new-counterparty-large": "Un pago elevado a un comercio al que nunca has pagado antes.",
+      "velocity": "{{count}} pagos ya en las últimas 24 horas.",
+      "monthly-cap": "Esto lleva tu gasto de los últimos 30 días por encima de los {{expected}} FTC que esperas gastar en un mes.",
+      "odd-hour": "Normalmente no realizas pagos a esta hora del día.",
+      "expiring-qr": "Este código está a punto de caducar — no dejes que nadie te apresure.",
+      "dormancy-break": "Tu primer pago en {{days}} días, y uno elevado."
+    }
+  },
+  "activityReview": {
+    "title": "Revisión de actividad",
+    "subtitle": "Un repaso de tu patrón de gasto y de los pagos que ANTON Pay marcó como inusuales para ti.",
+    "patternHeading": "Tu patrón habitual",
+    "payments": "Pagos realizados",
+    "median": "Importe habitual",
+    "largest": "Pago más alto",
+    "merchants": "Comercios pagados",
+    "lastPayment": "Último pago",
+    "flaggedHeading": "Pagos marcados",
+    "empty": "Nada marcado",
+    "emptyBody": "Los pagos que parezcan inusuales para ti aparecerán aquí."
   }
 }

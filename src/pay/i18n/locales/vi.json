@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Nhà hàng",
     "purposeEVENT": "Sự kiện",
     "purposeSERVICE": "Dịch vụ",
-    "purposeREFUND": "Hoàn tiền"
+    "purposeREFUND": "Hoàn tiền",
+    "iso": {
+      "title": "Chi tiết thanh toán ISO 20022",
+      "debtor": "Từ (bạn)",
+      "creditor": "Đến (người bán)",
+      "purpose": "Mã mục đích",
+      "reference": "Tham chiếu",
+      "note": "Khoản thanh toán này tương ứng với một giao dịch chuyển tiền ISO 20022 PACS.008. Thêm thông tin của bạn trong Cài đặt → Chi tiết thanh toán."
+    }
   },
   "paymentDone": {
     "title": "Đã ghi nhận thanh toán",
@@ -117,7 +125,13 @@
     "resetConfirm": "Đặt lại ứng dụng? Thao tác này sẽ xóa vĩnh viễn ví của bạn và mọi bản ghi thanh toán trên thiết bị này. Không thể hoàn tác.",
     "language": "Ngôn ngữ",
     "languagePick": "Chọn ngôn ngữ",
-    "backToHome": "Về trang chủ"
+    "backToHome": "Về trang chủ",
+    "paymentDetails": "Chi tiết thanh toán",
+    "paymentDetailsSub": "Tên và địa chỉ của bạn cho hồ sơ thanh toán",
+    "moneyProfile": "Hồ sơ tài chính",
+    "moneyProfileSub": "Mẫu chi tiêu thông thường của bạn — giúp phát hiện các khoản thanh toán bất thường",
+    "activityReview": "Xem lại hoạt động",
+    "activityReviewSub": "Mẫu chi tiêu của bạn và mọi khoản thanh toán bị đánh dấu"
   },
   "wallet": {
     "title": "Ví của bạn",
@@ -129,5 +143,73 @@
     "noWallet": "Chưa có ví",
     "noWalletBody": "Tạo ví để bắt đầu thanh toán cho người bán.",
     "createWallet": "Tạo ví"
+  },
+  "paymentDetails": {
+    "title": "Chi tiết thanh toán",
+    "subtitle": "Tên và địa chỉ của bạn được thêm vào hồ sơ ISO 20022 của mỗi khoản thanh toán bạn thực hiện. Tất cả các trường đều không bắt buộc.",
+    "name": "Họ và tên",
+    "street": "Địa chỉ đường phố",
+    "postcode": "Mã bưu chính",
+    "city": "Thành phố",
+    "country": "Quốc gia (mã ISO)",
+    "privacyNote": "Những thông tin này được lưu trên điện thoại này. Chúng chỉ được dùng để điền vào hồ sơ thanh toán — ANTON Pay không bao giờ tự gửi chúng đi đâu cả.",
+    "save": "Lưu"
+  },
+  "moneyProfile": {
+    "title": "Hồ sơ tài chính",
+    "subtitle": "Một bức tranh riêng tư về con người bạn và mẫu chi tiêu bình thường của bạn. ANTON Pay dùng nó để đánh dấu các khoản thanh toán trông bất thường đối với bạn. Mọi trường đều không bắt buộc.",
+    "identitySection": "Về bạn",
+    "dateOfBirth": "Ngày sinh",
+    "nationality": "Quốc tịch (mã ISO)",
+    "occupation": "Nghề nghiệp",
+    "occupationPlaceholder": "ví dụ: Giáo viên",
+    "moneySection": "Mẫu chi tiêu của bạn",
+    "sourceOfFunds": "Tiền của bạn chủ yếu đến từ đâu",
+    "source": {
+      "salary": "Lương",
+      "business": "Kinh doanh",
+      "savings": "Tiết kiệm",
+      "investments": "Đầu tư",
+      "pension": "Lương hưu",
+      "gift": "Quà tặng",
+      "other": "Khác"
+    },
+    "expectedMonthly": "FTC dự kiến chi mỗi tháng",
+    "typicalPayment": "Quy mô thanh toán thông thường (FTC)",
+    "privacyNote": "Đây là hồ sơ cá nhân chỉ được lưu trên điện thoại này. ANTON Pay không bao giờ gửi nó đi đâu. Đây không phải là kiểm tra danh tính — đây là mốc cơ sở mà ứng dụng dùng để so sánh các khoản thanh toán mới.",
+    "save": "Lưu"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Điều này trông bất thường",
+      "caution": "Đáng để xem lại",
+      "info": "Nên biết"
+    },
+    "payAnyway": "Vẫn thanh toán",
+    "payAnywayHint": "Chỉ nhấn lại nếu bạn chắc chắn khoản thanh toán này là đúng.",
+    "signal": {
+      "amount-anomaly": "Lớn hơn khoảng {{factor}}× so với khoản thanh toán thông thường của bạn.",
+      "above-typical": "Lớn hơn khoảng {{factor}}× so với quy mô thanh toán thông thường bạn đã đặt.",
+      "new-counterparty": "Bạn chưa bao giờ thanh toán cho người bán này trước đây.",
+      "new-counterparty-large": "Một khoản thanh toán lớn cho người bán bạn chưa từng thanh toán trước đây.",
+      "velocity": "Đã có {{count}} khoản thanh toán trong 24 giờ qua.",
+      "monthly-cap": "Điều này đẩy mức chi tiêu 30 ngày của bạn vượt qua {{expected}} FTC mà bạn dự kiến chi trong một tháng.",
+      "odd-hour": "Bạn thường không thực hiện thanh toán vào thời điểm này trong ngày.",
+      "expiring-qr": "Mã QR này sắp hết hạn — đừng để ai hối thúc bạn.",
+      "dormancy-break": "Khoản thanh toán đầu tiên của bạn sau {{days}} ngày, và là một khoản lớn."
+    }
+  },
+  "activityReview": {
+    "title": "Xem lại hoạt động",
+    "subtitle": "Nhìn lại mẫu chi tiêu của bạn và mọi khoản thanh toán mà ANTON Pay đã đánh dấu là bất thường đối với bạn.",
+    "patternHeading": "Mẫu chi tiêu thông thường của bạn",
+    "payments": "Số khoản thanh toán đã thực hiện",
+    "median": "Số tiền thông thường",
+    "largest": "Khoản thanh toán lớn nhất",
+    "merchants": "Số người bán đã thanh toán",
+    "lastPayment": "Khoản thanh toán gần nhất",
+    "flaggedHeading": "Các khoản thanh toán bị đánh dấu",
+    "empty": "Không có gì bị đánh dấu",
+    "emptyBody": "Các khoản thanh toán trông bất thường đối với bạn sẽ hiển thị ở đây."
   }
 }

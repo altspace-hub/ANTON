@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "음식점",
     "purposeEVENT": "행사",
     "purposeSERVICE": "서비스",
-    "purposeREFUND": "환불"
+    "purposeREFUND": "환불",
+    "iso": {
+      "title": "ISO 20022 결제 세부정보",
+      "debtor": "보내는 사람 (나)",
+      "creditor": "받는 사람 (가맹점)",
+      "purpose": "목적 코드",
+      "reference": "참조 번호",
+      "note": "이 결제는 ISO 20022 PACS.008 신용 이체에 해당합니다. 설정 → 결제 세부정보 에서 정보를 추가하세요."
+    }
   },
   "paymentDone": {
     "title": "결제가 기록됨",
@@ -117,7 +125,13 @@
     "resetConfirm": "앱을 초기화할까요? 이 기기의 지갑과 모든 결제 기록이 영구적으로 삭제되며, 되돌릴 수 없습니다.",
     "language": "언어",
     "languagePick": "언어 선택",
-    "backToHome": "홈으로"
+    "backToHome": "홈으로",
+    "paymentDetails": "결제 세부정보",
+    "paymentDetailsSub": "결제 기록용 이름과 주소",
+    "moneyProfile": "자금 프로필",
+    "moneyProfileSub": "평소의 자금 패턴 — 비정상적인 결제를 찾는 데 도움이 됩니다",
+    "activityReview": "활동 검토",
+    "activityReviewSub": "지출 패턴 및 플래그된 결제"
   },
   "wallet": {
     "title": "내 지갑",
@@ -129,5 +143,73 @@
     "noWallet": "아직 지갑이 없습니다",
     "noWalletBody": "지갑을 만들어 가맹점 결제를 시작하세요.",
     "createWallet": "지갑 만들기"
+  },
+  "paymentDetails": {
+    "title": "결제 세부정보",
+    "subtitle": "이름과 주소는 회원님이 하는 모든 결제의 ISO 20022 기록에 추가됩니다. 모든 항목은 선택 사항입니다.",
+    "name": "전체 이름",
+    "street": "도로명 주소",
+    "postcode": "우편번호",
+    "city": "도시",
+    "country": "국가 (ISO 코드)",
+    "privacyNote": "이 정보는 이 휴대폰에 보관됩니다. 결제 기록을 채우는 데만 사용되며 — ANTON Pay는 절대 자체적으로 어디에도 전송하지 않습니다.",
+    "save": "저장"
+  },
+  "moneyProfile": {
+    "title": "자금 프로필",
+    "subtitle": "회원님이 누구인지, 그리고 정상적인 자금 패턴이 어떤 모습인지에 대한 비공개 기록입니다. ANTON Pay는 이를 사용해 회원님에게 비정상적으로 보이는 결제를 플래그합니다. 모든 항목은 선택 사항입니다.",
+    "identitySection": "회원님에 대하여",
+    "dateOfBirth": "생년월일",
+    "nationality": "국적 (ISO 코드)",
+    "occupation": "직업",
+    "occupationPlaceholder": "예: 교사",
+    "moneySection": "회원님의 자금 패턴",
+    "sourceOfFunds": "자금의 주요 출처",
+    "source": {
+      "salary": "급여",
+      "business": "사업",
+      "savings": "저축",
+      "investments": "투자",
+      "pension": "연금",
+      "gift": "증여",
+      "other": "기타"
+    },
+    "expectedMonthly": "월별 예상 FTC 지출액",
+    "typicalPayment": "일반적인 결제 규모 (FTC)",
+    "privacyNote": "이는 이 휴대폰에만 보관되는 개인 기록입니다. ANTON Pay는 절대 어디에도 전송하지 않습니다. 신원 확인이 아니라 — 앱이 새로운 결제를 비교하는 기준값입니다.",
+    "save": "저장"
+  },
+  "fraud": {
+    "title": {
+      "warning": "비정상적으로 보입니다",
+      "caution": "확인해 볼 만합니다",
+      "info": "알아두면 좋습니다"
+    },
+    "payAnyway": "그래도 결제",
+    "payAnywayHint": "이 결제가 맞다고 확신하는 경우에만 다시 탭하세요.",
+    "signal": {
+      "amount-anomaly": "평소 결제보다 약 {{factor}}× 더 큽니다.",
+      "above-typical": "설정한 일반적인 결제 규모보다 약 {{factor}}× 더 큽니다.",
+      "new-counterparty": "이 가맹점에 결제한 적이 한 번도 없습니다.",
+      "new-counterparty-large": "결제한 적 없는 가맹점에 대한 큰 금액의 결제입니다.",
+      "velocity": "지난 24시간 동안 이미 {{count}}건의 결제가 있었습니다.",
+      "monthly-cap": "이로 인해 30일 지출이 한 달에 쓸 것으로 예상한 {{expected}} FTC를 초과합니다.",
+      "odd-hour": "회원님은 보통 하루 중 이 시간에 결제하지 않습니다.",
+      "expiring-qr": "이 QR 코드는 곧 만료됩니다 — 누구도 회원님을 재촉하게 두지 마세요.",
+      "dormancy-break": "{{days}}일 만의 첫 결제이며, 큰 금액입니다."
+    }
+  },
+  "activityReview": {
+    "title": "활동 검토",
+    "subtitle": "회원님의 지출 패턴과 ANTON Pay가 비정상적이라고 플래그한 결제를 되돌아봅니다.",
+    "patternHeading": "회원님의 평소 패턴",
+    "payments": "완료된 결제",
+    "median": "일반적인 금액",
+    "largest": "최대 결제",
+    "merchants": "결제한 가맹점",
+    "lastPayment": "최근 결제",
+    "flaggedHeading": "플래그된 결제",
+    "empty": "플래그된 항목 없음",
+    "emptyBody": "회원님에게 비정상적으로 보이는 결제가 여기에 표시됩니다."
   }
 }

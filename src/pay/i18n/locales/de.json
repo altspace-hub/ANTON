@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restaurant",
     "purposeEVENT": "Veranstaltung",
     "purposeSERVICE": "Dienstleistung",
-    "purposeREFUND": "Rückerstattung"
+    "purposeREFUND": "Rückerstattung",
+    "iso": {
+      "title": "ISO 20022 Zahlungsdetails",
+      "debtor": "Von (Sie)",
+      "creditor": "An (Händler)",
+      "purpose": "Verwendungscode",
+      "reference": "Referenz",
+      "note": "Diese Zahlung entspricht einer ISO 20022 PACS.008-Überweisung. Fügen Sie Ihre Angaben unter Einstellungen → Zahlungsdetails hinzu."
+    }
   },
   "paymentDone": {
     "title": "Zahlung erfasst",
@@ -117,7 +125,13 @@
     "resetConfirm": "App zurücksetzen? Damit werden deine Wallet und alle Zahlungsdatensätze auf diesem Gerät dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.",
     "language": "Sprache",
     "languagePick": "Sprache wählen",
-    "backToHome": "Zurück zur Startseite"
+    "backToHome": "Zurück zur Startseite",
+    "paymentDetails": "Zahlungsdetails",
+    "paymentDetailsSub": "Ihr Name und Ihre Adresse für Zahlungsbelege",
+    "moneyProfile": "Finanzprofil",
+    "moneyProfileSub": "Ihr übliches Zahlungsmuster — hilft, ungewöhnliche Zahlungen zu erkennen",
+    "activityReview": "Aktivitätsübersicht",
+    "activityReviewSub": "Ihr Ausgabenmuster und alle markierten Zahlungen"
   },
   "wallet": {
     "title": "Deine Wallet",
@@ -129,5 +143,73 @@
     "noWallet": "Noch keine Wallet",
     "noWalletBody": "Erstelle eine Wallet, um Händler zu bezahlen.",
     "createWallet": "Wallet erstellen"
+  },
+  "paymentDetails": {
+    "title": "Zahlungsdetails",
+    "subtitle": "Ihr Name und Ihre Adresse werden dem ISO 20022-Datensatz jeder Zahlung hinzugefügt, die Sie tätigen. Alle Felder sind optional.",
+    "name": "Vollständiger Name",
+    "street": "Straße und Hausnummer",
+    "postcode": "Postleitzahl",
+    "city": "Stadt",
+    "country": "Land (ISO-Code)",
+    "privacyNote": "Diese Angaben bleiben auf diesem Telefon. Sie werden nur zum Ausfüllen des Zahlungsdatensatzes verwendet — ANTON Pay sendet sie niemals von selbst irgendwohin.",
+    "save": "Speichern"
+  },
+  "moneyProfile": {
+    "title": "Finanzprofil",
+    "subtitle": "Ein privates Bild davon, wer Sie sind und wie Ihr normales Zahlungsmuster aussieht. ANTON Pay nutzt es, um Zahlungen zu markieren, die für Sie ungewöhnlich wirken. Jedes Feld ist optional.",
+    "identitySection": "Über Sie",
+    "dateOfBirth": "Geburtsdatum",
+    "nationality": "Staatsangehörigkeit (ISO-Code)",
+    "occupation": "Beruf",
+    "occupationPlaceholder": "z. B. Lehrer/in",
+    "moneySection": "Ihr Zahlungsmuster",
+    "sourceOfFunds": "Woher Ihr Geld hauptsächlich stammt",
+    "source": {
+      "salary": "Gehalt",
+      "business": "Geschäft",
+      "savings": "Ersparnisse",
+      "investments": "Investitionen",
+      "pension": "Rente",
+      "gift": "Geschenk",
+      "other": "Sonstiges"
+    },
+    "expectedMonthly": "Erwartete FTC-Ausgaben pro Monat",
+    "typicalPayment": "Typische Zahlungshöhe (FTC)",
+    "privacyNote": "Dies ist ein persönlicher Datensatz, der nur auf diesem Telefon gespeichert wird. ANTON Pay sendet ihn niemals irgendwohin. Es ist keine Identitätsprüfung — es ist der Vergleichswert, mit dem die App neue Zahlungen abgleicht.",
+    "save": "Speichern"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Das wirkt ungewöhnlich",
+      "caution": "Einen Blick wert",
+      "info": "Gut zu wissen"
+    },
+    "payAnyway": "Trotzdem zahlen",
+    "payAnywayHint": "Tippen Sie nur erneut, wenn Sie sicher sind, dass diese Zahlung korrekt ist.",
+    "signal": {
+      "amount-anomaly": "Etwa {{factor}}× größer als Ihre übliche Zahlung.",
+      "above-typical": "Etwa {{factor}}× größer als die typische Zahlungshöhe, die Sie festgelegt haben.",
+      "new-counterparty": "Sie haben diesen Händler noch nie bezahlt.",
+      "new-counterparty-large": "Eine große Zahlung an einen Händler, den Sie noch nie bezahlt haben.",
+      "velocity": "{{count}} Zahlungen bereits in den letzten 24 Stunden.",
+      "monthly-cap": "Dadurch übersteigen Ihre Ausgaben der letzten 30 Tage die {{expected}} FTC, die Sie pro Monat ausgeben möchten.",
+      "odd-hour": "Sie tätigen normalerweise keine Zahlungen zu dieser Tageszeit.",
+      "expiring-qr": "Dieser Code läuft bald ab — lassen Sie sich von niemandem drängen.",
+      "dormancy-break": "Ihre erste Zahlung seit {{days}} Tagen, und eine große dazu."
+    }
+  },
+  "activityReview": {
+    "title": "Aktivitätsübersicht",
+    "subtitle": "Ein Rückblick auf Ihr Ausgabenmuster und alle Zahlungen, die ANTON Pay als für Sie ungewöhnlich markiert hat.",
+    "patternHeading": "Ihr übliches Muster",
+    "payments": "Getätigte Zahlungen",
+    "median": "Typischer Betrag",
+    "largest": "Größte Zahlung",
+    "merchants": "Bezahlte Händler",
+    "lastPayment": "Letzte Zahlung",
+    "flaggedHeading": "Markierte Zahlungen",
+    "empty": "Nichts markiert",
+    "emptyBody": "Zahlungen, die für Sie ungewöhnlich wirken, erscheinen hier."
   }
 }

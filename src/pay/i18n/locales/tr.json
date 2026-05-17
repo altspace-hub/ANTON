@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restoran",
     "purposeEVENT": "Etkinlik",
     "purposeSERVICE": "Hizmet",
-    "purposeREFUND": "İade"
+    "purposeREFUND": "İade",
+    "iso": {
+      "title": "ISO 20022 ödeme bilgileri",
+      "debtor": "Gönderen (siz)",
+      "creditor": "Alıcı (işletme)",
+      "purpose": "Amaç kodu",
+      "reference": "Referans",
+      "note": "Bu ödeme bir ISO 20022 PACS.008 alacak transferine karşılık gelir. Bilgilerinizi Ayarlar → Ödeme bilgileri bölümünden ekleyin."
+    }
   },
   "paymentDone": {
     "title": "Ödeme kaydedildi",
@@ -117,7 +125,13 @@
     "resetConfirm": "Uygulama sıfırlansın mı? Bu işlem cüzdanınızı ve bu cihazdaki tüm ödeme kayıtlarını kalıcı olarak siler. Bu işlem geri alınamaz.",
     "language": "Dil",
     "languagePick": "Dil seçin",
-    "backToHome": "Ana sayfaya dön"
+    "backToHome": "Ana sayfaya dön",
+    "paymentDetails": "Ödeme bilgileri",
+    "paymentDetailsSub": "Ödeme kayıtları için adınız ve adresiniz",
+    "moneyProfile": "Para profili",
+    "moneyProfileSub": "Olağan para düzeniniz — alışılmadık ödemeleri fark etmeye yardımcı olur",
+    "activityReview": "Etkinlik incelemesi",
+    "activityReviewSub": "Harcama düzeniniz ve işaretlenen ödemeler"
   },
   "wallet": {
     "title": "Cüzdanınız",
@@ -129,5 +143,73 @@
     "noWallet": "Henüz cüzdan yok",
     "noWalletBody": "Satıcılara ödeme yapmaya başlamak için bir cüzdan oluşturun.",
     "createWallet": "Cüzdan oluştur"
+  },
+  "paymentDetails": {
+    "title": "Ödeme bilgileri",
+    "subtitle": "Adınız ve adresiniz, yaptığınız her ödemenin ISO 20022 kaydına eklenir. Tüm alanlar isteğe bağlıdır.",
+    "name": "Tam ad",
+    "street": "Sokak adresi",
+    "postcode": "Posta kodu",
+    "city": "Şehir",
+    "country": "Ülke (ISO kodu)",
+    "privacyNote": "Bu bilgiler bu telefonda kalır. Yalnızca ödeme kaydını doldurmak için kullanılır — ANTON Pay bunları kendiliğinden hiçbir yere göndermez.",
+    "save": "Kaydet"
+  },
+  "moneyProfile": {
+    "title": "Para profili",
+    "subtitle": "Kim olduğunuzun ve normal para düzeninizin nasıl göründüğünün gizli bir resmi. ANTON Pay bunu, sizin için alışılmadık görünen ödemeleri işaretlemek için kullanır. Her alan isteğe bağlıdır.",
+    "identitySection": "Hakkınızda",
+    "dateOfBirth": "Doğum tarihi",
+    "nationality": "Uyruk (ISO kodu)",
+    "occupation": "Meslek",
+    "occupationPlaceholder": "ör. Öğretmen",
+    "moneySection": "Para düzeniniz",
+    "sourceOfFunds": "Paranızın esas olarak nereden geldiği",
+    "source": {
+      "salary": "Maaş",
+      "business": "İşletme",
+      "savings": "Birikim",
+      "investments": "Yatırımlar",
+      "pension": "Emekli maaşı",
+      "gift": "Hediye",
+      "other": "Diğer"
+    },
+    "expectedMonthly": "Aylık beklenen FTC harcaması",
+    "typicalPayment": "Tipik ödeme tutarı (FTC)",
+    "privacyNote": "Bu, yalnızca bu telefonda tutulan kişisel bir kayıttır. ANTON Pay bunu hiçbir yere göndermez. Bir kimlik denetimi değildir — uygulamanın yeni ödemeleri karşılaştırdığı referans düzeydir.",
+    "save": "Kaydet"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Bu alışılmadık görünüyor",
+      "caution": "Bakmaya değer",
+      "info": "Bilmekte fayda var"
+    },
+    "payAnyway": "Yine de öde",
+    "payAnywayHint": "Bu ödemenin doğru olduğundan eminseniz tekrar dokunun.",
+    "signal": {
+      "amount-anomaly": "Olağan ödemenizden yaklaşık {{factor}}× daha büyük.",
+      "above-typical": "Belirlediğiniz tipik ödeme tutarından yaklaşık {{factor}}× daha büyük.",
+      "new-counterparty": "Bu işletmeye daha önce hiç ödeme yapmadınız.",
+      "new-counterparty-large": "Daha önce hiç ödeme yapmadığınız bir işletmeye büyük bir ödeme.",
+      "velocity": "Son 24 saat içinde zaten {{count}} ödeme.",
+      "monthly-cap": "Bu, 30 günlük harcamanızı bir ayda harcamayı beklediğiniz {{expected}} FTC'nin üzerine çıkarıyor.",
+      "odd-hour": "Günün bu saatinde genellikle ödeme yapmazsınız.",
+      "expiring-qr": "Bu kodun süresi dolmak üzere — kimsenin sizi acele ettirmesine izin vermeyin.",
+      "dormancy-break": "{{days}} gündür ilk ödemeniz ve büyük bir ödeme."
+    }
+  },
+  "activityReview": {
+    "title": "Etkinlik incelemesi",
+    "subtitle": "Harcama düzeninize ve ANTON Pay'in sizin için alışılmadık olarak işaretlediği ödemelere geriye dönük bir bakış.",
+    "patternHeading": "Olağan düzeniniz",
+    "payments": "Yapılan ödemeler",
+    "median": "Tipik tutar",
+    "largest": "En büyük ödeme",
+    "merchants": "Ödeme yapılan işletmeler",
+    "lastPayment": "Son ödeme",
+    "flaggedHeading": "İşaretlenen ödemeler",
+    "empty": "İşaretlenen yok",
+    "emptyBody": "Sizin için alışılmadık görünen ödemeler burada görünecek."
   }
 }

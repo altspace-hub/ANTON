@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Étterem",
     "purposeEVENT": "Esemény",
     "purposeSERVICE": "Szolgáltatás",
-    "purposeREFUND": "Visszatérítés"
+    "purposeREFUND": "Visszatérítés",
+    "iso": {
+      "title": "ISO 20022 fizetési adatok",
+      "debtor": "Feladó (Ön)",
+      "creditor": "Címzett (kereskedő)",
+      "purpose": "Jogcímkód",
+      "reference": "Hivatkozás",
+      "note": "Ez a fizetés egy ISO 20022 PACS.008 átutalásnak felel meg. Adatait a Beállítások → Fizetési adatok menüben adhatja meg."
+    }
   },
   "paymentDone": {
     "title": "Fizetés rögzítve",
@@ -117,7 +125,13 @@
     "resetConfirm": "Visszaállítod az alkalmazást? Ez véglegesen törli a tárcádat és minden fizetési rekordot erről a készülékről. Ez nem vonható vissza.",
     "language": "Nyelv",
     "languagePick": "Válassz nyelvet",
-    "backToHome": "Vissza a főképernyőre"
+    "backToHome": "Vissza a főképernyőre",
+    "paymentDetails": "Fizetési adatok",
+    "paymentDetailsSub": "Az Ön neve és címe a fizetési nyilvántartáshoz",
+    "moneyProfile": "Pénzügyi profil",
+    "moneyProfileSub": "Az Ön szokásos pénzügyi mintázata — segít kiszűrni a szokatlan fizetéseket",
+    "activityReview": "Tevékenység áttekintése",
+    "activityReviewSub": "Az Ön költési mintázata és a megjelölt fizetések"
   },
   "wallet": {
     "title": "A tárcád",
@@ -129,5 +143,73 @@
     "noWallet": "Még nincs tárca",
     "noWalletBody": "Hozz létre egy tárcát, hogy fizetni tudj a kereskedőknek.",
     "createWallet": "Tárca létrehozása"
+  },
+  "paymentDetails": {
+    "title": "Fizetési adatok",
+    "subtitle": "Az Ön neve és címe minden fizetésénél bekerül az ISO 20022 nyilvántartásba. Minden mező kitöltése opcionális.",
+    "name": "Teljes név",
+    "street": "Utca, házszám",
+    "postcode": "Irányítószám",
+    "city": "Város",
+    "country": "Ország (ISO-kód)",
+    "privacyNote": "Ezek az adatok ezen a telefonon maradnak. Csak a fizetési nyilvántartás kitöltésére szolgálnak — az ANTON Pay soha nem küldi el őket sehová magától.",
+    "save": "Mentés"
+  },
+  "moneyProfile": {
+    "title": "Pénzügyi profil",
+    "subtitle": "Egy privát kép arról, hogy ki Ön, és hogyan néz ki a szokásos pénzügyi mintázata. Az ANTON Pay ezt használja az Ön számára szokatlannak tűnő fizetések megjelölésére. Minden mező kitöltése opcionális.",
+    "identitySection": "Önről",
+    "dateOfBirth": "Születési dátum",
+    "nationality": "Állampolgárság (ISO-kód)",
+    "occupation": "Foglalkozás",
+    "occupationPlaceholder": "pl. Tanár",
+    "moneySection": "Az Ön pénzügyi mintázata",
+    "sourceOfFunds": "Honnan származik a pénze elsősorban",
+    "source": {
+      "salary": "Fizetés",
+      "business": "Vállalkozás",
+      "savings": "Megtakarítás",
+      "investments": "Befektetések",
+      "pension": "Nyugdíj",
+      "gift": "Ajándék",
+      "other": "Egyéb"
+    },
+    "expectedMonthly": "Várható havi FTC-költés",
+    "typicalPayment": "Tipikus fizetési összeg (FTC)",
+    "privacyNote": "Ez egy személyes nyilvántartás, amely kizárólag ezen a telefonon marad. Az ANTON Pay soha nem küldi el sehová. Nem személyazonosság-ellenőrzés — ez az az alapérték, amelyhez az alkalmazás az új fizetéseket hasonlítja.",
+    "save": "Mentés"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Ez szokatlannak tűnik",
+      "caution": "Érdemes megnézni",
+      "info": "Jó tudni"
+    },
+    "payAnyway": "Fizetés mindenképp",
+    "payAnywayHint": "Csak akkor koppintson újra, ha biztos benne, hogy ez a fizetés helyes.",
+    "signal": {
+      "amount-anomaly": "Körülbelül {{factor}}×-szel nagyobb a szokásos fizetésénél.",
+      "above-typical": "Körülbelül {{factor}}×-szel nagyobb az Ön által beállított tipikus fizetési összegnél.",
+      "new-counterparty": "Ennek a kereskedőnek még soha nem fizetett.",
+      "new-counterparty-large": "Nagy összegű fizetés egy kereskedőnek, akinek még soha nem fizetett.",
+      "velocity": "Már {{count}} fizetés az elmúlt 24 órában.",
+      "monthly-cap": "Ezzel a 30 napos költése túllépi azt a {{expected}} FTC-t, amelyet havonta tervez elkölteni.",
+      "odd-hour": "A nap ebben a szakaszában általában nem szokott fizetni.",
+      "expiring-qr": "Ez a kód hamarosan lejár — ne hagyja, hogy bárki siettesse.",
+      "dormancy-break": "Az első fizetése {{days}} nap után, ráadásul egy nagy összegű."
+    }
+  },
+  "activityReview": {
+    "title": "Tevékenység áttekintése",
+    "subtitle": "Visszatekintés az Ön költési mintázatára és azokra a fizetésekre, amelyeket az ANTON Pay szokatlannak jelölt meg az Ön számára.",
+    "patternHeading": "Az Ön szokásos mintázata",
+    "payments": "Teljesített fizetések",
+    "median": "Tipikus összeg",
+    "largest": "Legnagyobb fizetés",
+    "merchants": "Kifizetett kereskedők",
+    "lastPayment": "Utolsó fizetés",
+    "flaggedHeading": "Megjelölt fizetések",
+    "empty": "Nincs megjelölve semmi",
+    "emptyBody": "Az Ön számára szokatlannak tűnő fizetések itt jelennek meg."
   }
 }

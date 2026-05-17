@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restawran",
     "purposeEVENT": "Event",
     "purposeSERVICE": "Serbisyo",
-    "purposeREFUND": "Refund"
+    "purposeREFUND": "Refund",
+    "iso": {
+      "title": "Mga detalye ng bayad sa ISO 20022",
+      "debtor": "Mula sa (ikaw)",
+      "creditor": "Para sa (merchant)",
+      "purpose": "Code ng layunin",
+      "reference": "Reperensya",
+      "note": "Ang bayad na ito ay tumutugma sa isang ISO 20022 PACS.008 credit transfer. Idagdag ang iyong mga detalye sa Mga Setting → Mga detalye ng bayad."
+    }
   },
   "paymentDone": {
     "title": "Naitala ang bayad",
@@ -117,7 +125,13 @@
     "resetConfirm": "I-reset ang app? Permanenteng buburahin nito ang iyong wallet at lahat ng tala ng bayad sa device na ito. Hindi na ito mababawi.",
     "language": "Wika",
     "languagePick": "Pumili ng wika",
-    "backToHome": "Bumalik sa home"
+    "backToHome": "Bumalik sa home",
+    "paymentDetails": "Mga detalye ng bayad",
+    "paymentDetailsSub": "Ang iyong pangalan at address para sa mga record ng bayad",
+    "moneyProfile": "Profile ng pera",
+    "moneyProfileSub": "Ang iyong karaniwang pattern ng pera — tumutulong matukoy ang mga hindi pangkaraniwang bayad",
+    "activityReview": "Pagsusuri ng aktibidad",
+    "activityReviewSub": "Ang iyong pattern ng paggastos at anumang naka-flag na bayad"
   },
   "wallet": {
     "title": "Ang iyong wallet",
@@ -129,5 +143,73 @@
     "noWallet": "Wala pang wallet",
     "noWalletBody": "Gumawa ng wallet para magsimulang magbayad sa mga merchant.",
     "createWallet": "Gumawa ng wallet"
+  },
+  "paymentDetails": {
+    "title": "Mga detalye ng bayad",
+    "subtitle": "Ang iyong pangalan at address ay idinaragdag sa ISO 20022 record ng bawat bayad na gagawin mo. Lahat ng field ay opsyonal.",
+    "name": "Buong pangalan",
+    "street": "Address ng kalye",
+    "postcode": "Postcode",
+    "city": "Lungsod",
+    "country": "Bansa (ISO code)",
+    "privacyNote": "Ang mga detalyeng ito ay nananatili sa telepono na ito. Ginagamit lamang ang mga ito upang punan ang record ng bayad — hindi kailanman ipinapadala ng ANTON Pay ang mga ito kahit saan nang mag-isa.",
+    "save": "I-save"
+  },
+  "moneyProfile": {
+    "title": "Profile ng pera",
+    "subtitle": "Isang pribadong larawan ng kung sino ka at kung ano ang hitsura ng iyong normal na pattern ng pera. Ginagamit ito ng ANTON Pay upang i-flag ang mga bayad na mukhang hindi pangkaraniwan para sa iyo. Bawat field ay opsyonal.",
+    "identitySection": "Tungkol sa iyo",
+    "dateOfBirth": "Petsa ng kapanganakan",
+    "nationality": "Nasyonalidad (ISO code)",
+    "occupation": "Trabaho",
+    "occupationPlaceholder": "hal. Guro",
+    "moneySection": "Ang iyong pattern ng pera",
+    "sourceOfFunds": "Saan pangunahing nanggagaling ang iyong pera",
+    "source": {
+      "salary": "Sahod",
+      "business": "Negosyo",
+      "savings": "Ipon",
+      "investments": "Mga pamumuhunan",
+      "pension": "Pensyon",
+      "gift": "Regalo",
+      "other": "Iba pa"
+    },
+    "expectedMonthly": "Inaasahang FTC na ginagastos bawat buwan",
+    "typicalPayment": "Karaniwang laki ng bayad (FTC)",
+    "privacyNote": "Ito ay isang personal na record na itinatago lamang sa telepono na ito. Hindi kailanman ito ipinapadala ng ANTON Pay kahit saan. Hindi ito isang pagsusuri ng pagkakakilanlan — ito ang baseline na ikinukumpara ng app sa mga bagong bayad.",
+    "save": "I-save"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Mukhang hindi pangkaraniwan ito",
+      "caution": "Sulit tingnan",
+      "info": "Mabuting malaman"
+    },
+    "payAnyway": "Magbayad pa rin",
+    "payAnywayHint": "Mag-tap ulit lamang kung sigurado ka na tama ang bayad na ito.",
+    "signal": {
+      "amount-anomaly": "Mga {{factor}}× na mas malaki kaysa sa iyong karaniwang bayad.",
+      "above-typical": "Mga {{factor}}× na mas malaki kaysa sa karaniwang laki ng bayad na itinakda mo.",
+      "new-counterparty": "Hindi mo pa kailanman nabayaran ang merchant na ito.",
+      "new-counterparty-large": "Isang malaking bayad sa isang merchant na hindi mo pa kailanman nabayaran.",
+      "velocity": "{{count}} bayad na sa nakaraang 24 na oras.",
+      "monthly-cap": "Itinutulak nito ang iyong paggastos sa 30 araw lampas sa {{expected}} FTC na inaasahan mong gastusin sa isang buwan.",
+      "odd-hour": "Hindi ka karaniwang nagbabayad sa oras na ito ng araw.",
+      "expiring-qr": "Malapit nang mag-expire ang code na ito — huwag hayaang madaliin ka ninuman.",
+      "dormancy-break": "Ang iyong unang bayad sa loob ng {{days}} araw, at isang malaki pa."
+    }
+  },
+  "activityReview": {
+    "title": "Pagsusuri ng aktibidad",
+    "subtitle": "Isang pagbabalik-tanaw sa iyong pattern ng paggastos at anumang bayad na naka-flag ng ANTON Pay bilang hindi pangkaraniwan para sa iyo.",
+    "patternHeading": "Ang iyong karaniwang pattern",
+    "payments": "Mga bayad na ginawa",
+    "median": "Karaniwang halaga",
+    "largest": "Pinakamalaking bayad",
+    "merchants": "Mga merchant na binayaran",
+    "lastPayment": "Huling bayad",
+    "flaggedHeading": "Mga naka-flag na bayad",
+    "empty": "Walang naka-flag",
+    "emptyBody": "Lalabas dito ang mga bayad na mukhang hindi pangkaraniwan para sa iyo."
   }
 }

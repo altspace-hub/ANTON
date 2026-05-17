@@ -69,7 +69,15 @@
     "purposeRESTAURANT": "Restoran",
     "purposeEVENT": "Acara",
     "purposeSERVICE": "Perkhidmatan",
-    "purposeREFUND": "Bayaran balik"
+    "purposeREFUND": "Bayaran balik",
+    "iso": {
+      "title": "Butiran pembayaran ISO 20022",
+      "debtor": "Daripada (anda)",
+      "creditor": "Kepada (peniaga)",
+      "purpose": "Kod tujuan",
+      "reference": "Rujukan",
+      "note": "Pembayaran ini sepadan dengan pemindahan kredit ISO 20022 PACS.008. Tambah butiran anda di Tetapan → Butiran pembayaran."
+    }
   },
   "paymentDone": {
     "title": "Pembayaran direkodkan",
@@ -117,7 +125,13 @@
     "resetConfirm": "Set semula aplikasi? Tindakan ini memadamkan dompet anda dan semua rekod pembayaran pada peranti ini secara kekal. Tindakan ini tidak boleh dibatalkan.",
     "language": "Bahasa",
     "languagePick": "Pilih bahasa",
-    "backToHome": "Kembali ke laman utama"
+    "backToHome": "Kembali ke laman utama",
+    "paymentDetails": "Butiran pembayaran",
+    "paymentDetailsSub": "Nama dan alamat anda untuk rekod pembayaran",
+    "moneyProfile": "Profil kewangan",
+    "moneyProfileSub": "Corak kewangan biasa anda — membantu mengesan pembayaran luar biasa",
+    "activityReview": "Semakan aktiviti",
+    "activityReviewSub": "Corak perbelanjaan anda dan sebarang pembayaran yang ditandakan"
   },
   "wallet": {
     "title": "Dompet anda",
@@ -129,5 +143,73 @@
     "noWallet": "Tiada dompet lagi",
     "noWalletBody": "Cipta dompet untuk mula membayar peniaga.",
     "createWallet": "Cipta dompet"
+  },
+  "paymentDetails": {
+    "title": "Butiran pembayaran",
+    "subtitle": "Nama dan alamat anda ditambahkan pada rekod ISO 20022 bagi setiap pembayaran yang anda buat. Semua medan adalah pilihan.",
+    "name": "Nama penuh",
+    "street": "Alamat jalan",
+    "postcode": "Poskod",
+    "city": "Bandar",
+    "country": "Negara (kod ISO)",
+    "privacyNote": "Butiran ini kekal pada telefon ini. Ia hanya digunakan untuk mengisi rekod pembayaran — ANTON Pay tidak pernah menghantarnya ke mana-mana dengan sendirinya.",
+    "save": "Simpan"
+  },
+  "moneyProfile": {
+    "title": "Profil kewangan",
+    "subtitle": "Gambaran peribadi tentang siapa anda dan rupa corak kewangan normal anda. ANTON Pay menggunakannya untuk menandakan pembayaran yang kelihatan luar biasa bagi anda. Setiap medan adalah pilihan.",
+    "identitySection": "Tentang anda",
+    "dateOfBirth": "Tarikh lahir",
+    "nationality": "Kewarganegaraan (kod ISO)",
+    "occupation": "Pekerjaan",
+    "occupationPlaceholder": "cth. Guru",
+    "moneySection": "Corak kewangan anda",
+    "sourceOfFunds": "Dari mana wang anda kebanyakannya datang",
+    "source": {
+      "salary": "Gaji",
+      "business": "Perniagaan",
+      "savings": "Simpanan",
+      "investments": "Pelaburan",
+      "pension": "Pencen",
+      "gift": "Hadiah",
+      "other": "Lain-lain"
+    },
+    "expectedMonthly": "FTC yang dijangka dibelanjakan setiap bulan",
+    "typicalPayment": "Saiz pembayaran biasa (FTC)",
+    "privacyNote": "Ini ialah rekod peribadi yang disimpan hanya pada telefon ini. ANTON Pay tidak pernah menghantarnya ke mana-mana. Ia bukan semakan identiti — ia ialah garis dasar yang dibandingkan oleh aplikasi dengan pembayaran baharu.",
+    "save": "Simpan"
+  },
+  "fraud": {
+    "title": {
+      "warning": "Ini kelihatan luar biasa",
+      "caution": "Wajar diteliti",
+      "info": "Wajar diketahui"
+    },
+    "payAnyway": "Bayar juga",
+    "payAnywayHint": "Ketik sekali lagi hanya jika anda pasti pembayaran ini betul.",
+    "signal": {
+      "amount-anomaly": "Kira-kira {{factor}}× lebih besar daripada pembayaran biasa anda.",
+      "above-typical": "Kira-kira {{factor}}× lebih besar daripada saiz pembayaran biasa yang anda tetapkan.",
+      "new-counterparty": "Anda tidak pernah membayar peniaga ini sebelum ini.",
+      "new-counterparty-large": "Pembayaran besar kepada peniaga yang anda tidak pernah bayar sebelum ini.",
+      "velocity": "Sudah {{count}} pembayaran dalam 24 jam yang lalu.",
+      "monthly-cap": "Ini menolak perbelanjaan 30 hari anda melepasi {{expected}} FTC yang anda jangka belanjakan dalam sebulan.",
+      "odd-hour": "Anda biasanya tidak membuat pembayaran pada waktu ini.",
+      "expiring-qr": "Kod ini hampir luput — jangan biarkan sesiapa menggesa anda.",
+      "dormancy-break": "Pembayaran pertama anda dalam {{days}} hari, dan jumlahnya besar."
+    }
+  },
+  "activityReview": {
+    "title": "Semakan aktiviti",
+    "subtitle": "Imbasan kembali corak perbelanjaan anda dan sebarang pembayaran yang ditandakan ANTON Pay sebagai luar biasa bagi anda.",
+    "patternHeading": "Corak biasa anda",
+    "payments": "Pembayaran dibuat",
+    "median": "Jumlah biasa",
+    "largest": "Pembayaran terbesar",
+    "merchants": "Peniaga yang dibayar",
+    "lastPayment": "Pembayaran terakhir",
+    "flaggedHeading": "Pembayaran yang ditandakan",
+    "empty": "Tiada apa-apa ditandakan",
+    "emptyBody": "Pembayaran yang kelihatan luar biasa bagi anda akan dipaparkan di sini."
   }
 }
