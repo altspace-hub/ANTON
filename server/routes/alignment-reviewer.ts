@@ -327,14 +327,17 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
   // GET /api/coding/alignment-reviews/:id/history — get review history
   router.get('/coding/alignment-reviews/:id/history', async (req, res) => {
     try {
-
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
       }
 
       // Get all reviews for the same project name for trend analysis
-
+      const history = await db.all(
+        'SELECT id, project_name, review_date, status, overall_status, created_at FROM alignment_reviews WHERE project_name = ? ORDER BY created_at ASC',
+        review.project_name
+      );
 
       res.json(history);
     } catch (error) {

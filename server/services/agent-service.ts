@@ -16,6 +16,7 @@ export interface AgentProfile {
   routing_keywords: string; routing_patterns: string; routing_priority: number;
   escalation_policy: string; max_conversation_turns: number;
   connectors: string; availability_schedule: string; offline_message: string | null;
+  auto_response_enabled: boolean;
   total_conversations: number; total_messages_handled: number; avg_satisfaction_score: number | null;
   created_at: string; updated_at: string;
 }

@@ -413,7 +413,16 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
       const costTrends = await db.all(query);
 
       // Calculate totals
-
+      const totals = await db.get(`
+        SELECT
+          COUNT(*) as total_calls,
+          SUM(estimated_cost_usd) as total_cost,
+          AVG(estimated_cost_usd) as avg_cost_per_call,
+          SUM(input_token_count) as total_input_tokens,
+          SUM(output_token_count) as total_output_tokens
+        FROM audit_log
+        WHERE timestamp >= CURRENT_DATE - INTERVAL '30 days'
+      `);
 
       res.json({ trends: costTrends, totals });
     } catch (error) {
@@ -448,7 +457,7 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
 
       query += ' ORDER BY timestamp DESC';
 
-
+      const events = await db.all(query, ...params) as Array<Record<string, unknown>>;
 
       // CSV headers
       const headers = [
@@ -636,7 +645,17 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
         return;
       }
 
-
+      const result = await db.run(`
+        INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, failure_reason)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+        attempt.username,
+        attempt.user_id || null,
+        attempt.ip_address || null,
+        attempt.user_agent || null,
+        attempt.success ? 1 : 0,
+        attempt.failure_reason || null
+      );
 
       const eventType = attempt.success ? 'login_success' : 'login_failure';
       console.log(`[Audit] Logged login attempt: ${attempt.username} - ${eventType}`);
