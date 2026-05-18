@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 2 * * 1' # Weekly on Monday 2am
 
+# Run JavaScript actions (e.g. pnpm/action-setup@v4) on Node 24 instead
+# of the deprecated Node 20 runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   security:
     runs-on: ubuntu-latest

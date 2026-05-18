@@ -10,6 +10,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Run JavaScript actions (e.g. pnpm/action-setup@v4) on Node 24 instead
+# of the deprecated Node 20 runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   e2e:
     name: E2E — ${{ matrix.project }}
