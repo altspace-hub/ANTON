@@ -78,3 +78,14 @@ workspaces/
 
 # ANTON orchestrator runtime trails (generated at runtime)
 .anton/
+
+# Portable bundle — downloaded runtimes + first-run DB + output zip.
+# These are NOT committed to git; they only exist to be swept into the
+# distributable zip by scripts/portable/. See docs/PORTABLE_BUNDLE.md.
+node/
+pgsql/
+ollama/
+pgdata/
+.portable-tmp/
+.portable-run/
+ANTON-portable*.zip
