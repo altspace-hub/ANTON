@@ -200,7 +200,7 @@ $parent = Split-Path $Root -Parent
 # already embedded as real files in the root node_modules).
 $exclude = @(
   '.git', '.env', 'pgdata', '.portable-run', '.portable-tmp',
-  'dist-installer', 'node_modules/.cache',
+  'dist-installer', 'node_modules/.cache', 'not_to_git',
   'relay/node_modules',
   'anton-business/packages/futurechain-sdk/node_modules',
   'anton-business/packages/shared-types/node_modules'
