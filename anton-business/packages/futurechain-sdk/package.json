@@ -1,6 +1,7 @@
 {
   "name": "@futurechain/sdk",
   "version": "0.0.1",
+  "license": "Apache-2.0",
   "description": "Shared TypeScript SDK for FutureChain — wallet, PACS.008, RPC, reference encoding. Consumed by ANTON Business and (later) ANTON Wallet.",
   "type": "module",
   "main": "./src/index.ts",
