@@ -60,13 +60,47 @@ interface ArtifactRow {
 }
 
 const CATEGORY_ORDER: Category[] = ['visualize', 'adapt_audience', 'package', 'regulatory', 'review'];
-const CATEGORY_META: Record<Category, { label: string; icon: typeof BarChart3 }> = {
-  visualize:       { label: 'Visualize',            icon: BarChart3 },
-  adapt_audience:  { label: 'Adapt for audience',   icon: Users },
-  package:         { label: 'Package',              icon: Package },
-  review:          { label: 'Review',               icon: Shield },
-  regulatory:      { label: 'Regulatory',           icon: Gavel },
+const CATEGORY_META: Record<Category, { label: string; icon: typeof BarChart3; blurb: string }> = {
+  visualize:       { label: 'Visualize',          icon: BarChart3, blurb: 'Turn this output into a diagram you can preview and download. Instant — no AI call.' },
+  adapt_audience:  { label: 'Adapt for audience', icon: Users,     blurb: 'Re-write the output for a different reader. Each one runs a fresh AI pass.' },
+  package:         { label: 'Package',            icon: Package,   blurb: 'Download the output as a file.' },
+  review:          { label: 'Review',             icon: Shield,    blurb: 'Run a fresh, critical second pass over the output. Each one runs a new AI review.' },
+  regulatory:      { label: 'Regulatory',         icon: Gavel,     blurb: 'Regulatory-specific checks over the output.' },
 };
+
+/** Plain-language "what you get when you press it" for one renderer. */
+function outcomeText(r: Renderer): string {
+  const fileLabel: Record<string, string> = {
+    md: 'a Markdown document', pdf: 'a PDF', docx: 'a Word document',
+    xlsx: 'an Excel workbook', pptx: 'a slide deck', svg: 'an SVG image',
+    mmd: 'a diagram', html: 'a standalone HTML file',
+  };
+  const out = fileLabel[r.output.file_type] ?? `a .${r.output.file_type} file`;
+  if (r.category === 'review' || r.category === 'adapt_audience') {
+    return `Press to run a fresh AI pass — produces ${out} to preview & download. Uses API credit.`;
+  }
+  if (r.category === 'visualize') {
+    return `Press to build ${out} from this output. Instant, no AI call.`;
+  }
+  return `Press to download ${out}.`;
+}
+
+/** Turn a raw upstream error (often raw Anthropic JSON) into one clean line. */
+function friendlyError(raw: string): string {
+  const low = raw.toLowerCase();
+  if (low.includes('credit balance is too low')) {
+    return 'Out of Anthropic API credits — top up in the Anthropic console (Plans & Billing), then try again.';
+  }
+  if (low.includes('rate_limit') || low.includes('rate limit')) {
+    return 'The AI API is rate-limiting requests — wait a moment and try again.';
+  }
+  if (low.includes('overloaded')) {
+    return 'The AI API is temporarily overloaded — try again shortly.';
+  }
+  const m = raw.match(/"message"\s*:\s*"([^"]+)"/);
+  if (m) return m[1];
+  return raw.length > 200 ? raw.slice(0, 200) + '…' : raw;
+}
 
 export default function TransformPanel({ sessionId }: { sessionId: string | null | undefined }) {
   const [renderers, setRenderers] = useState<Renderer[]>([]);
@@ -76,6 +110,7 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
   const [running, setRunning] = useState<string | null>(null);
   const [results, setResults] = useState<Map<string, RunResult>>(new Map());
   const [error, setError] = useState<string | null>(null);
+  const [extraction, setExtraction] = useState<{ status: string | null; contentType: string | null }>({ status: null, contentType: null });
 
   const load = useCallback(async () => {
     if (!sessionId) { setLoading(false); return; }
@@ -86,8 +121,9 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
         fetchWithAuth(`/api/sessions/${encodeURIComponent(sessionId)}/artifacts`, { headers: getAuthHeader() }),
       ]);
       if (appRes.ok) {
-        const d = await appRes.json() as { renderers?: Renderer[] };
+        const d = await appRes.json() as { renderers?: Renderer[]; structured_status?: string | null; content_type?: string | null };
         setRenderers(d.renderers ?? []);
+        setExtraction({ status: d.structured_status ?? null, contentType: d.content_type ?? null });
       }
       if (artRes.ok) {
         const d = await artRes.json() as { artifacts?: ArtifactRow[] };
@@ -129,7 +165,7 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
       setResults(m => { const nm = new Map(m); nm.set(r.id, data); return nm; });
       await load();
     } catch (e) {
-      setError(`${r.label}: ${e instanceof Error ? e.message : String(e)}`);
+      setError(`${r.label}: ${friendlyError(e instanceof Error ? e.message : String(e))}`);
     } finally {
       setRunning(null);
     }
@@ -159,6 +195,17 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
         </div>
       )}
 
+      {!extraction.contentType && (
+        <div className="rounded border border-adv-blue/20 bg-adv-blue/5 px-3 py-2 text-[10px] text-adv-gray">
+          Diagram and board-deck transforms appear once the structured analysis of this
+          output is ready
+          {extraction.status ? ` — status: ${extraction.status}` : ' — not started yet'}.
+          {extraction.status === 'failed' || extraction.status === 'error'
+            ? ' It failed; re-running the module will retry it.'
+            : ' It runs automatically just after a module finishes.'}
+        </div>
+      )}
+
       {CATEGORY_ORDER.map(cat => {
         const items = grouped[cat] ?? [];
         if (items.length === 0) return null;
@@ -177,18 +224,21 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
               <span className="text-[10px] text-adv-gray/70">({items.length})</span>
             </button>
             {isOpen && (
-              <div className="border-t border-border p-2 flex flex-wrap gap-2">
-                {items.map(r => (
-                  <RendererButton
-                    key={r.id}
-                    renderer={r}
-                    sessionId={sessionId}
-                    busy={running === r.id}
-                    result={results.get(r.id)}
-                    existingArtifact={artifacts.find(a => a.renderer_id === r.id)}
-                    onRun={() => void runRenderer(r)}
-                  />
-                ))}
+              <div className="border-t border-border p-2 space-y-2">
+                <p className="text-[10px] text-adv-gray/80">{CATEGORY_META[cat].blurb}</p>
+                <div className="flex flex-wrap gap-2">
+                  {items.map(r => (
+                    <RendererButton
+                      key={r.id}
+                      renderer={r}
+                      sessionId={sessionId}
+                      busy={running === r.id}
+                      result={results.get(r.id)}
+                      existingArtifact={artifacts.find(a => a.renderer_id === r.id)}
+                      onRun={() => void runRenderer(r)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -212,11 +262,10 @@ function RendererButton({ renderer, sessionId, busy, result, existingArtifact, o
   const [showPreview, setShowPreview] = useState(false);
 
   return (
-    <div className="rounded border border-border bg-adv-dark/50 p-2 flex flex-col gap-1 min-w-[200px]">
+    <div className="rounded border border-border bg-adv-dark/50 p-2 flex flex-col gap-1 w-64">
       <button
         onClick={onRun}
         disabled={busy}
-        title={renderer.description}
         className={`rounded px-2.5 py-1.5 text-[11px] font-medium inline-flex items-center gap-1.5 disabled:opacity-60 ${
           done
             ? 'border border-adv-green/40 text-adv-green hover:bg-adv-green/10'
@@ -229,6 +278,8 @@ function RendererButton({ renderer, sessionId, busy, result, existingArtifact, o
           <span className="ml-1 text-[9px] uppercase tracking-wider text-adv-gold">{renderer.status}</span>
         )}
       </button>
+      <p className="text-[10px] text-adv-gray leading-snug">{renderer.description}</p>
+      <p className="text-[9px] text-adv-gray/60 leading-snug">{outcomeText(renderer)}</p>
       {done && artifactId && (
         <div className="flex items-center gap-1 pt-1">
           {supportsInlinePreview(fileType) && (
