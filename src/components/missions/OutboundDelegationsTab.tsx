@@ -2,8 +2,9 @@
 // Inbound delegations live at /missions/inbox (cross-mission view).
 
 import { useEffect, useState, useCallback } from 'react';
-import { Send, Check, X, AlertCircle, Shield, ShieldOff, Coins } from 'lucide-react';
+import { Send, Check, X, AlertCircle, Shield, ShieldOff, Coins, Plus } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
+import CreateDelegationModal from './CreateDelegationModal';
 
 type DelegationStatus =
   | 'draft' | 'sent' | 'received' | 'accepted' | 'declined'
@@ -48,6 +49,7 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -91,13 +93,19 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold text-adv-off-white">Outbound delegations</h2>
-        <p className="text-[11px] text-adv-gray">
-          Sub-missions delegated to peer ANTON instances over AAP. Inbound delegations live in
-          {' '}
-          <a href="/missions/inbox" className="text-adv-teal hover:underline">Mission Inbox</a>.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-adv-off-white">Outbound delegations</h2>
+          <p className="text-[11px] text-adv-gray">
+            Sub-missions delegated to peer ANTON instances over AAP. Inbound delegations live in
+            {' '}
+            <a href="/missions/inbox" className="text-adv-teal hover:underline">Mission Inbox</a>.
+          </p>
+        </div>
+        <button onClick={() => setShowCreate(true)}
+          className="shrink-0 inline-flex items-center gap-1 rounded border border-adv-teal/40 bg-adv-teal/10 px-2 py-1 text-[11px] text-adv-teal hover:bg-adv-teal/20">
+          <Plus className="h-3 w-3" /> New delegation
+        </button>
       </div>
 
       {error && (
@@ -196,6 +204,14 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
             );
           })}
         </div>
+      )}
+
+      {showCreate && (
+        <CreateDelegationModal
+          missionId={missionId}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); void load(); }}
+        />
       )}
     </div>
   );
