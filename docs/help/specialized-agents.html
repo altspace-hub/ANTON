@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specialized Agents — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk active" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#local">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Specialized Agents</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local</div>
+      <h1>Specialized Agents — standing AI personas</h1>
+      <p class="lead">A module is a one-shot expert task. A Specialized Agent is
+      something more durable: a named AI persona that stays on, holds a conversation,
+      routes questions, reaches into live systems through tools, and escalates to a
+      human when it should. Agents are how ANTON staffs a function — support, sales,
+      HR — rather than answering a single question.</p>
+      <div class="page-meta">
+        <span class="chip">For: teams automating a function</span>
+        <span class="chip">7 connector types</span>
+        <span class="chip">AI-generated config</span>
+        <span class="chip">Layer 4 — Collaborative Intelligence</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What a Specialized Agent is</a></li>
+        <li><a href="#think">How to think about it — agent vs module</a></li>
+        <li><a href="#anatomy">The anatomy of an agent</a></li>
+        <li><a href="#connectors">Connectors — reaching live systems</a></li>
+        <li><a href="#build">Creating an agent, step by step</a></li>
+        <li><a href="#remote">Remote agents across instances</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What a Specialized Agent is</h2>
+    <p>A Specialized Agent is an autonomous AI persona with four things of its own: a
+    <strong>system prompt</strong> that defines who it is, <strong>knowledge
+    packs</strong> it draws on, <strong>routing rules</strong> that decide what it
+    handles and what it passes on, and an <strong>escalation policy</strong> that
+    says when a human must step in.</p>
+    <p>Agents sit at <strong>Layer 4</strong> of ANTON's vision — Collaborative
+    Intelligence. They are managed from the Agent Hub, and a single ANTON instance
+    can run several at once: a support agent, a sales agent, an HR agent, a travel
+    agent — each a distinct persona staffing a distinct function.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">🎭</div><h4>A standing persona</h4>
+        <p>Always on, holds context across a whole conversation, not a single turn.</p></div>
+      <div class="feature"><div class="ic">🔌</div><h4>Tool-equipped</h4>
+        <p>Reaches live systems — APIs, databases, calendars — through connectors.</p></div>
+      <div class="feature"><div class="ic">🚦</div><h4>Knows its limits</h4>
+        <p>Routing rules and an escalation policy decide when to hand off to a human.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it — agent vs module</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>A <strong>module</strong> is a <em>specialist you call in</em> for one job —
+      brief it, get a deliverable, done. A <strong>Specialized Agent</strong> is a
+      <em>team member you hire</em> — it has a role, it stays, it handles whatever
+      comes to its desk, it uses the tools its role needs, and it knows when a
+      question is above its pay grade and escalates. If the work is a task, build a
+      module run. If the work is a <em>function</em>, build an agent.</p>
+    </div>
+
+    <table>
+      <tr><th></th><th>Expert module</th><th>Specialized Agent</th></tr>
+      <tr><td>Lifetime</td><td>One run, then it's over</td><td>Standing — runs until you turn it off</td></tr>
+      <tr><td>Conversation</td><td>A single prompt and response</td><td>An ongoing, multi-turn conversation with memory</td></tr>
+      <tr><td>Tools</td><td>Knowledge sources only</td><td>Live connectors — API, database, email, calendar, CRM, ERP</td></tr>
+      <tr><td>Routing</td><td>You pick the module</td><td>The agent decides what it handles vs escalates</td></tr>
+      <tr><td>Best for</td><td>"Draft this", "assess that"</td><td>"Handle our tier-1 support", "qualify inbound leads"</td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>They are not rivals</div>
+      <p>An agent often <em>uses</em> module-style expertise inside its conversation —
+      the difference is the wrapper, not the intelligence. Reach for a module when you
+      personally want one deliverable; reach for an agent when something needs to be
+      <em>handled repeatedly, by itself</em>, with tools and a hand-off path.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="anatomy"><span class="ix">3</span>The anatomy of an agent</h2>
+    <p>Every agent profile is four parts. Get these right and the agent behaves
+    predictably; get them vague and it drifts.</p>
+
+    <div class="diagram">
+<pre>
+   ┌──────────────────────── AGENT PROFILE ────────────────────────┐
+   │                                                                │
+   │   SYSTEM PROMPT          who it is · tone · what it must        │
+   │                          and must not do                       │
+   │                                                                │
+   │   KNOWLEDGE PACKS  ───▶   the .anton bundles it reasons from    │
+   │                                                                │
+   │   ROUTING RULES    ───▶   what it answers itself                │
+   │                           what it passes on                     │
+   │                                                                │
+   │   ESCALATION       ───▶   the trigger + the human it hands      │
+   │   POLICY                  off to                                │
+   │                                                                │
+   │   CONNECTORS  ┌── rest_api ── webhook ── database ──┐           │
+   │               └── email ── calendar ── crm ── erp ──┘           │
+   │                                                                │
+   └────────────────────────────────────────────────────────────────┘
+              │                                    │
+              ▼                                    ▼
+      agent_conversations                  agent_audit_log
+      (multi-turn memory)                  (every action recorded)
+</pre>
+    </div>
+
+    <ul>
+      <li><strong>System prompt</strong> — the agent's identity, tone and boundaries.
+      This is the single most important field; write it as you would a job
+      description.</li>
+      <li><strong>Knowledge packs</strong> — the <code>.anton</code> bundles the agent
+      reasons from, exactly like a module's knowledge layer.</li>
+      <li><strong>Routing rules</strong> — what the agent answers directly versus what
+      it forwards. This keeps the agent inside its competence.</li>
+      <li><strong>Escalation policy</strong> — the condition under which a human is
+      brought in, and who that human is.</li>
+    </ul>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Profiles, conversations &amp; the data model
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Migration <code>111_specialized_agents.sql</code> defines six tables:
+        <code>agent_profiles</code> (the persona, prompt, routing and escalation
+        config), <code>agent_conversations</code> and <code>agent_messages</code>
+        (multi-turn memory), <code>agent_connectors</code> (the tools an agent may
+        use), <code>agent_templates</code> (starting points) and
+        <code>agent_audit_log</code> (every action the agent takes, recorded).</p>
+        <p>CRUD on profiles runs through
+        <code>server/services/agent-service.ts</code>. Each conversation turn is
+        handled by <code>agent-processor.ts</code>, which manages the dialogue and
+        routes any tool calls. The REST surface is
+        <code>server/routes/agents.ts</code> — <code>GET/POST /agents</code>,
+        <code>/agents/:id</code>, plus the public directory and query endpoints
+        covered in §6.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="connectors"><span class="ix">4</span>Connectors — reaching live systems</h2>
+    <p>What separates an agent from a chatbot is that it can <em>act</em>. Connectors
+    are the agent's tools — typed channels to live systems. Seven connector types are
+    available.</p>
+
+    <table>
+      <tr><th>Connector type</th><th>Lets the agent…</th></tr>
+      <tr><td><code>rest_api</code></td><td>Call an external REST API to fetch or send data</td></tr>
+      <tr><td><code>webhook</code></td><td>Trigger an outbound webhook into another system</td></tr>
+      <tr><td><code>database</code></td><td>Run read-only queries against a database</td></tr>
+      <tr><td><code>email</code></td><td>Send and read email</td></tr>
+      <tr><td><code>calendar</code></td><td>Check availability and create events</td></tr>
+      <tr><td><code>crm</code></td><td>Look up and update CRM records</td></tr>
+      <tr><td><code>erp</code></td><td>Reach into an ERP for orders, stock, invoices</td></tr>
+    </table>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Credentials are vaulted; database access is read-only</div>
+      <p>Connector credentials are never stored in plain text — they are encrypted in
+      ANTON's credential vault and decrypted only at call time. Database connectors
+      are deliberately <strong>read-only</strong>: an agent can look something up but
+      cannot mutate your database directly. Anything that changes state should go
+      through a connector you control, with the agent's escalation policy gating the
+      sensitive cases.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The connector executor
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>When the agent's conversation produces a tool call,
+        <code>server/services/agent-connector-executor.ts</code> carries it out — a
+        live API call, an outbound webhook, or a read-only database query. Credentials
+        come from <code>credential-vault.ts</code>, decrypted only for the duration of
+        the call. Every connector invocation is written to
+        <code>agent_audit_log</code>, so an agent's actions are fully traceable after
+        the fact — which is what makes an autonomous agent safe to run in a regulated
+        setting.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="build"><span class="ix">5</span>Creating an agent, step by step</h2>
+    <p>You build agents in the Agent Hub. You can start from a template, or describe
+    the agent in plain language and let the <strong>agent builder</strong> draft the
+    whole configuration for you.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the Agent Hub</span>
+            <p>The management surface for every agent on this instance — create, edit,
+            enable, disable.</p></li>
+          <li><span class="st">Describe the agent, or pick a template</span>
+            <p>Type what you want — "<em>a first-line support agent for our software
+            product</em>" — and the agent builder generates a draft profile: system
+            prompt, suggested knowledge packs, routing and escalation.</p></li>
+          <li><span class="st">Review &amp; tighten the system prompt</span>
+            <p>This is the agent's identity. Make the boundaries explicit — what it
+            must never promise, what tone it holds.</p></li>
+          <li><span class="st">Attach knowledge packs</span>
+            <p>Give the agent the <code>.anton</code> bundles it should reason from —
+            your product docs, your policies.</p></li>
+          <li><span class="st">Add connectors</span>
+            <p>Wire the tools the role needs — a <code>database</code> connector to
+            look up orders, a <code>calendar</code> to book a callback. Credentials go
+            into the vault.</p></li>
+          <li><span class="st">Set routing &amp; escalation</span>
+            <p>Define what the agent handles itself and the trigger that hands a
+            conversation to a named human.</p></li>
+          <li><span class="st">Test, then enable</span>
+            <p>Run trial conversations from the Hub. When it behaves, enable it — and
+            check <code>agent_audit_log</code> periodically.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">localhost:5173/agents/support-agent</span>
+          </div>
+          <div class="view">
+            <div style="font-size:13px;font-weight:800;color:var(--ink)">Support Agent</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:9px">Active · 41 conversations this week</div>
+            <div class="kv"><span class="k">Persona</span><span>First-line product support</span></div>
+            <div class="kv"><span class="k">Knowledge</span><span>product-docs.anton</span></div>
+            <div class="kv"><span class="k">Connectors</span><span>database · email · calendar</span></div>
+            <div class="kv"><span class="k">Escalates to</span><span>Human queue — billing &amp; refunds</span></div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:8px">Every action logged to agent_audit_log.</div>
+          </div>
+        </div>
+        <figcaption>An agent profile in the Agent Hub — persona, knowledge, tools, escalation.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a first-line support agent</div>
+      <p>You want an agent to handle tier-1 support for your software. You describe it
+      to the agent builder, which drafts a profile. You tighten the
+      <strong>system prompt</strong> ("be warm, never promise a refund, never
+      speculate on a delivery date"), attach the <code>product-docs.anton</code>
+      <strong>knowledge pack</strong>, and wire a read-only <code>database</code>
+      connector so it can look up a customer's order status and a
+      <code>calendar</code> connector to book a callback. The <strong>routing
+      rule</strong> says it answers how-to and order-status questions itself; the
+      <strong>escalation policy</strong> says anything mentioning billing, refunds or
+      a complaint goes straight to the human queue. A customer asks "where's my
+      order?" — the agent queries the database and answers. A customer asks for a
+      refund — the agent escalates, politely, and a person picks it up. Every step is
+      in <code>agent_audit_log</code>.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="remote"><span class="ix">6</span>Remote agents across instances</h2>
+    <p>Agents are not confined to your own instance. An agent can be published to a
+    <strong>public directory</strong>, and other ANTON instances can discover it and
+    route a query to the best-matching remote agent. This is the concrete first step
+    of Layer 4 — ANTON-to-ANTON collaboration.</p>
+    <p>The flow is symmetric: <code>/agents/public/directory</code> lists the agents
+    an instance offers, and <code>/agents/public/query</code> accepts a question and
+    routes it to the agent best suited to answer. A support agent on one instance can
+    field a question that originated on another — without either side exposing its
+    internals.</p>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Where this is going</div>
+      <p>Cross-instance agents are <strong>in progress</strong> — the foundation is
+      built and the discovery and query endpoints work, but Layer 4 of the
+      <a href="agent-protocol.html">Agent Protocol</a> vision is still maturing. Check
+      <a href="status.html">Build status</a> for exactly where remote agent
+      collaboration stands today before depending on it for production work.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The agent builder &amp; remote discovery
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>server/services/agent-builder.ts</code> turns a plain-language
+        description into a full agent configuration — system prompt, suggested
+        knowledge, routing and escalation — which you then review and edit.
+        <code>remote-agent-client.ts</code> handles the cross-instance side: it
+        discovers agents on peer instances and routes a query to the best match. The
+        public surface is <code>/agents/public/directory</code> and
+        <code>/agents/public/query</code> in <code>server/routes/agents.ts</code>; the
+        agent UI is <code>src/pages/agents/AgentHubPage.tsx</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Build an agent for a <em>function</em>; use a module for a one-off task.</li>
+          <li>Write the system prompt like a job description — explicit boundaries.</li>
+          <li>Set a clear escalation policy before you enable the agent.</li>
+          <li>Keep database connectors read-only; gate state changes behind escalation.</li>
+          <li>Test with trial conversations, then review <code>agent_audit_log</code> regularly.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't ship the agent builder's first draft unread — always tighten the prompt.</li>
+          <li>Don't give an agent a connector its role doesn't need.</li>
+          <li>Don't leave the escalation policy vague — an agent with no hand-off path will overreach.</li>
+          <li>Don't depend on cross-instance remote agents for production before checking build status.</li>
+          <li>Don't store connector credentials anywhere but the vault.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>An agent is staff, not a feature</div>
+      <p>The agents that work well are the ones treated like a new hire: a clear role,
+      a clear scope, the right tools, a manager to escalate to, and a record of what
+      they did. The agents that go wrong are the ones given a vague prompt and broad
+      access "to be helpful". Define the job tightly — the agent will do exactly that
+      job, tirelessly.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="output-and-export.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Output &amp; export</div>
+      </a>
+      <a class="next" href="companion.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Companion</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers Specialized Agents
+      (<code>server/services/agent-*.ts</code>, migration 111). Press
+      <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

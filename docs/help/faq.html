@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ &amp; troubleshooting — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk active" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<main class="content">
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#reference">Reference</a><span class="sep">›</span>
+    <span class="here">FAQ &amp; troubleshooting</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Reference</div>
+      <h1>FAQ &amp; troubleshooting</h1>
+      <p class="lead">The questions that come up most often, and the fixes for the
+      things that most often go wrong. Each answer links to the page with the full
+      story.</p>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#general">General</a></li>
+        <li><a href="#local">ANTON Local</a></li>
+        <li><a href="#apps">The phone apps</a></li>
+        <li><a href="#pay">Payments</a></li>
+        <li><a href="#trouble">Troubleshooting</a></li>
+      </ol>
+    </div>
+
+    <h2 id="general"><span class="ix">1</span>General</h2>
+
+    <h4>Is ANTON one app or several?</h4>
+    <p>Several. One desktop workspace — <a href="anton-local.html">ANTON Local</a> — and
+    four phone apps: <a href="companion.html">Companion</a>, <a href="comm.html">Comm</a>,
+    <a href="business.html">Business</a> and <a href="pay.html">Pay</a>. They share an
+    identity model and a few protocols but install and run independently.</p>
+
+    <h4>Does my data leave my machine?</h4>
+    <p>ANTON is local-first. Documents and records stay on the device. The only things
+    that leave are LLM API calls (from ANTON Local) and actions you explicitly take —
+    sending a message, making a payment. The phone apps have no backend at all.</p>
+
+    <h4>Which app should I use?</h4>
+    <p>If you do expert knowledge work, ANTON Local. To reach your instance from a
+    phone, Companion. For encrypted messaging and a wallet without an instance, Comm.
+    To <em>take</em> payments, Business. To <em>make</em> payments, Pay.</p>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Not sure something is finished?</div>
+      <p>Check the <a href="status.html">Build status</a> page. It is the honest map
+      of what is built, partial, stubbed or still spec.</p>
+    </div>
+
+    <h2 id="local"><span class="ix">2</span>ANTON Local</h2>
+
+    <h4>What do I need to run it?</h4>
+    <p>Node.js 22+, pnpm, PostgreSQL 16+, and an Anthropic API key. Ollama is optional
+    (for knowledge memory). The full walkthrough is on <a href="getting-started.html">Install
+    &amp; first run</a>.</p>
+
+    <h4>Do I have to use Claude?</h4>
+    <p>No — Claude is the default and the most deeply integrated, but ANTON Local also
+    supports OpenAI, Azure OpenAI, Gemini, Mistral and local Ollama models. Add the
+    relevant key in <code>.env</code> and switch model per session. See
+    <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>.</p>
+
+    <h4>What is a pillar versus a module?</h4>
+    <p>A <strong>pillar</strong> is a whole mode of intelligence you switch into
+    (Work, Markets, Missions…). A <strong>module</strong> is one pre-tuned expert task
+    inside the Work pillar. See <a href="pillars.html">The 12 pillars</a> and
+    <a href="pillar-work.html">Work</a>.</p>
+
+    <h4>How do I get good output the first time?</h4>
+    <p>Trust the defaults — every module ships pre-tuned. Then pick the right
+    <a href="knowledge-and-prompts.html">knowledge source</a> for the task, choose an
+    <a href="output-and-export.html">output format</a> before running, and raise the
+    thinking level for harder problems.</p>
+
+    <h2 id="apps"><span class="ix">3</span>The phone apps</h2>
+
+    <h4>How does a phone connect to my ANTON Local?</h4>
+    <p>Through the <a href="pairing.html">Ed25519 pairing ritual</a> — the desktop
+    shows a QR, the phone scans it, and a device certificate is issued. After that the
+    phone reaches the instance either directly over HTTPS or through the
+    <a href="mesh-and-relay.html">mesh relay</a>.</p>
+
+    <h4>Does ANTON Comm need ANTON Local?</h4>
+    <p>No. Comm is fully standalone — it creates its own identity and works
+    peer-to-peer. Companion is the one that requires a paired instance.</p>
+
+    <h4>Why is ANTON Comm only in English and Swedish?</h4>
+    <p>Comm shipped its feature roadmap before a full translation pass. It currently
+    has only English and Swedish locale catalogues, so other languages fall back to
+    English. Pay and Business, by contrast, ship 38 languages. See
+    <a href="status.html">Build status</a>.</p>
+
+    <h4>Can I run several of the apps on one phone?</h4>
+    <p>Yes — each has its own application id and installs separately.</p>
+
+    <h2 id="pay"><span class="ix">4</span>Payments</h2>
+
+    <h4>How does a payment actually work?</h4>
+    <p>ANTON Business builds a <code>futurechain:pay</code> QR; ANTON Pay or Comm
+    scans it, shows the detail, runs the fraud check, and records the payment. The
+    full flow is on <a href="payments-flow.html">The payment flow</a>.</p>
+
+    <h4>Are payments cryptographically signed and settled on-chain?</h4>
+    <p>Not yet. PACS.008 <em>drafts</em> are assembled and shown today, but real
+    signing and settlement are blocked on the FutureChain Rust core being vendored —
+    see the <a href="status.html#blocker">critical-path blocker</a>. The apps are
+    built so signing switches on cleanly when that lands.</p>
+
+    <h4>The fraud engine flagged my payment — did it block it?</h4>
+    <p>No. The <a href="pay.html#fraud">fraud engine</a> is always advisory. It raises
+    signals so you pause and think; the decision is always yours. A
+    <em>warning</em>-level result asks you to confirm twice, nothing more.</p>
+
+    <h4>I lost my phone — can I recover my wallet?</h4>
+    <p>Only if you backed it up. The wallet key is created on-device and held in
+    secure storage; without a backup it cannot be recovered. Treat it like cash and
+    back up before changing phones or resetting the app.</p>
+
+    <h2 id="trouble"><span class="ix">5</span>Troubleshooting</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Common fixes</div>
+        <ul>
+          <li><strong>Dev server won't start</strong> — check <code>DATABASE_URL</code> in <code>.env</code> and that PostgreSQL is running; re-run <code>pnpm run db:init</code>.</li>
+          <li><strong>"Payment code expired"</strong> — QR codes expire after 15 minutes; ask the merchant for a fresh one.</li>
+          <li><strong>Pairing QR rejected</strong> — the enrollment package lives only 60 seconds; generate a new one and scan promptly.</li>
+          <li><strong>Phone can't reach the instance</strong> — confirm the instance is on the same LAN or has a public URL; otherwise use the mesh relay.</li>
+          <li><strong>An old theme/accent persists</strong> — the phone apps store settings locally; clear app storage to return to defaults.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Things to check first</div>
+        <ul>
+          <li>Antivirus may flag a sideloaded debug APK as a false positive — it is unsigned, not malicious.</li>
+          <li>An LLM error mid-run usually means a missing or rate-limited API key — check <code>.env</code>.</li>
+          <li>If output looks thin, you may be on a low thinking level — raise it and re-run.</li>
+          <li>If a feature seems missing, it may be stubbed — confirm on <a href="status.html">Build status</a> before assuming a bug.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Still stuck?</div>
+      <p>The deepest source of truth is the code itself. <code>CLAUDE.md</code> at the
+      repository root orients you; the relevant help page's "How it works" panels name
+      the exact files. Press <code>t</code> on any page to open them all.</p>
+    </div>
+
+    <div class="pagenav">
+      <a class="prev" href="glossary.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Glossary</div>
+      </a>
+      <a class="next" href="index.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Help home</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Suite — Capabilities & Architecture</title>
+<style>
+  :root{
+    --teal:#0D7D6C; --teal-dark:#06655A; --teal-soft:#E3F1EE;
+    --ink:#1A1B2E; --body:#3C3D4E; --muted:#6B6C7E; --faint:#9A9BAA;
+    --canvas:#F5F3EF; --surface:#FFFFFF; --surface-alt:#FAF9F6;
+    --border:#E4E1DA; --border-soft:#EFEDE7;
+    --blue:#3070C7; --navy:#1F2A44; --orange:#C97220; --plum:#7A4E8C;
+    --gold:#C8881E; --red:#C0392B; --green:#1E8E4E;
+    --shadow:0 1px 3px rgba(26,27,46,.06),0 6px 24px rgba(26,27,46,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--canvas); color:var(--body); line-height:1.62; font-size:15.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--teal-dark);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{
+    font-family:"SF Mono", "JetBrains Mono",Consolas,Menlo,monospace;
+    font-size:.84em; background:var(--teal-soft); color:var(--teal-dark);
+    padding:1.5px 5px; border-radius:4px;
+  }
+
+  /* layout */
+  .wrap{display:flex;max-width:1400px;margin:0 auto;}
+  nav.toc{
+    width:268px; flex-shrink:0; position:sticky; top:0; height:100vh;
+    overflow-y:auto; padding:30px 18px 60px; border-right:1px solid var(--border);
+    background:var(--surface-alt);
+  }
+  nav.toc .brand{display:flex;align-items:center;gap:11px;margin-bottom:6px;padding:0 10px}
+  nav.toc .logo{
+    width:38px;height:38px;border-radius:9px;background:var(--teal);
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-weight:800;font-size:19px;flex-shrink:0;
+  }
+  nav.toc .brand .t1{font-weight:800;color:var(--ink);font-size:15px;line-height:1.2}
+  nav.toc .brand .t2{font-size:11px;color:var(--muted);letter-spacing:.04em}
+  nav.toc .ver{font-size:11px;color:var(--faint);padding:0 10px;margin-bottom:20px}
+  nav.toc a{
+    display:block;padding:6px 10px;border-radius:7px;color:var(--body);
+    font-size:13.5px;margin-bottom:1px;
+  }
+  nav.toc a:hover{background:var(--teal-soft);text-decoration:none}
+  nav.toc a.grp{
+    font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--faint);margin-top:18px;padding-bottom:3px;pointer-events:none;
+  }
+  nav.toc a.sub{padding-left:22px;font-size:12.5px;color:var(--muted)}
+
+  main{flex:1;min-width:0;padding:46px 56px 120px;max-width:1000px}
+
+  /* hero */
+  .hero{
+    background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dark) 100%);
+    color:#fff;border-radius:18px;padding:44px 44px 40px;margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .hero h1{font-size:33px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+  .hero p{font-size:16px;opacity:.93;max-width:680px}
+  .hero .meta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+  .hero .meta span{
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+    padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:600;
+  }
+
+  section{margin-top:46px;scroll-margin-top:20px}
+  h2{
+    font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.015em;
+    margin-bottom:6px;padding-bottom:10px;border-bottom:2px solid var(--border);
+    display:flex;align-items:center;gap:11px;
+  }
+  h2 .ix{
+    background:var(--teal);color:#fff;font-size:13px;width:27px;height:27px;
+    border-radius:7px;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:700;flex-shrink:0;
+  }
+  h3{font-size:18px;font-weight:700;color:var(--ink);margin:28px 0 9px}
+  h4{font-size:14.5px;font-weight:700;color:var(--ink);margin:18px 0 6px}
+  p{margin:9px 0}
+  .lead{font-size:16px;color:var(--body)}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    padding:22px 24px;margin:16px 0;box-shadow:var(--shadow);
+  }
+  .card.tint{background:var(--teal-soft);border-color:#CBE5DF}
+
+  ul,ol{margin:9px 0 9px 22px}
+  li{margin:4px 0}
+  ul.tight li{margin:2px 0}
+
+  table{
+    width:100%;border-collapse:collapse;margin:14px 0;font-size:13.6px;
+    background:var(--surface);border-radius:10px;overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  th{
+    background:var(--navy);color:#fff;text-align:left;padding:9px 12px;
+    font-weight:600;font-size:12.5px;letter-spacing:.02em;
+  }
+  td{padding:8px 12px;border-bottom:1px solid var(--border-soft);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:nth-child(even) td{background:var(--surface-alt)}
+
+  .grid{display:grid;gap:14px;margin:16px 0}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:880px){.g2,.g3{grid-template-columns:1fr}}
+
+  .stat{
+    background:var(--surface);border:1px solid var(--border);border-radius:11px;
+    padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .stat .n{font-size:27px;font-weight:800;color:var(--teal-dark);line-height:1}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:5px}
+
+  .badge{
+    display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;
+    border-radius:5px;letter-spacing:.02em;vertical-align:middle;
+  }
+  .b-done{background:#DCF1E4;color:var(--green)}
+  .b-partial{background:#FBF0D6;color:var(--gold)}
+  .b-stub{background:#F7DDD9;color:var(--red)}
+  .b-spec{background:#E8E3EF;color:var(--plum)}
+
+  .applogo{
+    width:34px;height:34px;border-radius:9px;display:inline-flex;
+    align-items:center;justify-content:center;color:#fff;font-weight:800;
+    font-size:16px;flex-shrink:0;
+  }
+  .apphead{display:flex;align-items:center;gap:13px;margin-bottom:4px}
+  .apphead .nm{font-size:18px;font-weight:800;color:var(--ink)}
+  .apphead .role{font-size:12.5px;color:var(--muted)}
+
+  .pill{
+    display:inline-block;background:var(--surface-alt);border:1px solid var(--border);
+    border-radius:16px;padding:3px 11px;font-size:12px;margin:3px 4px 3px 0;color:var(--body);
+  }
+  .note{
+    border-left:3px solid var(--teal);background:var(--surface-alt);
+    padding:11px 16px;border-radius:0 8px 8px 0;margin:14px 0;font-size:14px;
+  }
+  .note.warn{border-color:var(--gold);background:#FDF8EC}
+  .footer{
+    margin-top:64px;padding-top:24px;border-top:1px solid var(--border);
+    font-size:12.5px;color:var(--faint);
+  }
+  .diagram{
+    background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    padding:26px;margin:18px 0;box-shadow:var(--shadow);overflow-x:auto;
+  }
+  .diagram pre{
+    font-family:"SF Mono","JetBrains Mono",Consolas,monospace;font-size:12px;
+    line-height:1.5;color:var(--body);white-space:pre;
+  }
+  .kv{display:flex;gap:8px;font-size:13.5px;margin:3px 0}
+  .kv .k{font-weight:700;color:var(--ink);min-width:118px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Suite</div><div class="t2">by openEXPERT</div></div>
+  </div>
+  <div class="ver">Capabilities &amp; Architecture · v0.7.5 · 18 May 2026</div>
+
+  <a class="grp">Overview</a>
+  <a href="#intro">The five apps</a>
+  <a href="#map">How it all connects</a>
+  <a href="#numbers">Scale at a glance</a>
+
+  <a class="grp">The Apps</a>
+  <a href="#local">1 · ANTON Local</a>
+  <a href="#local-pillars" class="sub">Pillars</a>
+  <a href="#local-modules" class="sub">Modules &amp; areas</a>
+  <a href="#local-knowledge" class="sub">Knowledge &amp; prompts</a>
+  <a href="#local-atlas" class="sub">Risk Atlas</a>
+  <a href="#local-output" class="sub">Output &amp; export</a>
+  <a href="#companion">2 · ANTON Companion</a>
+  <a href="#comm">3 · ANTON Comm</a>
+  <a href="#business">4 · ANTON Business</a>
+  <a href="#pay">5 · ANTON Pay</a>
+
+  <a class="grp">The Connections</a>
+  <a href="#relay">ANTON Mesh &amp; relay</a>
+  <a href="#pairing">Pairing &amp; enrollment</a>
+  <a href="#sdk">FutureChain SDK</a>
+  <a href="#payments">Payment flow</a>
+  <a href="#aap">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Status</a>
+  <a href="#status">Built vs stub vs spec</a>
+  <a href="#vision">The 6-layer vision</a>
+</nav>
+
+<main>
+
+<div class="hero">
+  <h1>ANTON Suite — Capabilities &amp; Architecture</h1>
+  <p>A complete fly-over of the ANTON ecosystem: one local-first desktop workspace and
+  four phone apps, the protocols that bind them, and an honest map of what is built,
+  what is stubbed, and what is still spec.</p>
+  <div class="meta">
+    <span>5 applications</span>
+    <span>12 pillars</span>
+    <span>~260 expert modules</span>
+    <span>38 languages</span>
+    <span>Local-first · privacy by design</span>
+  </div>
+</div>
+
+<!-- ============================ INTRO ============================ -->
+<section id="intro">
+  <h2><span class="ix">◆</span>The five apps</h2>
+  <p class="lead">ANTON by openEXPERT is an AI-powered expert ecosystem. One is a full
+  desktop-class workspace; four are focused, phone-only companions. Every app stores
+  its data on the user's own device — only LLM API calls and explicitly-chosen network
+  actions ever leave the machine.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--teal)">A</div>
+        <div><div class="nm">ANTON Local</div><div class="role">Desktop web workspace · the brain</div></div>
+      </div>
+      <p>The full product: React + TypeScript front-end, Express + PostgreSQL back-end,
+      multi-LLM. 12 pillars, ~260 expert modules, the Risk Atlas engine, Markets
+      self-learning intelligence, Portals, Missions. Runs on <code>localhost</code>.</p>
+    </div>
+    <div class="card">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--teal)">▲</div>
+        <div><div class="nm">ANTON Companion</div><div class="role">Phone client for an ANTON Local instance</div></div>
+      </div>
+      <p>The mobile surface of your own ANTON Local. Ed25519 device pairing,
+      multi-instance switching, an approvals inbox, push, voice, capture.
+      Capacitor Android + PWA + iOS scaffold.</p>
+    </div>
+    <div class="card">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--navy)">●</div>
+        <div><div class="nm">ANTON Comm</div><div class="role">Standalone E2E messaging + wallet</div></div>
+      </div>
+      <p>A peer-to-peer communication app — no ANTON Local needed. Encrypted chat,
+      the Wassup feed, events, portal browsing, a FutureChain wallet with a
+      jurisdiction-aware tax engine and the light fraud engine.</p>
+    </div>
+    <div class="card">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--blue)">⟪</div>
+        <div><div class="nm">ANTON Business</div><div class="role">Merchant payment-acceptance app</div></div>
+      </div>
+      <p>Phone-only merchant tool. Generates <code>futurechain:pay</code> QR codes
+      (simple flat amount or itemised cart with VAT), keeps a gap-free receipt
+      ledger, embeds ISO 20022 creditor data into every code.</p>
+    </div>
+    <div class="card">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--orange)">☀</div>
+        <div><div class="nm">ANTON Pay</div><div class="role">Customer payments app</div></div>
+      </div>
+      <p>Phone-only payer app for private people. Scans a merchant QR, shows the
+      ISO 20022 detail, runs a 9-rule on-device fraud check, records the payment
+      with a PACS.008 draft. The newest app in the suite.</p>
+    </div>
+    <div class="card tint">
+      <div class="apphead">
+        <div class="applogo" style="background:var(--teal-dark)">↔</div>
+        <div><div class="nm">The connective tissue</div><div class="role">What binds the suite</div></div>
+      </div>
+      <p>The ANTON Mesh relay, the FutureChain SDK, the Ed25519 pairing ritual,
+      the <code>futurechain:pay</code> URI contract and the ANTON Agent Protocol —
+      all anchored on Ed25519 identity with no central PKI.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MAP ============================ -->
+<section id="map">
+  <h2><span class="ix">◆</span>How it all connects</h2>
+  <p>Five apps, but one identity model and a small set of shared rails. The desktop
+  workspace is the only piece that talks to LLM providers; the phone apps are thin,
+  local, and connect either to <em>your</em> ANTON Local or, peer-to-peer, to each other.</p>
+
+  <div class="diagram">
+<pre>
+                       ┌──────────────────────────────┐
+   LLM providers ◀────▶│        ANTON LOCAL           │   PostgreSQL 16+
+   Claude · GPT ·      │  desktop workspace · server  │   161+ migrations
+   Gemini · Mistral    │  12 pillars · ~260 modules   │
+   Azure · Ollama      └───────┬───────────────┬──────┘
+                                │               │
+              Ed25519 pairing   │               │  /aap/v1  · /v1/portals/*
+              (QR enrollment)   │               │  ANTON Agent Protocol
+                                │               │
+                    ┌───────────▼──────┐   ┌────▼─────────────┐
+                    │  ANTON COMPANION │   │  peer ANTON      │
+                    │  approvals·push  │   │  instances       │
+                    │  voice·capture   │   │  (collaboration) │
+                    └──────────────────┘   └──────────────────┘
+
+   ─────────────────  THE  FUTURECHAIN  PAYMENT  RAIL  ─────────────────
+
+      ┌───────────────┐   futurechain:pay QR    ┌───────────────┐
+      │ ANTON BUSINESS│ ─── (ADR-004 v1 ref ───▶│   ANTON PAY   │
+      │  merchant     │      + ISO 20022        │   customer    │
+      │  builds QR    │      creditor party)    │  scans·pays   │
+      └───────────────┘                         └──────┬────────┘
+                                                        │ PACS.008 draft
+      ┌───────────────┐                                 │ assembled
+      │  ANTON COMM   │  wallet · tax engine · fraud ◀───┘ on-device
+      │  P2P messaging│
+      └───────┬───────┘
+              │  wss://  E2E messages · portal discovery
+      ┌───────▼────────────────────────────────────────┐
+      │   ANTON MESH RELAY  (Noise IK · never decrypts) │
+      │   routes ciphertext · hosts portal registry     │
+      └─────────────────────────────────────────────────┘
+</pre>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4>Two ways phones reach a desktop</h4>
+      <ul class="tight">
+        <li><strong>Direct HTTPS</strong> — Companion talks straight to an ANTON Local
+        endpoint on the LAN or a public URL.</li>
+        <li><strong>Mesh relay</strong> — when the instance isn't publicly reachable,
+        Noise-IK ciphertext is bounced through the relay, which can never read it.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>One identity primitive everywhere</h4>
+      <ul class="tight">
+        <li><strong>Ed25519</strong> long-term keys anchor every app and instance.</li>
+        <li>Contact hash <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> is the shareable,
+        privacy-preserving address.</li>
+        <li>No central PKI — trust flows through QR exchange and signed audit trails.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ NUMBERS ============================ -->
+<section id="numbers">
+  <h2><span class="ix">◆</span>Scale at a glance</h2>
+  <p>Concrete counts from the codebase. Module and area totals are approximate —
+  they are assembled from a core registry plus per-area patch files.</p>
+  <div class="grid g3">
+    <div class="stat"><div class="n">12</div><div class="l">Pillars in ANTON Local</div></div>
+    <div class="stat"><div class="n">~260</div><div class="l">Expert modules across ~59 domain areas</div></div>
+    <div class="stat"><div class="n">44</div><div class="l">Output formats in 6 categories</div></div>
+    <div class="stat"><div class="n">157</div><div class="l">Express route files (factory pattern)</div></div>
+    <div class="stat"><div class="n">224</div><div class="l">Back-end service files</div></div>
+    <div class="stat"><div class="n">161+</div><div class="l">PostgreSQL migrations</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">LLM providers supported</div></div>
+    <div class="stat"><div class="n">16+</div><div class="l">Built-in output renderers</div></div>
+    <div class="stat"><div class="n">38</div><div class="l">UI languages (Pay &amp; Business)</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">Apps · 4 phone + 1 desktop</div></div>
+    <div class="stat"><div class="n">7</div><div class="l">Risk Atlas deterministic stages</div></div>
+    <div class="stat"><div class="n">9</div><div class="l">Fraud-engine rules (Pay &amp; Comm)</div></div>
+  </div>
+</section>
+
+<!-- ============================ ANTON LOCAL ============================ -->
+<section id="local">
+  <h2><span class="ix">1</span>ANTON Local — the desktop workspace</h2>
+  <p class="lead">The flagship application: an AI-powered expert workspace for 55+
+  professional domains. React 18 + TypeScript (strict) + Vite 6 front-end; Express +
+  Node 22 + PostgreSQL 16 back-end; Tailwind 4; Zustand state. It runs entirely on
+  <code>localhost</code> — documents never leave the machine, only LLM calls do.</p>
+
+  <div class="card">
+    <div class="kv"><span class="k">Design ethos</span><span>"Start with the problem, not the solution." Every module opens with a problem statement and pre-tuned AI behaviour; click <em>Run</em> and the defaults already produce excellent output.</span></div>
+    <div class="kv"><span class="k">Primary users</span><span>Domain professionals aged 35–65 — consultants, lawyers, compliance officers, analysts — who need reliable, structured, audit-defensible AI output without a command line.</span></div>
+    <div class="kv"><span class="k">Deployment modes</span><span><code>solo</code> (default, single-user, no auth) or <code>team</code> (JWT auth, roles: viewer / analyst / admin).</span></div>
+  </div>
+
+  <h3 id="local-pillars">The 12 pillars</h3>
+  <p>Pillars are top-level "modes of intelligence" selected from the App Mode toggle.
+  Each has its own UI, services and data model.</p>
+  <table>
+    <tr><th>Pillar</th><th>What it does</th></tr>
+    <tr><td><strong>Work</strong></td><td>The default. ~260 expert modules across ~59 professional domains — the core consulting workspace.</td></tr>
+    <tr><td><strong>School</strong></td><td>Educational interface with teacher oversight, assignment queues, progress tracking.</td></tr>
+    <tr><td><strong>Life</strong></td><td>Personal-life modules — microfinance, BoP finance, consumer protection, workers' rights, mobile money.</td></tr>
+    <tr><td><strong>Pathfinder</strong></td><td>Mode-aware research assistant — a "smart action bar" that reads intent and routes to the right module, with search history and calibration.</td></tr>
+    <tr><td><strong>Markets</strong></td><td>Self-learning financial intelligence. Daily feedback validates predictions, recalibrates reasoning. ANTON 100 indexes, why-chains, backtesting, 39 Python computation templates. ANTON's proof of self-learning intelligence.</td></tr>
+    <tr><td><strong>Community</strong></td><td>E2E-encrypted ANTON-to-ANTON messaging, privacy-preserving contact hashes, trust scoring, group chats, announcement channels.</td></tr>
+    <tr><td><strong>Procure</strong></td><td>Procurement cycles — RFQs, weighted vendor scoring, negotiation, contract tracking.</td></tr>
+    <tr><td><strong>Civic</strong></td><td>Civic engagements — eligibility checks, document submissions, authority directory, knowledge packs.</td></tr>
+    <tr><td><strong>Grow</strong></td><td>CRM-style — contacts, pipeline stages, opportunities, AI signals, briefings.</td></tr>
+    <tr><td><strong>Payments</strong></td><td>FutureChain wallet &amp; marketplace integration — wallet, gateway, budget, transactions.</td></tr>
+    <tr><td><strong>Portals</strong></td><td>User-built ANTON-only web spaces that are simultaneously human sites and machine-readable AAP endpoints. 8-phase builder, 7 templates, 12-verb capability taxonomy, registry protocol. ANTON's proof of inter-instance interoperability.</td></tr>
+    <tr><td><strong>Missions</strong></td><td>Multi-step automation jobs (research / outreach / monitoring) with an encrypted credential vault, service packs and an inbox with proposal/confirmation checkpoints.</td></tr>
+  </table>
+
+  <h3 id="local-modules">Modules &amp; domain areas</h3>
+  <p>Around <strong>260 expert modules</strong> are organised into roughly <strong>59
+  domain areas</strong>. Module definitions live in <code>src/lib/constants.ts</code>
+  plus per-area patch files; system prompts live in <code>server/areas/{area}/modules/</code>.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Regulated &amp; financial</h4>
+      <span class="pill">FCP — financial crime (35+ modules)</span>
+      <span class="pill">Risk (incl. 8 Risk Atlas modules)</span>
+      <span class="pill">Banking</span><span class="pill">Audit</span>
+      <span class="pill">Legal</span><span class="pill">Data privacy</span>
+      <span class="pill">Insurance</span><span class="pill">PE/VC</span>
+      <span class="pill">Accounting &amp; tax</span><span class="pill">Islamic finance</span>
+      <span class="pill">DORA / cyber</span>
+    </div>
+    <div class="card">
+      <h4>Business &amp; professional</h4>
+      <span class="pill">Consulting</span><span class="pill">Sales</span>
+      <span class="pill">Marketing</span><span class="pill">Strategy</span>
+      <span class="pill">HR &amp; talent</span><span class="pill">Operations</span>
+      <span class="pill">Project management</span><span class="pill">Comms &amp; PR</span>
+      <span class="pill">Product management</span>
+    </div>
+    <div class="card">
+      <h4>Technical &amp; creative</h4>
+      <span class="pill">Software engineering</span><span class="pill">Coding</span>
+      <span class="pill">Hardware engineering</span><span class="pill">Data analytics</span>
+      <span class="pill">Blockchain</span><span class="pill">Design &amp; branding</span>
+      <span class="pill">Journalism</span><span class="pill">Creative production</span>
+    </div>
+    <div class="card">
+      <h4>Sector &amp; Global South</h4>
+      <span class="pill">Healthcare</span><span class="pill">Education</span>
+      <span class="pill">Government / public sector</span><span class="pill">Real estate</span>
+      <span class="pill">Manufacturing</span><span class="pill">Food business</span>
+      <span class="pill">Microfinance</span><span class="pill">Smallholder farming</span>
+      <span class="pill">Mobile money</span><span class="pill">Land &amp; workers' rights</span>
+      <span class="pill">Trades &amp; service workers</span>
+    </div>
+  </div>
+
+  <h3>Server architecture</h3>
+  <div class="grid g3">
+    <div class="card"><h4>Routes</h4><p>157 route files in <code>server/routes/</code>. All follow the factory pattern: <code>createXxxRoutes(db, anthropic?)</code> → <code>Router</code>, mounted in <code>server/index.ts</code>.</p></div>
+    <div class="card"><h4>Services</h4><p>224 single-responsibility service files — LLM clients, knowledge resolution, Markets (36), Risk Atlas (9), Portals (15), exports, infrastructure.</p></div>
+    <div class="card"><h4>Connectors</h4><p>4 adapters — API, database, filesystem (path-whitelisted), script (no shell injection). Credentials decrypted from an encrypted vault.</p></div>
+  </div>
+  <p><strong>Middleware (8):</strong> auth (JWT/session), rate-limit (4 limiters), CSRF,
+  token budget, audit queue, app-auth (device certs), relay-auth, role gates.
+  <strong>Streaming:</strong> Server-Sent Events for LLM responses;
+  WebSocket for Community messaging and focus tracking.</p>
+
+  <h3 id="local-knowledge">Knowledge sources &amp; the 7-layer prompt</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>4 knowledge source modes</h4>
+      <ol class="tight">
+        <li><strong>Claude's Knowledge</strong> — built-in + optional web search.</li>
+        <li><strong>Online References</strong> — paste URLs; the server fetches &amp; extracts text.</li>
+        <li><strong>Local Folders</strong> — index whitelisted directories on the machine.</li>
+        <li><strong>Combined</strong> — merge with priority rules (local-first / AI-first / merged).</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>7-layer prompt assembly</h4>
+      <p>Every request is built by <code>prompt-builder.ts</code> from layered context:
+      system foundation → area context → org context &amp; knowledge packs → module
+      expertise → optional persona → skills → knowledge sources → transparency
+      (thinking-level config). 8+ named expert personas and 10+ audience proxies
+      (board, regulator, journalist…) can be layered on.</p>
+    </div>
+  </div>
+
+  <h4>Multi-LLM &amp; thinking levels</h4>
+  <table>
+    <tr><th>Provider</th><th>Default model</th><th>Thinking level</th><th>Effect</th></tr>
+    <tr><td>Anthropic Claude <em>(default)</em></td><td><code>claude-opus-4-7</code></td><td><code>quick</code></td><td>No deep reasoning</td></tr>
+    <tr><td>OpenAI</td><td><code>gpt-4o</code> / GPT-5 tier</td><td><code>think</code></td><td>Standard reasoning</td></tr>
+    <tr><td>Azure OpenAI</td><td>per deployment (o3/o4-mini)</td><td><code>think_hard</code></td><td>Deep reasoning</td></tr>
+    <tr><td>Google Gemini</td><td><code>gemini-2.0-flash</code></td><td><code>investigate</code></td><td>Maximum reasoning</td></tr>
+    <tr><td>Mistral</td><td><code>mistral-large-latest</code></td><td><code>plan_first</code></td><td>Plan, then execute</td></tr>
+    <tr><td>Ollama</td><td>user-selected (local)</td><td colspan="2">Levels map to adaptive effort (Opus 4.7) or token budgets (other models)</td></tr>
+  </table>
+
+  <h3 id="local-atlas">The Risk Atlas — deterministic risk engine</h3>
+  <p>A universal seven-stage threat-path methodology generalising the CASP BWRA
+  approach. The pattern is <strong>deterministic engine + LLM rationale</strong>: the
+  AI never decides the scores, only the words around them — so the register is
+  audit-defensible by construction.</p>
+  <div class="card">
+    <div class="kv"><span class="k">The 7 stages</span><span>Exposures → Threat paths → Vulnerabilities → Inherent risk (= max E,T,V) → Controls (Strong/Adequate/Weak, worst-of) → Residual (= inherent − reduction, clamped 1–5) → Appetite (5×5 grid).</span></div>
+    <div class="kv"><span class="k">Data model</span><span>18 tables (<code>risk_atlases</code>, <code>atlas_threat_paths</code>, <code>atlas_controls</code>, <code>atlas_residual_scores</code>…) across migrations 125–129.</span></div>
+    <div class="kv"><span class="k">Industry packs</span><span>25 composable <code>.anton</code> overlays — industry, FCP-domain (AML/CFT, sanctions, fraud, ABC, market abuse, tax-evasion facilitation, export controls) and universal-core, with parent inheritance.</span></div>
+    <div class="kv"><span class="k">Integrity rules</span><span>6 Compliance-as-Code checks (ATLAS-INT-001…006) surface live findings — residual ≥4 with no appetite, a Strong control with no evidence, etc.</span></div>
+    <div class="kv"><span class="k">Exports</span><span>Board-pack DOCX, threat-path PDF, heatmap SVG, <code>.anton</code> bundle.</span></div>
+  </div>
+
+  <h3 id="local-output">Output formats, renderers &amp; export</h3>
+  <p><strong>44 output formats</strong> in 6 categories — Strategic (executive summary,
+  decision memo, board pack…), Analytical (detailed findings, regulatory comparison,
+  audit report…), Operational (action plan, policy document, RACI…), Scoring (gap
+  matrix, maturity assessment…), Communication (briefings, training material,
+  presentations…) and Planning (compliance calendar, budget estimate…).</p>
+  <p>Every run produces Markdown (the source of truth) plus a structured JSON payload.
+  <strong>16+ post-hoc renderers</strong> then transform it: the 5 file exports
+  (<code>.docx</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.pptx</code>,
+  <code>.fountain</code>), Mermaid flowchart / Gantt / sequence / mindmap, an SVG
+  risk heatmap, an executive one-pager, a plain-language version, a board deck, a
+  standalone HTML file, and "devil's advocate" / "regulator's-eye" review passes.</p>
+
+  <h3>Other headline features</h3>
+  <div class="grid g3">
+    <div class="card"><h4>Specialized Agents</h4><p>Autonomous AI personas with their own prompts, knowledge, routing and escalation. 7 connector types (REST, webhook, DB, email, calendar, CRM, ERP). Discoverable across peer instances.</p></div>
+    <div class="card"><h4>Gap Assessment Wizard</h4><p>8-step framework-compliance assessment with iteration support, outputting a gap-scoring matrix.</p></div>
+    <div class="card"><h4>Counsel's Desk</h4><p>Legal research workspace with citation tracking and regulatory horizon scanning.</p></div>
+    <div class="card"><h4>Missions &amp; Task Agent</h4><p>Multi-step automation with human checkpoints; the <code>tmpl_amlr_readiness_v1</code> template is a 10-task end-to-end AMLR programme.</p></div>
+    <div class="card"><h4>Knowledge Packs</h4><p>Importable regulatory bundles in the <code>.anton</code> format.</p></div>
+    <div class="card"><h4>Evidence Pack</h4><p>Curated, instance-signed regulatory evidence bundles linked to Atlas findings.</p></div>
+  </div>
+</section>
+
+<!-- ============================ COMPANION ============================ -->
+<section id="companion">
+  <h2><span class="ix">2</span>ANTON Companion — your instance, in your pocket</h2>
+  <div class="apphead">
+    <div class="applogo" style="background:var(--teal)">▲</div>
+    <div><div class="nm">ANTON Companion</div>
+      <div class="role"><code>src/app/</code> · <code>android/</code> · PWA + Capacitor 8.3 · teal theme</div></div>
+  </div>
+  <p class="lead">The mobile surface of an ANTON Local instance. It is built for the
+  professional who needs to respond to urgent work items, approve actions and run
+  AI-assisted research away from the desk — while the organisation keeps control
+  through the pairing ritual.</p>
+
+  <h3>What it does</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Pairing &amp; multi-instance</h4>
+      <ul class="tight">
+        <li>Ed25519 enrollment ritual — scan a QR, the phone mints a fresh keypair into the Keychain/Keystore, signs the challenge, receives a device certificate.</li>
+        <li>Pair with several ANTON Local instances; a Wallet-card-style switcher makes the active one unambiguous.</li>
+        <li>Two transports — direct HTTPS, or Noise-IK mesh via the relay.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Approvals — the enterprise wedge</h4>
+      <ul class="tight">
+        <li>A severity-sorted checkpoint inbox surfacing pending decisions from the instance.</li>
+        <li>Biometric re-confirm on critical / high items.</li>
+        <li>Responses are Ed25519 signed-envelopes with replay-protected nonces.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Capture, voice &amp; push</h4>
+      <ul class="tight">
+        <li>Camera / library / share-sheet capture, resized to 2048px before upload.</li>
+        <li>Full-screen hold-to-talk voice mode with live captions and barge-in.</li>
+        <li>APNs / FCM / web-push — payloads carry only an event id, severity and opaque title, never confidential content.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Full workspace reach</h4>
+      <p>35+ screens mirror the desktop pillars — Chat, Tasks, Schedule, Search,
+      Markets, Radar, Missions, My Work, Community, Portals, Wallet, Work Modules,
+      School. A "Standard mode" offers a simplified 4-tab variant for NGO and
+      plain-language deployments.</p>
+    </div>
+  </div>
+  <div class="note">Identity lives in <code>src/app/services/identity.ts</code>;
+  the paired-instance store and race-free switcher in <code>instances.ts</code>;
+  approvals in <code>checkpoints.ts</code>. Server side: <code>app-enrollment-service.ts</code>
+  and the <code>/api/app/*</code> routes. App id <code>com.futurechain.anton.companion</code>.</div>
+</section>
+
+<!-- ============================ COMM ============================ -->
+<section id="comm">
+  <h2><span class="ix">3</span>ANTON Comm — standalone communication &amp; money</h2>
+  <div class="apphead">
+    <div class="applogo" style="background:var(--navy)">●</div>
+    <div><div class="nm">ANTON Comm</div>
+      <div class="role"><code>src/comm/</code> · <code>android-comm/</code> · Capacitor 8.3 · navy theme</div></div>
+  </div>
+  <p class="lead">A peer-to-peer communication app that needs <em>no</em> ANTON Local
+  instance. It bootstraps its own Ed25519 identity, talks to peers end-to-end
+  encrypted through the relay, and carries a full FutureChain wallet with a
+  jurisdiction-aware tax engine.</p>
+
+  <h3>Capabilities</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Messaging &amp; social</h4>
+      <ul class="tight">
+        <li>E2E-encrypted chat (HPKE / X25519) — reactions, edits, deletes, polls, voice notes, media, location share, disappearing messages, receipts.</li>
+        <li><strong>Wassup</strong> — an ephemeral status feed (text + image, 24h default), likes and comments, fanned out over the chat layer to contacts only.</li>
+        <li><strong>Events</strong> — a local calendar with invitations and RSVPs carried over E2E chat.</li>
+        <li><strong>Portals</strong> — discover ANTON portals via the relay registry, then invoke capabilities directly on the owner's instance.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Wallet, tax &amp; fraud</h4>
+      <ul class="tight">
+        <li>A FutureChain secp256k1 wallet — send, receive, swap; an on-device transaction ledger.</li>
+        <li><strong>Tax engine</strong> — jurisdiction-aware position &amp; annual reports via <code>@futurechain/sdk/tax</code>; cost-basis methods, holding-period relief, K4 / CSV export.</li>
+        <li><strong>Money profile</strong> — a self-declared baseline (DOB, nationality, occupation, source of funds, expected spend).</li>
+        <li><strong>Light fraud engine</strong> — the same 9-rule deterministic check as ANTON Pay, run before each payment is confirmed.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">~18 screens, ~30 services. Relay client speaks a 5-byte framed
+  WebSocket protocol (<code>HELLO_COMM</code> → <code>DELIVER_COMM</code>) to
+  <code>wss://relay.futurechain.eu</code>. Data sits in an IndexedDB v3 schema.
+  App id <code>com.futurechain.anton.comm</code>.</div>
+  <div class="note warn">Comm currently ships only English and Swedish locale
+  catalogues. Non-en/sv users see English for the whole app — translating Comm into
+  the other 36 languages is a known, separate effort.</div>
+</section>
+
+<!-- ============================ BUSINESS ============================ -->
+<section id="business">
+  <h2><span class="ix">4</span>ANTON Business — the merchant app</h2>
+  <div class="apphead">
+    <div class="applogo" style="background:var(--blue)">⟪</div>
+    <div><div class="nm">ANTON Business</div>
+      <div class="role"><code>src/business/</code> · <code>android-business/</code> · Capacitor + Vite + React · blue <code>#3070C7</code></div></div>
+  </div>
+  <p class="lead">A phone-only, no-backend tool for small and medium merchants —
+  retailers, restaurants, event sellers, consultants — to accept FutureChain
+  payments by showing a QR code. Designed for merchants who are not crypto-savvy.</p>
+
+  <h3>How it works</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Two sale modes</h4>
+      <ul class="tight">
+        <li><strong>Simple</strong> — tap an amount on the keypad, show the QR.</li>
+        <li><strong>Extended</strong> — build a cart from a pre-set item catalogue, with per-item VAT and discounts, then show the QR.</li>
+      </ul>
+      <h4>Receipt ledger</h4>
+      <p>Every sale becomes a <em>kvitto</em> with gap-free Bokföringslagen 5 kap.
+      numbering (K-000001…), status tracking, full VAT detail, exportable to PDF or JSON.</p>
+    </div>
+    <div class="card">
+      <h4>The QR it produces</h4>
+      <p>A <code>futurechain:pay</code> URI carrying the merchant receive address,
+      the amount in micro-FTC, an 8-char merchant id, a 12-char order id, the
+      ADR-004 v1 reference, optional VAT/discount, a 15-minute expiry — and the
+      merchant's ISO 20022 creditor party (<code>cn/cc/cct/cst/cpc</code>),
+      added so the payer can build a complete PACS.008 record.</p>
+    </div>
+  </div>
+  <div class="note">Onboarding collects legal name, org number, address, VAT status
+  and country. Settings (ported from Comm) cover wallet, appearance with 8 accent
+  colours, backup/export, language and reset. <strong>38 languages.</strong>
+  Build: <code>build:business:cap</code> → copy <code>dist/business/</code> →
+  <code>gradlew assembleDebug</code>.</div>
+</section>
+
+<!-- ============================ PAY ============================ -->
+<section id="pay">
+  <h2><span class="ix">5</span>ANTON Pay — the customer payments app</h2>
+  <div class="apphead">
+    <div class="applogo" style="background:var(--orange)">☀</div>
+    <div><div class="nm">ANTON Pay</div>
+      <div class="role"><code>src/pay/</code> · <code>android-pay/</code> · Capacitor + Vite · sunrise-orange <code>#C97220</code></div></div>
+  </div>
+  <p class="lead">The newest app: a focused, phone-only payments app for private
+  people who just want to pay merchants — without the full ANTON Comm experience.
+  Scan, review, check for fraud, confirm. All on-device.</p>
+
+  <h3>The payment flow</h3>
+  <ol>
+    <li><strong>Onboard once</strong> — a wallet (Ed25519 keypair) is created up front; identity entry is optional.</li>
+    <li><strong>Scan</strong> — the camera reads a merchant's <code>futurechain:pay</code> QR (manual paste fallback exists).</li>
+    <li><strong>Review</strong> — the decoded payment is shown: FTC amount + estimated SEK, merchant, purpose, VAT, a live expiry countdown, and an expandable <strong>ISO 20022 payment detail</strong> panel.</li>
+    <li><strong>Fraud check</strong> — the light fraud engine scores the payment and lists any signals; a <em>warning</em> level arms a two-step "Pay anyway" confirm. It is always advisory — it never blocks.</li>
+    <li><strong>Confirm</strong> — the payment is recorded locally with a full PACS.008 draft assembled from the saved identity and the scanned creditor.</li>
+  </ol>
+
+  <h3>The light fraud engine</h3>
+  <p>A pure, deterministic, on-device scorer — no LLM, no network, no I/O. It
+  compares the pending payment against two baselines: the self-declared
+  <em>money profile</em> and the derived <em>behaviour profile</em>.</p>
+  <table>
+    <tr><th>Signal</th><th>Fires when…</th></tr>
+    <tr><td>amount-anomaly</td><td>Much larger than the user's median payment</td></tr>
+    <tr><td>above-typical</td><td>Much larger than the declared typical payment size</td></tr>
+    <tr><td>new-counterparty</td><td>First-ever payment to this merchant</td></tr>
+    <tr><td>new-counterparty-large</td><td>A large payment to a never-seen merchant</td></tr>
+    <tr><td>velocity</td><td>Many payments already in the last 24 hours</td></tr>
+    <tr><td>monthly-cap</td><td>Pushes 30-day spend past the declared monthly budget</td></tr>
+    <tr><td>odd-hour</td><td>Outside the user's usual active hours</td></tr>
+    <tr><td>expiring-qr</td><td>The QR is about to expire — "don't let anyone rush you"</td></tr>
+    <tr><td>dormancy-break</td><td>A large first payment after a long dormant gap</td></tr>
+  </table>
+  <p>Signals are weighted (info 8 / caution 22 / warning 45), summed and capped at
+  100. The <strong>Activity Review</strong> screen shows the user their own pattern
+  and every flagged payment after the fact.</p>
+  <div class="note">Services: <code>payment.ts</code>, <code>payment-identity.ts</code>,
+  <code>pacs008-draft.ts</code>, <code>money-profile.ts</code>,
+  <code>behavior-profile.ts</code>, <code>fraud-engine.ts</code> — all with unit
+  tests. <strong>38 languages.</strong> App default accent: sunrise orange.</div>
+</section>
+
+<!-- ============================ RELAY ============================ -->
+<section id="relay">
+  <h2><span class="ix">↔</span>ANTON Mesh &amp; the relay</h2>
+  <p class="lead">A WebSocket relay broker that replaces Cloudflare Tunnel. It is
+  the transport rail when a phone cannot reach an ANTON Local instance directly —
+  and the discovery rail for Comm messages and portals.</p>
+  <div class="card">
+    <div class="kv"><span class="k">Location</span><span><code>relay/</code> — ~5,900 lines of TypeScript, Apache-2.0, fully self-hostable (Docker / systemd / bare Node).</span></div>
+    <div class="kv"><span class="k">Cipher suite</span><span><code>Noise_IK_25519_ChaChaPoly_BLAKE2b</code> — ChaCha20-Poly1305 AEAD, X25519 ephemeral DH, Ed25519 long-term identity.</span></div>
+    <div class="kv"><span class="k">What it can do</span><span>Match connections by <code>instance_id</code> and forward opaque ciphertext. Observe metadata (who connects when). Cause denial of service.</span></div>
+    <div class="kv"><span class="k">What it cannot do</span><span>Decrypt traffic, impersonate an instance (binding signature), or misroute (direction-tag + instance-id checks).</span></div>
+    <div class="kv"><span class="k">Status</span><span><span class="badge b-done">BUILT</span> Phase 2 reference implementation complete, threat model peer-reviewed.</span></div>
+  </div>
+  <p>The same relay process also exposes an HTTP <code>/v1/portals/*</code> registry
+  for portal discovery and routes the Comm app's E2E message frames — a frame-type
+  byte distinguishes instance traffic from Comm traffic.</p>
+</section>
+
+<!-- ============================ PAIRING ============================ -->
+<section id="pairing">
+  <h2><span class="ix">↔</span>Pairing &amp; enrollment ritual</h2>
+  <p>How a phone becomes trusted by an ANTON Local instance — an Ed25519 ritual
+  with no central authority.</p>
+  <ol>
+    <li>The admin opens "Connect a device". The instance issues a 60-second-TTL
+    enrollment package: its Ed25519 + X25519 public keys, a self-binding signature,
+    relay endpoints, a nonce and an optional 6-digit out-of-band code.</li>
+    <li>The phone scans the QR, generates a fresh Ed25519 keypair, and stores the
+    private key in the biometric-protected Keychain / Keystore.</li>
+    <li>The phone signs <code>${token}.${nonce}.${publicKey}</code> and POSTs to
+    <code>/api/app/enrollment/complete</code> with the confirmation code.</li>
+    <li>The server verifies signature and code, then issues a device certificate and
+    a 30-day session token. The phone biometric-locks the credentials.</li>
+  </ol>
+  <div class="note">At rest, the instance private key is AES-256-GCM encrypted in
+  <code>instance_identity.privkey_encrypted</code> when
+  <code>INSTANCE_KEY_ENCRYPTION_KEY</code> is set. The contact hash format
+  <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> is shared by every app in the suite.</div>
+</section>
+
+<!-- ============================ SDK ============================ -->
+<section id="sdk">
+  <h2><span class="ix">↔</span>The FutureChain SDK</h2>
+  <p>The shared <code>@futurechain/sdk</code> workspace package — the payment and
+  crypto primitives used by Business, Pay and Comm. It is partially implemented;
+  several modules wait on the FutureChain Rust core being vendored.</p>
+  <table>
+    <tr><th>Module</th><th>Purpose</th><th>Status</th></tr>
+    <tr><td><code>reference</code></td><td>ADR-004 remittance encoding — v1 (merchant-bearing) &amp; v2 (operational); never throws, returns a discriminated union.</td><td><span class="badge b-done">BUILT</span></td></tr>
+    <tr><td><code>tax</code></td><td>Jurisdiction-aware crypto-asset tax engine — cost basis, holding-period relief, loss offset, K4/CSV reports.</td><td><span class="badge b-partial">IN PROGRESS</span></td></tr>
+    <tr><td><code>wallet</code></td><td>secp256k1 keys, mnemonics, signing. Address derivation works; create / sign / verify stubbed.</td><td><span class="badge b-partial">PARTIAL</span></td></tr>
+    <tr><td><code>pacs008</code></td><td>ISO 20022 PACS.008 builder + canonical serialisation + hashing.</td><td><span class="badge b-stub">STUB</span></td></tr>
+    <tr><td><code>rpc</code></td><td>RPC envelope between app and backend.</td><td><span class="badge b-stub">STUB</span></td></tr>
+  </table>
+  <div class="note warn">The PACS.008 builder throws <code>NotImplementedError</code>
+  — it is blocked on the Rust <code>iso20022_pacs008.rs</code> being vendored, so the
+  canonical form can byte-match. Until then, Pay and Comm assemble PACS.008
+  <em>drafts</em> as plain object literals; they are populated and shown to the user
+  but not yet cryptographically signed. Signing lands when the SDK unstubs.</div>
+</section>
+
+<!-- ============================ PAYMENTS ============================ -->
+<section id="payments">
+  <h2><span class="ix">↔</span>The payment flow, end to end</h2>
+  <p>The <code>futurechain:pay</code> URI is the contract between merchant and
+  customer apps. Business <em>encodes</em> it; Pay and Comm <em>decode</em> it.</p>
+  <div class="diagram">
+<pre>
+ ANTON BUSINESS                                      ANTON PAY / COMM
+ ─────────────                                       ────────────────
+ merchant enters                                     customer scans QR
+ amount / cart                                              │
+       │                                                    ▼
+       ▼                                            decode + validate
+ build futurechain:pay URI                          (scheme, expiry)
+   to=&lt;receive address&gt;                                     │
+   amount=&lt;micro-FTC&gt;                                        ▼
+   ref=&lt;ADR-004 v1&gt;  ──── M:merchant O:order ────▶   review screen:
+   cn/cc/cct/cst/cpc  ─── ISO 20022 creditor ────▶   amount · merchant
+   exp=&lt;+15 min&gt;  v=1                                  ISO 20022 panel
+       │                                                    │
+       ▼                                                    ▼
+ show QR on screen  ════════ QR ════════════▶        fraud engine (9 rules)
+       │                                                    │
+       ▼                                                    ▼
+ kvitto recorded                                     confirm → record +
+ (gap-free ledger)                                   PACS.008 draft assembled
+                                                            │
+   settlement is bilateral, off-app  ◀───────────────────────┘
+   (merchant ↔ Safello blockchain node)
+</pre>
+  </div>
+  <p>The <code>ref</code> field carries the ADR-004 <strong>v1</strong> reference —
+  merchant id, order id, purpose (<code>RETAIL/RESTAURANT/EVENT/SERVICE/REFUND</code>),
+  and optional item count / VAT / discount. On the payer side, the purpose is mapped
+  to an ISO 20022 external purpose code (RETAIL→GDDS, RESTAURANT/SERVICE→SCVE,
+  EVENT→OTHR, REFUND→REFUND) when the PACS.008 draft is assembled. Settlement itself
+  is bilateral between the merchant and Safello — the apps only keep local records.</p>
+</section>
+
+<!-- ============================ AAP ============================ -->
+<section id="aap">
+  <h2><span class="ix">↔</span>Agent Protocol &amp; portals</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h4>ANTON Agent Protocol (AAP)</h4>
+      <p>A symmetric instance-to-instance protocol — wire format v1 locked. WebSocket
+      over <code>wss://</code> at <code>/aap/v1</code>, advertised via mDNS. After an
+      Ed25519-signed <code>HELLO</code>/<code>WELCOME</code> handshake and an X25519
+      ECDH, peers exchange AES-256-GCM-encrypted <code>.anton</code> bundles —
+      contact bundles, evidence packs, market theses, Risk Atlas packs, portals.
+      Every message carries a replay-protected nonce.</p>
+    </div>
+    <div class="card">
+      <h4>Portals &amp; the registry protocol</h4>
+      <p>Portals are user-built ANTON web spaces that double as machine-readable
+      endpoints. The registry protocol adds deterministic canonical JSON, signed
+      envelopes and homoglyph defence; a registry client submits portals to the
+      relay-hosted registry and verifies them against a signed transparency log.
+      Local portals are complete; cross-instance public discovery has a 6-phase
+      roadmap with a legal review gating launch.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ STATUS ============================ -->
+<section id="status">
+  <h2><span class="ix">✓</span>Built vs stub vs spec — an honest map</h2>
+  <p>The suite is close to done, but not uniformly. This is where each load-bearing
+  piece actually stands.</p>
+  <table>
+    <tr><th>Component</th><th>Status</th><th>Note</th></tr>
+    <tr><td>ANTON Local — 12 pillars, modules, prompts</td><td><span class="badge b-done">BUILT</span></td><td>The mature core of the suite</td></tr>
+    <tr><td>Risk Atlas deterministic engine</td><td><span class="badge b-done">BUILT</span></td><td>Phase 1 + Addendum, 25 packs, audit-locked calculator</td></tr>
+    <tr><td>ANTON Mesh relay</td><td><span class="badge b-done">BUILT</span></td><td>Phase 2 reference implementation, self-hostable</td></tr>
+    <tr><td>Companion app — pairing, approvals, push, voice</td><td><span class="badge b-done">BUILT</span></td><td>Functionally complete; ship blockers were push dispatch + store assets</td></tr>
+    <tr><td>Comm app — messaging, wallet, events, portals</td><td><span class="badge b-done">BUILT</span></td><td>Full R1–R13 roadmap shipped; only en/sv locales</td></tr>
+    <tr><td>Business app</td><td><span class="badge b-done">BUILT</span></td><td>Phone-only v2.0; 38 languages</td></tr>
+    <tr><td>Pay app + light fraud engine</td><td><span class="badge b-done">BUILT</span></td><td>Newest app; 5-phase PACS.008/KYC/fraud plan complete</td></tr>
+    <tr><td>SDK <code>reference</code> (ADR-004 v1/v2)</td><td><span class="badge b-done">BUILT</span></td><td>Encode/decode round-trip deterministic</td></tr>
+    <tr><td>App enrollment ritual (Ed25519)</td><td><span class="badge b-done">BUILT</span></td><td>Multi-instance + biometric + revocation</td></tr>
+    <tr><td>SDK <code>tax</code> engine</td><td><span class="badge b-partial">IN PROGRESS</span></td><td>Schema + Sweden rules done; cost-basis &amp; other jurisdictions draft</td></tr>
+    <tr><td>SDK <code>wallet</code></td><td><span class="badge b-partial">PARTIAL</span></td><td>Address derivation works; signing stubbed</td></tr>
+    <tr><td>AAP transport</td><td><span class="badge b-partial">PARTIAL</span></td><td>Handshake + bundles + nonce replay in place</td></tr>
+    <tr><td>SDK <code>pacs008</code> builder</td><td><span class="badge b-stub">STUB</span></td><td>Blocked on Rust <code>iso20022_pacs008.rs</code> being vendored</td></tr>
+    <tr><td>Portals cross-instance discovery</td><td><span class="badge b-spec">ROADMAP</span></td><td>6-phase plan; legal review gates public launch</td></tr>
+    <tr><td>Safello settlement integration</td><td><span class="badge b-spec">SPEC</span></td><td>Bilateral KYC model; reference code archived</td></tr>
+  </table>
+  <div class="note warn"><strong>The critical-path blocker:</strong> the FutureChain
+  Rust core (<code>iso20022_pacs008.rs</code>) must be vendored before PACS.008 can be
+  built, canonicalised, hashed and signed for real. Everything downstream — signed
+  payment records, real settlement — waits on it. The apps are deliberately built so
+  that drafts populate and display today, and signing simply switches on when the
+  SDK unstubs.</div>
+</section>
+
+<!-- ============================ VISION ============================ -->
+<section id="vision">
+  <h2><span class="ix">✦</span>The 6-layer vision</h2>
+  <p>ANTON is designed as six layers, each independently valuable and each making
+  the next more powerful.</p>
+  <table>
+    <tr><th>#</th><th>Layer</th><th>Status</th></tr>
+    <tr><td>1</td><td><strong>Individual ANTON</strong> — pillars, modules, 7-layer prompts</td><td><span class="badge b-done">DONE</span></td></tr>
+    <tr><td>2</td><td><strong>Intelligent ANTON</strong> — knowledge atoms, pattern detection, predictions, calibration (Markets is the proof)</td><td><span class="badge b-partial">MOSTLY DONE</span></td></tr>
+    <tr><td>3</td><td><strong>Network</strong> — Community, E2E messaging, contact hashes, trust</td><td><span class="badge b-done">BUILT</span></td></tr>
+    <tr><td>4</td><td><strong>Collaborative Intelligence</strong> — ANTON-to-ANTON via the Agent Protocol</td><td><span class="badge b-partial">IN PROGRESS</span></td></tr>
+    <tr><td>5</td><td><strong>Marketplace</strong> — <code>.anton</code> bundle trading, rating, discovery</td><td><span class="badge b-spec">NOT STARTED</span></td></tr>
+    <tr><td>6</td><td><strong>Economy</strong> — FutureChain payments, expertise as income</td><td><span class="badge b-spec">NOT STARTED</span></td></tr>
+  </table>
+  <p>The four phone apps and the payment rail are the concrete first steps into
+  layers 4–6: Companion extends an instance to mobile, Comm carries the network
+  peer-to-peer, and Business + Pay are the first working pieces of the economy layer.</p>
+</section>
+
+<div class="footer">
+  <p><strong>ANTON Suite — Capabilities &amp; Architecture.</strong> Generated 18 May 2026
+  for package <code>openexpert</code> v0.7.5. Compiled from a five-agent fly-over of the
+  repository at <code>C:\ANTON_PostgreSQLv2</code>. Counts are accurate to the codebase
+  at time of writing; module and area totals are approximate (assembled from a core
+  registry plus per-area patch files). Status labels reflect what is built, partially
+  built, stubbed or spec-only — see §"Built vs stub vs spec" for the honest map.</p>
+</div>
+
+</main>
+</div>
+</body>
+</html>

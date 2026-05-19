@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Atlas — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk active" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#local">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Risk Atlas</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local</div>
+      <h1>The Risk Atlas — a deterministic risk engine</h1>
+      <p class="lead">The Risk Atlas turns risk assessment from an opinion into a
+      calculation. It walks any business — a bakery or a bank — through seven stages
+      from exposure to appetite, and the scores are computed by a fixed rule, not
+      guessed by an AI. The result is a risk register you can defend to an auditor
+      line by line.</p>
+      <div class="page-meta">
+        <span class="chip">For: risk &amp; compliance professionals</span>
+        <span class="chip">7 deterministic stages</span>
+        <span class="chip">25 industry packs</span>
+        <span class="chip">Engine + LLM rationale</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the Risk Atlas is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#stages">The seven stages, walked</a></li>
+        <li><a href="#packs">Industry packs &amp; the FCP addendum</a></li>
+        <li><a href="#build">Building an Atlas, step by step</a></li>
+        <li><a href="#integrity">Integrity rules &amp; exports</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the Risk Atlas is</h2>
+    <p>The Risk Atlas is a workspace inside the <a href="pillar-work.html">Work
+    pillar</a> for building and maintaining a <em>living risk register</em>. It
+    generalises the CASP BWRA (Business-Wide Risk Assessment) threat-path method into
+    a universal causal-chain engine that any organisation can use, regulated or not.</p>
+    <p>Most risk registers are a spreadsheet of numbers nobody can explain six months
+    later. The Atlas is different in one decisive way: <strong>the numbers are
+    computed, not chosen.</strong> You supply the facts — what you are exposed to,
+    how strong a control is — and a deterministic engine derives inherent risk,
+    residual risk and appetite position. The AI writes the <em>rationale</em> around
+    each number; it never decides the number itself.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">⛓</div><h4>Causal chains</h4>
+        <p>Risk is modelled as a threat path — a story from exposure to harm, stage by stage.</p></div>
+      <div class="feature"><div class="ic">🔢</div><h4>Fixed arithmetic</h4>
+        <p>Inherent, residual and appetite all come from one audited calculator.</p></div>
+      <div class="feature"><div class="ic">📋</div><h4>Audit-defensible</h4>
+        <p>Every score traces to a rule and an input. Nothing is a black box.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of the Atlas as <strong>a deterministic engine wrapped in LLM
+      rationale</strong>. The engine is a calculator with locked rules: feed it the
+      same inputs and it always returns the same residual score. The LLM's job is the
+      <em>words</em> — describing a threat path in plain language, drafting a control
+      description, explaining why a residual sits where it does. If an auditor asks
+      "why is this a 4?", the answer is arithmetic, not judgement.</p>
+    </div>
+
+    <p>Two ideas explain almost every screen in the workspace:</p>
+    <ul>
+      <li><strong>A threat path is a sentence.</strong> "<em>Cash-heavy takings
+      (exposure) let a dishonest employee skim (threat) because there is no daily
+      reconciliation (vulnerability), causing loss and tax misstatement (harm).</em>"
+      Every path you build should read as a coherent causal story.</li>
+      <li><strong>The AI never moves a number.</strong> It can suggest exposures,
+      draft threat paths, propose control descriptions — but the moment a score is
+      set, the residual and appetite are pure arithmetic. This is non-negotiable and
+      it is what makes the register hold up under scrutiny.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why "weakest link" not "average"</div>
+      <p>Inherent risk is <code>max(exposure, threat, vulnerability)</code> — not an
+      average. A path with low exposure today but a gaping vulnerability is still
+      high-inherent, because the risk materialises the instant exposure changes.
+      Averaging would hide that. The same worst-of logic governs controls: one weak
+      control sinks the whole rollup for that path.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="stages"><span class="ix">3</span>The seven stages, walked</h2>
+    <p>Every Atlas is built — and recalculated — through the same seven-stage chain.
+    Stages 1–3 are inputs you (or the AI) gather; stages 4–7 are computed.</p>
+
+    <div class="diagram">
+<pre>
+  STAGE 1        STAGE 2          STAGE 3            STAGE 4
+  ┌─────────┐    ┌───────────┐    ┌──────────────┐   ┌──────────────────┐
+  │ EXPOSURE│───▶│  THREAT   │───▶│VULNERABILITY │──▶│ INHERENT RISK    │
+  │ points  │    │  paths    │    │  weaknesses  │   │ = max(E, T, V)   │
+  │ what you│    │ how harm  │    │ what lets it │   │ weakest link     │
+  │ can lose│    │  reaches  │    │   through    │   │ governs          │
+  └─────────┘    └───────────┘    └──────────────┘   └────────┬─────────┘
+                                                               │
+       ┌───────────────────────────────────────────────────────┘
+       ▼
+  STAGE 5                    STAGE 6                  STAGE 7
+  ┌──────────────────┐       ┌─────────────────────┐  ┌────────────────────┐
+  │ CONTROLS         │──────▶│ RESIDUAL RISK       │─▶│ APPETITE  (5×5)    │
+  │ Strong  −2       │       │ = inherent − reduce │  │ 1-2 within         │
+  │ Adequate −1      │       │   clamped to [1,5]  │  │  3  boundary       │
+  │ Weak / Absent  0 │       │ worst control wins  │  │  4  outside        │
+  │ worst-of rollup  │       │                     │  │  5  unacceptable   │
+  └──────────────────┘       └─────────────────────┘  └────────────────────┘
+</pre>
+    </div>
+
+    <table>
+      <tr><th>#</th><th>Stage</th><th>What happens</th><th>Computed?</th></tr>
+      <tr><td>1</td><td>Exposures</td><td>List what the business is exposed to — cash, customers, data, jurisdictions, channels — each scored 1–5.</td><td>Input</td></tr>
+      <tr><td>2</td><td>Threat paths</td><td>Draw the causal routes by which harm reaches the business; each carries a threat-credibility score.</td><td>Input</td></tr>
+      <tr><td>3</td><td>Vulnerabilities</td><td>Identify the weaknesses on each path that let the threat through, scored 1–5.</td><td>Input</td></tr>
+      <tr><td>4</td><td>Inherent risk</td><td><code>max(exposure, threat, vulnerability)</code> per path — risk before any controls.</td><td><span class="badge b-done">Calculated</span></td></tr>
+      <tr><td>5</td><td>Controls</td><td>Link mitigations to vulnerabilities, each graded Strong / Adequate / Weak; rolled up worst-of per path.</td><td>Input + rollup</td></tr>
+      <tr><td>6</td><td>Residual risk</td><td><code>inherent − reduction</code>, clamped to [1,5]. Strong = −2, Adequate = −1, Weak/Absent = 0.</td><td><span class="badge b-done">Calculated</span></td></tr>
+      <tr><td>7</td><td>Appetite</td><td>Residual placed on a 5×5 grid: 1–2 within appetite, 3 boundary, 4 outside, 5 unacceptable.</td><td><span class="badge b-done">Calculated</span></td></tr>
+    </table>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a single threat path scored</div>
+      <p>A small café. <strong>Exposure</strong>: heavy cash takings, scored 4.
+      <strong>Threat</strong>: employee skimming, credibility 3.
+      <strong>Vulnerability</strong>: no daily till reconciliation, scored 4.
+      Inherent risk = max(4, 3, 4) = <strong>4</strong>. The café adds one control —
+      a weekly (not daily) spot-check — graded <em>Weak</em>, reduction 0. Residual =
+      4 − 0 = <strong>4</strong> → <em>outside appetite</em>. Swap to a daily count
+      with a signed log — an <em>Adequate</em> control, reduction −1 — and residual
+      drops to <strong>3</strong>, the boundary. The AI writes the wording on every
+      line; the engine does the subtraction.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The deterministic calculator
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>server/services/risk-atlas/atlas-residual-calculator.ts</code> is the
+        engine — described in its own header comment as "the crown jewel of the
+        methodology". It exposes pure functions: <code>calculateInherent()</code>
+        returns <code>max(exposure, threat, vulnerability)</code>;
+        a control-rollup helper takes an arbitrary set of control strengths and
+        returns the <em>worst</em> grade (empty list → <code>absent</code>);
+        residual = inherent minus the reduction for that rollup
+        (<code>Strong −2, Adequate −1, Weak 0, Absent 0</code>), clamped to
+        <code>[1, 5]</code>; and appetite buckets the residual (1–2 within, 3
+        boundary, 4 outside, 5 unacceptable).</p>
+        <p>The file ships with <strong>25 unit tests</strong> — every branch is
+        covered and the header states plainly: "No LLM is involved." This is what
+        makes the register reproducible: re-running the calculation can never
+        silently change a score.</p>
+      </div>
+    </details>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The 18-table data model
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Migrations <code>125_risk_atlas_foundation.sql</code> through
+        <code>129_risk_atlas_addendum_review_fixes.sql</code> define <strong>18
+        tables</strong>. The core seven mirror the stages:
+        <code>risk_atlases</code>, <code>atlas_exposure_points</code>,
+        <code>atlas_threat_paths</code>, <code>atlas_vulnerabilities</code>,
+        <code>atlas_controls</code>, <code>atlas_inherent_scores</code>,
+        <code>atlas_residual_scores</code>. Around them sit
+        <code>atlas_appetite_statements</code>, <code>atlas_escalation_triggers</code>,
+        <code>atlas_review_cycles</code>, <code>atlas_industry_packs</code>,
+        <code>atlas_events</code>, <code>atlas_fcp_scope</code> and
+        <code>atlas_cross_domain_path_bundles</code>.</p>
+        <p>CRUD runs through <code>atlas-service.ts</code> with owner-bound mutations;
+        every REST endpoint in <code>server/routes/atlas.ts</code> (~30 of them) is
+        gated by <code>ensureAtlasAccess(db, req, atlasId)</code>. Stage changes are
+        appended to <code>atlas_events</code> via <code>atlas-event-logger.ts</code>,
+        so the register carries its own audit trail.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="packs"><span class="ix">4</span>Industry packs &amp; the FCP addendum</h2>
+    <p>You rarely start an Atlas from a blank page. <strong>25 industry packs</strong>
+    ship as composable <code>.anton</code> overlays under
+    <code>data/risk-atlas/packs/</code>. A pack pre-loads typical exposures, threat
+    paths and severity benchmarks for a sector, so you begin with a sensible
+    skeleton and edit rather than invent.</p>
+
+    <table>
+      <tr><th>Pack kind</th><th>Examples</th><th>Use</th></tr>
+      <tr><td><code>industry</code></td><td>sme-general, fcp-bank, fcp-casp, sector-*</td><td>The base for a whole organisation or sector</td></tr>
+      <tr><td><code>fcp-domain</code></td><td>AML/CFT, sanctions, fraud, ABC, market abuse, tax-evasion facilitation, export controls</td><td>Financial-crime overlays layered onto a base pack</td></tr>
+      <tr><td><code>overlay</code></td><td>universal-fcp-core</td><td>Cross-cutting content merged into any pack</td></tr>
+    </table>
+
+    <p>Packs support <strong>parent inheritance</strong> — an FCP-domain pack can
+    extend a base industry pack via <code>parent_pack_id</code>, and the loader
+    protects against inheritance cycles. The <strong>FCP addendum</strong> adds two
+    capabilities for financial-crime-obliged firms:</p>
+    <ul>
+      <li><strong>FCP scope</strong> — <code>atlas_fcp_scope</code> records which
+      financial-crime domains are active for an Atlas, set with help from the
+      <code>fcp-scope-assessor</code> module.</li>
+      <li><strong>Cross-domain bundles</strong> — <code>atlas_cross_domain_path_bundles</code>
+      groups threat paths from several domains into one causal "story" for the board
+      pack, and <code>computeCompanyAppetite()</code> does a deterministic worst-of
+      rollup per domain (Stage 7b).</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Atlas in a Mission</div>
+      <p>For a regulated entity, the Atlas is one step in a larger programme. The
+      mission template <code>tmpl_amlr_readiness_v1</code> chains ten tasks — scope →
+      Atlas → BWRA → gap analysis → policies → training → audit — with four human
+      checkpoints. See <a href="pillar-missions.html">Missions</a> for how that
+      orchestration works.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The pack loader &amp; inheritance
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>atlas-pack-loader.ts</code> loads, validates and merges packs. When a
+        pack declares a <code>parent_pack_id</code>, <code>getPackContent()</code>
+        resolves the chain depth-first and merges severity benchmarks and content,
+        with explicit cycle protection so a malformed pack cannot loop.
+        <code>atlas-fcp-scope-service.ts</code> owns FCP scope, the cross-domain
+        bundles and the Stage 7b company-wide appetite rollup. Eight
+        <code>atlas-*</code> modules under <code>server/areas/risk/modules/</code>
+        provide the per-stage LLM specialisations, orchestrated for AMLR Article 16
+        by <code>business-wide-risk-assessment</code> in the <code>fcp</code> area.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="build"><span class="ix">5</span>Building an Atlas, step by step</h2>
+    <p>The workspace is a five-tab shell. You move left to right; each stage feeds the
+    next, and the computed stages update the moment an input changes.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Create the Atlas &amp; pick a pack</span>
+            <p>Name the Atlas and choose a starting industry pack — <code>sme-general</code>
+            for a small business, a sector pack for something specific. The pack
+            seeds typical exposures and threat paths.</p></li>
+          <li><span class="st">Confirm exposures (Stage 1)</span>
+            <p>Review the seeded exposure points, add what's missing, remove what
+            doesn't apply, and score each 1–5. Be honest — this is the floor the
+            chain is built on.</p></li>
+          <li><span class="st">Draw the threat paths (Stages 2–3)</span>
+            <p>For each material exposure, describe how harm reaches you and the
+            vulnerabilities on the way. Let the <code>atlas-*</code> modules draft the
+            wording; you keep editorial control.</p></li>
+          <li><span class="st">Read the inherent scores (Stage 4)</span>
+            <p>Inherent risk appears automatically per path. Nothing to enter — if a
+            number looks wrong, an input is wrong.</p></li>
+          <li><span class="st">Link controls (Stage 5)</span>
+            <p>Attach each mitigation to the vulnerability it addresses and grade it
+            Strong / Adequate / Weak. Strong claims need real evidence — see §6.</p></li>
+          <li><span class="st">Review residual &amp; appetite (Stages 6–7)</span>
+            <p>Residual and appetite position compute live. Where a path sits outside
+            appetite, write an action with an owner and a target date.</p></li>
+          <li><span class="st">Set a review cycle &amp; export</span>
+            <p>Schedule the next review and generate the board pack. The Atlas is now
+            a living register, not a one-off document.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">localhost:5173/risk-atlas/atlas-7c2</span>
+          </div>
+          <div class="view">
+            <div style="font-size:13px;font-weight:800;color:var(--ink)">Café Lindgren — Risk Atlas</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px">5 threat paths · pack: sme-general · review due 12 Aug</div>
+            <table style="margin:0;font-size:11.5px;box-shadow:none">
+              <tr><th>Threat path</th><th>Inh.</th><th>Ctrl</th><th>Res.</th><th>Appetite</th></tr>
+              <tr><td>Till skimming</td><td>4</td><td>Weak</td><td>4</td><td><span class="badge b-stub">outside</span></td></tr>
+              <tr><td>Supplier fraud</td><td>3</td><td>Adequate</td><td>2</td><td><span class="badge b-done">within</span></td></tr>
+              <tr><td>Data breach</td><td>4</td><td>Strong</td><td>2</td><td><span class="badge b-done">within</span></td></tr>
+              <tr><td>Cash-in-transit</td><td>3</td><td>Adequate</td><td>3</td><td><span class="badge b-partial">boundary</span></td></tr>
+            </table>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:8px">Residual = inherent − control reduction · computed, not entered</div>
+          </div>
+        </div>
+        <figcaption>The workspace residual view — every number traces to a rule.</figcaption>
+      </figure>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="integrity"><span class="ix">6</span>Integrity rules &amp; exports</h2>
+    <p>An Atlas can drift — a residual creeps up, a Strong control loses its evidence,
+    an outside-appetite path never gets an action. <strong>Six integrity rules</strong>
+    run as pure functions over a snapshot of the Atlas and surface live findings on
+    the workspace dashboard.</p>
+
+    <table>
+      <tr><th>Rule</th><th>Fires when…</th></tr>
+      <tr><td>ATLAS-INT-001</td><td>A residual of 4 or 5 has no appetite statement attached</td></tr>
+      <tr><td>ATLAS-INT-002</td><td>A control graded <em>Strong</em> has no evidence (under 5 characters)</td></tr>
+      <tr><td>ATLAS-INT-003</td><td>An outside-appetite path has no remediation action</td></tr>
+      <tr><td>ATLAS-INT-004</td><td>An action exists but is missing an owner or a target date</td></tr>
+      <tr><td>ATLAS-INT-005/006</td><td>Further consistency checks across escalation triggers and review cycles</td></tr>
+    </table>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>A Strong control is a claim, not a label</div>
+      <p>The integrity rules will not let you mark a control <em>Strong</em> and walk
+      away. Strong carries a −2 reduction — the biggest move on the board — so it
+      demands evidence: a policy reference, a test result, a sign-off. If you cannot
+      point to proof, grade it <em>Adequate</em>. An honest Adequate beats an
+      unevidenced Strong every time an auditor looks.</p>
+    </div>
+
+    <p>When the register is sound, <code>atlas-export.ts</code> produces the
+    deliverables: a <strong>board-pack DOCX</strong>, a <strong>threat-path PDF</strong>,
+    a <strong>heatmap SVG</strong> (the 5×5 appetite grid) and a portable
+    <code>.anton</code> bundle you can share with a peer instance over the
+    <a href="agent-protocol.html">Agent Protocol</a>.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Integrity rules as pure functions
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>atlas-integrity-rules.ts</code> implements six Compliance-as-Code
+        checks (<code>ATLAS-INT-001</code>…<code>006</code>) as pure functions over an
+        Atlas snapshot — no I/O, easy to unit-test, deterministic. The workspace
+        dashboard renders their findings live so a drifting register is visible
+        without anyone running a report. Exports are assembled by
+        <code>atlas-export.ts</code>; the heatmap SVG places each path on the 5×5
+        residual-by-likelihood grid produced by the calculator.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Start from the closest industry pack and edit — don't build from blank.</li>
+          <li>Write every threat path as a readable causal sentence.</li>
+          <li>Score exposures honestly; the whole chain rests on them.</li>
+          <li>Attach real evidence to any control you grade Strong.</li>
+          <li>Give every outside-appetite path an owner and a target date.</li>
+          <li>Set a review cycle so the Atlas stays a living register.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't try to override a computed residual — it's arithmetic, fix the input.</li>
+          <li>Don't grade controls Strong to make the heatmap look better.</li>
+          <li>Don't average exposure, threat and vulnerability — the engine takes the max.</li>
+          <li>Don't ignore integrity-rule findings; they are the register telling you it has drifted.</li>
+          <li>Don't treat the AI's draft wording as final — review every line.</li>
+          <li>Don't let an Atlas go stale; a register with no review cycle is a document.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The Atlas habit</div>
+      <p>The Risk Atlas earns its keep over time, not on day one. Revisit it on the
+      review cycle, after every material change — a new product, a new jurisdiction,
+      an incident — and let the engine recompute. Because the scores are deterministic,
+      what changes between reviews is always traceable to a fact that changed. That
+      traceability <em>is</em> the audit defence.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pillars-more.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">More pillars</div>
+      </a>
+      <a class="next" href="knowledge-and-prompts.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Knowledge &amp; prompts</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the Risk Atlas (<code>server/services/risk-atlas/</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

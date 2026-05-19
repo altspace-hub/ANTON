@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge &amp; prompts — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk active" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#local">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Knowledge &amp; prompts</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local</div>
+      <h1>Knowledge sources &amp; the prompt that gets built</h1>
+      <p class="lead">Before any module runs, ANTON does two things you control:
+      it decides <em>where</em> the AI gets reference material, and it assembles a
+      layered system prompt that turns a frontier model into a domain expert. Get
+      both right and a click on "Run" produces excellent output.</p>
+      <div class="page-meta">
+        <span class="chip">For: every ANTON Local user</span>
+        <span class="chip">4 knowledge modes</span>
+        <span class="chip">7-layer prompt</span>
+        <span class="chip">6 LLM providers</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What this page covers</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#sources">The four knowledge source modes</a></li>
+        <li><a href="#prompt">The seven-layer prompt</a></li>
+        <li><a href="#thinking">Thinking levels &amp; choosing a model</a></li>
+        <li><a href="#configure">Configuring a run, step by step</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What this page covers</h2>
+    <p>Two linked systems sit behind every module run in ANTON Local.</p>
+    <p><strong>(A) Knowledge sources</strong> answer the question <em>"what is the AI
+    allowed to look at?"</em> — only its own training, web pages you name, files on
+    your machine, or a blend. <strong>(B) The seven-layer prompt</strong> answers
+    <em>"who is the AI being, and how carefully is it thinking?"</em> — it stacks
+    system rules, your domain area, your organisation's context, the module's
+    expertise, an optional persona, skills, the knowledge sources, and a transparency
+    layer into one instruction set.</p>
+    <p>You do not have to understand the internals to get good results — the defaults
+    are tuned. But knowing what the panels do lets you steer a run that the defaults
+    would not nail.</p>
+
+    <div class="grid g2">
+      <div class="feature"><div class="ic">📚</div><h4>Knowledge Source Panel</h4>
+        <p>Four modes controlling where reference material comes from. Visible on every module.</p></div>
+      <div class="feature"><div class="ic">🧱</div><h4>The prompt builder</h4>
+        <p>Seven kinds of context assembled into one expert system prompt — automatically.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of a module run as <strong>briefing a consultant</strong>. The
+      knowledge source is the <em>folder of materials</em> you hand them — nothing,
+      a stack of web printouts, your own files, or a mix. The seven-layer prompt is
+      the <em>job description and house style</em> — what kind of expert they are,
+      who they work for, how formal to be, how hard to think. ANTON writes that
+      briefing for you; the panels are where you adjust it.</p>
+    </div>
+
+    <p>Two ideas make the choices easy:</p>
+    <ul>
+      <li><strong>Knowledge source is about <em>truth</em>, prompt layers are about
+      <em>behaviour</em>.</strong> If the AI needs facts it cannot have memorised —
+      your contract, this week's news — change the knowledge source. If the output is
+      factually fine but the wrong shape or tone, change the prompt (persona, thinking
+      level, output format).</li>
+      <li><strong>More is not better.</strong> Pointing at ten local folders or asking
+      for maximum reasoning on a simple task costs time and money for no gain. Match
+      the setting to the task.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>The defaults are a real answer</div>
+      <p>Every module ships with a knowledge mode and thinking level already chosen by
+      the people who built it. "Start with the problem, not the solution" means the
+      first thing to try is <em>just clicking Run</em>. Tune the panels when the
+      default output tells you something specific is missing — not pre-emptively.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="sources"><span class="ix">3</span>The four knowledge source modes</h2>
+    <p>Every module has a Knowledge Source Panel with four modes. They differ only in
+    where the AI's reference material comes from.</p>
+
+    <table>
+      <tr><th>Mode</th><th>Where facts come from</th><th>Best for</th></tr>
+      <tr><td><strong>Claude's Knowledge</strong></td><td>The model's built-in training, plus an optional live web search</td><td>General expertise, well-established topics, anything before the knowledge cutoff</td></tr>
+      <tr><td><strong>Online References</strong></td><td>URLs you paste — the server fetches each page and extracts the text</td><td>A specific regulation, a named report, current pages you can point to</td></tr>
+      <tr><td><strong>Local Folders</strong></td><td>Directories on your machine, indexed and word-counted</td><td>Your own contracts, policies, evidence — material that must never leave the machine</td></tr>
+      <tr><td><strong>Combined</strong></td><td>Two or more of the above merged under a priority rule</td><td>Grounding broad AI expertise in your specific documents</td></tr>
+    </table>
+
+    <h3>Combined mode — the priority rule</h3>
+    <p>Combined mode is the powerful one, and the priority rule decides what wins when
+    sources disagree:</p>
+    <ul class="tight">
+      <li><strong>Local-first</strong> — your documents are authoritative; AI
+      knowledge fills gaps. Use for compliance work where your own policy is the
+      truth.</li>
+      <li><strong>AI-first</strong> — the model leads; your files are supporting
+      context. Use for analysis where you want broad expertise, lightly grounded.</li>
+      <li><strong>Merged</strong> — both weighed together with no built-in winner.
+      Use for research where you genuinely want the synthesis.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Local Folders are path-whitelisted</div>
+      <p>ANTON will only read directories listed in the <code>ALLOWED_FOLDER_PATHS</code>
+      environment variable. This is a deliberate safety boundary — it stops a module
+      (or a connector) reaching anywhere else on the disk. If a folder you expect is
+      not selectable, it has not been added to that whitelist. See
+      <a href="getting-started.html">Install &amp; first run</a>.</p>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — choosing a source for a gap assessment</div>
+      <p>You are assessing your firm's AML policy against the EU AMLR. The regulation
+      text is stable and public — but your <em>policy</em> is private and specific.
+      The right choice is <strong>Combined, local-first</strong>: point Local Folders
+      at the directory holding your policy documents, let Claude's Knowledge supply
+      the AMLR framework. The AI compares your real text against the regulation
+      without your policy ever leaving the machine.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Knowledge resolution at request time
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>When a module runs, the selected mode is resolved into actual reference
+        text by <code>resolveKnowledgeSources</code> in
+        <code>server/services/knowledge-resolver.ts</code>. Online References are
+        fetched server-side and stripped to plain text; Local Folders are indexed and
+        word-counted with every path checked against <code>ALLOWED_FOLDER_PATHS</code>
+        via <code>path.resolve</code> prefix matching. The resolved material becomes
+        <strong>Layer 6</strong> of the prompt (see §4). Web search, when enabled, is
+        passed through as the Anthropic <code>web_search</code> tool rather than
+        pre-fetched.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="prompt"><span class="ix">4</span>The seven-layer prompt</h2>
+    <p>You never write a system prompt by hand. For every run, ANTON's
+    <code>prompt-builder.ts</code> assembles one from seven kinds of context. Each
+    layer narrows the AI from "a capable model" toward "the exact expert this task
+    needs".</p>
+
+    <div class="diagram">
+<pre>
+   ┌─ LAYER 1 ── System Foundation ──────────────────────────────┐
+   │  base rules · writing style (strict/balanced/creative)      │
+   │  ┌─ LAYER 2 ── Area Context ──────────────────────────────┐ │
+   │  │  the domain area's framing  (server/areas/{area}/)     │ │
+   │  │  2a org context · 2b knowledge packs · 2c/2d data      │ │
+   │  │  ┌─ LAYER 3 ── Module Expertise ──────────────────────┐│ │
+   │  │  │  the specific module's system-prompt.md            ││ │
+   │  │  │  ┌─ LAYER 4 ── Persona  (optional) ───────────────┐││ │
+   │  │  │  │  named expert role · 4a resume context         │││ │
+   │  │  │  │  ┌─ LAYER 5 ── Skills  (optional) ────────────┐│││ │
+   │  │  │  │  │  custom modules · skill mixins             ││││ │
+   │  │  │  │  │  ┌─ LAYER 6 ── Knowledge Sources ────────┐ ││││ │
+   │  │  │  │  │  │  resolved web / URL / folder material  │ ││││ │
+   │  │  │  │  │  │  ┌─ LAYER 7 ── Transparency ────────┐  │ ││││ │
+   │  │  │  │  │  │  │  thinking level · reasoning trail │  │ ││││ │
+   │  │  │  │  │  │  └───────────────────────────────────┘  │ ││││ │
+   │  │  │  │  │  └─────────────────────────────────────────┘ ││││ │
+   │  │  │  │  └──────────────────────────────────────────────┘│││ │
+   │  │  │  └───────────────────────────────────────────────────┘││ │
+   │  │  └─────────────────────────────────────────────────────────┘│
+   │  └──────────────────────────────────────────────────────────────┘
+   └───────────────────────────────────────────────────────────────────┘
+              YOUR PROMPT  +  KNOWLEDGE  →  the model
+</pre>
+    </div>
+
+    <table>
+      <tr><th>Layer</th><th>What it adds</th><th>Who sets it</th></tr>
+      <tr><td>1 · System Foundation</td><td>Base behaviour and writing style — strict, balanced or creative</td><td>ANTON + your creativity setting</td></tr>
+      <tr><td>2 · Area Context</td><td>The framing for the domain area — plus org context (2a), knowledge packs (2b), and Roaring / Dow Jones data (2c, 2d)</td><td>The area + your org settings</td></tr>
+      <tr><td>3 · Module Expertise</td><td>The specific module's detailed system prompt</td><td>The module author</td></tr>
+      <tr><td>4 · Persona <span class="badge b-spec">optional</span></td><td>A named expert role; 4a adds resume / engagement context</td><td>You</td></tr>
+      <tr><td>5 · Skills <span class="badge b-spec">optional</span></td><td>Custom modules and skill mixins</td><td>You</td></tr>
+      <tr><td>6 · Knowledge Sources</td><td>The resolved reference material from §3</td><td>You — the Knowledge Source Panel</td></tr>
+      <tr><td>7 · Transparency</td><td>Thinking-level config and reasoning-trail flags</td><td>You — the thinking level</td></tr>
+    </table>
+
+    <h3>Personas &amp; audience proxies</h3>
+    <p>Layer 4 lets you stack a <strong>persona</strong> on top of the module. There
+    are 8+ named expert roles — a sceptical auditor, a regulator, a board chair, a
+    seasoned consultant — and 10+ <em>audience proxies</em> that make the AI write
+    <em>for</em> a reader: explain it as if to a board, a journalist, a new joiner.
+    A persona changes voice and emphasis without changing the facts.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> prompt-builder.ts and the layers
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>server/services/prompt-builder.ts</code> documents the structure in
+        its own header: "ANTON's system prompt is composed in seven KINDS of context.
+        Sub-layers extend Layers 2 and 4 — twelve assembly points in total but seven
+        conceptual layers." Layer 1 is the <code>CREATIVITY_INSTRUCTIONS</code> map
+        (<code>strict</code> / <code>balanced</code> / <code>creative</code>) plus the
+        plan-first and structure-reference instructions. Layer 2 reads
+        <code>server/areas/{area}/area-context.md</code>; <code>buildOrgContextLayer</code>
+        and <code>buildKnowledgePackLayer</code> add 2a and 2b. Layer 3 is the
+        module's <code>system-prompt.md</code>. Layer 4 is <code>getExpertRoleInstruction</code>
+        with <code>buildResumeContextLayer</code> for 4a. Layer 6 calls
+        <code>resolveKnowledgeSources</code> plus <code>buildAtomLayer</code>. The
+        full visual map lives at
+        <code>/docs/architecture/11-seven-layer-prompt-builder.md</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="thinking"><span class="ix">5</span>Thinking levels &amp; choosing a model</h2>
+    <p>Layer 7 carries the <strong>thinking level</strong> — how much deliberation the
+    model does before answering. Five levels trade speed and cost against depth.</p>
+
+    <table>
+      <tr><th>Level</th><th>Use it for</th><th>On Claude Opus 4.7</th></tr>
+      <tr><td><code>quick</code></td><td>Lookups, simple drafts, format conversions</td><td><code>effort: low</code></td></tr>
+      <tr><td><code>think</code></td><td>The everyday default — most module runs</td><td><code>effort: medium</code></td></tr>
+      <tr><td><code>think_hard</code></td><td>Analysis with trade-offs, gap assessments</td><td><code>effort: high</code></td></tr>
+      <tr><td><code>investigate</code></td><td>Hard, multi-step reasoning where being right matters most</td><td><code>effort: max</code></td></tr>
+      <tr><td><code>plan_first</code></td><td>Big tasks — the model plans, then executes the plan</td><td><code>effort: max</code></td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Don't reach for "investigate" by reflex</div>
+      <p>Higher thinking levels are slower and cost more, and on a straightforward
+      task they rarely improve the answer. Use <code>think</code> for most work; step
+      up to <code>think_hard</code> or <code>investigate</code> only when the task
+      genuinely has competing considerations the model must weigh. <code>plan_first</code>
+      shines on long, structured deliverables.</p>
+    </div>
+
+    <h3>Six LLM providers — how to choose</h3>
+    <p>Claude is the default and the most deeply integrated model. Five other
+    providers work through adapter modules; you switch per session in the UI, and
+    each is enabled by setting its API key in <code>.env</code>.</p>
+    <table>
+      <tr><th>Provider</th><th>Default model</th><th>Reach for it when…</th></tr>
+      <tr><td>Anthropic Claude <em>(default)</em></td><td><code>claude-opus-4-7</code></td><td>Almost always — the tuned baseline for every module</td></tr>
+      <tr><td>OpenAI</td><td><code>gpt-4o</code></td><td>You want a second opinion or prefer the OpenAI house style</td></tr>
+      <tr><td>Azure OpenAI</td><td>per deployment (o3 / o4-mini)</td><td>Enterprise deployments needing data residency; reasoning models</td></tr>
+      <tr><td>Google Gemini</td><td><code>gemini-2.0-flash</code></td><td>Fast, low-cost passes on high-volume work</td></tr>
+      <tr><td>Mistral</td><td><code>mistral-large-latest</code></td><td>An EU-hosted model is required</td></tr>
+      <tr><td>Ollama</td><td>user-selected (local)</td><td>The work must never touch an external API at all</td></tr>
+    </table>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="configure"><span class="ix">6</span>Configuring a run, step by step</h2>
+    <p>Putting it together — the order you actually touch the panels.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the module &amp; read the problem statement</span>
+            <p>Every module opens with a problem statement and pre-tuned behaviour.
+            Read it — it tells you what the defaults assume.</p></li>
+          <li><span class="st">Decide if the AI needs your facts</span>
+            <p>If the task depends on documents the model can't have memorised, set
+            the Knowledge Source Panel — usually Combined, local-first. If not, leave
+            it on Claude's Knowledge.</p></li>
+          <li><span class="st">Pick a thinking level</span>
+            <p>Leave it at <code>think</code> unless the task has real trade-offs to
+            weigh, in which case step up to <code>think_hard</code>.</p></li>
+          <li><span class="st">Add a persona, if it helps</span>
+            <p>For a board memo, layer the "board chair" audience proxy. For a hard
+            review, the "sceptical auditor" persona. Optional — skip if unsure.</p></li>
+          <li><span class="st">Choose the output format</span>
+            <p>Select the format(s) you want before running — see
+            <a href="output-and-export.html">Output &amp; export</a>.</p></li>
+          <li><span class="st">Run, then read the reasoning trail</span>
+            <p>The transparency layer surfaces how the model reasoned. If the output
+            misses, the trail usually shows which layer to adjust.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">localhost:5173/module/gap-assessment</span>
+          </div>
+          <div class="view">
+            <div style="font-size:13px;font-weight:800;color:var(--ink)">Knowledge Source</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">How the AI gets reference material</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span class="pill">○ Claude's Knowledge</span>
+              <span class="pill">○ Online References</span>
+              <span class="pill">○ Local Folders</span>
+              <span class="pill" style="border-color:var(--teal);background:var(--teal-soft);color:var(--teal-dark);font-weight:700">● Combined — local-first</span>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--ink);margin-top:12px">Thinking level</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+              <span class="pill">quick</span>
+              <span class="pill" style="border-color:var(--teal);background:var(--teal-soft);color:var(--teal-dark);font-weight:700">think_hard</span>
+              <span class="pill">investigate</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>The two panels you touch most — knowledge source and thinking level.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a fully configured run</div>
+      <p>Task: draft a board memo on a new regulation's impact on your firm. You set
+      Knowledge Source to <strong>Combined, AI-first</strong> (broad regulatory
+      knowledge, lightly grounded in your org profile), thinking level to
+      <strong>think_hard</strong> (real trade-offs to weigh), layer the
+      <strong>"board chair" audience proxy</strong> so it writes for a non-specialist
+      reader, and pick the <strong>Decision Memo</strong> output format. One click,
+      and the seven layers plus your knowledge produce a memo in the right shape,
+      tone and depth.</p>
+    </div>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Try the defaults first — they are a real, tuned answer.</li>
+          <li>Switch to Combined, local-first whenever your own documents are the truth.</li>
+          <li>Use <code>think</code> for most work; reserve higher levels for genuine trade-offs.</li>
+          <li>Layer an audience proxy when the reader is non-specialist.</li>
+          <li>Read the reasoning trail when output misses — it points at the layer to fix.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't point at folders that aren't on the <code>ALLOWED_FOLDER_PATHS</code> whitelist and expect them to load.</li>
+          <li>Don't crank thinking to maximum by reflex — it costs time and money for no gain on simple tasks.</li>
+          <li>Don't fix a tone problem by changing the knowledge source, or a facts problem with a persona.</li>
+          <li>Don't paste a dozen URLs when two will do — more sources dilute focus.</li>
+          <li>Don't assume a non-default model is better; Claude is the tuned baseline.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>Diagnose by layer</div>
+      <p>When a run disappoints, name the problem before you touch a panel. Wrong
+      <em>facts</em> → knowledge source. Wrong <em>shape</em> → output format. Wrong
+      <em>voice</em> → persona. Not <em>deep enough</em> → thinking level. The
+      seven-layer model is not just architecture — it is a checklist for fixing a
+      run in one move instead of five.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="risk-atlas.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Risk Atlas</div>
+      </a>
+      <a class="next" href="output-and-export.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Output &amp; export</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers knowledge sources and the prompt builder
+      (<code>server/services/prompt-builder.ts</code>). Press <code>t</code> to
+      expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

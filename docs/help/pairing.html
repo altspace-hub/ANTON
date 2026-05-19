@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pairing &amp; enrollment — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk active" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#connections">Connections</a><span class="sep">›</span>
+    <span class="here">Pairing &amp; enrollment</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Connections</div>
+      <h1>Pairing &amp; enrollment</h1>
+      <p class="lead">Before a phone can do anything with your ANTON Local instance,
+      it has to become <em>trusted</em>. ANTON does this with a short, deliberate
+      ritual built on Ed25519 keys and a QR code — no passwords, no central authority,
+      no account server. This page walks through exactly how it works.</p>
+      <div class="page-meta">
+        <span class="chip">Ed25519 enrollment</span>
+        <span class="chip">No central PKI</span>
+        <span class="chip">60-second QR</span>
+        <span class="chip">Multi-instance</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What pairing is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#ritual">The enrollment ritual, step by step</a></li>
+        <li><a href="#example">Worked example — pairing a phone</a></li>
+        <li><a href="#multi">Multi-instance &amp; the contact hash</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What pairing is</h2>
+    <p>Pairing — formally <em>enrollment</em> — is the one-time act of teaching an
+    ANTON Local instance that a particular phone belongs to a particular person, and
+    teaching the phone how to reach that instance securely ever after.</p>
+    <p>It is what stands between "a phone on the network" and "a phone allowed to read
+    your approvals, run modules and receive your push notifications." It is the
+    foundation under <a href="companion.html">ANTON Companion</a>, and the same
+    Ed25519 identity model underpins <a href="comm.html">ANTON Comm</a>,
+    <a href="business.html">Business</a> and <a href="pay.html">Pay</a>.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">🔑</div><h4>Key-based</h4>
+        <p>Each side proves itself with an Ed25519 signature — there is no shared
+        password to leak.</p></div>
+      <div class="feature"><div class="ic">📷</div><h4>QR-anchored</h4>
+        <p>Trust is bootstrapped in person, by scanning a short-lived QR on the
+        instance's screen.</p></div>
+      <div class="feature"><div class="ic">🏛</div><h4>No authority</h4>
+        <p>No certificate authority, no account server. The instance is its own root
+        of trust.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of pairing as a <strong>handshake you do once, in person</strong>. The
+      QR code on the instance's screen is the moment of trust — by being physically in
+      front of it, you confirm "this phone, this instance, this person." Everything
+      after that is just two keys recognising each other. There is no authority to
+      ask, because the instance <em>is</em> the authority for its own devices.</p>
+    </div>
+
+    <p>Three ideas carry the whole design:</p>
+    <ul>
+      <li><strong>Trust is established once, then it's just keys.</strong> The QR scan
+      is the only moment that needs a human and a physical screen. After it, the phone
+      holds a device certificate and the instance holds the phone's public key — they
+      authenticate each other forever without anyone re-confirming anything.</li>
+      <li><strong>The keypair is born on the phone and never leaves it.</strong> The
+      phone generates a fresh Ed25519 keypair during enrollment. The private key goes
+      straight into the OS secure element (iOS Keychain / Android Keystore) and is
+      never transmitted — not to the instance, not to a relay, not anywhere.</li>
+      <li><strong>The package is deliberately short-lived.</strong> The enrollment
+      QR is valid for 60 seconds. A pairing offer that isn't used almost immediately
+      simply expires — there is no long-lived secret sitting around to be stolen.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why no central authority is a feature</div>
+      <p>A traditional system has an account server that <em>everyone</em> must trust
+      and that becomes a single juicy target. ANTON has none. Your instance vouches
+      only for its own devices; a different instance is a completely separate trust
+      domain. There is nothing central to breach, and nothing central to take down.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="ritual"><span class="ix">3</span>The enrollment ritual, step by step</h2>
+    <p>Enrollment is a four-step exchange. The instance offers, the phone mints a key,
+    the phone proves itself, the instance issues a certificate.</p>
+
+    <div class="diagram">
+<pre>
+   ANTON LOCAL  (admin)                         PHONE  (new device)
+   ──────────────────────                       ──────────────────────
+   "Connect a device"                                   │
+        │                                               │
+        ▼  1. issue enrollment package (60s TTL)         │
+   ┌──────────────────────────────┐                      │
+   │ token        (one-time)      │                      │
+   │ nonce        (one-time)      │ ═══ QR on screen ═══▶ │  2. scan QR
+   │ instance Ed25519 + X25519 pk │                      │     generate FRESH
+   │ binding signature            │                      │     Ed25519 keypair
+   │ cert fingerprint             │                      │     ──▶ Keychain/
+   │ relay endpoints              │                      │         Keystore
+   │ optional 6-digit OOB code    │                      │
+   └──────────────────────────────┘                      │
+        │                                                ▼
+        │                                  3. sign  token.nonce.publicKey
+        │  ◀═══ POST /api/app/enrollment/complete ═══════════════════
+        │       { signature, devicePublicKey, confirmationCode }
+        ▼
+   4. verify signature + OOB code
+      issue DEVICE CERTIFICATE + 30-day session token  ═══════════▶ phone
+                                                          biometric-locks
+                                                          the credentials
+</pre>
+    </div>
+
+    <ol class="steps">
+      <li><span class="st">The admin issues an enrollment package</span>
+        <p>On ANTON Local, the admin opens <em>Connect a device</em>. The instance
+        builds a package — a one-time <code>token</code> and <code>nonce</code>, its
+        own Ed25519 and X25519 public keys, a self-binding signature, the TLS cert
+        fingerprint, relay endpoints, and an optional 6-digit out-of-band code — and
+        renders it as a QR with a 60-second time-to-live.</p></li>
+      <li><span class="st">The phone scans &amp; mints a fresh keypair</span>
+        <p>The phone reads the QR. It generates a brand-new Ed25519 keypair and writes
+        the private key into the biometric-protected Keychain (iOS) or Keystore
+        (Android). That private key never leaves the secure element.</p></li>
+      <li><span class="st">The phone signs the challenge &amp; posts it</span>
+        <p>The phone signs the string <code>${token}.${nonce}.${publicKey}</code> with
+        its new private key and POSTs the result to
+        <code>/api/app/enrollment/complete</code>, along with its device public key
+        and — if the admin set one — the 6-digit confirmation code typed by the user.</p></li>
+      <li><span class="st">The server verifies &amp; issues a certificate</span>
+        <p>The instance checks the signature against the public key, checks the
+        confirmation code, and confirms the token and nonce are unused and unexpired.
+        On success it issues a <strong>device certificate</strong> and a 30-day
+        session token. The phone biometric-locks both. The phone is now paired.</p></li>
+    </ol>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>The 6-digit code is your out-of-band check</div>
+      <p>The optional confirmation code is shown on the instance and typed into the
+      phone by a human. It defends against the case where someone photographs the QR
+      from across a room — they'd have the QR but not the code. For any device that
+      isn't physically in your hand the whole time, set a confirmation code.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> <code>app-enrollment-service.ts</code> &amp; the API
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The server side lives in
+        <code>server/services/app-enrollment-service.ts</code>. It builds the
+        <code>EnrollmentPackage</code> — <code>token</code>, <code>nonce</code>,
+        <code>instance_pubkey</code>, <code>instance_cert_fp</code>,
+        <code>endpoints</code> ({ <code>lan</code>, <code>wan</code>,
+        <code>mdns_name</code> }), an optional <code>transport</code> kind
+        (<code>public_https</code> default, or <code>mesh</code> with ranked
+        <code>relay_endpoints</code>) and the optional <code>confirmation_code</code>.
+        The matching routes are mounted under <code>/api/app/*</code> — the device
+        POSTs the signed completion to <code>/api/app/enrollment/complete</code>. A
+        legacy <code>register-simple</code> flow remains as a Web Crypto fallback for
+        clients that cannot do native Ed25519.</p>
+        <p>Three tables back the ritual (migrations 094 + 130 + 131):
+        <code>app_enrollment_tokens</code> holds the short-lived offer (with its
+        <code>confirmation_code</code>); <code>app_devices</code> records each
+        Ed25519-paired phone and its device certificate;
+        <code>instance_identity</code> stores the instance's own keypair. Enrollment
+        is BUILT — see <a href="status.html">Build status</a> — with multi-instance,
+        biometric locking and revocation all in place; 16 tests in
+        <code>tests/app/enrollment-link.test.ts</code> and
+        <code>enrollment-service.test.ts</code> cover URL parsing and the signature
+        contract.</p>
+      </div>
+    </details>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Encrypting the instance key at rest
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The instance's own Ed25519 private key — the root of trust for every paired
+        device — sits in the <code>instance_identity</code> table. If you set the
+        environment variable <code>INSTANCE_KEY_ENCRYPTION_KEY</code> to a 32-byte hex
+        value, that private key is stored AES-256-GCM encrypted in
+        <code>instance_identity.privkey_encrypted</code>.</p>
+        <p>Without the variable the service still works, but it stores the key in
+        plaintext and writes a one-time warning to the log. For any deployment beyond
+        a personal laptop, set <code>INSTANCE_KEY_ENCRYPTION_KEY</code> — it is the
+        difference between "someone with the database has your instance identity" and
+        "someone with the database has ciphertext."</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="example"><span class="ix">4</span>Worked example — pairing a phone</h2>
+
+    <div class="grid g2" style="align-items:start">
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--teal)">▲ Pair this device</div>
+            <div class="appbody">
+              <div class="m-h" style="text-align:center;margin-top:4px">Scan complete</div>
+              <div class="m-sub" style="text-align:center">Enter the 6-digit code shown on ANTON Local</div>
+              <div class="m-row" style="text-align:center;font-size:18px;font-weight:800;color:var(--ink);letter-spacing:.18em">4 1 7 — 2 9 3</div>
+              <div class="m-row"><div class="m-sub">Instance</div>Helsinki office laptop</div>
+              <div class="m-row"><div class="m-sub">Transport</div>Mesh relay</div>
+              <div class="m-row tap">🔑 Fresh keypair created · Keystore</div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--teal)">Confirm &amp; pair</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The phone after scanning — keypair minted, waiting on the OOB code.</figcaption>
+      </figure>
+      <div>
+        <p>An office wants to give an analyst Companion access to the shared ANTON
+        Local instance.</p>
+        <ol class="steps">
+          <li><span class="st">Admin opens "Connect a device"</span>
+            <p>ANTON Local renders a QR and shows a 6-digit code: <strong>417-293</strong>.
+            A 60-second countdown starts.</p></li>
+          <li><span class="st">Analyst scans within the minute</span>
+            <p>Companion decodes the package and immediately generates a fresh Ed25519
+            keypair into the Android Keystore.</p></li>
+          <li><span class="st">Analyst types 417-293 and confirms</span>
+            <p>Companion signs <code>token.nonce.publicKey</code> and POSTs it with the
+            code to <code>/api/app/enrollment/complete</code>.</p></li>
+          <li><span class="st">The instance issues the certificate</span>
+            <p>Signature and code check out. A device certificate and a 30-day session
+            token come back; Companion biometric-locks them. The analyst's phone now
+            appears in the instance's device list and can be revoked any time.</p></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>What the analyst's phone holds afterwards</div>
+      <p>After pairing, the phone holds: its own Ed25519 private key (in the Keystore,
+      never sent anywhere), a device certificate signed by the instance, a 30-day
+      session token, and the instance's public keys + relay endpoints so it knows how
+      to reach it. The instance holds only the phone's <em>public</em> key. Neither
+      side ever saw the other's secret — which is exactly the point.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="multi"><span class="ix">5</span>Multi-instance &amp; the contact hash</h2>
+    <p>One phone can pair with several ANTON Local instances — a personal laptop, an
+    office instance, a client's instance. Each pairing is fully independent: a
+    separate keypair, a separate certificate, a separate trust domain.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>Switching between instances</h4>
+        <p>Companion keeps the paired list in <code>src/app/services/instances.ts</code>.
+        A Wallet-card-style switcher (<code>InstanceSwitcher</code> /
+        <code>InstanceTopBar</code>) makes the <em>active</em> instance unambiguous —
+        you always know which ANTON you're talking to. <code>setActiveInstanceAsync()</code>
+        is race-free so a fast switch can't leave you half-connected.</p>
+      </div>
+      <div class="card">
+        <h4>The contact hash</h4>
+        <p>Every ANTON identity has a shareable, privacy-preserving address in the
+        format <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> — a contact hash derived from
+        the Ed25519 public key. It is safe to print, message or read aloud: it reveals
+        an address to reach you, never a secret. The same format is used across
+        Companion, Comm, Business and Pay.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>One phone, many ANTONs</div>
+      <p>Because each pairing is its own trust domain, losing access to one instance —
+      revoking the device, say — has no effect on the others. And because the contact
+      hash is just an address, you can share it freely; it is the QR ritual, not the
+      hash, that grants any actual trust.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Pair in person — be physically in front of the instance's QR.</li>
+          <li>Set a 6-digit confirmation code for any non-personal device.</li>
+          <li>Set <code>INSTANCE_KEY_ENCRYPTION_KEY</code> on any shared deployment.</li>
+          <li>Scan promptly — the QR expires after 60 seconds by design.</li>
+          <li>Revoke a device from the instance's device list the moment a phone is lost.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't photograph an enrollment QR to "pair later" — it will have expired.</li>
+          <li>Don't share a QR over a chat app — pairing is meant to be face to face.</li>
+          <li>Don't reuse one pairing across phones — each device mints its own keypair.</li>
+          <li>Don't treat the contact hash as a secret — it's an address, not a key.</li>
+          <li>Don't skip the confirmation code on devices that leave your hands.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Once a phone is paired, it can reach the instance directly or — when there's no
+    public address — through the <a href="mesh-and-relay.html">mesh relay</a>. Next,
+    see how money moves across the FutureChain payment rail.</p>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="mesh-and-relay.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">ANTON Mesh &amp; relay</div>
+      </a>
+      <a class="next" href="payments-flow.html">
+        <div class="dir">Next →</div>
+        <div class="tt">The payment flow</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers pairing (<code>server/services/app-enrollment-service.ts</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build status — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk active" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<main class="content">
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#reference">Reference</a><span class="sep">›</span>
+    <span class="here">Build status</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Reference</div>
+      <h1>Build status — an honest map</h1>
+      <p class="lead">The ANTON suite is close to complete, but not uniformly. This
+      page is the candid version: what is fully built, what is partial, what is
+      stubbed, and what is still only specified. If another page makes a feature
+      sound finished and you want to check, check here.</p>
+      <div class="page-meta">
+        <span class="chip">openexpert v0.7.5</span>
+        <span class="chip">As of 18 May 2026</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#legend">How to read the labels</a></li>
+        <li><a href="#blocker">The critical-path blocker</a></li>
+        <li><a href="#apps">The five apps</a></li>
+        <li><a href="#systems">Subsystems &amp; connections</a></li>
+        <li><a href="#vision">The 6-layer vision</a></li>
+      </ol>
+    </div>
+
+    <h2 id="legend"><span class="ix">1</span>How to read the labels</h2>
+    <div class="grid g4">
+      <div class="card"><span class="badge b-done">BUILT</span>
+        <p style="margin-top:7px;font-size:13px">Implemented, working, in day-to-day use. Safe to rely on.</p></div>
+      <div class="card"><span class="badge b-partial">PARTIAL</span>
+        <p style="margin-top:7px;font-size:13px">The core works; some paths are unfinished or in progress.</p></div>
+      <div class="card"><span class="badge b-stub">STUB</span>
+        <p style="margin-top:7px;font-size:13px">The shape exists; calls throw or return placeholders. Blocked.</p></div>
+      <div class="card"><span class="badge b-spec">SPEC</span>
+        <p style="margin-top:7px;font-size:13px">Designed and documented; not yet implemented.</p></div>
+    </div>
+
+    <h2 id="blocker"><span class="ix">2</span>The critical-path blocker</h2>
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>One dependency gates the payment rail</div>
+      <p>The FutureChain Rust core — specifically <code>iso20022_pacs008.rs</code> —
+      has not yet been vendored into the repo. Until it is, the SDK's
+      <code>pacs008</code> builder cannot build, canonicalise, hash or sign a real
+      PACS.008 message. Everything downstream waits on it: cryptographically signed
+      payment records and real on-chain settlement.</p>
+      <p>The apps are deliberately built so this is not visible to users today —
+      <a href="pay.html">ANTON Pay</a> and <a href="comm.html">ANTON Comm</a> assemble
+      PACS.008 <em>drafts</em> as plain objects, populate them and show them in the
+      ISO 20022 detail panel. Signing simply switches on when the SDK unstubs. See
+      <a href="payments-flow.html">The payment flow</a> for the full picture.</p>
+    </div>
+
+    <h2 id="apps"><span class="ix">3</span>The five apps</h2>
+    <table>
+      <tr><th>Component</th><th>Status</th><th>Note</th></tr>
+      <tr><td><a href="anton-local.html">ANTON Local</a> — 12 pillars, modules, prompts</td><td><span class="badge b-done">BUILT</span></td><td>The mature core of the suite</td></tr>
+      <tr><td><a href="risk-atlas.html">Risk Atlas</a> deterministic engine</td><td><span class="badge b-done">BUILT</span></td><td>Phase 1 + Addendum, 25 packs, audit-locked calculator with 25 tests</td></tr>
+      <tr><td><a href="pillar-markets.html">Markets</a> pillar</td><td><span class="badge b-partial">PARTIAL</span></td><td>Built and running, but an April 2026 audit found low prediction accuracy; pause flags installed while it is reviewed</td></tr>
+      <tr><td><a href="companion.html">ANTON Companion</a></td><td><span class="badge b-done">BUILT</span></td><td>Functionally complete; remaining work was push dispatch + store assets</td></tr>
+      <tr><td><a href="comm.html">ANTON Comm</a></td><td><span class="badge b-done">BUILT</span></td><td>Full feature roadmap shipped — but only English + Swedish locale catalogues</td></tr>
+      <tr><td><a href="business.html">ANTON Business</a></td><td><span class="badge b-done">BUILT</span></td><td>Phone-only v2.0; 38 languages</td></tr>
+      <tr><td><a href="pay.html">ANTON Pay</a> + light fraud engine</td><td><span class="badge b-done">BUILT</span></td><td>Newest app; the 5-phase PACS.008 / KYC / fraud plan is complete; 38 languages</td></tr>
+    </table>
+
+    <h2 id="systems"><span class="ix">4</span>Subsystems &amp; connections</h2>
+    <table>
+      <tr><th>Component</th><th>Status</th><th>Note</th></tr>
+      <tr><td><a href="mesh-and-relay.html">ANTON Mesh relay</a></td><td><span class="badge b-done">BUILT</span></td><td>Phase 2 reference implementation, self-hostable, threat model peer-reviewed</td></tr>
+      <tr><td><a href="pairing.html">Ed25519 enrollment ritual</a></td><td><span class="badge b-done">BUILT</span></td><td>Multi-instance, biometric, device revocation</td></tr>
+      <tr><td>FutureChain SDK — <code>reference</code> (ADR-004 v1/v2)</td><td><span class="badge b-done">BUILT</span></td><td>Encode/decode round-trip is deterministic</td></tr>
+      <tr><td>FutureChain SDK — <code>tax</code> engine</td><td><span class="badge b-partial">PARTIAL</span></td><td>Schema + Sweden rules done; cost-basis methods &amp; other jurisdictions still draft</td></tr>
+      <tr><td>FutureChain SDK — <code>wallet</code></td><td><span class="badge b-partial">PARTIAL</span></td><td>Address derivation works; create / sign / verify stubbed</td></tr>
+      <tr><td><a href="agent-protocol.html">ANTON Agent Protocol</a> (AAP)</td><td><span class="badge b-partial">PARTIAL</span></td><td>Handshake, signed bundles and nonce replay protection in place</td></tr>
+      <tr><td>FutureChain SDK — <code>pacs008</code> builder</td><td><span class="badge b-stub">STUB</span></td><td>Blocked on the Rust <code>iso20022_pacs008.rs</code> being vendored — see §2</td></tr>
+      <tr><td>FutureChain SDK — <code>rpc</code></td><td><span class="badge b-stub">STUB</span></td><td>Envelope shape declared; not implemented</td></tr>
+      <tr><td>Portals cross-instance public discovery</td><td><span class="badge b-spec">SPEC</span></td><td>6-phase roadmap drafted; a legal review gates public launch</td></tr>
+      <tr><td>Safello settlement integration</td><td><span class="badge b-spec">SPEC</span></td><td>Bilateral KYC model; reference code archived</td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>What this means in practice</div>
+      <p>You can use ANTON Local, all four phone apps, pairing, the mesh relay and the
+      QR payment flow today — they are built. What is <em>not</em> yet real is the
+      cryptographic signing and on-chain settlement of payments, and public
+      cross-instance portal discovery. Those are honest gaps, not bugs.</p>
+    </div>
+
+    <h2 id="vision"><span class="ix">5</span>The 6-layer vision</h2>
+    <p>ANTON is designed as six layers, each independently useful, each making the
+    next more powerful. This is where the whole project stands against its own plan.</p>
+    <table>
+      <tr><th>#</th><th>Layer</th><th>Status</th></tr>
+      <tr><td>1</td><td><strong>Individual ANTON</strong> — pillars, modules, 7-layer prompts</td><td><span class="badge b-done">DONE</span></td></tr>
+      <tr><td>2</td><td><strong>Intelligent ANTON</strong> — knowledge atoms, pattern detection, predictions, calibration</td><td><span class="badge b-partial">MOSTLY DONE</span></td></tr>
+      <tr><td>3</td><td><strong>Network</strong> — Community, E2E messaging, contact hashes, trust</td><td><span class="badge b-done">BUILT</span></td></tr>
+      <tr><td>4</td><td><strong>Collaborative Intelligence</strong> — ANTON-to-ANTON via the Agent Protocol</td><td><span class="badge b-partial">IN PROGRESS</span></td></tr>
+      <tr><td>5</td><td><strong>Marketplace</strong> — <code>.anton</code> bundle trading, rating, discovery</td><td><span class="badge b-spec">NOT STARTED</span></td></tr>
+      <tr><td>6</td><td><strong>Economy</strong> — FutureChain payments, expertise as income</td><td><span class="badge b-spec">NOT STARTED</span></td></tr>
+    </table>
+    <p>The four phone apps and the payment rail are the first concrete steps into
+    layers 4–6: Companion extends an instance to mobile, Comm carries the network
+    peer-to-peer, and Business + Pay are the first working pieces of the economy.</p>
+
+    <div class="pagenav">
+      <a class="prev" href="agent-protocol.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Agent Protocol &amp; portals</div>
+      </a>
+      <a class="next" href="glossary.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Glossary</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      Status reflects the codebase at time of writing and will drift — when in doubt,
+      check the code.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

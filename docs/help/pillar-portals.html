@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Portals pillar — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub active" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="anton-local.html">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Portals</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local · Pillars</div>
+      <h1>The Portals pillar — sites that are also endpoints</h1>
+      <p class="lead">A portal is a small web space you build inside ANTON. The
+      twist: it is two things at once. A person can visit it like any web page,
+      and another ANTON instance can read it as a machine endpoint and
+      <em>invoke</em> what it offers. Portals are ANTON's proof that instances
+      can interoperate.</p>
+      <div class="page-meta">
+        <span class="chip">For: anyone publishing a service</span>
+        <span class="chip">8-phase builder</span>
+        <span class="chip">7 starter templates</span>
+        <span class="chip">12-verb capability taxonomy</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What a portal is</a></li>
+        <li><a href="#think">How to think about a portal</a></li>
+        <li><a href="#capabilities">Capabilities — the 12-verb taxonomy</a></li>
+        <li><a href="#build">Building a portal, step by step</a></li>
+        <li><a href="#example">Worked example — a compliance clinic portal</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What a portal is</h2>
+    <p>Every other pillar produces work <em>for you</em>. Portals produce
+    something for <em>others</em>: a published space that describes who you are,
+    what you offer, and — crucially — what another ANTON can ask you to do.</p>
+    <p>The defining idea is duality. The same portal is rendered as a readable
+    human page and exposed as a structured, machine-readable descriptor over the
+    ANTON Agent Protocol. Build it once; it serves both audiences. That is why
+    Portals is described as ANTON's <strong>proof of inter-instance
+    interoperability</strong> — it is the concrete first step into Layer 4 of the
+    vision, where ANTON instances collaborate.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">⊞</div><h4>A human site</h4>
+        <p>A clean, readable page describing your service — anyone with ANTON can
+        visit and browse it.</p></div>
+      <div class="feature"><div class="ic">⌁</div><h4>A machine endpoint</h4>
+        <p>The same portal is an AAP-readable descriptor: another instance can
+        discover and invoke its capabilities.</p></div>
+      <div class="feature"><div class="ic">▤</div><h4>Transparency log</h4>
+        <p>Portal submissions go to a registry backed by a signed transparency
+        log — verifiable, tamper-evident.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about a portal</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of a portal as <strong>a shopfront with a service counter</strong>.
+      The shopfront is the human page — the window display, the description, the
+      reassuring detail. The service counter is the capability set — the small,
+      precise list of things you can actually be <em>asked</em> to do. A good
+      portal makes both honest: the window shows what is real, and the counter
+      offers only what you will genuinely deliver.</p>
+    </div>
+
+    <p>Two ideas keep portal design grounded:</p>
+    <ul>
+      <li><strong>A capability is a promise.</strong> When you list a capability,
+      you are telling other instances "ask me this and I will respond." Don't
+      list what you can't honour — an unfulfilled invocation is worse than a
+      missing one.</li>
+      <li><strong>The descriptor is the contract.</strong> The human page is
+      prose; the capability descriptor is the precise, structured truth a
+      machine reads. Keep them aligned — what a visitor sees and what an
+      instance can invoke should describe the same portal.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Start from a template</div>
+      <p>Portals ships with <strong>7 starter templates</strong>. Unless your
+      portal is genuinely unusual, begin from the closest template — it gives
+      you a sensible structure and a starting capability set, and the 8-phase
+      walkthrough then adapts it to you. Building from blank is rarely worth it.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="capabilities"><span class="ix">3</span>Capabilities — the 12-verb taxonomy</h2>
+    <p>What a portal offers is expressed as <em>capabilities</em>, and every
+    capability is built on one of <strong>12 standard verbs</strong>. The fixed
+    vocabulary is deliberate: a small, shared set of verbs is what lets a
+    visiting instance understand a portal it has never seen before. The verbs
+    cover the natural shapes of a service — answering, advising, reviewing,
+    drafting, looking things up, accepting submissions, scheduling, and so on.</p>
+
+    <table>
+      <tr><th>Capability shape</th><th>What invoking it means</th></tr>
+      <tr><td>Answer / advise</td><td>Ask a question; the portal owner's ANTON returns a reasoned response</td></tr>
+      <tr><td>Review / assess</td><td>Submit material; the portal evaluates it against a known standard</td></tr>
+      <tr><td>Draft / produce</td><td>Request a deliverable the portal generates from your inputs</td></tr>
+      <tr><td>Look up / search</td><td>Query a body of information the portal exposes</td></tr>
+      <tr><td>Submit / intake</td><td>Hand the portal a document or request for it to receive and process</td></tr>
+      <tr><td>Schedule / book</td><td>Arrange a slot or commitment with the portal owner</td></tr>
+    </table>
+
+    <p>Because the verbs are standardised, an instance discovering your portal
+    does not need to "learn" it — it already knows what an <em>answer</em>
+    capability or a <em>review</em> capability means. That shared taxonomy is the
+    interoperability, made concrete.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The capability descriptor and the registry protocol
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>A portal's capabilities are edited via
+        <code>server/services/portals/portal-capabilities-editor.ts</code> and
+        compiled into a <strong>capability descriptor</strong> — the
+        machine-readable contract. The portal's data model lives in migrations
+        <code>145_portals_client.sql</code>, <code>146_portal_content.sql</code>,
+        <code>147_portal_capability_invocations.sql</code> and
+        <code>148_portal_walkthrough_sessions.sql</code>.</p>
+        <p>Submission and discovery go through the <strong>registry
+        protocol</strong> under <code>server/services/registry-protocol/</code>:
+        <code>canonical-json.ts</code> produces a deterministic canonical form so
+        signatures are stable, <code>envelope.ts</code> wraps submissions in
+        signed envelopes, and <code>homoglyph.ts</code> defends against
+        look-alike-character spoofing of portal names. The registry is
+        append-only and backed by a signed transparency log.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="build"><span class="ix">4</span>Building a portal, step by step</h2>
+    <p>You don't fill in a form — you are <em>walked through</em> it. The builder
+    is an <strong>8-phase walkthrough</strong> that turns a description of your
+    service into a finished, publishable portal.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open Portals, choose a template</span>
+            <p>Pick the closest of the 7 starter templates. It seeds the
+            structure and an initial capability set.</p></li>
+          <li><span class="st">Describe your service</span>
+            <p>Tell the walkthrough, in plain language, what your portal is for.
+            ANTON uses that to enrich each phase.</p></li>
+          <li><span class="st">Work through the 8 phases</span>
+            <p>The walkthrough covers identity, the human-facing content, the
+            capability set, access rules and presentation — one focused phase at
+            a time.</p></li>
+          <li><span class="st">Define the capabilities</span>
+            <p>For each thing your portal offers, pick a verb and describe the
+            inputs and outputs. This becomes the machine-readable descriptor.</p></li>
+          <li><span class="st">Preview both faces</span>
+            <p>Check the rendered human page and the capability descriptor side
+            by side — they should describe the same portal.</p></li>
+          <li><span class="st">Publish</span>
+            <p>The portal becomes live locally and is submitted to the registry
+            with a signed envelope; the transparency log records it.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">localhost:5173/portals/build</span>
+          </div>
+          <div class="view">
+            <div style="font-size:13px;font-weight:800;color:var(--ink)">Portal walkthrough · Phase 4 of 8</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Capabilities — what others can invoke</div>
+            <div class="m-row" style="margin-bottom:6px"><strong>answer</strong> · "Ask a compliance question"</div>
+            <div class="m-row" style="margin-bottom:6px"><strong>review</strong> · "Assess a policy document"</div>
+            <div class="m-row tap">+ Add a capability</div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <div class="m-btn alt" style="flex:1">← Phase 3</div>
+              <div class="m-btn" style="flex:1">Phase 5 →</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Phase 4 of the 8-phase walkthrough — defining what others can invoke.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Public discovery is on a roadmap</div>
+      <p>Building, publishing, visiting and invoking portals all work today
+      <em>within reach of your instances</em>. Full <strong>cross-instance
+      public discovery</strong> — anyone, anywhere finding your portal in a
+      public registry — is on a 6-phase roadmap, with a legal review gating the
+      public launch. See <a href="status.html">Build status</a> and
+      <a href="agent-protocol.html">Agent Protocol &amp; portals</a> for exactly
+      where this stands.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="example"><span class="ix">5</span>Worked example — a compliance clinic portal</h2>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — build → publish → visit → invoke</div>
+      <p>You run a small compliance consultancy and want a portal where peers can
+      get quick help. You open <strong>Portals</strong>, choose the advisory
+      starter template, and tell the walkthrough "a clinic for AML compliance
+      questions and policy reviews." Across the 8 phases you write the human
+      page — who you are, your specialism, your turnaround — and define two
+      capabilities: an <strong>answer</strong> capability ("ask an AML compliance
+      question") and a <strong>review</strong> capability ("assess an AML policy
+      document"). You preview both faces, confirm they match, and
+      <strong>publish</strong>. A colleague on another ANTON instance later
+      <strong>visits</strong> your portal, reads the page, and <strong>invokes</strong>
+      the review capability — handing your portal a draft policy. Your ANTON
+      receives the invocation, runs the review, and returns the assessment. One
+      build; a human read it and a machine used it.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Rendering, walkthrough and invocation
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The 8-phase builder runs on
+        <code>portal-walkthrough-engine.ts</code> with
+        <code>portal-walkthrough-templates.ts</code> supplying the 7 starter
+        templates; <code>portal-llm-suggest.ts</code> and
+        <code>portal-prompt-enrichment.ts</code> turn your plain-language
+        description into per-phase suggestions. Walkthrough progress is persisted
+        via migration <code>148_portal_walkthrough_sessions.sql</code>.</p>
+        <p>The human face is produced by <code>portal-renderer.ts</code>; the
+        machine face is the capability descriptor. When another instance invokes
+        a capability, the call is handled by <code>portal-handler.ts</code> and
+        recorded in <code>147_portal_capability_invocations.sql</code>.
+        <code>portal-search-engine.ts</code> and
+        <code>portal-lan-discovery.ts</code> cover finding portals;
+        <code>portal-bundler.ts</code> packages a portal as a portable
+        <code>.anton</code> bundle. The REST surface is
+        <code>server/routes/portals.ts</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Start from the closest of the 7 templates rather than a blank portal.</li>
+          <li>List only capabilities you will genuinely honour — an invocation is a promise.</li>
+          <li>Keep the human page and the capability descriptor describing the same thing.</li>
+          <li>Preview both faces before publishing — read it as a visitor and as a machine.</li>
+          <li>Use precise verbs; the 12-verb taxonomy is what lets others understand you.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't advertise a capability you cannot fulfil reliably.</li>
+          <li>Don't let the human page over-promise what the descriptor actually offers.</li>
+          <li>Don't expect public, anyone-anywhere discovery yet — it is on a roadmap.</li>
+          <li>Don't cram many vague capabilities in; a few precise ones serve invokers better.</li>
+          <li>Don't skip the preview — a portal that reads well but invokes badly fails silently.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The Portals habit</div>
+      <p>Treat your portal like a service you would be happy to be judged on.
+      Every capability is a small, public commitment carried in a signed,
+      tamper-evident log. A focused portal that does three things honestly is
+      worth far more — to humans and to machines — than a sprawling one that
+      does ten things vaguely.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pillar-markets.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Markets</div>
+      </a>
+      <a class="next" href="pillar-missions.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Missions</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the Portals pillar (<code>server/services/portals/</code>,
+      <code>registry-protocol/</code>, migrations 145–148). Press <code>t</code>
+      to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

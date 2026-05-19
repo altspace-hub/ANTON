@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Output &amp; export — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk active" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#local">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Output &amp; export</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local</div>
+      <h1>Output formats &amp; the export pipeline</h1>
+      <p class="lead">ANTON does not just answer — it produces a <em>deliverable</em>.
+      You choose the shape of the output before you run, and afterwards a library of
+      renderers can transform that one result into a Word document, a slide deck, a
+      risk heatmap or a plain-language rewrite. One run, many forms.</p>
+      <div class="page-meta">
+        <span class="chip">For: every ANTON Local user</span>
+        <span class="chip">44 output formats</span>
+        <span class="chip">16+ renderers</span>
+        <span class="chip">Markdown + structured JSON</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What this page covers</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#formats">The 44 output formats</a></li>
+        <li><a href="#transform">The transformation system</a></li>
+        <li><a href="#export">Exporting, step by step</a></li>
+        <li><a href="#renderers">The renderer catalogue</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What this page covers</h2>
+    <p>Two stages turn a module run into something you can hand to someone.</p>
+    <p><strong>Before the run</strong>, you pick an <em>output format</em> — one of 44
+    structured shapes like Executive Summary, Action Plan or Gap Scoring Matrix. The
+    format becomes part of the prompt, so the AI writes <em>into</em> that shape
+    rather than producing loose prose.</p>
+    <p><strong>After the run</strong>, the <em>transformation system</em> takes over.
+    Every run yields two things — readable Markdown and a structured JSON payload —
+    and 16+ renderers can convert that into file exports, diagrams, alternative
+    framings and review passes. You never re-run the model to get a new format.</p>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of a module run as <strong>casting a master</strong>. The output format
+      you pick before running shapes the master itself — its structure, its sections,
+      its level of detail. The renderers afterwards are <strong>presses</strong>: each
+      stamps a copy of that master in a different material — DOCX, PDF, a Mermaid
+      chart, a board deck. The expensive part (the AI's thinking) happens once; every
+      export after that is a cheap, instant transformation.</p>
+    </div>
+
+    <p>Two ideas guide the choices:</p>
+    <ul>
+      <li><strong>Pick the format <em>before</em> you run.</strong> "Detailed
+      Findings" and "Quick Briefing" are different documents — different length,
+      depth and structure. The format steers the AI's writing, so choosing it after
+      the fact means re-running. Decide the deliverable first.</li>
+      <li><strong>Markdown is the source of truth.</strong> Every other format —
+      DOCX, PDF, a heatmap — is <em>derived</em> from the Markdown plus the structured
+      JSON. If something is wrong in an export, it was wrong in the run; fix the run,
+      then re-export.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>You can pick more than one format</div>
+      <p>Output formats are selected before running, and you can choose several at
+      once — say Executive Summary <em>and</em> Detailed Findings. The AI produces
+      both in one pass, which is far cheaper and more consistent than two separate
+      runs.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="formats"><span class="ix">3</span>The 44 output formats</h2>
+    <p>The 44 formats are organised into six categories. Each format carries its own
+    prompt instructions, so the AI knows exactly what structure to produce.</p>
+
+    <table>
+      <tr><th>Category</th><th>What it's for</th><th>Example formats</th></tr>
+      <tr><td><strong>Strategic</strong></td><td>Decisions and direction for leadership</td><td>Executive Summary · Decision Memo · Risk Appetite Statement · Board Pack</td></tr>
+      <tr><td><strong>Analytical</strong></td><td>Findings, comparisons, assessments</td><td>Detailed Findings · Regulatory Comparison · Impact Assessment · Audit Report</td></tr>
+      <tr><td><strong>Operational</strong></td><td>Documents that drive action</td><td>Action Plan · Project Plan · Policy Document · RACI Matrix</td></tr>
+      <tr><td><strong>Scoring</strong></td><td>Quantified, comparable assessments</td><td>Gap Scoring Matrix · Maturity Assessment · Data Readiness Scorecard</td></tr>
+      <tr><td><strong>Communication</strong></td><td>Material aimed at a specific reader</td><td>Quick Briefing · Training Material · Engagement Proposal</td></tr>
+      <tr><td><strong>Planning</strong></td><td>Forward-looking schedules and estimates</td><td>Compliance Calendar · Monitoring Plan · Budget Estimate</td></tr>
+    </table>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — same task, two formats</div>
+      <p>You have just finished an AML gap assessment. For the compliance committee
+      you want the numbers — you pick the <strong>Gap Scoring Matrix</strong>
+      (Scoring), which produces a rated table the AI can later turn into a heatmap.
+      For the board you want the story — you also tick <strong>Executive Summary</strong>
+      (Strategic), a one-page narrative. One run, both deliverables, each in its
+      proper shape.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Where the formats are defined
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The 44 formats live in
+        <code>src/lib/output-format-definitions.ts</code> — each entry is an object
+        with an <code>id</code>, a category, a label and a block of prompt
+        instructions describing the structure the AI must produce. When you select a
+        format, those instructions are folded into the system prompt (alongside the
+        seven layers — see <a href="knowledge-and-prompts.html">Knowledge &amp;
+        prompts</a>), which is why the format must be chosen <em>before</em> the run.
+        Selecting several formats appends each instruction block.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="transform"><span class="ix">4</span>The transformation system</h2>
+    <p>Every module run produces <strong>two artefacts</strong>, not one:</p>
+    <div class="grid g2">
+      <div class="card">
+        <h4>Markdown — the source of truth</h4>
+        <p>The human-readable result. This is the default view and the canonical
+        record. Every other format is derived from it.</p>
+      </div>
+      <div class="card">
+        <h4>Structured JSON — the machine payload</h4>
+        <p>A Haiku-based extractor reads the Markdown and produces a structured
+        payload (cached by content hash). This is what renderers like the heatmap or
+        the Gantt chart need to draw something.</p>
+      </div>
+    </div>
+
+    <p>With those two artefacts in hand, the <strong>Transform Panel</strong> offers
+    every renderer that fits. ANTON does not show all 16+ — it filters by the content
+    type and the fields actually present, so you only see transformations that will
+    work. Picking one is instant: no model call, no waiting.</p>
+
+    <div class="diagram">
+<pre>
+   MODULE RUN
+      │
+      ▼
+   ┌──────────────┐        ┌─────────────────────────┐
+   │  MARKDOWN    │───────▶│  Haiku extractor         │
+   │  (source of  │        │  → structured JSON       │
+   │   truth)     │        │  (cached by content hash)│
+   └──────┬───────┘        └────────────┬─────────────┘
+          │                             │
+          └───────────┬─────────────────┘
+                      ▼
+            ┌──────────────────────┐
+            │   TRANSFORM PANEL    │   renderers filtered by
+            │   (renderer registry)│   content type + fields
+            └──────────┬───────────┘
+                       │
+        ┌──────────────┼───────────────┬──────────────┐
+        ▼              ▼               ▼              ▼
+   file exports   Mermaid /        SVG risk        review passes
+   docx xlsx pdf  Gantt /          heatmap ·       devil's-advocate
+   pptx fountain  sequence /       exec one-pager  regulator's-eye
+                  mindmap          board deck      plain-language · HTML
+</pre>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Review passes are renderers too</div>
+      <p>Two of the most useful transformations are not exports at all. The
+      <strong>devil's-advocate</strong> renderer re-reads your output looking for
+      weaknesses and counter-arguments; the <strong>regulator's-eye</strong> pass
+      reads it the way a supervisor would. Run them on any important deliverable
+      before you send it — they catch the gap you stopped seeing.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="export"><span class="ix">5</span>Exporting, step by step</h2>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Choose the output format before running</span>
+            <p>In the module, tick the format(s) you want. This shapes what the AI
+            writes — pick the deliverable, not just the topic.</p></li>
+          <li><span class="st">Run the module</span>
+            <p>The result appears as Markdown; the structured JSON is extracted in the
+            background and cached.</p></li>
+          <li><span class="st">Open the Transform Panel</span>
+            <p>It lists every renderer that fits this output — file exports, diagrams,
+            reviews. Renderers that need fields your output lacks are hidden.</p></li>
+          <li><span class="st">Pick a transformation</span>
+            <p>Choose a file export (<code>.docx</code>, <code>.xlsx</code>, …) or a
+            visual renderer. It is produced instantly — no model call.</p></li>
+          <li><span class="st">Run a review pass, if it matters</span>
+            <p>For anything you're about to send, run the devil's-advocate or
+            regulator's-eye renderer first and read what it flags.</p></li>
+          <li><span class="st">Download or copy</span>
+            <p>File exports download to disk; diagrams and HTML can be copied or
+            saved. The Markdown stays as your canonical record.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">localhost:5173/module/gap-assessment/result</span>
+          </div>
+          <div class="view">
+            <div style="font-size:13px;font-weight:800;color:var(--ink)">Transform this output</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">16 renderers · 9 fit this result</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px">
+              <span class="pill">📄 Word .docx</span>
+              <span class="pill">📊 Excel .xlsx</span>
+              <span class="pill">📕 PDF</span>
+              <span class="pill">📈 PowerPoint</span>
+              <span class="pill" style="border-color:var(--teal);background:var(--teal-soft);color:var(--teal-dark);font-weight:700">🔥 Risk heatmap SVG</span>
+              <span class="pill">🗺 Mermaid flowchart</span>
+              <span class="pill">📋 Board deck</span>
+              <span class="pill">🗣 Plain-language</span>
+              <span class="pill">😈 Devil's advocate</span>
+            </div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:9px">Each is an instant transformation of the existing result.</div>
+          </div>
+        </div>
+        <figcaption>The Transform Panel — renderers filtered to those that fit.</figcaption>
+      </figure>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="renderers"><span class="ix">6</span>The renderer catalogue</h2>
+    <p>The 16+ built-in renderers fall into four families.</p>
+
+    <table>
+      <tr><th>Family</th><th>Renderers</th><th>What you get</th></tr>
+      <tr><td>File exports</td><td><code>.docx</code> · <code>.xlsx</code> · <code>.pdf</code> · <code>.pptx</code> · <code>.fountain</code></td><td>Branded Word docs, Excel with conditional formatting, typeset PDF, slide decks, screenplay format</td></tr>
+      <tr><td>Diagrams</td><td>Mermaid flowchart / Gantt / sequence / mindmap · SVG risk heatmap</td><td>Visual structure drawn from the structured JSON</td></tr>
+      <tr><td>Reframings</td><td>Executive one-pager · plain-language · board deck · standalone HTML</td><td>The same content recast for a different reader or medium</td></tr>
+      <tr><td>Review passes</td><td>Devil's-advocate · regulator's-eye</td><td>A critical second read that surfaces weaknesses and supervisory concerns</td></tr>
+    </table>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The renderer registry
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Renderers are declared in
+        <code>server/services/renderer-registry.builtin.ts</code>. Each registry
+        entry states the content type it handles and the structured-JSON fields it
+        requires; the Transform Panel filters the catalogue per session against the
+        run's actual content type and available fields, so you only ever see
+        transformations that can succeed. The file-export renderers themselves live
+        under <code>server/services/renderers/builtin/</code> —
+        <code>export-docx-renderer.ts</code>, <code>export-xlsx-renderer.ts</code>,
+        <code>export-pdf-renderer.ts</code>, <code>export-pptx-renderer.ts</code>,
+        <code>export-md-renderer.ts</code> — with the diagram and review renderers in
+        sibling folders (<code>visualize/</code>, <code>review/</code>,
+        <code>adapt/</code>).</p>
+      </div>
+    </details>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Adding a new format
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The transformation system is built to be extended cheaply. Adding a new
+        output renderer is, by design, <strong>one file plus one registry entry</strong>:
+        write the renderer under <code>server/services/renderers/</code> and declare
+        it in <code>renderer-registry.builtin.ts</code> with its content type and
+        required fields. Because every run already emits structured JSON, the new
+        renderer immediately has data to work with — and the Transform Panel picks it
+        up automatically wherever its fields are present.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Decide the deliverable, then pick the matching format — before you run.</li>
+          <li>Tick several formats in one run when you need more than one document.</li>
+          <li>Treat the Markdown as canonical; export from it, don't replace it.</li>
+          <li>Run a devil's-advocate or regulator's-eye pass on anything important.</li>
+          <li>Use the Scoring formats when you'll want a heatmap later — the renderer needs the structure.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't re-run the model just to change format — transform the existing result.</li>
+          <li>Don't expect a renderer that isn't offered to work; it's hidden because the fields aren't there.</li>
+          <li>Don't fix an export by editing the file — fix the run and re-export.</li>
+          <li>Don't send a board pack without reading the regulator's-eye pass first.</li>
+          <li>Don't pick a format after running and wonder why the structure is loose.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>One run, many forms</div>
+      <p>The discipline that pays off: run the model <em>once</em>, well, with the
+      right knowledge and the right format — then let the renderers do the rest. The
+      thinking is expensive and the transformations are free. A team that internalises
+      this stops re-running and starts re-rendering.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="knowledge-and-prompts.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Knowledge &amp; prompts</div>
+      </a>
+      <a class="next" href="specialized-agents.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Specialized Agents</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers output formats and the renderer registry
+      (<code>src/lib/output-format-definitions.ts</code>,
+      <code>server/services/renderer-registry.builtin.ts</code>). Press
+      <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install &amp; first run — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk active" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <span class="here">Getting started</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Getting started</div>
+      <h1>Install ANTON &amp; complete your first module</h1>
+      <p class="lead">ANTON Local runs on your own computer. This page takes you from
+      an empty machine to a finished piece of work — installing the prerequisites,
+      running the setup wizard, getting an API key, and clicking <em>Run</em> on your
+      first module. Allow about twenty minutes the first time.</p>
+      <div class="page-meta">
+        <span class="chip">For: anyone installing ANTON Local</span>
+        <span class="chip">Windows · macOS · Linux</span>
+        <span class="chip">~20 minutes</span>
+        <span class="chip">Local-first — your documents stay put</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What you are installing</a></li>
+        <li><a href="#think">How to think about local-first</a></li>
+        <li><a href="#prereq">Prerequisites</a></li>
+        <li><a href="#wizard">The automatic setup wizard</a></li>
+        <li><a href="#manual">Manual setup, step by step</a></li>
+        <li><a href="#apikey">Getting an Anthropic API key</a></li>
+        <li><a href="#firstrun">First run — your first module</a></li>
+        <li><a href="#modes">Solo vs team deployment</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What you are installing</h2>
+    <p>ANTON Local is the full ANTON desktop workspace — a React + TypeScript
+    front-end and an Express + PostgreSQL back-end that both run on
+    <code>localhost</code>. It is not a website you log into and not an app you
+    download from a store. You install it once, on a machine you control, and it
+    serves itself to your browser at <code>http://localhost:5173</code>.</p>
+    <p>Because it runs locally, ANTON needs a few supporting pieces installed
+    alongside it: a JavaScript runtime, a package manager, and a database. The
+    <a href="#wizard">setup wizard</a> handles almost all of this for you — the
+    <a href="#manual">manual route</a> is here for people who want to understand or
+    customise each step.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">⬇</div><h4>Installs locally</h4>
+        <p>One workspace on your machine — no account, no cloud tenancy.</p></div>
+      <div class="feature"><div class="ic">🔑</div><h4>One key to add</h4>
+        <p>An Anthropic API key in a <code>.env</code> file is the only must-have.</p></div>
+      <div class="feature"><div class="ic">🧩</div><h4>~260 modules ready</h4>
+        <p>After install, every expert module across 12 pillars works immediately.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about local-first</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of ANTON as a <strong>workshop in your own building</strong>, not a
+      desk you rent in someone else's office. The documents you feed it, the database
+      it writes, the outputs it produces — all of that lives on your disk and never
+      leaves. The <em>only</em> thing that crosses the network is the text of a prompt
+      sent to an LLM provider so it can reason, and the answer that comes back. If
+      that distinction matters for your work — and for a lawyer, compliance officer
+      or analyst it usually does — local-first is the whole point.</p>
+    </div>
+
+    <p>Two consequences are worth holding onto, because they shape every later
+    decision:</p>
+    <ul>
+      <li><strong>You are the host.</strong> There is no ANTON server watching over
+      your data. That also means backups, updates and the database are yours to
+      look after — see <a href="#best">§9</a>.</li>
+      <li><strong>The API key is the one outbound door.</strong> Provider keys live
+      server-side in <code>.env</code> and are never exposed to the browser. When you
+      run a module, your prompt and its knowledge context go to Anthropic (or whichever
+      provider you chose) and nowhere else. If you want a fully offline setup, point
+      ANTON at a local <a href="anton-local.html">Ollama</a> model instead.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Good to know</div>
+      <p>If you point a module at <strong>Local Folders</strong> as its knowledge
+      source, the contents of those files become part of the prompt sent to the LLM.
+      Local-first means the files <em>stay</em> on disk — it does not mean their text
+      is invisible to the model you chose. Knowledge-source modes are covered on the
+      <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a> page.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="prereq"><span class="ix">3</span>Prerequisites</h2>
+    <p>Four pieces of software. The first three are required; the fourth is optional
+    and only matters for ANTON's knowledge-memory and vector-search features.</p>
+
+    <table>
+      <tr><th>Software</th><th>Version</th><th>Why ANTON needs it</th><th>Required?</th></tr>
+      <tr><td><strong>Node.js</strong></td><td>v22 or newer</td><td>The JavaScript runtime that runs both the Vite front-end and the Express server.</td><td><span class="badge b-done">Required</span></td></tr>
+      <tr><td><strong>pnpm</strong></td><td>v10</td><td>The package manager ANTON's dependencies are locked against. Install with <code>npm install -g pnpm</code>.</td><td><span class="badge b-done">Required</span></td></tr>
+      <tr><td><strong>PostgreSQL</strong></td><td>16 or newer</td><td>The database — every session, module run, pillar table and migration lives here.</td><td><span class="badge b-done">Required</span></td></tr>
+      <tr><td><strong>Ollama</strong></td><td>latest</td><td>Local embedding model (<code>nomic-embed-text</code>) for knowledge memory and vector search.</td><td><span class="badge b-partial">Optional</span></td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Fast way to get Node on Windows</div>
+      <p>On Windows you can install Node in one line from a terminal:
+      <code>winget install OpenJS.NodeJS.LTS</code>. On macOS, <code>brew install node</code>
+      works equally well. Confirm with <code>node --version</code> — it must report
+      <code>v22</code> or higher before you go further.</p>
+    </div>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="wizard"><span class="ix">4</span>The automatic setup wizard</h2>
+    <p>This is the recommended route. The wizard checks your environment, asks for an
+    API key, sets up the database and installs everything. Once Node and pnpm are
+    present (PostgreSQL too), the wizard does the rest.</p>
+
+    <ol class="steps">
+      <li><span class="st">Clone the repository</span>
+        <p>Open a terminal and run <code>git clone &lt;repo&gt; &amp;&amp; cd openexpert</code>.</p></li>
+      <li><span class="st">Run the wizard</span>
+        <p>On Windows, double-click <code>setup-anton.bat</code> or run it from a
+        terminal. On macOS / Linux run
+        <code>powershell -ExecutionPolicy Bypass -File scripts/setup.ps1</code>.</p></li>
+      <li><span class="st">Answer the prompts</span>
+        <p>The wizard asks for your Anthropic API key (see <a href="#apikey">§6</a>),
+        then auto-detects PostgreSQL and offers to create the <code>anton</code> user
+        and <code>anton</code> database for you.</p></li>
+      <li><span class="st">Let it finish</span>
+        <p>It installs dependencies with pnpm, checks for Ollama and pulls the
+        embedding model if found, and initialises the database schema.</p></li>
+      <li><span class="st">Start ANTON</span>
+        <p>Run <code>pnpm run dev</code> and open <code>http://localhost:5173</code>.</p></li>
+    </ol>
+
+    <p>Behind the scenes the wizard performs exactly the steps in
+    <a href="#manual">§5</a> — so if it stops partway, you can pick up the manual
+    route from wherever it failed.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> What the setup wizard actually does
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The wizard is <code>scripts/setup.ps1</code> (the Windows
+        <code>setup-anton.bat</code> is a thin launcher around it). It verifies the
+        Node and pnpm versions, prompts for <code>ANTHROPIC_API_KEY</code> and writes
+        it into <code>.env</code> (copied from <code>.env.example</code>).</p>
+        <p>It auto-detects a local PostgreSQL service, then issues
+        <code>CREATE USER anton</code> and <code>CREATE DATABASE anton OWNER anton</code>
+        as the <code>postgres</code> superuser. Finally it runs
+        <code>pnpm install</code> and <code>pnpm run db:init</code>, which applies
+        <code>server/db/schema.sql</code> plus every pending migration in
+        <code>server/db/migrations-pg/</code> through the runner in
+        <code>server/db/init.ts</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="manual"><span class="ix">5</span>Manual setup, step by step</h2>
+    <p>The same outcome, done by hand. Use this if you want to understand each step,
+    are using an existing PostgreSQL server, or the wizard could not run.</p>
+
+    <ol class="steps">
+      <li><span class="st">Clone and install dependencies</span>
+        <p><code>git clone &lt;repo&gt; &amp;&amp; cd openexpert</code>, then
+        <code>pnpm install</code>.</p></li>
+      <li><span class="st">Create the database</span>
+        <p>Open <code>psql -U postgres</code> and run, in order:
+        <code>CREATE USER anton WITH PASSWORD 'anton';</code> then
+        <code>CREATE DATABASE anton OWNER anton;</code> then <code>\q</code>.</p></li>
+      <li><span class="st">Install Ollama (optional)</span>
+        <p>If you want knowledge memory and vector search, install Ollama and run
+        <code>ollama pull nomic-embed-text</code>. Skip this and ANTON still works —
+        only the memory features are dormant.</p></li>
+      <li><span class="st">Configure the environment</span>
+        <p>Copy the template: <code>cp .env.example .env</code>. Open <code>.env</code>
+        and set at minimum <code>ANTHROPIC_API_KEY</code> and
+        <code>DATABASE_URL</code> — see the panels below.</p></li>
+      <li><span class="st">Initialise the database</span>
+        <p>Run <code>pnpm run db:init</code>. It reads <code>DATABASE_URL</code>,
+        applies the schema and runs every pending migration.</p></li>
+      <li><span class="st">Start the dev servers</span>
+        <p><code>pnpm run dev</code> starts Vite on port 5173 and Express on port
+        3001 together. For a production build, use <code>pnpm run build</code> then
+        <code>pnpm run start</code>.</p></li>
+    </ol>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>The two .env lines that matter</h4>
+        <div class="kv"><span class="k">ANTHROPIC_API_KEY</span><span>Your Claude key, e.g. <code>sk-ant-...</code>. Without it no module can run.</span></div>
+        <div class="kv"><span class="k">DATABASE_URL</span><span><code>postgresql://anton:anton@localhost:5432/anton</code> — host, user, password and database in one string.</span></div>
+      </div>
+      <div class="card">
+        <h4>Optional .env keys</h4>
+        <p><code>OPENAI_API_KEY</code>, <code>GOOGLE_API_KEY</code>,
+        <code>MISTRAL_API_KEY</code> and the Azure pair enable other LLM providers.
+        <code>PORT</code> changes the Express port. <code>ALLOWED_FOLDER_PATHS</code>
+        whitelists directories for the Local Folders knowledge mode. Every variable
+        is documented in <code>.env.example</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Keep your keys server-side</div>
+      <p>The <code>.env</code> file is read only by the Express back-end — provider
+      keys are never sent to the browser. Never paste a key into front-end code, a
+      module field, or a commit. <code>.env</code> is git-ignored; leave it that way.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Database commands &amp; the migration runner
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>pnpm run db:init</code> applies <code>server/db/schema.sql</code> —
+        the source of truth for every table — and then runs the migration runner in
+        <code>server/db/init.ts</code> against everything in
+        <code>server/db/migrations-pg/</code> (161+ migrations as of v0.7.5).</p>
+        <p>To apply only newly-added migrations without re-initialising, use
+        <code>pnpm run db:migrate:pg</code>. On Windows, the helper
+        <code>scripts/run-migration.cjs</code> runs a single migration file directly.
+        ANTON is PostgreSQL-only — there is no SQLite fallback.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="apikey"><span class="ix">6</span>Getting an Anthropic API key</h2>
+    <p>ANTON's default and most deeply integrated model is Anthropic's Claude
+    (<code>claude-opus-4-7</code>). You supply your own key — ANTON does not resell
+    access.</p>
+
+    <ol class="steps">
+      <li><span class="st">Create an Anthropic account</span>
+        <p>Go to <code>console.anthropic.com</code> and sign up or sign in.</p></li>
+      <li><span class="st">Add billing</span>
+        <p>Claude API usage is pay-as-you-go. Add a payment method or a prepaid
+        credit balance in the console.</p></li>
+      <li><span class="st">Create a key</span>
+        <p>Under <em>API Keys</em>, create a new key. It starts with
+        <code>sk-ant-</code>. Copy it once — the console will not show it again.</p></li>
+      <li><span class="st">Paste it into ANTON</span>
+        <p>Give it to the setup wizard when prompted, or set
+        <code>ANTHROPIC_API_KEY=sk-ant-...</code> in <code>.env</code> by hand.</p></li>
+    </ol>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>You don't have to use Claude</div>
+      <p>ANTON supports six providers — Anthropic, OpenAI, Azure OpenAI, Google
+      Gemini, Mistral and Ollama. Set the matching key in <code>.env</code> for any
+      you want, and switch model per session in the UI. Ollama needs no key at all
+      and runs entirely offline. Claude is simply the best-tuned default.</p>
+    </div>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="firstrun"><span class="ix">7</span>First run — your first module</h2>
+    <p>With <code>pnpm run dev</code> running, open
+    <code>http://localhost:5173</code>. Here is what you will see and do.</p>
+
+    <figure>
+      <div class="browser">
+        <div class="chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url">localhost:5173 — ANTON</span>
+        </div>
+        <div class="view">
+          <div class="grid g3" style="margin:0">
+            <div class="card" style="padding:14px 16px">
+              <h4 style="margin-top:0">① Sidebar</h4>
+              <p style="font-size:13px;color:var(--muted);margin:0">Pillars,
+              favourites and the module list. Pick a pillar, then a module.</p>
+            </div>
+            <div class="card" style="padding:14px 16px">
+              <h4 style="margin-top:0">② Workspace</h4>
+              <p style="font-size:13px;color:var(--muted);margin:0">The module's
+              problem statement, knowledge panel, output-format picker and the
+              big <em>Run</em> button.</p>
+            </div>
+            <div class="card" style="padding:14px 16px">
+              <h4 style="margin-top:0">③ Output</h4>
+              <p style="font-size:13px;color:var(--muted);margin:0">The result
+              streams in live, then can be transformed and exported.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>The ANTON Local workspace on first open — sidebar, workspace, output.</figcaption>
+    </figure>
+
+    <ol class="steps">
+      <li><span class="st">Pick a module</span>
+        <p>In the sidebar, the <strong>Work</strong> pillar is selected by default.
+        Browse the module list and choose something close to a real task — for
+        example an <em>Executive Summary</em> or a <em>Decision Memo</em>.</p></li>
+      <li><span class="st">Read the problem statement</span>
+        <p>Every module opens with a clear statement of the problem it solves and a
+        pre-configured AI behaviour. You can run it as-is.</p></li>
+      <li><span class="st">Add your input</span>
+        <p>Type or paste what you want analysed. Leave the knowledge source on
+        <em>Claude's Knowledge</em> for now — other modes are on the
+        <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a> page.</p></li>
+      <li><span class="st">Choose an output format</span>
+        <p>Pick one of the 40+ formats before running. The default is sensible —
+        you can change it later.</p></li>
+      <li><span class="st">Click Run</span>
+        <p>The answer streams in live via Server-Sent Events. When it finishes you
+        can transform it or export to Word, Excel, PDF or PowerPoint — see
+        <a href="output-and-export.html">Output &amp; export</a>.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a five-minute first win</div>
+      <p>You open the <em>Decision Memo</em> module in the Work pillar. The problem
+      statement already frames it as "produce a board-ready memo recommending a
+      course of action". You paste three paragraphs about a vendor choice you are
+      weighing, leave the knowledge source on Claude's Knowledge, pick the
+      <em>Decision Memo</em> output format, and click <em>Run</em>. Twenty seconds
+      later you have a structured memo — options, recommendation, risks — that you
+      export to <code>.docx</code> with ANTON branding. That is the whole loop:
+      pick a module, configure, run, export.</p>
+    </div>
+
+    <!-- ============ 8 ============ -->
+    <h2 id="modes"><span class="ix">8</span>Solo vs team deployment</h2>
+    <p>ANTON runs in one of two modes, set by the <code>DEPLOYMENT_MODE</code>
+    variable in <code>.env</code>.</p>
+
+    <table>
+      <tr><th>Mode</th><th>Who it is for</th><th>Authentication</th></tr>
+      <tr><td><code>solo</code> <span class="badge b-done">default</span></td><td>One person on one machine — most installs.</td><td>None. You open the workspace and start working.</td></tr>
+      <tr><td><code>team</code></td><td>A shared instance several people reach.</td><td>JWT-based login with roles — viewer, analyst, admin.</td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Start solo</div>
+      <p>Unless you are deliberately standing up a shared instance, leave
+      <code>DEPLOYMENT_MODE</code> on <code>solo</code>. You can switch to
+      <code>team</code> later — the database does not change, only the auth
+      middleware activates. Team mode also pairs with the
+      <a href="companion.html">ANTON Companion</a> phone app and its approvals inbox.</p>
+    </div>
+
+    <!-- ============ 9 ============ -->
+    <h2 id="best"><span class="ix">9</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Use the setup wizard first — fall back to manual only if it stops.</li>
+          <li>Confirm <code>node --version</code> reports v22+ before anything else.</li>
+          <li>Keep <code>.env</code> out of version control — it is git-ignored by default.</li>
+          <li>Back up the PostgreSQL <code>anton</code> database regularly — you are the host now.</li>
+          <li>Start in <code>solo</code> mode; move to <code>team</code> only when you actually share the instance.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't paste an API key into module fields or front-end code — keys live in <code>.env</code> only.</li>
+          <li>Don't skip <code>pnpm run db:init</code> — ANTON will not start without its schema.</li>
+          <li>Don't use an older Node — v20 and below will fail the version check.</li>
+          <li>Don't assume Local Folders content is private from the LLM — local-first means files stay on disk, not unseen.</li>
+          <li>Don't commit a database snapshot containing client documents to a shared repo.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The shortest honest path</div>
+      <p>Install Node, pnpm and PostgreSQL. Run <code>setup-anton.bat</code>. Paste
+      your <code>sk-ant-</code> key. Run <code>pnpm run dev</code>. Open the workspace,
+      pick a module, click <em>Run</em>. Everything else on this page is detail you
+      can return to. When you are ready for the guided tour of the workspace itself,
+      head to <a href="anton-local.html">ANTON Local — overview &amp; tour</a>.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="index.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Help home</div>
+      </a>
+      <a class="next" href="anton-local.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Local — overview &amp; tour</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers installing ANTON Local. Press <code>t</code> to expand every
+      "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

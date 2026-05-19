@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Pay — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk active" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#apps">Phone apps</a><span class="sep">›</span>
+    <span class="here">ANTON Pay</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Phone apps</div>
+      <h1>ANTON Pay — the customer payments app</h1>
+      <p class="lead">ANTON Pay is a focused, phone-only app for private people who
+      just want to pay merchants — scan a code, check it's safe, confirm. It is the
+      simplest app in the ANTON suite, and a good place to learn the ideas the other
+      payment apps share.</p>
+      <div class="page-meta">
+        <span class="chip">For: customers / private people</span>
+        <span class="chip">Android + PWA</span>
+        <span class="chip">38 languages</span>
+        <span class="chip">No backend — all on-device</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON Pay is for</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#setup">Setting up — first run</a></li>
+        <li><a href="#paying">Making a payment, step by step</a></li>
+        <li><a href="#fraud">The fraud engine — reading the signals</a></li>
+        <li><a href="#profile">Money profile &amp; payment identity</a></li>
+        <li><a href="#review">History &amp; activity review</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What ANTON Pay is for</h2>
+    <p>ANTON Pay does one job well: it lets a person pay a merchant in FutureChain
+    (FTC) by scanning a QR code. It is the counterpart to <a href="business.html">ANTON
+    Business</a>, which is the app the merchant uses to <em>show</em> that code.</p>
+    <p>It exists because not everyone wants the full <a href="comm.html">ANTON Comm</a>
+    experience — messaging, social feed, events. Some people only want to pay. ANTON
+    Pay is that: a wallet, a scanner, a payment-review screen, and a quiet on-device
+    fraud check. Nothing else.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">✓</div><h4>Scan &amp; pay</h4>
+        <p>Point the camera at a merchant QR, review, confirm. Seconds.</p></div>
+      <div class="feature"><div class="ic">🛡</div><h4>Fraud-aware</h4>
+        <p>A 9-rule check runs before you confirm and flags anything unusual.</p></div>
+      <div class="feature"><div class="ic">🔒</div><h4>Yours alone</h4>
+        <p>The wallet, the history, the profile — all stay on your phone.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of ANTON Pay as a <strong>careful wallet</strong>, not a bank app.
+      It never moves money on its own and it never talks to a server about you. When
+      you scan a code, the app reads exactly what the merchant put in it, shows it to
+      you in plain language, and compares it against <em>your own</em> normal pattern
+      — so a payment that looks wrong stands out before you tap Confirm.</p>
+    </div>
+
+    <p>Two ideas are worth holding onto, because they explain almost every screen:</p>
+    <ul>
+      <li><strong>The QR is a contract.</strong> Everything you see on the review
+      screen — amount, merchant, purpose, expiry — came out of the QR code. The app
+      adds nothing. If a detail looks wrong, the code is wrong.</li>
+      <li><strong>The fraud engine is advisory, never a gate.</strong> It is there to
+      make you pause and think, not to block you. You are always allowed to pay. It
+      simply makes sure a strange payment is a <em>decision</em>, not an accident.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Good to know</div>
+      <p>ANTON Pay has no login and no account. Your identity is a wallet key created
+      on first run and held in the phone's secure storage. If you reset the app or
+      lose the phone without a backup, that wallet is gone — treat it like cash.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="setup"><span class="ix">3</span>Setting up — first run</h2>
+    <p>Onboarding is deliberately short. A payments app is useless without a wallet,
+    so ANTON Pay creates one for you up front rather than hiding it in settings.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the app</span>
+            <p>The Welcome screen explains, in one sentence, what ANTON Pay does.</p></li>
+          <li><span class="st">Create your wallet</span>
+            <p>Tap <em>Create my wallet</em>. An Ed25519 key pair is generated on the
+            phone and locked into secure storage. This is instant and needs no network.</p></li>
+          <li><span class="st">Add your details (optional)</span>
+            <p>You can enter your name and address now or later. They are only used
+            to fill in payment records — see <a href="#profile">§6</a>.</p></li>
+          <li><span class="st">You're ready</span>
+            <p>The Done screen shows your wallet address. From here on, the Home
+            screen's big <em>Scan to pay</em> button is all you need.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--orange)">☀ ANTON Pay</div>
+            <div class="appbody">
+              <div class="m-h" style="text-align:center;margin-top:6px">You're ready</div>
+              <div class="m-sub" style="text-align:center">Your wallet is secured on this device.</div>
+              <div class="m-row" style="margin-top:8px">
+                <div class="m-sub">Your wallet address</div>
+                <div style="font-size:11px;font-weight:700;color:var(--ink)">fc_8a3d…b1c7</div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--orange)">Start using ANTON Pay</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The end of onboarding — wallet created, ready to scan.</figcaption>
+      </figure>
+    </div>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="paying"><span class="ix">4</span>Making a payment, step by step</h2>
+    <p>This is the core flow. It is the same every time.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--orange)">Review payment</div>
+            <div class="appbody">
+              <div class="m-sub" style="text-align:center">You pay</div>
+              <div class="m-amt">12.50 FTC</div>
+              <div class="m-sub" style="text-align:center;margin-top:-6px">≈ 138 SEK</div>
+              <div class="m-row"><div class="m-sub">Merchant</div>Café Lindgren</div>
+              <div class="m-row"><div class="m-sub">Purpose</div>Restaurant</div>
+              <div class="m-row tap">▸ ISO 20022 payment details</div>
+              <div class="m-row" style="border-color:#EDD3CF;background:#FBEEEC">
+                <div style="color:var(--red);font-weight:700;font-size:11px">⚠ Worth a look</div>
+                <div style="font-size:10.5px;color:var(--body)">You've never paid this merchant before.</div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--orange)">Confirm &amp; pay</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The Review screen — every detail comes from the scanned QR.</figcaption>
+      </figure>
+      <div>
+        <ol class="steps">
+          <li><span class="st">Tap "Scan to pay"</span>
+            <p>The camera opens. If the camera is unavailable, use <em>Enter code
+            manually</em> and paste the <code>futurechain:pay</code> link.</p></li>
+          <li><span class="st">Point at the merchant's QR</span>
+            <p>The app decodes and checks the code — is it a real ANTON payment code,
+            and has it expired? An expired code is rejected with a clear message.</p></li>
+          <li><span class="st">Read the Review screen</span>
+            <p>Amount in FTC (and an estimated value in your currency), the merchant,
+            the purpose, and a live expiry countdown. Tap <em>ISO 20022 payment
+            details</em> to see the full structured record.</p></li>
+          <li><span class="st">Check the fraud panel</span>
+            <p>If anything looks unusual, a coloured panel lists why — see
+            <a href="#fraud">§5</a>. At <em>warning</em> level you confirm twice.</p></li>
+          <li><span class="st">Confirm &amp; pay</span>
+            <p>The payment is recorded on your phone with a full PACS.008 draft. The
+            merchant settles it on their side through Safello.</p></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — paying for lunch</div>
+      <p>You scan the QR on the café counter. Review shows <strong>12.50 FTC ≈ 138
+      SEK · Café Lindgren · Restaurant</strong>. The amount matches the menu, the
+      purpose makes sense, the countdown says 14 minutes left. One signal appears —
+      "You've never paid this merchant before" — which is true and harmless for a
+      café you're visiting for the first time. You tap <em>Confirm &amp; pay</em>.
+      Done.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Decoding the QR &amp; building the PACS.008 draft
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The QR carries a <code>futurechain:pay</code> URI. <code>payment.ts</code>
+        decodes it with the SDK's <code>reference.decode()</code> (ADR-004 v1),
+        validating the scheme, parameters and the <code>exp</code> expiry timestamp.</p>
+        <p>On confirm, <code>pacs008-draft.ts</code> assembles an ISO 20022 PACS.008
+        draft: the <strong>debtor</strong> is your saved identity (or a bare wallet
+        address if you skipped it), the <strong>creditor</strong> is the merchant
+        party extracted from the QR's <code>cn/cc/cct/cst/cpc</code> fields. The
+        ADR-004 purpose is mapped to an ISO external purpose code — RETAIL→GDDS,
+        RESTAURANT/SERVICE→SCVE, EVENT→OTHR, REFUND→REFUND.</p>
+        <p>The draft is stored on the payment record but <strong>not cryptographically
+        signed</strong> — real signing is blocked on the FutureChain Rust core
+        (<code>iso20022_pacs008.rs</code>) being vendored. See
+        <a href="status.html">Build status</a>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="fraud"><span class="ix">5</span>The fraud engine — reading the signals</h2>
+    <p>Before you confirm, ANTON Pay quietly compares the payment against two
+    pictures of "normal for you": what you <em>declared</em> in your money profile,
+    and what your <em>actual</em> payment history shows. If something doesn't fit, it
+    raises a signal. Nine rules can fire.</p>
+
+    <table>
+      <tr><th>Signal</th><th>What it means</th><th>Level</th></tr>
+      <tr><td>Amount anomaly</td><td>Much larger than your usual (median) payment</td><td><span class="badge b-partial">caution / warning</span></td></tr>
+      <tr><td>Above typical</td><td>Much larger than the typical size you declared</td><td><span class="badge b-partial">caution / warning</span></td></tr>
+      <tr><td>New counterparty</td><td>You have never paid this merchant before</td><td><span class="badge b-done">info</span></td></tr>
+      <tr><td>New counterparty, large</td><td>A big payment to a never-seen merchant</td><td><span class="badge b-stub">warning</span></td></tr>
+      <tr><td>Velocity</td><td>Many payments already in the last 24 hours</td><td><span class="badge b-partial">caution / warning</span></td></tr>
+      <tr><td>Monthly cap</td><td>Pushes 30-day spend past your declared monthly budget</td><td><span class="badge b-partial">caution / warning</span></td></tr>
+      <tr><td>Odd hour</td><td>Outside the hours you usually pay at</td><td><span class="badge b-done">caution</span></td></tr>
+      <tr><td>Expiring QR</td><td>The code is about to expire — a classic rush tactic</td><td><span class="badge b-done">caution</span></td></tr>
+      <tr><td>Dormancy break</td><td>A large first payment after a long quiet gap</td><td><span class="badge b-done">caution</span></td></tr>
+    </table>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>How to read a signal</div>
+      <p>A signal is <strong>not an accusation</strong> — it is a fact about how this
+      payment compares to your past. "New merchant" at a café you're visiting for the
+      first time is expected. The same signal combined with "5× your typical amount"
+      and "expiring QR" is a pattern worth stopping for. Read the signals
+      <em>together</em>, and ask: <em>does the story make sense?</em></p>
+    </div>
+
+    <p>Signals are weighted — <strong>info 8</strong>, <strong>caution 22</strong>,
+    <strong>warning 45</strong> — summed and capped at 100. The total sets the panel's
+    level:</p>
+    <ul class="tight">
+      <li><strong>Clear</strong> — no panel, or a quiet "good to know".</li>
+      <li><strong>Worth a look</strong> — a caution-toned panel; read it, then proceed.</li>
+      <li><strong>This looks unusual</strong> — a warning-toned panel; the
+      <em>Pay anyway</em> button requires a second, deliberate tap.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>If you see a warning</div>
+      <p>Stop. Re-read the amount and the merchant name. Ask the person you're paying
+      to confirm them out loud. The "expiring QR" signal in particular is a known
+      scam pattern — a fraudster wants you to rush. A real merchant will happily show
+      you a fresh code.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The fraud engine is pure and deterministic
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>fraud-engine.ts</code> exports a single pure function —
+        <code>assessPayment(pending, money, behavior)</code> — with no I/O, no network
+        and no LLM call. Given the same inputs it always returns the same
+        <code>{ score, level, signals[] }</code>, which makes it fully unit-testable
+        (<code>fraud-engine.test.ts</code>).</p>
+        <p>The two baselines: <code>money-profile.ts</code> holds your self-declared
+        figures; <code>behavior-profile.ts</code> derives the empirical picture —
+        median and max amount, known counterparties, active hours, 24h and 30d
+        velocity — from your local payment history. The same engine, byte-identical,
+        also runs inside <a href="comm.html">ANTON Comm</a>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="profile"><span class="ix">6</span>Money profile &amp; payment identity</h2>
+    <p>Two optional screens in Settings make ANTON Pay work better. Both are private
+    to the phone — the app never sends them anywhere.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>Payment details (your identity)</h4>
+        <p>Your name and address. These fill the <strong>debtor</strong> side of the
+        ISO 20022 record on every payment. Optional — without them the record falls
+        back to your bare wallet address.</p>
+      </div>
+      <div class="card">
+        <h4>Money profile (your baseline)</h4>
+        <p>Date of birth, nationality, occupation, where your money comes from, your
+        expected monthly spend and a typical payment size. This is the
+        <strong>baseline the fraud engine measures against</strong>.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why filling in the money profile helps</div>
+      <p>The fraud engine works with whatever it has. With no money profile it can
+      still use your payment history — but it can't catch a first-ever payment that's
+      far above what you'd ever intend to spend, because it has nothing to compare to.
+      Two honest numbers — <em>typical payment size</em> and <em>monthly budget</em> —
+      make the "above typical" and "monthly cap" signals possible. It is a five-minute
+      setup that pays off the first time something is wrong.</p>
+    </div>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="review"><span class="ix">7</span>History &amp; activity review</h2>
+    <p>Every confirmed payment is kept on the phone as a receipt. Two screens let you
+    look back.</p>
+    <ul>
+      <li><strong>Payment history</strong> — every payment, newest first. Tap a row
+      to expand the full detail, including the PACS.008 draft and any fraud signals
+      that fired at the time.</li>
+      <li><strong>Activity review</strong> — a dashboard of <em>your</em> pattern:
+      how many payments you've made, your typical and largest amounts, which
+      merchants you've paid, and a list of every payment that was flagged. It's the
+      after-the-fact view that helps you notice a problem you missed in the moment.</li>
+    </ul>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>A habit worth keeping</div>
+      <p>Open Activity review once a week. You're not auditing — you're keeping a feel
+      for your own normal. The better you know your pattern, the faster a wrong
+      payment will jump out at you, in the app or out of it.</p>
+    </div>
+
+    <!-- ============ 8 ============ -->
+    <h2 id="best"><span class="ix">8</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Fill in your money profile — it makes the fraud check far smarter.</li>
+          <li>Read the whole Review screen before confirming, not just the amount.</li>
+          <li>Treat a <em>warning</em> as a real stop sign — verify out loud.</li>
+          <li>Check Activity review periodically to stay close to your pattern.</li>
+          <li>Back up before resetting the app or changing phones — the wallet is irreplaceable.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't let anyone rush you because a QR is "about to expire".</li>
+          <li>Don't ignore a stack of signals just because each one alone seems minor.</li>
+          <li>Don't assume the app blocked anything — it never does; the decision is yours.</li>
+          <li>Don't pay a code whose merchant name you can't verify.</li>
+          <li>Don't treat the estimated currency value as exact — it's a live guide, the FTC amount is what's paid.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — the engine doing its job</div>
+      <p>A message asks you to pay a "delivery fee" and includes a payment link. You
+      paste it. Review shows <strong>340 FTC</strong> to a merchant you've never seen,
+      the panel is red — "This looks unusual" — listing <em>new counterparty, large</em>,
+      <em>above typical</em> (you set 10 FTC as typical) and <em>expiring QR</em>. The
+      story doesn't make sense for a delivery fee. You don't tap the second confirm.
+      The engine didn't block you — it just made the strangeness impossible to miss.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="business.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">ANTON Business</div>
+      </a>
+      <a class="next" href="mesh-and-relay.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Mesh &amp; relay</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers ANTON Pay (<code>src/pay/</code>). Press <code>t</code> to
+      expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

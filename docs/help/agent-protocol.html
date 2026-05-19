@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Protocol &amp; portals — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk active" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#connections">Connections</a><span class="sep">›</span>
+    <span class="here">Agent Protocol &amp; portals</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Connections</div>
+      <h1>The Agent Protocol &amp; portals</h1>
+      <p class="lead">Everything so far connected a phone to an instance. This page is
+      about the next layer up: how whole ANTON instances talk to <em>each other</em> —
+      exchanging signed, encrypted knowledge bundles directly, peer to peer — and how
+      portals make an instance discoverable to others.</p>
+      <div class="page-meta">
+        <span class="chip">ANTON Agent Protocol (AAP)</span>
+        <span class="chip">Wire format v1</span>
+        <span class="chip">Vision layer 4</span>
+        <span class="chip">Honest about the roadmap</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the Agent Protocol is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#aap">The AAP handshake &amp; bundles</a></li>
+        <li><a href="#walk">A bundle exchange, step by step</a></li>
+        <li><a href="#portals">Portals &amp; the registry protocol</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the Agent Protocol is</h2>
+    <p>The <strong>ANTON Agent Protocol</strong> — AAP — is how one ANTON instance
+    talks to another. Not a phone to an instance, but a full instance to a full
+    instance: two peers, each with its own pillars, modules and data, exchanging
+    information directly.</p>
+    <p>What they exchange is <strong><code>.anton</code> bundles</strong> — the same
+    portable knowledge format ANTON uses everywhere. A contact bundle, an evidence
+    pack, a market thesis, a Risk Atlas pack, a portal descriptor: all of these can
+    travel from one instance to another over AAP, signed and encrypted, with no server
+    in the middle.</p>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>Where this sits in the vision</div>
+      <p>AAP is the concrete foundation of <strong>layer 4 of the ANTON vision —
+      Collaborative Intelligence</strong>. Layer 1 is the individual instance; layer 3
+      is the human network (Community messaging); layer 4 is ANTON-to-ANTON
+      collaboration, where instances delegate, share and verify each other's work. AAP
+      is the wire it runs on. It is honestly marked <span class="badge b-partial">IN
+      PROGRESS</span> — see <a href="status.html">Build status</a>.</p>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of AAP as <strong>two ANTONs shaking hands and trading sealed
+      folders</strong>. Each instance proves who it is with an Ed25519 signature, the
+      two agree a shared secret nobody else holds, and then they pass
+      <code>.anton</code> bundles back and forth — each one a sealed, encrypted folder
+      that only the other instance can open. There is no broker, no account, no
+      central directory the conversation depends on.</p>
+    </div>
+
+    <p>Three ideas frame the rest of the page:</p>
+    <ul>
+      <li><strong>It is symmetric.</strong> Unlike pairing — where a phone enrolls
+      with an instance — AAP is peer to peer. Either instance can initiate; both speak
+      the same protocol; neither is subordinate.</li>
+      <li><strong>Identity is the contact hash, again.</strong> An instance is
+      addressed by the same <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> contact hash used
+      everywhere in the suite, and proves ownership of it with an Ed25519 signature on
+      every message.</li>
+      <li><strong>Discovery is the careful part.</strong> Talking to an instance you
+      already know is built. Letting strangers <em>find</em> your instance — public
+      portal discovery — is on a deliberate roadmap with a legal review gating launch.
+      The page is honest about that line.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why instances talk in bundles, not API calls</div>
+      <p>A <code>.anton</code> bundle is self-contained and signed — it carries its own
+      provenance. So when instance A sends instance B an evidence pack, B doesn't just
+      receive data; it receives a verifiable artifact it can store, re-share or audit
+      later. Collaboration that survives being passed along is what makes layer 4 more
+      than a chat protocol.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="aap"><span class="ix">3</span>The AAP handshake &amp; bundles</h2>
+    <p>AAP wire format v1 is locked. The transport is a WebSocket over
+    <code>wss://</code> at the path <code>/aap/v1</code>, and on a local network an
+    instance advertises that endpoint over mDNS so nearby peers can find it without
+    configuration.</p>
+
+    <p>Every AAP message is a signed envelope with a fixed shape — version
+    <code>v: 1</code>, a <code>type</code>, an <code>id</code>, a timestamp
+    <code>ts</code>, the sender's contact hash <code>from</code>, a <code>nonce</code>,
+    a <code>payload</code>, and an Ed25519 <code>sig</code>. The message types are:</p>
+
+    <table>
+      <tr><th>Type</th><th>Role</th></tr>
+      <tr><td><code>HELLO</code></td><td>Initiator opens — declares identity and the capabilities it offers.</td></tr>
+      <tr><td><code>WELCOME</code> / <code>REJECT</code></td><td>Responder accepts (and names accepted capabilities) or declines.</td></tr>
+      <tr><td><code>BUNDLE</code></td><td>An AES-256-GCM-encrypted <code>.anton</code> bundle body.</td></tr>
+      <tr><td><code>ACK</code></td><td>Confirms a bundle was received.</td></tr>
+      <tr><td><code>PING</code> / <code>PONG</code></td><td>Keep-alive.</td></tr>
+      <tr><td><code>ERROR</code> / <code>GOODBYE</code></td><td>Signal a fault, or close the session cleanly.</td></tr>
+    </table>
+
+    <p>The cryptography is layered: an <strong>Ed25519-signed</strong>
+    <code>HELLO</code>/<code>WELCOME</code> handshake authenticates both peers; an
+    <strong>X25519 ECDH</strong> exchange derives a shared secret; that secret keys
+    <strong>AES-256-GCM</strong> for every <code>BUNDLE</code> body. Each envelope also
+    carries a <strong>replay-protected nonce</strong>, so a captured message cannot be
+    re-sent later.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> <code>aap-transport-server.ts</code> &amp; the session
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The server side is <code>server/services/aap-transport-server.ts</code>: a
+        <code>WebSocketServer</code> mounted at <code>/aap/v1</code> that implements the
+        HELLO/WELCOME handshake, BUNDLE dispatch, ACK, PING/PONG, ERROR and GOODBYE.
+        It does not re-implement crypto — Ed25519 verification, the X25519 exchange and
+        AES-256-GCM bundle decryption all live in <code>community-crypto.ts</code>;
+        the transport file only orchestrates the protocol.</p>
+        <p>Each accepted peer becomes a <code>SessionState</code> holding the peer's
+        contact hash and pubkey, the list of <code>acceptedCapabilities</code>, and the
+        derived <code>sharedKeyHex</code> (X25519 → HKDF) used to decrypt
+        <code>BUNDLE</code> bodies. The server enforces a clock-skew tolerance of five
+        minutes on timestamps and only accepts a fixed set of
+        <code>SUPPORTED_CAPABILITIES</code> — <code>evidence-pack-publisher</code>,
+        <code>market-thesis-share</code>, <code>risk-atlas-export</code>,
+        <code>portal-publisher</code>, <code>career-profile-exchange</code>,
+        <code>humanitarian-deployment</code>, <code>hardware-share</code> and more. The
+        outbound side is <code>aap-transport-client.ts</code>, used to send bundles to
+        <code>wss://peer/aap/v1</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="walk"><span class="ix">4</span>A bundle exchange, step by step</h2>
+    <p>Here is one instance sending another a Risk Atlas pack over AAP.</p>
+
+    <div class="diagram">
+<pre>
+   INSTANCE A  (sender)                          INSTANCE B  (receiver)
+   ──────────────────────                        ──────────────────────
+   open wss://B/aap/v1                                    │
+        │                                                 │
+        │ ──── HELLO ─────────────────────────────────────▶
+        │      v:1 · from: ANTON-A · capabilities          │  verify Ed25519 sig
+        │      · nonce · Ed25519 sig                        │  check ts skew (±5m)
+        │                                                  │  check nonce unseen
+        │ ◀─── WELCOME ────────────────────────────────────│
+        │      accepted: [risk-atlas-export] · X25519 pk    │
+        │                                                  │
+        │ ═══ X25519 ECDH  →  HKDF  →  shared AES-256 key ══│  both sides derive
+        │                                                  │  the same key
+        │                                                  │
+        │ ──── BUNDLE ─────────────────────────────────────▶
+        │      AES-256-GCM( .anton risk-atlas pack )         │  decrypt · verify
+        │      · fresh nonce · Ed25519 sig                   │  · store artifact
+        │ ◀─── ACK ────────────────────────────────────────│
+        │                                                  │
+        │ ──── GOODBYE ────────────────────────────────────▶  session closed
+</pre>
+    </div>
+
+    <ol class="steps">
+      <li><span class="st">Instance A opens a session</span>
+        <p>A connects to <code>wss://B/aap/v1</code> and sends a <code>HELLO</code> —
+        its contact hash, the capabilities it offers, a fresh nonce, all under an
+        Ed25519 signature.</p></li>
+      <li><span class="st">Instance B verifies and welcomes</span>
+        <p>B checks the signature against A's pubkey, confirms the timestamp is within
+        the five-minute skew window and the nonce is unseen, then replies
+        <code>WELCOME</code> naming the capabilities it accepts — or <code>REJECT</code>
+        if it declines.</p></li>
+      <li><span class="st">Both sides derive a shared key</span>
+        <p>An X25519 ECDH between the two instances, run through HKDF, produces an
+        identical AES-256 key on each side. Nobody else can compute it.</p></li>
+      <li><span class="st">Instance A sends the bundle</span>
+        <p>A wraps the <code>.anton</code> Risk Atlas pack in an AES-256-GCM
+        <code>BUNDLE</code> envelope, with its own fresh replay-protected nonce and
+        signature, and sends it.</p></li>
+      <li><span class="st">Instance B decrypts, verifies and acks</span>
+        <p>B decrypts the body, verifies the signature, stores the bundle as a
+        verifiable artifact, and replies <code>ACK</code>. A <code>GOODBYE</code>
+        closes the session cleanly.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — sharing a Risk Atlas pack with a partner firm</div>
+      <p>A consultancy has built a sector-specific Risk Atlas pack and wants a partner
+      firm's ANTON instance to use it. The consultancy's instance opens AAP to the
+      partner's <code>/aap/v1</code>, sends <code>HELLO</code> offering
+      <code>risk-atlas-export</code>; the partner's instance recognises the contact
+      hash, replies <code>WELCOME</code>. One <code>BUNDLE</code> later, the partner
+      holds the pack — encrypted in transit, signed so its origin is provable, ready
+      to load into their own Risk Atlas. No file was emailed, no portal was public,
+      no third party saw the content.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="portals"><span class="ix">5</span>Portals &amp; the registry protocol</h2>
+    <p>AAP lets two instances talk once they know each other. <strong>Portals</strong>
+    are how an instance becomes <em>findable</em> in the first place. A portal is a
+    user-built ANTON web space that is simultaneously a human-facing site and a
+    machine-readable AAP endpoint, described by a capability descriptor.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>The registry protocol</h4>
+        <p>To list a portal so others can discover it, an instance submits a signed
+        record to a registry. The registry protocol enforces three things:
+        <strong>canonical JSON</strong> (RFC 8785 / JCS — so a signature round-trips
+        identically on both ends), <strong>signed envelopes</strong> (every submitted
+        record carries an Ed25519 signature), and <strong>homoglyph defence</strong>
+        (a portal can't register a name that visually impersonates another).</p>
+      </div>
+      <div class="card">
+        <h4>The transparency log</h4>
+        <p>The registry is hosted by the relay process and keeps an append-only,
+        signed <strong>transparency log</strong>. A registry client verifies portal
+        records against that log, so a registry operator cannot quietly insert or
+        alter an entry without it being detectable. Trust is verifiable, not assumed.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>What is built, and what is on the roadmap</div>
+      <p><strong>Local portals are complete</strong> — building, publishing, visiting
+      and invoking a portal on instances you already know works end to end. But
+      <strong>cross-instance public discovery</strong> — strangers finding your portal
+      through a public registry — is on a deliberate 6-phase roadmap with a
+      <strong>legal review gating launch</strong>. The protocol pieces (canonical JSON,
+      signed envelopes, homoglyph defence, transparency log) exist; turning on open
+      public discovery is a separate, gated decision. See <a href="status.html">Build
+      status</a> for exactly where the line is.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> <code>registry-protocol/</code> &amp; <code>registry-client/</code>
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>server/services/registry-protocol/</code> holds the wire rules:
+        <code>canonical-json.ts</code> wraps RFC 8785 canonicalisation via the vetted
+        <code>@truestamp/canonify</code> library (hand-rolling canonicalisation is a
+        known source of subtle cross-implementation bugs);
+        <code>envelope.ts</code> builds and verifies the signed records;
+        <code>homoglyph.ts</code> runs two confusable-name checks —
+        <code>hasRiskyMixedScript()</code> blocks names mixing Latin with a
+        confusable script (Cyrillic, Greek, Armenian, Cherokee), and
+        <code>computeSkeleton()</code> does a UTS&nbsp;#39 confusable-skeleton
+        reduction so the server can reject a registration whose skeleton already
+        exists.</p>
+        <p><code>server/services/registry-client/</code> is the consuming side —
+        <code>relay-submit.ts</code> submits portals to the relay-hosted registry,
+        <code>log-verifier.ts</code> + <code>sth-gap-check.ts</code> verify the signed
+        transparency log, <code>trust-store.ts</code> and <code>nonce-store.ts</code>
+        manage trusted keys and replay protection, and <code>cache.ts</code> /
+        <code>rate-limiter.ts</code> / <code>audit-writer.ts</code> handle the
+        operational edges. The portal capability model itself — the 12-verb
+        capability taxonomy and descriptor schema — lives under
+        <code>server/services/capability-descriptor/</code> and
+        <code>server/services/portals/</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Use AAP to share <code>.anton</code> bundles with instances you already trust.</li>
+          <li>Treat a received bundle as a verifiable artifact — its signature proves origin.</li>
+          <li>Let mDNS handle discovery of peer instances on the same network.</li>
+          <li>Check <a href="status.html">Build status</a> before relying on public portal discovery.</li>
+          <li>Keep instance Ed25519 keys encrypted at rest — they sign every AAP message.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't assume public cross-instance discovery is live — it's gated behind a legal review.</li>
+          <li>Don't hand-roll canonical JSON — signatures will silently fail to round-trip.</li>
+          <li>Don't accept a bundle whose signature you can't verify against a known key.</li>
+          <li>Don't treat AAP like pairing — it's symmetric, peer to peer, with no subordinate side.</li>
+          <li>Don't expect a registry operator to be trusted blindly — verify against the transparency log.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>AAP and portals are ANTON's proof that instances can collaborate without a
+    central server in the middle — the working first step into vision layer 4. For an
+    honest, component-by-component map of what is built, partial, stubbed or still
+    spec, see the Build status page next.</p>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="payments-flow.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">The payment flow</div>
+      </a>
+      <a class="next" href="status.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Build status</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the ANTON Agent Protocol (<code>server/services/aap-transport-*.ts</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

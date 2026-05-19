@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The payment flow — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk active" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#connections">Connections</a><span class="sep">›</span>
+    <span class="here">The payment flow</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Connections</div>
+      <h1>The payment flow, end to end</h1>
+      <p class="lead">A merchant shows a QR; a customer scans it and pays. Behind that
+      simple act is a precise contract — the <code>futurechain:pay</code> URI — and a
+      shared SDK that all three payment apps rely on. This page traces a payment from
+      the merchant's keypad to the local receipt, and is honest about what is built
+      and what still waits on the FutureChain core.</p>
+      <div class="page-meta">
+        <span class="chip">FutureChain rail</span>
+        <span class="chip"><code>futurechain:pay</code> URI</span>
+        <span class="chip">ISO 20022 PACS.008</span>
+        <span class="chip">Bilateral settlement</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the payment flow is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#uri">The futurechain:pay URI — the contract</a></li>
+        <li><a href="#sdk">The FutureChain SDK, module by module</a></li>
+        <li><a href="#walk">A payment, step by step</a></li>
+        <li><a href="#tax">The tax engine &amp; settlement</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the payment flow is</h2>
+    <p>The payment flow is the rail that connects three of ANTON's phone apps.
+    <a href="business.html">ANTON Business</a> is the merchant side — it builds a
+    payment request. <a href="pay.html">ANTON Pay</a> and the wallet inside
+    <a href="comm.html">ANTON Comm</a> are the customer side — they read that request
+    and act on it.</p>
+    <p>The thing in the middle is not a server. It is a <strong>data format</strong> —
+    the <code>futurechain:pay</code> URI — usually carried as a QR code on a screen.
+    Business encodes it; Pay and Comm decode it. Because the contract is just data,
+    no payment server has to be online for the apps to agree on what is being paid.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">⟪</div><h4>Business builds</h4>
+        <p>The merchant enters an amount or a cart; the app encodes a
+        <code>futurechain:pay</code> URI and shows it as a QR.</p></div>
+      <div class="feature"><div class="ic">☀</div><h4>Pay / Comm read</h4>
+        <p>The customer scans, the URI is decoded and validated, and a review screen
+        appears.</p></div>
+      <div class="feature"><div class="ic">⛓</div><h4>Settled bilaterally</h4>
+        <p>The actual on-chain transfer happens off-app, merchant ↔ Safello. The apps
+        keep local records.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of the <code>futurechain:pay</code> URI as a <strong>written
+      invoice</strong>. The merchant fills it in completely — who to pay, how much,
+      what for, who they legally are, when it expires — and the customer's app simply
+      <em>reads</em> it back. The customer's app never invents a figure. If a number
+      is wrong on the review screen, the invoice was wrong; the app is a faithful
+      reader, not an author.</p>
+    </div>
+
+    <p>Three ideas hold the rest of this page together:</p>
+    <ul>
+      <li><strong>The URI is the whole agreement.</strong> Everything the customer
+      sees — amount, merchant, purpose, VAT, expiry, the merchant's ISO 20022 identity
+      — was placed in the URI by the merchant. There is no second channel.</li>
+      <li><strong>The SDK is shared, and partly stubbed.</strong> All three apps build
+      on one <code>@futurechain/sdk</code> package. Some of it is solid and tested;
+      some of it deliberately throws until the FutureChain Rust core is vendored. This
+      page names which is which — and so does <a href="status.html">Build status</a>.</li>
+      <li><strong>Settlement is not the apps' job.</strong> The apps agree on the
+      payment and record it. Moving the money is bilateral between the merchant and
+      Safello, off-app. The apps are honest ledgers, not a clearing house.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Drafts today, signatures later</div>
+      <p>When you confirm a payment, the apps assemble a full ISO 20022 PACS.008
+      <em>draft</em> and show it to you — but that draft is <strong>not yet
+      cryptographically signed</strong>. Real signing is blocked on the FutureChain
+      Rust core being vendored. The apps are built so the draft populates and displays
+      now, and signing simply switches on when the SDK unstubs. See
+      <a href="status.html">Build status</a>.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="uri"><span class="ix">3</span>The <code>futurechain:pay</code> URI — the contract</h2>
+    <p>The URI is encoded by ADR-004 v1. Here is what each field carries.</p>
+
+    <table>
+      <tr><th>Field</th><th>Carries</th></tr>
+      <tr><td><code>to</code></td><td>The merchant's FutureChain receive address — where the payment is destined.</td></tr>
+      <tr><td><code>amount</code></td><td>The amount in <strong>micro-FTC</strong> (integer) — no floating point on the wire.</td></tr>
+      <tr><td><code>ref</code></td><td>The ADR-004 <strong>v1</strong> reference: an 8-char merchant id (<code>M:</code>), a 12-char order id (<code>O:</code>), the purpose, and optional item count / VAT / discount.</td></tr>
+      <tr><td><code>cn / cc / cct / cst / cpc</code></td><td>The merchant's ISO 20022 <strong>creditor party</strong> — name, country, and the address components — so the payer can build a complete PACS.008 record.</td></tr>
+      <tr><td><code>exp</code></td><td>An expiry timestamp — Business sets it ~15 minutes ahead. An expired URI is rejected on scan.</td></tr>
+      <tr><td><code>v</code></td><td>Format version — <code>1</code>.</td></tr>
+    </table>
+
+    <p>The <code>ref</code> purpose is one of
+    <code>RETAIL / RESTAURANT / EVENT / SERVICE / REFUND</code>. On the payer side,
+    when the PACS.008 draft is assembled, that purpose is mapped to an ISO 20022
+    external purpose code: RETAIL→GDDS, RESTAURANT/SERVICE→SCVE, EVENT→OTHR,
+    REFUND→REFUND.</p>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why amounts are integers</div>
+      <p>The <code>amount</code> field is micro-FTC as a whole number — 12.50 FTC
+      travels as <code>12500000</code>. Integer arithmetic has no rounding surprises,
+      so the figure the merchant typed is bit-for-bit the figure the customer
+      confirms. The currency estimate a payer app shows (e.g. "≈ 138 SEK") is a live
+      convenience only; the FTC amount is what is actually paid.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> ADR-004 &amp; the <code>reference</code> module
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The encoding rules are defined by <strong>ADR-004</strong> (the architecture
+        decision record under <code>anton-business/docs/adr/</code>). There are two
+        reference versions: <strong>v1</strong> is merchant-bearing — it carries the
+        full creditor party so a payer can assemble a PACS.008 — and <strong>v2</strong>
+        is an operational, leaner form.</p>
+        <p>Encoding and decoding are handled by the SDK's <code>reference</code> module
+        (<code>anton-business/packages/futurechain-sdk/src/reference/</code>). A key
+        design property: <code>reference.decode()</code> <strong>never throws</strong>.
+        It returns a discriminated union — success with the parsed fields, or a typed
+        failure — so a malformed or hostile QR is a handled value, not a crash. This
+        is the BUILT part of the SDK, with a deterministic encode/decode round-trip
+        covered by <code>reference.test.ts</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="sdk"><span class="ix">4</span>The FutureChain SDK, module by module</h2>
+    <p>All three payment apps depend on one workspace package,
+    <code>@futurechain/sdk</code>. It is partially implemented — and deliberately
+    honest about it. Each stubbed function throws a <code>NotImplementedError</code>
+    whose message names the artifact it is blocked on, so the failure is
+    self-diagnosing.</p>
+
+    <table>
+      <tr><th>Module</th><th>Purpose</th><th>Status</th></tr>
+      <tr><td><code>reference</code></td><td>ADR-004 remittance encoding — v1 (merchant-bearing) &amp; v2 (operational). Never throws; returns a discriminated union.</td><td><span class="badge b-done">BUILT</span></td></tr>
+      <tr><td><code>tax</code></td><td>Jurisdiction-aware crypto-asset tax engine — cost basis, holding-period relief, loss offset, K4/CSV reports.</td><td><span class="badge b-partial">IN PROGRESS</span></td></tr>
+      <tr><td><code>wallet</code></td><td>secp256k1 keys, mnemonics, signing. Address derivation works; create / sign / verify stubbed.</td><td><span class="badge b-partial">PARTIAL</span></td></tr>
+      <tr><td><code>pacs008</code></td><td>ISO 20022 PACS.008 builder + canonical serialisation + hashing.</td><td><span class="badge b-stub">STUB</span></td></tr>
+      <tr><td><code>rpc</code></td><td>RPC envelope between app and backend.</td><td><span class="badge b-stub">STUB</span></td></tr>
+    </table>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>The critical-path blocker</div>
+      <p>The <code>pacs008</code> builder throws <code>NotImplementedError</code> — it
+      is blocked on the FutureChain Rust core file <code>iso20022_pacs008.rs</code>
+      being vendored, so the canonical byte form can be matched exactly. Until then,
+      Pay and Comm assemble PACS.008 drafts as plain object literals: they are fully
+      populated and shown to the user, but not signed. Signed payment records and real
+      settlement all wait downstream of this one artifact.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Building a PACS.008 draft today
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>On the payer side (<a href="pay.html">ANTON Pay</a>), the service
+        <code>pacs008-draft.ts</code> assembles an ISO 20022 PACS.008 draft when the
+        user confirms. The <strong>debtor</strong> party is the payer's saved identity
+        — or a bare wallet address if identity entry was skipped — and the
+        <strong>creditor</strong> party is read straight from the scanned URI's
+        <code>cn/cc/cct/cst/cpc</code> fields. The ADR-004 purpose is mapped to its
+        ISO external purpose code at this point.</p>
+        <p>The draft is stored on the local payment record. It is a plain object
+        literal — deliberately <em>not</em> run through the stubbed
+        <code>@futurechain/sdk/pacs008</code> builder, which would throw. When the SDK
+        unstubs, the same draft data flows into the real builder for canonical
+        serialisation, hashing and signing — no change to what the apps collect today.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="walk"><span class="ix">5</span>A payment, step by step</h2>
+    <p>Here is one payment, all the way from the merchant's keypad to two local
+    records.</p>
+
+    <div class="diagram">
+<pre>
+   ANTON BUSINESS                                  ANTON PAY / COMM
+   ─────────────                                   ────────────────
+   merchant enters                                 customer scans the QR
+   amount or builds a cart                                 │
+        │                                                  ▼
+        ▼                                          reference.decode()
+   build futurechain:pay URI                       — validate scheme,
+     to       = receive address                      version, exp
+     amount   = micro-FTC integer                          │
+     ref      = ADR-004 v1  (M:merchant O:order)            ▼
+     cn/cc/cct/cst/cpc = ISO 20022 creditor          REVIEW screen:
+     exp      = now + ~15 min                        amount · merchant ·
+     v        = 1                                    purpose · countdown
+        │                                            · ISO 20022 panel
+        ▼                                                  │
+   show QR on screen  ════ QR ════════════════════▶        ▼
+        │                                          fraud engine — 9 rules
+        ▼                                                  │
+   kvitto recorded                                         ▼
+   (gap-free ledger,                              confirm → local record +
+    Bokföringslagen                                PACS.008 draft assembled
+    numbering K-000001…)                                   │
+        │                                                  │
+        ▼                                                  │
+   settlement is bilateral, off-app  ◀──────────────────────┘
+   merchant ↔ Safello blockchain node
+</pre>
+    </div>
+
+    <ol class="steps">
+      <li><span class="st">The merchant builds the request</span>
+        <p>In <a href="business.html">ANTON Business</a>, the merchant either taps a
+        flat amount on the keypad (Simple mode) or builds a cart with per-item VAT
+        (Extended mode). The app encodes a <code>futurechain:pay</code> URI carrying
+        the receive address, the amount in micro-FTC, the ADR-004 v1
+        <code>ref</code>, the merchant's ISO 20022 creditor party and a ~15-minute
+        expiry.</p></li>
+      <li><span class="st">The merchant shows the QR</span>
+        <p>The URI is rendered as a QR on the merchant's phone screen.</p></li>
+      <li><span class="st">The customer scans &amp; the URI is decoded</span>
+        <p>Pay or Comm reads the QR and calls <code>reference.decode()</code>, which
+        validates the scheme, version and expiry. An expired or malformed code is
+        rejected with a clear message — never a crash.</p></li>
+      <li><span class="st">The customer reads the review screen</span>
+        <p>The decoded payment is shown in plain language: FTC amount and an estimated
+        local-currency value, the merchant, the purpose, VAT, a live expiry countdown,
+        and an expandable ISO 20022 detail panel.</p></li>
+      <li><span class="st">The fraud engine scores it</span>
+        <p>The on-device 9-rule fraud engine compares the payment to the customer's
+        own pattern and surfaces any signals. It is always advisory — see
+        <a href="pay.html#fraud">ANTON Pay §5</a>.</p></li>
+      <li><span class="st">The customer confirms</span>
+        <p>On confirm, Pay/Comm record the payment locally and assemble the PACS.008
+        draft from the saved identity and the scanned creditor. Business records a
+        matching <em>kvitto</em> in its gap-free ledger. Settlement then happens
+        bilaterally, off-app, between the merchant and Safello.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — an itemised café sale</div>
+      <p>A café builds an Extended-mode cart: two coffees and a sandwich, 25% VAT,
+      11.20 FTC total. Business encodes a <code>futurechain:pay</code> URI —
+      <code>amount=11200000</code>, <code>ref</code> with merchant id, order id and
+      purpose <code>RESTAURANT</code>, the café's creditor party, <code>exp</code> 15
+      minutes out — and shows the QR. The customer's Pay app decodes it, shows
+      <strong>11.20 FTC · Café Lindgren · Restaurant</strong> with the VAT breakdown,
+      runs the fraud check (clear), and the customer confirms. Pay writes a local
+      record with a PACS.008 draft whose purpose code is SCVE; Business writes kvitto
+      <strong>K-000412</strong>. Two honest ledgers, one agreed payment.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="tax"><span class="ix">6</span>The tax engine &amp; settlement</h2>
+    <p>Two pieces sit alongside the core flow: the tax engine that helps a wallet
+    holder stay compliant, and the bilateral settlement that actually moves value.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>The tax engine</h4>
+        <p>The SDK's <code>tax</code> module is a jurisdiction-aware crypto-asset tax
+        engine — cost-basis tracking, holding-period relief, loss offset, and position
+        &amp; annual reports exportable as K4 or CSV. The rules are defined in
+        <code>FUTURECHAIN_TAX_RULES.md</code> and hot-loaded as YAML, so a
+        jurisdiction's rules can change without an app rebuild. It is
+        <span class="badge b-partial">IN PROGRESS</span> — the schema and the Sweden
+        rules are done; cost-basis methods and other jurisdictions are still in draft.
+        It is surfaced today inside the <a href="comm.html">ANTON Comm</a> wallet.</p>
+      </div>
+      <div class="card">
+        <h4>Settlement</h4>
+        <p>The apps agree on the payment and record it — they do not move the money.
+        Settlement is <strong>bilateral</strong>: the merchant settles directly with
+        <strong>Safello</strong>, which runs the blockchain node. The KYC model is
+        merchant-side. Settlement integration is currently
+        <span class="badge b-spec">SPEC</span> — the reference code is archived. The
+        apps are designed to be honest local ledgers regardless of when settlement
+        wires up.</p>
+      </div>
+    </div>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Read the whole review screen — the URI is the contract, so every field matters.</li>
+          <li>Trust the FTC amount; treat the local-currency estimate as a guide only.</li>
+          <li>Expect a fresh QR if one has expired — that's the design, not a fault.</li>
+          <li>Check <a href="status.html">Build status</a> before relying on signing or settlement.</li>
+          <li>Keep both ledgers — the merchant's kvitto and the payer's record are independent receipts.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't treat a PACS.008 draft as a signed instrument today — it isn't yet.</li>
+          <li>Don't expect a payment server to be online — the URI is self-contained.</li>
+          <li>Don't assume the apps settle the money — settlement is bilateral, off-app.</li>
+          <li>Don't hand-parse a <code>futurechain:pay</code> URI — use <code>reference.decode()</code>.</li>
+          <li>Don't rely on tax output for a jurisdiction still in draft — check the engine's status.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>The payment rail is one example of ANTON instances and apps agreeing through a
+    shared format rather than a central server. Next, see how whole ANTON instances
+    talk to <em>each other</em> over the Agent Protocol.</p>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pairing.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Pairing &amp; enrollment</div>
+      </a>
+      <a class="next" href="agent-protocol.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Agent Protocol &amp; portals</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the FutureChain payment rail (<code>@futurechain/sdk</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

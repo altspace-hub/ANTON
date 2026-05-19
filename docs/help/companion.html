@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Companion — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk active" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#apps">Phone apps</a><span class="sep">›</span>
+    <span class="here">ANTON Companion</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Phone apps</div>
+      <h1>ANTON Companion — your instance, in your pocket</h1>
+      <p class="lead">ANTON Companion is the mobile surface of <em>your own</em> ANTON
+      Local instance. It is not a separate product with its own data — it is a
+      window. You pair a phone to a desktop instance once, and from then on the phone
+      shows that instance's work, lets you approve its decisions, and lets you ask it
+      things from anywhere.</p>
+      <div class="page-meta">
+        <span class="chip">For: ANTON Local users on the move</span>
+        <span class="chip">Android + PWA + iOS scaffold</span>
+        <span class="chip">Capacitor 8.3 · teal theme</span>
+        <span class="chip">Pairs to your instance — not standalone</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON Companion is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#pairing">Pairing a device, step by step</a></li>
+        <li><a href="#instances">Multiple instances &amp; transports</a></li>
+        <li><a href="#approvals">The approvals inbox — the enterprise wedge</a></li>
+        <li><a href="#capture">Push, voice &amp; capture</a></li>
+        <li><a href="#modes">Pro mode vs Standard mode</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What ANTON Companion is</h2>
+    <p>ANTON Companion lives at <code>src/app/</code> and ships as a Capacitor Android
+    app, an installable PWA, and an iOS scaffold ready to overlay onto a Mac-generated
+    project. Whatever the wrapper, the job is the same: be the trusted phone client of
+    a specific ANTON Local instance.</p>
+    <p>It exists for the professional who can't always be at the desk but still needs
+    to act — approve an action a Mission is waiting on, answer a question, photograph a
+    document into a workspace, dictate a quick research request. The instance keeps all
+    the intelligence and all the data; the phone is a careful, well-secured remote.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">🔗</div><h4>Paired, not logged-in</h4>
+        <p>An Ed25519 device certificate ties this phone to one instance — no password.</p></div>
+      <div class="feature"><div class="ic">✅</div><h4>Approvals inbox</h4>
+        <p>Decisions the instance is waiting on, sorted by severity, signed on reply.</p></div>
+      <div class="feature"><div class="ic">🎙</div><h4>Voice &amp; capture</h4>
+        <p>Hold-to-talk research and camera capture straight into the workspace.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Companion is a <strong>window onto an instance, not a standalone app</strong>.
+      It holds almost no state of its own — just the device keypair and the list of
+      instances it has been paired to. Every list, every Mission, every approval you
+      see was computed on the desktop and sent down. If the instance is off, the window
+      shows nothing. That is the design: the brain stays on your machine; the phone is
+      the glass you look through.</p>
+    </div>
+
+    <p>Two consequences are worth holding onto, because they explain the whole app:</p>
+    <ul>
+      <li><strong>Trust is per-device, not per-account.</strong> Companion has no
+      username and no shared login. A phone earns access through the pairing ritual,
+      and the instance can revoke that one device's certificate without touching any
+      other. Losing the phone is contained.</li>
+      <li><strong>The phone never holds the keys to the kingdom.</strong> Push payloads
+      carry only an event id and a severity — never the confidential content. Approvals
+      are signed on the phone but decided against data the instance shows you at
+      read time. A stolen, locked phone leaks nothing.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Good to know</div>
+      <p>Because Companion is a window, it is genuinely fine to pair several phones to
+      one instance, or one phone to several instances. There is no "primary device."
+      Each pairing is an independent certificate. See <a href="#instances">§4</a>.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="pairing"><span class="ix">3</span>Pairing a device, step by step</h2>
+    <p>Pairing is the one-time ritual that turns a fresh phone into a trusted client.
+    It is an Ed25519 enrollment exchange with no central authority and no password —
+    the full mechanics are covered on <a href="pairing.html">Pairing &amp;
+    enrollment</a>; here is the walkthrough as you experience it in the app.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">On the desktop — "Connect a device"</span>
+            <p>An admin opens the pairing screen in ANTON Local. The instance issues a
+            <strong>60-second</strong> enrollment package — its public keys, a
+            self-binding signature, relay endpoints, a one-time nonce, and an optional
+            6-digit out-of-band code — and renders it as a QR.</p></li>
+          <li><span class="st">On the phone — open Join</span>
+            <p>Open Companion's Join screen. The phone generates a fresh Ed25519
+            keypair and writes the private key into the biometric-protected
+            Keychain / Keystore. It never leaves the device.</p></li>
+          <li><span class="st">Scan the QR</span>
+            <p>Point the camera at the desktop QR. Companion parses the package and,
+            if the desktop showed a 6-digit code, asks you to type it — a defence
+            against scanning the wrong screen.</p></li>
+          <li><span class="st">Sign the challenge</span>
+            <p>The phone signs <code>${token}.${nonce}.${publicKey}</code> and POSTs
+            it to <code>/api/app/enrollment/complete</code>. The server verifies the
+            signature and code.</p></li>
+          <li><span class="st">Receive the device certificate</span>
+            <p>The instance issues a device certificate and a session token. Companion
+            biometric-locks the credentials. The phone is now a paired client.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--teal)">▲ Connect a device</div>
+            <div class="appbody">
+              <div class="m-h" style="text-align:center;margin-top:4px">Scan the desktop QR</div>
+              <div class="m-sub" style="text-align:center">The code is valid for 60 seconds.</div>
+              <div class="m-row" style="text-align:center;padding:22px 11px;border-style:dashed">
+                <div style="font-size:30px">▦</div>
+                <div class="m-sub" style="margin-top:4px">Camera — point at ANTON Local</div>
+              </div>
+              <div class="m-row"><div class="m-sub">Confirmation code</div>
+                <div style="font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.18em">4 2 8 1 — —</div></div>
+              <div style="flex:1"></div>
+              <div class="m-btn alt">Enter code manually</div>
+              <div class="m-btn" style="background:var(--teal)">Pair this device</div>
+            </div>
+            <div class="navbar">
+              <div>Home</div><div class="on">Join</div><div>Approvals</div><div>More</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The Join screen — scan the desktop QR, confirm the 6-digit code.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a consultant on a site visit</div>
+      <p>Maria runs ANTON Local on her office workstation. Before leaving she opens
+      "Connect a device", and on her phone taps Join and scans the QR — confirming the
+      6-digit code <strong>428137</strong> shown on the desktop. Thirty seconds later
+      her phone holds a device certificate. On the client site she gets a push:
+      <em>"Mission checkpoint — high"</em>. She opens Companion, reads the proposed
+      action, holds her thumb to the fingerprint sensor, and approves it. The Mission
+      continues without her touching the desktop.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The enrollment ritual in code
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>On the phone, <code>src/app/services/identity.ts</code> mints the Ed25519
+        keypair (via <code>@noble/ed25519</code>) and stores the private key through
+        a tier-aware secure store — <code>@aparajita/capacitor-secure-storage</code>
+        on a device, a fallback in the PWA. <code>pairing-url.ts</code> parses the QR
+        package; <code>enrollment.ts</code> drives the <code>complete</code> POST.</p>
+        <p>Server side, <code>server/services/app-enrollment-service.ts</code> issues
+        the 60-second-TTL package, verifies the returned signature and confirmation
+        code, and writes the device certificate. The instance's own Ed25519 private
+        key is AES-256-GCM encrypted in <code>instance_identity.privkey_encrypted</code>
+        when <code>INSTANCE_KEY_ENCRYPTION_KEY</code> is set — without it the service
+        stores plaintext and logs a one-time warning.</p>
+        <p><strong>Tables</strong> (migrations 094, 130, 131): <code>app_devices</code>
+        holds the Ed25519-paired phones, <code>app_enrollment_tokens</code> carries the
+        live token plus its <code>confirmation_code</code>, and
+        <code>app_session_tokens</code> holds the issued session.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="instances"><span class="ix">4</span>Multiple instances &amp; transports</h2>
+    <p>One phone can be paired to several ANTON Local instances — your own workstation,
+    a team server, a client's hosted instance. Companion makes the <em>active</em>
+    instance unambiguous so you never act on the wrong one.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>The instance switcher</h4>
+        <p>A Wallet-card-style bottom sheet lists every paired instance. Switching is
+        race-free — a half-finished switch can never leave you talking to one instance
+        with another's credentials. An <strong>InstanceTopBar</strong> always shows
+        which instance is in focus.</p>
+      </div>
+      <div class="card">
+        <h4>Two transports</h4>
+        <p><strong>Direct HTTPS</strong> when the instance is reachable on the LAN or
+        at a public URL. <strong>Mesh relay</strong> when it is not — Noise-IK
+        ciphertext is bounced through the <a href="mesh-and-relay.html">ANTON Mesh
+        relay</a>, which matches you by instance id and can never read the traffic.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Which transport am I on?</div>
+      <p>You usually don't need to care — Companion prefers a direct connection and
+      falls back to the relay automatically. The relay only ever sees encrypted bytes
+      and connection metadata, so "I'm on the relay" is not a privacy downgrade for
+      your message contents. It is a downgrade only in that the relay <em>could</em>
+      observe that your phone connected, and could be a denial-of-service point.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="approvals"><span class="ix">5</span>The approvals inbox — the enterprise wedge</h2>
+    <p>The approvals inbox is the single feature that makes Companion worth deploying
+    across an organisation. ANTON Local runs Missions and agents that pause at
+    <strong>checkpoints</strong> — "I'm about to send this email", "I'm about to spend
+    against this budget". Those pending decisions surface in Companion as a
+    severity-sorted inbox, and your reply is cryptographically signed.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--teal)">▲ Approvals</div>
+            <div class="appbody">
+              <div class="m-row" style="border-color:#EDD3CF;background:#FBEEEC">
+                <div style="color:var(--red);font-weight:700;font-size:11px">⚠ CRITICAL · biometric</div>
+                <div style="font-size:11px;font-weight:700;color:var(--ink)">Send funds release notice</div>
+                <div class="m-sub">Mission · AMLR readiness · task 7</div>
+              </div>
+              <div class="m-row" style="border-color:#F0E2C2;background:#FDF8EC">
+                <div style="color:var(--gold);font-weight:700;font-size:11px">▲ HIGH · biometric</div>
+                <div style="font-size:11px;font-weight:700;color:var(--ink)">Approve outbound client email</div>
+                <div class="m-sub">Agent · Support desk</div>
+              </div>
+              <div class="m-row">
+                <div style="color:var(--muted);font-weight:700;font-size:11px">● NORMAL</div>
+                <div style="font-size:11px;font-weight:700;color:var(--ink)">Confirm research scope</div>
+                <div class="m-sub">Mission · Market scan</div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--teal)">Review oldest critical</div>
+            </div>
+            <div class="navbar">
+              <div>Home</div><div>Chat</div><div class="on">Approvals</div><div>More</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Approvals — severity-sorted, biometric-gated at the top.</figcaption>
+      </figure>
+      <div>
+        <p>How an approval behaves depends on its severity:</p>
+        <ul>
+          <li><strong>Critical / High</strong> — opening the item, and confirming it,
+          requires a biometric re-confirm (fingerprint or face). Any item explicitly
+          marked <code>requires_biometric</code> behaves the same way regardless of
+          severity.</li>
+          <li><strong>Normal / Low</strong> — a single deliberate tap.</li>
+        </ul>
+        <p>When this phone holds a paired keypair, the reply is sent as a
+        <strong>signed envelope</strong>: an Ed25519 signature over the decision plus a
+        replay-protected nonce. The instance can prove <em>which device</em> approved
+        <em>what</em>, and the same reply can't be replayed later.</p>
+        <p>The Approvals tab carries a live badge with the pending count, so an urgent
+        decision is visible without opening the app.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>An approval is a real decision</div>
+      <p>A critical checkpoint usually means money moves, a message goes out, or
+      something irreversible happens. The biometric prompt is there to make sure it is
+      <em>you</em> and that it is <em>deliberate</em>. Read the full item — Mission
+      name, the proposed action, the data behind it — before you place your thumb.
+      Don't clear the inbox on autopilot.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Checkpoints &amp; signed-envelope replies
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The instance writes pending decisions to the <code>app_checkpoints</code>
+        table; <code>server/services/app-checkpoint-service.ts</code> exposes them and
+        decides the biometric requirement from severity. The app pulls them through
+        <code>/api/app/checkpoints/*</code>.</p>
+        <p>On the phone, <code>src/app/services/checkpoints.ts</code> is the approvals
+        client. When a device keypair exists it wraps the response in a signed
+        envelope — <code>identity.ts</code> produces the Ed25519 signature, and the
+        server checks the nonce against <code>app_signed_envelope_nonces</code> so a
+        captured reply cannot be replayed. The <code>ApprovalsScreen.tsx</code> is a
+        primary tab with the live pending badge.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="capture"><span class="ix">6</span>Push, voice &amp; capture</h2>
+    <p>Three features turn Companion from a viewer into something you can act through.</p>
+
+    <div class="grid g3">
+      <div class="card">
+        <h4>Push</h4>
+        <p>APNs, FCM and web-push. A notification carries only an
+        <strong>event id, a severity and an opaque title</strong> plus a deep link —
+        <em>never</em> the confidential content. Tapping it opens the right screen,
+        where the real data is fetched over the authenticated channel.</p>
+      </div>
+      <div class="card">
+        <h4>Voice</h4>
+        <p>A full-screen, Telegram-style <strong>hold-to-talk</strong> overlay with
+        live captions, an on-device speech fallback, platform text-to-speech for the
+        reply, and immediate barge-in when you tap. Good for a quick research question
+        with your hands full.</p>
+      </div>
+      <div class="card">
+        <h4>Capture</h4>
+        <p>Camera, photo library, or the system share-sheet. The image is resized to
+        <strong>2048px at ~70% quality</strong> before it is POSTed to the instance —
+        so a document photo becomes workspace input without a huge upload.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why push carries so little</div>
+      <p>It is a deliberate privacy stance. Push notifications pass through Apple's and
+      Google's servers. If the payload contained the actual approval text or a document
+      summary, that text would sit on a third-party server. By carrying only an id and
+      a severity, ANTON keeps every confidential word on your instance and your phone —
+      the notification is just a doorbell.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The capture and push pipelines
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>On the phone <code>src/app/services/capture.ts</code> wraps the Capacitor
+        camera and share-target APIs and does the resize before upload;
+        <code>tts.ts</code>, <code>haptics.ts</code> and <code>biometric.ts</code> are
+        the other thin Capacitor wrappers, and <code>push.ts</code> registers the
+        device token. The <code>VoiceMode</code> overlay and <code>CapturePage.tsx</code>
+        are the surfaces.</p>
+        <p>Server side, <code>server/services/app-push-service.ts</code> dispatches to
+        APNs / FCM / web-push and reads device tokens from the
+        <code>app_push_tokens</code> table. Real dispatch needs
+        <code>APP_GATEWAY_PUSH=true</code> plus provider keys — until those are set the
+        dispatcher is a stub. See <a href="status.html">Build status</a> for where
+        push currently stands.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="modes"><span class="ix">7</span>Pro mode vs Standard mode</h2>
+    <p>Companion mirrors the desktop's breadth, which is a lot of surface for a phone.
+    It offers two shapes for that surface.</p>
+
+    <table>
+      <tr><th>Mode</th><th>Shape</th><th>Built for</th></tr>
+      <tr><td><strong>Pro mode</strong></td><td>35+ screens mirroring the desktop pillars — Chat, Tasks, Schedule, Search, Markets, Radar, Missions, My Work, Community, Portals, Wallet, Work modules, School.</td><td>Power users who use the full ANTON Local workspace and want all of it on the phone.</td></tr>
+      <tr><td><strong>Standard mode</strong></td><td>A simplified <strong>4-tab</strong> layout — the essentials only, with plain-language labels.</td><td>NGO deployments, occasional users, and anyone who only needs Chat, Approvals and a couple of core surfaces.</td></tr>
+    </table>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>Choosing a mode for a deployment</div>
+      <p>The instinct is to give everyone Pro mode "just in case." Resist it. A
+      4-tab Standard layout is not a lesser app — for someone whose whole job on the
+      phone is "approve the things that need approving," it is a <em>better</em> app:
+      nothing to get lost in. Match the mode to what the person actually does, not to
+      what the app can do.</p>
+    </div>
+
+    <!-- ============ 8 ============ -->
+    <h2 id="best"><span class="ix">8</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Confirm the 6-digit code during pairing — it stops a wrong-screen scan.</li>
+          <li>Set <code>INSTANCE_KEY_ENCRYPTION_KEY</code> on the instance so its key is encrypted at rest.</li>
+          <li>Read the whole approval — Mission, action, data — before the biometric tap.</li>
+          <li>Revoke a lost phone's device certificate from the instance immediately.</li>
+          <li>Pick Standard mode for users who only ever need to approve and chat.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't treat Companion as a data store — it is a window; the instance holds everything.</li>
+          <li>Don't clear the approvals inbox on autopilot; each critical item is a real decision.</li>
+          <li>Don't expect Companion to work with the instance offline — no instance, no window.</li>
+          <li>Don't assume push tells the whole story — it carries only an id; open the app for detail.</li>
+          <li>Don't share one pairing across phones; pair each device for its own revocable certificate.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The habit that makes Companion safe</div>
+      <p>Treat the device certificate like a key to your office, because that is what
+      it is. When a phone is retired, sold or lost, the very first action is to revoke
+      its certificate on the instance — not to "remember to do it later." Pairing is
+      cheap and per-device by design precisely so that revocation is clean and total.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="specialized-agents.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Specialized Agents</div>
+      </a>
+      <a class="next" href="comm.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Comm</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers ANTON Companion (<code>src/app/</code>). Press <code>t</code> to
+      expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>
