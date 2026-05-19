@@ -19,7 +19,7 @@ This document is the engineering plan: where things stand and what is left.
 | Signed brief + signed result, both verified | ✅ BUILT | Ed25519; failure ⇒ `failed`, non-actionable |
 | Peer accepts ⇒ local sub-mission created | ✅ BUILT | `origin_delegation_id` back-reference |
 | Inbound inbox + outbound delegations UI | ✅ BUILT | `MissionInboxPage`, `OutboundDelegationsTab` |
-| "Peer accepted" notification to originator | 🟡 STUB | Phase 5.5 TODO — originator only learns on result |
+| "Peer accepted / declined" notification to originator | ✅ BUILT | Phase A — outbound moves `sent → in_progress` / `declined` |
 | Delegate a multi-task sub-graph as one unit | ❌ NOT STARTED | Only single tasks today |
 | Capability-aware peer selection | 🟡 PARTIAL | `delegation_trust_level` exists, not wired to the UI |
 | AAP as the delegation transport | 🟡 SPEC + STUB | Delegation rides Community P2P queue; AAP crypto stubbed |
@@ -33,18 +33,26 @@ payment can actually settle. See `docs/help/status.html#blocker`.
 
 ---
 
-## Phase A — Mission delegation polish *(no blockers — do anytime)*
+## Phase A — Mission delegation polish — ✅ DONE (2026-05-19)
 
-Make cross-ANTON missions feel finished.
+Cross-ANTON missions now feel finished.
 
-- **A1. Accept notification (Phase 5.5).** When a peer accepts a delegation,
-  send a signed notification back so the originator's status moves
-  `sent → in_progress` instead of jumping straight to `completed`.
-- **A2. Delegation status surfacing.** Show live delegation state on the
-  originating mission's task (delegated / accepted / running / returned).
-- **A3. Decline reasons.** Surface the peer's decline reason in the UI.
+- **A1. Accept / decline notification.** ✅ When a peer accepts or declines
+  an inbound delegation, it signs a `mission_delegation_status` notice and
+  queues it back. The originator's outbound delegation moves
+  `sent → in_progress` (accepted) or `sent → declined` (with the reason).
+  Signature-bound to the peer; idempotent; best-effort so it never rolls
+  back the local accept/decline.
+- **A2. Delegation status surfacing.** ✅ The Outbound delegations tab
+  renders every status and now polls (25 s), so a peer's accept/decline
+  shows up live.
+- **A3. Decline reasons.** ✅ The decline reason rides the notice and is
+  written to the outbound row's `rejection_reason`, which the tab displays.
 
-*Effort: small. Files: `mission-delegation.ts`, `OutboundDelegationsTab.tsx`.*
+*Delivered in: `mission-delegation.ts` (`notifyOriginator`,
+`receiveStatusUpdate`), `p2p.ts` (dispatch branch),
+`OutboundDelegationsTab.tsx` (poll). Transport: the existing community
+queue — AAP migration is Phase C.*
 
 ---
 

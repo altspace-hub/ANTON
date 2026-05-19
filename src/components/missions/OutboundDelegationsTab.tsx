@@ -61,7 +61,13 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
     }
   }, [missionId]);
 
-  useEffect(() => { void load(); }, [load]);
+  // Poll so a peer's accept / decline (which arrives asynchronously over
+  // the community transport) shows up without a manual refresh.
+  useEffect(() => {
+    void load();
+    const t = setInterval(() => { void load(); }, 25_000);
+    return () => clearInterval(t);
+  }, [load]);
 
   async function act(delegationId: string, action: 'send' | 'approve' | 'reject' | 'cancel', body?: Record<string, unknown>): Promise<void> {
     setActing(delegationId); setError(null);

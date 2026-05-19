@@ -126,6 +126,41 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     )) ?? null;
   }
 
+  /**
+   * Phase 5.5 — notify the originator that an inbound delegation was
+   * accepted or declined. Signs a small notice and queues it back over
+   * the same community transport (message_type 'mission_delegation_status').
+   * `row` is the INBOUND delegation; its peer_contact_hash IS the originator.
+   */
+  async function notifyOriginator(row: MissionDelegationRow, status: 'accepted' | 'declined', reason?: string | null): Promise<void> {
+    const identity = await db.get<{ contact_hash: string; public_key: string; private_key_encrypted: string | null }>(
+      `SELECT contact_hash, public_key, private_key_encrypted FROM community_identity LIMIT 1`,
+    );
+    if (!identity) throw new Error('No local community_identity');
+    const canonicalNotice = canonical({ delegationId: row.id, status, reason: reason ?? null });
+    const signature = signing.ed25519Sign(canonicalNotice, identity.private_key_encrypted);
+    const envelope = {
+      payload_json: canonicalNotice, signature_b64: signature,
+      signer_contact_hash: identity.contact_hash, signer_public_key: identity.public_key, sig_alg: 'ed25519',
+    };
+    const mailId = `cm_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    await db.run(
+      `INSERT INTO community_mail (id, from_hash, to_hashes, subject, body, message_type, payload, payload_metadata)
+       VALUES (?, ?, ?, ?, ?, 'mission_delegation_status', ?, ?)`,
+      mailId, identity.contact_hash, JSON.stringify([row.peer_contact_hash]),
+      `[Delegation ${status}] ${row.brief_title}`,
+      `The delegated brief "${row.brief_title}" was ${status}.`,
+      JSON.stringify(envelope),
+      JSON.stringify({ delegation_id: row.id, kind: 'status', status }),
+    );
+    const queueId = `mq_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    await db.run(
+      `INSERT INTO community_message_queue (id, mail_id, recipient_hash, status)
+       VALUES (?, ?, ?, 'pending')`,
+      queueId, mailId, row.peer_contact_hash,
+    );
+  }
+
   // ── Outbound: create + sign + queue for delivery ────────────────────────
 
   async function createOutboundDelegation(input: OutboundDelegationInput): Promise<MissionDelegationRow> {
@@ -336,7 +371,15 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     );
     await logEvent(delegationId, 'accepted', actor, { sub_mission_id: subMissionId });
 
-    // TODO: send accept notification back via AAP (Phase 5.5)
+    // Phase 5.5 — tell the originator we accepted, so their outbound
+    // delegation moves sent → in_progress. Best-effort: the accept itself
+    // already stands; a transport failure must not roll it back.
+    try {
+      await notifyOriginator(row, 'accepted');
+      await logEvent(delegationId, 'accept_notified', actor, {});
+    } catch (notifyErr) {
+      await logEvent(delegationId, 'accept_notify_failed', null, { error: String(notifyErr) });
+    }
 
     const updated = await getDelegation(delegationId);
     return updated!;
@@ -354,6 +397,16 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
       reason ?? null, delegationId,
     );
     await logEvent(delegationId, 'declined', actor, { reason });
+
+    // Phase 5.5 — tell the originator we declined (with the reason), so
+    // their outbound delegation moves sent → declined. Best-effort.
+    try {
+      await notifyOriginator(row, 'declined', reason ?? null);
+      await logEvent(delegationId, 'decline_notified', actor, {});
+    } catch (notifyErr) {
+      await logEvent(delegationId, 'decline_notify_failed', null, { error: String(notifyErr) });
+    }
+
     return (await getDelegation(delegationId))!;
   }
 
@@ -477,6 +530,85 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     return (await getDelegation(delegationId))!;
   }
 
+  // ── Outbound side receives an accept / decline notice (Phase 5.5) ───────
+
+  async function receiveStatusUpdate(
+    delegationId: string,
+    signedNotice: { payload_json: string; signature_b64: string; signer_public_key: string; signer_contact_hash: string },
+  ): Promise<MissionDelegationRow> {
+    const row = await getDelegation(delegationId);
+    if (!row) throw new Error(`Unknown delegation: ${delegationId}`);
+    if (row.direction !== 'outbound') throw new Error('Status update received for a non-outbound delegation');
+
+    // Bind the signer to the recorded peer — same defence as
+    // receiveDelegationResult: a different accepted contact must not be
+    // able to forge an accept/decline for someone else's delegation.
+    const conn = await db.get<{ public_key: string | null }>(
+      `SELECT public_key FROM community_connections WHERE contact_hash = ?`,
+      row.peer_contact_hash,
+    );
+    const keyMatchesPeer = !!conn?.public_key
+      && conn.public_key.toLowerCase() === signedNotice.signer_public_key.toLowerCase();
+    const signerHashMatchesPeer = signedNotice.signer_contact_hash === row.peer_contact_hash;
+    const sigOk = keyMatchesPeer && signerHashMatchesPeer
+      && signing.ed25519Verify(signedNotice.payload_json, signedNotice.signature_b64, signedNotice.signer_public_key);
+    if (!sigOk) {
+      await logEvent(delegationId, 'signature_failed', row.peer_contact_hash, { kind: 'status' });
+      return row;   // forged or altered notice — ignore, do not move state
+    }
+
+    let notice: { status?: string; reason?: string | null } = {};
+    try { notice = JSON.parse(signedNotice.payload_json) as typeof notice; } catch { /* keep empty */ }
+    const peerStatus = notice.status;
+
+    // Only a still-'sent' outbound delegation reacts; anything later already
+    // has a definitive state. Idempotent — a repeated notice is a no-op.
+    if (row.status !== 'sent') {
+      await logEvent(delegationId, 'status_update_ignored', row.peer_contact_hash, { peer_status: peerStatus, current: row.status });
+      return row;
+    }
+
+    if (peerStatus === 'accepted') {
+      await db.run(
+        `UPDATE missions.mission_delegations
+         SET status = 'in_progress', accepted_at = NOW(), updated_at = NOW()
+         WHERE id = ?`,
+        delegationId,
+      );
+      await logEvent(delegationId, 'peer_accepted', row.peer_contact_hash, {});
+      if (row.mission_id) {
+        await db.run(
+          `INSERT INTO missions.mission_activity (mission_id, task_id, activity_type, description, details)
+           VALUES (?, ?, 'delegation_accepted', ?, ?)`,
+          row.mission_id, row.task_id,
+          `${row.peer_display_name ?? row.peer_contact_hash.slice(0, 12)} accepted: ${row.brief_title}`,
+          JSON.stringify({ delegation_id: row.id }),
+        );
+      }
+    } else if (peerStatus === 'declined') {
+      await db.run(
+        `UPDATE missions.mission_delegations
+         SET status = 'declined', rejection_reason = ?, closed_at = NOW(), updated_at = NOW()
+         WHERE id = ?`,
+        notice.reason ?? null, delegationId,
+      );
+      await logEvent(delegationId, 'peer_declined', row.peer_contact_hash, { reason: notice.reason ?? null });
+      if (row.mission_id) {
+        await db.run(
+          `INSERT INTO missions.mission_activity (mission_id, task_id, activity_type, description, details)
+           VALUES (?, ?, 'delegation_declined', ?, ?)`,
+          row.mission_id, row.task_id,
+          `${row.peer_display_name ?? row.peer_contact_hash.slice(0, 12)} declined: ${row.brief_title}`,
+          JSON.stringify({ delegation_id: row.id, reason: notice.reason ?? null }),
+        );
+      }
+    } else {
+      await logEvent(delegationId, 'status_update_unknown', row.peer_contact_hash, { peer_status: peerStatus });
+      return row;
+    }
+    return (await getDelegation(delegationId))!;
+  }
+
   // ── Outbound action: approve / reject the result ────────────────────────
 
   async function approveResult(delegationId: string, actor: string): Promise<MissionDelegationRow> {
@@ -564,6 +696,7 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     declineInbound,
     submitInboundResult,
     receiveDelegationResult,
+    receiveStatusUpdate,
     approveResult,
     rejectResult,
     cancelOutbound,
