@@ -82,24 +82,31 @@ creates + sends — tying B1 and B2 together for end users.
 
 ---
 
-## Phase C — Move delegation onto AAP *(no hard blocker; sequencing choice)*
+## Phase C — Move delegation onto AAP *(partly done)*
 
 Today delegation rides the **Community P2P queue** (async, signed). AAP —
 the ANTON Agent Protocol — is the intended real-time, encrypted transport.
 
-- **C1. Finish AAP crypto.** Wire the stubbed pieces in
+- **C1. Finish AAP crypto.** ⏸ DEFERRED. Wire the stubbed pieces in
   `aap-transport-server.ts` / `aap-transport-client.ts`: the X25519
   ephemeral handshake, real Ed25519 envelope signing, AES-256-GCM bundle
-  encrypt/decrypt. (Verification — `verifyEnvelopeSignature` — is already real.)
-- **C2. BUNDLE apply pipeline.** Implement decryption + the `.anton` bundle
-  importer so received BUNDLEs actually take effect.
-- **C3. Route delegation over AAP.** Carry `mission_delegation` /
-  `mission_delegation_result` as AAP BUNDLE types; keep the Community P2P
-  path as the offline/async fallback.
-- **C4. Rate limits + quotas.** Implement the `rate_limited` / `quota_exceeded`
-  paths that currently exist only as error codes.
+  encrypt/decrypt. (Verification — `verifyEnvelopeSignature` — is already
+  real.) Security-critical and two-sided; deferred until a two-instance
+  test setup exists so the handshake can be verified end-to-end.
+- **C2. BUNDLE apply pipeline.** ⏸ DEFERRED with C1 — decryption depends
+  on the C1 shared key.
+- **C3. Route delegation over AAP.** ⏸ DEFERRED with C1.
+- **C4. Rate limits + quotas.** ✅ DONE (2026-05-19). The AAP server now
+  enforces a per-IP HELLO rate limit (`rate_limited` → REJECT) and a
+  per-connection message quota (`quota_exceeded` → ERROR) — in-memory
+  sliding windows in `aap-transport-server.ts`. Previously these error
+  codes existed but never fired.
 
-*Effort: medium–large. Files: `aap-transport-*.ts`, `docs/aap/wire-format-v1.md`.*
+*C1–C3 are the security-critical handshake completion. They compose the
+already-audited `community-crypto.ts` primitives (X25519 / AES-256-GCM /
+Ed25519) — no new cryptography — but a subtle bug in a handshake fails
+silently, so they need a two-instance end-to-end test before being relied
+on. Delegation works today over the Community P2P transport regardless.*
 
 ---
 
