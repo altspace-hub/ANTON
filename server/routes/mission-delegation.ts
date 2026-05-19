@@ -44,6 +44,17 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     return _service;
   }
 
+  // Phase B1 — one task in a delegated sub-graph
+  const subgraphTaskSchema = z.object({
+    title: z.string().min(1).max(200),
+    description: z.string().max(8000).optional(),
+    taskType: z.enum([
+      'llm', 'research', 'analysis', 'export', 'review', 'notification',
+      'checkpoint', 'conditional', 'parallel_group', 'browser', 'api_call', 'database_query',
+    ]).optional(),
+    dependsOn: z.array(z.number().int().min(0).max(49)).max(50).optional(),
+  }).strict();
+
   const briefSchema = z.object({
     title: z.string().min(1).max(200),
     objective: z.string().min(1).max(8000),
@@ -52,6 +63,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     expectedOutput: z.string().max(8000).optional(),
     deadline: z.string().datetime().optional(),
     paymentAmountFtc: z.number().min(0).max(1_000_000).optional(),
+    tasks: z.array(subgraphTaskSchema).max(50).optional(),
   }).strict();
 
   // ── Outbound: create + send ────────────────────────────────────────────
@@ -76,6 +88,46 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
       res.status(201).json({ success: true, delegation });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Phase B1 — delegate a sub-graph (a connected set of tasks) as one unit.
+  // Mission-scoped, not task-scoped: brief.tasks carries the sub-graph.
+  router.post('/missions/:id/delegate-graph', async (req, res) => {
+    try {
+      const schema = z.object({
+        peer_contact_hash: z.string().min(8).max(200),
+        brief: briefSchema,
+      }).strict();
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
+      if (!parsed.data.brief.tasks || parsed.data.brief.tasks.length === 0) {
+        res.status(400).json({ error: 'delegate-graph requires brief.tasks — a non-empty sub-graph' }); return;
+      }
+      try { await resolveCallerIdentity(db, undefined); }
+      catch (err) { sendIdentityError(res, err); return; }
+      const s = await service();
+      const delegation = await s.createOutboundDelegation({
+        missionId: String(req.params.id),
+        peerContactHash: parsed.data.peer_contact_hash,
+        brief: parsed.data.brief,
+      });
+      res.status(201).json({ success: true, delegation });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Phase B2 — rank connected peers as delegation targets (capability +
+  // trust aware). Optional ?q= focuses the capability match.
+  router.get('/missions/delegations/peer-suggestions', async (req, res) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+      const s = await service();
+      const peers = await s.suggestDelegationPeers(q);
+      res.json({ success: true, peers });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
