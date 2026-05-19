@@ -73,7 +73,20 @@ export function createRendererRoutes(db: DatabaseAdapter): Router {
       for (const r of applicable) {
         (grouped[r.category] ??= []).push(r);
       }
-      res.json({ success: true, renderers: applicable, grouped });
+      // Also report the structured-extraction state, so the Transform panel
+      // can explain why the content-aware categories (Visualize, board deck)
+      // may be absent — e.g. extraction still running or failed.
+      const sess = await db.get<{ content_type: string | null; structured_status: string | null }>(
+        'SELECT content_type, structured_status FROM sessions WHERE id = ?',
+        parsed.data.session_id,
+      );
+      res.json({
+        success: true,
+        renderers: applicable,
+        grouped,
+        content_type: sess?.content_type ?? null,
+        structured_status: sess?.structured_status ?? null,
+      });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
