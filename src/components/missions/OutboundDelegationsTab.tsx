@@ -21,6 +21,7 @@ interface Delegation {
   signature_verified: boolean | null;
   result_signature_verified: boolean | null;
   payment_amount_ftc: string | number | null;
+  brief_tasks: unknown;
   rejection_reason: string | null;
   created_at: string;
   sent_at: string | null;
@@ -140,6 +141,11 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
                       {Number(d.payment_amount_ftc) > 0 && (
                         <span className="inline-flex items-center gap-1 text-[10px] text-adv-gold" title="Payment attached — settles on approval (stub)">
                           <Coins className="h-3 w-3" /> {Number(d.payment_amount_ftc)} FTC
+                        </span>
+                      )}
+                      {Array.isArray(d.brief_tasks) && d.brief_tasks.length > 0 && (
+                        <span className="inline-flex items-center rounded border border-adv-blue/40 bg-adv-blue/10 px-1.5 py-0.5 text-[10px] text-adv-blue" title="Sub-graph delegation — multiple tasks">
+                          {d.brief_tasks.length}-task sub-graph
                         </span>
                       )}
                     </div>

@@ -20,8 +20,8 @@ This document is the engineering plan: where things stand and what is left.
 | Peer accepts ⇒ local sub-mission created | ✅ BUILT | `origin_delegation_id` back-reference |
 | Inbound inbox + outbound delegations UI | ✅ BUILT | `MissionInboxPage`, `OutboundDelegationsTab` |
 | "Peer accepted / declined" notification to originator | ✅ BUILT | Phase A — outbound moves `sent → in_progress` / `declined` |
-| Delegate a multi-task sub-graph as one unit | ❌ NOT STARTED | Only single tasks today |
-| Capability-aware peer selection | 🟡 PARTIAL | `delegation_trust_level` exists, not wired to the UI |
+| Delegate a multi-task sub-graph as one unit | ✅ BUILT | Phase B1 — `brief.tasks` + migration 209 |
+| Capability-aware peer selection | ✅ BUILT | Phase B2 — `suggestDelegationPeers` ranking endpoint |
 | AAP as the delegation transport | 🟡 SPEC + STUB | Delegation rides Community P2P queue; AAP crypto stubbed |
 | **A2A payment (real settlement)** | 🟡 STUB | Pipeline + `payment_amount_ftc` field exist; no money moves |
 
@@ -56,19 +56,29 @@ queue — AAP migration is Phase C.*
 
 ---
 
-## Phase B — Richer delegation *(no blockers)*
+## Phase B — Richer delegation — ✅ DONE (2026-05-19)
 
-- **B1. Sub-graph delegation.** Delegate a connected set of tasks as one
-  atomic unit, not just a single task. The peer's sub-mission mirrors the
-  sub-graph.
-- **B2. Capability-aware peer selection.** When delegating, rank connected
-  peers by advertised capabilities + trust level (`delegation_trust_level`)
-  instead of a manual contact picker.
-- **B3. Result ingestion.** On approval, optionally fold the peer's result
-  back into the originating mission as a completed task / knowledge atoms,
-  rather than leaving it inert in `result_payload`.
+- **B1. Sub-graph delegation.** ✅ A delegation can carry a connected set of
+  tasks — `brief.tasks` with `dependsOn` index edges; migration 209 adds
+  `brief_tasks JSONB`. `POST /missions/:id/delegate-graph` creates one; on
+  accept, the peer's sub-mission is pre-built with those tasks + dependency
+  edges, so no LLM decomposition is needed — the delegated plan IS the plan.
+- **B2. Capability-aware peer selection.** ✅ `suggestDelegationPeers()`
+  ranks connected peers by `delegation_trust_level` plus an optional
+  capability match against their advertised agents.
+  `GET /missions/delegations/peer-suggestions?q=` exposes the ranking.
+- **B3. Result ingestion.** ✅ On `approveResult`, the peer's result is
+  folded back into the originating mission: the delegated task is marked
+  `completed` with the result as its output, so the mission can advance
+  past it instead of the result sitting inert in `result_payload`.
 
-*Effort: medium. Touches mission decomposition + the delegation data model.*
+Note: there is still no delegate-*creation* UI (delegations have always
+been API-only). B1's `delegate-graph` route and B2's peer-suggestion
+endpoint are ready to wire into one — that UI is a separate follow-up.
+The Outbound delegations tab shows the sub-graph task count + payment chip.
+
+*Delivered in: migration 209, `mission-delegation.ts` (service + route),
+`OutboundDelegationsTab.tsx`.*
 
 ---
 

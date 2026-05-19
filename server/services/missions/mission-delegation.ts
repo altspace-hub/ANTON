@@ -25,6 +25,18 @@ export type DelegationStatus =
   | 'in_progress' | 'completed' | 'approved' | 'rejected'
   | 'cancelled' | 'failed';
 
+/**
+ * One task in a delegated sub-graph (Phase B1). `dependsOn` holds
+ * zero-based indices into the same `tasks` array — the recipient rebuilds
+ * the DAG from these when accepting.
+ */
+export interface SubgraphTask {
+  title: string;
+  description?: string;
+  taskType?: string;                       // mission_tasks.task_type; defaults to 'llm'
+  dependsOn?: number[];                    // indices into the tasks array
+}
+
 export interface DelegationBrief {
   title: string;
   objective: string;
@@ -33,6 +45,7 @@ export interface DelegationBrief {
   expectedOutput?: string;
   deadline?: string;                       // ISO timestamp
   paymentAmountFtc?: number;
+  tasks?: SubgraphTask[];                  // Phase B1 — sub-graph delegation
 }
 
 export interface OutboundDelegationInput {
@@ -64,6 +77,7 @@ export interface MissionDelegationRow {
   brief_objective: string;
   brief_context: unknown;
   required_modules: unknown;
+  brief_tasks: unknown;
   expected_output: string | null;
   deadline: string | null;
   payment_amount_ftc: string | number | null;
@@ -85,6 +99,16 @@ export interface MissionDelegationRow {
   accepted_at: string | null;
   completed_at: string | null;
   closed_at: string | null;
+}
+
+/** A connected peer ranked as a delegation target (Phase B2). */
+export interface PeerSuggestion {
+  contactHash: string;
+  displayName: string | null;
+  endpoint: string | null;
+  trustLevel: string;
+  score: number;
+  matchedAgents: string[];
 }
 
 export async function createMissionDelegation(db: DatabaseAdapter) {
@@ -182,14 +206,15 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     await db.run(
       `INSERT INTO missions.mission_delegations
         (id, direction, mission_id, task_id, peer_contact_hash, peer_display_name, peer_endpoint,
-         brief_title, brief_objective, brief_context, required_modules,
+         brief_title, brief_objective, brief_context, required_modules, brief_tasks,
          expected_output, deadline, payment_amount_ftc, status)
-       VALUES (?, 'outbound', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+       VALUES (?, 'outbound', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
       id, input.missionId, input.taskId ?? null,
       input.peerContactHash, conn.display_name, conn.endpoint,
       input.brief.title, input.brief.objective,
       JSON.stringify(input.brief.context ?? {}),
       JSON.stringify(input.brief.requiredModules ?? []),
+      input.brief.tasks && input.brief.tasks.length > 0 ? JSON.stringify(input.brief.tasks) : null,
       input.brief.expectedOutput ?? null,
       input.brief.deadline ?? null,
       input.brief.paymentAmountFtc ?? null,
@@ -224,6 +249,7 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
         expectedOutput: row.expected_output,
         deadline: row.deadline,
         paymentAmountFtc: row.payment_amount_ftc != null ? Number(row.payment_amount_ftc) : null,
+        tasks: parseJson<SubgraphTask[] | null>(row.brief_tasks, null),
       },
     };
     const canonicalPayload = canonical(payload);
@@ -304,14 +330,15 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     await db.run(
       `INSERT INTO missions.mission_delegations
         (id, direction, peer_contact_hash, peer_display_name,
-         brief_title, brief_objective, brief_context, required_modules,
+         brief_title, brief_objective, brief_context, required_modules, brief_tasks,
          expected_output, deadline, payment_amount_ftc,
          status, signed_payload, signature_verified, signature_verified_at, inbound_mail_id)
-       VALUES (?, 'inbound', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+       VALUES (?, 'inbound', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
       input.delegationId, input.fromContactHash, input.fromDisplayName ?? null,
       input.brief.title, input.brief.objective,
       JSON.stringify(input.brief.context ?? {}),
       JSON.stringify(input.brief.requiredModules ?? []),
+      input.brief.tasks && input.brief.tasks.length > 0 ? JSON.stringify(input.brief.tasks) : null,
       input.brief.expectedOutput ?? null,
       input.brief.deadline ?? null,
       input.brief.paymentAmountFtc ?? null,
@@ -361,6 +388,43 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
         `UPDATE missions.mission_delegations SET sub_mission_id = ? WHERE id = ?`,
         subMissionId, delegationId,
       );
+
+      // Phase B1 — if the delegation carried a sub-graph, pre-build the
+      // sub-mission's tasks + dependency edges so no LLM decomposition is
+      // needed: the delegated plan IS the plan. The accepter still approves
+      // it before it runs (the sub-mission stays 'briefed').
+      const subTasks = parseJson<SubgraphTask[]>(row.brief_tasks, []);
+      if (Array.isArray(subTasks) && subTasks.length > 0) {
+        const ALLOWED_TYPES = new Set([
+          'llm', 'research', 'analysis', 'export', 'review', 'notification',
+          'checkpoint', 'conditional', 'parallel_group', 'browser', 'api_call', 'database_query',
+        ]);
+        const idByIndex: string[] = [];
+        for (let i = 0; i < subTasks.length; i++) {
+          const t = subTasks[i];
+          const taskId = `tsk_${randomUUID()}`;
+          idByIndex.push(taskId);
+          const taskType = t.taskType && ALLOWED_TYPES.has(t.taskType) ? t.taskType : 'llm';
+          await db.run(
+            `INSERT INTO missions.mission_tasks
+              (id, mission_id, title, description, task_type, status, sort_order)
+             VALUES (?, ?, ?, ?, ?, 'queued', ?)`,
+            taskId, subMissionId, t.title.slice(0, 200), t.description ?? null, taskType, i,
+          );
+        }
+        for (let i = 0; i < subTasks.length; i++) {
+          for (const dep of subTasks[i].dependsOn ?? []) {
+            if (dep >= 0 && dep < idByIndex.length && dep !== i) {
+              await db.run(
+                `INSERT INTO missions.mission_task_dependencies (task_id, depends_on_task_id)
+                 VALUES (?, ?) ON CONFLICT DO NOTHING`,
+                idByIndex[i], idByIndex[dep],
+              );
+            }
+          }
+        }
+        await logEvent(delegationId, 'subgraph_built', actor, { task_count: subTasks.length, sub_mission_id: subMissionId });
+      }
     }
 
     await db.run(
@@ -646,6 +710,36 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     return payment.id;
   }
 
+  /**
+   * Phase B3 — result ingestion. Folds an approved delegation's result back
+   * into the originating mission: the delegated task is marked completed
+   * with the peer's result as its output, so the originating mission can
+   * advance past it instead of the result sitting inert in result_payload.
+   */
+  async function ingestDelegationResult(row: MissionDelegationRow): Promise<void> {
+    if (!row.task_id || !row.mission_id) return;
+    const result = parseJson<Record<string, unknown> | null>(row.result_payload, null);
+    const peerLabel = row.peer_display_name ?? row.peer_contact_hash.slice(0, 12);
+    const summary = (result && typeof result === 'object' && typeof result.summary === 'string')
+      ? result.summary
+      : `Delegated to ${peerLabel} — result received and approved`;
+    const full = result != null ? JSON.stringify(result, null, 2) : null;
+    await db.run(
+      `UPDATE missions.mission_tasks
+       SET status = 'completed', output_summary = ?, output_full = ?, completed_at = NOW()
+       WHERE id = ? AND mission_id = ?`,
+      summary.slice(0, 2000), full, row.task_id, row.mission_id,
+    );
+    await logEvent(row.id, 'result_ingested', null, { task_id: row.task_id });
+    await db.run(
+      `INSERT INTO missions.mission_activity (mission_id, task_id, activity_type, description, details)
+       VALUES (?, ?, 'delegation_result_ingested', ?, ?)`,
+      row.mission_id, row.task_id,
+      `Delegated result from ${peerLabel} folded into the originating task`,
+      JSON.stringify({ delegation_id: row.id }),
+    );
+  }
+
   async function approveResult(delegationId: string, actor: string): Promise<MissionDelegationRow> {
     const row = await getDelegation(delegationId);
     if (!row) throw new Error(`Delegation not found: ${delegationId}`);
@@ -675,6 +769,16 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
         await logEvent(delegationId, 'payment_proposed', actor, { payment_id: paymentId, amount_ftc: payAmount });
       } catch (payErr) {
         await logEvent(delegationId, 'payment_skipped', null, { amount_ftc: payAmount, reason: String(payErr) });
+      }
+    }
+
+    // Phase B3 — fold the peer's result back into the originating mission.
+    // Best-effort: a failure here must not un-approve the result.
+    if (row.task_id && row.mission_id) {
+      try {
+        await ingestDelegationResult(row);
+      } catch (ingestErr) {
+        await logEvent(delegationId, 'result_ingest_failed', null, { reason: String(ingestErr) });
       }
     }
 
@@ -738,6 +842,57 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     );
   }
 
+  // ── Phase B2 — capability-aware peer selection ──────────────────────────
+
+  /**
+   * Rank connected peers as delegation targets. Primary signal is the
+   * connection's `delegation_trust_level`; if a query is supplied, peers'
+   * advertised agents are matched against it as a bonus (best-effort —
+   * offline peers simply fall back to trust-only ranking).
+   */
+  async function suggestDelegationPeers(query?: string): Promise<PeerSuggestion[]> {
+    const peers = await db.all<{
+      contact_hash: string; display_name: string | null; endpoint: string | null;
+      delegation_trust_level: string; status: string;
+    }>(
+      `SELECT contact_hash, display_name, endpoint, delegation_trust_level, status
+       FROM community_connections WHERE status IN ('accepted', 'active')`,
+    );
+    const TRUST: Record<string, number> = { pre_approved: 3, self: 3, suggested: 2, manual: 1 };
+
+    const agentsByPeer = new Map<string, string[]>();
+    const q = (query ?? '').trim();
+    if (q) {
+      try {
+        const { createRemoteAgentClient } = await import('../remote-agent-client.js');
+        const rac = await createRemoteAgentClient(db);
+        const agents = await rac.discoverRemoteAgents();
+        for (const a of agents as Array<{ peerHash: string; keywords?: unknown }>) {
+          const kws = Array.isArray(a.keywords) ? (a.keywords as string[]) : [];
+          agentsByPeer.set(a.peerHash, [...(agentsByPeer.get(a.peerHash) ?? []), ...kws]);
+        }
+      } catch { /* peers offline — trust-only ranking */ }
+    }
+    const qWords = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+    const ranked: PeerSuggestion[] = peers.map((p) => {
+      const trustScore = (TRUST[p.delegation_trust_level] ?? 1) * 10;
+      const kws = agentsByPeer.get(p.contact_hash) ?? [];
+      const matched = kws.filter((k) =>
+        qWords.some((w) => k.toLowerCase().includes(w) || w.includes(k.toLowerCase())));
+      return {
+        contactHash: p.contact_hash,
+        displayName: p.display_name,
+        endpoint: p.endpoint,
+        trustLevel: p.delegation_trust_level,
+        score: trustScore + matched.length * 5,
+        matchedAgents: [...new Set(matched)],
+      };
+    });
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked;
+  }
+
   return {
     createOutboundDelegation,
     sendDelegation,
@@ -754,6 +909,7 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
     listMissionDelegations,
     listInbound,
     getDelegationLog,
+    suggestDelegationPeers,
   };
 }
 
