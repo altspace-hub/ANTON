@@ -2,7 +2,7 @@
 // Inbound delegations live at /missions/inbox (cross-mission view).
 
 import { useEffect, useState, useCallback } from 'react';
-import { Send, Check, X, AlertCircle, Shield, ShieldOff } from 'lucide-react';
+import { Send, Check, X, AlertCircle, Shield, ShieldOff, Coins } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type DelegationStatus =
@@ -20,6 +20,7 @@ interface Delegation {
   status: DelegationStatus;
   signature_verified: boolean | null;
   result_signature_verified: boolean | null;
+  payment_amount_ftc: string | number | null;
   rejection_reason: string | null;
   created_at: string;
   sent_at: string | null;
@@ -134,6 +135,11 @@ export default function OutboundDelegationsTab({ missionId }: { missionId: strin
                       {d.status === 'completed' && d.result_signature_verified === false && (
                         <span className="inline-flex items-center gap-1 text-[10px] text-adv-red" title="Result signature failed">
                           <ShieldOff className="h-3 w-3" /> unverified
+                        </span>
+                      )}
+                      {Number(d.payment_amount_ftc) > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-adv-gold" title="Payment attached — settles on approval (stub)">
+                          <Coins className="h-3 w-3" /> {Number(d.payment_amount_ftc)} FTC
                         </span>
                       )}
                     </div>

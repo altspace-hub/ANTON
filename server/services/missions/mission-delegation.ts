@@ -611,6 +611,41 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
 
   // ── Outbound action: approve / reject the result ────────────────────────
 
+  /**
+   * Phase D0 — pay-on-approval. Routes the delegation's payment_amount_ftc
+   * through the mission payment pipeline (propose → approve → execute).
+   * Settlement is stubbed in fc-transaction-service until the FutureChain
+   * core is vendored; this wires the full loop so it is testable today.
+   * Requires the mission to have a financial budget + wallet configured,
+   * and the peer connection to carry an FC payment address.
+   */
+  async function initiateDelegationPayment(row: MissionDelegationRow, amount: number, approverActor: string): Promise<string> {
+    if (!row.mission_id) throw new Error('delegation has no mission to bill the payment against');
+    const conn = await db.get<{ payment_address: string | null; agent_wallet_address: string | null; display_name: string | null }>(
+      `SELECT payment_address, agent_wallet_address, display_name
+       FROM community_connections WHERE contact_hash = ?`,
+      row.peer_contact_hash,
+    );
+    const recipientAddress = String(conn?.payment_address ?? conn?.agent_wallet_address ?? '').trim();
+    if (!recipientAddress) throw new Error('peer connection has no FC payment address');
+
+    const { createMissionBudget } = await import('./mission-budget.js');
+    const budget = await createMissionBudget(db);
+    const payment = await budget.proposePayment({
+      missionId: row.mission_id,
+      taskId: row.task_id ?? undefined,
+      recipientAddress,
+      recipientLabel: row.peer_display_name ?? conn?.display_name ?? row.peer_contact_hash.slice(0, 12),
+      amountFtc: amount,
+      category: 'delegation',
+      purpose: `Delegated work: ${row.brief_title}`.slice(0, 200),
+    }, 'delegation-system');
+    // 'delegation-system' proposed it; the human delegation-approver approves
+    // — distinct actors, so the pipeline's separation-of-duties rule holds.
+    await budget.approvePayment(payment.id, approverActor);
+    return payment.id;
+  }
+
   async function approveResult(delegationId: string, actor: string): Promise<MissionDelegationRow> {
     const row = await getDelegation(delegationId);
     if (!row) throw new Error(`Delegation not found: ${delegationId}`);
@@ -628,6 +663,21 @@ export async function createMissionDelegation(db: DatabaseAdapter) {
       delegationId,
     );
     await logEvent(delegationId, 'approved', actor, {});
+
+    // Phase D0 — pay-on-approval. If the brief carried a payment amount,
+    // route it through the mission payment pipeline. Best-effort: a payment
+    // failure (no mission budget / wallet / peer address, category not
+    // whitelisted) must never un-approve the result.
+    const payAmount = row.payment_amount_ftc != null ? Number(row.payment_amount_ftc) : 0;
+    if (payAmount > 0) {
+      try {
+        const paymentId = await initiateDelegationPayment(row, payAmount, actor);
+        await logEvent(delegationId, 'payment_proposed', actor, { payment_id: paymentId, amount_ftc: payAmount });
+      } catch (payErr) {
+        await logEvent(delegationId, 'payment_skipped', null, { amount_ftc: payAmount, reason: String(payErr) });
+      }
+    }
+
     return (await getDelegation(delegationId))!;
   }
 

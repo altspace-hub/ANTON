@@ -341,7 +341,7 @@
         <ul class="tight">
           <li>The FutureChain rail runs in <strong>stub mode</strong> — wallet addresses and transaction IDs are placeholders; no money actually moves.</li>
           <li>The blocker is the FutureChain <strong>Rust core</strong> (<code>wallet.rs</code>, <code>iso20022_pacs008.rs</code>, the RPC client) — not yet vendored.</li>
-          <li>There is no settlement poller and no pay-on-approval wiring into the delegation lifecycle.</li>
+          <li>Pay-on-approval <em>is</em> now wired (Phase&nbsp;D0): approving a delegated result routes the payment through the mission payment pipeline — but against the stub gateway, with no settlement poller yet.</li>
         </ul>
       </div>
     </div>
