@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON-to-ANTON — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+  <a class="lnk active" href="anton-to-anton.html">ANTON-to-ANTON</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#connections">Connections</a><span class="sep">›</span>
+    <span class="here">ANTON-to-ANTON</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Connections</div>
+      <h1>ANTON-to-ANTON — two instances working together</h1>
+      <p class="lead">One ANTON Local instance can talk to another: discover its
+      agents, hand it a piece of a mission to run, and — in the near future — pay it
+      for the work. This page is how that works today, the rules that govern it, and
+      what is still on the way.</p>
+      <div class="page-meta">
+        <span class="chip">ANTON Local ↔ ANTON Local</span>
+        <span class="chip">Mission delegation: built</span>
+        <span class="chip">A2A payments: near-future</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON-to-ANTON means</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#rules">The guidelines — the trust model</a></li>
+        <li><a href="#connect">Connecting two ANTONs</a></li>
+        <li><a href="#delegate">Delegating a mission to a peer</a></li>
+        <li><a href="#receive">On the receiving side</a></li>
+        <li><a href="#pay">Paying for the work — the near future</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- 1 -->
+    <h2 id="what"><span class="ix">1</span>What ANTON-to-ANTON means</h2>
+    <p>Every ANTON Local instance is normally a private, local-first workspace. But two
+    instances — yours and a colleague's, a client's, a partner firm's — can also be
+    <em>connected</em>, so that work and knowledge can flow between them under the
+    owners' control.</p>
+    <p>There are three things one ANTON can do with another:</p>
+    <div class="grid g3">
+      <div class="feature"><div class="ic">🔎</div><h4>Discover &amp; ask</h4>
+        <p>Find a <a href="specialized-agents.html">Specialized Agent</a> on a peer instance and put a question to it.</p></div>
+      <div class="feature"><div class="ic">📨</div><h4>Delegate a mission</h4>
+        <p>Hand a mission task to a peer ANTON to run, and get a signed result back.</p></div>
+      <div class="feature"><div class="ic">💸</div><h4>Pay for it</h4>
+        <p><em>Near-future.</em> Attach an FTC amount to delegated work and settle on completion.</p></div>
+    </div>
+
+    <!-- 2 -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of two ANTONs less like two computers on a network and more like
+      <strong>two professionals who have exchanged business cards</strong>. Nothing
+      happens until they've been introduced. After that, every message between them is
+      <em>signed</em> — like initialled paperwork — and the receiving person always
+      decides whether to act on it. ANTON never silently runs a stranger's work.</p>
+    </div>
+
+    <p>Under the surface there are three transport layers — worth knowing which is which:</p>
+    <table>
+      <tr><th>Layer</th><th>Carries</th><th>Status</th></tr>
+      <tr><td><strong>Community P2P</strong> — signed messages via a queue</td><td>Mission delegations, results — the workhorse today</td><td><span class="badge b-done">BUILT</span></td></tr>
+      <tr><td><strong>Remote agents</strong> — HTTPS calls to a peer's public agent endpoints</td><td>Discover &amp; query a peer's Specialized Agents</td><td><span class="badge b-done">BUILT</span></td></tr>
+      <tr><td><strong>AAP</strong> — the ANTON Agent Protocol, real-time encrypted bundles</td><td>The "proper" protocol — see <a href="agent-protocol.html">Agent Protocol</a></td><td><span class="badge b-partial">SPEC + STUB</span></td></tr>
+    </table>
+    <p>The important takeaway: the polished real-time protocol (AAP) is still being
+    wired up, but a <strong>working path already exists</strong> — signed messages over
+    the Community P2P queue. That is what mission delegation runs on.</p>
+
+    <!-- 3 -->
+    <h2 id="rules"><span class="ix">3</span>The guidelines — the trust model</h2>
+    <p>Anything crossing between two ANTONs obeys four firm rules. They are not
+    settings you can switch off — they are the design.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>① Introduced first, always</h4>
+        <p>Two instances must be connected as community contacts before anything flows.
+        Each holds the other's <strong>contact hash</strong>
+        (<code>ANTON-XXXX-XXXX-XXXX-XXXX</code>, derived from an Ed25519 key) and
+        public key. An un-introduced peer is rejected outright.</p>
+      </div>
+      <div class="card">
+        <h4>② Everything is signed</h4>
+        <p>Every delegation and every result is <strong>Ed25519-signed</strong> by the
+        sender and verified on arrival. If a signature does not verify, the item is
+        marked <code>failed</code> and <em>cannot be acted on</em> — no override.</p>
+      </div>
+      <div class="card">
+        <h4>③ The receiving human decides</h4>
+        <p>Nothing auto-runs on the peer. A delegation lands in an inbox; the peer's
+        owner explicitly <strong>accepts or declines</strong>. Accepted work runs as a
+        normal mission with its usual human checkpoints.</p>
+      </div>
+      <div class="card">
+        <h4>④ Both sides keep the receipts</h4>
+        <p>Every step — created, sent, received, accepted, completed, approved — is
+        written to a <strong>signed audit log</strong> on both instances. Who did what,
+        when, is always reconstructable.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>A signature failure is final</div>
+      <p>If an incoming delegation or result fails signature verification, that is
+      treated as a security event, not a glitch. The item is dead — you re-establish
+      the connection and the sender re-sends. Do not look for a "force accept" button;
+      there isn't one, by design.</p>
+    </div>
+
+    <!-- 4 -->
+    <h2 id="connect"><span class="ix">4</span>Connecting two ANTONs</h2>
+    <p>This is the one-time introduction. Do it once per pair of instances.</p>
+    <ol class="steps">
+      <li><span class="st">Open the Community pillar on both instances</span>
+        <p>Each ANTON has a contact hash — its public, shareable address. Find it in
+        Community.</p></li>
+      <li><span class="st">Exchange contact hashes</span>
+        <p>Instance A adds instance B's <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> hash as a
+        contact, and B adds A's. Share the hashes over a channel you trust — they are
+        safe to show, but you want to be sure whose hash it is.</p></li>
+      <li><span class="st">Accept the connection</span>
+        <p>Each side accepts the other. Both instances now hold the peer's contact
+        hash, public key and endpoint in their contact list — the introduction is
+        complete.</p></li>
+      <li><span class="st">You're connected</span>
+        <p>From here, A can discover B's agents, and either side can delegate a mission
+        task to the other.</p></li>
+    </ol>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The connection record
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>A connected peer is a row in <code>community_connections</code> — it holds
+        the peer's <code>contact_hash</code>, <code>public_key</code> (Ed25519, used to
+        verify every signature from that peer), <code>endpoint</code> (HTTPS URL) and a
+        <code>preferred_transport</code>. The status must be <code>accepted</code> or
+        <code>active</code> for any A2A operation to proceed.</p>
+        <p>Identity itself lives in <code>instance_identity</code> — the instance's own
+        Ed25519 private key, AES-256-GCM encrypted at rest. The contact hash is the
+        first 16 bytes of <code>SHA-256(public key)</code>, so a hash can always be
+        checked against the key that signs with it. See <a href="pairing.html">Pairing
+        &amp; enrollment</a> for the identity primitives.</p>
+      </div>
+    </details>
+
+    <!-- 5 -->
+    <h2 id="delegate"><span class="ix">5</span>Delegating a mission to a peer</h2>
+    <p>This is the heart of ANTON-to-ANTON, and it is <strong>built and working</strong>.
+    One instance hands a mission task to a connected peer, the peer runs it, and a
+    signed result comes back.</p>
+
+    <figure>
+      <div class="diagram">
+<pre>
+  ANTON A  (originator)                       ANTON B  (the peer)
+  ─────────────────────                       ───────────────────
+  create mission
+  decompose into tasks
+        │
+        ▼
+  pick a task → Delegate
+   choose peer, write brief  ── signed ──▶   lands in Mission Inbox
+   (objective, modules,                            │
+    expected output,                               ▼
+    optional payment)                        Accept  →  a local
+        │                                    "sub-mission" is created
+        │                                          │
+        │                                          ▼
+        │                                    run it normally
+        │                                    (decompose, checkpoints,
+        │                                     advance, complete)
+        │                                          │
+   verify signature  ◀── signed result ───   Submit result
+        │
+        ▼
+  Approve  (or Reject)
+</pre>
+      </div>
+      <figcaption>The mission delegation round-trip — every arrow is Ed25519-signed.</figcaption>
+    </figure>
+
+    <ol class="steps">
+      <li><span class="st">Create a mission and decompose it</span>
+        <p>On the originating ANTON, build a mission in the <a href="pillar-missions.html">Missions</a>
+        pillar and let it break the objective into tasks.</p></li>
+      <li><span class="st">Delegate a task</span>
+        <p>On a task, choose <em>Delegate</em>, pick the connected peer, and write the
+        brief: a title, the objective, any context, the modules the peer should use,
+        the expected output, a deadline, and — optionally — an FTC payment amount.
+        This creates a <em>draft</em> delegation.</p></li>
+      <li><span class="st">Send it</span>
+        <p>Sending signs the brief with your instance's Ed25519 key and queues it for
+        delivery to the peer. Its status moves to <em>sent</em>.</p></li>
+      <li><span class="st">Wait for the result</span>
+        <p>The peer accepts, runs the work, and submits a signed result. It arrives in
+        your <em>Outbound delegations</em> tab.</p></li>
+      <li><span class="st">Verify and approve</span>
+        <p>Your ANTON checks the result's signature against the peer's public key. You
+        review the result and <em>Approve</em> or <em>Reject</em> it.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — splitting an AMLR programme</div>
+      <p>A consultancy runs the AMLR-readiness mission for a client. The
+      <em>independent audit brief</em> task should be done by a different firm for
+      independence. The consultancy delegates just that task to the audit firm's
+      ANTON, with the brief and a deadline. The audit firm's ANTON runs it as its own
+      sub-mission, with its own checkpoints, and sends back a signed deliverable. The
+      consultancy's audit trail records exactly who produced it and when.</p>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>One task at a time, for now</div>
+      <p>Today you delegate a <strong>single task</strong>. Handing a peer a whole
+      multi-task sub-graph as one unit, and being notified the moment they accept (not
+      only when results return), are known near-term improvements — see the
+      <code>docs/A2A_ROADMAP.md</code> roadmap.</p>
+    </div>
+
+    <!-- 6 -->
+    <h2 id="receive"><span class="ix">6</span>On the receiving side</h2>
+    <p>When a peer delegates to <em>you</em>, here is what you see and do.</p>
+    <ol class="steps">
+      <li><span class="st">It appears in your Mission Inbox</span>
+        <p>The signed delegation lands in the Missions inbox. ANTON has already
+        verified the signature against the sender's public key.</p></li>
+      <li><span class="st">Accept or decline</span>
+        <p>You read the brief and decide. Declining notifies the sender with an
+        optional reason. Accepting creates a local <strong>sub-mission</strong> —
+        linked back to the delegation — that you own.</p></li>
+      <li><span class="st">Run the sub-mission</span>
+        <p>It behaves like any mission you created yourself: decompose, approve the
+        plan, advance through tasks, clear checkpoints. It starts at <em>check-in</em>
+        autonomy, so you stay in control.</p></li>
+      <li><span class="st">Submit the result</span>
+        <p>When it's done, submit the result. Your ANTON signs it and sends it back to
+        the originator.</p></li>
+    </ol>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Mission delegation internals
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The delegation flow lives in <code>server/services/missions/mission-delegation.ts</code>
+        and <code>server/routes/mission-delegation.ts</code>; the data model is
+        migration <code>120_missions_delegation.sql</code> — tables
+        <code>mission_delegations</code> and <code>mission_delegation_log</code>.</p>
+        <p>Transport is <strong>not</strong> AAP yet — it rides the existing Community
+        P2P queue: the signed brief is written to <code>community_mail</code> with
+        <code>message_type = 'mission_delegation'</code> and queued in
+        <code>community_message_queue</code>. The peer's <code>/api/p2p/receive</code>
+        hands it to <code>/missions/p2p/receive</code>, which verifies the Ed25519
+        signature before recording it. Accepting writes a new
+        <code>missions.missions</code> row with an <code>origin_delegation_id</code>
+        back-reference. The whole protocol is <span class="badge b-done">BUILT</span>;
+        the only stub is a "peer has accepted" notification back to the originator.</p>
+      </div>
+    </details>
+
+    <!-- 7 -->
+    <h2 id="pay"><span class="ix">7</span>Paying for the work — the near future</h2>
+    <p>Delegating naturally raises the question: <em>can the peer be paid for the work?</em>
+    The honest answer today is <strong>not yet — but the groundwork is laid.</strong></p>
+
+    <div class="grid g2">
+      <div class="card tint">
+        <h4>What's already there</h4>
+        <ul class="tight">
+          <li>The delegation brief already carries an optional <code>payment_amount_ftc</code> field.</li>
+          <li>Delegated tasks support <strong>quality-linked</strong> terms (full pay at high quality, partial lower down).</li>
+          <li>A full payment pipeline exists — propose → approve → execute — with budgets and a separation-of-duties rule.</li>
+          <li>The ISO 20022 PACS.008 record is correctly assembled for every payment.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>What's missing</h4>
+        <ul class="tight">
+          <li>The FutureChain rail runs in <strong>stub mode</strong> — wallet addresses and transaction IDs are placeholders; no money actually moves.</li>
+          <li>The blocker is the FutureChain <strong>Rust core</strong> (<code>wallet.rs</code>, <code>iso20022_pacs008.rs</code>, the RPC client) — not yet vendored.</li>
+          <li>There is no settlement poller and no pay-on-approval wiring into the delegation lifecycle.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Honest status</div>
+      <p>You can attach an FTC amount to a delegation today and the pipeline will
+      record it — but settlement is a placeholder. Real ANTON-to-ANTON payment switches
+      on when the FutureChain Rust core lands and the RPC client is implemented. The
+      full plan is in <code>docs/A2A_ROADMAP.md</code>; the cross-cutting blocker is on
+      the <a href="status.html#blocker">Build status</a> page.</p>
+    </div>
+
+    <!-- 8 -->
+    <h2 id="best"><span class="ix">8</span>Best practices</h2>
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Verify a peer's contact hash through a trusted channel before accepting the connection.</li>
+          <li>Write delegation briefs the way you'd brief a colleague — objective, context, expected output, deadline.</li>
+          <li>Treat an accepted sub-mission like your own work: keep its checkpoints, review its output.</li>
+          <li>Use the audit log on both sides if there's ever a question about who did what.</li>
+          <li>Decline a delegation you can't do well — a clear decline beats a poor result.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't act on anything from an un-introduced or signature-failed peer.</li>
+          <li>Don't expect a delegated task to run unattended — the peer's human gates it.</li>
+          <li>Don't rely on A2A payment yet — the amount is recorded but not settled.</li>
+          <li>Don't delegate work whose data the peer shouldn't see — the brief travels to them.</li>
+          <li>Don't assume real-time delivery — Community P2P is a signed queue, not a live channel.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The simple rule</div>
+      <p>Delegate to another ANTON exactly what you would be comfortable handing a
+      trusted external colleague: a clear brief, data they're allowed to see, and a
+      result you will review before you rely on it.</p>
+    </div>
+
+    <div class="pagenav">
+      <a class="prev" href="agent-protocol.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Agent Protocol &amp; portals</div>
+      </a>
+      <a class="next" href="status.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Build status</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      Mission delegation is built; ANTON-to-ANTON payment is near-future — see
+      <code>docs/A2A_ROADMAP.md</code>.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>
