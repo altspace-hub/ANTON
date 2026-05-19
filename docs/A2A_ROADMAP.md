@@ -98,11 +98,16 @@ the ANTON Agent Protocol — is the intended real-time, encrypted transport.
 The goal: when an originator **approves** a delegated result, the
 `payment_amount_ftc` on the brief settles to the peer.
 
-**D0 — testable now, in stub mode (optional, unblocked).**
-Wire the delegation's `payment_amount_ftc` into the existing
-propose → approve → execute pipeline (`fc-gateway` / `mission-budget`) so the
-full pay-on-approval loop runs end-to-end against the *stub* gateway. Real
-settlement then becomes a drop-in when D2 lands.
+**D0 — pay-on-approval loop wired — ✅ DONE (2026-05-19).**
+On `approveResult`, a delegation carrying a `payment_amount_ftc` is routed
+through the mission payment pipeline: `proposePayment` (actor
+`delegation-system`) → `approvePayment` (the human delegation-approver, so
+the pipeline's separation-of-duties rule holds) → the background worker
+stub-executes it. Best-effort — a payment failure never un-approves the
+result. Requires the mission to have a financial budget + wallet configured
+and the peer connection to carry an FC payment address. Real settlement is
+a drop-in when D2 lands. *(`mission-delegation.ts` →
+`initiateDelegationPayment`.)*
 
 **Blocked until the Rust core is vendored:**
 
