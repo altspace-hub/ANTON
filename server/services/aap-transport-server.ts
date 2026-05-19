@@ -55,6 +55,22 @@ const SUPPORTED_CAPABILITIES = new Set([
   'hardware-share',
 ]);
 
+// ── C4 — rate limiting + quotas (in-memory, per-process) ─────────────────
+const HELLO_WINDOW_MS = 10_000;        // per-IP HELLO rate window
+const HELLO_MAX_PER_IP = 5;            // HELLOs allowed per IP per window
+const MSG_WINDOW_MS = 10_000;          // per-connection message-rate window
+const MSG_MAX_PER_CONN = 60;           // messages allowed per connection per window
+const helloLog = new Map<string, number[]>();
+
+/** Sliding-window rate check. Records the attempt; true if still within `max`. */
+function withinRate(log: Map<string, number[]>, key: string, windowMs: number, max: number): boolean {
+  const now = Date.now();
+  const recent = (log.get(key) ?? []).filter(t => now - t < windowMs);
+  recent.push(now);
+  log.set(key, recent);
+  return recent.length <= max;
+}
+
 export interface AapTransportServerOptions {
   /** Path to mount at. Defaults to /aap/v1. */
   path?: string;
@@ -76,11 +92,12 @@ export function mountAapTransportServer(
 
   http.on('upgrade', (req, socket, head) => {
     if (req.url !== path) return;
+    const ip = req.socket?.remoteAddress ?? 'unknown';
     // TLS check: req.connection.encrypted should be true for wss://. In dev
     // (HTTP server) we permit upgrade so localhost testing works; production
     // deployments should put HTTPS in front.
     wss.handleUpgrade(req, socket, head, (ws) => {
-      handleConnection(ws, db, options).catch(err => {
+      handleConnection(ws, db, options, ip).catch(err => {
         console.warn('[aap-transport] connection error:', err);
         try { ws.close(1011, 'internal error'); } catch { /* ignore */ }
       });
@@ -97,9 +114,11 @@ export function mountAapTransportServer(
 async function handleConnection(
   ws: WebSocket,
   db: DatabaseAdapter,
-  options: AapTransportServerOptions
+  options: AapTransportServerOptions,
+  ip: string
 ) {
   let session: SessionState | null = null;
+  const connMsgTimes: number[] = [];   // C4 — per-connection message timestamps
 
   ws.on('message', async (raw) => {
     let env: AapEnvelope;
@@ -125,6 +144,15 @@ async function handleConnection(
     }
     await recordNonce(db, env.from, env.nonce);
 
+    // C4 — per-connection message quota. Bounds any single connection's
+    // message rate, pre- or post-handshake.
+    const nowMs = Date.now();
+    while (connMsgTimes.length && nowMs - connMsgTimes[0] > MSG_WINDOW_MS) connMsgTimes.shift();
+    connMsgTimes.push(nowMs);
+    if (connMsgTimes.length > MSG_MAX_PER_CONN) {
+      return sendError(ws, env.id, 'quota_exceeded', 'message quota exceeded for this connection — slow down');
+    }
+
     // Pre-handshake: only HELLO is allowed.
     if (!session && env.type !== 'HELLO') {
       return sendError(ws, env.id, 'bad_signature', 'must HELLO first');
@@ -132,7 +160,7 @@ async function handleConnection(
 
     switch (env.type) {
       case 'HELLO':
-        session = await handleHello(ws, db, env, options);
+        session = await handleHello(ws, db, env, options, ip);
         return;
 
       case 'BUNDLE': {
@@ -170,8 +198,18 @@ async function handleHello(
   ws: WebSocket,
   db: DatabaseAdapter,
   env: AapEnvelope,
-  options: AapTransportServerOptions
+  options: AapTransportServerOptions,
+  ip: string
 ): Promise<SessionState | null> {
+  // C4 — per-IP HELLO rate limit. Checked before any expensive work.
+  if (!withinRate(helloLog, ip, HELLO_WINDOW_MS, HELLO_MAX_PER_IP)) {
+    sendEnvelope(ws, makeUnsignedEnvelope(env.from, 'REJECT', {
+      code: 'rate_limited', detail: 'too many HELLOs from this source — slow down',
+    }));
+    ws.close(1008, 'rate limited');
+    return null;
+  }
+
   const payload = env.payload as { pubkey?: string; capability_descriptors?: { id: string; version: string }[]; ephemeral_pubkey?: string };
   if (!payload.pubkey || !payload.ephemeral_pubkey) {
     sendError(ws, env.id, 'bad_signature', 'pubkey + ephemeral_pubkey required');
