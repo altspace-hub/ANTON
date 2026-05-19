@@ -208,6 +208,14 @@ The integration is **not greenfield**. Real, usable foundations:
   compliance node (§7.1) — no new node. It must be network-reachable (HTTPS) by the
   remote light hubs in production.
 - **0.4 Compliance routing hardening — FutureChain core (go-live prerequisite).**
+  _**✓ DONE 2026-05-19** — commits `da13f34` (gossip keystone, #1+#4) + `add48e5`
+  (#2–#7), merged via `a2a5eec`, pushed, and deployed to Bahnhof. Verified by
+  `futurechain/test_compliance_gossip.py` (3-node chain A←B←C; node C two hops
+  away discovers the compliance node via gossip and persists it to disk) and by
+  re-running the regression suite (89/96 — same as the pre-Phase-0.4 baseline,
+  no regression; Cat 14.1 `registry_enabled` flipped from False to True — visible
+  effect of the unconditional wiring)._
+
   A code trace + patent review confirmed the compliance *model* is correct (Model A —
   RPC-forward to a discoverable compliance node, matching patent Claims 2/7/12) and
   *enforcement* is solid (the mempool gate `mempool.rs:177-209` and block validation
