@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Missions pillar — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub active" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="anton-local.html">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Missions</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local · Pillars</div>
+      <h1>The Missions pillar — supervised multi-step automation</h1>
+      <p class="lead">A Mission is a job too big for a single prompt: research,
+      outreach, monitoring — work that runs across many steps, sometimes over
+      days. ANTON does the steps; you stay in control through checkpoints where
+      a human must approve before it goes on. It is automation with a hand on
+      the brake.</p>
+      <div class="page-meta">
+        <span class="chip">For: anyone running a programme</span>
+        <span class="chip">Research / outreach / monitoring</span>
+        <span class="chip">Encrypted credential vault</span>
+        <span class="chip">Human checkpoints</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What a Mission is</a></li>
+        <li><a href="#think">How to think about a Mission</a></li>
+        <li><a href="#parts">The moving parts — vault, service packs, inbox</a></li>
+        <li><a href="#run">Running a Mission, step by step</a></li>
+        <li><a href="#example">Worked example — the AMLR readiness template</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What a Mission is</h2>
+    <p>A <a href="pillar-work.html">Work</a> module answers one question well. A
+    Mission is different in kind: it is a <strong>programme of work</strong>
+    broken into a sequence of tasks, where each task may produce something the
+    next one needs, and some tasks reach outside ANTON — sending an email,
+    querying a service, monitoring a feed.</p>
+    <p>Because a Mission acts in the world and runs unattended between your
+    visits, it is built around <strong>checkpoints</strong>: defined points where
+    the Mission pauses, shows you what it has done and what it proposes to do
+    next, and waits for your approval. Nothing irreversible happens without a
+    human saying yes. That proposal/confirmation discipline is the heart of the
+    pillar.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">⛓</div><h4>Multi-step</h4>
+        <p>A Mission is a sequence of tasks — research, outreach, monitoring —
+        not a single prompt-and-answer.</p></div>
+      <div class="feature"><div class="ic">⌸</div><h4>Checkpointed</h4>
+        <p>At each checkpoint the Mission proposes; a human confirms before it
+        proceeds. You are always the gate.</p></div>
+      <div class="feature"><div class="ic">🔐</div><h4>Credentialled</h4>
+        <p>Outside actions use credentials from an encrypted vault — never
+        pasted into a prompt, never logged.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about a Mission</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of a Mission as <strong>delegating to a capable junior</strong>,
+      not pressing a "do everything" button. A good junior works through a plan,
+      comes back at the milestones that matter — "here is what I found, here is
+      what I'd do next, is that right?" — and never does the consequential thing
+      without checking. The checkpoints are exactly those come-back moments.
+      Missions automate the <em>effort</em>, not the <em>judgement</em>.</p>
+    </div>
+
+    <p>Two ideas keep Missions safe and useful:</p>
+    <ul>
+      <li><strong>Checkpoints are where you do your job.</strong> A Mission is
+      only as good as the attention you give it at each checkpoint. Read the
+      proposal, not just the summary, before you confirm — that is the whole
+      point of the pause.</li>
+      <li><strong>The vault is a boundary.</strong> A Mission can only reach a
+      service if you have given it a credential in the vault. Granting a
+      credential is granting reach — treat it as deliberately as you would
+      handing over a key.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Start from a Mission template</div>
+      <p>The Missions catalogue ships pre-built templates — multi-task programmes
+      that already have their checkpoints placed in the right spots. Unless your
+      job is unusual, start from the closest template and adapt it; you inherit a
+      sensible task breakdown and a checkpoint plan that has been thought
+      through.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="parts"><span class="ix">3</span>The moving parts — vault, service packs, inbox</h2>
+    <p>Four pieces make Missions work. You meet all four on screen.</p>
+
+    <table>
+      <tr><th>Piece</th><th>What it is</th><th>Why it matters</th></tr>
+      <tr><td>The Mission itself</td><td>A job decomposed into ordered tasks with checkpoints between them</td><td>The unit of supervised automation</td></tr>
+      <tr><td>Credential vault</td><td>Encrypted store of the credentials a Mission needs to act outside ANTON</td><td>Reach is explicit and controlled — secrets never touch a prompt</td></tr>
+      <tr><td>Service packs</td><td>Bundled connectors and capabilities a Mission can use to do real-world work</td><td>Gives Missions the tools to act, in a managed way</td></tr>
+      <tr><td>The inbox</td><td>The proposal/confirmation queue — pending checkpoints waiting on you</td><td>Where supervision actually happens</td></tr>
+    </table>
+
+    <p>The inbox is the pillar's centre of gravity. A Mission running quietly in
+    the background surfaces a card in the inbox each time it reaches a checkpoint:
+    here is the step, here is the evidence, here is the proposal — approve,
+    adjust or stop. The same checkpoints can also reach you on the
+    <a href="companion.html">Companion app</a>, where the approvals inbox lets
+    you confirm from your phone.</p>
+
+    <div class="diagram">
+<pre>
+   A  MISSION,  CHECKPOINTED
+
+   ┌─────────┐   ┌─────────┐   ╔═══════════╗   ┌─────────┐   ╔═══════════╗
+   │ task 1  │──▶│ task 2  │──▶║ CHECKPOINT║──▶│ task 3  │──▶║ CHECKPOINT║──▶ ...
+   │ research│   │ research│   ║  human ✔  ║   │ outreach│   ║  human ✔  ║
+   └─────────┘   └─────────┘   ╚═════╤═════╝   └────┬────┘   ╚═══════════╝
+                                     │              │
+                          proposal lands       credential
+                          in the INBOX         pulled from
+                          → approve / stop     the VAULT
+</pre>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Mission services and routes
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The Missions UI lives in <code>src/pages/missions/</code> —
+        <code>MissionsCatalogPage.tsx</code> (templates),
+        <code>MissionCreatorPage.tsx</code>, <code>MissionDashboardPage.tsx</code>,
+        <code>MissionInboxPage.tsx</code> (the checkpoint queue),
+        <code>CredentialVaultPage.tsx</code> and <code>ServicePacksPage.tsx</code>.</p>
+        <p>Server-side, <code>server/services/missions/</code> holds the engine:
+        <code>mission-controller.ts</code> and <code>mission-state.ts</code> drive
+        the lifecycle, <code>mission-decomposition.ts</code> breaks a job into
+        tasks, <code>mission-executor.ts</code> (with <code>executors/</code>)
+        runs them, <code>mission-checkpoint.ts</code> handles the
+        proposal/confirmation gates, <code>mission-credential-vault.ts</code>
+        encrypts credentials, <code>service-pack-manager.ts</code> manages service
+        packs and <code>mission-budget.ts</code> caps spend. The REST surface is
+        the <code>server/routes/mission-*.ts</code> family —
+        <code>missions.ts</code>, <code>mission-credentials.ts</code>,
+        <code>mission-delivery.ts</code>, <code>mission-delegation.ts</code> and
+        more.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="run"><span class="ix">4</span>Running a Mission, step by step</h2>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Pick a Mission from the catalogue</span>
+            <p>Choose a template that matches your programme — or create one from
+            scratch and let ANTON decompose it into tasks.</p></li>
+          <li><span class="st">Set the scope and goal</span>
+            <p>Tell the Mission what success looks like and any boundaries —
+            scope, audience, budget. This shapes every task.</p></li>
+          <li><span class="st">Provision credentials</span>
+            <p>If the Mission needs to act outside ANTON, add the needed
+            credentials to the vault and attach the relevant service packs.</p></li>
+          <li><span class="st">Start the Mission</span>
+            <p>ANTON works through the tasks. It runs unattended between
+            checkpoints — you don't need to watch it.</p></li>
+          <li><span class="st">Clear checkpoints from the inbox</span>
+            <p>Each checkpoint lands as an inbox card: read the proposal and the
+            evidence, then approve, adjust or stop.</p></li>
+          <li><span class="st">Collect the delivery</span>
+            <p>When the final task completes, the Mission delivers its result —
+            ready to review and export.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar">⌸ Mission inbox</div>
+            <div class="appbody">
+              <div class="m-sub">Checkpoint · awaiting you</div>
+              <div class="m-h">AMLR readiness — Task 4 of 10</div>
+              <div class="m-row">Gap analysis complete · 12 gaps found</div>
+              <div class="m-row tap">▸ Review proposal &amp; evidence</div>
+              <div class="m-row" style="border-color:#EAD9B6;background:#FDF8EC">
+                <div style="color:var(--gold);font-weight:700;font-size:11px">Proposes next</div>
+                <div style="font-size:10.5px">Draft remediation policies for 12 gaps</div>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;gap:8px">
+                <div class="m-btn alt" style="flex:1">Stop</div>
+                <div class="m-btn" style="flex:1">Approve</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>A checkpoint in the Mission inbox — proposal, evidence, and your decision.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Checkpoints are not a formality</div>
+      <p>It is tempting to approve checkpoints quickly to keep a Mission moving.
+      Don't. A checkpoint exists precisely because the next step is consequential
+      — it sends something, commits something, or builds on a judgement that
+      could be wrong. Read the proposal. The Mission cannot un-send an email you
+      waved through.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="example"><span class="ix">5</span>Worked example — the AMLR readiness template</h2>
+    <p>The clearest way to see Missions is the built-in template
+    <code>tmpl_amlr_readiness_v1</code> — a complete, end-to-end programme for an
+    entity that falls under the AMLR.</p>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a 10-task AMLR programme with 4 checkpoints</div>
+      <p>You are getting an obliged entity ready for the AMLR. From the
+      catalogue you start the <strong>AMLR readiness</strong> Mission. It is a
+      <strong>10-task programme</strong>: scope the obligations → build a
+      <a href="risk-atlas.html">Risk Atlas</a> → run the business-wide risk
+      assessment → analyse gaps → draft policies → prepare training → set up the
+      audit, and the connecting steps between them. Four <strong>explicit
+      checkpoints</strong> are placed at the moments that matter — after scoping,
+      after the risk assessment, after the gap analysis, and before the audit
+      package is finalised. ANTON works each task; when it reaches a checkpoint
+      it pauses and a card appears in your inbox. At the gap-analysis checkpoint
+      you read the 12 gaps it found, agree they're right, and approve it to draft
+      remediation policies. You did not do the legwork — but you signed off every
+      consequential turn. The output is a coherent readiness programme, and you
+      can defend every step of it because you approved it.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Templates, the vault and budget control
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The catalogue templates, including
+        <code>tmpl_amlr_readiness_v1</code>, are defined in
+        <code>server/services/missions/seed-templates.ts</code>. A template is a
+        pre-decomposed task list with its checkpoints already positioned — which
+        is why the AMLR template arrives as 10 tasks with 4 checkpoints rather
+        than something you assemble yourself.</p>
+        <p>Credentials a Mission needs are encrypted by
+        <code>mission-credential-vault.ts</code> — they are decrypted only at the
+        moment a task uses them and are never written to logs or prompts, in line
+        with ANTON's no-PII-in-logs rule. <code>mission-budget.ts</code> caps how
+        much LLM spend a Mission may consume, and <code>mission-checkpoint.ts</code>
+        enforces that flagged steps cannot proceed without a recorded human
+        confirmation.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Start from a catalogue template — its checkpoints are already placed well.</li>
+          <li>Read the full proposal and evidence at each checkpoint before approving.</li>
+          <li>Give the Mission a clear goal and explicit boundaries up front.</li>
+          <li>Add only the credentials a Mission genuinely needs, and review what it can reach.</li>
+          <li>Set a budget cap so a long Mission can't run away with spend.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't rubber-stamp checkpoints to keep things moving — that defeats the design.</li>
+          <li>Don't treat a Mission like a single prompt; it acts over many steps and over time.</li>
+          <li>Don't grant a credential "just in case" — reach should always be deliberate.</li>
+          <li>Don't ignore the inbox; a Mission stalls politely, waiting for you.</li>
+          <li>Don't assume an outside action is reversible — confirm before, not after.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The Missions habit</div>
+      <p>Run Missions the way a good manager runs a delegated programme: set a
+      clear brief, give exactly the access needed, then show up properly at the
+      milestones. The pillar carries the effort; your attention at the
+      checkpoints is what makes the result trustworthy — and defensible.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pillar-portals.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Portals</div>
+      </a>
+      <a class="next" href="pillars-more.html">
+        <div class="dir">Next →</div>
+        <div class="tt">More pillars</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the Missions pillar (<code>src/pages/missions/</code>,
+      <code>server/routes/mission-*.ts</code>, <code>server/services/missions/</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

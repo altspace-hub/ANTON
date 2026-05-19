@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glossary — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk active" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<main class="content">
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#reference">Reference</a><span class="sep">›</span>
+    <span class="here">Glossary</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Reference</div>
+      <h1>Glossary</h1>
+      <p class="lead">Every ANTON term in one place, in plain language. Where a term
+      has its own help page, the definition links to it.</p>
+    </div>
+
+    <h2 id="a"><span class="ix">A</span>A — C</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td><strong>AAP</strong> — ANTON Agent Protocol</td><td>The protocol two ANTON instances use to talk to each other and exchange signed <code>.anton</code> bundles. See <a href="agent-protocol.html">Agent Protocol &amp; portals</a>.</td></tr>
+      <tr><td><strong>ADR-004</strong></td><td>The architecture decision that defines how the payment <em>reference</em> field is encoded — a version-tagged envelope (v1 merchant-bearing, v2 operational).</td></tr>
+      <tr><td><strong>.anton bundle</strong></td><td>A portable, signed package of ANTON content — a knowledge pack, evidence pack, Risk Atlas industry pack, contact bundle or portal.</td></tr>
+      <tr><td><strong>Appetite</strong></td><td>Stage 7 of the <a href="risk-atlas.html">Risk Atlas</a> — where a residual risk score sits on a 5×5 grid: within, at the boundary, outside, or unacceptable.</td></tr>
+      <tr><td><strong>Area</strong></td><td>A domain grouping of expert modules in the Work pillar — e.g. FCP, legal, audit, healthcare. ANTON has around 59.</td></tr>
+      <tr><td><strong>Atom</strong> / knowledge atom</td><td>A small, verified fact (e.g. a specific regulatory clause) that ANTON can inject into a prompt to reduce hallucination, or extract from output for reuse.</td></tr>
+      <tr><td><strong>Behaviour profile</strong></td><td>The empirical picture of a user's payment habits — median amount, known merchants, active hours, velocity — derived from local history. Feeds the <a href="pay.html#fraud">fraud engine</a>.</td></tr>
+      <tr><td><strong>Capacitor</strong></td><td>The framework that wraps the ANTON phone web apps into native Android (and iOS) apps.</td></tr>
+      <tr><td><strong>Checkpoint</strong></td><td>A pending decision an ANTON Local instance hands to a paired phone for human approval. See <a href="companion.html">ANTON Companion</a>.</td></tr>
+      <tr><td><strong>Contact hash</strong></td><td>A privacy-preserving address in the form <code>ANTON-XXXX-XXXX-XXXX-XXXX</code>, derived from an Ed25519 public key. Safe to share; reveals no email or phone number.</td></tr>
+      <tr><td><strong>Creditor party</strong></td><td>The merchant side of an ISO 20022 payment record — name, address, country. ANTON Business embeds it into the QR.</td></tr>
+    </table>
+
+    <h2 id="d"><span class="ix">D</span>D — M</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td><strong>Debtor party</strong></td><td>The payer side of an ISO 20022 payment record — the customer's identity, from their saved <a href="pay.html#profile">payment details</a>.</td></tr>
+      <tr><td><strong>Ed25519</strong></td><td>The digital-signature algorithm that anchors identity across the whole suite — every app and instance has an Ed25519 key pair.</td></tr>
+      <tr><td><strong>FCP</strong> — Financial Crime Prevention</td><td>The largest expert area in ANTON Local — anti-money-laundering, sanctions, fraud, and related compliance modules.</td></tr>
+      <tr><td><strong>Fraud engine</strong></td><td>A pure, deterministic, on-device check (9 rules) in ANTON Pay and Comm that flags an unusual payment before you confirm. Advisory — never blocks. See <a href="pay.html#fraud">the signals</a>.</td></tr>
+      <tr><td><strong>FTC</strong> — FutureChain token</td><td>The currency unit used across the ANTON payment apps.</td></tr>
+      <tr><td><strong>futurechain:pay</strong></td><td>The QR-encodable URI that carries a payment request from a merchant to a customer. See <a href="payments-flow.html">The payment flow</a>.</td></tr>
+      <tr><td><strong>Inherent risk</strong></td><td>Stage 4 of the Risk Atlas — risk before controls, computed deterministically as <code>max(exposure, threat, vulnerability)</code>.</td></tr>
+      <tr><td><strong>Knowledge pack</strong></td><td>An importable bundle of regulatory or domain knowledge in the <code>.anton</code> format.</td></tr>
+      <tr><td><strong>Knowledge source</strong></td><td>Where a module gets reference material — Claude's Knowledge, Online References, Local Folders, or Combined. See <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>.</td></tr>
+      <tr><td><strong>Kvitto</strong></td><td>A merchant receipt in ANTON Business, kept in a gap-free numbered ledger.</td></tr>
+      <tr><td><strong>Mesh</strong> / ANTON Mesh</td><td>The end-to-end encrypted transport that lets a phone reach an instance through a blind relay. See <a href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>.</td></tr>
+      <tr><td><strong>Micro-FTC</strong></td><td>The smallest FTC unit; amounts are stored as integer micro-FTC to avoid rounding errors.</td></tr>
+      <tr><td><strong>Migration</strong></td><td>A versioned SQL change to the PostgreSQL schema. ANTON Local has 161+.</td></tr>
+      <tr><td><strong>Module</strong></td><td>A single pre-tuned expert task in the Work pillar — pick it, configure it, run it. ANTON has around 260.</td></tr>
+      <tr><td><strong>Money profile</strong></td><td>A user's self-declared financial baseline (income source, monthly spend, typical payment). Feeds the fraud engine.</td></tr>
+    </table>
+
+    <h2 id="n"><span class="ix">N</span>N — Z</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td><strong>Noise IK</strong></td><td>The cryptographic handshake pattern the mesh relay uses — gives forward secrecy and authenticates the instance.</td></tr>
+      <tr><td><strong>PACS.008</strong></td><td>The ISO 20022 credit-transfer message format. ANTON assembles PACS.008 <em>drafts</em> today; real signing is <a href="status.html">pending the Rust core</a>.</td></tr>
+      <tr><td><strong>Pairing</strong></td><td>The Ed25519 ritual that makes a phone trusted by an ANTON Local instance. See <a href="pairing.html">Pairing &amp; enrollment</a>.</td></tr>
+      <tr><td><strong>Pillar</strong></td><td>A top-level "mode of intelligence" in ANTON Local. There are 12. See <a href="pillars.html">The 12 pillars</a>.</td></tr>
+      <tr><td><strong>Portal</strong></td><td>A user-built ANTON web space that is also a machine-readable endpoint. See <a href="pillar-portals.html">Portals</a>.</td></tr>
+      <tr><td><strong>Prompt layers</strong></td><td>The 7 layers ANTON assembles into every LLM request — from system foundation to transparency. See <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>.</td></tr>
+      <tr><td><strong>Relay</strong></td><td>The WebSocket broker that forwards encrypted traffic between phones and instances, and hosts the portal registry. It can never read the traffic.</td></tr>
+      <tr><td><strong>Renderer</strong></td><td>A post-hoc transformer that turns a module's output into a file or visual — DOCX, Mermaid chart, heatmap, board deck. See <a href="output-and-export.html">Output &amp; export</a>.</td></tr>
+      <tr><td><strong>Residual risk</strong></td><td>Stage 6 of the Risk Atlas — risk after controls: <code>inherent − reduction</code>, clamped to 1–5. Computed deterministically.</td></tr>
+      <tr><td><strong>Risk Atlas</strong></td><td>ANTON's seven-stage, audit-defensible risk engine. See <a href="risk-atlas.html">Risk Atlas</a>.</td></tr>
+      <tr><td><strong>Secure store</strong></td><td>The tiered on-device store for private keys — native Keystore/Keychain, else encrypted IndexedDB, else memory.</td></tr>
+      <tr><td><strong>Specialized Agent</strong></td><td>A standing AI persona with its own prompt, knowledge, routing and connectors. See <a href="specialized-agents.html">Specialized Agents</a>.</td></tr>
+      <tr><td><strong>SSE</strong> — Server-Sent Events</td><td>The streaming channel ANTON Local uses to deliver LLM responses token by token.</td></tr>
+      <tr><td><strong>Thinking level</strong></td><td>How much reasoning a run gets — quick, think, think_hard, investigate, plan_first.</td></tr>
+      <tr><td><strong>Transparency log</strong></td><td>The append-only, signed record of portal registrations that lets anyone verify the registry has not tampered with an entry.</td></tr>
+      <tr><td><strong>Wassup</strong></td><td>The ephemeral status feed in ANTON Comm — posts to your contacts that expire after 24 hours.</td></tr>
+    </table>
+
+    <div class="pagenav">
+      <a class="prev" href="status.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Build status</div>
+      </a>
+      <a class="next" href="faq.html">
+        <div class="dir">Next →</div>
+        <div class="tt">FAQ &amp; troubleshooting</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

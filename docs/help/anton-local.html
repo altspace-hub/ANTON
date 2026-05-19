@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Local — overview &amp; tour — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk active" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <span class="here">ANTON Local</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local</div>
+      <h1>ANTON Local — overview &amp; a guided tour</h1>
+      <p class="lead">ANTON Local is the flagship of the suite: a desktop-class AI
+      workspace for professional work, running entirely on your own machine. This
+      page is the orientation tour — what it is, how it is laid out, who it is for,
+      and how a single piece of work moves through it from start to finish.</p>
+      <div class="page-meta">
+        <span class="chip">For: domain professionals 35–65</span>
+        <span class="chip">Desktop web · localhost</span>
+        <span class="chip">12 pillars · ~260 modules</span>
+        <span class="chip">Multi-LLM · local-first</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON Local is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#layout">The workspace layout</a></li>
+        <li><a href="#session">How a session works</a></li>
+        <li><a href="#who">Who it is for</a></li>
+        <li><a href="#deeper">Where to go deeper</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What ANTON Local is</h2>
+    <p>ANTON Local is an AI-powered expert workspace for 55+ professional domains.
+    It is the "brain" of the ANTON suite — the only application that talks to LLM
+    providers, and the one the four phone apps connect back to. Technically it is a
+    <strong>React 18 + TypeScript + Vite 6</strong> front-end and an
+    <strong>Express + Node 22 + PostgreSQL 16</strong> back-end, both running on
+    <code>localhost</code>.</p>
+    <p>What makes it more than a chat box is structure. Instead of a blank prompt,
+    ANTON gives you roughly <strong>260 expert modules</strong> grouped into
+    <strong>12 pillars</strong> — each module a pre-built workspace with a problem
+    statement, tuned AI behaviour, a knowledge panel and output-format choices. You
+    are never starting from nothing.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">🧠</div><h4>Structured, not blank</h4>
+        <p>Every module opens with the problem already framed and the AI pre-tuned.</p></div>
+      <div class="feature"><div class="ic">🔒</div><h4>Local-first</h4>
+        <p>Documents and the database stay on your machine; only LLM calls leave.</p></div>
+      <div class="feature"><div class="ic">🔁</div><h4>Multi-LLM</h4>
+        <p>Claude is the default; OpenAI, Azure, Gemini, Mistral and Ollama also work.</p></div>
+    </div>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The design ethos — "start with the problem"</div>
+      <p>ANTON's guiding principle is <strong>"Start with the problem, not the
+      solution."</strong> A general chat tool hands you an empty box and asks you to
+      know exactly what to say. ANTON instead begins each module with a clear
+      statement of the problem it solves and a behaviour already configured to solve
+      it well. You can override everything — but if you simply click <em>Run</em>,
+      the defaults are meant to produce excellent output. Think of the modules as a
+      colleague's well-organised templates, not as a search bar.</p>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+    <p>Two ideas explain almost every screen in ANTON Local.</p>
+    <ul>
+      <li><strong>Pillars are modes of mind, modules are tasks.</strong> A
+      <em>pillar</em> is a whole way of working — expert consulting, education,
+      market intelligence, automation. Inside a pillar, a <em>module</em> is one
+      concrete job. You first choose the mode, then the task. The
+      <a href="pillars.html">pillars page</a> covers this in full.</li>
+      <li><strong>The output is the artefact, the run is disposable.</strong> ANTON
+      is built to produce a <em>thing</em> — a memo, a matrix, a board pack — not
+      just a conversation. Every run yields Markdown plus a structured payload that
+      can be re-rendered and exported many ways without re-running the model.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>You do not need the command line</div>
+      <p>ANTON Local is deliberately built for professionals who are experts in
+      their domain, not in software. After install, everything happens in the
+      browser: pick, configure, run, export. The terminal is only for the one-time
+      setup covered on <a href="getting-started.html">Install &amp; first run</a>.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="layout"><span class="ix">3</span>The workspace layout</h2>
+    <p>The window has three regions. Once you recognise them, ANTON is easy to
+    navigate.</p>
+
+    <figure>
+      <div class="browser">
+        <div class="chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url">localhost:5173 — ANTON · Work pillar</span>
+        </div>
+        <div class="view" style="padding:0">
+          <div style="display:flex;min-height:240px">
+            <div style="width:150px;background:var(--surface-alt);border-right:1px solid var(--border);padding:12px 10px">
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;margin-bottom:5px">Pillar</div>
+              <div style="font-size:11px;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;padding:4px 8px;margin-bottom:8px">Work</div>
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;margin-bottom:5px">★ Favourites</div>
+              <div style="font-size:10.5px;color:var(--body);padding:2px 8px">Decision Memo</div>
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;margin:8px 0 5px">Modules</div>
+              <div style="font-size:10.5px;color:var(--body);padding:2px 8px">Executive Summary</div>
+              <div style="font-size:10.5px;color:var(--body);padding:2px 8px">Gap Assessment</div>
+              <div style="font-size:10.5px;color:var(--body);padding:2px 8px">Risk Appetite…</div>
+            </div>
+            <div style="flex:1;padding:14px 16px">
+              <div style="font-size:13px;font-weight:800;color:var(--ink)">Decision Memo</div>
+              <div style="font-size:11px;color:var(--muted);margin:3px 0 9px">Produce a board-ready memo recommending a course of action.</div>
+              <div class="m-row" style="margin-bottom:7px">Knowledge source — Claude's Knowledge ▾</div>
+              <div class="m-row" style="margin-bottom:7px">Output format — Decision Memo ▾</div>
+              <div class="m-btn" style="font-size:11px">▶ Run</div>
+            </div>
+            <div style="width:120px;background:var(--surface-alt);border-left:1px solid var(--border);padding:12px 10px">
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;margin-bottom:5px">Output</div>
+              <div style="font-size:10px;color:var(--muted);line-height:1.5">Result streams in here, then transforms &amp; exports.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>The three regions — sidebar (left), module workspace (centre), output (right).</figcaption>
+    </figure>
+
+    <div class="grid g3">
+      <div class="card">
+        <h4>① The sidebar</h4>
+        <p>Your navigation. It shows the active <strong>pillar</strong>, your
+        <strong>favourites</strong>, and the <strong>module list</strong> for the
+        current pillar, grouped by domain area. Pick a pillar, then a module.</p>
+      </div>
+      <div class="card">
+        <h4>② The workspace</h4>
+        <p>The centre. The chosen module's problem statement, your input area, the
+        <strong>knowledge source panel</strong>, the <strong>output-format
+        picker</strong>, the thinking-level control and the <em>Run</em> button.</p>
+      </div>
+      <div class="card">
+        <h4>③ The output</h4>
+        <p>Where the answer streams in live. After a run, the
+        <strong>Transform panel</strong> re-renders it and the export controls
+        produce Word, Excel, PDF, PowerPoint or Markdown files.</p>
+      </div>
+    </div>
+
+    <p>Above all of this sits the <strong>App Mode toggle</strong> — the control
+    that switches between the 12 pillars. It is the single most important navigation
+    element in ANTON, and the <a href="pillars.html">pillars page</a> is devoted to
+    it.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The front-end — routes, lazy loading &amp; state
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The React app is rooted in <code>src/App.tsx</code>, where every page is
+        a lazy-loaded route (<code>React.lazy()</code> + <code>Suspense</code>) so
+        the initial bundle stays small. Pages live in <code>src/pages/</code> (60+
+        components); shared UI in <code>src/components/</code>; the sidebar in
+        <code>src/components/layout/Sidebar.tsx</code>.</p>
+        <p>Global state is held in <strong>Zustand</strong> stores in
+        <code>src/stores/</code> — <code>useSessionStore</code>,
+        <code>useConfigStore</code>, <code>useSettingsStore</code> and others. The
+        active pillar is <code>useSettingsStore.appMode</code>. The 150+ module
+        definitions live in <code>src/lib/constants.ts</code>; shared types in
+        <code>src/lib/types.ts</code>. No Redux, no Context for global state.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="session"><span class="ix">4</span>How a session works</h2>
+    <p>Every piece of work in ANTON follows the same four-beat loop, whatever the
+    pillar or module. Learn it once and the whole product opens up.</p>
+
+    <ol class="steps">
+      <li><span class="st">Pick a module</span>
+        <p>Choose a pillar from the App Mode toggle, then a module from the sidebar.
+        The module opens with its problem statement and pre-tuned behaviour.</p></li>
+      <li><span class="st">Configure</span>
+        <p>Add your input. Choose a <strong>knowledge source</strong> — Claude's
+        Knowledge, online references, local folders or a combination. Pick one or
+        more <strong>output formats</strong>. Set a <strong>thinking level</strong>
+        if the task needs deeper reasoning.</p></li>
+      <li><span class="st">Run</span>
+        <p>Click <em>Run</em>. The answer streams into the output area live via
+        Server-Sent Events, with extended thinking shown when enabled.</p></li>
+      <li><span class="st">Transform &amp; export</span>
+        <p>The finished run is Markdown plus a structured payload. The Transform
+        panel re-renders it — heatmaps, board decks, plain-language versions — and
+        the export controls produce <code>.docx</code>, <code>.xlsx</code>,
+        <code>.pdf</code>, <code>.pptx</code> files.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — one task, end to end</div>
+      <p>A compliance officer needs a gap assessment against a regulation. She picks
+      the <strong>Work</strong> pillar, opens the <em>Gap Assessment</em> module, and
+      sets the knowledge source to a <strong>Local Folder</strong> holding the firm's
+      policy documents. She selects the <em>Gap Scoring Matrix</em> output format and
+      a <code>think_hard</code> thinking level. She clicks <em>Run</em>; the matrix
+      streams in. She then uses the Transform panel to produce an executive one-pager
+      for the board and exports both the matrix to <code>.xlsx</code> and the
+      one-pager to <code>.pdf</code> — without re-running the model once. Pick →
+      configure → run → transform &amp; export.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="who"><span class="ix">5</span>Who it is for</h2>
+    <p>ANTON Local is built for <strong>domain professionals aged 35–65</strong> —
+    consultants, lawyers, compliance officers, analysts, auditors, and experts across
+    55+ fields — who need reliable, structured, audit-defensible output from frontier
+    LLMs, and who should not have to learn a command line or prompt-engineering to
+    get it.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>It is a good fit when…</h4>
+        <ul class="tight">
+          <li>You produce documents — memos, assessments, policies, briefings.</li>
+          <li>Your material is sensitive and should stay on your own machine.</li>
+          <li>You want consistent structure, not a different answer shape each time.</li>
+          <li>You value being able to export and re-render the same result many ways.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>The design rules behind that</h4>
+        <ul class="tight">
+          <li>14px+ minimum font, large readable text, clear labels.</li>
+          <li>Progressive disclosure — advanced controls are present but tucked away.</li>
+          <li>Fully keyboard navigable, full ARIA labels.</li>
+          <li>Three themes — light (default), dark, corporate.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="deeper"><span class="ix">6</span>Where to go deeper</h2>
+    <p>This page is the orientation. Each part of ANTON Local has its own dedicated
+    help page — follow whichever matches your next question.</p>
+
+    <table>
+      <tr><th>To learn about…</th><th>Go to</th></tr>
+      <tr><td>The 12 pillars and how to choose one</td><td><a href="pillars.html">The 12 pillars</a></td></tr>
+      <tr><td>The Work pillar and its ~260 expert modules</td><td><a href="pillar-work.html">Work — expert modules</a></td></tr>
+      <tr><td>Knowledge source modes &amp; the 7-layer prompt</td><td><a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a></td></tr>
+      <tr><td>Output formats, renderers and exporting</td><td><a href="output-and-export.html">Output &amp; export</a></td></tr>
+      <tr><td>The deterministic 7-stage risk engine</td><td><a href="risk-atlas.html">Risk Atlas</a></td></tr>
+      <tr><td>Autonomous AI personas for support, sales, HR</td><td><a href="specialized-agents.html">Specialized Agents</a></td></tr>
+      <tr><td>What is built, partial or still spec</td><td><a href="status.html">Build status</a></td></tr>
+    </table>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The server — routes, services &amp; deployment modes
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The Express back-end is rooted in <code>server/index.ts</code>, where all
+        routes are mounted. There are <strong>157 route files</strong> in
+        <code>server/routes/</code>, every one following the factory pattern —
+        <code>createXxxRoutes(db, anthropic?)</code> returns a <code>Router</code>.
+        Behind them sit <strong>224 service files</strong> in
+        <code>server/services/</code>, each single-responsibility — LLM clients,
+        knowledge resolution, Markets (36 services), Risk Atlas (9), Portals (15),
+        exports and infrastructure.</p>
+        <p>LLM responses stream to the browser over <strong>Server-Sent Events</strong>;
+        Community messaging uses a WebSocket. <code>server/services/claude-client.ts</code>
+        wraps the Claude API (streaming, adaptive thinking, web search) and
+        <code>prompt-builder.ts</code> assembles the 7-layer prompt. Eight middleware
+        layers cover auth, rate-limiting, CSRF and token budgeting.</p>
+        <p><strong>Deployment mode</strong> is set by <code>DEPLOYMENT_MODE</code> in
+        <code>.env</code>: <code>solo</code> (default, no auth) or <code>team</code>
+        (JWT auth with viewer / analyst / admin roles). The database schema is
+        identical in both — team mode simply activates the auth middleware.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Pick the pillar first, then the module — mode before task.</li>
+          <li>Trust the module defaults for a first run; tune only if needed.</li>
+          <li>Favourite the modules you use often so they sit at the top of the sidebar.</li>
+          <li>Use the Transform panel to re-render a result rather than re-running the model.</li>
+          <li>Match the thinking level to the task — quick for drafts, deeper for analysis.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't treat ANTON like a chat box — start from a module, not a blank prompt.</li>
+          <li>Don't re-run a module just to get another export format — transform instead.</li>
+          <li>Don't ignore the knowledge-source panel; it decides where the AI's facts come from.</li>
+          <li>Don't expect every pillar to be equally mature — check <a href="status.html">Build status</a>.</li>
+          <li>Don't forget you are the host — back the database up yourself.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The one habit that makes ANTON click</div>
+      <p>Before every task, ask two questions in order: <em>which pillar is this?</em>
+      and <em>which module is the closest fit?</em> Mode, then task. Once that
+      becomes reflex, the rest of ANTON — knowledge sources, formats, transforms —
+      is just refining a workspace that is already pointed at the right problem.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="getting-started.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Install &amp; first run</div>
+      </a>
+      <a class="next" href="pillars.html">
+        <div class="dir">Next →</div>
+        <div class="tt">The 12 pillars</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers ANTON Local (<code>src/</code> + <code>server/</code>).
+      Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

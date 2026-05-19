@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Mesh &amp; relay — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk active" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#connections">Connections</a><span class="sep">›</span>
+    <span class="here">ANTON Mesh &amp; relay</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Connections</div>
+      <h1>ANTON Mesh &amp; the relay</h1>
+      <p class="lead">When your phone can't reach your ANTON Local instance directly,
+      a small relay server bounces encrypted traffic between them. This page explains
+      what the relay is, the one thing it can never do — read your traffic — and how
+      to think about trusting it.</p>
+      <div class="page-meta">
+        <span class="chip">Transport layer</span>
+        <span class="chip">Self-hostable · Apache-2.0</span>
+        <span class="chip">~5,900 lines of TypeScript</span>
+        <span class="chip">Replaces Cloudflare Tunnel</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the relay is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#trust">The trust model — can &amp; cannot</a></li>
+        <li><a href="#flow">A relayed request, step by step</a></li>
+        <li><a href="#selfhost">Running your own relay</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the relay is</h2>
+    <p>A phone app — <a href="companion.html">ANTON Companion</a> or
+    <a href="comm.html">ANTON Comm</a> — needs to reach a server somewhere. There are
+    two ways that can happen:</p>
+
+    <div class="grid g2">
+      <div class="feature"><div class="ic">→</div><h4>Direct HTTPS</h4>
+        <p>The phone talks straight to your ANTON Local on the LAN, or on a public
+        URL. Simplest path — no relay involved at all.</p></div>
+      <div class="feature"><div class="ic">↔</div><h4>Mesh relay</h4>
+        <p>When the instance has no public address — a laptop at home, behind a
+        router — a relay in the middle forwards the traffic for both sides.</p></div>
+    </div>
+
+    <p>The <strong>ANTON Mesh relay</strong> is the second path. It is a tiny Node.js
+    process — a WebSocket broker — that exists for one reason: to connect two parties
+    who otherwise cannot find each other. It replaces the Cloudflare Tunnel that
+    earlier builds relied on, so the whole rail can be owned and audited by the people
+    who run it. The reference implementation lives in <code>relay/</code>, is about
+    5,900 lines of TypeScript, and is licensed Apache-2.0 so anyone can host one.</p>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>The key fact, up front</div>
+      <p>The relay carries <strong>opaque ciphertext</strong>. The encryption is set
+      up directly between your phone and your instance — the relay is never a party to
+      it. It moves sealed envelopes; it cannot open them. Everything else on this page
+      is a consequence of that one design choice.</p>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of the relay as a <strong>dumb, blind postbox</strong>. It accepts
+      sealed envelopes and hands them to whoever is waiting on the other side of the
+      same box. It cannot read what's inside, it cannot write a convincing fake, and
+      it cannot decide to deliver your mail somewhere else. It <em>can</em> see that
+      an envelope passed through, and it <em>can</em> refuse to carry it — but that's
+      the full extent of its power.</p>
+    </div>
+
+    <p>Two ideas make the rest of this page click:</p>
+    <ul>
+      <li><strong>Encryption ends at the two real parties.</strong> The phone and the
+      instance perform a Noise-IK handshake with <em>each other</em>. The relay only
+      ever sees the result: <code>ENVELOPE</code> frames it cannot decrypt. This is
+      end-to-end encryption in the literal sense — the "ends" are the two devices, not
+      the relay.</li>
+      <li><strong>The relay is untrusted by design.</strong> You do not have to
+      believe the relay operator is honest. The protocol is built so that a malicious
+      relay can annoy you (drop traffic, watch metadata) but can never read,
+      impersonate or misdeliver. That is why self-hosting is optional, not required —
+      a public relay is safe to use.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>What the relay is not</div>
+      <p>The relay is not a server that runs ANTON. It holds no documents, no
+      sessions, no AI. It is pure plumbing. If the relay goes down, your data is
+      untouched — you simply lose the indirect path and fall back to direct HTTPS on
+      the LAN.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="trust"><span class="ix">3</span>The trust model — what it can and cannot do</h2>
+    <p>The honest way to reason about any relay is to name its powers exactly. Here
+    they are.</p>
+
+    <table>
+      <tr><th>The relay CAN…</th><th>The relay CANNOT…</th></tr>
+      <tr><td>See <em>metadata</em> — which instance id connected, when, and how much traffic flowed</td><td><strong>Decrypt</strong> any traffic — the Noise-IK keys never reach it</td></tr>
+      <tr><td>Cause <em>denial of service</em> — drop, delay or refuse to forward frames</td><td><strong>Impersonate</strong> an instance — a binding signature is checked on every HELLO</td></tr>
+      <tr><td>Observe connection lifetimes and approximate message sizes</td><td><strong>Misroute</strong> traffic — direction tags + instance-id matching pin each leg</td></tr>
+      <tr><td>Be replaced — you can run your own and bypass a public one entirely</td><td><strong>Replay</strong> an old proof onto another relay — the proof is bound to one <code>relay_url</code></td></tr>
+    </table>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>How to weigh this</div>
+      <p>A relay you don't run can learn <em>that</em> your phone talked to your
+      instance and roughly how much — never <em>what</em>. If even that metadata
+      matters to you, the answer is simple: run your own relay (<a href="#selfhost">§5</a>).
+      For most people, a public relay carrying sealed envelopes is an entirely
+      reasonable trade.</p>
+    </div>
+
+    <h3>The cipher suite</h3>
+    <p>The phone↔instance tunnel uses <strong>Noise IK</strong> with this exact suite:</p>
+    <div class="diagram">
+<pre>
+   Noise_IK_25519_ChaChaPoly_BLAKE2b
+   ───────────  ─────  ──────────  ───────
+        │          │        │         │
+        │          │        │         └─ BLAKE2b      — hashing in the handshake
+        │          │        └─ ChaChaPoly             — ChaCha20-Poly1305 AEAD
+        │          └─ Curve25519 (X25519)             — ephemeral Diffie-Hellman
+        └─ IK pattern   — initiator Knows responder's static key in advance
+</pre>
+    </div>
+    <p>The <strong>IK</strong> pattern matters: the phone already knows the instance's
+    static public key (it learned it during <a href="pairing.html">pairing</a>), so
+    the handshake authenticates the instance from the very first message. Long-term
+    identity is <strong>Ed25519</strong>; the ephemeral key exchange is X25519.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The wire frame &amp; instance-id matching
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Every relay message is a frame defined in <code>relay/src/frame.ts</code>:
+        a 1-byte version (<code>0x01</code>), a 1-byte type, a 3-byte big-endian
+        payload length, then the payload. Frame types include
+        <code>HELLO_INSTANCE</code> (0x01), <code>HELLO_PHONE</code> (0x02),
+        <code>ACK_*</code>, <code>PING</code>/<code>PONG</code>,
+        <code>DIAL_INSTANCE</code> (0x07 — an instance dialing a peer instance),
+        <code>ERROR</code> (0x0F) and <code>ENVELOPE</code> (0x10 — the opaque
+        ciphertext the relay just forwards).</p>
+        <p>The relay matches the two legs of a connection by <strong>instance id</strong>.
+        Per spec §1.5, <code>instance_id = sha256(instance_X25519_static_pubkey)[0..16)</code>
+        — the first 16 bytes of the SHA-256 of the instance's static X25519 public
+        key (<code>deriveInstanceId</code> in <code>relay/src/primitives.ts</code>).
+        Because the id is derived from a key the relay can verify a signature against,
+        the relay cannot be tricked into pairing a phone with the wrong instance.</p>
+      </div>
+    </details>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The 6-step HELLO verification
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>relay/src/hello.ts</code> runs the spec §3.2 six-step verification on
+        every <code>HELLO_INSTANCE</code>. It is the relay's one real security duty,
+        and it guards three attacks: <em>instance squatting</em> (a stranger claiming
+        your instance id — closed by the binding signature), <em>proof replay</em>
+        across relays (closed by binding the proof to this relay's
+        <code>relay_url</code>), and <em>bad signatures</em> (closed by checking both
+        <code>binding_sig</code> and <code>proof_sig</code>).</p>
+        <p>Failures raise a typed <code>HelloVerificationError</code> with a named code
+        — <code>BAD_HELLO</code> (0x0002) for a malformed payload, mismatched id, bad
+        binding or wrong relay_url, and <code>INVALID_PROOF</code> (0x0003) for a bad
+        timestamp, bad signature or replay. The relay closes the connection rather
+        than guessing. The Comm app uses a parallel set of frame types
+        (<code>HELLO_COMM</code> 0x20 … <code>DELIVER_COMM</code> 0x23) so one relay
+        process can carry both instance traffic and Comm messages — a frame-type byte
+        keeps the two cleanly separated.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="flow"><span class="ix">4</span>A relayed request, step by step</h2>
+    <p>Here is exactly what happens when your phone, paired to a home instance with no
+    public address, opens its approvals inbox through the relay.</p>
+
+    <div class="diagram">
+<pre>
+     ANTON COMPANION                RELAY                 ANTON LOCAL
+     (your phone)            (blind postbox)            (home laptop)
+          │                         │                         │
+          │                         │ ◀──── HELLO_INSTANCE ────│  1. instance
+          │                         │       (binding sig,      │     registers,
+          │                         │        relay_url, id)    │     id derived
+          │                         │ ──── ACK_INSTANCE ──────▶│
+          │                         │                         │
+          │ ──── HELLO_PHONE ──────▶ │  2. phone asks for       │
+          │      (instance id)       │     that same id         │
+          │ ◀──── ACK_PHONE ─────────│  3. relay MATCHES the    │
+          │                         │     two legs by id       │
+          │                         │                         │
+          │ ══════ Noise IK handshake (end to end) ═══════════▶ │  4. phone &
+          │ ◀═════ relay forwards bytes, cannot read them ═════ │     instance
+          │                         │                         │     share keys
+          │                         │                         │
+          │ ═══ ENVELOPE (sealed ciphertext) ═════════════════▶ │  5. real
+          │ ◀══ ENVELOPE (sealed ciphertext) ══════════════════ │     traffic
+          │                         │                         │
+       inbox shown          relay saw 2 ids +           request handled
+                            byte counts — nothing more
+</pre>
+    </div>
+
+    <ol class="steps">
+      <li><span class="st">The instance registers</span>
+        <p>Your ANTON Local opens a long-lived WebSocket to the relay and sends
+        <code>HELLO_INSTANCE</code> — its instance id plus a binding signature proving
+        it owns the key behind that id. The relay verifies and holds the connection.</p></li>
+      <li><span class="st">The phone asks for that id</span>
+        <p>Companion sends <code>HELLO_PHONE</code> naming the instance id it learned
+        at pairing. The relay looks for a registered instance leg with that id.</p></li>
+      <li><span class="st">The relay matches the two legs</span>
+        <p>Finding both, the relay now has a pair. From here it does exactly one job:
+        copy bytes from one leg to the other.</p></li>
+      <li><span class="st">Phone and instance handshake — through, not with, the relay</span>
+        <p>The Noise-IK handshake runs end to end. The relay forwards the handshake
+        bytes but is not a participant; it ends up holding no keys.</p></li>
+      <li><span class="st">Real traffic flows as sealed envelopes</span>
+        <p>Every subsequent message is an <code>ENVELOPE</code> frame of opaque
+        ciphertext. Your approvals inbox loads. The relay saw two instance ids meet
+        and counted some bytes — and learned nothing else.</p></li>
+    </ol>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — approving a payment from the train</div>
+      <p>Your ANTON Local is a laptop at home with no public URL. On the train, you
+      open Companion to approve a flagged checkpoint. Companion can't reach the laptop
+      directly, so it connects to <code>wss://relay.futurechain.eu</code>, names your
+      instance id, and the relay matches it to the laptop's already-registered leg. A
+      Noise-IK tunnel forms end to end; the checkpoint and your Ed25519-signed
+      approval cross as sealed envelopes. The relay operator could tell that
+      <em>some</em> phone reached <em>your</em> instance at 14:02 — never that it was
+      an approval, nor what it approved.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="selfhost"><span class="ix">5</span>Running your own relay</h2>
+    <p>Because the relay is Apache-2.0 and self-hosting is a first-class path, an
+    organisation that wants zero third parties on the rail can run its own. There are
+    three deployment routes, in order of operational simplicity.</p>
+
+    <div class="grid g3">
+      <div class="card">
+        <h4>Docker</h4>
+        <p>Recommended for self-hosters. A multi-stage Alpine image (~120 MiB). The
+        bundled <code>docker-compose.yml</code> runs a read-only rootfs, drops all
+        capabilities and sets memory/CPU limits.</p>
+      </div>
+      <div class="card">
+        <h4>systemd</h4>
+        <p>Bare-metal, single-relay deployments. Runs as a dedicated
+        <code>anton-relay</code> system user with no shell and no home directory.</p>
+      </div>
+      <div class="card">
+        <h4>Bare Node</h4>
+        <p>For development and testing — <code>RELAY_URL=wss://… node dist/index.js</code>.
+        TLS can terminate at the relay or at a reverse proxy in front of it.</p>
+      </div>
+    </div>
+
+    <p>The only required setting is <code>RELAY_URL</code> — the public WSS address
+    the relay answers on, which clients bake into their connection list. TLS certs are
+    optional (<code>RELAY_TLS_CERT</code> / <code>RELAY_TLS_KEY</code>) if you
+    terminate TLS at the relay rather than at a proxy.</p>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>When self-hosting is worth it</div>
+      <p>Self-host if metadata is sensitive — a relay you control sees the same
+      metadata, but it's <em>your</em> metadata under your own retention rules. For a
+      household or a single NGO, a public relay is perfectly fine: the envelopes are
+      sealed either way. ANTON Mesh v0.1 deliberately targets households, NGOs and
+      self-hosting SMEs — not enterprise fleets.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> What ships in <code>relay/</code>
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The <code>relay/</code> directory is a standalone package — its own
+        <code>package.json</code>, <code>Dockerfile</code>, <code>docker-compose.yml</code>,
+        <code>systemd/</code> unit files and a <code>RUNBOOK.md</code>. Source under
+        <code>relay/src/</code>: <code>server.ts</code> (the WS server),
+        <code>frame.ts</code> (wire codec), <code>hello.ts</code> (HELLO verification),
+        <code>match.ts</code> (instance-id leg matching), <code>primitives.ts</code>
+        (Ed25519 / X25519 / SHA-256 via <code>@noble</code>), <code>limits.ts</code>
+        (rate &amp; size limits), <code>audit.ts</code> + <code>metrics.ts</code>
+        (operational visibility), and <code>registry/</code> + <code>comm-registry.ts</code>
+        for the portal registry and Comm routing the same process also hosts.</p>
+        <p>The relay process is deliberately minimal: it accepts WebSocket
+        connections, verifies HELLOs, matches legs and forwards bytes. It opens no
+        outbound connections, reads no documents and runs no AI — which is exactly why
+        a read-only, capability-dropped container is a comfortable fit. Build status:
+        the relay is <a href="status.html">BUILT</a> — a Phase 2 reference
+        implementation with a peer-reviewed threat model.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Use direct HTTPS on the LAN when you can — it's the simplest path and skips the relay entirely.</li>
+          <li>Treat a public relay as safe for sealed traffic — that's the whole design.</li>
+          <li>Self-host a relay if connection metadata is genuinely sensitive to you.</li>
+          <li>Run the container as shipped — read-only rootfs, dropped capabilities.</li>
+          <li>Keep <code>RELAY_URL</code> stable; clients remember it.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't expect the relay to "see" your data — it never can, so don't design as if it could.</li>
+          <li>Don't treat the relay as a backup of anything — it stores nothing.</li>
+          <li>Don't run a relay with broad capabilities or a writable rootfs — it needs neither.</li>
+          <li>Don't assume self-hosting changes the encryption — it doesn't; it only changes who sees metadata.</li>
+          <li>Don't panic if the relay is down — fall back to direct HTTPS.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>The relay is the most invisible piece of the suite when it works, and the
+    easiest to reason about once you hold the one fact: it is a blind postbox. Next,
+    see how a phone first earns the right to be matched to your instance at all.</p>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pay.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">ANTON Pay</div>
+      </a>
+      <a class="next" href="pairing.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Pairing &amp; enrollment</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the ANTON Mesh relay (<code>relay/</code>). Press <code>t</code>
+      to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

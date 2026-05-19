@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Business — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk active" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#apps">Phone apps</a><span class="sep">›</span>
+    <span class="here">ANTON Business</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Phone apps</div>
+      <h1>ANTON Business — the merchant app</h1>
+      <p class="lead">ANTON Business is a phone-only, no-backend tool for small and
+      medium merchants — retailers, restaurants, event sellers, consultants — to accept
+      FutureChain payments by showing a QR code. It is the merchant counterpart to
+      <a href="pay.html">ANTON Pay</a>: Business <em>makes</em> the code, Pay
+      <em>scans</em> it.</p>
+      <div class="page-meta">
+        <span class="chip">For: merchants accepting payment</span>
+        <span class="chip">Android + PWA · Capacitor + Vite + React</span>
+        <span class="chip">38 languages</span>
+        <span class="chip">No backend — all on-device</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON Business is for</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#setup">Onboarding — registering the business</a></li>
+        <li><a href="#modes">Simple &amp; Extended sale modes</a></li>
+        <li><a href="#taking">Taking a payment in Extended mode</a></li>
+        <li><a href="#qr">The futurechain:pay QR code</a></li>
+        <li><a href="#kvitto">The kvitto receipt ledger</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What ANTON Business is for</h2>
+    <p>ANTON Business lives at <code>src/business/</code> and ships as a Capacitor
+    Android app built with Vite and React, plus an installable PWA. It does one job:
+    turn a sale into a <code>futurechain:pay</code> QR code a customer can scan, and
+    keep a clean, gap-free record of every sale.</p>
+    <p>It is built for merchants who are <em>not</em> crypto-savvy. There is no node to
+    run, no backend to host, no wallet jargon on the main screens. A shopkeeper opens
+    the app, taps in an amount, and shows the screen to the customer. Behind that
+    simplicity sits a proper ISO 20022 payment record and a bookkeeping-grade ledger.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">▦</div><h4>Show a QR</h4>
+        <p>Enter an amount or build a cart; the app renders a payment QR in seconds.</p></div>
+      <div class="feature"><div class="ic">🧾</div><h4>Gap-free receipts</h4>
+        <p>Every sale becomes a numbered <em>kvitto</em> — no missing numbers, ever.</p></div>
+      <div class="feature"><div class="ic">📵</div><h4>No backend</h4>
+        <p>Everything runs on the phone. No server, no account, no hosting.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>ANTON Business is a <strong>code generator with a cash register attached</strong>.
+      It never receives money and it never talks to a payment network. Its job is to
+      describe a sale precisely — amount, items, VAT, your merchant identity — pack
+      that description into a QR, and write a receipt. The customer's app
+      (<a href="pay.html">Pay</a> or <a href="comm.html">Comm</a>) reads the code; the
+      actual money moves bilaterally between you and Safello, off-app. Business is the
+      <em>counter</em>, not the till.</p>
+    </div>
+
+    <p>Two ideas explain almost every screen:</p>
+    <ul>
+      <li><strong>You create codes; you don't collect payments.</strong> The QR is a
+      request. Settlement happens on the FutureChain rail between the merchant and
+      Safello — the app's job ends when the code is shown and the receipt is written.</li>
+      <li><strong>The QR is a contract, and you write it.</strong> Everything the
+      customer sees on their Review screen — amount, your business name, the purpose,
+      the expiry — comes from the code <em>you</em> generated. Getting the cart and the
+      VAT right in Business is what makes the customer's review honest.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Good to know</div>
+      <p>ANTON Business has no login and no account. Your business identity is stored
+      on the phone after onboarding. Like the other payment apps, treat the device as
+      the system of record — and see <a href="#kvitto">§7</a> for exporting the receipt
+      ledger so your books survive a lost phone.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="setup"><span class="ix">3</span>Onboarding — registering the business</h2>
+    <p>Onboarding collects the details that go into every QR's creditor party and every
+    receipt. It is a one-time form.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the app</span>
+            <p>The Welcome screen explains that Business turns a sale into a scannable
+            payment code, all on the phone.</p></li>
+          <li><span class="st">Enter your legal details</span>
+            <p>Legal business name, organisation number, and registered address.
+            These become the ISO 20022 <strong>creditor party</strong> in every code
+            you generate.</p></li>
+          <li><span class="st">Set your VAT status &amp; country</span>
+            <p>Whether the business is VAT-registered, and the country of
+            registration. This drives how VAT appears on receipts and in Extended-mode
+            carts.</p></li>
+          <li><span class="st">Confirm the receive address</span>
+            <p>The Safello-arranged FutureChain receive address that customer payments
+            settle to. Every QR carries it as the <code>to</code> field.</p></li>
+          <li><span class="st">You're open for business</span>
+            <p>The Home screen offers the two sale modes. Settings — ported from
+            ANTON Comm — cover wallet, appearance with 8 accent colours, backup and
+            language.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--blue)">⟪ Set up your business</div>
+            <div class="appbody">
+              <div class="m-h" style="margin-top:4px">Business details</div>
+              <div class="m-row"><div class="m-sub">Legal name</div>Café Lindgren AB</div>
+              <div class="m-row"><div class="m-sub">Org number</div>556789-1234</div>
+              <div class="m-row"><div class="m-sub">Country</div>Sweden (SE)</div>
+              <div class="m-row"><div class="m-sub">VAT status</div>Registered · 25% / 12%</div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--blue)">Save &amp; continue</div>
+            </div>
+            <div class="navbar">
+              <div class="on">Set up</div><div>Sell</div><div>Receipts</div><div>Settings</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Onboarding — the details that become the QR's creditor party.</figcaption>
+      </figure>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Merchant identity &amp; the creditor party
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>src/business/services/merchant.ts</code> holds the onboarding profile —
+        legal name, org number, address, VAT status, country, receive address — in the
+        phone's local store. <code>secure-store.ts</code> guards anything sensitive.</p>
+        <p><code>payment-party.ts</code> turns that profile into the ISO 20022
+        <strong>creditor party</strong> — the <code>cn/cc/cct/cst/cpc</code> fields
+        (name, country, city, street, postcode) — which <code>qr.ts</code> then folds
+        into every <code>futurechain:pay</code> code so the payer's app can build a
+        complete PACS.008 record from a single scan.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="modes"><span class="ix">4</span>Simple &amp; Extended sale modes</h2>
+    <p>Business has two ways to describe a sale. They produce the same kind of QR — the
+    difference is how much detail goes into it.</p>
+
+    <table>
+      <tr><th>Mode</th><th>How you enter the sale</th><th>Best for</th></tr>
+      <tr><td><strong>Simple</strong></td><td>Tap an amount on a keypad. One number, show the QR.</td><td>A market stall, a tip jar, a flat-price service — anywhere the amount is the whole story.</td></tr>
+      <tr><td><strong>Extended</strong></td><td>Build a cart from a pre-set item catalogue, each line carrying its own VAT rate and optional discount.</td><td>A café or shop with a fixed menu, where the customer — and your books — need an itemised breakdown.</td></tr>
+    </table>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>Which mode to reach for</div>
+      <p>Simple mode is faster, but Extended mode is what makes your <em>receipt</em>
+      meaningful. If a sale needs to show what was bought and at which VAT rate — for
+      the customer's expense claim or your own bookkeeping — use Extended even though
+      it is a few more taps. Simple mode is for when the amount genuinely is the
+      entire transaction.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The item catalogue &amp; cart
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Extended mode draws on a merchant-defined catalogue:
+        <code>src/business/services/items.ts</code> stores each catalogue item — name,
+        price, VAT rate. <code>cart.ts</code> is the pure cart model: it adds and
+        removes lines, applies per-item discounts, and rolls the lines up into a total
+        with a correct per-rate VAT breakdown.</p>
+        <p>That cart total — or the Simple-mode keypad amount — is what
+        <code>qr.ts</code> encodes. The two modes converge here: by the time a QR is
+        built, a Simple sale and an Extended sale are just an amount plus an optional
+        item count and VAT detail on the ADR-004 reference.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="taking"><span class="ix">5</span>Taking a payment in Extended mode</h2>
+    <p>This is the fuller of the two flows. It is the same every time.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--blue)">⟪ Show this code</div>
+            <div class="appbody">
+              <div class="m-sub" style="text-align:center">Customer pays</div>
+              <div class="m-amt">12.50 FTC</div>
+              <div class="m-sub" style="text-align:center;margin-top:-6px">≈ 138 SEK · incl. 25% VAT</div>
+              <div class="m-row" style="text-align:center;padding:20px 11px;border-style:dashed">
+                <div style="font-size:30px">▦</div>
+                <div class="m-sub" style="margin-top:4px">futurechain:pay · K-000412</div>
+              </div>
+              <div class="m-row"><div class="m-sub">Expires in</div>
+                <div style="font-weight:700;color:var(--ink)">14:52</div></div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--blue)">Mark as paid</div>
+            </div>
+            <div class="navbar">
+              <div>Set up</div><div class="on">Sell</div><div>Receipts</div><div>Settings</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The QR screen — show this to the customer, watch the countdown.</figcaption>
+      </figure>
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the Sell tab, choose Extended</span>
+            <p>The cart screen opens with your item catalogue along the bottom.</p></li>
+          <li><span class="st">Build the cart</span>
+            <p>Tap each item the customer is buying. Adjust quantities, apply a
+            discount on a line if needed. The running total and the per-rate VAT
+            breakdown update live.</p></li>
+          <li><span class="st">Generate the QR</span>
+            <p>Tap <em>Charge</em>. Business builds a <code>futurechain:pay</code> code
+            — see <a href="#qr">§6</a> — with a 15-minute expiry, and renders it
+            full-screen with a live countdown.</p></li>
+          <li><span class="st">Show the screen to the customer</span>
+            <p>They scan it with ANTON Pay or Comm, review the amount and your business
+            name, and confirm on their device.</p></li>
+          <li><span class="st">Mark as paid &amp; keep the kvitto</span>
+            <p>Once the customer confirms, tap <em>Mark as paid</em>. The sale becomes
+            a numbered <em>kvitto</em> in the receipt ledger — see <a href="#kvitto">§7</a>.</p></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a café order</div>
+      <p>A customer orders two coffees and a sandwich. The barista opens Sell →
+      Extended, taps <strong>Coffee × 2</strong> and <strong>Sandwich × 1</strong> from
+      the catalogue. The cart shows <strong>12.50 FTC, incl. 25% VAT 2.50 FTC</strong>.
+      Tap <em>Charge</em>, and a QR appears with a 15-minute countdown. The customer
+      scans it with ANTON Pay, sees <em>"12.50 FTC · Café Lindgren · Restaurant"</em>,
+      and confirms. The barista taps <em>Mark as paid</em> — kvitto <strong>K-000412</strong>
+      is written, with the two coffees, the sandwich and the VAT line intact.</p>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Settlement is bilateral, off-app</div>
+      <p>"Mark as paid" records that the customer confirmed on their side — it does not
+      mean the app moved money. Actual settlement is bilateral between the merchant and
+      Safello on the FutureChain rail. For low-value, in-person sales this is fine; for
+      a large or remote sale, confirm the funds have arrived through your Safello
+      arrangement before handing over goods. See <a href="payments-flow.html">The
+      payment flow</a>.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="qr"><span class="ix">6</span>The futurechain:pay QR code</h2>
+    <p>The QR is the whole point of the app. It is a <code>futurechain:pay</code> URI —
+    a compact, structured description of the sale. The customer-side decoding is
+    covered on <a href="payments-flow.html">The payment flow</a>; here is what Business
+    packs into it.</p>
+
+    <table>
+      <tr><th>Field</th><th>What it carries</th></tr>
+      <tr><td><code>to</code></td><td>The merchant's Safello-arranged FutureChain receive address.</td></tr>
+      <tr><td><code>amount</code></td><td>The total in <strong>micro-FTC</strong> (1 FTC = 1,000,000 micro-FTC).</td></tr>
+      <tr><td><code>ref</code></td><td>The ADR-004 <strong>v1</strong> reference — an 8-char merchant id, a 12-char order id, the purpose, and optional item count / VAT / discount.</td></tr>
+      <tr><td><code>cn/cc/cct/cst/cpc</code></td><td>The ISO 20022 <strong>creditor party</strong> — your business name, country, city, street and postcode.</td></tr>
+      <tr><td><code>exp</code></td><td>A unix timestamp <strong>15 minutes</strong> ahead — long enough for a queue, short enough that a stale code can't be re-used.</td></tr>
+      <tr><td><code>v</code></td><td>The schema version — <code>1</code>.</td></tr>
+    </table>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why the creditor party rides in the QR</div>
+      <p>Carrying your ISO 20022 creditor details inside the code means the customer's
+      app can assemble a complete PACS.008 payment record from a single scan — no
+      lookup, no network call to identify you. It is what lets a private payer end up
+      with a proper, structured receipt of <em>who</em> they paid, not just an address.
+      Getting your onboarding details right (<a href="#setup">§3</a>) is what makes
+      that record accurate.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Building the URI with the FutureChain SDK
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>src/business/services/qr.ts</code> is a pure function with no I/O. It
+        assembles the <code>futurechain:pay</code> URI, converting the FTC amount to
+        micro-FTC, and builds the <code>ref</code> field via the
+        <code>@futurechain/sdk</code> package's <code>reference.encodeV1()</code> — the
+        ADR-004 v1 schema. The 15-minute window is the exported
+        <code>QR_EXPIRY_SECONDS</code> constant.</p>
+        <p>The <code>reference</code> SDK module is <span class="badge b-done">BUILT</span> —
+        encode/decode round-trips deterministically. The PACS.008 builder it feeds into
+        on the customer side is still <span class="badge b-stub">STUB</span>, blocked on
+        the FutureChain Rust core (<code>iso20022_pacs008.rs</code>) being vendored — so
+        the QR is fully real today, but the customer's record stays an unsigned
+        <em>draft</em> until that lands. See <a href="status.html">Build status</a>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="kvitto"><span class="ix">7</span>The kvitto receipt ledger</h2>
+    <p>Every completed sale becomes a <em>kvitto</em> — a receipt — and the receipts
+    form a ledger that is built to satisfy bookkeeping law.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>Gap-free numbering</h4>
+        <p>Receipts are numbered <strong>K-000001, K-000002, …</strong> with no gaps,
+        ever — the sequence the Swedish <em>Bokföringslagen</em> 5 kap. requires. A
+        missing number would itself be a bookkeeping red flag, so the app simply never
+        produces one.</p>
+      </div>
+      <div class="card">
+        <h4>Full detail &amp; export</h4>
+        <p>Each kvitto carries the line items, the per-rate VAT breakdown, the total,
+        a status, and a timestamp. The whole ledger exports to <strong>PDF</strong>
+        (human-readable receipts) or <strong>JSON</strong> (for an accountant or
+        accounting software).</p>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>A habit worth keeping</div>
+      <p>Export the kvitto ledger regularly — weekly, or at least monthly — and store
+      the file off the phone. The ledger is gap-free and bookkeeping-grade, but it
+      lives on one device with no backend behind it. An export you already have is
+      worth more than a perfect ledger you can no longer reach. Treat it as part of
+      closing the day's till.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The receipt ledger &amp; exporters
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>src/business/services/receipts.ts</code> owns the kvitto ledger. It
+        issues the next gap-free <code>K-</code> number, records the line items, VAT
+        breakdown, total and status for each sale, and persists the ledger through
+        <code>db.ts</code> on the device.</p>
+        <p>Export is split out: <code>pdf.ts</code> renders human-readable receipt PDFs,
+        and <code>kvitto-export.ts</code> produces the JSON form for accounting
+        hand-off. <code>backup.ts</code> and <code>backup-format.ts</code> handle a
+        full-app backup so the merchant profile, catalogue and ledger can be restored
+        onto a new phone.</p>
+      </div>
+    </details>
+
+    <!-- ============ 8 ============ -->
+    <h2 id="best"><span class="ix">8</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Enter your legal details exactly at onboarding — they become the QR's creditor party.</li>
+          <li>Use Extended mode whenever a sale needs an itemised, VAT-correct receipt.</li>
+          <li>Export the kvitto ledger to PDF or JSON regularly, and store it off the phone.</li>
+          <li>For a large or remote sale, confirm Safello settlement before releasing goods.</li>
+          <li>Show the customer a fresh code if the 15-minute countdown has run low.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't treat "Mark as paid" as proof of settlement — it records the customer's confirm only.</li>
+          <li>Don't expect the app to move or receive money; it generates codes and keeps receipts.</li>
+          <li>Don't rely on the phone as your only copy of the books — export.</li>
+          <li>Don't reuse a stale QR after its 15-minute expiry; generate a new one.</li>
+          <li>Don't skip Extended mode for itemised sales just to save a few taps.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — closing the day</div>
+      <p>At the end of a market day a stall holder has 37 sales — kvitto K-000376
+      through K-000412, an unbroken run. From the Receipts tab she taps Export → JSON
+      and AirDrops the file to her laptop, then Export → PDF for her own folder. The
+      gap-free numbering means her accountant can see at a glance that nothing is
+      missing. The phone could be lost tomorrow; the day's books are already safe.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="comm.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">ANTON Comm</div>
+      </a>
+      <a class="next" href="pay.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Pay</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers ANTON Business (<code>src/business/</code>). Press <code>t</code> to
+      expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTON Comm — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk active" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="index.html#apps">Phone apps</a><span class="sep">›</span>
+    <span class="here">ANTON Comm</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">Phone apps</div>
+      <h1>ANTON Comm — standalone communication &amp; money</h1>
+      <p class="lead">ANTON Comm is a peer-to-peer communication app that needs no
+      ANTON Local instance behind it. It bootstraps its own identity, talks to other
+      people end-to-end encrypted, and carries a full FutureChain wallet with a
+      jurisdiction-aware tax engine. It is the most self-contained app in the suite.</p>
+      <div class="page-meta">
+        <span class="chip">For: anyone — no ANTON Local needed</span>
+        <span class="chip">Android + PWA · Capacitor 8.3</span>
+        <span class="chip">Navy theme</span>
+        <span class="chip">E2E messaging + wallet</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What ANTON Comm is</a></li>
+        <li><a href="#think">How to think about it</a></li>
+        <li><a href="#setup">First run — bootstrapping an identity</a></li>
+        <li><a href="#messaging">Messaging, Wassup, Events &amp; Portals</a></li>
+        <li><a href="#wallet">The FutureChain wallet &amp; tax engine</a></li>
+        <li><a href="#paying">Sending a payment, step by step</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What ANTON Comm is</h2>
+    <p>ANTON Comm lives at <code>src/comm/</code> and ships as a Capacitor Android app
+    and an installable PWA. It is a standalone product: install it, and you have an
+    encrypted messenger, an ephemeral social feed, a local calendar, a portal browser
+    and a cryptocurrency wallet — with nothing else required.</p>
+    <p>Unlike <a href="companion.html">ANTON Companion</a>, which is a window onto a
+    desktop instance, Comm <em>is</em> the whole thing. There is no server holding your
+    data and no instance to pair with. Your identity is created on the phone, your
+    messages are encrypted end-to-end, and your wallet ledger lives only on the device.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">💬</div><h4>E2E messaging</h4>
+        <p>Encrypted chat with reactions, edits, polls, voice notes and disappearing messages.</p></div>
+      <div class="feature"><div class="ic">💸</div><h4>Wallet &amp; tax</h4>
+        <p>A FutureChain wallet with an on-device ledger and a jurisdiction-aware tax engine.</p></div>
+      <div class="feature"><div class="ic">🛡</div><h4>Fraud-aware payments</h4>
+        <p>The same 9-rule on-device fraud check as <a href="pay.html">ANTON Pay</a>.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about it</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of ANTON Comm as <strong>two apps that happen to share a phone</strong>:
+      a private messenger and a private wallet. They sit on the same Ed25519 identity
+      and the same relay connection, but neither needs a server that knows about you.
+      The relay routes <em>ciphertext</em> it cannot read; the wallet ledger never
+      leaves the device. Comm's promise is that your conversations and your money are
+      both yours alone — no account, no cloud copy.</p>
+    </div>
+
+    <p>Two ideas explain almost every screen:</p>
+    <ul>
+      <li><strong>Your identity is a keypair, not an account.</strong> On first run
+      Comm generates an Ed25519 identity and derives a shareable contact hash —
+      <code>ANTON-XXXX-XXXX-XXXX-XXXX</code>. There is no sign-up, no recovery email.
+      If you lose the phone without a backup, that identity is gone.</li>
+      <li><strong>The relay is a dumb pipe.</strong> Every message is encrypted before
+      it touches the network. The <a href="mesh-and-relay.html">ANTON Mesh relay</a>
+      matches connections and forwards opaque bytes; it cannot decrypt, edit or
+      impersonate. It is a post office that only ever handles sealed envelopes.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Comm currently ships only English &amp; Swedish</div>
+      <p>Comm includes locale catalogues for <strong>English and Swedish only</strong>.
+      A user whose phone is set to any other language will see the entire app in
+      English. This is a known, deliberate gap — translating Comm into the other 36
+      suite languages is a separate effort, tracked on <a href="status.html">Build
+      status</a>. It does not affect functionality, only the interface language.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="setup"><span class="ix">3</span>First run — bootstrapping an identity</h2>
+    <p>Because there is no account, onboarding's real job is to create the keypair that
+    <em>is</em> you, and to connect to the relay.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open the app</span>
+            <p>The Welcome screen explains, in a sentence, that Comm is a private
+            messenger with a wallet, and that everything stays on the phone.</p></li>
+          <li><span class="st">Create your identity</span>
+            <p>Comm generates an Ed25519 keypair and writes the private key into the
+            phone's secure storage. From it, it derives your contact hash
+            <code>ANTON-XXXX-XXXX-XXXX-XXXX</code> — the address you share.</p></li>
+          <li><span class="st">Pick a display name</span>
+            <p>A name your contacts will see. It is local cosmetic metadata, not part
+            of the cryptographic identity.</p></li>
+          <li><span class="st">Connect to the relay</span>
+            <p>Comm opens a WebSocket to <code>wss://relay.futurechain.eu</code> and
+            announces itself by contact hash so peers can reach you.</p></li>
+          <li><span class="st">Add your first contact</span>
+            <p>Exchange contact hashes — by QR in person, or by pasting a hash — and
+            the encrypted channel between you two is live.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--navy)">● ANTON Comm</div>
+            <div class="appbody">
+              <div class="m-h" style="text-align:center;margin-top:4px">You're set up</div>
+              <div class="m-sub" style="text-align:center">Your identity lives on this device.</div>
+              <div class="m-row"><div class="m-sub">Your contact hash</div>
+                <div style="font-size:11px;font-weight:700;color:var(--ink)">ANTON-7K2P-94QX-3MD1-LZ8R</div></div>
+              <div class="m-row tap">▸ Show as QR to share</div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--navy)">Start messaging</div>
+            </div>
+            <div class="navbar">
+              <div class="on">Chats</div><div>Wassup</div><div>Events</div><div>Wallet</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The end of onboarding — identity created, contact hash ready to share.</figcaption>
+      </figure>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Identity, crypto &amp; the relay client
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p><code>src/comm/services/identity.ts</code> mints the Ed25519 identity and
+        derives the contact hash; the private key is held by
+        <code>secure-store.ts</code>. Message encryption is in
+        <code>crypto.ts</code> — HPKE / X25519 sealing, so each message is end-to-end
+        encrypted to the recipient's key.</p>
+        <p><code>relay-client.ts</code> speaks a compact 5-byte-framed WebSocket
+        protocol to <code>wss://relay.futurechain.eu</code> —
+        <code>HELLO_COMM</code> to announce, <code>DELIVER_COMM</code> to route a
+        ciphertext frame. A frame-type byte lets the same relay carry Comm traffic and
+        ANTON instance traffic on one connection without confusing them.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="messaging"><span class="ix">4</span>Messaging, Wassup, Events &amp; Portals</h2>
+    <p>Comm's communication side is four features layered on the same encrypted
+    channel to your contacts.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>E2E chat</h4>
+        <p>One-to-one encrypted conversations with reactions, message edits and
+        deletes, <strong>polls</strong>, voice notes, media and location sharing, read
+        receipts, and <strong>disappearing messages</strong> with a per-thread timer.
+        Edits and poll votes are queued so they survive an offline peer.</p>
+      </div>
+      <div class="card">
+        <h4>Wassup — the ephemeral feed</h4>
+        <p>A status feed: short text or an image, visible for <strong>24 hours</strong>
+        by default, with likes and comments. It is fanned out over the same chat layer
+        to your contacts only — there is no public timeline and no algorithm.</p>
+      </div>
+      <div class="card">
+        <h4>Events</h4>
+        <p>A local calendar. Create an event, invite contacts, and collect RSVPs —
+        all carried as ordinary E2E chat messages. No event server ever sees who is
+        going where.</p>
+      </div>
+      <div class="card">
+        <h4>Portals</h4>
+        <p>Browse <a href="agent-protocol.html">ANTON portals</a> discovered through
+        the relay's registry, then invoke a portal's capabilities directly on the
+        owner's instance. Descriptors and pages are cached so a flaky network falls
+        back to the last good copy.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Why "ephemeral" is a feature, not a limitation</div>
+      <p>Wassup posts expiring after 24 hours, and disappearing messages clearing on a
+      timer, are not Comm forgetting to save your data. They are Comm choosing not to.
+      A status that vanishes can't be screenshotted from a years-old archive; a
+      conversation that clears can't be subpoenaed from a backup that doesn't exist.
+      Treat the timers as a privacy tool you reach for on purpose.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The IndexedDB v7 schema
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>All Comm data sits in one IndexedDB database, <code>anton-comm</code>,
+        defined in a single place — <code>src/comm/services/db.ts</code>. There is one
+        <code>openDb()</code> and one schema; feature modules import it rather than
+        opening the database themselves, which avoids the version-race that once hung
+        the chat list on "Loading…".</p>
+        <p>The schema has grown by version: v1 <code>contacts</code>, then
+        <code>messages</code> and <code>events</code>, the <code>wassup_posts</code> /
+        <code>wassup_interactions</code> stores, v5 an <code>inline_outbox</code> queue
+        for edits and poll-votes that must survive an offline peer, v6 a
+        <code>portal_cache</code>, and v7 a <code>wallet_txs</code> ledger store. Per
+        the tax rules the wallet ledger <strong>must stay on-device</strong> — it is
+        never synced to a server.</p>
+      </div>
+    </details>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="wallet"><span class="ix">5</span>The FutureChain wallet &amp; tax engine</h2>
+    <p>Comm carries a full FutureChain wallet — the second "app" inside the app. It can
+    send, receive and swap FutureChain (FTC), and it keeps every transaction in an
+    on-device ledger that a tax engine reads.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4>Wallet &amp; ledger</h4>
+        <p>A FutureChain secp256k1 wallet. Every send, receive, swap and refund is
+        written to the local transaction ledger — the <code>wallet_txs</code> store —
+        which is the single source of truth for both your balance history and the tax
+        engine. It never leaves the phone.</p>
+      </div>
+      <div class="card">
+        <h4>The jurisdiction-aware tax engine</h4>
+        <p>Built on <code>@futurechain/sdk/tax</code>. It computes a per-transaction
+        <strong>cost basis</strong>, applies holding-period relief and loss offset, and
+        produces position and annual reports — exportable as a Swedish
+        <strong>K4</strong> form or generic <strong>CSV</strong>.</p>
+      </div>
+    </div>
+
+    <p>Two more pieces support payments:</p>
+    <ul>
+      <li><strong>Money profile</strong> — an optional, self-declared baseline: date of
+      birth, nationality, occupation, source of funds, expected monthly spend and a
+      typical payment size. It is private to the phone.</li>
+      <li><strong>The light fraud engine</strong> — the <em>same</em> 9-rule
+      deterministic check that <a href="pay.html#fraud">ANTON Pay §5</a> describes in
+      full. Byte-identical code, run before every payment is confirmed.</li>
+    </ul>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>How to think about the tax engine</div>
+      <p>The tax engine is a <strong>bookkeeper, not a tax adviser</strong>. It applies
+      the rules for your declared jurisdiction to the ledger it can see, and produces a
+      report you can hand to an accountant or paste into a filing. It does not know
+      about transactions you made in another wallet, and it does not file anything for
+      you. Treat its K4 / CSV output as a well-prepared draft — accurate for what Comm
+      knows, and a starting point for the rest.</p>
+    </div>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>Honest status — the payment rail is partial</div>
+      <p>The SDK <code>tax</code> engine is in progress (Swedish rules done, other
+      jurisdictions in draft), the <code>wallet</code> module's signing is partial, and
+      the ISO 20022 PACS.008 builder is stubbed pending the FutureChain Rust core. Comm
+      assembles and shows PACS.008 <em>drafts</em> today; cryptographic signing switches
+      on when the SDK unstubs. See <a href="status.html">Build status</a> for the full
+      honest map.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="paying"><span class="ix">6</span>Sending a payment, step by step</h2>
+    <p>Paying a merchant in Comm works exactly like <a href="pay.html">ANTON Pay</a> —
+    the fraud check is the same engine. See <a href="payments-flow.html">The payment
+    flow</a> for the end-to-end picture.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar" style="background:var(--navy)">● Review payment</div>
+            <div class="appbody">
+              <div class="m-sub" style="text-align:center">You send</div>
+              <div class="m-amt">24.00 FTC</div>
+              <div class="m-sub" style="text-align:center;margin-top:-6px">≈ 264 SEK</div>
+              <div class="m-row"><div class="m-sub">Merchant</div>Form &amp; Function AB</div>
+              <div class="m-row"><div class="m-sub">Purpose</div>Retail</div>
+              <div class="m-row tap">▸ ISO 20022 payment details</div>
+              <div class="m-row" style="border-color:#F0E2C2;background:#FDF8EC">
+                <div style="color:var(--gold);font-weight:700;font-size:11px">⚠ Worth a look</div>
+                <div style="font-size:10.5px;color:var(--body)">Larger than your typical payment.</div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="m-btn" style="background:var(--navy)">Confirm &amp; send</div>
+            </div>
+            <div class="navbar">
+              <div>Chats</div><div>Wassup</div><div>Events</div><div class="on">Wallet</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The Review screen — the fraud panel before you confirm.</figcaption>
+      </figure>
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open Wallet, tap Scan</span>
+            <p>The camera reads a merchant's <code>futurechain:pay</code> QR. A manual
+            paste fallback exists if the camera can't be used.</p></li>
+          <li><span class="st">Comm decodes &amp; validates</span>
+            <p>It checks the scheme and the expiry. An expired code is rejected with a
+            clear message rather than a quiet failure.</p></li>
+          <li><span class="st">Read the Review screen</span>
+            <p>FTC amount and an estimated value in your currency, the merchant, the
+            purpose, the live expiry countdown, and an expandable ISO 20022 detail
+            panel — every value lifted from the QR.</p></li>
+          <li><span class="st">Check the fraud panel</span>
+            <p>The 9-rule engine compares the payment to your money profile and your
+            ledger history. A <em>warning</em> arms a two-step confirm.</p></li>
+          <li><span class="st">Confirm &amp; send</span>
+            <p>The transaction is written to the on-device ledger with a PACS.008
+            draft, and the tax engine picks it up for cost-basis tracking.</p></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — paying for a chair</div>
+      <p>Erik scans the QR at a design shop. Review shows <strong>24.00 FTC ≈ 264 SEK ·
+      Form &amp; Function AB · Retail</strong>, 13 minutes on the countdown. One signal
+      fires — <em>above typical</em>, because Erik set 10 FTC as his typical payment and
+      this is a one-off furniture purchase. The story makes sense, so he reads it,
+      confirms once, and the payment lands in his ledger. Months later, the tax engine
+      uses this exact ledger row to compute the cost basis on the FTC he spent.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The Comm payment services
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The payment path is a small set of single-responsibility services in
+        <code>src/comm/services/</code>. <code>fraud-engine.ts</code> exports the pure
+        <code>assessPayment(pending, money, behavior)</code> function — no I/O, no
+        network, no LLM — byte-identical to ANTON Pay's. <code>money-profile.ts</code>
+        holds the self-declared baseline; <code>behavior-profile.ts</code> derives the
+        empirical one from the ledger.</p>
+        <p><code>transactions.ts</code> reads and writes the <code>wallet_txs</code>
+        ledger; <code>pacs008-draft.ts</code> assembles the ISO 20022 draft;
+        <code>payment-identity.ts</code> supplies the debtor party.
+        <code>tax-bridge.ts</code> connects the ledger to <code>@futurechain/sdk/tax</code>,
+        and <code>tax-residency.ts</code> / <code>ftc-classification.ts</code> feed the
+        jurisdiction logic. <code>wallet.ts</code> is the wallet itself.</p>
+      </div>
+    </details>
+
+    <!-- ============ 7 ============ -->
+    <h2 id="best"><span class="ix">7</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Exchange contact hashes in person by QR when you can — it's the strongest verification.</li>
+          <li>Fill in the money profile — it makes the fraud engine far smarter.</li>
+          <li>Use disappearing messages and Wassup's 24h expiry as deliberate privacy tools.</li>
+          <li>Export a K4 / CSV from the tax engine before filing season and give it to your accountant.</li>
+          <li>Back up before resetting the app — the identity and the wallet are irreplaceable.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't expect to recover an identity by email — there is no account and no recovery.</li>
+          <li>Don't treat the tax report as filed advice; it's an accurate draft of what Comm knows.</li>
+          <li>Don't ignore a stack of fraud signals because each one alone seems minor.</li>
+          <li>Don't assume a non-English phone shows a translated app — only en/sv ship today.</li>
+          <li>Don't expect signed settlement yet — PACS.008 drafts populate; signing waits on the SDK.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>Treat the phone as the vault</div>
+      <p>In Comm there is no cloud copy of anything — not your messages, not your
+      identity, not your wallet. That is the whole point, and it puts one habit at the
+      centre: a real backup, kept somewhere safe, made <em>before</em> you ever need it.
+      A standalone app that owes you nothing also can't rescue you. The phone is the
+      vault; back the vault up.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="companion.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">ANTON Companion</div>
+      </a>
+      <a class="next" href="business.html">
+        <div class="dir">Next →</div>
+        <div class="tt">ANTON Business</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers ANTON Comm (<code>src/comm/</code>). Press <code>t</code> to
+      expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Markets pillar — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub active" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="anton-local.html">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Markets</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local · Pillars</div>
+      <h1>The Markets pillar — self-learning financial intelligence</h1>
+      <p class="lead">Markets is ANTON's proof that the system can learn. It does
+      not just answer questions about companies and indexes — it makes
+      predictions, then waits for the real world to score them, and recalibrates
+      its own reasoning from the result. It is the most ambitious pillar, and
+      the most honest one about how it is doing.</p>
+      <div class="page-meta">
+        <span class="chip">For: analysts &amp; investors</span>
+        <span class="chip">ANTON 100 indexes</span>
+        <span class="chip">Closed-loop calibration</span>
+        <span class="chip">Effectiveness audit: candid</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the Markets pillar is</a></li>
+        <li><a href="#think">How to think about a learning system</a></li>
+        <li><a href="#pieces">The moving parts — indexes, why-chains, computation</a></li>
+        <li><a href="#honest">An honest word — the effectiveness audit</a></li>
+        <li><a href="#thesis">Working with a thesis, step by step</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the Markets pillar is</h2>
+    <p>Most AI tools give an answer and move on; nothing ever tells them whether
+    the answer was right. Markets is built to break that loop. Every prediction
+    it makes — a price move, an index direction, a thesis outcome — is recorded
+    with a deadline. When the deadline arrives, ANTON checks the prediction
+    against what actually happened and feeds the verdict back into how it weighs
+    evidence next time.</p>
+    <p>That feedback loop is the whole point. Markets is the working example of
+    <strong>Layer 2 of ANTON's vision — "Intelligent ANTON"</strong>: knowledge
+    atoms, pattern detection, predictions and calibration. If the loop works
+    here, the same machinery can make any pillar self-improving.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">↻</div><h4>Closed loop</h4>
+        <p>Predictions are checked against real outcomes, and the verdict
+        recalibrates future reasoning.</p></div>
+      <div class="feature"><div class="ic">▲</div><h4>ANTON 100</h4>
+        <p>Curated indexes of 100 entities, with attribution and rebalancing
+        logic the system can reason about.</p></div>
+      <div class="feature"><div class="ic">∴</div><h4>Why-chains</h4>
+        <p>Every conclusion carries an explicit causal chain — not just an
+        answer, but the reasoning behind it.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about a learning system</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Think of Markets as <strong>an analyst keeping a scored notebook</strong>,
+      not an oracle. An oracle expects to be believed. An analyst writes down a
+      view, dates it, and later marks it right or wrong — and gets better
+      because of that habit. Markets' value is not any single prediction; it is
+      the discipline of <em>checking</em>. When you read a Markets output, read
+      it the way you would read a colleague's note: a reasoned view, with a
+      track record you can inspect, not a fact.</p>
+    </div>
+
+    <p>Two ideas make the rest of the pillar make sense:</p>
+    <ul>
+      <li><strong>A prediction is a commitment.</strong> It comes with a horizon
+      and a measurable claim. That is what makes it scorable — and what makes
+      the calibration honest. A vague view cannot be marked.</li>
+      <li><strong>Calibration is the product.</strong> When Markets says it is
+      "70% confident", that number is only meaningful if, historically, claims
+      at 70% came true about 70% of the time. The pillar's job is to make that
+      true over time — and to show you when it isn't yet.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>Read the why-chain, not just the verdict</div>
+      <p>Markets always exposes the causal reasoning — the why-chain — behind a
+      conclusion. That is the most useful part. A prediction you disagree with
+      but whose reasoning is laid out plainly is far more valuable than a
+      confident number with no chain. Inspect the links; that is where you
+      decide whether to trust the view.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="pieces"><span class="ix">3</span>The moving parts — indexes, why-chains, computation</h2>
+    <p>Markets is the largest service surface in ANTON Local — dozens of
+    coordinated services. You don't need to know them individually, but four
+    concepts are worth recognising on screen.</p>
+
+    <table>
+      <tr><th>Piece</th><th>What it is</th><th>Why it matters</th></tr>
+      <tr><td>ANTON 100 indexes</td><td>Curated baskets of 100 entities, with attribution and rebalancing logic</td><td>A stable frame to measure and compare against</td></tr>
+      <tr><td>Why-chains</td><td>Explicit causal reasoning chains behind every conclusion</td><td>You can inspect <em>why</em>, not just <em>what</em></td></tr>
+      <tr><td>Computation templates</td><td>39 Python templates for repeatable quantitative analysis</td><td>Deterministic maths, kept separate from the LLM's judgement</td></tr>
+      <tr><td>Backtesting &amp; calibration</td><td>Replays predictions against history; scores confidence vs. outcomes</td><td>The closed loop — turns hindsight into better foresight</td></tr>
+    </table>
+
+    <p>The split is deliberate, and it mirrors the <a href="risk-atlas.html">Risk
+    Atlas</a> philosophy: <strong>deterministic engine plus LLM rationale</strong>.
+    The Python computation templates and the prediction verifier do the maths
+    and the scoring with no model in the loop; the LLM supplies the narrative,
+    the thesis and the why-chain. That separation is what makes the calibration
+    trustworthy — the scorekeeper is not the same component as the storyteller.</p>
+
+    <div class="diagram">
+<pre>
+   THE  CLOSED  LEARNING  LOOP
+
+   ┌─────────────┐   makes    ┌──────────────┐   recorded   ┌─────────────┐
+   │  thesis +   │ ─────────▶ │  prediction  │ ───────────▶ │  prediction │
+   │  why-chain  │            │  + horizon   │   with a     │  log        │
+   │  (LLM)      │            │  + confidence│   deadline   │             │
+   └─────────────┘            └──────────────┘              └──────┬──────┘
+         ▲                                                         │
+         │                                              deadline   │
+         │  recalibrated                                arrives     ▼
+         │  pattern weights                          ┌──────────────────┐
+   ┌─────┴──────────────┐      verdict feeds back     │  verifier checks │
+   │  calibration /     │ ◀───────────────────────────│  vs. real market │
+   │  pattern feedback  │      (deterministic)        │  outcome         │
+   └────────────────────┘                             └──────────────────┘
+</pre>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The Markets service stack and migrations
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>Markets is built across migrations <code>049_markets_pillar.sql</code>
+        through <code>062_markets_anton100_indexes.sql</code> — the pillar
+        foundation, thesis entities, patterns &amp; indexes, the learning tables,
+        why-chains (v1 and v2), workflow seeds, PostgreSQL partitioning and
+        optimisations, a cross-pillar reference table, the event calendar, data
+        source seeds and the ANTON 100 index enhancements.</p>
+        <p>The logic lives in roughly three dozen services under
+        <code>server/services/market-*.ts</code>. Key ones:
+        <code>market-thesis-service.ts</code> and
+        <code>market-thesis-lifecycle-service.ts</code> manage theses;
+        <code>market-prediction-verifier.ts</code> scores predictions against
+        outcomes; <code>market-conditional-accuracy-service.ts</code> and
+        <code>market-pattern-weight-feedback-service.ts</code> handle
+        calibration; <code>market-computation-service.ts</code> runs the Python
+        templates; <code>market-index-service.ts</code> and
+        <code>market-index-rebalance-service.ts</code> drive the ANTON 100;
+        <code>market-why-chains-service.ts</code> builds the causal chains.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="honest"><span class="ix">4</span>An honest word — the effectiveness audit</h2>
+    <p>A learning pillar should be judged by whether it is actually learning. In
+    April 2026 a closed-loop audit looked hard at exactly that — and the answer
+    was sobering.</p>
+
+    <div class="callout callout--warn">
+      <div class="ct"><span class="em">⚠</span>What the April 2026 audit found</div>
+      <p>Prediction accuracy was around <strong>21%</strong> — well below where a
+      useful learning loop should sit. Calibration was <em>inverted</em>:
+      higher-confidence predictions were not more reliable. The thesis lifecycle
+      was thin, and only one index rebalance had ever run. In short, the
+      machinery was built and wired, but the loop was not yet measurably making
+      ANTON better. That is the honest status — see <a href="status.html">Build
+      status</a> for where every pillar stands.</p>
+    </div>
+
+    <p>Because of that audit, two environment flags exist so an operator can
+    pause the expensive parts of Markets while the effectiveness work continues:</p>
+    <ul class="tight">
+      <li><code>MARKETS_THINKING_DISABLED=true</code> — pauses every LLM-spending
+      Markets phase. Free phases (NAV, prices, prediction checkpoints, event
+      triggers, materialised-view refreshes) keep running.</li>
+      <li><code>MARKETS_FETCH_DISABLED=true</code> — pauses every external
+      Markets data fetch (market data, news, RSS).</li>
+    </ul>
+    <p>If your Markets screens look quiet, an operator may have set these. That
+    is intentional restraint, not a bug. We are telling you this because a
+    learning system that hides its scorecard is not learning — it is just
+    performing. Markets shows you its real numbers, including the unflattering
+    ones, and that candour is the feature.</p>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="thesis"><span class="ix">5</span>Working with a thesis, step by step</h2>
+    <p>A <em>thesis</em> is the central object in Markets: a view about an entity
+    or theme, with reasoning attached and an outcome to be checked. Here is the
+    lifecycle.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Open Markets and pick a subject</span>
+            <p>An ANTON 100 index, a constituent entity, or a theme. The pillar
+            gives you the current picture and recent why-chains.</p></li>
+          <li><span class="st">Form a thesis</span>
+            <p>State a view — "this entity is mispriced because…". ANTON builds
+            a why-chain: the explicit causal links behind the claim.</p></li>
+          <li><span class="st">Attach a prediction</span>
+            <p>Turn the view into something scorable: a measurable claim, a
+            horizon, a confidence level. Without these it cannot be marked.</p></li>
+          <li><span class="st">Let the loop run</span>
+            <p>The prediction is logged. At its deadline the verifier checks it
+            against real outcomes — no LLM, no editing.</p></li>
+          <li><span class="st">Read the verdict and the recalibration</span>
+            <p>Right or wrong, the result updates pattern weights and your
+            calibration record. Review the thesis lifecycle to see how the view
+            held up.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar">▲ Thesis · ANTON 100</div>
+            <div class="appbody">
+              <div class="m-h">Entity mispriced — re-rating likely</div>
+              <div class="m-sub">Why-chain · 4 links</div>
+              <div class="m-row tap">∴ View causal chain</div>
+              <div class="m-row"><div class="m-sub">Prediction</div>+8% within 90 days</div>
+              <div class="m-row"><div class="m-sub">Confidence</div>62%</div>
+              <div class="m-row" style="border-color:#EDD3CF;background:#FBEEEC">
+                <div style="color:var(--red);font-weight:700;font-size:11px">Track record</div>
+                <div style="font-size:10.5px">62%-band claims: marked on outcome</div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="m-btn">Log prediction</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>A thesis with its why-chain and a scorable, dated prediction.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — a thesis through the loop</div>
+      <p>You think a constituent of an ANTON 100 index is undervalued. You write
+      that as a thesis; ANTON builds a four-link why-chain — earnings momentum,
+      a sector tailwind, a depressed peer multiple, a catalyst on the calendar.
+      You attach a prediction: <strong>+8% within 90 days, confidence 62%</strong>.
+      The prediction is logged. Ninety days later the verifier checks the actual
+      move — say it returned +3%. The claim is marked a partial miss; the
+      pattern weights behind "sector tailwind" are nudged down a little, and your
+      62%-confidence band gets one more data point. No single run made ANTON
+      smarter — the <em>habit</em> of marking it did. And, candidly, today that
+      habit is still early: see §4.</p>
+    </div>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> Predictions, verification and calibration
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>A thesis is stored via <code>market-thesis-service.ts</code>; its
+        progression through draft → active → resolved is handled by
+        <code>market-thesis-lifecycle-service.ts</code>. Predictions are recorded
+        against the thesis with a horizon and confidence.</p>
+        <p>At the deadline, <code>market-prediction-verifier.ts</code> compares
+        the claim with real market data (subject to <code>MARKETS_FETCH_DISABLED</code>),
+        producing a deterministic verdict. <code>market-conditional-accuracy-service.ts</code>
+        rolls verdicts into calibration curves, and
+        <code>market-pattern-weight-feedback-service.ts</code> adjusts the
+        weights of the patterns that fed the why-chain.
+        <code>market-backtest-runner.ts</code> replays history to test the loop
+        offline. All of this is what the April 2026 audit measured.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Read the why-chain before you read the prediction — the reasoning is the real output.</li>
+          <li>Treat every prediction as a dated, scorable commitment, not advice.</li>
+          <li>Check the calibration record — does ANTON's confidence track reality yet?</li>
+          <li>Use the ANTON 100 indexes as a stable frame to compare against.</li>
+          <li>Keep theses around long enough to be marked; the loop only learns from resolved ones.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't treat a Markets prediction as financial advice — it is a scored analyst view.</li>
+          <li>Don't trust a confidence number without checking the calibration behind it.</li>
+          <li>Don't assume the loop is mature — the April 2026 audit found ~21% accuracy.</li>
+          <li>Don't be alarmed by quiet screens — an operator may have set the pause flags.</li>
+          <li>Don't skip the why-chain just because the headline answer looks confident.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The Markets habit</div>
+      <p>Use Markets the way a disciplined analyst uses a journal: write the
+      view, date it, and come back to see if it held. The pillar's promise is
+      not perfect predictions — it is an honest, improving record. Judge it, and
+      use it, on that.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pillar-work.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">Work</div>
+      </a>
+      <a class="next" href="pillar-portals.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Portals</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the Markets pillar (<code>server/services/market-*.ts</code>,
+      migrations 049–062). Press <code>t</code> to expand every "How it works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>

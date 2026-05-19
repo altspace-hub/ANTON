@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Work pillar — ANTON Help</title>
+<link rel="stylesheet" href="_assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== SIDEBAR (identical on every page) ===================== -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><div class="t1">ANTON Help</div><div class="t2">Knowledge Base</div></div>
+  </div>
+  <a class="home-link" href="index.html">← Help home</a>
+
+  <a class="grp">Getting started</a>
+  <a class="lnk" href="getting-started.html">Install &amp; first run</a>
+
+  <a class="grp">ANTON Local</a>
+  <a class="lnk" href="anton-local.html">Overview &amp; tour</a>
+  <a class="lnk" href="pillars.html">The 12 pillars</a>
+  <a class="lnk sub active" href="pillar-work.html">Work — expert modules</a>
+  <a class="lnk sub" href="pillar-markets.html">Markets</a>
+  <a class="lnk sub" href="pillar-portals.html">Portals</a>
+  <a class="lnk sub" href="pillar-missions.html">Missions</a>
+  <a class="lnk sub" href="pillars-more.html">More pillars</a>
+  <a class="lnk" href="risk-atlas.html">Risk Atlas</a>
+  <a class="lnk" href="knowledge-and-prompts.html">Knowledge &amp; prompts</a>
+  <a class="lnk" href="output-and-export.html">Output &amp; export</a>
+  <a class="lnk" href="specialized-agents.html">Specialized Agents</a>
+
+  <a class="grp">Phone apps</a>
+  <a class="lnk" href="companion.html">ANTON Companion</a>
+  <a class="lnk" href="comm.html">ANTON Comm</a>
+  <a class="lnk" href="business.html">ANTON Business</a>
+  <a class="lnk" href="pay.html">ANTON Pay</a>
+
+  <a class="grp">Connections</a>
+  <a class="lnk" href="mesh-and-relay.html">ANTON Mesh &amp; relay</a>
+  <a class="lnk" href="pairing.html">Pairing &amp; enrollment</a>
+  <a class="lnk" href="payments-flow.html">The payment flow</a>
+  <a class="lnk" href="agent-protocol.html">Agent Protocol &amp; portals</a>
+
+  <a class="grp">Reference</a>
+  <a class="lnk" href="status.html">Build status</a>
+  <a class="lnk" href="glossary.html">Glossary</a>
+  <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+</nav>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+  <div class="topbar">
+    <span class="menu-btn">☰</span>
+    <a href="index.html">Help</a><span class="sep">›</span>
+    <a href="anton-local.html">ANTON Local</a><span class="sep">›</span>
+    <span class="here">Work</span>
+  </div>
+
+  <div class="inner">
+
+    <div class="page-head">
+      <div class="eyebrow">ANTON Local · Pillars</div>
+      <h1>The Work pillar — your expert modules</h1>
+      <p class="lead">Work is ANTON's default pillar and the heart of the product:
+      roughly 260 pre-tuned expert modules spread across about 59 professional
+      domains. Each module is a structured workspace that already knows how an
+      expert in that field thinks — so you can start with your problem, not a
+      blank prompt box.</p>
+      <div class="page-meta">
+        <span class="chip">For: domain professionals 35–65</span>
+        <span class="chip">~260 modules</span>
+        <span class="chip">~59 domain areas</span>
+        <span class="chip">Default pillar</span>
+      </div>
+    </div>
+
+    <div class="toc-inline">
+      <div class="tt">On this page</div>
+      <ol>
+        <li><a href="#what">What the Work pillar is</a></li>
+        <li><a href="#think">How to think about picking a module</a></li>
+        <li><a href="#areas">How modules are organised into areas</a></li>
+        <li><a href="#run">Running a module, step by step</a></li>
+        <li><a href="#example">Worked example — a Gap Assessment</a></li>
+        <li><a href="#best">Best practices</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="what"><span class="ix">1</span>What the Work pillar is</h2>
+    <p>Open ANTON Local and, unless you switch pillars, you are in Work. It is the
+    pillar most people spend most of their time in. Where a raw chat window asks
+    you to <em>describe</em> the AI behaviour you want, a Work module
+    <em>arrives</em> with that behaviour already configured: a problem statement,
+    a tuned system prompt, sensible defaults for reasoning depth, and an output
+    format chosen to suit the task.</p>
+    <p>That is the design philosophy in one sentence — <strong>"start with the
+    problem, not the solution."</strong> Someone who simply picks the right
+    module and clicks <em>Run</em> should get excellent output. Everything is
+    overridable, but the defaults are the point.</p>
+
+    <div class="grid g3">
+      <div class="feature"><div class="ic">◆</div><h4>Pre-tuned</h4>
+        <p>Every module ships with an expert system prompt and default knowledge,
+        format and thinking settings.</p></div>
+      <div class="feature"><div class="ic">▦</div><h4>Organised</h4>
+        <p>~260 modules grouped into ~59 domain areas — FCP, legal, banking, HR,
+        coding, healthcare and many more.</p></div>
+      <div class="feature"><div class="ic">⤓</div><h4>Exportable</h4>
+        <p>Every run produces Markdown plus a structured payload you can render to
+        docx, xlsx, pdf, pptx and more.</p></div>
+    </div>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="think"><span class="ix">2</span>How to think about picking a module</h2>
+
+    <div class="callout callout--think">
+      <div class="ct"><span class="em">🧭</span>The mental model</div>
+      <p>Don't ask "which AI feature do I need?" Ask <strong>"what is the
+      deliverable, and who would normally produce it?"</strong> A module is
+      named for an outcome — <em>Gap Assessment</em>, <em>Policy Review</em>,
+      <em>Alert Investigation</em>, <em>Pitch Deck Critique</em> — not for a
+      technique. Find the module whose name matches the thing you actually need
+      on your desk, and the expert framing comes for free.</p>
+    </div>
+
+    <p>Three habits make module selection fast and reliable:</p>
+    <ul>
+      <li><strong>Match the deliverable.</strong> If you need a board memo,
+      reach for a module that produces decision memos — not a general analysis
+      module you then have to reshape.</li>
+      <li><strong>Trust the area grouping.</strong> Modules sit inside a domain
+      area for a reason: that area carries shared context the module inherits.
+      A risk module run from the Risk area knows the risk vocabulary.</li>
+      <li><strong>Read the problem statement first.</strong> Each module opens
+      with a plain-language description of the problem it solves. If that
+      statement doesn't describe your situation, it's the wrong module — keep
+      looking before you start typing.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>When no module fits exactly</div>
+      <p>Pick the closest one and adjust its inputs — most modules are broader
+      than their name suggests. If you genuinely work across an unusual domain,
+      <a href="pillars-more.html">Pathfinder</a> reads your intent in plain
+      language and routes you to the best-matching module automatically.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="areas"><span class="ix">3</span>How modules are organised into areas</h2>
+    <p>Modules are not a flat list. They live in roughly <strong>59 domain
+    areas</strong>, and the area is doing real work: it supplies the shared
+    context, vocabulary and knowledge that every module inside it inherits.
+    Choosing the right area is half of choosing the right module.</p>
+
+    <table>
+      <tr><th>Area group</th><th>Representative domain areas</th></tr>
+      <tr><td>Regulated &amp; financial</td><td>FCP (financial crime — 35+ modules), Risk (incl. 8 Risk Atlas modules), Banking, Audit, Legal, Data privacy, Insurance, PE/VC, Accounting &amp; tax, Islamic finance, Cyber/DORA, ESG</td></tr>
+      <tr><td>Business &amp; professional</td><td>Consulting, Sales, Marketing, Strategy, HR, Operations, Project management, Comms &amp; PR, Product management, Startups, Branding</td></tr>
+      <tr><td>Technical &amp; creative</td><td>Software engineering, Coding, Hardware engineering, Data analytics, Blockchain, Design, Journalism, Creative production</td></tr>
+      <tr><td>Sector &amp; public</td><td>Healthcare, Education, Government / public sector, Real estate, Manufacturing, Food business, Investment</td></tr>
+      <tr><td>Global South &amp; personal</td><td>Microfinance, Smallholder farming, Livestock &amp; poultry, Mobile money, Land rights, Workers' rights, Trades, Micro-business, Personal finance (incl. BoP), Consumer protection</td></tr>
+    </table>
+
+    <p>Each area folder under <code>server/areas/{area}/modules/</code> holds the
+    system prompts for that area's modules. The areas above are real folders in
+    the repository — from <code>fcp/</code> and <code>legal/</code> through
+    <code>coding/</code>, <code>healthcare/</code>, <code>hr/</code>,
+    <code>microfinance/</code> and <code>smallholder-farming/</code>.</p>
+
+    <figure>
+      <div class="browser">
+        <div class="chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url">localhost:5173/work</span>
+        </div>
+        <div class="view">
+          <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px">Work — choose an area</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">~260 modules across ~59 domain areas</div>
+          <div class="grid g3" style="margin:0;gap:9px">
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">FCP</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">35+ financial-crime modules</p></div>
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">Risk</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">incl. 8 Risk Atlas modules</p></div>
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">Legal</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Research, drafting, review</p></div>
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">HR</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Talent, policy, comms</p></div>
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">Coding</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Review, architecture, docs</p></div>
+            <div class="card" style="padding:11px 13px"><h4 style="margin:0">Healthcare</h4><p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Clinical &amp; admin support</p></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>The Work pillar landing — areas first, then the modules inside each.</figcaption>
+    </figure>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> The module registry and per-area patches
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>The core module definitions live in <code>src/lib/constants.ts</code> —
+        IDs, labels, default knowledge mode, default output format, default
+        thinking level and the area grouping. The list is large, so additional
+        modules are layered in through <strong>per-area patch files</strong>
+        rather than bloating one file. That is why the suite docs describe the
+        ~260 / ~59 totals as <em>approximate</em>: they are assembled from a core
+        registry plus patches at load time.</p>
+        <p>Each module's expert system prompt is a file under
+        <code>server/areas/{area}/modules/</code>. When you run a module the
+        server resolves: the area context, then the module's own prompt, then
+        the layers you chose (knowledge, persona, format). See
+        <a href="knowledge-and-prompts.html">Knowledge &amp; prompts</a> for the
+        full 7-layer assembly handled by <code>prompt-builder.ts</code>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="run"><span class="ix">4</span>Running a module, step by step</h2>
+    <p>The flow is the same for every one of the ~260 modules. Once you know it,
+    you know all of them.</p>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="steps">
+          <li><span class="st">Pick the module</span>
+            <p>Choose the domain area, then the module whose problem statement
+            matches your situation. Read that statement before going further.</p></li>
+          <li><span class="st">Describe your task</span>
+            <p>Fill in the module's input fields — your context, the documents
+            or scenario, the question. This is the only thing the defaults can't
+            guess for you.</p></li>
+          <li><span class="st">Set the knowledge source</span>
+            <p>Choose where the AI draws reference material: Claude's Knowledge,
+            Online References, Local Folders, or Combined. The module's default
+            is usually right — see <a href="knowledge-and-prompts.html">Knowledge
+            &amp; prompts</a>.</p></li>
+          <li><span class="st">Pick output format(s)</span>
+            <p>Choose the deliverable shape — executive summary, action plan, gap
+            matrix and so on. You select this <em>before</em> running.</p></li>
+          <li><span class="st">Choose a thinking level</span>
+            <p><code>quick</code>, <code>think</code>, <code>think_hard</code> or
+            <code>investigate</code>. Deeper levels reason longer; the module's
+            default suits most runs.</p></li>
+          <li><span class="st">Run, review, export</span>
+            <p>Click <em>Run</em>; the answer streams in. Review it, iterate if
+            needed, then export to docx / xlsx / pdf / pptx — see
+            <a href="output-and-export.html">Output &amp; export</a>.</p></li>
+        </ol>
+      </div>
+      <figure>
+        <div class="device">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>▆ ▼ 84%</span></div>
+            <div class="appbar">◆ Gap Assessment</div>
+            <div class="appbody">
+              <div class="m-sub">Domain area</div>
+              <div class="m-row">FCP — financial crime</div>
+              <div class="m-sub" style="margin-top:4px">Knowledge source</div>
+              <div class="m-row tap">▸ Combined — local-first</div>
+              <div class="m-sub" style="margin-top:4px">Output format</div>
+              <div class="m-row">Gap Scoring Matrix</div>
+              <div class="m-sub" style="margin-top:4px">Thinking level</div>
+              <div class="m-row">think_hard</div>
+              <div style="flex:1"></div>
+              <div class="m-btn">Run module</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>A module run, configured — knowledge, format and thinking level chosen before Run.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout--tip">
+      <div class="ct"><span class="em">💡</span>The defaults are pre-tuned for a reason</div>
+      <p>Every module already has a knowledge mode, an output format and a
+      thinking level chosen by whoever built it. If you are new to a module,
+      run it once on the defaults before changing anything. Override only what
+      the first result tells you to override — that is faster than guessing the
+      perfect configuration up front.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="example"><span class="ix">5</span>Worked example — a Gap Assessment</h2>
+    <p>You are a compliance officer at a mid-size payments firm and need to know
+    how far your AML controls are from the incoming AMLR requirements.</p>
+
+    <div class="callout callout--example">
+      <div class="ct"><span class="em">📌</span>Example — assessing AMLR readiness</div>
+      <p>You open the <strong>FCP</strong> area and pick the <strong>Gap
+      Assessment</strong> module. Its problem statement — "measure a programme
+      against a regulatory framework and score every gap" — is exactly your
+      situation. You paste your current AML policy and procedure documents into
+      the input, set the knowledge source to <strong>Combined (local-first)</strong>
+      so your own documents lead, leave the output format on its default
+      <strong>Gap Scoring Matrix</strong>, and bump the thinking level to
+      <code>think_hard</code> because this needs careful reasoning. You click
+      <em>Run</em>. ANTON streams back a matrix: each AMLR requirement, your
+      current state, a RAG score and a specific remediation note. You export it
+      to <code>.xlsx</code> with the RAG colours baked in, and hand it to your
+      programme lead. The whole thing took minutes, and the structure is one a
+      regulator would recognise — because the module was built by encoding how
+      a financial-crime expert frames a gap assessment.</p>
+    </div>
+
+    <p>Notice what you did <em>not</em> do: you never wrote a system prompt, never
+    described an output schema, never explained what a gap matrix is. The module
+    carried all of that. For larger framework assessments, the dedicated
+    <strong>Gap Assessment Wizard</strong> walks you through 8 steps with
+    iteration support — the same idea, expanded into a guided flow.</p>
+
+    <details class="tech">
+      <summary><span class="tag">How it works</span> What a module run resolves on the server
+        <span class="tw">+</span></summary>
+      <div class="tbody">
+        <p>When you click <em>Run</em>, the request goes to ANTON's Express
+        backend, where <code>prompt-builder.ts</code> assembles the final prompt
+        from up to seven layers: system foundation → area context → org context
+        &amp; knowledge packs → the module's expert prompt → optional persona →
+        skills → your chosen knowledge sources. The thinking level you picked
+        becomes a transparency layer that configures reasoning depth.</p>
+        <p>For <code>claude-opus-4-7</code> the level maps to an adaptive-effort
+        setting (<code>quick</code>→low … <code>investigate</code>→max); for
+        other models it maps to token budgets. The response streams back over
+        Server-Sent Events. Every run yields Markdown <em>and</em> a structured
+        JSON payload, which the renderer registry turns into your chosen export
+        formats — see <a href="output-and-export.html">Output &amp; export</a>.</p>
+      </div>
+    </details>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="best"><span class="ix">6</span>Best practices</h2>
+
+    <div class="dd">
+      <div class="dd-col dd-do">
+        <div class="hd">✓ Do</div>
+        <ul>
+          <li>Read the module's problem statement before you start typing — it tells you if you have the right module.</li>
+          <li>Run on the defaults first; change settings only in response to the result.</li>
+          <li>Pick the output format that matches your real deliverable, before running.</li>
+          <li>Use Combined / local-first knowledge when your own documents must lead the analysis.</li>
+          <li>Raise the thinking level for genuinely hard reasoning; leave it low for routine drafting.</li>
+        </ul>
+      </div>
+      <div class="dd-col dd-dont">
+        <div class="hd">✕ Don't</div>
+        <ul>
+          <li>Don't fight a module — if its framing is wrong for you, pick a different module.</li>
+          <li>Don't rewrite the system prompt; the module already encodes the expert framing.</li>
+          <li>Don't set every run to <code>investigate</code> — it is slower and rarely needed for drafting.</li>
+          <li>Don't paste confidential documents into a knowledge mode that allows web search if that matters to you.</li>
+          <li>Don't treat the first output as final — iterate; modules are built to be re-run.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--best">
+      <div class="ct"><span class="em">★</span>The Work-pillar habit</div>
+      <p>Build a short personal shortlist of the five or six modules you use
+      most. Most professionals live inside a handful of deliverables; once you
+      know which modules produce them and what their good defaults are, ANTON
+      stops feeling like 260 tools and starts feeling like your own desk.</p>
+    </div>
+
+    <!-- prev / next -->
+    <div class="pagenav">
+      <a class="prev" href="pillars.html">
+        <div class="dir">← Previous</div>
+        <div class="tt">The 12 pillars</div>
+      </a>
+      <a class="next" href="pillar-markets.html">
+        <div class="dir">Next →</div>
+        <div class="tt">Markets</div>
+      </a>
+    </div>
+
+    <div class="foot">
+      ANTON Help &amp; Knowledge Base · ANTON by openEXPERT v0.7.5 ·
+      This page covers the Work pillar (<code>src/lib/constants.ts</code>,
+      <code>server/areas/</code>). Press <code>t</code> to expand every "How it
+      works" panel.
+    </div>
+
+  </div>
+</main>
+</div>
+<script src="_assets/help.js"></script>
+</body>
+</html>
