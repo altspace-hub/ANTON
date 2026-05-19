@@ -72,13 +72,13 @@ queue — AAP migration is Phase C.*
   `completed` with the result as its output, so the mission can advance
   past it instead of the result sitting inert in `result_payload`.
 
-Note: there is still no delegate-*creation* UI (delegations have always
-been API-only). B1's `delegate-graph` route and B2's peer-suggestion
-endpoint are ready to wire into one — that UI is a separate follow-up.
-The Outbound delegations tab shows the sub-graph task count + payment chip.
+Delegate-creation UI ✅ — the Outbound delegations tab has a "New
+delegation" button opening a modal that selects tasks (a single task or a
+multi-task sub-graph), ranks peers via B2, takes the brief, and
+creates + sends — tying B1 and B2 together for end users.
 
 *Delivered in: migration 209, `mission-delegation.ts` (service + route),
-`OutboundDelegationsTab.tsx`.*
+`OutboundDelegationsTab.tsx`, `CreateDelegationModal.tsx`.*
 
 ---
 
