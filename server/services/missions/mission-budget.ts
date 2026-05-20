@@ -75,9 +75,26 @@ export interface MissionFinancialSettings {
 
 export async function createMissionBudget(db: DatabaseAdapter) {
   const { createFCBudgetService } = await import('../fc-budget-service.js');
+  // Phase 2 (May 20 2026): wire fc-wallet-service + fc-connection-service
+  // into fc-transaction-service so submitTransaction takes the REAL
+  // sign+POST path when `fc_connection_config.stub_mode = FALSE`. When
+  // stub_mode is TRUE (default), submitTransaction continues to return
+  // the synthetic `STUB_TX_…` envelope — existing dev installs unchanged.
+  const { createFCConnectionService } = await import('../fc-connection-service.js');
+  const { createFCWalletService } = await import('../fc-wallet-service.js');
   const { createFCTransactionService } = await import('../fc-transaction-service.js');
   const fcBudget = await createFCBudgetService(db);
-  const fcTx = await createFCTransactionService(db);
+  const fcConn = await createFCConnectionService(db);
+  const getCfg = async () => {
+    const c = await fcConn.getConfig() as Record<string, unknown> | undefined;
+    if (!c) return undefined;
+    return {
+      node_url: (c['node_url'] as string | null | undefined) ?? null,
+      stub_mode: c['stub_mode'] !== false, // default TRUE if undefined
+    };
+  };
+  const fcWallet = await createFCWalletService(db, getCfg);
+  const fcTx = await createFCTransactionService(db, fcWallet, getCfg);
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -326,9 +343,21 @@ export async function createMissionBudget(db: DatabaseAdapter) {
       });
       const submitted = await fcTx.submitTransaction(tx.id);
 
-      if (submitted.status !== 'confirmed') {
-        await markFailed(paymentId, `Submission did not confirm: ${submitted.status}`);
-        return { success: false, error: `submit returned ${submitted.status}` };
+      // Phase 2 (May 20 2026): accept the full status spectrum the real
+      // submit path can return:
+      //   'confirmed'  — stub mode, or local Full-node admit
+      //   'submitted'  — real mode, server accepted; poller will mark
+      //                   confirmed when the tx is mined
+      //   'queued'     — Phase 0.5 P2P-forward acknowledged; the
+      //                   compliance screen + mining happens async
+      //   'pending'    — server response shape unrecognised; poller
+      //                   still watches
+      // Anything else ('rejected' / 'error') is a definite failure.
+      const inFlightOk = ['confirmed', 'submitted', 'queued', 'pending'].includes(submitted.status);
+      if (!inFlightOk) {
+        const reason = submitted.reason ?? `submit returned ${submitted.status}`;
+        await markFailed(paymentId, `Submission did not confirm: ${reason}`);
+        return { success: false, error: reason };
       }
 
       // Record spend on both the mission and the FC spending log
