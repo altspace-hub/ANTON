@@ -299,7 +299,7 @@ export async function executePayment(
 
     if (status === 'queued' || status === 'accepted') {
       // Fire-and-forget — poller updates the DB row in the background.
-      void pollConfirmation(updated.id, updated.txId ?? uetr);
+      void pollConfirmation(updated.id, updated.txId ?? uetr, decoded.toAddress);
     }
     return updated;
   } catch (err) {
@@ -319,11 +319,22 @@ export async function getPaymentRecord(id: string): Promise<PaymentRecord | null
   return getPayment(id);
 }
 
-/** Background poller — watches `/transaction/{txId}` until the tx is
- *  mined or the deadline expires. Updates `status` to `confirmed` (with
- *  `confirmedAt`) on success; leaves the record alone on timeout so
- *  the user can manually refresh later. */
-async function pollConfirmation(recordId: string, txId: string): Promise<void> {
+/** Background poller — watches the recipient's `/get_utxos` until a
+ *  UTXO with our `txId` appears (i.e. the tx is mined into a block
+ *  and the recipient's spendable set has been updated). Updates
+ *  `status` to `confirmed` (with `confirmedAt`) on success; leaves
+ *  the record alone on timeout so the user can manually refresh later.
+ *
+ *  Why not poll `/transaction/{id}`? FutureChain's
+ *  `blockchain.get_transaction` (rpc/mod.rs → blockchain.rs) searches
+ *  the mempool first and the chain second, so /transaction returns
+ *  the full tx body even while it's still pending. The recipient's
+ *  UTXO set, by contrast, only reflects mined output. */
+async function pollConfirmation(
+  recordId: string,
+  txId: string,
+  recipientAddress: string,
+): Promise<void> {
   const rpc = getRpc();
   const deadline = Date.now() + 5 * 60_000; // 5 min
   const intervalMs = 5_000;
@@ -331,15 +342,8 @@ async function pollConfirmation(recordId: string, txId: string): Promise<void> {
   while (Date.now() < deadline) {
     await sleep(intervalMs);
     try {
-      const tx = (await rpc.getTransaction(txId)) as {
-        block_height?: number;
-        status?: string;
-        error?: string;
-      } | null;
-      if (!tx) continue;
-      // futurechain returns the tx with `block_height` populated once
-      // it's been mined; absent means still in mempool.
-      if (typeof tx.block_height === 'number' && tx.block_height > 0) {
+      const utxos = await rpc.getUtxos(recipientAddress);
+      if (utxos.some((u) => u.tx_id === txId)) {
         const current = await getPayment(recordId);
         if (!current) return;
         await putPayment({
