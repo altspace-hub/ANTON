@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
-import { formatFtc, getPaymentRecord } from '../services/payment';
+import { formatFtc, getPaymentRecord, pollConfirmation } from '../services/payment';
 import type { PaymentRecord, PaymentStatus } from '../services/types';
 
 interface Props {
@@ -40,6 +40,17 @@ export default function PaymentDoneScreen({ record: initial, onHome, onHistory }
     const id = window.setInterval(tick, POLL_MS);
     return () => { cancelled = true; window.clearInterval(id); };
   }, [record.id, record.status]);
+
+  // Re-arm the confirmation poller whenever we land on this screen
+  // and the record is non-terminal — covers the case where the user
+  // backgrounded the app long enough for the OS to kill the original
+  // fire-and-forget poller from executePayment. The poller is
+  // idempotent so concurrent runs are safe.
+  useEffect(() => {
+    if (isTerminal(record.status)) return;
+    if (!record.txId) return;
+    void pollConfirmation(record.id, record.txId, record.toAddress);
+  }, [record.id, record.status, record.txId, record.toAddress]);
 
   const view = statusView(record.status);
 

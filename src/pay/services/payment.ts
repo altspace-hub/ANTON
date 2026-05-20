@@ -329,8 +329,14 @@ export async function getPaymentRecord(id: string): Promise<PaymentRecord | null
  *  `blockchain.get_transaction` (rpc/mod.rs → blockchain.rs) searches
  *  the mempool first and the chain second, so /transaction returns
  *  the full tx body even while it's still pending. The recipient's
- *  UTXO set, by contrast, only reflects mined output. */
-async function pollConfirmation(
+ *  UTXO set, by contrast, only reflects mined output.
+ *
+ *  Exported + idempotent so the UI (PaymentDoneScreen on mount) can
+ *  re-arm a poller for a non-terminal record after the app has been
+ *  backgrounded and the original `executePayment`-spawned poller
+ *  has been killed by the OS. Concurrent runs are safe — both will
+ *  write the same `confirmed` row when they see the UTXO. */
+export async function pollConfirmation(
   recordId: string,
   txId: string,
   recipientAddress: string,
