@@ -14,6 +14,7 @@
  * the old `publicKeyCompressed` — Ed25519 keys are 32 bytes.
  */
 import { wallet as sdkWallet } from '@futurechain/sdk';
+import { assertBiometric } from './biometric';
 import { getSecure, removeSecure, setSecure } from './secure-store';
 
 const PRIV_KEY = 'fc.wallet.priv';
@@ -44,8 +45,15 @@ export async function createAndStoreWallet(): Promise<Wallet> {
 /** Restore a wallet from a user-supplied 24-word BIP-39 mnemonic.
  *  Wipes any existing wallet first — caller should confirm with the
  *  user before invoking. Treats the restored wallet as already backed
- *  up (the user clearly has the phrase). */
+ *  up (the user clearly has the phrase).
+ *
+ *  Gated behind a fresh biometric prompt to make a stolen-but-unlocked
+ *  phone unable to silently swap the wallet under the user — even
+ *  though the prompt below also requires the user to type 24 words,
+ *  the gate keeps the threat model consistent ("any wallet-modifying
+ *  action requires user presence"). */
 export async function restoreFromMnemonic(mnemonic: string): Promise<Wallet> {
+  await assertBiometric({ reason: 'Restore wallet from recovery phrase' });
   const trimmed = mnemonic.trim().split(/\s+/).join(' ');
   const seed = sdkWallet.seedPhraseFromMnemonic(trimmed);
   const wallet = sdkWallet.walletFromSeedPhrase(seed);
@@ -73,11 +81,23 @@ export async function wipeWallet(): Promise<void> {
 }
 
 /** Read back the recovery phrase the user wrote down at wallet
- *  creation time. Returns null if the wallet was restored from a
- *  phrase the user supplied themselves (we still store it for parity)
- *  OR if the wallet has been wiped. UI is expected to gate this behind
- *  a PIN/biometric prompt before showing it. */
+ *  creation time. Returns null if the wallet has been wiped.
+ *
+ *  This raw accessor is used by the onboarding screens
+ *  (BackupShow → BackupVerify) where the user has JUST seen the phrase
+ *  and a biometric prompt would be both redundant and broken (biometry
+ *  may not be enrolled yet on a fresh device). For the "re-show after
+ *  onboarding" Settings flow, use {@link getMnemonicWithBiometric}. */
 export async function getMnemonic(): Promise<string | null> {
+  return getSecure(MNEMONIC_KEY);
+}
+
+/** Same as {@link getMnemonic} but gated behind a fresh biometric
+ *  prompt. Throws on cancel / unavailable / failure — caller surfaces
+ *  the message to the user. Use this on the Settings re-display flow
+ *  and anywhere else outside the create/verify onboarding path. */
+export async function getMnemonicWithBiometric(): Promise<string | null> {
+  await assertBiometric({ reason: 'Show recovery phrase' });
   return getSecure(MNEMONIC_KEY);
 }
 

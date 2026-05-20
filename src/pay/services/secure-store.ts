@@ -9,8 +9,25 @@
  * Detection ladder:
  *   - 'native' — Capacitor SecureStorage (Android Keystore / iOS Keychain)
  *   - 'web'    — IndexedDB wrapped with non-extractable AES-GCM
- *   - 'memory' — last-resort in-process Map
+ *   - 'memory' — last-resort in-process Map (DEV ONLY)
+ *
+ * Fail-closed contract: on a real device (`Capacitor.isNativePlatform()`
+ * is true) the only acceptable tier is 'native'. If the native plugin
+ * is missing or throws, detect() raises — we refuse to silently
+ * downgrade a phone's wallet storage to IndexedDB-wrapped (which is
+ * extractable by a forensics image of the device) or the in-process
+ * Map (which is zero protection). Web tier is reserved for the dev
+ * preview in a browser; memory tier is reserved for unit tests under
+ * vitest where neither IndexedDB nor Capacitor are available.
  */
+import { Capacitor } from '@capacitor/core';
+
+export class SecureStoreUnavailableError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'SecureStoreUnavailableError';
+  }
+}
 
 let tier: 'native' | 'web' | 'memory' | null = null;
 
@@ -21,7 +38,17 @@ async function detect(): Promise<'native' | 'web' | 'memory'> {
     await mod.SecureStorage.set('__anton_pay_probe__', '1');
     await mod.SecureStorage.remove('__anton_pay_probe__');
     tier = 'native';
-  } catch {
+    return tier;
+  } catch (e) {
+    if (Capacitor.isNativePlatform()) {
+      // Fail-closed: on a real device the native keystore is the ONLY
+      // acceptable backing store for wallet secrets. Refusing to fall
+      // back here is what makes the threat model honest.
+      throw new SecureStoreUnavailableError(
+        'native secure storage is unavailable on this device — refusing to downgrade to a less-secure tier',
+        e,
+      );
+    }
     tier = (typeof window !== 'undefined' && 'indexedDB' in window) ? 'web' : 'memory';
   }
   return tier;

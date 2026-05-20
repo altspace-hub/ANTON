@@ -18,9 +18,14 @@ const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
 /** Production API key — matches LIGHT_HUB_API_KEYS on Bahnhof.
  *  TODO(daniel): move to a runtime-fetched / settings-driven value
  *  before public release; embedding in the client is fine for the
- *  closed-test phase. */
+ *  closed-test phase.
+ *
+ *  Rotated 2026-05-20 after a Caddy access-log audit found the prior
+ *  token in 184+ log lines. Caddy now redacts X-Api-Key + Authorization
+ *  on log write, and the SDK only sends this header on
+ *  POST /submit_signed_transaction (see AUTH_REQUIRED_PATHS). */
 const DEFAULT_API_KEY =
-  'c787100cd839de4bce1d234dc86b3c141105a112ecedbec0302ba0d037a44cc4';
+  '4fc4de103453fa356ead6bdf72f217dcf1720d427de1e4245d5709119433a941';
 
 let cached: rpc.RpcClient | null = null;
 

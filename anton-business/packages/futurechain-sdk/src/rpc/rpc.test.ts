@@ -184,6 +184,28 @@ describe('RpcClient — submitSignedTransaction', () => {
     await c.submitSignedTransaction(fakeTx());
     expect(calls[0]!.headers['X-API-Key']).toBe('SECRET_KEY');
   });
+
+  it('does NOT send X-API-Key on public read endpoints', async () => {
+    // The Bahnhof public light hub only auths POST /submit_signed_transaction.
+    // Sending the key on /balance, /get_utxos, /info, etc. would leak it
+    // into the reverse-proxy access log on every UI poll.
+    const { fetch: f, calls } = mockFetch([
+      { body: { address: 'fc_x', balance: 0, balance_ftc: 0, utxo_count: 0 } },
+      { body: [] },
+      { body: { tx_id: 't', status: 'pending' } },
+      { body: { chain_height: 1 } },
+      { body: { status: 'ok' } },
+    ]);
+    const c = new RpcClient({ endpoint: 'http://x', apiKey: 'SECRET_KEY', fetch: f });
+    await c.getBalance('fc_x');
+    await c.getUtxos('fc_x');
+    await c.getTransaction('t');
+    await c.getInfo();
+    await c.getHealth();
+    for (const call of calls) {
+      expect(call.headers['X-API-Key']).toBeUndefined();
+    }
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

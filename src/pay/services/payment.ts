@@ -16,6 +16,7 @@ import type { DecodedCreditor, DecodedPayment, PaymentRecord } from './types';
 import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
 import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
+import { requireBiometric } from './biometric';
 import { assembleDraft } from './pacs008-draft';
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
@@ -166,6 +167,18 @@ export function formatSek(sek: number): string {
   return sek.toLocaleString('sv-SE', { maximumFractionDigits: 2 });
 }
 
+/** Short reason string for the biometric prompt — `Send 0.10 FTC to
+ *  fc_VLak…SyS2`. Truncates the address so the prompt fits one line on
+ *  small phones. */
+function shortGateReason(amountFtc: number, to: string): string {
+  const amt = amountFtc.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  });
+  const tail = to.length > 16 ? `${to.slice(0, 8)}…${to.slice(-4)}` : to;
+  return `Send ${amt} FTC to ${tail}`;
+}
+
 // ── Payment records ───────────────────────────────────────────────────
 
 /** Persist a confirmed payment as a local receipt only — no chain
@@ -239,6 +252,35 @@ export async function executePayment(
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   const amountFtc = microFtcToFtc(decoded.amountMicroFtc);
   const rpc = getRpc();
+
+  // Biometric gate — fresh user-presence check before we sign anything.
+  // On a real device this surfaces Face ID / Touch ID / fingerprint or
+  // the device-credential fallback. On web/dev/tests it's a no-op so
+  // the existing smoke + unit tests keep working unchanged. A denied
+  // prompt returns a `failed` record (with `cancelled` / `unavailable`
+  // / `failed` in the error string) BEFORE any DB row is persisted.
+  const gate = await requireBiometric({
+    reason: shortGateReason(amountFtc, decoded.toAddress),
+  });
+  if (!gate.ok) {
+    const failed: PaymentRecord = {
+      id,
+      toAddress: decoded.toAddress,
+      merchantId: decoded.merchantId,
+      orderId: decoded.orderId,
+      purpose: decoded.purpose,
+      amountMicroFtc: decoded.amountMicroFtc,
+      ref: decoded.ref,
+      qrUri: decoded.qrUri,
+      status: 'failed',
+      paidAt: Date.now(),
+      pacs008: draft,
+      risk,
+      error: `biometric ${gate.reason}`,
+    };
+    await putPayment(failed);
+    return failed;
+  }
 
   // Persist the "submitting" record so the UI can navigate immediately.
   const baseRecord: PaymentRecord = {

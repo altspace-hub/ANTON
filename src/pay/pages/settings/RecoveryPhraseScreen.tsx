@@ -1,14 +1,15 @@
 /**
  * RecoveryPhraseScreen — Settings → Show recovery phrase.
  *
- * Two-tap reveal: an explicit acknowledge button, then the 24 words
- * appear in a numbered grid identical to BackupShowScreen so users
- * recognise the format. No PIN/biometric gate yet — that comes in
- * the OS-keychain hardening pass.
+ * Two-tap + biometric reveal: an acknowledge button triggers the OS
+ * biometric prompt (Face ID / Touch ID / fingerprint / device PIN
+ * fallback), and only on success does the 24-word grid render. The
+ * mnemonic is fetched lazily — never held in component state before
+ * the gate passes.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getMnemonic } from '../../services/wallet';
+import { getMnemonicWithBiometric } from '../../services/wallet';
 
 interface Props {
   onBack: () => void;
@@ -18,10 +19,24 @@ export default function RecoveryPhraseScreen({ onBack }: Props) {
   const { t } = useTranslation();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void (async () => setMnemonic(await getMnemonic()))();
-  }, []);
+  // Wipe any lingering plaintext from state when the screen unmounts —
+  // belt-and-braces; React will GC anyway but this makes the lifetime
+  // visible.
+  useEffect(() => () => setMnemonic(null), []);
+
+  async function onReveal() {
+    setGateError(null);
+    try {
+      const m = await getMnemonicWithBiometric();
+      setMnemonic(m);
+      setAcknowledged(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setGateError(msg);
+    }
+  }
 
   const words = (mnemonic ?? '').split(' ');
 
@@ -52,12 +67,19 @@ export default function RecoveryPhraseScreen({ onBack }: Props) {
               {t('recoveryPhrase.warning',
                  'Anyone who sees these 24 words can spend your funds. Look around — no cameras, no shoulders. Never screenshot, photograph, or share them.')}
             </div>
-            <button type="button" onClick={() => setAcknowledged(true)}
+            <button type="button" onClick={() => { void onReveal(); }}
                     className="w-full py-3.5 rounded-xl text-sm font-semibold mt-2"
                     style={{ backgroundColor: 'var(--color-accent)',
                              color: 'var(--color-accent-fg)' }}>
               {t('recoveryPhrase.reveal', 'I am alone — show me the phrase')}
             </button>
+            {gateError && (
+              <div className="mt-3 text-xs"
+                   style={{ color: 'var(--color-danger, #c53030)' }}>
+                {t('recoveryPhrase.gateDenied',
+                   'Biometric check did not pass. Recovery phrase remains hidden.')}
+              </div>
+            )}
           </>
         )}
 
