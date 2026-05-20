@@ -11,6 +11,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
+import BackupShowScreen from './pages/onboarding/BackupShowScreen';
+import BackupVerifyScreen from './pages/onboarding/BackupVerifyScreen';
 import DoneScreen from './pages/onboarding/DoneScreen';
 import HomeScreen from './pages/HomeScreen';
 import ScanScreen from './pages/ScanScreen';
@@ -22,12 +24,16 @@ import WalletScreen from './pages/settings/WalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
+import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
+import RestoreScreen from './pages/settings/RestoreScreen';
 import { hasProfile } from './services/profile';
 import type { DecodedPayment, PaymentRecord } from './services/types';
 
 type Screen =
   | 'loading'
   | 'onboarding-welcome'
+  | 'onboarding-backup-show'
+  | 'onboarding-backup-verify'
   | 'onboarding-done'
   | 'home'
   | 'scan'
@@ -38,7 +44,9 @@ type Screen =
   | 'settings-wallet'
   | 'settings-payment'
   | 'settings-money'
-  | 'settings-activity';
+  | 'settings-activity'
+  | 'settings-recovery'
+  | 'settings-restore';
 
 export default function App() {
   const { t } = useTranslation();
@@ -67,8 +75,19 @@ export default function App() {
       <WelcomeScreen
         onWalletReady={(address) => {
           setNewAddress(address);
-          setScreen('onboarding-done');
+          setScreen('onboarding-backup-show');
         }}
+      />
+    );
+  }
+  if (screen === 'onboarding-backup-show') {
+    return <BackupShowScreen onContinue={() => setScreen('onboarding-backup-verify')} />;
+  }
+  if (screen === 'onboarding-backup-verify') {
+    return (
+      <BackupVerifyScreen
+        onBack={() => setScreen('onboarding-backup-show')}
+        onVerified={() => setScreen('onboarding-done')}
       />
     );
   }
@@ -136,6 +155,8 @@ export default function App() {
         onPaymentDetails={() => setScreen('settings-payment')}
         onMoneyProfile={() => setScreen('settings-money')}
         onActivityReview={() => setScreen('settings-activity')}
+        onRecoveryPhrase={() => setScreen('settings-recovery')}
+        onRestore={() => setScreen('settings-restore')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
@@ -151,6 +172,20 @@ export default function App() {
   }
   if (screen === 'settings-activity') {
     return <ActivityReviewScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-recovery') {
+    return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-restore') {
+    return (
+      <RestoreScreen
+        onBack={() => setScreen('settings')}
+        onRestored={(address) => {
+          setNewAddress(address);
+          setScreen('onboarding-done');
+        }}
+      />
+    );
   }
 
   // Should never reach — all states above covered.
