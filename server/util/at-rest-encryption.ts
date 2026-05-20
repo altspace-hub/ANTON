@@ -101,3 +101,112 @@ export function encryptUtf8(
 export function decryptUtf8(encrypted: Buffer, iv: Buffer): string {
   return decryptBlob(encrypted, iv).toString('utf8');
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// Phase B3 (May 20 2026) — per-wallet envelope encryption
+// ──────────────────────────────────────────────────────────────────────
+//
+// The bare `encryptBlob` / `decryptBlob` above key AES-256-GCM directly
+// off the master env key. That means a single master-key compromise
+// decrypts every secret on the instance. The functions below derive a
+// per-context key via PBKDF2 so the master never touches AES-GCM
+// directly and the blast radius of a key leak is one context (e.g. one
+// wallet row).
+//
+// On-disk shape is unchanged (ciphertext + IV blobs). The discriminator
+// is the `key_version` column on the calling table:
+//   • 1 = legacy direct-master encryption (decryptBlob path)
+//   • 2 = derived per-context encryption (decryptForContext path)
+
+/** PBKDF2 iteration count. NIST SP 800-132 recommends ≥10_000; 100_000
+ *  is the OWASP 2023 baseline and matches what the app-enrollment flow
+ *  uses for the user-password PBKDF. */
+export const ENVELOPE_PBKDF2_ITERATIONS = 100_000;
+
+/** Application-wide "purpose" tag mixed into the salt, so the same
+ *  master + context bytes used in two different domains derive
+ *  different keys. */
+const ENVELOPE_SALT_PREFIX = 'anton:envelope:v2:';
+
+/** Derive a per-context 32-byte AES key from the master env key via
+ *  PBKDF2-HMAC-SHA-256. `context` is the row-identifying token mixed
+ *  into the salt — for `fc_wallets` rows pass `"fc_wallets:" + wallet_id`.
+ *  Returns null if the master env key is unset or wrong length. */
+export function deriveContextKey(context: string): Buffer | null {
+  const master = getEncryptionKey();
+  if (!master) return null;
+  const salt = crypto.createHash('sha256')
+    .update(ENVELOPE_SALT_PREFIX + context, 'utf8')
+    .digest();
+  return crypto.pbkdf2Sync(
+    master,
+    salt,
+    ENVELOPE_PBKDF2_ITERATIONS,
+    32,
+    'sha256',
+  );
+}
+
+/** Encrypt under a derived per-context key (key_version=2 wire format).
+ *  Returns the ciphertext+tag and IV exactly like `encryptBlob`, plus
+ *  the envelope version it produced. Returns null if the master env
+ *  key is unset. */
+export function encryptForContext(
+  plaintext: Buffer,
+  context: string,
+): { encrypted: Buffer; iv: Buffer; keyVersion: 2 } | null {
+  const derived = deriveContextKey(context);
+  if (!derived) return null;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', derived, iv);
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return { encrypted: Buffer.concat([ciphertext, tag]), iv, keyVersion: 2 };
+}
+
+/** Decrypt under a derived per-context key (key_version=2 path).
+ *  Throws if the master env key is missing or the tag does not verify. */
+export function decryptForContext(
+  encrypted: Buffer,
+  iv: Buffer,
+  context: string,
+): Buffer {
+  const derived = deriveContextKey(context);
+  if (!derived) {
+    throw new Error(
+      'at-rest-encryption.decryptForContext: INSTANCE_KEY_ENCRYPTION_KEY missing — cannot decrypt',
+    );
+  }
+  if (encrypted.length < 17) {
+    throw new Error(
+      `at-rest-encryption.decryptForContext: blob too short (${encrypted.length} bytes < 17)`,
+    );
+  }
+  const tag = encrypted.subarray(encrypted.length - 16);
+  const ciphertext = encrypted.subarray(0, encrypted.length - 16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', derived, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+}
+
+/** Version-aware decrypt: routes to the legacy direct-master path
+ *  (v1 or unset) or the derived path (v2) by the row's `key_version`
+ *  column value. `context` is required even for v1 calls so the call
+ *  sites read uniformly, but it is ignored on the legacy path. */
+export function decryptVersioned(
+  encrypted: Buffer,
+  iv: Buffer,
+  keyVersion: number | null | undefined,
+  context: string,
+): Buffer {
+  if ((keyVersion ?? 1) >= 2) {
+    return decryptForContext(encrypted, iv, context);
+  }
+  return decryptBlob(encrypted, iv);
+}
+
+/** The salt-context string for `fc_wallets` rows. Centralised so the
+ *  encrypt and decrypt sites never disagree. */
+export function fcWalletContext(walletId: string): string {
+  return `fc_wallets:${walletId}`;
+}

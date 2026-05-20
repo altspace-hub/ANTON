@@ -189,7 +189,11 @@ export async function createFCTransactionService(
 
     let signingWallet;
     try {
-      signingWallet = await fcWallet!.getDecryptedWallet(senderRow.id);
+      signingWallet = await fcWallet!.getDecryptedWallet(senderRow.id, {
+        actor: 'fc-transaction-service',
+        requestId: txId,
+        reason: `sign tx ${row.to_address} ${row.amount_ftc} FTC`,
+      });
     } catch (e) {
       const reason = `cannot decrypt sender wallet: ${(e as Error).message}`;
       await markStatus(txId, 'failed', reason);
