@@ -250,6 +250,25 @@ The integration is **not greenfield**. Real, usable foundations:
   submit a transaction with **no compliance-node RPC reachable from its side**.
   FutureChain-repo work, ~1 week. Decided 2026-05-20.
 
+  _**✓ DONE 2026-05-20** — commits `8f92915` (feature) + `d9bc485` (merge),
+  pushed to FutureChain `main`, deployed to Node 1 + Node 2 + Bahnhof (all 3
+  hosts now run the Phase 0.5 binary `md5 66d79439…`; converged at height
+  804,782). Verified by `futurechain/test_p2p_compliance_forward.py` — a new
+  4-node integration test (A↔B↔C↔D where A is Full + Heimdall and D submits
+  three hops away; the request gossips back to A, which runs
+  `screen_p2p_request`); `futurechain/test_compliance_gossip.py` (the Phase
+  0.4 announce-gossip regression — still PASS); and one live cross-host
+  smoke check: a POST of a signed Transaction to Bahnhof's
+  `/submit_signed_transaction` returned `{status: "queued", request_id,
+  tx_id}` and the same request_id arrived in Node 1's screening handler
+  twenty seconds later — proving the new path works on the production
+  3-node network with no RPC port crossing the public internet. Daniel's
+  "I don't want nodes to be exposed publicly" ask, resolved. **One caveat
+  for future work:** `/submit_pacs008_batch` no longer accepts traffic on
+  light hubs (it carries the wallet password — gossipping it would defeat
+  the security goal). Light-hub clients must use the client-side-signed
+  `/submit_signed_transaction` path._
+
   - **New P2P message** — `ComplianceScreenRequest { request_id,
     originator_address, transaction }` in `network/messages.rs`; classified as
     broadcast (priority 6, same tier as `NewTransaction`). Re-broadcast on first
