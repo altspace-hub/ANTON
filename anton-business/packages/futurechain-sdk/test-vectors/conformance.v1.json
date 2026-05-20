@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "generated_by": "futurechain/src/bin/generate_conformance_vectors.rs",
+  "purpose": "Phase 0.1 conformance vectors for the @futurechain/sdk TypeScript wallet — byte-exact source of truth.",
+  "warning": "These mnemonics are PUBLISHED for testing. Never use as real wallets.",
+  "vectors": [
+    {
+      "name": "all-abandon (BIP-39 24-word edge case, lowest entropy)",
+      "mnemonic_24": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art",
+      "seed_hex": "408b285c123836004f4b8842c89324c1f01382450c0d439af345ba7fc49acf705489c6fc77dbd4e3dc1dd8cc6bc9f043db8ada1e243c4a0eafb290d399480840",
+      "test_message_utf8": "futurechain-sdk-phase-0.1-conformance-test-message-v1",
+      "derivations": [
+        {
+          "account": 0,
+          "index": 0,
+          "priv_key_hex": "96edef9f95d1e717905e293dda38637ff405961b0d19a0f0623cfde3c344db63",
+          "pub_key_hex": "0b665c05c161f729099cc4d338e879fd3d840daad596d397d28259313af4fc41",
+          "address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+          "signature_hex": "3ee5cabee71b3a78038389bac959d9e7b4668ca4293cfd2bdcfb62c07493bfd8db329d2026023409e356436bbc0d2117683d477dfb759c40d8c811cc71007507"
+        },
+        {
+          "account": 0,
+          "index": 1,
+          "priv_key_hex": "c7a6fcf60de9d9d56d90db808cf8bbff93f47b29a6264072f8dfe87547d14b46",
+          "pub_key_hex": "cd56409b0d6d32950a39423c3a1d33380bc52c9d3427bedc6a634198da2c700e",
+          "address": "fc_VQyYJWMbRTSiToaEYidz7TJ5MDafyk6st2",
+          "signature_hex": "dc882b73d7bc7e804acce31079bce5af7c862d7d904b61d6f0a313209e80467fe333a397aed787ff3e8a356a34a3143f71ff09c072dc97e6ee793098ced39b09"
+        },
+        {
+          "account": 1,
+          "index": 0,
+          "priv_key_hex": "e9bdc07648967f54dc06755c7912c34926f0b14ef49ddae676d7f82ac40d1a29",
+          "pub_key_hex": "b39e5facf05cec6bdfb99261361d5ded4a27d6b3a05a00d6fdf4c1a5f7688fa0",
+          "address": "fc_VK3i8jjg89pySsKc7mioSzFpQmaoPcqW48",
+          "signature_hex": "901ad9b27240df1672f75b1a3ea2aa4892bccd2a60c022052b14b6f7d9aa0119226908c1c3f18b15899156045897c426c3e4b23ecde33eb64d08f8fcbfaa1c01"
+        },
+        {
+          "account": 1,
+          "index": 5,
+          "priv_key_hex": "a842a2156cb2fd1ab3da18c71c19e623bddbc22d0cfe8b82a90d81bcb30741f0",
+          "pub_key_hex": "a72e17975bd1b02a93412cfd93e75f76f6ad1704b3c082de727fff43fd22a80d",
+          "address": "fc_VVHaYb9fNGseYQ4Mve6zgU7ayhXjikSzxS",
+          "signature_hex": "68e393414040da314f8ba268ebfc82bc8be5f4ca4ad0e21084eb2a97392323a24e40832efb79ed575e34e15dffb391330c6e5556ad2586ab8400bdc612fd1302"
+        },
+        {
+          "account": 12345,
+          "index": 67890,
+          "priv_key_hex": "2649c28905ab1a454b5b59be1a5e9abf1044292d0dc3e7f7aa8e323f8e48403c",
+          "pub_key_hex": "b25dd25bbdfd127f72391e2e6db02856f843363c2b0f2c5e5a11ba86864f008b",
+          "address": "fc_VFQDe4Tz1dbHJmATefXHte943zcUoASMus",
+          "signature_hex": "1714e662c7cd9a69ec380001778020d87b47f6bf9e5562979fbf8d50f2f5f5449a174a02b039a47497d949cc69088a2d72133884fb1f8204f3fa6abfa52f1c0c"
+        }
+      ]
+    },
+    {
+      "name": "legal-winner (BIP-39 24-word known test vector)",
+      "mnemonic_24": "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title",
+      "seed_hex": "761914478ebf6fe16185749372e91549361af22b386de46322cf8b1ba7e92e80c4af05196f742be1e63aab603899842ddadf4e7248d8e43870a4b6ff9bf16324",
+      "test_message_utf8": "futurechain-sdk-phase-0.1-conformance-test-message-v1",
+      "derivations": [
+        {
+          "account": 0,
+          "index": 0,
+          "priv_key_hex": "79cc51ac9b5b24c30e4ceb32e68ba06940dc303fec0304e66aa38c35f3ae3427",
+          "pub_key_hex": "391a26fe5d91f5a7da765a9f1ce876bddae6dcdd778f29bc6f6987cd30954da8",
+          "address": "fc_VDHDoqf9dj8WJamDvm21n7bt37vX431PYX",
+          "signature_hex": "ebad1ad252814ad07319738cf7586df01a7b6e47ef9cf4a322795d4b0fc46be69ac75191569ce44cb3eb766a9172594b827ecd0714f5d7ebc17809c4c85f690a"
+        },
+        {
+          "account": 0,
+          "index": 1,
+          "priv_key_hex": "f1bf692346ab70621794ca0f4942611dbd7f019decf4ce91ff83d85a66ea03ce",
+          "pub_key_hex": "51d9d76a9c26f82735f6ff7bb850a3acf068d45aba6b2fd97d63687d55b47a23",
+          "address": "fc_VHo1mA3mnWYkV4ZzxKrAxG8RUPZge9ECaU",
+          "signature_hex": "62acec022d45d52e6e79bc12f55acb0123d871a1dc784e8b9f5f7007b75d9fbde09a87f67bf3290d15a9706cf36b4342e919634623ad75a0a738b420acbfbc03"
+        },
+        {
+          "account": 1,
+          "index": 0,
+          "priv_key_hex": "1343d81cbefee274804bc93e2f4edbdded66721eaa22c2487ed026f7df973eb9",
+          "pub_key_hex": "f0c5638a6c9ca556db84303f91530d0d4b384ecaaf8baf19c3d9ef60fe16cd0a",
+          "address": "fc_VWLUEABwpmdkkdywZfWu185EjxeQ1KEMZe",
+          "signature_hex": "d19f839ed2f4a4cf4dda97052eea379d063e24ee5c9fc46a69d3028fecc535321dbbdce45fb0631eaecd7f46e46c09afac5483f27f3a8a195157cf729b3c9602"
+        }
+      ]
+    }
+  ]
+}
