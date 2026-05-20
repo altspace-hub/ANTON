@@ -32,8 +32,11 @@ export interface RpcConfig {
   /** Base URL of a FutureChain node, e.g. `http://127.0.0.1:8545` or
    *  `https://bahnhof.futurechain.eu`. Trailing slash optional. */
   endpoint: string;
-  /** Optional API key — set as `X-API-Key` header. Used by light hubs
-   *  that opt into `LIGHT_HUB_API_KEYS`. */
+  /** Optional API key — set as `X-API-Key` header on **auth-required**
+   *  requests only (today: `POST /submit_signed_transaction`). Read
+   *  endpoints are public and never carry the key, so it can't leak
+   *  into a reverse-proxy access log on every `getBalance` /
+   *  `getHealth` poll. See {@link AUTH_REQUIRED_PATHS}. */
   apiKey?: string;
   /** Request timeout in ms. Default 10_000. */
   timeoutMs?: number;
@@ -128,6 +131,24 @@ export class RpcError extends Error {
 }
 
 // ───────────────────────────────────────────────────────────────────────
+// Auth-required endpoint set
+// ───────────────────────────────────────────────────────────────────────
+
+/** The only endpoints on a Bahnhof-style public light hub that take
+ *  `X-API-Key`. Every other path is public chain data; sending the key
+ *  on those would leak it into the hub's reverse-proxy access log on
+ *  every poll. Kept as an exported `Set` so future auth-required RPCs
+ *  can opt in here in one place. */
+export const AUTH_REQUIRED_PATHS: ReadonlySet<string> = new Set([
+  '/submit_signed_transaction',
+]);
+
+/** `true` iff a request to (method, path) should carry `X-API-Key`. */
+export function isAuthRequired(method: string, path: string): boolean {
+  return method === 'POST' && AUTH_REQUIRED_PATHS.has(path);
+}
+
+// ───────────────────────────────────────────────────────────────────────
 // Client
 // ───────────────────────────────────────────────────────────────────────
 
@@ -196,7 +217,9 @@ export class RpcClient {
     const url = this.base + path;
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
-    if (this.config.apiKey) headers['X-API-Key'] = this.config.apiKey;
+    if (this.config.apiKey && isAuthRequired(method, path)) {
+      headers['X-API-Key'] = this.config.apiKey;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
