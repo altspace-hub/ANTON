@@ -7,10 +7,15 @@ import {
 } from '@futurechain/sdk/wallet';
 import { RpcClient } from '@futurechain/sdk/rpc';
 import {
-  encryptBlob,
-  decryptBlob,
+  decryptVersioned,
+  encryptForContext,
+  fcWalletContext,
   warnPlaintextOnce,
 } from '../util/at-rest-encryption.js';
+import {
+  type AuditLogger,
+  noopAuditLogger,
+} from '../util/wallet-audit-log.js';
 
 /**
  * fc-wallet-service — Phase 2 (May 20 2026).
@@ -60,6 +65,10 @@ export interface WalletRow {
   mnemonic_encrypted?: Buffer | null;
   mnemonic_iv?: Buffer | null;
   sdk_schema_version?: number;
+  /** At-rest envelope version. 1 = direct master-key AES-GCM (rows
+   *  written before Phase B3 / migration 211). 2 = PBKDF2-derived
+   *  per-wallet key. See server/util/at-rest-encryption.ts. */
+  key_version?: number;
 }
 
 export interface CreateWalletParams {
@@ -93,6 +102,11 @@ export async function createFCWalletService(
   // Optional FC connection lookup. When omitted, all flows run in stub
   // mode (legacy callers stay unchanged).
   getConnectionConfig?: () => Promise<FCConnectionConfig | undefined>,
+  // Optional audit logger. When omitted, the no-op logger is used —
+  // production bootstrap MUST plumb in `createWalletAuditLogger(db)`
+  // so privkey-decrypt / signing events are recorded. Tests use the
+  // no-op to stay self-contained.
+  audit: AuditLogger = noopAuditLogger,
 ) {
   // ─── Read path (unchanged from the stub) ──────────────────────────
 
@@ -155,30 +169,37 @@ export async function createFCWalletService(
       return { id, address, name: params.name, walletType: params.walletType, sdkSchemaVersion: 1 };
     }
 
-    // ── REAL MODE — Ed25519 + at-rest encryption ──
+    // ── REAL MODE — Ed25519 + at-rest envelope encryption ──
+    // Phase B3 (May 20 2026): privkey + mnemonic are encrypted under a
+    // PBKDF2-derived per-wallet key (`encryptForContext`) instead of
+    // the master env key directly. New rows are key_version=2; legacy
+    // v1 rows stay readable via the version-aware decrypt path.
     const phrase = generateSeedPhrase();
     const sdkW: SdkWallet = walletFromSeedPhrase(phrase, 0, 0);
     const pubkeyBuf = Buffer.from(sdkW.publicKey);
     const privkeyBuf = Buffer.from(sdkW.privateKey);
+    const ctx = fcWalletContext(id);
 
-    const encPriv = encryptBlob(privkeyBuf);
+    const encPriv = encryptForContext(privkeyBuf, ctx);
     if (!encPriv) warnPlaintextOnce(COMPONENT);
 
     // Mnemonic backup only for human wallets. An agent wallet is auto-
     // managed by ANTON-local and recovered via the instance-identity
     // restore path, not a user mnemonic.
-    let encMnemonic: { encrypted: Buffer; iv: Buffer } | null = null;
+    let encMnemonic: { encrypted: Buffer; iv: Buffer; keyVersion: 2 } | null = null;
     if (params.walletType === 'human') {
-      encMnemonic = encryptBlob(Buffer.from(phrase.mnemonic, 'utf8'));
+      encMnemonic = encryptForContext(Buffer.from(phrase.mnemonic, 'utf8'), ctx);
     }
+
+    const keyVersion = encPriv ? encPriv.keyVersion : 1;
 
     await db.run(
       `INSERT INTO fc_wallets (
          id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id,
          balance_ftc, balance_raw,
          pubkey, privkey_encrypted, privkey_iv, mnemonic_encrypted, mnemonic_iv,
-         sdk_schema_version
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 2)`,
+         sdk_schema_version, key_version
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 2, ?)`,
       id, params.name, fileName, sdkW.address, params.walletType,
       params.ownerAddress ?? null, params.agentId ?? null,
       pubkeyBuf,
@@ -186,6 +207,7 @@ export async function createFCWalletService(
       encPriv ? encPriv.iv : null,
       encMnemonic ? encMnemonic.encrypted : (params.walletType === 'human' ? Buffer.from(phrase.mnemonic, 'utf8') : null),
       encMnemonic ? encMnemonic.iv : null,
+      keyVersion,
     );
 
     return {
@@ -204,42 +226,110 @@ export async function createFCWalletService(
    *  Throws if the wallet is a stub (sdk_schema_version=1), or if the
    *  privkey columns are missing, or if INSTANCE_KEY_ENCRYPTION_KEY is
    *  unset and the row was stored encrypted. */
-  async function getDecryptedPrivkey(walletId: string): Promise<Buffer> {
+  async function getDecryptedPrivkey(
+    walletId: string,
+    auditCtx?: { actor?: string; requestId?: string; reason?: string },
+  ): Promise<Buffer> {
+    const startedAt = Date.now();
+    const actor = auditCtx?.actor ?? null;
+    const requestId = auditCtx?.requestId ?? null;
+    const baseDetails = {
+      reason: auditCtx?.reason ?? 'unspecified',
+    };
+    const auditDenied = async (errorCode: string, extra?: Record<string, unknown>) => {
+      await audit.log({
+        component: COMPONENT,
+        action: 'get_decrypted_privkey',
+        walletId,
+        actor,
+        requestId,
+        result: 'denied',
+        errorCode,
+        details: { ...baseDetails, ...extra, elapsedMs: Date.now() - startedAt },
+      });
+    };
+    const auditError = async (errorCode: string, extra?: Record<string, unknown>) => {
+      await audit.log({
+        component: COMPONENT,
+        action: 'get_decrypted_privkey',
+        walletId,
+        actor,
+        requestId,
+        result: 'error',
+        errorCode,
+        details: { ...baseDetails, ...extra, elapsedMs: Date.now() - startedAt },
+      });
+    };
+
     const row = await db.get<WalletRow>(
-      'SELECT id, sdk_schema_version, privkey_encrypted, privkey_iv FROM fc_wallets WHERE id = ?',
+      'SELECT id, sdk_schema_version, privkey_encrypted, privkey_iv, key_version FROM fc_wallets WHERE id = ?',
       walletId,
     );
     if (!row) {
+      await auditDenied('not_found');
       throw new Error(`fc-wallet-service.getDecryptedPrivkey: wallet ${walletId} not found`);
     }
     if ((row.sdk_schema_version ?? 1) < 2) {
+      await auditDenied('legacy_stub', { sdkSchemaVersion: row.sdk_schema_version });
       throw new Error(
         `fc-wallet-service.getDecryptedPrivkey: wallet ${walletId} is a legacy stub (sdk_schema_version=${row.sdk_schema_version}) — no real privkey. Re-create the wallet in real mode (fc_connection_config.stub_mode = FALSE).`,
       );
     }
     if (!row.privkey_encrypted) {
+      await auditError('corrupted_row', { detail: 'privkey_encrypted is NULL on v2 row' });
       throw new Error(
         `fc-wallet-service.getDecryptedPrivkey: wallet ${walletId} is sdk v2 but privkey_encrypted is NULL — corrupted row`,
       );
     }
-    if (!row.privkey_iv) {
-      // No IV → row was stored in plaintext (dev mode, no env key).
-      // privkey_encrypted then literally holds the 32-byte raw privkey.
-      if (row.privkey_encrypted.length !== 32) {
-        throw new Error(
-          `fc-wallet-service.getDecryptedPrivkey: wallet ${walletId} plaintext privkey wrong length (${row.privkey_encrypted.length} != 32)`,
+    let priv: Buffer;
+    try {
+      if (!row.privkey_iv) {
+        // No IV → row was stored in plaintext (dev mode, no env key).
+        // privkey_encrypted then literally holds the 32-byte raw privkey.
+        if (row.privkey_encrypted.length !== 32) {
+          await auditError('plaintext_wrong_length', { len: row.privkey_encrypted.length });
+          throw new Error(
+            `fc-wallet-service.getDecryptedPrivkey: wallet ${walletId} plaintext privkey wrong length (${row.privkey_encrypted.length} != 32)`,
+          );
+        }
+        priv = Buffer.from(row.privkey_encrypted);
+      } else {
+        priv = decryptVersioned(
+          row.privkey_encrypted,
+          row.privkey_iv,
+          row.key_version,
+          fcWalletContext(walletId),
         );
       }
-      return Buffer.from(row.privkey_encrypted);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await auditError('decrypt_failed', { msg });
+      throw e;
     }
-    return decryptBlob(row.privkey_encrypted, row.privkey_iv);
+    await audit.log({
+      component: COMPONENT,
+      action: 'get_decrypted_privkey',
+      walletId,
+      actor,
+      requestId,
+      result: 'ok',
+      details: {
+        ...baseDetails,
+        keyVersion: row.key_version ?? 1,
+        elapsedMs: Date.now() - startedAt,
+      },
+    });
+    return priv;
   }
 
   /** Reconstruct an SDK Wallet object from a stored fc_wallets row.
    *  Convenience for callers (fc-transaction-service) that already have
    *  the row + just want a `Wallet` shape to pass to the SDK. */
-  async function getDecryptedWallet(walletId: string): Promise<SdkWallet> {
-    const priv = await getDecryptedPrivkey(walletId);
+  async function getDecryptedWallet(
+    walletId: string,
+    auditCtx?: { actor?: string; requestId?: string; reason?: string },
+  ): Promise<SdkWallet> {
+    const priv = await getDecryptedPrivkey(walletId, auditCtx);
     return walletFromPrivateKey(new Uint8Array(priv));
   }
 
