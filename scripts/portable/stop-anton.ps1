@@ -38,8 +38,12 @@ function Stop-Pid($pidFile, $expectedName, $label) {
 
 if (-not $Quiet) { Write-Host ""; Write-Host "Stopping ANTON ..." -ForegroundColor Cyan }
 
-Stop-Pid (Join-Path $RunDir 'server.pid') 'node*'   'ANTON server'
-Stop-Pid (Join-Path $RunDir 'ollama.pid') 'ollama*' 'Ollama'
+Stop-Pid (Join-Path $RunDir 'server.pid')      'node*'        'ANTON server'
+# Phase 2 (May 20 2026): stop the bundled FutureChain light hub before
+# Ollama / PostgreSQL so any in-flight RPC fetch from the server has a
+# chance to fail closed instead of hitting a half-torn-down chain.
+Stop-Pid (Join-Path $RunDir 'futurechain.pid') 'futurechain*' 'FutureChain light hub'
+Stop-Pid (Join-Path $RunDir 'ollama.pid')      'ollama*'      'Ollama'
 
 # --- PostgreSQL: pg_ctl uses the data directory, no pid needed ------
 if (Test-Path (Join-Path $PgData 'postmaster.pid')) {
