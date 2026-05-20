@@ -240,6 +240,60 @@ The integration is **not greenfield**. Real, usable foundations:
     over plain HTTP today.
   - Real `measure_latency` (a stub today) + delete the dead `network/discovery.rs`.
 
+- **0.5 P2P compliance forwarding — FutureChain core (security hardening; replaces
+  the 0.4 RPC-forward path).** Removes the requirement that a compliance node expose
+  an HTTP RPC publicly. The compliance-screen request flows over the same
+  TLS-encrypted P2P channel that `NewTransaction` / `NewBlock` /
+  `ComplianceAnnouncement` already use — only direct P2P peers ever touch a
+  compliance node, the way blocks already propagate. With this, a node anywhere in
+  the network ("cluster 3", many hops from a compliance node in "cluster 1") can
+  submit a transaction with **no compliance-node RPC reachable from its side**.
+  FutureChain-repo work, ~1 week. Decided 2026-05-20.
+
+  - **New P2P message** — `ComplianceScreenRequest { request_id,
+    originator_address, transaction }` in `network/messages.rs`; classified as
+    broadcast (priority 6, same tier as `NewTransaction`). Re-broadcast on first
+    sight, dedup'd by `request_id` via a TTL'd `seen_screen_requests` set —
+    mirrors the Phase 0.4 `ComplianceAnnouncement` gossip pattern exactly.
+  - **Compliance-node side.** A node that holds a `ComplianceGateway`, on first
+    sight of a new request: per-`originator_address` rate-limit check (reuses
+    `security::rate_limiter`); screens via
+    `ComplianceGateway::process_iso20022_transaction` → Heimdall; attaches the
+    compliance signature; **broadcasts the result as a normal `NewTransaction`**.
+    The appearance of the stamped tx IS the response — no separate
+    `ComplianceScreenResponse` type, no synchronous reply path. The mempool
+    admission rule (`mempool.rs:177-209`) and block-validation rule
+    (`blockchain.rs:366-385`) — unchanged — admit the stamped tx network-wide.
+  - **Receiving-node side.** `POST /submit_signed_transaction` on a node with a
+    local gateway: still processes locally (no change). On a light-hub: builds a
+    `ComplianceScreenRequest`, broadcasts via P2P, returns `{status: "queued",
+    request_id, tx_id}`. Client polls `GET /transaction/{tx_id}` for confirmation
+    (same poll the wallet UIs will already do for block inclusion).
+    `POST /submit_pacs008_batch` follows the same pattern (signs each tx with the
+    wallet on the receiving node, broadcasts one `ComplianceScreenRequest` per tx).
+  - **Remove the 0.4 RPC-forward path.** Delete `build_upstream_candidates` and
+    `forward_to_upstream` from `rpc/mod.rs`; remove the forward blocks in the two
+    submit handlers. P2P gossip becomes the only forwarding transport. The
+    `endpoint` field in `ComplianceAnnouncement` is then informational only
+    (still useful for `/compliance/nodes` display); the network no longer depends
+    on it being reachable. Update `09_NETWORK_SECURITY.md` to describe the
+    P2P-only forwarding model. Drop `COMPLIANCE_FORWARD_REQUIRE_TLS` (the env
+    gate added in Phase 0.4 becomes moot — there is no HTTP forward to gate).
+
+  **Verified by** a new integration test extending `test_compliance_gossip.py`
+  into a 4-node chain A↔B↔C↔D — A is the compliance node, D is a "cluster 3"
+  node three hops away that submits a tx and watches it land in a block; the
+  existing 3-node gossip test (for `ComplianceAnnouncement`, regression); and
+  the regression suite end-to-end.
+
+  **Security posture won.** No compliance node needs its RPC exposed beyond its
+  own host. The TLS-1.3 P2P port — mutual peer authentication, dedup-protected
+  gossip — is the only contact surface, identical to the surface that `NewBlock`
+  and `NewTransaction` already use. An attacker on the public internet has the
+  same view of a compliance node as they do of any other node — no extra HTTP
+  service to attack. The patent's compliance-stamp-required-for-mining rule is
+  unchanged; only the *transport* for the screen request moves from HTTP to P2P.
+
 ### Phase 1 — `@futurechain/sdk`: the foundation *(~1.5 weeks)*
 
 Replace the three stub modules; this is the shared core.
@@ -316,6 +370,7 @@ routing payment instructions over the relay; fix `fc_kyc_profiles` (PII columns 
                 └─► Phase 3   (also needs 0.2)
 0.3 ──► the compliance node itself; gates all real settlement
 0.4 ──► FutureChain core; gates open-network go-live (Bahnhof + shipped ANTON-locals)
+0.5 ──► supersedes 0.4's RPC-forward with P2P gossip — no public compliance RPC ever
 Phase 5 runs in parallel
 ```
 
@@ -342,15 +397,20 @@ parallelisable.
      one; discovery is also wired only behind an ISO-sync flag (`main.rs:1456`). The
      designed behaviour is gossiped propagation (whitepaper §10.2; patent Claim 12).
      Fixed in **Phase 0.4** — gossip the announce, bootstrap seed, always-wire.
-   - *Reachability.* The compliance node must advertise an RPC endpoint the remote
-     light hubs (Bahnhof, users' ANTON-locals) can actually reach. Loopback/LAN is
-     fine for local dev; production needs that node publicly reachable (HTTPS), the
-     same as Bahnhof.
-   - *Model — settled.* The compliance model is **Model A** (RPC-forward to a
-     compliance node) per both the patent claims and the code; Model B (P2P
-     pre-mempool interception) does not exist and conflicts with the mempool rule
-     that rejects unstamped transactions. No decision outstanding — only the Phase
-     0.4 routing work.
+   - *Reachability — superseded by Phase 0.5.* The compliance node's RPC does NOT
+     need to be reachable from the public internet — Phase 0.5 routes
+     compliance-screen requests over the same TLS-encrypted P2P gossip channel
+     that `NewTransaction` / `NewBlock` already use, so only direct P2P peers
+     ever touch a compliance node. Until 0.5 lands, the interim model (Phase 0.4)
+     keeps RPC-forward as the only path and would require public RPC in production
+     — hence 0.5 is the security-hardening end-state.
+   - *Model — Phase 0.5 replaces Model A with Model B.* The patent's
+     gateway-stamp invention (mempool admission + block validation reject
+     unstamped PACS.008) is unchanged in either model — Phase 0.5 only changes
+     the *transport* of the screen request, from HTTP RPC (Model A) to P2P
+     gossip with the stamped result re-broadcast as `NewTransaction` (Model B).
+     Phase 0.5 removes the RPC-forward path entirely; P2P becomes the sole
+     forwarding transport.
 2. **Bahnhof domain — RESOLVED for now (2026-05-19).** No domain yet; development
    uses the **direct IP `79.136.1.113`**. Fine through Phases 0–2 and Phase 3 *dev*
    (debug builds; Bahnhof needs `RPC_BIND_ADDRESS=0.0.0.0` + `RPC_CORS_ORIGINS`). A
