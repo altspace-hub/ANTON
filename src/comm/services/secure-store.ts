@@ -9,12 +9,25 @@
  *                ciphertext. Exfil of the IDB file yields only ciphertext;
  *                same-origin XSS can still call decrypt but the raw bytes
  *                never appear as a string in localStorage / DOM scope.
- *   - 'memory' — in-process Map, last-resort.
+ *   - 'memory' — in-process Map, last-resort (DEV ONLY).
  *
  * Migration: legacy plaintext values written before the wrap landed are
  * still readable. On first read they're detected by failing the JSON-envelope
  * parse; we return them and rewrap on the next setSecure call.
+ *
+ * Fail-closed contract (Phase B2, May 20 2026): on a real device
+ * (`Capacitor.isNativePlatform()` is true) the only acceptable tier
+ * is 'native'. The plugin throwing on a real device raises
+ * SecureStoreUnavailableError instead of silently downgrading.
  */
+import { Capacitor } from '@capacitor/core';
+
+export class SecureStoreUnavailableError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'SecureStoreUnavailableError';
+  }
+}
 
 let tier: 'native' | 'web' | 'memory' | null = null;
 
@@ -25,7 +38,14 @@ async function detect(): Promise<'native' | 'web' | 'memory'> {
     await mod.SecureStorage.set('__anton_comm_probe__', '1');
     await mod.SecureStorage.remove('__anton_comm_probe__');
     tier = 'native';
-  } catch {
+    return tier;
+  } catch (e) {
+    if (Capacitor.isNativePlatform()) {
+      throw new SecureStoreUnavailableError(
+        'native secure storage is unavailable on this device — refusing to downgrade to a less-secure tier',
+        e,
+      );
+    }
     tier = (typeof window !== 'undefined' && 'indexedDB' in window) ? 'web' : 'memory';
   }
   return tier;

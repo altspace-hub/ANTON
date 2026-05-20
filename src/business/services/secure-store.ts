@@ -11,8 +11,21 @@
  *   - 'web'    — IndexedDB wrapped with non-extractable AES-GCM (XSS can
  *                still call decrypt; raw bytes never leave the SubtleCrypto
  *                handle)
- *   - 'memory' — last-resort in-process Map
+ *   - 'memory' — last-resort in-process Map (DEV ONLY)
+ *
+ * Fail-closed contract (Phase B2, May 20 2026): on a real device
+ * (`Capacitor.isNativePlatform()` is true) the only acceptable tier
+ * is 'native'. The plugin throwing on a real device raises
+ * SecureStoreUnavailableError instead of silently downgrading.
  */
+import { Capacitor } from '@capacitor/core';
+
+export class SecureStoreUnavailableError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'SecureStoreUnavailableError';
+  }
+}
 
 let tier: 'native' | 'web' | 'memory' | null = null;
 
@@ -23,7 +36,14 @@ async function detect(): Promise<'native' | 'web' | 'memory'> {
     await mod.SecureStorage.set('__anton_business_probe__', '1');
     await mod.SecureStorage.remove('__anton_business_probe__');
     tier = 'native';
-  } catch {
+    return tier;
+  } catch (e) {
+    if (Capacitor.isNativePlatform()) {
+      throw new SecureStoreUnavailableError(
+        'native secure storage is unavailable on this device — refusing to downgrade to a less-secure tier',
+        e,
+      );
+    }
     tier = (typeof window !== 'undefined' && 'indexedDB' in window) ? 'web' : 'memory';
   }
   return tier;

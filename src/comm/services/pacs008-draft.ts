@@ -13,11 +13,15 @@
  * (mirroring `src/pay/services/payment.ts`).
  *
  * The SDK's `Pacs008Builder.build()` / `canonicalize()` / `hash()`
- * are still stubbed (throw NotImplementedError, blocked on the Rust
- * `iso20022_pacs008.rs` vendor), so this module assembles the
- * `Pacs008Draft` object literal directly — enough to display the
- * payment's ISO 20022 shape and snapshot it on the wallet tx record.
- * Signing lands when the SDK module is unstubbed.
+ * are now implemented (Phase 1, May 20 2026 — see
+ * `@futurechain/sdk/pacs008` index.ts:248-336). This module still
+ * assembles the `Pacs008Draft` object literal directly because the
+ * draft shape is a UI-facing display object, not a signable message —
+ * the Wallet send screen consumes the draft for display + local
+ * receipt only. When the Comm app wires a Bahnhof submission path
+ * (mirroring `src/pay/services/payment.ts::executePayment`), it will
+ * call `pacs008.buildPacs008` + `pacs008.buildSignedPacs008Transaction`
+ * directly, not this module.
  */
 import { reference } from '@futurechain/sdk';
 import type { pacs008 } from '@futurechain/sdk';
