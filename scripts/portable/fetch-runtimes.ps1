@@ -8,12 +8,21 @@
  PostgreSQL and no Ollama install on the user's machine.
 
  It places, at the repo root:
-     node\     portable Node.js (win-x64)
-     pgsql\    portable PostgreSQL binaries (win-x64)
-     ollama\   portable Ollama (win-amd64)  [optional]
+     node\           portable Node.js (win-x64)
+     pgsql\          portable PostgreSQL binaries (win-x64)
+     ollama\         portable Ollama (win-amd64)  [optional]
+     futurechain\    bundled FutureChain light-hub node (Phase 2,
+                     May 20 2026)                  [optional]
 
  None of these are committed to git (see .gitignore) - they are
  only there to be swept into the distributable zip.
+
+ The FutureChain binary has no public download URL (it's our own
+ build). The script looks for it at $FcSourcePath - either a
+ pre-built futurechain.exe on disk (set via -FcSourcePath) or, by
+ default, the CI-produced location runtimes-source\futurechain\
+ futurechain.exe. If the source binary isn't found, the script
+ warns and continues (ANTON runs in fc-stub mode without it).
 
  Usage (from the repo root):
      powershell -ExecutionPolicy Bypass -File scripts\portable\fetch-runtimes.ps1
@@ -28,6 +37,9 @@
      -NodeVersion      pin a Node version, e.g. v22.13.1 (default: latest v22 LTS)
      -PgUrl            override the PostgreSQL binaries zip URL
      -OllamaUrl        override the Ollama zip URL
+     -SkipFutureChain  skip bundling the FutureChain light hub
+     -FcSourcePath     where to find a pre-built futurechain.exe
+                       (default: runtimes-source\futurechain\futurechain.exe)
 ================================================================
 #>
 [CmdletBinding()]
@@ -38,7 +50,9 @@ param(
   [switch]$KeepGpu,
   [string]$NodeVersion = '',
   [string]$PgUrl = 'https://get.enterprisedb.com/postgresql/postgresql-16.6-1-windows-x64-binaries.zip',
-  [string]$OllamaUrl = 'https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip'
+  [string]$OllamaUrl = 'https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip',
+  [switch]$SkipFutureChain,
+  [string]$FcSourcePath = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,6 +64,11 @@ $TmpDir   = Join-Path $RepoRoot '.portable-tmp'
 $NodeDir  = Join-Path $RepoRoot 'node'
 $PgDir    = Join-Path $RepoRoot 'pgsql'
 $OllamaDir= Join-Path $RepoRoot 'ollama'
+# Phase 2 (May 20 2026): bundled FutureChain light hub.
+$FcDir    = Join-Path $RepoRoot 'futurechain'
+if (-not $FcSourcePath) {
+  $FcSourcePath = Join-Path $RepoRoot 'runtimes-source\futurechain\futurechain.exe'
+}
 
 # ---- helpers ---------------------------------------------------
 function Say   ($m){ Write-Host "  $m" -ForegroundColor Gray }
@@ -231,6 +250,35 @@ if ($SkipOllama) {
   }
 }
 
+# ================================================================
+# 4. FutureChain light hub (optional - Phase 2, May 20 2026)
+# ================================================================
+# Cross-compiled `futurechain.exe` is dropped in by CI (or a developer
+# running `cargo build --release --bin futurechain` on Windows). This
+# script just copies it from the source location into the bundle dir.
+# If the source binary isn't present we warn and continue — the
+# resulting bundle works in stub mode (no real wallet / tx settlement,
+# per fc_connection_config.stub_mode = TRUE default).
+if ($SkipFutureChain) {
+  Step "FutureChain light hub"
+  Warn "skipped (-SkipFutureChain)"
+} else {
+  Step "FutureChain light hub"
+  if ((Test-Path (Join-Path $FcDir 'futurechain.exe')) -and -not $Force) {
+    Warn "futurechain\ already populated - skipping (use -Force to re-copy)"
+  } elseif (Test-Path $FcSourcePath) {
+    Reset-Dir $FcDir
+    Copy-Item -Path $FcSourcePath -Destination (Join-Path $FcDir 'futurechain.exe') -Force
+    # Reserve a data subdir so run-anton.ps1 can populate it on first run.
+    New-Item -ItemType Directory -Path (Join-Path $FcDir 'data') -Force | Out-Null
+    Ok "futurechain.exe placed (source: $FcSourcePath)"
+  } else {
+    Warn "futurechain source not found at $FcSourcePath"
+    Warn "  → ANTON bundle will run in stub mode for wallets / transactions"
+    Warn "  → drop a Windows-built futurechain.exe at that path, or pass -FcSourcePath"
+  }
+}
+
 # ---- cleanup ---------------------------------------------------
 Step "Cleanup"
 Remove-Item $TmpDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -248,9 +296,10 @@ function Show-Size ($label, $path) {
     Write-Host ("  {0,-10} {1,7}      (not present)" -f $label, '-') -ForegroundColor DarkGray
   }
 }
-Show-Size 'node'   $NodeDir
-Show-Size 'pgsql'  $PgDir
-Show-Size 'ollama' $OllamaDir
+Show-Size 'node'        $NodeDir
+Show-Size 'pgsql'       $PgDir
+Show-Size 'ollama'      $OllamaDir
+Show-Size 'futurechain' $FcDir
 Write-Host ""
 Write-Host "Next: Phase 2 builds 'Start ANTON.bat' which uses these runtimes." -ForegroundColor DarkGray
 Write-Host ""

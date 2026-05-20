@@ -203,7 +203,16 @@ $exclude = @(
   'dist-installer', 'node_modules/.cache', 'not_to_git',
   'relay/node_modules',
   'anton-business/packages/futurechain-sdk/node_modules',
-  'anton-business/packages/shared-types/node_modules'
+  'anton-business/packages/shared-types/node_modules',
+  # Phase 2 (May 20 2026): the bundled FutureChain light hub.
+  #   futurechain\futurechain.exe  → bundled (carries the runtime)
+  #   futurechain\data\            → per-install blockchain data; built
+  #                                   on first run, NOT for distribution
+  #   runtimes-source\             → developer source for the pre-built
+  #                                   futurechain.exe; fetch-runtimes.ps1
+  #                                   reads it, not the runtime
+  'futurechain/data',
+  'runtimes-source'
 )
 $tarArgs = @('-a', '-c', '-f', $zipPath, '-C', $parent)
 foreach ($e in $exclude) { $tarArgs += '--exclude'; $tarArgs += "$leaf/$e" }

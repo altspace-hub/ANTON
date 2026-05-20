@@ -11,6 +11,8 @@
    3. starts the bundled PostgreSQL (private port, localhost only)
    4. makes sure the database schema is up to date
    5. starts Ollama (optional - for knowledge memory)
+   5.5 starts the bundled FutureChain light hub (optional, Phase 2 -
+       loopback RPC for wallet + payment operations)
    6. starts the ANTON server and opens it in the browser
    7. stays open as a small control window; closing it (or running
       'Stop ANTON.bat') shuts everything down cleanly
@@ -30,13 +32,23 @@ $NodeExe = Join-Path $Root 'node\node.exe'
 $PgBin   = Join-Path $Root 'pgsql\bin'
 $PgData  = Join-Path $Root 'pgdata'
 $Ollama  = Join-Path $Root 'ollama'
+# Phase 2 (May 20 2026): bundled FutureChain light-hub node — 4th
+# supervised runtime. Optional: if futurechain\futurechain.exe is
+# missing, the script logs a warning and the ANTON server continues in
+# stub mode (per fc_connection_config.stub_mode = TRUE default).
+$FcDir   = Join-Path $Root 'futurechain'
+$FcExe   = Join-Path $FcDir 'futurechain.exe'
+$FcData  = Join-Path $FcDir 'data'
 $RunDir  = Join-Path $Root '.portable-run'
 $EnvFile = Join-Path $Root '.env'
 $TsxCli  = Join-Path $Root 'node_modules\tsx\dist\cli.mjs'
 
 # ---- settings --------------------------------------------------
-$PgPort  = 54329                  # private port - avoids clashing with any other PostgreSQL
-$AppPort = 3001
+$PgPort       = 54329             # private port - avoids clashing with any other PostgreSQL
+$AppPort      = 3001
+$FcRpcPort    = 8546              # light hub loopback RPC — avoids clash with a host's Node 1 on 8545
+$FcP2pPort    = 30304             # light hub P2P port (loopback)
+$FcWindowDays = 7                 # rolling-window memory in days
 $DbUrl   = "postgresql://anton:anton@127.0.0.1:$PgPort/anton"
 
 # ---- helpers ---------------------------------------------------
@@ -197,6 +209,67 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
     Ok "Ollama started"
   } else {
     Warn "ollama\ not bundled - ANTON runs fine without it (knowledge memory is reduced)"
+  }
+
+  # ==============================================================
+  # 5.5 FutureChain light hub (optional - Phase 2, May 20 2026)
+  # ==============================================================
+  # The bundled `futurechain.exe` runs as a "light hub" node: no mining,
+  # no Heimdall, a rolling 7-day in-memory block window. ANTON's fc-*
+  # services target it on http://127.0.0.1:$FcRpcPort. If the binary
+  # isn't bundled (e.g. dev install built without cross-compile yet),
+  # ANTON falls back to its long-standing stub mode for wallet creation
+  # and transaction submission (per fc_connection_config.stub_mode =
+  # TRUE default). All A2A_ROADMAP Phase D pay flows still work as
+  # `STUB_TX_…` envelopes in that case.
+  Step "FutureChain light hub (optional)"
+  if (Test-Path $FcExe) {
+    New-Item -ItemType Directory -Path $FcData -Force | Out-Null
+    $fcArgs = @(
+      'node',
+      '--node-type', 'light-hub',
+      '--light-hub-window-days', "$FcWindowDays",
+      '--rpc-port', "$FcRpcPort",
+      '--port',     "$FcP2pPort",
+      '--datadir',  $FcData
+    )
+    # Optional bootstrap seed: if FUTURECHAIN_CONNECT_SEED is set in the
+    # process env (e.g. by the .env), pass `--connect <seed>` so the
+    # light hub finds the open network on first start. Otherwise the
+    # hub runs in standalone loopback mode (fine for dev).
+    if ($env:FUTURECHAIN_CONNECT_SEED) {
+      $fcArgs += @('--connect', $env:FUTURECHAIN_CONNECT_SEED)
+    }
+    $fcOut = Join-Path $RunDir 'futurechain.log'
+    $fcErr = Join-Path $RunDir 'futurechain.err.log'
+    $fc = Start-Process -FilePath $FcExe -ArgumentList $fcArgs `
+            -WorkingDirectory $FcDir -WindowStyle Hidden -PassThru `
+            -RedirectStandardOutput $fcOut `
+            -RedirectStandardError  $fcErr
+    Set-Content -Path (Join-Path $RunDir 'futurechain.pid') -Value $fc.Id
+
+    # Wait for the light hub's RPC to answer /health (max ~30 s).
+    $fcUp = $false
+    for ($i = 0; $i -lt 30; $i++) {
+      if ($fc.HasExited) { break }
+      try {
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$FcRpcPort/health" `
+               -UseBasicParsing -TimeoutSec 2
+        if ($r.StatusCode -eq 200) { $fcUp = $true; break }
+      } catch { }
+      Start-Sleep -Seconds 1
+    }
+    if ($fcUp) {
+      Ok "FutureChain light hub running on 127.0.0.1:$FcRpcPort (window: $FcWindowDays days)"
+      # Surface the loopback URL to the ANTON server. fc-connection-service
+      # reads FUTURECHAIN_RPC_URL when seeding fc_connection_config on
+      # first run; an existing row is left untouched (admin's call).
+      $env:FUTURECHAIN_RPC_URL = "http://127.0.0.1:$FcRpcPort"
+    } else {
+      Warn "FutureChain light hub did not respond on /health within 30s - ANTON will run in stub mode (see $fcErr)"
+    }
+  } else {
+    Warn "futurechain\futurechain.exe not bundled - ANTON runs in stub mode for wallets / transactions"
   }
 
   # ==============================================================
