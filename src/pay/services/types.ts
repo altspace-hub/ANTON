@@ -4,7 +4,7 @@
  * Kept storage-free so pure-logic modules (payment URI decode) can
  * import these shapes without reaching the Capacitor / IndexedDB layer.
  */
-import type { pacs008 } from '@futurechain/sdk';
+import type { Pacs008Draft } from './pacs008-draft';
 import type { FraudAssessment } from './fraud-engine';
 
 export type PaymentPurpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
@@ -76,6 +76,26 @@ export interface DecodedPayment {
  * this app records the customer's side, it does not broadcast a chain
  * transaction.
  */
+/**
+ * Lifecycle of a payment record.
+ *   - `recorded`   pre-chain-settlement legacy: a local receipt only,
+ *                  used by older builds that didn't talk to the chain
+ *   - `submitting` we're posting `/submit_signed_transaction` now
+ *   - `queued`     light hub accepted the signed tx and is gossiping it
+ *                  for P2P compliance screening (Phase 0.5 path)
+ *   - `accepted`   admitted to a mempool of a node with a local
+ *                  Heimdall gateway
+ *   - `confirmed`  mined into a block (poller saw it via /transaction)
+ *   - `failed`     rejected by Caddy / Heimdall / network — `error` set
+ */
+export type PaymentStatus =
+  | 'recorded'
+  | 'submitting'
+  | 'queued'
+  | 'accepted'
+  | 'confirmed'
+  | 'failed';
+
 export interface PaymentRecord {
   /** Local uuid. */
   id: string;
@@ -86,15 +106,25 @@ export interface PaymentRecord {
   amountMicroFtc: bigint;
   ref: string;
   qrUri: string;
-  status: 'recorded';
+  status: PaymentStatus;
   /** Epoch ms the customer confirmed the payment. */
   paidAt: number;
   /** ISO 20022 PACS.008 draft assembled at confirmation time from the
    *  payer's saved identity + the scanned creditor party. Optional —
    *  payments recorded before the identity feature, or with no payer
    *  identity set, omit it. */
-  pacs008?: pacs008.Pacs008Draft;
+  pacs008?: Pacs008Draft;
   /** Light-fraud-engine assessment captured at confirmation time.
    *  Optional — payments recorded before the fraud engine omit it. */
   risk?: FraudAssessment;
+  /** On-chain UETR / txid once submitted. Populated from `tx.id`. */
+  txId?: string;
+  /** Phase 0.5 P2P-forward tracing id, set by the light hub on submit. */
+  requestId?: string;
+  /** Epoch ms /submit_signed_transaction returned. */
+  submittedAt?: number;
+  /** Epoch ms the tx was first seen mined into a block. */
+  confirmedAt?: number;
+  /** Human-readable failure reason when `status === 'failed'`. */
+  error?: string;
 }

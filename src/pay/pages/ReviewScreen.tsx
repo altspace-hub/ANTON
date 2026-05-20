@@ -10,16 +10,15 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
 import {
-  estimateSek, formatFtc, formatSek, isExpired,
-  loadBehaviorProfile, recordPayment, secondsUntilExpiry,
+  estimateSek, executePayment, formatFtc, formatSek, isExpired,
+  loadBehaviorProfile, secondsUntilExpiry,
 } from '../services/payment';
 import { loadProfile } from '../services/profile';
 import { loadPayerIdentity } from '../services/payment-identity';
 import { loadMoneyProfile } from '../services/money-profile';
 import { loadWallet } from '../services/wallet';
-import { assembleDraft } from '../services/pacs008-draft';
+import { assembleDraft, type Pacs008Draft } from '../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../services/fraud-engine';
-import type { pacs008 } from '@futurechain/sdk';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
 interface Props {
@@ -40,7 +39,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [secsLeft, setSecsLeft] = useState<number | null>(() => secondsUntilExpiry(payment));
   const [expired, setExpired] = useState(() => isExpired(payment));
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
+  const [draft, setDraft] = useState<Pacs008Draft | null>(null);
   const [isoOpen, setIsoOpen] = useState(false);
   const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
   const [armed, setArmed] = useState(false);
@@ -88,7 +87,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
     }
     setBusy(true);
     try {
-      const record = await recordPayment(payment, assessment ?? undefined);
+      const record = await executePayment(payment, assessment ?? undefined);
       onConfirmed(record);
     } catch {
       setBusy(false);

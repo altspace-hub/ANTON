@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { hasWallet, loadWallet } from '../../services/wallet';
+import { fetchBalanceFtc } from '../../services/fc-rpc';
 
 interface Props {
   onBack: () => void;
@@ -16,6 +17,8 @@ export default function WalletScreen({ onBack }: Props) {
   const [address, setAddress] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [balance, setBalance] = useState<{ ftc: number; utxoCount: number } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -26,6 +29,31 @@ export default function WalletScreen({ onBack }: Props) {
       setLoaded(true);
     })();
   }, []);
+
+  // Pull balance whenever the address is known + auto-refresh every 30s.
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    const tick = async () => {
+      setRefreshing(true);
+      const b = await fetchBalanceFtc(address);
+      if (!cancelled) {
+        setBalance(b);
+        setRefreshing(false);
+      }
+    };
+    void tick();
+    const id = window.setInterval(tick, 30_000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [address]);
+
+  async function manualRefresh() {
+    if (!address || refreshing) return;
+    setRefreshing(true);
+    const b = await fetchBalanceFtc(address);
+    setBalance(b);
+    setRefreshing(false);
+  }
 
   async function copy() {
     if (!address) return;
@@ -58,6 +86,36 @@ export default function WalletScreen({ onBack }: Props) {
 
         {loaded && address && (
           <>
+            {/* Balance card */}
+            <div className="rounded-xl p-4 mb-3"
+                 style={{ backgroundColor: 'var(--color-surface)',
+                          border: '1px solid var(--color-border)' }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="text-xs uppercase tracking-wider"
+                     style={{ color: 'var(--color-text-faint)' }}>
+                  {t('wallet.balanceLabel', 'Balance')}
+                </div>
+                <button type="button" onClick={manualRefresh} disabled={refreshing}
+                        className="text-[11px] uppercase tracking-wider px-2 py-0.5 rounded"
+                        style={{ color: 'var(--color-text-muted)' }}>
+                  {refreshing ? t('common.loading', 'Refreshing…') : t('common.refresh', 'Refresh')}
+                </button>
+              </div>
+              <div className="font-bold text-2xl mono" style={{ color: 'var(--color-text)' }}>
+                {balance == null
+                  ? '—'
+                  : `${balance.ftc.toLocaleString('en-US', {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 6,
+                    })} FTC`}
+              </div>
+              {balance != null && (
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                  {t('wallet.utxoCount', { count: balance.utxoCount, defaultValue: '{{count}} UTXOs' })}
+                </p>
+              )}
+            </div>
+
             <div className="rounded-xl p-4 mb-3"
                  style={{ backgroundColor: 'var(--color-surface)',
                           border: '1px solid var(--color-border)' }}>

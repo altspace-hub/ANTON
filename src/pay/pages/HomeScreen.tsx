@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
 import { loadWallet } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
+import { fetchBalanceFtc } from '../services/fc-rpc';
 import type { PaymentRecord } from '../services/types';
 
 interface Props {
@@ -27,6 +28,7 @@ export default function HomeScreen({ onScan, onHistory, onSettings }: Props) {
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -35,6 +37,19 @@ export default function HomeScreen({ onScan, onHistory, onSettings }: Props) {
       setPayments(await listPayments());
     })();
   }, []);
+
+  // Refresh balance whenever the address is known, then every 30s.
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    const tick = async () => {
+      const b = await fetchBalanceFtc(address);
+      if (!cancelled) setBalanceFtc(b?.ftc ?? null);
+    };
+    void tick();
+    const id = window.setInterval(tick, 30_000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [address]);
 
   const recent = payments.slice(0, 3);
 
@@ -70,7 +85,21 @@ export default function HomeScreen({ onScan, onHistory, onSettings }: Props) {
           <div className="mono text-sm" style={{ color: 'var(--color-text)' }}>
             {address ? shortAddress(address) : '—'}
           </div>
-          <div className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-lg font-bold mono" style={{ color: 'var(--color-text)' }}>
+              {balanceFtc == null
+                ? '—'
+                : balanceFtc.toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 4,
+                  })}
+            </span>
+            <span className="text-xs uppercase tracking-wider"
+                  style={{ color: 'var(--color-text-faint)' }}>
+              FTC
+            </span>
+          </div>
+          <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
             {t('home.paymentsCount', { count: payments.length })}
           </div>
         </div>

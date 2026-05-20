@@ -11,16 +11,17 @@
  * writes the customer's local receipt, it does not broadcast a chain
  * transaction.
  */
-import { reference } from '@futurechain/sdk';
+import { pacs008, reference } from '@futurechain/sdk';
 import type { DecodedCreditor, DecodedPayment, PaymentRecord } from './types';
-import { getAllPayments, putPayment, wipePayments } from './db';
-import { loadPayerIdentity } from './payment-identity';
+import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
+import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
 import { assembleDraft } from './pacs008-draft';
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
 import type { FraudAssessment } from './fraud-engine';
+import { getRpc } from './fc-rpc';
 
 /** 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000;
@@ -167,10 +168,10 @@ export function formatSek(sek: number): string {
 
 // ── Payment records ───────────────────────────────────────────────────
 
-/** Persist a confirmed payment as a local receipt. Assembles and
- *  snapshots the ISO 20022 PACS.008 draft from the payer's saved
- *  identity + the scanned creditor party. The optional `risk` is the
- *  fraud-engine assessment computed by the Review screen. */
+/** Persist a confirmed payment as a local receipt only — no chain
+ *  settlement. Kept for backward compatibility with older builds that
+ *  pre-date the chain-settle flow. New code paths should call
+ *  `executePayment` instead. */
 export async function recordPayment(
   decoded: DecodedPayment,
   risk?: FraudAssessment,
@@ -192,6 +193,215 @@ export async function recordPayment(
   };
   await putPayment(record);
   return record;
+}
+
+/** 1 FTC = 100_000_000 satoshi (chain output unit).
+ *  1 FTC = 1_000_000 micro-FTC (URI/QR unit).
+ *  → 1 micro-FTC = 100 satoshi. */
+const SATOSHI_PER_MICRO_FTC = 100;
+
+/** Default tx fee in satoshi when the SDK's default would underpay.
+ *  Mirrors the FutureChain min-fee (100 sat = 1e-6 FTC) used by the
+ *  regression vectors; chosen to be invisible at retail amounts but
+ *  not zero so mempool fee-priority ordering still has a signal. */
+const DEFAULT_FEE_SATOSHI = 100;
+
+/**
+ * Settle a payment on the FutureChain via the SDK + the public
+ * light-hub at rpc.futurechain.eu:
+ *
+ *   1. Load the on-device wallet + payer identity.
+ *   2. Fetch the wallet's UTXOs (greedy-select for amount + fee).
+ *   3. Build a PACS.008 message + signed Transaction (`buildSignedPacs008Transaction`).
+ *   4. POST /submit_signed_transaction — Caddy enforces the X-API-Key.
+ *   5. Persist a `PaymentRecord` (status `queued|accepted|failed`) and
+ *      kick off a background poller that watches `/transaction/{txid}`
+ *      and flips status to `confirmed` when the tx is mined.
+ *
+ * Returns immediately after step 4. The poller updates the DB row in
+ * the background; the UI is expected to re-read the record via
+ * `getPaymentRecord(id)` to observe the status transitions.
+ */
+export async function executePayment(
+  decoded: DecodedPayment,
+  risk?: FraudAssessment,
+): Promise<PaymentRecord> {
+  const [identity, wallet] = await Promise.all([
+    loadPayerIdentity(),
+    loadWallet(),
+  ]);
+  if (!wallet) {
+    throw new Error('executePayment: no wallet on this device');
+  }
+
+  const id = newId();
+  const draft = assembleDraft(identity, wallet.address, decoded);
+  const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
+  const amountFtc = microFtcToFtc(decoded.amountMicroFtc);
+  const rpc = getRpc();
+
+  // Persist the "submitting" record so the UI can navigate immediately.
+  const baseRecord: PaymentRecord = {
+    id,
+    toAddress: decoded.toAddress,
+    merchantId: decoded.merchantId,
+    orderId: decoded.orderId,
+    purpose: decoded.purpose,
+    amountMicroFtc: decoded.amountMicroFtc,
+    ref: decoded.ref,
+    qrUri: decoded.qrUri,
+    status: 'submitting',
+    paidAt: Date.now(),
+    pacs008: draft,
+    risk,
+  };
+  await putPayment(baseRecord);
+
+  try {
+    // 1. UTXOs the sender can spend.
+    const utxos = await rpc.getUtxos(wallet.address);
+    if (utxos.length === 0) {
+      throw new Error('no spendable UTXOs — wallet has no on-chain balance');
+    }
+
+    // 2. PACS.008 message with the actual ISO parties.
+    const message = pacs008.buildPacs008({
+      debtor: identityToPacsParty(identity, wallet.address),
+      creditor: creditorToPacsParty(decoded),
+      amountFtc,
+      remittanceText: decoded.ref,
+    });
+    const uetr = extractUetr(message);
+
+    // 3. Signed Transaction (greedy UTXO + outputs + Ed25519 sig).
+    const tx = pacs008.buildSignedPacs008Transaction({
+      wallet,
+      utxos,
+      recipient: decoded.toAddress,
+      amountSatoshi,
+      feeSatoshi: DEFAULT_FEE_SATOSHI,
+      pacs008: message,
+      uetr,
+    });
+
+    // 4. Submit. Caddy enforces X-API-Key; futurechain enforces it again.
+    const submit = await rpc.submitSignedTransaction(tx);
+    const status = mapSubmitStatus(submit.status);
+    const updated: PaymentRecord = {
+      ...baseRecord,
+      status,
+      txId: submit.tx_id ?? uetr,
+      requestId: submit.request_id,
+      submittedAt: Date.now(),
+      error: status === 'failed' ? (submit.reason ?? submit.error ?? 'rejected') : undefined,
+    };
+    await putPayment(updated);
+
+    if (status === 'queued' || status === 'accepted') {
+      // Fire-and-forget — poller updates the DB row in the background.
+      void pollConfirmation(updated.id, updated.txId ?? uetr);
+    }
+    return updated;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const failed: PaymentRecord = {
+      ...baseRecord,
+      status: 'failed',
+      error: message,
+    };
+    await putPayment(failed);
+    return failed;
+  }
+}
+
+/** Re-read a payment record (UI polls this to observe status). */
+export async function getPaymentRecord(id: string): Promise<PaymentRecord | null> {
+  return getPayment(id);
+}
+
+/** Background poller — watches `/transaction/{txId}` until the tx is
+ *  mined or the deadline expires. Updates `status` to `confirmed` (with
+ *  `confirmedAt`) on success; leaves the record alone on timeout so
+ *  the user can manually refresh later. */
+async function pollConfirmation(recordId: string, txId: string): Promise<void> {
+  const rpc = getRpc();
+  const deadline = Date.now() + 5 * 60_000; // 5 min
+  const intervalMs = 5_000;
+
+  while (Date.now() < deadline) {
+    await sleep(intervalMs);
+    try {
+      const tx = (await rpc.getTransaction(txId)) as {
+        block_height?: number;
+        status?: string;
+        error?: string;
+      } | null;
+      if (!tx) continue;
+      // futurechain returns the tx with `block_height` populated once
+      // it's been mined; absent means still in mempool.
+      if (typeof tx.block_height === 'number' && tx.block_height > 0) {
+        const current = await getPayment(recordId);
+        if (!current) return;
+        await putPayment({
+          ...current,
+          status: 'confirmed',
+          confirmedAt: Date.now(),
+        });
+        return;
+      }
+    } catch {
+      // Transient — keep polling until the deadline.
+    }
+  }
+}
+
+function mapSubmitStatus(s: string): PaymentRecord['status'] {
+  if (s === 'queued') return 'queued';
+  if (s === 'accepted') return 'accepted';
+  if (s === 'rejected' || s === 'error') return 'failed';
+  if (s === 'pending') return 'queued';
+  return 'queued';
+}
+
+function identityToPacsParty(
+  identity: PayerIdentity | null,
+  walletAddress: string,
+): pacs008.Pacs008Party {
+  return {
+    name: identity?.name.trim() || walletAddress,
+    countryOfResidence: identity?.country.trim().toUpperCase() || 'SE',
+    accountId: walletAddress,
+  };
+}
+
+function creditorToPacsParty(decoded: DecodedPayment): pacs008.Pacs008Party {
+  return {
+    name: decoded.creditor?.name.trim() || decoded.merchantId,
+    countryOfResidence: decoded.creditor?.country.trim().toUpperCase() || 'SE',
+    accountId: decoded.toAddress,
+  };
+}
+
+function extractUetr(message: pacs008.Pacs008Message): string {
+  // Defensive — the SDK's buildPacs008 always populates the UETR at
+  // document.FIToFICstmrCdtTrf.CdtTrfTxInf[0].PmtId.UETR; we read it
+  // out rather than re-generate to ensure tx.id and the PACS.008
+  // payload agree (the chain requires this).
+  const doc = (message as Record<string, unknown>).document as
+    | Record<string, unknown>
+    | undefined;
+  const blk = doc?.FIToFICstmrCdtTrf as Record<string, unknown> | undefined;
+  const txs = blk?.CdtTrfTxInf as Array<Record<string, unknown>> | undefined;
+  const pmtId = txs?.[0]?.PmtId as Record<string, unknown> | undefined;
+  const uetr = pmtId?.UETR;
+  if (typeof uetr !== 'string') {
+    throw new Error('extractUetr: PACS.008 payload missing UETR');
+  }
+  return uetr;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Every recorded payment, newest first. */

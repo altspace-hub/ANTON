@@ -39,6 +39,19 @@ export async function putPayment(record: PaymentRecord): Promise<void> {
   db.close();
 }
 
+/** Fetch a single payment record by id, or null if not found. */
+export async function getPayment(id: string): Promise<PaymentRecord | null> {
+  const db = await open();
+  const row = await new Promise<PaymentRecord | null>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(id);
+    req.onsuccess = () => resolve((req.result as PaymentRecord | undefined) ?? null);
+    req.onerror = () => reject(req.error);
+  });
+  db.close();
+  return row;
+}
+
 /** All payment records, newest first. */
 export async function getAllPayments(): Promise<PaymentRecord[]> {
   const db = await open();
