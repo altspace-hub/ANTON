@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_by": "futurechain/src/bin/generate_conformance_vectors.rs",
-  "purpose": "Phase 0.1 conformance vectors for the @futurechain/sdk TypeScript wallet — byte-exact source of truth.",
+  "purpose": "Phase 0.1 + Phase 1 conformance vectors for the @futurechain/sdk TypeScript SDK — byte-exact source of truth for wallet + signing_message_v2.",
   "warning": "These mnemonics are PUBLISHED for testing. Never use as real wallets.",
   "vectors": [
     {
@@ -83,6 +83,192 @@
           "signature_hex": "d19f839ed2f4a4cf4dda97052eea379d063e24ee5c9fc46a69d3028fecc535321dbbdce45fb0631eaecd7f46e46c09afac5483f27f3a8a195157cf729b3c9602"
         }
       ]
+    }
+  ],
+  "transactions": [
+    {
+      "name": "minimal-transfer",
+      "description": "1 input, 1 output, no metadata, no encrypted_data — sanity baseline.",
+      "signer_priv_key_hex": "96edef9f95d1e717905e293dda38637ff405961b0d19a0f0623cfde3c344db63",
+      "signer_pub_key_hex": "0b665c05c161f729099cc4d338e879fd3d840daad596d397d28259313af4fc41",
+      "signer_address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+      "tx": {
+        "access_list": null,
+        "encrypted_data": null,
+        "fee": 100,
+        "id": "",
+        "inputs": [
+          {
+            "output_index": 0,
+            "previous_tx_id": "0000000000000000000000000000000000000000000000000000000000000001",
+            "public_key": null,
+            "signature": null
+          }
+        ],
+        "metadata": null,
+        "outputs": [
+          {
+            "address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+            "amount": 12345
+          }
+        ],
+        "privacy_proof": null,
+        "signature": null,
+        "timestamp": "2026-05-19T20:00:00Z"
+      },
+      "signing_message_v2": "0000000000000000000000000000000000000000000000000000000000000001:0|fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H:12345|100|1779220800|none|none",
+      "signing_message_v2_sha256_hex": "2eb3970d225a9a118c165bb677a8ef35684cc7c639084d5cd681fb6ecce568d5",
+      "signature_hex": "3ededdf49286a5cccdf73f675d48454473c98ca52cbbf666bbe789e93aac286bc48025a5b1045376f4d2091f5ddbf63a73f1959cf4a432ea5f7b2c235922a807"
+    },
+    {
+      "name": "pacs008-with-metadata-and-encrypted-data",
+      "description": "Realistic PACS.008-bearing tx: 2 inputs, 2 outputs (recipient + change), metadata.transaction_type=ISO20022_PACS008, metadata.iso20022_ref set, encrypted_data = a short JSON-like blob (the canonical PACS.008 bytes the screening node ingests).",
+      "signer_priv_key_hex": "96edef9f95d1e717905e293dda38637ff405961b0d19a0f0623cfde3c344db63",
+      "signer_pub_key_hex": "0b665c05c161f729099cc4d338e879fd3d840daad596d397d28259313af4fc41",
+      "signer_address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+      "tx": {
+        "access_list": null,
+        "encrypted_data": [
+          123,
+          34,
+          100,
+          111,
+          99,
+          117,
+          109,
+          101,
+          110,
+          116,
+          34,
+          58,
+          123,
+          34,
+          70,
+          73,
+          84,
+          111,
+          70,
+          73,
+          67,
+          115,
+          116,
+          109,
+          114,
+          67,
+          100,
+          116,
+          84,
+          114,
+          102,
+          34,
+          58,
+          123,
+          34,
+          71,
+          114,
+          112,
+          72,
+          100,
+          114,
+          34,
+          58,
+          123,
+          34,
+          77,
+          115,
+          103,
+          73,
+          100,
+          34,
+          58,
+          34,
+          84,
+          69,
+          83,
+          84,
+          34,
+          125,
+          125,
+          125,
+          125
+        ],
+        "fee": 1100,
+        "id": "",
+        "inputs": [
+          {
+            "output_index": 0,
+            "previous_tx_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "public_key": null,
+            "signature": null
+          },
+          {
+            "output_index": 3,
+            "previous_tx_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "public_key": null,
+            "signature": null
+          }
+        ],
+        "metadata": {
+          "compliance_decision_hash": null,
+          "compliance_node_address": null,
+          "compliance_screening_id": null,
+          "compliance_signature": null,
+          "compliance_timestamp": null,
+          "iso20022_ref": "UETR-12345abcd",
+          "transaction_type": "ISO20022_PACS008"
+        },
+        "outputs": [
+          {
+            "address": "fc_TestRecipient00000000000000000000",
+            "amount": 1000000
+          },
+          {
+            "address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+            "amount": 998900
+          }
+        ],
+        "privacy_proof": null,
+        "signature": null,
+        "timestamp": "2026-05-19T20:00:00Z"
+      },
+      "signing_message_v2": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:0,bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:3|fc_TestRecipient00000000000000000000:1000000,fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H:998900|1100|1779220800|efd16a9328098640dc1231a9ab8361ce7dbe61eab89065eb41f6e29b1808ec60|08b90d489b09b7d758f0e09c1043246ffcb3f93725e0fd7d54f9e2662dc690ac",
+      "signing_message_v2_sha256_hex": "9882c308971ea8722661b47b83521c9d8bce0863df879518c8c178abfac9db9e",
+      "signature_hex": "ff75d091c17513a048299ac91a5c166422dbadd917d867dc02d3ef97a20c7e95496cbbc3a474a4126d6b13f65fbc3c5dfdb204936dc19ab10efa01eca4acae0c"
+    },
+    {
+      "name": "non-pacs008-metadata",
+      "description": "Coinbase-style minimal tx with metadata.transaction_type=COINBASE (no iso20022_ref) — verifies metadata canonical handles the empty-iso_ref branch.",
+      "signer_priv_key_hex": "96edef9f95d1e717905e293dda38637ff405961b0d19a0f0623cfde3c344db63",
+      "signer_pub_key_hex": "0b665c05c161f729099cc4d338e879fd3d840daad596d397d28259313af4fc41",
+      "signer_address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+      "tx": {
+        "access_list": null,
+        "encrypted_data": null,
+        "fee": 0,
+        "id": "",
+        "inputs": [],
+        "metadata": {
+          "compliance_decision_hash": null,
+          "compliance_node_address": null,
+          "compliance_screening_id": null,
+          "compliance_signature": null,
+          "compliance_timestamp": null,
+          "iso20022_ref": null,
+          "transaction_type": "COINBASE"
+        },
+        "outputs": [
+          {
+            "address": "fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H",
+            "amount": 2500000000
+          }
+        ],
+        "privacy_proof": null,
+        "signature": null,
+        "timestamp": "2026-05-19T20:00:00Z"
+      },
+      "signing_message_v2": "|fc_VCjDhTr82jbLnhPh9bPpwLAwya6UnE6Q2H:2500000000|0|1779220800|none|ec387f6c7fa8d80f40fd5c928b9c434a35912b10d498c4f06891307202229642",
+      "signing_message_v2_sha256_hex": "9fe3d4bbde3a5a7c7dc0a55514e53072ad9507d4a940280a9344f7d2ca44378e",
+      "signature_hex": "8e19980d00d4ae910669ce85ec0c6a4c408cf4c25aa49f3180ecf28c08ee8741e0db711b8448e5ce8a0317b37b7b57d882486e8abf5f64fde14236744d242c0a"
     }
   ]
 }

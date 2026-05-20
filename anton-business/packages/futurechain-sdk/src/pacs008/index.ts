@@ -1,65 +1,504 @@
 /**
- * pacs008/ — PACS.008.001.13 builder + canonical JSON serialisation.
+ * pacs008/ — Transaction signing + PACS.008 message builder.
  *
- * Status: STUB. Real implementation lands in sprint 1 task 2.
- * Must match iso20022_pacs008.rs byte-for-byte. Vendor that file
- * into docs/futurechain/ before unstubbing.
+ * Status: IMPLEMENTED (Phase 1 — May 20 2026). Byte-exact against the
+ * Rust canonical at `futurechain/src/transaction.rs:593-632` (the
+ * `signing_message_v2` private fn) and `futurechain/src/blockchain.rs`
+ * (the Transaction / TransactionInput / TransactionOutput /
+ * TransactionMetadata structs).
  *
- * The Pacs008Builder pattern in spec §8.3 is the target API.
+ * What's in here:
+ *   • Transaction / TransactionInput / TransactionOutput / TransactionMetadata
+ *     — wire-shape types matching what `serde_json::to_value(&Transaction)`
+ *     emits in the Rust core. The RPC client POSTs and reads these shapes.
+ *   • `signingMessageV2(tx)` — the exact pipe-delimited canonical string
+ *     that the Rust signer builds. Byte-for-byte equal to Rust output.
+ *   • `signingMessageV2Hash(tx)` — SHA-256 of the UTF-8 bytes of the
+ *     canonical string. This is the 32-byte hash that Ed25519 actually
+ *     signs.
+ *   • `signTransaction(wallet, tx)` — produces an updated Transaction with
+ *     the wallet's Ed25519 signature attached at the tx-level AND on every
+ *     input (dual signature placement — matches transaction.rs:321-330).
+ *   • `Pacs008Builder` — produces a Pacs008Message JSON in the canonical
+ *     wire shape (the same shape `regression_test_suite.py::create_pacs008_message`
+ *     emits, matching `iso20022_pacs008.rs::Pacs008Document` serde).
+ *   • `canonicalize(pacs008)` / `hash(pacs008)` — JSON bytes / SHA-256 of
+ *     the Pacs008Message. These are what go into `tx.encrypted_data` and
+ *     what `signing_message_v2` re-hashes into `encrypted_data_hash`.
+ *
+ * Conformance is asserted in `pacs008.test.ts` against the v2 vectors in
+ * `test-vectors/conformance.v1.json`.
  */
-import { NotImplementedError } from '../index.js';
+import { sha256 } from '@noble/hashes/sha2';
+import { ed25519 } from '@noble/curves/ed25519';
+import type { Wallet } from '../wallet/index.js';
 
-export interface PartyIdentification {
+// ───────────────────────────────────────────────────────────────────────
+// Transaction wire shape — matches `blockchain.rs::Transaction` serde
+// ───────────────────────────────────────────────────────────────────────
+
+/** A signed-or-unsigned Transaction in the FutureChain wire shape. The
+ *  field names and order match exactly what `serde_json::to_value(&Transaction)`
+ *  emits on the Rust side, which is what the RPC server expects on POST. */
+export interface Transaction {
+  id: string;
+  inputs: TransactionInput[];
+  outputs: TransactionOutput[];
+  fee: number;
+  /** Timestamp — Rust uses `chrono::DateTime<Utc>` which serdes as a
+   *  RFC 3339 string ("2026-05-20T00:00:00Z"). When `signingMessageV2`
+   *  builds the canonical it converts this back to Unix seconds — the
+   *  same as `tx.timestamp.timestamp()` on the Rust side. */
+  timestamp: string;
+  signature: number[] | null;
+  metadata: TransactionMetadata | null;
+  /** PACS.008 payload bytes (the canonical JSON of a Pacs008Message).
+   *  Rust serdes Vec<u8> as a JSON number array. */
+  encrypted_data: number[] | null;
+  privacy_proof: unknown | null;
+  access_list: string[] | null;
+}
+
+export interface TransactionInput {
+  previous_tx_id: string;
+  output_index: number;
+  signature: number[] | null;
+  public_key: number[] | null;
+  /** Shadow-mode FALCON-512 fields — soft-upgrade per
+   *  `blockchain.rs::TransactionInput` serde. Omitted from JSON if null. */
+  pq_signature?: number[] | null;
+  pq_public_key?: number[] | null;
+}
+
+export interface TransactionOutput {
   address: string;
+  amount: number;
+}
+
+export interface TransactionMetadata {
+  iso20022_ref: string | null;
+  transaction_type: string;
+  // Compliance-decision fields — populated by the gateway AFTER user
+  // signs. Excluded from `signing_message_v2`'s metadata_user_hash on
+  // purpose so the user signature is stable across compliance stamping.
+  compliance_node_address: string | null;
+  compliance_screening_id: string | null;
+  compliance_decision_hash: string | null;
+  compliance_signature: number[] | null;
+  compliance_timestamp: number | null;
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// signing_message_v2 — byte-exact mirror of transaction.rs:593-632
+// ───────────────────────────────────────────────────────────────────────
+
+/** Build the canonical pipe-delimited signing string for a Transaction.
+ *  Output format (six `|`-joined fields):
+ *
+ *      inputs|outputs|fee|timestamp_unix_seconds|encrypted_data_hash|metadata_user_hash
+ *
+ *  Where:
+ *    inputs               = comma-joined "<previous_tx_id>:<output_index>"
+ *    outputs              = comma-joined "<address>:<amount>"
+ *    encrypted_data_hash  = hex(SHA-256(encrypted_data)) OR "none"
+ *    metadata_user_hash   = hex(SHA-256("iso_ref=<ref>;type=<type>")) OR "none"
+ *
+ *  Compliance metadata is INTENTIONALLY excluded — it's filled in by the
+ *  gateway after the user signs.
+ *
+ *  Must match `transaction.rs::signing_message_v2` byte-for-byte. The
+ *  conformance suite checks ~3 transaction shapes against the Rust
+ *  oracle. */
+export function signingMessageV2(tx: Transaction): string {
+  const inputs_str = tx.inputs
+    .map((i) => `${i.previous_tx_id}:${i.output_index}`)
+    .join(',');
+  const outputs_str = tx.outputs
+    .map((o) => `${o.address}:${o.amount}`)
+    .join(',');
+
+  const encrypted_data_hash = tx.encrypted_data
+    ? bytesToHex(sha256(Uint8Array.from(tx.encrypted_data)))
+    : 'none';
+
+  let metadata_user_hash: string;
+  if (tx.metadata) {
+    const canonical = `iso_ref=${tx.metadata.iso20022_ref ?? ''};type=${tx.metadata.transaction_type}`;
+    metadata_user_hash = bytesToHex(sha256(utf8(canonical)));
+  } else {
+    metadata_user_hash = 'none';
+  }
+
+  const ts_unix = timestampToUnixSeconds(tx.timestamp);
+
+  return `${inputs_str}|${outputs_str}|${tx.fee}|${ts_unix}|${encrypted_data_hash}|${metadata_user_hash}`;
+}
+
+/** SHA-256 of the UTF-8 bytes of `signingMessageV2(tx)` — the 32-byte
+ *  hash that the Ed25519 signer actually consumes. Matches Rust's
+ *  `Sha256::digest(message.as_bytes())` in transaction.rs:309. */
+export function signingMessageV2Hash(tx: Transaction): Uint8Array {
+  return sha256(utf8(signingMessageV2(tx)));
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// signTransaction — dual signature placement (tx + every input)
+// ───────────────────────────────────────────────────────────────────────
+
+/** Sign `tx` with the wallet's Ed25519 private key. Mirrors
+ *  `transaction.rs::sign_transaction:306-333` — attaches the same
+ *  signature both at `tx.signature` (tx-level) and on each
+ *  `input.signature` (per-input), with `input.public_key` set to the
+ *  wallet's pubkey on every input.
+ *
+ *  Does NOT modify the input `tx`; returns a new Transaction. Does NOT
+ *  set `tx.id` (txid is set by the Transaction builder — `calculate_txid`
+ *  in the Rust core is height-gated v1/v2 logic and lives in the
+ *  builder, not here).
+ *
+ *  Pre-condition: `tx.metadata` and `tx.encrypted_data` must already be
+ *  populated as they will appear on chain — signing locks both into the
+ *  hash.
+ *
+ *  Compliance fields in metadata may be null at sign time — that's
+ *  expected; they're filled in by the gateway later, and
+ *  `signing_message_v2` excludes them from the hash for that reason. */
+export function signTransaction(wallet: Wallet, tx: Transaction): Transaction {
+  const hash = signingMessageV2Hash(tx);
+  const sig = ed25519.sign(hash, wallet.privateKey);
+  const sigArr = Array.from(sig);
+  const pubArr = Array.from(wallet.publicKey);
+
+  return {
+    ...tx,
+    signature: sigArr,
+    inputs: tx.inputs.map((i) => ({
+      ...i,
+      signature: sigArr,
+      public_key: pubArr,
+    })),
+  };
+}
+
+/** Verify a signed Transaction's tx-level Ed25519 signature against the
+ *  given public key. Re-computes `signing_message_v2` from the tx and
+ *  checks the signature.
+ *
+ *  Note: this verifies the user signature only. Compliance signatures
+ *  (set by the gateway in `metadata.compliance_signature`) are a separate
+ *  channel — see `compliance_gateway.rs` for that path. */
+export function verifyTransactionSignature(
+  tx: Transaction,
+  publicKey: Uint8Array,
+): boolean {
+  if (!tx.signature) return false;
+  if (publicKey.length !== 32) return false;
+  if (tx.signature.length !== 64) return false;
+  const sig = Uint8Array.from(tx.signature);
+  const hash = signingMessageV2Hash(tx);
+  try {
+    return ed25519.verify(sig, hash, publicKey);
+  } catch {
+    return false;
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// PACS.008 message builder
+// ───────────────────────────────────────────────────────────────────────
+
+/** Party information for the debtor/creditor on a PACS.008. */
+export interface Pacs008Party {
   name: string;
-  country: string;
-  city?: string;
-  street?: string;
-  postcode?: string;
-  orgNr?: string;
+  /** ISO 3166 alpha-2 country code (residence). */
+  countryOfResidence?: string;
+  /** Wallet address — `fc_...`. */
+  accountId: string;
 }
 
-/** Standard ISO 20022 purpose codes used by ANTON Business. The full
- *  list is much longer; these are the ones we expect to emit in v1.0. */
-export type Purpose = 'GDDS' | 'SCVE' | 'OTHR' | 'CASH' | 'INTC' | 'REFUND';
-
-export interface Pacs008Draft {
-  debtor: PartyIdentification;
-  creditor: PartyIdentification;
-  amountMicroFtc: bigint;
-  currency: 'FTC';
-  purpose: Purpose;
-  reference: string;
+/** Builder input — the high-level intent the SDK consumer wants to send. */
+export interface Pacs008BuildInput {
+  debtor: Pacs008Party;
+  creditor: Pacs008Party;
+  /** Amount in FTC (a decimal — e.g. 1.00). The on-wire representation is
+   *  a JSON number; the chain stores satoshis (1 FTC = 1e8 satoshi) on
+   *  outputs separately. */
+  amountFtc: number;
+  /** Optional UETR (Unique End-to-End Transaction Reference). Auto-generated
+   *  as a UUID v4 if omitted. */
   uetr?: string;
+  /** Optional remittance text (free-form, see ADR-004 for the @futurechain/sdk/
+   *  reference encoding the merchant apps use). */
+  remittanceText?: string;
+  /** BIC for both agents (the same chain operator runs both legs of a
+   *  same-chain payment). Defaults to TESTSE33XXX. */
+  bic?: string;
 }
 
+/** The wire-shape Pacs008Message — matches what the regression suite +
+ *  `iso20022_pacs008.rs::Pacs008Document` serde emit on the Rust side. */
+export type Pacs008Message = Record<string, unknown>;
+
+const DEFAULT_BIC = 'TESTSE33XXX';
+const DEFAULT_BANK_NAME = 'Test Bank SE';
+
+/** Builder for a PACS.008.001.13 wire message. Chainable convenience
+ *  wrapper around `buildPacs008` — useful when constructing a tx from
+ *  partial state across multiple call sites. */
 export class Pacs008Builder {
-  private draft: Partial<Pacs008Draft> = { currency: 'FTC' };
+  private partial: Partial<Pacs008BuildInput> = {};
 
-  debtor(p: PartyIdentification): this { this.draft.debtor = p; return this; }
-  creditor(p: PartyIdentification): this { this.draft.creditor = p; return this; }
-  amount(microFtc: bigint, currency: 'FTC' = 'FTC'): this {
-    this.draft.amountMicroFtc = microFtc;
-    this.draft.currency = currency;
-    return this;
-  }
-  purpose(p: Purpose): this { this.draft.purpose = p; return this; }
-  reference(r: string): this { this.draft.reference = r; return this; }
-  uetr(u: string): this { this.draft.uetr = u; return this; }
+  debtor(p: Pacs008Party): this { this.partial.debtor = p; return this; }
+  creditor(p: Pacs008Party): this { this.partial.creditor = p; return this; }
+  amountFtc(v: number): this { this.partial.amountFtc = v; return this; }
+  uetr(v: string): this { this.partial.uetr = v; return this; }
+  remittance(v: string): this { this.partial.remittanceText = v; return this; }
+  bic(v: string): this { this.partial.bic = v; return this; }
 
-  build(): Pacs008Draft {
-    throw new NotImplementedError('Pacs008Builder.build()', 'parent-repo: iso20022_pacs008.rs not yet vendored');
+  build(): Pacs008Message {
+    if (!this.partial.debtor) throw new Error('Pacs008Builder.build(): debtor required');
+    if (!this.partial.creditor) throw new Error('Pacs008Builder.build(): creditor required');
+    if (this.partial.amountFtc === undefined) {
+      throw new Error('Pacs008Builder.build(): amountFtc required');
+    }
+    return buildPacs008(this.partial as Pacs008BuildInput);
   }
 }
 
-/** Canonical JSON of a PACS.008 for hashing/signing. Key order, BigInt
- *  encoding, and whitespace rules must match the Rust serializer. */
-export function canonicalize(_draft: Pacs008Draft): Uint8Array {
-  throw new NotImplementedError('pacs008.canonicalize()', 'parent-repo: iso20022_pacs008.rs not yet vendored');
+/** Build a Pacs008Message from a `Pacs008BuildInput`. Pure function —
+ *  no I/O, no side effects. The output matches the regression suite's
+ *  `create_pacs008_message` shape so the Rust core's
+ *  `serde_json::from_slice::<Pacs008Message>(encrypted_data)` deserialises
+ *  it cleanly. */
+export function buildPacs008(input: Pacs008BuildInput): Pacs008Message {
+  const now = isoNowSeconds();
+  const uetr = input.uetr ?? uuidV4();
+  const msgId = `MSGID-${randomHex(16).toUpperCase()}`;
+  const instrId = `INSTR-${randomHex(16).toUpperCase()}`;
+  const e2eId = `E2E-${randomHex(16).toUpperCase()}`;
+  const txId = `TXID-${randomHex(16).toUpperCase()}`;
+  const bic = input.bic ?? DEFAULT_BIC;
+
+  return {
+    document: {
+      FIToFICstmrCdtTrf: {
+        GrpHdr: {
+          MsgId: msgId,
+          CreDtTm: now,
+          NbOfTxs: '1',
+          SttlmInf: { SttlmMtd: 'CLRG' },
+        },
+        CdtTrfTxInf: [{
+          PmtId: { InstrId: instrId, EndToEndId: e2eId, TxId: txId, UETR: uetr },
+          IntrBkSttlmAmt: { '@Ccy': 'FTC', $value: input.amountFtc },
+          ChrgBr: 'SLEV',
+          Dbtr: { Nm: input.debtor.name, CtryOfRes: input.debtor.countryOfResidence ?? 'SE' },
+          DbtrAcct: { Id: { Othr: { Id: input.debtor.accountId } } },
+          DbtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
+          CdtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
+          Cdtr: { Nm: input.creditor.name, CtryOfRes: input.creditor.countryOfResidence ?? 'SE' },
+          CdtrAcct: { Id: { Othr: { Id: input.creditor.accountId } } },
+          Purp: { Cd: 'SUPP' },
+          ...(input.remittanceText !== undefined
+            ? { RmtInf: { Ustrd: [input.remittanceText] } }
+            : {}),
+        }],
+      },
+    },
+    futurechain_metadata: {
+      compliance_checked: false,
+      kyc_verified: false,
+      aml_checked: false,
+      sanctions_checked: false,
+      risk_score: 0.1,
+      processing_timestamp: now,
+      blockchain_tx_id: null,
+      node_type: 'archive',
+      network_id: 'mainnet',
+    },
+  };
 }
 
-/** Keccak-256 of the canonical JSON. This is the message hash that
- *  wallet.sign() consumes. */
-export function hash(_draft: Pacs008Draft): Uint8Array {
-  throw new NotImplementedError('pacs008.hash()');
+/** Canonical bytes of a PACS.008 message — `tx.encrypted_data` content.
+ *  Uses `JSON.stringify` (key order = insertion order — same as the
+ *  builder). Matches the Rust `serde_json::to_vec(&pacs008)` shape on
+ *  the deserialization side (the Rust signer's `signing_message_v2` only
+ *  hashes the BYTES that already live in `tx.encrypted_data`, so the
+ *  builder's JSON shape is what matters). */
+export function canonicalize(pacs008: Pacs008Message): Uint8Array {
+  return utf8(JSON.stringify(pacs008));
+}
+
+/** SHA-256 of the canonical bytes — useful for content addressing /
+ *  off-chain dedup. */
+export function hash(pacs008: Pacs008Message): Uint8Array {
+  return sha256(canonicalize(pacs008));
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Transaction builder — UTXO selection + outputs + sign
+// ───────────────────────────────────────────────────────────────────────
+
+/** A spendable UTXO as returned by `/get_utxos/{address}` on the live
+ *  node. Re-exported from rpc/ so the builder doesn't import rpc/ —
+ *  pacs008/ stays the "lower" layer in the dep graph. */
+export interface UtxoLike {
+  tx_id: string;
+  output_index: number;
+  amount: number;
+}
+
+export interface BuildPacs008TxInput {
+  /** The wallet that owns the input UTXOs and signs the tx. */
+  wallet: Wallet;
+  /** All UTXOs available for the sender. The builder picks greedily
+   *  largest-first; pass the full set returned by `getUtxos(address)`. */
+  utxos: UtxoLike[];
+  /** Recipient wallet address (fc_…). Same chain — no cross-chain. */
+  recipient: string;
+  /** Amount to send, in satoshi (1 FTC = 100_000_000 satoshi). */
+  amountSatoshi: number;
+  /** Network fee in satoshi. Default 100 (= 1e-6 FTC). */
+  feeSatoshi?: number;
+  /** The PACS.008 payload — built by `Pacs008Builder` or `buildPacs008`. */
+  pacs008: Pacs008Message;
+  /** UETR — the txid for PACS.008 is the UETR per the protocol. Must match
+   *  the UETR in the PACS.008 message. */
+  uetr: string;
+  /** Optional override for tx.timestamp (ISO 8601 UTC). Defaults to now. */
+  timestamp?: string;
+}
+
+/** Greedy UTXO selection — largest-first until the target is met. Throws
+ *  if the sender's UTXOs sum to less than the target. */
+export function selectUtxosGreedy(
+  utxos: UtxoLike[],
+  targetSatoshi: number,
+): UtxoLike[] {
+  if (targetSatoshi <= 0) {
+    throw new Error('selectUtxosGreedy: target must be > 0');
+  }
+  const sorted = [...utxos].sort((a, b) => b.amount - a.amount);
+  const picked: UtxoLike[] = [];
+  let sum = 0;
+  for (const u of sorted) {
+    picked.push(u);
+    sum += u.amount;
+    if (sum >= targetSatoshi) return picked;
+  }
+  throw new Error(
+    `selectUtxosGreedy: insufficient funds — need ${targetSatoshi} sat, have ${sum} sat across ${utxos.length} UTXO(s)`,
+  );
+}
+
+/** Build a fully-signed PACS.008-bearing Transaction ready to POST to
+ *  `/submit_signed_transaction`. Mirrors the Rust core's
+ *  `TransactionBuilder::create_transaction` shape: greedy UTXO selection,
+ *  recipient + change outputs, fee, metadata.transaction_type =
+ *  `ISO20022_PACS008`, encrypted_data = canonical JSON of the
+ *  Pacs008Message, txid = UETR, then `signTransaction` to attach the
+ *  Ed25519 signature on both the tx-level and every input. */
+export function buildSignedPacs008Transaction(
+  input: BuildPacs008TxInput,
+): Transaction {
+  const fee = input.feeSatoshi ?? 100;
+  if (fee < 0) throw new Error('buildSignedPacs008Transaction: fee must be >= 0');
+  if (input.amountSatoshi <= 0) {
+    throw new Error('buildSignedPacs008Transaction: amountSatoshi must be > 0');
+  }
+  const target = input.amountSatoshi + fee;
+  const selected = selectUtxosGreedy(input.utxos, target);
+  const totalIn = selected.reduce((s, u) => s + u.amount, 0);
+  const change = totalIn - target;
+  if (change < 0) {
+    // Shouldn't happen — selectUtxosGreedy already guarantees sum >= target.
+    throw new Error('buildSignedPacs008Transaction: invariant violated — change < 0');
+  }
+
+  const outputs: TransactionOutput[] = [
+    { address: input.recipient, amount: input.amountSatoshi },
+  ];
+  if (change > 0) {
+    // Change goes back to the sender.
+    outputs.push({ address: input.wallet.address, amount: change });
+  }
+
+  const unsigned: Transaction = {
+    id: input.uetr, // PACS.008: txid = UETR (per protocol spec §5 Phase 1)
+    inputs: selected.map((u) => ({
+      previous_tx_id: u.tx_id,
+      output_index: u.output_index,
+      signature: null,
+      public_key: null,
+    })),
+    outputs,
+    fee,
+    timestamp: input.timestamp ?? isoNowSeconds(),
+    signature: null,
+    metadata: {
+      iso20022_ref: input.uetr,
+      transaction_type: 'ISO20022_PACS008',
+      compliance_node_address: null,
+      compliance_screening_id: null,
+      compliance_decision_hash: null,
+      compliance_signature: null,
+      compliance_timestamp: null,
+    },
+    encrypted_data: Array.from(canonicalize(input.pacs008)),
+    privacy_proof: null,
+    access_list: null,
+  };
+
+  return signTransaction(input.wallet, unsigned);
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Helpers
+// ───────────────────────────────────────────────────────────────────────
+
+function bytesToHex(b: Uint8Array): string {
+  let s = '';
+  for (const x of b) s += x.toString(16).padStart(2, '0');
+  return s;
+}
+
+function utf8(s: string): Uint8Array {
+  return new TextEncoder().encode(s);
+}
+
+/** Convert the Rust-side `tx.timestamp.timestamp()` Unix seconds form
+ *  from the wire-shape ISO 8601 string. Drops sub-second precision —
+ *  matches `chrono::DateTime::timestamp() -> i64`. */
+function timestampToUnixSeconds(iso: string): number {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) {
+    throw new Error(`signingMessageV2: invalid timestamp '${iso}'`);
+  }
+  return Math.floor(t / 1000);
+}
+
+function isoNowSeconds(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function randomHex(len: number): string {
+  const bytes = new Uint8Array(Math.ceil(len / 2));
+  crypto.getRandomValues(bytes);
+  let s = '';
+  for (const b of bytes) s += b.toString(16).padStart(2, '0');
+  return s.slice(0, len);
+}
+
+function uuidV4(): string {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  // We just allocated b with length 16 so every index is in bounds; the
+  // non-null assertions are required only under `noUncheckedIndexedAccess`.
+  b[6] = (b[6]! & 0x0f) | 0x40; // version 4
+  b[8] = (b[8]! & 0x3f) | 0x80; // RFC 4122 variant
+  const h = (i: number) => b[i]!.toString(16).padStart(2, '0');
+  return (
+    `${h(0)}${h(1)}${h(2)}${h(3)}-${h(4)}${h(5)}-${h(6)}${h(7)}-` +
+    `${h(8)}${h(9)}-${h(10)}${h(11)}${h(12)}${h(13)}${h(14)}${h(15)}`
+  );
 }

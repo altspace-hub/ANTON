@@ -61,8 +61,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const VECTORS_PATH = resolve(HERE, '../../test-vectors/conformance.v1.json');
 
 const file: VectorsFile = JSON.parse(readFileSync(VECTORS_PATH, 'utf8'));
-if (file.schema_version !== 1) {
-  throw new Error(`vectors schema_version ${file.schema_version} != 1 — regenerate`);
+// v1 = wallet-only vectors. v2 = wallet + tx-signing vectors (Phase 1 pacs008
+// module). Both are wallet-test-compatible; pacs008.test.ts requires v2.
+if (file.schema_version < 1 || file.schema_version > 2) {
+  throw new Error(`vectors schema_version ${file.schema_version} unsupported — regenerate`);
 }
 
 // ───────────────────────────────────────────────────────────────────────
