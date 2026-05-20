@@ -7,41 +7,40 @@
  * `/get_utxos`, `/transaction`, `/iso_received`, `/info`, `/health`)
  * are unauthenticated — the data is already public on-chain.
  *
- * The default endpoint + key live in the build; a future settings
- * screen will let advanced users point at their own node.
+ * Phase F1+F2 (May 20 2026): the bearer is no longer a build-time
+ * constant. Every install obtains its own token via
+ * `enrollment.ts::getInstallToken` on first launch and stores it in
+ * the OS keystore. Decompiling the APK/IPA yields no working token.
+ * `getRpc()` is now `async` so the token can be resolved lazily.
+ *
+ * The default endpoint lives in the build; a future settings screen
+ * will let advanced users point at their own node.
  */
 import { rpc } from '@futurechain/sdk';
+import { getInstallToken } from './enrollment';
 
 /** Production light-hub URL (Bahnhof, behind Caddy + LE). */
 const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
 
-/** Production API key — matches LIGHT_HUB_API_KEYS on Bahnhof.
- *  TODO(daniel): move to a runtime-fetched / settings-driven value
- *  before public release; embedding in the client is fine for the
- *  closed-test phase.
- *
- *  Rotated 2026-05-20 after a Caddy access-log audit found the prior
- *  token in 184+ log lines. Caddy now redacts X-Api-Key + Authorization
- *  on log write, and the SDK only sends this header on
- *  POST /submit_signed_transaction (see AUTH_REQUIRED_PATHS). */
-const DEFAULT_API_KEY =
-  '4fc4de103453fa356ead6bdf72f217dcf1720d427de1e4245d5709119433a941';
-
 let cached: rpc.RpcClient | null = null;
 
-/** The shared RpcClient for this app session. Cached after first call. */
-export function getRpc(): rpc.RpcClient {
+/** The shared RpcClient for this app session. Resolves the per-install
+ *  bearer token on first call (enrolling if necessary) and caches both
+ *  the token and the client. */
+export async function getRpc(): Promise<rpc.RpcClient> {
   if (cached) return cached;
+  const apiKey = await getInstallToken(DEFAULT_ENDPOINT);
   cached = new rpc.RpcClient({
     endpoint: DEFAULT_ENDPOINT,
-    apiKey: DEFAULT_API_KEY,
+    apiKey,
     timeoutMs: 15_000,
   });
   return cached;
 }
 
-/** Reset the cached client — useful after a settings change once we
- *  wire a settings screen. Today only the tests need this. */
+/** Reset the cached client + force re-resolve on next getRpc. Useful
+ *  after a wallet reset (token-bound install_id cleared) or a settings
+ *  change once we wire a settings screen. */
 export function resetRpc(): void {
   cached = null;
 }
@@ -53,7 +52,8 @@ export async function fetchBalanceFtc(address: string): Promise<{
   utxoCount: number;
 } | null> {
   try {
-    const b = await getRpc().getBalance(address);
+    const client = await getRpc();
+    const b = await client.getBalance(address);
     return { ftc: b.balance_ftc, utxoCount: b.utxo_count };
   } catch {
     return null;

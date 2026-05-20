@@ -251,7 +251,7 @@ export async function executePayment(
   const draft = assembleDraft(identity, wallet.address, decoded);
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   const amountFtc = microFtcToFtc(decoded.amountMicroFtc);
-  const rpc = getRpc();
+  const rpc = await getRpc();
 
   // Biometric gate — fresh user-presence check before we sign anything.
   // On a real device this surfaces Face ID / Touch ID / fingerprint or
@@ -383,7 +383,7 @@ export async function pollConfirmation(
   txId: string,
   recipientAddress: string,
 ): Promise<void> {
-  const rpc = getRpc();
+  const rpc = await getRpc();
   const deadline = Date.now() + 5 * 60_000; // 5 min
   const intervalMs = 5_000;
 
