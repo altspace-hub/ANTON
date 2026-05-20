@@ -279,18 +279,19 @@ The PACS.008.001.13 message shape produced by
 
 | Secret | Location | Notes |
 |---|---|---|
-| **Bahnhof bearer** (`RPC_BEARER_TOKEN` / `LIGHT_HUB_API_KEYS`) | `/etc/caddy/auth.env` + `/etc/systemd/system/futurechain-node.service.d/api-keys.conf` on `79.136.1.113`; client copy is `DEFAULT_API_KEY` in `src/pay/services/fc-rpc.ts` | **Current value (rotated 2026-05-20):** `4fc4de103453fa356ead6bdf72f217dcf1720d427de1e4245d5709119433a941`. Prior token was leaked into 184+ access-log lines before the redaction landed — see `git log -- anton-business/packages/futurechain-sdk/src/rpc/index.ts`. Rotate again before public release. |
+| **Per-install Bahnhof tokens** | SQLite at `/var/lib/bahnhof-enroll/db.sqlite3` on `79.136.1.113`; one row per app install; client copy in each install's OS keystore under `fc.install.token` | **Replaces the single hardcoded `DEFAULT_API_KEY` as of Phase F1+F2 (May 20 2026).** The app calls `POST /enroll` on first launch and stores the issued token. The FC binary still keeps the legacy `LIGHT_HUB_API_KEYS` env var as defense-in-depth for any direct-localhost callers, but Caddy is the only public path and it goes through the sidecar. Use `bahnhof-admin {list,revoke,show}` on Bahnhof to manage. |
+| **Bahnhof legacy bearer** (`LIGHT_HUB_API_KEYS`) | `/etc/systemd/system/futurechain-node.service.d/api-keys.conf` on `79.136.1.113` | Still set to the rotated value (`4fc4de10…`) but no public client uses it after Phase F. Kept as defense-in-depth for direct-localhost calls. Can be removed once all callers move to enrolled tokens. |
+| **Sidecar admin bearer** (`ENROLL_ADMIN_TOKEN`) | `/etc/bahnhof-enroll/admin.env` on `79.136.1.113` (perms 0640 root:bahnhof-enroll) | Gates `POST /revoke` on `127.0.0.1:8546`. Required by `bahnhof-admin revoke`. Loopback-only — no public exposure. Rotate via `openssl rand -hex 32` + edit file + `systemctl restart bahnhof-enroll`. |
 | **Bahnhof SSH key** (`bahnhof_futurechain`) | `~/.ssh/bahnhof_futurechain` on the original Linux machine | Copy across to the Windows machine if you need SSH. User `ubuntu` on `79.136.1.113`. |
 | **DB003 mining wallet** (`fc_VEH4mJb5P9hKEaWkiuXRG6e6jooCnQZqKs`) | Wallet file in `/home/daniel/FutureChain/futurechain/wallets/` | Password is in the FutureChain memory entry `reference_secrets.md`. Used as the funding source for `pay-app-e2e-smoke.mts`. |
 | **`INSTANCE_KEY_ENCRYPTION_KEY`** (server side) | Env var on ANTON-business server | 32 bytes of hex. When unset, server falls back to plaintext + a one-time stderr warning (dev only). Production deployment MUST set this. |
 | **`COMPLIANCE_SIGNING_SALT`** (FutureChain miner side) | Env var on Node 2 in the dev topology | Memory entry `project_pay_slice_complete_may20_2026.md` documents this. Value: `COMPLIANCE_SIGNING_KEY`. Without it Node 2's miner refuses gossiped txs. |
 | **App-enrollment AES key** | Generated per install, derived from instance ID | Used by `app-enrollment-service.ts` for the companion-app pairing flow. |
-| **Capacitor SecureStorage entries** | OS keystore — never disk-readable | Mnemonic, privkey, address, "backed up" flag. See `src/pay/services/secure-store.ts` + `wallet.ts`. |
+| **Capacitor SecureStorage entries** | OS keystore — never disk-readable | Mnemonic, privkey, address, "backed up" flag, `fc.install.id`, `fc.install.token`. See `src/pay/services/secure-store.ts` + `wallet.ts` + `enrollment.ts`. |
 
 **What NOT to commit, ever:**
-- The bearer token in any plaintext form OTHER than
-  `src/pay/services/fc-rpc.ts::DEFAULT_API_KEY` (which is intentional
-  for the closed-test phase — see TODO at that line).
+- Any per-install token (they should never leave the device's OS keystore + the Bahnhof SQLite).
+- The sidecar admin bearer.
 - Wallet passwords.
 - Mnemonic phrases.
 - The contents of `auth.env` or `api-keys.conf`.
@@ -370,7 +371,7 @@ the Windows clone before staging anything.
 
 | Gap | Severity | Suggested next step | Reference |
 |---|---|---|---|
-| Per-build / per-install bearer tokens | HIGH (before public release) | xcaddy + caddy-ratelimit, then move to onboarding-handshake token provisioning | EY ch 13 §10.2 |
+| Device attestation on `/enroll` (Play Integrity / App Attest) | LOW–MEDIUM | Gate the enrollment endpoint so only legitimately-signed builds can mint tokens. Revisit when ANTON moves to B2B profile. | EY ch 13 §10.3 |
 | FC light-hub doesn't enforce its own endpoint allowlist | MEDIUM | Add light-hub-mode endpoint refusal at the FC application layer | EY ch 13 §5.4 |
 | Comm app on-chain send path | MEDIUM | Mirror pay/payment.ts::executePayment for Comm | this doc §5 |
 | Business app backup UI (Backup{Show,Verify} + Settings re-display) | MEDIUM | Lift the Pay-app screens with minimal change | this doc §5 |
