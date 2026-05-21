@@ -180,6 +180,54 @@ export function signTransaction(wallet: Wallet, tx: Transaction): Transaction {
   };
 }
 
+/**
+ * Async signer callback — pure function of (digest → signature) that
+ * the caller plugs in from a native plugin / HSM / etc. The signer
+ * MUST NOT inspect or persist the digest; it MUST return a 64-byte
+ * Ed25519 signature.
+ *
+ * Used by the *WithSigner variants below to keep the private key
+ * out of JavaScript heap entirely — the canonical implementation
+ * delegates to a Capacitor plugin that holds the priv under an
+ * Android Keystore alias and signs in native JVM code.
+ */
+export type AsyncEd25519Signer = (digest: Uint8Array) => Promise<Uint8Array>;
+
+/**
+ * Signer-callback variant of {@link signTransaction}. Identical
+ * placement (tx-level + every input) as the wallet-shaped variant —
+ * the only difference is the sign step delegates to a callback so
+ * the priv key can live somewhere safer than the JS heap.
+ *
+ *   publicKey  — the 32-byte Ed25519 public key (safe to expose)
+ *   signer     — async callback that signs a 32-byte digest
+ *   tx         — the Transaction to sign
+ */
+export async function signTransactionWithSigner(
+  publicKey: Uint8Array,
+  signer: AsyncEd25519Signer,
+  tx: Transaction,
+): Promise<Transaction> {
+  const digest = signingMessageV2Hash(tx);
+  const sig = await signer(digest);
+  if (sig.length !== 64) {
+    throw new Error(
+      `signTransactionWithSigner: signer returned ${sig.length} bytes; expected 64.`,
+    );
+  }
+  const sigArr = Array.from(sig);
+  const pubArr = Array.from(publicKey);
+  return {
+    ...tx,
+    signature: sigArr,
+    inputs: tx.inputs.map((i) => ({
+      ...i,
+      signature: sigArr,
+      public_key: pubArr,
+    })),
+  };
+}
+
 /** Verify a signed Transaction's tx-level Ed25519 signature against the
  *  given public key. Re-computes `signing_message_v2` from the tx and
  *  checks the signature.
@@ -450,6 +498,88 @@ export function buildSignedPacs008Transaction(
   };
 
   return signTransaction(input.wallet, unsigned);
+}
+
+/**
+ * Same as {@link BuildPacs008TxInput} but with the private key
+ * abstracted behind a signer callback so the priv can live in
+ * native code (Android Keystore via a Capacitor plugin, an HSM,
+ * etc.). The caller supplies the wallet's public key + address +
+ * an async signer.
+ */
+export interface BuildPacs008TxWithSignerInput {
+  /** 32-byte Ed25519 public key — safe to pass through JS heap. */
+  publicKey: Uint8Array;
+  /** Sender's `fc_…` Base58 address; change goes back here. */
+  senderAddress: string;
+  /** Native signer callback — typically a Capacitor plugin that
+   *  signs in JVM/Kotlin from a Keystore-resident priv key. */
+  signer: AsyncEd25519Signer;
+  utxos: UtxoLike[];
+  recipient: string;
+  amountSatoshi: number;
+  feeSatoshi?: number;
+  pacs008: Pacs008Message;
+  uetr: string;
+  timestamp?: number;
+}
+
+/**
+ * Signer-callback variant of {@link buildSignedPacs008Transaction}.
+ * Identical byte-for-byte output — only the priv-key handling
+ * differs. Use this from any client that doesn't want the priv in
+ * the JS heap (which should be all of them, once migrated).
+ */
+export async function buildSignedPacs008TransactionWithSigner(
+  input: BuildPacs008TxWithSignerInput,
+): Promise<Transaction> {
+  const fee = input.feeSatoshi ?? 100;
+  if (fee < 0) throw new Error('buildSignedPacs008TransactionWithSigner: fee must be >= 0');
+  if (input.amountSatoshi <= 0) {
+    throw new Error('buildSignedPacs008TransactionWithSigner: amountSatoshi must be > 0');
+  }
+  const target = input.amountSatoshi + fee;
+  const selected = selectUtxosGreedy(input.utxos, target);
+  const totalIn = selected.reduce((s, u) => s + u.amount, 0);
+  const change = totalIn - target;
+  if (change < 0) {
+    throw new Error('buildSignedPacs008TransactionWithSigner: invariant violated — change < 0');
+  }
+
+  const outputs: TransactionOutput[] = [
+    { address: input.recipient, amount: input.amountSatoshi },
+  ];
+  if (change > 0) {
+    outputs.push({ address: input.senderAddress, amount: change });
+  }
+
+  const unsigned: Transaction = {
+    id: input.uetr,
+    inputs: selected.map((u) => ({
+      previous_tx_id: u.tx_id,
+      output_index: u.output_index,
+      signature: null,
+      public_key: null,
+    })),
+    outputs,
+    fee,
+    timestamp: input.timestamp ?? isoNowSeconds(),
+    signature: null,
+    metadata: {
+      iso20022_ref: input.uetr,
+      transaction_type: 'ISO20022_PACS008',
+      compliance_node_address: null,
+      compliance_screening_id: null,
+      compliance_decision_hash: null,
+      compliance_signature: null,
+      compliance_timestamp: null,
+    },
+    encrypted_data: Array.from(canonicalize(input.pacs008)),
+    privacy_proof: null,
+    access_list: null,
+  };
+
+  return signTransactionWithSigner(input.publicKey, input.signer, unsigned);
 }
 
 // ───────────────────────────────────────────────────────────────────────
