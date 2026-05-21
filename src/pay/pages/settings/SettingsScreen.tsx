@@ -32,6 +32,8 @@ interface Props {
   onRestore: () => void;
   /** Settings → RPC endpoint switcher (point at a local FC node). */
   onRpcEndpoint: () => void;
+  /** Settings → scheduled-payment reminders (Wave 5). */
+  onSchedules: () => void;
   onReset: () => void;
 }
 
@@ -40,7 +42,7 @@ const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
   onBack, onWallet, onWalletsList, onPaymentDetails, onMoneyProfile, onActivityReview,
-  onRecoveryPhrase, onRestore, onRpcEndpoint, onReset,
+  onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onReset,
 }: Props) {
   const { t } = useTranslation();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -215,6 +217,26 @@ export default function SettingsScreen({
               </div>
               <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                 {t('settings.recoveryPhraseSub', 'Show your 24-word backup phrase')}
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 style={{ color: 'var(--color-text-dim)' }}>
+              <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Scheduled payments */}
+          <button type="button" onClick={onSchedules}
+                  className="rounded-xl p-4 flex items-center justify-between text-left"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)' }}>
+            <div>
+              <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+                {t('settings.schedules', 'Scheduled payments')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('settings.schedulesSub', 'Reminders for rent, subscriptions, bills')}
               </div>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

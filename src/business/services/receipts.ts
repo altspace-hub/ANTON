@@ -8,20 +8,52 @@
  *
  * Status flow ('pending' → 'confirmed' / 'voided') is unchanged.
  */
+import { sha256 } from '@noble/hashes/sha2';
 import { openDb, STORE_RECEIPTS, INDEX_RECEIPTS_BY_CREATED } from './db';
 import { consumeKvittoNumber, loadConfig } from './merchant';
 import type { NewReceiptInput, Receipt } from './types';
+
+function bytesToHex(b: Uint8Array): string {
+  let out = '';
+  for (const byte of b) out += byte.toString(16).padStart(2, '0');
+  return out;
+}
+
+/** Deterministic JSON of a Receipt minus its own prevHash — the
+ *  hash a SUBSEQUENT kvitto stores in its `prevHash` field. */
+function canonicalizeReceipt(r: Receipt): string {
+  const { prevHash: _ignore, ...rest } = r;
+  const obj: Record<string, unknown> = { ...rest };
+  obj.amountMicroFtc = r.amountMicroFtc.toString();
+  const sorted: Record<string, unknown> = {};
+  for (const k of Object.keys(obj).sort()) sorted[k] = obj[k];
+  return JSON.stringify(sorted);
+}
+
+function hashReceipt(r: Receipt): string {
+  return bytesToHex(sha256(new TextEncoder().encode(canonicalizeReceipt(r))));
+}
 
 export type { Receipt, NewReceiptInput, ReceiptMode, ReceiptStatus, KvittoRenderModel } from './types';
 export { formatKvittoNumber } from './types';
 
 /** Allocate the next kvitto number from the merchant config + persist
- *  the receipt row. Returns the inserted Receipt. */
+ *  the receipt row. Returns the inserted Receipt.
+ *
+ *  Wave 5: stamps `prevHash` = SHA-256 of the immediately previous
+ *  kvitto's canonical JSON. Forms a tamper-evident chain across the
+ *  whole receipts table. Combined with the Z-rapport signature, this
+ *  is court-defensible audit evidence — editing any past kvitto
+ *  breaks the prevHash on its successor, which breaks the Z-rapport
+ *  reconciliation, which fails the bookkeeping audit. */
 export async function persistReceipt(input: NewReceiptInput): Promise<Receipt> {
   const config = await loadConfig();
   if (!config) throw new Error('persistReceipt: merchant not configured');
   const kvittoNumber = await consumeKvittoNumber(config);
   const now = Date.now();
+  // Find the immediately-previous kvitto so we can chain its hash in.
+  const prev = kvittoNumber > 1 ? await getReceipt(kvittoNumber - 1) : null;
+  const prevHash = prev ? hashReceipt(prev) : undefined;
   const row: Receipt = {
     kvittoNumber,
     orderId: input.orderId,
@@ -44,6 +76,7 @@ export async function persistReceipt(input: NewReceiptInput): Promise<Receipt> {
     confirmedAt: input.status === 'confirmed' ? now : null,
     txHash: null,
     receivingAddress: input.receivingAddress,
+    prevHash,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

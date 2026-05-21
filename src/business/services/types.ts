@@ -40,6 +40,13 @@ export interface Receipt {
    *  creation so multi-wallet merchants can filter "which till took
    *  this sale". Optional — pre-multi-wallet receipts lack it. */
   receivingAddress?: string;
+  /** SHA-256 hex of the previous kvitto's canonical JSON. Forms a
+   *  tamper-evident chain at the per-kvitto level (item #10 of the
+   *  expert plan). Together with the Z-rapport signature it makes
+   *  any mid-day kvitto edit detectable: changing K-000042 changes
+   *  K-000043.prevHash, which breaks the chain. Set at write time;
+   *  pre-Wave-5 kvittos lack it. */
+  prevHash?: string;
 }
 
 export interface NewReceiptInput {

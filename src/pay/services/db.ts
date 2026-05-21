@@ -16,14 +16,13 @@
 import type { PaymentRecord, ReceivedRecord } from './types';
 
 const DB_NAME = 'anton-pay';
-/** v1: payments. v2: + received. v3: + contacts (address book).
- *  Any new store goes through this single opener — never open the
- *  same DB name from a sibling module with a different version
- *  number, IDB will race. */
-const DB_VERSION = 3;
+/** v1: payments. v2: + received. v3: + fc_contacts. v4: + schedules
+ *  (scheduled-payment reminders, Wave 5). */
+const DB_VERSION = 4;
 const STORE = 'payments';
 const RECEIVED_STORE = 'received';
 const CONTACTS_STORE = 'fc_contacts';
+const SCHEDULES_STORE = 'schedules';
 
 /** Centralised IDB opener. Exported so address-book.ts shares it. */
 export function openDb(): Promise<IDBDatabase> {
@@ -40,6 +39,11 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(CONTACTS_STORE)) {
         const store = db.createObjectStore(CONTACTS_STORE, { keyPath: 'id' });
         store.createIndex('byAddress', 'address', { unique: false });
+      }
+      // v4 — scheduled-payment reminders (Wave 5). One row per
+      // active or paused recurring schedule the user has created.
+      if (!db.objectStoreNames.contains(SCHEDULES_STORE)) {
+        db.createObjectStore(SCHEDULES_STORE, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => resolve(req.result);

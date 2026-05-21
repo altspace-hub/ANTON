@@ -31,8 +31,11 @@ import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
 import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
 import RestoreScreen from './pages/settings/RestoreScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
+import ScheduledPaymentsScreen from './pages/settings/ScheduledPaymentsScreen';
+import AddScheduleScreen from './pages/settings/AddScheduleScreen';
 import { hasProfile } from './services/profile';
 import { maybeRunIdlePoll, runOneShotPoll } from './services/idle-poller';
+import { reconcileScheduleNotifications } from './services/schedules';
 import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import type { DecodedPayment, PaymentRecord } from './services/types';
@@ -61,7 +64,9 @@ type Screen =
   | 'settings-activity'
   | 'settings-recovery'
   | 'settings-restore'
-  | 'settings-rpc';
+  | 'settings-rpc'
+  | 'settings-schedules'
+  | 'settings-schedules-add';
 
 export default function App() {
   const { t } = useTranslation();
@@ -119,6 +124,9 @@ export default function App() {
     };
 
     void onForeground();
+    // Re-arm scheduled-payment notifications on every foreground so a
+    // fresh install or OS-cleared notification state recovers itself.
+    void reconcileScheduleNotifications();
     const onVisibility = () => {
       if (document.visibilityState === 'visible') void onForeground();
     };
@@ -231,6 +239,7 @@ export default function App() {
         onRecoveryPhrase={() => setScreen('settings-recovery')}
         onRestore={() => setScreen('settings-restore')}
         onRpcEndpoint={() => setScreen('settings-rpc')}
+        onSchedules={() => setScreen('settings-schedules')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
@@ -294,6 +303,22 @@ export default function App() {
   }
   if (screen === 'settings-rpc') {
     return <RpcEndpointScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-schedules') {
+    return (
+      <ScheduledPaymentsScreen
+        onBack={() => setScreen('settings')}
+        onAdd={() => setScreen('settings-schedules-add')}
+      />
+    );
+  }
+  if (screen === 'settings-schedules-add') {
+    return (
+      <AddScheduleScreen
+        onBack={() => setScreen('settings-schedules')}
+        onCreated={() => setScreen('settings-schedules')}
+      />
+    );
   }
   if (screen === 'settings-restore') {
     return (
