@@ -74,6 +74,8 @@
     "cart": "Winkelwagen",
     "charge": "{{amount}} SEK in rekening brengen",
     "errCartEmpty": "De winkelwagen is leeg.",
+    "includeOrderDetails": "Bestelgegevens meesturen",
+    "includeOrderDetailsHint": "De klant ziet de gespecificeerde bestelling in zijn app en ondertekent deze als onderdeel van de betaling.",
     "issueKvitto": "Kvitto uitgeven · {{amount}} SEK",
     "noItemsHint": "Voeg eerst artikelen toe via Instellingen → Artikelen en kom dan hier terug.",
     "noItemsLabel": "Geen artikelen in catalogus",

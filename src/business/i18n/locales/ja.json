@@ -74,6 +74,8 @@
     "cart": "カート",
     "charge": "{{amount}} SEK を請求",
     "errCartEmpty": "カートが空です。",
+    "includeOrderDetails": "注文明細を含める",
+    "includeOrderDetailsHint": "お客様はアプリで明細付き注文を確認し、支払いの一部として署名します。",
     "issueKvitto": "kvitto を発行 · {{amount}} SEK",
     "noItemsHint": "まず「設定」→「商品」で商品を追加してから、ここに戻ってください。",
     "noItemsLabel": "カタログに商品がありません",

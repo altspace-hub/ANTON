@@ -74,6 +74,8 @@
     "cart": "السلة",
     "charge": "تحصيل {{amount}} SEK",
     "errCartEmpty": "السلة فارغة.",
+    "includeOrderDetails": "تضمين تفاصيل الطلب",
+    "includeOrderDetailsHint": "يرى العميل الطلب مفصّلاً في تطبيقه ويوقّع عليه كجزء من عملية الدفع.",
     "issueKvitto": "إصدار كفيتو · {{amount}} SEK",
     "noItemsHint": "أضِف عناصر في الإعدادات ← العناصر أولاً، ثم عُد إلى هنا.",
     "noItemsLabel": "لا توجد عناصر في الكتالوج",

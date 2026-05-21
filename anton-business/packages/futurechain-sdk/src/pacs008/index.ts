@@ -278,6 +278,14 @@ export interface Pacs008BuildInput {
   /** Optional remittance text (free-form, see ADR-004 for the @futurechain/sdk/
    *  reference encoding the merchant apps use). */
   remittanceText?: string;
+  /** Optional full structured `RmtInf` block (Wave 10 — rich remittance).
+   *  When set, this is placed under `CdtTrfTxInf[0].RmtInf` verbatim and
+   *  the `remittanceText` field is ignored. Use `encodeRemittance()` from
+   *  `./remittance.js` to build this. */
+  remittanceInfo?: {
+    Ustrd?: string[];
+    Strd?: Array<Record<string, unknown>>;
+  };
   /** BIC for both agents (the same chain operator runs both legs of a
    *  same-chain payment). Defaults to TESTSE33XXX. */
   bic?: string;
@@ -347,9 +355,15 @@ export function buildPacs008(input: Pacs008BuildInput): Pacs008Message {
           Cdtr: { Nm: input.creditor.name, CtryOfRes: input.creditor.countryOfResidence ?? 'SE' },
           CdtrAcct: { Id: { Othr: { Id: input.creditor.accountId } } },
           Purp: { Cd: 'SUPP' },
-          ...(input.remittanceText !== undefined
-            ? { RmtInf: { Ustrd: [input.remittanceText] } }
-            : {}),
+          // Wave 10 — structured remittance wins over the legacy
+          // single-line shorthand. When neither is set, RmtInf is
+          // omitted entirely (older payers / chains were never relying
+          // on it being present).
+          ...(input.remittanceInfo
+            ? { RmtInf: input.remittanceInfo }
+            : input.remittanceText !== undefined
+              ? { RmtInf: { Ustrd: [input.remittanceText] } }
+              : {}),
         }],
       },
     },
@@ -632,3 +646,15 @@ function uuidV4(): string {
     `${h(8)}${h(9)}-${h(10)}${h(11)}${h(12)}${h(13)}${h(14)}${h(15)}`
   );
 }
+
+// ───────────────────────────────────────────────────────────────────────
+// Wave 10 — rich remittance re-exports
+// ───────────────────────────────────────────────────────────────────────
+
+export {
+  encodeRemittance, decodeRemittance, readableSummary,
+  sha256Hex, buildAttachment,
+  REMITTANCE_SOFT_CAP_BYTES, REMITTANCE_HARD_CAP_BYTES, INLINE_ATTACHMENT_LIMIT,
+  type AntonRemittance, type AntonRemittanceItem, type AntonRemittanceAttachment,
+  type EncodedRemittance,
+} from './remittance.js';

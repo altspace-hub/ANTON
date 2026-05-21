@@ -16,6 +16,7 @@
  * the order info before they sign the PACS.008.
  */
 import { reference } from '@futurechain/sdk';
+import type { AntonRemittance } from '@futurechain/sdk/pacs008';
 import { keccak_256 } from '@noble/hashes/sha3';
 
 /** 15 minutes — per spec §9 default expiry. Long enough for a queue at
@@ -67,11 +68,22 @@ export interface SimpleOrder {
  *    I: item count           (sum of cart line quantities)
  *    V: VAT in micro-FTC     (post-discount VAT, converted via ftcPerSek)
  *    D: discount in micro-FTC (the SEK discount converted via ftcPerSek)
+ *
+ *  Wave 10 — optional `orderEnvelope` carries the structured AntonRemittance
+ *  payload (line items, VAT, ref) so the customer's Pay app can show what
+ *  they're paying for line-by-line and bundle it into the PACS.008 RmtInf
+ *  when they sign. Per-merchant opt-in (toggle on the QR screen). The
+ *  envelope is base64'd and placed under `&order=` in the QR.
+ *
+ *  CAUTION: QR practical size is ~2 KB at high error correction. Don't
+ *  include attachments — those come from the customer on their phone.
  */
 export interface ExtendedOrder extends SimpleOrder {
   itemCount: number;
   vatSek: number;
   discountSek?: number;
+  /** Wave 10 — structured order envelope encoded into the QR. */
+  orderEnvelope?: AntonRemittance;
 }
 
 export interface BuiltQr {
@@ -100,6 +112,7 @@ export function buildExtendedQr(order: ExtendedOrder): BuiltQr {
     discountMicroUnits: order.discountSek !== undefined && order.discountSek > 0
       ? sekToMicroFtc(order.discountSek, order.ftcPerSek)
       : undefined,
+    orderEnvelope: order.orderEnvelope,
   });
 }
 
@@ -107,6 +120,7 @@ interface InternalOrder extends SimpleOrder {
   itemCount?: number;
   vatMicroUnits?: bigint;
   discountMicroUnits?: bigint;
+  orderEnvelope?: AntonRemittance;
 }
 
 function buildQr(order: InternalOrder): BuiltQr {
@@ -140,6 +154,20 @@ function buildQr(order: InternalOrder): BuiltQr {
     if (order.creditor.city) params.set('cct', order.creditor.city);
     if (order.creditor.street) params.set('cst', order.creditor.street);
     if (order.creditor.postcode) params.set('cpc', order.creditor.postcode);
+  }
+  // Wave 10 — optional structured order envelope, base64-JSON in `order`.
+  if (order.orderEnvelope) {
+    const envelopeJson = JSON.stringify(order.orderEnvelope);
+    const envelopeB64 = base64UrlSafe(envelopeJson);
+    // Practical QR limit ~2 KB at high error correction. Soft-warn at 1500.
+    if (envelopeB64.length > 1500) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `qr.buildQr: order envelope is ${envelopeB64.length} chars in base64 — ` +
+        'the QR may exceed scanner-friendly size. Trim items or skip attachments.',
+      );
+    }
+    params.set('order', envelopeB64);
   }
   return {
     uri: `futurechain:pay?${params.toString()}`,
@@ -193,4 +221,72 @@ export function computeMerchantId(orgNr: string, walletAddress: string): string 
   let hex = '';
   for (let i = 0; i < 4; i++) hex += digest[i]!.toString(16).padStart(2, '0');
   return hex.toUpperCase();
+}
+
+/** URL-safe base64 — replaces `+ /` with `- _`, strips `=` padding so
+ *  the encoded value survives a URL parameter without needing percent-
+ *  encoding. Decoder reverses. */
+function base64UrlSafe(s: string): string {
+  // utf-8 → bytes → standard base64 → url-safe substitution
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = typeof btoa === 'function' ? btoa(bin) : Buffer.from(bytes).toString('base64');
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Decode a `&order=` param back into an AntonRemittance. Returns null
+ *  on any failure (invalid base64, JSON parse error, wrong shape).
+ *  Used by the Pay app's scanner. */
+export function decodeOrderEnvelope(b64: string): AntonRemittance | null {
+  try {
+    // Restore standard base64 padding.
+    const pad = (4 - (b64.length % 4)) % 4;
+    const std = b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(pad);
+    const bin = typeof atob === 'function' ? atob(std) : Buffer.from(std, 'base64').toString('binary');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const json = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(json) as AntonRemittance;
+    if (parsed.v !== 1) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+// Re-export the rich-remittance helpers from the SDK for the merchant-side
+// callers (cart → envelope construction). Pay imports its own copy.
+export { encodeRemittance, decodeRemittance, sha256Hex } from '@futurechain/sdk/pacs008';
+export type { AntonRemittance };
+
+/**
+ * Build an AntonRemittance order envelope from a cart + order id.
+ *
+ * The envelope carries line items, totals, and VAT — exactly what the
+ * customer sees on the kvitto. The merchant's "Include order details"
+ * toggle (Wave 10) controls whether this gets attached to the QR.
+ *
+ * Stays slim — no attachments. Customer can add their own on Pay-side.
+ */
+export function buildOrderEnvelopeFromCart(input: {
+  cart: import('./cart').Cart;
+  totals: import('./cart').CartTotals;
+  orderId: string;
+}): AntonRemittance {
+  const { cart, totals, orderId } = input;
+  return {
+    v: 1,
+    kind: 'order',
+    ref: orderId,
+    items: cart.lines.map((l) => ({
+      name: l.name,
+      qty: l.quantity,
+      unitPriceSek: l.unitPriceSek,
+      lineTotalSek: l.unitPriceSek * l.quantity,
+      vatRate: l.vatRate,
+    })),
+    amountSek: totals.totalSek,
+    vatSek: totals.totalVatSek,
+  };
 }

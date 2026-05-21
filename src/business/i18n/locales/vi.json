@@ -74,6 +74,8 @@
     "cart": "Giỏ hàng",
     "charge": "Tính {{amount}} SEK",
     "errCartEmpty": "Giỏ hàng trống.",
+    "includeOrderDetails": "Bao gồm chi tiết đơn hàng",
+    "includeOrderDetailsHint": "Khách hàng thấy đơn hàng từng mục trong ứng dụng và ký xác nhận như một phần của thanh toán.",
     "issueKvitto": "Phát hành kvitto · {{amount}} SEK",
     "noItemsHint": "Hãy thêm mặt hàng trong Cài đặt → Mặt hàng trước, rồi quay lại đây.",
     "noItemsLabel": "Không có mặt hàng nào trong danh mục",

@@ -74,6 +74,8 @@
     "cart": "购物车",
     "charge": "收款 {{amount}} SEK",
     "errCartEmpty": "购物车为空。",
+    "includeOrderDetails": "包含订单明细",
+    "includeOrderDetailsHint": "客户可在其应用中查看逐项订单明细，并作为付款的一部分进行签名。",
     "issueKvitto": "开具 kvitto · {{amount}} SEK",
     "noItemsHint": "请先在“设置 → 商品”中添加商品，然后再回到此处。",
     "noItemsLabel": "商品目录中无商品",

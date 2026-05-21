@@ -74,6 +74,8 @@
     "cart": "Cart",
     "charge": "Singilin ng {{amount}} SEK",
     "errCartEmpty": "Walang laman ang cart.",
+    "includeOrderDetails": "Isama ang mga detalye ng order",
+    "includeOrderDetailsHint": "Makikita ng customer ang detalyadong listahan ng order sa kanilang app at pipirmahan ito bilang bahagi ng bayad.",
     "issueKvitto": "Mag-isyu ng kvitto · {{amount}} SEK",
     "noItemsHint": "Magdagdag muna ng item sa Mga Setting → Mga Item, pagkatapos ay bumalik dito.",
     "noItemsLabel": "Walang item sa katalogo",

@@ -19,6 +19,8 @@
  * Parser parity with src/pay/services/received.ts so chain-shape
  * tuning stays in one mental model.
  */
+import { decodeRemittance } from '@futurechain/sdk/pacs008';
+import type { AntonRemittance } from '@futurechain/sdk/pacs008';
 import { getActiveWalletMeta } from './wallets';
 import { getRpc } from './fc-rpc';
 import { confirmReceiptByMatch } from './receipts';
@@ -43,6 +45,7 @@ export async function pollIncomingOnce(): Promise<Receipt[]> {
         ref: n.remittance ?? '',
         txHash: n.txHash,
         receivingAddress: meta.address,
+        customerRemittance: n.customerRemittance,
       });
       if (receipt) confirmed.push(receipt);
     }
@@ -92,6 +95,9 @@ interface Normalised {
   txHash: string;
   amountMicroFtc: bigint;
   remittance?: string;
+  /** Wave 10 — structured AntonRemittance decoded from the PACS.008
+   *  `RmtInf.Strd` block, when the customer attached one. */
+  customerRemittance?: AntonRemittance;
 }
 
 function normaliseItem(raw: unknown): Normalised | null {
@@ -132,5 +138,15 @@ function normaliseItem(raw: unknown): Normalised | null {
     ? remRaw.filter(s => typeof s === 'string').join(' ')
     : typeof remRaw === 'string' ? remRaw : undefined;
 
-  return { txHash, amountMicroFtc, remittance };
+  // Wave 10 — pull the whole RmtInf block and try to decode the
+  // ANTON-V1 structured envelope. Present only when the customer's
+  // Pay app bundled order details / a note into the payment.
+  const rmtInf = pick(raw, [
+    ['document', 'FIToFICstmrCdtTrf', 'CdtTrfTxInf', '0', 'RmtInf'],
+    ['CdtTrfTxInf', '0', 'RmtInf'],
+    ['RmtInf'],
+  ]);
+  const customerRemittance = rmtInf ? decodeRemittance(rmtInf) ?? undefined : undefined;
+
+  return { txHash, amountMicroFtc, remittance, customerRemittance };
 }

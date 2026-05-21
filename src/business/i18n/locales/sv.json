@@ -74,6 +74,8 @@
     "cart": "Varukorg",
     "charge": "Debitera {{amount}} SEK",
     "errCartEmpty": "Varukorgen är tom.",
+    "includeOrderDetails": "Inkludera orderdetaljer",
+    "includeOrderDetailsHint": "Kunden ser den specificerade ordern i sin app och signerar den som en del av betalningen.",
     "issueKvitto": "Utfärda kvitto · {{amount}} SEK",
     "noItemsHint": "Lägg till varor under Inställningar → Varor först, kom sedan tillbaka hit.",
     "noItemsLabel": "Inga varor i katalogen",

@@ -74,6 +74,8 @@
     "cart": "ตะกร้า",
     "charge": "เรียกเก็บ {{amount}} SEK",
     "errCartEmpty": "ตะกร้าว่างเปล่า",
+    "includeOrderDetails": "รวมรายละเอียดคำสั่งซื้อ",
+    "includeOrderDetailsHint": "ลูกค้าจะเห็นรายการสินค้าในแอปและลงนามเป็นส่วนหนึ่งของการชำระเงิน",
     "issueKvitto": "ออกใบ kvitto · {{amount}} SEK",
     "noItemsHint": "เพิ่มสินค้าในการตั้งค่า → สินค้าก่อน แล้วกลับมาที่นี่",
     "noItemsLabel": "ไม่มีสินค้าในแคตตาล็อก",

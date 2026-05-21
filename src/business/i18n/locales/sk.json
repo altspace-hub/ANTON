@@ -74,6 +74,8 @@
     "cart": "Košík",
     "charge": "Účtovať {{amount}} SEK",
     "errCartEmpty": "Košík je prázdny.",
+    "includeOrderDetails": "Zahrnúť podrobnosti objednávky",
+    "includeOrderDetailsHint": "Zákazník vidí rozpísanú objednávku vo svojej aplikácii a ako súčasť platby ju potvrdí.",
     "issueKvitto": "Vystaviť kvitto · {{amount}} SEK",
     "noItemsHint": "Najprv pridajte položky v Nastavenia → Položky, potom sa sem vráťte.",
     "noItemsLabel": "V katalógu nie sú žiadne položky",

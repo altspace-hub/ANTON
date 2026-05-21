@@ -74,6 +74,8 @@
     "cart": "Panier",
     "charge": "Encaisser {{amount}} SEK",
     "errCartEmpty": "Le panier est vide.",
+    "includeOrderDetails": "Inclure le détail de la commande",
+    "includeOrderDetailsHint": "Le client voit la commande détaillée dans son application et la signe dans le cadre du paiement.",
     "issueKvitto": "Émettre le kvitto · {{amount}} SEK",
     "noItemsHint": "Ajoutez d'abord des articles dans Paramètres → Articles, puis revenez ici.",
     "noItemsLabel": "Aucun article dans le catalogue",

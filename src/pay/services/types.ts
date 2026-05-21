@@ -66,6 +66,12 @@ export interface DecodedPayment {
   expUnixSeconds: number;
   /** Merchant ISO 20022 creditor party, if the QR carried one. */
   creditor: DecodedCreditor | null;
+  /** Wave 10 — structured order envelope decoded from the QR `order`
+   *  param. Present when the merchant flipped "Include order details".
+   *  Carries items[], amountSek, vatSek, ref — what the customer is
+   *  paying for line-by-line. Customer's Pay app re-bundles this into
+   *  the PACS.008 RmtInf alongside any note/agreement they add. */
+  orderEnvelope: import('@futurechain/sdk/pacs008').AntonRemittance | null;
   /** The full scanned URI, kept verbatim on the payment record. */
   qrUri: string;
 }

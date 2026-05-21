@@ -74,6 +74,8 @@
     "cart": "Warenkorb",
     "charge": "{{amount}} SEK berechnen",
     "errCartEmpty": "Der Warenkorb ist leer.",
+    "includeOrderDetails": "Bestelldetails einschließen",
+    "includeOrderDetailsHint": "Der Kunde sieht die aufgeschlüsselte Bestellung in seiner App und unterzeichnet sie als Teil der Zahlung.",
     "issueKvitto": "Kvitto ausstellen · {{amount}} SEK",
     "noItemsHint": "Fügen Sie zuerst unter Einstellungen → Artikel Artikel hinzu und kehren Sie dann hierher zurück.",
     "noItemsLabel": "Keine Artikel im Katalog",

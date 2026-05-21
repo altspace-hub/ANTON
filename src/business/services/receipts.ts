@@ -143,6 +143,10 @@ export async function confirmReceiptByMatch(opts: {
   ref: string;
   txHash: string;
   receivingAddress: string;
+  /** Wave 10 — structured remittance the customer attached, decoded
+   *  from the on-chain PACS.008 RmtInf. Persisted onto the confirmed
+   *  receipt so the merchant can read the customer's note / terms. */
+  customerRemittance?: Receipt['customerRemittance'];
 }): Promise<Receipt | null> {
   const pending = (await listReceipts(500)).filter(r => r.status === 'pending');
   const matches = pending.filter(r =>
@@ -158,6 +162,7 @@ export async function confirmReceiptByMatch(opts: {
     status: 'confirmed',
     confirmedAt: Date.now(),
     txHash: opts.txHash,
+    ...(opts.customerRemittance ? { customerRemittance: opts.customerRemittance } : {}),
   };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_RECEIPTS, 'readwrite');

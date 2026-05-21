@@ -74,6 +74,8 @@
     "cart": "ਕਾਰਟ",
     "charge": "{{amount}} SEK ਚਾਰਜ ਕਰੋ",
     "errCartEmpty": "ਕਾਰਟ ਖਾਲੀ ਹੈ.",
+    "includeOrderDetails": "ਆਰਡਰ ਵੇਰਵੇ ਸ਼ਾਮਲ ਕਰੋ",
+    "includeOrderDetailsHint": "ਗਾਹਕ ਆਪਣੀ ਐਪ ਵਿੱਚ ਆਈਟਮ-ਵਾਰ ਆਰਡਰ ਦੇਖਦਾ ਹੈ ਅਤੇ ਭੁਗਤਾਨ ਦੇ ਹਿੱਸੇ ਵਜੋਂ ਇਸ 'ਤੇ ਦਸਤਖ਼ਤ ਕਰਦਾ ਹੈ।",
     "issueKvitto": "Kvitto ਜਾਰੀ ਕਰੋ · {{amount}} SEK",
     "noItemsHint": "ਪਹਿਲਾਂ ਸੈਟਿੰਗਾਂ → ਆਈਟਮਾਂ ਵਿੱਚ ਆਈਟਮਾਂ ਜੋੜੋ, ਫਿਰ ਇੱਥੇ ਵਾਪਸ ਆਓ.",
     "noItemsLabel": "ਕੈਟਾਲਾਗ ਵਿੱਚ ਕੋਈ ਆਈਟਮ ਨਹੀਂ",

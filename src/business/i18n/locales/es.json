@@ -74,6 +74,8 @@
     "cart": "Carrito",
     "charge": "Cobrar {{amount}} SEK",
     "errCartEmpty": "El carrito está vacío.",
+    "includeOrderDetails": "Incluir detalles del pedido",
+    "includeOrderDetailsHint": "El cliente ve el pedido detallado en su app y lo firma como parte del pago.",
     "issueKvitto": "Emitir kvitto · {{amount}} SEK",
     "noItemsHint": "Añade artículos primero en Ajustes → Artículos y luego vuelve aquí.",
     "noItemsLabel": "No hay artículos en el catálogo",

@@ -74,6 +74,8 @@
     "cart": "Cart",
     "charge": "Charge {{amount}} SEK",
     "errCartEmpty": "Cart is empty.",
+    "includeOrderDetails": "Include order details",
+    "includeOrderDetailsHint": "Customer sees the itemized order in their app and signs it as part of the payment.",
     "issueKvitto": "Issue kvitto · {{amount}} SEK",
     "noItemsHint": "Add items in Settings → Items first, then come back here.",
     "noItemsLabel": "No items in catalogue",

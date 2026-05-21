@@ -69,6 +69,14 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
    *  required at the full-disclosure tier. */
   const [identityComplete, setIdentityComplete] = useState<boolean>(true);
   const [identityMissing, setIdentityMissing] = useState<string[]>([]);
+  /** Wave 10 — free-text note the customer attaches to this payment.
+   *  Bundles into PACS.008 RmtInf.Ustrd[1] alongside the structured
+   *  order envelope. Soft-capped at 500 chars for the textarea but the
+   *  underlying RmtInf can carry much more. */
+  const [customerNote, setCustomerNote] = useState('');
+  /** Whether the customer's wallet is ready — gates the note textarea
+   *  (no note when paying through a non-FTC fallback). */
+  const [walletConnected, setWalletConnected] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -95,6 +103,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
         : minimalDisclosureReady(idStatus);
       setIdentityComplete(ready);
       setIdentityMissing(missingFields(idStatus));
+      setWalletConnected(!!wallet);
       if (wallet) setDraft(assembleDraft(identity, wallet.address, payment, tier));
       setAssessment(assessPayment(
         {
@@ -152,7 +161,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
     }
     setBusy(true);
     try {
-      const record = await executePayment(payment, assessment ?? undefined);
+      const record = await executePayment(payment, assessment ?? undefined, customerNote);
       onConfirmed(record);
     } catch {
       setBusy(false);
@@ -224,6 +233,92 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
             </div>
           ))}
         </div>
+
+        {/* Wave 10 — itemized order details from the merchant's QR.
+            Shown when the merchant flipped "Include order details". */}
+        {payment.orderEnvelope?.items && payment.orderEnvelope.items.length > 0 && (
+          <div className="rounded-xl mb-4 overflow-hidden"
+               style={{ backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)' }}>
+            <div className="px-4 py-2 text-xs uppercase tracking-wider"
+                 style={{ color: 'var(--color-text-faint)',
+                          borderBottom: '1px solid var(--color-border-soft)' }}>
+              {t('review.orderDetails', 'Order details')}
+            </div>
+            {payment.orderEnvelope.items.map((it, i) => (
+              <div key={i}
+                   className="flex items-start justify-between px-4 py-2.5"
+                   style={{ borderTop: i === 0 ? undefined : '1px solid var(--color-border-soft)' }}>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold"
+                       style={{ color: 'var(--color-text)' }}>
+                    {it.qty}× {it.name}
+                  </div>
+                  {it.unitPriceSek !== undefined && (
+                    <div className="text-xs mt-0.5"
+                         style={{ color: 'var(--color-text-muted)' }}>
+                      {it.unitPriceSek.toFixed(2)} SEK · VAT {it.vatRate}%
+                    </div>
+                  )}
+                </div>
+                {it.lineTotalSek !== undefined && (
+                  <div className="text-sm mono font-semibold ml-3 text-right"
+                       style={{ color: 'var(--color-text)' }}>
+                    {it.lineTotalSek.toFixed(2)} SEK
+                  </div>
+                )}
+              </div>
+            ))}
+            {(payment.orderEnvelope.amountSek !== undefined
+              || payment.orderEnvelope.vatSek !== undefined) && (
+              <div className="px-4 py-2 text-xs flex justify-between"
+                   style={{ borderTop: '1px solid var(--color-border-soft)',
+                            color: 'var(--color-text-muted)' }}>
+                <span>
+                  {payment.orderEnvelope.vatSek !== undefined && payment.orderEnvelope.vatSek > 0
+                    ? t('review.orderVat', 'VAT {{vat}} SEK',
+                        { vat: payment.orderEnvelope.vatSek.toFixed(2) })
+                    : ''}
+                </span>
+                {payment.orderEnvelope.amountSek !== undefined && (
+                  <span className="font-semibold"
+                        style={{ color: 'var(--color-text)' }}>
+                    {payment.orderEnvelope.amountSek.toFixed(2)} SEK
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Wave 10 — customer's optional free-text note. Gets bundled
+            into the PACS.008 RmtInf alongside the order details when
+            the customer signs (Ustrd[1] line). */}
+        {walletConnected && (
+          <div className="mb-4">
+            <label className="text-xs uppercase tracking-wider block mb-1"
+                   style={{ color: 'var(--color-text-faint)' }}>
+              {t('review.noteLabel', 'Add a note (optional)')}
+            </label>
+            <textarea value={customerNote}
+                      onChange={(e) => setCustomerNote(e.target.value)}
+                      placeholder={t('review.notePlaceholder',
+                        'For internal use — what this payment is for, any agreement.')}
+                      rows={3}
+                      maxLength={500}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ backgroundColor: 'var(--color-surface)',
+                               border: '1px solid var(--color-border)',
+                               color: 'var(--color-text)',
+                               resize: 'vertical' }} />
+            {customerNote.length > 0 && (
+              <div className="text-xs mt-1 text-right"
+                   style={{ color: 'var(--color-text-faint)' }}>
+                {customerNote.length}/500
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ISO 20022 / PACS.008 details */}
         {draft && (

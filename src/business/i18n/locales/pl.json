@@ -74,6 +74,8 @@
     "cart": "Koszyk",
     "charge": "Pobierz {{amount}} SEK",
     "errCartEmpty": "Koszyk jest pusty.",
+    "includeOrderDetails": "Dołącz szczegóły zamówienia",
+    "includeOrderDetailsHint": "Klient widzi w swojej aplikacji szczegółowe zestawienie zamówienia i podpisuje je jako część płatności.",
     "issueKvitto": "Wystaw kvitto · {{amount}} SEK",
     "noItemsHint": "Najpierw dodaj pozycje w Ustawienia → Pozycje, a potem wróć tutaj.",
     "noItemsLabel": "Brak pozycji w katalogu",

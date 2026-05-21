@@ -74,6 +74,8 @@
     "cart": "Carrinho",
     "charge": "Cobrar {{amount}} SEK",
     "errCartEmpty": "O carrinho está vazio.",
+    "includeOrderDetails": "Incluir detalhes do pedido",
+    "includeOrderDetailsHint": "O cliente vê o pedido detalhado na sua aplicação e assina-o como parte do pagamento.",
     "issueKvitto": "Emitir kvitto · {{amount}} SEK",
     "noItemsHint": "Adicione primeiro artigos em Definições → Artigos e depois regresse aqui.",
     "noItemsLabel": "Sem artigos no catálogo",

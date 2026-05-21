@@ -102,6 +102,15 @@ export function decodePaymentUri(uri: string, now?: number): DecodeResult {
     };
   }
 
+  // Wave 10 — optional structured order envelope (cart items, totals,
+  // ref). Present only when the merchant flipped "Include order details"
+  // on the QR generation screen. Base64url-JSON in the `order` param.
+  let orderEnvelope: DecodedPayment['orderEnvelope'] = null;
+  const orderParam = params.get('order');
+  if (orderParam) {
+    orderEnvelope = decodeOrderEnvelopeParam(orderParam);
+  }
+
   const payment: DecodedPayment = {
     toAddress: to,
     amountMicroFtc,
@@ -115,11 +124,34 @@ export function decodePaymentUri(uri: string, now?: number): DecodeResult {
     discountMicroFtc: f.discountMicroUnits ?? null,
     expUnixSeconds,
     creditor,
+    orderEnvelope,
     qrUri: trimmed,
   };
 
   if (isExpired(payment, now)) return { ok: false, reason: 'expired' };
   return { ok: true, payment };
+}
+
+/** Decode the `order=` QR param. Base64url → UTF-8 → JSON →
+ *  AntonRemittance. Returns null on any failure. The Pay app's Review
+ *  screen calls this once per scan; subsequent payment-record reads
+ *  pass the parsed shape through without re-decoding. */
+function decodeOrderEnvelopeParam(b64: string): DecodedPayment['orderEnvelope'] {
+  try {
+    const pad = (4 - (b64.length % 4)) % 4;
+    const std = b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(pad);
+    const bin = typeof atob === 'function'
+      ? atob(std)
+      : Buffer.from(std, 'base64').toString('binary');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const json = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(json);
+    if (parsed && typeof parsed === 'object' && parsed.v === 1) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /** True when the QR carried an expiry that has already passed. A QR
@@ -239,6 +271,10 @@ const DEFAULT_FEE_SATOSHI = 100;
 export async function executePayment(
   decoded: DecodedPayment,
   risk?: FraudAssessment,
+  /** Wave 10 — customer's optional free-text note. Bundles into the
+   *  PACS.008 RmtInf alongside the merchant's order envelope (if any).
+   *  Pass undefined or '' for the default minimal-remittance behaviour. */
+  customerNote?: string,
 ): Promise<PaymentRecord> {
   const [identity, signer] = await Promise.all([
     loadPayerIdentity(),
@@ -313,11 +349,37 @@ export async function executePayment(
     }
 
     // 2. PACS.008 message with the actual ISO parties.
+    // Wave 10 — if the merchant attached a structured order envelope
+    // (or the customer added a note), build the rich RmtInf and pass
+    // it through instead of the legacy single-line `remittanceText`.
+    const trimmedNote = (customerNote ?? '').trim();
+    let remittanceInfo: ReturnType<typeof pacs008.encodeRemittance>['rmtInf'] | undefined;
+    if (decoded.orderEnvelope || trimmedNote) {
+      const merged: pacs008.AntonRemittance = decoded.orderEnvelope
+        ? { ...decoded.orderEnvelope, ...(trimmedNote ? { message: trimmedNote } : {}) }
+        : {
+            v: 1,
+            kind: 'message',
+            ref: decoded.orderId,
+            ...(trimmedNote ? { message: trimmedNote } : {}),
+          };
+      try {
+        const encoded = pacs008.encodeRemittance(merged);
+        remittanceInfo = encoded.rmtInf;
+      } catch (e) {
+        // Hard-cap exceeded — fall back to the legacy single-line
+        // shorthand so the payment still proceeds.
+        // eslint-disable-next-line no-console
+        console.warn('executePayment: rich remittance too large, falling back to ref', e);
+      }
+    }
     const message = pacs008.buildPacs008({
       debtor: identityToPacsParty(identity, wallet.address),
       creditor: creditorToPacsParty(decoded),
       amountFtc,
-      remittanceText: decoded.ref,
+      ...(remittanceInfo
+        ? { remittanceInfo }
+        : { remittanceText: decoded.ref }),
     });
     const uetr = extractUetr(message);
 

@@ -74,6 +74,8 @@
     "cart": "Kurv",
     "charge": "Opkræv {{amount}} SEK",
     "errCartEmpty": "Kurven er tom.",
+    "includeOrderDetails": "Inkludér ordredetaljer",
+    "includeOrderDetailsHint": "Kunden ser den specificerede ordre i sin app og underskriver den som en del af betalingen.",
     "issueKvitto": "Udsted kvitto · {{amount}} SEK",
     "noItemsHint": "Tilføj varer i Indstillinger → Varer først, og kom så tilbage hertil.",
     "noItemsLabel": "Ingen varer i kataloget",

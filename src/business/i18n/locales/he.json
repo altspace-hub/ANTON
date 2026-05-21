@@ -74,6 +74,8 @@
     "cart": "עגלה",
     "charge": "חיוב {{amount}} SEK",
     "errCartEmpty": "העגלה ריקה.",
+    "includeOrderDetails": "כלול פרטי הזמנה",
+    "includeOrderDetailsHint": "הלקוח רואה את ההזמנה המפורטת באפליקציה שלו וחותם עליה כחלק מהתשלום.",
     "issueKvitto": "הנפק kvitto · {{amount}} SEK",
     "noItemsHint": "הוסף תחילה פריטים בהגדרות ← פריטים, ואז חזור לכאן.",
     "noItemsLabel": "אין פריטים בקטלוג",

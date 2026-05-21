@@ -74,6 +74,8 @@
     "cart": "Handlekurv",
     "charge": "Belast {{amount}} SEK",
     "errCartEmpty": "Handlekurven er tom.",
+    "includeOrderDetails": "Inkluder ordredetaljer",
+    "includeOrderDetailsHint": "Kunden ser den spesifiserte ordren i appen sin og signerer den som en del av betalingen.",
     "issueKvitto": "Utsted kvitto · {{amount}} SEK",
     "noItemsHint": "Legg til varer i Innstillinger → Varer først, og kom så tilbake hit.",
     "noItemsLabel": "Ingen varer i katalogen",

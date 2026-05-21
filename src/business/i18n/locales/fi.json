@@ -74,6 +74,8 @@
     "cart": "Ostoskori",
     "charge": "Veloita {{amount}} SEK",
     "errCartEmpty": "Ostoskori on tyhjä.",
+    "includeOrderDetails": "Sisällytä tilaustiedot",
+    "includeOrderDetailsHint": "Asiakas näkee eritellyn tilauksen sovelluksessaan ja allekirjoittaa sen osana maksua.",
     "issueKvitto": "Anna kvitto · {{amount}} SEK",
     "noItemsHint": "Lisää tuotteita ensin kohdassa Asetukset → Tuotteet ja palaa sitten tänne.",
     "noItemsLabel": "Luettelossa ei ole tuotteita",

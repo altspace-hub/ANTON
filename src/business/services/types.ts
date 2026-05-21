@@ -47,6 +47,12 @@ export interface Receipt {
    *  K-000043.prevHash, which breaks the chain. Set at write time;
    *  pre-Wave-5 kvittos lack it. */
   prevHash?: string;
+  /** Wave 10 — structured remittance the customer attached to their
+   *  payment (free-text note, agreed terms, their own itemisation).
+   *  Decoded from the on-chain PACS.008 RmtInf by the inbound poller
+   *  when the receipt confirms. Absent on receipts paid without a
+   *  rich remittance, or confirmed before Wave 10. */
+  customerRemittance?: import('@futurechain/sdk/pacs008').AntonRemittance;
 }
 
 export interface NewReceiptInput {

@@ -74,6 +74,8 @@
     "cart": "Sepet",
     "charge": "{{amount}} SEK tahsil et",
     "errCartEmpty": "Sepet boş.",
+    "includeOrderDetails": "Sipariş ayrıntılarını ekle",
+    "includeOrderDetailsHint": "Müşteri, uygulamasında kalemli siparişi görür ve ödemenin bir parçası olarak imzalar.",
     "issueKvitto": "Kvitto düzenle · {{amount}} SEK",
     "noItemsHint": "Önce Ayarlar → Ürünler bölümünden ürün ekleyin, ardından buraya geri dönün.",
     "noItemsLabel": "Katalogda ürün yok",

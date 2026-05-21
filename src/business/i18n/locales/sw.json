@@ -74,6 +74,8 @@
     "cart": "Kikapu",
     "charge": "Toza {{amount}} SEK",
     "errCartEmpty": "Kikapu ni tupu.",
+    "includeOrderDetails": "Jumuisha maelezo ya agizo",
+    "includeOrderDetailsHint": "Mteja anaona agizo lenye vipengee mstari kwa mstari katika programu yake na kuisaini kama sehemu ya malipo.",
     "issueKvitto": "Toa kvitto · {{amount}} SEK",
     "noItemsHint": "Ongeza vipengee katika Mipangilio → Vipengee kwanza, kisha rudi hapa.",
     "noItemsLabel": "Hakuna vipengee katika katalogi",

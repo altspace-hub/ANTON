@@ -93,6 +93,40 @@ export function KvittoView({ receipt, merchant }: { receipt: Receipt; merchant: 
           ref: {receipt.ref}
         </div>
       )}
+
+      {/* Wave 10 — remittance the customer attached to their payment.
+          Decoded from the on-chain PACS.008 RmtInf by the inbound
+          poller. Shown so the merchant can read the customer's note
+          / agreed terms against the kvitto. */}
+      {receipt.customerRemittance && (
+        (receipt.customerRemittance.message
+          || receipt.customerRemittance.decision
+          || receipt.customerRemittance.terms) && (
+          <>
+            <hr className="my-3" style={{ borderColor: '#EAE7E0' }} />
+            <div className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                 style={{ color: '#686A7C' }}>
+              Customer note
+            </div>
+            {receipt.customerRemittance.message && (
+              <div className="text-[11px] mb-1" style={{ color: '#3A3A3A' }}>
+                {receipt.customerRemittance.message}
+              </div>
+            )}
+            {receipt.customerRemittance.decision && (
+              <div className="text-[11px] mb-1" style={{ color: '#3A3A3A' }}>
+                <span style={{ color: '#686A7C' }}>Agreed: </span>
+                {receipt.customerRemittance.decision}
+              </div>
+            )}
+            {receipt.customerRemittance.terms && (
+              <div className="text-[10px]" style={{ color: '#686A7C' }}>
+                {receipt.customerRemittance.terms}
+              </div>
+            )}
+          </>
+        )
+      )}
     </div>
   );
 }

@@ -74,6 +74,8 @@
     "cart": "장바구니",
     "charge": "{{amount}} SEK 청구",
     "errCartEmpty": "장바구니가 비어 있습니다.",
+    "includeOrderDetails": "주문 내역 포함",
+    "includeOrderDetailsHint": "고객이 앱에서 상세 주문 내역을 확인하고 결제의 일부로 서명합니다.",
     "issueKvitto": "kvitto 발행 · {{amount}} SEK",
     "noItemsHint": "먼저 설정 → 품목에서 품목을 추가한 다음 여기로 돌아오세요.",
     "noItemsLabel": "카탈로그에 품목 없음",

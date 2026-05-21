@@ -22,7 +22,7 @@ import {
   addLine, computeTotals, empty, removeLine, setQuantity,
   type Cart,
 } from '../services/cart';
-import { buildExtendedQr, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
+import { buildExtendedQr, buildOrderEnvelopeFromCart, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
 import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
@@ -42,6 +42,11 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
   // distinct category values, so a flat (segment-less) catalogue keeps
   // the legacy single-grid layout.
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Wave 10 — opt-in toggle. When ON, the cart is bundled as a structured
+  // AntonRemittance envelope and rides along inside the QR. The Pay app
+  // decodes it and shows the customer line-by-line what they're paying for.
+  // OFF (default) keeps the QR small — only `to/amount/ref/inv/exp`.
+  const [includeOrderDetails, setIncludeOrderDetails] = useState(false);
   const [cart, setCart] = useState<Cart>(empty());
   const [phase, setPhase] = useState<Phase>('cart');
   const [built, setBuilt] = useState<BuiltQr | null>(null);
@@ -86,10 +91,14 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
     if (totals.totalSek <= 0) return setError(t('extended.errCartEmpty'));
     if (walletConnected) {
       try {
+        const orderId = generateOrderId();
+        const orderEnvelope = includeOrderDetails
+          ? buildOrderEnvelopeFromCart({ cart, totals, orderId })
+          : undefined;
         const b = buildExtendedQr({
           toAddress: config.safelloReceiveAddress,
           merchantId,
-          orderId: generateOrderId(),
+          orderId,
           amountSek: totals.totalSek,
           ftcPerSek: config.ftcPerSek,
           vatSek: totals.totalVatSek,
@@ -97,6 +106,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
           itemCount: totals.itemCount,
           purpose: 'RESTAURANT',
           creditor: merchantToCreditorParty(config),
+          orderEnvelope,
         });
         setBuilt(b);
         setPhase('qr');
@@ -427,6 +437,29 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
       )}
 
       <div className="p-6 pt-3">
+        {/* Wave 10 — opt-in toggle: include itemized order details in
+            the QR. Off by default to keep QR small; the merchant flips
+            it on for service businesses / agreements / anywhere the
+            customer should see line-by-line what they're paying for. */}
+        {walletConnected && cart.lines.length > 0 && (
+          <label className="flex items-center gap-3 mb-3 px-1"
+                 style={{ cursor: 'pointer' }}>
+            <input type="checkbox" checked={includeOrderDetails}
+                   onChange={(e) => setIncludeOrderDetails(e.target.checked)}
+                   style={{ width: 18, height: 18, accentColor: 'var(--color-accent)' }} />
+            <span className="flex-1">
+              <span className="text-sm font-semibold block"
+                    style={{ color: 'var(--color-text)' }}>
+                {t('extended.includeOrderDetails', 'Include order details')}
+              </span>
+              <span className="text-xs block mt-0.5"
+                    style={{ color: 'var(--color-text-muted)' }}>
+                {t('extended.includeOrderDetailsHint',
+                  'Customer sees the itemized order in their app and signs it as part of the payment.')}
+              </span>
+            </span>
+          </label>
+        )}
         <PrimaryButton
           onClick={generateQrOrIssue}
           disabled={totals.totalSek <= 0}

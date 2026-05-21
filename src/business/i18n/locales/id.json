@@ -74,6 +74,8 @@
     "cart": "Keranjang",
     "charge": "Tagih {{amount}} SEK",
     "errCartEmpty": "Keranjang kosong.",
+    "includeOrderDetails": "Sertakan detail pesanan",
+    "includeOrderDetailsHint": "Pelanggan melihat pesanan terperinci di aplikasi mereka dan menandatanganinya sebagai bagian dari pembayaran.",
     "issueKvitto": "Terbitkan kvitto · {{amount}} SEK",
     "noItemsHint": "Tambahkan item terlebih dahulu di Pengaturan → Item, lalu kembali ke sini.",
     "noItemsLabel": "Tidak ada item di katalog",

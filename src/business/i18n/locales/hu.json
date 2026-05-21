@@ -74,6 +74,8 @@
     "cart": "Kosár",
     "charge": "{{amount}} SEK felszámítása",
     "errCartEmpty": "A kosár üres.",
+    "includeOrderDetails": "Rendelési részletek csatolása",
+    "includeOrderDetailsHint": "Az ügyfél az alkalmazásában látja a tételes rendelést, és a fizetés részeként aláírja azt.",
     "issueKvitto": "Kvitto kiállítása · {{amount}} SEK",
     "noItemsHint": "Először adjon hozzá tételeket a Beállítások → Tételek menüben, majd térjen ide vissza.",
     "noItemsLabel": "Nincsenek tételek a katalógusban",

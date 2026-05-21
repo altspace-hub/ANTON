@@ -74,6 +74,8 @@
     "cart": "Coș",
     "charge": "Încasează {{amount}} SEK",
     "errCartEmpty": "Coșul este gol.",
+    "includeOrderDetails": "Includeți detaliile comenzii",
+    "includeOrderDetailsHint": "Clientul vede comanda detaliată în aplicația sa și o semnează ca parte a plății.",
     "issueKvitto": "Emite kvitto · {{amount}} SEK",
     "noItemsHint": "Adaugă mai întâi articole în Setări → Articole, apoi revino aici.",
     "noItemsLabel": "Niciun articol în catalog",

@@ -74,6 +74,8 @@
     "cart": "Troli",
     "charge": "Caj {{amount}} SEK",
     "errCartEmpty": "Troli kosong.",
+    "includeOrderDetails": "Sertakan butiran pesanan",
+    "includeOrderDetailsHint": "Pelanggan melihat pesanan terperinci dalam aplikasi mereka dan menandatanganinya sebagai sebahagian daripada pembayaran.",
     "issueKvitto": "Keluarkan kvitto · {{amount}} SEK",
     "noItemsHint": "Tambah item dalam Tetapan → Item dahulu, kemudian kembali ke sini.",
     "noItemsLabel": "Tiada item dalam katalog",
