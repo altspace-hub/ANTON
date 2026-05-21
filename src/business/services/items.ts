@@ -84,6 +84,61 @@ export async function seedSampleItems(): Promise<CatalogueItem[]> {
   return samples;
 }
 
+/**
+ * Load all items from an industry template into the catalogue.
+ *
+ *   - mode = 'append' keeps existing items and appends the template's.
+ *     The merchant can curate from there.
+ *   - mode = 'replace' wipes the current catalogue first. Useful when
+ *     onboarding for the first time and the merchant hasn't curated yet.
+ *
+ * Returns the new full catalogue.
+ */
+export async function loadIndustryTemplate(
+  templateId: string,
+  mode: 'append' | 'replace',
+): Promise<CatalogueItem[]> {
+  // Lazy import to avoid pulling the 600-item template blob into the
+  // sale-flow bundles. Only `Settings → Items → Templates` triggers this.
+  const { getTemplate } = await import('../data/industry-templates');
+  const template = getTemplate(templateId);
+  if (!template) throw new Error(`loadIndustryTemplate: unknown id "${templateId}"`);
+  const existing = mode === 'append' ? await loadItems() : [];
+  const now = Date.now();
+  const additions: CatalogueItem[] = [];
+  for (const segment of template.segments) {
+    for (const item of segment.items) {
+      additions.push({
+        id: generateItemId(),
+        name: item.name,
+        unitPriceSek: item.priceSek,
+        vatRate: item.vatRate,
+        category: segment.label,
+        updatedAt: now,
+      });
+    }
+  }
+  const merged = [...existing, ...additions];
+  await saveAll(merged);
+  return merged;
+}
+
+/** Returns the unique set of category names present in the current
+ *  catalogue, in the order they were first added. Used to drive the
+ *  segment tab-bar in the Extended-sale screen. */
+export async function listCategories(): Promise<string[]> {
+  const items = await loadItems();
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const i of items) {
+    const c = (i.category ?? '').trim();
+    if (!c || seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  return out;
+}
+
 export async function wipeItems(): Promise<void> {
   await removeSecure(KEY);
 }

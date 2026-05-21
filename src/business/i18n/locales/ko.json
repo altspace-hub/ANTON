@@ -69,6 +69,7 @@
     "title": "설정이 완료되었습니다"
   },
   "extended": {
+    "allCategories": "전체",
     "backToCart": "장바구니로 돌아가기",
     "cart": "장바구니",
     "charge": "{{amount}} SEK 청구",
@@ -107,6 +108,29 @@
     "subtitle": "시작하려면 품목 몇 개를 추가하세요. 나중에 설정에서 편집, 추가 또는 삭제할 수 있습니다.",
     "title": "품목 추가",
     "vatRate": "VAT 세율"
+  },
+  "itemsManage": {
+    "add": "+ 품목 추가",
+    "addTitle": "새 품목",
+    "allCategories": "전체",
+    "confirmDelete": "이 품목을 삭제하시겠습니까?",
+    "delete": "품목 삭제",
+    "editTitle": "품목 편집",
+    "empty": "품목이 아직 없습니다. 첫 번째 품목을 추가하거나 위의 템플릿을 불러오세요.",
+    "emptyCategory": "이 세그먼트에 품목이 없습니다.",
+    "fieldCategory": "세그먼트 (선택 사항)",
+    "fieldCategoryPlaceholder": "예: 에스프레소",
+    "fieldName": "이름",
+    "fieldNamePlaceholder": "예: 카푸치노",
+    "fieldPrice": "가격 (SEK)",
+    "fieldVat": "부가세율",
+    "newCategory": "+ 새로 만들기",
+    "noCategory": "없음",
+    "openTemplates": "업종 템플릿 보기",
+    "openTemplatesSub": "40개의 기성 카탈로그 — 카페, 살롱, 배관 등",
+    "title": "품목",
+    "totalCount": "카탈로그에 {{count}}개 품목",
+    "vatPercent": "부가세 {{rate}}%"
   },
   "mode": {
     "continue": "계속",
@@ -216,6 +240,8 @@
     "defaultMode": "기본 모드:",
     "exportKvittos": "kvitto 내보내기",
     "generateWalletHint": "지갑을 생성하여 판매 흐름에서 FTC 결제 QR을 활성화하세요.",
+    "items": "품목",
+    "itemsSub": "판매 품목 · 가격 · 40개 업종 템플릿",
     "language": "언어",
     "languagePick": "언어 선택",
     "mode": "테마",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "결제 대기 중"
+  },
+  "templates": {
+    "append": "카탈로그에 추가",
+    "confirmReplace": "현재 카탈로그를 \"{{name}}\" 템플릿으로 교체하시겠습니까? 기존 품목이 모두 삭제됩니다.",
+    "editAfterHint": "불러온 후 언제든지 편집, 삭제 또는 추가할 수 있습니다.",
+    "footer": "40개 템플릿 · 585개 기본 품목 · 모두 편집 가능",
+    "replace": "카탈로그 교체",
+    "subtitle": "판매하는 것과 가장 가까운 템플릿을 선택하세요. 현실적인 품목과 적절한 가격 및 부가세율이 불러와집니다 — 이후 비즈니스에 맞게 편집하세요.",
+    "summary": "{{segments}}개 세그먼트에 걸쳐 {{count}}개 품목. 불러온 후 모든 가격과 부가세율을 편집할 수 있습니다.",
+    "title": "업종 템플릿"
   },
   "wallet": {
     "addressLabel": "주소",

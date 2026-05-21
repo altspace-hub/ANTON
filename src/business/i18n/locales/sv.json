@@ -69,6 +69,7 @@
     "title": "Du är klar"
   },
   "extended": {
+    "allCategories": "Alla",
     "backToCart": "Tillbaka till varukorg",
     "cart": "Varukorg",
     "charge": "Debitera {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Lägg till några varor för att komma igång. Du kan redigera, lägga till fler eller ta bort dem senare i Inställningar.",
     "title": "Lägg till dina varor",
     "vatRate": "Momssats"
+  },
+  "itemsManage": {
+    "add": "+ Lägg till ny vara",
+    "addTitle": "Ny vara",
+    "allCategories": "Alla",
+    "confirmDelete": "Ta bort den här varan?",
+    "delete": "Ta bort vara",
+    "editTitle": "Redigera vara",
+    "empty": "Inga varor ännu. Lägg till din första, eller ladda en mall ovan.",
+    "emptyCategory": "Inga varor i det här segmentet.",
+    "fieldCategory": "Segment (valfritt)",
+    "fieldCategoryPlaceholder": "t.ex. Espresso",
+    "fieldName": "Namn",
+    "fieldNamePlaceholder": "t.ex. Cappuccino",
+    "fieldPrice": "Pris (SEK)",
+    "fieldVat": "Momssats",
+    "newCategory": "+ nytt",
+    "noCategory": "Inget",
+    "openTemplates": "Bläddra bland branschmallar",
+    "openTemplatesSub": "40 färdiga kataloger — café, salong, rörmokare och fler",
+    "title": "Varor",
+    "totalCount": "{{count}} varor i katalogen",
+    "vatPercent": "Moms {{rate}}%"
   },
   "mode": {
     "continue": "Fortsätt",
@@ -216,6 +240,8 @@
     "defaultMode": "Standardläge:",
     "exportKvittos": "Exportera kvitton",
     "generateWalletHint": "Skapa en plånbok för att låsa upp FTC-betal-QR i försäljningsflöden.",
+    "items": "Varor",
+    "itemsSub": "Vad du säljer · priser · mallar för 40 branscher",
     "language": "Språk",
     "languagePick": "Välj språk",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Lyssnar efter betalning"
+  },
+  "templates": {
+    "append": "Lägg till i min katalog",
+    "confirmReplace": "Ersätt din nuvarande katalog med mallen \"{{name}}\"? Befintliga varor tas bort.",
+    "editAfterHint": "Redigera, ta bort eller lägg till vad som helst efter att du laddat mallen.",
+    "footer": "40 mallar · 585 startvaror · allt redigerbart",
+    "replace": "Ersätt min katalog",
+    "subtitle": "Välj en mall som liknar det du säljer. Vi laddar realistiska varor med rimliga priser och momssatser — sedan anpassar du dem efter din verksamhet.",
+    "summary": "{{count}} varor i {{segments}} segment. Varje pris och momssats går att redigera efter att du laddat mallen.",
+    "title": "Branschmallar"
   },
   "wallet": {
     "addressLabel": "Adress",

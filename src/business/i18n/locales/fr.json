@@ -69,6 +69,7 @@
     "title": "Tout est configuré"
   },
   "extended": {
+    "allCategories": "Toutes",
     "backToCart": "Retour au panier",
     "cart": "Panier",
     "charge": "Encaisser {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Ajoutez quelques articles pour commencer. Vous pourrez les modifier, en ajouter ou les supprimer plus tard dans les Paramètres.",
     "title": "Ajoutez vos articles",
     "vatRate": "Taux de TVA"
+  },
+  "itemsManage": {
+    "add": "+ Ajouter un article",
+    "addTitle": "Nouvel article",
+    "allCategories": "Toutes",
+    "confirmDelete": "Supprimer cet article ?",
+    "delete": "Supprimer l'article",
+    "editTitle": "Modifier l'article",
+    "empty": "Aucun article pour l'instant. Ajoutez le premier ou chargez un modèle ci-dessus.",
+    "emptyCategory": "Aucun article dans cette rubrique.",
+    "fieldCategory": "Rubrique (facultatif)",
+    "fieldCategoryPlaceholder": "ex. Espresso",
+    "fieldName": "Nom",
+    "fieldNamePlaceholder": "ex. Cappuccino",
+    "fieldPrice": "Prix (SEK)",
+    "fieldVat": "Taux de TVA",
+    "newCategory": "+ Nouvelle",
+    "noCategory": "Aucune",
+    "openTemplates": "Parcourir les modèles de secteur",
+    "openTemplatesSub": "40 catalogues prêts à l'emploi — café, salon, plombier, et plus",
+    "title": "Articles",
+    "totalCount": "{{count}} articles dans le catalogue",
+    "vatPercent": "TVA {{rate}}%"
   },
   "mode": {
     "continue": "Continuer",
@@ -216,6 +240,8 @@
     "defaultMode": "Mode par défaut :",
     "exportKvittos": "Exporter les kvittos",
     "generateWalletHint": "Générez un portefeuille pour débloquer les QR de paiement FTC dans les parcours de vente.",
+    "items": "Articles",
+    "itemsSub": "Ce que vous vendez · prix · modèles pour 40 secteurs",
     "language": "Langue",
     "languagePick": "Choisir la langue",
     "mode": "Thème",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "En attente d'un paiement"
+  },
+  "templates": {
+    "append": "Ajouter à mon catalogue",
+    "confirmReplace": "Remplacer votre catalogue actuel par le modèle \"{{name}}\" ? Les articles existants seront supprimés.",
+    "editAfterHint": "Modifiez, supprimez ou ajoutez ce que vous voulez après le chargement.",
+    "footer": "40 modèles · 585 articles de départ · tous modifiables",
+    "replace": "Remplacer mon catalogue",
+    "subtitle": "Choisissez un modèle proche de ce que vous vendez. Nous chargeons des articles réalistes avec des prix et des taux de TVA adaptés — vous les ajustez ensuite à votre activité.",
+    "summary": "{{count}} articles répartis en {{segments}} rubriques. Chaque prix et taux de TVA est modifiable après le chargement.",
+    "title": "Modèles de secteur"
   },
   "wallet": {
     "addressLabel": "Adresse",

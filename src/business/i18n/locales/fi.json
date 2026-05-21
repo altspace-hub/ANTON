@@ -69,6 +69,7 @@
     "title": "Olet valmis"
   },
   "extended": {
+    "allCategories": "Kaikki",
     "backToCart": "Takaisin ostoskoriin",
     "cart": "Ostoskori",
     "charge": "Veloita {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Lisää muutama tuote päästäksesi alkuun. Voit muokata, lisätä lisää tai poistaa niitä myöhemmin Asetuksista.",
     "title": "Lisää tuotteesi",
     "vatRate": "ALV-kanta"
+  },
+  "itemsManage": {
+    "add": "+ Lisää uusi tuote",
+    "addTitle": "Uusi tuote",
+    "allCategories": "Kaikki",
+    "confirmDelete": "Poistetaanko tämä tuote?",
+    "delete": "Poista tuote",
+    "editTitle": "Muokkaa tuotetta",
+    "empty": "Ei tuotteita vielä. Lisää ensimmäinen tai lataa malli yllä.",
+    "emptyCategory": "Tässä segmentissä ei ole tuotteita.",
+    "fieldCategory": "Segmentti (valinnainen)",
+    "fieldCategoryPlaceholder": "esim. Espresso",
+    "fieldName": "Nimi",
+    "fieldNamePlaceholder": "esim. Cappuccino",
+    "fieldPrice": "Hinta (SEK)",
+    "fieldVat": "ALV-kanta",
+    "newCategory": "+ uusi",
+    "noCategory": "Ei mitään",
+    "openTemplates": "Selaa toimialamallit",
+    "openTemplatesSub": "40 valmista luetteloa — kahvila, parturi, putkimies ja lisää",
+    "title": "Tuotteet",
+    "totalCount": "{{count}} tuotetta luettelossa",
+    "vatPercent": "ALV {{rate}}%"
   },
   "mode": {
     "continue": "Jatka",
@@ -216,6 +240,8 @@
     "defaultMode": "Oletustila:",
     "exportKvittos": "Vie kvittot",
     "generateWalletHint": "Luo lompakko avataksesi FTC-maksu-QR-koodit myyntiprosesseissa.",
+    "items": "Tuotteet",
+    "itemsSub": "Mitä myyt · hinnat · mallit 40 toimialalle",
     "language": "Kieli",
     "languagePick": "Valitse kieli",
     "mode": "Teema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Kuunnellaan maksua"
+  },
+  "templates": {
+    "append": "Lisää luettelooni",
+    "confirmReplace": "Korvataanko nykyinen luettelosi mallilla \"{{name}}\"? Olemassa olevat tuotteet poistetaan.",
+    "editAfterHint": "Muokkaa, poista tai lisää mitä tahansa lataamisen jälkeen.",
+    "footer": "40 mallia · 585 aloitustuotetta · kaikki muokattavissa",
+    "replace": "Korvaa luetteloni",
+    "subtitle": "Valitse myyntiäsi lähinnä oleva malli. Lataamme realistiset tuotteet järkevillä hinnoilla ja ALV-kannoilla — sitten muokkaat ne vastaamaan liiketoimintaasi.",
+    "summary": "{{count}} tuotetta {{segments}} segmentissä. Jokainen hinta ja ALV-kanta on muokattavissa lataamisen jälkeen.",
+    "title": "Toimialamallit"
   },
   "wallet": {
     "addressLabel": "Osoite",

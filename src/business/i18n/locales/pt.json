@@ -69,6 +69,7 @@
     "title": "Configuração concluída"
   },
   "extended": {
+    "allCategories": "Todas",
     "backToCart": "Voltar ao carrinho",
     "cart": "Carrinho",
     "charge": "Cobrar {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Adicione alguns artigos para começar. Pode editá-los, adicionar mais ou removê-los mais tarde nas Definições.",
     "title": "Adicione os seus artigos",
     "vatRate": "Taxa de IVA"
+  },
+  "itemsManage": {
+    "add": "+ Adicionar novo artigo",
+    "addTitle": "Novo artigo",
+    "allCategories": "Todas",
+    "confirmDelete": "Eliminar este artigo?",
+    "delete": "Eliminar artigo",
+    "editTitle": "Editar artigo",
+    "empty": "Sem artigos ainda. Adicione o primeiro ou carregue um modelo acima.",
+    "emptyCategory": "Nenhum artigo nesta categoria.",
+    "fieldCategory": "Categoria (opcional)",
+    "fieldCategoryPlaceholder": "ex. Espresso",
+    "fieldName": "Nome",
+    "fieldNamePlaceholder": "ex. Cappuccino",
+    "fieldPrice": "Preço (SEK)",
+    "fieldVat": "Taxa de IVA",
+    "newCategory": "+ Nova",
+    "noCategory": "Nenhuma",
+    "openTemplates": "Explorar modelos de setor",
+    "openTemplatesSub": "40 catálogos prontos — café, salão, canalizador e mais",
+    "title": "Artigos",
+    "totalCount": "{{count}} artigos no catálogo",
+    "vatPercent": "IVA {{rate}}%"
   },
   "mode": {
     "continue": "Continuar",
@@ -216,6 +240,8 @@
     "defaultMode": "Modo predefinido:",
     "exportKvittos": "Exportar kvittos",
     "generateWalletHint": "Gere uma carteira para desbloquear os QR de pagamento em FTC nos fluxos de venda.",
+    "items": "Artigos",
+    "itemsSub": "O que vende · preços · modelos para 40 setores",
     "language": "Idioma",
     "languagePick": "Escolher idioma",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "À escuta de pagamento"
+  },
+  "templates": {
+    "append": "Adicionar ao meu catálogo",
+    "confirmReplace": "Substituir o seu catálogo atual pelo modelo \"{{name}}\"? Os artigos existentes serão removidos.",
+    "editAfterHint": "Edite, remova ou adicione o que quiser após o carregamento.",
+    "footer": "40 modelos · 585 artigos de arranque · todos editáveis",
+    "replace": "Substituir o meu catálogo",
+    "subtitle": "Escolha um modelo próximo do que vende. Carregamos artigos realistas com preços e taxas de IVA adequados — depois adapta-os ao seu negócio.",
+    "summary": "{{count}} artigos em {{segments}} categorias. Cada preço e taxa de IVA é editável após o carregamento.",
+    "title": "Modelos de setor"
   },
   "wallet": {
     "addressLabel": "Endereço",

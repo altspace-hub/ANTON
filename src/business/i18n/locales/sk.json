@@ -69,6 +69,7 @@
     "title": "Všetko je nastavené"
   },
   "extended": {
+    "allCategories": "Všetky",
     "backToCart": "Späť do košíka",
     "cart": "Košík",
     "charge": "Účtovať {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Pridajte niekoľko položiek, aby ste mohli začať. Neskôr ich môžete upraviť, pridať ďalšie alebo odstrániť v Nastaveniach.",
     "title": "Pridajte svoje položky",
     "vatRate": "Sadzba DPH"
+  },
+  "itemsManage": {
+    "add": "+ Pridať novú položku",
+    "addTitle": "Nová položka",
+    "allCategories": "Všetky",
+    "confirmDelete": "Odstrániť túto položku?",
+    "delete": "Odstrániť položku",
+    "editTitle": "Upraviť položku",
+    "empty": "Zatiaľ žiadne položky. Pridajte prvú alebo načítajte šablónu vyššie.",
+    "emptyCategory": "V tomto segmente nie sú žiadne položky.",
+    "fieldCategory": "Segment (voliteľné)",
+    "fieldCategoryPlaceholder": "napr. Espresso",
+    "fieldName": "Názov",
+    "fieldNamePlaceholder": "napr. Cappuccino",
+    "fieldPrice": "Cena (SEK)",
+    "fieldVat": "Sadzba DPH",
+    "newCategory": "+ nový",
+    "noCategory": "Žiadny",
+    "openTemplates": "Prehľadávať odvetvové šablóny",
+    "openTemplatesSub": "40 hotových katalógov — kaviareň, salón, inštalatér a ďalšie",
+    "title": "Položky",
+    "totalCount": "{{count}} položiek v katalógu",
+    "vatPercent": "DPH {{rate}}%"
   },
   "mode": {
     "continue": "Pokračovať",
@@ -216,6 +240,8 @@
     "defaultMode": "Predvolený režim:",
     "exportKvittos": "Exportovať kvittos",
     "generateWalletHint": "Vygenerujte peňaženku a odomknite platobné QR FTC v procesoch predaja.",
+    "items": "Položky",
+    "itemsSub": "Čo predávate · ceny · šablóny pre 40 odvetví",
     "language": "Jazyk",
     "languagePick": "Vyberte jazyk",
     "mode": "Téma",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Čaká na platbu"
+  },
+  "templates": {
+    "append": "Pridať do môjho katalógu",
+    "confirmReplace": "Nahradiť váš aktuálny katalóg šablónou \"{{name}}\"? Existujúce položky budú odstránené.",
+    "editAfterHint": "Po načítaní čokoľvek upravte, odstráňte alebo pridajte.",
+    "footer": "40 šablón · 585 úvodných položiek · všetko upraviteľné",
+    "replace": "Nahradiť môj katalóg",
+    "subtitle": "Vyberte šablónu, ktorá sa najviac podobá tomu, čo predávate. Načítame realistické položky s rozumnými cenami a sadzbami DPH — potom ich upravíte podľa svojej firmy.",
+    "summary": "{{count}} položiek v {{segments}} segmentoch. Každú cenu a sadzbu DPH možno po načítaní upraviť.",
+    "title": "Odvetvové šablóny"
   },
   "wallet": {
     "addressLabel": "Adresa",

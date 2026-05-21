@@ -69,6 +69,7 @@
     "title": "Naka-set up ka na"
   },
   "extended": {
+    "allCategories": "Lahat",
     "backToCart": "Bumalik sa cart",
     "cart": "Cart",
     "charge": "Singilin ng {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Magdagdag ng ilang item para makapagsimula. Maaari mong i-edit, magdagdag pa, o alisin ang mga ito mamaya sa Mga Setting.",
     "title": "Idagdag ang iyong mga item",
     "vatRate": "Rate ng VAT"
+  },
+  "itemsManage": {
+    "add": "+ Magdagdag ng bagong item",
+    "addTitle": "Bagong item",
+    "allCategories": "Lahat",
+    "confirmDelete": "Burahin ang item na ito?",
+    "delete": "Burahin ang item",
+    "editTitle": "I-edit ang item",
+    "empty": "Wala pang item. Magdagdag ng una, o mag-load ng template sa itaas.",
+    "emptyCategory": "Walang item sa segment na ito.",
+    "fieldCategory": "Segment (opsyonal)",
+    "fieldCategoryPlaceholder": "hal. Espresso",
+    "fieldName": "Pangalan",
+    "fieldNamePlaceholder": "hal. Cappuccino",
+    "fieldPrice": "Presyo (SEK)",
+    "fieldVat": "Rate ng VAT",
+    "newCategory": "+ bago",
+    "noCategory": "Wala",
+    "openTemplates": "I-browse ang mga template ng industriya",
+    "openTemplatesSub": "40 handang katalogo — café, salon, plumber, at iba pa",
+    "title": "Mga Item",
+    "totalCount": "{{count}} item sa katalogo",
+    "vatPercent": "VAT {{rate}}%"
   },
   "mode": {
     "continue": "Magpatuloy",
@@ -216,6 +240,8 @@
     "defaultMode": "Default na mode:",
     "exportKvittos": "I-export ang mga kvitto",
     "generateWalletHint": "Bumuo ng wallet para i-unlock ang mga QR ng bayad sa FTC sa daloy ng benta.",
+    "items": "Mga Item",
+    "itemsSub": "Ano ang ibinebenta mo · mga presyo · mga template para sa 40 industriya",
     "language": "Wika",
     "languagePick": "Pumili ng wika",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Nakikinig para sa bayad"
+  },
+  "templates": {
+    "append": "Idagdag sa aking katalogo",
+    "confirmReplace": "Palitan ang iyong kasalukuyang katalogo ng template na \"{{name}}\"? Aalisin ang mga kasalukuyang item.",
+    "editAfterHint": "I-edit, alisin, o magdagdag ng kahit ano pagkatapos mag-load.",
+    "footer": "40 template · 585 panimulang item · lahat ay maaaring i-edit",
+    "replace": "Palitan ang aking katalogo",
+    "subtitle": "Pumili ng template na malapit sa ibinebenta mo. Naglo-load kami ng mga makatotohanang item na may makatwirang mga presyo at rate ng VAT — pagkatapos ay i-edit mo para tumugma sa iyong negosyo.",
+    "summary": "{{count}} item sa {{segments}} segment. Ang bawat presyo at rate ng VAT ay maaaring i-edit pagkatapos mag-load.",
+    "title": "Mga template ng industriya"
   },
   "wallet": {
     "addressLabel": "Address",

@@ -69,6 +69,7 @@
     "title": "Ești configurat"
   },
   "extended": {
+    "allCategories": "Toate",
     "backToCart": "Înapoi la coș",
     "cart": "Coș",
     "charge": "Încasează {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Adaugă câteva articole pentru a începe. Le poți edita, adăuga altele sau elimina mai târziu în Setări.",
     "title": "Adaugă articolele tale",
     "vatRate": "Cota TVA"
+  },
+  "itemsManage": {
+    "add": "+ Adaugă articol nou",
+    "addTitle": "Articol nou",
+    "allCategories": "Toate",
+    "confirmDelete": "Ștergi acest articol?",
+    "delete": "Șterge articol",
+    "editTitle": "Editează articol",
+    "empty": "Niciun articol încă. Adaugă primul sau încarcă un șablon de mai sus.",
+    "emptyCategory": "Niciun articol în acest segment.",
+    "fieldCategory": "Segment (opțional)",
+    "fieldCategoryPlaceholder": "ex. Espresso",
+    "fieldName": "Denumire",
+    "fieldNamePlaceholder": "ex. Cappuccino",
+    "fieldPrice": "Preț (SEK)",
+    "fieldVat": "Cotă TVA",
+    "newCategory": "+ nou",
+    "noCategory": "Niciunul",
+    "openTemplates": "Răsfoiește șabloane de industrie",
+    "openTemplatesSub": "40 de cataloage gata făcute — cafenea, salon, instalator și altele",
+    "title": "Articole",
+    "totalCount": "{{count}} articole în catalog",
+    "vatPercent": "TVA {{rate}}%"
   },
   "mode": {
     "continue": "Continuă",
@@ -216,6 +240,8 @@
     "defaultMode": "Mod implicit:",
     "exportKvittos": "Exportă kvittos",
     "generateWalletHint": "Generează un portofel pentru a debloca codurile QR de plată FTC în fluxurile de vânzare.",
+    "items": "Articole",
+    "itemsSub": "Ce vinzi · prețuri · șabloane pentru 40 de industrii",
     "language": "Limbă",
     "languagePick": "Alege limba",
     "mode": "Temă",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Ascultă pentru plată"
+  },
+  "templates": {
+    "append": "Adaugă în catalogul meu",
+    "confirmReplace": "Înlocuiești catalogul curent cu șablonul „{{name}}\"? Articolele existente vor fi eliminate.",
+    "editAfterHint": "Editează, elimină sau adaugă orice după încărcare.",
+    "footer": "40 de șabloane · 585 de articole de pornire · toate editabile",
+    "replace": "Înlocuiește catalogul meu",
+    "subtitle": "Alege un șablon apropiat de ce vinzi. Încărcăm articole realiste cu prețuri și cote TVA rezonabile — pe care le editezi apoi pentru afacerea ta.",
+    "summary": "{{count}} articole în {{segments}} segmente. Fiecare preț și cotă TVA este editabil după încărcare.",
+    "title": "Șabloane de industrie"
   },
   "wallet": {
     "addressLabel": "Adresă",

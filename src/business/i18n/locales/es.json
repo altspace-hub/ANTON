@@ -69,6 +69,7 @@
     "title": "Todo listo"
   },
   "extended": {
+    "allCategories": "Todas",
     "backToCart": "Volver al carrito",
     "cart": "Carrito",
     "charge": "Cobrar {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Añade algunos artículos para empezar. Podrás editarlos, añadir más o eliminarlos más adelante en Ajustes.",
     "title": "Añade tus artículos",
     "vatRate": "Tipo de IVA"
+  },
+  "itemsManage": {
+    "add": "+ Añadir nuevo artículo",
+    "addTitle": "Nuevo artículo",
+    "allCategories": "Todas",
+    "confirmDelete": "¿Eliminar este artículo?",
+    "delete": "Eliminar artículo",
+    "editTitle": "Editar artículo",
+    "empty": "Aún no hay artículos. Añade el primero o carga una plantilla desde arriba.",
+    "emptyCategory": "No hay artículos en esta categoría.",
+    "fieldCategory": "Categoría (opcional)",
+    "fieldCategoryPlaceholder": "p. ej. Espresso",
+    "fieldName": "Nombre",
+    "fieldNamePlaceholder": "p. ej. Cappuccino",
+    "fieldPrice": "Precio (SEK)",
+    "fieldVat": "Tipo de IVA",
+    "newCategory": "+ Nueva",
+    "noCategory": "Ninguna",
+    "openTemplates": "Explorar plantillas de sector",
+    "openTemplatesSub": "40 catálogos listos — café, salón, fontanero y más",
+    "title": "Artículos",
+    "totalCount": "{{count}} artículos en el catálogo",
+    "vatPercent": "IVA {{rate}}%"
   },
   "mode": {
     "continue": "Continuar",
@@ -216,6 +240,8 @@
     "defaultMode": "Modo predeterminado:",
     "exportKvittos": "Exportar kvittos",
     "generateWalletHint": "Genera una cartera para desbloquear los QR de pago en FTC en los flujos de venta.",
+    "items": "Artículos",
+    "itemsSub": "Lo que vendes · precios · plantillas para 40 sectores",
     "language": "Idioma",
     "languagePick": "Elegir idioma",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Esperando pago"
+  },
+  "templates": {
+    "append": "Añadir a mi catálogo",
+    "confirmReplace": "¿Reemplazar tu catálogo actual con la plantilla \"{{name}}\"? Los artículos existentes se eliminarán.",
+    "editAfterHint": "Edita, elimina o añade lo que quieras después de cargar.",
+    "footer": "40 plantillas · 585 artículos de inicio · todos editables",
+    "replace": "Reemplazar mi catálogo",
+    "subtitle": "Elige una plantilla parecida a lo que vendes. Cargamos artículos realistas con precios y tipos de IVA sensatos — luego los adaptas a tu negocio.",
+    "summary": "{{count}} artículos en {{segments}} categorías. Cada precio y tipo de IVA es editable después de cargar.",
+    "title": "Plantillas de sector"
   },
   "wallet": {
     "addressLabel": "Dirección",

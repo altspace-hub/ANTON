@@ -69,6 +69,7 @@
     "title": "Umesanidiwa"
   },
   "extended": {
+    "allCategories": "Zote",
     "backToCart": "Rudi kwenye kikapu",
     "cart": "Kikapu",
     "charge": "Toza {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Ongeza vipengee vichache ili kuanza. Unaweza kuhariri, kuongeza zaidi, au kuviondoa baadaye katika Mipangilio.",
     "title": "Ongeza vipengee vyako",
     "vatRate": "Kiwango cha VAT"
+  },
+  "itemsManage": {
+    "add": "+ Ongeza kipengee kipya",
+    "addTitle": "Kipengee kipya",
+    "allCategories": "Zote",
+    "confirmDelete": "Futa kipengee hiki?",
+    "delete": "Futa kipengee",
+    "editTitle": "Hariri kipengee",
+    "empty": "Bado hakuna vipengee. Ongeza cha kwanza, au pakia kiolezo hapo juu.",
+    "emptyCategory": "Hakuna vipengee katika sehemu hii.",
+    "fieldCategory": "Sehemu (hiari)",
+    "fieldCategoryPlaceholder": "k.m. Espresso",
+    "fieldName": "Jina",
+    "fieldNamePlaceholder": "k.m. Cappuccino",
+    "fieldPrice": "Bei (SEK)",
+    "fieldVat": "Kiwango cha VAT",
+    "newCategory": "+ mpya",
+    "noCategory": "Hakuna",
+    "openTemplates": "Vinjari violezo vya sekta",
+    "openTemplatesSub": "Katalogi 40 zilizotengenezwa tayari — mkahawa, saluni, mfanyakazi wa bomba na zaidi",
+    "title": "Vipengee",
+    "totalCount": "Vipengee {{count}} katika katalogi",
+    "vatPercent": "VAT {{rate}}%"
   },
   "mode": {
     "continue": "Endelea",
@@ -216,6 +240,8 @@
     "defaultMode": "Hali chaguo-msingi:",
     "exportKvittos": "Hamisha kvittos",
     "generateWalletHint": "Tengeneza pochi ili kufungua QR za malipo ya FTC katika mitiririko ya mauzo.",
+    "items": "Vipengee",
+    "itemsSub": "Unachouza · bei · violezo vya sekta 40",
     "language": "Lugha",
     "languagePick": "Chagua lugha",
     "mode": "Mandhari",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Inasikiliza malipo"
+  },
+  "templates": {
+    "append": "Ongeza kwenye katalogi yangu",
+    "confirmReplace": "Badilisha katalogi yako ya sasa na kiolezo cha \"{{name}}\"? Vipengee vilivyopo vitaondolewa.",
+    "editAfterHint": "Hariri, ondoa, au ongeza chochote baada ya kupakia.",
+    "footer": "Violezo 40 · vipengee 585 vya kuanza · vyote vinaweza kuhaririwa",
+    "replace": "Badilisha katalogi yangu",
+    "subtitle": "Chagua kiolezo karibu na unachouza. Tunapakia vipengee halisi na bei na viwango vya VAT vinavyofaa — kisha uhariri vilingane na biashara yako.",
+    "summary": "Vipengee {{count}} katika sehemu {{segments}}. Kila bei na kiwango cha VAT vinaweza kuhaririwa baada ya kupakia.",
+    "title": "Violezo vya sekta"
   },
   "wallet": {
     "addressLabel": "Anwani",

@@ -69,6 +69,7 @@
     "title": "Du er klar"
   },
   "extended": {
+    "allCategories": "Alle",
     "backToCart": "Tilbage til kurv",
     "cart": "Kurv",
     "charge": "Opkræv {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Tilføj et par varer for at komme i gang. Du kan redigere, tilføje flere eller fjerne dem senere i Indstillinger.",
     "title": "Tilføj dine varer",
     "vatRate": "Momssats"
+  },
+  "itemsManage": {
+    "add": "+ Tilføj ny vare",
+    "addTitle": "Ny vare",
+    "allCategories": "Alle",
+    "confirmDelete": "Slet denne vare?",
+    "delete": "Slet vare",
+    "editTitle": "Rediger vare",
+    "empty": "Ingen varer endnu. Tilføj din første, eller indlæs en skabelon ovenfor.",
+    "emptyCategory": "Ingen varer i dette segment.",
+    "fieldCategory": "Segment (valgfrit)",
+    "fieldCategoryPlaceholder": "f.eks. Espresso",
+    "fieldName": "Navn",
+    "fieldNamePlaceholder": "f.eks. Cappuccino",
+    "fieldPrice": "Pris (SEK)",
+    "fieldVat": "Momssats",
+    "newCategory": "+ ny",
+    "noCategory": "Ingen",
+    "openTemplates": "Gennemse brancheskabeloner",
+    "openTemplatesSub": "40 færdige kataloger — café, salon, VVS-installatør og flere",
+    "title": "Varer",
+    "totalCount": "{{count}} varer i kataloget",
+    "vatPercent": "Moms {{rate}}%"
   },
   "mode": {
     "continue": "Fortsæt",
@@ -216,6 +240,8 @@
     "defaultMode": "Standardtilstand:",
     "exportKvittos": "Eksportér kvittos",
     "generateWalletHint": "Generer en wallet for at låse op for FTC-betalings-QR-koder i salgsforløb.",
+    "items": "Varer",
+    "itemsSub": "Hvad du sælger · priser · skabeloner til 40 brancher",
     "language": "Sprog",
     "languagePick": "Vælg sprog",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Lytter efter betaling"
+  },
+  "templates": {
+    "append": "Tilføj til mit katalog",
+    "confirmReplace": "Erstat dit nuværende katalog med skabelonen \"{{name}}\"? Eksisterende varer vil blive fjernet.",
+    "editAfterHint": "Rediger, fjern eller tilføj hvad som helst efter indlæsning.",
+    "footer": "40 skabeloner · 585 startvarer · alt redigérbart",
+    "replace": "Erstat mit katalog",
+    "subtitle": "Vælg en skabelon, der ligner det, du sælger. Vi indlæser realistiske varer med fornuftige priser og momssatser — derefter redigerer du dem, så de passer til din virksomhed.",
+    "summary": "{{count}} varer fordelt på {{segments}} segmenter. Alle priser og momssatser kan redigeres efter indlæsning.",
+    "title": "Brancheskabeloner"
   },
   "wallet": {
     "addressLabel": "Adresse",

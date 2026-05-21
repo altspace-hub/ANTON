@@ -69,6 +69,7 @@
     "title": "Minden készen áll"
   },
   "extended": {
+    "allCategories": "Mind",
     "backToCart": "Vissza a kosárhoz",
     "cart": "Kosár",
     "charge": "{{amount}} SEK felszámítása",
@@ -107,6 +108,29 @@
     "subtitle": "Adjon hozzá néhány tételt a kezdéshez. Később szerkesztheti, hozzáadhat továbbiakat vagy eltávolíthatja őket a Beállításokban.",
     "title": "Adja hozzá a tételeit",
     "vatRate": "Áfakulcs"
+  },
+  "itemsManage": {
+    "add": "+ Új tétel hozzáadása",
+    "addTitle": "Új tétel",
+    "allCategories": "Mind",
+    "confirmDelete": "Törli ezt a tételt?",
+    "delete": "Tétel törlése",
+    "editTitle": "Tétel szerkesztése",
+    "empty": "Még nincsenek tételek. Adja hozzá az elsőt, vagy töltsön be egy sablont fentről.",
+    "emptyCategory": "Ebben a szegmensben nincsenek tételek.",
+    "fieldCategory": "Szegmens (opcionális)",
+    "fieldCategoryPlaceholder": "pl. Espresso",
+    "fieldName": "Név",
+    "fieldNamePlaceholder": "pl. Cappuccino",
+    "fieldPrice": "Ár (SEK)",
+    "fieldVat": "Áfakulcs",
+    "newCategory": "+ új",
+    "noCategory": "Nincs",
+    "openTemplates": "Iparági sablonok böngészése",
+    "openTemplatesSub": "40 kész katalógus — kávézó, szalon, vízszerelő és más",
+    "title": "Tételek",
+    "totalCount": "{{count}} tétel a katalógusban",
+    "vatPercent": "ÁFA {{rate}}%"
   },
   "mode": {
     "continue": "Folytatás",
@@ -216,6 +240,8 @@
     "defaultMode": "Alapértelmezett mód:",
     "exportKvittos": "Kvittok exportálása",
     "generateWalletHint": "Hozzon létre egy tárcát az FTC fizetési QR-kódok feloldásához az eladási folyamatokban.",
+    "items": "Tételek",
+    "itemsSub": "Mit értékesít · árak · sablonok 40 iparághoz",
     "language": "Nyelv",
     "languagePick": "Válasszon nyelvet",
     "mode": "Téma",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Fizetésre vár"
+  },
+  "templates": {
+    "append": "Hozzáadás a katalógusomhoz",
+    "confirmReplace": "Lecseréli a jelenlegi katalógust a „{{name}}\" sablonra? A meglévő tételek törlődnek.",
+    "editAfterHint": "Betöltés után bármit szerkeszthet, eltávolíthat vagy hozzáadhat.",
+    "footer": "40 sablon · 585 kiindulási tétel · mind szerkeszthető",
+    "replace": "Katalógus cseréje",
+    "subtitle": "Válasszon egy, az Ön tevékenységéhez közel álló sablont. Valósághű tételeket töltünk be ésszerű árakkal és áfakulcsokkal — ezeket aztán az üzletéhez igazíthatja.",
+    "summary": "{{count}} tétel {{segments}} szegmensben. Minden ár és áfakulcs szerkeszthető a betöltés után.",
+    "title": "Iparági sablonok"
   },
   "wallet": {
     "addressLabel": "Cím",

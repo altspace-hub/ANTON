@@ -69,6 +69,7 @@
     "title": "Bạn đã thiết lập xong"
   },
   "extended": {
+    "allCategories": "Tất cả",
     "backToCart": "Quay lại giỏ hàng",
     "cart": "Giỏ hàng",
     "charge": "Tính {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Thêm một vài mặt hàng để bắt đầu. Bạn có thể chỉnh sửa, thêm hoặc xóa chúng sau trong Cài đặt.",
     "title": "Thêm các mặt hàng của bạn",
     "vatRate": "Mức VAT"
+  },
+  "itemsManage": {
+    "add": "+ Thêm mặt hàng mới",
+    "addTitle": "Mặt hàng mới",
+    "allCategories": "Tất cả",
+    "confirmDelete": "Xóa mặt hàng này?",
+    "delete": "Xóa mặt hàng",
+    "editTitle": "Chỉnh sửa mặt hàng",
+    "empty": "Chưa có mặt hàng nào. Thêm mặt hàng đầu tiên hoặc tải mẫu ở trên.",
+    "emptyCategory": "Không có mặt hàng nào trong phân khúc này.",
+    "fieldCategory": "Phân khúc (tùy chọn)",
+    "fieldCategoryPlaceholder": "Ví dụ: Espresso",
+    "fieldName": "Tên",
+    "fieldNamePlaceholder": "Ví dụ: Cappuccino",
+    "fieldPrice": "Giá (SEK)",
+    "fieldVat": "Mức VAT",
+    "newCategory": "+ mới",
+    "noCategory": "Không có",
+    "openTemplates": "Duyệt mẫu theo ngành",
+    "openTemplatesSub": "40 danh mục có sẵn — quán cà phê, salon, thợ sửa ống nước và nhiều hơn",
+    "title": "Mặt hàng",
+    "totalCount": "{{count}} mặt hàng trong danh mục",
+    "vatPercent": "VAT {{rate}}%"
   },
   "mode": {
     "continue": "Tiếp tục",
@@ -216,6 +240,8 @@
     "defaultMode": "Chế độ mặc định:",
     "exportKvittos": "Xuất kvitto",
     "generateWalletHint": "Tạo ví để mở khóa QR thanh toán FTC trong các quy trình bán hàng.",
+    "items": "Mặt hàng",
+    "itemsSub": "Hàng bán · giá · mẫu cho 40 ngành",
     "language": "Ngôn ngữ",
     "languagePick": "Chọn ngôn ngữ",
     "mode": "Giao diện",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Đang lắng nghe thanh toán"
+  },
+  "templates": {
+    "append": "Thêm vào danh mục của tôi",
+    "confirmReplace": "Thay thế danh mục hiện tại bằng mẫu \"{{name}}\"? Các mặt hàng hiện có sẽ bị xóa.",
+    "editAfterHint": "Chỉnh sửa, xóa hoặc thêm bất cứ thứ gì sau khi tải.",
+    "footer": "40 mẫu · 585 mặt hàng khởi đầu · tất cả có thể chỉnh sửa",
+    "replace": "Thay thế danh mục của tôi",
+    "subtitle": "Chọn mẫu gần với những gì bạn bán. Chúng tôi tải các mặt hàng thực tế với giá hợp lý và mức VAT — sau đó bạn chỉnh sửa cho phù hợp với doanh nghiệp của mình.",
+    "summary": "{{count}} mặt hàng trên {{segments}} phân khúc. Mọi giá và mức VAT đều có thể chỉnh sửa sau khi tải.",
+    "title": "Mẫu theo ngành"
   },
   "wallet": {
     "addressLabel": "Địa chỉ",

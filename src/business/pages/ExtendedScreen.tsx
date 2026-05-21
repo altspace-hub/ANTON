@@ -38,6 +38,10 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [walletConnected, setWalletConnected] = useState(false);
   const [items, setItems] = useState<CatalogueItem[]>([]);
+  // Active segment chip — null = show all items. Computed lazily from
+  // distinct category values, so a flat (segment-less) catalogue keeps
+  // the legacy single-grid layout.
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<Cart>(empty());
   const [phase, setPhase] = useState<Phase>('cart');
   const [built, setBuilt] = useState<BuiltQr | null>(null);
@@ -346,9 +350,48 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                }}>
             {t('extended.noItemsHint')}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {items.map((item) => (
+        ) : (() => {
+          // Build the ordered category list once per render.
+          const seenCats = new Set<string>();
+          const orderedCats: string[] = [];
+          for (const it of items) {
+            const c = (it.category ?? '').trim();
+            if (!c || seenCats.has(c)) continue;
+            seenCats.add(c);
+            orderedCats.push(c);
+          }
+          // Filter visible items by the active chip (if any).
+          const visible = activeCategory
+            ? items.filter((i) => (i.category ?? '').trim() === activeCategory)
+            : items;
+          return (
+            <>
+              {orderedCats.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto mb-3 -mx-1 px-1 pb-1">
+                  <button type="button" onClick={() => setActiveCategory(null)}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                          style={{
+                            backgroundColor: activeCategory === null ? 'var(--color-accent)' : 'var(--color-surface)',
+                            color: activeCategory === null ? 'var(--color-accent-fg)' : 'var(--color-text)',
+                            border: '1px solid var(--color-border)',
+                          }}>
+                    {t('extended.allCategories', 'All')}
+                  </button>
+                  {orderedCats.map((cat) => (
+                    <button key={cat} type="button" onClick={() => setActiveCategory(cat)}
+                            className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                            style={{
+                              backgroundColor: activeCategory === cat ? 'var(--color-accent)' : 'var(--color-surface)',
+                              color: activeCategory === cat ? 'var(--color-accent-fg)' : 'var(--color-text)',
+                              border: '1px solid var(--color-border)',
+                            }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                {visible.map((item) => (
               <button
                 type="button"
                 key={item.id}
@@ -373,8 +416,10 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                 </div>
               </button>
             ))}
-          </div>
-        )}
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {error && (

@@ -69,6 +69,7 @@
     "title": "Vše je připraveno"
   },
   "extended": {
+    "allCategories": "Vše",
     "backToCart": "Zpět do košíku",
     "cart": "Košík",
     "charge": "Naúčtovat {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Přidejte několik položek pro začátek. Můžete je upravovat, přidávat další nebo odebírat později v Nastavení.",
     "title": "Přidejte své položky",
     "vatRate": "Sazba DPH"
+  },
+  "itemsManage": {
+    "add": "+ Přidat novou položku",
+    "addTitle": "Nová položka",
+    "allCategories": "Vše",
+    "confirmDelete": "Smazat tuto položku?",
+    "delete": "Smazat položku",
+    "editTitle": "Upravit položku",
+    "empty": "Zatím žádné položky. Přidejte první, nebo načtěte šablonu výše.",
+    "emptyCategory": "V tomto segmentu nejsou žádné položky.",
+    "fieldCategory": "Segment (volitelné)",
+    "fieldCategoryPlaceholder": "např. Espresso",
+    "fieldName": "Název",
+    "fieldNamePlaceholder": "např. Cappuccino",
+    "fieldPrice": "Cena (SEK)",
+    "fieldVat": "Sazba DPH",
+    "newCategory": "+ nový",
+    "noCategory": "Žádný",
+    "openTemplates": "Procházet oborové šablony",
+    "openTemplatesSub": "40 hotových katalogů — kavárna, salon, instalatér a další",
+    "title": "Položky",
+    "totalCount": "{{count}} položek v katalogu",
+    "vatPercent": "DPH {{rate}}%"
   },
   "mode": {
     "continue": "Pokračovat",
@@ -216,6 +240,8 @@
     "defaultMode": "Výchozí režim:",
     "exportKvittos": "Exportovat kvittos",
     "generateWalletHint": "Vygenerujte peněženku pro odemčení platebních QR kódů FTC v prodejních procesech.",
+    "items": "Položky",
+    "itemsSub": "Co prodáváte · ceny · šablony pro 40 oborů",
     "language": "Jazyk",
     "languagePick": "Vyberte jazyk",
     "mode": "Motiv",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Čeká na platbu"
+  },
+  "templates": {
+    "append": "Přidat do mého katalogu",
+    "confirmReplace": "Nahradit váš stávající katalog šablonou \"{{name}}\"? Stávající položky budou odstraněny.",
+    "editAfterHint": "Po načtení cokoli upravte, odeberte nebo přidejte.",
+    "footer": "40 šablon · 585 počátečních položek · vše upravitelné",
+    "replace": "Nahradit můj katalog",
+    "subtitle": "Vyberte šablonu, která se nejvíce podobá tomu, co prodáváte. Načteme realistické položky s rozumnými cenami a sazbami DPH — poté je upravíte podle své firmy.",
+    "summary": "{{count}} položek ve {{segments}} segmentech. Každou cenu a sazbu DPH lze po načtení upravit.",
+    "title": "Oborové šablony"
   },
   "wallet": {
     "addressLabel": "Adresa",

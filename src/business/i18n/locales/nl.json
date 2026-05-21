@@ -69,6 +69,7 @@
     "title": "Je bent ingesteld"
   },
   "extended": {
+    "allCategories": "Alle",
     "backToCart": "Terug naar winkelwagen",
     "cart": "Winkelwagen",
     "charge": "{{amount}} SEK in rekening brengen",
@@ -107,6 +108,29 @@
     "subtitle": "Voeg een paar artikelen toe om te beginnen. Je kunt ze later bewerken, aanvullen of verwijderen via Instellingen.",
     "title": "Voeg je artikelen toe",
     "vatRate": "Btw-tarief"
+  },
+  "itemsManage": {
+    "add": "+ Nieuw artikel toevoegen",
+    "addTitle": "Nieuw artikel",
+    "allCategories": "Alle",
+    "confirmDelete": "Dit artikel verwijderen?",
+    "delete": "Artikel verwijderen",
+    "editTitle": "Artikel bewerken",
+    "empty": "Nog geen artikelen. Voeg het eerste toe of laad een sjabloon hierboven.",
+    "emptyCategory": "Geen artikelen in deze rubriek.",
+    "fieldCategory": "Rubriek (optioneel)",
+    "fieldCategoryPlaceholder": "bijv. Espresso",
+    "fieldName": "Naam",
+    "fieldNamePlaceholder": "bijv. Cappuccino",
+    "fieldPrice": "Prijs (SEK)",
+    "fieldVat": "Btw-tarief",
+    "newCategory": "+ Nieuwe",
+    "noCategory": "Geen",
+    "openTemplates": "Branchesjablonen bekijken",
+    "openTemplatesSub": "40 kant-en-klare catalogi — café, salon, loodgieter en meer",
+    "title": "Artikelen",
+    "totalCount": "{{count}} artikelen in catalogus",
+    "vatPercent": "Btw {{rate}}%"
   },
   "mode": {
     "continue": "Doorgaan",
@@ -216,6 +240,8 @@
     "defaultMode": "Standaardmodus:",
     "exportKvittos": "Kvittos exporteren",
     "generateWalletHint": "Genereer een wallet om FTC-betaal-QR's in de verkoopflows te ontgrendelen.",
+    "items": "Artikelen",
+    "itemsSub": "Wat u verkoopt · prijzen · sjablonen voor 40 branches",
     "language": "Taal",
     "languagePick": "Kies taal",
     "mode": "Thema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Wachten op betaling"
+  },
+  "templates": {
+    "append": "Toevoegen aan mijn catalogus",
+    "confirmReplace": "Uw huidige catalogus vervangen door het sjabloon \"{{name}}\"? Bestaande artikelen worden verwijderd.",
+    "editAfterHint": "Bewerk, verwijder of voeg toe wat u wilt na het laden.",
+    "footer": "40 sjablonen · 585 startersartikelen · allemaal bewerkbaar",
+    "replace": "Mijn catalogus vervangen",
+    "subtitle": "Kies een sjabloon dat dicht bij wat u verkoopt ligt. We laden realistische artikelen met verstandige prijzen en btw-tarieven — daarna past u ze aan uw bedrijf aan.",
+    "summary": "{{count}} artikelen verdeeld over {{segments}} rubrieken. Elke prijs en elk btw-tarief is bewerkbaar na het laden.",
+    "title": "Branchesjablonen"
   },
   "wallet": {
     "addressLabel": "Adres",

@@ -69,6 +69,7 @@
     "title": "Wszystko gotowe"
   },
   "extended": {
+    "allCategories": "Wszystkie",
     "backToCart": "Powrót do koszyka",
     "cart": "Koszyk",
     "charge": "Pobierz {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Dodaj kilka pozycji, aby zacząć. Możesz je edytować, dodawać kolejne lub usuwać później w Ustawieniach.",
     "title": "Dodaj swoje pozycje",
     "vatRate": "Stawka VAT"
+  },
+  "itemsManage": {
+    "add": "+ Dodaj nową pozycję",
+    "addTitle": "Nowa pozycja",
+    "allCategories": "Wszystkie",
+    "confirmDelete": "Usunąć tę pozycję?",
+    "delete": "Usuń pozycję",
+    "editTitle": "Edytuj pozycję",
+    "empty": "Brak pozycji. Dodaj pierwszą lub wczytaj szablon powyżej.",
+    "emptyCategory": "Brak pozycji w tym segmencie.",
+    "fieldCategory": "Segment (opcjonalnie)",
+    "fieldCategoryPlaceholder": "np. Espresso",
+    "fieldName": "Nazwa",
+    "fieldNamePlaceholder": "np. Cappuccino",
+    "fieldPrice": "Cena (SEK)",
+    "fieldVat": "Stawka VAT",
+    "newCategory": "+ nowy",
+    "noCategory": "Brak",
+    "openTemplates": "Przeglądaj szablony branżowe",
+    "openTemplatesSub": "40 gotowych katalogów — kawiarnia, salon, hydraulik i inne",
+    "title": "Pozycje",
+    "totalCount": "{{count}} pozycji w katalogu",
+    "vatPercent": "VAT {{rate}}%"
   },
   "mode": {
     "continue": "Kontynuuj",
@@ -216,6 +240,8 @@
     "defaultMode": "Tryb domyślny:",
     "exportKvittos": "Eksportuj kvittos",
     "generateWalletHint": "Wygeneruj portfel, aby odblokować kody QR płatności FTC w procesach sprzedaży.",
+    "items": "Pozycje",
+    "itemsSub": "Co sprzedajesz · ceny · szablony dla 40 branż",
     "language": "Język",
     "languagePick": "Wybierz język",
     "mode": "Motyw",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Oczekiwanie na płatność"
+  },
+  "templates": {
+    "append": "Dodaj do mojego katalogu",
+    "confirmReplace": "Zastąpić bieżący katalog szablonem „{{name}}\"? Istniejące pozycje zostaną usunięte.",
+    "editAfterHint": "Po wczytaniu możesz edytować, usuwać lub dodawać dowolne pozycje.",
+    "footer": "40 szablonów · 585 pozycji startowych · wszystkie edytowalne",
+    "replace": "Zastąp mój katalog",
+    "subtitle": "Wybierz szablon zbliżony do tego, co sprzedajesz. Wczytujemy realistyczne pozycje z sensownymi cenami i stawkami VAT — a potem edytujesz je pod swój biznes.",
+    "summary": "{{count}} pozycji w {{segments}} segmentach. Każda cena i stawka VAT jest edytowalna po wczytaniu.",
+    "title": "Szablony branżowe"
   },
   "wallet": {
     "addressLabel": "Adres",

@@ -69,6 +69,7 @@
     "title": "Anda telah sedia"
   },
   "extended": {
+    "allCategories": "Semua",
     "backToCart": "Kembali ke troli",
     "cart": "Troli",
     "charge": "Caj {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Tambah beberapa item untuk bermula. Anda boleh sunting, tambah lagi, atau buang kemudian dalam Tetapan.",
     "title": "Tambah item anda",
     "vatRate": "Kadar VAT"
+  },
+  "itemsManage": {
+    "add": "+ Tambah item baharu",
+    "addTitle": "Item baharu",
+    "allCategories": "Semua",
+    "confirmDelete": "Padam item ini?",
+    "delete": "Padam item",
+    "editTitle": "Sunting item",
+    "empty": "Belum ada item. Tambah yang pertama, atau muat templat di atas.",
+    "emptyCategory": "Tiada item dalam segmen ini.",
+    "fieldCategory": "Segmen (pilihan)",
+    "fieldCategoryPlaceholder": "cth. Espresso",
+    "fieldName": "Nama",
+    "fieldNamePlaceholder": "cth. Cappuccino",
+    "fieldPrice": "Harga (SEK)",
+    "fieldVat": "Kadar GST",
+    "newCategory": "+ baharu",
+    "noCategory": "Tiada",
+    "openTemplates": "Layari templat industri",
+    "openTemplatesSub": "40 katalog sedia guna — kafe, salun, tukang paip, dan lain-lain",
+    "title": "Item",
+    "totalCount": "{{count}} item dalam katalog",
+    "vatPercent": "GST {{rate}}%"
   },
   "mode": {
     "continue": "Teruskan",
@@ -216,6 +240,8 @@
     "defaultMode": "Mod lalai:",
     "exportKvittos": "Eksport kvittos",
     "generateWalletHint": "Jana dompet untuk membuka kunci QR bayaran FTC dalam aliran jualan.",
+    "items": "Item",
+    "itemsSub": "Apa yang anda jual · harga · templat untuk 40 industri",
     "language": "Bahasa",
     "languagePick": "Pilih bahasa",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Menunggu pembayaran"
+  },
+  "templates": {
+    "append": "Tambah ke katalog saya",
+    "confirmReplace": "Gantikan katalog semasa anda dengan templat \"{{name}}\"? Item sedia ada akan dibuang.",
+    "editAfterHint": "Sunting, buang, atau tambah apa sahaja selepas memuatkan.",
+    "footer": "40 templat · 585 item permulaan · semua boleh disunting",
+    "replace": "Gantikan katalog saya",
+    "subtitle": "Pilih templat yang hampir dengan apa yang anda jual. Kami memuatkan item realistik dengan harga dan kadar GST yang munasabah — kemudian anda sunting supaya sepadan dengan perniagaan anda.",
+    "summary": "{{count}} item merentasi {{segments}} segmen. Setiap harga dan kadar GST boleh disunting selepas memuatkan.",
+    "title": "Templat industri"
   },
   "wallet": {
     "addressLabel": "Alamat",

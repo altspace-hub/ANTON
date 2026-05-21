@@ -69,6 +69,7 @@
     "title": "Sie sind eingerichtet"
   },
   "extended": {
+    "allCategories": "Alle",
     "backToCart": "Zurück zum Warenkorb",
     "cart": "Warenkorb",
     "charge": "{{amount}} SEK berechnen",
@@ -107,6 +108,29 @@
     "subtitle": "Fügen Sie einige Artikel hinzu, um zu beginnen. Sie können sie später in den Einstellungen bearbeiten, ergänzen oder entfernen.",
     "title": "Artikel hinzufügen",
     "vatRate": "MwSt.-Satz"
+  },
+  "itemsManage": {
+    "add": "+ Neuen Artikel hinzufügen",
+    "addTitle": "Neuer Artikel",
+    "allCategories": "Alle",
+    "confirmDelete": "Diesen Artikel löschen?",
+    "delete": "Artikel löschen",
+    "editTitle": "Artikel bearbeiten",
+    "empty": "Noch keine Artikel. Fügen Sie Ihren ersten hinzu oder laden Sie oben eine Vorlage.",
+    "emptyCategory": "Keine Artikel in dieser Rubrik.",
+    "fieldCategory": "Rubrik (optional)",
+    "fieldCategoryPlaceholder": "z. B. Espresso",
+    "fieldName": "Name",
+    "fieldNamePlaceholder": "z. B. Cappuccino",
+    "fieldPrice": "Preis (SEK)",
+    "fieldVat": "MwSt.-Satz",
+    "newCategory": "+ Neu",
+    "noCategory": "Keine",
+    "openTemplates": "Branchenvorlagen durchsuchen",
+    "openTemplatesSub": "40 fertige Kataloge – Café, Salon, Klempner u. v. m.",
+    "title": "Artikel",
+    "totalCount": "{{count}} Artikel im Katalog",
+    "vatPercent": "MwSt. {{rate}}%"
   },
   "mode": {
     "continue": "Weiter",
@@ -216,6 +240,8 @@
     "defaultMode": "Standardmodus:",
     "exportKvittos": "Kvittos exportieren",
     "generateWalletHint": "Erstellen Sie eine Wallet, um FTC-Zahlungs-QRs im Verkaufsablauf freizuschalten.",
+    "items": "Artikel",
+    "itemsSub": "Was Sie verkaufen · Preise · Vorlagen für 40 Branchen",
     "language": "Sprache",
     "languagePick": "Sprache wählen",
     "mode": "Design",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Warte auf Zahlung"
+  },
+  "templates": {
+    "append": "Zu meinem Katalog hinzufügen",
+    "confirmReplace": "Ihren aktuellen Katalog durch die Vorlage \"{{name}}\" ersetzen? Vorhandene Artikel werden entfernt.",
+    "editAfterHint": "Nach dem Laden alles bearbeiten, entfernen oder ergänzen.",
+    "footer": "40 Vorlagen · 585 Starterartikel · alle bearbeitbar",
+    "replace": "Meinen Katalog ersetzen",
+    "subtitle": "Wählen Sie eine Vorlage, die Ihrem Angebot nahekommt. Wir laden realistische Artikel mit sinnvollen Preisen und MwSt.-Sätzen – dann passen Sie sie an Ihr Unternehmen an.",
+    "summary": "{{count}} Artikel in {{segments}} Rubriken. Jeder Preis und jeder MwSt.-Satz ist nach dem Laden bearbeitbar.",
+    "title": "Branchenvorlagen"
   },
   "wallet": {
     "addressLabel": "Adresse",

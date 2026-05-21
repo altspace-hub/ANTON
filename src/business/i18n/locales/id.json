@@ -69,6 +69,7 @@
     "title": "Anda sudah siap"
   },
   "extended": {
+    "allCategories": "Semua",
     "backToCart": "Kembali ke keranjang",
     "cart": "Keranjang",
     "charge": "Tagih {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Tambahkan beberapa item untuk memulai. Anda dapat mengedit, menambah lagi, atau menghapusnya nanti di Pengaturan.",
     "title": "Tambahkan item Anda",
     "vatRate": "Tarif PPN"
+  },
+  "itemsManage": {
+    "add": "+ Tambah item baru",
+    "addTitle": "Item baru",
+    "allCategories": "Semua",
+    "confirmDelete": "Hapus item ini?",
+    "delete": "Hapus item",
+    "editTitle": "Edit item",
+    "empty": "Belum ada item. Tambahkan yang pertama, atau muat template di atas.",
+    "emptyCategory": "Tidak ada item di segmen ini.",
+    "fieldCategory": "Segmen (opsional)",
+    "fieldCategoryPlaceholder": "mis. Espresso",
+    "fieldName": "Nama",
+    "fieldNamePlaceholder": "mis. Cappuccino",
+    "fieldPrice": "Harga (SEK)",
+    "fieldVat": "Tarif PPN",
+    "newCategory": "+ baru",
+    "noCategory": "Tidak ada",
+    "openTemplates": "Jelajahi template industri",
+    "openTemplatesSub": "40 katalog siap pakai — kafe, salon, tukang ledeng, dan lainnya",
+    "title": "Item",
+    "totalCount": "{{count}} item dalam katalog",
+    "vatPercent": "PPN {{rate}}%"
   },
   "mode": {
     "continue": "Lanjutkan",
@@ -216,6 +240,8 @@
     "defaultMode": "Mode default:",
     "exportKvittos": "Ekspor kvittos",
     "generateWalletHint": "Buat dompet untuk membuka QR pembayaran FTC dalam alur penjualan.",
+    "items": "Item",
+    "itemsSub": "Yang Anda jual · harga · template untuk 40 industri",
     "language": "Bahasa",
     "languagePick": "Pilih bahasa",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Menunggu pembayaran"
+  },
+  "templates": {
+    "append": "Tambahkan ke katalog saya",
+    "confirmReplace": "Ganti katalog Anda saat ini dengan template \"{{name}}\"? Item yang ada akan dihapus.",
+    "editAfterHint": "Edit, hapus, atau tambahkan apa saja setelah dimuat.",
+    "footer": "40 template · 585 item awal · semua dapat diedit",
+    "replace": "Ganti katalog saya",
+    "subtitle": "Pilih template yang mendekati apa yang Anda jual. Kami memuat item realistis dengan harga dan tarif PPN yang masuk akal — lalu Anda mengeditnya agar sesuai bisnis Anda.",
+    "summary": "{{count}} item dalam {{segments}} segmen. Setiap harga dan tarif PPN dapat diedit setelah dimuat.",
+    "title": "Template industri"
   },
   "wallet": {
     "addressLabel": "Alamat",

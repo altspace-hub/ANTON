@@ -69,6 +69,7 @@
     "title": "You're set up"
   },
   "extended": {
+    "allCategories": "All",
     "backToCart": "Back to cart",
     "cart": "Cart",
     "charge": "Charge {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Add a few items to get started. You can edit, add more, or remove them later in Settings.",
     "title": "Add your items",
     "vatRate": "VAT rate"
+  },
+  "itemsManage": {
+    "add": "+ Add new item",
+    "addTitle": "New item",
+    "allCategories": "All",
+    "confirmDelete": "Delete this item?",
+    "delete": "Delete item",
+    "editTitle": "Edit item",
+    "empty": "No items yet. Add your first, or load a template above.",
+    "emptyCategory": "No items in this segment.",
+    "fieldCategory": "Segment (optional)",
+    "fieldCategoryPlaceholder": "e.g. Espresso",
+    "fieldName": "Name",
+    "fieldNamePlaceholder": "e.g. Cappuccino",
+    "fieldPrice": "Price (SEK)",
+    "fieldVat": "VAT rate",
+    "newCategory": "+ new",
+    "noCategory": "None",
+    "openTemplates": "Browse industry templates",
+    "openTemplatesSub": "40 ready-made catalogues — café, salon, plumber, more",
+    "title": "Items",
+    "totalCount": "{{count}} items in catalogue",
+    "vatPercent": "VAT {{rate}}%"
   },
   "mode": {
     "continue": "Continue",
@@ -216,6 +240,8 @@
     "defaultMode": "Default mode:",
     "exportKvittos": "Export kvittos",
     "generateWalletHint": "Generate a wallet to unlock FTC payment QRs in sale flows.",
+    "items": "Items",
+    "itemsSub": "What you sell · prices · templates for 40 industries",
     "language": "Language",
     "languagePick": "Choose language",
     "mode": "Theme",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Listening for payment"
+  },
+  "templates": {
+    "append": "Add to my catalogue",
+    "confirmReplace": "Replace your current catalogue with the \"{{name}}\" template? Existing items will be removed.",
+    "editAfterHint": "Edit, remove, or add to anything after loading.",
+    "footer": "40 templates · 585 starter items · all editable",
+    "replace": "Replace my catalogue",
+    "subtitle": "Pick a template close to what you sell. We load realistic items with sensible prices and VAT rates — then you edit them to match your business.",
+    "summary": "{{count}} items across {{segments}} segments. Every price and VAT rate is editable after loading.",
+    "title": "Industry templates"
   },
   "wallet": {
     "addressLabel": "Address",

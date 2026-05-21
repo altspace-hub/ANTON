@@ -69,6 +69,7 @@
     "title": "Kurulumunuz tamam"
   },
   "extended": {
+    "allCategories": "Tümü",
     "backToCart": "Sepete dön",
     "cart": "Sepet",
     "charge": "{{amount}} SEK tahsil et",
@@ -107,6 +108,29 @@
     "subtitle": "Başlamak için birkaç ürün ekleyin. Daha sonra Ayarlar'da düzenleyebilir, daha fazlasını ekleyebilir veya kaldırabilirsiniz.",
     "title": "Ürünlerinizi ekleyin",
     "vatRate": "KDV oranı"
+  },
+  "itemsManage": {
+    "add": "+ Yeni ürün ekle",
+    "addTitle": "Yeni ürün",
+    "allCategories": "Tümü",
+    "confirmDelete": "Bu ürün silinsin mi?",
+    "delete": "Ürünü sil",
+    "editTitle": "Ürünü düzenle",
+    "empty": "Henüz ürün yok. İlkini ekleyin ya da yukarıdan bir şablon yükleyin.",
+    "emptyCategory": "Bu bölümde ürün yok.",
+    "fieldCategory": "Bölüm (isteğe bağlı)",
+    "fieldCategoryPlaceholder": "örn. Espresso",
+    "fieldName": "Ad",
+    "fieldNamePlaceholder": "örn. Kapuçino",
+    "fieldPrice": "Fiyat (SEK)",
+    "fieldVat": "KDV oranı",
+    "newCategory": "+ yeni",
+    "noCategory": "Yok",
+    "openTemplates": "Sektör şablonlarına göz at",
+    "openTemplatesSub": "40 hazır katalog — kafe, kuaför, tesisatçı ve daha fazlası",
+    "title": "Ürünler",
+    "totalCount": "Katalogda {{count}} ürün",
+    "vatPercent": "KDV {{rate}}%"
   },
   "mode": {
     "continue": "Devam et",
@@ -216,6 +240,8 @@
     "defaultMode": "Varsayılan mod:",
     "exportKvittos": "Kvittos'u dışa aktar",
     "generateWalletHint": "Satış akışlarında FTC ödeme QR'larının kilidini açmak için bir cüzdan oluşturun.",
+    "items": "Ürünler",
+    "itemsSub": "Sattıklarınız · fiyatlar · 40 sektör için şablonlar",
     "language": "Dil",
     "languagePick": "Dil seçin",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Ödeme bekleniyor"
+  },
+  "templates": {
+    "append": "Kataloğuma ekle",
+    "confirmReplace": "Mevcut kataloğunuz \"{{name}}\" şablonuyla değiştirilsin mi? Mevcut ürünler silinecek.",
+    "editAfterHint": "Yükledikten sonra her şeyi düzenleyin, kaldırın veya ekleyin.",
+    "footer": "40 şablon · 585 başlangıç ürünü · tümü düzenlenebilir",
+    "replace": "Kataloğumu değiştir",
+    "subtitle": "Sattıklarınıza yakın bir şablon seçin. Makul fiyatlar ve KDV oranlarıyla gerçekçi ürünler yüklüyoruz — sonra işletmenize uyacak şekilde düzenliyorsunuz.",
+    "summary": "{{segments}} bölümde {{count}} ürün. Her fiyat ve KDV oranı yükledikten sonra düzenlenebilir.",
+    "title": "Sektör şablonları"
   },
   "wallet": {
     "addressLabel": "Adres",

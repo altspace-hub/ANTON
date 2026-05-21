@@ -69,6 +69,7 @@
     "title": "設定が完了しました"
   },
   "extended": {
+    "allCategories": "すべて",
     "backToCart": "カートに戻る",
     "cart": "カート",
     "charge": "{{amount}} SEK を請求",
@@ -107,6 +108,29 @@
     "subtitle": "まずはいくつか商品を追加しましょう。後で設定から編集、追加、削除できます。",
     "title": "商品を追加",
     "vatRate": "VAT 税率"
+  },
+  "itemsManage": {
+    "add": "+ 商品を追加",
+    "addTitle": "新しい商品",
+    "allCategories": "すべて",
+    "confirmDelete": "この商品を削除しますか？",
+    "delete": "商品を削除",
+    "editTitle": "商品を編集",
+    "empty": "商品がまだありません。最初の商品を追加するか、上のテンプレートを読み込んでください。",
+    "emptyCategory": "このセグメントに商品はありません。",
+    "fieldCategory": "セグメント（任意）",
+    "fieldCategoryPlaceholder": "例：エスプレッソ",
+    "fieldName": "名称",
+    "fieldNamePlaceholder": "例：カプチーノ",
+    "fieldPrice": "価格（SEK）",
+    "fieldVat": "消費税率",
+    "newCategory": "+ 新規",
+    "noCategory": "なし",
+    "openTemplates": "業種テンプレートを見る",
+    "openTemplatesSub": "40種類の既製カタログ — カフェ、サロン、配管工など",
+    "title": "商品",
+    "totalCount": "カタログに{{count}}件の商品",
+    "vatPercent": "消費税 {{rate}}%"
   },
   "mode": {
     "continue": "続ける",
@@ -216,6 +240,8 @@
     "defaultMode": "デフォルトモード：",
     "exportKvittos": "kvitto をエクスポート",
     "generateWalletHint": "ウォレットを生成して、販売フローで FTC 支払い QR を利用できるようにします。",
+    "items": "商品",
+    "itemsSub": "販売商品 · 価格 · 40業種のテンプレート",
     "language": "言語",
     "languagePick": "言語を選択",
     "mode": "テーマ",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "支払いを待機中"
+  },
+  "templates": {
+    "append": "カタログに追加",
+    "confirmReplace": "現在のカタログを「{{name}}」テンプレートで置き換えますか？既存の商品はすべて削除されます。",
+    "editAfterHint": "読み込み後は自由に編集・削除・追加できます。",
+    "footer": "40テンプレート · 585件のスターター商品 · すべて編集可能",
+    "replace": "カタログを置き換える",
+    "subtitle": "販売内容に近いテンプレートを選んでください。現実的な商品と適切な価格・消費税率が読み込まれます — その後は自分のビジネスに合わせて編集してください。",
+    "summary": "{{segments}}セグメントにわたる{{count}}件の商品。すべての価格と消費税率は読み込み後に編集できます。",
+    "title": "業種テンプレート"
   },
   "wallet": {
     "addressLabel": "アドレス",

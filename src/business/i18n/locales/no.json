@@ -69,6 +69,7 @@
     "title": "Du er klar"
   },
   "extended": {
+    "allCategories": "Alle",
     "backToCart": "Tilbake til handlekurv",
     "cart": "Handlekurv",
     "charge": "Belast {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Legg til noen varer for å komme i gang. Du kan redigere, legge til flere eller fjerne dem senere i Innstillinger.",
     "title": "Legg til varene dine",
     "vatRate": "Mva-sats"
+  },
+  "itemsManage": {
+    "add": "+ Legg til ny vare",
+    "addTitle": "Ny vare",
+    "allCategories": "Alle",
+    "confirmDelete": "Slette denne varen?",
+    "delete": "Slett vare",
+    "editTitle": "Rediger vare",
+    "empty": "Ingen varer ennå. Legg til din første, eller last inn en mal ovenfor.",
+    "emptyCategory": "Ingen varer i dette segmentet.",
+    "fieldCategory": "Segment (valgfritt)",
+    "fieldCategoryPlaceholder": "f.eks. Espresso",
+    "fieldName": "Navn",
+    "fieldNamePlaceholder": "f.eks. Cappuccino",
+    "fieldPrice": "Pris (SEK)",
+    "fieldVat": "Mva-sats",
+    "newCategory": "+ ny",
+    "noCategory": "Ingen",
+    "openTemplates": "Bla gjennom bransjemaler",
+    "openTemplatesSub": "40 ferdige kataloger — kafé, salong, rørlegger og mer",
+    "title": "Varer",
+    "totalCount": "{{count}} varer i katalogen",
+    "vatPercent": "Mva {{rate}}%"
   },
   "mode": {
     "continue": "Fortsett",
@@ -216,6 +240,8 @@
     "defaultMode": "Standardmodus:",
     "exportKvittos": "Eksporter kvittos",
     "generateWalletHint": "Generer en lommebok for å låse opp FTC-betalings-QR-koder i salgsflyter.",
+    "items": "Varer",
+    "itemsSub": "Hva du selger · priser · maler for 40 bransjer",
     "language": "Språk",
     "languagePick": "Velg språk",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "Lytter etter betaling"
+  },
+  "templates": {
+    "append": "Legg til i min katalog",
+    "confirmReplace": "Erstatt din nåværende katalog med malen \"{{name}}\"? Eksisterende varer vil bli fjernet.",
+    "editAfterHint": "Rediger, fjern eller legg til hva som helst etter innlasting.",
+    "footer": "40 maler · 585 startvarer · alt redigerbart",
+    "replace": "Erstatt min katalog",
+    "subtitle": "Velg en mal som ligner det du selger. Vi laster inn realistiske varer med fornuftige priser og mva-satser — deretter redigerer du dem slik at de passer din virksomhet.",
+    "summary": "{{count}} varer fordelt på {{segments}} segmenter. Alle priser og mva-satser kan redigeres etter innlasting.",
+    "title": "Bransjemaler"
   },
   "wallet": {
     "addressLabel": "Adresse",

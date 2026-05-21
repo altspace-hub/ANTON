@@ -69,6 +69,7 @@
     "title": "Configurazione completata"
   },
   "extended": {
+    "allCategories": "Tutte",
     "backToCart": "Torna al carrello",
     "cart": "Carrello",
     "charge": "Addebita {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "Aggiungi alcuni articoli per iniziare. Potrai modificarli, aggiungerne altri o rimuoverli in seguito dalle Impostazioni.",
     "title": "Aggiungi i tuoi articoli",
     "vatRate": "Aliquota IVA"
+  },
+  "itemsManage": {
+    "add": "+ Aggiungi nuovo articolo",
+    "addTitle": "Nuovo articolo",
+    "allCategories": "Tutte",
+    "confirmDelete": "Eliminare questo articolo?",
+    "delete": "Elimina articolo",
+    "editTitle": "Modifica articolo",
+    "empty": "Nessun articolo ancora. Aggiungi il primo o carica un modello qui sopra.",
+    "emptyCategory": "Nessun articolo in questa categoria.",
+    "fieldCategory": "Categoria (facoltativo)",
+    "fieldCategoryPlaceholder": "es. Espresso",
+    "fieldName": "Nome",
+    "fieldNamePlaceholder": "es. Cappuccino",
+    "fieldPrice": "Prezzo (SEK)",
+    "fieldVat": "Aliquota IVA",
+    "newCategory": "+ Nuova",
+    "noCategory": "Nessuna",
+    "openTemplates": "Sfoglia i modelli di settore",
+    "openTemplatesSub": "40 cataloghi pronti all'uso — bar, salone, idraulico e altro",
+    "title": "Articoli",
+    "totalCount": "{{count}} articoli nel catalogo",
+    "vatPercent": "IVA {{rate}}%"
   },
   "mode": {
     "continue": "Continua",
@@ -216,6 +240,8 @@
     "defaultMode": "Modalità predefinita:",
     "exportKvittos": "Esporta kvittos",
     "generateWalletHint": "Genera un portafoglio per sbloccare i QR di pagamento in FTC nei flussi di vendita.",
+    "items": "Articoli",
+    "itemsSub": "Cosa vendi · prezzi · modelli per 40 settori",
     "language": "Lingua",
     "languagePick": "Scegli la lingua",
     "mode": "Tema",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "In attesa di pagamento"
+  },
+  "templates": {
+    "append": "Aggiungi al mio catalogo",
+    "confirmReplace": "Sostituire il catalogo attuale con il modello \"{{name}}\"? Gli articoli esistenti verranno rimossi.",
+    "editAfterHint": "Modifica, rimuovi o aggiungi qualsiasi cosa dopo il caricamento.",
+    "footer": "40 modelli · 585 articoli di partenza · tutti modificabili",
+    "replace": "Sostituisci il mio catalogo",
+    "subtitle": "Scegli un modello vicino a ciò che vendi. Carichiamo articoli realistici con prezzi e aliquote IVA sensati — poi li adatti alla tua attività.",
+    "summary": "{{count}} articoli in {{segments}} categorie. Ogni prezzo e aliquota IVA è modificabile dopo il caricamento.",
+    "title": "Modelli di settore"
   },
   "wallet": {
     "addressLabel": "Indirizzo",

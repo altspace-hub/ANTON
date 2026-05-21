@@ -69,6 +69,7 @@
     "title": "设置完成"
   },
   "extended": {
+    "allCategories": "全部",
     "backToCart": "返回购物车",
     "cart": "购物车",
     "charge": "收款 {{amount}} SEK",
@@ -107,6 +108,29 @@
     "subtitle": "添加几项商品以开始使用。稍后可在“设置”中编辑、添加或删除它们。",
     "title": "添加您的商品",
     "vatRate": "增值税率"
+  },
+  "itemsManage": {
+    "add": "+ 添加商品",
+    "addTitle": "新商品",
+    "allCategories": "全部",
+    "confirmDelete": "删除此商品？",
+    "delete": "删除商品",
+    "editTitle": "编辑商品",
+    "empty": "暂无商品。请添加第一件商品，或从上方加载模板。",
+    "emptyCategory": "此分类中没有商品。",
+    "fieldCategory": "分类（可选）",
+    "fieldCategoryPlaceholder": "例如：浓缩咖啡",
+    "fieldName": "名称",
+    "fieldNamePlaceholder": "例如：卡布奇诺",
+    "fieldPrice": "价格（SEK）",
+    "fieldVat": "增值税率",
+    "newCategory": "+ 新建",
+    "noCategory": "无",
+    "openTemplates": "浏览行业模板",
+    "openTemplatesSub": "40个现成商品目录 — 咖啡馆、沙龙、管道工等",
+    "title": "商品",
+    "totalCount": "目录中共 {{count}} 件商品",
+    "vatPercent": "增值税 {{rate}}%"
   },
   "mode": {
     "continue": "继续",
@@ -216,6 +240,8 @@
     "defaultMode": "默认模式：",
     "exportKvittos": "导出 kvittos",
     "generateWalletHint": "生成钱包以在销售流程中解锁 FTC 付款 QR。",
+    "items": "商品",
+    "itemsSub": "所售商品 · 价格 · 40个行业模板",
     "language": "语言",
     "languagePick": "选择语言",
     "mode": "主题",
@@ -249,6 +275,16 @@
   },
   "sync": {
     "listening": "正在监听付款"
+  },
+  "templates": {
+    "append": "添加到我的目录",
+    "confirmReplace": "用「{{name}}」模板替换当前目录？现有商品将被删除。",
+    "editAfterHint": "加载后可自由编辑、删除或添加任何内容。",
+    "footer": "40个模板 · 585件起步商品 · 全部可编辑",
+    "replace": "替换我的目录",
+    "subtitle": "选择一个与您销售内容相近的模板。我们会加载带有合理价格和增值税率的真实商品 — 然后您可以根据自己的业务进行编辑。",
+    "summary": "共 {{count}} 件商品，分布在 {{segments}} 个分类中。所有价格和增值税率均可在加载后编辑。",
+    "title": "行业模板"
   },
   "wallet": {
     "addressLabel": "地址",

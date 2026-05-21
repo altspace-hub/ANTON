@@ -31,6 +31,8 @@ import AddWalletScreen from './pages/settings/AddWalletScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import DayCloseScreen from './pages/settings/DayCloseScreen';
 import PinSetupScreen from './pages/settings/PinSetupScreen';
+import ItemsManageScreen from './pages/settings/ItemsManageScreen';
+import TemplatesPickerScreen from './pages/settings/TemplatesPickerScreen';
 import { hasConfig } from './services/merchant';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
@@ -54,6 +56,8 @@ type Screen =
   | 'settings-rpc'
   | 'settings-day-close'
   | 'settings-pin'
+  | 'settings-items'
+  | 'settings-templates'
   | 'settings-recovery'
   | 'backup-show'
   | 'backup-verify';
@@ -171,6 +175,7 @@ export default function App() {
         onRpcEndpoint={() => setScreen('settings-rpc')}
         onDayClose={() => setScreen('settings-day-close')}
         onPin={() => setScreen('settings-pin')}
+        onItems={() => setScreen('settings-items')}
         onReset={() => {
           setPendingMode('simple');
           setScreen('onboarding-welcome');
@@ -215,6 +220,22 @@ export default function App() {
   }
   if (screen === 'settings-pin') {
     return <PinSetupScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-items') {
+    return (
+      <ItemsManageScreen
+        onBack={() => setScreen('settings')}
+        onOpenTemplates={() => setScreen('settings-templates')}
+      />
+    );
+  }
+  if (screen === 'settings-templates') {
+    return (
+      <TemplatesPickerScreen
+        onBack={() => setScreen('settings-items')}
+        onLoaded={() => setScreen('settings-items')}
+      />
+    );
   }
   if (screen === 'settings-recovery') {
     return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;
