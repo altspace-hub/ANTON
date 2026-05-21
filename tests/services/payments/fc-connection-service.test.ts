@@ -84,6 +84,62 @@ describe('updateConfig — column allow-list', () => {
   });
 });
 
+describe('applyEnvOverrides — FUTURECHAIN_RPC_URL seeding', () => {
+  // Pristine state = migration-081 defaults. Only then do we honour
+  // the env var. Once the user has touched the config (different
+  // node_url OR stub_mode flipped to false), env is ignored on restart.
+  const PRISTINE = { id: 'default', node_url: 'http://localhost:8545', stub_mode: true };
+
+  it('no-ops when FUTURECHAIN_RPC_URL is unset', async () => {
+    const db = makeMockDb({ ...PRISTINE });
+    const svc = await createFCConnectionService(db);
+    const r = await svc.applyEnvOverrides({});
+    expect(r.applied).toBe(false);
+    expect(r.reason).toMatch(/no FUTURECHAIN_RPC_URL/);
+    expect(db.calls.find(c => c.sql.startsWith('UPDATE fc_connection_config'))).toBeUndefined();
+  });
+
+  it('seeds node_url + stub_mode=false on a pristine row', async () => {
+    const db = makeMockDb({ ...PRISTINE });
+    const svc = await createFCConnectionService(db);
+    const r = await svc.applyEnvOverrides({ FUTURECHAIN_RPC_URL: 'http://127.0.0.1:8546' } as NodeJS.ProcessEnv);
+    expect(r.applied).toBe(true);
+    expect(r.node_url).toBe('http://127.0.0.1:8546');
+    const update = db.calls.find(c => c.sql.startsWith('UPDATE fc_connection_config'));
+    expect(update).toBeTruthy();
+    expect(update!.sql).toContain('node_url = ?');
+    expect(update!.sql).toContain('stub_mode = ?');
+    // Args order: node_url, stub_mode, then 'default' for WHERE id = ?
+    expect(update!.args).toEqual(['http://127.0.0.1:8546', false, 'default']);
+  });
+
+  it('refuses non-http(s) URLs (defense against accidental file:/// or junk)', async () => {
+    const db = makeMockDb({ ...PRISTINE });
+    const svc = await createFCConnectionService(db);
+    const r = await svc.applyEnvOverrides({ FUTURECHAIN_RPC_URL: 'ftp://nope' } as NodeJS.ProcessEnv);
+    expect(r.applied).toBe(false);
+    expect(r.reason).toMatch(/not http/);
+    expect(db.calls.find(c => c.sql.startsWith('UPDATE fc_connection_config'))).toBeUndefined();
+  });
+
+  it('skips when user has already set a custom node_url (UI override wins)', async () => {
+    const db = makeMockDb({ id: 'default', node_url: 'https://rpc.futurechain.eu', stub_mode: true });
+    const svc = await createFCConnectionService(db);
+    const r = await svc.applyEnvOverrides({ FUTURECHAIN_RPC_URL: 'http://127.0.0.1:8546' } as NodeJS.ProcessEnv);
+    expect(r.applied).toBe(false);
+    expect(r.reason).toMatch(/already customised/);
+    expect(db.calls.find(c => c.sql.startsWith('UPDATE fc_connection_config'))).toBeUndefined();
+  });
+
+  it('skips when stub_mode is already false (user previously turned on real mode)', async () => {
+    const db = makeMockDb({ id: 'default', node_url: 'http://localhost:8545', stub_mode: false });
+    const svc = await createFCConnectionService(db);
+    const r = await svc.applyEnvOverrides({ FUTURECHAIN_RPC_URL: 'http://127.0.0.1:8546' } as NodeJS.ProcessEnv);
+    expect(r.applied).toBe(false);
+    expect(r.reason).toMatch(/already customised/);
+  });
+});
+
 describe('isStubMode', () => {
   it('defaults to true when no config exists yet', async () => {
     const db = makeMockDb(undefined);

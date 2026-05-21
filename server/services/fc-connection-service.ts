@@ -44,6 +44,39 @@ export async function createFCConnectionService(db: DatabaseAdapter) {
 
   async function isStubMode() { return ((await getConfig()) as Record<string, unknown>)?.stub_mode ?? true; }
 
-  return { getConfig, updateConfig, healthCheck, isStubMode };
+  /**
+   * One-shot startup hook for the portable bundle (and any deployment
+   * that exposes the node URL via env). When `FUTURECHAIN_RPC_URL` is
+   * set and the config row is still at its migration-081 defaults
+   * (node_url='http://localhost:8545' and stub_mode=TRUE), we point the
+   * config at the env URL and flip stub_mode off so fc-wallet-service
+   * and fc-transaction-service take the real path.
+   *
+   * Pristine-row rule: if the user has already customised either field
+   * via the UI (Settings → FutureChain), the env var is ignored. We
+   * never clobber a manual configuration on restart.
+   *
+   * Returns `{ applied, reason, node_url? }` for the boot log.
+   */
+  async function applyEnvOverrides(env: NodeJS.ProcessEnv = process.env): Promise<{
+    applied: boolean; reason: string; node_url?: string;
+  }> {
+    const envUrl = env.FUTURECHAIN_RPC_URL?.trim();
+    if (!envUrl) return { applied: false, reason: 'no FUTURECHAIN_RPC_URL set' };
+    if (!/^https?:\/\//.test(envUrl)) {
+      return { applied: false, reason: `ignored — FUTURECHAIN_RPC_URL "${envUrl}" is not http(s)://` };
+    }
+    const cfg = (await getConfig()) as Record<string, unknown>;
+    const currentUrl = (cfg?.node_url as string | undefined) ?? '';
+    const currentStub = cfg?.stub_mode;
+    const isPristine = currentUrl === 'http://localhost:8545' && (currentStub === true || currentStub === 1);
+    if (!isPristine) {
+      return { applied: false, reason: `config already customised (node_url=${currentUrl}, stub_mode=${String(currentStub)})` };
+    }
+    await updateConfig({ node_url: envUrl, stub_mode: false });
+    return { applied: true, reason: 'seeded from FUTURECHAIN_RPC_URL', node_url: envUrl };
+  }
+
+  return { getConfig, updateConfig, healthCheck, isStubMode, applyEnvOverrides };
 }
 export type FCConnectionService = Awaited<ReturnType<typeof createFCConnectionService>>;
