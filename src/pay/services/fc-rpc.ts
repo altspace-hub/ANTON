@@ -18,20 +18,50 @@
  */
 import { rpc } from '@futurechain/sdk';
 import { getInstallToken } from './enrollment';
+import { getSecure, setSecure, removeSecure } from './secure-store';
 
 /** Production light-hub URL (Bahnhof, behind Caddy + LE). */
-const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
+export const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
+
+/** Secure-store key holding a user override. When absent, getRpc()
+ *  uses DEFAULT_ENDPOINT. Stored in secure-store rather than IDB so
+ *  it survives an app cache wipe (the wallet does too — and a
+ *  payment app where wallet and endpoint disagree is dangerous). */
+const ENDPOINT_KEY = 'fc.rpc.endpoint';
 
 let cached: rpc.RpcClient | null = null;
 
+/** Returns the currently-configured endpoint URL (override or
+ *  default). Async because the override lives in async secure-store. */
+export async function getEndpoint(): Promise<string> {
+  const override = (await getSecure(ENDPOINT_KEY))?.trim();
+  return override && /^https?:\/\//.test(override) ? override : DEFAULT_ENDPOINT;
+}
+
+/** Persist a user-chosen RPC endpoint. Pass `null` (or the default
+ *  URL) to remove the override. Invalidates the cached client so the
+ *  next getRpc() picks up the change immediately. */
+export async function setEndpoint(url: string | null): Promise<void> {
+  if (!url || url.trim() === DEFAULT_ENDPOINT) {
+    await removeSecure(ENDPOINT_KEY);
+  } else {
+    if (!/^https?:\/\//.test(url.trim())) {
+      throw new Error('Endpoint must start with http:// or https://');
+    }
+    await setSecure(ENDPOINT_KEY, url.trim());
+  }
+  cached = null;
+}
+
 /** The shared RpcClient for this app session. Resolves the per-install
  *  bearer token on first call (enrolling if necessary) and caches both
- *  the token and the client. */
+ *  the token and the client. Honors a user-set endpoint override. */
 export async function getRpc(): Promise<rpc.RpcClient> {
   if (cached) return cached;
-  const apiKey = await getInstallToken(DEFAULT_ENDPOINT);
+  const endpoint = await getEndpoint();
+  const apiKey = await getInstallToken(endpoint);
   cached = new rpc.RpcClient({
-    endpoint: DEFAULT_ENDPOINT,
+    endpoint,
     apiKey,
     timeoutMs: 15_000,
   });
@@ -40,7 +70,7 @@ export async function getRpc(): Promise<rpc.RpcClient> {
 
 /** Reset the cached client + force re-resolve on next getRpc. Useful
  *  after a wallet reset (token-bound install_id cleared) or a settings
- *  change once we wire a settings screen. */
+ *  change. */
 export function resetRpc(): void {
   cached = null;
 }

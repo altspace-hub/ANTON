@@ -128,3 +128,48 @@ export interface PaymentRecord {
   /** Human-readable failure reason when `status === 'failed'`. */
   error?: string;
 }
+
+/**
+ * An inbound transaction observed on the chain. Polled from
+ * `/iso_received/<addr>` by services/received.ts. The shape is
+ * normalised — the chain may return PACS.008 in any of several
+ * envelopes; we pull the fields that matter and stash the raw JSON
+ * on `rawJson` for debugging.
+ *
+ * Stored in the same IndexedDB as PaymentRecord but in a separate
+ * object store. Keyed by `txId` — every poll re-fetches the full
+ * list and dedupes against this set.
+ */
+export interface ReceivedRecord {
+  /** Chain tx id / UETR — stable across polls, used as the primary key. */
+  txId: string;
+  /** This device's wallet address (recipient). Stored so a multi-
+   *  wallet device's per-wallet view can filter. */
+  toAddress: string;
+  /** PACS.008 Dbtr.Acct.Othr.Id — the sender's `fc_…` address. */
+  fromAddress: string;
+  /** Optional sender display name (PACS.008 Dbtr.Nm). */
+  fromName?: string;
+  amountMicroFtc: bigint;
+  /** Concatenated RmtInf.Ustrd strings. Often carries the ADR-004
+   *  reference for merchant-flow matching. */
+  remittance?: string;
+  /** Epoch ms of the chain `CreDtTm` if present, else when we first
+   *  observed the row. */
+  receivedAt: number;
+  blockHeight?: number;
+  /** Verbatim JSON of the raw item the chain returned — kept until
+   *  the response shape is stable so the user (and debugger) can see
+   *  exactly what was parsed. */
+  rawJson: string;
+}
+
+/**
+ * Unified view of one row of activity, used by the merged history
+ * timeline. The `direction` tells the row template which icon and
+ * counterparty field to show.
+ */
+export type Activity =
+  | { direction: 'sent';     at: number; record: PaymentRecord }
+  | { direction: 'received'; at: number; record: ReceivedRecord };
+

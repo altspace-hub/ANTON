@@ -30,7 +30,10 @@ import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
 import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
 import RestoreScreen from './pages/settings/RestoreScreen';
+import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import { hasProfile } from './services/profile';
+import { pollIncomingOnce } from './services/received';
+import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import type { DecodedPayment, PaymentRecord } from './services/types';
 
 type Screen =
@@ -56,7 +59,8 @@ type Screen =
   | 'settings-money'
   | 'settings-activity'
   | 'settings-recovery'
-  | 'settings-restore';
+  | 'settings-restore'
+  | 'settings-rpc';
 
 export default function App() {
   const { t } = useTranslation();
@@ -71,6 +75,40 @@ export default function App() {
     (async () => {
       setScreen((await hasProfile()) ? 'home' : 'onboarding-welcome');
     })();
+  }, []);
+
+  /**
+   * Inbound poller — fires on mount + every 30 s + whenever the app
+   * comes back to the foreground. Each fresh ReceivedRecord triggers
+   * a local notification. Errors inside pollIncomingOnce never bubble
+   * up — the poller swallows network / parse failures and retries on
+   * the next tick.
+   *
+   * We deliberately do NOT pause when there's no wallet — the poller
+   * is a no-op until a wallet exists, and starting it early keeps the
+   * code path simple. The permission prompt is fired on mount too;
+   * the user sees it once on a fresh install and never again.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    void ensureNotificationPermission();
+
+    const tick = async () => {
+      const fresh = await pollIncomingOnce();
+      if (cancelled) return;
+      for (const r of fresh) {
+        void notifyIncoming(r);
+      }
+    };
+    void tick();
+    const interval = window.setInterval(tick, 30_000);
+    const onVisibility = () => { if (document.visibilityState === 'visible') void tick(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   if (screen === 'loading') {
@@ -174,6 +212,7 @@ export default function App() {
         onActivityReview={() => setScreen('settings-activity')}
         onRecoveryPhrase={() => setScreen('settings-recovery')}
         onRestore={() => setScreen('settings-restore')}
+        onRpcEndpoint={() => setScreen('settings-rpc')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
@@ -234,6 +273,9 @@ export default function App() {
   }
   if (screen === 'settings-recovery') {
     return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-rpc') {
+    return <RpcEndpointScreen onBack={() => setScreen('settings')} />;
   }
   if (screen === 'settings-restore') {
     return (

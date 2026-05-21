@@ -1,11 +1,17 @@
 /**
- * HistoryScreen — every recorded payment, newest first. Each row is a
- * local receipt; tapping one expands its full detail inline.
+ * HistoryScreen — full activity timeline, both directions.
+ *
+ * Merges outgoing PaymentRecord rows with inbound ReceivedRecord
+ * rows via buildActivity(). Each row is tappable to expand the per-
+ * tx detail inline. Outgoing rows surface merchant / order / ref;
+ * inbound rows surface sender / remittance / block height.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatFtc, listPayments } from '../services/payment';
-import type { PaymentRecord } from '../services/types';
+import { listReceived } from '../services/received';
+import { buildActivity } from '../services/activity';
+import type { Activity, PaymentRecord, ReceivedRecord } from '../services/types';
 
 interface Props {
   onBack: () => void;
@@ -18,13 +24,25 @@ function formatDate(ms: number): string {
   });
 }
 
+function rowKey(a: Activity): string {
+  return a.direction === 'sent' ? `s-${a.record.id}` : `r-${a.record.txId}`;
+}
+
+function abbreviate(addr: string): string {
+  if (addr.length <= 18) return addr;
+  return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
+}
+
 export default function HistoryScreen({ onBack }: Props) {
   const { t } = useTranslation();
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [items, setItems] = useState<Activity[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    void (async () => setPayments(await listPayments()))();
+    void (async () => {
+      const [sent, received] = await Promise.all([listPayments(), listReceived()]);
+      setItems(buildActivity(sent, received));
+    })();
   }, []);
 
   return (
@@ -41,13 +59,14 @@ export default function HistoryScreen({ onBack }: Props) {
             </svg>
           </button>
           <h2 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
-            {t('history.title')}
+            {t('history.activityTitle', 'Activity')}
           </h2>
         </div>
 
-        {payments.length === 0 ? (
+        {items.length === 0 ? (
           <div className="rounded-xl p-6 text-center mt-4"
-               style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+               style={{ backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)' }}>
             <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
               {t('history.empty')}
             </div>
@@ -57,37 +76,43 @@ export default function HistoryScreen({ onBack }: Props) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {payments.map((p) => {
-              const open = expanded === p.id;
+            {items.map((a) => {
+              const key = rowKey(a);
+              const open = expanded === key;
               return (
-                <div key={p.id} className="rounded-xl overflow-hidden"
+                <div key={key} className="rounded-xl overflow-hidden"
                      style={{ backgroundColor: 'var(--color-surface)',
                               border: '1px solid var(--color-border)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(open ? null : p.id)}
-                    className="w-full flex items-center justify-between p-3.5 text-left"
-                  >
-                    <div>
-                      <div className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>
-                        {t(`review.purpose${p.purpose}`)}
+                  <button type="button"
+                          onClick={() => setExpanded(open ? null : key)}
+                          className="w-full flex items-center gap-3 p-3.5 text-left">
+                    <DirectionGlyph direction={a.direction} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm"
+                           style={{ color: 'var(--color-text)' }}>
+                        {a.direction === 'sent'
+                          ? t(`review.purpose${a.record.purpose}`)
+                          : t('history.receivedFrom', { defaultValue: 'Received' })}
                       </div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                        {t('history.paidOn', { date: formatDate(p.paidAt) })}
+                      <div className="text-xs mt-0.5"
+                           style={{ color: 'var(--color-text-muted)' }}>
+                        {formatDate(a.at)}
                       </div>
                     </div>
-                    <div className="mono text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-                      {formatFtc(p.amountMicroFtc)} FTC
+                    <div className="mono text-sm font-semibold"
+                         style={{ color: a.direction === 'received'
+                                    ? 'var(--color-accent)'
+                                    : 'var(--color-text)' }}>
+                      {a.direction === 'received' ? '+' : ''}
+                      {formatFtc(a.record.amountMicroFtc)} FTC
                     </div>
                   </button>
                   {open && (
                     <div className="px-3.5 pb-3.5 pt-1"
                          style={{ borderTop: '1px solid var(--color-border-soft)' }}>
-                      <DetailRow label={t('history.merchant')} value={p.merchantId} />
-                      <DetailRow label={t('history.orderId')} value={p.orderId} />
-                      <DetailRow label={t('history.amount')}
-                                 value={`${formatFtc(p.amountMicroFtc)} FTC`} />
-                      <DetailRow label={t('history.reference')} value={p.ref} wrap />
+                      {a.direction === 'sent'
+                        ? <SentDetail r={a.record} />
+                        : <ReceivedDetail r={a.record} />}
                     </div>
                   )}
                 </div>
@@ -97,6 +122,60 @@ export default function HistoryScreen({ onBack }: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+function DirectionGlyph({ direction }: { direction: 'sent' | 'received' }) {
+  const isOut = direction === 'sent';
+  return (
+    <span aria-hidden
+          className="flex items-center justify-center w-9 h-9 rounded-full shrink-0"
+          style={{ backgroundColor: isOut ? 'var(--color-surface-alt, rgba(0,0,0,0.04))'
+                                          : 'var(--color-accent-soft, rgba(45,212,168,0.12))',
+                   color: isOut ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
+      {isOut ? (
+        // ↗
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M7 17L17 7M9 7h8v8" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        // ↙
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M17 7L7 17M15 17H7V9" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function SentDetail({ r }: { r: PaymentRecord }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DetailRow label={t('history.merchant')} value={r.merchantId} />
+      <DetailRow label={t('history.orderId')} value={r.orderId} />
+      <DetailRow label={t('history.amount')}
+                 value={`${formatFtc(r.amountMicroFtc)} FTC`} />
+      <DetailRow label={t('history.reference')} value={r.ref} wrap />
+      {r.txId && <DetailRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />}
+    </>
+  );
+}
+
+function ReceivedDetail({ r }: { r: ReceivedRecord }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DetailRow label={t('history.from', 'From')}
+                 value={r.fromName ? `${r.fromName} · ${abbreviate(r.fromAddress)}` : abbreviate(r.fromAddress) || '—'} />
+      <DetailRow label={t('history.amount')}
+                 value={`+${formatFtc(r.amountMicroFtc)} FTC`} />
+      {r.remittance && <DetailRow label={t('history.note', 'Note')} value={r.remittance} wrap />}
+      <DetailRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />
+      {r.blockHeight && <DetailRow label={t('history.block', 'Block')} value={String(r.blockHeight)} />}
+    </>
   );
 }
 

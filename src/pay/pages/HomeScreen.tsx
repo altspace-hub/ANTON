@@ -9,8 +9,10 @@ import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
 import { loadWallet } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
+import { listReceived } from '../services/received';
+import { buildActivity } from '../services/activity';
 import { fetchBalanceFtc } from '../services/fc-rpc';
-import type { PaymentRecord } from '../services/types';
+import type { Activity } from '../services/types';
 
 interface Props {
   onScan: () => void;
@@ -28,15 +30,35 @@ export function shortAddress(addr: string): string {
 export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }: Props) {
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [activity, setActivity] = useState<Activity[]>([]);
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
 
+  // Refresh activity + wallet on mount AND when the tab/app becomes
+  // visible. The receive poller fires on the same visibility change
+  // (in App.tsx), so by the time we re-read the IDB stores, fresh
+  // inbound rows are already persisted.
   useEffect(() => {
-    void (async () => {
+    let cancelled = false;
+    const load = async () => {
       const wallet = await loadWallet();
+      if (cancelled) return;
       setAddress(wallet?.address ?? '');
-      setPayments(await listPayments());
-    })();
+      const [sent, received] = await Promise.all([listPayments(), listReceived()]);
+      if (cancelled) return;
+      setActivity(buildActivity(sent, received));
+    };
+    void load();
+    const onVisibility = () => { if (document.visibilityState === 'visible') void load(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    // Also re-poll the activity stores on a slow timer — covers the
+    // 30-second-while-foregrounded case where a payment lands but the
+    // user hasn't backgrounded the app.
+    const interval = window.setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
   }, []);
 
   // Refresh balance whenever the address is known, then every 30s.
@@ -52,7 +74,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
     return () => { cancelled = true; window.clearInterval(id); };
   }, [address]);
 
-  const recent = payments.slice(0, 3);
+  const recent = activity.slice(0, 3);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto safe-top safe-bottom"
@@ -101,7 +123,11 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
             </span>
           </div>
           <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            {t('home.paymentsCount', { count: payments.length })}
+            {t('home.activityCount', {
+              count: activity.length,
+              defaultValue: '{{count}} payment',
+              defaultValue_other: '{{count}} payments',
+            })}
           </div>
         </div>
 
@@ -145,13 +171,13 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
           </span>
         </button>
 
-        {/* Recent payments */}
+        {/* Recent activity — sent + received, sorted by timestamp. */}
         <div className="flex items-center justify-between mt-7 mb-2">
           <h2 className="text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--color-text-faint)' }}>
-            {t('home.recentPayments')}
+            {t('home.recentActivity', 'Recent activity')}
           </h2>
-          {payments.length > 3 && (
+          {activity.length > 3 && (
             <button type="button" onClick={onHistory}
                     className="text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>
               {t('home.seeAll')}
@@ -171,27 +197,49 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {recent.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={onHistory}
-                className="flex items-center justify-between rounded-xl p-3.5 text-left"
-                style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-              >
-                <div>
-                  <div className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>
-                    {t(`review.purpose${p.purpose}`)}
+            {recent.map((a) => {
+              const key = a.direction === 'sent' ? `s-${a.record.id}` : `r-${a.record.txId}`;
+              const isIn = a.direction === 'received';
+              const title = a.direction === 'sent'
+                ? t(`review.purpose${a.record.purpose}`)
+                : t('history.receivedFrom', 'Received');
+              const sub = a.direction === 'sent'
+                ? a.record.merchantId
+                : (a.record.fromName ?? (a.record.fromAddress
+                    ? `${a.record.fromAddress.slice(0, 10)}…${a.record.fromAddress.slice(-4)}`
+                    : '—'));
+              return (
+                <button key={key} type="button" onClick={onHistory}
+                        className="flex items-center justify-between rounded-xl p-3.5 text-left"
+                        style={{ backgroundColor: 'var(--color-surface)',
+                                 border: '1px solid var(--color-border)' }}>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span aria-hidden
+                          className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+                          style={{ backgroundColor: isIn
+                                     ? 'var(--color-accent-soft, rgba(45,212,168,0.12))'
+                                     : 'var(--color-surface-alt, rgba(0,0,0,0.04))',
+                                   color: isIn ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                      {isIn ? '↙' : '↗'}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate"
+                           style={{ color: 'var(--color-text)' }}>
+                        {title}
+                      </div>
+                      <div className="mono text-xs mt-0.5 truncate"
+                           style={{ color: 'var(--color-text-muted)' }}>
+                        {sub}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mono text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                    {p.merchantId}
+                  <div className="mono text-sm font-semibold shrink-0"
+                       style={{ color: isIn ? 'var(--color-accent)' : 'var(--color-text)' }}>
+                    {isIn ? '+' : ''}{formatFtc(a.record.amountMicroFtc)} FTC
                   </div>
-                </div>
-                <div className="mono text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-                  {formatFtc(p.amountMicroFtc)} FTC
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
