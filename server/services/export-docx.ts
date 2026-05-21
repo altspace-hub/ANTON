@@ -380,71 +380,157 @@ interface ExportMetadata {
   includeCoverPage?: boolean;
 }
 
-// EXPORT-01: Build a governance-ready cover page as the first section
-function buildCoverPage(meta: ExportMetadata, s: ReturnType<typeof resolveStyle>): (Paragraph | Table)[] {
+// EXPORT-01: Governance-ready cover page (rebuilt for a printable Word page).
+// Design goals (2026-05-21 pass):
+//   • Readable on a white page — dark text on light shading, NOT the
+//     dark-mode hex values the original used (a white title on a white
+//     Word page is invisible).
+//   • Brand-customisable — uses s.accent / s.h1Color / s.h2Color from
+//     resolveStyle(brandConfig). All colour-sensitive elements scale
+//     with the caller's brand palette.
+//   • More information up front — Module, Model, Thinking level,
+//     Creativity, Word count + reading time, Sources & scope, "About
+//     this analysis."
+//   • Better visual hierarchy — accent bar, branding + AI-assisted
+//     subtitle, classification, big title, subject, status pill,
+//     metadata grid (zebra-striped, light), about, sources, disclaimer.
+function buildCoverPage(meta: ExportMetadata, s: ReturnType<typeof resolveStyle>, markdown: string): (Paragraph | Table)[] {
   const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
   const items: (Paragraph | Table)[] = [];
 
-  // Top ANTON branding line
-  items.push(new Paragraph({ children: [new TextRun({ text: 'ANTON by openEXPERT', color: '2DD4A8', size: 36, bold: true, font: s.h1Font })], spacing: { before: 0, after: 400 } }));
+  // Word count + reading time — strip markdown punctuation + code fences.
+  const text = markdown.replace(/```[\s\S]*?```/g, ' ').replace(/[#*_`>|[\](){}\\-]/g, ' ');
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  const readMin = Math.max(1, Math.round(wordCount / 220));
 
-  // Classification badge
+  // Print-friendly neutrals — kept local so they don't drift with the
+  // brand accent (which may be any colour).
+  const C_INK     = '1A1B2E';        // primary text
+  const C_BODY    = '3C3D4E';        // secondary text
+  const C_MUTED   = '6B6B7E';        // labels / captions
+  const C_LIGHT   = 'FAFAFA';        // pale row shading
+  const C_BORDER  = 'E4E1DA';        // hairline borders
+  const C_ALERT   = 'C0392B';        // confidential / draft
+  const C_OK      = '1E8E4E';        // FINAL
+  const C_WARN    = 'C8881E';        // DRAFT
+
+  // Top accent bar — a thin 1-row borderless table filled with the brand accent.
+  items.push(new Table({
+    width: { size: 9000, type: WidthType.DXA },
+    rows: [new TableRow({ children: [new TableCell({
+      shading: { type: ShadingType.CLEAR, fill: s.accent },
+      children: [new Paragraph({ children: [new TextRun({ text: ' ', size: 4 })] })],
+      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+    })] })],
+    borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+  }));
+
+  // ANTON branding + AI-assisted subtitle.
+  items.push(new Paragraph({ children: [new TextRun({ text: 'ANTON by openEXPERT', color: s.accent, size: 32, bold: true, font: s.h1Font })], spacing: { before: 400, after: 0 } }));
+  items.push(new Paragraph({ children: [new TextRun({ text: 'AI-assisted analysis · requires professional review', color: C_MUTED, size: 16, italics: true, font: s.bodyFont })], spacing: { before: 0, after: 800 } }));
+
+  // Classification.
   const classification = meta.classificationLabel || 'CONFIDENTIAL — For Recipient Only';
   items.push(new Paragraph({
-    children: [new TextRun({ text: classification.toUpperCase(), color: 'E74C3C', size: 20, bold: true, font: s.h2Font })],
-    spacing: { before: 200, after: 800 },
+    children: [new TextRun({ text: classification.toUpperCase(), color: C_ALERT, size: 18, bold: true, font: s.h2Font })],
+    spacing: { before: 0, after: 600 },
   }));
 
-  // Main title
+  // Big title — uses brand h1Color, NOT white (so it's visible on a white page).
   items.push(new Paragraph({
-    children: [new TextRun({ text: meta.title || 'Analysis Report', color: 'FFFFFF', size: 64, bold: true, font: s.h1Font })],
+    children: [new TextRun({ text: meta.title || 'Analysis Report', color: s.h1Color, size: 56, bold: true, font: s.h1Font })],
     heading: HeadingLevel.HEADING_1,
-    spacing: { before: 0, after: 400 },
+    spacing: { before: 0, after: 200 },
   }));
-
   if (meta.subject) {
-    items.push(new Paragraph({ children: [new TextRun({ text: meta.subject, color: 'B0B0B0', size: 28, font: s.bodyFont })], spacing: { before: 0, after: 800 } }));
+    items.push(new Paragraph({ children: [new TextRun({ text: meta.subject, color: C_BODY, size: 24, font: s.bodyFont })], spacing: { before: 0, after: 400 } }));
   }
 
-  // Status watermark
+  // Status pill — accent-coloured bar character + label.
   const status = meta.status || 'DRAFT';
-  items.push(new Paragraph({ children: [new TextRun({ text: status, color: status === 'FINAL' ? '27AE60' : 'F5A623', size: 32, bold: true, font: s.h1Font })], spacing: { before: 0, after: 1600 } }));
+  const statusColor = status === 'FINAL' ? C_OK : status === 'CONFIDENTIAL DRAFT' ? C_ALERT : C_WARN;
+  items.push(new Paragraph({ children: [new TextRun({ text: `▌ ${status}`, color: statusColor, size: 22, bold: true, font: s.h2Font })], spacing: { before: 0, after: 800 } }));
 
-  // Cover metadata table
-  const rows: Array<[string, string]> = [
+  // Metadata table — light zebra rows, accent top/bottom borders, hairline grid.
+  const govRows: Array<[string, string]> = [
     ['Client', meta.clientName || '—'],
     ['Project', meta.projectName || '—'],
     ['Date', date],
     ['Version', meta.version || 'v1.0'],
-    ['Author', meta.author || 'ANTON FCP Workbench'],
+    ['Author', meta.author || 'ANTON by openEXPERT'],
     ['Reviewer', meta.reviewer || '________________________'],
-    ['Session ID', meta.sessionId ? meta.sessionId.slice(0, 8).toUpperCase() : '—'],
   ];
+  const techRows: Array<[string, string]> = [];
+  if (meta.moduleId)   techRows.push(['Module', meta.moduleId]);
+  if (meta.model)      techRows.push(['Model', meta.model]);
+  if (meta.thinking)   techRows.push(['Thinking level', meta.thinking]);
+  if (meta.creativity) techRows.push(['Creativity', meta.creativity]);
+  techRows.push(['Length', `${wordCount.toLocaleString()} words · ≈ ${readMin}-minute read`]);
+  if (meta.sessionId)  techRows.push(['Session', meta.sessionId.slice(0, 8).toUpperCase()]);
+  const allRows = [...govRows, ...techRows];
 
-  const COL1 = 1440; const COL2 = 3600;
-
+  const COL1 = 2000; const COL2 = 5400;
   items.push(new Table({
     width: { size: COL1 + COL2, type: WidthType.DXA },
-    rows: rows.map(([label, value]) => new TableRow({
+    rows: allRows.map(([label, value], idx) => new TableRow({
       children: [
-        new TableCell({ width: { size: COL1, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18, font: s.bodyFont, color: 'B0B0B0' })], spacing: { before: 40, after: 40 } })], shading: { type: ShadingType.CLEAR, fill: '152238' } }),
-        new TableCell({ width: { size: COL2, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: value, size: 18, font: s.bodyFont, color: 'E0E0E0' })], spacing: { before: 40, after: 40 } })], shading: { type: ShadingType.CLEAR, fill: '0F1B2D' } }),
+        new TableCell({
+          width: { size: COL1, type: WidthType.DXA },
+          shading: { type: ShadingType.CLEAR, fill: C_LIGHT },
+          children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18, font: s.bodyFont, color: C_MUTED })], spacing: { before: 80, after: 80 } })],
+        }),
+        new TableCell({
+          width: { size: COL2, type: WidthType.DXA },
+          shading: { type: ShadingType.CLEAR, fill: idx % 2 === 0 ? 'FFFFFF' : C_LIGHT },
+          children: [new Paragraph({ children: [new TextRun({ text: value, size: 18, font: s.bodyFont, color: C_INK })], spacing: { before: 80, after: 80 } })],
+        }),
       ],
     })),
     borders: {
-      top:    { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8' },
-      bottom: { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8' },
+      top:    { style: BorderStyle.SINGLE, size: 8, color: s.accent },
+      bottom: { style: BorderStyle.SINGLE, size: 8, color: s.accent },
       left:   { style: BorderStyle.NONE },
       right:  { style: BorderStyle.NONE },
-      insideHorizontal:{ style: BorderStyle.SINGLE, size: 1, color: '152238' },
-      insideVertical:{ style: BorderStyle.NONE },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: C_BORDER },
+      insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: C_BORDER },
     },
   }));
 
-  // LEGAL-01 disclaimer
+  // About this analysis.
   items.push(new Paragraph({
-    children: [new TextRun({ text: 'AI-Assisted Analysis — Not Legal Advice — Requires Professional Review', size: 16, italics: true, color: '707070', font: s.bodyFont })],
-    spacing: { before: 800, after: 0 },
+    children: [new TextRun({ text: 'About this analysis', color: s.h2Color, size: 22, bold: true, font: s.h2Font })],
+    spacing: { before: 600, after: 120 },
+  }));
+  const aboutPieces: string[] = ['This document was generated by ANTON, an AI-powered expert workspace.'];
+  if (meta.moduleId) aboutPieces.push(`Module: ${meta.moduleId}.`);
+  if (meta.model) {
+    const cfg = [meta.model];
+    if (meta.thinking)   cfg.push(`thinking "${meta.thinking}"`);
+    if (meta.creativity) cfg.push(`creativity "${meta.creativity}"`);
+    aboutPieces.push(`Run with ${cfg.join(', ')}.`);
+  }
+  aboutPieces.push('The output is AI-assisted and must be verified by a qualified professional before being relied on.');
+  items.push(new Paragraph({
+    children: [new TextRun({ text: aboutPieces.join(' '), size: 18, color: C_BODY, font: s.bodyFont })],
+    spacing: { before: 0, after: 400 },
+  }));
+
+  // Sources & scope.
+  if (meta.documentsLoaded && meta.documentsLoaded.length > 0) {
+    items.push(new Paragraph({
+      children: [new TextRun({ text: 'Sources & scope', color: s.h2Color, size: 22, bold: true, font: s.h2Font })],
+      spacing: { before: 300, after: 120 },
+    }));
+    items.push(new Paragraph({
+      children: [new TextRun({ text: meta.documentsLoaded.join(' · '), size: 18, color: C_BODY, font: s.bodyFont })],
+      spacing: { before: 0, after: 400 },
+    }));
+  }
+
+  // Disclaimer footer (small italic).
+  items.push(new Paragraph({
+    children: [new TextRun({ text: 'AI-Assisted Analysis — Not Legal Advice — Requires Professional Review', size: 14, italics: true, color: '707070', font: s.bodyFont })],
+    spacing: { before: 600, after: 0 },
   }));
 
   return items;
@@ -668,7 +754,7 @@ export async function generateDocx(
             margin: { top: MARGIN_DXA, right: MARGIN_DXA, bottom: MARGIN_DXA, left: MARGIN_DXA },
           },
         },
-        children: buildCoverPage(metadata, s),
+        children: buildCoverPage(metadata, s, markdown),
       }] : []),
       {
         // ── A4 two-column layout ─────────────────────────────────

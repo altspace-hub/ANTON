@@ -298,11 +298,207 @@ function styleDataRow(row: ExcelJS.Row, rowIndex: number, colCount: number, styl
 
 const LEGAL_DISCLAIMER_TEXT = 'This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.';
 
+// ── Cover-sheet styling constants (print-friendly, neutral) ──
+// Kept independent of `style.dark` / `style.altRow` (which are tuned
+// for the data sheets' dark-on-dark theme) so the cover stays readable
+// on a printed page regardless of brand accent.
+const COVER_INK    = '1A1B2E';
+const COVER_BODY   = '3C3D4E';
+const COVER_MUTED  = '6B6B7E';
+const COVER_LIGHT  = 'FAFAFA';
+const COVER_BORDER = 'E4E1DA';
+
+type XlsxCoverMetadata = {
+  title?: string;
+  subject?: string;
+  author?: string;
+  model?: string;
+  thinking?: string;
+  moduleId?: string;
+  sessionId?: string;
+  creativity?: string;
+  documentsLoaded?: string[];
+  clientName?: string;
+  projectName?: string;
+  version?: string;
+  reviewer?: string;
+  status?: 'DRAFT' | 'FINAL' | 'CONFIDENTIAL DRAFT' | string;
+  classificationLabel?: string;
+};
+
+// EXPORT-COVER-XLSX: build the front cover sheet for the workbook.
+// Brand-customisable: top accent bar + label cell colour scale with
+// `style.accent`. Lays out:
+//   • ANTON branding + AI-assisted subtitle
+//   • Classification
+//   • Title + subject
+//   • Status pill
+//   • Governance & technical metadata table (zebra rows)
+//   • About this analysis + Sources & scope
+function buildCoverSheet(
+  workbook: ExcelJS.Workbook,
+  meta: XlsxCoverMetadata,
+  style: ReturnType<typeof resolveXlsxStyle>,
+  sectionCount: number,
+) {
+  const ws = workbook.addWorksheet('Cover', {
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: 'portrait', margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } },
+    views: [{ showGridLines: false }],
+  });
+  ws.properties.tabColor = { argb: `FF${style.accent}` };
+  ws.getColumn(1).width = 28;
+  ws.getColumn(2).width = 70;
+
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const titleFont = style.titleFont;
+
+  // Row 1 — top accent bar (slim).
+  const barRow = ws.addRow(['', '']);
+  barRow.height = 8;
+  for (let c = 1; c <= 2; c++) {
+    barRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${style.accent}` } };
+  }
+
+  // Spacer.
+  ws.addRow(['', '']).height = 8;
+
+  // Branding line.
+  const brandRow = ws.addRow(['ANTON by openEXPERT', '']);
+  ws.mergeCells(brandRow.number, 1, brandRow.number, 2);
+  brandRow.getCell(1).font = { name: titleFont, bold: true, size: 18, color: { argb: `FF${style.accent}` } };
+  brandRow.getCell(1).alignment = { vertical: 'middle' };
+  brandRow.height = 26;
+
+  const subBrandRow = ws.addRow(['AI-assisted analysis · requires professional review', '']);
+  ws.mergeCells(subBrandRow.number, 1, subBrandRow.number, 2);
+  subBrandRow.getCell(1).font = { name: titleFont, italic: true, size: 10, color: { argb: `FF${COVER_MUTED}` } };
+  subBrandRow.height = 16;
+
+  ws.addRow(['', '']).height = 8;
+
+  // Classification.
+  const classification = (meta.classificationLabel || 'CONFIDENTIAL — For Recipient Only').toUpperCase();
+  const classRow = ws.addRow([classification, '']);
+  ws.mergeCells(classRow.number, 1, classRow.number, 2);
+  classRow.getCell(1).font = { name: titleFont, bold: true, size: 10, color: { argb: 'FFC0392B' } };
+  classRow.height = 16;
+
+  ws.addRow(['', '']).height = 12;
+
+  // Big title.
+  const titleRow = ws.addRow([meta.title || 'Analysis Report', '']);
+  ws.mergeCells(titleRow.number, 1, titleRow.number, 2);
+  titleRow.getCell(1).font = { name: titleFont, bold: true, size: 26, color: { argb: `FF${COVER_INK}` } };
+  titleRow.getCell(1).alignment = { vertical: 'middle', wrapText: true };
+  titleRow.height = 36;
+
+  if (meta.subject) {
+    const subjRow = ws.addRow([meta.subject, '']);
+    ws.mergeCells(subjRow.number, 1, subjRow.number, 2);
+    subjRow.getCell(1).font = { name: titleFont, size: 12, color: { argb: `FF${COVER_BODY}` } };
+    subjRow.getCell(1).alignment = { vertical: 'middle', wrapText: true };
+    subjRow.height = 20;
+  }
+
+  // Status pill.
+  const status = meta.status || 'DRAFT';
+  const statusColor = status === 'FINAL' ? '1E8E4E' : status === 'CONFIDENTIAL DRAFT' ? 'C0392B' : 'C8881E';
+  const statusRow = ws.addRow([`▌ ${status}`, '']);
+  ws.mergeCells(statusRow.number, 1, statusRow.number, 2);
+  statusRow.getCell(1).font = { name: titleFont, bold: true, size: 12, color: { argb: `FF${statusColor}` } };
+  statusRow.height = 20;
+
+  ws.addRow(['', '']).height = 14;
+
+  // Metadata table — zebra rows, accent top/bottom borders, hairline grid.
+  const govRows: Array<[string, string]> = [
+    ['Client', meta.clientName || '—'],
+    ['Project', meta.projectName || '—'],
+    ['Date', date],
+    ['Version', meta.version || 'v1.0'],
+    ['Author', meta.author || 'ANTON by openEXPERT'],
+    ['Reviewer', meta.reviewer || '________________________'],
+  ];
+  const techRows: Array<[string, string]> = [];
+  if (meta.moduleId)   techRows.push(['Module', meta.moduleId]);
+  if (meta.model)      techRows.push(['Model', meta.model]);
+  if (meta.thinking)   techRows.push(['Thinking level', meta.thinking]);
+  if (meta.creativity) techRows.push(['Creativity', meta.creativity]);
+  techRows.push(['Sheets', `${sectionCount} data sheet${sectionCount === 1 ? '' : 's'} + Disclaimer`]);
+  if (meta.sessionId)  techRows.push(['Session', meta.sessionId.slice(0, 8).toUpperCase()]);
+
+  const metaRows = [...govRows, ...techRows];
+  const tableStart = ws.rowCount + 1;
+  metaRows.forEach(([label, value], idx) => {
+    const r = ws.addRow([label, value]);
+    r.height = 18;
+    const labelCell = r.getCell(1);
+    const valueCell = r.getCell(2);
+    labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COVER_LIGHT}` } };
+    labelCell.font = { name: titleFont, bold: true, size: 10, color: { argb: `FF${COVER_MUTED}` } };
+    labelCell.alignment = { vertical: 'middle' };
+    valueCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx % 2 === 0 ? 'FFFFFFFF' : `FF${COVER_LIGHT}` } };
+    valueCell.font = { name: titleFont, size: 10, color: { argb: `FF${COVER_INK}` } };
+    valueCell.alignment = { vertical: 'middle', wrapText: true };
+    // Hairline grid.
+    const border = { style: 'thin' as const, color: { argb: `FF${COVER_BORDER}` } };
+    labelCell.border = { bottom: border, right: border };
+    valueCell.border = { bottom: border };
+  });
+  // Accent top/bottom on the table.
+  const tableEnd = ws.rowCount;
+  const accentBorder = { style: 'medium' as const, color: { argb: `FF${style.accent}` } };
+  for (let c = 1; c <= 2; c++) {
+    const top = ws.getRow(tableStart).getCell(c);
+    top.border = { ...(top.border || {}), top: accentBorder };
+    const bot = ws.getRow(tableEnd).getCell(c);
+    bot.border = { ...(bot.border || {}), bottom: accentBorder };
+  }
+
+  ws.addRow(['', '']).height = 14;
+
+  // About this analysis.
+  const aboutHead = ws.addRow(['About this analysis', '']);
+  ws.mergeCells(aboutHead.number, 1, aboutHead.number, 2);
+  aboutHead.getCell(1).font = { name: titleFont, bold: true, size: 12, color: { argb: `FF${COVER_INK}` } };
+  aboutHead.height = 20;
+
+  const aboutPieces: string[] = ['This workbook was generated by ANTON, an AI-powered expert workspace.'];
+  if (meta.moduleId) aboutPieces.push(`Module: ${meta.moduleId}.`);
+  if (meta.model) {
+    const cfg = [meta.model];
+    if (meta.thinking)   cfg.push(`thinking "${meta.thinking}"`);
+    if (meta.creativity) cfg.push(`creativity "${meta.creativity}"`);
+    aboutPieces.push(`Run with ${cfg.join(', ')}.`);
+  }
+  aboutPieces.push('Tabular outputs are tab-separated below. AI-assisted — must be verified by a qualified professional before being relied on.');
+  const aboutBody = ws.addRow([aboutPieces.join(' '), '']);
+  ws.mergeCells(aboutBody.number, 1, aboutBody.number, 2);
+  aboutBody.getCell(1).font = { name: titleFont, size: 10, color: { argb: `FF${COVER_BODY}` } };
+  aboutBody.getCell(1).alignment = { vertical: 'top', wrapText: true };
+  aboutBody.height = 48;
+
+  if (meta.documentsLoaded && meta.documentsLoaded.length > 0) {
+    ws.addRow(['', '']).height = 8;
+    const srcHead = ws.addRow(['Sources & scope', '']);
+    ws.mergeCells(srcHead.number, 1, srcHead.number, 2);
+    srcHead.getCell(1).font = { name: titleFont, bold: true, size: 12, color: { argb: `FF${COVER_INK}` } };
+    srcHead.height = 20;
+    const srcBody = ws.addRow([meta.documentsLoaded.join(' · '), '']);
+    ws.mergeCells(srcBody.number, 1, srcBody.number, 2);
+    srcBody.getCell(1).font = { name: titleFont, size: 10, color: { argb: `FF${COVER_BODY}` } };
+    srcBody.getCell(1).alignment = { vertical: 'top', wrapText: true };
+    srcBody.height = 36;
+  }
+
+  return ws;
+}
+
 // ── Main export function ────────────────────────────────────
 
 export async function generateXlsx(
   markdown: string,
-  metadata: { title?: string; author?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string; documentsLoaded?: string[] } = {},
+  metadata: XlsxCoverMetadata = {},
   brandConfig?: BrandConfig | null
 ): Promise<Buffer> {
   const style = resolveXlsxStyle(brandConfig);
@@ -314,6 +510,11 @@ export async function generateXlsx(
   workbook.calcProperties = { fullCalcOnLoad: true };
 
   const sections = parseMarkdown(markdown);
+
+  // Cover sheet always first — gives the workbook the same governance
+  // surface as the DOCX export.
+  const tableSectionCount = sections.filter(s => s.tables.length > 0).length;
+  buildCoverSheet(workbook, metadata, style, tableSectionCount);
 
   // If there are tables, each section with a table gets its own sheet
   let hasSheets = false;
