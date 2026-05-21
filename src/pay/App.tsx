@@ -32,7 +32,8 @@ import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
 import RestoreScreen from './pages/settings/RestoreScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import { hasProfile } from './services/profile';
-import { pollIncomingOnce } from './services/received';
+import { maybeRunIdlePoll, runOneShotPoll } from './services/idle-poller';
+import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import type { DecodedPayment, PaymentRecord } from './services/types';
 
@@ -78,35 +79,52 @@ export default function App() {
   }, []);
 
   /**
-   * Inbound poller — fires on mount + every 30 s + whenever the app
-   * comes back to the foreground. Each fresh ReceivedRecord triggers
-   * a local notification. Errors inside pollIncomingOnce never bubble
-   * up — the poller swallows network / parse failures and retries on
-   * the next tick.
+   * Polling strategy (redesigned 2026-05-21 based on industry research):
    *
-   * We deliberately do NOT pause when there's no wallet — the poller
-   * is a no-op until a wallet exists, and starting it early keeps the
-   * code path simple. The permission prompt is fired on mount too;
-   * the user sees it once on a fresh install and never again.
+   * 1. The always-on 30 s timer is gone — Coinbase's engineering blog
+   *    explicitly calls that an anti-pattern (perf review, 2024) and
+   *    no production wallet (Phantom, MetaMask, BlueWallet, Muun)
+   *    runs a foreground timer. They use WebSocket / SSE subscriptions
+   *    or push notifications instead.
+   *
+   * 2. The new floor is the idle poller in services/idle-poller.ts:
+   *    a once-per-day opportunistic poll fired when the app comes to
+   *    the foreground IF more than 20 h have passed since the last
+   *    successful poll. The chosen hour is per-install random so
+   *    server-side load distributes naturally.
+   *
+   * 3. Each wallet/activity screen does a one-shot sync on mount and
+   *    offers pull-to-refresh + a "Sync now" button (HomeScreen).
+   *    Hot anticipation polling (the moment the user actually expects
+   *    a payment) is the responsibility of services/active-sync.ts —
+   *    bounded backoff over a 5 min budget (10 min for merchant QR).
+   *
+   * Permission prompt fires once on mount and is cached.
    */
   useEffect(() => {
     let cancelled = false;
     void ensureNotificationPermission();
 
-    const tick = async () => {
-      const fresh = await pollIncomingOnce();
-      if (cancelled) return;
-      for (const r of fresh) {
-        void notifyIncoming(r);
-      }
+    // One-shot poll on app open. Idle floor: if >20h since last run,
+    // ALSO bump last-run timestamp so the daily counter resets.
+    const onForeground = async () => {
+      const fresh = await maybeRunIdlePoll() ?? 0;
+      if (cancelled || fresh === 0) return;
+      // Notify the user for each fresh inbound row we just observed.
+      // The records themselves live in IDB; pull them out.
+      const all = await listReceived();
+      // Best-effort: take the freshest N records up to the count we
+      // know is fresh — receivedAt ordering matches IDB key order.
+      for (const r of all.slice(0, fresh)) void notifyIncoming(r);
     };
-    void tick();
-    const interval = window.setInterval(tick, 30_000);
-    const onVisibility = () => { if (document.visibilityState === 'visible') void tick(); };
+
+    void onForeground();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void onForeground();
+    };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);

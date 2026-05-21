@@ -4,14 +4,18 @@
  * A wallet chip, the primary "Scan to pay" action, and a peek at the
  * most recent payments. Everything else is one tap away in Settings.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
+import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import { loadWallet } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
 import { fetchBalanceFtc } from '../services/fc-rpc';
+import { runOneShotPoll, getLastSyncTs } from '../services/idle-poller';
+import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
+import { notifyIncoming } from '../services/notifications';
 import type { Activity } from '../services/types';
 
 interface Props {
@@ -32,47 +36,85 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
   const [address, setAddress] = useState<string>('');
   const [activity, setActivity] = useState<Activity[]>([]);
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
+  const [lastSyncTs, setLastSyncTs] = useState<number>(0);
+  const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
+  const activeSyncCancelRef = useRef<(() => void) | null>(null);
 
-  // Refresh activity + wallet on mount AND when the tab/app becomes
-  // visible. The receive poller fires on the same visibility change
-  // (in App.tsx), so by the time we re-read the IDB stores, fresh
-  // inbound rows are already persisted.
+  // Load activity, wallet, and balance once on mount + on every
+  // visibilitychange to 'visible'. No background timer (Coinbase
+  // anti-pattern, 2024) — the app-level idle poller in App.tsx
+  // owns the "have I missed anything?" question, and the Sync
+  // button below owns the "I'm expecting one right now" question.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       const wallet = await loadWallet();
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
-      const [sent, received] = await Promise.all([listPayments(), listReceived()]);
+      const [sent, received, ts] = await Promise.all([
+        listPayments(), listReceived(), getLastSyncTs(),
+      ]);
       if (cancelled) return;
       setActivity(buildActivity(sent, received));
+      setLastSyncTs(ts);
+      if (wallet?.address) {
+        const b = await fetchBalanceFtc(wallet.address);
+        if (!cancelled) setBalanceFtc(b?.ftc ?? null);
+      }
     };
     void load();
     const onVisibility = () => { if (document.visibilityState === 'visible') void load(); };
     document.addEventListener('visibilitychange', onVisibility);
-    // Also re-poll the activity stores on a slow timer — covers the
-    // 30-second-while-foregrounded case where a payment lands but the
-    // user hasn't backgrounded the app.
-    const interval = window.setInterval(load, 30_000);
     return () => {
       cancelled = true;
       document.removeEventListener('visibilitychange', onVisibility);
-      window.clearInterval(interval);
+      activeSyncCancelRef.current?.();
     };
   }, []);
 
-  // Refresh balance whenever the address is known, then every 30s.
+  // Reload the activity rows during an active-sync tick — the snapshot
+  // counter tells us when something fired even though no fresh tx
+  // arrived, so the "Last synced" label can still tick over.
   useEffect(() => {
-    if (!address) return;
-    let cancelled = false;
-    const tick = async () => {
-      const b = await fetchBalanceFtc(address);
-      if (!cancelled) setBalanceFtc(b?.ftc ?? null);
-    };
-    void tick();
-    const id = window.setInterval(tick, 30_000);
-    return () => { cancelled = true; window.clearInterval(id); };
-  }, [address]);
+    if (!activeSync) return;
+    void (async () => {
+      const [sent, received, ts] = await Promise.all([
+        listPayments(), listReceived(), getLastSyncTs(),
+      ]);
+      setActivity(buildActivity(sent, received));
+      setLastSyncTs(ts);
+    })();
+  }, [activeSync]);
+
+  /** "Sync now" — user-initiated bounded active polling. Stops on
+   *  first fresh tx OR explicit Cancel OR 5 min budget. */
+  function startSync() {
+    if (activeSyncCancelRef.current) return; // already running
+    const cancel = startActiveSync({
+      budgetMs: 5 * 60 * 1000,
+      onTick: (snap) => setActiveSync(snap),
+      onFresh: async (fresh) => {
+        for (const r of fresh) void notifyIncoming(r);
+        // Reload activity so the new row appears immediately, even
+        // though the active-sync would also stop here.
+        const [sent, received] = await Promise.all([listPayments(), listReceived()]);
+        setActivity(buildActivity(sent, received));
+      },
+      onEnd: () => {
+        activeSyncCancelRef.current = null;
+        setActiveSync(null);
+        void runOneShotPoll().then(() => getLastSyncTs().then(setLastSyncTs));
+      },
+    });
+    activeSyncCancelRef.current = cancel;
+    // Also seed an immediate snapshot so the banner renders straight
+    // away without waiting for the first onTick.
+    setActiveSync({ elapsedMs: 0, budgetMs: 5 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
+  }
+
+  function cancelSync() {
+    activeSyncCancelRef.current?.();
+  }
 
   const recent = activity.slice(0, 3);
 
@@ -122,14 +164,49 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
               FTC
             </span>
           </div>
-          <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            {t('home.activityCount', {
-              count: activity.length,
-              defaultValue: '{{count}} payment',
-              defaultValue_other: '{{count}} payments',
-            })}
+          <div className="flex items-center justify-between mt-1">
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {t('home.activityCount', {
+                count: activity.length,
+                defaultValue: '{{count}} payment',
+                defaultValue_other: '{{count}} payments',
+              })}
+            </div>
+            <div className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
+              {lastSyncTs > 0
+                ? t('home.lastSync', { ago: formatAgo(Date.now() - lastSyncTs), defaultValue: 'Synced {{ago}} ago' })
+                : t('home.notYetSynced', 'Not synced yet')}
+            </div>
           </div>
         </div>
+
+        {/* Active-sync banner — only visible while Sync is running. */}
+        {activeSync && (
+          <div className="mb-4">
+            <ActiveSyncBanner snapshot={activeSync} onCancel={cancelSync} />
+          </div>
+        )}
+
+        {/* Sync button — only visible when no active-sync is running.
+            Replaces the always-on 30 s background timer with a user-
+            initiated bounded burst (5 min budget, backoff curve in
+            services/active-sync.ts). */}
+        {!activeSync && (
+          <button type="button" onClick={startSync}
+                  className="rounded-2xl p-3 mb-4 flex items-center justify-center gap-2 active:opacity-90 transition-opacity"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)',
+                           color: 'var(--color-text)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"
+                    stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-sm font-semibold">
+              {t('home.syncNow', 'Sync now — listen for incoming payment')}
+            </span>
+          </button>
+        )}
 
         {/* Scan CTA */}
         <button
@@ -245,4 +322,17 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       </div>
     </div>
   );
+}
+
+/** Coarse "X minutes ago / X hours ago" formatter for the Last-synced
+ *  label. Deliberately granular — we want the user to see "just now"
+ *  vs "a couple of hours ago," not exact seconds. */
+function formatAgo(ms: number): string {
+  if (ms < 60_000) return 'just now';
+  const m = Math.floor(ms / 60_000);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
 }

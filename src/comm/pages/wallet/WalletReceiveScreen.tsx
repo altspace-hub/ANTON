@@ -6,9 +6,12 @@
  * what to send. For request-amount flows the customer would build a
  * `futurechain:pay` URI themselves; that's a follow-up.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrCode from '../../components/QrCode';
+import ActiveSyncBanner from '../../components/ActiveSyncBanner';
+import { startActiveSync, type ActiveSyncSnapshot } from '../../services/active-sync';
+import { notifyIncoming } from '../../services/notifications';
 
 interface Props {
   address: string;
@@ -18,6 +21,28 @@ interface Props {
 export default function WalletReceiveScreen({ address, onBack }: Props) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+
+  // Auto-arm a 5-min active-sync when the Receive screen mounts —
+  // showing your own QR is a strong "I'm expecting one" signal
+  // (Galoy POS pattern). Cancels automatically on unmount.
+  useEffect(() => {
+    const cancel = startActiveSync({
+      budgetMs: 5 * 60 * 1000,
+      onTick: setActiveSync,
+      onFresh: (fresh) => {
+        for (const f of fresh) void notifyIncoming(f.tx, f.fromName);
+      },
+      onEnd: () => {
+        cancelRef.current = null;
+        setActiveSync(null);
+      },
+    });
+    cancelRef.current = cancel;
+    setActiveSync({ elapsedMs: 0, budgetMs: 5 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
+    return () => { cancel(); };
+  }, []);
 
   async function copy() {
     try {
@@ -42,6 +67,17 @@ export default function WalletReceiveScreen({ address, onBack }: Props) {
         <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)]">
           <QrCode value={address} size={240} />
         </div>
+
+        {/* Active-sync banner — armed automatically while the Receive
+            screen is visible; auto-cancels on unmount. */}
+        {activeSync && (
+          <div className="mt-4 w-full">
+            <ActiveSyncBanner
+              snapshot={activeSync}
+              onCancel={() => cancelRef.current?.()}
+            />
+          </div>
+        )}
 
         <div className="mt-5 w-full px-2">
           <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)] mb-1">

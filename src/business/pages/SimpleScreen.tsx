@@ -10,16 +10,19 @@
  * still issue a "no-QR" kvitto — useful for cash sales OR for trying
  * the app before committing to FTC.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Keypad from '../components/Keypad';
 import { KvittoView } from '../components/KvittoView';
 import PrimaryButton from '../components/PrimaryButton';
 import QrDisplay from '../components/QrDisplay';
+import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import { loadConfig } from '../services/merchant';
 import { buildSimpleQr, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
 import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
+import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
+import { notifyReceiptConfirmed } from '../services/notifications';
 import type { MerchantConfig, Receipt } from '../services/types';
 import { loadWallet } from '../services/wallet';
 
@@ -35,6 +38,13 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
   const [built, setBuilt] = useState<BuiltQr | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Active-sync snapshot for the "Waiting for payment…" banner. */
+  const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+  /** The pending receipt the QR was issued against — set when the QR
+   *  is shown, used by the active-sync match to know which row to
+   *  transition to `done`. */
+  const pendingReceiptIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -90,10 +100,49 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
     }
   }
 
-  async function issueKvitto(qr: BuiltQr | null) {
-    if (!config || !merchantId) return;
+  /**
+   * Arm a pending kvitto + start the active-sync that will flip it to
+   * Confirmed when the customer's payment lands on-chain. Called once
+   * automatically when the merchant lands on the QR phase — Galoy POS
+   * pattern, no extra tap.
+   *
+   * The "Paid" button on the QR screen becomes a manual force-confirm
+   * fallback (BlueWallet "limbo state" escape hatch) for the case
+   * where chain confirmation lags or the customer paid out-of-band.
+   */
+  async function armQrAndPersist(qr: BuiltQr): Promise<Receipt | null> {
+    if (!config || !merchantId) return null;
     try {
       const r = await persistReceipt({
+        orderId: qr.inv,
+        merchantId,
+        mode: 'simple',
+        purpose: 'RETAIL',
+        amountSek,
+        amountMicroFtc: qr.amountMicroFtc,
+        ftcPerSek: config.ftcPerSek,
+        vatBreakdown: [],
+        qrUri: qr.uri,
+        ref: qr.ref,
+        status: 'pending',
+        receivingAddress: config.safelloReceiveAddress || undefined,
+      });
+      setReceipt(r);
+      pendingReceiptIdRef.current = r.kvittoNumber;
+      return r;
+    } catch (err) {
+      setError((err as Error).message);
+      return null;
+    }
+  }
+
+  /** Manual force-confirm — bypasses chain matching. Used when the
+   *  merchant has seen the customer pay (e.g. cash) or the chain is
+   *  slow. The QR-armed pending receipt is left as-is. */
+  async function manualFinish(qr: BuiltQr | null) {
+    if (!config || !merchantId) return;
+    try {
+      const r = receipt ?? await persistReceipt({
         orderId: qr?.inv ?? generateOrderId(),
         merchantId,
         mode: 'simple',
@@ -104,24 +153,65 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
         vatBreakdown: [],
         qrUri: qr?.uri ?? '',
         ref: qr?.ref ?? '',
-        // Pending until the on-chain matcher confirms — overrides the
-        // legacy local-only "confirmed at issuance" behaviour. The
-        // inbound poller flips this to 'confirmed' once the matching
-        // tx lands on this wallet (services/received.ts).
         status: 'pending',
         receivingAddress: config.safelloReceiveAddress || undefined,
       });
       setReceipt(r);
       setPhase('done');
+      cancelRef.current?.();
     } catch (err) {
       setError((err as Error).message);
     }
   }
 
+  // Auto-arm on QR phase entry: persist pending receipt + 10-min
+  // active-sync. Galoy POS pattern.
+  useEffect(() => {
+    if (phase !== 'qr' || !built || pendingReceiptIdRef.current !== null) return;
+    let cancelled = false;
+    void (async () => {
+      const r = await armQrAndPersist(built);
+      if (cancelled || !r) return;
+      const cancel = startActiveSync({
+        budgetMs: 10 * 60 * 1000, // 10 min — matches BTCPay invoice default
+        onTick: setActiveSync,
+        onFresh: (fresh) => {
+          const match = fresh.find(f => f.kvittoNumber === r.kvittoNumber);
+          if (match) {
+            setReceipt(match);
+            void notifyReceiptConfirmed(match);
+            // Auto-transition to the success screen — Galoy's "no
+            // double-tap" lesson. The merchant sees Pending flip
+            // to Confirmed without touching the device.
+            setPhase('done');
+          } else {
+            // Some other pending receipt confirmed in the same poll
+            // — still useful (e.g. a previous sale catching up).
+            // Don't transition phases for that, just notify.
+            for (const f of fresh) void notifyReceiptConfirmed(f);
+          }
+        },
+        onEnd: () => {
+          cancelRef.current = null;
+          setActiveSync(null);
+        },
+      });
+      cancelRef.current = cancel;
+      setActiveSync({ elapsedMs: 0, budgetMs: 10 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
+    })();
+    return () => {
+      cancelled = true;
+      cancelRef.current?.();
+    };
+  }, [phase, built]);
+
   function reset() {
+    cancelRef.current?.();
+    pendingReceiptIdRef.current = null;
     setAmountStr('0');
     setBuilt(null);
     setReceipt(null);
+    setActiveSync(null);
     setPhase('entry');
     setError(null);
   }
@@ -169,6 +259,20 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
         <p className="mono text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
           {t('simple.order', { id: built.inv })}
         </p>
+
+        {/* Live "Waiting for payment 0:42…" banner — auto-armed when
+            this screen mounted (see the useEffect above). The
+            merchant doesn't tap Sync; the QR being on screen IS the
+            sync signal (POS pattern). */}
+        {activeSync && (
+          <div className="mt-5 w-full">
+            <ActiveSyncBanner
+              snapshot={activeSync}
+              onCancel={() => cancelRef.current?.()}
+            />
+          </div>
+        )}
+
         <div className="flex gap-3 mt-auto w-full">
           <button
             type="button"
@@ -180,12 +284,14 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
               border: '1px solid var(--color-border)',
             }}
           >{t('common.cancel')}</button>
+          {/* Force-confirm fallback — used when the chain is slow or
+              the customer paid out-of-band (BlueWallet "limbo" pattern). */}
           <button
             type="button"
-            onClick={() => issueKvitto(built)}
+            onClick={() => manualFinish(built)}
             className="flex-1 py-4 rounded-xl font-bold"
             style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >{t('sale.paid')}</button>
+          >{t('sale.markPaid', 'Mark as paid')}</button>
         </div>
       </div>
     );
@@ -227,7 +333,7 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
       ) : (
         <div className="flex flex-col gap-2">
           <PrimaryButton
-            onClick={() => issueKvitto(null)}
+            onClick={() => manualFinish(null)}
             disabled={amountSek <= 0}
             marginTopAuto={false}
           >

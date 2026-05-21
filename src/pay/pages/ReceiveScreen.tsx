@@ -15,10 +15,13 @@
  * here, lift the `reference.encodeV1` call from src/business/services/
  * qr.ts.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrCode from '../components/QrCode';
+import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import { getActiveWalletMeta } from '../services/wallet';
+import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
+import { notifyIncoming } from '../services/notifications';
 import type { WalletMeta } from '../services/wallets';
 
 interface Props {
@@ -41,10 +44,36 @@ export default function ReceiveScreen({ onBack }: Props) {
   const [meta, setMeta] = useState<WalletMeta | null>(null);
   const [amount, setAmount] = useState('');
   const [copied, setCopied] = useState(false);
+  const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     void (async () => setMeta(await getActiveWalletMeta()))();
   }, []);
+
+  /**
+   * Auto-arm a 5-min active-sync when the Receive screen mounts —
+   * showing your own QR is a strong "I'm expecting one" signal
+   * (Galoy's POS pattern, generalised). Cancels automatically on
+   * unmount; user can also tap Cancel on the banner.
+   */
+  useEffect(() => {
+    if (!meta) return;
+    const cancel = startActiveSync({
+      budgetMs: 5 * 60 * 1000,
+      onTick: (snap) => setActiveSync(snap),
+      onFresh: (fresh) => {
+        for (const r of fresh) void notifyIncoming(r);
+      },
+      onEnd: () => {
+        cancelRef.current = null;
+        setActiveSync(null);
+      },
+    });
+    cancelRef.current = cancel;
+    setActiveSync({ elapsedMs: 0, budgetMs: 5 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
+    return () => { cancel(); };
+  }, [meta]);
 
   const micro = ftcToMicro(amount);
   const validAmount = amount.trim() === '' || micro !== null;
@@ -117,11 +146,23 @@ export default function ReceiveScreen({ onBack }: Props) {
             </div>
 
             {/* QR */}
-            <div className="self-center p-4 rounded-2xl mb-5"
+            <div className="self-center p-4 rounded-2xl mb-3"
                  style={{ backgroundColor: '#FFFFFF',
                           border: '1px solid var(--color-border)' }}>
               <QrCode value={qrValue} size={240} />
             </div>
+
+            {/* Active-sync banner — shown while the Receive screen is
+                visible. Cancel stops the polling early; closing the
+                screen also cancels via the useEffect cleanup. */}
+            {activeSync && (
+              <div className="mb-4">
+                <ActiveSyncBanner
+                  snapshot={activeSync}
+                  onCancel={() => cancelRef.current?.()}
+                />
+              </div>
+            )}
 
             {/* Address */}
             <div className="rounded-xl p-4 mb-3"

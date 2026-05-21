@@ -30,7 +30,7 @@ import WalletDetailScreen from './pages/settings/WalletDetailScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import { hasConfig } from './services/merchant';
-import { pollIncomingOnce } from './services/received';
+import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
 import type { SaleMode } from './services/types';
 
@@ -68,33 +68,36 @@ export default function App() {
   }, []);
 
   /**
-   * Inbound payment poller — every 30 s + on app foreground. For each
-   * inbound transaction observed on the merchant's active wallet, the
-   * matcher in services/received.ts looks for a pending Receipt with
-   * the same amount + ref and flips it to `confirmed`. Each confirmed
-   * receipt fires a local OS notification "Payment received · X SEK".
+   * Polling strategy (redesigned 2026-05-21):
    *
-   * No-op while no wallet exists; errors inside pollIncomingOnce are
-   * swallowed so a network blip never breaks the sale flow.
+   *   - Idle floor: once-per-day opportunistic poll on app foreground
+   *     (services/idle-poller.ts). Bulk-confirms any pending receipts
+   *     that landed while the merchant was offline. Replaces the
+   *     previous always-on 30 s timer (Coinbase anti-pattern).
+   *   - Hot polling: SimpleScreen / ExtendedScreen auto-arm a 10-min
+   *     active-sync the moment the QR is rendered. The merchant
+   *     watches "Waiting for payment 0:42…" change to "Payment
+   *     received ✓" without any extra taps (Galoy POS pattern).
+   *   - Permission prompt fires on mount, cached.
    */
   useEffect(() => {
     let cancelled = false;
     void ensureNotificationPermission();
 
-    const tick = async () => {
-      const confirmed = await pollIncomingOnce();
-      if (cancelled) return;
+    const onForeground = async () => {
+      const confirmed = await maybeRunIdlePoll();
+      if (cancelled || !confirmed) return;
       for (const receipt of confirmed) {
         void notifyReceiptConfirmed(receipt);
       }
     };
-    void tick();
-    const interval = window.setInterval(tick, 30_000);
-    const onVisibility = () => { if (document.visibilityState === 'visible') void tick(); };
+    void onForeground();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void onForeground();
+    };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);

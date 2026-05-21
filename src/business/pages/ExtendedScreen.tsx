@@ -10,11 +10,12 @@
  * hasn't connected a wallet yet, the QR phase is skipped and we
  * issue a no-QR kvitto with the full VAT breakdown intact.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KvittoView } from '../components/KvittoView';
 import PrimaryButton from '../components/PrimaryButton';
 import QrDisplay from '../components/QrDisplay';
+import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import { loadItems, type CatalogueItem } from '../services/items';
 import { loadConfig } from '../services/merchant';
 import {
@@ -24,6 +25,8 @@ import {
 import { buildExtendedQr, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
 import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
+import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
+import { notifyReceiptConfirmed } from '../services/notifications';
 import type { MerchantConfig, Receipt } from '../services/types';
 import { loadWallet } from '../services/wallet';
 
@@ -40,6 +43,9 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
   const [built, setBuilt] = useState<BuiltQr | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+  const pendingReceiptIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -94,12 +100,13 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
         setError((err as Error).message);
       }
     } else {
-      issueKvitto(null);
+      // No wallet path → straight to manual confirm (cash sale).
+      void manualFinish(null);
     }
   }
 
-  async function issueKvitto(qr: BuiltQr | null) {
-    if (!config || !merchantId) return;
+  async function persistPendingReceipt(qr: BuiltQr | null): Promise<Receipt | null> {
+    if (!config || !merchantId) return null;
     try {
       const r = await persistReceipt({
         orderId: qr?.inv ?? generateOrderId(),
@@ -116,22 +123,67 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
         vatBreakdown: totals.vatBreakdown,
         qrUri: qr?.uri ?? '',
         ref: qr?.ref ?? '',
-        // Pending until the on-chain matcher confirms (see SimpleScreen
-        // for the same rationale).
         status: 'pending',
         receivingAddress: config.safelloReceiveAddress || undefined,
       });
       setReceipt(r);
-      setPhase('done');
+      pendingReceiptIdRef.current = r.kvittoNumber;
+      return r;
     } catch (err) {
       setError((err as Error).message);
+      return null;
     }
   }
 
+  /** Manual force-confirm — chain-lag escape hatch (BlueWallet
+   *  "limbo state" pattern). */
+  async function manualFinish(qr: BuiltQr | null) {
+    const r = receipt ?? await persistPendingReceipt(qr);
+    if (!r) return;
+    setReceipt(r);
+    setPhase('done');
+    cancelRef.current?.();
+  }
+
+  // Auto-arm on QR phase entry: persist pending receipt + 10-min
+  // active-sync. Same Galoy POS pattern as SimpleScreen.
+  useEffect(() => {
+    if (phase !== 'qr' || !built || pendingReceiptIdRef.current !== null) return;
+    let cancelled = false;
+    void (async () => {
+      const r = await persistPendingReceipt(built);
+      if (cancelled || !r) return;
+      const cancel = startActiveSync({
+        budgetMs: 10 * 60 * 1000,
+        onTick: setActiveSync,
+        onFresh: (fresh) => {
+          const match = fresh.find(f => f.kvittoNumber === r.kvittoNumber);
+          if (match) {
+            setReceipt(match);
+            void notifyReceiptConfirmed(match);
+            setPhase('done');
+          } else {
+            for (const f of fresh) void notifyReceiptConfirmed(f);
+          }
+        },
+        onEnd: () => {
+          cancelRef.current = null;
+          setActiveSync(null);
+        },
+      });
+      cancelRef.current = cancel;
+      setActiveSync({ elapsedMs: 0, budgetMs: 10 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
+    })();
+    return () => { cancelled = true; cancelRef.current?.(); };
+  }, [phase, built]);
+
   function reset() {
+    cancelRef.current?.();
+    pendingReceiptIdRef.current = null;
     setCart(empty());
     setBuilt(null);
     setReceipt(null);
+    setActiveSync(null);
     setPhase('cart');
     setError(null);
   }
@@ -179,6 +231,18 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
         <p className="mono text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
           {t('extended.orderItems', { id: built.inv, count: totals.itemCount })}
         </p>
+
+        {/* Live "Waiting for payment…" banner — auto-armed when this
+            screen mounted. Same POS pattern as SimpleScreen. */}
+        {activeSync && (
+          <div className="mt-5 w-full">
+            <ActiveSyncBanner
+              snapshot={activeSync}
+              onCancel={() => cancelRef.current?.()}
+            />
+          </div>
+        )}
+
         <div className="flex gap-3 mt-auto w-full">
           <button
             type="button"
@@ -192,10 +256,10 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
           >{t('extended.backToCart')}</button>
           <button
             type="button"
-            onClick={() => issueKvitto(built)}
+            onClick={() => manualFinish(built)}
             className="flex-1 py-4 rounded-xl font-bold"
             style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >{t('sale.paid')}</button>
+          >{t('sale.markPaid', 'Mark as paid')}</button>
         </div>
       </div>
     );
