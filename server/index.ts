@@ -317,6 +317,23 @@ if (!projectsTable) {
 // RATE-04: initialise async audit queue now that DB is ready
 initAuditQueue(db);
 
+// FC-CONN-SEED: pick up FUTURECHAIN_RPC_URL from the portable bundle's
+// run-anton.ps1 probe (Step 5.5) on first boot. Only applies when the
+// fc_connection_config row is still at its migration-081 defaults —
+// any manual config via Settings → FutureChain is left alone.
+try {
+  const { createFCConnectionService } = await import('./services/fc-connection-service.js');
+  const fcConn = await createFCConnectionService(db);
+  const result = await fcConn.applyEnvOverrides();
+  if (result.applied) {
+    console.log(`[fc] seeded node_url from FUTURECHAIN_RPC_URL → ${result.node_url} (stub_mode=false)`);
+  } else if (process.env.FUTURECHAIN_RPC_URL) {
+    console.log(`[fc] env override skipped: ${result.reason}`);
+  }
+} catch (err) {
+  console.warn('[fc] applyEnvOverrides failed:', err instanceof Error ? err.message : err);
+}
+
 // Initialize workspace root directory
 await ensureWorkspacesRoot();
 
