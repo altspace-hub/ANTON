@@ -24,13 +24,17 @@ import {
 interface Props {
   onBack: () => void;
   onConnectWallet: () => void;
+  onShowRecovery: () => void;
+  onBackupPhrase: () => void;
   onReset: () => void;
 }
 
 const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
-export default function SettingsScreen({ onBack, onConnectWallet, onReset }: Props) {
+export default function SettingsScreen({
+  onBack, onConnectWallet, onShowRecovery, onBackupPhrase, onReset,
+}: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -127,9 +131,28 @@ export default function SettingsScreen({ onBack, onConnectWallet, onReset }: Pro
                    style={{ color: 'var(--color-text-faint)' }}>
                 {t('settings.address')}
               </div>
-              <div className="mono text-[11px] break-all"
+              <div className="mono text-[11px] break-all mb-3"
                    style={{ color: 'var(--color-accent)' }}>
                 {walletAddress}
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={onBackupPhrase}
+                        className="px-3 py-2 rounded-lg text-xs font-semibold"
+                        style={{
+                          backgroundColor: 'var(--color-accent)',
+                          color: 'var(--color-accent-fg)',
+                        }}>
+                  {t('settings.backupPhrase', 'Back up recovery phrase')}
+                </button>
+                <button type="button" onClick={onShowRecovery}
+                        className="px-3 py-2 rounded-lg text-xs font-semibold"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: 'var(--color-accent)',
+                          border: '1px solid var(--color-border)',
+                        }}>
+                  {t('settings.showRecovery', 'Show recovery phrase')}
+                </button>
               </div>
             </>
           ) : (

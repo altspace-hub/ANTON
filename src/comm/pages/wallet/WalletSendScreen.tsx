@@ -29,6 +29,7 @@ import { loadPayerIdentity } from '../../services/payment-identity';
 import { loadMoneyProfile } from '../../services/money-profile';
 import { assembleDraft, type CreditorParty } from '../../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../../services/fraud-engine';
+import { sendOnChain } from '../../services/payment';
 
 interface ParsedPayUri {
   ok: true;
@@ -156,6 +157,21 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
     setError(null);
     try {
       const ftc = Number(parsed.amountMicroFtc) / 1_000_000;
+
+      // Phase G2 (May 21 2026): broadcast on-chain via the Bahnhof
+      // public RPC hub. Biometric gate fires inside sendOnChain. On
+      // success we have the real tx id; the tax ledger row is then
+      // written with that id (replaces the prior `txHash: null`
+      // local-only behaviour).
+      const sent = await sendOnChain({
+        to: parsed.to,
+        amountMicroFtc: parsed.amountMicroFtc,
+        remittanceText: parsed.ref ?? null,
+        creditor: parsed.creditor
+          ? { name: parsed.creditor.name, countryOfResidence: parsed.creditor.country }
+          : null,
+      });
+
       // Until the rate oracle lands, fiat value is left as 0 so the
       // tax engine sees the gap. The annual report flow will prompt
       // the user to fill missing fiat values.
@@ -166,7 +182,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
         fiatValueAtTx: 0,
         fiatCurrency: 'SEK',
         ref: parsed.ref,
-        txHash: null,
+        txHash: sent.txId,
         jurisdictionAtTx: null,
         note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
         pacs008: draft ?? undefined,

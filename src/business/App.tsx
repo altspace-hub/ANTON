@@ -22,6 +22,9 @@ import ItemsSetupScreen from './pages/onboarding/ItemsSetupScreen';
 import DoneScreen from './pages/onboarding/DoneScreen';
 import SettingsScreen from './pages/settings/SettingsScreen';
 import ConnectWalletScreen from './pages/settings/ConnectWalletScreen';
+import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
+import BackupShowScreen from './pages/onboarding/BackupShowScreen';
+import BackupVerifyScreen from './pages/onboarding/BackupVerifyScreen';
 import { hasConfig } from './services/merchant';
 import type { SaleMode } from './services/types';
 
@@ -36,7 +39,10 @@ type Screen =
   | 'simple'
   | 'extended'
   | 'settings'
-  | 'settings-wallet';
+  | 'settings-wallet'
+  | 'settings-recovery'
+  | 'backup-show'
+  | 'backup-verify';
 
 export default function App() {
   const { t } = useTranslation();
@@ -108,6 +114,8 @@ export default function App() {
       <SettingsScreen
         onBack={() => setScreen('home')}
         onConnectWallet={() => setScreen('settings-wallet')}
+        onShowRecovery={() => setScreen('settings-recovery')}
+        onBackupPhrase={() => setScreen('backup-show')}
         onReset={() => {
           setPendingMode('simple');
           setScreen('onboarding-welcome');
@@ -117,6 +125,20 @@ export default function App() {
   }
   if (screen === 'settings-wallet') {
     return <ConnectWalletScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-recovery') {
+    return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'backup-show') {
+    return <BackupShowScreen onContinue={() => setScreen('backup-verify')} />;
+  }
+  if (screen === 'backup-verify') {
+    return (
+      <BackupVerifyScreen
+        onVerified={() => setScreen('settings')}
+        onBack={() => setScreen('backup-show')}
+      />
+    );
   }
 
   // Should never reach — all states above covered.
