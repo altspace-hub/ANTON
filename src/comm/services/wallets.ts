@@ -82,15 +82,20 @@ export async function migrateLegacyIfNeeded(): Promise<void> {
   const legacyBackedUp = (await getSecure(LEGACY_BACKED_UP)) === '1';
 
   const id = newId();
+  // ALWAYS derive — see src/pay/services/wallets.ts for the
+  // ghost-address rationale. Pre-Ed25519 installs stored a
+  // secp256k1 / Keccak placeholder that we must NOT trust.
+  const derivedAddress = deriveAddressFromHex(legacyPriv);
   const meta: WalletMeta = {
     id,
     label: 'Main wallet',
-    address: legacyAddr ?? deriveAddressFromHex(legacyPriv),
+    address: derivedAddress,
     createdAt: Date.now(),
     backedUp: legacyBackedUp,
   };
+  void legacyAddr;
   await setSecure(privKey(id), legacyPriv);
-  await setSecure(addrKey(id), meta.address);
+  await setSecure(addrKey(id), derivedAddress);
   if (legacyMnemonic) await setSecure(mnemonicKey(id), legacyMnemonic);
   if (legacyBackedUp) await setSecure(backedUpKey(id), '1');
   await writeRegistry([meta]);
@@ -102,9 +107,26 @@ export async function migrateLegacyIfNeeded(): Promise<void> {
   await removeSecure(LEGACY_BACKED_UP);
 }
 
+async function healAddressesIfNeeded(list: WalletMeta[]): Promise<WalletMeta[]> {
+  let dirty = false;
+  for (const w of list) {
+    const hex = await getSecure(privKey(w.id));
+    if (!hex) continue;
+    const real = deriveAddressFromHex(hex);
+    if (w.address !== real) {
+      w.address = real;
+      await setSecure(addrKey(w.id), real);
+      dirty = true;
+    }
+  }
+  if (dirty) await writeRegistry(list);
+  return list;
+}
+
 export async function listWallets(): Promise<WalletMeta[]> {
   await migrateLegacyIfNeeded();
-  return readRegistry();
+  const list = await readRegistry();
+  return healAddressesIfNeeded(list);
 }
 
 export async function getActiveWalletId(): Promise<string | null> {
@@ -138,7 +160,7 @@ export async function getActiveWallet(): Promise<Wallet | null> {
 export async function getActiveWalletMeta(): Promise<WalletMeta | null> {
   const id = await getActiveWalletId();
   if (!id) return null;
-  const list = await readRegistry();
+  const list = await listWallets();
   return list.find(w => w.id === id) ?? null;
 }
 

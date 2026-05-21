@@ -98,15 +98,25 @@ export async function migrateLegacyIfNeeded(): Promise<void> {
   const legacyBackedUp = (await getSecure(LEGACY_BACKED_UP)) === '1';
 
   const id = newId();
+  // ALWAYS derive the address from the priv hex, NEVER trust
+  // `legacyAddr`. Pre-2026-05-20 installs stored a secp256k1 / Keccak
+  // placeholder (Ethereum-style 40-hex `fc_…` "ghost address") that
+  // does not match the Ed25519 SDK's `addressFromPublicKey` output.
+  // Funds sent to a ghost are unspendable; we must surface the real
+  // Ed25519-derived address everywhere or the Receive QR will route
+  // money to the void.
+  const derivedAddress = deriveAddressFromHex(legacyPriv);
   const meta: WalletMeta = {
     id,
     label: 'Main wallet',
-    address: legacyAddr ?? deriveAddressFromHex(legacyPriv),
+    address: derivedAddress,
     createdAt: Date.now(),
     backedUp: legacyBackedUp,
   };
+  // Suppress the unused-var lint — we deliberately ignore legacyAddr.
+  void legacyAddr;
   await setSecure(privKey(id), legacyPriv);
-  await setSecure(addrKey(id), meta.address);
+  await setSecure(addrKey(id), derivedAddress);
   if (legacyMnemonic) await setSecure(mnemonicKey(id), legacyMnemonic);
   if (legacyBackedUp) await setSecure(backedUpKey(id), '1');
   await writeRegistry([meta]);
@@ -121,9 +131,35 @@ export async function migrateLegacyIfNeeded(): Promise<void> {
 
 // ── Listing / active selection ──────────────────────────────────────
 
+/**
+ * Self-heal pass for the "ghost address" bug (2026-05-21):
+ * historical installs that ran the first registry migration before
+ * the `derivedAddress` fix above had `meta.address` set to a
+ * secp256k1 / Keccak placeholder rather than the real Ed25519
+ * `addressFromPublicKey`. If we detect a mismatch between the
+ * registry's stored address and the priv-derived one we update the
+ * row in-place. Runs on every list/read — cheap, idempotent.
+ */
+async function healAddressesIfNeeded(list: WalletMeta[]): Promise<WalletMeta[]> {
+  let dirty = false;
+  for (const w of list) {
+    const hex = await getSecure(privKey(w.id));
+    if (!hex) continue;
+    const real = deriveAddressFromHex(hex);
+    if (w.address !== real) {
+      w.address = real;
+      await setSecure(addrKey(w.id), real);
+      dirty = true;
+    }
+  }
+  if (dirty) await writeRegistry(list);
+  return list;
+}
+
 export async function listWallets(): Promise<WalletMeta[]> {
   await migrateLegacyIfNeeded();
-  return readRegistry();
+  const list = await readRegistry();
+  return healAddressesIfNeeded(list);
 }
 
 export async function getActiveWalletId(): Promise<string | null> {
@@ -157,7 +193,10 @@ export async function getActiveWallet(): Promise<Wallet | null> {
 export async function getActiveWalletMeta(): Promise<WalletMeta | null> {
   const id = await getActiveWalletId();
   if (!id) return null;
-  const list = await readRegistry();
+  // Go through listWallets so the self-heal pass runs — guarantees
+  // the returned meta carries the priv-derived address rather than a
+  // stale legacy value.
+  const list = await listWallets();
   return list.find(w => w.id === id) ?? null;
 }
 
