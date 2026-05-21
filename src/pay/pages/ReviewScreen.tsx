@@ -23,6 +23,11 @@ import {
   findSimilarContacts, getContactByAddress,
   type Contact, type SimilarityWarning,
 } from '../services/address-book';
+import {
+  travelRuleTierFor, fullDisclosureReady, minimalDisclosureReady,
+  missingFields, type TravelRuleTier,
+} from '../services/travel-rule';
+import { getDisplayQuote } from '../services/fx';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
 interface Props {
@@ -55,6 +60,15 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [knownContact, setKnownContact] = useState<Contact | null>(null);
   const [similar, setSimilar] = useState<SimilarityWarning[]>([]);
   const [similarAck, setSimilarAck] = useState(false);
+  /** Travel Rule + GDPR tier resolved at decode time. `null` until
+   *  the FX quote returns. Drives whether the PACS.008 carries
+   *  address fields and whether signing is blocked on profile-
+   *  completeness. */
+  const [travelTier, setTravelTier] = useState<TravelRuleTier | null>(null);
+  /** Tracks whether the user's saved identity has the address fields
+   *  required at the full-disclosure tier. */
+  const [identityComplete, setIdentityComplete] = useState<boolean>(true);
+  const [identityMissing, setIdentityMissing] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -63,7 +77,25 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
         loadMoneyProfile(), loadBehaviorProfile(),
       ]);
       if (profile) setFtcPerSek(profile.ftcPerSek);
-      if (wallet) setDraft(assembleDraft(identity, wallet.address, payment));
+      // Travel Rule + GDPR tier — resolved from the amount + EUR rate.
+      const eurQuote = await getDisplayQuote('EUR');
+      const tier = travelRuleTierFor(payment.amountMicroFtc, eurQuote);
+      setTravelTier(tier);
+      const idStatus = {
+        hasName: !!identity?.name.trim(),
+        hasCountry: !!identity?.country.trim(),
+        hasStreet: !!identity?.street.trim(),
+        hasCity: !!identity?.city.trim(),
+        hasPostcode: !!identity?.postcode.trim(),
+      };
+      // For minimal tier we only need name + country; for full tier
+      // (Travel Rule applies) we need every field.
+      const ready = tier === 'full' || tier === 'no-rate-conservative'
+        ? fullDisclosureReady(idStatus)
+        : minimalDisclosureReady(idStatus);
+      setIdentityComplete(ready);
+      setIdentityMissing(missingFields(idStatus));
+      if (wallet) setDraft(assembleDraft(identity, wallet.address, payment, tier));
       setAssessment(assessPayment(
         {
           amountMicroFtc: payment.amountMicroFtc,
@@ -105,6 +137,12 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
     // (May 2024, USD 24M) defence. Refuses to proceed otherwise.
     if (similar.length > 0 && !similarAck) {
       return; // UI shows the "I confirm this is not <name>" gate.
+    }
+    // Travel Rule gate (EU 2023/1113). Above the €1000 threshold the
+    // PACS.008 must carry full Dbtr address — block sign if not all
+    // fields are present.
+    if (!identityComplete) {
+      return; // UI shows the "complete your profile" banner.
     }
     // A 'warning'-level assessment takes a deliberate second tap — the
     // engine is advisory, never a hard block.
@@ -322,8 +360,35 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           </div>
         )}
 
+        {/* Travel Rule + GDPR tier banner. Shown above the Pay
+            button when the tier is `full` or `no-rate-conservative`
+            AND the user's profile is missing fields. EU 2023/1113. */}
+        {!identityComplete && (
+          <div className="rounded-xl p-3 mb-3"
+               style={{ backgroundColor: 'rgba(200,136,30,0.08)',
+                        border: '1px solid #C8881E' }}>
+            <div className="text-xs font-semibold mb-1"
+                 style={{ color: '#C8881E' }}>
+              {t('travelRule.title', 'Profile required for this amount')}
+            </div>
+            <div className="text-sm" style={{ color: 'var(--color-text)' }}>
+              {travelTier === 'no-rate-conservative'
+                ? t('travelRule.noRateBody',
+                    'No live FTC/EUR rate available. Conservative posture: payments are treated as above the EU Travel Rule €1000 threshold until the rate source is back online.')
+                : t('travelRule.fullBody',
+                    'This payment exceeds the EU Travel Rule threshold (€1000). EU 2023/1113 requires the originator address fields to be included.')}
+            </div>
+            <div className="text-xs mt-2"
+                 style={{ color: 'var(--color-text-muted)' }}>
+              {t('travelRule.missing', { fields: identityMissing.join(', '), defaultValue: 'Missing: {{fields}}. Open Settings → Payment details to complete.' })}
+            </div>
+          </div>
+        )}
+
         <PrimaryButton onClick={confirm}
-                       disabled={expired || busy || (similar.length > 0 && !similarAck)}
+                       disabled={expired || busy
+                         || (similar.length > 0 && !similarAck)
+                         || !identityComplete}
                        style={armed ? { backgroundColor: 'var(--color-error)' } : undefined}>
           {busy ? t('review.confirming')
             : armed ? t('fraud.payAnyway')

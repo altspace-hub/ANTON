@@ -374,6 +374,22 @@ export default function SettingsScreen({
                           borderTop: '1px solid var(--color-border-soft)' }}>
               {t('settings.aboutPhoneOnly')}
             </div>
+            {/* MiCA disclosure (Reg. (EU) 2023/1114). Self-custody
+                wallets are not themselves CASPs, but the hub the app
+                routes through (Bahnhof) IS — Annex IV §9 "transfer
+                service for crypto-assets". Show the authorisation
+                number when set; flag pending when not. */}
+            <div className="text-[11px] mt-2 pt-2"
+                 style={{ color: 'var(--color-text-faint)',
+                          borderTop: '1px solid var(--color-border-soft)' }}>
+              {t('settings.micaDisclosure',
+                'FTC settlement is routed through Bahnhof\'s public light-hub at rpc.futurechain.eu. Bahnhof operates this hub under Sweden Finansinspektionen (FI) authorisation pending publication; once issued, the CASP authorisation number will appear here.')}
+            </div>
+            <div className="text-[11px] mt-1"
+                 style={{ color: 'var(--color-text-faint)' }}>
+              {t('settings.travelRuleNote',
+                'Payments above €1000 require the EU Travel Rule (Reg. 2023/1113) originator info — your profile in Payment details supplies these fields.')}
+            </div>
           </div>
 
           {/* Danger zone */}

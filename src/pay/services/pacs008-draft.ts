@@ -11,6 +11,7 @@
  */
 import type { DecodedPayment, PaymentPurpose } from './types';
 import type { PayerIdentity } from './payment-identity';
+import type { TravelRuleTier } from './travel-rule';
 
 /** ISO 20022 external purpose code subset we surface for retail QR scans. */
 export type Purpose = 'GDDS' | 'SCVE' | 'OTHR' | 'REFUND';
@@ -46,15 +47,31 @@ const PURPOSE_TO_ISO: Record<PaymentPurpose, Purpose> = {
 };
 
 /** The customer as the PACS.008 debtor party. Falls back to the bare
- *  wallet address for the name when no identity has been saved. */
+ *  wallet address for the name when no identity has been saved.
+ *
+ *  Travel-Rule + GDPR two-tier: in `minimal` mode (sub-€1000 P2P
+ *  self-custody transfers), street/city/postcode are deliberately
+ *  OMITTED even if the user has filled them — GDPR Art. 5(1)(c)
+ *  data minimisation. In `full` mode (>= €1000, Travel Rule applies),
+ *  the address is included if available; if any field is missing the
+ *  caller should have blocked signing rather than ship a partial
+ *  disclosure. */
 export function payerToParty(
   identity: PayerIdentity | null,
   walletAddress: string,
+  tier: TravelRuleTier = 'minimal',
 ): PartyIdentification {
-  return {
+  const base: PartyIdentification = {
     address: walletAddress,
     name: identity?.name.trim() || walletAddress,
     country: identity?.country.trim().toUpperCase() || 'SE',
+  };
+  if (tier === 'minimal') {
+    // Sub-threshold: strip address fields per GDPR minimisation.
+    return base;
+  }
+  return {
+    ...base,
     city: identity?.city.trim() || undefined,
     street: identity?.street.trim() || undefined,
     postcode: identity?.postcode.trim() || undefined,
@@ -79,9 +96,10 @@ export function assembleDraft(
   identity: PayerIdentity | null,
   walletAddress: string,
   decoded: DecodedPayment,
+  tier: TravelRuleTier = 'minimal',
 ): Pacs008Draft {
   return {
-    debtor: payerToParty(identity, walletAddress),
+    debtor: payerToParty(identity, walletAddress, tier),
     creditor: creditorToParty(decoded),
     amountMicroFtc: decoded.amountMicroFtc,
     currency: 'FTC',
