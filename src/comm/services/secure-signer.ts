@@ -57,6 +57,15 @@ function bytesToHex(b: Uint8Array): string {
  * priv hex MUST be deleted from any other JS-accessible store; the
  * canonical storage is now the native plugin's Keystore-bound copy.
  *
+ * NOTE on Capacitor bridge logging: every PluginCall.methodData is
+ * logged via Logger.verbose(...) by default. In a debug build with
+ * `loggingBehavior: 'production'` set in capacitor.config.*.ts
+ * (Wave 8) that VERBOSE trace is suppressed, so the privHex passed
+ * here doesn't appear in logcat. Release builds were already at
+ * this level by Capacitor default. If you ever revert the
+ * loggingBehavior config, a debug build's logcat will expose this
+ * priv hex to anyone with ADB + READ_LOGS.
+ *
  * Throws on a non-native platform — the caller is expected to check
  * isSecureSignerAvailable() first and degrade gracefully (dev only).
  */

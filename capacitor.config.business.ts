@@ -15,6 +15,11 @@ const config: CapacitorConfig = {
   appId: 'com.futurechain.anton.business',
   appName: 'ANTON Business',
   webDir: 'dist/business',
+  // Suppress Capacitor's VERBOSE plugin-call trace even in debug
+  // builds (see capacitor.config.pay.ts for the rationale — the
+  // FcSecureSigner.wrap migration leaks priv hex via methodData
+  // unless this is set).
+  loggingBehavior: 'production',
   android: {
     path: 'android-business',
     allowMixedContent: false,

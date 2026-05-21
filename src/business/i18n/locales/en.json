@@ -150,6 +150,25 @@
     "resetHelp": "Erases your business profile, items, wallet and every kvitto from this device. Export your kvittos first — Bokföringslagen requires 7-year retention.",
     "resetConfirm": "Reset the app? This permanently erases your profile, items, wallet and all kvittos on this device. Make sure you have exported your kvittos."
   },
+  "dayClose": {
+    "title": "Day close",
+    "preview": "Open window",
+    "since": "Since",
+    "window": "Window",
+    "kvittos": "Kvittos",
+    "kreditnotor": "Kreditnotor",
+    "sales": "Sales",
+    "refunds": "Refunds",
+    "vat": "VAT",
+    "close": "Close day · sign Z report",
+    "hint": "Signs the day's sales with your merchant wallet (Ed25519). The resulting Z report is the audit-defensible bookkeeping voucher for the window. SKVFS 2021:17/18 requires this for kassaregister.",
+    "signedTitle": "Z report signed",
+    "downloadSie": "Download SIE 4",
+    "email": "Email accountant",
+    "history": "Past Z reports",
+    "emailSubject": "Z-rapport {{zNumber}} + SIE 4",
+    "emailBody": "Attached: Z-rapport {{zNumber}} signed by the merchant wallet.\n\n— Paste the SIE 4 file content below into your accounting software (Bokio / Fortnox / Visma)."
+  },
   "wallet": {
     "title": "Connect wallet",
     "generateDesc1": "Generate a secp256k1 keypair on this device. The private key never leaves your phone — it lives in the device's secure keychain.",

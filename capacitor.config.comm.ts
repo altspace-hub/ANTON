@@ -12,6 +12,11 @@ const config: CapacitorConfig = {
   appId: 'com.futurechain.anton.communication',
   appName: 'ANTON Communication',
   webDir: 'dist/comm',
+  // Suppress Capacitor's VERBOSE plugin-call trace even in debug
+  // builds (see capacitor.config.pay.ts for the rationale — the
+  // FcSecureSigner.wrap migration leaks priv hex via methodData
+  // unless this is set).
+  loggingBehavior: 'production',
   // Use a separate Android project so the existing Companion App build
   // chain is untouched. `npx cap add android --config capacitor.config.comm.ts`
   // will scaffold this directory; subsequent syncs honour it.

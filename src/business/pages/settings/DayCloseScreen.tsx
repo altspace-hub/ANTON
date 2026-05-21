@@ -158,10 +158,10 @@ export default function DayCloseScreen({ onBack }: Props) {
               {t('dayClose.signedTitle', 'Z report signed')} · {formatZNumber(justClosed.zNumber)}
             </div>
             <div className="text-xs space-y-1 mb-3" style={{ color: 'var(--color-text-muted)' }}>
-              <div>{t('dayClose.window')}: {formatDateTime(justClosed.openedAt)} → {formatDateTime(justClosed.closedAt)}</div>
-              <div>{t('dayClose.sales')}: {justClosed.salesGrossSek.toFixed(2)} SEK ({justClosed.toKvittoNumber - justClosed.fromKvittoNumber + 1} kvittos)</div>
-              <div>{t('dayClose.refunds')}: {justClosed.refundsGrossSek.toFixed(2)} SEK ({justClosed.refundsCount} kreditnotor)</div>
-              <div>{t('dayClose.vat')}: 25%={justClosed.vatSek25.toFixed(2)} · 12%={justClosed.vatSek12.toFixed(2)} · 6%={justClosed.vatSek6.toFixed(2)} SEK</div>
+              <div>{t('dayClose.window', 'Window')}: {formatDateTime(justClosed.openedAt)} → {formatDateTime(justClosed.closedAt)}</div>
+              <div>{t('dayClose.sales', 'Sales')}: {justClosed.salesGrossSek.toFixed(2)} SEK ({justClosed.toKvittoNumber - justClosed.fromKvittoNumber + 1} kvittos)</div>
+              <div>{t('dayClose.refunds', 'Refunds')}: {justClosed.refundsGrossSek.toFixed(2)} SEK ({justClosed.refundsCount} kreditnotor)</div>
+              <div>{t('dayClose.vat', 'VAT')}: 25%={justClosed.vatSek25.toFixed(2)} · 12%={justClosed.vatSek12.toFixed(2)} · 6%={justClosed.vatSek6.toFixed(2)} SEK</div>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => downloadSie(justClosed)}
@@ -190,9 +190,9 @@ export default function DayCloseScreen({ onBack }: Props) {
               </div>
               {preview ? (
                 <div className="space-y-1 text-sm" style={{ color: 'var(--color-text)' }}>
-                  <div>{t('dayClose.since')}: {formatDateTime(preview.windowOpenedAt)}</div>
-                  <div>{t('dayClose.kvittos')}: {preview.receiptsCount} · {preview.salesGrossSek.toFixed(2)} SEK</div>
-                  <div>{t('dayClose.kreditnotor')}: {preview.refundsCount} · {preview.refundsGrossSek.toFixed(2)} SEK</div>
+                  <div>{t('dayClose.since', 'Since')}: {formatDateTime(preview.windowOpenedAt)}</div>
+                  <div>{t('dayClose.kvittos', 'Kvittos')}: {preview.receiptsCount} · {preview.salesGrossSek.toFixed(2)} SEK</div>
+                  <div>{t('dayClose.kreditnotor', 'Kreditnotor')}: {preview.refundsCount} · {preview.refundsGrossSek.toFixed(2)} SEK</div>
                 </div>
               ) : (
                 <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
