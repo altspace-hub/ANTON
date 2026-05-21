@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrCode from '../components/QrCode';
 import ActiveSyncBanner from '../components/ActiveSyncBanner';
+import FiatAmountInput from '../components/FiatAmountInput';
 import { getActiveWalletMeta } from '../services/wallet';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
 import { notifyIncoming } from '../services/notifications';
@@ -28,21 +29,13 @@ interface Props {
   onBack: () => void;
 }
 
-/** Convert "12.5" FTC to "12500000" micro-FTC. Returns null on bad
- *  input. Strict: only digits + a single optional dot. */
-function ftcToMicro(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  if (!/^\d+(\.\d{1,6})?$/.test(trimmed)) return null;
-  const [whole, frac = ''] = trimmed.split('.');
-  const padded = (frac + '000000').slice(0, 6);
-  return `${BigInt(whole) * 1_000_000n + BigInt(padded || '0')}`;
-}
-
 export default function ReceiveScreen({ onBack }: Props) {
   const { t } = useTranslation();
   const [meta, setMeta] = useState<WalletMeta | null>(null);
-  const [amount, setAmount] = useState('');
+  /** Amount in micro-FTC — the canonical thing baked into the QR.
+   *  FiatAmountInput drives this whether the user typed in fiat or
+   *  FTC; zero means "no amount, sender chooses." */
+  const [microFtc, setMicroFtc] = useState<bigint>(0n);
   const [copied, setCopied] = useState(false);
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
@@ -75,11 +68,9 @@ export default function ReceiveScreen({ onBack }: Props) {
     return () => { cancel(); };
   }, [meta]);
 
-  const micro = ftcToMicro(amount);
-  const validAmount = amount.trim() === '' || micro !== null;
   const qrValue = meta
-    ? micro
-      ? `futurechain:pay?to=${meta.address}&amount=${micro}`
+    ? microFtc > 0n
+      ? `futurechain:pay?to=${meta.address}&amount=${microFtc.toString()}`
       : `futurechain:pay?to=${meta.address}`
     : '';
 
@@ -94,8 +85,11 @@ export default function ReceiveScreen({ onBack }: Props) {
 
   async function share() {
     if (!meta) return;
-    const text = micro
-      ? `Pay me ${amount} FTC — ${meta.address}`
+    const ftc = microFtc > 0n
+      ? (Number(microFtc) / 1_000_000).toString()
+      : null;
+    const text = ftc
+      ? `Pay me ${ftc} FTC — ${meta.address}`
       : `My FutureChain address: ${meta.address}`;
     try {
       // navigator.share is the cleanest cross-platform path; Capacitor's
@@ -178,39 +172,19 @@ export default function ReceiveScreen({ onBack }: Props) {
               </div>
             </div>
 
-            {/* Optional amount */}
-            <div className="rounded-xl p-4 mb-4"
-                 style={{ backgroundColor: 'var(--color-surface)',
-                          border: '1px solid var(--color-border)' }}>
-              <label htmlFor="receive-amount"
-                     className="text-xs uppercase tracking-wider mb-1.5 block"
-                     style={{ color: 'var(--color-text-faint)' }}>
-                {t('receive.requestAmount', 'Request amount (optional)')}
-              </label>
-              <div className="flex items-baseline gap-2">
-                <input
-                  id="receive-amount"
-                  type="text"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="flex-1 bg-transparent text-2xl font-bold mono outline-none"
-                  style={{ color: 'var(--color-text)' }}
-                />
-                <span className="text-xs uppercase tracking-wider"
-                      style={{ color: 'var(--color-text-faint)' }}>FTC</span>
-              </div>
-              {!validAmount && (
-                <p className="text-xs mt-2" style={{ color: 'var(--color-danger, #C0392B)' }}>
-                  {t('receive.invalidAmount', 'Enter a number with up to 6 decimals')}
-                </p>
-              )}
-              <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
-                {micro
+            {/* Optional amount — fiat-first when a rate is available
+                (EBA/MiCA Art. 66 "fair, clear, not misleading"), falls
+                back to FTC-only with explicit "Rate unavailable" notice
+                when the FutureChain oracle is offline. */}
+            <div className="mb-4">
+              <FiatAmountInput
+                initialMicroFtc={microFtc}
+                onChangeMicroFtc={setMicroFtc}
+                label={t('receive.requestAmount', 'Request amount (optional)')}
+                helper={microFtc > 0n
                   ? t('receive.qrIncludesAmount', 'QR includes this amount')
                   : t('receive.qrAddressOnly', 'QR carries only your address — sender chooses the amount')}
-              </p>
+              />
             </div>
 
             {/* Actions */}
