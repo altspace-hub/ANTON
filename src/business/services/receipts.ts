@@ -42,6 +42,8 @@ export async function persistReceipt(input: NewReceiptInput): Promise<Receipt> {
     status: input.status,
     createdAt: now,
     confirmedAt: input.status === 'confirmed' ? now : null,
+    txHash: null,
+    receivingAddress: input.receivingAddress,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -86,6 +88,51 @@ export async function listReceipts(limit = 100): Promise<Receipt[]> {
     };
     req.onerror = () => reject(req.error);
   });
+}
+
+/**
+ * Find a pending receipt that matches an inbound chain transaction
+ * and flip it to `confirmed`. Matching is conservative: amount must
+ * match exactly (after the satoshi → micro-FTC conversion in the
+ * caller); ref must contain the receipt's ref string (a SUBSTRING
+ * match because the chain may wrap the ADR-004 reference inside other
+ * remittance text); receiving address must match if both sides have
+ * it. Returns the confirmed receipt, or null when no match.
+ *
+ * Multi-match guard: if more than one pending receipt has the same
+ * amount + ref, we refuse to auto-confirm and return null — the
+ * merchant has to reconcile manually. Same-amount-and-ref collisions
+ * are vanishingly rare in practice but we'd rather surface the
+ * ambiguity than guess.
+ */
+export async function confirmReceiptByMatch(opts: {
+  amountMicroFtc: bigint;
+  ref: string;
+  txHash: string;
+  receivingAddress: string;
+}): Promise<Receipt | null> {
+  const pending = (await listReceipts(500)).filter(r => r.status === 'pending');
+  const matches = pending.filter(r =>
+    r.amountMicroFtc === opts.amountMicroFtc &&
+    (opts.ref === '' || r.ref === opts.ref || opts.ref.includes(r.ref)) &&
+    (!r.receivingAddress || r.receivingAddress === opts.receivingAddress)
+  );
+  if (matches.length !== 1) return null;
+  const receipt = matches[0];
+  const db = await openDb();
+  const updated: Receipt = {
+    ...receipt,
+    status: 'confirmed',
+    confirmedAt: Date.now(),
+    txHash: opts.txHash,
+  };
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_RECEIPTS, 'readwrite');
+    tx.objectStore(STORE_RECEIPTS).put(serializeForIdb(updated));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  return updated;
 }
 
 export async function voidReceipt(kvittoNumber: number): Promise<void> {

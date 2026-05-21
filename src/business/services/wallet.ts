@@ -1,128 +1,97 @@
 /**
- * wallet.ts — Ed25519 wallet generation + secure persistence (merchant side).
+ * wallet.ts — Business App: facade over the multi-wallet registry in
+ * wallets.ts.
  *
- * Phase C2 (May 20 2026): swapped from the legacy secp256k1 stub to the
- * real @futurechain/sdk Ed25519 keypair + Base58 `fc_` address. Mirrors
- * the pay-app wallet.ts so the two apps' wallet code paths stay aligned.
+ * Thin compatibility layer for legacy callsites (ConnectWalletScreen,
+ * SettingsScreen, SimpleScreen, ExtendedScreen). Every call resolves
+ * to the active wallet — switching wallets is done via setActiveWallet
+ * in wallets.ts, after which the next loadWallet() returns the new
+ * active wallet AND merchant.safelloReceiveAddress is updated to match.
  *
- * Public surface preserved (`createAndStoreWallet`/`loadWallet`/
- * `hasWallet`/`wipeWallet`) so existing callers (ConnectWalletScreen,
- * SettingsScreen, SimpleScreen, ExtendedScreen) compile unchanged. The
- * `publicKeyCompressed` field on the Wallet interface is renamed
- * `publicKey` (Ed25519 keys are 32 bytes, not the 33-byte compressed
- * secp256k1 layout). The only call sites that touched it were inside
- * this file, so no UI changes needed.
- *
- * What the merchant uses the wallet for today: deriving the `fc_…`
- * address that goes into the payment QR. No signing path lives here
- * yet — when receive-side accounting moves to verifying inbound txs,
- * it'll plug into the same SDK.
+ * History: originally implemented Ed25519 keygen + secure persistence
+ * directly (Phase C2 swap from secp256k1, May 20 2026). As of
+ * 2026-05-21 the on-disk layout is v2 (per-wallet prefixed keys +
+ * a registry list). Legacy v1 installs are migrated transparently —
+ * see wallets.migrateLegacyIfNeeded().
  */
-import { wallet as sdkWallet } from '@futurechain/sdk';
 import { assertBiometric } from './biometric';
-import { getSecure, removeSecure, setSecure } from './secure-store';
+import {
+  createWallet as createWalletInRegistry,
+  getActiveWallet,
+  getActiveWalletId,
+  getActiveWalletMeta,
+  getMnemonicForActive,
+  isBackedUp as isBackedUpInRegistry,
+  markBackedUp as markBackedUpInRegistry,
+  migrateLegacyIfNeeded,
+  wipeAllWallets,
+  importWalletFromMnemonic,
+  type Wallet,
+} from './wallets';
 
-const PRIV_KEY = 'fc.wallet.priv';
-const ADDR_KEY = 'fc.wallet.addr';
-const MNEMONIC_KEY = 'fc.wallet.mnemonic';
-const BACKED_UP_KEY = 'fc.wallet.backedUp';
+export type { Wallet };
 
-export interface Wallet {
-  /** 32-byte Ed25519 private key — sensitive, never log. */
-  privateKey: Uint8Array;
-  /** 32-byte Ed25519 public key. */
-  publicKey: Uint8Array;
-  /** `fc_…` Base58 address derived from the public key. */
-  address: string;
-}
-
-/** Create a fresh wallet (Ed25519 + 24-word BIP-39 mnemonic), persist
- *  privkey + address + mnemonic, mark as NOT yet backed up. */
+/** Create the FIRST wallet on this device. Used by the onboarding
+ *  ConnectWalletScreen flow. Throws if any wallet already exists —
+ *  Settings → Wallets → "+ New wallet" is the path for additional. */
 export async function createAndStoreWallet(): Promise<Wallet> {
   if (await hasWallet()) {
-    throw new Error('A wallet already exists on this device. Recover or reset first.');
+    throw new Error('A wallet already exists on this device.');
   }
-  const { wallet, mnemonic } = sdkWallet.createWallet();
-  await persist(wallet, mnemonic, false);
+  const { meta } = await createWalletInRegistry('Main wallet');
+  const wallet = await getActiveWallet();
+  if (!wallet) {
+    throw new Error(`Wallet ${meta.id} created but not retrievable`);
+  }
   return wallet;
 }
 
-/** Restore from a user-supplied 24-word BIP-39 mnemonic. Wipes any
- *  existing wallet first (caller confirms with the user before calling).
- *  Gated behind a fresh biometric prompt — wallet replacement is one of
- *  the actions a stolen-but-unlocked phone should NOT be able to do
- *  silently. */
+/** Restore from a 24-word BIP-39 mnemonic. Wipes every existing
+ *  wallet first — caller confirms with the user. Biometric-gated. */
 export async function restoreFromMnemonic(mnemonic: string): Promise<Wallet> {
   await assertBiometric({ reason: 'Restore wallet from recovery phrase' });
-  const trimmed = mnemonic.trim().split(/\s+/).join(' ');
-  const seed = sdkWallet.seedPhraseFromMnemonic(trimmed);
-  const wallet = sdkWallet.walletFromSeedPhrase(seed);
-  await wipeWallet();
-  await persist(wallet, trimmed, true);
+  await wipeAllWallets();
+  await importWalletFromMnemonic(mnemonic, 'Main wallet');
+  const wallet = await getActiveWallet();
+  if (!wallet) throw new Error('Restore succeeded but wallet was not retrievable');
   return wallet;
 }
 
 export async function loadWallet(): Promise<Wallet | null> {
-  const privHex = await getSecure(PRIV_KEY);
-  if (!privHex) return null;
-  const priv = hexToBytes(privHex);
-  return sdkWallet.walletFromPrivateKey(priv);
+  return getActiveWallet();
 }
 
 export async function hasWallet(): Promise<boolean> {
-  return (await getSecure(PRIV_KEY)) !== null;
+  await migrateLegacyIfNeeded();
+  return (await getActiveWalletId()) !== null;
 }
 
+/** Erase EVERY wallet on the device. Used by the Restore flow before
+ *  importing a new one. Settings → single-wallet delete uses
+ *  deleteWallet() in wallets.ts instead. */
 export async function wipeWallet(): Promise<void> {
-  await removeSecure(PRIV_KEY);
-  await removeSecure(ADDR_KEY);
-  await removeSecure(MNEMONIC_KEY);
-  await removeSecure(BACKED_UP_KEY);
+  await wipeAllWallets();
 }
 
-/** Raw mnemonic read — used by the onboarding backup flow (BackupShow
- *  / BackupVerify when those screens land for Business). Settings
- *  re-display should use {@link getMnemonicWithBiometric} instead. */
 export async function getMnemonic(): Promise<string | null> {
-  return getSecure(MNEMONIC_KEY);
+  return getMnemonicForActive();
 }
 
-/** Same as {@link getMnemonic} but gated behind a biometric prompt.
- *  Throws on cancel / unavailable. */
 export async function getMnemonicWithBiometric(): Promise<string | null> {
   await assertBiometric({ reason: 'Show recovery phrase' });
-  return getSecure(MNEMONIC_KEY);
+  return getMnemonicForActive();
 }
 
 export async function isMnemonicBackedUp(): Promise<boolean> {
-  return (await getSecure(BACKED_UP_KEY)) === '1';
+  const id = await getActiveWalletId();
+  if (!id) return false;
+  return isBackedUpInRegistry(id);
 }
 
 export async function markMnemonicBackedUp(): Promise<void> {
-  await setSecure(BACKED_UP_KEY, '1');
+  const id = await getActiveWalletId();
+  if (!id) throw new Error('No active wallet to mark backed up');
+  await markBackedUpInRegistry(id);
 }
 
-async function persist(wallet: Wallet, mnemonic: string, backedUp: boolean): Promise<void> {
-  await setSecure(PRIV_KEY, bytesToHex(wallet.privateKey));
-  await setSecure(ADDR_KEY, wallet.address);
-  await setSecure(MNEMONIC_KEY, mnemonic);
-  if (backedUp) {
-    await setSecure(BACKED_UP_KEY, '1');
-  } else {
-    await removeSecure(BACKED_UP_KEY);
-  }
-}
-
-function bytesToHex(b: Uint8Array): string {
-  let out = '';
-  for (const byte of b) out += byte.toString(16).padStart(2, '0');
-  return out;
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  }
-  return out;
-}
+export { getActiveWalletMeta };

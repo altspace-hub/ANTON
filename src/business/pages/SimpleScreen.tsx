@@ -104,7 +104,12 @@ export default function SimpleScreen({ onBack }: { onBack: () => void }) {
         vatBreakdown: [],
         qrUri: qr?.uri ?? '',
         ref: qr?.ref ?? '',
-        status: 'confirmed',
+        // Pending until the on-chain matcher confirms — overrides the
+        // legacy local-only "confirmed at issuance" behaviour. The
+        // inbound poller flips this to 'confirmed' once the matching
+        // tx lands on this wallet (services/received.ts).
+        status: 'pending',
+        receivingAddress: config.safelloReceiveAddress || undefined,
       });
       setReceipt(r);
       setPhase('done');

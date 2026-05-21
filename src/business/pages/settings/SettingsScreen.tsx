@@ -26,6 +26,10 @@ interface Props {
   onConnectWallet: () => void;
   onShowRecovery: () => void;
   onBackupPhrase: () => void;
+  /** Multi-wallet management — list / switch / add / delete. */
+  onWalletsList: () => void;
+  /** Settings → switch which FutureChain hub this app talks to. */
+  onRpcEndpoint: () => void;
   onReset: () => void;
 }
 
@@ -33,7 +37,7 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onConnectWallet, onShowRecovery, onBackupPhrase, onReset,
+  onBack, onConnectWallet, onShowRecovery, onBackupPhrase, onWalletsList, onRpcEndpoint, onReset,
 }: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
@@ -171,6 +175,48 @@ export default function SettingsScreen({
             </>
           )}
         </div>
+
+        {/* Wallets — multi-wallet management. Independent rounded
+            card so it sits between the legacy wallet block above and
+            the merchant-identity block below. */}
+        <button type="button" onClick={onWalletsList}
+                className="rounded-xl p-4 flex items-center justify-between text-left"
+                style={{ backgroundColor: 'var(--color-surface)',
+                         border: '1px solid var(--color-border)' }}>
+          <div>
+            <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+              {t('settings.wallets', 'Wallets')}
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {t('settings.walletsSub', 'Switch active wallet · add · delete')}
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               style={{ color: 'var(--color-text-dim)' }}>
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* RPC endpoint switch. */}
+        <button type="button" onClick={onRpcEndpoint}
+                className="rounded-xl p-4 flex items-center justify-between text-left"
+                style={{ backgroundColor: 'var(--color-surface)',
+                         border: '1px solid var(--color-border)' }}>
+          <div>
+            <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+              {t('settings.rpcEndpoint', 'RPC endpoint')}
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {t('settings.rpcEndpointSub', 'Which FutureChain node this app talks to')}
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               style={{ color: 'var(--color-text-dim)' }}>
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
         {/* Business identity */}
         {config && (

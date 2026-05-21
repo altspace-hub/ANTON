@@ -25,7 +25,13 @@ import ConnectWalletScreen from './pages/settings/ConnectWalletScreen';
 import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
 import BackupShowScreen from './pages/onboarding/BackupShowScreen';
 import BackupVerifyScreen from './pages/onboarding/BackupVerifyScreen';
+import WalletsListScreen from './pages/settings/WalletsListScreen';
+import WalletDetailScreen from './pages/settings/WalletDetailScreen';
+import AddWalletScreen from './pages/settings/AddWalletScreen';
+import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import { hasConfig } from './services/merchant';
+import { pollIncomingOnce } from './services/received';
+import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
 import type { SaleMode } from './services/types';
 
 type Screen =
@@ -40,6 +46,10 @@ type Screen =
   | 'extended'
   | 'settings'
   | 'settings-wallet'
+  | 'settings-wallets-list'
+  | 'settings-wallet-detail'
+  | 'settings-wallet-add'
+  | 'settings-rpc'
   | 'settings-recovery'
   | 'backup-show'
   | 'backup-verify';
@@ -48,11 +58,45 @@ export default function App() {
   const { t } = useTranslation();
   const [screen, setScreen] = useState<Screen>('loading');
   const [pendingMode, setPendingMode] = useState<SaleMode>('simple');
+  /** Wallet id whose detail screen is being viewed. */
+  const [detailWalletId, setDetailWalletId] = useState<string>('');
 
   useEffect(() => {
     (async () => {
       setScreen((await hasConfig()) ? 'home' : 'onboarding-welcome');
     })();
+  }, []);
+
+  /**
+   * Inbound payment poller — every 30 s + on app foreground. For each
+   * inbound transaction observed on the merchant's active wallet, the
+   * matcher in services/received.ts looks for a pending Receipt with
+   * the same amount + ref and flips it to `confirmed`. Each confirmed
+   * receipt fires a local OS notification "Payment received · X SEK".
+   *
+   * No-op while no wallet exists; errors inside pollIncomingOnce are
+   * swallowed so a network blip never breaks the sale flow.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    void ensureNotificationPermission();
+
+    const tick = async () => {
+      const confirmed = await pollIncomingOnce();
+      if (cancelled) return;
+      for (const receipt of confirmed) {
+        void notifyReceiptConfirmed(receipt);
+      }
+    };
+    void tick();
+    const interval = window.setInterval(tick, 30_000);
+    const onVisibility = () => { if (document.visibilityState === 'visible') void tick(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   if (screen === 'loading') {
@@ -116,6 +160,8 @@ export default function App() {
         onConnectWallet={() => setScreen('settings-wallet')}
         onShowRecovery={() => setScreen('settings-recovery')}
         onBackupPhrase={() => setScreen('backup-show')}
+        onWalletsList={() => setScreen('settings-wallets-list')}
+        onRpcEndpoint={() => setScreen('settings-rpc')}
         onReset={() => {
           setPendingMode('simple');
           setScreen('onboarding-welcome');
@@ -125,6 +171,35 @@ export default function App() {
   }
   if (screen === 'settings-wallet') {
     return <ConnectWalletScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-wallets-list') {
+    return (
+      <WalletsListScreen
+        onBack={() => setScreen('settings')}
+        onAddWallet={() => setScreen('settings-wallet-add')}
+        onOpenWallet={(id) => { setDetailWalletId(id); setScreen('settings-wallet-detail'); }}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-detail') {
+    return (
+      <WalletDetailScreen
+        walletId={detailWalletId}
+        onBack={() => setScreen('settings-wallets-list')}
+        onDeleted={() => setScreen('settings-wallets-list')}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-add') {
+    return (
+      <AddWalletScreen
+        onBack={() => setScreen('settings-wallets-list')}
+        onDone={() => setScreen('settings-wallets-list')}
+      />
+    );
+  }
+  if (screen === 'settings-rpc') {
+    return <RpcEndpointScreen onBack={() => setScreen('settings')} />;
   }
   if (screen === 'settings-recovery') {
     return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;

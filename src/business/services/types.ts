@@ -32,6 +32,14 @@ export interface Receipt {
   status: ReceiptStatus;
   createdAt: number;
   confirmedAt: number | null;
+  /** Chain tx id once the inbound poller observed the customer's
+   *  payment landing on the merchant's wallet. Optional — pre-2026-05-21
+   *  receipts confirmed via the legacy local-only flow lack it. */
+  txHash?: string | null;
+  /** Wallet address that received this payment. Stamped at receipt
+   *  creation so multi-wallet merchants can filter "which till took
+   *  this sale". Optional — pre-multi-wallet receipts lack it. */
+  receivingAddress?: string;
 }
 
 export interface NewReceiptInput {
@@ -50,6 +58,10 @@ export interface NewReceiptInput {
   qrUri: string;
   ref: string;
   status: ReceiptStatus;
+  /** Wallet address that issued this QR — stamped onto the Receipt so
+   *  the inbound poller (services/received.ts) can confirm payments
+   *  against the correct multi-wallet bucket. */
+  receivingAddress?: string;
 }
 
 export type SaleMode = 'simple' | 'extended';

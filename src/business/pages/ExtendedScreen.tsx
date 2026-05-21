@@ -116,7 +116,10 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
         vatBreakdown: totals.vatBreakdown,
         qrUri: qr?.uri ?? '',
         ref: qr?.ref ?? '',
-        status: 'confirmed',
+        // Pending until the on-chain matcher confirms (see SimpleScreen
+        // for the same rationale).
+        status: 'pending',
+        receivingAddress: config.safelloReceiveAddress || undefined,
       });
       setReceipt(r);
       setPhase('done');
