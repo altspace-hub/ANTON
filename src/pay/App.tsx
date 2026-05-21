@@ -35,7 +35,8 @@ import ScheduledPaymentsScreen from './pages/settings/ScheduledPaymentsScreen';
 import AddScheduleScreen from './pages/settings/AddScheduleScreen';
 import { hasProfile } from './services/profile';
 import { maybeRunIdlePoll, runOneShotPoll } from './services/idle-poller';
-import { reconcileScheduleNotifications } from './services/schedules';
+import { reconcileScheduleNotifications, getSchedule, recordFire } from './services/schedules';
+import { scheduleToDecodedPayment } from './services/schedule-to-payment';
 import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import type { DecodedPayment, PaymentRecord } from './services/types';
@@ -76,6 +77,11 @@ export default function App() {
   const [newAddress, setNewAddress] = useState<string>('');
   /** Wallet id whose detail screen is being viewed (Settings → Wallets → row). */
   const [detailWalletId, setDetailWalletId] = useState<string>('');
+  /** When a scheduled-payment notification tap routes the user to
+   *  Review, this carries the originating schedule id so onConfirmed
+   *  can call recordFire() to roll the schedule forward. null
+   *  outside the scheduled-payment flow (regular QR scans). */
+  const [firingScheduleId, setFiringScheduleId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -127,6 +133,33 @@ export default function App() {
     // Re-arm scheduled-payment notifications on every foreground so a
     // fresh install or OS-cleared notification state recovers itself.
     void reconcileScheduleNotifications();
+
+    // Scheduled-payment tap handler. When the user taps a recurring-
+    // payment reminder, the OS launches/foregrounds the app and fires
+    // 'localNotificationActionPerformed' with our `extra.scheduleId`.
+    // Synthesize a DecodedPayment from the schedule + push to Review.
+    let unlistenSchedule: (() => void) | null = null;
+    void (async () => {
+      try {
+        const mod = await import('@capacitor/local-notifications');
+        const handle = await mod.LocalNotifications.addListener(
+          'localNotificationActionPerformed',
+          async (action) => {
+            const scheduleId =
+              (action.notification?.extra as { scheduleId?: string } | undefined)?.scheduleId;
+            if (!scheduleId) return;
+            const schedule = await getSchedule(scheduleId);
+            if (!schedule || !schedule.active) return;
+            const decoded = scheduleToDecodedPayment(schedule);
+            setPendingPayment(decoded);
+            setFiringScheduleId(scheduleId);
+            setScreen('review');
+          },
+        );
+        unlistenSchedule = () => { void handle.remove(); };
+      } catch { /* plugin unavailable on web — silent */ }
+    })();
+
     const onVisibility = () => {
       if (document.visibilityState === 'visible') void onForeground();
     };
@@ -134,6 +167,7 @@ export default function App() {
     return () => {
       cancelled = true;
       document.removeEventListener('visibilitychange', onVisibility);
+      unlistenSchedule?.();
     };
   }, []);
 
@@ -203,8 +237,17 @@ export default function App() {
     return (
       <ReviewScreen
         payment={pendingPayment}
-        onCancel={() => setScreen('home')}
+        onCancel={() => {
+          setFiringScheduleId(null);
+          setScreen('home');
+        }}
         onConfirmed={(record) => {
+          // If we got here from a scheduled-payment reminder, roll the
+          // schedule forward + re-arm the next notification.
+          if (firingScheduleId) {
+            void recordFire(firingScheduleId);
+            setFiringScheduleId(null);
+          }
           setLastRecord(record);
           setScreen('payment-done');
         }}

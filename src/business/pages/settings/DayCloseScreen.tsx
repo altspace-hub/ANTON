@@ -24,6 +24,8 @@ import { buildSieForZ } from '../../services/sie-export';
 import { listReceipts } from '../../services/receipts';
 import { listRefunds } from '../../services/refunds';
 import { loadConfig } from '../../services/merchant';
+import { isPinSet } from '../../services/pin';
+import PinPad from '../../components/PinPad';
 import { formatZNumber, type ZReport, type MerchantConfig } from '../../services/types';
 
 interface Props { onBack: () => void; }
@@ -52,6 +54,7 @@ export default function DayCloseScreen({ onBack }: Props) {
   const [busy, setBusy] = useState(false);
   const [justClosed, setJustClosed] = useState<ZReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPin, setShowPin] = useState(false);
 
   async function refresh() {
     const [cfg, lastZ, allReceipts, allRefunds, history] = await Promise.all([
@@ -72,6 +75,18 @@ export default function DayCloseScreen({ onBack }: Props) {
   }
 
   useEffect(() => { void refresh(); }, []);
+
+  async function attemptClose() {
+    // If a merchant PIN is set, gate the day-close behind it.
+    // SKVFS-shaped audit trail benefits from this — only the till
+    // holder can close the day, not a passer-by who picked up the
+    // till mid-shift.
+    if (await isPinSet()) {
+      setShowPin(true);
+    } else {
+      await doClose();
+    }
+  }
 
   async function doClose() {
     setError(null); setBusy(true);
@@ -188,7 +203,7 @@ export default function DayCloseScreen({ onBack }: Props) {
             {error && (
               <p className="text-xs mb-3" style={{ color: '#C0392B' }}>{error}</p>
             )}
-            <button type="button" onClick={doClose}
+            <button type="button" onClick={attemptClose}
                     disabled={busy || !preview || preview.receiptsCount === 0}
                     className="w-full py-3.5 rounded-xl text-sm font-semibold"
                     style={{ backgroundColor: 'var(--color-accent)',
@@ -234,6 +249,14 @@ export default function DayCloseScreen({ onBack }: Props) {
           </>
         )}
       </div>
+
+      <PinPad open={showPin} mode="verify"
+              title="Confirm with merchant PIN"
+              onCancel={() => setShowPin(false)}
+              onConfirm={async () => {
+                setShowPin(false);
+                await doClose();
+              }} />
     </div>
   );
 }
