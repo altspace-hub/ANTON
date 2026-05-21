@@ -29,6 +29,7 @@ import WalletsListScreen from './pages/settings/WalletsListScreen';
 import WalletDetailScreen from './pages/settings/WalletDetailScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
+import DayCloseScreen from './pages/settings/DayCloseScreen';
 import { hasConfig } from './services/merchant';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
@@ -50,6 +51,7 @@ type Screen =
   | 'settings-wallet-detail'
   | 'settings-wallet-add'
   | 'settings-rpc'
+  | 'settings-day-close'
   | 'settings-recovery'
   | 'backup-show'
   | 'backup-verify';
@@ -165,6 +167,7 @@ export default function App() {
         onBackupPhrase={() => setScreen('backup-show')}
         onWalletsList={() => setScreen('settings-wallets-list')}
         onRpcEndpoint={() => setScreen('settings-rpc')}
+        onDayClose={() => setScreen('settings-day-close')}
         onReset={() => {
           setPendingMode('simple');
           setScreen('onboarding-welcome');
@@ -203,6 +206,9 @@ export default function App() {
   }
   if (screen === 'settings-rpc') {
     return <RpcEndpointScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-day-close') {
+    return <DayCloseScreen onBack={() => setScreen('settings')} />;
   }
   if (screen === 'settings-recovery') {
     return <RecoveryPhraseScreen onBack={() => setScreen('settings')} />;

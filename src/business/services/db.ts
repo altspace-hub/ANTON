@@ -13,16 +13,22 @@
  */
 
 export const DB_NAME = 'anton-business';
-/** v1: receipts. v2: + fc_contacts (FC payment address book — used
- *  by the address-poisoning defense on the merchant's own outgoing
- *  payment surface, when that arrives). */
-export const DB_VERSION = 2;
+/** v1: receipts. v2: + fc_contacts. v3: + refunds (kreditnotor) +
+ *  z_reports (daily close). Bokföringslagen 5 kap requires the
+ *  refund chain to be a separate sequenced document; SKVFS 2021:17
+ *  requires the Z-rapport for kassaregister. */
+export const DB_VERSION = 3;
 
 export const STORE_RECEIPTS = 'receipts';
 export const STORE_FC_CONTACTS = 'fc_contacts';
+export const STORE_REFUNDS = 'refunds';
+export const STORE_Z_REPORTS = 'z_reports';
 
 export const INDEX_RECEIPTS_BY_CREATED = 'by_created';
 export const INDEX_RECEIPTS_BY_STATUS = 'by_status';
+export const INDEX_REFUNDS_BY_ORIGINAL = 'by_original';
+export const INDEX_REFUNDS_BY_CREATED = 'by_created';
+export const INDEX_ZREPORTS_BY_CLOSED = 'by_closed';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -42,6 +48,21 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_FC_CONTACTS)) {
         const store = db.createObjectStore(STORE_FC_CONTACTS, { keyPath: 'id' });
         store.createIndex('byAddress', 'address', { unique: false });
+      }
+      // v3 — credit notes (kreditnotor). Own gap-free sequence per
+      // Bokföringslagen 5 kap. originalKvittoNumber is the FK back
+      // to the kvitto being corrected.
+      if (!db.objectStoreNames.contains(STORE_REFUNDS)) {
+        const store = db.createObjectStore(STORE_REFUNDS, { keyPath: 'kreditNumber' });
+        store.createIndex(INDEX_REFUNDS_BY_ORIGINAL, 'originalKvittoNumber', { unique: false });
+        store.createIndex(INDEX_REFUNDS_BY_CREATED, 'createdAt', { unique: false });
+      }
+      // v3 — Z reports (daily close). Each holds a hash chain back
+      // to the previous Z plus an Ed25519 signature by the merchant's
+      // active wallet.
+      if (!db.objectStoreNames.contains(STORE_Z_REPORTS)) {
+        const store = db.createObjectStore(STORE_Z_REPORTS, { keyPath: 'zNumber' });
+        store.createIndex(INDEX_ZREPORTS_BY_CLOSED, 'closedAt', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

@@ -33,6 +33,10 @@ export async function loadConfig(): Promise<MerchantConfig | null> {
       safelloReceiveAddress: parsed.safelloReceiveAddress ?? '',
       // Pre-country configs default to Sweden — the app's home market.
       country: parsed.country ?? 'SE',
+      // Wave 4 additions — kreditnota + Z-rapport sequences. Lazy
+      // defaults so existing installs don't need a re-onboard.
+      nextKreditNumber: parsed.nextKreditNumber ?? 1,
+      nextZNumber: parsed.nextZNumber ?? 1,
     };
   } catch {
     return null;
@@ -56,5 +60,20 @@ export async function wipeConfig(): Promise<void> {
 export async function consumeKvittoNumber(config: MerchantConfig): Promise<number> {
   const current = config.nextKvittoNumber;
   await saveConfig({ ...config, nextKvittoNumber: current + 1 });
+  return current;
+}
+
+/** Same shape for the kreditnota (credit note) sequence — gap-free
+ *  per Bokföringslagen 5 kap. */
+export async function consumeKreditNumber(config: MerchantConfig): Promise<number> {
+  const current = config.nextKreditNumber;
+  await saveConfig({ ...config, nextKreditNumber: current + 1 });
+  return current;
+}
+
+/** Z-rapport sequence — one per daily close. */
+export async function consumeZNumber(config: MerchantConfig): Promise<number> {
+  const current = config.nextZNumber;
+  await saveConfig({ ...config, nextZNumber: current + 1 });
   return current;
 }
