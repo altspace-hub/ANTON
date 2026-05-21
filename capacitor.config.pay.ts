@@ -15,6 +15,16 @@ const config: CapacitorConfig = {
   appId: 'com.futurechain.anton.pay',
   appName: 'ANTON Pay',
   webDir: 'dist/pay',
+  // Suppress Capacitor's VERBOSE plugin-call trace even in debug
+  // builds. The default debug behaviour logs every PluginCall's
+  // methodData JSON to logcat — including the FcSecureSigner.wrap
+  // call that one-shot transits a wallet's priv hex through the
+  // bridge during Wave-7 migration. With 'production' the bridge
+  // still logs errors but not the verbose request/response trace.
+  // Release builds were already at this level by default; making
+  // it explicit so a debug build can't leak the priv to anyone
+  // with ADB + READ_LOGS.
+  loggingBehavior: 'production',
   android: {
     path: 'android-pay',
     allowMixedContent: false,
