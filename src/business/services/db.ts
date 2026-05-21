@@ -13,9 +13,13 @@
  */
 
 export const DB_NAME = 'anton-business';
-export const DB_VERSION = 1;
+/** v1: receipts. v2: + fc_contacts (FC payment address book — used
+ *  by the address-poisoning defense on the merchant's own outgoing
+ *  payment surface, when that arrives). */
+export const DB_VERSION = 2;
 
 export const STORE_RECEIPTS = 'receipts';
+export const STORE_FC_CONTACTS = 'fc_contacts';
 
 export const INDEX_RECEIPTS_BY_CREATED = 'by_created';
 export const INDEX_RECEIPTS_BY_STATUS = 'by_status';
@@ -32,6 +36,12 @@ export function openDb(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_RECEIPTS, { keyPath: 'kvittoNumber' });
         store.createIndex(INDEX_RECEIPTS_BY_CREATED, 'createdAt', { unique: false });
         store.createIndex(INDEX_RECEIPTS_BY_STATUS, 'status', { unique: false });
+      }
+      // v2 — FC address book (payment recipient contacts). Used by
+      // findSimilarContacts() for the address-poisoning defense.
+      if (!db.objectStoreNames.contains(STORE_FC_CONTACTS)) {
+        const store = db.createObjectStore(STORE_FC_CONTACTS, { keyPath: 'id' });
+        store.createIndex('byAddress', 'address', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

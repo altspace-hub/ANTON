@@ -16,11 +16,17 @@
 import type { PaymentRecord, ReceivedRecord } from './types';
 
 const DB_NAME = 'anton-pay';
-const DB_VERSION = 2;
+/** v1: payments. v2: + received. v3: + contacts (address book).
+ *  Any new store goes through this single opener — never open the
+ *  same DB name from a sibling module with a different version
+ *  number, IDB will race. */
+const DB_VERSION = 3;
 const STORE = 'payments';
 const RECEIVED_STORE = 'received';
+const CONTACTS_STORE = 'fc_contacts';
 
-function open(): Promise<IDBDatabase> {
+/** Centralised IDB opener. Exported so address-book.ts shares it. */
+export function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
@@ -31,11 +37,17 @@ function open(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(RECEIVED_STORE)) {
         db.createObjectStore(RECEIVED_STORE, { keyPath: 'txId' });
       }
+      if (!db.objectStoreNames.contains(CONTACTS_STORE)) {
+        const store = db.createObjectStore(CONTACTS_STORE, { keyPath: 'id' });
+        store.createIndex('byAddress', 'address', { unique: false });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
+
+const open = openDb;
 
 /** Insert (or replace) a payment record. */
 export async function putPayment(record: PaymentRecord): Promise<void> {

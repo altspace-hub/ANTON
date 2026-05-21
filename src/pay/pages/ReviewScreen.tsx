@@ -19,6 +19,10 @@ import { loadMoneyProfile } from '../services/money-profile';
 import { loadWallet } from '../services/wallet';
 import { assembleDraft, type Pacs008Draft } from '../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../services/fraud-engine';
+import {
+  findSimilarContacts, getContactByAddress,
+  type Contact, type SimilarityWarning,
+} from '../services/address-book';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
 interface Props {
@@ -43,6 +47,14 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [isoOpen, setIsoOpen] = useState(false);
   const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
   const [armed, setArmed] = useState(false);
+  /** Address-poisoning warning state. `knownContact` = the recipient
+   *  is a known contact (good signal). `similar` = there are contacts
+   *  with addresses dangerously close to this one (look-alike attack).
+   *  When `similar.length > 0` the signing flow is hard-gated behind
+   *  an explicit "I confirm this is not <name>" tap. */
+  const [knownContact, setKnownContact] = useState<Contact | null>(null);
+  const [similar, setSimilar] = useState<SimilarityWarning[]>([]);
+  const [similarAck, setSimilarAck] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -63,6 +75,15 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
         money,
         behavior,
       ));
+      // Address-poisoning check — exact match vs near-match against
+      // the explicit contact list. The result drives the UI banner +
+      // the signing gate.
+      const [known, sim] = await Promise.all([
+        getContactByAddress(payment.toAddress),
+        findSimilarContacts(payment.toAddress),
+      ]);
+      setKnownContact(known);
+      setSimilar(sim);
     })();
   }, [payment]);
 
@@ -79,6 +100,12 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
 
   async function confirm() {
     if (expired || busy) return;
+    // Address-poisoning hard gate. Look-alike contacts MUST be
+    // explicitly acknowledged before signing — this is the Wintermute
+    // (May 2024, USD 24M) defence. Refuses to proceed otherwise.
+    if (similar.length > 0 && !similarAck) {
+      return; // UI shows the "I confirm this is not <name>" gate.
+    }
     // A 'warning'-level assessment takes a deliberate second tap — the
     // engine is advisory, never a hard block.
     if (assessment?.level === 'warning' && !armed) {
@@ -249,7 +276,54 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           </div>
         ) : null}
 
-        <PrimaryButton onClick={confirm} disabled={expired || busy}
+        {/* Address-poisoning hard gate. Surfaced ABOVE the Pay button
+            because acknowledging it is required before sign. Stripe-
+            Terminal-style explicit Confirm pattern. */}
+        {knownContact && (
+          <div className="rounded-xl p-3 mb-3"
+               style={{ backgroundColor: 'var(--color-accent-soft, rgba(45,212,168,0.12))',
+                        border: '1px solid var(--color-accent-dim, rgba(45,212,168,0.32))' }}>
+            <div className="text-xs font-semibold mb-0.5"
+                 style={{ color: 'var(--color-accent)' }}>
+              {t('review.knownContact', 'Recognized contact')}
+            </div>
+            <div className="text-sm" style={{ color: 'var(--color-text)' }}>
+              {t('review.payingTo', { name: knownContact.label, defaultValue: 'Paying to {{name}}' })}
+            </div>
+          </div>
+        )}
+
+        {similar.length > 0 && (
+          <div className="rounded-xl p-3 mb-3"
+               style={{ backgroundColor: 'rgba(192,57,43,0.08)',
+                        border: '1px solid #C0392B' }}>
+            <div className="text-xs font-semibold mb-1"
+                 style={{ color: '#C0392B' }}>
+              {t('review.lookAlike', 'Look-alike address detected')}
+            </div>
+            <div className="text-sm mb-2" style={{ color: 'var(--color-text)' }}>
+              {t('review.lookAlikeBody', {
+                name: similar[0].contact.label,
+                defaultValue: 'This address looks similar to your contact "{{name}}" but is NOT the same. Attackers grind addresses with matching head/tail to trick recipients. Verify the full address before paying.',
+              })}
+            </div>
+            <label className="flex items-start gap-2 text-xs cursor-pointer"
+                   style={{ color: 'var(--color-text)' }}>
+              <input type="checkbox" checked={similarAck}
+                     onChange={(e) => setSimilarAck(e.target.checked)}
+                     className="mt-0.5" />
+              <span>
+                {t('review.lookAlikeAck', {
+                  name: similar[0].contact.label,
+                  defaultValue: 'I confirm this address is NOT "{{name}}" and I want to pay this new address.',
+                })}
+              </span>
+            </label>
+          </div>
+        )}
+
+        <PrimaryButton onClick={confirm}
+                       disabled={expired || busy || (similar.length > 0 && !similarAck)}
                        style={armed ? { backgroundColor: 'var(--color-error)' } : undefined}>
           {busy ? t('review.confirming')
             : armed ? t('fraud.payAnyway')

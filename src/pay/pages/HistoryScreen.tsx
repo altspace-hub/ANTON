@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { formatFtc, listPayments } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
+import { isDust } from '../services/address-book';
 import type { Activity, PaymentRecord, ReceivedRecord } from '../services/types';
 
 interface Props {
@@ -41,7 +42,11 @@ export default function HistoryScreen({ onBack }: Props) {
   useEffect(() => {
     void (async () => {
       const [sent, received] = await Promise.all([listPayments(), listReceived()]);
-      setItems(buildActivity(sent, received));
+      // Hide dust by default — common delivery vector for address-
+      // poisoning attacks. The user can switch to "show all" once a
+      // setting is added; for now hide-by-default is the safer choice.
+      const nonDust = received.filter(r => !isDust(r.amountMicroFtc));
+      setItems(buildActivity(sent, nonDust));
     })();
   }, []);
 

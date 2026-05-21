@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 7;
+export const DB_VERSION = 8;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -34,6 +34,11 @@ export const STORE_PORTAL_CACHE = 'portal_cache';
  *  per-tx ledger + annual position. Per FUTURECHAIN_TAX_RULES.md the
  *  ledger MUST stay on-device — no syncing to the server side. */
 export const STORE_WALLET_TXS = 'wallet_txs';
+/** v8 — FC address book. Distinct from chat contacts (which are
+ *  keyed by contactHash and serve E2E chat). These are FC payment
+ *  addresses the user has explicitly added — used by the address-
+ *  poisoning defense to recognise known payees on send. */
+export const STORE_FC_CONTACTS = 'fc_contacts';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -100,6 +105,13 @@ export function openDb(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_WALLET_TXS, { keyPath: 'id' });
         store.createIndex(INDEX_WALLET_BY_TS, 'ts', { unique: false });
         store.createIndex(INDEX_WALLET_BY_REF, 'ref', { unique: false });
+      }
+      // v8 — FC address book (payment recipients, distinct from chat
+      // contacts above). byAddress index drives findSimilarContacts
+      // for address-poisoning detection.
+      if (!db.objectStoreNames.contains(STORE_FC_CONTACTS)) {
+        const store = db.createObjectStore(STORE_FC_CONTACTS, { keyPath: 'id' });
+        store.createIndex('byAddress', 'address', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);

@@ -12,6 +12,7 @@ import { loadWallet } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
+import { isDust } from '../services/address-book';
 import { fetchBalanceFtc } from '../services/fc-rpc';
 import { runOneShotPoll, getLastSyncTs } from '../services/idle-poller';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
@@ -55,7 +56,8 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
         listPayments(), listReceived(), getLastSyncTs(),
       ]);
       if (cancelled) return;
-      setActivity(buildActivity(sent, received));
+      // Filter dust (< 0.1 FTC) — address-poisoning delivery vector.
+      setActivity(buildActivity(sent, received.filter(r => !isDust(r.amountMicroFtc))));
       setLastSyncTs(ts);
       if (wallet?.address) {
         const b = await fetchBalanceFtc(wallet.address);
@@ -81,7 +83,8 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       const [sent, received, ts] = await Promise.all([
         listPayments(), listReceived(), getLastSyncTs(),
       ]);
-      setActivity(buildActivity(sent, received));
+      // Filter dust (< 0.1 FTC) — address-poisoning delivery vector.
+      setActivity(buildActivity(sent, received.filter(r => !isDust(r.amountMicroFtc))));
       setLastSyncTs(ts);
     })();
   }, [activeSync]);
@@ -98,7 +101,8 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
         // Reload activity so the new row appears immediately, even
         // though the active-sync would also stop here.
         const [sent, received] = await Promise.all([listPayments(), listReceived()]);
-        setActivity(buildActivity(sent, received));
+        // Filter dust (< 0.1 FTC) — address-poisoning delivery vector.
+      setActivity(buildActivity(sent, received.filter(r => !isDust(r.amountMicroFtc))));
       },
       onEnd: () => {
         activeSyncCancelRef.current = null;
