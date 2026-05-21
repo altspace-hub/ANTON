@@ -19,6 +19,10 @@ import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
 import WalletSendScreen from './wallet/WalletSendScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
+import WalletsListScreen from './wallet/WalletsListScreen';
+import WalletDetailScreen from './wallet/WalletDetailScreen';
+import AddWalletScreen from './wallet/AddWalletScreen';
+import RpcEndpointScreen from './wallet/RpcEndpointScreen';
 import TaxResidencyScreen from './wallet/TaxResidencyScreen';
 import TaxPositionScreen from './wallet/TaxPositionScreen';
 import TaxReportScreen from './wallet/TaxReportScreen';
@@ -30,6 +34,10 @@ type View =
   | 'receive'
   | 'send'
   | 'history'
+  | 'wallets-list'
+  | 'wallet-detail'
+  | 'wallet-add'
+  | 'rpc-endpoint'
   | 'tax-residency'
   | 'tax-position'
   | 'tax-report';
@@ -37,6 +45,8 @@ type View =
 export default function WalletScreen() {
   const [view, setView] = useState<View>('loading');
   const [address, setAddress] = useState<string | null>(null);
+  /** Wallet id whose detail screen is being viewed. */
+  const [detailWalletId, setDetailWalletId] = useState<string>('');
 
   useEffect(() => {
     void refresh();
@@ -91,6 +101,35 @@ export default function WalletScreen() {
   if (view === 'history') {
     return <WalletHistoryScreen onBack={() => setView('balance')} />;
   }
+  if (view === 'wallets-list') {
+    return (
+      <WalletsListScreen
+        onBack={() => { void refresh(); }}
+        onAddWallet={() => setView('wallet-add')}
+        onOpenWallet={(id) => { setDetailWalletId(id); setView('wallet-detail'); }}
+      />
+    );
+  }
+  if (view === 'wallet-detail') {
+    return (
+      <WalletDetailScreen
+        walletId={detailWalletId}
+        onBack={() => setView('wallets-list')}
+        onDeleted={() => setView('wallets-list')}
+      />
+    );
+  }
+  if (view === 'wallet-add') {
+    return (
+      <AddWalletScreen
+        onBack={() => setView('wallets-list')}
+        onDone={() => setView('wallets-list')}
+      />
+    );
+  }
+  if (view === 'rpc-endpoint') {
+    return <RpcEndpointScreen onBack={() => setView('balance')} />;
+  }
   if (view === 'tax-residency') {
     return (
       <TaxResidencyScreen
@@ -119,6 +158,8 @@ export default function WalletScreen() {
       onReceive={() => setView('receive')}
       onSend={() => setView('send')}
       onHistory={() => setView('history')}
+      onManage={() => setView('wallets-list')}
+      onRpcEndpoint={() => setView('rpc-endpoint')}
       onTax={async () => {
         // First tap routes to residency capture; subsequent taps land
         // straight on the computed position screen.

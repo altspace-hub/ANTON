@@ -1,136 +1,102 @@
 /**
- * wallet.ts — Comm App FutureChain wallet.
+ * wallet.ts — facade over the multi-wallet registry in wallets.ts.
  *
- * Phase C3 (May 20 2026): swapped from the legacy secp256k1 stub to the
- * real @futurechain/sdk Ed25519 keypair + Base58 `fc_` address. Mirrors
- * the pay-app wallet.ts so all three ANTON apps share the same curve +
- * address shape.
+ * Thin compatibility layer for legacy callsites (payment.ts,
+ * WalletScreen, WalletConnectScreen, payment-identity). Every call
+ * resolves to the active wallet — switching wallets is done via
+ * setActiveWallet() in wallets.ts, after which the next loadWallet()
+ * returns the new active wallet.
+ *
+ * History: this used to own Ed25519 keygen + secure persistence
+ * directly (Phase C3 swap from secp256k1, May 20 2026). As of
+ * 2026-05-21 the on-disk layout is v2 (per-wallet prefixed keys +
+ * a registry list); legacy v1 installs migrate transparently — see
+ * wallets.migrateLegacyIfNeeded().
  *
  * Separate from the Comm App's Ed25519 messaging identity in
  * identity.ts:
  *   - identity.ts → contactHash + signed envelopes for E2E chat.
- *   - this module → FutureChain payment wallet (also Ed25519, but
- *     keyed for `fc_…` addresses + transaction signing, not for chat).
- *
- * The private key lives in the tier-aware secure-store (native
- * Keystore on Android; AES-GCM-wrapped IndexedDB on web fallback). On
- * a real device the store is fail-closed: a missing native plugin
- * throws rather than silently downgrading.
- *
- * Public surface preserved (`createAndStoreWallet`/`loadWallet`/
- * `hasWallet`/`wipeWallet`) so existing callers compile unchanged. The
- * `publicKeyCompressed` field on the Wallet interface is renamed
- * `publicKey` (Ed25519 keys are 32 bytes, not the 33-byte compressed
- * secp256k1 layout). The only call site that touched it was inside
- * this file.
- *
- * Send path: today's WalletSendScreen records local-only `send` txs;
- * once the Comm wallet wires up to Bahnhof, the signing path lands in
- * a sibling `payment.ts` mirroring `src/pay/services/payment.ts`.
+ *   - this module → FutureChain payment wallet.
  */
-import { wallet as sdkWallet } from '@futurechain/sdk';
 import { assertBiometric } from './biometric';
-import { getSecure, removeSecure, setSecure } from './secure-store';
+import {
+  createWallet as createWalletInRegistry,
+  getActiveWallet,
+  getActiveWalletId,
+  getActiveWalletMeta,
+  getMnemonicForActive,
+  isBackedUp as isBackedUpInRegistry,
+  markBackedUp as markBackedUpInRegistry,
+  migrateLegacyIfNeeded,
+  wipeAllWallets,
+  importWalletFromMnemonic,
+  type Wallet,
+} from './wallets';
 
-const PRIV_KEY = 'fc.wallet.priv';
-const ADDR_KEY = 'fc.wallet.addr';
-const MNEMONIC_KEY = 'fc.wallet.mnemonic';
-const BACKED_UP_KEY = 'fc.wallet.backedUp';
+export type { Wallet };
 
-export interface Wallet {
-  /** 32-byte Ed25519 private key — sensitive, never log. */
-  privateKey: Uint8Array;
-  /** 32-byte Ed25519 public key. */
-  publicKey: Uint8Array;
-  /** `fc_…` Base58 address derived from the public key. */
-  address: string;
-}
-
-/** Generate + persist a new wallet (Ed25519 + 24-word BIP-39 mnemonic).
- *  Throws if one already exists on the device — recovery from seed is
- *  a deliberate, separate flow via {@link restoreFromMnemonic}. */
+/** Create the FIRST wallet on this device. Used by the onboarding
+ *  flow (WalletConnectScreen). Throws if any wallet already exists —
+ *  Settings → "+ New wallet" is the path for additional wallets. */
 export async function createAndStoreWallet(): Promise<Wallet> {
   if (await hasWallet()) {
     throw new Error('A wallet already exists on this device.');
   }
-  const { wallet, mnemonic } = sdkWallet.createWallet();
-  await persist(wallet, mnemonic, false);
+  const { meta } = await createWalletInRegistry('Main wallet');
+  const wallet = await getActiveWallet();
+  if (!wallet) {
+    throw new Error(`Wallet ${meta.id} created but not retrievable`);
+  }
   return wallet;
 }
 
-/** Restore from a 24-word BIP-39 mnemonic. Wipes any existing wallet
- *  first (caller confirms with the user before calling). Gated behind
- *  a biometric prompt. */
+/** Restore a wallet from a 24-word BIP-39 mnemonic. Wipes every
+ *  existing wallet first — caller confirms with the user before
+ *  invoking. Biometric-gated. */
 export async function restoreFromMnemonic(mnemonic: string): Promise<Wallet> {
   await assertBiometric({ reason: 'Restore wallet from recovery phrase' });
-  const trimmed = mnemonic.trim().split(/\s+/).join(' ');
-  const seed = sdkWallet.seedPhraseFromMnemonic(trimmed);
-  const wallet = sdkWallet.walletFromSeedPhrase(seed);
-  await wipeWallet();
-  await persist(wallet, trimmed, true);
+  await wipeAllWallets();
+  await importWalletFromMnemonic(mnemonic, 'Main wallet');
+  const wallet = await getActiveWallet();
+  if (!wallet) throw new Error('Restore succeeded but wallet was not retrievable');
   return wallet;
 }
 
 export async function loadWallet(): Promise<Wallet | null> {
-  const privHex = await getSecure(PRIV_KEY);
-  if (!privHex) return null;
-  const priv = hexToBytes(privHex);
-  return sdkWallet.walletFromPrivateKey(priv);
+  return getActiveWallet();
 }
 
 export async function hasWallet(): Promise<boolean> {
-  return (await getSecure(PRIV_KEY)) !== null;
+  await migrateLegacyIfNeeded();
+  return (await getActiveWalletId()) !== null;
 }
 
-/** Destroy the local wallet. Cannot be undone. */
+/** Erase EVERY wallet on the device. Used by the Restore flow before
+ *  importing a new one. Settings → single-wallet delete uses
+ *  deleteWallet() in wallets.ts instead. */
 export async function wipeWallet(): Promise<void> {
-  await removeSecure(PRIV_KEY);
-  await removeSecure(ADDR_KEY);
-  await removeSecure(MNEMONIC_KEY);
-  await removeSecure(BACKED_UP_KEY);
+  await wipeAllWallets();
 }
 
-/** Raw mnemonic read — used by the onboarding backup flow. Settings
- *  re-display should use {@link getMnemonicWithBiometric}. */
 export async function getMnemonic(): Promise<string | null> {
-  return getSecure(MNEMONIC_KEY);
+  return getMnemonicForActive();
 }
 
-/** Same as {@link getMnemonic} but gated behind a biometric prompt. */
 export async function getMnemonicWithBiometric(): Promise<string | null> {
   await assertBiometric({ reason: 'Show recovery phrase' });
-  return getSecure(MNEMONIC_KEY);
+  return getMnemonicForActive();
 }
 
 export async function isMnemonicBackedUp(): Promise<boolean> {
-  return (await getSecure(BACKED_UP_KEY)) === '1';
+  const id = await getActiveWalletId();
+  if (!id) return false;
+  return isBackedUpInRegistry(id);
 }
 
 export async function markMnemonicBackedUp(): Promise<void> {
-  await setSecure(BACKED_UP_KEY, '1');
+  const id = await getActiveWalletId();
+  if (!id) throw new Error('No active wallet to mark backed up');
+  await markBackedUpInRegistry(id);
 }
 
-async function persist(wallet: Wallet, mnemonic: string, backedUp: boolean): Promise<void> {
-  await setSecure(PRIV_KEY, bytesToHex(wallet.privateKey));
-  await setSecure(ADDR_KEY, wallet.address);
-  await setSecure(MNEMONIC_KEY, mnemonic);
-  if (backedUp) {
-    await setSecure(BACKED_UP_KEY, '1');
-  } else {
-    await removeSecure(BACKED_UP_KEY);
-  }
-}
-
-function bytesToHex(b: Uint8Array): string {
-  let out = '';
-  for (const byte of b) out += byte.toString(16).padStart(2, '0');
-  return out;
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  }
-  return out;
-}
+export { getActiveWalletMeta };

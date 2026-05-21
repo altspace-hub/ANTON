@@ -16,10 +16,14 @@ interface Props {
   onSend: () => void;
   onHistory: () => void;
   onTax: () => void;
+  /** Multi-wallet management — open the Wallets list. */
+  onManage: () => void;
+  /** Switch which FutureChain hub the app talks to. */
+  onRpcEndpoint: () => void;
 }
 
 export default function WalletBalanceScreen({
-  address, onReceive, onSend, onHistory, onTax,
+  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint,
 }: Props) {
   const { t } = useTranslation();
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
@@ -70,6 +74,13 @@ export default function WalletBalanceScreen({
           <ActionButton label={t('wallet.send')} onClick={onSend} />
           <ActionButton label={t('wallet.history')} onClick={onHistory} />
           <ActionButton label={t('wallet.tax')} onClick={onTax} />
+        </div>
+
+        {/* Secondary row — wallet management + RPC endpoint. Tucked
+            below the primary action grid because they're rare-use. */}
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <ActionButton label={t('wallet.manage', 'Wallets')} onClick={onManage} />
+          <ActionButton label={t('wallet.rpc', 'RPC endpoint')} onClick={onRpcEndpoint} />
         </div>
 
         <div className="mt-6">

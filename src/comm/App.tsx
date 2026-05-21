@@ -8,6 +8,8 @@ import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
 import { reconcileAllReminders } from './services/event-reminders';
 import { reconcileLiveShares } from './services/geo';
+import { pollIncomingOnce } from './services/received';
+import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 
 // P4-1: every screen the user can navigate to but doesn't see on cold
@@ -109,6 +111,39 @@ export default function App() {
     void reconcileLiveShares();
     return () => stopRelayClient();
   }, [identityVersion]);
+
+  /**
+   * Inbound FutureChain polling — fires on mount, every 30 s, and
+   * on every visibilitychange to 'visible'. Each fresh ReceivedRecord
+   * is persisted into the local tx ledger (services/received.ts →
+   * recordTx) and triggers a local OS notification. Errors inside
+   * pollIncomingOnce never bubble up so a network/parse failure
+   * never breaks the chat experience.
+   *
+   * Permission prompt fires once on mount and is cached. No-op until
+   * a wallet exists.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    void ensureNotificationPermission();
+
+    const tick = async () => {
+      const fresh = await pollIncomingOnce();
+      if (cancelled) return;
+      for (const incoming of fresh) {
+        void notifyIncoming(incoming.tx, incoming.fromName);
+      }
+    };
+    void tick();
+    const interval = window.setInterval(tick, 30_000);
+    const onVisibility = () => { if (document.visibilityState === 'visible') void tick(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   if (view === 'onboarding') {
     return (
