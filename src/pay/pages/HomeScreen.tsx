@@ -14,6 +14,7 @@ import type { PaymentRecord } from '../services/types';
 
 interface Props {
   onScan: () => void;
+  onReceive: () => void;
   onHistory: () => void;
   onSettings: () => void;
 }
@@ -24,7 +25,7 @@ export function shortAddress(addr: string): string {
   return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
-export default function HomeScreen({ onScan, onHistory, onSettings }: Props) {
+export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }: Props) {
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
@@ -120,6 +121,28 @@ export default function HomeScreen({ onScan, onHistory, onSettings }: Props) {
           </span>
           <span className="text-xl font-bold">{t('home.scanToPay')}</span>
           <span className="text-sm mt-1" style={{ opacity: 0.85 }}>{t('home.scanHint')}</span>
+        </button>
+
+        {/* Receive CTA — secondary action, same width, lighter weight so
+            Scan stays the primary call-to-action. */}
+        <button
+          type="button"
+          onClick={onReceive}
+          className="rounded-2xl p-3.5 mt-2 flex items-center justify-center gap-2 active:opacity-90 transition-opacity"
+          style={{ backgroundColor: 'var(--color-surface)',
+                   border: '1px solid var(--color-border)',
+                   color: 'var(--color-text)' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="4" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+            <rect x="14" y="4" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+            <rect x="4" y="14" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"
+                  fill="currentColor" />
+          </svg>
+          <span className="text-sm font-semibold">
+            {t('home.receive', 'Show my QR · Receive')}
+          </span>
         </button>
 
         {/* Recent payments */}

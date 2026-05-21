@@ -19,8 +19,12 @@ import ScanScreen from './pages/ScanScreen';
 import ReviewScreen from './pages/ReviewScreen';
 import PaymentDoneScreen from './pages/PaymentDoneScreen';
 import HistoryScreen from './pages/HistoryScreen';
+import ReceiveScreen from './pages/ReceiveScreen';
 import SettingsScreen from './pages/settings/SettingsScreen';
 import WalletScreen from './pages/settings/WalletScreen';
+import WalletsListScreen from './pages/settings/WalletsListScreen';
+import WalletDetailScreen from './pages/settings/WalletDetailScreen';
+import AddWalletScreen from './pages/settings/AddWalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
@@ -37,11 +41,17 @@ type Screen =
   | 'onboarding-done'
   | 'home'
   | 'scan'
+  | 'receive'
   | 'review'
   | 'payment-done'
   | 'history'
   | 'settings'
   | 'settings-wallet'
+  | 'settings-wallets-list'
+  | 'settings-wallet-detail'
+  | 'settings-wallet-add'
+  | 'settings-wallet-add-backup-show'
+  | 'settings-wallet-add-backup-verify'
   | 'settings-payment'
   | 'settings-money'
   | 'settings-activity'
@@ -54,6 +64,8 @@ export default function App() {
   const [pendingPayment, setPendingPayment] = useState<DecodedPayment | null>(null);
   const [lastRecord, setLastRecord] = useState<PaymentRecord | null>(null);
   const [newAddress, setNewAddress] = useState<string>('');
+  /** Wallet id whose detail screen is being viewed (Settings → Wallets → row). */
+  const [detailWalletId, setDetailWalletId] = useState<string>('');
 
   useEffect(() => {
     (async () => {
@@ -98,10 +110,14 @@ export default function App() {
     return (
       <HomeScreen
         onScan={() => setScreen('scan')}
+        onReceive={() => setScreen('receive')}
         onHistory={() => setScreen('history')}
         onSettings={() => setScreen('settings')}
       />
     );
+  }
+  if (screen === 'receive') {
+    return <ReceiveScreen onBack={() => setScreen('home')} />;
   }
   if (screen === 'scan') {
     return (
@@ -152,6 +168,7 @@ export default function App() {
       <SettingsScreen
         onBack={() => setScreen('home')}
         onWallet={() => setScreen('settings-wallet')}
+        onWalletsList={() => setScreen('settings-wallets-list')}
         onPaymentDetails={() => setScreen('settings-payment')}
         onMoneyProfile={() => setScreen('settings-money')}
         onActivityReview={() => setScreen('settings-activity')}
@@ -163,6 +180,48 @@ export default function App() {
   }
   if (screen === 'settings-wallet') {
     return <WalletScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-wallets-list') {
+    return (
+      <WalletsListScreen
+        onBack={() => setScreen('settings')}
+        onAddWallet={() => setScreen('settings-wallet-add')}
+        onOpenWallet={(id) => { setDetailWalletId(id); setScreen('settings-wallet-detail'); }}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-detail') {
+    return (
+      <WalletDetailScreen
+        walletId={detailWalletId}
+        onBack={() => setScreen('settings-wallets-list')}
+        onDeleted={() => setScreen('settings-wallets-list')}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-add') {
+    return (
+      <AddWalletScreen
+        onBack={() => setScreen('settings-wallets-list')}
+        onCreated={() => setScreen('settings-wallet-add-backup-show')}
+        onImported={() => setScreen('settings-wallets-list')}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-add-backup-show') {
+    return (
+      <BackupShowScreen
+        onContinue={() => setScreen('settings-wallet-add-backup-verify')}
+      />
+    );
+  }
+  if (screen === 'settings-wallet-add-backup-verify') {
+    return (
+      <BackupVerifyScreen
+        onBack={() => setScreen('settings-wallet-add-backup-show')}
+        onVerified={() => setScreen('settings-wallets-list')}
+      />
+    );
   }
   if (screen === 'settings-payment') {
     return <PaymentDetailsScreen onBack={() => setScreen('settings')} />;

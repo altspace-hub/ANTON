@@ -22,6 +22,8 @@ import { wipeMoneyProfile } from '../../services/money-profile';
 interface Props {
   onBack: () => void;
   onWallet: () => void;
+  /** Multi-wallet management (list / switch / add / delete). */
+  onWalletsList: () => void;
   onPaymentDetails: () => void;
   onMoneyProfile: () => void;
   onActivityReview: () => void;
@@ -34,7 +36,7 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onWallet, onPaymentDetails, onMoneyProfile, onActivityReview,
+  onBack, onWallet, onWalletsList, onPaymentDetails, onMoneyProfile, onActivityReview,
   onRecoveryPhrase, onRestore, onReset,
 }: Props) {
   const { t } = useTranslation();
@@ -110,6 +112,26 @@ export default function SettingsScreen({
                 {walletAddress
                   ? `${walletAddress.slice(0, 12)}…${walletAddress.slice(-6)}`
                   : t('settings.walletConnected')}
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 style={{ color: 'var(--color-text-dim)' }}>
+              <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Wallets — multi-wallet management */}
+          <button type="button" onClick={onWalletsList}
+                  className="rounded-xl p-4 flex items-center justify-between text-left"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)' }}>
+            <div>
+              <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+                {t('settings.wallets', 'Wallets')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('settings.walletsSub', 'Switch active wallet · add · delete')}
               </div>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
