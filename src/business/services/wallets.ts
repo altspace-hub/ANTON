@@ -24,9 +24,14 @@
  * getActiveWalletMeta() separately.
  */
 import { wallet as sdkWallet } from '@futurechain/sdk';
+import { ed25519 } from '@noble/curves/ed25519';
 import { assertBiometric } from './biometric';
 import { getSecure, removeSecure, setSecure } from './secure-store';
 import { loadConfig, saveConfig } from './merchant';
+import {
+  hasAlias as nativeHasAlias, isSecureSignerAvailable,
+  signWithAlias, wrapPriv,
+} from './secure-signer';
 
 const IDS_KEY     = 'fc.wallet.ids';
 const ACTIVE_KEY  = 'fc.wallet.active';
@@ -46,6 +51,11 @@ export interface WalletMeta {
   address: string;
   createdAt: number;
   backedUp: boolean;
+  /** Wave 7 — 32-byte Ed25519 public key as hex. Required by the
+   *  signer-callback path so the SDK can attach the pubkey to a
+   *  signed tx without having the priv. See Pay's wallets.ts for
+   *  the migration story. */
+  publicKeyHex?: string;
 }
 
 export interface Wallet {
@@ -200,6 +210,7 @@ export async function createWallet(
     address: wallet.address,
     createdAt: Date.now(),
     backedUp: false,
+    publicKeyHex: bytesToHex(wallet.publicKey),
   };
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
@@ -232,6 +243,7 @@ export async function importWalletFromMnemonic(
     address: wallet.address,
     createdAt: Date.now(),
     backedUp: true,
+    publicKeyHex: bytesToHex(wallet.publicKey),
   };
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
@@ -310,6 +322,68 @@ export async function wipeAllWallets(): Promise<void> {
   await removeSecure(LEGACY_ADDR);
   await removeSecure(LEGACY_MNEMONIC);
   await removeSecure(LEGACY_BACKED_UP);
+}
+
+// ── Native-bound signer (Wave 7) — see src/pay/services/wallets.ts
+// for the full rationale. Used here by z-reports.ts to sign the
+// daily Z-rapport without the priv ever entering JS heap. ─────────
+
+export interface ActiveSigner {
+  alias: string;
+  publicKey: Uint8Array;
+  address: string;
+  sign: (digest: Uint8Array) => Promise<Uint8Array>;
+}
+
+export async function getActiveSigner(): Promise<ActiveSigner | null> {
+  const id = await getActiveWalletId();
+  if (!id) return null;
+  const list = await listWallets();
+  let meta = list.find(w => w.id === id);
+  if (!meta) return null;
+
+  if (isSecureSignerAvailable()) {
+    const wrapped = await nativeHasAlias(id);
+    if (!wrapped) {
+      const hex = await getSecure(privKey(id));
+      if (!hex) {
+        throw new Error(
+          `getActiveSigner: priv hex missing for wallet ${id} and no native alias yet`,
+        );
+      }
+      if (!meta.publicKeyHex) {
+        const w = sdkWallet.walletFromPrivateKey(hexToBytes(hex));
+        meta.publicKeyHex = bytesToHex(w.publicKey);
+        const updated = list.map(x => (x.id === id ? meta! : x));
+        await writeRegistry(updated);
+      }
+      await wrapPriv(id, hex);
+      const mnemonic = await getSecure(mnemonicKey(id));
+      if (mnemonic) await removeSecure(privKey(id));
+    }
+    if (!meta.publicKeyHex) {
+      throw new Error(
+        `getActiveSigner: wallet ${id} has no publicKeyHex`,
+      );
+    }
+    return {
+      alias: id,
+      publicKey: hexToBytes(meta.publicKeyHex),
+      address: meta.address,
+      sign: (digest: Uint8Array) => signWithAlias(id, digest),
+    };
+  }
+
+  // Dev / web fallback.
+  const hex = await getSecure(privKey(id));
+  if (!hex) throw new Error('getActiveSigner: no priv hex and no native signer (dev only)');
+  const w = sdkWallet.walletFromPrivateKey(hexToBytes(hex));
+  return {
+    alias: id,
+    publicKey: w.publicKey,
+    address: w.address,
+    sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
+  };
 }
 
 function newId(): string {

@@ -16,6 +16,7 @@ import type { DecodedCreditor, DecodedPayment, PaymentRecord } from './types';
 import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
 import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
+import { getActiveSigner } from './wallets';
 import { requireBiometric } from './biometric';
 import { assembleDraft } from './pacs008-draft';
 import {
@@ -239,13 +240,18 @@ export async function executePayment(
   decoded: DecodedPayment,
   risk?: FraudAssessment,
 ): Promise<PaymentRecord> {
-  const [identity, wallet] = await Promise.all([
+  const [identity, signer] = await Promise.all([
     loadPayerIdentity(),
-    loadWallet(),
+    getActiveSigner(),
   ]);
-  if (!wallet) {
+  if (!signer) {
     throw new Error('executePayment: no wallet on this device');
   }
+  // Adapter so the existing draft / utxo / submit lines that read
+  // `wallet.address` and `wallet.publicKey` keep working without a
+  // refactor — the signer carries both. `privateKey` is intentionally
+  // absent on this shape; signing goes through signer.sign().
+  const wallet = { address: signer.address, publicKey: signer.publicKey };
 
   const id = newId();
   const draft = assembleDraft(identity, wallet.address, decoded);
@@ -316,8 +322,12 @@ export async function executePayment(
     const uetr = extractUetr(message);
 
     // 3. Signed Transaction (greedy UTXO + outputs + Ed25519 sig).
-    const tx = pacs008.buildSignedPacs008Transaction({
-      wallet,
+    // Wave 7: signer-callback path so the priv key never enters the
+    // JS heap on a real device. Falls back to in-JS @noble on dev.
+    const tx = await pacs008.buildSignedPacs008TransactionWithSigner({
+      publicKey: wallet.publicKey,
+      senderAddress: wallet.address,
+      signer: signer.sign,
       utxos,
       recipient: decoded.toAddress,
       amountSatoshi,

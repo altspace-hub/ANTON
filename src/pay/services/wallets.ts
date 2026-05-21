@@ -30,8 +30,13 @@
  * accessors) stays in wallet.ts and now reads through this module.
  */
 import { wallet as sdkWallet } from '@futurechain/sdk';
+import { ed25519 } from '@noble/curves/ed25519';
 import { assertBiometric } from './biometric';
 import { getSecure, removeSecure, setSecure } from './secure-store';
+import {
+  hasAlias as nativeHasAlias, isSecureSignerAvailable,
+  signWithAlias, wrapPriv,
+} from './secure-signer';
 
 // ── Secure-store key layout ─────────────────────────────────────────
 const IDS_KEY     = 'fc.wallet.ids';
@@ -53,6 +58,14 @@ export interface WalletMeta {
   address: string;
   createdAt: number;
   backedUp: boolean;
+  /** 32-byte Ed25519 public key as hex. Lazy-added in Wave 7: pre-
+   *  Wave-7 wallets derive the pubkey from the priv hex still in
+   *  secure-store; on first sign attempt the migration writes this
+   *  field and wraps the priv into the native signer. Required for
+   *  the signer-callback path because the SDK needs the pubkey to
+   *  attach to the signed tx, and the priv may no longer be
+   *  reachable from JS. */
+  publicKeyHex?: string;
 }
 
 export interface Wallet {
@@ -223,6 +236,7 @@ export async function createWallet(
     address: wallet.address,
     createdAt: Date.now(),
     backedUp: false,
+    publicKeyHex: bytesToHex(wallet.publicKey),
   };
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
@@ -256,6 +270,7 @@ export async function importWalletFromMnemonic(
     address: wallet.address,
     createdAt: Date.now(),
     backedUp: true,
+    publicKeyHex: bytesToHex(wallet.publicKey),
   };
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
@@ -344,6 +359,109 @@ export async function wipeAllWallets(): Promise<void> {
   await removeSecure(LEGACY_ADDR);
   await removeSecure(LEGACY_MNEMONIC);
   await removeSecure(LEGACY_BACKED_UP);
+}
+
+// ── Native-bound signer (Wave 7) ────────────────────────────────────
+
+export interface ActiveSigner {
+  /** Wallet id — used as the native plugin's alias. */
+  alias: string;
+  /** 32-byte Ed25519 public key. Safe to expose. */
+  publicKey: Uint8Array;
+  /** fc_… Base58 address derived from the public key. */
+  address: string;
+  /** Async sign — delegates to the native plugin on a real device,
+   *  falls back to in-JS @noble/ed25519 in dev / browser preview.
+   *  The priv key never leaves native on the native path. */
+  sign: (digest: Uint8Array) => Promise<Uint8Array>;
+}
+
+/**
+ * Get a signer for the active wallet. Wave 7 of the security plan:
+ *
+ *   • On native (Capacitor Android): the priv is held under an
+ *     Android-Keystore-bound AES-GCM key in the FcSecureSigner
+ *     plugin. Signing happens in JVM via i2p eddsa. The priv NEVER
+ *     enters JS heap.
+ *
+ *   • First call for a pre-Wave-7 wallet TRANSPARENTLY migrates:
+ *       1. Read priv hex from secure-store.
+ *       2. Wrap it into the native plugin under the wallet's alias.
+ *       3. Stamp the wallet meta's `publicKeyHex` for future signs.
+ *       4. If the mnemonic is also stored (it is for every wallet
+ *          created in-app), DELETE the priv hex from secure-store —
+ *          the mnemonic is the recoverable source of truth.
+ *
+ *   • Dev / web preview falls back to in-JS @noble/ed25519. The
+ *     priv comes from secure-store, fills a Uint8Array for a few
+ *     ms, signs, and is dropped. This is the legacy path; it
+ *     stays so the existing unit tests + dev preview keep working.
+ *
+ * Returns null when no wallet is active.
+ */
+export async function getActiveSigner(): Promise<ActiveSigner | null> {
+  const id = await getActiveWalletId();
+  if (!id) return null;
+  // listWallets runs migrateLegacy + heal — guarantees meta is fresh.
+  const list = await listWallets();
+  let meta = list.find(w => w.id === id);
+  if (!meta) return null;
+
+  if (isSecureSignerAvailable()) {
+    // Native path. Migrate if the plugin doesn't yet hold this wallet.
+    const wrapped = await nativeHasAlias(id);
+    if (!wrapped) {
+      const hex = await getSecure(privKey(id));
+      if (!hex) {
+        throw new Error(
+          `getActiveSigner: priv hex missing for wallet ${id} and no native alias yet; cannot sign`,
+        );
+      }
+      // Stamp the publicKeyHex on the meta if it isn't already there.
+      if (!meta.publicKeyHex) {
+        const w = sdkWallet.walletFromPrivateKey(hexToBytes(hex));
+        meta.publicKeyHex = bytesToHex(w.publicKey);
+        const updated = list.map(x => (x.id === id ? meta! : x));
+        await writeRegistry(updated);
+      }
+      await wrapPriv(id, hex);
+      // Only delete the priv hex if the mnemonic is around to
+      // restore from. If the mnemonic is missing (shouldn't happen
+      // for in-app-created wallets, but defensive) keep the priv as
+      // backup — losing the wallet is worse than the residual.
+      const mnemonic = await getSecure(mnemonicKey(id));
+      if (mnemonic) await removeSecure(privKey(id));
+    }
+    if (!meta.publicKeyHex) {
+      // Defensive: at this point the priv is in the plugin only and
+      // we have no pubkey on the meta. We need the priv to derive
+      // pubkey — unwrap, derive, drop. This is the migration-edge
+      // case; should not happen on a fresh install.
+      throw new Error(
+        `getActiveSigner: wallet ${id} has no publicKeyHex; mnemonic-based recovery needed`,
+      );
+    }
+    return {
+      alias: id,
+      publicKey: hexToBytes(meta.publicKeyHex),
+      address: meta.address,
+      sign: (digest: Uint8Array) => signWithAlias(id, digest),
+    };
+  }
+
+  // Dev / web fallback — in-JS signing via @noble. Priv lives in
+  // secure-store and transits the JS heap. Acceptable in dev.
+  const hex = await getSecure(privKey(id));
+  if (!hex) {
+    throw new Error('getActiveSigner: no priv hex and no native signer (dev only)');
+  }
+  const w = sdkWallet.walletFromPrivateKey(hexToBytes(hex));
+  return {
+    alias: id,
+    publicKey: w.publicKey,
+    address: w.address,
+    sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

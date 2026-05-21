@@ -6,6 +6,8 @@ import android.view.WindowManager;
 
 import com.getcapacitor.BridgeActivity;
 
+import com.futurechain.anton.communication.plugins.FcSecureSignerPlugin;
+
 /**
  * MainActivity for ANTON Communication.
  *
@@ -22,6 +24,9 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register FcSecureSigner before super.onCreate (Wave 7).
+        registerPlugin(FcSecureSignerPlugin.class);
+
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!isDebuggable) {
             getWindow().setFlags(

@@ -30,7 +30,7 @@ import { openDb, STORE_Z_REPORTS, INDEX_ZREPORTS_BY_CLOSED } from './db';
 import { consumeZNumber, loadConfig } from './merchant';
 import { listReceipts } from './receipts';
 import { listRefunds } from './refunds';
-import { getActiveWallet } from './wallets';
+import { getActiveSigner, getActiveWallet } from './wallets';
 import type { Receipt, RefundReceipt, ZReport } from './types';
 
 // IDB serialisation — bigint → string at the boundary.
@@ -103,8 +103,11 @@ export async function listZReports(limit = 50): Promise<ZReport[]> {
 export async function closeDay(now = Date.now()): Promise<ZReport> {
   const config = await loadConfig();
   if (!config) throw new Error('closeDay: merchant not configured');
-  const wallet = await getActiveWallet();
-  if (!wallet) throw new Error('closeDay: no active wallet — cannot sign the Z report');
+  // Wave 7 — sign via the native plugin path so the priv never
+  // enters JS heap. getActiveSigner handles transparent migration
+  // from the legacy priv-in-secure-store layout.
+  const signer = await getActiveSigner();
+  if (!signer) throw new Error('closeDay: no active wallet — cannot sign the Z report');
 
   const prev = await lastZReport();
   const openedAt = prev ? prev.closedAt : 0;
@@ -182,9 +185,10 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
   const canon = canonicalize(base);
   const selfHashBytes = sha256(new TextEncoder().encode(canon));
   const selfHash = bytesToHex(selfHashBytes);
-  // sdkWallet.sign is byte-exact to the FC chain's Ed25519; reuse it.
-  void sdkWallet; // import kept for clarity even though signing uses noble below
-  const sig = ed25519.sign(selfHashBytes, wallet.privateKey);
+  // Wave 7 — sign in native via signer.sign() rather than directly
+  // touching wallet.privateKey. Byte-for-byte identical Ed25519
+  // signature; just doesn't transit JS heap.
+  const sig = await signer.sign(selfHashBytes);
   const signature = bytesToHex(sig);
 
   const signed: ZReport = { ...base, selfHash, signature };

@@ -27,6 +27,7 @@
 import { pacs008 } from '@futurechain/sdk';
 import { assertBiometric } from './biometric';
 import { loadWallet } from './wallet';
+import { getActiveSigner } from './wallets';
 import { loadPayerIdentity } from './payment-identity';
 import { getRpc } from './fc-rpc';
 
@@ -70,13 +71,17 @@ export async function sendOnChain(input: SendInput): Promise<SendResult> {
     reason: shortGateReason(amountFtc, input.to),
   });
 
-  const [identity, wallet] = await Promise.all([
+  const [identity, signer] = await Promise.all([
     loadPayerIdentity(),
-    loadWallet(),
+    getActiveSigner(),
   ]);
-  if (!wallet) {
+  if (!signer) {
     throw new Error('no wallet on this device');
   }
+  // Wave 7 — wallet shape carries only the public bits. Signing
+  // goes through signer.sign(); the priv key never enters JS heap
+  // on a real device.
+  const wallet = { address: signer.address, publicKey: signer.publicKey };
 
   const client = await getRpc();
   const utxos = await client.getUtxos(wallet.address);
@@ -103,8 +108,10 @@ export async function sendOnChain(input: SendInput): Promise<SendResult> {
   });
   const uetr = extractUetr(message);
 
-  const tx = pacs008.buildSignedPacs008Transaction({
-    wallet,
+  const tx = await pacs008.buildSignedPacs008TransactionWithSigner({
+    publicKey: wallet.publicKey,
+    senderAddress: wallet.address,
+    signer: signer.sign,
     utxos,
     recipient: input.to,
     amountSatoshi,

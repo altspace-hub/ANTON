@@ -6,6 +6,8 @@ import android.view.WindowManager;
 
 import com.getcapacitor.BridgeActivity;
 
+import com.futurechain.anton.pay.plugins.FcSecureSignerPlugin;
+
 /**
  * MainActivity for ANTON Pay.
  *
@@ -22,6 +24,11 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register FcSecureSigner before super.onCreate so it's
+        // available to the WebView from the first JS call. Wave 7
+        // native Ed25519 signing.
+        registerPlugin(FcSecureSignerPlugin.class);
+
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!isDebuggable) {
             getWindow().setFlags(
