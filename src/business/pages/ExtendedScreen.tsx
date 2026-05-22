@@ -30,11 +30,16 @@ import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-syn
 import { notifyReceiptConfirmed } from '../services/notifications';
 import type { MerchantConfig, Receipt } from '../services/types';
 import { loadWallet } from '../services/wallet';
+import { useViewport } from '../hooks/useViewport';
 
 type Phase = 'cart' | 'review' | 'qr' | 'done';
 
 export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
+  // On a tablet the item grid widens to 3 columns — the centred
+  // content column is ~860px, so 3 keeps generous POS-sized touch
+  // targets; a phone stays 2-up.
+  const viewport = useViewport();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [walletConnected, setWalletConnected] = useState(false);
@@ -408,7 +413,7 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
                   ))}
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2">
+              <div className={`grid gap-2 ${viewport === 'tablet' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {visible.map((item) => (
               <button
                 type="button"
