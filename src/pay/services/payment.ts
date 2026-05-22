@@ -18,12 +18,14 @@ import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
 import { getActiveSigner } from './wallets';
 import { requireBiometric } from './biometric';
-import { assembleDraft } from './pacs008-draft';
+import { assembleDraft, type PartyIdentification } from './pacs008-draft';
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
 import type { FraudAssessment } from './fraud-engine';
 import { getRpc } from './fc-rpc';
+import { getDisplayQuote } from './fx';
+import { travelRuleTierFor } from './travel-rule';
 
 /** 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000;
@@ -283,6 +285,16 @@ export async function executePayment(
   if (!signer) {
     throw new Error('executePayment: no wallet on this device');
   }
+  // A payment must carry a real originator name — shipping the bare
+  // fc_ address as the debtor "name" is not a KYC identity, and the
+  // chain's compliance validator rejects a missing / placeholder
+  // debtor name. The ReviewScreen gate is the primary block; this is
+  // the defence-in-depth backstop right before signing.
+  if (!identity || !identity.name.trim()) {
+    throw new Error(
+      'Set your payment identity (your name) in Settings before sending a payment.',
+    );
+  }
   // Adapter so the existing draft / utxo / submit lines that read
   // `wallet.address` and `wallet.publicKey` keep working without a
   // refactor — the signer carries both. `privateKey` is intentionally
@@ -290,7 +302,14 @@ export async function executePayment(
   const wallet = { address: signer.address, publicKey: signer.publicKey };
 
   const id = newId();
-  const draft = assembleDraft(identity, wallet.address, decoded);
+  // Travel-Rule tier — decides whether the originator postal address
+  // is disclosed on-chain: >= EUR 1000 (or no live FX rate — the
+  // conservative default) includes it; sub-threshold omits it per
+  // GDPR data-minimisation. Resolved once here so the signed message
+  // and the on-record draft agree.
+  const eurQuote = await getDisplayQuote('EUR');
+  const tier = travelRuleTierFor(decoded.amountMicroFtc, eurQuote);
+  const draft = assembleDraft(identity, wallet.address, decoded, tier);
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   const amountFtc = microFtcToFtc(decoded.amountMicroFtc);
   const rpc = await getRpc();
@@ -374,9 +393,10 @@ export async function executePayment(
       }
     }
     const message = pacs008.buildPacs008({
-      debtor: identityToPacsParty(identity, wallet.address),
-      creditor: creditorToPacsParty(decoded),
+      debtor: pacsPartyFromDraft(draft.debtor),
+      creditor: pacsPartyFromDraft(draft.creditor),
       amountFtc,
+      purpose: isoPurpose(draft.purpose),
       ...(remittanceInfo
         ? { remittanceInfo }
         : { remittanceText: decoded.ref }),
@@ -487,23 +507,33 @@ function mapSubmitStatus(s: string): PaymentRecord['status'] {
   return 'queued';
 }
 
-function identityToPacsParty(
-  identity: PayerIdentity | null,
-  walletAddress: string,
-): pacs008.Pacs008Party {
-  return {
-    name: identity?.name.trim() || walletAddress,
-    countryOfResidence: identity?.country.trim().toUpperCase() || 'SE',
-    accountId: walletAddress,
+/** Convert a draft PartyIdentification — which has already had the
+ *  Travel-Rule tier applied (postal address present on full /
+ *  conservative tiers, omitted on minimal) — into the SDK's on-chain
+ *  Pacs008Party, carrying the structured postal address through to
+ *  the signed message. */
+function pacsPartyFromDraft(p: PartyIdentification): pacs008.Pacs008Party {
+  const party: pacs008.Pacs008Party = {
+    name: p.name,
+    countryOfResidence: p.country,
+    accountId: p.address,
   };
+  if (p.street || p.city || p.postcode) {
+    party.postalAddress = {
+      streetName: p.street || undefined,
+      townName: p.city || undefined,
+      postCode: p.postcode || undefined,
+      country: p.country,
+    };
+  }
+  return party;
 }
 
-function creditorToPacsParty(decoded: DecodedPayment): pacs008.Pacs008Party {
-  return {
-    name: decoded.creditor?.name.trim() || decoded.merchantId,
-    countryOfResidence: decoded.creditor?.country.trim().toUpperCase() || 'SE',
-    accountId: decoded.toAddress,
-  };
+/** Map the app's display purpose to a valid ISO 20022 external
+ *  purpose code for `Purp.Cd`. GDDS / SCVE / OTHR are ISO codes; the
+ *  app-local 'REFUND' has no ISO equivalent and maps to OTHR. */
+function isoPurpose(p: string): string {
+  return p === 'REFUND' ? 'OTHR' : p;
 }
 
 function extractUetr(message: pacs008.Pacs008Message): string {

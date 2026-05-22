@@ -36,8 +36,16 @@ const ANNA: PayerIdentity = {
 };
 
 describe('payerToParty', () => {
-  it('maps a saved identity to the debtor party (country upper-cased)', () => {
+  it('minimal tier: name + country only (GDPR data-minimisation, sub-threshold P2P)', () => {
     expect(payerToParty(ANNA, 'fc_anna_wallet')).toEqual({
+      address: 'fc_anna_wallet',
+      name: 'Anna Andersson',
+      country: 'SE',
+    });
+  });
+
+  it('full tier: includes the postal address (Travel-Rule >= EUR 1000)', () => {
+    expect(payerToParty(ANNA, 'fc_anna_wallet', 'full')).toEqual({
       address: 'fc_anna_wallet',
       name: 'Anna Andersson',
       country: 'SE',
