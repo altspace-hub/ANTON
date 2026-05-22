@@ -44,6 +44,7 @@ import { useViewport } from './hooks/useViewport';
 import NavRail, { type NavSection } from './components/NavRail';
 import LockScreen from './components/LockScreen';
 import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
+import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 import type { SaleMode } from './services/types';
 
 type Screen =
@@ -73,6 +74,34 @@ type Screen =
   | 'settings-recovery'
   | 'backup-show'
   | 'backup-verify';
+
+/** Where the Android hardware back button steps to from each screen.
+ *  A screen absent from this map (home, the onboarding entry, the
+ *  done celebration) has no parent — back there exits the app. */
+const BACK_PARENT: Partial<Record<Screen, Screen>> = {
+  'onboarding-mode': 'onboarding-welcome',
+  'onboarding-register': 'onboarding-mode',
+  'onboarding-items': 'onboarding-register',
+  'simple': 'home',
+  'extended': 'home',
+  'receipts': 'home',
+  'receipt-detail': 'receipts',
+  'statistics': 'home',
+  'inventory': 'home',
+  'settings': 'home',
+  'settings-wallet': 'settings',
+  'settings-wallets-list': 'settings',
+  'settings-wallet-detail': 'settings-wallets-list',
+  'settings-wallet-add': 'settings-wallets-list',
+  'settings-rpc': 'settings',
+  'settings-day-close': 'settings',
+  'settings-pin': 'settings',
+  'settings-items': 'settings',
+  'settings-templates': 'settings-items',
+  'settings-recovery': 'settings',
+  'backup-show': 'settings',
+  'backup-verify': 'backup-show',
+};
 
 export default function App() {
   const { t } = useTranslation();
@@ -144,6 +173,18 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
+
+  // Android hardware back button — step to the current screen's parent,
+  // or fall through to the double-press-to-exit prompt at a root screen.
+  useAndroidBackButton({
+    onBack(): AppBackResult {
+      // Behind the lock gate there is nothing to navigate — exit.
+      if (locked) return 'exit';
+      const parent = BACK_PARENT[screen];
+      if (parent) { setScreen(parent); return 'handled'; }
+      return 'exit';
+    },
+  });
 
   // App-open lock — block the whole UI behind a biometric gate when
   // the merchant enabled it. Cold start begins locked; the grace-aware

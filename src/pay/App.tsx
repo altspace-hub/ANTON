@@ -35,6 +35,7 @@ import ScheduledPaymentsScreen from './pages/settings/ScheduledPaymentsScreen';
 import AddScheduleScreen from './pages/settings/AddScheduleScreen';
 import LockScreen from './components/LockScreen';
 import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
+import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 import { hasProfile } from './services/profile';
 import { maybeRunIdlePoll, runOneShotPoll } from './services/idle-poller';
 import { reconcileScheduleNotifications, getSchedule, recordFire } from './services/schedules';
@@ -70,6 +71,35 @@ type Screen =
   | 'settings-rpc'
   | 'settings-schedules'
   | 'settings-schedules-add';
+
+/** Where the Android hardware back button steps to from each screen.
+ *  A screen absent from this map (home, the onboarding entry, the
+ *  done celebration) has no parent — back there exits the app.
+ *  `review` is handled separately so it can also clear the in-flight
+ *  scheduled-payment id. */
+const BACK_PARENT: Partial<Record<Screen, Screen>> = {
+  'onboarding-backup-show': 'onboarding-welcome',
+  'onboarding-backup-verify': 'onboarding-backup-show',
+  'scan': 'home',
+  'receive': 'home',
+  'payment-done': 'home',
+  'history': 'home',
+  'settings': 'home',
+  'settings-wallet': 'settings',
+  'settings-wallets-list': 'settings',
+  'settings-wallet-detail': 'settings-wallets-list',
+  'settings-wallet-add': 'settings-wallets-list',
+  'settings-wallet-add-backup-show': 'settings-wallet-add',
+  'settings-wallet-add-backup-verify': 'settings-wallet-add-backup-show',
+  'settings-payment': 'settings',
+  'settings-money': 'settings',
+  'settings-activity': 'settings',
+  'settings-recovery': 'settings',
+  'settings-restore': 'settings',
+  'settings-rpc': 'settings',
+  'settings-schedules': 'settings',
+  'settings-schedules-add': 'settings-schedules',
+};
 
 export default function App() {
   const { t } = useTranslation();
@@ -184,6 +214,25 @@ export default function App() {
       unlistenSchedule?.();
     };
   }, []);
+
+  // Android hardware back button — step to the current screen's parent,
+  // or fall through to the double-press-to-exit prompt at a root screen.
+  useAndroidBackButton({
+    onBack(): AppBackResult {
+      // Behind the lock gate there is nothing to navigate — exit.
+      if (locked) return 'exit';
+      // Review carries an in-flight scheduled-payment id; clear it so a
+      // back-out doesn't leave the next manual scan rolling a schedule.
+      if (screen === 'review') {
+        setFiringScheduleId(null);
+        setScreen('home');
+        return 'handled';
+      }
+      const parent = BACK_PARENT[screen];
+      if (parent) { setScreen(parent); return 'handled'; }
+      return 'exit';
+    },
+  });
 
   // App-open lock — biometric gate over the whole UI when enabled.
   if (locked) {
