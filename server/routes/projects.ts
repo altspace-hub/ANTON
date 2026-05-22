@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { createProjectWorkspace, deleteProjectWorkspace } from '../services/workspace.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createProjectRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -164,7 +165,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
 
       res.json({ totals, byModule, recentActivity });
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
+      const msg = safeError(error);
       res.status(500).json({ error: msg });
     }
   });

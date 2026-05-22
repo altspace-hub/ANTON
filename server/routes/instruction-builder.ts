@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { callSync } from '../services/claude-client.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -14,7 +15,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       );
       res.json(projects);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -36,7 +37,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', id);
       res.json(project);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -56,7 +57,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
 
       res.json({ ...(project as any), instruction_files: files });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -89,7 +90,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id);
       res.json(project);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -150,7 +151,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
         outputTokens: result.outputTokens,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -199,7 +200,7 @@ Format as well-structured Markdown. Be specific and actionable.`,
         outputTokens: result.outputTokens,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -283,7 +284,7 @@ Format your response as:
 
       res.json({ reviews });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -391,7 +392,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
         allFiles,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -401,7 +402,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       const profiles = await db.all('SELECT * FROM tool_profiles ORDER BY display_name ASC');
       res.json(profiles);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -415,7 +416,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       }
       res.json(profile);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -447,7 +448,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       const profile = await db.get('SELECT * FROM tool_profiles WHERE id = ?', req.params.id);
       res.json(profile);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { requireRole } from '../middleware/auth.js';
 import * as budgetManager from '../services/budget-manager.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createAdminRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -85,7 +86,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       const budgets = budgetManager.getAllUserBudgets(db);
       res.json({ budgets });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });
@@ -104,7 +105,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       const success = budgetManager.updateUserBudget(db, userId, monthlyTokenBudget, alertThreshold);
       res.json({ success });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });
@@ -116,7 +117,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       const success = budgetManager.resetMonthlyUsage(db, userId);
       res.json({ success });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });

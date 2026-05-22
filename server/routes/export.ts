@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { safeError } from '../lib/error-response.js';
 
 // PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
 // to improve server startup time. Dynamic imports are cached by Node's module system after first call.
@@ -205,7 +206,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           res.status(400).json({ error: `Unsupported format: ${format}` });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Export failed';
+      const message = safeError(error);
       console.error('[export] Error:', message);
       res.status(500).json({ error: message });
     }
@@ -260,7 +261,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         res.send(await fs.readFile(outputPath));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Template export failed';
+      const message = safeError(error);
       console.error('[export/with-template] Error:', message);
       res.status(500).json({ error: message });
     }
@@ -376,7 +377,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Trust certificate generation failed';
+      const message = safeError(error);
       console.error('[export/trust-certificate] Error:', message);
       res.status(500).json({ error: message });
     }

@@ -7,6 +7,7 @@ import {
   bundleScriptMediumTemplate,
   bundleCodingLargeBlueprint,
 } from '../services/anton-bundler.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -116,7 +117,7 @@ export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
       res.send(buffer);
     } catch (error: any) {
       console.error('[coding] Export error:', error);
-      res.status(500).json({ error: error.message || 'Failed to export bundle' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

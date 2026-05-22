@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { callSync } from '../services/claude-client.js';
 import { ingestLocalProject } from '../services/project-ingestor.js';
+import { safeError } from '../lib/error-response.js';
 
 const DIMENSIONS = [
   { name: 'feature-completeness', persona: 'Product Manager', reviewType: 'product' },
@@ -22,7 +23,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
       const reviews = await db.all('SELECT * FROM alignment_reviews ORDER BY created_at DESC');
       res.json(reviews);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -44,7 +45,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', id);
       res.json(review);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -71,7 +72,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
         steering_instructions: steering,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -97,7 +98,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
         res.status(400).json({ error: 'Unsupported source_type. Currently supports: local-directory' });
       }
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -141,7 +142,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
 
       res.json({ goals_reference: goalsRef });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -225,7 +226,7 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
 
       res.json(alignmentReport);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -320,7 +321,7 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
 
       res.json({ files: generatedFiles });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -341,7 +342,7 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
 
       res.json(history);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

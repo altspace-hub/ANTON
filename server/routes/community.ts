@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { safeError } from '../lib/error-response.js';
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1282,7 +1283,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       res.json({ ok: true, ...result });
     } catch (err) {
       console.error('[community] Entity share error:', err);
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to share entities' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

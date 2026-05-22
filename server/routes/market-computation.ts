@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketComputationService } from '../services/market-computation-service.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createMarketComputationRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -32,7 +33,7 @@ export async function createMarketComputationRoutes(db: DatabaseAdapter) {
       res.json(result);
     } catch (err) {
       console.error('[market-compute] Run template error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to run computation';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });
