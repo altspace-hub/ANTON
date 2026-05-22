@@ -22,6 +22,7 @@ import {
   topItems, revenueByCategory, revenueByVatRate, hourHistogram,
   type StatsBundle, type StatsPeriod, type SalesSummary,
 } from '../services/stats';
+import { useViewport } from '../hooks/useViewport';
 
 interface Props {
   onBack: () => void;
@@ -31,6 +32,7 @@ const PERIODS: StatsPeriod[] = ['today', 'week', 'month', 'quarter', 'year', 'al
 
 export default function StatisticsScreen({ onBack }: Props) {
   const { t } = useTranslation();
+  const viewport = useViewport();
   const [bundle, setBundle] = useState<StatsBundle | null>(null);
   const [nameToCategory, setNameToCategory] = useState<Map<string, string>>(new Map());
   const [period, setPeriod] = useState<StatsPeriod>('week');
@@ -124,7 +126,9 @@ export default function StatisticsScreen({ onBack }: Props) {
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            {/* On a tablet the four metric cards sit in one row;
+                a phone keeps the 2×2 block. */}
+            <div className={`grid gap-2 mb-4 ${viewport === 'tablet' ? 'grid-cols-4' : 'grid-cols-2'}`}>
               <SummaryCard
                 label={t('stats.gross', 'Gross sales')}
                 value={`${view.summary.grossSek.toFixed(0)} SEK`}
@@ -163,6 +167,10 @@ export default function StatisticsScreen({ onBack }: Props) {
                         valueFormat={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)} />
             </Panel>
 
+            {/* Analytic panels — on a tablet they pair into two
+                columns under the full-width trend chart; a phone
+                stacks them. */}
+            <div className={viewport === 'tablet' ? 'grid grid-cols-2 gap-3 items-start' : ''}>
             {/* Top items */}
             <Panel title={t('stats.topItems', 'Top items')}>
               <div className="flex flex-col gap-1.5">
@@ -234,6 +242,7 @@ export default function StatisticsScreen({ onBack }: Props) {
             <Panel title={t('stats.busiestHours', 'Busiest hours')}>
               <HeatStrip hours={view.hours} />
             </Panel>
+            </div>
 
             <p className="text-xs mt-1 text-center"
                style={{ color: 'var(--color-text-faint)' }}>
