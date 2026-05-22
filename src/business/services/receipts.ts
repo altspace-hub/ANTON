@@ -54,6 +54,12 @@ function canonicalizeReceipt(r: Receipt): string {
   return JSON.stringify(sorted);
 }
 
+/** Canonical-formula version. v2 (the hardening pass) hashes only the
+ *  immutable sale-fact allowlist above. A kvitto stamped with this
+ *  version has a `prevHash` the audit verifier can hard-check;
+ *  anything older is treated as unverifiable legacy. */
+export const RECEIPT_CHAIN_VERSION = 2;
+
 /** SHA-256 hex of a receipt's immutable creation record. Exported so
  *  the audit-chain verifier can re-derive the link without duplicating
  *  the canonical form. */
@@ -108,6 +114,7 @@ export async function persistReceipt(input: NewReceiptInput): Promise<Receipt> {
     txHash: null,
     receivingAddress: input.receivingAddress,
     prevHash,
+    chainVersion: RECEIPT_CHAIN_VERSION,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

@@ -27,7 +27,7 @@
  * they unit-test without IndexedDB. The `verify*` / `verifyBooks`
  * wrappers load from the store and delegate.
  */
-import { listReceipts, receiptChainHash } from './receipts';
+import { listReceipts, receiptChainHash, RECEIPT_CHAIN_VERSION } from './receipts';
 import { listZReports, verifyZReport } from './z-reports';
 import type { Receipt, ZReport } from './types';
 
@@ -93,6 +93,21 @@ export function checkReceiptChain(receipts: readonly Receipt[]): ChainVerifyResu
       findings.push({
         kind: 'receipt', at: cur.kvittoNumber, hard: false,
         detail: 'no prevHash — kvitto predates the Wave-5 chain',
+      });
+      continue;
+    }
+
+    // `cur.prevHash` is only comparable with the current hash formula
+    // if `cur` itself was written under chain version 2. A pre-v2
+    // kvitto stored a prevHash from the old whole-row formula — that
+    // is a legacy gap, NOT tampering, so it is a soft finding. (The
+    // formula changed in the hardening pass; no kvitto issued before
+    // it can be hard-verified, and re-hashing stored books to "fix"
+    // that would itself be the thing an audit tool exists to catch.)
+    if (cur.chainVersion !== RECEIPT_CHAIN_VERSION) {
+      findings.push({
+        kind: 'receipt', at: cur.kvittoNumber, hard: false,
+        detail: `K-${cur.kvittoNumber} predates the v${RECEIPT_CHAIN_VERSION} chain formula — link not verifiable`,
       });
       continue;
     }

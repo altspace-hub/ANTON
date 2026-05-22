@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
   checkReceiptChain, checkZReportChain, checkReconciliation,
 } from '../audit-chain';
-import { receiptChainHash } from '../receipts';
+import { receiptChainHash, RECEIPT_CHAIN_VERSION } from '../receipts';
 import type { Receipt, ZReport } from '../types';
 
 // ── builders ────────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@ function mkReceipt(n: number, over: Partial<Receipt> = {}): Receipt {
     status: 'pending',
     createdAt: 1_700_000_000_000 + n * 1000,
     confirmedAt: null,
+    chainVersion: RECEIPT_CHAIN_VERSION,
     ...over,
   };
 }
@@ -128,6 +129,18 @@ describe('checkReceiptChain', () => {
     const r = checkReceiptChain(rs);
     expect(r.ok).toBe(true); // soft only
     expect(r.findings.some((f) => !f.hard && /predates/.test(f.detail))).toBe(true);
+  });
+
+  it('downgrades a pre-v2 kvitto (old hash formula) to a soft finding', () => {
+    // A kvitto written before the hardening pass carries a prevHash
+    // from the old whole-row formula. It must NOT read as "altered".
+    const rs = chainedReceipts(3);
+    delete rs[1]!.chainVersion;          // K-2 predates v2
+    rs[1]!.prevHash = 'old-formula-hash'; // its link can't be re-derived
+    const r = checkReceiptChain(rs);
+    expect(r.ok).toBe(true); // soft only — no false tamper alarm
+    expect(r.findings.some((f) => !f.hard && /predates the v2 chain formula/.test(f.detail))).toBe(true);
+    expect(r.findings.some((f) => f.hard)).toBe(false);
   });
 
   it('flags a prevHash on the first kvitto as a hard break', () => {

@@ -49,6 +49,12 @@ export interface Receipt {
    *  K-000043.prevHash, which breaks the chain. Set at write time;
    *  pre-Wave-5 kvittos lack it. */
   prevHash?: string;
+  /** Which canonical formula produced `prevHash`. v2 (the hardening
+   *  pass) hashes only the immutable sale facts; pre-v2 kvittos hashed
+   *  the whole row, so their `prevHash` is not comparable with the v2
+   *  hash and the verifier downgrades them to a soft "legacy" note
+   *  rather than a false "altered" alarm. Absent = pre-v2. */
+  chainVersion?: number;
   /** Wave 10 — structured remittance the customer attached to their
    *  payment (free-text note, agreed terms, their own itemisation).
    *  Decoded from the on-chain PACS.008 RmtInf by the inbound poller
