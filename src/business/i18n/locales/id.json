@@ -178,6 +178,14 @@
     "void": "Batalkan kvitto ini",
     "voided": "Kvitto dibatalkan."
   },
+  "lock": {
+    "checking": "Menunggu pembukaan kunci…",
+    "failed": "Gagal membuka kunci. Coba lagi.",
+    "locked": "Terkunci — buka kunci untuk melanjutkan.",
+    "reason": "Buka kunci ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Buka kunci"
+  },
   "mode": {
     "continue": "Lanjutkan",
     "extendedBody": "Tambahkan item dari katalog, rincian PPN otomatis per tarif, diskon opsional. Terbaik untuk kafe, restoran, ritel.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Tentang",
     "accent": "Warna aksen",
     "address": "Alamat",
+    "appLock": "Kunci aplikasi",
+    "appLockDisableReason": "Konfirmasi untuk menonaktifkan kunci aplikasi",
+    "appLockEnableReason": "Konfirmasi untuk mengaktifkan kunci aplikasi",
+    "appLockSub": "Memerlukan sidik jari atau wajah untuk membuka aplikasi",
     "appearance": "Tampilan",
     "appearanceHelp": "Pilih warna aksen dan tema terang atau gelap.",
     "backToHome": "Kembali ke beranda",

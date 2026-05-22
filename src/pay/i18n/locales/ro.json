@@ -115,6 +115,14 @@
     "syncNow": "Sincronizează — ascultă pentru plăți primite",
     "walletLabel": "Portofelul tău"
   },
+  "lock": {
+    "checking": "Se așteaptă deblocarea…",
+    "failed": "Deblocarea a eșuat. Încearcă din nou.",
+    "locked": "Blocat — deblochează pentru a continua.",
+    "reason": "Deblochează ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Deblochează"
+  },
   "moneyProfile": {
     "dateOfBirth": "Data nașterii",
     "expectedMonthly": "FTC estimați cheltuiți pe lună",
@@ -288,6 +296,10 @@
     "accent": "Culoare de accent",
     "activityReview": "Examinarea activității",
     "activityReviewSub": "Tiparul tău de cheltuieli și eventualele plăți semnalate",
+    "appLock": "Blocare aplicație",
+    "appLockDisableReason": "Confirmă pentru a dezactiva blocarea aplicației",
+    "appLockEnableReason": "Confirmă pentru a activa blocarea aplicației",
+    "appLockSub": "Necesită amprentă sau față pentru a deschide aplicația",
     "appearance": "Aspect",
     "appearanceHelp": "Alege o culoare de accent și o temă luminoasă sau întunecată.",
     "backToHome": "Înapoi la pagina principală",

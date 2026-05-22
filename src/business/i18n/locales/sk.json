@@ -178,6 +178,14 @@
     "void": "Stornovať toto kvitto",
     "voided": "Kvitto stornované."
   },
+  "lock": {
+    "checking": "Čakanie na odomknutie…",
+    "failed": "Odomknutie sa nepodarilo. Skúste to znova.",
+    "locked": "Uzamknuté — odomknite pre pokračovanie.",
+    "reason": "Odomknúť ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Odomknúť"
+  },
   "mode": {
     "continue": "Pokračovať",
     "extendedBody": "Pridávajte položky z katalógu, automatické rozdelenie DPH podľa sadzieb, voliteľná zľava. Najvhodnejšie pre kaviarne, reštaurácie, maloobchod.",
@@ -289,6 +297,10 @@
     "aboutTitle": "O aplikácii",
     "accent": "Farba zvýraznenia",
     "address": "Adresa",
+    "appLock": "Zámok aplikácie",
+    "appLockDisableReason": "Potvrďte vypnutie zámku aplikácie",
+    "appLockEnableReason": "Potvrďte zapnutie zámku aplikácie",
+    "appLockSub": "Vyžadovať odtlačok prsta alebo tvár na otvorenie aplikácie",
     "appearance": "Vzhľad",
     "appearanceHelp": "Vyberte farbu zvýraznenia a svetlú alebo tmavú tému.",
     "backToHome": "Späť na domovskú obrazovku",

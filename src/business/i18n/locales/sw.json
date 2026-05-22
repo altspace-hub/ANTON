@@ -178,6 +178,14 @@
     "void": "Futa kvitto hii",
     "voided": "Kvitto imefutwa."
   },
+  "lock": {
+    "checking": "Inasubiri kufunguliwa…",
+    "failed": "Kufungua hakukufaulu. Jaribu tena.",
+    "locked": "Imefungwa — fungua ili kuendelea.",
+    "reason": "Fungua ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Fungua"
+  },
   "mode": {
     "continue": "Endelea",
     "extendedBody": "Ongeza vipengee kutoka katalogi, mgawanyo wa VAT otomatiki katika viwango, punguzo la hiari. Bora kwa mikahawa, migahawa, na rejareja.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Kuhusu programu",
     "accent": "Rangi ya lafudhi",
     "address": "Anwani",
+    "appLock": "Kufunga programu",
+    "appLockDisableReason": "Thibitisha kuzima kufunga programu",
+    "appLockEnableReason": "Thibitisha kuwasha kufunga programu",
+    "appLockSub": "Inahitaji alama ya vidole au uso kufungua programu",
     "appearance": "Muonekano",
     "appearanceHelp": "Chagua rangi ya lafudhi na mandhari nyepesi au nyeusi.",
     "backToHome": "Rudi nyumbani",

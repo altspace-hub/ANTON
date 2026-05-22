@@ -178,6 +178,14 @@
     "void": "Dit kvitto annuleren",
     "voided": "Kvitto geannuleerd."
   },
+  "lock": {
+    "checking": "Wachten op ontgrendeling…",
+    "failed": "Ontgrendeling mislukt. Probeer het opnieuw.",
+    "locked": "Vergrendeld — ontgrendel om door te gaan.",
+    "reason": "ANTON Business ontgrendelen",
+    "title": "ANTON Business",
+    "unlock": "Ontgrendelen"
+  },
   "mode": {
     "continue": "Doorgaan",
     "extendedBody": "Voeg artikelen toe uit een catalogus, met automatische btw-uitsplitsing over tarieven en optionele korting. Ideaal voor cafés, restaurants en de detailhandel.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Over de app",
     "accent": "Accentkleur",
     "address": "Adres",
+    "appLock": "App-vergrendeling",
+    "appLockDisableReason": "Bevestig om de app-vergrendeling uit te schakelen",
+    "appLockEnableReason": "Bevestig om de app-vergrendeling in te schakelen",
+    "appLockSub": "Vingerafdruk of gezicht vereist om de app te openen",
     "appearance": "Weergave",
     "appearanceHelp": "Kies een accentkleur en een licht of donker thema.",
     "backToHome": "Terug naar startscherm",

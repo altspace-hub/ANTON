@@ -115,6 +115,14 @@
     "syncNow": "סנכרן עכשיו — הקשב לתשלום נכנס",
     "walletLabel": "הארנק שלך"
   },
+  "lock": {
+    "checking": "ממתין לביטול נעילה…",
+    "failed": "ביטול הנעילה נכשל. נסה שוב.",
+    "locked": "נעול — בטל נעילה כדי להמשיך.",
+    "reason": "בטל את נעילת ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "בטל נעילה"
+  },
   "moneyProfile": {
     "dateOfBirth": "תאריך לידה",
     "expectedMonthly": "FTC צפוי להוצאה בחודש",
@@ -288,6 +296,10 @@
     "accent": "צבע הדגשה",
     "activityReview": "סקירת פעילות",
     "activityReviewSub": "דפוס ההוצאות שלך וכל תשלום שסומן",
+    "appLock": "נעילת אפליקציה",
+    "appLockDisableReason": "אשר כדי לכבות את נעילת האפליקציה",
+    "appLockEnableReason": "אשר כדי להפעיל את נעילת האפליקציה",
+    "appLockSub": "דרוש טביעת אצבע או פנים לפתיחת האפליקציה",
     "appearance": "מראה",
     "appearanceHelp": "בחר צבע הדגשה וערכת נושא בהירה או כהה.",
     "backToHome": "חזרה לדף הבית",

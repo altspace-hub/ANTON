@@ -8,7 +8,7 @@
  * On mount, hasProfile() decides between resuming Home or starting
  * onboarding.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
 import BackupShowScreen from './pages/onboarding/BackupShowScreen';
@@ -33,6 +33,8 @@ import RestoreScreen from './pages/settings/RestoreScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import ScheduledPaymentsScreen from './pages/settings/ScheduledPaymentsScreen';
 import AddScheduleScreen from './pages/settings/AddScheduleScreen';
+import LockScreen from './components/LockScreen';
+import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
 import { hasProfile } from './services/profile';
 import { maybeRunIdlePoll, runOneShotPoll } from './services/idle-poller';
 import { reconcileScheduleNotifications, getSchedule, recordFire } from './services/schedules';
@@ -82,6 +84,9 @@ export default function App() {
    *  can call recordFire() to roll the schedule forward. null
    *  outside the scheduled-payment flow (regular QR scans). */
   const [firingScheduleId, setFiringScheduleId] = useState<string | null>(null);
+  /** App-open biometric lock — starts locked when the user enabled it. */
+  const [locked, setLocked] = useState<boolean>(() => isAppLockEnabled());
+  const hiddenAtRef = useRef<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -161,7 +166,16 @@ export default function App() {
     })();
 
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') void onForeground();
+      if (document.visibilityState === 'visible') {
+        void onForeground();
+        if (isAppLockEnabled() && hiddenAtRef.current > 0
+            && Date.now() - hiddenAtRef.current > APP_LOCK_GRACE_MS) {
+          setLocked(true);
+        }
+        hiddenAtRef.current = 0;
+      } else {
+        hiddenAtRef.current = Date.now();
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
@@ -170,6 +184,11 @@ export default function App() {
       unlistenSchedule?.();
     };
   }, []);
+
+  // App-open lock — biometric gate over the whole UI when enabled.
+  if (locked) {
+    return <LockScreen onUnlock={() => setLocked(false)} />;
+  }
 
   if (screen === 'loading') {
     return (

@@ -24,6 +24,8 @@ import {
 import { LANGUAGES, COMPLETE_LOCALES } from '../i18n/languages';
 import { getLanguage, setLanguage } from '../i18n';
 import { openDb, STORE_PORTAL_CACHE } from '../services/db';
+import { isAppLockEnabled, setAppLockEnabled } from '../services/app-lock';
+import { requireBiometric } from '../services/biometric';
 
 interface Props {
   onBack: () => void;
@@ -49,6 +51,8 @@ export default function SettingsScreen({
   const [draftName, setDraftName] = useState(identity?.displayName ?? '');
   const [copied, setCopied] = useState(false);
 
+  const [appLockOn, setAppLockOn] = useState<boolean>(isAppLockEnabled);
+  const [appLockBusy, setAppLockBusy] = useState(false);
   const [readReceipts, setReadReceipts] = useState(getReadReceiptsEnabled());
   const [typingIndicator, setTypingIndicator] = useState(getTypingIndicatorEnabled());
   const [accent, setAccentState] = useState<AccentKey>(getAccent());
@@ -67,6 +71,27 @@ export default function SettingsScreen({
 
   const [storageText, setStorageText] = useState<string>(t('common.loading'));
   const [cacheStatus, setCacheStatus] = useState<string | null>(null);
+
+  /** Toggle the app-open biometric lock — confirmed both ways so a
+   *  found, unlocked phone can't have it quietly disabled. */
+  async function toggleAppLock() {
+    if (appLockBusy) return;
+    setAppLockBusy(true);
+    try {
+      const r = await requireBiometric({
+        reason: appLockOn
+          ? t('settings.appLockDisableReason', 'Confirm to turn off the app lock')
+          : t('settings.appLockEnableReason', 'Confirm to turn on the app lock'),
+        title: t('lock.title', 'ANTON'),
+      });
+      if (!r.ok && r.reason !== 'unavailable') return;
+      const next = !appLockOn;
+      setAppLockEnabled(next);
+      setAppLockOn(next);
+    } finally {
+      setAppLockBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!identity) return;
@@ -410,6 +435,13 @@ export default function SettingsScreen({
       {/* ── Privacy ─────────────────────────────────────────── */}
       <SectionHeader label={t('settings.sectionPrivacy')} />
       <div className="mt-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] overflow-hidden">
+        <SettingToggle
+          label={t('settings.appLock', 'App lock')}
+          description={t('settings.appLockSub', 'Require fingerprint or face to open the app')}
+          value={appLockOn}
+          onChange={() => { if (!appLockBusy) void toggleAppLock(); }}
+        />
+        <Divider />
         <SettingToggle
           label={t('settings.readReceipts')}
           description={t('settings.readReceiptsHelp')}

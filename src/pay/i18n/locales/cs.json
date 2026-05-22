@@ -115,6 +115,14 @@
     "syncNow": "Synchronizovat nyní — čekat na příchozí platbu",
     "walletLabel": "Vaše peněženka"
   },
+  "lock": {
+    "checking": "Čekání na odemčení…",
+    "failed": "Odemčení se nezdařilo. Zkuste to znovu.",
+    "locked": "Uzamčeno — odemkněte pro pokračování.",
+    "reason": "Odemknout ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Odemknout"
+  },
   "moneyProfile": {
     "dateOfBirth": "Datum narození",
     "expectedMonthly": "Očekávané FTC utracené za měsíc",
@@ -288,6 +296,10 @@
     "accent": "Barva zvýraznění",
     "activityReview": "Přehled aktivity",
     "activityReviewSub": "Váš vzorec útrat a případné označené platby",
+    "appLock": "Zámek aplikace",
+    "appLockDisableReason": "Potvrďte vypnutí zámku aplikace",
+    "appLockEnableReason": "Potvrďte zapnutí zámku aplikace",
+    "appLockSub": "Vyžadovat otisk prstu nebo obličej pro otevření aplikace",
     "appearance": "Vzhled",
     "appearanceHelp": "Vyberte barvu zvýraznění a světlý nebo tmavý motiv.",
     "backToHome": "Zpět na úvodní obrazovku",

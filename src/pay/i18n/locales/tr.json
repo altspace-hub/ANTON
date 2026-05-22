@@ -115,6 +115,14 @@
     "syncNow": "Şimdi senkronize et — gelen ödemeyi bekle",
     "walletLabel": "Cüzdanınız"
   },
+  "lock": {
+    "checking": "Kilit açılması bekleniyor…",
+    "failed": "Kilit açılamadı. Tekrar dene.",
+    "locked": "Kilitli — devam etmek için kilidi aç.",
+    "reason": "ANTON Pay kilidini aç",
+    "title": "ANTON Pay",
+    "unlock": "Kilidi aç"
+  },
   "moneyProfile": {
     "dateOfBirth": "Doğum tarihi",
     "expectedMonthly": "Aylık beklenen FTC harcaması",
@@ -288,6 +296,10 @@
     "accent": "Vurgu rengi",
     "activityReview": "Etkinlik incelemesi",
     "activityReviewSub": "Harcama düzeniniz ve işaretlenen ödemeler",
+    "appLock": "Uygulama kilidi",
+    "appLockDisableReason": "Uygulama kilidini kapatmak için onayla",
+    "appLockEnableReason": "Uygulama kilidini açmak için onayla",
+    "appLockSub": "Uygulamayı açmak için parmak izi veya yüz gerekir",
     "appearance": "Görünüm",
     "appearanceHelp": "Bir vurgu rengi ve açık veya koyu tema seçin.",
     "backToHome": "Ana sayfaya dön",

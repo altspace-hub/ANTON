@@ -115,6 +115,14 @@
     "syncNow": "Synkronoi nyt — kuuntele saapuvaa maksua",
     "walletLabel": "Lompakkosi"
   },
+  "lock": {
+    "checking": "Odotetaan lukituksen avaamista…",
+    "failed": "Lukituksen avaaminen epäonnistui. Yritä uudelleen.",
+    "locked": "Lukittu — avaa lukitus jatkaaksesi.",
+    "reason": "Avaa ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Avaa lukitus"
+  },
   "moneyProfile": {
     "dateOfBirth": "Syntymäaika",
     "expectedMonthly": "Odotettu FTC-kulutus kuukaudessa",
@@ -288,6 +296,10 @@
     "accent": "Korostusväri",
     "activityReview": "Toiminnan katsaus",
     "activityReviewSub": "Rahankäyttötapasi ja mahdolliset merkityt maksut",
+    "appLock": "Sovelluksen lukitus",
+    "appLockDisableReason": "Vahvista sovelluksen lukituksen poistaminen käytöstä",
+    "appLockEnableReason": "Vahvista sovelluksen lukituksen ottaminen käyttöön",
+    "appLockSub": "Vaadi sormenjälki tai kasvontunnistus sovelluksen avaamiseen",
     "appearance": "Ulkoasu",
     "appearanceHelp": "Valitse korostusväri sekä vaalea tai tumma teema.",
     "backToHome": "Takaisin etusivulle",

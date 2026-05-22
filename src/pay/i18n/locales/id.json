@@ -115,6 +115,14 @@
     "syncNow": "Sinkronkan sekarang — dengarkan pembayaran masuk",
     "walletLabel": "Dompet Anda"
   },
+  "lock": {
+    "checking": "Menunggu pembukaan kunci…",
+    "failed": "Gagal membuka kunci. Coba lagi.",
+    "locked": "Terkunci — buka kunci untuk melanjutkan.",
+    "reason": "Buka kunci ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Buka kunci"
+  },
   "moneyProfile": {
     "dateOfBirth": "Tanggal lahir",
     "expectedMonthly": "FTC yang diperkirakan dibelanjakan per bulan",
@@ -288,6 +296,10 @@
     "accent": "Warna aksen",
     "activityReview": "Tinjauan aktivitas",
     "activityReviewSub": "Pola pengeluaran Anda dan pembayaran apa pun yang ditandai",
+    "appLock": "Kunci aplikasi",
+    "appLockDisableReason": "Konfirmasi untuk menonaktifkan kunci aplikasi",
+    "appLockEnableReason": "Konfirmasi untuk mengaktifkan kunci aplikasi",
+    "appLockSub": "Memerlukan sidik jari atau wajah untuk membuka aplikasi",
     "appearance": "Tampilan",
     "appearanceHelp": "Pilih warna aksen dan tema terang atau gelap.",
     "backToHome": "Kembali ke beranda",

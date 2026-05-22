@@ -115,6 +115,14 @@
     "syncNow": "Sincronizar agora — à escuta de pagamento a receber",
     "walletLabel": "A sua carteira"
   },
+  "lock": {
+    "checking": "A aguardar desbloqueio…",
+    "failed": "Desbloqueio falhado. Tenta novamente.",
+    "locked": "Bloqueado — desbloqueia para continuar.",
+    "reason": "Desbloquear ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Desbloquear"
+  },
   "moneyProfile": {
     "dateOfBirth": "Data de nascimento",
     "expectedMonthly": "FTC que espera gastar por mês",
@@ -288,6 +296,10 @@
     "accent": "Cor de destaque",
     "activityReview": "Revisão de atividade",
     "activityReviewSub": "O seu padrão de gastos e quaisquer pagamentos assinalados",
+    "appLock": "Bloqueio da aplicação",
+    "appLockDisableReason": "Confirma para desativar o bloqueio da aplicação",
+    "appLockEnableReason": "Confirma para ativar o bloqueio da aplicação",
+    "appLockSub": "Exige impressão digital ou rosto para abrir a aplicação",
     "appearance": "Aspeto",
     "appearanceHelp": "Escolha uma cor de destaque e um tema claro ou escuro.",
     "backToHome": "Voltar ao início",

@@ -115,6 +115,14 @@
     "syncNow": "Szinkronizálás — bejövő fizetés figyelése",
     "walletLabel": "A tárcád"
   },
+  "lock": {
+    "checking": "Várakozás a feloldásra…",
+    "failed": "A feloldás nem sikerült. Próbálja újra.",
+    "locked": "Zárolva — a folytatáshoz oldja fel.",
+    "reason": "ANTON Pay feloldása",
+    "title": "ANTON Pay",
+    "unlock": "Feloldás"
+  },
   "moneyProfile": {
     "dateOfBirth": "Születési dátum",
     "expectedMonthly": "Várható havi FTC-költés",
@@ -288,6 +296,10 @@
     "accent": "Kiemelőszín",
     "activityReview": "Tevékenység áttekintése",
     "activityReviewSub": "Az Ön költési mintázata és a megjelölt fizetések",
+    "appLock": "Alkalmazászárolás",
+    "appLockDisableReason": "Erősítse meg az alkalmazászárolás kikapcsolásához",
+    "appLockEnableReason": "Erősítse meg az alkalmazászárolás bekapcsolásához",
+    "appLockSub": "Ujjlenyomat vagy arcfelismerés szükséges az alkalmazás megnyitásához",
     "appearance": "Megjelenés",
     "appearanceHelp": "Válassz kiemelőszínt, valamint világos vagy sötét témát.",
     "backToHome": "Vissza a főképernyőre",

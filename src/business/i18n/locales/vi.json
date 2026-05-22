@@ -178,6 +178,14 @@
     "void": "Hủy kvitto này",
     "voided": "Kvitto đã được hủy."
   },
+  "lock": {
+    "checking": "Đang chờ mở khóa…",
+    "failed": "Mở khóa thất bại. Thử lại.",
+    "locked": "Đã khóa — mở khóa để tiếp tục.",
+    "reason": "Mở khóa ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Mở khóa"
+  },
   "mode": {
     "continue": "Tiếp tục",
     "extendedBody": "Thêm mặt hàng từ danh mục, tự động phân tích VAT theo các mức thuế, giảm giá tùy chọn. Phù hợp nhất cho quán cà phê, nhà hàng, bán lẻ.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Giới thiệu",
     "accent": "Màu nhấn",
     "address": "Địa chỉ",
+    "appLock": "Khóa ứng dụng",
+    "appLockDisableReason": "Xác nhận để tắt khóa ứng dụng",
+    "appLockEnableReason": "Xác nhận để bật khóa ứng dụng",
+    "appLockSub": "Yêu cầu vân tay hoặc khuôn mặt để mở ứng dụng",
     "appearance": "Giao diện",
     "appearanceHelp": "Chọn một màu nhấn và giao diện sáng hoặc tối.",
     "backToHome": "Về trang chủ",

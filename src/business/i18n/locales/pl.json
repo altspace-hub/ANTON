@@ -178,6 +178,14 @@
     "void": "Unieważnij ten kvitto",
     "voided": "Kvitto unieważniony."
   },
+  "lock": {
+    "checking": "Oczekiwanie na odblokowanie…",
+    "failed": "Odblokowanie nie powiodło się. Spróbuj ponownie.",
+    "locked": "Zablokowano — odblokuj, aby kontynuować.",
+    "reason": "Odblokuj ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Odblokuj"
+  },
   "mode": {
     "continue": "Kontynuuj",
     "extendedBody": "Dodawaj pozycje z katalogu, automatyczny podział VAT według stawek, opcjonalny rabat. Najlepsze do kawiarni, restauracji i handlu detalicznego.",
@@ -289,6 +297,10 @@
     "aboutTitle": "O aplikacji",
     "accent": "Kolor akcentu",
     "address": "Adres",
+    "appLock": "Blokada aplikacji",
+    "appLockDisableReason": "Potwierdź, aby wyłączyć blokadę aplikacji",
+    "appLockEnableReason": "Potwierdź, aby włączyć blokadę aplikacji",
+    "appLockSub": "Wymagaj odcisku palca lub twarzy przy otwieraniu aplikacji",
     "appearance": "Wygląd",
     "appearanceHelp": "Wybierz kolor akcentu oraz jasny lub ciemny motyw.",
     "backToHome": "Powrót do strony głównej",

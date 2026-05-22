@@ -178,6 +178,14 @@
     "void": "Makulera detta kvitto",
     "voided": "Kvittot makulerat."
   },
+  "lock": {
+    "checking": "Väntar på upplåsning…",
+    "failed": "Upplåsning misslyckades. Försök igen.",
+    "locked": "Låst — lås upp för att fortsätta.",
+    "reason": "Lås upp ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Lås upp"
+  },
   "mode": {
     "continue": "Fortsätt",
     "extendedBody": "Lägg till varor från en katalog, automatisk momsuppdelning per sats, valfri rabatt. Bäst för caféer, restauranger, butiker.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Om appen",
     "accent": "Accentfärg",
     "address": "Adress",
+    "appLock": "Applås",
+    "appLockDisableReason": "Bekräfta för att stänga av applåset",
+    "appLockEnableReason": "Bekräfta för att slå på applåset",
+    "appLockSub": "Kräv fingeravtryck eller ansikte för att öppna appen",
     "appearance": "Utseende",
     "appearanceHelp": "Välj en accentfärg och ett ljust eller mörkt tema.",
     "backToHome": "Tillbaka till start",

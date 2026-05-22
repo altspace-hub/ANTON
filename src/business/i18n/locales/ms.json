@@ -178,6 +178,14 @@
     "void": "Batalkan kvitto ini",
     "voided": "Kvitto dibatalkan."
   },
+  "lock": {
+    "checking": "Menunggu buka kunci…",
+    "failed": "Buka kunci gagal. Cuba lagi.",
+    "locked": "Dikunci — buka kunci untuk meneruskan.",
+    "reason": "Buka kunci ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Buka kunci"
+  },
   "mode": {
     "continue": "Teruskan",
     "extendedBody": "Tambah item dari katalog, pecahan VAT automatik merentas kadar, diskaun pilihan. Sesuai untuk kafe, restoran, peruncitan.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Perihal",
     "accent": "Warna aksen",
     "address": "Alamat",
+    "appLock": "Kunci aplikasi",
+    "appLockDisableReason": "Sahkan untuk mematikan kunci aplikasi",
+    "appLockEnableReason": "Sahkan untuk menghidupkan kunci aplikasi",
+    "appLockSub": "Memerlukan cap jari atau wajah untuk membuka aplikasi",
     "appearance": "Penampilan",
     "appearanceHelp": "Pilih warna aksen dan tema cerah atau gelap.",
     "backToHome": "Kembali ke laman utama",

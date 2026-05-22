@@ -115,6 +115,14 @@
     "syncNow": "今すぐ同期 — 着金を待機",
     "walletLabel": "あなたのウォレット"
   },
+  "lock": {
+    "checking": "ロック解除を待機中…",
+    "failed": "ロック解除に失敗しました。もう一度お試しください。",
+    "locked": "ロック中 — 続けるにはロックを解除してください。",
+    "reason": "ANTON Pay のロックを解除",
+    "title": "ANTON Pay",
+    "unlock": "ロックを解除"
+  },
   "moneyProfile": {
     "dateOfBirth": "生年月日",
     "expectedMonthly": "月あたりの予想 FTC 支出額",
@@ -288,6 +296,10 @@
     "accent": "アクセントカラー",
     "activityReview": "アクティビティ確認",
     "activityReviewSub": "あなたの支出パターンとフラグ付けされた支払い",
+    "appLock": "アプリロック",
+    "appLockDisableReason": "アプリロックをオフにするには確認してください",
+    "appLockEnableReason": "アプリロックをオンにするには確認してください",
+    "appLockSub": "アプリを開くときに指紋または顔認証が必要です",
     "appearance": "外観",
     "appearanceHelp": "アクセントカラーとライト/ダークテーマを選択します。",
     "backToHome": "ホームに戻る",

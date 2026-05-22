@@ -115,6 +115,14 @@
     "syncNow": "مزامنة الآن — الاستماع لدفعة واردة",
     "walletLabel": "محفظتك"
   },
+  "lock": {
+    "checking": "في انتظار إلغاء القفل…",
+    "failed": "فشل إلغاء القفل. حاول مرة أخرى.",
+    "locked": "مقفل — أفتح القفل للمتابعة.",
+    "reason": "افتح قفل ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "فتح القفل"
+  },
   "moneyProfile": {
     "dateOfBirth": "تاريخ الميلاد",
     "expectedMonthly": "المتوقع إنفاقه من FTC شهريًا",
@@ -288,6 +296,10 @@
     "accent": "اللون المميز",
     "activityReview": "مراجعة النشاط",
     "activityReviewSub": "نمط إنفاقك وأي دفعات تم تمييزها",
+    "appLock": "قفل التطبيق",
+    "appLockDisableReason": "تأكيد لإيقاف تشغيل قفل التطبيق",
+    "appLockEnableReason": "تأكيد لتشغيل قفل التطبيق",
+    "appLockSub": "يستلزم بصمة الإصبع أو الوجه لفتح التطبيق",
     "appearance": "المظهر",
     "appearanceHelp": "اختر لونًا مميزًا ومظهرًا فاتحًا أو داكنًا.",
     "backToHome": "العودة إلى الرئيسية",

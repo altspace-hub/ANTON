@@ -19,6 +19,8 @@ import { wipeAllPayments } from '../../services/payment';
 import { wipeReceived } from '../../services/db';
 import { wipePayerIdentity } from '../../services/payment-identity';
 import { wipeMoneyProfile } from '../../services/money-profile';
+import { isAppLockEnabled, setAppLockEnabled } from '../../services/app-lock';
+import { requireBiometric } from '../../services/biometric';
 
 interface Props {
   onBack: () => void;
@@ -50,6 +52,28 @@ export default function SettingsScreen({
   const [accent, setAccentState] = useState<AccentKey>(getAccent());
   const [mode, setModeState] = useState<AppMode>(getMode());
   const [storageText, setStorageText] = useState<string>('…');
+  const [appLockOn, setAppLockOn] = useState<boolean>(isAppLockEnabled);
+  const [appLockBusy, setAppLockBusy] = useState(false);
+
+  /** Toggle the app-open lock — biometric-confirmed both ways. */
+  async function toggleAppLock() {
+    if (appLockBusy) return;
+    setAppLockBusy(true);
+    try {
+      const r = await requireBiometric({
+        reason: appLockOn
+          ? t('settings.appLockDisableReason', 'Confirm to turn off the app lock')
+          : t('settings.appLockEnableReason', 'Confirm to turn on the app lock'),
+        title: t('lock.title', 'ANTON Pay'),
+      });
+      if (!r.ok && r.reason !== 'unavailable') return;
+      const next = !appLockOn;
+      setAppLockEnabled(next);
+      setAppLockOn(next);
+    } finally {
+      setAppLockBusy(false);
+    }
+  }
 
   useEffect(() => {
     void (async () => {
@@ -124,6 +148,33 @@ export default function SettingsScreen({
               <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
                     strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+          </button>
+
+          {/* App-open lock — biometric gate on every app open. */}
+          <button type="button" onClick={() => void toggleAppLock()} disabled={appLockBusy}
+                  className="rounded-xl p-4 flex items-center justify-between text-left"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)' }}>
+            <div className="flex-1 min-w-0 pr-3">
+              <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+                {t('settings.appLock', 'App lock')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('settings.appLockSub', 'Require fingerprint or face to open the app')}
+              </div>
+            </div>
+            <div style={{
+              width: 44, height: 26, borderRadius: 13, flexShrink: 0,
+              backgroundColor: appLockOn ? 'var(--color-accent)' : 'var(--color-surface-muted)',
+              border: '1px solid var(--color-border)', position: 'relative',
+              transition: 'background-color 0.15s', opacity: appLockBusy ? 0.6 : 1,
+            }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFFFFF',
+                position: 'absolute', top: 2, left: appLockOn ? 22 : 2,
+                transition: 'left 0.15s', boxShadow: '0 1px 2px rgba(0,0,0,0.25)',
+              }} />
+            </div>
           </button>
 
           {/* Wallets — multi-wallet management */}

@@ -115,6 +115,14 @@
     "syncNow": "지금 동기화 — 입금 대기",
     "walletLabel": "내 지갑"
   },
+  "lock": {
+    "checking": "잠금 해제를 기다리는 중…",
+    "failed": "잠금 해제에 실패했습니다. 다시 시도하세요.",
+    "locked": "잠김 — 계속하려면 잠금을 해제하세요.",
+    "reason": "ANTON Pay 잠금 해제",
+    "title": "ANTON Pay",
+    "unlock": "잠금 해제"
+  },
   "moneyProfile": {
     "dateOfBirth": "생년월일",
     "expectedMonthly": "월별 예상 FTC 지출액",
@@ -288,6 +296,10 @@
     "accent": "강조 색상",
     "activityReview": "활동 검토",
     "activityReviewSub": "지출 패턴 및 플래그된 결제",
+    "appLock": "앱 잠금",
+    "appLockDisableReason": "앱 잠금을 끄려면 확인하세요",
+    "appLockEnableReason": "앱 잠금을 켜려면 확인하세요",
+    "appLockSub": "앱을 열 때 지문 또는 얼굴 인식이 필요합니다",
     "appearance": "디스플레이",
     "appearanceHelp": "강조 색상과 밝은 테마 또는 어두운 테마를 선택하세요.",
     "backToHome": "홈으로",

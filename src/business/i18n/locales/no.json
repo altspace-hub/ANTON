@@ -178,6 +178,14 @@
     "void": "Annuller dette kvitto",
     "voided": "Kvitto annullert."
   },
+  "lock": {
+    "checking": "Venter på opplåsing…",
+    "failed": "Opplåsing mislyktes. Prøv igjen.",
+    "locked": "Låst — lås opp for å fortsette.",
+    "reason": "Lås opp ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Lås opp"
+  },
   "mode": {
     "continue": "Fortsett",
     "extendedBody": "Legg til varer fra en katalog, automatisk mva-fordeling på tvers av satser, valgfri rabatt. Best for kafeer, restauranter, butikkhandel.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Om appen",
     "accent": "Aksentfarge",
     "address": "Adresse",
+    "appLock": "App-lås",
+    "appLockDisableReason": "Bekreft for å slå av app-låsen",
+    "appLockEnableReason": "Bekreft for å slå på app-låsen",
+    "appLockSub": "Krev fingeravtrykk eller ansiktsgjenkjenning for å åpne appen",
     "appearance": "Utseende",
     "appearanceHelp": "Velg en aksentfarge og et lyst eller mørkt tema.",
     "backToHome": "Tilbake til startside",

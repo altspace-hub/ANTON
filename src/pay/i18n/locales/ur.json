@@ -115,6 +115,14 @@
     "syncNow": "ابھی مطابقت کریں — آنے والی ادائیگی سنیں",
     "walletLabel": "آپ کا والٹ"
   },
+  "lock": {
+    "checking": "قفل کھلنے کا انتظار ہے…",
+    "failed": "قفل نہیں کھل سکا۔ دوبارہ کوشش کریں۔",
+    "locked": "مقفل — جاری رکھنے کے لیے قفل کھولیں۔",
+    "reason": "ANTON Pay کا قفل کھولیں",
+    "title": "ANTON Pay",
+    "unlock": "قفل کھولیں"
+  },
   "moneyProfile": {
     "dateOfBirth": "تاریخ پیدائش",
     "expectedMonthly": "ہر ماہ متوقع خرچ شدہ FTC",
@@ -288,6 +296,10 @@
     "accent": "ایکسنٹ رنگ",
     "activityReview": "سرگرمی کا جائزہ",
     "activityReviewSub": "آپ کے خرچ کا انداز اور کوئی نشان زد ادائیگیاں",
+    "appLock": "ایپ لاک",
+    "appLockDisableReason": "ایپ لاک بند کرنے کی تصدیق کریں",
+    "appLockEnableReason": "ایپ لاک چالو کرنے کی تصدیق کریں",
+    "appLockSub": "ایپ کھولنے کے لیے انگلی کا نشان یا چہرہ درکار ہے",
     "appearance": "ظاہری شکل",
     "appearanceHelp": "ایک ایکسنٹ رنگ اور روشن یا گہرا تھیم منتخب کریں۔",
     "backToHome": "ہوم پر واپس",

@@ -232,6 +232,14 @@
     "rateUnavailable": "Rate unavailable — enter amount in FTC. Fiat display will return when the FutureChain oracle is live.",
     "swap": "Swap currency"
   },
+  "lock": {
+    "checking": "Waiting for unlock…",
+    "failed": "Unlock failed. Try again.",
+    "locked": "Locked — unlock to continue.",
+    "reason": "Unlock ANTON",
+    "title": "ANTON",
+    "unlock": "Unlock"
+  },
   "moneyProfile": {
     "dateOfBirth": "Date of birth",
     "expectedMonthly": "Expected FTC spent per month",
@@ -341,6 +349,10 @@
     "accent": "Accent colour",
     "activityReview": "Activity review",
     "activityReviewSub": "Your spending pattern and any flagged payments",
+    "appLock": "App lock",
+    "appLockDisableReason": "Confirm to turn off the app lock",
+    "appLockEnableReason": "Confirm to turn on the app lock",
+    "appLockSub": "Require fingerprint or face to open the app",
     "appearanceHelp": "Pick an accent colour and a light or dark canvas. Changes apply instantly.",
     "cacheCleared": "Cache cleared",
     "clearCache": "Clear cache",

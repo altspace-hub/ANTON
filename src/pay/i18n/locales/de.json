@@ -115,6 +115,14 @@
     "syncNow": "Jetzt synchronisieren — auf eingehende Zahlung warten",
     "walletLabel": "Deine Wallet"
   },
+  "lock": {
+    "checking": "Warte auf Entsperrung…",
+    "failed": "Entsperrung fehlgeschlagen. Erneut versuchen.",
+    "locked": "Gesperrt — entsperr, um fortzufahren.",
+    "reason": "ANTON Pay entsperren",
+    "title": "ANTON Pay",
+    "unlock": "Entsperren"
+  },
   "moneyProfile": {
     "dateOfBirth": "Geburtsdatum",
     "expectedMonthly": "Erwartete FTC-Ausgaben pro Monat",
@@ -288,6 +296,10 @@
     "accent": "Akzentfarbe",
     "activityReview": "Aktivitätsübersicht",
     "activityReviewSub": "Ihr Ausgabenmuster und alle markierten Zahlungen",
+    "appLock": "App-Sperre",
+    "appLockDisableReason": "Bestätige, um die App-Sperre zu deaktivieren",
+    "appLockEnableReason": "Bestätige, um die App-Sperre zu aktivieren",
+    "appLockSub": "Fingerabdruck oder Gesicht zum Öffnen der App erforderlich",
     "appearance": "Darstellung",
     "appearanceHelp": "Wähle eine Akzentfarbe und ein helles oder dunkles Design.",
     "backToHome": "Zurück zur Startseite",

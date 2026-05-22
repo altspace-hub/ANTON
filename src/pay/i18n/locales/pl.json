@@ -115,6 +115,14 @@
     "syncNow": "Synchronizuj — nasłuchuj przychodzących płatności",
     "walletLabel": "Twój portfel"
   },
+  "lock": {
+    "checking": "Oczekiwanie na odblokowanie…",
+    "failed": "Odblokowanie nie powiodło się. Spróbuj ponownie.",
+    "locked": "Zablokowano — odblokuj, aby kontynuować.",
+    "reason": "Odblokuj ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Odblokuj"
+  },
   "moneyProfile": {
     "dateOfBirth": "Data urodzenia",
     "expectedMonthly": "Spodziewane FTC wydane miesięcznie",
@@ -288,6 +296,10 @@
     "accent": "Kolor akcentu",
     "activityReview": "Przegląd aktywności",
     "activityReviewSub": "Twój wzorzec wydatków i wszelkie oznaczone płatności",
+    "appLock": "Blokada aplikacji",
+    "appLockDisableReason": "Potwierdź, aby wyłączyć blokadę aplikacji",
+    "appLockEnableReason": "Potwierdź, aby włączyć blokadę aplikacji",
+    "appLockSub": "Wymagaj odcisku palca lub twarzy przy otwieraniu aplikacji",
     "appearance": "Wygląd",
     "appearanceHelp": "Wybierz kolor akcentu oraz jasny lub ciemny motyw.",
     "backToHome": "Powrót do strony głównej",

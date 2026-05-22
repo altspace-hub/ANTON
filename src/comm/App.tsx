@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ChatListScreen from './pages/ChatListScreen';
 import TabBar, { type TabId } from './components/TabBar';
@@ -11,6 +11,8 @@ import { reconcileLiveShares } from './services/geo';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
+import LockScreen from './components/LockScreen';
+import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
 
 // P4-1: every screen the user can navigate to but doesn't see on cold
 // boot is lazy-loaded. The "default landing" (ChatListScreen + TopBar +
@@ -66,6 +68,9 @@ export default function App() {
   const [openPortalAddress, setOpenPortalAddress] = useState<string | null>(null);
   const [openPostId, setOpenPostId] = useState<string | null>(null);
   const [wassupVersion, setWassupVersion] = useState(0);
+  /** App-open biometric lock — starts locked when the user enabled it. */
+  const [locked, setLocked] = useState<boolean>(() => isAppLockEnabled());
+  const hiddenAtRef = useRef<number>(0);
 
   useEffect(() => {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
@@ -138,7 +143,16 @@ export default function App() {
     };
     void onForeground();
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') void onForeground();
+      if (document.visibilityState === 'visible') {
+        void onForeground();
+        if (isAppLockEnabled() && hiddenAtRef.current > 0
+            && Date.now() - hiddenAtRef.current > APP_LOCK_GRACE_MS) {
+          setLocked(true);
+        }
+        hiddenAtRef.current = 0;
+      } else {
+        hiddenAtRef.current = Date.now();
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
@@ -146,6 +160,11 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
+
+  // App-open lock — biometric gate over the whole UI when enabled.
+  if (locked) {
+    return <LockScreen onUnlock={() => setLocked(false)} />;
+  }
 
   if (view === 'onboarding') {
     return (

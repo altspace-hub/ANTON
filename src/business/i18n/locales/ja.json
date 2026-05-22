@@ -178,6 +178,14 @@
     "void": "この kvitto を無効化",
     "voided": "Kvitto を無効化しました。"
   },
+  "lock": {
+    "checking": "ロック解除を待機中…",
+    "failed": "ロック解除に失敗しました。もう一度お試しください。",
+    "locked": "ロック中 — 続けるにはロックを解除してください。",
+    "reason": "ANTON Business のロックを解除",
+    "title": "ANTON Business",
+    "unlock": "ロックを解除"
+  },
   "mode": {
     "continue": "続ける",
     "extendedBody": "カタログから商品を追加し、税率ごとに VAT を自動で内訳表示、任意で割引も可能です。カフェ、レストラン、小売店に最適です。",
@@ -289,6 +297,10 @@
     "aboutTitle": "アプリについて",
     "accent": "アクセントカラー",
     "address": "アドレス",
+    "appLock": "アプリロック",
+    "appLockDisableReason": "アプリロックをオフにするには確認してください",
+    "appLockEnableReason": "アプリロックをオンにするには確認してください",
+    "appLockSub": "アプリを開くときに指紋または顔認証が必要です",
     "appearance": "外観",
     "appearanceHelp": "アクセントカラーと、ライトまたはダークのテーマを選択します。",
     "backToHome": "ホームに戻る",

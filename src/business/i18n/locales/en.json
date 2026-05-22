@@ -178,6 +178,14 @@
     "void": "Void this kvitto",
     "voided": "Kvitto voided."
   },
+  "lock": {
+    "checking": "Waiting for unlock…",
+    "failed": "Unlock failed. Try again.",
+    "locked": "Locked — unlock to continue.",
+    "reason": "Unlock ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Unlock"
+  },
   "mode": {
     "continue": "Continue",
     "extendedBody": "Add items from a catalogue, automatic VAT breakdown across rates, optional discount. Best for cafés, restaurants, retail.",
@@ -289,6 +297,10 @@
     "aboutTitle": "About",
     "accent": "Accent colour",
     "address": "Address",
+    "appLock": "App lock",
+    "appLockDisableReason": "Confirm to turn off the app lock",
+    "appLockEnableReason": "Confirm to turn on the app lock",
+    "appLockSub": "Require fingerprint or face to open the app",
     "appearance": "Appearance",
     "appearanceHelp": "Pick an accent colour and a light or dark theme.",
     "backToHome": "Back to home",

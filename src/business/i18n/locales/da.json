@@ -178,6 +178,14 @@
     "void": "Annullér dette kvitto",
     "voided": "Kvitto annulleret."
   },
+  "lock": {
+    "checking": "Venter på oplåsning…",
+    "failed": "Oplåsning mislykkedes. Prøv igen.",
+    "locked": "Låst — lås op for at fortsætte.",
+    "reason": "Lås op ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Lås op"
+  },
   "mode": {
     "continue": "Fortsæt",
     "extendedBody": "Tilføj varer fra et katalog, automatisk moms-opdeling på tværs af satser, valgfri rabat. Bedst til caféer, restauranter, detailhandel.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Om appen",
     "accent": "Accentfarve",
     "address": "Adresse",
+    "appLock": "App-lås",
+    "appLockDisableReason": "Bekræft for at slå app-låsen fra",
+    "appLockEnableReason": "Bekræft for at slå app-låsen til",
+    "appLockSub": "Kræv fingeraftryk eller ansigtsgenkendelse for at åbne appen",
     "appearance": "Udseende",
     "appearanceHelp": "Vælg en accentfarve og et lyst eller mørkt tema.",
     "backToHome": "Tilbage til startside",

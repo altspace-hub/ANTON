@@ -115,6 +115,14 @@
     "syncNow": "अभी सिंक करें — आने वाले भुगतान की प्रतीक्षा करें",
     "walletLabel": "आपका वॉलेट"
   },
+  "lock": {
+    "checking": "अनलॉक होने की प्रतीक्षा में…",
+    "failed": "अनलॉक विफल हुआ। फिर से प्रयास करें।",
+    "locked": "लॉक है — जारी रखने के लिए अनलॉक करें।",
+    "reason": "ANTON Pay को अनलॉक करें",
+    "title": "ANTON Pay",
+    "unlock": "अनलॉक करें"
+  },
   "moneyProfile": {
     "dateOfBirth": "जन्म तिथि",
     "expectedMonthly": "प्रति माह अपेक्षित खर्च FTC",
@@ -288,6 +296,10 @@
     "accent": "एक्सेंट रंग",
     "activityReview": "गतिविधि समीक्षा",
     "activityReviewSub": "आपका खर्च पैटर्न और कोई भी फ़्लैग किए गए भुगतान",
+    "appLock": "ऐप लॉक",
+    "appLockDisableReason": "ऐप लॉक बंद करने की पुष्टि करें",
+    "appLockEnableReason": "ऐप लॉक चालू करने की पुष्टि करें",
+    "appLockSub": "ऐप खोलने के लिए फिंगरप्रिंट या चेहरा आवश्यक है",
     "appearance": "रूप",
     "appearanceHelp": "एक एक्सेंट रंग और हल्की या गहरी थीम चुनें।",
     "backToHome": "होम पर वापस",

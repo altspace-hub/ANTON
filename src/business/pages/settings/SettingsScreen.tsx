@@ -17,6 +17,8 @@ import { wipeItems } from '../../services/items';
 import { wipeStockMovements } from '../../services/inventory';
 import { isPinSet } from '../../services/pin';
 import PinPad from '../../components/PinPad';
+import { isAppLockEnabled, setAppLockEnabled } from '../../services/app-lock';
+import { requireBiometric } from '../../services/biometric';
 import { getLanguage, setLanguage } from '../../i18n';
 import { LANGUAGES, languageOption } from '../../i18n/languages';
 import {
@@ -60,6 +62,9 @@ export default function SettingsScreen({
    *  `showResetPin` = the merchant PIN check is up. */
   const [resetArmed, setResetArmed] = useState(false);
   const [showResetPin, setShowResetPin] = useState(false);
+  /** App-open biometric lock toggle. */
+  const [appLockOn, setAppLockOn] = useState<boolean>(isAppLockEnabled);
+  const [appLockBusy, setAppLockBusy] = useState(false);
   const [storageText, setStorageText] = useState<string>('…');
 
   useEffect(() => {
@@ -116,6 +121,34 @@ export default function SettingsScreen({
       // final gate (still behind the in-UI arming step).
       if (!confirm(t('settings.resetConfirm'))) return;
       await doReset();
+    }
+  }
+
+  /**
+   * Toggle the app-open lock. Turning it ON runs a biometric check
+   * first — there's no point enabling a lock the merchant can't pass,
+   * and it confirms the device actually has biometrics / a device
+   * lock. Turning it OFF also requires a successful check so someone
+   * who grabbed an unlocked phone can't quietly disable it.
+   */
+  async function toggleAppLock() {
+    if (appLockBusy) return;
+    setAppLockBusy(true);
+    try {
+      const r = await requireBiometric({
+        reason: appLockOn
+          ? t('settings.appLockDisableReason', 'Confirm to turn off the app lock')
+          : t('settings.appLockEnableReason', 'Confirm to turn on the app lock'),
+        title: t('lock.title', 'ANTON Business'),
+      });
+      // unavailable → the device has no biometric/credential; allow the
+      // toggle either way (a lock here would be unenforceable anyway).
+      if (!r.ok && r.reason !== 'unavailable') return;
+      const next = !appLockOn;
+      setAppLockEnabled(next);
+      setAppLockOn(next);
+    } finally {
+      setAppLockBusy(false);
     }
   }
 
@@ -248,6 +281,36 @@ export default function SettingsScreen({
             <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
                   strokeLinecap="round" strokeLinejoin="round" />
           </svg>
+        </button>
+
+        {/* App-open lock — biometric gate every time the app opens. */}
+        <button type="button" onClick={() => void toggleAppLock()} disabled={appLockBusy}
+                className="rounded-xl p-4 flex items-center justify-between text-left"
+                style={{ backgroundColor: 'var(--color-surface)',
+                         border: '1px solid var(--color-border)' }}>
+          <div className="flex-1 min-w-0 pr-3">
+            <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+              {t('settings.appLock', 'App lock')}
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {t('settings.appLockSub', 'Require fingerprint or face to open the app')}
+            </div>
+          </div>
+          {/* Inline switch */}
+          <div style={{
+            width: 44, height: 26, borderRadius: 13, flexShrink: 0,
+            backgroundColor: appLockOn ? 'var(--color-accent)' : 'var(--color-surface-muted)',
+            border: '1px solid var(--color-border)',
+            position: 'relative', transition: 'background-color 0.15s',
+            opacity: appLockBusy ? 0.6 : 1,
+          }}>
+            <div style={{
+              width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFFFFF',
+              position: 'absolute', top: 2, left: appLockOn ? 22 : 2,
+              transition: 'left 0.15s',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.25)',
+            }} />
+          </div>
         </button>
 
         {/* Items management — catalogue CRUD + industry-template loader. */}

@@ -178,6 +178,14 @@
     "void": "I-void ang kvitto na ito",
     "voided": "Na-void ang kvitto."
   },
+  "lock": {
+    "checking": "Naghihintay na ma-unlock…",
+    "failed": "Nabigo ang pag-unlock. Subukang muli.",
+    "locked": "Naka-lock — i-unlock para magpatuloy.",
+    "reason": "I-unlock ang ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "I-unlock"
+  },
   "mode": {
     "continue": "Magpatuloy",
     "extendedBody": "Magdagdag ng mga item mula sa katalogo, awtomatikong breakdown ng VAT sa iba't ibang rate, opsyonal na diskwento. Pinakamainam para sa mga café, restawran, retail.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Tungkol dito",
     "accent": "Accent na kulay",
     "address": "Address",
+    "appLock": "App lock",
+    "appLockDisableReason": "Kumpirmahin para i-off ang app lock",
+    "appLockEnableReason": "Kumpirmahin para i-on ang app lock",
+    "appLockSub": "Kailangang fingerprint o mukha para buksan ang app",
     "appearance": "Hitsura",
     "appearanceHelp": "Pumili ng accent na kulay at light o dark na tema.",
     "backToHome": "Bumalik sa home",

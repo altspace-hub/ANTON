@@ -178,6 +178,14 @@
     "void": "Kvitto érvénytelenítése",
     "voided": "A kvitto érvénytelen."
   },
+  "lock": {
+    "checking": "Várakozás a feloldásra…",
+    "failed": "A feloldás nem sikerült. Próbálja újra.",
+    "locked": "Zárolva — a folytatáshoz oldja fel.",
+    "reason": "ANTON Business feloldása",
+    "title": "ANTON Business",
+    "unlock": "Feloldás"
+  },
   "mode": {
     "continue": "Folytatás",
     "extendedBody": "Adjon hozzá tételeket egy katalógusból, automatikus áfa-bontás a kulcsok szerint, opcionális kedvezmény. Legjobb kávézókhoz, éttermekhez, kiskereskedelemhez.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Névjegy",
     "accent": "Kiemelőszín",
     "address": "Cím",
+    "appLock": "Alkalmazászárolás",
+    "appLockDisableReason": "Erősítse meg az alkalmazászárolás kikapcsolásához",
+    "appLockEnableReason": "Erősítse meg az alkalmazászárolás bekapcsolásához",
+    "appLockSub": "Ujjlenyomat vagy arcfelismerés szükséges az alkalmazás megnyitásához",
     "appearance": "Megjelenés",
     "appearanceHelp": "Válasszon kiemelőszínt és világos vagy sötét témát.",
     "backToHome": "Vissza a kezdőlapra",

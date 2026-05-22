@@ -178,6 +178,14 @@
     "void": "Bu kvitto'yu iptal et",
     "voided": "Kvitto iptal edildi."
   },
+  "lock": {
+    "checking": "Kilit açılması bekleniyor…",
+    "failed": "Kilit açılamadı. Tekrar dene.",
+    "locked": "Kilitli — devam etmek için kilidi aç.",
+    "reason": "ANTON Business kilidini aç",
+    "title": "ANTON Business",
+    "unlock": "Kilidi aç"
+  },
   "mode": {
     "continue": "Devam et",
     "extendedBody": "Bir katalogdan ürün ekleyin, oranlara göre otomatik KDV dökümü, isteğe bağlı indirim. Kafeler, restoranlar, perakende için idealdir.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Hakkında",
     "accent": "Vurgu rengi",
     "address": "Adres",
+    "appLock": "Uygulama kilidi",
+    "appLockDisableReason": "Uygulama kilidini kapatmak için onayla",
+    "appLockEnableReason": "Uygulama kilidini açmak için onayla",
+    "appLockSub": "Uygulamayı açmak için parmak izi veya yüz gerekir",
     "appearance": "Görünüm",
     "appearanceHelp": "Bir vurgu rengi ve açık ya da koyu bir tema seçin.",
     "backToHome": "Ana sayfaya dön",

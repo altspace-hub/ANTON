@@ -115,6 +115,14 @@
     "syncNow": "Synkroniser nå — lytt etter innkommende betaling",
     "walletLabel": "Lommeboken din"
   },
+  "lock": {
+    "checking": "Venter på opplåsing…",
+    "failed": "Opplåsing mislyktes. Prøv igjen.",
+    "locked": "Låst — lås opp for å fortsette.",
+    "reason": "Lås opp ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Lås opp"
+  },
   "moneyProfile": {
     "dateOfBirth": "Fødselsdato",
     "expectedMonthly": "Forventet FTC brukt per måned",
@@ -288,6 +296,10 @@
     "accent": "Aksentfarge",
     "activityReview": "Aktivitetsgjennomgang",
     "activityReviewSub": "Forbruksmønsteret ditt og eventuelle merkede betalinger",
+    "appLock": "App-lås",
+    "appLockDisableReason": "Bekreft for å slå av app-låsen",
+    "appLockEnableReason": "Bekreft for å slå på app-låsen",
+    "appLockSub": "Krev fingeravtrykk eller ansiktsgjenkjenning for å åpne appen",
     "appearance": "Utseende",
     "appearanceHelp": "Velg en aksentfarge og et lyst eller mørkt tema.",
     "backToHome": "Tilbake til start",

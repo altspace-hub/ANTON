@@ -115,6 +115,14 @@
     "syncNow": "Nu synchroniseren — wachten op inkomende betaling",
     "walletLabel": "Je wallet"
   },
+  "lock": {
+    "checking": "Wachten op ontgrendeling…",
+    "failed": "Ontgrendeling mislukt. Probeer het opnieuw.",
+    "locked": "Vergrendeld — ontgrendel om door te gaan.",
+    "reason": "ANTON Pay ontgrendelen",
+    "title": "ANTON Pay",
+    "unlock": "Ontgrendelen"
+  },
   "moneyProfile": {
     "dateOfBirth": "Geboortedatum",
     "expectedMonthly": "Verwachte FTC-uitgaven per maand",
@@ -288,6 +296,10 @@
     "accent": "Accentkleur",
     "activityReview": "Activiteitsoverzicht",
     "activityReviewSub": "Je uitgavenpatroon en eventuele gemarkeerde betalingen",
+    "appLock": "App-vergrendeling",
+    "appLockDisableReason": "Bevestig om de app-vergrendeling uit te schakelen",
+    "appLockEnableReason": "Bevestig om de app-vergrendeling in te schakelen",
+    "appLockSub": "Vingerafdruk of gezicht vereist om de app te openen",
     "appearance": "Weergave",
     "appearanceHelp": "Kies een accentkleur en een licht of donker thema.",
     "backToHome": "Terug naar start",

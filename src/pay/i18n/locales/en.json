@@ -115,6 +115,14 @@
     "syncNow": "Sync now — listen for incoming payment",
     "walletLabel": "Your wallet"
   },
+  "lock": {
+    "checking": "Waiting for unlock…",
+    "failed": "Unlock failed. Try again.",
+    "locked": "Locked — unlock to continue.",
+    "reason": "Unlock ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Unlock"
+  },
   "moneyProfile": {
     "dateOfBirth": "Date of birth",
     "expectedMonthly": "Expected FTC spent per month",
@@ -288,6 +296,10 @@
     "accent": "Accent colour",
     "activityReview": "Activity review",
     "activityReviewSub": "Your spending pattern and any flagged payments",
+    "appLock": "App lock",
+    "appLockDisableReason": "Confirm to turn off the app lock",
+    "appLockEnableReason": "Confirm to turn on the app lock",
+    "appLockSub": "Require fingerprint or face to open the app",
     "appearance": "Appearance",
     "appearanceHelp": "Pick an accent colour and a light or dark theme.",
     "backToHome": "Back to home",

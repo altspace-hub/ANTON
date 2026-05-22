@@ -10,7 +10,7 @@
  * On mount, hasConfig() decides between resuming Home or starting
  * onboarding-welcome.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import HomeScreen from './pages/HomeScreen';
 import SimpleScreen from './pages/SimpleScreen';
@@ -42,6 +42,8 @@ import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
 import { useViewport } from './hooks/useViewport';
 import NavRail, { type NavSection } from './components/NavRail';
+import LockScreen from './components/LockScreen';
+import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
 import type { SaleMode } from './services/types';
 
 type Screen =
@@ -84,6 +86,11 @@ export default function App() {
   /** Merchant's default sale mode — drives the nav rail's "Sell"
    *  destination on tablet. Defaults to 'simple' until config loads. */
   const [defaultMode, setDefaultMode] = useState<SaleMode>('simple');
+  /** App-open lock. Starts locked when the merchant enabled it; the
+   *  LockScreen clears it. `hiddenAtRef` timestamps the last
+   *  background so the resume handler can apply the grace window. */
+  const [locked, setLocked] = useState<boolean>(() => isAppLockEnabled());
+  const hiddenAtRef = useRef<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -119,7 +126,17 @@ export default function App() {
     };
     void onForeground();
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') void onForeground();
+      if (document.visibilityState === 'visible') {
+        void onForeground();
+        // App-open lock — re-lock if backgrounded past the grace window.
+        if (isAppLockEnabled() && hiddenAtRef.current > 0
+            && Date.now() - hiddenAtRef.current > APP_LOCK_GRACE_MS) {
+          setLocked(true);
+        }
+        hiddenAtRef.current = 0;
+      } else {
+        hiddenAtRef.current = Date.now();
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
@@ -127,6 +144,13 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
+
+  // App-open lock — block the whole UI behind a biometric gate when
+  // the merchant enabled it. Cold start begins locked; the grace-aware
+  // re-lock above handles return-from-background.
+  if (locked) {
+    return <LockScreen onUnlock={() => setLocked(false)} />;
+  }
 
   if (screen === 'loading') {
     return (

@@ -178,6 +178,14 @@
     "void": "Annuler ce kvitto",
     "voided": "Kvitto annulé."
   },
+  "lock": {
+    "checking": "En attente de déverrouillage…",
+    "failed": "Déverrouillage échoué. Veuillez réessayer.",
+    "locked": "Verrouillé — déverrouillez pour continuer.",
+    "reason": "Déverrouiller ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Déverrouiller"
+  },
   "mode": {
     "continue": "Continuer",
     "extendedBody": "Ajoutez des articles depuis un catalogue, avec ventilation automatique de la TVA selon les taux et remise facultative. Idéal pour les cafés, restaurants et commerces de détail.",
@@ -289,6 +297,10 @@
     "aboutTitle": "À propos",
     "accent": "Couleur d'accentuation",
     "address": "Adresse",
+    "appLock": "Verrouillage de l'application",
+    "appLockDisableReason": "Confirmez pour désactiver le verrouillage de l'application",
+    "appLockEnableReason": "Confirmez pour activer le verrouillage de l'application",
+    "appLockSub": "Exiger une empreinte digitale ou le visage pour ouvrir l'application",
     "appearance": "Apparence",
     "appearanceHelp": "Choisissez une couleur d'accentuation et un thème clair ou sombre.",
     "backToHome": "Retour à l'accueil",

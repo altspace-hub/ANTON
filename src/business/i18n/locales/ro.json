@@ -178,6 +178,14 @@
     "void": "Anulează acest kvitto",
     "voided": "Kvitto anulat."
   },
+  "lock": {
+    "checking": "Se așteaptă deblocarea…",
+    "failed": "Deblocarea a eșuat. Încearcă din nou.",
+    "locked": "Blocat — deblochează pentru a continua.",
+    "reason": "Deblochează ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Deblochează"
+  },
   "mode": {
     "continue": "Continuă",
     "extendedBody": "Adaugi articole dintr-un catalog, defalcare automată a TVA pe cote, reducere opțională. Ideal pentru cafenele, restaurante, comerț cu amănuntul.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Despre",
     "accent": "Culoare de accent",
     "address": "Adresă",
+    "appLock": "Blocare aplicație",
+    "appLockDisableReason": "Confirmă pentru a dezactiva blocarea aplicației",
+    "appLockEnableReason": "Confirmă pentru a activa blocarea aplicației",
+    "appLockSub": "Necesită amprentă sau față pentru a deschide aplicația",
     "appearance": "Aspect",
     "appearanceHelp": "Alege o culoare de accent și o temă deschisă sau întunecată.",
     "backToHome": "Înapoi la pagina principală",

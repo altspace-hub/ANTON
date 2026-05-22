@@ -115,6 +115,14 @@
     "syncNow": "Synchroniser maintenant — écouter un paiement entrant",
     "walletLabel": "Votre portefeuille"
   },
+  "lock": {
+    "checking": "En attente de déverrouillage…",
+    "failed": "Déverrouillage échoué. Réessaie.",
+    "locked": "Verrouillé — déverrouille pour continuer.",
+    "reason": "Déverrouiller ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Déverrouiller"
+  },
   "moneyProfile": {
     "dateOfBirth": "Date de naissance",
     "expectedMonthly": "FTC dépensés attendus par mois",
@@ -288,6 +296,10 @@
     "accent": "Couleur d'accent",
     "activityReview": "Aperçu de l'activité",
     "activityReviewSub": "Vos habitudes de dépenses et tout paiement signalé",
+    "appLock": "Verrouillage de l'application",
+    "appLockDisableReason": "Confirme pour désactiver le verrouillage de l'application",
+    "appLockEnableReason": "Confirme pour activer le verrouillage de l'application",
+    "appLockSub": "Exiger une empreinte digitale ou le visage pour ouvrir l'application",
     "appearance": "Apparence",
     "appearanceHelp": "Choisissez une couleur d'accent et un thème clair ou sombre.",
     "backToHome": "Retour à l'accueil",

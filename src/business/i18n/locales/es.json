@@ -178,6 +178,14 @@
     "void": "Anular este kvitto",
     "voided": "Kvitto anulado."
   },
+  "lock": {
+    "checking": "Esperando desbloqueo…",
+    "failed": "Desbloqueo fallido. Inténtelo de nuevo.",
+    "locked": "Bloqueado — desbloquee para continuar.",
+    "reason": "Desbloquear ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Desbloquear"
+  },
   "mode": {
     "continue": "Continuar",
     "extendedBody": "Añade artículos desde un catálogo, con desglose automático del IVA por tipos y descuento opcional. Ideal para cafeterías, restaurantes y comercio minorista.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Acerca de",
     "accent": "Color de acento",
     "address": "Dirección",
+    "appLock": "Bloqueo de aplicación",
+    "appLockDisableReason": "Confirme para desactivar el bloqueo de la aplicación",
+    "appLockEnableReason": "Confirme para activar el bloqueo de la aplicación",
+    "appLockSub": "Requerir huella dactilar o rostro para abrir la aplicación",
     "appearance": "Apariencia",
     "appearanceHelp": "Elige un color de acento y un tema claro u oscuro.",
     "backToHome": "Volver al inicio",

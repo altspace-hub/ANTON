@@ -178,6 +178,14 @@
     "void": "作废此 kvitto",
     "voided": "Kvitto 已作废。"
   },
+  "lock": {
+    "checking": "正在等待解锁…",
+    "failed": "解锁失败。请重试。",
+    "locked": "已锁定 — 解锁后方可继续。",
+    "reason": "解锁 ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "解锁"
+  },
   "mode": {
     "continue": "继续",
     "extendedBody": "从商品目录中添加项目，自动按不同税率拆分增值税，可选折扣。最适合咖啡馆、餐厅、零售店。",
@@ -289,6 +297,10 @@
     "aboutTitle": "关于",
     "accent": "强调色",
     "address": "地址",
+    "appLock": "应用锁定",
+    "appLockDisableReason": "请确认以关闭应用锁定",
+    "appLockEnableReason": "请确认以开启应用锁定",
+    "appLockSub": "打开应用时需要指纹或面部识别",
     "appearance": "外观",
     "appearanceHelp": "选择强调色以及浅色或深色主题。",
     "backToHome": "返回主页",

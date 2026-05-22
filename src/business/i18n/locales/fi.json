@@ -178,6 +178,14 @@
     "void": "Mitätöi tämä kvitto",
     "voided": "Kvitto mitätöity."
   },
+  "lock": {
+    "checking": "Odotetaan lukituksen avaamista…",
+    "failed": "Lukituksen avaaminen epäonnistui. Yritä uudelleen.",
+    "locked": "Lukittu — avaa lukitus jatkaaksesi.",
+    "reason": "Avaa ANTON Business",
+    "title": "ANTON Business",
+    "unlock": "Avaa lukitus"
+  },
   "mode": {
     "continue": "Jatka",
     "extendedBody": "Lisää tuotteita luettelosta, automaattinen ALV-erittely eri kannoilla, valinnainen alennus. Sopii parhaiten kahviloille, ravintoloille ja vähittäiskaupalle.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Tietoja",
     "accent": "Korostusväri",
     "address": "Osoite",
+    "appLock": "Sovelluksen lukitus",
+    "appLockDisableReason": "Vahvista sovelluksen lukituksen poistaminen käytöstä",
+    "appLockEnableReason": "Vahvista sovelluksen lukituksen ottaminen käyttöön",
+    "appLockSub": "Vaadi sormenjälki tai kasvontunnistus sovelluksen avaamiseen",
     "appearance": "Ulkoasu",
     "appearanceHelp": "Valitse korostusväri sekä vaalea tai tumma teema.",
     "backToHome": "Takaisin etusivulle",

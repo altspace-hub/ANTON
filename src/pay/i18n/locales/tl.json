@@ -115,6 +115,14 @@
     "syncNow": "I-sync ngayon — makinig para sa papasok na bayad",
     "walletLabel": "Ang iyong wallet"
   },
+  "lock": {
+    "checking": "Naghihintay na ma-unlock…",
+    "failed": "Nabigo ang pag-unlock. Subukang muli.",
+    "locked": "Naka-lock — i-unlock para magpatuloy.",
+    "reason": "I-unlock ang ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "I-unlock"
+  },
   "moneyProfile": {
     "dateOfBirth": "Petsa ng kapanganakan",
     "expectedMonthly": "Inaasahang FTC na ginagastos bawat buwan",
@@ -288,6 +296,10 @@
     "accent": "Accent color",
     "activityReview": "Pagsusuri ng aktibidad",
     "activityReviewSub": "Ang iyong pattern ng paggastos at anumang naka-flag na bayad",
+    "appLock": "App lock",
+    "appLockDisableReason": "Kumpirmahin para i-off ang app lock",
+    "appLockEnableReason": "Kumpirmahin para i-on ang app lock",
+    "appLockSub": "Kailangang fingerprint o mukha para buksan ang app",
     "appearance": "Hitsura",
     "appearanceHelp": "Pumili ng accent color at light o dark na tema.",
     "backToHome": "Bumalik sa home",

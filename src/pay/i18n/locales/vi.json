@@ -115,6 +115,14 @@
     "syncNow": "Đồng bộ ngay — lắng nghe thanh toán đến",
     "walletLabel": "Ví của bạn"
   },
+  "lock": {
+    "checking": "Đang chờ mở khóa…",
+    "failed": "Mở khóa thất bại. Thử lại.",
+    "locked": "Đã khóa — mở khóa để tiếp tục.",
+    "reason": "Mở khóa ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Mở khóa"
+  },
   "moneyProfile": {
     "dateOfBirth": "Ngày sinh",
     "expectedMonthly": "FTC dự kiến chi mỗi tháng",
@@ -288,6 +296,10 @@
     "accent": "Màu nhấn",
     "activityReview": "Xem lại hoạt động",
     "activityReviewSub": "Mẫu chi tiêu của bạn và mọi khoản thanh toán bị đánh dấu",
+    "appLock": "Khóa ứng dụng",
+    "appLockDisableReason": "Xác nhận để tắt khóa ứng dụng",
+    "appLockEnableReason": "Xác nhận để bật khóa ứng dụng",
+    "appLockSub": "Yêu cầu vân tay hoặc khuôn mặt để mở ứng dụng",
     "appearance": "Giao diện",
     "appearanceHelp": "Chọn màu nhấn và giao diện sáng hoặc tối.",
     "backToHome": "Về trang chủ",

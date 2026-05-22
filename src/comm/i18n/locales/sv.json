@@ -232,6 +232,14 @@
     "rateUnavailable": "Kurs ej tillgänglig — ange belopp i FTC. Fiatvisning återkommer när FutureChain-oraklet är aktivt.",
     "swap": "Byt valuta"
   },
+  "lock": {
+    "checking": "Väntar på upplåsning…",
+    "failed": "Upplåsning misslyckades. Försök igen.",
+    "locked": "Låst — lås upp för att fortsätta.",
+    "reason": "Lås upp ANTON",
+    "title": "ANTON",
+    "unlock": "Lås upp"
+  },
   "moneyProfile": {
     "dateOfBirth": "Födelsedatum",
     "expectedMonthly": "Förväntad FTC spenderad per månad",
@@ -341,6 +349,10 @@
     "accent": "Accentfärg",
     "activityReview": "Aktivitetsgranskning",
     "activityReviewSub": "Ditt betalningsmönster och eventuella flaggade betalningar",
+    "appLock": "Applås",
+    "appLockDisableReason": "Bekräfta för att stänga av applåset",
+    "appLockEnableReason": "Bekräfta för att slå på applåset",
+    "appLockSub": "Kräv fingeravtryck eller ansikte för att öppna appen",
     "appearanceHelp": "Välj en accentfärg och ljus eller mörk bakgrund. Ändringar tillämpas direkt.",
     "cacheCleared": "Cachen rensad",
     "clearCache": "Rensa cache",

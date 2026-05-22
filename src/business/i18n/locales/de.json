@@ -178,6 +178,14 @@
     "void": "Dieses Kvitto stornieren",
     "voided": "Kvitto storniert."
   },
+  "lock": {
+    "checking": "Warte auf Entsperrung…",
+    "failed": "Entsperrung fehlgeschlagen. Erneut versuchen.",
+    "locked": "Gesperrt — entsperren Sie, um fortzufahren.",
+    "reason": "ANTON Business entsperren",
+    "title": "ANTON Business",
+    "unlock": "Entsperren"
+  },
   "mode": {
     "continue": "Weiter",
     "extendedBody": "Fügen Sie Artikel aus einem Katalog hinzu, mit automatischer MwSt.-Aufschlüsselung über mehrere Sätze und optionalem Rabatt. Ideal für Cafés, Restaurants und den Einzelhandel.",
@@ -289,6 +297,10 @@
     "aboutTitle": "Über die App",
     "accent": "Akzentfarbe",
     "address": "Adresse",
+    "appLock": "App-Sperre",
+    "appLockDisableReason": "Bestätigen Sie, um die App-Sperre zu deaktivieren",
+    "appLockEnableReason": "Bestätigen Sie, um die App-Sperre zu aktivieren",
+    "appLockSub": "Fingerabdruck oder Gesicht zum Öffnen der App erforderlich",
     "appearance": "Darstellung",
     "appearanceHelp": "Wählen Sie eine Akzentfarbe und ein helles oder dunkles Design.",
     "backToHome": "Zurück zur Startseite",

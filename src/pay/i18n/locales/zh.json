@@ -115,6 +115,14 @@
     "syncNow": "立即同步 — 监听入账",
     "walletLabel": "您的钱包"
   },
+  "lock": {
+    "checking": "正在等待解锁…",
+    "failed": "解锁失败。请重试。",
+    "locked": "已锁定 — 解锁后方可继续。",
+    "reason": "解锁 ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "解锁"
+  },
   "moneyProfile": {
     "dateOfBirth": "出生日期",
     "expectedMonthly": "每月预计花费的 FTC",
@@ -288,6 +296,10 @@
     "accent": "强调色",
     "activityReview": "活动审查",
     "activityReviewSub": "您的消费模式及任何被标记的付款",
+    "appLock": "应用锁定",
+    "appLockDisableReason": "请确认以关闭应用锁定",
+    "appLockEnableReason": "请确认以开启应用锁定",
+    "appLockSub": "打开应用时需要指纹或面部识别",
     "appearance": "外观",
     "appearanceHelp": "选择强调色以及浅色或深色主题。",
     "backToHome": "返回首页",

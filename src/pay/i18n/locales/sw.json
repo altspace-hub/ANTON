@@ -115,6 +115,14 @@
     "syncNow": "Sawazisha sasa — sikiliza malipo yanayoingia",
     "walletLabel": "Pochi yako"
   },
+  "lock": {
+    "checking": "Inasubiri kufunguliwa…",
+    "failed": "Kufungua hakukufaulu. Jaribu tena.",
+    "locked": "Imefungwa — fungua ili kuendelea.",
+    "reason": "Fungua ANTON Pay",
+    "title": "ANTON Pay",
+    "unlock": "Fungua"
+  },
   "moneyProfile": {
     "dateOfBirth": "Tarehe ya kuzaliwa",
     "expectedMonthly": "FTC inayotarajiwa kutumika kwa mwezi",
@@ -288,6 +296,10 @@
     "accent": "Rangi ya msisitizo",
     "activityReview": "Mapitio ya shughuli",
     "activityReviewSub": "Mtindo wako wa matumizi na malipo yoyote yaliyowekewa alama",
+    "appLock": "Kufunga programu",
+    "appLockDisableReason": "Thibitisha kuzima kufunga programu",
+    "appLockEnableReason": "Thibitisha kuwasha kufunga programu",
+    "appLockSub": "Inahitaji alama ya vidole au uso kufungua programu",
     "appearance": "Mwonekano",
     "appearanceHelp": "Chagua rangi ya msisitizo na mandhari nyepesi au nyeusi.",
     "backToHome": "Rudi mwanzo",
