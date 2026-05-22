@@ -95,6 +95,8 @@
     "settings": "Cài đặt",
     "simpleSale": "Bán hàng đơn giản",
     "simpleSaleBody": "Một số tiền → kvitto.",
+    "statistics": "Thống kê",
+    "statisticsBody": "Doanh thu, xu hướng, mặt hàng bán chạy.",
     "version": "ANTON Business v0.0.1 · chỉ dùng điện thoại"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Phát hành kvitto (không QR)",
     "order": "Đơn hàng {{id}}",
     "title": "Bán hàng đơn giản"
+  },
+  "stats": {
+    "avgSale": "Doanh thu trung bình",
+    "busiestHours": "Giờ cao điểm",
+    "byCategory": "Doanh thu theo phân khúc",
+    "byVat": "Chi tiết VAT",
+    "empty": "Chưa có doanh thu trong kỳ này.",
+    "gross": "Doanh thu gộp (gồm VAT)",
+    "itemsSoldFooter": "{{count}} mặt hàng đã bán trong kỳ này",
+    "period": {
+      "all": "Tất cả",
+      "month": "Tháng",
+      "quarter": "Quý",
+      "today": "Hôm nay",
+      "week": "Tuần",
+      "year": "Năm"
+    },
+    "quickSale": "Bán nhanh",
+    "refunds": "{{count}} hoàn tiền",
+    "saleCount": "Số giao dịch",
+    "title": "Thống kê",
+    "topItems": "Mặt hàng bán chạy",
+    "trend": "Xu hướng doanh thu",
+    "uncategorised": "Chưa phân loại",
+    "vat": "VAT đã thu",
+    "vatRateRow": "VAT {{rate}}% · thuần {{net}}"
   },
   "sync": {
     "listening": "Đang lắng nghe thanh toán"

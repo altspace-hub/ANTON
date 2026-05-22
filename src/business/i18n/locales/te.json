@@ -95,6 +95,8 @@
     "settings": "సెట్టింగ్‌లు",
     "simpleSale": "సాధారణ అమ్మకం",
     "simpleSaleBody": "ఒక మొత్తం → kvitto.",
+    "statistics": "గణాంకాలు",
+    "statisticsBody": "అమ్మకాలు, ధోరణులు, అగ్రశ్రేణి ఐటెమ్‌లు.",
     "version": "ANTON Business v0.0.1 · ఫోన్-మాత్రమే"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto జారీ చేయి (QR లేదు)",
     "order": "ఆర్డర్ {{id}}",
     "title": "సాధారణ అమ్మకం"
+  },
+  "stats": {
+    "avgSale": "సగటు అమ్మకం",
+    "busiestHours": "అత్యంత బిజీగా ఉన్న గంటలు",
+    "byCategory": "సెగ్మెంట్ వారీగా ఆదాయం",
+    "byVat": "VAT విభజన",
+    "empty": "ఈ కాలంలో ఇంకా అమ్మకాలు లేవు.",
+    "gross": "స్థూల అమ్మకాలు",
+    "itemsSoldFooter": "ఈ కాలంలో {{count}} ఐటెమ్‌లు అమ్ముడయ్యాయి",
+    "period": {
+      "all": "అన్ని సమయం",
+      "month": "నెల",
+      "quarter": "త్రైమాసికం",
+      "today": "ఈరోజు",
+      "week": "వారం",
+      "year": "సంవత్సరం"
+    },
+    "quickSale": "త్వరిత అమ్మకాలు",
+    "refunds": "{{count}} వాపసులు",
+    "saleCount": "అమ్మకాలు",
+    "title": "గణాంకాలు",
+    "topItems": "అగ్రశ్రేణి ఐటెమ్‌లు",
+    "trend": "అమ్మకాల ధోరణి",
+    "uncategorised": "వర్గీకరించబడలేదు",
+    "vat": "సేకరించిన VAT",
+    "vatRateRow": "VAT {{rate}}% · నికర {{net}}"
   },
   "sync": {
     "listening": "చెల్లింపు కోసం వేచి ఉంది"

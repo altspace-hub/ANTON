@@ -95,6 +95,8 @@
     "settings": "Nastavení",
     "simpleSale": "Jednoduchý prodej",
     "simpleSaleBody": "Jedna částka → kvitto.",
+    "statistics": "Statistiky",
+    "statisticsBody": "Tržby, trendy, nejprodávanější položky.",
     "version": "ANTON Business v0.0.1 · pouze telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Vystavit kvitto (bez QR)",
     "order": "Objednávka {{id}}",
     "title": "Jednoduchý prodej"
+  },
+  "stats": {
+    "avgSale": "Průměrná tržba",
+    "busiestHours": "Nejrušnější hodiny",
+    "byCategory": "Tržby podle segmentu",
+    "byVat": "Rozdělení DPH",
+    "empty": "V tomto období zatím žádné tržby.",
+    "gross": "Hrubé tržby",
+    "itemsSoldFooter": "{{count}} položek prodaných v tomto období",
+    "period": {
+      "all": "Vše",
+      "month": "Měsíc",
+      "quarter": "Čtvrtletí",
+      "today": "Dnes",
+      "week": "Týden",
+      "year": "Rok"
+    },
+    "quickSale": "Rychlý prodej",
+    "refunds": "{{count}} vrácení",
+    "saleCount": "Prodeje",
+    "title": "Statistiky",
+    "topItems": "Nejprodávanější",
+    "trend": "Trend tržeb",
+    "uncategorised": "Nezařazené",
+    "vat": "Vybraná DPH",
+    "vatRateRow": "DPH {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Čeká na platbu"

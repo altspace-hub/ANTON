@@ -95,6 +95,8 @@
     "settings": "Настройки",
     "simpleSale": "Простая продажа",
     "simpleSaleBody": "Одна сумма → kvitto.",
+    "statistics": "Статистика",
+    "statisticsBody": "Продажи, тренды, лучшие товары.",
     "version": "ANTON Business v0.0.1 · только для телефона"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Выдать kvitto (без QR)",
     "order": "Заказ {{id}}",
     "title": "Простая продажа"
+  },
+  "stats": {
+    "avgSale": "Средняя продажа",
+    "busiestHours": "Час пик",
+    "byCategory": "Выручка по сегментам",
+    "byVat": "Разбивка по НДС",
+    "empty": "В этом периоде продаж ещё не было.",
+    "gross": "Валовые продажи",
+    "itemsSoldFooter": "{{count}} товаров продано за период",
+    "period": {
+      "all": "За всё время",
+      "month": "Месяц",
+      "quarter": "Квартал",
+      "today": "Сегодня",
+      "week": "Неделя",
+      "year": "Год"
+    },
+    "quickSale": "Быстрые продажи",
+    "refunds": "{{count}} возврат(а)",
+    "saleCount": "Продажи",
+    "title": "Статистика",
+    "topItems": "Топ товаров",
+    "trend": "Тренд продаж",
+    "uncategorised": "Без категории",
+    "vat": "Собранный НДС",
+    "vatRateRow": "НДС {{rate}}% · нетто {{net}}"
   },
   "sync": {
     "listening": "Ожидание платежа"

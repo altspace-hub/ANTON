@@ -95,6 +95,8 @@
     "settings": "Mga Setting",
     "simpleSale": "Simpleng benta",
     "simpleSaleBody": "Isang halaga → kvitto.",
+    "statistics": "Mga Istatistika",
+    "statisticsBody": "Mga benta, mga trend, mga nangungunang item.",
     "version": "ANTON Business v0.0.1 · para sa telepono lamang"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Mag-isyu ng kvitto (walang QR)",
     "order": "Order {{id}}",
     "title": "Simpleng benta"
+  },
+  "stats": {
+    "avgSale": "Karaniwang benta",
+    "busiestHours": "Pinaka-abalang oras",
+    "byCategory": "Kita ayon sa segment",
+    "byVat": "Breakdown ng VAT",
+    "empty": "Wala pang benta sa panahong ito.",
+    "gross": "Kabuuang benta",
+    "itemsSoldFooter": "{{count}} item ang naibenta sa panahong ito",
+    "period": {
+      "all": "Lahat ng panahon",
+      "month": "Buwan",
+      "quarter": "Quarter",
+      "today": "Ngayon",
+      "week": "Linggo",
+      "year": "Taon"
+    },
+    "quickSale": "Mga mabilis na benta",
+    "refunds": "{{count}} refund",
+    "saleCount": "Mga benta",
+    "title": "Mga Istatistika",
+    "topItems": "Mga nangungunang item",
+    "trend": "Trend ng benta",
+    "uncategorised": "Walang kategorya",
+    "vat": "VAT na nakolekta",
+    "vatRateRow": "VAT {{rate}}% · neto {{net}}"
   },
   "sync": {
     "listening": "Nakikinig para sa bayad"

@@ -95,6 +95,8 @@
     "settings": "Налаштування",
     "simpleSale": "Простий продаж",
     "simpleSaleBody": "Одна сума → kvitto.",
+    "statistics": "Статистика",
+    "statisticsBody": "Продажі, тренди, найкращі товари.",
     "version": "ANTON Business v0.0.1 · лише для телефону"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Видати kvitto (без QR)",
     "order": "Замовлення {{id}}",
     "title": "Простий продаж"
+  },
+  "stats": {
+    "avgSale": "Середній продаж",
+    "busiestHours": "Найзавантаженіші години",
+    "byCategory": "Виручка за сегментами",
+    "byVat": "Розподіл ПДВ",
+    "empty": "У цьому періоді продажів ще не було.",
+    "gross": "Валові продажі",
+    "itemsSoldFooter": "{{count}} товарів продано за період",
+    "period": {
+      "all": "За весь час",
+      "month": "Місяць",
+      "quarter": "Квартал",
+      "today": "Сьогодні",
+      "week": "Тиждень",
+      "year": "Рік"
+    },
+    "quickSale": "Швидкі продажі",
+    "refunds": "{{count}} повернень",
+    "saleCount": "Продажі",
+    "title": "Статистика",
+    "topItems": "Топ товарів",
+    "trend": "Тренд продажів",
+    "uncategorised": "Без категорії",
+    "vat": "Зібраний ПДВ",
+    "vatRateRow": "ПДВ {{rate}}% · нетто {{net}}"
   },
   "sync": {
     "listening": "Очікування платежу"

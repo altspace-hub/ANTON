@@ -95,6 +95,8 @@
     "settings": "ترتیبات",
     "simpleSale": "سادہ فروخت",
     "simpleSaleBody": "ایک رقم ← کویٹو۔",
+    "statistics": "اعداد و شمار",
+    "statisticsBody": "فروخت، رجحانات، سب سے زیادہ بکنے والی اشیاء۔",
     "version": "ANTON Business v0.0.1 · صرف فون"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "کویٹو جاری کریں (QR کے بغیر)",
     "order": "آرڈر {{id}}",
     "title": "سادہ فروخت"
+  },
+  "stats": {
+    "avgSale": "اوسط فروخت",
+    "busiestHours": "مصروف ترین اوقات",
+    "byCategory": "سیگمنٹ کے مطابق آمدنی",
+    "byVat": "VAT تقسیم",
+    "empty": "اس مدت میں ابھی تک کوئی فروخت نہیں۔",
+    "gross": "مجموعی فروخت",
+    "itemsSoldFooter": "اس مدت میں {{count}} اشیاء فروخت ہوئیں",
+    "period": {
+      "all": "سب وقت",
+      "month": "مہینہ",
+      "quarter": "سہ ماہی",
+      "today": "آج",
+      "week": "ہفتہ",
+      "year": "سال"
+    },
+    "quickSale": "فوری فروخت",
+    "refunds": "{{count}} واپسیاں",
+    "saleCount": "فروخت",
+    "title": "اعداد و شمار",
+    "topItems": "سب سے زیادہ بکنے والی اشیاء",
+    "trend": "فروخت کا رجحان",
+    "uncategorised": "بغیر زمرے کے",
+    "vat": "وصول شدہ VAT",
+    "vatRateRow": "VAT {{rate}}% · خالص {{net}}"
   },
   "sync": {
     "listening": "ادائیگی کا انتظار"

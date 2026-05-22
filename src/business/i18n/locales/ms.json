@@ -95,6 +95,8 @@
     "settings": "Tetapan",
     "simpleSale": "Jualan mudah",
     "simpleSaleBody": "Satu amaun → kvitto.",
+    "statistics": "Statistik",
+    "statisticsBody": "Jualan, arah aliran, item terlaris.",
     "version": "ANTON Business v0.0.1 · telefon sahaja"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Keluarkan kvitto (tiada QR)",
     "order": "Pesanan {{id}}",
     "title": "Jualan mudah"
+  },
+  "stats": {
+    "avgSale": "Purata jualan",
+    "busiestHours": "Waktu paling sibuk",
+    "byCategory": "Hasil mengikut segmen",
+    "byVat": "Pecahan GST",
+    "empty": "Tiada jualan dalam tempoh ini lagi.",
+    "gross": "Jualan kasar",
+    "itemsSoldFooter": "{{count}} item dijual dalam tempoh ini",
+    "period": {
+      "all": "Semua masa",
+      "month": "Bulan",
+      "quarter": "Suku tahun",
+      "today": "Hari ini",
+      "week": "Minggu",
+      "year": "Tahun"
+    },
+    "quickSale": "Jualan pantas",
+    "refunds": "{{count}} bayaran balik",
+    "saleCount": "Jualan",
+    "title": "Statistik",
+    "topItems": "Item terlaris",
+    "trend": "Arah aliran jualan",
+    "uncategorised": "Tidak dikategorikan",
+    "vat": "GST dikutip",
+    "vatRateRow": "GST {{rate}}% · bersih {{net}}"
   },
   "sync": {
     "listening": "Menunggu pembayaran"

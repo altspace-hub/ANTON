@@ -95,6 +95,8 @@
     "settings": "Instellingen",
     "simpleSale": "Eenvoudige verkoop",
     "simpleSaleBody": "Eén bedrag → kvitto.",
+    "statistics": "Statistieken",
+    "statisticsBody": "Verkopen, trends, topartikelen.",
     "version": "ANTON Business v0.0.1 · alleen telefoon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto uitgeven (zonder QR)",
     "order": "Bestelling {{id}}",
     "title": "Eenvoudige verkoop"
+  },
+  "stats": {
+    "avgSale": "Gemiddelde verkoop",
+    "busiestHours": "Drukste uren",
+    "byCategory": "Omzet per segment",
+    "byVat": "Btw-uitsplitsing",
+    "empty": "Nog geen verkopen in deze periode.",
+    "gross": "Bruto-omzet",
+    "itemsSoldFooter": "{{count}} artikelen verkocht in deze periode",
+    "period": {
+      "all": "Alles",
+      "month": "Maand",
+      "quarter": "Kwartaal",
+      "today": "Vandaag",
+      "week": "Week",
+      "year": "Jaar"
+    },
+    "quickSale": "Snelle verkopen",
+    "refunds": "{{count}} terugbetalingen",
+    "saleCount": "Verkopen",
+    "title": "Statistieken",
+    "topItems": "Topartikelen",
+    "trend": "Verkooptrend",
+    "uncategorised": "Zonder categorie",
+    "vat": "Geïnde btw",
+    "vatRateRow": "Btw {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Wachten op betaling"

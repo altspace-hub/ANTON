@@ -95,6 +95,8 @@
     "settings": "Ayarlar",
     "simpleSale": "Basit satış",
     "simpleSaleBody": "Tek tutar → kvitto.",
+    "statistics": "İstatistikler",
+    "statisticsBody": "Satışlar, eğilimler, en çok satanlar.",
     "version": "ANTON Business v0.0.1 · yalnızca telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto düzenle (QR yok)",
     "order": "Sipariş {{id}}",
     "title": "Basit satış"
+  },
+  "stats": {
+    "avgSale": "Ortalama satış",
+    "busiestHours": "En yoğun saatler",
+    "byCategory": "Segmente göre gelir",
+    "byVat": "KDV dökümü",
+    "empty": "Bu dönemde henüz satış yok.",
+    "gross": "Brüt satışlar",
+    "itemsSoldFooter": "Bu dönemde {{count}} ürün satıldı",
+    "period": {
+      "all": "Tüm zamanlar",
+      "month": "Ay",
+      "quarter": "Çeyrek",
+      "today": "Bugün",
+      "week": "Hafta",
+      "year": "Yıl"
+    },
+    "quickSale": "Hızlı satışlar",
+    "refunds": "{{count}} iade",
+    "saleCount": "Satışlar",
+    "title": "İstatistikler",
+    "topItems": "En çok satanlar",
+    "trend": "Satış eğilimi",
+    "uncategorised": "Kategorisiz",
+    "vat": "Tahsil edilen KDV",
+    "vatRateRow": "KDV {{rate}}% · net {{net}}"
   },
   "sync": {
     "listening": "Ödeme bekleniyor"

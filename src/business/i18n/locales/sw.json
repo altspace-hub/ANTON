@@ -95,6 +95,8 @@
     "settings": "Mipangilio",
     "simpleSale": "Uuzaji rahisi",
     "simpleSaleBody": "Kiasi kimoja → kvitto.",
+    "statistics": "Takwimu",
+    "statisticsBody": "Mauzo, mwelekeo, vipengee maarufu.",
     "version": "ANTON Business v0.0.1 · simu pekee"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Toa kvitto (bila QR)",
     "order": "Agizo {{id}}",
     "title": "Uuzaji rahisi"
+  },
+  "stats": {
+    "avgSale": "Wastani wa mauzo",
+    "busiestHours": "Masaa ya kilele",
+    "byCategory": "Mapato kwa sehemu",
+    "byVat": "Mgawanyo wa VAT",
+    "empty": "Bado hakuna mauzo katika kipindi hiki.",
+    "gross": "Mauzo ghafi (pamoja na VAT)",
+    "itemsSoldFooter": "Vipengee {{count}} viliuzwa katika kipindi hiki",
+    "period": {
+      "all": "Wakati wote",
+      "month": "Mwezi",
+      "quarter": "Robo mwaka",
+      "today": "Leo",
+      "week": "Wiki",
+      "year": "Mwaka"
+    },
+    "quickSale": "Uuzaji wa haraka",
+    "refunds": "Marejesho {{count}}",
+    "saleCount": "Idadi ya mauzo",
+    "title": "Takwimu",
+    "topItems": "Vipengee maarufu",
+    "trend": "Mwelekeo wa mauzo",
+    "uncategorised": "Bila kategoria",
+    "vat": "VAT iliyokusanywa",
+    "vatRateRow": "VAT {{rate}}% · wavu {{net}}"
   },
   "sync": {
     "listening": "Inasikiliza malipo"

@@ -95,6 +95,8 @@
     "settings": "設定",
     "simpleSale": "シンプル販売",
     "simpleSaleBody": "1つの金額 → kvitto。",
+    "statistics": "統計",
+    "statisticsBody": "売上、トレンド、売れ筋商品。",
     "version": "ANTON Business v0.0.1 · スマートフォン専用"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "kvitto を発行（QR なし）",
     "order": "注文 {{id}}",
     "title": "シンプル販売"
+  },
+  "stats": {
+    "avgSale": "平均売上",
+    "busiestHours": "ピーク時間帯",
+    "byCategory": "セグメント別売上",
+    "byVat": "消費税内訳",
+    "empty": "この期間の売上はまだありません。",
+    "gross": "総売上（税込）",
+    "itemsSoldFooter": "この期間に{{count}}件の商品が売れました",
+    "period": {
+      "all": "全期間",
+      "month": "月",
+      "quarter": "四半期",
+      "today": "今日",
+      "week": "週",
+      "year": "年"
+    },
+    "quickSale": "クイック販売",
+    "refunds": "{{count}}件の返金",
+    "saleCount": "販売件数",
+    "title": "統計",
+    "topItems": "売れ筋商品",
+    "trend": "売上トレンド",
+    "uncategorised": "未分類",
+    "vat": "消費税収収額",
+    "vatRateRow": "消費税 {{rate}}% · 税抜 {{net}}"
   },
   "sync": {
     "listening": "支払いを待機中"

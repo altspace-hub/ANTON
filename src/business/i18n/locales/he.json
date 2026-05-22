@@ -95,6 +95,8 @@
     "settings": "הגדרות",
     "simpleSale": "מכירה פשוטה",
     "simpleSaleBody": "סכום אחד ← kvitto.",
+    "statistics": "סטטיסטיקות",
+    "statisticsBody": "מכירות, מגמות, פריטים מובילים.",
     "version": "ANTON Business v0.0.1 · לטלפון בלבד"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "הנפק kvitto (ללא QR)",
     "order": "הזמנה {{id}}",
     "title": "מכירה פשוטה"
+  },
+  "stats": {
+    "avgSale": "מכירה ממוצעת",
+    "busiestHours": "השעות העמוסות ביותר",
+    "byCategory": "הכנסות לפי קטגוריה",
+    "byVat": "פירוט מע\"מ",
+    "empty": "אין מכירות בתקופה זו עדיין.",
+    "gross": "מכירות ברוטו",
+    "itemsSoldFooter": "{{count}} פריטים נמכרו בתקופה זו",
+    "period": {
+      "all": "כל הזמן",
+      "month": "חודש",
+      "quarter": "רבעון",
+      "today": "היום",
+      "week": "שבוע",
+      "year": "שנה"
+    },
+    "quickSale": "מכירות מהירות",
+    "refunds": "{{count}} החזרים",
+    "saleCount": "מכירות",
+    "title": "סטטיסטיקות",
+    "topItems": "פריטים מובילים",
+    "trend": "מגמת מכירות",
+    "uncategorised": "ללא קטגוריה",
+    "vat": "מע\"מ שנגבה",
+    "vatRateRow": "מע\"מ {{rate}}% · נטו {{net}}"
   },
   "sync": {
     "listening": "ממתין לתשלום"

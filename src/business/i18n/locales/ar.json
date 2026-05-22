@@ -95,6 +95,8 @@
     "settings": "الإعدادات",
     "simpleSale": "بيع بسيط",
     "simpleSaleBody": "مبلغ واحد ← كفيتو.",
+    "statistics": "الإحصائيات",
+    "statisticsBody": "المبيعات، الاتجاهات، أفضل العناصر.",
     "version": "ANTON Business v0.0.1 · للهاتف فقط"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "إصدار كفيتو (بدون QR)",
     "order": "الطلب {{id}}",
     "title": "بيع بسيط"
+  },
+  "stats": {
+    "avgSale": "متوسط البيع",
+    "busiestHours": "أكثر الساعات ازدحاماً",
+    "byCategory": "الإيرادات حسب القسم",
+    "byVat": "تفصيل ضريبة القيمة المضافة",
+    "empty": "لا توجد مبيعات في هذه الفترة بعد.",
+    "gross": "إجمالي المبيعات",
+    "itemsSoldFooter": "{{count}} عنصر تم بيعه في هذه الفترة",
+    "period": {
+      "all": "كل الوقت",
+      "month": "شهر",
+      "quarter": "ربع",
+      "today": "اليوم",
+      "week": "أسبوع",
+      "year": "سنة"
+    },
+    "quickSale": "مبيعات سريعة",
+    "refunds": "{{count}} مبلغ مسترد",
+    "saleCount": "المبيعات",
+    "title": "الإحصائيات",
+    "topItems": "أفضل العناصر",
+    "trend": "اتجاه المبيعات",
+    "uncategorised": "غير مصنَّف",
+    "vat": "ضريبة القيمة المضافة المحصَّلة",
+    "vatRateRow": "ضريبة القيمة المضافة {{rate}}% · صافٍ {{net}}"
   },
   "sync": {
     "listening": "في انتظار الدفعة"

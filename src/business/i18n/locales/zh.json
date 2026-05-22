@@ -95,6 +95,8 @@
     "settings": "设置",
     "simpleSale": "简易销售",
     "simpleSaleBody": "一个金额 → kvitto。",
+    "statistics": "统计",
+    "statisticsBody": "销售额、趋势、热销商品。",
     "version": "ANTON Business v0.0.1 · 仅限手机"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "开具 kvitto（无 QR）",
     "order": "订单 {{id}}",
     "title": "简易销售"
+  },
+  "stats": {
+    "avgSale": "平均销售额",
+    "busiestHours": "高峰时段",
+    "byCategory": "按分类的收入",
+    "byVat": "增值税明细",
+    "empty": "该时间段内暂无销售记录。",
+    "gross": "含税销售额",
+    "itemsSoldFooter": "该时间段共售出 {{count}} 件商品",
+    "period": {
+      "all": "全部",
+      "month": "月",
+      "quarter": "季度",
+      "today": "今天",
+      "week": "周",
+      "year": "年"
+    },
+    "quickSale": "快速销售",
+    "refunds": "{{count}} 笔退款",
+    "saleCount": "销售笔数",
+    "title": "统计",
+    "topItems": "热销商品",
+    "trend": "销售趋势",
+    "uncategorised": "未分类",
+    "vat": "已收增值税",
+    "vatRateRow": "增值税 {{rate}}% · 净额 {{net}}"
   },
   "sync": {
     "listening": "正在监听付款"

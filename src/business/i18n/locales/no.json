@@ -95,6 +95,8 @@
     "settings": "Innstillinger",
     "simpleSale": "Enkelt salg",
     "simpleSaleBody": "Ett beløp → kvitto.",
+    "statistics": "Statistikk",
+    "statisticsBody": "Salg, trender, toppvarer.",
     "version": "ANTON Business v0.0.1 · kun telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Utsted kvitto (ingen QR)",
     "order": "Ordre {{id}}",
     "title": "Enkelt salg"
+  },
+  "stats": {
+    "avgSale": "Gjennomsnittlig salg",
+    "busiestHours": "Travleste timer",
+    "byCategory": "Omsetning per segment",
+    "byVat": "Mva-fordeling",
+    "empty": "Ingen salg i denne perioden ennå.",
+    "gross": "Bruttosalg",
+    "itemsSoldFooter": "{{count}} varer solgt i perioden",
+    "period": {
+      "all": "Alle tider",
+      "month": "Måned",
+      "quarter": "Kvartal",
+      "today": "I dag",
+      "week": "Uke",
+      "year": "År"
+    },
+    "quickSale": "Hurtigsalg",
+    "refunds": "{{count}} refunderinger",
+    "saleCount": "Salg",
+    "title": "Statistikk",
+    "topItems": "Toppvarer",
+    "trend": "Salgstrend",
+    "uncategorised": "Ukategorisert",
+    "vat": "Innkrevd mva",
+    "vatRateRow": "Mva {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Lytter etter betaling"

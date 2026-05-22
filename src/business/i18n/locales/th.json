@@ -95,6 +95,8 @@
     "settings": "การตั้งค่า",
     "simpleSale": "การขายแบบง่าย",
     "simpleSaleBody": "หนึ่งจำนวนเงิน → kvitto",
+    "statistics": "สถิติ",
+    "statisticsBody": "ยอดขาย, แนวโน้ม, สินค้าขายดี",
     "version": "ANTON Business v0.0.1 · ใช้เฉพาะบนโทรศัพท์"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "ออกใบ kvitto (ไม่มี QR)",
     "order": "คำสั่งซื้อ {{id}}",
     "title": "การขายแบบง่าย"
+  },
+  "stats": {
+    "avgSale": "ยอดขายเฉลี่ย",
+    "busiestHours": "ชั่วโมงยอดนิยม",
+    "byCategory": "รายได้แยกตามกลุ่ม",
+    "byVat": "รายละเอียด VAT",
+    "empty": "ยังไม่มียอดขายในช่วงนี้",
+    "gross": "ยอดขายรวม (รวม VAT)",
+    "itemsSoldFooter": "ขายได้ {{count}} รายการในช่วงนี้",
+    "period": {
+      "all": "ทั้งหมด",
+      "month": "เดือน",
+      "quarter": "ไตรมาส",
+      "today": "วันนี้",
+      "week": "สัปดาห์",
+      "year": "ปี"
+    },
+    "quickSale": "ขายด่วน",
+    "refunds": "{{count}} รายการคืนเงิน",
+    "saleCount": "จำนวนรายการขาย",
+    "title": "สถิติ",
+    "topItems": "สินค้าขายดี",
+    "trend": "แนวโน้มยอดขาย",
+    "uncategorised": "ไม่มีหมวดหมู่",
+    "vat": "VAT ที่เก็บได้",
+    "vatRateRow": "VAT {{rate}}% · สุทธิ {{net}}"
   },
   "sync": {
     "listening": "กำลังรับฟังการชำระเงิน"

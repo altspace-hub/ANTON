@@ -95,6 +95,8 @@
     "settings": "সেটিংস",
     "simpleSale": "সিম্পল বিক্রয়",
     "simpleSaleBody": "একটি পরিমাণ → কভিত্তো।",
+    "statistics": "পরিসংখ্যান",
+    "statisticsBody": "বিক্রয়, প্রবণতা, শীর্ষ আইটেম।",
     "version": "ANTON Business v0.0.1 · শুধুমাত্র ফোন"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "কভিত্তো ইস্যু করুন (QR ছাড়া)",
     "order": "অর্ডার {{id}}",
     "title": "সিম্পল বিক্রয়"
+  },
+  "stats": {
+    "avgSale": "গড় বিক্রয়",
+    "busiestHours": "সবচেয়ে ব্যস্ত ঘণ্টা",
+    "byCategory": "সেগমেন্ট অনুযায়ী রাজস্ব",
+    "byVat": "VAT বিভাজন",
+    "empty": "এই সময়কালে এখনো কোনো বিক্রয় নেই।",
+    "gross": "মোট বিক্রয়",
+    "itemsSoldFooter": "এই সময়কালে {{count}}টি আইটেম বিক্রি হয়েছে",
+    "period": {
+      "all": "সব সময়",
+      "month": "মাস",
+      "quarter": "ত্রৈমাসিক",
+      "today": "আজ",
+      "week": "সপ্তাহ",
+      "year": "বছর"
+    },
+    "quickSale": "দ্রুত বিক্রয়",
+    "refunds": "{{count}}টি রিফান্ড",
+    "saleCount": "বিক্রয়",
+    "title": "পরিসংখ্যান",
+    "topItems": "শীর্ষ আইটেম",
+    "trend": "বিক্রয় প্রবণতা",
+    "uncategorised": "অশ্রেণীভুক্ত",
+    "vat": "সংগৃহীত VAT",
+    "vatRateRow": "VAT {{rate}}% · নেট {{net}}"
   },
   "sync": {
     "listening": "পেমেন্টের জন্য অপেক্ষা করছে"

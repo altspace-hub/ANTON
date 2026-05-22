@@ -95,6 +95,8 @@
     "settings": "설정",
     "simpleSale": "심플 판매",
     "simpleSaleBody": "하나의 금액 → kvitto.",
+    "statistics": "통계",
+    "statisticsBody": "매출, 트렌드, 인기 품목.",
     "version": "ANTON Business v0.0.1 · 휴대폰 전용"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "kvitto 발행 (QR 없음)",
     "order": "주문 {{id}}",
     "title": "심플 판매"
+  },
+  "stats": {
+    "avgSale": "평균 매출",
+    "busiestHours": "피크 시간대",
+    "byCategory": "세그먼트별 매출",
+    "byVat": "부가세 내역",
+    "empty": "이 기간에 아직 매출이 없습니다.",
+    "gross": "총매출 (세금 포함)",
+    "itemsSoldFooter": "이 기간에 {{count}}개 품목이 판매되었습니다",
+    "period": {
+      "all": "전체 기간",
+      "month": "월",
+      "quarter": "분기",
+      "today": "오늘",
+      "week": "주",
+      "year": "연"
+    },
+    "quickSale": "빠른 판매",
+    "refunds": "{{count}}건 환불",
+    "saleCount": "판매 건수",
+    "title": "통계",
+    "topItems": "인기 품목",
+    "trend": "매출 트렌드",
+    "uncategorised": "미분류",
+    "vat": "부가세 수취액",
+    "vatRateRow": "부가세 {{rate}}% · 순액 {{net}}"
   },
   "sync": {
     "listening": "결제 대기 중"

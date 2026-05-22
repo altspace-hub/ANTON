@@ -95,6 +95,8 @@
     "settings": "تنظیمات",
     "simpleSale": "فروش ساده",
     "simpleSaleBody": "یک مبلغ ← کویتو.",
+    "statistics": "آمار",
+    "statisticsBody": "فروش‌ها، روندها، پرفروش‌ترین اقلام.",
     "version": "ANTON Business v0.0.1 · فقط تلفن"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "صدور کویتو (بدون QR)",
     "order": "سفارش {{id}}",
     "title": "فروش ساده"
+  },
+  "stats": {
+    "avgSale": "میانگین فروش",
+    "busiestHours": "شلوغ‌ترین ساعات",
+    "byCategory": "درآمد بر اساس بخش",
+    "byVat": "تفکیک مالیات بر ارزش افزوده",
+    "empty": "در این بازه هنوز فروشی ثبت نشده است.",
+    "gross": "فروش ناخالص",
+    "itemsSoldFooter": "{{count}} قلم در این بازه فروخته شد",
+    "period": {
+      "all": "همه زمان‌ها",
+      "month": "ماه",
+      "quarter": "سه‌ماهه",
+      "today": "امروز",
+      "week": "هفته",
+      "year": "سال"
+    },
+    "quickSale": "فروش سریع",
+    "refunds": "{{count}} بازپرداخت",
+    "saleCount": "فروش‌ها",
+    "title": "آمار",
+    "topItems": "پرفروش‌ترین اقلام",
+    "trend": "روند فروش",
+    "uncategorised": "دسته‌بندی‌نشده",
+    "vat": "مالیات بر ارزش افزوده دریافت‌شده",
+    "vatRateRow": "مالیات بر ارزش افزوده {{rate}}% · خالص {{net}}"
   },
   "sync": {
     "listening": "در انتظار دریافت پرداخت"

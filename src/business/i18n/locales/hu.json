@@ -95,6 +95,8 @@
     "settings": "Beállítások",
     "simpleSale": "Egyszerű eladás",
     "simpleSaleBody": "Egy összeg → kvitto.",
+    "statistics": "Statisztikák",
+    "statisticsBody": "Eladások, trendek, legjobb tételek.",
     "version": "ANTON Business v0.0.1 · csak telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto kiállítása (QR nélkül)",
     "order": "Rendelés {{id}}",
     "title": "Egyszerű eladás"
+  },
+  "stats": {
+    "avgSale": "Átlagos eladás",
+    "busiestHours": "Legforgalmasabb órák",
+    "byCategory": "Bevétel szegmens szerint",
+    "byVat": "ÁFA-bontás",
+    "empty": "Ebben az időszakban még nem volt eladás.",
+    "gross": "Bruttó eladások",
+    "itemsSoldFooter": "{{count}} tétel eladva ebben az időszakban",
+    "period": {
+      "all": "Összesen",
+      "month": "Hónap",
+      "quarter": "Negyedév",
+      "today": "Ma",
+      "week": "Hét",
+      "year": "Év"
+    },
+    "quickSale": "Gyors eladások",
+    "refunds": "{{count}} visszatérítés",
+    "saleCount": "Eladások",
+    "title": "Statisztikák",
+    "topItems": "Legjobb tételek",
+    "trend": "Eladási trend",
+    "uncategorised": "Kategorizálatlan",
+    "vat": "Begyűjtött ÁFA",
+    "vatRateRow": "ÁFA {{rate}}% · nettó {{net}}"
   },
   "sync": {
     "listening": "Fizetésre vár"

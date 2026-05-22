@@ -95,6 +95,8 @@
     "settings": "Ρυθμίσεις",
     "simpleSale": "Απλή πώληση",
     "simpleSaleBody": "Ένα ποσό → kvitto.",
+    "statistics": "Στατιστικά",
+    "statisticsBody": "Πωλήσεις, τάσεις, κορυφαία είδη.",
     "version": "ANTON Business v0.0.1 · μόνο για κινητό"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Έκδοση kvitto (χωρίς QR)",
     "order": "Παραγγελία {{id}}",
     "title": "Απλή πώληση"
+  },
+  "stats": {
+    "avgSale": "Μέση πώληση",
+    "busiestHours": "Ώρες αιχμής",
+    "byCategory": "Έσοδα ανά τμήμα",
+    "byVat": "Ανάλυση ΦΠΑ",
+    "empty": "Δεν υπάρχουν πωλήσεις σε αυτή την περίοδο.",
+    "gross": "Ακαθάριστες πωλήσεις",
+    "itemsSoldFooter": "{{count}} είδη πωλήθηκαν σε αυτή την περίοδο",
+    "period": {
+      "all": "Όλη η περίοδος",
+      "month": "Μήνας",
+      "quarter": "Τρίμηνο",
+      "today": "Σήμερα",
+      "week": "Εβδομάδα",
+      "year": "Έτος"
+    },
+    "quickSale": "Γρήγορες πωλήσεις",
+    "refunds": "{{count}} επιστροφές",
+    "saleCount": "Πωλήσεις",
+    "title": "Στατιστικά",
+    "topItems": "Κορυφαία είδη",
+    "trend": "Τάση πωλήσεων",
+    "uncategorised": "Χωρίς κατηγορία",
+    "vat": "ΦΠΑ που εισπράχθηκε",
+    "vatRateRow": "ΦΠΑ {{rate}}% · καθαρό {{net}}"
   },
   "sync": {
     "listening": "Αναμονή για πληρωμή"

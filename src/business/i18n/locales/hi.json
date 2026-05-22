@@ -95,6 +95,8 @@
     "settings": "सेटिंग्स",
     "simpleSale": "सरल बिक्री",
     "simpleSaleBody": "एक राशि ← क्विट्टो।",
+    "statistics": "आँकड़े",
+    "statisticsBody": "बिक्री, रुझान, शीर्ष आइटम।",
     "version": "ANTON Business v0.0.1 · केवल फ़ोन"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "क्विट्टो जारी करें (QR के बिना)",
     "order": "ऑर्डर {{id}}",
     "title": "सरल बिक्री"
+  },
+  "stats": {
+    "avgSale": "औसत बिक्री",
+    "busiestHours": "सबसे व्यस्त घंटे",
+    "byCategory": "सेगमेंट के अनुसार राजस्व",
+    "byVat": "VAT विभाजन",
+    "empty": "इस अवधि में अभी कोई बिक्री नहीं।",
+    "gross": "सकल बिक्री",
+    "itemsSoldFooter": "इस अवधि में {{count}} आइटम बिके",
+    "period": {
+      "all": "सभी समय",
+      "month": "माह",
+      "quarter": "तिमाही",
+      "today": "आज",
+      "week": "सप्ताह",
+      "year": "वर्ष"
+    },
+    "quickSale": "त्वरित बिक्री",
+    "refunds": "{{count}} वापसियाँ",
+    "saleCount": "बिक्री",
+    "title": "आँकड़े",
+    "topItems": "शीर्ष आइटम",
+    "trend": "बिक्री रुझान",
+    "uncategorised": "अवर्गीकृत",
+    "vat": "एकत्रित VAT",
+    "vatRateRow": "VAT {{rate}}% · शुद्ध {{net}}"
   },
   "sync": {
     "listening": "भुगतान की प्रतीक्षा"

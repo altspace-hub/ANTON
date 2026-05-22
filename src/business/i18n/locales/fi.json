@@ -95,6 +95,8 @@
     "settings": "Asetukset",
     "simpleSale": "Yksinkertainen myynti",
     "simpleSaleBody": "Yksi summa → kvitto.",
+    "statistics": "Tilastot",
+    "statisticsBody": "Myynti, trendit, myydyimmät tuotteet.",
     "version": "ANTON Business v0.0.1 · vain puhelin"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Anna kvitto (ei QR:ää)",
     "order": "Tilaus {{id}}",
     "title": "Yksinkertainen myynti"
+  },
+  "stats": {
+    "avgSale": "Keskimääräinen myynti",
+    "busiestHours": "Vilkkaimmat tunnit",
+    "byCategory": "Tuotot segmenteittäin",
+    "byVat": "ALV-erittely",
+    "empty": "Ei myyntiä tällä jaksolla vielä.",
+    "gross": "Bruttomyynti",
+    "itemsSoldFooter": "{{count}} tuotetta myyty jaksolla",
+    "period": {
+      "all": "Kaikki ajat",
+      "month": "Kuukausi",
+      "quarter": "Neljännes",
+      "today": "Tänään",
+      "week": "Viikko",
+      "year": "Vuosi"
+    },
+    "quickSale": "Pikamyynti",
+    "refunds": "{{count}} hyvitystä",
+    "saleCount": "Myynnit",
+    "title": "Tilastot",
+    "topItems": "Myydyimmät tuotteet",
+    "trend": "Myyntitrendi",
+    "uncategorised": "Luokittelematon",
+    "vat": "Kerätty ALV",
+    "vatRateRow": "ALV {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Kuunnellaan maksua"

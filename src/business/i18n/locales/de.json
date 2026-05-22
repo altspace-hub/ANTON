@@ -95,6 +95,8 @@
     "settings": "Einstellungen",
     "simpleSale": "Einfacher Verkauf",
     "simpleSaleBody": "Ein Betrag → kvitto.",
+    "statistics": "Statistiken",
+    "statisticsBody": "Umsätze, Trends, Top-Artikel.",
     "version": "ANTON Business v0.0.1 · nur Smartphone"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto ausstellen (ohne QR)",
     "order": "Bestellung {{id}}",
     "title": "Einfacher Verkauf"
+  },
+  "stats": {
+    "avgSale": "Durchschnittlicher Verkauf",
+    "busiestHours": "Stoßzeiten",
+    "byCategory": "Umsatz nach Segment",
+    "byVat": "MwSt.-Aufschlüsselung",
+    "empty": "In diesem Zeitraum noch keine Verkäufe.",
+    "gross": "Bruttoumsatz",
+    "itemsSoldFooter": "{{count}} Artikel in diesem Zeitraum verkauft",
+    "period": {
+      "all": "Gesamt",
+      "month": "Monat",
+      "quarter": "Quartal",
+      "today": "Heute",
+      "week": "Woche",
+      "year": "Jahr"
+    },
+    "quickSale": "Schnellverkäufe",
+    "refunds": "{{count}} Erstattungen",
+    "saleCount": "Verkäufe",
+    "title": "Statistiken",
+    "topItems": "Top-Artikel",
+    "trend": "Verkaufstrend",
+    "uncategorised": "Ohne Kategorie",
+    "vat": "Erhobene MwSt.",
+    "vatRateRow": "MwSt. {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Warte auf Zahlung"

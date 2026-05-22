@@ -95,6 +95,8 @@
     "settings": "Setări",
     "simpleSale": "Vânzare simplă",
     "simpleSaleBody": "O singură sumă → kvitto.",
+    "statistics": "Statistici",
+    "statisticsBody": "Vânzări, tendințe, articole de top.",
     "version": "ANTON Business v0.0.1 · doar pe telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Emite kvitto (fără QR)",
     "order": "Comanda {{id}}",
     "title": "Vânzare simplă"
+  },
+  "stats": {
+    "avgSale": "Vânzare medie",
+    "busiestHours": "Orele de vârf",
+    "byCategory": "Venituri pe segment",
+    "byVat": "Defalcare TVA",
+    "empty": "Nicio vânzare în această perioadă.",
+    "gross": "Vânzări brute",
+    "itemsSoldFooter": "{{count}} articole vândute în această perioadă",
+    "period": {
+      "all": "Tot timpul",
+      "month": "Lună",
+      "quarter": "Trimestru",
+      "today": "Azi",
+      "week": "Săptămână",
+      "year": "An"
+    },
+    "quickSale": "Vânzări rapide",
+    "refunds": "{{count}} rambursări",
+    "saleCount": "Vânzări",
+    "title": "Statistici",
+    "topItems": "Articole de top",
+    "trend": "Tendință vânzări",
+    "uncategorised": "Necategorizat",
+    "vat": "TVA colectat",
+    "vatRateRow": "TVA {{rate}}% · net {{net}}"
   },
   "sync": {
     "listening": "Ascultă pentru plată"

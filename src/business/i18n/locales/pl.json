@@ -95,6 +95,8 @@
     "settings": "Ustawienia",
     "simpleSale": "Sprzedaż prosta",
     "simpleSaleBody": "Jedna kwota → kvitto.",
+    "statistics": "Statystyki",
+    "statisticsBody": "Sprzedaż, trendy, najlepsze pozycje.",
     "version": "ANTON Business v0.0.1 · tylko telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Wystaw kvitto (bez QR)",
     "order": "Zamówienie {{id}}",
     "title": "Sprzedaż prosta"
+  },
+  "stats": {
+    "avgSale": "Średnia sprzedaż",
+    "busiestHours": "Najbardziej ruchliwe godziny",
+    "byCategory": "Przychody wg segmentu",
+    "byVat": "Podział VAT",
+    "empty": "Brak sprzedaży w tym okresie.",
+    "gross": "Sprzedaż brutto",
+    "itemsSoldFooter": "{{count}} pozycji sprzedanych w tym okresie",
+    "period": {
+      "all": "Cały czas",
+      "month": "Miesiąc",
+      "quarter": "Kwartał",
+      "today": "Dziś",
+      "week": "Tydzień",
+      "year": "Rok"
+    },
+    "quickSale": "Szybka sprzedaż",
+    "refunds": "{{count}} zwroty",
+    "saleCount": "Sprzedaż",
+    "title": "Statystyki",
+    "topItems": "Najlepsze pozycje",
+    "trend": "Trend sprzedaży",
+    "uncategorised": "Bez kategorii",
+    "vat": "Pobrany VAT",
+    "vatRateRow": "VAT {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Oczekiwanie na płatność"

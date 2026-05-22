@@ -95,6 +95,8 @@
     "settings": "Inställningar",
     "simpleSale": "Enkel försäljning",
     "simpleSaleBody": "Ett belopp → kvitto.",
+    "statistics": "Statistik",
+    "statisticsBody": "Försäljning, trender, toppvaror.",
     "version": "ANTON Business v0.0.1 · endast telefon"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Utfärda kvitto (ingen QR)",
     "order": "Order {{id}}",
     "title": "Enkel försäljning"
+  },
+  "stats": {
+    "avgSale": "Genomsnittlig försäljning",
+    "busiestHours": "Mest aktiva timmar",
+    "byCategory": "Intäkter per segment",
+    "byVat": "Momsfördelning",
+    "empty": "Ingen försäljning under den här perioden än.",
+    "gross": "Bruttoförsäljning",
+    "itemsSoldFooter": "{{count}} varor sålda under perioden",
+    "period": {
+      "all": "Alla tider",
+      "month": "Månad",
+      "quarter": "Kvartal",
+      "today": "Idag",
+      "week": "Vecka",
+      "year": "År"
+    },
+    "quickSale": "Snabbförsäljning",
+    "refunds": "{{count}} återbetalningar",
+    "saleCount": "Försäljningar",
+    "title": "Statistik",
+    "topItems": "Toppvaror",
+    "trend": "Försäljningstrend",
+    "uncategorised": "Okategoriserat",
+    "vat": "Insamlad moms",
+    "vatRateRow": "Moms {{rate}}% · netto {{net}}"
   },
   "sync": {
     "listening": "Lyssnar efter betalning"

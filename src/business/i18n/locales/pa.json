@@ -95,6 +95,8 @@
     "settings": "ਸੈਟਿੰਗਾਂ",
     "simpleSale": "ਸਧਾਰਨ ਵਿਕਰੀ",
     "simpleSaleBody": "ਇੱਕ ਰਕਮ → kvitto.",
+    "statistics": "ਅੰਕੜੇ",
+    "statisticsBody": "ਵਿਕਰੀ, ਰੁਝਾਨ, ਚੋਟੀ ਦੀਆਂ ਆਈਟਮਾਂ।",
     "version": "ANTON Business v0.0.1 · ਸਿਰਫ਼ ਫੋਨ"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Kvitto ਜਾਰੀ ਕਰੋ (QR ਨਹੀਂ)",
     "order": "ਆਰਡਰ {{id}}",
     "title": "ਸਧਾਰਨ ਵਿਕਰੀ"
+  },
+  "stats": {
+    "avgSale": "ਔਸਤ ਵਿਕਰੀ",
+    "busiestHours": "ਸਭ ਤੋਂ ਵਿਅਸਤ ਘੰਟੇ",
+    "byCategory": "ਸੈਗਮੈਂਟ ਅਨੁਸਾਰ ਆਮਦਨ",
+    "byVat": "VAT ਵੰਡ",
+    "empty": "ਇਸ ਸਮੇਂ ਵਿੱਚ ਅਜੇ ਕੋਈ ਵਿਕਰੀ ਨਹੀਂ।",
+    "gross": "ਕੁੱਲ ਵਿਕਰੀ",
+    "itemsSoldFooter": "ਇਸ ਸਮੇਂ ਵਿੱਚ {{count}} ਆਈਟਮਾਂ ਵੇਚੀਆਂ ਗਈਆਂ",
+    "period": {
+      "all": "ਸਾਰਾ ਸਮਾਂ",
+      "month": "ਮਹੀਨਾ",
+      "quarter": "ਤਿਮਾਹੀ",
+      "today": "ਅੱਜ",
+      "week": "ਹਫ਼ਤਾ",
+      "year": "ਸਾਲ"
+    },
+    "quickSale": "ਤੇਜ਼ ਵਿਕਰੀ",
+    "refunds": "{{count}} ਵਾਪਸੀਆਂ",
+    "saleCount": "ਵਿਕਰੀ",
+    "title": "ਅੰਕੜੇ",
+    "topItems": "ਚੋਟੀ ਦੀਆਂ ਆਈਟਮਾਂ",
+    "trend": "ਵਿਕਰੀ ਰੁਝਾਨ",
+    "uncategorised": "ਗੈਰ-ਸ਼੍ਰੇਣੀਬੱਧ",
+    "vat": "ਇਕੱਠਾ ਕੀਤਾ VAT",
+    "vatRateRow": "VAT {{rate}}% · ਨੈੱਟ {{net}}"
   },
   "sync": {
     "listening": "ਭੁਗਤਾਨ ਲਈ ਉਡੀਕ ਕਰ ਰਿਹਾ ਹੈ"

@@ -95,6 +95,8 @@
     "settings": "Pengaturan",
     "simpleSale": "Penjualan sederhana",
     "simpleSaleBody": "Satu jumlah → kvitto.",
+    "statistics": "Statistik",
+    "statisticsBody": "Penjualan, tren, item terlaris.",
     "version": "ANTON Business v0.0.1 · hanya ponsel"
   },
   "items": {
@@ -303,6 +305,32 @@
     "issueKvittoNoQr": "Terbitkan kvitto (tanpa QR)",
     "order": "Pesanan {{id}}",
     "title": "Penjualan sederhana"
+  },
+  "stats": {
+    "avgSale": "Rata-rata penjualan",
+    "busiestHours": "Jam tersibuk",
+    "byCategory": "Pendapatan per segmen",
+    "byVat": "Rincian PPN",
+    "empty": "Belum ada penjualan dalam periode ini.",
+    "gross": "Penjualan kotor",
+    "itemsSoldFooter": "{{count}} item terjual dalam periode ini",
+    "period": {
+      "all": "Semua waktu",
+      "month": "Bulan",
+      "quarter": "Kuartal",
+      "today": "Hari ini",
+      "week": "Minggu",
+      "year": "Tahun"
+    },
+    "quickSale": "Penjualan cepat",
+    "refunds": "{{count}} pengembalian dana",
+    "saleCount": "Penjualan",
+    "title": "Statistik",
+    "topItems": "Item terlaris",
+    "trend": "Tren penjualan",
+    "uncategorised": "Tidak berkategori",
+    "vat": "PPN dikumpulkan",
+    "vatRateRow": "PPN {{rate}}% · neto {{net}}"
   },
   "sync": {
     "listening": "Menunggu pembayaran"
