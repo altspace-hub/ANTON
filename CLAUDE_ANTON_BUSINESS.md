@@ -458,6 +458,31 @@ App source: `src/business/` (React + Vite + Tailwind). Native shell:
 preserved at `anton-business/_archive/expo-attempt/` — see that dir's
 README for the toolchain rationale.
 
+### 15.1 APK build environment (per-machine, one-time)
+
+`./gradlew` needs a JDK on `JAVA_HOME`. The simplest source is the JDK
+that ships inside Android Studio — no separate JDK install required.
+
+**Windows** (PowerShell, persists for the user — new terminals pick it up):
+
+```powershell
+$jdk = "C:\Program Files\Android\Android Studio\jbr"   # adjust if Studio is elsewhere
+[Environment]::SetEnvironmentVariable('JAVA_HOME', $jdk, 'User')
+[Environment]::SetEnvironmentVariable('Path',
+  [Environment]::GetEnvironmentVariable('Path','User') + ";$jdk\bin", 'User')
+```
+
+**macOS / Linux** — add to `~/.zshrc` / `~/.bashrc`:
+
+```bash
+export JAVA_HOME="$HOME/Android/Sdk/../android-studio/jbr"   # or `/usr/libexec/java_home`
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+`adb` lives in the Android SDK `platform-tools/` (Windows default:
+`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`). Same `assembleDebug`
++ `adb install -r` flow applies to `android-pay/` and `android-comm/`.
+
 ---
 
 ## 16. Definition of done (per feature)
