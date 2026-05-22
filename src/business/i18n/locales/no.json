@@ -90,6 +90,8 @@
     "extendedSaleBody": "Handlekurv med varelinjer + mva-fordeling.",
     "noWalletBody": "Du kan utstede kvittos, men kundene kan ikke betale med FTC ennå. Gå til Innstillinger → Koble til lommebok.",
     "noWalletTitle": "Ingen lommebok tilkoblet",
+    "receipts": "Kvittos",
+    "receiptsBody": "Bla gjennom og gjenåpne tidligere kvittos.",
     "settings": "Innstillinger",
     "simpleSale": "Enkelt salg",
     "simpleSaleBody": "Ett beløp → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} varer i katalogen",
     "vatPercent": "Mva {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Annullere dette kvitto? Det forblir i systemet (Bokföringslagen), men merkes som annullert og utelates fra Z-rapporten.",
+    "notFound": "Kvitto ikke funnet.",
+    "pinTitle": "Bekreft med forhandler-PIN",
+    "print": "Skriv ut / PDF",
+    "share": "Del",
+    "statusConfirmed": "Bekreftet",
+    "statusPending": "Venter",
+    "statusVoided": "Annullert",
+    "txHash": "Kjede-tx",
+    "void": "Annuller dette kvitto",
+    "voided": "Kvitto annullert."
+  },
   "mode": {
     "continue": "Fortsett",
     "extendedBody": "Legg til varer fra en katalog, automatisk mva-fordeling på tvers av satser, valgfri rabatt. Best for kafeer, restauranter, butikkhandel.",
@@ -171,6 +186,20 @@
     "unlock": "Lås opp",
     "verifyCurrent": "Gjeldende PIN",
     "wrong": "Feil PIN."
+  },
+  "receipts": {
+    "empty": "Ingen kvittos ennå. De vises her etter ditt første salg.",
+    "emptyFilter": "Ingen kvittos med denne statusen.",
+    "filterAll": "Alle",
+    "filterConfirmed": "Bekreftede",
+    "filterPending": "Ventende",
+    "filterVoided": "Annullerte",
+    "itemCount": "{{count}} vare(r)",
+    "statusConfirmed": "Bekreftet",
+    "statusPending": "Venter",
+    "statusVoided": "Annullert",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Biometrisk kontroll mislyktes. Gjenopprettingsfrasen forblir skjult.",

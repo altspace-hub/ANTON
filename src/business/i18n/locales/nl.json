@@ -90,6 +90,8 @@
     "extendedSaleBody": "Winkelwagen met regelitems + btw-uitsplitsing.",
     "noWalletBody": "Je kunt kvittos uitgeven, maar klanten kunnen nog niet met FTC betalen. Ga naar Instellingen → Wallet koppelen.",
     "noWalletTitle": "Geen wallet gekoppeld",
+    "receipts": "Kvittos",
+    "receiptsBody": "Blader door eerdere kvittos en open ze opnieuw.",
     "settings": "Instellingen",
     "simpleSale": "Eenvoudige verkoop",
     "simpleSaleBody": "Eén bedrag → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} artikelen in catalogus",
     "vatPercent": "Btw {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Dit kvitto annuleren? Het blijft in het register staan (Bokföringslagen) maar wordt gemarkeerd als geannuleerd en uitgesloten van het Z-rapport.",
+    "notFound": "Kvitto niet gevonden.",
+    "pinTitle": "Bevestigen met handelaars-PIN",
+    "print": "Afdrukken / PDF",
+    "share": "Delen",
+    "statusConfirmed": "Bevestigd",
+    "statusPending": "In behandeling",
+    "statusVoided": "Geannuleerd",
+    "txHash": "Keten-tx",
+    "void": "Dit kvitto annuleren",
+    "voided": "Kvitto geannuleerd."
+  },
   "mode": {
     "continue": "Doorgaan",
     "extendedBody": "Voeg artikelen toe uit een catalogus, met automatische btw-uitsplitsing over tarieven en optionele korting. Ideaal voor cafés, restaurants en de detailhandel.",
@@ -171,6 +186,20 @@
     "unlock": "Ontgrendelen",
     "verifyCurrent": "Huidige PIN",
     "wrong": "Onjuiste PIN."
+  },
+  "receipts": {
+    "empty": "Nog geen kvittos. Ze verschijnen hier na uw eerste verkoop.",
+    "emptyFilter": "Geen kvittos met deze status.",
+    "filterAll": "Alle",
+    "filterConfirmed": "Bevestigd",
+    "filterPending": "In behandeling",
+    "filterVoided": "Geannuleerd",
+    "itemCount": "{{count}} artikel(en)",
+    "statusConfirmed": "Bevestigd",
+    "statusPending": "In behandeling",
+    "statusVoided": "Geannuleerd",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Biometrische controle is niet geslaagd. Herstelzin blijft verborgen.",

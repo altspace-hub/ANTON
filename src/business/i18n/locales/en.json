@@ -90,6 +90,8 @@
     "extendedSaleBody": "Cart with line items + VAT breakdown.",
     "noWalletBody": "You can issue kvittos, but customers can't pay with FTC yet. Go to Settings → Connect wallet.",
     "noWalletTitle": "No wallet connected",
+    "receipts": "Receipts",
+    "receiptsBody": "Browse and reopen past kvittos.",
     "settings": "Settings",
     "simpleSale": "Simple sale",
     "simpleSaleBody": "One amount → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} items in catalogue",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Void this kvitto? It stays on record (Bokföringslagen) but is marked voided and excluded from the Z report.",
+    "notFound": "Kvitto not found.",
+    "pinTitle": "Confirm with merchant PIN",
+    "print": "Print / PDF",
+    "share": "Share",
+    "statusConfirmed": "Confirmed",
+    "statusPending": "Pending",
+    "statusVoided": "Voided",
+    "txHash": "Chain tx",
+    "void": "Void this kvitto",
+    "voided": "Kvitto voided."
+  },
   "mode": {
     "continue": "Continue",
     "extendedBody": "Add items from a catalogue, automatic VAT breakdown across rates, optional discount. Best for cafés, restaurants, retail.",
@@ -171,6 +186,20 @@
     "unlock": "Unlock",
     "verifyCurrent": "Current PIN",
     "wrong": "Wrong PIN."
+  },
+  "receipts": {
+    "empty": "No kvittos yet. They appear here after your first sale.",
+    "emptyFilter": "No kvittos with this status.",
+    "filterAll": "All",
+    "filterConfirmed": "Confirmed",
+    "filterPending": "Pending",
+    "filterVoided": "Voided",
+    "itemCount": "{{count}} item(s)",
+    "statusConfirmed": "Confirmed",
+    "statusPending": "Pending",
+    "statusVoided": "Voided",
+    "title": "Receipts",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Biometric check did not pass. Recovery phrase remains hidden.",

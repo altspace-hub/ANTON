@@ -14,10 +14,11 @@ import type { MerchantConfig } from '../services/types';
 interface Props {
   onSimple: () => void;
   onExtended: () => void;
+  onReceipts: () => void;
   onSettings: () => void;
 }
 
-export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) {
+export default function HomeScreen({ onSimple, onExtended, onReceipts, onSettings }: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
 
@@ -93,6 +94,32 @@ export default function HomeScreen({ onSimple, onExtended, onSettings }: Props) 
           large={defaultMode === 'extended'}
         />
       </div>
+
+      {/* Receipts history — browse + reopen any past kvitto. */}
+      <button
+        type="button"
+        onClick={onReceipts}
+        className="text-left rounded-xl mt-3 flex items-center justify-between transition-transform active:scale-[0.98]"
+        style={{
+          padding: '16px 18px',
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <div>
+          <div className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
+            {t('home.receipts', 'Receipts')}
+          </div>
+          <div className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            {t('home.receiptsBody', 'Browse and reopen past kvittos.')}
+          </div>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             style={{ color: 'var(--color-text-dim)' }}>
+          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       <div className="mt-auto text-center text-[11px]"
            style={{ color: 'var(--color-text-faint)' }}>

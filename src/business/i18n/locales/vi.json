@@ -90,6 +90,8 @@
     "extendedSaleBody": "Giỏ hàng với các mục hàng + phân tích VAT.",
     "noWalletBody": "Bạn có thể phát hành kvitto, nhưng khách hàng chưa thể thanh toán bằng FTC. Hãy vào Cài đặt → Kết nối ví.",
     "noWalletTitle": "Chưa kết nối ví",
+    "receipts": "Biên lai",
+    "receiptsBody": "Duyệt và mở lại các kvittos trong quá khứ.",
     "settings": "Cài đặt",
     "simpleSale": "Bán hàng đơn giản",
     "simpleSaleBody": "Một số tiền → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} mặt hàng trong danh mục",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Hủy kvitto này? Hồ sơ vẫn được lưu theo Bokföringslagen nhưng sẽ được đánh dấu là đã hủy và loại khỏi báo cáo Z.",
+    "notFound": "Không tìm thấy kvitto.",
+    "pinTitle": "Xác nhận bằng PIN thương nhân",
+    "print": "In / PDF",
+    "share": "Chia sẻ",
+    "statusConfirmed": "Đã xác nhận",
+    "statusPending": "Đang chờ",
+    "statusVoided": "Đã hủy",
+    "txHash": "TX trên chuỗi",
+    "void": "Hủy kvitto này",
+    "voided": "Kvitto đã được hủy."
+  },
   "mode": {
     "continue": "Tiếp tục",
     "extendedBody": "Thêm mặt hàng từ danh mục, tự động phân tích VAT theo các mức thuế, giảm giá tùy chọn. Phù hợp nhất cho quán cà phê, nhà hàng, bán lẻ.",
@@ -171,6 +186,20 @@
     "unlock": "Mở khóa",
     "verifyCurrent": "PIN hiện tại",
     "wrong": "PIN sai."
+  },
+  "receipts": {
+    "empty": "Chưa có kvittos nào. Chúng sẽ xuất hiện ở đây sau lần bán hàng đầu tiên.",
+    "emptyFilter": "Không có kvittos nào với trạng thái này.",
+    "filterAll": "Tất cả",
+    "filterConfirmed": "Đã xác nhận",
+    "filterPending": "Đang chờ",
+    "filterVoided": "Đã hủy",
+    "itemCount": "{{count}} mặt hàng",
+    "statusConfirmed": "Đã xác nhận",
+    "statusPending": "Đang chờ",
+    "statusVoided": "Đã hủy",
+    "title": "Biên lai",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Xác minh sinh trắc học không thành công. Cụm từ khôi phục vẫn được ẩn.",

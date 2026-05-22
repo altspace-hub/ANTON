@@ -90,6 +90,8 @@
     "extendedSaleBody": "ਲਾਈਨ ਆਈਟਮਾਂ + VAT ਵੰਡ ਵਾਲੀ ਕਾਰਟ.",
     "noWalletBody": "ਤੁਸੀਂ kvittos ਜਾਰੀ ਕਰ ਸਕਦੇ ਹੋ, ਪਰ ਗਾਹਕ ਅਜੇ FTC ਨਾਲ ਭੁਗਤਾਨ ਨਹੀਂ ਕਰ ਸਕਦੇ. ਸੈਟਿੰਗਾਂ → ਵਾਲਿਟ ਜੋੜੋ 'ਤੇ ਜਾਓ.",
     "noWalletTitle": "ਕੋਈ ਵਾਲਿਟ ਨਹੀਂ ਜੁੜਿਆ",
+    "receipts": "ਰਸੀਦਾਂ",
+    "receiptsBody": "ਪੁਰਾਣੇ kvittos ਦੇਖੋ ਅਤੇ ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ।",
     "settings": "ਸੈਟਿੰਗਾਂ",
     "simpleSale": "ਸਧਾਰਨ ਵਿਕਰੀ",
     "simpleSaleBody": "ਇੱਕ ਰਕਮ → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "ਕੈਟਾਲਾਗ ਵਿੱਚ {{count}} ਆਈਟਮਾਂ",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "ਇਹ kvitto ਰੱਦ ਕਰਨਾ ਹੈ? ਇਹ ਰਿਕਾਰਡ ਵਿੱਚ ਰਹੇਗਾ (Bokföringslagen) ਪਰ ਰੱਦ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਹੋਵੇਗਾ ਅਤੇ Z ਰਿਪੋਰਟ ਤੋਂ ਬਾਹਰ ਰੱਖਿਆ ਜਾਵੇਗਾ।",
+    "notFound": "Kvitto ਨਹੀਂ ਮਿਲਿਆ।",
+    "pinTitle": "ਵਪਾਰੀ PIN ਨਾਲ ਪੁਸ਼ਟੀ ਕਰੋ",
+    "print": "ਪ੍ਰਿੰਟ / PDF",
+    "share": "ਸਾਂਝਾ ਕਰੋ",
+    "statusConfirmed": "ਪੁਸ਼ਟੀ ਹੋਈ",
+    "statusPending": "ਬਕਾਇਆ",
+    "statusVoided": "ਰੱਦ ਹੋਈ",
+    "txHash": "ਚੇਨ tx",
+    "void": "ਇਹ kvitto ਰੱਦ ਕਰੋ",
+    "voided": "Kvitto ਰੱਦ ਕੀਤੀ ਗਈ।"
+  },
   "mode": {
     "continue": "ਜਾਰੀ ਰੱਖੋ",
     "extendedBody": "ਇੱਕ ਕੈਟਾਲਾਗ ਵਿੱਚੋਂ ਆਈਟਮਾਂ ਜੋੜੋ, ਦਰਾਂ ਵਿੱਚ ਆਟੋਮੈਟਿਕ VAT ਵੰਡ, ਵਿਕਲਪਿਕ ਛੋਟ. ਕੈਫੇ, ਰੈਸਟੋਰੈਂਟਾਂ, ਪ੍ਰਚੂਨ ਲਈ ਸਭ ਤੋਂ ਵਧੀਆ.",
@@ -171,6 +186,20 @@
     "unlock": "ਅਨਲੌਕ ਕਰੋ",
     "verifyCurrent": "ਮੌਜੂਦਾ PIN",
     "wrong": "ਗਲਤ PIN।"
+  },
+  "receipts": {
+    "empty": "ਅਜੇ ਕੋਈ kvitto ਨਹੀਂ। ਤੁਹਾਡੀ ਪਹਿਲੀ ਵਿਕਰੀ ਤੋਂ ਬਾਅਦ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੀਆਂ।",
+    "emptyFilter": "ਇਸ ਸਟੇਟਸ ਨਾਲ ਕੋਈ kvitto ਨਹੀਂ।",
+    "filterAll": "ਸਭ",
+    "filterConfirmed": "ਪੁਸ਼ਟੀ ਹੋਈ",
+    "filterPending": "ਬਕਾਇਆ",
+    "filterVoided": "ਰੱਦ ਹੋਈ",
+    "itemCount": "{{count}} ਆਈਟਮ",
+    "statusConfirmed": "ਪੁਸ਼ਟੀ ਹੋਈ",
+    "statusPending": "ਬਕਾਇਆ",
+    "statusVoided": "ਰੱਦ ਹੋਈ",
+    "title": "ਰਸੀਦਾਂ",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "ਬਾਇਓਮੈਟ੍ਰਿਕ ਜਾਂਚ ਪਾਸ ਨਹੀਂ ਹੋਈ। ਰਿਕਵਰੀ ਫ਼ਰੇਜ਼ ਲੁਕੀ ਰਹੇਗੀ।",

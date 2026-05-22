@@ -33,6 +33,8 @@ import DayCloseScreen from './pages/settings/DayCloseScreen';
 import PinSetupScreen from './pages/settings/PinSetupScreen';
 import ItemsManageScreen from './pages/settings/ItemsManageScreen';
 import TemplatesPickerScreen from './pages/settings/TemplatesPickerScreen';
+import ReceiptsHistoryScreen from './pages/ReceiptsHistoryScreen';
+import KvittoDetailScreen from './pages/KvittoDetailScreen';
 import { hasConfig } from './services/merchant';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
@@ -48,6 +50,8 @@ type Screen =
   | 'home'
   | 'simple'
   | 'extended'
+  | 'receipts'
+  | 'receipt-detail'
   | 'settings'
   | 'settings-wallet'
   | 'settings-wallets-list'
@@ -68,6 +72,8 @@ export default function App() {
   const [pendingMode, setPendingMode] = useState<SaleMode>('simple');
   /** Wallet id whose detail screen is being viewed. */
   const [detailWalletId, setDetailWalletId] = useState<string>('');
+  /** Kvitto number whose detail screen is being viewed. */
+  const [detailKvittoNumber, setDetailKvittoNumber] = useState<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -154,6 +160,7 @@ export default function App() {
       <HomeScreen
         onSimple={() => setScreen('simple')}
         onExtended={() => setScreen('extended')}
+        onReceipts={() => setScreen('receipts')}
         onSettings={() => setScreen('settings')}
       />
     );
@@ -163,6 +170,22 @@ export default function App() {
   }
   if (screen === 'extended') {
     return <ExtendedScreen onBack={() => setScreen('home')} />;
+  }
+  if (screen === 'receipts') {
+    return (
+      <ReceiptsHistoryScreen
+        onBack={() => setScreen('home')}
+        onOpenReceipt={(n) => { setDetailKvittoNumber(n); setScreen('receipt-detail'); }}
+      />
+    );
+  }
+  if (screen === 'receipt-detail') {
+    return (
+      <KvittoDetailScreen
+        kvittoNumber={detailKvittoNumber}
+        onBack={() => setScreen('receipts')}
+      />
+    );
   }
   if (screen === 'settings') {
     return (

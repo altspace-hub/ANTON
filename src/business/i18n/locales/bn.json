@@ -90,6 +90,8 @@
     "extendedSaleBody": "লাইন আইটেম + VAT বিভাজনসহ কার্ট।",
     "noWalletBody": "আপনি কভিত্তো ইস্যু করতে পারেন, কিন্তু গ্রাহকরা এখনও FTC দিয়ে পেমেন্ট করতে পারবেন না। সেটিংস → ওয়ালেট সংযুক্ত করুন-এ যান।",
     "noWalletTitle": "কোনো ওয়ালেট সংযুক্ত নেই",
+    "receipts": "রসিদ",
+    "receiptsBody": "পুরানো kvittos দেখুন এবং পুনরায় খুলুন।",
     "settings": "সেটিংস",
     "simpleSale": "সিম্পল বিক্রয়",
     "simpleSaleBody": "একটি পরিমাণ → কভিত্তো।",
@@ -134,6 +136,19 @@
     "totalCount": "ক্যাটালগে {{count}}টি আইটেম",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "এই kvitto বাতিল করবেন? এটি রেকর্ডে থাকবে (Bokföringslagen) কিন্তু বাতিল হিসেবে চিহ্নিত হবে এবং Z রিপোর্ট থেকে বাদ পড়বে।",
+    "notFound": "Kvitto পাওয়া যায়নি।",
+    "pinTitle": "মার্চেন্ট PIN দিয়ে নিশ্চিত করুন",
+    "print": "প্রিন্ট / PDF",
+    "share": "শেয়ার করুন",
+    "statusConfirmed": "নিশ্চিত",
+    "statusPending": "মুলতুবি",
+    "statusVoided": "বাতিল",
+    "txHash": "চেইন tx",
+    "void": "এই kvitto বাতিল করুন",
+    "voided": "Kvitto বাতিল করা হয়েছে।"
+  },
   "mode": {
     "continue": "চালিয়ে যান",
     "extendedBody": "একটি ক্যাটালগ থেকে আইটেম যোগ করুন, বিভিন্ন হার জুড়ে স্বয়ংক্রিয় VAT বিভাজন, ঐচ্ছিক ছাড়। ক্যাফে, রেস্তোরাঁ, খুচরা বিক্রয়ের জন্য সেরা।",
@@ -171,6 +186,20 @@
     "unlock": "আনলক করুন",
     "verifyCurrent": "বর্তমান PIN",
     "wrong": "ভুল PIN।"
+  },
+  "receipts": {
+    "empty": "এখনো কোনো kvitto নেই। প্রথম বিক্রয়ের পরে এখানে দেখা যাবে।",
+    "emptyFilter": "এই স্ট্যাটাসে কোনো kvitto নেই।",
+    "filterAll": "সব",
+    "filterConfirmed": "নিশ্চিত",
+    "filterPending": "মুলতুবি",
+    "filterVoided": "বাতিল",
+    "itemCount": "{{count}}টি আইটেম",
+    "statusConfirmed": "নিশ্চিত",
+    "statusPending": "মুলতুবি",
+    "statusVoided": "বাতিল",
+    "title": "রসিদ",
+    "totalCount": "{{count}}টি kvitto"
   },
   "recoveryPhrase": {
     "gateDenied": "বায়োমেট্রিক যাচাই সফল হয়নি। রিকভারি ফ্রেজ লুকানো থাকবে।",

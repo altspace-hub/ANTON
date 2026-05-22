@@ -90,6 +90,8 @@
     "extendedSaleBody": "Carrinho com linhas de artigos + desagregação do IVA.",
     "noWalletBody": "Pode emitir kvittos, mas os clientes ainda não conseguem pagar com FTC. Vá a Definições → Ligar carteira.",
     "noWalletTitle": "Nenhuma carteira ligada",
+    "receipts": "Kvittos",
+    "receiptsBody": "Navegue e reabra kvittos anteriores.",
     "settings": "Definições",
     "simpleSale": "Venda simples",
     "simpleSaleBody": "Um valor → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} artigos no catálogo",
     "vatPercent": "IVA {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Anular este kvitto? Permanece no registo (Bokföringslagen) mas é marcado como anulado e excluído do relatório Z.",
+    "notFound": "Kvitto não encontrado.",
+    "pinTitle": "Confirmar com o PIN do comerciante",
+    "print": "Imprimir / PDF",
+    "share": "Partilhar",
+    "statusConfirmed": "Confirmado",
+    "statusPending": "Pendente",
+    "statusVoided": "Anulado",
+    "txHash": "Tx na cadeia",
+    "void": "Anular este kvitto",
+    "voided": "Kvitto anulado."
+  },
   "mode": {
     "continue": "Continuar",
     "extendedBody": "Adicione artigos a partir de um catálogo, com desagregação automática do IVA por taxas e desconto opcional. Ideal para cafés, restaurantes e comércio a retalho.",
@@ -171,6 +186,20 @@
     "unlock": "Desbloquear",
     "verifyCurrent": "PIN atual",
     "wrong": "PIN incorreto."
+  },
+  "receipts": {
+    "empty": "Ainda não há kvittos. Aparecerão aqui após a sua primeira venda.",
+    "emptyFilter": "Nenhum kvitto com este estado.",
+    "filterAll": "Todos",
+    "filterConfirmed": "Confirmados",
+    "filterPending": "Pendentes",
+    "filterVoided": "Anulados",
+    "itemCount": "{{count}} artigo(s)",
+    "statusConfirmed": "Confirmado",
+    "statusPending": "Pendente",
+    "statusVoided": "Anulado",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "A verificação biométrica não passou. A frase de recuperação permanece oculta.",

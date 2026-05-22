@@ -90,6 +90,8 @@
     "extendedSaleBody": "లైన్ ఐటెమ్‌లు + VAT విభజనతో కార్ట్.",
     "noWalletBody": "మీరు kvittos జారీ చేయవచ్చు, కానీ కస్టమర్లు ఇంకా FTC తో చెల్లించలేరు. సెట్టింగ్‌లు → వాలెట్‌ను కనెక్ట్ చేయండి కు వెళ్లండి.",
     "noWalletTitle": "వాలెట్ ఏదీ కనెక్ట్ కాలేదు",
+    "receipts": "రసీదులు",
+    "receiptsBody": "పాత kvittos-ను చూడండి మరియు మళ్లీ తెరవండి.",
     "settings": "సెట్టింగ్‌లు",
     "simpleSale": "సాధారణ అమ్మకం",
     "simpleSaleBody": "ఒక మొత్తం → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "కేటలాగ్‌లో {{count}} ఐటెమ్(లు)",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "ఈ kvitto-ను రద్దు చేయాలా? ఇది రికార్డులో ఉంటుంది (Bokföringslagen) కానీ రద్దు చేయబడినట్టు గుర్తు పెట్టబడి Z నివేదిక నుండి మినహాయించబడుతుంది.",
+    "notFound": "Kvitto కనుగొనబడలేదు.",
+    "pinTitle": "వ్యాపారి PIN తో నిర్ధారించండి",
+    "print": "ప్రింట్ / PDF",
+    "share": "షేర్ చేయి",
+    "statusConfirmed": "నిర్ధారించబడింది",
+    "statusPending": "పెండింగ్‌లో",
+    "statusVoided": "రద్దు చేయబడింది",
+    "txHash": "చైన్ tx",
+    "void": "ఈ kvitto-ను రద్దు చేయి",
+    "voided": "Kvitto రద్దు చేయబడింది."
+  },
   "mode": {
     "continue": "కొనసాగించు",
     "extendedBody": "ఒక కేటలాగ్ నుండి ఐటెమ్‌లను జోడించండి, రేట్ల మధ్య ఆటోమేటిక్ VAT విభజన, ఐచ్ఛిక తగ్గింపు. కేఫ్‌లు, రెస్టారెంట్లు, రిటైల్‌కు ఉత్తమం.",
@@ -171,6 +186,20 @@
     "unlock": "అన్‌లాక్ చేయి",
     "verifyCurrent": "ప్రస్తుత PIN",
     "wrong": "తప్పు PIN."
+  },
+  "receipts": {
+    "empty": "ఇంకా kvittos లేవు. మీ మొదటి అమ్మకం తర్వాత ఇక్కడ కనిపిస్తాయి.",
+    "emptyFilter": "ఈ స్థితిలో kvittos లేవు.",
+    "filterAll": "అన్నీ",
+    "filterConfirmed": "నిర్ధారించబడింది",
+    "filterPending": "పెండింగ్‌లో",
+    "filterVoided": "రద్దు చేయబడింది",
+    "itemCount": "{{count}} ఐటెమ్(లు)",
+    "statusConfirmed": "నిర్ధారించబడింది",
+    "statusPending": "పెండింగ్‌లో",
+    "statusVoided": "రద్దు చేయబడింది",
+    "title": "రసీదులు",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "బయోమెట్రిక్ తనిఖీ పాస్ కాలేదు. రికవరీ పదబంధం దాచబడి ఉంటుంది.",

@@ -90,6 +90,8 @@
     "extendedSaleBody": "Satır kalemli sepet + KDV dökümü.",
     "noWalletBody": "Kvittos düzenleyebilirsiniz, ancak müşteriler henüz FTC ile ödeme yapamaz. Ayarlar → Cüzdan bağla bölümüne gidin.",
     "noWalletTitle": "Bağlı cüzdan yok",
+    "receipts": "Makbuzlar",
+    "receiptsBody": "Geçmiş kvittos'lara göz atın ve yeniden açın.",
     "settings": "Ayarlar",
     "simpleSale": "Basit satış",
     "simpleSaleBody": "Tek tutar → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "Katalogda {{count}} ürün",
     "vatPercent": "KDV {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Bu kvitto iptal edilsin mi? Kayıtta kalır (Bokföringslagen) ancak iptal edildi olarak işaretlenir ve Z raporundan çıkarılır.",
+    "notFound": "Kvitto bulunamadı.",
+    "pinTitle": "Satıcı PIN'i ile onaylayın",
+    "print": "Yazdır / PDF",
+    "share": "Paylaş",
+    "statusConfirmed": "Onaylandı",
+    "statusPending": "Beklemede",
+    "statusVoided": "İptal edildi",
+    "txHash": "Zincir işlemi",
+    "void": "Bu kvitto'yu iptal et",
+    "voided": "Kvitto iptal edildi."
+  },
   "mode": {
     "continue": "Devam et",
     "extendedBody": "Bir katalogdan ürün ekleyin, oranlara göre otomatik KDV dökümü, isteğe bağlı indirim. Kafeler, restoranlar, perakende için idealdir.",
@@ -171,6 +186,20 @@
     "unlock": "Kilidi aç",
     "verifyCurrent": "Mevcut PIN",
     "wrong": "Yanlış PIN."
+  },
+  "receipts": {
+    "empty": "Henüz kvitto yok. İlk satışınızdan sonra burada görünürler.",
+    "emptyFilter": "Bu durumda kvitto yok.",
+    "filterAll": "Tümü",
+    "filterConfirmed": "Onaylandı",
+    "filterPending": "Beklemede",
+    "filterVoided": "İptal edildi",
+    "itemCount": "{{count}} ürün",
+    "statusConfirmed": "Onaylandı",
+    "statusPending": "Beklemede",
+    "statusVoided": "İptal edildi",
+    "title": "Makbuzlar",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Biyometrik doğrulama başarısız oldu. Kurtarma ifadesi gizli kaldı.",

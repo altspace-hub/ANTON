@@ -90,6 +90,8 @@
     "extendedSaleBody": "Troli dengan item baris + pecahan VAT.",
     "noWalletBody": "Anda boleh mengeluarkan kvitto, tetapi pelanggan belum boleh membayar dengan FTC. Pergi ke Tetapan → Sambungkan dompet.",
     "noWalletTitle": "Tiada dompet disambungkan",
+    "receipts": "Resit",
+    "receiptsBody": "Semak imbas dan buka semula kvittos lama.",
     "settings": "Tetapan",
     "simpleSale": "Jualan mudah",
     "simpleSaleBody": "Satu amaun → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} item dalam katalog",
     "vatPercent": "GST {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Batalkan kvitto ini? Ia kekal dalam rekod (Bokföringslagen) tetapi ditandakan sebagai dibatalkan dan dikecualikan daripada laporan Z.",
+    "notFound": "Kvitto tidak dijumpai.",
+    "pinTitle": "Sahkan dengan PIN peniaga",
+    "print": "Cetak / PDF",
+    "share": "Kongsi",
+    "statusConfirmed": "Disahkan",
+    "statusPending": "Tertunda",
+    "statusVoided": "Dibatalkan",
+    "txHash": "Tx rantaian",
+    "void": "Batalkan kvitto ini",
+    "voided": "Kvitto dibatalkan."
+  },
   "mode": {
     "continue": "Teruskan",
     "extendedBody": "Tambah item dari katalog, pecahan VAT automatik merentas kadar, diskaun pilihan. Sesuai untuk kafe, restoran, peruncitan.",
@@ -171,6 +186,20 @@
     "unlock": "Buka kunci",
     "verifyCurrent": "PIN semasa",
     "wrong": "PIN salah."
+  },
+  "receipts": {
+    "empty": "Belum ada kvittos. Ia akan muncul di sini selepas jualan pertama anda.",
+    "emptyFilter": "Tiada kvittos dengan status ini.",
+    "filterAll": "Semua",
+    "filterConfirmed": "Disahkan",
+    "filterPending": "Tertunda",
+    "filterVoided": "Dibatalkan",
+    "itemCount": "{{count}} item",
+    "statusConfirmed": "Disahkan",
+    "statusPending": "Tertunda",
+    "statusVoided": "Dibatalkan",
+    "title": "Resit",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Semakan biometrik tidak berjaya. Frasa pemulihan kekal tersembunyi.",

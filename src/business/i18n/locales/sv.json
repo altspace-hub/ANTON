@@ -90,6 +90,8 @@
     "extendedSaleBody": "Varukorg med rader + momsuppdelning.",
     "noWalletBody": "Du kan utfärda kvitton, men kunder kan inte betala med FTC ännu. Gå till Inställningar → Anslut plånbok.",
     "noWalletTitle": "Ingen plånbok ansluten",
+    "receipts": "Kvitton",
+    "receiptsBody": "Bläddra bland och öppna tidigare kvitton.",
     "settings": "Inställningar",
     "simpleSale": "Enkel försäljning",
     "simpleSaleBody": "Ett belopp → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} varor i katalogen",
     "vatPercent": "Moms {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Makulera detta kvitto? Det finns kvar i systemet (Bokföringslagen) men markeras som makulerat och exkluderas från Z-rapporten.",
+    "notFound": "Kvittot hittades inte.",
+    "pinTitle": "Bekräfta med handlar-PIN",
+    "print": "Skriv ut / PDF",
+    "share": "Dela",
+    "statusConfirmed": "Bekräftat",
+    "statusPending": "Väntar",
+    "statusVoided": "Makulerat",
+    "txHash": "Kedja-tx",
+    "void": "Makulera detta kvitto",
+    "voided": "Kvittot makulerat."
+  },
   "mode": {
     "continue": "Fortsätt",
     "extendedBody": "Lägg till varor från en katalog, automatisk momsuppdelning per sats, valfri rabatt. Bäst för caféer, restauranger, butiker.",
@@ -171,6 +186,20 @@
     "unlock": "Lås upp",
     "verifyCurrent": "Nuvarande PIN",
     "wrong": "Fel PIN."
+  },
+  "receipts": {
+    "empty": "Inga kvitton än. De visas här efter din första försäljning.",
+    "emptyFilter": "Inga kvitton med denna status.",
+    "filterAll": "Alla",
+    "filterConfirmed": "Bekräftade",
+    "filterPending": "Väntande",
+    "filterVoided": "Makulerade",
+    "itemCount": "{{count}} artikel(ar)",
+    "statusConfirmed": "Bekräftat",
+    "statusPending": "Väntar",
+    "statusVoided": "Makulerat",
+    "title": "Kvitton",
+    "totalCount": "{{count}} kvitton"
   },
   "recoveryPhrase": {
     "gateDenied": "Biometrisk kontroll misslyckades. Återställningsfrasen förblir dold.",

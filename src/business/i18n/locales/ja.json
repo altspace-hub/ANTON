@@ -90,6 +90,8 @@
     "extendedSaleBody": "明細付きカート + VAT 内訳。",
     "noWalletBody": "kvitto は発行できますが、お客様はまだ FTC で支払えません。「設定」→「ウォレットを接続」へ進んでください。",
     "noWalletTitle": "ウォレットが未接続です",
+    "receipts": "レシート",
+    "receiptsBody": "過去の kvittos を閲覧・再表示できます。",
     "settings": "設定",
     "simpleSale": "シンプル販売",
     "simpleSaleBody": "1つの金額 → kvitto。",
@@ -134,6 +136,19 @@
     "totalCount": "カタログに{{count}}件の商品",
     "vatPercent": "消費税 {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "この kvitto を無効化しますか？Bokföringslagen により記録に残りますが、無効済みとしてマークされ Z レポートから除外されます。",
+    "notFound": "Kvitto が見つかりません。",
+    "pinTitle": "加盟店 PIN で確認",
+    "print": "印刷 / PDF",
+    "share": "共有",
+    "statusConfirmed": "確認済み",
+    "statusPending": "保留中",
+    "statusVoided": "無効済み",
+    "txHash": "チェーン TX",
+    "void": "この kvitto を無効化",
+    "voided": "Kvitto を無効化しました。"
+  },
   "mode": {
     "continue": "続ける",
     "extendedBody": "カタログから商品を追加し、税率ごとに VAT を自動で内訳表示、任意で割引も可能です。カフェ、レストラン、小売店に最適です。",
@@ -171,6 +186,20 @@
     "unlock": "ロック解除",
     "verifyCurrent": "現在の PIN",
     "wrong": "PIN が違います。"
+  },
+  "receipts": {
+    "empty": "まだ kvittos がありません。最初の売上後にここに表示されます。",
+    "emptyFilter": "このステータスの kvittos はありません。",
+    "filterAll": "すべて",
+    "filterConfirmed": "確認済み",
+    "filterPending": "保留中",
+    "filterVoided": "無効済み",
+    "itemCount": "{{count}} 点",
+    "statusConfirmed": "確認済み",
+    "statusPending": "保留中",
+    "statusVoided": "無効済み",
+    "title": "レシート",
+    "totalCount": "{{count}} 件の kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "生体認証が通過しませんでした。リカバリーフレーズは非表示のままです。",

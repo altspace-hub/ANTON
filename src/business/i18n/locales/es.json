@@ -90,6 +90,8 @@
     "extendedSaleBody": "Carrito con líneas de artículos + desglose del IVA.",
     "noWalletBody": "Puedes emitir kvittos, pero los clientes aún no pueden pagar con FTC. Ve a Ajustes → Conectar cartera.",
     "noWalletTitle": "Ninguna cartera conectada",
+    "receipts": "Kvittos",
+    "receiptsBody": "Explora y vuelve a abrir kvittos anteriores.",
     "settings": "Ajustes",
     "simpleSale": "Venta simple",
     "simpleSaleBody": "Un importe → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} artículos en el catálogo",
     "vatPercent": "IVA {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "¿Anular este kvitto? Permanece en el registro (Bokföringslagen) pero se marca como anulado y se excluye del informe Z.",
+    "notFound": "Kvitto no encontrado.",
+    "pinTitle": "Confirmar con el PIN del comerciante",
+    "print": "Imprimir / PDF",
+    "share": "Compartir",
+    "statusConfirmed": "Confirmado",
+    "statusPending": "Pendiente",
+    "statusVoided": "Anulado",
+    "txHash": "Tx en cadena",
+    "void": "Anular este kvitto",
+    "voided": "Kvitto anulado."
+  },
   "mode": {
     "continue": "Continuar",
     "extendedBody": "Añade artículos desde un catálogo, con desglose automático del IVA por tipos y descuento opcional. Ideal para cafeterías, restaurantes y comercio minorista.",
@@ -171,6 +186,20 @@
     "unlock": "Desbloquear",
     "verifyCurrent": "PIN actual",
     "wrong": "PIN incorrecto."
+  },
+  "receipts": {
+    "empty": "Aún no hay kvittos. Aparecerán aquí después de tu primera venta.",
+    "emptyFilter": "No hay kvittos con este estado.",
+    "filterAll": "Todos",
+    "filterConfirmed": "Confirmados",
+    "filterPending": "Pendientes",
+    "filterVoided": "Anulados",
+    "itemCount": "{{count}} artículo(s)",
+    "statusConfirmed": "Confirmado",
+    "statusPending": "Pendiente",
+    "statusVoided": "Anulado",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "La verificación biométrica no ha superado. La frase de recuperación permanece oculta.",

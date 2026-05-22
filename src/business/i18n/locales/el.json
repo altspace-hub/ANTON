@@ -90,6 +90,8 @@
     "extendedSaleBody": "Καλάθι με γραμμές ειδών + ανάλυση ΦΠΑ.",
     "noWalletBody": "Μπορείτε να εκδίδετε kvittos, αλλά οι πελάτες δεν μπορούν ακόμη να πληρώσουν με FTC. Μεταβείτε στις Ρυθμίσεις → Σύνδεση πορτοφολιού.",
     "noWalletTitle": "Δεν έχει συνδεθεί πορτοφόλι",
+    "receipts": "Kvittos",
+    "receiptsBody": "Περιηγηθείτε και ανοίξτε ξανά παλαιότερα kvittos.",
     "settings": "Ρυθμίσεις",
     "simpleSale": "Απλή πώληση",
     "simpleSaleBody": "Ένα ποσό → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} είδη στον κατάλογο",
     "vatPercent": "ΦΠΑ {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Ακύρωση αυτού του kvitto; Παραμένει στο αρχείο (Bokföringslagen), αλλά επισημαίνεται ως ακυρωμένο και εξαιρείται από την αναφορά Z.",
+    "notFound": "Το kvitto δεν βρέθηκε.",
+    "pinTitle": "Επιβεβαίωση με PIN εμπόρου",
+    "print": "Εκτύπωση / PDF",
+    "share": "Κοινοποίηση",
+    "statusConfirmed": "Επιβεβαιωμένο",
+    "statusPending": "Σε αναμονή",
+    "statusVoided": "Ακυρωμένο",
+    "txHash": "Tx αλυσίδας",
+    "void": "Ακύρωση αυτού του kvitto",
+    "voided": "Το kvitto ακυρώθηκε."
+  },
   "mode": {
     "continue": "Συνέχεια",
     "extendedBody": "Προσθέστε είδη από κατάλογο, αυτόματη ανάλυση ΦΠΑ ανά συντελεστή, προαιρετική έκπτωση. Ιδανικό για καφετέριες, εστιατόρια, λιανική.",
@@ -171,6 +186,20 @@
     "unlock": "Ξεκλείδωμα",
     "verifyCurrent": "Τρέχον PIN",
     "wrong": "Λάθος PIN."
+  },
+  "receipts": {
+    "empty": "Δεν υπάρχουν ακόμη kvittos. Θα εμφανιστούν εδώ μετά την πρώτη πώληση.",
+    "emptyFilter": "Δεν υπάρχουν kvittos με αυτή την κατάσταση.",
+    "filterAll": "Όλα",
+    "filterConfirmed": "Επιβεβαιωμένα",
+    "filterPending": "Σε αναμονή",
+    "filterVoided": "Ακυρωμένα",
+    "itemCount": "{{count}} είδος(-η)",
+    "statusConfirmed": "Επιβεβαιωμένο",
+    "statusPending": "Σε αναμονή",
+    "statusVoided": "Ακυρωμένο",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "Ο βιομετρικός έλεγχος απέτυχε. Η φράση ανάκτησης παραμένει κρυφή.",

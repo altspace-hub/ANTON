@@ -90,6 +90,8 @@
     "extendedSaleBody": "Panier avec articles + ventilation de la TVA.",
     "noWalletBody": "Vous pouvez émettre des kvittos, mais les clients ne peuvent pas encore payer en FTC. Allez dans Paramètres → Connecter un portefeuille.",
     "noWalletTitle": "Aucun portefeuille connecté",
+    "receipts": "Kvittos",
+    "receiptsBody": "Parcourez et rouvrez vos kvittos passés.",
     "settings": "Paramètres",
     "simpleSale": "Vente simple",
     "simpleSaleBody": "Un montant → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} articles dans le catalogue",
     "vatPercent": "TVA {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Annuler ce kvitto ? Il reste dans le registre (Bokföringslagen) mais est marqué comme annulé et exclu du rapport Z.",
+    "notFound": "Kvitto introuvable.",
+    "pinTitle": "Confirmer avec le PIN commerçant",
+    "print": "Imprimer / PDF",
+    "share": "Partager",
+    "statusConfirmed": "Confirmé",
+    "statusPending": "En attente",
+    "statusVoided": "Annulé",
+    "txHash": "Tx chaîne",
+    "void": "Annuler ce kvitto",
+    "voided": "Kvitto annulé."
+  },
   "mode": {
     "continue": "Continuer",
     "extendedBody": "Ajoutez des articles depuis un catalogue, avec ventilation automatique de la TVA selon les taux et remise facultative. Idéal pour les cafés, restaurants et commerces de détail.",
@@ -171,6 +186,20 @@
     "unlock": "Déverrouiller",
     "verifyCurrent": "PIN actuel",
     "wrong": "PIN incorrect."
+  },
+  "receipts": {
+    "empty": "Aucun kvitto pour l'instant. Ils apparaîtront ici après votre première vente.",
+    "emptyFilter": "Aucun kvitto avec ce statut.",
+    "filterAll": "Tous",
+    "filterConfirmed": "Confirmés",
+    "filterPending": "En attente",
+    "filterVoided": "Annulés",
+    "itemCount": "{{count}} article(s)",
+    "statusConfirmed": "Confirmé",
+    "statusPending": "En attente",
+    "statusVoided": "Annulé",
+    "title": "Kvittos",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "La vérification biométrique a échoué. La phrase de récupération reste masquée.",

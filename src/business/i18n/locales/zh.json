@@ -90,6 +90,8 @@
     "extendedSaleBody": "带明细项目的购物车 + 增值税拆分。",
     "noWalletBody": "您可以开具 kvitto，但客户暂时无法使用 FTC 付款。请前往“设置 → 连接钱包”。",
     "noWalletTitle": "未连接钱包",
+    "receipts": "收据",
+    "receiptsBody": "浏览并重新打开过去的 kvittos。",
     "settings": "设置",
     "simpleSale": "简易销售",
     "simpleSaleBody": "一个金额 → kvitto。",
@@ -134,6 +136,19 @@
     "totalCount": "目录中共 {{count}} 件商品",
     "vatPercent": "增值税 {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "要作废此 kvitto 吗？根据 Bokföringslagen，记录将予以保留，但会标记为已作废，并从 Z 报告中排除。",
+    "notFound": "找不到 kvitto。",
+    "pinTitle": "使用商户 PIN 确认",
+    "print": "打印 / PDF",
+    "share": "分享",
+    "statusConfirmed": "已确认",
+    "statusPending": "待处理",
+    "statusVoided": "已作废",
+    "txHash": "链上 TX",
+    "void": "作废此 kvitto",
+    "voided": "Kvitto 已作废。"
+  },
   "mode": {
     "continue": "继续",
     "extendedBody": "从商品目录中添加项目，自动按不同税率拆分增值税，可选折扣。最适合咖啡馆、餐厅、零售店。",
@@ -171,6 +186,20 @@
     "unlock": "解锁",
     "verifyCurrent": "当前 PIN",
     "wrong": "PIN 错误。"
+  },
+  "receipts": {
+    "empty": "暂无 kvittos。完成第一笔销售后将在此显示。",
+    "emptyFilter": "没有该状态的 kvittos。",
+    "filterAll": "全部",
+    "filterConfirmed": "已确认",
+    "filterPending": "待处理",
+    "filterVoided": "已作废",
+    "itemCount": "{{count}} 件商品",
+    "statusConfirmed": "已确认",
+    "statusPending": "待处理",
+    "statusVoided": "已作废",
+    "title": "收据",
+    "totalCount": "{{count}} 张 kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "生物识别验证未通过。恢复短语仍处于隐藏状态。",

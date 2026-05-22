@@ -90,6 +90,8 @@
     "extendedSaleBody": "سلة تحتوي على بنود + تفصيل ضريبة القيمة المضافة.",
     "noWalletBody": "يمكنك إصدار الكفيتو، لكن لا يمكن للعملاء الدفع باستخدام FTC بعد. توجّه إلى الإعدادات ← ربط المحفظة.",
     "noWalletTitle": "لا توجد محفظة متصلة",
+    "receipts": "الإيصالات",
+    "receiptsBody": "تصفَّح وأعِد فتح الكفيتو السابقة.",
     "settings": "الإعدادات",
     "simpleSale": "بيع بسيط",
     "simpleSaleBody": "مبلغ واحد ← كفيتو.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} عنصر في الكتالوج",
     "vatPercent": "ضريبة القيمة المضافة {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "إلغاء هذا الكفيتو؟ يبقى في السجل (Bokföringslagen) لكنه يُوسَم بالإلغاء ويُستبعَد من تقرير Z.",
+    "notFound": "الكفيتو غير موجود.",
+    "pinTitle": "التأكيد برمز PIN للتاجر",
+    "print": "طباعة / PDF",
+    "share": "مشاركة",
+    "statusConfirmed": "مؤكَّد",
+    "statusPending": "معلَّق",
+    "statusVoided": "ملغى",
+    "txHash": "معرِّف السلسلة",
+    "void": "إلغاء هذا الكفيتو",
+    "voided": "تم إلغاء الكفيتو."
+  },
   "mode": {
     "continue": "متابعة",
     "extendedBody": "أضِف عناصر من كتالوج، مع تفصيل تلقائي لضريبة القيمة المضافة عبر النسب المختلفة، وخصم اختياري. الأنسب للمقاهي والمطاعم وتجارة التجزئة.",
@@ -171,6 +186,20 @@
     "unlock": "فتح القفل",
     "verifyCurrent": "رمز PIN الحالي",
     "wrong": "رمز PIN خاطئ."
+  },
+  "receipts": {
+    "empty": "لا توجد كفيتو بعد. ستظهر هنا بعد أولى مبيعاتك.",
+    "emptyFilter": "لا توجد كفيتو بهذه الحالة.",
+    "filterAll": "الكل",
+    "filterConfirmed": "مؤكَّد",
+    "filterPending": "معلَّق",
+    "filterVoided": "ملغى",
+    "itemCount": "{{count}} عنصر",
+    "statusConfirmed": "مؤكَّد",
+    "statusPending": "معلَّق",
+    "statusVoided": "ملغى",
+    "title": "الإيصالات",
+    "totalCount": "{{count}} كفيتو"
   },
   "recoveryPhrase": {
     "gateDenied": "لم يجتز التحقق البيومتري. تظل عبارة الاسترداد مخفية.",

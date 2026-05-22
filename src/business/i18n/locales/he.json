@@ -90,6 +90,8 @@
     "extendedSaleBody": "עגלה עם פריטים + פירוט מע\"מ.",
     "noWalletBody": "אתה יכול להנפיק kvittos, אך לקוחות עדיין לא יכולים לשלם ב-FTC. עבור אל הגדרות ← חבר ארנק.",
     "noWalletTitle": "אין ארנק מחובר",
+    "receipts": "קבלות",
+    "receiptsBody": "עיין ופתח מחדש kvittos קודמים.",
     "settings": "הגדרות",
     "simpleSale": "מכירה פשוטה",
     "simpleSaleBody": "סכום אחד ← kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "{{count}} פריטים בקטלוג",
     "vatPercent": "מע\"מ {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "לבטל kvitto זה? הוא ישאר בתיעוד (Bokföringslagen) אך יסומן כמבוטל ויוסר מדוח Z.",
+    "notFound": "ה-kvitto לא נמצא.",
+    "pinTitle": "אישור עם PIN סוחר",
+    "print": "הדפס / PDF",
+    "share": "שתף",
+    "statusConfirmed": "מאושר",
+    "statusPending": "ממתין",
+    "statusVoided": "מבוטל",
+    "txHash": "מזהה שרשרת",
+    "void": "בטל kvitto זה",
+    "voided": "ה-kvitto בוטל."
+  },
   "mode": {
     "continue": "המשך",
     "extendedBody": "הוסף פריטים מקטלוג, פירוט מע\"מ אוטומטי לפי שיעורים, והנחה אופציונלית. מתאים ביותר לבתי קפה, מסעדות וקמעונאות.",
@@ -171,6 +186,20 @@
     "unlock": "בטל נעילה",
     "verifyCurrent": "PIN נוכחי",
     "wrong": "PIN שגוי."
+  },
+  "receipts": {
+    "empty": "אין kvittos עדיין. הם יופיעו כאן לאחר המכירה הראשונה שלך.",
+    "emptyFilter": "אין kvittos עם סטטוס זה.",
+    "filterAll": "הכול",
+    "filterConfirmed": "מאושר",
+    "filterPending": "ממתין",
+    "filterVoided": "מבוטל",
+    "itemCount": "{{count}} פריט(ים)",
+    "statusConfirmed": "מאושר",
+    "statusPending": "ממתין",
+    "statusVoided": "מבוטל",
+    "title": "קבלות",
+    "totalCount": "{{count}} kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "אימות ביומטרי נכשל. ביטוי השחזור נשאר מוסתר.",

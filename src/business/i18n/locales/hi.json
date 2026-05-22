@@ -90,6 +90,8 @@
     "extendedSaleBody": "लाइन आइटम वाली कार्ट + VAT विभाजन।",
     "noWalletBody": "आप क्विट्टो जारी कर सकते हैं, लेकिन ग्राहक अभी FTC से भुगतान नहीं कर सकते। सेटिंग्स ← वॉलेट कनेक्ट करें पर जाएँ।",
     "noWalletTitle": "कोई वॉलेट कनेक्ट नहीं",
+    "receipts": "रसीदें",
+    "receiptsBody": "पिछले क्विट्टो देखें और फिर से खोलें।",
     "settings": "सेटिंग्स",
     "simpleSale": "सरल बिक्री",
     "simpleSaleBody": "एक राशि ← क्विट्टो।",
@@ -134,6 +136,19 @@
     "totalCount": "कैटलॉग में {{count}} आइटम",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "यह क्विट्टो रद्द करें? यह रिकॉर्ड में बना रहेगा (Bokföringslagen) लेकिन रद्द किया हुआ चिह्नित होगा और Z रिपोर्ट से बाहर रखा जाएगा।",
+    "notFound": "क्विट्टो नहीं मिला।",
+    "pinTitle": "व्यापारी PIN से पुष्टि करें",
+    "print": "प्रिंट / PDF",
+    "share": "साझा करें",
+    "statusConfirmed": "पुष्टि हुई",
+    "statusPending": "लंबित",
+    "statusVoided": "रद्द हुई",
+    "txHash": "चेन ट्रांज़ैक्शन",
+    "void": "यह क्विट्टो रद्द करें",
+    "voided": "क्विट्टो रद्द हो गया।"
+  },
   "mode": {
     "continue": "जारी रखें",
     "extendedBody": "कैटलॉग से आइटम जोड़ें, दरों के अनुसार स्वचालित VAT विभाजन, और वैकल्पिक छूट। कैफ़े, रेस्तराँ और खुदरा के लिए सर्वोत्तम।",
@@ -171,6 +186,20 @@
     "unlock": "अनलॉक करें",
     "verifyCurrent": "वर्तमान PIN",
     "wrong": "गलत PIN।"
+  },
+  "receipts": {
+    "empty": "अभी कोई क्विट्टो नहीं है। पहली बिक्री के बाद यहाँ दिखाई देंगे।",
+    "emptyFilter": "इस स्थिति में कोई क्विट्टो नहीं है।",
+    "filterAll": "सभी",
+    "filterConfirmed": "पुष्टि हुई",
+    "filterPending": "लंबित",
+    "filterVoided": "रद्द हुई",
+    "itemCount": "{{count}} आइटम",
+    "statusConfirmed": "पुष्टि हुई",
+    "statusPending": "लंबित",
+    "statusVoided": "रद्द हुई",
+    "title": "रसीदें",
+    "totalCount": "{{count}} क्विट्टो"
   },
   "recoveryPhrase": {
     "gateDenied": "बायोमेट्रिक जाँच पास नहीं हुई। रिकवरी वाक्यांश छिपा रहता है।",

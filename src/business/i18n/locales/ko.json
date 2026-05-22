@@ -90,6 +90,8 @@
     "extendedSaleBody": "품목이 있는 장바구니 + VAT 분석.",
     "noWalletBody": "kvitto는 발행할 수 있지만 고객은 아직 FTC로 결제할 수 없습니다. 설정 → 지갑 연결로 이동하세요.",
     "noWalletTitle": "연결된 지갑 없음",
+    "receipts": "영수증",
+    "receiptsBody": "과거 kvittos를 탐색하고 다시 열 수 있습니다.",
     "settings": "설정",
     "simpleSale": "심플 판매",
     "simpleSaleBody": "하나의 금액 → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "카탈로그에 {{count}}개 품목",
     "vatPercent": "부가세 {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "이 kvitto를 무효화하시겠습니까? Bokföringslagen에 따라 기록은 유지되지만 무효화됨으로 표시되고 Z 보고서에서 제외됩니다.",
+    "notFound": "Kvitto를 찾을 수 없습니다.",
+    "pinTitle": "가맹점 PIN으로 확인",
+    "print": "인쇄 / PDF",
+    "share": "공유",
+    "statusConfirmed": "확인됨",
+    "statusPending": "대기 중",
+    "statusVoided": "무효화됨",
+    "txHash": "체인 TX",
+    "void": "이 kvitto 무효화",
+    "voided": "Kvitto가 무효화되었습니다."
+  },
   "mode": {
     "continue": "계속",
     "extendedBody": "카탈로그에서 품목을 추가하고, 세율별 VAT 자동 분석, 선택적 할인이 가능합니다. 카페, 레스토랑, 소매점에 가장 적합합니다.",
@@ -171,6 +186,20 @@
     "unlock": "잠금 해제",
     "verifyCurrent": "현재 PIN",
     "wrong": "PIN이 틀렸습니다."
+  },
+  "receipts": {
+    "empty": "아직 kvittos가 없습니다. 첫 번째 판매 후 여기에 표시됩니다.",
+    "emptyFilter": "이 상태의 kvittos가 없습니다.",
+    "filterAll": "전체",
+    "filterConfirmed": "확인됨",
+    "filterPending": "대기 중",
+    "filterVoided": "무효화됨",
+    "itemCount": "{{count}}개 품목",
+    "statusConfirmed": "확인됨",
+    "statusPending": "대기 중",
+    "statusVoided": "무효화됨",
+    "title": "영수증",
+    "totalCount": "{{count}}개의 kvittos"
   },
   "recoveryPhrase": {
     "gateDenied": "생체 인증에 실패했습니다. 복구 구문은 숨겨진 상태로 유지됩니다.",

@@ -90,6 +90,8 @@
     "extendedSaleBody": "Kikapu chenye vipengee vya mstari + mgawanyo wa VAT.",
     "noWalletBody": "Unaweza kutoa kvittos, lakini wateja hawawezi kulipa kwa FTC bado. Nenda Mipangilio → Unganisha pochi.",
     "noWalletTitle": "Hakuna pochi iliyounganishwa",
+    "receipts": "Risiti",
+    "receiptsBody": "Vinjari na ufungue tena kvittos za zamani.",
     "settings": "Mipangilio",
     "simpleSale": "Uuzaji rahisi",
     "simpleSaleBody": "Kiasi kimoja → kvitto.",
@@ -134,6 +136,19 @@
     "totalCount": "Vipengee {{count}} katika katalogi",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "Futa kvitto hii? Itabaki kwenye rekodi kulingana na Bokföringslagen lakini itawekwa alama ya kufutwa na kutolewa katika ripoti ya Z.",
+    "notFound": "Kvitto haijapatikana.",
+    "pinTitle": "Thibitisha na PIN ya mfanyabiashara",
+    "print": "Chapisha / PDF",
+    "share": "Shiriki",
+    "statusConfirmed": "Imethibitishwa",
+    "statusPending": "Inasubiri",
+    "statusVoided": "Imefutwa",
+    "txHash": "TX ya mnyororo",
+    "void": "Futa kvitto hii",
+    "voided": "Kvitto imefutwa."
+  },
   "mode": {
     "continue": "Endelea",
     "extendedBody": "Ongeza vipengee kutoka katalogi, mgawanyo wa VAT otomatiki katika viwango, punguzo la hiari. Bora kwa mikahawa, migahawa, na rejareja.",
@@ -171,6 +186,20 @@
     "unlock": "Fungua",
     "verifyCurrent": "PIN ya sasa",
     "wrong": "PIN si sahihi."
+  },
+  "receipts": {
+    "empty": "Bado hakuna kvittos. Zitaonekana hapa baada ya mauzo yako ya kwanza.",
+    "emptyFilter": "Hakuna kvittos zenye hali hii.",
+    "filterAll": "Zote",
+    "filterConfirmed": "Imethibitishwa",
+    "filterPending": "Inasubiri",
+    "filterVoided": "Imefutwa",
+    "itemCount": "Vipengee {{count}}",
+    "statusConfirmed": "Imethibitishwa",
+    "statusPending": "Inasubiri",
+    "statusVoided": "Imefutwa",
+    "title": "Risiti",
+    "totalCount": "Kvittos {{count}}"
   },
   "recoveryPhrase": {
     "gateDenied": "Uthibitishaji wa kibayometriki haukupita. Msemo wa kurejesha unabaki kufichwa.",

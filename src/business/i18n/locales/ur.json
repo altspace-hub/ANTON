@@ -90,6 +90,8 @@
     "extendedSaleBody": "اشیاء کے ساتھ کارٹ + VAT تقسیم۔",
     "noWalletBody": "آپ کویٹو جاری کر سکتے ہیں، لیکن گاہک ابھی FTC سے ادائیگی نہیں کر سکتے۔ ترتیبات ← والٹ منسلک کریں پر جائیں۔",
     "noWalletTitle": "کوئی والٹ منسلک نہیں",
+    "receipts": "رسیدیں",
+    "receiptsBody": "گزشتہ کویٹوز دیکھیں اور دوبارہ کھولیں۔",
     "settings": "ترتیبات",
     "simpleSale": "سادہ فروخت",
     "simpleSaleBody": "ایک رقم ← کویٹو۔",
@@ -134,6 +136,19 @@
     "totalCount": "کیٹلاگ میں {{count}} اشیاء",
     "vatPercent": "VAT {{rate}}%"
   },
+  "kvittoDetail": {
+    "confirmVoid": "یہ کویٹو منسوخ کریں؟ یہ ریکارڈ میں رہے گا (Bokföringslagen) لیکن منسوخ شدہ قرار دیا جائے گا اور Z رپورٹ سے خارج ہو گا۔",
+    "notFound": "کویٹو نہیں ملا۔",
+    "pinTitle": "تاجر PIN سے تصدیق کریں",
+    "print": "پرنٹ / PDF",
+    "share": "شیئر کریں",
+    "statusConfirmed": "تصدیق شدہ",
+    "statusPending": "زیرِ التواء",
+    "statusVoided": "منسوخ شدہ",
+    "txHash": "چین ٹرانزیکشن",
+    "void": "یہ کویٹو منسوخ کریں",
+    "voided": "کویٹو منسوخ ہو گیا۔"
+  },
   "mode": {
     "continue": "جاری رکھیں",
     "extendedBody": "کیٹلاگ سے اشیاء شامل کریں، شرحوں کے مطابق خودکار VAT تقسیم، اور اختیاری رعایت۔ کیفے، ریستوران اور خوردہ فروشی کے لیے بہترین۔",
@@ -171,6 +186,20 @@
     "unlock": "قفل کھولیں",
     "verifyCurrent": "موجودہ PIN",
     "wrong": "غلط PIN۔"
+  },
+  "receipts": {
+    "empty": "ابھی تک کوئی کویٹو نہیں۔ پہلی فروخت کے بعد یہاں ظاہر ہوں گے۔",
+    "emptyFilter": "اس حالت میں کوئی کویٹو نہیں۔",
+    "filterAll": "سب",
+    "filterConfirmed": "تصدیق شدہ",
+    "filterPending": "زیرِ التواء",
+    "filterVoided": "منسوخ شدہ",
+    "itemCount": "{{count}} شے",
+    "statusConfirmed": "تصدیق شدہ",
+    "statusPending": "زیرِ التواء",
+    "statusVoided": "منسوخ شدہ",
+    "title": "رسیدیں",
+    "totalCount": "{{count}} کویٹوز"
   },
   "recoveryPhrase": {
     "gateDenied": "بایومیٹرک تصدیق کامیاب نہیں ہوئی۔ بازیابی جملہ مخفی رہتا ہے۔",
