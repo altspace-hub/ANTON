@@ -57,6 +57,11 @@
     "since": "De la",
     "title": "Închidere zi",
     "vat": "TVA",
+    "verifyChecked": "{{r}} verigi kvitto · {{z}} verigi Z-report verificate",
+    "verifyFail": "Breșă de integritate — registrele au fost modificate",
+    "verifyOk": "Registre intacte — fiecare verigă din lanț verificată",
+    "verifyRun": "Verifică lanțurile kvitto + Z-report",
+    "verifyTitle": "Verificare registre",
     "window": "Fereastră"
   },
   "done": {

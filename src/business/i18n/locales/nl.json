@@ -57,6 +57,11 @@
     "since": "Sinds",
     "title": "Dagafsluiting",
     "vat": "BTW",
+    "verifyChecked": "{{r}} kvitto-koppelingen · {{z}} Z-report-koppelingen gecontroleerd",
+    "verifyFail": "Integriteitsbreuk — de boeken zijn gemanipuleerd",
+    "verifyOk": "Boeken integer — elke schakel in de keten geverifieerd",
+    "verifyRun": "Kvitto + Z-report-ketens controleren",
+    "verifyTitle": "Boeken controleren",
     "window": "Periode"
   },
   "done": {

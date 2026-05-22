@@ -19,19 +19,50 @@ function bytesToHex(b: Uint8Array): string {
   return out;
 }
 
-/** Deterministic JSON of a Receipt minus its own prevHash — the
- *  hash a SUBSEQUENT kvitto stores in its `prevHash` field. */
+/**
+ * The immutable creation fields of a Receipt — the "sale facts" the
+ * tamper-evident chain protects. Deliberately an ALLOWLIST, not a
+ * denylist: a future field added to Receipt is excluded by default,
+ * so it can't silently change the chain hash.
+ *
+ * Excluded on purpose — the settlement lifecycle, which legitimately
+ * mutates AFTER a later kvitto has already chained this one's hash:
+ *   status, confirmedAt, txHash, uetr, customerRemittance, prevHash.
+ * Including any of those would mean a normal `confirm` or `void`
+ * breaks the chain of every subsequent kvitto with no tampering at
+ * all. The chain protects what was sold, not how it settled.
+ */
+const RECEIPT_CHAIN_FIELDS = [
+  'kvittoNumber', 'orderId', 'merchantId', 'mode', 'purpose',
+  'amountSek', 'amountMicroFtc', 'ftcPerSek', 'vatSek', 'discountSek',
+  'itemCount', 'lines', 'vatBreakdown', 'qrUri', 'ref', 'createdAt',
+  'receivingAddress',
+] as const;
+
+/** Deterministic JSON over a Receipt's immutable creation fields.
+ *  This is the string a SUBSEQUENT kvitto hashes into its `prevHash`. */
 function canonicalizeReceipt(r: Receipt): string {
-  const { prevHash: _ignore, ...rest } = r;
-  const obj: Record<string, unknown> = { ...rest };
-  obj.amountMicroFtc = r.amountMicroFtc.toString();
+  const obj: Record<string, unknown> = {};
+  const src = r as unknown as Record<string, unknown>;
+  for (const k of RECEIPT_CHAIN_FIELDS) {
+    const v = src[k];
+    if (v === undefined) continue;
+    obj[k] = k === 'amountMicroFtc' ? r.amountMicroFtc.toString() : v;
+  }
   const sorted: Record<string, unknown> = {};
   for (const k of Object.keys(obj).sort()) sorted[k] = obj[k];
   return JSON.stringify(sorted);
 }
 
-function hashReceipt(r: Receipt): string {
+/** SHA-256 hex of a receipt's immutable creation record. Exported so
+ *  the audit-chain verifier can re-derive the link without duplicating
+ *  the canonical form. */
+export function receiptChainHash(r: Receipt): string {
   return bytesToHex(sha256(new TextEncoder().encode(canonicalizeReceipt(r))));
+}
+
+function hashReceipt(r: Receipt): string {
+  return receiptChainHash(r);
 }
 
 export type { Receipt, NewReceiptInput, ReceiptMode, ReceiptStatus, KvittoRenderModel } from './types';

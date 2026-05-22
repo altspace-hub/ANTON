@@ -57,6 +57,11 @@
     "since": "Siden",
     "title": "Dagsavslutning",
     "vat": "Mva",
+    "verifyChecked": "{{r}} kvittos-lenker · {{z}} Z-rapport-lenker kontrollert",
+    "verifyFail": "Integritetsbrudd — regnskapet er blitt endret",
+    "verifyOk": "Regnskapet intakt — hvert kjedeledd verifisert",
+    "verifyRun": "Kontroller kvittos + Z-rapport-kjedene",
+    "verifyTitle": "Verifiser regnskapet",
     "window": "Periode"
   },
   "done": {

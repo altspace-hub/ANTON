@@ -57,6 +57,11 @@
     "since": "Od",
     "title": "Uzávierka dňa",
     "vat": "DPH",
+    "verifyChecked": "{{r}} kvittos-odkazov · {{z}} Z-rapport-odkazov overených",
+    "verifyFail": "Porušenie integrity — účtovníctvo bolo zmenené",
+    "verifyOk": "Účtovníctvo v poriadku — každý článok reťazca overený",
+    "verifyRun": "Skontrolovať kvittos + Z-rapport reťazce",
+    "verifyTitle": "Overiť účtovníctvo",
     "window": "Obdobie"
   },
   "done": {

@@ -57,6 +57,11 @@
     "since": "Sedan",
     "title": "Dagsavstämning",
     "vat": "Moms",
+    "verifyChecked": "{{r}} kvitton-länkar · {{z}} Z-rapport-länkar kontrollerade",
+    "verifyFail": "Integritetsproblem — bokföringen har manipulerats",
+    "verifyOk": "Bokföringen intakt — varje kedjelänk verifierad",
+    "verifyRun": "Kontrollera kvitton- och Z-rapportkedjorna",
+    "verifyTitle": "Verifiera bokföringen",
     "window": "Kassa"
   },
   "done": {

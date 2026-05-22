@@ -57,6 +57,11 @@
     "since": "Desde",
     "title": "Fecho do dia",
     "vat": "IVA",
+    "verifyChecked": "{{r}} ligações de kvitto · {{z}} ligações de Z-report verificadas",
+    "verifyFail": "Quebra de integridade — os livros foram alterados",
+    "verifyOk": "Livros íntegros — cada elo da cadeia verificado",
+    "verifyRun": "Verificar as cadeias de kvitto + Z-report",
+    "verifyTitle": "Verificar livros",
     "window": "Período"
   },
   "done": {

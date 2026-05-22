@@ -57,6 +57,11 @@
     "since": "నుండి",
     "title": "రోజు ముగింపు",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto లింకులు · {{z}} Z-report లింకులు తనిఖీ చేయబడ్డాయి",
+    "verifyFail": "Integrity break — పుస్తకాలు మార్చబడ్డాయి",
+    "verifyOk": "Books intact — ప్రతి చైన్ లింకు ధృవీకరించబడింది",
+    "verifyRun": "kvitto + Z-report చైన్‌లను తనిఖీ చేయండి",
+    "verifyTitle": "Verify books",
     "window": "విండో"
   },
   "done": {

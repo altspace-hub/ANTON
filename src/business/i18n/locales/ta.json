@@ -57,6 +57,11 @@
     "since": "தொடக்கம்",
     "title": "நாள் முடிவு",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto இணைப்புகள் · {{z}} Z-report இணைப்புகள் சரிபார்க்கப்பட்டன",
+    "verifyFail": "Integrity break — புத்தகங்கள் திருத்தப்பட்டுள்ளன",
+    "verifyOk": "Books intact — ஒவ்வொரு சங்கிலி இணைப்பும் சரிபார்க்கப்பட்டது",
+    "verifyRun": "kvitto + Z-report சங்கிலிகளை சரிபார்க்கவும்",
+    "verifyTitle": "Verify books",
     "window": "சாளரம்"
   },
   "done": {

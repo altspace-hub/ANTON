@@ -57,6 +57,11 @@
     "since": "ਤੋਂ",
     "title": "ਦਿਨ ਬੰਦ",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto ਲਿੰਕ · {{z}} Z-report ਲਿੰਕ ਜਾਂਚੇ ਗਏ",
+    "verifyFail": "Integrity break — ਖਾਤੇ ਵਿੱਚ ਛੇੜਛਾੜ ਕੀਤੀ ਗਈ ਹੈ",
+    "verifyOk": "Books intact — ਹਰ ਚੇਨ ਲਿੰਕ ਤਸਦੀਕ ਕੀਤਾ ਗਿਆ",
+    "verifyRun": "kvitto + Z-report ਚੇਨਾਂ ਦੀ ਜਾਂਚ ਕਰੋ",
+    "verifyTitle": "Verify books",
     "window": "ਵਿੰਡੋ"
   },
   "done": {

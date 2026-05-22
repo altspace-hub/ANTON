@@ -57,6 +57,11 @@
     "since": "से",
     "title": "दिन बंद",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto लिंक · {{z}} Z-report लिंक जाँचे गए",
+    "verifyFail": "श्रृंखला टूटी — बहीखाते से छेड़छाड़ हुई है",
+    "verifyOk": "बहीखाता सुरक्षित — श्रृंखला की हर कड़ी सत्यापित",
+    "verifyRun": "kvitto + Z-report श्रृंखलाएँ जाँचें",
+    "verifyTitle": "बहीखाता सत्यापित करें",
     "window": "विंडो"
   },
   "done": {

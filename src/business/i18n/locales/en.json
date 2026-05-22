@@ -57,6 +57,11 @@
     "since": "Since",
     "title": "Day close",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto links · {{z}} Z-report links checked",
+    "verifyFail": "Integrity break — the books have been altered",
+    "verifyOk": "Books intact — every chain link verified",
+    "verifyRun": "Check the kvitto + Z-report chains",
+    "verifyTitle": "Verify books",
     "window": "Window"
   },
   "done": {

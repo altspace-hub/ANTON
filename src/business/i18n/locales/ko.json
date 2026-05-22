@@ -57,6 +57,11 @@
     "since": "이후",
     "title": "일일 마감",
     "vat": "VAT",
+    "verifyChecked": "{{r}}개의 kvitto 링크 · {{z}}개의 Z-report 링크를 확인했습니다",
+    "verifyFail": "무결성 오류 — 장부가 변조되었습니다",
+    "verifyOk": "장부 정상 — 모든 체인 링크가 검증되었습니다",
+    "verifyRun": "kvitto + Z-report 체인 확인하기",
+    "verifyTitle": "장부 검증",
     "window": "기간"
   },
   "done": {

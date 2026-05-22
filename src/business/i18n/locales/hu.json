@@ -57,6 +57,11 @@
     "since": "Ettől",
     "title": "Napzárás",
     "vat": "ÁFA",
+    "verifyChecked": "{{r}} kvitto-lánc · {{z}} Z-report-lánc ellenőrizve",
+    "verifyFail": "Integritás-törés — a könyvelést módosították",
+    "verifyOk": "Könyvek sértetlenek — minden láncszemet ellenőriztek",
+    "verifyRun": "Ellenőrizze a kvitto- és Z-report-láncokat",
+    "verifyTitle": "Könyvelés ellenőrzése",
     "window": "Ablak"
   },
   "done": {

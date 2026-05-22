@@ -57,6 +57,11 @@
     "since": "Depuis",
     "title": "Clôture de journée",
     "vat": "TVA",
+    "verifyChecked": "{{r}} liens kvitto · {{z}} liens Z-report vérifiés",
+    "verifyFail": "Rupture d'intégrité — les livres ont été altérés",
+    "verifyOk": "Livres intègres — chaque maillon de la chaîne vérifié",
+    "verifyRun": "Vérifier les chaînes kvitto + Z-report",
+    "verifyTitle": "Vérifier les livres",
     "window": "Période"
   },
   "done": {

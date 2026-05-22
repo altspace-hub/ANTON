@@ -57,6 +57,11 @@
     "since": "از",
     "title": "بستن روز",
     "vat": "مالیات بر ارزش افزوده",
+    "verifyChecked": "{{r}} پیوند kvitto · {{z}} پیوند Z-report بررسی شد",
+    "verifyFail": "شکست در زنجیره — دفاتر دستکاری شده‌اند",
+    "verifyOk": "دفاتر سالم است — هر حلقه از زنجیره تأیید شد",
+    "verifyRun": "بررسی زنجیره‌های kvitto + Z-report",
+    "verifyTitle": "تأیید دفاتر",
     "window": "پنجره"
   },
   "done": {

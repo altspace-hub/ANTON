@@ -57,6 +57,11 @@
     "since": "Từ",
     "title": "Kết thúc ngày",
     "vat": "VAT",
+    "verifyChecked": "Đã kiểm tra {{r}} liên kết kvitto · {{z}} liên kết Z-report",
+    "verifyFail": "Lỗi toàn vẹn — sổ sách đã bị chỉnh sửa",
+    "verifyOk": "Sổ sách nguyên vẹn — mọi mắt xích đều đã xác minh",
+    "verifyRun": "Kiểm tra chuỗi kvitto + Z-report",
+    "verifyTitle": "Xác minh sổ sách",
     "window": "Khoảng thời gian"
   },
   "done": {

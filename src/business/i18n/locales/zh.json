@@ -57,6 +57,11 @@
     "since": "自",
     "title": "日结",
     "vat": "VAT",
+    "verifyChecked": "已核查 {{r}} 条 kvitto 链接 · {{z}} 条 Z-report 链接",
+    "verifyFail": "完整性异常 — 账簿已被篡改",
+    "verifyOk": "账簿完好 — 所有链环均已验证",
+    "verifyRun": "核查 kvitto + Z-report 链",
+    "verifyTitle": "验证账簿",
     "window": "时间段"
   },
   "done": {

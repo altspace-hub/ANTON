@@ -57,6 +57,11 @@
     "since": "Dal",
     "title": "Chiusura giornata",
     "vat": "IVA",
+    "verifyChecked": "{{r}} link kvitto · {{z}} link Z-report verificati",
+    "verifyFail": "Violazione dell'integrità — i libri contabili sono stati alterati",
+    "verifyOk": "Libri contabili integri — ogni anello della catena verificato",
+    "verifyRun": "Verifica le catene kvitto + Z-report",
+    "verifyTitle": "Verifica libri",
     "window": "Periodo"
   },
   "done": {

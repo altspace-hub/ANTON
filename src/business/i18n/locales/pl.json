@@ -57,6 +57,11 @@
     "since": "Od",
     "title": "Zamknięcie dnia",
     "vat": "VAT",
+    "verifyChecked": "{{r}} ogniw kvitto · {{z}} ogniw Z-report sprawdzono",
+    "verifyFail": "Naruszenie integralności — księgi zostały zmodyfikowane",
+    "verifyOk": "Księgi nienaruszone — każde ogniwo łańcucha zweryfikowane",
+    "verifyRun": "Sprawdź łańcuchy kvitto + Z-report",
+    "verifyTitle": "Weryfikacja ksiąg",
     "window": "Okno"
   },
   "done": {

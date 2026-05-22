@@ -57,6 +57,11 @@
     "since": "מאז",
     "title": "סגירת יום",
     "vat": "מע\"מ",
+    "verifyChecked": "{{r}} קישורי kvitto · {{z}} קישורי Z-report נבדקו",
+    "verifyFail": "שבירת שלמות — הספרים שונו",
+    "verifyOk": "הספרים תקינים — כל חוליה בשרשרת אומתה",
+    "verifyRun": "בדוק את שרשראות ה-kvitto + Z-report",
+    "verifyTitle": "אמת ספרים",
     "window": "חלון"
   },
   "done": {

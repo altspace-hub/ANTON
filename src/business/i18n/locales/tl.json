@@ -57,6 +57,11 @@
     "since": "Mula",
     "title": "Pagsasara ng araw",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto link · {{z}} Z-report link ang nasuri",
+    "verifyFail": "Integrity break — ang mga libro ay binago",
+    "verifyOk": "Books intact — bawat chain link ay na-verify",
+    "verifyRun": "Suriin ang mga kvitto + Z-report chain",
+    "verifyTitle": "Verify books",
     "window": "Window"
   },
   "done": {

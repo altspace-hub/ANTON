@@ -25,6 +25,8 @@ import { listReceipts } from '../../services/receipts';
 import { listRefunds } from '../../services/refunds';
 import { loadConfig } from '../../services/merchant';
 import { isPinSet } from '../../services/pin';
+import { verifyBooks, type BooksVerifyReport } from '../../services/audit-chain';
+import { getActiveSigner } from '../../services/wallets';
 import PinPad from '../../components/PinPad';
 import { formatZNumber, type ZReport, type MerchantConfig } from '../../services/types';
 
@@ -55,6 +57,29 @@ export default function DayCloseScreen({ onBack }: Props) {
   const [justClosed, setJustClosed] = useState<ZReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
+  /** Wave-2 hardening — tamper-evident chain verification. */
+  const [verifying, setVerifying] = useState(false);
+  const [booksReport, setBooksReport] = useState<BooksVerifyReport | null>(null);
+
+  async function runVerifyBooks() {
+    setVerifying(true);
+    setBooksReport(null);
+    try {
+      // Pass the active wallet's public key so the Z-report Ed25519
+      // signatures are verified too, not just the chain linkage.
+      const signer = await getActiveSigner();
+      let pubHex: string | undefined;
+      if (signer) {
+        pubHex = Array.from(signer.publicKey)
+          .map((b) => b.toString(16).padStart(2, '0')).join('');
+      }
+      setBooksReport(await verifyBooks(pubHex));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setVerifying(false);
+    }
+  }
 
   async function refresh() {
     const [cfg, lastZ, allReceipts, allRefunds, history] = await Promise.all([
@@ -247,6 +272,50 @@ export default function DayCloseScreen({ onBack }: Props) {
               ))}
             </div>
           </>
+        )}
+
+        {/* Verify books — walk the tamper-evident kvitto + Z-report
+            chains and prove nothing has been altered. */}
+        <h3 className="text-sm font-bold uppercase tracking-wider mt-6 mb-2"
+            style={{ color: 'var(--color-text-faint)' }}>
+          {t('dayClose.verifyTitle', 'Verify books')}
+        </h3>
+        <button type="button" onClick={() => void runVerifyBooks()} disabled={verifying}
+                className="w-full py-3 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: 'var(--color-surface)',
+                         border: '1px solid var(--color-border)',
+                         color: 'var(--color-text)',
+                         opacity: verifying ? 0.6 : 1 }}>
+          {verifying
+            ? t('common.working', 'Working…')
+            : t('dayClose.verifyRun', 'Check the kvitto + Z-report chains')}
+        </button>
+
+        {booksReport && (
+          <div className="rounded-xl p-3 mt-2"
+               style={{
+                 backgroundColor: booksReport.ok
+                   ? 'rgba(45,212,168,0.08)' : 'rgba(192,57,43,0.08)',
+                 border: `1px solid ${booksReport.ok ? 'rgba(45,212,168,0.4)' : 'var(--color-error)'}`,
+               }}>
+            <div className="text-sm font-semibold mb-1"
+                 style={{ color: booksReport.ok ? '#0D7D6C' : 'var(--color-error)' }}>
+              {booksReport.ok
+                ? t('dayClose.verifyOk', 'Books intact — every chain link verified')
+                : t('dayClose.verifyFail', 'Integrity break — the books have been altered')}
+            </div>
+            <div className="text-xs mb-1" style={{ color: 'var(--color-text-muted)' }}>
+              {t('dayClose.verifyChecked',
+                '{{r}} kvitto links · {{z}} Z-report links checked',
+                { r: booksReport.receipts.checked, z: booksReport.zReports.checked })}
+            </div>
+            {booksReport.allFindings.map((f, i) => (
+              <div key={i} className="text-xs mt-1"
+                   style={{ color: f.hard ? 'var(--color-error)' : 'var(--color-warning)' }}>
+                {f.hard ? '✗' : '⚠'} {f.detail}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

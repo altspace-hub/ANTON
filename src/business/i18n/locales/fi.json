@@ -57,6 +57,11 @@
     "since": "Alkaen",
     "title": "Päivän sulkeminen",
     "vat": "ALV",
+    "verifyChecked": "{{r}} kvittos-linkkiä · {{z}} Z-rapport-linkkiä tarkistettu",
+    "verifyFail": "Eheysongelma — kirjanpitoa on muutettu",
+    "verifyOk": "Kirjanpito ehjä — jokainen ketjulinkki vahvistettu",
+    "verifyRun": "Tarkista kvittos + Z-rapport-ketjut",
+    "verifyTitle": "Tarkista kirjanpito",
     "window": "Jakso"
   },
   "done": {

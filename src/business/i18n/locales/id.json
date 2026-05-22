@@ -57,6 +57,11 @@
     "since": "Sejak",
     "title": "Tutup hari",
     "vat": "PPN",
+    "verifyChecked": "{{r}} tautan kvitto · {{z}} tautan Z-report diperiksa",
+    "verifyFail": "Integrity break — pembukuan telah diubah",
+    "verifyOk": "Books intact — setiap tautan rantai terverifikasi",
+    "verifyRun": "Periksa rantai kvitto + Z-report",
+    "verifyTitle": "Verify books",
     "window": "Jendela"
   },
   "done": {

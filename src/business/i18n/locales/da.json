@@ -57,6 +57,11 @@
     "since": "Siden",
     "title": "Dagsluk",
     "vat": "Moms",
+    "verifyChecked": "{{r}} kvittos-links · {{z}} Z-rapport-links kontrolleret",
+    "verifyFail": "Integritetsbrud — bogføringen er blevet ændret",
+    "verifyOk": "Bogføringen intakt — hvert kædelink verificeret",
+    "verifyRun": "Kontrollér kvittos + Z-rapport-kæderne",
+    "verifyTitle": "Verificér bogføringen",
     "window": "Periode"
   },
   "done": {

@@ -57,6 +57,11 @@
     "since": "Sejak",
     "title": "Tutup hari",
     "vat": "VAT",
+    "verifyChecked": "{{r}} pautan kvitto · {{z}} pautan Z-report disemak",
+    "verifyFail": "Integrity break — rekod perakaunan telah diubah",
+    "verifyOk": "Books intact — setiap pautan rantaian disahkan",
+    "verifyRun": "Semak rantaian kvitto + Z-report",
+    "verifyTitle": "Verify books",
     "window": "Tetingkap"
   },
   "done": {

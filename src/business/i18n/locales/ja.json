@@ -57,6 +57,11 @@
     "since": "以来",
     "title": "日次締め",
     "vat": "VAT",
+    "verifyChecked": "{{r}} 件の kvitto リンク · {{z}} 件の Z-report リンクを確認しました",
+    "verifyFail": "整合性エラー — 帳簿が改ざんされています",
+    "verifyOk": "帳簿は正常です — すべてのチェーンリンクを検証しました",
+    "verifyRun": "kvitto + Z-report チェーンを確認する",
+    "verifyTitle": "帳簿を検証",
     "window": "期間"
   },
   "done": {

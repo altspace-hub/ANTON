@@ -57,6 +57,11 @@
     "since": "Seit",
     "title": "Tagesabschluss",
     "vat": "MwSt.",
+    "verifyChecked": "{{r}} Kvitto-Links · {{z}} Z-report-Links geprüft",
+    "verifyFail": "Integritätsfehler — die Bücher wurden manipuliert",
+    "verifyOk": "Bücher integer — jeder Kettenglied verifiziert",
+    "verifyRun": "Kvitto + Z-report-Ketten prüfen",
+    "verifyTitle": "Bücher prüfen",
     "window": "Fenster"
   },
   "done": {

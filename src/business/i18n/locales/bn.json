@@ -57,6 +57,11 @@
     "since": "থেকে",
     "title": "দিন বন্ধ",
     "vat": "VAT",
+    "verifyChecked": "{{r}}টি kvitto লিঙ্ক · {{z}}টি Z-report লিঙ্ক যাচাই করা হয়েছে",
+    "verifyFail": "Integrity break — হিসাব পরিবর্তন করা হয়েছে",
+    "verifyOk": "Books intact — প্রতিটি চেইন লিঙ্ক যাচাই করা হয়েছে",
+    "verifyRun": "kvitto + Z-report চেইন যাচাই করুন",
+    "verifyTitle": "Verify books",
     "window": "উইন্ডো"
   },
   "done": {

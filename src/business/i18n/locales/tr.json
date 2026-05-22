@@ -57,6 +57,11 @@
     "since": "Tarihinden beri",
     "title": "Gün kapanışı",
     "vat": "KDV",
+    "verifyChecked": "{{r}} kvitto bağlantısı · {{z}} Z-report bağlantısı kontrol edildi",
+    "verifyFail": "Zincir kırıldı — defterler değiştirilmiş",
+    "verifyOk": "Defterler eksiksiz — zincirin her halkası doğrulandı",
+    "verifyRun": "kvitto + Z-report zincirlerini kontrol et",
+    "verifyTitle": "Defterleri doğrula",
     "window": "Pencere"
   },
   "done": {

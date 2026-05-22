@@ -57,6 +57,11 @@
     "since": "سے",
     "title": "دن کی بندش",
     "vat": "VAT",
+    "verifyChecked": "{{r}} kvitto لنکس · {{z}} Z-report لنکس چیک ہو گئے",
+    "verifyFail": "سلسلہ ٹوٹ گیا — دفتر میں ردوبدل ہوئی ہے",
+    "verifyOk": "دفتر درست ہے — سلسلے کی ہر کڑی تصدیق شدہ",
+    "verifyRun": "kvitto + Z-report سلسلے جانچیں",
+    "verifyTitle": "دفتر کی تصدیق",
     "window": "ونڈو"
   },
   "done": {

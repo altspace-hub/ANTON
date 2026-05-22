@@ -57,6 +57,11 @@
     "since": "Tangu",
     "title": "Kufunga siku",
     "vat": "VAT",
+    "verifyChecked": "Viungo {{r}} vya kvitto · viungo {{z}} vya Z-report vimekaguliwa",
+    "verifyFail": "Ukiukaji wa uadilifu — vitabu vimebadilishwa",
+    "verifyOk": "Vitabu salama — kila kiungo cha mnyororo kimethibitishwa",
+    "verifyRun": "Kagua minyororo ya kvitto + Z-report",
+    "verifyTitle": "Thibitisha vitabu",
     "window": "Kipindi"
   },
   "done": {

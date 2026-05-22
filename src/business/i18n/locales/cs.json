@@ -57,6 +57,11 @@
     "since": "Od",
     "title": "Uzávěrka dne",
     "vat": "DPH",
+    "verifyChecked": "{{r}} kvittos-odkazů · {{z}} Z-rapport-odkazů ověřeno",
+    "verifyFail": "Porušení integrity — účetnictví bylo pozměněno",
+    "verifyOk": "Účetnictví v pořádku — každý článek řetězce ověřen",
+    "verifyRun": "Zkontrolovat kvittos + Z-rapport řetězce",
+    "verifyTitle": "Ověřit účetnictví",
     "window": "Období"
   },
   "done": {
