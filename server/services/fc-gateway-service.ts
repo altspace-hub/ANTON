@@ -11,7 +11,7 @@ export async function createFCGatewayService(db: DatabaseAdapter) {
       await db.run("INSERT INTO fc_gateway_config (id, api_key) VALUES ('default', ?)", apiKey);
       config = await db.get('SELECT * FROM fc_gateway_config WHERE id = ?', 'default');
     }
-    return config;
+    return config as Record<string, unknown>;
   }
 
   async function updateConfig(updates: Record<string, unknown>) {

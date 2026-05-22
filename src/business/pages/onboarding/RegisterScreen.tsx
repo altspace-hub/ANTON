@@ -74,6 +74,8 @@ export default function RegisterScreen({
       kvittoEmail: form.kvittoEmail.trim() || undefined,
       defaultMode: pendingMode,
       nextKvittoNumber: 1,
+      nextKreditNumber: 1,
+      nextZNumber: 1,
       configuredAt: Date.now(),
       ftcPerSek: 0.1,
       lastBackupAt: 0,

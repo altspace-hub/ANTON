@@ -53,7 +53,7 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
       console.log('[pattern-scheduler] Running scheduled pattern detection...');
       try {
         const startTime = Date.now();
-        const result = patternDetection.runAllDetectors();
+        const result = await patternDetection.runAllDetectors();
         const duration = Date.now() - startTime;
 
         console.log(`[pattern-scheduler] Completed in ${duration}ms. Patterns detected: ${result.patternsDetected}`);
@@ -130,7 +130,7 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
     const startTime = Date.now();
 
     try {
-      const result = patternDetection.runAllDetectors();
+      const result = await patternDetection.runAllDetectors();
       const duration = Date.now() - startTime;
 
       logDetectionRun({
@@ -241,8 +241,13 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
   /**
    * Load configuration from database
    */
-  function loadConfig(): ScheduleConfig {
+  async function loadConfig(): Promise<ScheduleConfig> {
     try {
+      const row = await db.get(`
+        SELECT enabled, cron_expression, detector_types
+        FROM pattern_scheduler_config
+        WHERE id = 1
+      `) as any;
 
       if (row) {
         return {
@@ -259,7 +264,7 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
   }
 
   // Load saved config on initialization
-  const savedConfig = loadConfig();
+  const savedConfig = await loadConfig();
   if (savedConfig) {
     config = savedConfig;
   }

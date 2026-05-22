@@ -655,14 +655,21 @@ export async function runIterativeReasoning(
 
 // ── Revelation chain fetcher ──────────────────────────────────────
 
-export function getRevelationChain(
+export async function getRevelationChain(
   db: DatabaseAdapter,
   chainId: string,
-): Record<string, unknown> | null {
+): Promise<Record<string, unknown> | null> {
   try {
-
+    const chain = await db.get(
+      'SELECT * FROM revelation_chains WHERE id = ?',
+      chainId,
+    ) as Record<string, unknown> | undefined;
     if (!chain) return null;
 
+    const rawSteps = await db.all(
+      'SELECT * FROM revelation_steps WHERE chain_id = ? ORDER BY phase_index ASC',
+      chainId,
+    ) as Array<Record<string, unknown>>;
 
     // Map snake_case DB columns → camelCase for frontend
     const steps = rawSteps.map((s) => ({

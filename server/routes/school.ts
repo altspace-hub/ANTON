@@ -2752,7 +2752,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         const { lessonId } = req.body as { lessonId?: string };
         if (!lessonId) return res.status(400).json({ error: 'lessonId required' });
 
-
+        const lesson = await db.get('SELECT * FROM teacher_lessons WHERE id = ?', lessonId as string) as Record<string, unknown> | null;
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
         const manifest = {
@@ -3076,7 +3076,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (curriculum_id) { conditions.push('curriculum_id = ?'); params.push(curriculum_id); }
       if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
       sql += ' ORDER BY created_at DESC';
-      const rows = await db.run(sql, ...params) as Record<string, unknown>[];
+      const rows = await db.all(sql, ...params) as Record<string, unknown>[];
       res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
@@ -3216,7 +3216,9 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       const since = new Date(Date.now() - days * 86_400_000).toISOString();
 
       // Count students in teacher's classes
-
+      const classes = await db.all(
+        'SELECT id FROM school_classes WHERE teacher_user_id = ?'
+      , teacherId) as { id: string }[];
       const classIds = classes.map(c => c.id);
 
       let totalStudents = 0;
@@ -3234,7 +3236,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
         if (studentIds.length > 0) {
           const sPlaceholders = studentIds.map(() => '?').join(',');
           const todaySince = new Date(Date.now() - 86_400_000).toISOString();
-          const activeTodayRows = await db.all(
+          const activeTodayRows = await db.get(
             `SELECT COUNT(DISTINCT user_id) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
           , ...studentIds, todaySince) as { cnt: number };
           activeToday = activeTodayRows.cnt ?? 0;
@@ -3349,7 +3351,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
       const { id } = req.params;
       try {
-
+        const flag = await db.get('SELECT id FROM oversight_flags WHERE id = ?', id) as { id: string } | undefined;
         if (!flag) return res.status(404).json({ error: 'Flag not found' });
         await db.run(`UPDATE oversight_flags SET resolved = 1, resolved_at = ? WHERE id = ?`, new Date().toISOString(), id);
         return res.json({ ok: true });

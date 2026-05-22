@@ -48,7 +48,9 @@ export async function createCapabilityCardGenerator(db: DatabaseAdapter) {
     // Get profile (may not exist or have different columns)
     let profile: { role_title?: string; organisation?: string; expertise?: string; focus_areas?: string } | null = null;
     try {
-      profile = await db.get('SELECT role_title, organisation, expertise, focus_areas FROM user_profiles LIMIT 1');
+      profile = (await db.get<{ role_title?: string; organisation?: string; expertise?: string; focus_areas?: string }>(
+        'SELECT role_title, organisation, expertise, focus_areas FROM user_profiles LIMIT 1'
+      )) ?? null;
     } catch { /* table or columns may not exist */ }
 
     // Get earliest session
@@ -68,7 +70,7 @@ export async function createCapabilityCardGenerator(db: DatabaseAdapter) {
       avgQualityScore: qualityMap.get(m.module_id) ?? null,
     }));
 
-    const areas = Array.from(new Set(moduleStats.map(m => m.area_id).filter(Boolean)));
+    const areas = Array.from(new Set(moduleStats.map(m => m.area_id).filter((a): a is string => a !== null)));
 
     const card: CapabilityCard = {
       formatVersion: '1.0.0',

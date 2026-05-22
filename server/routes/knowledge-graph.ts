@@ -192,7 +192,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   router.get('/knowledge-graph/analytics/communities', async (req, res) => {
     try {
       const iterations = parseInt(req.query.iterations as string) || 10;
-      const communities = analytics.detectCommunities(iterations);
+      const communities = await analytics.detectCommunities(iterations);
 
       // Convert Map to array format
       const result = Array.from(communities.entries()).map(([id, members]) => ({
@@ -216,7 +216,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
 
-      const path = analytics.findShortestPath(
+      const path = await analytics.findShortestPath(
         sourceType as string,
         sourceId as string,
         targetType as string,
@@ -239,7 +239,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const format = (req.query.format as string) || 'json';
 
       // Get all nodes and relationships
-
+      const nodes = await db.all('SELECT * FROM entity_nodes');
       const relationships = await db.all('SELECT * FROM entity_relationships');
 
       if (format === 'graphml') {

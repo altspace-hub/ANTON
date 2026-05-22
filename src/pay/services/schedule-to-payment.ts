@@ -75,6 +75,9 @@ export function scheduleToDecodedPayment(
     creditor: schedule.payeeLabel
       ? { name: schedule.payeeLabel, country: 'SE' }
       : null,
+    // Schedules carry no merchant order envelope — the user is the
+    // originator, so there are no line items to re-bundle.
+    orderEnvelope: null,
     qrUri,
   };
 }

@@ -703,7 +703,8 @@ For each HIGH or CRITICAL risk dependency, provide:
   /**
    * Returns a parsed review session from the DB, or null if not found.
    */
-  function getReviewSession(id: string): ReviewSessionRow | null {
+  async function getReviewSession(id: string): Promise<ReviewSessionRow | null> {
+    const row = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', id) as any;
 
     if (!row) return null;
 
@@ -741,7 +742,13 @@ For each HIGH or CRITICAL risk dependency, provide:
 
     const total = ((await db.get('SELECT COUNT(*) as c FROM code_review_sessions')) as { c: number } | undefined)?.c ?? 0;
 
-    const sessions = rows.map(row => ({
+    const rows = await db.all(
+      'SELECT * FROM code_review_sessions ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      limit,
+      offset,
+    ) as any[];
+
+    const sessions = rows.map((row: any) => ({
       id: row.id as string,
       session_id: row.session_id as string | null,
       project_id: row.project_id as string | null,

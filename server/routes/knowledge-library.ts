@@ -101,7 +101,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   // POST /api/knowledge-library/:id/index — trigger BM25 indexing
   router.post('/knowledge-library/:id/index', async (req, res) => {
     try {
-
+      const entry = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
       if (!entry) return res.status(404).json({ error: 'Not found' });
       const folderPath = entry.path as string;
       if (!fs.existsSync(folderPath)) return res.status(400).json({ error: `Path does not exist: ${folderPath}` });
@@ -114,7 +114,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
       const now = new Date().toISOString();
       await db.run(`UPDATE knowledge_library SET indexed_at = ?, file_count = ?, word_count = ?, updated_at = ? WHERE id = ?`, now, result.documents, wordCount, now, req.params.id);
 
-
+      const updated = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id) as Record<string, unknown>;
       res.json({ ...updated, recursive: Boolean(updated.recursive), file_filter: updated.file_filter ? JSON.parse(updated.file_filter as string) : null, chunks: result.chunks });
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Indexing failed';

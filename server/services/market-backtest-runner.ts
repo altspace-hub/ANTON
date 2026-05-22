@@ -1,5 +1,6 @@
 // Market Backtest Runner — historical simulation with full intelligence pipeline:
 // atoms, theses, predictions, validation, signal weight calibration, NAV tracking.
+import type AnthropicSDK from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 
@@ -141,7 +142,7 @@ ${atomContext.slice(0, 2000)}
 
 Generate 2-4 investment theses. Return JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]
 Return ONLY the JSON array.` }],
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }] as unknown as Anthropic.Messages.Tool[],
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }] as unknown as AnthropicSDK.Messages.Tool[],
         });
 
         let text = '';
@@ -348,7 +349,7 @@ Return ONLY the JSON array.` }],
         const benchmarkDailyReturn = prevBenchmarkNav > 0 ? (benchmarkNav - prevBenchmarkNav) / prevBenchmarkNav : 0;
         benchmarkNavHistory.push({ date: simDate, nav: benchmarkNav, dailyReturn: benchmarkDailyReturn });
         // R2: Circuit breaker check
-        const prevLevel = circuitBreakerLevel;
+        const prevLevel: 'none' | 'tier1' | 'tier2' = circuitBreakerLevel;
         if (drawdown >= 0.25 && circuitBreakerLevel !== 'tier2') {
           const targetCash = 0.80;
           const sellFraction = targetCash - (cashBalance / (nav > 0 ? nav : 1));

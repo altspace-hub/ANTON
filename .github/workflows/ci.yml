@@ -25,9 +25,15 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Frontend TypeScript check
+      # Hardening (May 2026): the typecheck is now a real release gate.
+      # It previously carried `continue-on-error: true`, so 526 type
+      # errors — including ~156 undeclared-variable references that were
+      # live runtime bugs — accumulated on main unnoticed. Green tsc is
+      # the floor under the "audit-grade" claim; it does not get to fail.
+      - name: TypeScript check (server + apps)
         run: pnpm run typecheck
-        continue-on-error: true
+      - name: TypeScript check (FutureChain SDK)
+        run: pnpm --filter @futurechain/sdk typecheck
 
   security-audit:
     name: Security Audit

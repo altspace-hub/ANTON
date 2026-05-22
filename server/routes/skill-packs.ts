@@ -128,6 +128,7 @@ export async function createSkillPacksRoutes(db: DatabaseAdapter) {
       );
 
 
+      const created = await db.get('SELECT * FROM skill_packs WHERE id = ?', id) as SkillPackRow;
       res.status(201).json(parsePackRow(created));
     } catch (error) {
       console.error('[skill-packs] POST /skill-packs error:', error);

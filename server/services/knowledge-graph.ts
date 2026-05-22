@@ -147,7 +147,10 @@ export async function createKnowledgeGraph(db: DatabaseAdapter) {
       const node = await db.all('SELECT * FROM entity_nodes WHERE entity_type = ? AND entity_id = ?', type, id);
       if (node) nodes.push(node);
 
-
+      const relationships = await db.all(`
+        SELECT * FROM entity_relationships
+        WHERE (source_type = ? AND source_id = ?) OR (target_type = ? AND target_id = ?)
+      `, type, id, type, id) as any[];
 
       for (const rel of relationships) {
         edges.push(rel);

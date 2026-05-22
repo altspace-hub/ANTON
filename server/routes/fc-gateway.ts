@@ -11,9 +11,9 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
 
   adminRouter.get('/futurechain/gateway/config', async (_req, res) => {
     try {
-      const config = await svc.getConfig();
+      const config = (await svc.getConfig()) ?? {};
       // Mask API key for display
-      const key = String(config.api_key);
+      const key = String(config.api_key ?? '');
       res.json({ ...config, api_key_display: key.length > 8 ? `gw_${'*'.repeat(8)}...${key.slice(-8)}` : key });
     } catch (err) { res.status(500).json({ error: 'Failed to get config' }); }
   });
@@ -51,32 +51,32 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
     const { valid, config } = await svc.validateApiKey(key);
     if (!valid) { await svc.logAction('auth_failed', req.ip, null, 'error', undefined, 'Invalid API key'); return res.status(401).json({ error: 'Invalid API key' }); }
     if (!config?.enabled) return res.status(403).json({ error: 'Gateway is disabled' });
-    (req as Record<string, unknown>).gatewayConfig = config;
+    (req as unknown as Record<string, unknown>).gatewayConfig = config;
     next();
   });
 
   publicRouter.get('/status', async (_req, res) => {
     try {
       const config = await svc.getConfig();
-      res.json({ enabled: !!config.enabled, version: '1.0.0' });
+      res.json({ enabled: !!config?.enabled, version: '1.0.0' });
     } catch { res.json({ enabled: false, version: '1.0.0' }); }
   });
 
   publicRouter.get('/balance', async (req, res) => {
     try {
-      const perm = await svc.checkPermission('balance_check', (req as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
+      const perm = await svc.checkPermission('balance_check', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
       const { createFCWalletService } = await import('../services/fc-wallet-service.js');
       const walletService = await createFCWalletService(db);
       const wallets = await walletService.getWallets();
       await svc.logAction('balance_check', req.ip, null, 'success');
-      res.json(wallets.map((w: Record<string, unknown>) => ({ name: w.name, type: w.wallet_type, address: w.address, balance_ftc: w.balance_ftc })));
+      res.json(wallets.map((w) => ({ name: w.name, type: w.wallet_type, address: w.address, balance_ftc: w.balance_ftc })));
     } catch (err) { res.status(500).json({ error: 'Failed to get balance' }); }
   });
 
   publicRouter.get('/contacts/:hash', async (req, res) => {
     try {
-      const perm = await svc.checkPermission('contact_lookup', (req as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
+      const perm = await svc.checkPermission('contact_lookup', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
       const conn = await db.get(
         "SELECT display_name, payment_address, payment_name, payment_country, agent_wallet_address FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
@@ -89,7 +89,7 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
 
   publicRouter.post('/pay', async (req, res) => {
     try {
-      const perm = await svc.checkPermission('send_payment', (req as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
+      const perm = await svc.checkPermission('send_payment', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
       const { contactHash, toAddress, amount, purpose, nature, goal } = req.body;
       if (!amount || amount <= 0) return res.status(400).json({ error: 'amount must be positive' });
@@ -105,7 +105,7 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
 
   publicRouter.get('/transactions', async (req, res) => {
     try {
-      const perm = await svc.checkPermission('balance_check', (req as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
+      const perm = await svc.checkPermission('balance_check', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
       const { createFCTransactionService } = await import('../services/fc-transaction-service.js');
       const txService = await createFCTransactionService(db);

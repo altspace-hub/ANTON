@@ -21,6 +21,7 @@ function decoded(over: Partial<DecodedPayment> = {}): DecodedPayment {
     discountMicroFtc: null,
     expUnixSeconds: 0,
     creditor: null,
+    orderEnvelope: null,
     qrUri: 'futurechain:pay?to=fc_merchant_recv',
     ...over,
   };

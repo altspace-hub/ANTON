@@ -9,6 +9,8 @@
  */
 import type { CartLine, VatBreakdownEntry } from './cart';
 
+export type { CartLine, VatBreakdownEntry } from './cart';
+
 export type ReceiptMode = 'simple' | 'extended';
 export type ReceiptStatus = 'pending' | 'confirmed' | 'voided';
 

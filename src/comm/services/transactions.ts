@@ -33,7 +33,7 @@
  * privacy-sensitive; computation is local; export to advisers is the
  * only egress path.
  */
-import type { pacs008 } from '@futurechain/sdk';
+import type { Pacs008Draft } from './pacs008-draft';
 import {
   openDb,
   STORE_WALLET_TXS,
@@ -84,7 +84,7 @@ export interface WalletTx {
    *  txs recorded before the payment-identity feature, or from a QR
    *  with no ADR-004 v1 reference, omit it. Schemaless-safe: adding an
    *  optional record field needs no IndexedDB version bump. */
-  pacs008?: pacs008.Pacs008Draft;
+  pacs008?: Pacs008Draft;
   /** Light fraud-engine assessment computed at send time from the
    *  money + behaviour baselines. Advisory only — the engine never
    *  blocked this send. Optional: receives + txs recorded before the

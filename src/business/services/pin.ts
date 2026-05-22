@@ -45,7 +45,7 @@ function bytesToHex(b: Uint8Array): string {
   return out;
 }
 
-function hexToBytes(hex: string): Uint8Array {
+function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) {
     out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
@@ -53,7 +53,7 @@ function hexToBytes(hex: string): Uint8Array {
   return out;
 }
 
-async function pbkdf2(pin: string, saltBytes: Uint8Array): Promise<Uint8Array> {
+async function pbkdf2(pin: string, saltBytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
   const enc = new TextEncoder();
   const baseKey = await crypto.subtle.importKey(
     'raw', enc.encode(pin),

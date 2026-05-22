@@ -152,7 +152,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // GET /api/projects/invitations/accept/:token — accept invitation
   router.get('/projects/invitations/accept/:token', async (req, res) => {
     try {
-      const invitation = await db.all(`
+      const invitation = await db.get(`
         SELECT * FROM project_invitations
         WHERE token = ? AND status = 'pending' AND expires_at > NOW()
       `, req.params.token) as {

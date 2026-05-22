@@ -44,6 +44,8 @@ function merchant(over: Partial<MerchantConfig> = {}): MerchantConfig {
     safelloReceiveAddress: 'fc_safello',
     defaultMode: 'simple',
     nextKvittoNumber: 1,
+    nextKreditNumber: 1,
+    nextZNumber: 1,
     configuredAt: Date.now(),
     ftcPerSek: 0.1,
     lastBackupAt: 0,

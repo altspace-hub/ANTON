@@ -143,7 +143,7 @@ async function detectSignalClusterPatterns(db: DatabaseAdapter): Promise<Detecte
 async function detectDeadlineClusterPatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const patterns: DetectedPattern[] = [];
   try {
-    const result = await db.all(`
+    const result = await db.get(`
       SELECT COUNT(*) as count,
              STRING_AGG(title, ' | ') as titles,
              MIN(due_date) as earliest
@@ -297,14 +297,19 @@ export async function recordPatternDetection(
 }
 
 /** Check auto-execution eligibility and return count of auto-executions today */
-export function getAutoExecutionCount(db: DatabaseAdapter): number {
+export async function getAutoExecutionCount(db: DatabaseAdapter): Promise<number> {
   try {
-
-    return r.c;
+    const r = await db.get(`
+      SELECT COUNT(*) as c
+      FROM orchestrator_pattern_detections
+      WHERE auto_executed = 1
+        AND detected_at::date = CURRENT_DATE
+    `) as { c: number } | undefined;
+    return r ? Number(r.c) : 0;
   } catch { return 0; }
 }
 
 /** Check if daily auto-execution limit has been reached */
-export function isAutoExecutionAllowed(db: DatabaseAdapter): boolean {
-  return getAutoExecutionCount(db) < ORCHESTRATOR_HARD_LIMITS.MAX_AUTO_EXECUTIONS_PER_DAY;
+export async function isAutoExecutionAllowed(db: DatabaseAdapter): Promise<boolean> {
+  return (await getAutoExecutionCount(db)) < ORCHESTRATOR_HARD_LIMITS.MAX_AUTO_EXECUTIONS_PER_DAY;
 }

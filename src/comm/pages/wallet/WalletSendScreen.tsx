@@ -22,12 +22,11 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { pacs008 } from '@futurechain/sdk';
 import { recordTx, loadBehaviorProfile } from '../../services/transactions';
 import { loadWallet } from '../../services/wallet';
 import { loadPayerIdentity } from '../../services/payment-identity';
 import { loadMoneyProfile } from '../../services/money-profile';
-import { assembleDraft, type CreditorParty } from '../../services/pacs008-draft';
+import { assembleDraft, type CreditorParty, type Pacs008Draft } from '../../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../../services/fraud-engine';
 import { sendOnChain } from '../../services/payment';
 
@@ -62,7 +61,7 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<pacs008.Pacs008Draft | null>(null);
+  const [draft, setDraft] = useState<Pacs008Draft | null>(null);
   const [isoOpen, setIsoOpen] = useState(false);
   const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
   const [armed, setArmed] = useState(false);

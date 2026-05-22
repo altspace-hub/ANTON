@@ -24,7 +24,7 @@ const createCycleSchema = z.object({
   currency: z.string().max(10).optional(),
   deadline: z.string().max(50).optional(),
   owner: z.string().max(200).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateCycleSchema = z.object({
@@ -37,7 +37,7 @@ const updateCycleSchema = z.object({
   currency: z.string().max(10).optional(),
   deadline: z.string().max(50).optional(),
   owner: z.string().max(200).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createRequirementSchema = z.object({
@@ -83,7 +83,7 @@ const addVendorSchema = z.object({
   website: z.string().url().max(1000).optional(),
   status: z.string().max(50).optional(),
   notes: z.string().max(10000).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateVendorSchema = z.object({
@@ -94,7 +94,7 @@ const updateVendorSchema = z.object({
   status: z.string().max(50).optional(),
   total_score: z.number().nonnegative().optional(),
   notes: z.string().max(10000).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const saveEvaluationSchema = z.object({
@@ -113,7 +113,7 @@ const createDocumentSchema = z.object({
   content: z.string().optional(),
   status: z.string().max(50).optional(),
   version: z.number().int().min(1).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateDocumentSchema = z.object({
@@ -122,7 +122,7 @@ const updateDocumentSchema = z.object({
   content: z.string().optional(),
   status: z.string().max(50).optional(),
   version: z.number().int().min(1).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createContractSchema = z.object({
@@ -135,7 +135,7 @@ const createContractSchema = z.object({
   start_date: z.string().max(50).optional(),
   end_date: z.string().max(50).optional(),
   terms: z.string().max(50000).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateContractSchema = z.object({
@@ -148,7 +148,7 @@ const updateContractSchema = z.object({
   start_date: z.string().max(50).optional(),
   end_date: z.string().max(50).optional(),
   terms: z.string().max(50000).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ── Route Factory ────────────────────────────────────────────────────────────

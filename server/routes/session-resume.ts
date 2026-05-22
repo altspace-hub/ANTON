@@ -88,7 +88,7 @@ export async function createSessionResumeRoutes(db: DatabaseAdapter): Promise<Ro
   router.get('/sessions/:sessionId/resume-context', async (req: Request, res: Response) => {
     try {
       const sessionId = String(req.params.sessionId);
-      const snapshot = resumeService.getLatestSnapshot(sessionId);
+      const snapshot = await resumeService.getLatestSnapshot(sessionId);
       if (!snapshot) return res.json({ context: '' });
       const context = resumeService.buildResumeContext(snapshot);
       res.json({ context, snapshot });

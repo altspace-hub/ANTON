@@ -137,9 +137,9 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
     salesNetSek += r.amountSek - r.vatSek;
     ftcReceivedMicro += r.amountMicroFtc;
     for (const v of r.vatBreakdown) {
-      if (v.ratePct === 6) vatSek6 += v.vatSek;
-      else if (v.ratePct === 12) vatSek12 += v.vatSek;
-      else if (v.ratePct === 25) vatSek25 += v.vatSek;
+      if (v.rate === 6) vatSek6 += v.vatSek;
+      else if (v.rate === 12) vatSek12 += v.vatSek;
+      else if (v.rate === 25) vatSek25 += v.vatSek;
     }
   }
   const voidsGrossSek = voids.reduce((s, v) => s + v.amountSek, 0);

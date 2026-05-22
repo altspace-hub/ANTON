@@ -307,7 +307,7 @@ async function executeHeadlessStep(
         const { callChat } = await import('./provider-router.js');
         const result = await callChat({
           model: (cfg['model'] as string) || 'claude-haiku-4-5-20251001',
-          systemPrompt,
+          system: systemPrompt,
           messages: [{ role: 'user', content: userMessage }],
           maxTokens: (cfg['maxTokens'] as number) || 2048,
           thinkingLevel: (cfg['thinking'] as string) || undefined,

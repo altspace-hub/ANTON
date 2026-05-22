@@ -42,13 +42,13 @@ const updateCampaignSchema = z.object({
   salary_currency: z.string().length(3).optional(),
   salary_period: z.enum(['annual', 'monthly', 'hourly']).optional(),
   headcount: z.number().int().positive().optional(),
-  discovery_document: z.record(z.unknown()).optional(),
-  capability_map: z.record(z.unknown()).optional(),
-  scoring_framework: z.record(z.unknown()).optional(),
-  ad_variants: z.array(z.record(z.unknown())).optional(),
+  discovery_document: z.record(z.string(), z.unknown()).optional(),
+  capability_map: z.record(z.string(), z.unknown()).optional(),
+  scoring_framework: z.record(z.string(), z.unknown()).optional(),
+  ad_variants: z.array(z.record(z.string(), z.unknown())).optional(),
   selected_ad_variant: z.string().optional(),
   ad_content: z.string().optional(),
-  ad_questions: z.array(z.record(z.unknown())).optional(),
+  ad_questions: z.array(z.record(z.string(), z.unknown())).optional(),
   wildcard_threshold: z.number().min(0).max(100).optional(),
   shortlist_threshold: z.number().min(0).max(100).optional(),
   decline_threshold: z.number().min(0).max(100).optional(),
@@ -74,8 +74,8 @@ const updateCandidateSchema = z.object({
   status: z.enum(['new', 'screening', 'assessed', 'followup_sent', 'followup_received',
                    'shortlisted', 'interview', 'offer', 'hired', 'rejected', 'withdrawn']).optional(),
   notes: z.string().optional(),
-  question_responses: z.array(z.record(z.unknown())).optional(),
-  followup_responses: z.array(z.record(z.unknown())).optional(),
+  question_responses: z.array(z.record(z.string(), z.unknown())).optional(),
+  followup_responses: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 const createDimensionSchema = z.object({
@@ -112,8 +112,8 @@ const humanDecisionSchema = z.object({
                         'wildcard_decision', 'bias_override']),
   decision: z.string().min(1),
   reasoning: z.string().optional(),
-  previousState: z.record(z.unknown()).optional(),
-  newState: z.record(z.unknown()).optional(),
+  previousState: z.record(z.string(), z.unknown()).optional(),
+  newState: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ── Route Factory ───────────────────────────────────────────────────────────

@@ -81,7 +81,7 @@ export async function createMemoryRoutes(db: DatabaseAdapter) {
       const decidedBy = req.query.decidedBy as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
 
-      const history = memory.getCheckpointHistory({
+      const history = await memory.getCheckpointHistory({
         workflowId,
         stepIndex,
         decidedBy,
@@ -163,7 +163,7 @@ export async function createMemoryRoutes(db: DatabaseAdapter) {
       const workflowId = req.query.workflowId as string | undefined;
       const decidedBy = req.query.decidedBy as string | undefined;
 
-      const insights = memory.getInsightSummary({
+      const insights = await memory.getInsightSummary({
         workflowId,
         decidedBy,
       });

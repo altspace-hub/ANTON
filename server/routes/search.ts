@@ -137,7 +137,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       if (!query || !collections || collections.length === 0) {
         return res.status(400).json({ error: 'Query and collections required' });
       }
-      const results = keywordSearch(db, query, collections, limit || 10);
+      const results = await keywordSearch(db, query, collections, limit || 10);
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Keyword search error:', error);

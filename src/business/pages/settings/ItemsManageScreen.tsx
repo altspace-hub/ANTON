@@ -305,7 +305,7 @@ function ItemEditor({
 
         <Field label={t('itemsManage.fieldPrice', 'Price (SEK)')}
                value={price} onChange={setPrice}
-               type="number" inputMode="decimal"
+               inputMode="decimal"
                placeholder="0.00" />
 
         <div className="mb-4">

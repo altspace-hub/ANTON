@@ -57,8 +57,8 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Calculate degree centrality (number of connections)
    */
-  function calculateDegreeCentrality(limit = 20): Array<{ entity_type: string; entity_id: string; degree: number; normalized: number }> {
-    const { nodes, adjacency } = buildGraphRepresentation();
+  async function calculateDegreeCentrality(limit = 20): Promise<Array<{ entity_type: string; entity_id: string; degree: number; normalized: number }>> {
+    const { nodes, adjacency } = await buildGraphRepresentation();
     const results: Array<{ entity_type: string; entity_id: string; degree: number; normalized: number }> = [];
     const maxDegree = Math.max(...Array.from(adjacency.values()).map(s => s.size), 1);
 
@@ -78,8 +78,8 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Calculate betweenness centrality (measure of bridge nodes)
    */
-  function calculateBetweennessCentrality(limit = 20): Array<{ entity_type: string; entity_id: string; betweenness: number; normalized: number }> {
-    const { nodes, adjacency } = buildGraphRepresentation();
+  async function calculateBetweennessCentrality(limit = 20): Promise<Array<{ entity_type: string; entity_id: string; betweenness: number; normalized: number }>> {
+    const { nodes, adjacency } = await buildGraphRepresentation();
     const betweenness = new Map<string, number>();
 
     // Initialize all nodes with 0
@@ -157,8 +157,8 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Calculate PageRank (iterative algorithm)
    */
-  function calculatePageRank(iterations = 20, dampingFactor = 0.85, limit = 20): Array<{ entity_type: string; entity_id: string; pagerank: number }> {
-    const { nodes, adjacency } = buildGraphRepresentation();
+  async function calculatePageRank(iterations = 20, dampingFactor = 0.85, limit = 20): Promise<Array<{ entity_type: string; entity_id: string; pagerank: number }>> {
+    const { nodes, adjacency } = await buildGraphRepresentation();
     const nodeCount = nodes.size;
     if (nodeCount === 0) return [];
 
@@ -199,13 +199,13 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Find shortest path between two entities
    */
-  function findShortestPath(
+  async function findShortestPath(
     sourceType: string,
     sourceId: string,
     targetType: string,
     targetId: string
-  ): Array<{ entity_type: string; entity_id: string }> | null {
-    const { nodes, adjacency } = buildGraphRepresentation();
+  ): Promise<Array<{ entity_type: string; entity_id: string }> | null> {
+    const { nodes, adjacency } = await buildGraphRepresentation();
     const sourceKey = `${sourceType}:${sourceId}`;
     const targetKey = `${targetType}:${targetId}`;
 
@@ -238,8 +238,8 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Detect communities using label propagation algorithm
    */
-  function detectCommunities(iterations = 10): Map<number, Array<{ entity_type: string; entity_id: string }>> {
-    const { nodes, adjacency } = buildGraphRepresentation();
+  async function detectCommunities(iterations = 10): Promise<Map<number, Array<{ entity_type: string; entity_id: string }>>> {
+    const { nodes, adjacency } = await buildGraphRepresentation();
     const labels = new Map<string, number>();
     let labelId = 0;
 
@@ -300,8 +300,8 @@ export async function createGraphAnalytics(db: DatabaseAdapter) {
   /**
    * Get graph statistics
    */
-  function getGraphStats() {
-    const { nodes, edges } = buildGraphRepresentation();
+  async function getGraphStats() {
+    const { nodes, edges } = await buildGraphRepresentation();
     const nodeCount = nodes.size;
     const edgeCount = edges.length;
     const avgDegree = nodeCount > 0 ? (2 * edgeCount) / nodeCount : 0;

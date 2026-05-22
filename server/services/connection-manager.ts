@@ -169,11 +169,11 @@ export async function createConnectionManager(db: DatabaseAdapter) {
         userId,
         now,
         now);
-      return this.get(id)!;
+      return (await this.get(id))!;
     },
 
     async update(id: string, data: Partial<Pick<Connection, 'display_name' | 'config' | 'permissions' | 'status'>>): Promise<Connection | null> {
-      const existing = this.get(id);
+      const existing = await this.get(id);
       if (!existing) return null;
 
       const now = new Date().toISOString();
@@ -209,7 +209,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
     },
 
     async test(id: string): Promise<{ ok: boolean; message: string }> {
-      const conn = this.get(id);
+      const conn = await this.get(id);
       if (!conn) return { ok: false, message: 'Connection not found' };
 
       let result: { ok: boolean; message: string };
@@ -307,12 +307,12 @@ export async function createConnectionManager(db: DatabaseAdapter) {
     // ── Scripts ────────────────────────────────────────────────
 
     async listScripts(): Promise<Script[]> {
-      const rows = await db.all('SELECT * FROM connection_scripts ORDER BY display_name') as Record<string, unknown>[];
+      const rows = await db.all('SELECT * FROM connection_scripts ORDER BY display_name') as RawScriptRow[];
       return rows.map(parseScript);
     },
 
     async getScript(id: string): Promise<Script | null> {
-      const row = await db.get('SELECT * FROM connection_scripts WHERE id = ?', id) as Record<string, unknown> | undefined;
+      const row = await db.get('SELECT * FROM connection_scripts WHERE id = ?', id) as RawScriptRow | undefined;
       return row ? parseScript(row) : null;
     },
 
@@ -357,14 +357,14 @@ export async function createConnectionManager(db: DatabaseAdapter) {
         data.approved_by ? now : null,
         now
       );
-      return this.getScript(id)!;
+      return (await this.getScript(id))!;
     },
 
     async updateScript(
       id: string,
       data: Partial<Pick<Script, 'display_name' | 'description' | 'parameters' | 'expected_outputs' | 'max_runtime_seconds' | 'memory_limit_mb' | 'version'>>
     ): Promise<Script | null> {
-      const existing = this.getScript(id);
+      const existing = await this.getScript(id);
       if (!existing) return null;
       await db.run(`
         UPDATE scripts SET

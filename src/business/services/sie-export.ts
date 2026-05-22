@@ -84,10 +84,10 @@ function vatBreakdownToTrans(
   for (const v of vatBreakdown) {
     const net = v.netSek * signMultiplier;
     const vat = v.vatSek * signMultiplier;
-    const gross = v.grossSek * signMultiplier;
+    const gross = (v.netSek + v.vatSek) * signMultiplier;
     let salesAcct: string;
     let vatAcct: string;
-    switch (v.ratePct) {
+    switch (v.rate) {
       case 25: salesAcct = ACCT.sales25; vatAcct = ACCT.vat25Out; break;
       case 12: salesAcct = ACCT.sales12; vatAcct = ACCT.vat12Out; break;
       case 6:  salesAcct = ACCT.sales06; vatAcct = ACCT.vat06Out; break;

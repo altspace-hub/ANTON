@@ -24,14 +24,39 @@
  * directly, not this module.
  */
 import { reference } from '@futurechain/sdk';
-import type { pacs008 } from '@futurechain/sdk';
 import type { PayerIdentity } from './payment-identity';
 
 /** ADR-004 v1 purpose codes (`reference.V1Purpose`). */
 type V1Purpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
 
+/** ISO 20022 external purpose code subset we surface for retail QR scans.
+ *  App-local — not an SDK type (the SDK's `Pacs008Builder` owns the
+ *  on-chain message shape; this draft is display + local-receipt only). */
+export type Purpose = 'GDDS' | 'SCVE' | 'OTHR' | 'REFUND';
+
+/** Display-time party identification. App-local — not the on-chain
+ *  `Pacs008Party` shape (which only carries name + country + accountId). */
+export interface PartyIdentification {
+  address: string;
+  name: string;
+  country: string;
+  city?: string;
+  street?: string;
+  postcode?: string;
+}
+
+/** Display-time PACS.008 draft snapshot for the local receipt. */
+export interface Pacs008Draft {
+  debtor: PartyIdentification;
+  creditor: PartyIdentification;
+  amountMicroFtc: bigint;
+  currency: string;
+  purpose: Purpose;
+  reference: string;
+}
+
 /** ADR-004 v1 purpose → ISO 20022 external purpose code. */
-const PURPOSE_TO_ISO: Record<V1Purpose, pacs008.Purpose> = {
+const PURPOSE_TO_ISO: Record<V1Purpose, Purpose> = {
   RETAIL: 'GDDS',      // purchase of goods
   RESTAURANT: 'SCVE',  // purchase of services
   SERVICE: 'SCVE',
@@ -70,7 +95,7 @@ export interface PayUriForDraft {
 export function payerToParty(
   identity: PayerIdentity | null,
   walletAddress: string,
-): pacs008.PartyIdentification {
+): PartyIdentification {
   return {
     address: walletAddress,
     name: identity?.name.trim() || walletAddress,
@@ -87,7 +112,7 @@ export function payerToParty(
 export function creditorToParty(
   uri: PayUriForDraft,
   fallbackName: string,
-): pacs008.PartyIdentification {
+): PartyIdentification {
   return {
     address: uri.to,
     name: uri.creditor?.name.trim() || fallbackName,
@@ -107,7 +132,7 @@ export function assembleDraft(
   identity: PayerIdentity | null,
   walletAddress: string,
   uri: PayUriForDraft,
-): pacs008.Pacs008Draft | null {
+): Pacs008Draft | null {
   if (!uri.ref) return null;
 
   // The ADR-004 reference must be a v1 (merchant-bearing) remittance.

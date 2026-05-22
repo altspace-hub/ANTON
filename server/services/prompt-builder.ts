@@ -475,7 +475,7 @@ export async function buildAtomLayer(
         if (enriched.length === 0) return buildAtomLayerFallback(db, areaId);
 
         // Apply ANTON boosts (confidence, recency, area/module relevance, superseded)
-        const boosted = applyAntonBoosts(enriched, { areaId, moduleId }, db);
+        const boosted = await applyAntonBoosts(enriched, { areaId, moduleId }, db);
 
         // Apply token budget cap
         const capped = applyTokenBudget(boosted, 4000);
@@ -658,7 +658,7 @@ export async function buildHardwareHkpLayer(
     // ── Build sub-blocks ────────────────────────────────────────────────────
 
     const specBlock = renderSpecificationBlock(pack, claims, components, regionalAlts, claimLimit);
-    const diagnosticBlock = renderDiagnosticBlock(diagnosticRows as DiagnosticCaseRow[]);
+    const diagnosticBlock = renderDiagnosticBlock(diagnosticRows as unknown as DiagnosticCaseRow[]);
     const lifecycleBlock = renderLifecycleBlock(lifecycle);
 
     // ── Order sub-blocks by path ────────────────────────────────────────────

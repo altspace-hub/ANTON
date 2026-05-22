@@ -92,7 +92,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     `, feedback, checkpointId);
   }
 
-  function getCheckpointHistory(params: {
+  async function getCheckpointHistory(params: {
     workflowId?: string;
     stepIndex?: number;
     decidedBy?: string;
@@ -119,7 +119,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     query += ' ORDER BY decided_at DESC LIMIT ?';
     queryParams.push(params.limit ?? 20);
 
-
+    const rows = await db.all(query, ...queryParams) as any[];
 
     // Calculate distribution
     const distribution: Record<string, number> = {};
@@ -348,11 +348,11 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
   /**
    * Get insight summary for a workflow or user
    */
-  function getInsightSummary(params: {
+  async function getInsightSummary(params: {
     workflowId?: string;
     decidedBy?: string;
   }) {
-    const history = getCheckpointHistory(params);
+    const history = await getCheckpointHistory(params);
 
     if (history.totalDecisions === 0) {
       return {

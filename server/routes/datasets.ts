@@ -81,7 +81,7 @@ export async function createDatasetsRoutes(db: DatabaseAdapter) {
       }
 
       // Check if name already exists
-      if (store.nameExists(name)) {
+      if (await store.nameExists(name)) {
         res.status(409).json({ error: 'Dataset name already exists' });
         return;
       }

@@ -191,7 +191,7 @@ export async function createDeadlinesRoutes(db: DatabaseAdapter) {
   // GET /api/deadlines/:id/reminders
   router.get('/deadlines/:id/reminders', async (req, res) => {
     try {
-
+      const reminders = await db.all('SELECT * FROM deadline_reminders WHERE deadline_id = ? ORDER BY remind_days_before DESC', req.params.id);
       res.json(reminders);
     } catch (err) {
       console.error('[deadlines] reminders error:', err);
@@ -213,7 +213,7 @@ export async function createDeadlinesRoutes(db: DatabaseAdapter) {
       }
       const id = randomUUID();
       await db.run('INSERT INTO deadline_reminders (id, deadline_id, remind_days_before, remind_via, email_address) VALUES (?, ?, ?, ?, ?)', id, req.params.id, remind_days_before, remind_via || 'email', email_address || null);
-
+      const reminder = await db.get('SELECT * FROM deadline_reminders WHERE id = ?', id);
       res.status(201).json(reminder);
     } catch (err) {
       console.error('[deadlines] create reminder error:', err);

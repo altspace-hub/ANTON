@@ -44,7 +44,7 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   router.get('/org-context/prompt', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const prompt = orgCtxService.buildOrgContextPrompt(userId);
+      const prompt = await orgCtxService.buildOrgContextPrompt(userId);
       res.json({ prompt });
     } catch (err) {
       res.status(500).json({ error: 'Failed to build org context prompt' });

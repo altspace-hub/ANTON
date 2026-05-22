@@ -408,7 +408,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       let businessContext: string | null = null;
       if (moduleId === 'ic-memo') {
         try {
-
+          const identityRow = await db.get(
+            'SELECT * FROM fund_identity WHERE id = ?', 'default'
+          ) as {
+            fund_name?: string; fund_type?: string; geography_focus?: string;
+            sector_focus?: string; typical_check_size?: string; partner_name?: string;
+            currency?: string; investment_style_notes?: string;
+          } | undefined;
           if (identityRow) {
             const contextParts: string[] = ['## YOUR FIRM\'S CONTEXT (MY WAY OF WORKING)'];
             contextParts.push(
@@ -476,7 +482,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
             let templateData: unknown = null;
             if (docType) {
-
+              const tmplRow = await db.get(
+                "SELECT template_data FROM document_templates WHERE document_type = ? ORDER BY is_default DESC, updated_at DESC LIMIT 1",
+                docType
+              ) as { template_data: string } | undefined;
               if (tmplRow) {
                 try { templateData = JSON.parse(tmplRow.template_data); } catch { /* ignore */ }
               }
@@ -1712,7 +1721,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       res.status(400).json({ error: 'chainId required' });
       return;
     }
-    const chain = getRevelationChain(db, chainId);
+    const chain = await getRevelationChain(db, chainId);
     if (!chain) {
       res.status(404).json({ error: 'Revelation chain not found' });
       return;

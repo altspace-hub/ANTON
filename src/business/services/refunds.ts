@@ -46,7 +46,7 @@ function hydrate(r: IdbRefund): RefundReceipt {
  *  supplies one explicitly (partial refund with line selection) we
  *  use that; otherwise we negate the original kvitto's breakdown. */
 function negateVat(entries: VatBreakdownEntry[]): VatBreakdownEntry[] {
-  return entries.map(e => ({ ...e, netSek: -e.netSek, vatSek: -e.vatSek, grossSek: -e.grossSek }));
+  return entries.map(e => ({ ...e, netSek: -e.netSek, vatSek: -e.vatSek }));
 }
 
 /**

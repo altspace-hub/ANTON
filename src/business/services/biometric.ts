@@ -41,7 +41,7 @@ export async function requireBiometric(prompt: BiometricPrompt): Promise<Biometr
 
   let status: Awaited<ReturnType<typeof NativeBiometric.isAvailable>>;
   try {
-    status = await NativeBiometric.isAvailable({ useFallback: true });
+    status = await NativeBiometric.isAvailable();
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     return { ok: false, reason: 'unavailable', detail };

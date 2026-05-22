@@ -84,7 +84,7 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         });
 
       // Apply ANTON boosts
-      const boosted = applyAntonBoosts(enriched, { areaId, moduleId }, db);
+      const boosted = await applyAntonBoosts(enriched, { areaId, moduleId }, db);
 
       // Post-filter by confidence and atom type
       let filtered = boosted;
@@ -301,7 +301,10 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'atomId, sessionId, and wasRelevant (boolean) are required' });
       }
 
-
+      const result = await db.run(
+        'UPDATE retrieval_feedback SET was_relevant = ? WHERE atom_id = ? AND session_id = ?',
+        wasRelevant ? 1 : 0, atomId, sessionId
+      );
 
       if (result.changes === 0) {
         return res.status(404).json({ error: 'No matching feedback row found' });

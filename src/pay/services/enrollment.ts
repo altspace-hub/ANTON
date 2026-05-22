@@ -169,7 +169,6 @@ function appVersion(): string {
 function readEnvOverride(): string | null {
   // Vite env (browser/Capacitor build)
   try {
-    // @ts-expect-error — import.meta.env is Vite-only
     const v: unknown = import.meta.env?.VITE_FC_INSTALL_TOKEN;
     if (typeof v === 'string' && v.length === 64) return v;
   } catch { /* not under Vite */ }

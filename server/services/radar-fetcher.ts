@@ -298,7 +298,9 @@ If you find nothing relevant, return: []`,
     if (unscoredItems.length === 0) return 0;
 
     // Read custom PE/VC scoring criteria once (empty string = use built-in default)
-
+    const customCriteriaRow = await db.get(
+      "SELECT value FROM radar_settings WHERE key = 'pevc_scoring_criteria'"
+    ) as { value: string } | undefined;
     const customPevcCriteria = customCriteriaRow?.value?.trim() || null;
 
     let scored = 0;
