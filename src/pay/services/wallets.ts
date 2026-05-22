@@ -37,6 +37,8 @@ import {
   hasAlias as nativeHasAlias, isSecureSignerAvailable,
   signWithAlias, wrapPriv,
 } from './secure-signer';
+import { getEndpoint } from './fc-rpc';
+import { registerAddress } from './enrollment';
 
 // ── Secure-store key layout ─────────────────────────────────────────
 const IDS_KEY     = 'fc.wallet.ids';
@@ -66,6 +68,12 @@ export interface WalletMeta {
    *  attach to the signed tx, and the priv may no longer be
    *  reachable from JS. */
   publicKeyHex?: string;
+  /** Epoch ms when this wallet's fc_ address was registered with the
+   *  Bahnhof node — the install ↔ address mapping in the sidecar.
+   *  Undefined = not yet registered (the next syncRegisteredAddresses
+   *  call retries it). The private key is never sent; only the
+   *  public address. */
+  registeredAt?: number;
 }
 
 export interface Wallet {
@@ -245,6 +253,12 @@ export async function createWallet(
   list.push(meta);
   await writeRegistry(list);
   await setSecure(ACTIVE_KEY, id);
+  // Best-effort: tell the Bahnhof node about the new wallet
+  // (install ↔ address mapping; the private key never leaves the
+  // device). A network failure here does NOT block wallet creation —
+  // the address stays unregistered and is retried on the next
+  // syncRegisteredAddresses call (any subsequent create / import).
+  await syncRegisteredAddresses();
   return { meta, mnemonic };
 }
 
@@ -279,7 +293,46 @@ export async function importWalletFromMnemonic(
   list.push(meta);
   await writeRegistry(list);
   await setSecure(ACTIVE_KEY, id);
+  // Best-effort registration of the restored wallet with Bahnhof —
+  // see createWallet for the rationale + retry mechanism.
+  await syncRegisteredAddresses();
   return meta;
+}
+
+/** Register every locally-known wallet address with the Bahnhof node
+ *  — the install ↔ fc_ address mapping in the sidecar; the private
+ *  key is never sent. Idempotent on the server side (keyed on
+ *  install_id × fc_address); locally each wallet records
+ *  `registeredAt` once it succeeds so subsequent calls only retry
+ *  the ones that haven't gone through yet. Best-effort — a transport
+ *  failure here is logged but never thrown, so wallet creation never
+ *  fails because the node is briefly unreachable. */
+async function syncRegisteredAddresses(): Promise<void> {
+  let endpoint: string;
+  try {
+    endpoint = await getEndpoint();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`syncRegisteredAddresses: no RPC endpoint (${String(err)})`);
+    return;
+  }
+  const list = await readRegistry();
+  let dirty = false;
+  for (const meta of list) {
+    if (meta.registeredAt) continue;
+    try {
+      await registerAddress(endpoint, meta.address, meta.label);
+      meta.registeredAt = Date.now();
+      dirty = true;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `syncRegisteredAddresses: failed for ${meta.address} ` +
+        `(${String(err)}); will retry on the next launch / create.`,
+      );
+    }
+  }
+  if (dirty) await writeRegistry(list);
 }
 
 export async function renameWallet(id: string, label: string): Promise<void> {

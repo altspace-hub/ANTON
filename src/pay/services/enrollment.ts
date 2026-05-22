@@ -102,6 +102,44 @@ export async function getOrCreateInstallId(): Promise<string> {
   return fresh;
 }
 
+/** Tell the Bahnhof node about a newly-created local wallet — the
+ *  install ↔ fc_ address mapping only, never the private key.
+ *
+ *  The endpoint is idempotent on (install_id, fc_address) so safe to
+ *  retry. Throws on network / auth failure; the caller decides
+ *  whether to swallow (createWallet, fire-and-forget) or surface
+ *  (a manual re-sync from settings).
+ *
+ *  POST {endpoint}/register_address
+ *    headers: { Content-Type: application/json, X-API-Key: <install token> }
+ *    body:    { fc_address: "fc_…", label?: "Daily" }
+ */
+export async function registerAddress(
+  endpoint: string,
+  fcAddress: string,
+  label?: string,
+): Promise<void> {
+  const token = await getInstallToken(endpoint);
+  const res = await fetch(`${endpoint.replace(/\/$/, '')}/register_address`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': token,
+    },
+    body: JSON.stringify({
+      fc_address: fcAddress,
+      ...(label ? { label } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(
+      `register_address failed: HTTP ${res.status} ${detail.slice(0, 200)}`,
+    );
+  }
+}
+
+
 // ── internals ────────────────────────────────────────────────────────
 
 async function enroll(endpoint: string, installId: string): Promise<string> {
