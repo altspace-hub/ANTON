@@ -16,10 +16,13 @@ interface Props {
   onExtended: () => void;
   onReceipts: () => void;
   onStatistics: () => void;
+  onInventory: () => void;
   onSettings: () => void;
 }
 
-export default function HomeScreen({ onSimple, onExtended, onReceipts, onStatistics, onSettings }: Props) {
+export default function HomeScreen({
+  onSimple, onExtended, onReceipts, onStatistics, onInventory, onSettings,
+}: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
 
@@ -96,7 +99,7 @@ export default function HomeScreen({ onSimple, onExtended, onReceipts, onStatist
         />
       </div>
 
-      {/* Receipts + Statistics — secondary destinations, 2-up row. */}
+      {/* Receipts / Statistics / Inventory — secondary destinations. */}
       <div className="grid grid-cols-2 gap-3 mt-3">
         <UtilityCard
           title={t('home.receipts', 'Receipts')}
@@ -106,6 +109,10 @@ export default function HomeScreen({ onSimple, onExtended, onReceipts, onStatist
           title={t('home.statistics', 'Statistics')}
           body={t('home.statisticsBody', 'Sales, trends, top items.')}
           onClick={onStatistics} />
+        <UtilityCard
+          title={t('home.inventory', 'Inventory')}
+          body={t('home.inventoryBody', 'Stock levels and movements.')}
+          onClick={onInventory} />
       </div>
 
       <div className="mt-auto text-center text-[11px]"

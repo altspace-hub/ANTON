@@ -175,8 +175,15 @@ export default function ItemsManageScreen({ onBack, onOpenTemplates }: Props) {
           initial={editing}
           existingCategories={categories}
           onCancel={() => setEditing(null)}
-          onSave={async (patch) => {
+          onSave={async (patch, opts) => {
             await updateItem(editing.id, patch);
+            // Wave 12 — if stock tracking was just enabled and the
+            // merchant gave an opening count, record the `initial`
+            // movement once (only when the item had no tracking before).
+            if (opts?.initialStock !== undefined && !editing.trackStock) {
+              const { setInitialStock } = await import('../../services/inventory');
+              await setInitialStock({ ...editing, ...patch }, opts.initialStock);
+            }
             setEditing(null);
             await refresh();
           }}
@@ -193,13 +200,19 @@ export default function ItemsManageScreen({ onBack, onOpenTemplates }: Props) {
           initial={null}
           existingCategories={categories}
           onCancel={() => setShowAdd(false)}
-          onSave={async (patch) => {
-            await addItem({
+          onSave={async (patch, opts) => {
+            const created = await addItem({
               name: patch.name ?? '',
               unitPriceSek: patch.unitPriceSek ?? 0,
               vatRate: patch.vatRate ?? 12,
               category: patch.category,
+              trackStock: patch.trackStock,
+              lowStockThreshold: patch.lowStockThreshold,
             });
+            if (patch.trackStock && opts?.initialStock !== undefined) {
+              const { setInitialStock } = await import('../../services/inventory');
+              await setInitialStock(created, opts.initialStock);
+            }
             setShowAdd(false);
             await refresh();
           }}
@@ -225,7 +238,10 @@ function ItemEditor({
   initial: CatalogueItem | null;
   existingCategories: string[];
   onCancel: () => void;
-  onSave: (patch: Partial<Omit<CatalogueItem, 'id' | 'updatedAt'>>) => void | Promise<void>;
+  onSave: (
+    patch: Partial<Omit<CatalogueItem, 'id' | 'updatedAt'>>,
+    opts?: { initialStock?: number },
+  ) => void | Promise<void>;
   onDelete: (() => void | Promise<void>) | null;
 }) {
   const { t } = useTranslation();
@@ -234,18 +250,38 @@ function ItemEditor({
   const [vatRate, setVatRate] = useState<0 | 6 | 12 | 25>(initial?.vatRate ?? 12);
   const [category, setCategory] = useState(initial?.category ?? '');
   const [showCustomCat, setShowCustomCat] = useState(false);
+  // Wave 12 — stock tracking. `trackStock` is the opt-in toggle.
+  // `openingCount` is only used when tracking is being newly enabled
+  // on an item that wasn't tracked before.
+  const [trackStock, setTrackStock] = useState(initial?.trackStock ?? false);
+  const [openingCount, setOpeningCount] = useState('');
+  const wasTracked = initial?.trackStock ?? false;
 
   const numericPrice = Number.parseFloat(price.replace(',', '.'));
   const canSave = name.trim().length > 0 && Number.isFinite(numericPrice) && numericPrice >= 0;
+  /** Show the opening-count field only when tracking is freshly
+   *  enabled — an already-tracked item's stock is changed from the
+   *  Inventory screen, never silently here. */
+  const showOpeningCount = trackStock && !wasTracked;
 
   async function handleSave() {
     if (!canSave) return;
-    await onSave({
-      name: name.trim(),
-      unitPriceSek: numericPrice,
-      vatRate,
-      category: category.trim() || undefined,
-    });
+    const opening = Number.parseInt(openingCount, 10);
+    await onSave(
+      {
+        name: name.trim(),
+        unitPriceSek: numericPrice,
+        vatRate,
+        category: category.trim() || undefined,
+        trackStock,
+        ...(initial?.lowStockThreshold !== undefined
+          ? { lowStockThreshold: initial.lowStockThreshold }
+          : {}),
+      },
+      showOpeningCount && Number.isInteger(opening) && opening >= 0
+        ? { initialStock: opening }
+        : undefined,
+    );
   }
 
   return (
@@ -336,6 +372,32 @@ function ItemEditor({
                 {t('itemsManage.newCategory', '+ new')}
               </button>
             </div>
+          )}
+        </div>
+
+        {/* Wave 12 — stock tracking toggle. Opt-in per item; service
+            items leave it off. When freshly enabled, an opening-count
+            field appears so the merchant can seed the inventory. */}
+        <div className="mb-4">
+          <label className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
+            <input type="checkbox" checked={trackStock}
+                   onChange={(e) => setTrackStock(e.target.checked)}
+                   style={{ width: 18, height: 18, accentColor: 'var(--color-accent)' }} />
+            <span className="flex-1">
+              <span className="text-sm font-semibold block" style={{ color: 'var(--color-text)' }}>
+                {t('itemsManage.trackStock', 'Track stock')}
+              </span>
+              <span className="text-xs block mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('itemsManage.trackStockHint',
+                  'Count this item in Inventory and deduct it on every sale.')}
+              </span>
+            </span>
+          </label>
+          {showOpeningCount && (
+            <input value={openingCount} onChange={(e) => setOpeningCount(e.target.value)}
+                   type="number" inputMode="numeric"
+                   placeholder={t('itemsManage.openingCount', 'Opening stock count')}
+                   className="w-full mt-2" />
           )}
         </div>
 

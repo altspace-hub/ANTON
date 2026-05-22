@@ -36,6 +36,7 @@ import TemplatesPickerScreen from './pages/settings/TemplatesPickerScreen';
 import ReceiptsHistoryScreen from './pages/ReceiptsHistoryScreen';
 import KvittoDetailScreen from './pages/KvittoDetailScreen';
 import StatisticsScreen from './pages/StatisticsScreen';
+import InventoryScreen from './pages/InventoryScreen';
 import { hasConfig } from './services/merchant';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
@@ -54,6 +55,7 @@ type Screen =
   | 'receipts'
   | 'receipt-detail'
   | 'statistics'
+  | 'inventory'
   | 'settings'
   | 'settings-wallet'
   | 'settings-wallets-list'
@@ -164,6 +166,7 @@ export default function App() {
         onExtended={() => setScreen('extended')}
         onReceipts={() => setScreen('receipts')}
         onStatistics={() => setScreen('statistics')}
+        onInventory={() => setScreen('inventory')}
         onSettings={() => setScreen('settings')}
       />
     );
@@ -192,6 +195,9 @@ export default function App() {
   }
   if (screen === 'statistics') {
     return <StatisticsScreen onBack={() => setScreen('home')} />;
+  }
+  if (screen === 'inventory') {
+    return <InventoryScreen onBack={() => setScreen('home')} />;
   }
   if (screen === 'settings') {
     return (

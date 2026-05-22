@@ -25,6 +25,7 @@ import {
 import { buildExtendedQr, buildOrderEnvelopeFromCart, computeMerchantId, generateOrderId, type BuiltQr } from '../services/qr';
 import { merchantToCreditorParty } from '../services/payment-party';
 import { persistReceipt } from '../services/receipts';
+import { deductSale } from '../services/inventory';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
 import { notifyReceiptConfirmed } from '../services/notifications';
 import type { MerchantConfig, Receipt } from '../services/types';
@@ -142,6 +143,13 @@ export default function ExtendedScreen({ onBack }: { onBack: () => void }) {
       });
       setReceipt(r);
       pendingReceiptIdRef.current = r.kvittoNumber;
+      // Wave 12 — deduct stock for any tracked cart items. Best-effort:
+      // a bookkeeping failure must never fail the sale, so swallow.
+      try {
+        await deductSale(cart.lines, r.kvittoNumber);
+      } catch {
+        /* inventory deduction is non-critical to the sale */
+      }
       return r;
     } catch (err) {
       setError((err as Error).message);

@@ -14,6 +14,7 @@ import type { MerchantConfig } from '../../services/types';
 import { hasWallet, loadWallet, wipeWallet } from '../../services/wallet';
 import { wipeReceipts } from '../../services/db';
 import { wipeItems } from '../../services/items';
+import { wipeStockMovements } from '../../services/inventory';
 import { getLanguage, setLanguage } from '../../i18n';
 import { LANGUAGES, languageOption } from '../../i18n/languages';
 import {
@@ -94,7 +95,7 @@ export default function SettingsScreen({
 
   async function handleReset() {
     if (!confirm(t('settings.resetConfirm'))) return;
-    await Promise.all([wipeConfig(), wipeWallet(), wipeReceipts(), wipeItems()]);
+    await Promise.all([wipeConfig(), wipeWallet(), wipeReceipts(), wipeItems(), wipeStockMovements()]);
     onReset();
   }
 

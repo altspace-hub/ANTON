@@ -17,6 +17,15 @@ export interface CatalogueItem {
   vatRate: 0 | 6 | 12 | 25;
   category?: string;
   updatedAt: number;
+  /** Wave 12 — inventory. Opt-in per item: service-style items
+   *  (a haircut, a consultation hour) leave this false; retail stock
+   *  items turn it on. When true, the sale flow deducts stock and the
+   *  Inventory screen tracks the item. */
+  trackStock?: boolean;
+  /** Low-stock alert threshold. When current stock drops to or below
+   *  this, the item is flagged. Defaults to 5 when trackStock is on
+   *  and this is unset. */
+  lowStockThreshold?: number;
 }
 
 export async function loadItems(): Promise<CatalogueItem[]> {

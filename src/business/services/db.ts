@@ -14,21 +14,25 @@
 
 export const DB_NAME = 'anton-business';
 /** v1: receipts. v2: + fc_contacts. v3: + refunds (kreditnotor) +
- *  z_reports (daily close). Bokföringslagen 5 kap requires the
- *  refund chain to be a separate sequenced document; SKVFS 2021:17
- *  requires the Z-rapport for kassaregister. */
-export const DB_VERSION = 3;
+ *  z_reports (daily close). v4: + stock_movements (Wave 12 inventory
+ *  — append-only audit log of every stock change). Bokföringslagen 5
+ *  kap requires the refund chain to be a separate sequenced document;
+ *  SKVFS 2021:17 requires the Z-rapport for kassaregister. */
+export const DB_VERSION = 4;
 
 export const STORE_RECEIPTS = 'receipts';
 export const STORE_FC_CONTACTS = 'fc_contacts';
 export const STORE_REFUNDS = 'refunds';
 export const STORE_Z_REPORTS = 'z_reports';
+export const STORE_STOCK_MOVEMENTS = 'stock_movements';
 
 export const INDEX_RECEIPTS_BY_CREATED = 'by_created';
 export const INDEX_RECEIPTS_BY_STATUS = 'by_status';
 export const INDEX_REFUNDS_BY_ORIGINAL = 'by_original';
 export const INDEX_REFUNDS_BY_CREATED = 'by_created';
 export const INDEX_ZREPORTS_BY_CLOSED = 'by_closed';
+export const INDEX_STOCK_BY_ITEM = 'by_item';
+export const INDEX_STOCK_BY_CREATED = 'by_created';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -63,6 +67,16 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_Z_REPORTS)) {
         const store = db.createObjectStore(STORE_Z_REPORTS, { keyPath: 'zNumber' });
         store.createIndex(INDEX_ZREPORTS_BY_CLOSED, 'closedAt', { unique: false });
+      }
+      // v4 — stock movements (Wave 12 inventory). Append-only audit
+      // log: every sale / restock / adjustment / wastage / initial
+      // count is one immutable row. Current stock = initial + Σdelta.
+      // `id` is a generated string; indexed by itemId (per-item
+      // history) and createdAt (chronological list).
+      if (!db.objectStoreNames.contains(STORE_STOCK_MOVEMENTS)) {
+        const store = db.createObjectStore(STORE_STOCK_MOVEMENTS, { keyPath: 'id' });
+        store.createIndex(INDEX_STOCK_BY_ITEM, 'itemId', { unique: false });
+        store.createIndex(INDEX_STOCK_BY_CREATED, 'createdAt', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
