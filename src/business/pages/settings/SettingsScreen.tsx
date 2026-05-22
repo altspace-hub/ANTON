@@ -15,6 +15,8 @@ import { hasWallet, loadWallet, wipeWallet } from '../../services/wallet';
 import { wipeReceipts } from '../../services/db';
 import { wipeItems } from '../../services/items';
 import { wipeStockMovements } from '../../services/inventory';
+import { isPinSet } from '../../services/pin';
+import PinPad from '../../components/PinPad';
 import { getLanguage, setLanguage } from '../../i18n';
 import { LANGUAGES, languageOption } from '../../i18n/languages';
 import {
@@ -53,6 +55,11 @@ export default function SettingsScreen({
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [accent, setAccentState] = useState<AccentKey>(getAccent());
   const [mode, setModeState] = useState<AppMode>(getMode());
+  /** Reset is two-step + PIN-gated so it can't be triggered by a stray
+   *  tap. `resetArmed` = the first tap revealed the confirm panel;
+   *  `showResetPin` = the merchant PIN check is up. */
+  const [resetArmed, setResetArmed] = useState(false);
+  const [showResetPin, setShowResetPin] = useState(false);
   const [storageText, setStorageText] = useState<string>('…');
 
   useEffect(() => {
@@ -93,8 +100,26 @@ export default function SettingsScreen({
     }
   }
 
-  async function handleReset() {
-    if (!confirm(t('settings.resetConfirm'))) return;
+  /**
+   * Reset is deliberately hard to trigger by accident:
+   *   1. Tap "Reset app" — only *arms* the danger zone (reveals the
+   *      confirm panel). Nothing is wiped.
+   *   2. Tap "Erase everything" — if a merchant PIN is set, the PIN
+   *      pad must be cleared first; otherwise the OS confirm() dialog.
+   *   3. Only then is every store wiped.
+   */
+  async function attemptReset() {
+    if (await isPinSet()) {
+      setShowResetPin(true);
+    } else {
+      // No PIN configured — fall back to the OS confirm dialog as the
+      // final gate (still behind the in-UI arming step).
+      if (!confirm(t('settings.resetConfirm'))) return;
+      await doReset();
+    }
+  }
+
+  async function doReset() {
     await Promise.all([wipeConfig(), wipeWallet(), wipeReceipts(), wipeItems(), wipeStockMovements()]);
     onReset();
   }
@@ -460,7 +485,7 @@ export default function SettingsScreen({
           </div>
         </div>
 
-        {/* Danger zone */}
+        {/* Danger zone — two-step: the first tap only arms the panel. */}
         <div className="rounded-xl p-4"
              style={{
                backgroundColor: 'var(--color-error-bg)',
@@ -470,17 +495,54 @@ export default function SettingsScreen({
           <p className="text-sm mb-3" style={{ color: 'var(--color-text-body)' }}>
             {t('settings.resetHelp')}
           </p>
-          <button type="button" onClick={handleReset}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold"
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-error)',
-                    border: '1px solid var(--color-error)',
-                  }}>
-            {t('settings.resetApp')}
-          </button>
+          {!resetArmed ? (
+            <button type="button" onClick={() => setResetArmed(true)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold"
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: 'var(--color-error)',
+                      border: '1px solid var(--color-error)',
+                    }}>
+              {t('settings.resetApp')}
+            </button>
+          ) : (
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-error)' }}>
+                {t('settings.resetArmedWarning',
+                  'This permanently erases your profile, items, wallet, kvittos and stock. It cannot be undone.')}
+              </p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setResetArmed(false)}
+                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                        style={{
+                          backgroundColor: 'var(--color-surface)',
+                          color: 'var(--color-text)',
+                          border: '1px solid var(--color-border)',
+                        }}>
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button type="button" onClick={() => void attemptReset()}
+                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                        style={{
+                          backgroundColor: 'var(--color-error)',
+                          color: '#FFFFFF',
+                        }}>
+                  {t('settings.resetConfirmBtn', 'Erase everything')}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Merchant-PIN gate on reset — the final step when a PIN is set. */}
+      <PinPad open={showResetPin} mode="verify"
+              title={t('settings.resetPinTitle', 'Confirm reset with merchant PIN')}
+              onCancel={() => setShowResetPin(false)}
+              onConfirm={async () => {
+                setShowResetPin(false);
+                await doReset();
+              }} />
 
       <div className="p-6 mt-2">
         <PrimaryButton onClick={onBack} marginTopAuto={false}>
