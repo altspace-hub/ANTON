@@ -183,6 +183,20 @@ export async function setActiveWallet(id: string): Promise<void> {
   await syncMerchantAddress(found.address);
 }
 
+/**
+ * Load the full `Wallet` — INCLUDING the private key in the JS heap.
+ *
+ * This is valid ONLY in the moments before the native-signer
+ * migration runs: right after `createWalletInRegistry` /
+ * `importWalletFromMnemonic`, while the priv is still in secure-store.
+ * Once `getActiveSigner()` has run once (e.g. the first day-close) the
+ * priv is wrapped into the native Keystore and removed from
+ * secure-store — and this returns `null`.
+ *
+ * Do NOT use this for signing or for "is a wallet connected" checks.
+ * Signing goes through `getActiveSigner()` (priv never enters JS);
+ * existence + address come from `getActiveWalletMeta()`.
+ */
 export async function getActiveWallet(): Promise<Wallet | null> {
   const id = await getActiveWalletId();
   if (!id) return null;
@@ -358,8 +372,17 @@ export async function getActiveSigner(): Promise<ActiveSigner | null> {
         await writeRegistry(updated);
       }
       await wrapPriv(id, hex);
-      const mnemonic = await getSecure(mnemonicKey(id));
-      if (mnemonic) await removeSecure(privKey(id));
+      // Destroy the JS-readable priv copy once the wrap is CONFIRMED
+      // present in the native Keystore. Previously this was gated on
+      // `if (mnemonic)` — but the mnemonic is a separate recovery
+      // anchor and has nothing to do with whether the cleartext priv
+      // should linger in secure-store. A priv-only imported wallet
+      // (no mnemonic) was left with the cleartext priv readable from
+      // JS *and* a native copy — two copies, one of them exposed.
+      // The native Keystore is now the storage; the JS copy goes.
+      if (await nativeHasAlias(id)) {
+        await removeSecure(privKey(id));
+      }
     }
     if (!meta.publicKeyHex) {
       throw new Error(

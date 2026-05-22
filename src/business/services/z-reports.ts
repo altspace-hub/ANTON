@@ -30,7 +30,7 @@ import { openDb, STORE_Z_REPORTS, INDEX_ZREPORTS_BY_CLOSED } from './db';
 import { consumeZNumber, loadConfig } from './merchant';
 import { listReceipts } from './receipts';
 import { listRefunds } from './refunds';
-import { getActiveSigner, getActiveWallet } from './wallets';
+import { getActiveSigner } from './wallets';
 import type { Receipt, RefundReceipt, ZReport } from './types';
 
 // IDB serialisation — bigint → string at the boundary.

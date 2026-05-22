@@ -1,10 +1,21 @@
 /**
  * crypto.ts — Browser port of server/services/community-e2e.ts.
  *
- * Forward-secret messaging: X25519 long-term keypair + per-message HKDF
- * salt + AES-256-GCM. Compromising the long-term private key does not
- * decrypt past messages; each message uses a key derived from the static
- * shared secret + a fresh random salt.
+ * E2E messaging: X25519 long-term keypair + per-message HKDF salt +
+ * AES-256-GCM. Each message's AES key is HKDF(staticSharedSecret,
+ * freshRandomSalt) — the fresh salt gives per-message KEY SEPARATION:
+ * cracking or reusing one message's key does not help with another.
+ *
+ * NOTE — this is NOT forward secrecy. The DH secret is STATIC (derived
+ * from the long-term identity keys on both sides). An attacker who
+ * later obtains a long-term private key recovers the static shared
+ * secret and can re-derive every past message key — the salt is sent
+ * in the envelope, so it provides no protection against that. True
+ * forward secrecy needs an ephemeral DH per message/session (X3DH +
+ * Double Ratchet) or destruction of the per-message key after use.
+ * Treat this layer as "confidential in transit + key-separated", and
+ * do not promise forward secrecy to users or in marketing copy until
+ * an ephemeral-key handshake is implemented.
  *
  * The X25519 keypair is derived deterministically from the user's Ed25519
  * identity (same trick as src/app/services/identity.ts §getDeviceX25519Keypair).

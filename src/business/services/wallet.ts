@@ -27,9 +27,10 @@ import {
   wipeAllWallets,
   importWalletFromMnemonic,
   type Wallet,
+  type WalletMeta,
 } from './wallets';
 
-export type { Wallet };
+export type { Wallet, WalletMeta };
 
 /** Create the FIRST wallet on this device. Used by the onboarding
  *  ConnectWalletScreen flow. Throws if any wallet already exists —
@@ -57,8 +58,21 @@ export async function restoreFromMnemonic(mnemonic: string): Promise<Wallet> {
   return wallet;
 }
 
-export async function loadWallet(): Promise<Wallet | null> {
-  return getActiveWallet();
+/**
+ * The active wallet as a priv-LESS view — id, label, address,
+ * publicKeyHex. This is what the UI should use: sale screens, the
+ * settings wallet card, the "is a wallet connected" check all need
+ * the address, never the private key.
+ *
+ * Sourced from the registry meta, so it keeps working after the
+ * native-signer migration has removed the JS-readable priv from
+ * secure-store. (The old implementation returned a full `Wallet` via
+ * `getActiveWallet()`, which silently became `null` the moment the
+ * priv was wrapped into the Keystore — breaking every wallet-aware
+ * screen after the first day-close.)
+ */
+export async function loadWallet(): Promise<WalletMeta | null> {
+  return getActiveWalletMeta();
 }
 
 export async function hasWallet(): Promise<boolean> {
