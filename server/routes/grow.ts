@@ -190,7 +190,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create contact error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -199,7 +199,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/grow/contacts/:id', async (req: Request, res: Response) => {
     try {
-      const contact = await svc.getContact(req.params.id);
+      const contact = await svc.getContact(String(req.params.id));
       if (!contact) return res.status(404).json({ error: 'Contact not found' });
       res.json(contact);
     } catch (err) {
@@ -211,11 +211,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.put('/grow/contacts/:id', async (req: Request, res: Response) => {
     try {
       const data = updateContactSchema.parse(req.body);
-      await svc.updateContact(req.params.id, data);
+      await svc.updateContact(String(req.params.id), data);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Update contact error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -224,7 +224,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.delete('/grow/contacts/:id', async (req: Request, res: Response) => {
     try {
-      await svc.deleteContact(req.params.id);
+      await svc.deleteContact(String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
       console.error('[grow] Delete contact error:', err);
@@ -255,7 +255,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create organisation error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -264,7 +264,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/grow/organisations/:id', async (req: Request, res: Response) => {
     try {
-      const org = await svc.getOrganisation(req.params.id);
+      const org = await svc.getOrganisation(String(req.params.id));
       if (!org) return res.status(404).json({ error: 'Organisation not found' });
       res.json(org);
     } catch (err) {
@@ -276,11 +276,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.put('/grow/organisations/:id', async (req: Request, res: Response) => {
     try {
       const data = updateOrgSchema.parse(req.body);
-      await svc.updateOrganisation(req.params.id, data);
+      await svc.updateOrganisation(String(req.params.id), data);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Update organisation error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -289,7 +289,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.delete('/grow/organisations/:id', async (req: Request, res: Response) => {
     try {
-      await svc.deleteOrganisation(req.params.id);
+      await svc.deleteOrganisation(String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
       console.error('[grow] Delete organisation error:', err);
@@ -302,7 +302,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.get('/grow/relationships/:entityType/:entityId', async (req: Request, res: Response) => {
     try {
       const { entityType, entityId } = req.params;
-      const relationships = await svc.listRelationships(entityType, entityId);
+      const relationships = await svc.listRelationships(String(entityType), String(entityId));
       res.json(relationships);
     } catch (err) {
       console.error('[grow] List relationships error:', err);
@@ -317,7 +317,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create relationship error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -326,7 +326,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.delete('/grow/relationships/:id', async (req: Request, res: Response) => {
     try {
-      await svc.deleteRelationship(req.params.id);
+      await svc.deleteRelationship(String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
       console.error('[grow] Delete relationship error:', err);
@@ -356,7 +356,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create interaction error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -407,7 +407,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create opportunity error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -416,7 +416,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/grow/opportunities/:id', async (req: Request, res: Response) => {
     try {
-      const opportunity = await svc.getOpportunity(req.params.id);
+      const opportunity = await svc.getOpportunity(String(req.params.id));
       if (!opportunity) return res.status(404).json({ error: 'Opportunity not found' });
       res.json(opportunity);
     } catch (err) {
@@ -428,11 +428,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.put('/grow/opportunities/:id', async (req: Request, res: Response) => {
     try {
       const data = updateOpportunitySchema.parse(req.body);
-      await svc.updateOpportunity(req.params.id, data);
+      await svc.updateOpportunity(String(req.params.id), data);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Update opportunity error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -442,11 +442,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/opportunities/:id/move', async (req: Request, res: Response) => {
     try {
       const { stageId } = moveOpportunitySchema.parse(req.body);
-      await svc.moveOpportunity(req.params.id, stageId);
+      await svc.moveOpportunity(String(req.params.id), stageId);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Move opportunity error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -479,7 +479,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create activity error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -489,11 +489,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.put('/grow/activities/:id', async (req: Request, res: Response) => {
     try {
       const data = updateActivitySchema.parse(req.body);
-      await svc.updateActivity(req.params.id, data);
+      await svc.updateActivity(String(req.params.id), data);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Update activity error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -502,7 +502,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.post('/grow/activities/:id/complete', async (req: Request, res: Response) => {
     try {
-      await svc.completeActivity(req.params.id);
+      await svc.completeActivity(String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
       console.error('[grow] Complete activity error:', err);
@@ -534,7 +534,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create signal error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -544,11 +544,11 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.put('/grow/signals/:id', async (req: Request, res: Response) => {
     try {
       const data = updateSignalSchema.parse(req.body);
-      await svc.updateSignal(req.params.id, data);
+      await svc.updateSignal(String(req.params.id), data);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Update signal error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -574,7 +574,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Validation failed', details: err.errors });
+        return res.status(400).json({ error: 'Validation failed', details: err.issues });
       }
       console.error('[grow] Create briefing error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -583,7 +583,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/grow/briefings/:id', async (req: Request, res: Response) => {
     try {
-      const briefing = await svc.getBriefing(req.params.id);
+      const briefing = await svc.getBriefing(String(req.params.id));
       if (!briefing) return res.status(404).json({ error: 'Briefing not found' });
       res.json(briefing);
     } catch (err) {

@@ -435,7 +435,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         await ingestRawData({
           sourceId,
           dataType: 'news',
-          symbol: item.related || null,
+          symbol: item.related || undefined,
           title: item.headline,
           content: JSON.stringify(item),
           publishedAt: new Date(item.datetime * 1000).toISOString(),
@@ -566,7 +566,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           const items = await response.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string | null; url: string }>;
           for (const item of items) {
             await ingestRawData({
-              sourceId, dataType: 'news', symbol: item.symbol || null,
+              sourceId, dataType: 'news', symbol: item.symbol || undefined,
               title: item.title,
               content: JSON.stringify(item),
               publishedAt: item.publishedDate,
@@ -587,7 +587,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           const items = await response.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string; url: string }>;
           for (const item of items) {
             await ingestRawData({
-              sourceId, dataType: 'news', symbol: item.symbol || null,
+              sourceId, dataType: 'news', symbol: item.symbol || undefined,
               title: item.title,
               content: JSON.stringify(item),
               publishedAt: item.publishedDate,

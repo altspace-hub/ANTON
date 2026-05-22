@@ -5,6 +5,14 @@ import { createMarketThesisService } from '../services/market-thesis-service.js'
 import { createMarketValidationService } from '../services/market-validation-service.js';
 import Anthropic from '@anthropic-ai/sdk';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Normalise a string | string[] | undefined value into a string[] (or undefined). */
+function toStringArray(value: string | string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value : [value];
+}
+
 // ── Zod Schemas ───────────────────────────────────────────────────────────────
 
 const createThesisSchema = z.object({
@@ -103,7 +111,12 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
       const { title, description, thesisType, confidence, timeHorizon, successCriteria, keyAssumptions, riskFactors, targetEntities } = parsed.data;
-      const id = await thesisService.createThesis({ title, description, thesisType, confidence, timeHorizon, successCriteria, keyAssumptions, riskFactors, targetEntities });
+      const id = await thesisService.createThesis({
+        title, description, thesisType, confidence, timeHorizon, targetEntities,
+        successCriteria: toStringArray(successCriteria),
+        keyAssumptions: toStringArray(keyAssumptions),
+        riskFactors: toStringArray(riskFactors),
+      });
       res.status(201).json({ id });
     } catch (err) {
       console.error('[market-theses] Create error:', err);
@@ -117,7 +130,13 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
       if (!parsed.success) {
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
-      await thesisService.updateThesis(req.params.id, parsed.data);
+      const { successCriteria, keyAssumptions, riskFactors, targetEntities: _targetEntities, ...rest } = parsed.data;
+      await thesisService.updateThesis(req.params.id, {
+        ...rest,
+        ...(successCriteria !== undefined ? { successCriteria: toStringArray(successCriteria) } : {}),
+        ...(keyAssumptions !== undefined ? { keyAssumptions: toStringArray(keyAssumptions) } : {}),
+        ...(riskFactors !== undefined ? { riskFactors: toStringArray(riskFactors) } : {}),
+      });
       res.json({ ok: true });
     } catch (err) {
       console.error('[market-theses] Update error:', err);
@@ -234,7 +253,7 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
       const { thesisId, title, description, predictionType, targetEntity, targetSymbol, predictedOutcome, predictedValue, predictedDirection, confidence, timeHorizonDays, deadline, keyAssumptions } = parsed.data;
-      const id = await thesisService.createPrediction({ thesisId, title, description, predictionType, targetEntity, targetSymbol, predictedOutcome, predictedValue, predictedDirection, confidence, timeHorizonDays, deadline, keyAssumptions });
+      const id = await thesisService.createPrediction({ thesisId, title, description, predictionType, targetEntity, targetSymbol, predictedOutcome, predictedValue, predictedDirection, confidence, timeHorizonDays, deadline, keyAssumptions: toStringArray(keyAssumptions) });
       res.status(201).json({ id });
     } catch (err) {
       console.error('[market-predictions] Create error:', err);

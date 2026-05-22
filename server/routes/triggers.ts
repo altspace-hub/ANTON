@@ -21,10 +21,10 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   router.get('/triggers', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const triggers = listener.listTriggers(userId);
+      const triggers = await listener.listTriggers(userId);
 
       // Augment with 24h metrics
-      const withMetrics = triggers.map((t) => ({
+      const withMetrics = triggers.map((t: typeof triggers[number]) => ({
         ...t,
         auth_config: { ...t.auth_config, secret: undefined }, // Never expose secrets
         metrics: listener.getTriggerMetrics(t.id, 24),
@@ -40,7 +40,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   // ── Get trigger ────────────────────────────────────────────────────────────
   router.get('/triggers/:id', async (req: Request, res: Response) => {
     try {
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
 
       res.json({
@@ -88,7 +88,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
         return res.status(400).json({ error: 'External triggers must have authentication configured' });
       }
 
-      const trigger = listener.createTrigger({
+      const trigger = await listener.createTrigger({
         name, description, trigger_type, workflow_id,
         auth_config: auth_config as Parameters<typeof listener.createTrigger>[0]['auth_config'],
         filter_config: filter_config as Parameters<typeof listener.createTrigger>[0]['filter_config'],
@@ -113,7 +113,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   router.put('/triggers/:id', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
       if (trigger.user_id !== userId && userId !== 'default') {
         return res.status(403).json({ error: 'Forbidden' });
@@ -144,7 +144,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
 
       await db.run(`UPDATE webhook_triggers SET ${updates.join(', ')} WHERE id = ?`, ...values);
 
-      const updated = listener.getTrigger(String(req.params.id))!;
+      const updated = (await listener.getTrigger(String(req.params.id)))!;
       res.json({ trigger: { ...updated, auth_config: { ...updated.auth_config, secret: undefined } } });
     } catch (err) {
       console.error('[triggers] update error:', err);
@@ -156,7 +156,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   router.patch('/triggers/:id/status', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
       if (trigger.user_id !== userId && userId !== 'default') {
         return res.status(403).json({ error: 'Forbidden' });
@@ -179,7 +179,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   router.delete('/triggers/:id', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
       if (trigger.user_id !== userId && userId !== 'default') {
         return res.status(403).json({ error: 'Forbidden' });
@@ -196,13 +196,13 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   // ── Event log ──────────────────────────────────────────────────────────────
   router.get('/triggers/:id/events', async (req: Request, res: Response) => {
     try {
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
 
       const limit = Math.min(parseInt(String(String(req.query.limit) || '50')), 200);
       const offset = parseInt(String(String(req.query.offset) || '0'));
 
-      const events = listener.getEventLog(String(req.params.id), limit, offset);
+      const events = await listener.getEventLog(String(req.params.id), limit, offset);
       res.json({ events, total: events.length });
     } catch (err) {
       console.error('[triggers] event log error:', err);
@@ -237,8 +237,8 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
   router.get('/triggers/metrics/summary', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const triggers = listener.listTriggers(userId);
-      const summary = triggers.map((t) => ({
+      const triggers = await listener.listTriggers(userId);
+      const summary = triggers.map((t: typeof triggers[number]) => ({
         trigger_id: t.id,
         name: t.name,
         type: t.trigger_type,
@@ -254,7 +254,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
 
   router.get('/triggers/:id/metrics', async (req: Request, res: Response) => {
     try {
-      const trigger = listener.getTrigger(String(req.params.id));
+      const trigger = await listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
 
       const hours = parseInt(String(req.query.hours || '24'), 10) || 24;

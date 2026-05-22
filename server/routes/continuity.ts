@@ -163,7 +163,7 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
   // ── Delete profile ─────────────────────────────────────────────────────────
   router.delete('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
-
+      const result = await db.run('DELETE FROM continuity_profiles WHERE id = ?', String(req.params.id));
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ deleted: true });
     } catch (err) {
@@ -188,7 +188,7 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
       }
       query += ' ORDER BY updated_at DESC LIMIT 3';
 
-
+      const rows = await db.all(query, ...params) as RawProfileRow[];
       const profiles = rows.map(parseProfile);
 
       if (profiles.length === 0) {

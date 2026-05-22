@@ -108,7 +108,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
      */
     async get(id: string): Promise<StoredDataset | null> {
       const row = await db.get('SELECT * FROM datasets WHERE id = ?', id);
-      return row ? (row as StoredDataset) : null;
+      return row ? (row as unknown as StoredDataset) : null;
     },
 
     /**
@@ -116,7 +116,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
      */
     async getByName(name: string): Promise<StoredDataset | null> {
       const row = await db.get('SELECT * FROM datasets WHERE name = ?', name);
-      return row ? (row as StoredDataset) : null;
+      return row ? (row as unknown as StoredDataset) : null;
     },
 
     /**
@@ -188,7 +188,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
 
       query += ' ORDER BY created_at DESC';
 
-      return await db.run(query, ...params) as StoredDataset[];
+      return await db.all(query, ...params) as unknown as StoredDataset[];
     },
 
     /**

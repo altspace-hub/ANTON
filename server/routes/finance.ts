@@ -159,6 +159,11 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
     try {
       const { topic_id, completed_unit, score } = req.body as { topic_id: string; completed_unit?: string; score?: number };
 
+      const existing = await db.get(
+        "SELECT * FROM finance_learning_progress WHERE user_id = 'default' AND topic_id = ?",
+        topic_id
+      ) as Record<string, unknown> | undefined;
+
       const completedUnits: string[] = existing ? JSON.parse((existing.completed_units as string) || '[]') : [];
       if (completed_unit && !completedUnits.includes(completed_unit)) completedUnits.push(completed_unit);
       const id = existing ? (existing.id as string) : `flp_${Date.now()}`;

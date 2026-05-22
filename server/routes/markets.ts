@@ -12,7 +12,7 @@ const addToWatchlistSchema = z.object({
   name: z.string().min(1).max(200),
   assetType: z.string().max(50).optional(),
   notes: z.string().optional(),
-  alertConfig: z.record(z.unknown()).optional(),
+  alertConfig: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateWatchlistSchema = z.object({
@@ -20,7 +20,7 @@ const updateWatchlistSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   assetType: z.string().max(50).optional(),
   notes: z.string().optional(),
-  alertConfig: z.record(z.unknown()).optional(),
+  alertConfig: z.record(z.string(), z.unknown()).optional(),
   isActive: z.union([z.boolean(), z.number()]).optional(),
 });
 
@@ -275,7 +275,11 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
       if (!parsed.success) {
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
-      await dataService.updateWatchlistItem(req.params.id, parsed.data);
+      await dataService.updateWatchlistItem(req.params.id, {
+        notes: parsed.data.notes,
+        alertConfig: parsed.data.alertConfig,
+        isActive: parsed.data.isActive === undefined ? undefined : Boolean(parsed.data.isActive),
+      });
       res.json({ ok: true });
     } catch (err) {
       console.error('[markets] Update watchlist error:', err);
@@ -331,8 +335,11 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
       const { content, atomType, confidence, category, subcategory, sentiment, tags } = parsed.data;
+      const normalizedTags = typeof tags === 'string'
+        ? tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : tags;
       const id = await atomService.createAtom({
-        content, atomType, confidence, category, subcategory, sentiment, tags,
+        content, atomType, confidence, category, subcategory, sentiment, tags: normalizedTags,
         extractionMethod: 'manual',
       });
       res.status(201).json({ id });

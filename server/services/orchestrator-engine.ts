@@ -1530,7 +1530,7 @@ export async function runHeartbeatCycle(
   if (action === 'briefing_generated' || action === 'none') {
     try {
       const { detectPatterns, recordPatternDetection, shouldAutoPause, isAutoExecutionAllowed } = await import('./orchestrator-pattern-engine.js');
-      const patterns = detectPatterns(db);
+      const patterns = await detectPatterns(db);
       if (patterns.length > 0) {
         for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
           recordPatternDetection(db, pat, briefingId ?? null);
@@ -1540,7 +1540,7 @@ export async function runHeartbeatCycle(
 
       // Stage 3+ auto-execution: run patterns with auto_execute=1
       const currentStage = (await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as { current_stage: number } | undefined)?.current_stage ?? 1;
-      if (currentStage >= 3 && isAutoExecutionAllowed(db)) {
+      if (currentStage >= 3 && await isAutoExecutionAllowed(db)) {
         const autoPatterns = await db.all(`
           SELECT id, pattern_type, name, suggested_action
           FROM orchestrator_patterns
@@ -1548,7 +1548,7 @@ export async function runHeartbeatCycle(
         `) as Array<{ id: string; pattern_type: string; name: string; suggested_action: string }>;
 
         for (const ap of autoPatterns) {
-          if (!isAutoExecutionAllowed(db)) break; // re-check limit each iteration
+          if (!await isAutoExecutionAllowed(db)) break; // re-check limit each iteration
 
           const execId = randomUUID();
           try {
@@ -1582,7 +1582,7 @@ export async function runHeartbeatCycle(
       }
 
       // Auto-pause check
-      const { pause, reason } = shouldAutoPause(db);
+      const { pause, reason } = await shouldAutoPause(db);
       if (pause) {
         await db.run(`
           UPDATE orchestrator_config SET

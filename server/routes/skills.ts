@@ -51,7 +51,7 @@ export async function createSkillsRoutes(db: DatabaseAdapter) {
   // NOTE: Must be registered before /skills/:id to avoid "community" being matched as :id
   router.get('/skills/community', async (_req, res) => {
     try {
-
+      const skills = await db.all('SELECT * FROM community_skills ORDER BY submitted_at DESC') as Record<string, unknown>[];
       res.json(skills.map((s) => ({
         ...s,
         tags: typeof s.tags === 'string' ? JSON.parse(s.tags as string) : s.tags,

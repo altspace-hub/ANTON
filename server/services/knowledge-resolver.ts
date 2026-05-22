@@ -280,7 +280,7 @@ export async function resolveKnowledgeSources(
     }
     // Legacy BM25 retrieval (fallback)
     else if (folderPaths && folderPaths.length > 0) {
-      const retrieved = retrieveChunks(options.db, options.userQuery, folderPaths, topK, minScore);
+      const retrieved = await retrieveChunks(options.db, options.userQuery, folderPaths, topK, minScore);
       if (retrieved.length > 0) {
         const ragParts: string[] = [];
         ragParts.push('## RETRIEVED RELEVANT PASSAGES');

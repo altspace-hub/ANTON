@@ -135,7 +135,7 @@ export async function createCodingReviewRoutes(db: DatabaseAdapter): Promise<Rou
         return res.status(400).json({ error: 'previous_session_id is required' });
       }
 
-
+      const previous = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', previous_session_id);
       if (!previous) return res.status(404).json({ error: 'Previous session not found' });
 
       const prevParsed = parseReviewSession(previous);
@@ -320,7 +320,7 @@ export async function createCodingReviewRoutes(db: DatabaseAdapter): Promise<Rou
       const { id } = req.params;
       const { findings, tokens_consumed } = req.body;
 
-
+      const existing = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', id);
       if (!existing) {
         return res.status(404).json({ error: 'Review session not found' });
       }

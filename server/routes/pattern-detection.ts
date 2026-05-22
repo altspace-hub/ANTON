@@ -40,8 +40,8 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
-      const patterns = patternDetection.getPatterns(filters);
-      const detectorState = patternDetection.getDetectorState();
+      const patterns = await patternDetection.getPatterns(filters);
+      const detectorState = await patternDetection.getDetectorState();
 
       res.json({
         success: true,
@@ -97,7 +97,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   // GET /api/patterns/detector-state — get detector state
   router.get('/patterns/detector-state', async (req, res) => {
     try {
-      const state = patternDetection.getDetectorState();
+      const state = await patternDetection.getDetectorState();
       res.json({
         success: true,
         state: state || {
@@ -125,19 +125,19 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
 
       switch (type) {
         case 'temporal_correlation':
-          patterns = patternDetection.detectTemporalCorrelation();
+          patterns = await patternDetection.detectTemporalCorrelation();
           break;
         case 'entity_convergence':
-          patterns = patternDetection.detectEntityConvergence();
+          patterns = await patternDetection.detectEntityConvergence();
           break;
         case 'cascade':
-          patterns = patternDetection.detectCascade();
+          patterns = await patternDetection.detectCascade();
           break;
         case 'trend_divergence':
-          patterns = patternDetection.detectTrendDivergence();
+          patterns = await patternDetection.detectTrendDivergence();
           break;
         case 'gap':
-          patterns = patternDetection.detectGaps();
+          patterns = await patternDetection.detectGaps();
           break;
         default:
           return res.status(400).json({

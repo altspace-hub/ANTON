@@ -1788,7 +1788,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       sql += ' ORDER BY cp.updated_at DESC LIMIT ?';
       params.push(limit);
 
-      const projects = await db.run(sql, ...params);
+      const projects = await db.all(sql, ...params);
       res.json(projects.map(parseProject));
     } catch (error) {
       console.error('[coding-large] List projects error:', error);
@@ -1919,7 +1919,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
   router.get('/coding/projects/:id/baseline', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({ baseline_summary: project.baseline_summary });
     } catch (error) {
@@ -2112,7 +2112,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
   router.get('/coding/projects/:id/releases', async (req, res) => {
     try {
-
+      const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number ASC', req.params.id);
       res.json(releases.map(parseRelease));
     } catch (error) {
       console.error('[coding-large] List releases error:', error);
@@ -2627,7 +2627,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
   router.get('/coding/projects/:id/cost', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({
         estimate: JSON.parse(project.cost_estimate || '{}'),
@@ -2735,7 +2735,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
   router.post('/coding/projects/:id/rediscovery', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { scope } = req.body;

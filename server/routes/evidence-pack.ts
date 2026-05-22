@@ -140,8 +140,8 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // ── Get one ─────────────────────────────────────────────────────────────
   router.get('/evidence-pack/:id', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
-      const pack = await readPackRow(db, req.params.id);
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const items = await db.all(
         `SELECT item_type, item_id, item_hash, item_summary, item_order,
@@ -160,8 +160,8 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // ── Run / re-run the collector ──────────────────────────────────────────
   router.post('/evidence-pack/:id/collect', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
-      const pack = await readPackRow(db, req.params.id);
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       if (pack.status !== 'draft') {
         return res.status(409).json({ error: `Pack is ${pack.status}; cannot re-collect` });
@@ -197,8 +197,8 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // before the user clicks finalise.
   router.post('/evidence-pack/:id/preview', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
-      const assembled = await rebuildAssembledPack(db, req.params.id);
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      const assembled = await rebuildAssembledPack(db, String(req.params.id));
       if (!assembled) return res.status(404).json({ error: 'Pack not found' });
       const mapping = mapCompliance(
         assembled,
@@ -216,9 +216,9 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // Reversible until finalise.
   router.put('/evidence-pack/:id/gap-acceptance', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const parsed = gapAcceptanceSchema.parse(req.body);
-      const pack = await readPackRow(db, req.params.id);
+      const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       if (pack.status !== 'draft') {
         return res.status(409).json({ error: 'Pack is finalised; cannot edit gap acceptances' });
@@ -242,8 +242,8 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
 
   router.delete('/evidence-pack/:id/gap-acceptance/:pointId', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
-      const pack = await readPackRow(db, req.params.id);
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       if (pack.status !== 'draft') {
         return res.status(409).json({ error: 'Pack is finalised; cannot edit gap acceptances' });
@@ -265,9 +265,9 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // allowed but flagged on the cover.
   router.post('/evidence-pack/:id/finalise', requireAuth, requireRole('analyst'), async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
-      await finalisePack(db, req.params.id);
-      const pack = await readPackRow(db, req.params.id);
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      await finalisePack(db, String(req.params.id));
+      const pack = await readPackRow(db, String(req.params.id));
       res.json({ pack });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -277,9 +277,9 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // ── Export ──────────────────────────────────────────────────────────────
   router.post('/evidence-pack/:id/export', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const format = exportFormatSchema.parse(req.body?.format ?? 'anton');
-      const assembled = await rebuildAssembledPack(db, req.params.id);
+      const assembled = await rebuildAssembledPack(db, String(req.params.id));
       if (!assembled) return res.status(404).json({ error: 'Pack not found' });
 
       if (format === 'anton') {
@@ -328,9 +328,9 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // URL-safe access token; password is bcrypt-hashed.
   router.post('/evidence-pack/:id/shares', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const parsed = createShareSchema.parse(req.body);
-      const pack = await readPackRow(db, req.params.id);
+      const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       if (pack.status !== 'finalised') {
         return res.status(409).json({ error: 'Pack must be finalised before sharing' });
@@ -365,7 +365,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
 
   router.get('/evidence-pack/:id/shares', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const rows = await db.all(
         `SELECT id, access_token, recipient_name, recipient_organisation,
                 recipient_contact, purpose, created_at, expires_at,
@@ -383,7 +383,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
 
   router.delete('/evidence-pack/:id/shares/:shareId', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const reason = (req.body?.reason as string | undefined) ?? 'revoked by owner';
       const r = await db.run(
         `UPDATE evidence_pack_shares
@@ -402,7 +402,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // ── Owner: chain-of-custody ─────────────────────────────────────────────
   router.get('/evidence-pack/:id/access-log', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const limit = Math.min(Number(req.query.limit ?? 200) || 200, 1000);
       const rows = await db.all(
         `SELECT al.id, al.share_id, al.accessed_at, al.accessor_type,
@@ -426,7 +426,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // Cleared with a reason that lands in the access log (Phase 4 audit).
   router.put('/evidence-pack/:id/legal-hold', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const enable = req.body?.enable === true;
       const reason = (req.body?.reason as string | undefined)?.trim() || (enable ? 'enabled' : 'cleared');
       await db.run(
@@ -456,7 +456,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // and can audit the redaction.
   router.put('/evidence-pack/:id/items/:itemKey/redact', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const status = req.body?.status === 'full' ? 'full' : req.body?.status === 'partial' ? 'partial' : 'none';
       const reason = (req.body?.reason as string | undefined)?.trim() || null;
       if (status !== 'none' && !reason) {
@@ -488,7 +488,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   // ── Soft delete (respects legal hold + retention) ──────────────────────
   router.delete('/evidence-pack/:id', requireAuth, async (req, res) => {
     try {
-      if (!await assertOwnerOrAdmin(req, res, req.params.id)) return;
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const row = await db.get<{ legal_hold: boolean; retention_until: string | null; status: string }>(
         `SELECT legal_hold, retention_until, status FROM evidence_packs WHERE id = ?`,
         req.params.id,
@@ -554,7 +554,7 @@ export function createSharedPackRoutes(db: DatabaseAdapter): Router {
    * spot probing.
    */
   async function resolveShare(req: Request, res: Response, action: string, requirePassword: boolean): Promise<{ share: ShareRow; pack: PackRowMin } | null> {
-    const token = req.params.token;
+    const token = String(req.params.token);
     const share = await db.get<ShareRow>(
       `SELECT id, pack_id, password_hash, recipient_name, recipient_organisation,
               created_at, expires_at, revoked_at, allow_download, watermark_text

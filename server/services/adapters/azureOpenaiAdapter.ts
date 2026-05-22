@@ -157,7 +157,7 @@ export async function streamAzureOpenAI(
   console.log(`[azure-openai] streamAzureOpenAI: deployment=${config.deployment}, reasoning=${isReasoning}, apiVersion=${config.apiVersion}, msgCount=${messages.length}, systemLen=${params.system?.length ?? 0}`);
 
   try {
-    const stream = await client.chat.completions.create(body as OpenAI.ChatCompletionCreateParamsStreaming);
+    const stream = await client.chat.completions.create(body as unknown as OpenAI.ChatCompletionCreateParamsStreaming);
 
     let fullText = '';
     let inputTokens = 0;
@@ -286,7 +286,7 @@ export class AzureOpenAIAdapter {
     console.log(`[azure-openai] sendRequest: deployment=${this.deployment}, reasoning=${this.isReasoningModel}, msgCount=${messages.length}, systemLen=${actualSystemLen}, bodySize=${bodySize}`);
 
     try {
-      const stream = await this.client.chat.completions.create(body as OpenAI.ChatCompletionCreateParamsStreaming);
+      const stream = await this.client.chat.completions.create(body as unknown as OpenAI.ChatCompletionCreateParamsStreaming);
 
       let fullText = '';
       let inputTokens = 0;
@@ -377,7 +377,7 @@ export class AzureOpenAIAdapter {
       }
     }
 
-    const stream = await this.client.chat.completions.create(params as OpenAI.ChatCompletionCreateParamsStreaming);
+    const stream = await this.client.chat.completions.create(params as unknown as OpenAI.ChatCompletionCreateParamsStreaming);
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content;

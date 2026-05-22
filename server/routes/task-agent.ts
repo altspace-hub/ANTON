@@ -310,9 +310,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         stepName,
       );
       // Fire-and-forget atom extraction (non-blocking)
-      getAtomExtractor().extractAtoms(outputId).catch((err) => {
-        console.warn('[task-agent] atom extraction failed (non-fatal):', err instanceof Error ? err.message : err);
-      });
+      void getAtomExtractor()
+        .then((extractor) => extractor.extractAtoms(outputId))
+        .catch((err: unknown) => {
+          console.warn('[task-agent] atom extraction failed (non-fatal):', err instanceof Error ? err.message : err);
+        });
     } catch (err) {
       console.warn('[task-agent] emitTaskAtoms failed (non-fatal):', err instanceof Error ? err.message : err);
     }

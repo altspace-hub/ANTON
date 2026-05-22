@@ -138,7 +138,7 @@ export async function reindexDocument(
     }
 
     // 2. Delete old chunks from ChromaDB
-    const oldChunks = getDocumentChunks(db, documentId);
+    const oldChunks = await getDocumentChunks(db, documentId);
     const oldChromaIds = oldChunks.map((c) => c.chroma_id);
 
     if (oldChromaIds.length > 0) {
@@ -218,7 +218,7 @@ export async function deleteDocument(
 ): Promise<boolean> {
   try {
     // 1. Get chunk IDs from SQLite
-    const chunks = getDocumentChunks(db, documentId);
+    const chunks = await getDocumentChunks(db, documentId);
     const chromaIds = chunks.map((c) => c.chroma_id);
 
     // 2. Delete chunks from ChromaDB

@@ -227,7 +227,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         const activePackNames: string[] = JSON.parse(session.active_knowledge_packs || '[]');
         if (activePackNames.length > 0) {
           const kpService = await createKnowledgePackService(db);
-          const allActiveSummary = kpService.getActivePacksSummary();
+          const allActiveSummary = await kpService.getActivePacksSummary();
           if (allActiveSummary) {
             // Filter to only packs named in the session's active list
             const placeholders = activePackNames.map(() => '?').join(',');

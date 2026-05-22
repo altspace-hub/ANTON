@@ -24,6 +24,7 @@
  */
 
 import { createHash } from 'crypto';
+import type Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getClient, isApiKeyConfigured } from './claude-client.js';
 import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
@@ -428,7 +429,7 @@ Now produce the document in ${ctx.project.working_language}, following the secti
   });
 
   // Extract text content
-  const textBlocks = resp.content.filter((b): b is { type: 'text'; text: string } => b.type === 'text');
+  const textBlocks = resp.content.filter((b): b is Anthropic.TextBlock => b.type === 'text');
   return textBlocks.map(b => b.text).join('').trim();
 }
 

@@ -182,14 +182,14 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
 
   // GET /api/dowjones/monitoring — active monitoring registrations from DB
   router.get('/dowjones/monitoring', async (req, res) => {
-
+    const rows = await db.all(`SELECT * FROM entity_monitoring WHERE connector='dowjones' ORDER BY registered_at DESC`);
     res.json({ monitoring: rows });
   });
 
   // GET /api/dowjones/screens/recent — recent screens from DB
   router.get('/dowjones/screens/recent', async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
-
+    const rows = await db.all(`SELECT * FROM entity_screens WHERE connector='dowjones' ORDER BY screened_at DESC LIMIT ?`, limit);
     res.json({ screens: rows });
   });
 

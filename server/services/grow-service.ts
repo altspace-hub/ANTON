@@ -23,9 +23,9 @@ interface UpdateContactInput {
   title?: string;
   email?: string;
   phone?: string;
-  organisationId?: string;
+  organisationId?: string | null;
   tags?: string[];
-  confidenceScore?: number;
+  confidenceScore?: number | null;
   source?: string;
   notes?: string;
   lastContactedAt?: string;
@@ -112,16 +112,16 @@ interface CreateOpportunityInput {
 
 interface UpdateOpportunityInput {
   title?: string;
-  contactId?: string;
-  organisationId?: string;
+  contactId?: string | null;
+  organisationId?: string | null;
   stageId?: string;
-  value?: number;
+  value?: number | null;
   currency?: string;
   probability?: number;
-  expectedCloseDate?: string;
-  nextAction?: string;
-  nextActionDate?: string;
-  description?: string;
+  expectedCloseDate?: string | null;
+  nextAction?: string | null;
+  nextActionDate?: string | null;
+  description?: string | null;
   tags?: string[];
   wonLostReason?: string;
 }
@@ -146,7 +146,7 @@ interface UpdateActivityInput {
   title?: string;
   description?: string;
   activityType?: string;
-  dueDate?: string;
+  dueDate?: string | null;
   status?: string;
 }
 

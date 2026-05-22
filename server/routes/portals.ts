@@ -40,6 +40,7 @@ import { rebuildPortalDescriptor, readCurrentCapabilities } from '../services/po
 import { verifyAndPersist } from '../services/portals/external-url-verifier.js';
 import { getTrustStore } from '../services/registry-client/trust-store.js';
 import { fetchSubmissionStatus, RelaySubmitError } from '../services/registry-client/relay-submit.js';
+import { CAPABILITY_VERBS } from '../services/capability-descriptor/schema.js';
 
 // ── Owner-check middleware ──────────────────────────────────────────────────
 // Used on /portals/:id/* mutations after requireAuth. Verifies that the
@@ -117,7 +118,7 @@ const inquireSchema = z.object({
 
 const capabilityEditSchema = z.object({
   id: z.string().min(1).regex(/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/i, 'lowercase slug'),
-  verb: z.string().min(1),
+  verb: z.enum(CAPABILITY_VERBS),
   customVerbName: z.string().optional(),
   title: z.string().min(1).max(120),
   description: z.string().max(2000),
@@ -338,7 +339,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.get('/portals/walkthroughs/:id', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const session = await walkthroughs.getSession(req.params.id);
+      const session = await walkthroughs.getSession(String(req.params.id));
       if (!session) return res.status(404).json({ error: 'Session not found' });
       res.json({ session });
     } catch (err) {
@@ -349,7 +350,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.get('/portals/walkthroughs/:id/prompt', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const prompt = await walkthroughs.generatePhasePrompt(req.params.id);
+      const prompt = await walkthroughs.generatePhasePrompt(String(req.params.id));
       res.json({ prompt });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -359,7 +360,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.post('/portals/walkthroughs/:id/advance', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const result = await walkthroughs.advanceSession(req.params.id, req.body);
+      const result = await walkthroughs.advanceSession(String(req.params.id), req.body);
       res.json(result);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -376,7 +377,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       const kyc = (req.body && typeof req.body === 'object' && 'kyc' in req.body)
         ? (req.body as { kyc?: unknown }).kyc as never
         : undefined;
-      const result = await walkthroughs.finalizeSession(req.params.id, { kyc });
+      const result = await walkthroughs.finalizeSession(String(req.params.id), { kyc });
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -414,7 +415,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.post('/portals/walkthroughs/:id/abandon', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      await walkthroughs.abandonSession(req.params.id);
+      await walkthroughs.abandonSession(String(req.params.id));
       res.status(204).end();
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -429,7 +430,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.post('/portals/walkthroughs/:id/llm-suggest', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const r = await suggestPhase(db, req.params.id);
+      const r = await suggestPhase(db, String(req.params.id));
       switch (r.kind) {
         case 'ok':
           return res.status(200).json({
@@ -481,7 +482,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('X-Accel-Buffering', 'no');
-      await suggestPhaseStream(db, req.params.id, res);
+      await suggestPhaseStream(db, String(req.params.id), res);
       res.write('data: [DONE]\n\n');
       res.end();
     } catch (err) {
@@ -551,7 +552,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.get('/portals/walkthroughs/:id/cost', requireAuth, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
-      const costUsdCents = await getSessionCostCents(db, req.params.id);
+      const costUsdCents = await getSessionCostCents(db, String(req.params.id));
       const callRow = await db.get<{ llm_calls_used: number }>(
         `SELECT llm_calls_used FROM portal_walkthrough_sessions WHERE id = ?`, req.params.id,
       );
@@ -796,8 +797,8 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
           params.push(req.params.id);
           await db.run(`UPDATE portals SET ${sets.join(', ')} WHERE id = ?`, ...params);
         }
-        const caps = await readCurrentCapabilities(db, req.params.id);
-        await rebuildPortalDescriptor(db, req.params.id, caps, {
+        const caps = await readCurrentCapabilities(db, String(req.params.id));
+        await rebuildPortalDescriptor(db, String(req.params.id), caps, {
           displayTitle: parsed.display_title,
           description: parsed.description,
           publicIndex: parsed.public_index,
@@ -841,7 +842,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   // the edit UI to seed its form.
   router.get('/portals/:id/capabilities', requireAuth, requirePortalOwner, async (req, res) => {
     try {
-      const capabilities = await readCurrentCapabilities(db, req.params.id);
+      const capabilities = await readCurrentCapabilities(db, String(req.params.id));
       res.json({ capabilities });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -855,7 +856,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.put('/portals/:id/capabilities', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const parsed = capabilitiesUpdateSchema.parse(req.body);
-      const result = await rebuildPortalDescriptor(db, req.params.id, parsed.capabilities);
+      const result = await rebuildPortalDescriptor(db, String(req.params.id), parsed.capabilities);
       res.json(result);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -876,7 +877,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   router.get('/portals/:id/pages', requireAuth, requirePortalOwner, async (req, res) => {
     try {
-      const pages = await portalDb.listPages(req.params.id);
+      const pages = await portalDb.listPages(String(req.params.id));
       res.json({ pages });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -886,7 +887,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.put('/portals/:id/pages', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const parsed = upsertPageSchema.parse(req.body);
-      const page = await portalDb.upsertPage(req.params.id, parsed);
+      const page = await portalDb.upsertPage(String(req.params.id), parsed);
       res.json({ page });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
@@ -897,7 +898,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     try {
       const path = req.query.path as string | undefined;
       if (!path) return res.status(400).json({ error: 'path query parameter required' });
-      const ok = await portalDb.deletePage(req.params.id, path);
+      const ok = await portalDb.deletePage(String(req.params.id), path);
       if (!ok) return res.status(404).json({ error: 'Page not found' });
       res.status(204).end();
     } catch (err) {
@@ -909,7 +910,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   router.get('/portals/:id/assets', requireAuth, requirePortalOwner, async (req, res) => {
     try {
-      const assets = await portalDb.listAssets(req.params.id);
+      const assets = await portalDb.listAssets(String(req.params.id));
       res.json({ assets });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -923,7 +924,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       if (!req.file) return res.status(400).json({ error: 'file required' });
       const path = (req.body?.path as string | undefined)?.trim();
       if (!path) return res.status(400).json({ error: 'path field required' });
-      const asset = await portalDb.upsertAsset(req.params.id, {
+      const asset = await portalDb.upsertAsset(String(req.params.id), {
         path,
         mimeType: req.file.mimetype || 'application/octet-stream',
         content: req.file.buffer,
@@ -939,7 +940,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     try {
       const path = req.query.path as string | undefined;
       if (!path) return res.status(400).json({ error: 'path query parameter required' });
-      const ok = await portalDb.deleteAsset(req.params.id, path);
+      const ok = await portalDb.deleteAsset(String(req.params.id), path);
       if (!ok) return res.status(404).json({ error: 'Asset not found' });
       res.status(204).end();
     } catch (err) {
@@ -1044,7 +1045,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.get('/portals/:id/bundle', requireAuth, requirePortalOwner, async (req, res) => {
     try {
       const redactToTemplate = req.query.template === '1';
-      const buf = await bundlePortal(db, req.params.id, { redactToTemplate });
+      const buf = await bundlePortal(db, String(req.params.id), { redactToTemplate });
       const portal = await db.get<{ name: string; namespace: string }>(
         `SELECT name, namespace FROM portals WHERE id = ?`, req.params.id,
       );
@@ -1129,7 +1130,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   router.get('/portals/visit/:address/asset/*', async (req, res) => {
     try {
-      const assetPath = (req.params as Record<string, string>)['0'] ?? '';
+      const assetPath = String((req.params as Record<string, unknown>)['0'] ?? '');
       const r = await handler.handleFetch({
         portalAddress: decodeURIComponent(req.params.address),
         path: assetPath,
@@ -1184,8 +1185,8 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     try {
       const parsed = invokeSchema.parse(req.body);
       const r = await handler.handleInvoke({
-        portalAddress: decodeURIComponent(req.params.address),
-        capabilityId: req.params.capId,
+        portalAddress: decodeURIComponent(String(req.params.address)),
+        capabilityId: String(req.params.capId),
         input: parsed.input,
         visitorContactHash: parsed.visitorContactHash,
       });

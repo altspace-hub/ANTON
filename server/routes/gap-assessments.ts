@@ -333,7 +333,7 @@ Generate the complete framework JSON now.`;
       const extraSystemContext = [orgContextLayer, knowledgePackLayer, knowledgeContext].filter(Boolean).join('\n\n');
 
       // Model tier: 'opus'/'sonnet' for Claude, or a custom model ID (azure:*, gpt-*, mistral-*, etc.)
-      const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
       const tierLabel = modelTier === 'opus' ? 'Opus 4.7 (deep reasoning)'
         : modelTier === 'sonnet' ? 'Sonnet 4.6 (standard)'
         : modelTier;
@@ -461,7 +461,7 @@ Generate the complete framework JSON now.`;
       const findingsCount = Object.values(allFindings).flat().length;
       console.log(`[gap-assessments] synthesise: starting — ${findingsCount} findings, anthropic timeout: ${(anthropic as unknown as { timeout?: number }).timeout ?? 'default'}`);
 
-      const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
       const result = await synthesiseCapabilityView(anthropic, allFindings, contextConfig, modelTier, db);
       console.log(`[gap-assessments] synthesise: Claude returned ${result.json.length} chars JSON, ${result.reasoning.length} chars reasoning`);
 
@@ -491,7 +491,7 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
       const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
       await db.run('UPDATE gap_assessments SET board_summary = ?, board_reasoning = ?, current_step = 7, updated_at = ? WHERE id = ?', result.summary, result.reasoning || null, new Date().toISOString(), req.params.id as string);
@@ -516,7 +516,7 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const modelTier: GapModelTier = contextConfig.modelTier || 'sonnet';
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
       const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
       await db.run('UPDATE gap_assessments SET roadmap = ?, roadmap_reasoning = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?', result.json, result.reasoning || null, 'complete', new Date().toISOString(), req.params.id as string);
@@ -533,7 +533,7 @@ Generate the complete framework JSON now.`;
   router.post('/gap-assessments/:id/snapshot', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
       const findings = await db.all('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string) as Record<string, unknown>[];
@@ -619,7 +619,7 @@ Generate the complete framework JSON now.`;
   router.get('/gap-assessments/:id/iterations/:iterationId', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
       const iteration = await db.get('SELECT * FROM gap_iterations WHERE id = ? AND assessment_id = ?', req.params.iterationId as string, req.params.id as string) as Record<string, unknown> | undefined;
@@ -649,7 +649,7 @@ Generate the complete framework JSON now.`;
   router.post('/gap-assessments/:id/compare', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
       const { iterationA, iterationB } = req.body as { iterationA: string; iterationB: string };

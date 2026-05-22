@@ -227,7 +227,10 @@ Structure the digest clearly so a compliance officer can immediately identify wh
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      return res.json(rows.map(r => ({
+      const rows = await db.all(
+        `SELECT * FROM regulatory_feed_digests WHERE user_id = ? ORDER BY created_at DESC`
+      , userId);
+      return res.json(rows.map((r: Record<string, unknown>) => ({
         ...r,
         sources: JSON.parse((r.sources as string) || '[]'),
       })));
@@ -243,6 +246,9 @@ Structure the digest clearly so a compliance officer can immediately identify wh
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
+      const row = await db.get<Record<string, unknown>>(
+        `SELECT * FROM regulatory_feed_digests WHERE id = ? AND user_id = ?`
+      , String(req.params.id), userId);
       if (!row) return res.status(404).json({ error: 'Digest not found' });
       return res.json({ ...row, sources: JSON.parse((row.sources as string) || '[]') });
     } catch (err) {

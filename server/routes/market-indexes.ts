@@ -145,7 +145,10 @@ export async function createMarketIndexesRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
       }
       const { name, description, indexType, philosophy, universe, maxHoldings, rebalanceFrequency, weightingMethod, benchmarkSymbol } = parsed.data;
-      const id = await indexService.createIndex({ name, description, indexType, philosophy, universe, maxHoldings, rebalanceFrequency, weightingMethod, benchmarkSymbol });
+      const id = await indexService.createIndex({
+        name, description, indexType, philosophy, maxHoldings, rebalanceFrequency, weightingMethod, benchmarkSymbol,
+        universe: universe === undefined ? undefined : [universe],
+      });
       res.status(201).json({ id });
     } catch (err) {
       console.error('[market-indexes] Create error:', err);

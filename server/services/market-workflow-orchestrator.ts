@@ -23,8 +23,6 @@ import { createMarketPatternService } from './market-pattern-service.js';
 import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createWhyChainInsightsAggregator } from './market-why-chain-insights.js';
 
 // ── Step Timeout ────────────────────────────────────────────────────────────────
@@ -112,7 +110,7 @@ export async function createMarketWorkflowOrchestrator(
         max_tokens: 4096,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Parameters<typeof client.messages.create>[0]['tools'],
       });
       let text = '';
       for (const block of response.content) {
@@ -124,7 +122,7 @@ export async function createMarketWorkflowOrchestrator(
     const { callChat } = await import('./provider-router.js');
     const result = await callChat({
       model: 'claude-haiku-4-5-20251001',
-      systemPrompt,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,
       thinkingLevel: thinking,
@@ -606,6 +604,7 @@ Return ONLY the JSON array, no other text.`;
             title: string; description: string; prediction_type?: string;
             target_symbol?: string; predicted_outcome: string; predicted_direction?: string;
             confidence?: number; time_horizon_days?: number; deadline?: string;
+            key_assumptions?: string[];
           }>;
         }>;
 
@@ -777,12 +776,15 @@ Return ONLY the JSON array, no other text.`;
       );
       if (!index) throw new Error(`Index not found: ${indexId}`);
 
+      let holdings: Array<{ symbol: string; weight: number; current_price: number; entry_price: number }> = [];
+      let returns: number[] = [];
+
       // Step 1: Current portfolio metrics
       try {
-        const holdings = await db.all<{ symbol: string; weight: number; current_price: number; entry_price: number }>(
+        holdings = await db.all<{ symbol: string; weight: number; current_price: number; entry_price: number }>(
           'SELECT symbol, weight, current_price, entry_price FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL', indexId
         );
-        const returns = holdings.map(h =>
+        returns = holdings.map(h =>
           h.entry_price > 0 ? (h.current_price - h.entry_price) / h.entry_price : 0
         );
         const result = await withTimeout(
@@ -1399,7 +1401,13 @@ Return ONLY the JSON array, no other text.`;
 
   // ── Weekly Pulse: Short-term directional predictions for fast learning ─────
 
-  async function runWeeklyPulse(): Promise<WorkflowRunResult> {
+  async function runWeeklyPulse(): Promise<{
+    runId: string;
+    status: string;
+    stepsCompleted: string[];
+    stepResults: Record<string, unknown>;
+    error?: string;
+  }> {
     const runId = `wfrun_pulse_${Date.now()}`;
     const stepsCompleted: string[] = [];
     const stepResults: Record<string, unknown> = {};

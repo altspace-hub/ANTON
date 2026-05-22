@@ -86,7 +86,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       const { orgNumber } = req.params;
 
       // Check DB cache (24h TTL)
-      const cached = await db.all(`
+      const cached = await db.get(`
         SELECT result FROM entity_screens
         WHERE org_number=? AND connector='roaring' AND cached_until > NOW()
         ORDER BY screened_at DESC LIMIT 1
@@ -154,6 +154,12 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
   router.get('/roaring/screens/recent', async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
 
+    const rows = await db.all(`
+      SELECT id, session_id, entity_name, org_number, connector, risk_score, hit_count, screened_at
+      FROM entity_screens
+      WHERE connector='roaring'
+      ORDER BY screened_at DESC LIMIT ?
+    `, limit);
     res.json({ screens: rows });
   });
 

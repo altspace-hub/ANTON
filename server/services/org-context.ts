@@ -83,7 +83,7 @@ export async function createOrgContextService(db: DatabaseAdapter) {
    * Update the org context, logging history for changed fields.
    */
   async function updateContext(update: OrgContextUpdate, changedBy: string = 'default'): Promise<OrgContext> {
-    const current = getContext(changedBy);
+    const current = await getContext(changedBy);
 
     const fields: Record<string, unknown> = {};
     const historyEntries: Array<{ field: string; prev: unknown; next: unknown }> = [];
@@ -123,15 +123,15 @@ export async function createOrgContextService(db: DatabaseAdapter) {
     `, CONTEXT_ID, h.field, String(h.prev ?? ''), String(h.next ?? ''), changedBy, now);
     }
 
-    return getContext(changedBy);
+    return await getContext(changedBy);
   }
 
   /**
    * Build prompt layer 2a: Organisational Context.
    * Injected before the module system prompt.
    */
-  function buildOrgContextPrompt(userId: string = 'default'): string {
-    const ctx = getContext(userId);
+  async function buildOrgContextPrompt(userId: string = 'default'): Promise<string> {
+    const ctx = await getContext(userId);
 
     // If no meaningful context is set, return empty
     if (!ctx.org_name && !ctx.jurisdiction && ctx.current_priorities.length === 0 && !ctx.custom_context) {
@@ -178,7 +178,7 @@ export async function createOrgContextService(db: DatabaseAdapter) {
     return await db.all(`
       SELECT * FROM org_context_history WHERE org_context_id = ?
       ORDER BY changed_at DESC LIMIT ?
-    `, CONTEXT_ID, limit) as ReturnType<typeof getHistory>;
+    `, CONTEXT_ID, limit) as Awaited<ReturnType<typeof getHistory>>;
   }
 
   return {

@@ -79,6 +79,7 @@ export interface AssessmentBatchResult {
   findings: ArticleFinding[];
   batchIndex: number;
   totalBatches: number;
+  thinking: string;
 }
 
 const BATCH_SIZE = 12;
@@ -686,7 +687,7 @@ ${capabilityView}`,
   return { json: extractJson(result.text, 'object'), reasoning: result.thinking };
 }
 
-type AssessmentRow = { id: string; frameworks: string; scope_config: string; context_config: string; article_scores: string; capability_view: string | null; status: string };
+type AssessmentRow = { id: string; frameworks: string; scope_config: string; context_config: string; article_scores: string; capability_view: string | null; board_summary: string | null; roadmap: string | null; status: string };
 
 export async function createGapAssessmentEngine(db: DatabaseAdapter) {
   async function getAssessment(id: string): Promise<AssessmentRow | undefined> {

@@ -181,8 +181,8 @@ export async function executeCommand(
       // Execute graph rebuild
       try {
         const { createKnowledgeGraph } = await import('./knowledge-graph.js');
-        const graph = createKnowledgeGraph(context.db);
-        const result = graph.buildGraph();
+        const graph = await createKnowledgeGraph(context.db);
+        const result = await graph.buildGraph();
         return {
           success: true,
           message: `Graph rebuilt: ${result.nodesCreated} nodes, ${result.relationshipsCreated} relationships created.`,
@@ -211,8 +211,8 @@ export async function executeCommand(
     case 'run_pattern_detection': {
       try {
         const { createPatternDetection } = await import('./pattern-detection.js');
-        const engine = createPatternDetection(context.db);
-        const result = engine.runAllDetectors();
+        const engine = await createPatternDetection(context.db);
+        const result = await engine.runAllDetectors();
         return {
           success: true,
           message: `Pattern detection complete: ${result.patternsDetected} patterns found.`,

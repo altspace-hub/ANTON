@@ -14,7 +14,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'crypto';
-import type { DatabaseAdapter } from '../db/database.js';
+import type { DatabaseAdapter } from '../../db/database.js';
 
 // ── HMAC Verification ─────────────────────────────────────────────────────
 

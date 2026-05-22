@@ -531,6 +531,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       });
       completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id });
 
+      const updated = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', proposal.id);
 
       // Return redirect path so frontend can navigate to WorkflowMonitor with context
       res.json({
@@ -734,6 +735,8 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
     try {
       const { auto_execute } = req.body as { auto_execute?: boolean };
 
+      const stage = await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as
+        | { current_stage: number } | undefined;
 
       // Auto-execute requires Stage 3+
       if (auto_execute && (!stage || stage.current_stage < 3)) {
@@ -747,6 +750,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         WHERE id = ?
       `, auto_execute ? 1 : 0, req.params.id);
 
+      const updated = await db.get('SELECT * FROM orchestrator_patterns WHERE id = ?', req.params.id);
 
       if (!updated) return res.status(404).json({ error: 'Pattern not found' });
       res.json({ pattern: updated });
@@ -759,10 +763,10 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   router.post('/orchestrator/patterns/detect', requireAuth, async (_req: Request, res: Response) => {
     try {
       const { detectPatterns, recordPatternDetection } = await import('../services/orchestrator-pattern-engine.js');
-      const patterns = detectPatterns(db);
+      const patterns = await detectPatterns(db);
       const recorded: string[] = [];
       for (const p of patterns.slice(0, 5)) {
-        const pid = recordPatternDetection(db, p, null);
+        const pid = await recordPatternDetection(db, p, null);
         if (pid) recorded.push(pid);
       }
       res.json({ patterns_detected: patterns.length, patterns_recorded: recorded.length, patterns });
@@ -775,7 +779,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   // ── Demo Mode: get state ─────────────────────────────────────────────────
   router.get('/orchestrator/demo', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const state = getDemoState(db);
+      const state = await getDemoState(db);
       res.json({ demo: state, persona_context: state.mode !== 'off' ? getMeridianPersonaContext() : null });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -811,7 +815,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   // ── Demo Mode: advance simulation day (Accelerated Mode) ─────────────────
   router.post('/orchestrator/demo/advance', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const { day, done } = advanceSimulationDay(db);
+      const { day, done } = await advanceSimulationDay(db);
       if (!done && anthropic) {
         // Trigger a heartbeat cycle for the new day's signals
         runHeartbeatCycle(db, anthropic, 'on_demand', false).catch(() => {});

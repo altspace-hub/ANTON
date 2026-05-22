@@ -171,7 +171,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: err.errors });
+        res.status(400).json({ error: 'Validation failed', details: err.issues });
         return;
       }
       const message = safeError(err);
@@ -250,7 +250,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: err.errors });
+        res.status(400).json({ error: 'Validation failed', details: err.issues });
         return;
       }
       const message = safeError(err);
@@ -344,7 +344,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: err.errors });
+        res.status(400).json({ error: 'Validation failed', details: err.issues });
         return;
       }
       const message = safeError(err);
@@ -409,7 +409,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           model: parsed.deploymentName,
           messages: [{ role: 'user', content: 'Say "ok" and nothing else.' }],
           max_completion_tokens: 10,
-        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsNonStreaming);
 
         res.json({
           ok: true,
@@ -433,7 +433,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: err.errors });
+        res.status(400).json({ error: 'Validation failed', details: err.issues });
         return;
       }
       const message = safeError(err);
@@ -465,7 +465,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           model: deploymentName,
           messages: [{ role: 'user', content: 'Say "test1 ok"' }],
           max_completion_tokens: 10,
-        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsNonStreaming);
         results.push({ test: 'basic (max_completion_tokens)', ok: true, response: r.choices?.[0]?.message?.content || '' });
       } catch (e) { results.push({ test: 'basic (max_completion_tokens)', ok: false, error: (e as Error).message }); }
 
@@ -477,7 +477,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           messages: [{ role: 'user', content: 'Say "test2 ok"' }],
           max_completion_tokens: 10,
           stream: true,
-        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsStreaming);
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming', ok: true, response: text });
@@ -492,7 +492,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           max_completion_tokens: 10,
           stream: true,
           reasoning_effort: 'low',
-        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsStreaming);
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming + reasoning_effort=low', ok: true, response: text });
@@ -507,7 +507,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           messages: [{ role: 'system', content: bigSystem }, { role: 'user', content: 'Say "test4 ok"' }],
           max_completion_tokens: 10,
           stream: true,
-        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsStreaming);
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming + 14K system prompt', ok: true, response: text });
@@ -523,7 +523,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           max_completion_tokens: 10,
           stream: true,
           reasoning_effort: 'high',
-        } as Record<string, unknown> as Parameters<typeof client5.chat.completions.create>[0]);
+        } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsStreaming);
         let text5 = '';
         for await (const chunk of stream5) { text5 += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: '80K system + reasoning_effort=high', ok: true, response: text5 });

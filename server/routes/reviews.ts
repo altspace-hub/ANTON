@@ -8,7 +8,7 @@ import { createReviewOrchestrator, type ReviewContext } from '../services/review
 
 export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
-  const orchestrator = createReviewOrchestrator(anthropic);
+  const orchestrator = await createReviewOrchestrator(anthropic);
 
   // GET /api/reviews/modes — list available review modes
   router.get('/reviews/modes', async (_req, res) => {
@@ -83,7 +83,10 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
     const { sessionId } = req.query as { sessionId?: string };
     if (!sessionId) { res.json([]); return; }
     try {
-
+      const reviews = await db.all(
+        `SELECT * FROM reviews WHERE session_id = ? ORDER BY created_at DESC`,
+        sessionId,
+      );
       res.json(reviews);
     } catch {
       res.json([]);

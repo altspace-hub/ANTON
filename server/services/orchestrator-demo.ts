@@ -251,7 +251,7 @@ export async function deactivateDemoMode(db: DatabaseAdapter): Promise<{ cleaned
   try {
     await db.exec('BEGIN TRANSACTION');
     try {
-
+      const r1 = await db.run("DELETE FROM radar_items WHERE id LIKE 'demo-%'");
       cleaned += r1.changes;
     } catch { /* table may not exist */ }
     try {
@@ -283,8 +283,8 @@ When generating briefings and proposals, use this context to make recommendation
 }
 
 /** Advance simulation by one day (Accelerated Mode) */
-export function advanceSimulationDay(db: DatabaseAdapter): { day: number; done: boolean } {
-  const state = getDemoState(db);
+export async function advanceSimulationDay(db: DatabaseAdapter): Promise<{ day: number; done: boolean }> {
+  const state = await getDemoState(db);
   if (state.mode !== 'simulation' && state.mode !== 'accelerated') {
     return { day: 0, done: true };
   }
@@ -292,6 +292,6 @@ export function advanceSimulationDay(db: DatabaseAdapter): { day: number; done: 
   const nextDay = currentDay + 1;
   const done = nextDay > 0;
 
-  saveDemoState(db, { ...state, simulation_day: done ? 0 : nextDay });
+  await saveDemoState(db, { ...state, simulation_day: done ? 0 : nextDay });
   return { day: nextDay, done };
 }

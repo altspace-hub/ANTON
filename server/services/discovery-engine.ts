@@ -1502,8 +1502,8 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
   // ── Get Output ───────────────────────────────────────────────────────
 
-  function getOutput(outputId: string) {
-
+  async function getOutput(outputId: string) {
+    const row = await db.get('SELECT * FROM discovery_outputs WHERE id = ?', outputId) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
       id: row.id as string,
@@ -1523,7 +1523,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   async function getOutputBySession(sessionId: string) {
     const row = await db.get('SELECT * FROM discovery_outputs WHERE session_id = ?', sessionId) as Record<string, unknown> | undefined;
     if (!row) return null;
-    return getOutput(row.id as string);
+    return await getOutput(row.id as string);
   }
 
   // ── Public API ───────────────────────────────────────────────────────

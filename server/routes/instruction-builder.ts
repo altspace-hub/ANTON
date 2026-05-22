@@ -157,7 +157,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
   // POST /api/coding/instruction-builder/projects/:id/architecture — generate architecture proposal
   router.post('/coding/instruction-builder/projects/:id/architecture', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id) as any;
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -206,7 +206,7 @@ Format as well-structured Markdown. Be specific and actionable.`,
   // POST /api/coding/instruction-builder/projects/:id/review — trigger expert panel review
   router.post('/coding/instruction-builder/projects/:id/review', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id) as any;
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -290,7 +290,7 @@ Format your response as:
   // POST /api/coding/instruction-builder/projects/:id/generate — generate instruction files
   router.post('/coding/instruction-builder/projects/:id/generate', async (req, res) => {
     try {
-
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id) as any;
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -381,7 +381,9 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       await db.run("UPDATE instruction_builder_projects SET status = 'generated', updated_at = NOW() WHERE id = ?", req.params.id);
 
       // Fetch all files
-
+      const allFiles = await db.all(
+        'SELECT * FROM instruction_files WHERE instruction_builder_project_id = ? ORDER BY file_type ASC, filename ASC'
+      , req.params.id);
 
       res.json({
         primaryFile: { id: primaryId, filename: profile.primary_filename, content: primaryResult.text },
@@ -396,7 +398,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
   // GET /api/coding/instruction-builder/tool-profiles — list tool profiles
   router.get('/coding/instruction-builder/tool-profiles', async (req, res) => {
     try {
-
+      const profiles = await db.all('SELECT * FROM tool_profiles ORDER BY display_name ASC');
       res.json(profiles);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -406,7 +408,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
   // GET /api/coding/instruction-builder/tool-profiles/:id — get profile
   router.get('/coding/instruction-builder/tool-profiles/:id', async (req, res) => {
     try {
-
+      const profile = await db.get('SELECT * FROM tool_profiles WHERE id = ?', req.params.id);
       if (!profile) {
         res.status(404).json({ error: 'Tool profile not found' });
         return;
@@ -442,7 +444,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
 
       await db.run(`UPDATE tool_profiles SET ${updates.join(', ')} WHERE id = ?`, ...values);
 
-
+      const profile = await db.get('SELECT * FROM tool_profiles WHERE id = ?', req.params.id);
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });

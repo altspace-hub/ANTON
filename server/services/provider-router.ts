@@ -684,7 +684,10 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
     const result = await adapter.sendRequest({
       model: dep.deployment_name,
       systemPrompt: config.system,
-      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      messages: config.messages.map(m => ({
+        role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: m.content,
+      })),
       thinking: config.thinkingLevel as import('../../src/lib/types.js').ThinkingLevel | undefined,
       creativity: 'balanced',
       maxTokens,

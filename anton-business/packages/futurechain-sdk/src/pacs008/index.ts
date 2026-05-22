@@ -535,7 +535,8 @@ export interface BuildPacs008TxWithSignerInput {
   feeSatoshi?: number;
   pacs008: Pacs008Message;
   uetr: string;
-  timestamp?: number;
+  /** Optional override for tx.timestamp (ISO 8601 UTC). Defaults to now. */
+  timestamp?: string;
 }
 
 /**

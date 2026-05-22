@@ -795,7 +795,7 @@ ${deliveryTeam.map(m => {
       if (ragDirPath) {
         try {
           const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
-          const ragChunks = retrieveChunks(db, scopeQuery || String(engagement.engagement_brief || ''), [ragDirPath], 15, 0.05);
+          const ragChunks = await retrieveChunks(db, scopeQuery || String(engagement.engagement_brief || ''), [ragDirPath], 15, 0.05);
           if (ragChunks.length > 0) {
             ragDirectoryContext = `\n\nRAG KNOWLEDGE DIRECTORY (${ragChunks.length} retrieved passages from: ${path.basename(ragDirPath)}):\n` +
               ragChunks.map((c) => `[${c.documentName}]\n${c.text}`).join('\n\n---\n\n');
@@ -868,7 +868,7 @@ Use these benchmarks to position the client relative to industry peers where rel
       if (knowledgeConfig.indexedKBEnabled) {
         try {
           const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
-          const kbChunks = retrieveChunks(db, scopeQuery || String(engagement.title), [], 15, 0.05);
+          const kbChunks = await retrieveChunks(db, scopeQuery || String(engagement.title), [], 15, 0.05);
           if (kbChunks.length > 0) {
             knowledgeContext += `\n\nINDEXED KNOWLEDGE BASE (${kbChunks.length} relevant passages):\n` +
               kbChunks.map(c => `[${c.documentName}]\n${c.text}`).join('\n\n---\n\n');

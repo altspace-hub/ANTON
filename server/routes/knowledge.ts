@@ -34,7 +34,7 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
 
       const since = sinceStr ? new Date(sinceStr) : undefined;
 
-      const atoms = (await getExtractor()).searchAtoms(q, {
+      const atoms = await (await getExtractor()).searchAtoms(q, {
         areaId: area,
         atomType: type,
         entityType,
@@ -111,7 +111,7 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
         Math.max(parseInt(String(req.query.limit ?? '100'), 10) || 100, 1),
         500
       );
-      const decisions = (await getOutputStore()).getDecisionsForWorkflow(req.params.workflowId, limit);
+      const decisions = await (await getOutputStore()).getDecisionsForWorkflow(req.params.workflowId, limit);
       res.json({ decisions, total: decisions.length });
     } catch (err) {
       console.error('[knowledge/decisions GET]', err);
@@ -157,7 +157,7 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
       // Resolve user ID from auth context (injected by auth middleware) or fallback
       const userId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'system';
 
-      const outputId = (await getOutputStore()).storeOutput({
+      const outputId = await (await getOutputStore()).storeOutput({
         executionId, workflowId, stepIndex, stepType,
         areaId, moduleId, connectionId, outputData,
         workflowName, stepName, userId,

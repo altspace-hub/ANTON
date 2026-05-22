@@ -96,7 +96,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
 
   // Rule execution engine
   async function executeRule(ruleId: number, context: any): Promise<RuleExecution> {
-    const rule = getRule(ruleId);
+    const rule = await getRule(ruleId);
     if (!rule || !rule.active) {
       throw new Error(`Rule ${ruleId} not found or inactive`);
     }
@@ -344,7 +344,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
 
   // Batch execution - run all active rules against a context
   async function executeAllRules(context: any, category?: string): Promise<RuleExecution[]> {
-    const rules = getAllRules(category).filter(r => r.active === 1);
+    const rules = (await getAllRules(category)).filter(r => r.active === 1);
     const executions: RuleExecution[] = [];
 
     for (const rule of rules) {
@@ -362,8 +362,11 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
   // Compliance dashboard stats
   async function getComplianceDashboard(): Promise<any> {
 
+    const totalRules = await db.get("SELECT COUNT(*) as count FROM compliance_rules WHERE active = 1") as { count: number };
     const totalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE remediation_status = 'open'") as { count: number };
     const criticalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE severity = 'critical' AND remediation_status = 'open'") as { count: number };
+
+    const recentExecutions = (await db.get("SELECT COUNT(*) as count FROM rule_executions WHERE executed_at >= NOW() - INTERVAL '7 days'") as { count: number }).count;
 
 
 

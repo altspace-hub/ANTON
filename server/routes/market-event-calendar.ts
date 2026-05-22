@@ -15,7 +15,7 @@ const createEventSchema = z.object({
   scheduledAt: z.string().min(1),
   importance: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   preEventHours: z.number().int().min(0).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateEventSchema = z.object({
@@ -27,7 +27,7 @@ const updateEventSchema = z.object({
   scheduledAt: z.string().optional(),
   importance: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   preEventHours: z.number().int().min(0).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const completeEventSchema = z.object({
