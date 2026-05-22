@@ -25,6 +25,13 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # The PG migration runner sorts lexicographically — two migrations
+      # sharing a numeric prefix would run in a filename-tiebreak order
+      # that is not the team's intent. Catch a collision before merge.
+      - name: Migration prefixes are unique
+        run: |
+          dups=$(ls server/db/migrations-pg/ | grep -oE '^[0-9]+' | sort | uniq -d)
+          test -z "$dups" || { echo "Duplicate migration prefix(es): $dups"; exit 1; }
       # Hardening (May 2026): the typecheck is now a real release gate.
       # It previously carried `continue-on-error: true`, so 526 type
       # errors — including ~156 undeclared-variable references that were
