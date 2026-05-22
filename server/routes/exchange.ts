@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import type { DatabaseAdapter } from '../db/database.js';
 import { exportModuleToAnton } from '../services/antonExport.js';
+import { safeError } from '../lib/error-response.js';
 import {
   bundleModuleToAnton,
   bundleComplianceRuleset,
@@ -61,7 +62,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${moduleId}.anton"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -76,7 +77,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const result = await validateAntonFile(req.file.buffer, db);
       res.json(result);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Validation failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -94,7 +95,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -110,7 +111,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -128,7 +129,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -146,7 +147,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -163,7 +164,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -178,7 +179,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -192,7 +193,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -207,7 +208,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -221,7 +222,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -235,7 +236,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -249,7 +250,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -264,7 +265,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const result = await importAntonFile(req.file.buffer, db);
       res.json(result);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Import failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -287,7 +288,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const result = await importFn(db, payload);
       res.json(result);
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Import failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   }
 

@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
+import { safeError } from '../lib/error-response.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -10,7 +11,8 @@ const anthropic = new Anthropic({
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
 function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  // Delegates to the shared safeError — redacts in production.
+  return safeError(err);
 }
 
 export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {

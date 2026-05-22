@@ -3,6 +3,7 @@ import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
+import { safeError } from '../lib/error-response.js';
 
 /** Validates a folder path: must be absolute and must not contain path traversal sequences. */
 function validateFolderPath(folderPath: unknown): folderPath is string {
@@ -29,7 +30,7 @@ export async function createRagRoutes(db: DatabaseAdapter) {
       const result = await indexFolder(db, folderPath);
       res.json({ success: true, ...result });
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Indexing failed' });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 

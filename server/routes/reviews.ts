@@ -5,6 +5,7 @@ import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.
 import { streamChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
@@ -73,7 +74,7 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Review failed';
+      const message = safeError(error);
       if (!res.headersSent) res.status(500).json({ error: message });
     }
   });
@@ -113,7 +114,7 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
       console.error('[review-orchestrator] Error running review engine:', error);
       res.status(500).json({
         error: 'Review engine failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: safeError(error),
       });
     }
   });

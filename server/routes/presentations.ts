@@ -6,6 +6,7 @@ import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
 import { streamToResponse, callSync, isApiKeyConfigured } from '../services/claude-client.js';
 import { generatePptx, resolveBrand, type PresentationBrand } from '../services/export-pptx.js';
+import { safeError } from '../lib/error-response.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || './outputs');
@@ -48,7 +49,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
         res
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Consultation failed';
+      const message = safeError(error);
       if (!res.headersSent) res.status(500).json({ error: message });
     }
   });
@@ -96,7 +97,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
       const row = await db.get('SELECT * FROM presentations WHERE id = ?', id);
       res.json(row);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Save failed' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -148,7 +149,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
       if (!row) { res.status(404).json({ error: 'Not found' }); return; }
       res.json(row);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Update failed' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -165,7 +166,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
       await db.run('DELETE FROM presentations WHERE id = ?', id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Delete failed' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -386,7 +387,7 @@ FORMATTING RULES:
           await db.run(`UPDATE presentations SET status = 'failed', updated_at = NOW() WHERE id = ?`, id);
         } catch { /* non-fatal */ }
       }
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Generation failed' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

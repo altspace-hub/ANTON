@@ -12,6 +12,7 @@ import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import pkg from 'pg';
+import { safeError } from '../lib/error-response.js';
 const { Client: PgClient } = pkg;
 import mysql from 'mysql2/promise';
 import sql from 'mssql';
@@ -1245,7 +1246,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       });
       res.json({ response: result.text });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'AI request failed';
+      const msg = safeError(err);
       res.status(500).json({ error: msg });
     }
   });
@@ -1278,7 +1279,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       }
       res.json({ workflowDefinition });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Generation failed';
+      const msg = safeError(err);
       res.status(500).json({ error: msg });
     }
   });

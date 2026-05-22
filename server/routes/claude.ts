@@ -1636,7 +1636,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       res.end();
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = safeError(error);
       if (!res.headersSent) {
         res.status(500).json({ error: message });
       } else {

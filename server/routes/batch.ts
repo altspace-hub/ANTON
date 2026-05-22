@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdapter) {
   const router = Router();
@@ -114,7 +115,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
         send({
           type: 'error',
           rowIndex: i,
-          error: err instanceof Error ? err.message : 'API error',
+          error: safeError(err),
         });
       }
 
@@ -215,7 +216,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
         resultsUrl: `/api/batch/anthropic-batch/${batch.id}/results`,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Batch submission failed';
+      const message = safeError(err);
       res.status(502).json({ error: message });
     }
   });
@@ -237,7 +238,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
       }).retrieve(batchId);
       res.json(batch);
     } catch (err) {
-      res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to retrieve batch' });
+      res.status(502).json({ error: safeError(err) });
     }
   });
 
@@ -275,7 +276,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
       }
       res.end();
     } catch (err) {
-      res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to retrieve results' });
+      res.status(502).json({ error: safeError(err) });
     }
   });
 

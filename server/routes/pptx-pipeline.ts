@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import { executeScript } from '../services/script-executor.js';
 import { callSync } from '../services/claude-client.js';
+import { safeError } from '../lib/error-response.js';
 
 const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || './outputs');
 const MAX_FIX_CYCLES = 3;
@@ -100,7 +101,7 @@ CRITICAL RULES:
         durationMs: execResult.durationMs,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -154,7 +155,7 @@ CRITICAL RULES:
         });
       }
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -219,7 +220,7 @@ CRITICAL RULES:
         stderr: execResult.success ? undefined : execResult.stderr,
       });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

@@ -8,6 +8,7 @@
  */
 
 import { Router } from 'express';
+import { safeError } from '../lib/error-response.js';
 
 const router = Router();
 
@@ -48,7 +49,7 @@ router.get('/status', async (req, res) => {
       })),
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = safeError(error);
     const isTimeout = errorMessage.includes('aborted');
 
     res.json({
@@ -90,7 +91,7 @@ router.get('/models', async (req, res) => {
   } catch (error) {
     res.status(503).json({
       error: 'Failed to fetch Ollama models',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: safeError(error),
     });
   }
 });
@@ -150,7 +151,7 @@ router.post('/pull', async (req, res) => {
     res.write(
       `data: ${JSON.stringify({
         type: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: safeError(error),
       })}\n\n`
     );
     res.end();
@@ -178,7 +179,7 @@ router.delete('/models/:modelName', async (req, res) => {
   } catch (error) {
     res.status(503).json({
       error: 'Failed to delete model',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: safeError(error),
     });
   }
 });

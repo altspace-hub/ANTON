@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { AUDIENCES, getAudienceProfile } from '../services/audience-adapter.js';
 import { callSync } from '../services/claude-client.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createAudienceAdapterRoutes(): Promise<Router> {
   const router = Router();
@@ -58,7 +59,7 @@ export async function createAudienceAdapterRoutes(): Promise<Router> {
     } catch (error) {
       console.error('[audience-adapter] Adapt error:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Failed to adapt content',
+        error: safeError(error),
       });
     }
   });

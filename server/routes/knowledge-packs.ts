@@ -9,6 +9,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
+import { safeError } from '../lib/error-response.js';
 
 // Rate limit bundle imports to 10 per 15 minutes per IP.
 // Importing a pack parses a ZIP, validates thousands of entities, and runs
@@ -113,7 +114,7 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
       const pack = await svc.installBundledPack(slug, userId);
       res.status(201).json({ pack, message: `Pack '${pack.display_name}' installed with ${pack.entity_count} entities` });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Install failed';
+      const msg = safeError(err);
       console.error('[knowledge-packs] bundled install error:', err);
       res.status(400).json({ error: msg });
     }
@@ -138,7 +139,7 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
       const pack = await svc.importBundle(req.file.buffer, userId);
       res.status(201).json({ pack, message: `Pack '${pack.display_name}' imported successfully with ${pack.entity_count} entities` });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Import failed';
+      const msg = safeError(err);
       console.error('[knowledge-packs] import error:', err);
       res.status(400).json({ error: msg });
     }
@@ -190,7 +191,7 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
       await svc.deletePack(String(req.params.id));
       res.json({ deleted: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Delete failed';
+      const msg = safeError(err);
       console.error('[knowledge-packs] delete error:', err);
       // 409 Conflict if pack is still active
       const status = msg.includes('currently active') ? 409 : 500;

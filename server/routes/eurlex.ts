@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
+import { safeError } from '../lib/error-response.js';
 
 // Known regulation shortcuts
 const REGULATION_LOOKUP: Record<string, { title: string; celexNumber: string }> = {
@@ -246,7 +247,7 @@ ${eurLexText ? `OFFICIAL EUR-LEX TEXT (first 40,000 chars):\n${eurLexText.slice(
       });
       send({ type: 'done' });
     } catch (error: unknown) {
-      send({ type: 'error', message: error instanceof Error ? error.message : 'Validation failed' });
+      send({ type: 'error', message: safeError(error) });
     } finally {
       res.end();
     }

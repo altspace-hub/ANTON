@@ -3,10 +3,12 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { createKnowledgeGraph } from '../services/knowledge-graph.js';
 import { createGraphAnalytics } from '../services/graph-analytics.js';
+import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
 function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  // Delegates to the shared safeError — redacts in production.
+  return safeError(err);
 }
 
 export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {

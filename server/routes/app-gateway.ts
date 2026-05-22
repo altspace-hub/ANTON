@@ -23,6 +23,7 @@ import { hybridSearch } from '../services/hybrid-search.js';
 import { callChat, resolveModel } from '../services/provider-router.js';
 import { createAppMailService, type MailProviderKind } from '../services/app-mail-service.js';
 import type { ModuleDefinition } from '../../src/lib/types.js';
+import { safeError } from '../lib/error-response.js';
 // MODULES + AREAS are loaded at boot via dynamic import — the existing
 // pattern across app-gateway.ts. A static import drags in src/lib/constants.ts
 // which has hundreds of relative imports without .js extensions, tripping
@@ -110,7 +111,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const instances = await advertiser.browse(2500);
       res.json({ instances });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'LAN browse failed' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -122,7 +123,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const result = await svc.registerUser(publicKey, displayName, preferredLanguage);
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Registration failed' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -136,8 +137,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       console.log('[app-gateway] register-simple success');
       res.json(result);
     } catch (err) {
-      console.error('[app-gateway] register-simple error:', err instanceof Error ? err.message : 'unknown');
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Registration failed' });
+      console.error('[app-gateway] register-simple error:', safeError(err));
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -287,7 +288,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const updated = await svc.getUserProfile(req.appUser!.id);
       res.json(updated);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to update profile' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -373,7 +374,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
     } catch (err) {
       console.error('[app-gateway] query-sync error:', err);
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Query failed' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -417,7 +418,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         res.write(`data: ${JSON.stringify({ type: 'error', error: 'Query processing failed' })}\n\n`);
         res.end();
       } else {
-        res.status(500).json({ error: err instanceof Error ? err.message : 'Query failed' });
+        res.status(500).json({ error: safeError(err) });
       }
     }
   });
@@ -439,7 +440,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const cfg = await getRelayEndpoints(db);
       res.json(cfg);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to read relay list' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -454,7 +455,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const cfg = await getRelayEndpoints(db);
       res.json(cfg);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to set relay list' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -590,7 +591,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       await svc.updateConnectedUser(String(req.params.userId), String(req.params.orgId), req.body);
       res.json({ success: true });
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to update user' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -680,7 +681,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       if (!pkg) return res.status(404).json({ error: 'Enrollment token expired or already used' });
       res.json(pkg);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to fetch enrollment' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -697,7 +698,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       if (!pkg) return res.status(404).json({ error: 'Enrollment token expired or already used' });
       res.json(pkg);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to fetch enrollment' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -726,7 +727,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Enrollment failed' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -737,7 +738,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const devices = await enrollment.listDevices(userId);
       res.json({ devices });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to list devices' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -748,7 +749,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       await enrollment.revokeDevice(userId, String(req.params.id));
       res.json({ revoked: true });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to revoke device' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -774,7 +775,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         vapid_public_key: process.env.VAPID_PUBLIC_KEY || null,
       });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load instance info' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -815,7 +816,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
       res.json(pkg);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to start enrollment' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -850,7 +851,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to register push token' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -870,7 +871,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       await push.unregisterToken(String(b.device_id), platform, String(req.params.token));
       res.json({ unregistered: true });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to unregister' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -885,7 +886,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const list = await checkpoints.listPending(req.appUser!.id, { orgId, limit });
       res.json({ checkpoints: list });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load checkpoints' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -895,7 +896,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       if (!c) return res.status(404).json({ error: 'Checkpoint not found' });
       res.json({ checkpoint: c });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to load checkpoint' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -920,7 +921,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
             signature: env.signature,
           });
         } catch (e) {
-          return res.status(401).json({ error: e instanceof Error ? e.message : 'Envelope verification failed' });
+          return res.status(401).json({ error: safeError(e) });
         }
         try { b = JSON.parse(env.payload); }
         catch { return res.status(400).json({ error: 'Envelope payload not JSON' }); }
@@ -937,7 +938,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         });
       res.json({ checkpoint: result });
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to respond' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -966,7 +967,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
       res.json({ checkpoint: result });
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to create checkpoint' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -1408,7 +1409,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
       res.json({ provider: row });
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to connect provider' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -1418,7 +1419,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       await mail.disconnectProvider(req.appUser!.id, String(req.params.orgId), String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to disconnect provider' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -1428,7 +1429,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const result = await mail.syncProvider(req.appUser!.id, String(req.params.orgId), String(req.params.id));
       res.status(result.ok ? 200 : 503).json(result);
     } catch (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to sync provider' });
+      res.status(400).json({ error: safeError(err) });
     }
   });
 
@@ -1520,7 +1521,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         temperature: 0.3,
         thinkingLevel: 'think',
       }).catch((err) => {
-        throw new Error(`LLM call failed: ${err instanceof Error ? err.message : 'unknown'}`);
+        throw new Error(`LLM call failed: ${safeError(err)}`);
       });
 
       // 4. Parse the JSON. Tolerate stray code fences / leading prose.
@@ -1552,7 +1553,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       });
     } catch (err) {
       console.error('[app-gateway] pathfinder error:', err);
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Pathfinder query failed' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

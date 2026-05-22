@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -117,7 +118,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
       const updated = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id) as Record<string, unknown>;
       res.json({ ...updated, recursive: Boolean(updated.recursive), file_filter: updated.file_filter ? JSON.parse(updated.file_filter as string) : null, chunks: result.chunks });
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Indexing failed';
+      const msg = safeError(error);
       res.status(500).json({ error: msg });
     }
   });

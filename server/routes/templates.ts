@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { safeError } from '../lib/error-response.js';
 
 const TEMPLATES_DIR = path.join(process.cwd(), 'uploads', 'templates');
 fs.ensureDirSync(TEMPLATES_DIR);
@@ -27,7 +28,7 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
       const templates = await db.all('SELECT * FROM brand_templates ORDER BY created_at DESC');
       res.json(templates);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch templates';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });
@@ -61,7 +62,7 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
     } catch (err) {
       // Clean up saved file if DB insert fails
       if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
-      const message = err instanceof Error ? err.message : 'Failed to save template';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });
@@ -85,7 +86,7 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
       await db.run('DELETE FROM brand_templates WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete template';
+      const message = safeError(err);
       res.status(500).json({ error: message });
     }
   });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { parseCommand, executeCommand } from '../services/command-parser.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createCommandRoutes(db: DatabaseAdapter, anthropic: Anthropic | undefined) {
   const router = Router();
@@ -21,7 +22,7 @@ export async function createCommandRoutes(db: DatabaseAdapter, anthropic: Anthro
       res.json(parsed);
     } catch (error: any) {
       console.error('[commands] Parse error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -45,7 +46,7 @@ export async function createCommandRoutes(db: DatabaseAdapter, anthropic: Anthro
       res.json({ parsed, result });
     } catch (error: any) {
       console.error('[commands] Execute error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

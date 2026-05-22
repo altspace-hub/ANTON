@@ -5,6 +5,7 @@ import { createMarketPredictionAttributionService } from '../services/market-pre
 import { createMarketThesisLifecycleService } from '../services/market-thesis-lifecycle-service.js';
 import { createMarketInvestigationLifecycleService } from '../services/market-investigation-lifecycle-service.js';
 import { createMarketDataBacklogTriageService } from '../services/market-data-backlog-triage-service.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createMarketLearningRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -225,7 +226,7 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
       res.json(result);
     } catch (err) {
       console.error('[market-learning] Auto-verify error:', err instanceof Error ? err.message : err, err instanceof Error ? err.stack : '');
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Verification failed' });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

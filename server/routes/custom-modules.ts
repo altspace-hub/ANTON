@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { safeError } from '../lib/error-response.js';
 
 const GUIDE_SYSTEM_PROMPT = `You are a friendly AI module designer helping users create custom Claude modules tailored to their specific tasks.
 
@@ -236,7 +237,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       });
       res.json({ response: result.text });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'AI request failed';
+      const msg = safeError(err);
       res.status(500).json({ error: msg });
     }
   });
@@ -273,7 +274,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       const moduleConfig = JSON.parse(cleaned);
       res.json({ moduleConfig });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Generation failed';
+      const msg = safeError(err);
       res.status(500).json({ error: msg });
     }
   });
@@ -321,7 +322,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         model: resolvedModel,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Test run failed';
+      const msg = safeError(err);
       res.status(500).json({ error: msg });
     }
   });
