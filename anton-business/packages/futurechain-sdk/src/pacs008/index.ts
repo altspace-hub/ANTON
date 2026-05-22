@@ -255,6 +255,21 @@ export function verifyTransactionSignature(
 // PACS.008 message builder
 // ───────────────────────────────────────────────────────────────────────
 
+/** ISO 20022 structured postal address (`PstlAdr`). Every field is
+ *  optional and emitted only when present. Set it on the debtor for
+ *  a Travel-Rule transfer (>= EUR 1000); omit it sub-threshold per
+ *  GDPR data-minimisation. */
+export interface Pacs008PostalAddress {
+  /** Street name (`StrtNm`). */
+  streetName?: string;
+  /** Post code (`PstCd`). */
+  postCode?: string;
+  /** Town / city name (`TwnNm`). */
+  townName?: string;
+  /** ISO 3166 alpha-2 country (`Ctry`). */
+  country?: string;
+}
+
 /** Party information for the debtor/creditor on a PACS.008. */
 export interface Pacs008Party {
   name: string;
@@ -262,6 +277,9 @@ export interface Pacs008Party {
   countryOfResidence?: string;
   /** Wallet address — `fc_...`. */
   accountId: string;
+  /** Structured postal address (`PstlAdr`). Emitted into the signed
+   *  message only when present — set it for Travel-Rule transfers. */
+  postalAddress?: Pacs008PostalAddress;
 }
 
 /** Builder input — the high-level intent the SDK consumer wants to send. */
@@ -289,6 +307,10 @@ export interface Pacs008BuildInput {
   /** BIC for both agents (the same chain operator runs both legs of a
    *  same-chain payment). Defaults to TESTSE33XXX. */
   bic?: string;
+  /** ISO 20022 external purpose code (`Purp.Cd`) — e.g. GDDS, SCVE,
+   *  OTHR. Defaults to 'SUPP'. FutureChain's validator requires a
+   *  purpose for a debtor resident in a high-risk country. */
+  purpose?: string;
 }
 
 /** The wire-shape Pacs008Message — matches what the regression suite +
@@ -296,7 +318,7 @@ export interface Pacs008BuildInput {
 export type Pacs008Message = Record<string, unknown>;
 
 const DEFAULT_BIC = 'TESTSE33XXX';
-const DEFAULT_BANK_NAME = 'Test Bank SE';
+const DEFAULT_BANK_NAME = 'FutureChain AB';
 
 /** Builder for a PACS.008.001.13 wire message. Chainable convenience
  *  wrapper around `buildPacs008` — useful when constructing a tx from
@@ -310,6 +332,7 @@ export class Pacs008Builder {
   uetr(v: string): this { this.partial.uetr = v; return this; }
   remittance(v: string): this { this.partial.remittanceText = v; return this; }
   bic(v: string): this { this.partial.bic = v; return this; }
+  purpose(v: string): this { this.partial.purpose = v; return this; }
 
   build(): Pacs008Message {
     if (!this.partial.debtor) throw new Error('Pacs008Builder.build(): debtor required');
@@ -319,6 +342,26 @@ export class Pacs008Builder {
     }
     return buildPacs008(this.partial as Pacs008BuildInput);
   }
+}
+
+/** Render a Pacs008Party into the ISO debtor/creditor shape — `Nm` +
+ *  `CtryOfRes`, plus a structured `PstlAdr` when the party carries a
+ *  postal address. */
+function isoParty(p: Pacs008Party): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    Nm: p.name,
+    CtryOfRes: p.countryOfResidence ?? 'SE',
+  };
+  const a = p.postalAddress;
+  if (a && (a.streetName || a.postCode || a.townName || a.country)) {
+    const pstlAdr: Record<string, unknown> = {};
+    if (a.streetName) pstlAdr.StrtNm = a.streetName;
+    if (a.postCode) pstlAdr.PstCd = a.postCode;
+    if (a.townName) pstlAdr.TwnNm = a.townName;
+    if (a.country) pstlAdr.Ctry = a.country;
+    out.PstlAdr = pstlAdr;
+  }
+  return out;
 }
 
 /** Build a Pacs008Message from a `Pacs008BuildInput`. Pure function —
@@ -348,13 +391,13 @@ export function buildPacs008(input: Pacs008BuildInput): Pacs008Message {
           PmtId: { InstrId: instrId, EndToEndId: e2eId, TxId: txId, UETR: uetr },
           IntrBkSttlmAmt: { '@Ccy': 'FTC', $value: input.amountFtc },
           ChrgBr: 'SLEV',
-          Dbtr: { Nm: input.debtor.name, CtryOfRes: input.debtor.countryOfResidence ?? 'SE' },
+          Dbtr: isoParty(input.debtor),
           DbtrAcct: { Id: { Othr: { Id: input.debtor.accountId } } },
           DbtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
           CdtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
-          Cdtr: { Nm: input.creditor.name, CtryOfRes: input.creditor.countryOfResidence ?? 'SE' },
+          Cdtr: isoParty(input.creditor),
           CdtrAcct: { Id: { Othr: { Id: input.creditor.accountId } } },
-          Purp: { Cd: 'SUPP' },
+          Purp: { Cd: input.purpose ?? 'SUPP' },
           // Wave 10 — structured remittance wins over the legacy
           // single-line shorthand. When neither is set, RmtInf is
           // omitted entirely (older payers / chains were never relying
