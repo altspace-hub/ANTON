@@ -54,7 +54,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { fetchSessions, fetchProfile, fetchSessionStats, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import type { Session } from '@/lib/types';
 import AreaDashboard from './AreaDashboard';
-import { loadHiddenNavItems, ALL_NAV_ITEMS } from './NavItemConfig';
+import { loadHiddenNavItems, ALL_NAV_ITEMS, DEFAULT_FAVORITE_NAV_ITEMS } from './NavItemConfig';
 import NavLinkWithStar from './NavLinkWithStar';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -402,9 +402,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [favoriteNavItems, setFavoriteNavItems] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem('openexpert-favorite-nav-items');
-      return new Set(raw ? JSON.parse(raw) : []);
+      // First run (key absent) — seed the standard favorites. Once the
+      // user toggles anything the key is written, so unstarring sticks.
+      if (raw === null) return new Set(DEFAULT_FAVORITE_NAV_ITEMS);
+      return new Set(JSON.parse(raw) as string[]);
     } catch {
-      return new Set();
+      return new Set(DEFAULT_FAVORITE_NAV_ITEMS);
     }
   });
   const [hiddenNavItems] = useState<Set<string>>(loadHiddenNavItems);

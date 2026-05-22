@@ -159,6 +159,32 @@ export function applyRolePreset(role: string): void {
   saveHiddenNavItems(new Set(hidden));
 }
 
+/**
+ * Favorites starred for every user from the very first launch. The user
+ * can unstar any of them — once they toggle anything, the localStorage
+ * key `openexpert-favorite-nav-items` is written and this default no
+ * longer applies. Order here is the order they were chosen, not display
+ * order (the Favorites section renders by its own item order).
+ */
+export const DEFAULT_FAVORITE_NAV_ITEMS: string[] = [
+  'home',
+  'engagements',
+  'discover',
+  'prompt',
+  'council',
+  'task-agent',
+  'coding',
+  'my-work',
+  'projects',
+  'build-module',
+  'exchange',
+  'knowledge-base',
+  'orchestration',
+  'intelligence',
+  'radar',
+  'app-gateway',
+];
+
 export function loadHiddenNavItems(): Set<string> {
   try {
     const raw = localStorage.getItem(NAV_ITEMS_HIDDEN_KEY);
