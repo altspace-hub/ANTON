@@ -191,6 +191,14 @@
     "tapToPick": "Нажмите, чтобы выбрать",
     "title": "Как вы продаёте?"
   },
+  "nav": {
+    "home": "Главная",
+    "inventory": "Склад",
+    "receipts": "Kvittos",
+    "sell": "Продажа",
+    "settings": "Настройки",
+    "statistics": "Статистика"
+  },
   "pin": {
     "change": "Изменить PIN",
     "choose": "Выберите PIN (4–6 цифр)",

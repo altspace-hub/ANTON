@@ -191,6 +191,14 @@
     "tapToPick": "Atinge pentru a alege",
     "title": "Cum vinzi?"
   },
+  "nav": {
+    "home": "Acasă",
+    "inventory": "Inventar",
+    "receipts": "Kvittos",
+    "sell": "Vânzare",
+    "settings": "Setări",
+    "statistics": "Statistici"
+  },
   "pin": {
     "change": "Schimbă PIN",
     "choose": "Alege un PIN (4–6 cifre)",

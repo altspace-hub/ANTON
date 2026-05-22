@@ -191,6 +191,14 @@
     "tapToPick": "Торкніться, щоб вибрати",
     "title": "Як ви продаєте?"
   },
+  "nav": {
+    "home": "Головна",
+    "inventory": "Склад",
+    "receipts": "Kvittos",
+    "sell": "Продаж",
+    "settings": "Налаштування",
+    "statistics": "Статистика"
+  },
   "pin": {
     "change": "Змінити PIN",
     "choose": "Виберіть PIN (4–6 цифр)",

@@ -191,6 +191,14 @@
     "tapToPick": "点击选择",
     "title": "您如何销售？"
   },
+  "nav": {
+    "home": "主页",
+    "inventory": "库存",
+    "receipts": "收据",
+    "sell": "销售",
+    "settings": "设置",
+    "statistics": "统计"
+  },
   "pin": {
     "change": "修改 PIN",
     "choose": "设置 PIN（4〜6 位数字）",

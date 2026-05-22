@@ -191,6 +191,14 @@
     "tapToPick": "הקש לבחירה",
     "title": "איך אתה מוכר?"
   },
+  "nav": {
+    "home": "בית",
+    "inventory": "מלאי",
+    "receipts": "קבלות",
+    "sell": "מכירה",
+    "settings": "הגדרות",
+    "statistics": "סטטיסטיקות"
+  },
   "pin": {
     "change": "שנה PIN",
     "choose": "בחר PIN (4–6 ספרות)",

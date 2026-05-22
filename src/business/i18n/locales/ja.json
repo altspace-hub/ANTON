@@ -191,6 +191,14 @@
     "tapToPick": "タップして選択",
     "title": "どのように販売しますか？"
   },
+  "nav": {
+    "home": "ホーム",
+    "inventory": "在庫",
+    "receipts": "レシート",
+    "sell": "販売",
+    "settings": "設定",
+    "statistics": "統計"
+  },
   "pin": {
     "change": "PIN を変更",
     "choose": "PIN を選択（4〜6桁）",

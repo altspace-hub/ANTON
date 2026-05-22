@@ -37,9 +37,11 @@ import ReceiptsHistoryScreen from './pages/ReceiptsHistoryScreen';
 import KvittoDetailScreen from './pages/KvittoDetailScreen';
 import StatisticsScreen from './pages/StatisticsScreen';
 import InventoryScreen from './pages/InventoryScreen';
-import { hasConfig } from './services/merchant';
+import { hasConfig, loadConfig } from './services/merchant';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyReceiptConfirmed, ensureNotificationPermission } from './services/notifications';
+import { useViewport } from './hooks/useViewport';
+import NavRail, { type NavSection } from './components/NavRail';
 import type { SaleMode } from './services/types';
 
 type Screen =
@@ -72,16 +74,22 @@ type Screen =
 
 export default function App() {
   const { t } = useTranslation();
+  const viewport = useViewport();
   const [screen, setScreen] = useState<Screen>('loading');
   const [pendingMode, setPendingMode] = useState<SaleMode>('simple');
   /** Wallet id whose detail screen is being viewed. */
   const [detailWalletId, setDetailWalletId] = useState<string>('');
   /** Kvitto number whose detail screen is being viewed. */
   const [detailKvittoNumber, setDetailKvittoNumber] = useState<number>(0);
+  /** Merchant's default sale mode — drives the nav rail's "Sell"
+   *  destination on tablet. Defaults to 'simple' until config loads. */
+  const [defaultMode, setDefaultMode] = useState<SaleMode>('simple');
 
   useEffect(() => {
     (async () => {
       setScreen((await hasConfig()) ? 'home' : 'onboarding-welcome');
+      const cfg = await loadConfig();
+      if (cfg?.defaultMode) setDefaultMode(cfg.defaultMode);
     })();
   }, []);
 
@@ -159,6 +167,11 @@ export default function App() {
   if (screen === 'onboarding-done') {
     return <DoneScreen onContinue={() => setScreen('home')} />;
   }
+  // ── Post-onboarding screens ───────────────────────────────────────
+  // Rendered into `content`, then wrapped by the adaptive shell below:
+  // a phone gets the bare full-screen stack; a tablet gets a persistent
+  // NavRail + a centred content column.
+  const content: React.ReactNode = (() => {
   if (screen === 'home') {
     return (
       <HomeScreen
@@ -287,6 +300,51 @@ export default function App() {
     );
   }
 
-  // Should never reach — all states above covered.
-  return null;
+    return null;
+  })();
+
+  // ── Adaptive shell ────────────────────────────────────────────────
+  // Phone: the bare screen, full-bleed (the legacy stack).
+  if (viewport === 'phone') return content;
+
+  // Tablet: persistent NavRail + the screen in a centred content
+  // column. The rail's active section is derived from the screen, and
+  // each rail destination is a top-level setScreen.
+  return (
+    <div className="flex flex-row" style={{ height: '100%' }}>
+      <NavRail
+        active={navSectionFor(screen)}
+        onNavigate={(section) => {
+          switch (section) {
+            case 'home':       setScreen('home'); break;
+            case 'sell':       setScreen(defaultMode === 'extended' ? 'extended' : 'simple'); break;
+            case 'receipts':   setScreen('receipts'); break;
+            case 'statistics': setScreen('statistics'); break;
+            case 'inventory':  setScreen('inventory'); break;
+            case 'settings':   setScreen('settings'); break;
+          }
+        }} />
+      <div className="flex-1 min-w-0 overflow-hidden flex justify-center"
+           style={{ backgroundColor: 'var(--color-bg)' }}>
+        {/* Centred column — caps the reading width so forms and lists
+            don't stretch across a 1280px landscape tablet, while still
+            giving the dashboards and item grids room to breathe. */}
+        <div className="w-full" style={{ maxWidth: 860, height: '100%' }}>
+          {content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Map a screen state onto the nav-rail section it belongs to, so the
+ *  rail highlights the right item even on a sub-screen (a settings
+ *  detail page still lights up "Settings"). */
+function navSectionFor(screen: Screen): NavSection {
+  if (screen === 'simple' || screen === 'extended') return 'sell';
+  if (screen === 'receipts' || screen === 'receipt-detail') return 'receipts';
+  if (screen === 'statistics') return 'statistics';
+  if (screen === 'inventory') return 'inventory';
+  if (screen.startsWith('settings') || screen.startsWith('backup')) return 'settings';
+  return 'home';
 }

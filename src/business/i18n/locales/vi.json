@@ -191,6 +191,14 @@
     "tapToPick": "Chạm để chọn",
     "title": "Bạn bán hàng như thế nào?"
   },
+  "nav": {
+    "home": "Trang chủ",
+    "inventory": "Kho hàng",
+    "receipts": "Biên lai",
+    "sell": "Bán",
+    "settings": "Cài đặt",
+    "statistics": "Thống kê"
+  },
   "pin": {
     "change": "Thay đổi PIN",
     "choose": "Chọn PIN (4–6 chữ số)",

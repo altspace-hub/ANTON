@@ -191,6 +191,14 @@
     "tapToPick": "탭하여 선택",
     "title": "어떻게 판매하시나요?"
   },
+  "nav": {
+    "home": "홈",
+    "inventory": "재고",
+    "receipts": "영수증",
+    "sell": "판매",
+    "settings": "설정",
+    "statistics": "통계"
+  },
   "pin": {
     "change": "PIN 변경",
     "choose": "PIN 선택 (4〜6자리)",

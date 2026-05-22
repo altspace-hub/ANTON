@@ -191,6 +191,14 @@
     "tapToPick": "I-tap para pumili",
     "title": "Paano ka nagbebenta?"
   },
+  "nav": {
+    "home": "Home",
+    "inventory": "Imbentaryo",
+    "receipts": "Mga resibo",
+    "sell": "Benta",
+    "settings": "Mga Setting",
+    "statistics": "Mga Istatistika"
+  },
   "pin": {
     "change": "Baguhin ang PIN",
     "choose": "Pumili ng PIN (4–6 digit)",

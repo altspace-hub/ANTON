@@ -191,6 +191,14 @@
     "tapToPick": "برای انتخاب ضربه بزنید",
     "title": "چگونه می‌فروشید؟"
   },
+  "nav": {
+    "home": "خانه",
+    "inventory": "موجودی",
+    "receipts": "رسیدها",
+    "sell": "فروش",
+    "settings": "تنظیمات",
+    "statistics": "آمار"
+  },
   "pin": {
     "change": "تغییر PIN",
     "choose": "یک PIN انتخاب کنید (۴–۶ رقم)",

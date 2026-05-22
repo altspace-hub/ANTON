@@ -191,6 +191,14 @@
     "tapToPick": "Tik om te kiezen",
     "title": "Hoe verkoop je?"
   },
+  "nav": {
+    "home": "Startscherm",
+    "inventory": "Voorraad",
+    "receipts": "Kvittos",
+    "sell": "Verkoop",
+    "settings": "Instellingen",
+    "statistics": "Statistieken"
+  },
   "pin": {
     "change": "PIN wijzigen",
     "choose": "Kies een PIN (4–6 cijfers)",

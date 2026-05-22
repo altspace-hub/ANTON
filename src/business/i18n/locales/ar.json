@@ -191,6 +191,14 @@
     "tapToPick": "اضغط للاختيار",
     "title": "كيف تبيع؟"
   },
+  "nav": {
+    "home": "الرئيسية",
+    "inventory": "المخزون",
+    "receipts": "الإيصالات",
+    "sell": "بيع",
+    "settings": "الإعدادات",
+    "statistics": "الإحصائيات"
+  },
   "pin": {
     "change": "تغيير رمز PIN",
     "choose": "اختر رمز PIN (4–6 أرقام)",

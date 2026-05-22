@@ -191,6 +191,14 @@
     "tapToPick": "Napauta valitaksesi",
     "title": "Miten myyt?"
   },
+  "nav": {
+    "home": "Koti",
+    "inventory": "Varasto",
+    "receipts": "Kvitot",
+    "sell": "Myynti",
+    "settings": "Asetukset",
+    "statistics": "Tilastot"
+  },
   "pin": {
     "change": "Vaihda PIN",
     "choose": "Valitse PIN (4–6 numeroa)",

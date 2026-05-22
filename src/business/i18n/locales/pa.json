@@ -191,6 +191,14 @@
     "tapToPick": "ਚੁਣਨ ਲਈ ਟੈਪ ਕਰੋ",
     "title": "ਤੁਸੀਂ ਕਿਵੇਂ ਵੇਚਦੇ ਹੋ?"
   },
+  "nav": {
+    "home": "ਘਰ",
+    "inventory": "ਇਨਵੈਂਟਰੀ",
+    "receipts": "ਰਸੀਦਾਂ",
+    "sell": "ਵਿਕਰੀ",
+    "settings": "ਸੈਟਿੰਗਾਂ",
+    "statistics": "ਅੰਕੜੇ"
+  },
   "pin": {
     "change": "PIN ਬਦਲੋ",
     "choose": "ਇੱਕ PIN ਚੁਣੋ (4–6 ਅੰਕ)",

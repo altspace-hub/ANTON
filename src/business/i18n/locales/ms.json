@@ -191,6 +191,14 @@
     "tapToPick": "Ketik untuk pilih",
     "title": "Bagaimana anda menjual?"
   },
+  "nav": {
+    "home": "Utama",
+    "inventory": "Inventori",
+    "receipts": "Resit",
+    "sell": "Jual",
+    "settings": "Tetapan",
+    "statistics": "Statistik"
+  },
   "pin": {
     "change": "Tukar PIN",
     "choose": "Pilih PIN (4–6 digit)",

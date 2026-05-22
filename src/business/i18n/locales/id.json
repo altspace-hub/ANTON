@@ -191,6 +191,14 @@
     "tapToPick": "Ketuk untuk memilih",
     "title": "Bagaimana Anda menjual?"
   },
+  "nav": {
+    "home": "Beranda",
+    "inventory": "Inventaris",
+    "receipts": "Tanda terima",
+    "sell": "Jual",
+    "settings": "Pengaturan",
+    "statistics": "Statistik"
+  },
   "pin": {
     "change": "Ubah PIN",
     "choose": "Pilih PIN (4–6 digit)",

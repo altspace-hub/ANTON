@@ -191,6 +191,14 @@
     "tapToPick": "चुनने के लिए टैप करें",
     "title": "आप कैसे बेचते हैं?"
   },
+  "nav": {
+    "home": "होम",
+    "inventory": "इन्वेंटरी",
+    "receipts": "रसीदें",
+    "sell": "बिक्री",
+    "settings": "सेटिंग्स",
+    "statistics": "आँकड़े"
+  },
   "pin": {
     "change": "PIN बदलें",
     "choose": "एक PIN चुनें (4–6 अंक)",

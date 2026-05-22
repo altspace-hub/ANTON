@@ -191,6 +191,14 @@
     "tapToPick": "Koppintson a választáshoz",
     "title": "Hogyan értékesít?"
   },
+  "nav": {
+    "home": "Főoldal",
+    "inventory": "Készlet",
+    "receipts": "Kvittos",
+    "sell": "Eladás",
+    "settings": "Beállítások",
+    "statistics": "Statisztikák"
+  },
   "pin": {
     "change": "PIN módosítása",
     "choose": "Adjon meg egy PIN-kódot (4–6 jegy)",

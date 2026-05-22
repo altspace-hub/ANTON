@@ -191,6 +191,14 @@
     "tapToPick": "Trykk for å velge",
     "title": "Hvordan selger du?"
   },
+  "nav": {
+    "home": "Hjem",
+    "inventory": "Lagerbeholdning",
+    "receipts": "Kvittos",
+    "sell": "Salg",
+    "settings": "Innstillinger",
+    "statistics": "Statistikk"
+  },
   "pin": {
     "change": "Endre PIN",
     "choose": "Velg en PIN (4–6 sifre)",

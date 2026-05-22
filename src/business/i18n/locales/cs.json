@@ -191,6 +191,14 @@
     "tapToPick": "Klepnutím vyberte",
     "title": "Jak prodáváte?"
   },
+  "nav": {
+    "home": "Domů",
+    "inventory": "Sklad",
+    "receipts": "Kvittos",
+    "sell": "Prodej",
+    "settings": "Nastavení",
+    "statistics": "Statistiky"
+  },
   "pin": {
     "change": "Změnit PIN",
     "choose": "Zvolte PIN (4–6 číslic)",

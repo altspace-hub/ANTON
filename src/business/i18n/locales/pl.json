@@ -191,6 +191,14 @@
     "tapToPick": "Dotknij, aby wybrać",
     "title": "Jak sprzedajesz?"
   },
+  "nav": {
+    "home": "Główna",
+    "inventory": "Magazyn",
+    "receipts": "Kvittos",
+    "sell": "Sprzedaż",
+    "settings": "Ustawienia",
+    "statistics": "Statystyki"
+  },
   "pin": {
     "change": "Zmień PIN",
     "choose": "Wybierz PIN (4–6 cyfr)",

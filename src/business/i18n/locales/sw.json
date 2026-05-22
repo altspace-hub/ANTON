@@ -191,6 +191,14 @@
     "tapToPick": "Gusa kuchagua",
     "title": "Unauzaje?"
   },
+  "nav": {
+    "home": "Nyumbani",
+    "inventory": "Hifadhi",
+    "receipts": "Risiti",
+    "sell": "Uza",
+    "settings": "Mipangilio",
+    "statistics": "Takwimu"
+  },
   "pin": {
     "change": "Badilisha PIN",
     "choose": "Chagua PIN (tarakimu 4–6)",

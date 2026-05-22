@@ -191,6 +191,14 @@
     "tapToPick": "Πατήστε για επιλογή",
     "title": "Πώς πουλάτε;"
   },
+  "nav": {
+    "home": "Αρχική",
+    "inventory": "Απόθεμα",
+    "receipts": "Kvittos",
+    "sell": "Πώληση",
+    "settings": "Ρυθμίσεις",
+    "statistics": "Στατιστικά"
+  },
   "pin": {
     "change": "Αλλαγή PIN",
     "choose": "Επιλέξτε PIN (4–6 ψηφία)",

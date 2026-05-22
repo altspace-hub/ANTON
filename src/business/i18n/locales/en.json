@@ -191,6 +191,14 @@
     "tapToPick": "Tap to pick",
     "title": "How do you sell?"
   },
+  "nav": {
+    "home": "Home",
+    "inventory": "Inventory",
+    "receipts": "Receipts",
+    "sell": "Sell",
+    "settings": "Settings",
+    "statistics": "Statistics"
+  },
   "pin": {
     "change": "Change PIN",
     "choose": "Choose a PIN (4–6 digits)",

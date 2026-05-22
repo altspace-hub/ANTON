@@ -191,6 +191,14 @@
     "tapToPick": "Tryck för att välja",
     "title": "Hur säljer du?"
   },
+  "nav": {
+    "home": "Start",
+    "inventory": "Lager",
+    "receipts": "Kvitton",
+    "sell": "Försäljning",
+    "settings": "Inställningar",
+    "statistics": "Statistik"
+  },
   "pin": {
     "change": "Ändra PIN",
     "choose": "Välj en PIN (4–6 siffror)",

@@ -191,6 +191,14 @@
     "tapToPick": "Seçmek için dokunun",
     "title": "Nasıl satış yapıyorsunuz?"
   },
+  "nav": {
+    "home": "Ana Sayfa",
+    "inventory": "Envanter",
+    "receipts": "Makbuzlar",
+    "sell": "Satış",
+    "settings": "Ayarlar",
+    "statistics": "İstatistikler"
+  },
   "pin": {
     "change": "PIN değiştir",
     "choose": "Bir PIN seçin (4–6 basamak)",
