@@ -102,22 +102,36 @@ export async function getOrCreateInstallId(): Promise<string> {
   return fresh;
 }
 
-/** Tell the Bahnhof node about a newly-created local wallet — the
- *  install ↔ fc_ address mapping only, never the private key.
+/** Wire shape for POST /register_address — a signed registration.
  *
- *  The endpoint is idempotent on (install_id, fc_address) so safe to
- *  retry. Throws on network / auth failure; the caller decides
- *  whether to swallow (createWallet, fire-and-forget) or surface
- *  (a manual re-sync from settings).
+ *  The client signs the canonical message
+ *  `"register-address|<install_id>|<fc_address>|<timestamp>"` with
+ *  the wallet's Ed25519 private key on-device, and sends the public
+ *  key + signature here. The sidecar verifies the public key
+ *  derives to the claimed fc_ address AND that the signature is
+ *  valid — proving the caller HOLDS the private key, not merely
+ *  claims to own the address. The private key itself NEVER crosses
+ *  the wire. */
+export interface RegisterAddressPayload {
+  fc_address: string;
+  /** 64-char lowercase hex of the 32-byte Ed25519 public key. */
+  public_key: string;
+  /** 128-char lowercase hex of the 64-byte Ed25519 signature. */
+  signature: string;
+  /** Epoch seconds when the signature was produced — must be within
+   *  the server's freshness window (5 min) to defeat replay. */
+  timestamp: number;
+  label?: string;
+}
+
+/** POST /register_address with a signed proof-of-control payload.
  *
- *  POST {endpoint}/register_address
- *    headers: { Content-Type: application/json, X-API-Key: <install token> }
- *    body:    { fc_address: "fc_…", label?: "Daily" }
- */
+ *  Idempotent on the server (keyed on install_id × fc_address);
+ *  throws on transport / auth / verification failure (the caller
+ *  decides whether to swallow or surface). */
 export async function registerAddress(
   endpoint: string,
-  fcAddress: string,
-  label?: string,
+  payload: RegisterAddressPayload,
 ): Promise<void> {
   const token = await getInstallToken(endpoint);
   const res = await fetch(`${endpoint.replace(/\/$/, '')}/register_address`, {
@@ -126,10 +140,7 @@ export async function registerAddress(
       'Content-Type': 'application/json',
       'X-API-Key': token,
     },
-    body: JSON.stringify({
-      fc_address: fcAddress,
-      ...(label ? { label } : {}),
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => '');

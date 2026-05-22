@@ -25,7 +25,10 @@ import {
 import type { FraudAssessment } from './fraud-engine';
 import { getRpc } from './fc-rpc';
 import { getDisplayQuote } from './fx';
-import { travelRuleTierFor } from './travel-rule';
+import {
+  fullDisclosureReady, missingFields, travelRuleTierFor,
+  type IdentityFieldStatus,
+} from './travel-rule';
 
 /** 1 FTC = 1_000_000 micro-FTC. */
 const MICRO_FTC_PER_FTC = 1_000_000;
@@ -309,6 +312,25 @@ export async function executePayment(
   // and the on-record draft agree.
   const eurQuote = await getDisplayQuote('EUR');
   const tier = travelRuleTierFor(decoded.amountMicroFtc, eurQuote);
+  // Backstop for the ReviewScreen gate: when the Travel Rule applies
+  // (full / no-rate-conservative tier), the payer identity MUST be
+  // complete — otherwise executePayment called via a deeplink or
+  // programmatic path would silently ship a partial PstlAdr.
+  if (tier !== 'minimal') {
+    const fields: IdentityFieldStatus = {
+      hasName: !!identity.name.trim(),
+      hasCountry: !!identity.country.trim(),
+      hasStreet: !!identity.street.trim(),
+      hasCity: !!identity.city.trim(),
+      hasPostcode: !!identity.postcode.trim(),
+    };
+    if (!fullDisclosureReady(fields)) {
+      throw new Error(
+        `Travel Rule applies — complete your address ` +
+        `(${missingFields(fields).join(', ')}) in Settings before sending.`,
+      );
+    }
+  }
   const draft = assembleDraft(identity, wallet.address, decoded, tier);
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   const amountFtc = microFtcToFtc(decoded.amountMicroFtc);

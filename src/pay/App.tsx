@@ -9,6 +9,7 @@
  * onboarding.
  */
 import { useEffect, useRef, useState } from 'react';
+import { syncRegisteredAddresses } from './services/wallets';
 import { useTranslation } from 'react-i18next';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
 import BackupShowScreen from './pages/onboarding/BackupShowScreen';
@@ -122,6 +123,16 @@ export default function App() {
     (async () => {
       setScreen((await hasProfile()) ? 'home' : 'onboarding-welcome');
     })();
+  }, []);
+
+  // Best-effort retry of any wallet registrations that didn't go
+  // through earlier (e.g. Bahnhof unreachable at create-time). The
+  // server endpoint is idempotent on (install_id × fc_address);
+  // syncRegisteredAddresses skips wallets that already have
+  // `registeredAt` set, so this is a cheap no-op when everything is
+  // in sync.
+  useEffect(() => {
+    void syncRegisteredAddresses();
   }, []);
 
   /**

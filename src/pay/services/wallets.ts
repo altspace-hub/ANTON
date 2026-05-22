@@ -38,7 +38,9 @@ import {
   signWithAlias, wrapPriv,
 } from './secure-signer';
 import { getEndpoint } from './fc-rpc';
-import { registerAddress } from './enrollment';
+import {
+  getOrCreateInstallId, registerAddress, type RegisterAddressPayload,
+} from './enrollment';
 
 // ── Secure-store key layout ─────────────────────────────────────────
 const IDS_KEY     = 'fc.wallet.ids';
@@ -299,15 +301,21 @@ export async function importWalletFromMnemonic(
   return meta;
 }
 
-/** Register every locally-known wallet address with the Bahnhof node
- *  — the install ↔ fc_ address mapping in the sidecar; the private
- *  key is never sent. Idempotent on the server side (keyed on
- *  install_id × fc_address); locally each wallet records
- *  `registeredAt` once it succeeds so subsequent calls only retry
- *  the ones that haven't gone through yet. Best-effort — a transport
- *  failure here is logged but never thrown, so wallet creation never
- *  fails because the node is briefly unreachable. */
-async function syncRegisteredAddresses(): Promise<void> {
+/** Register every locally-known wallet address with the Bahnhof
+ *  node — the install ↔ fc_ address mapping in the sidecar. The
+ *  private key is never sent. For each still-unregistered wallet:
+ *    1. Load the private key from secure-store.
+ *    2. Sign `"register-address|<install_id>|<fc_address>|<ts>"`
+ *       with the wallet's Ed25519 key on-device (proves we hold the
+ *       key — only the SIGNATURE crosses the wire, not the key).
+ *    3. POST the address + public key + signature + timestamp.
+ *  Idempotent on the server (install_id × fc_address); locally each
+ *  wallet records `registeredAt` once it succeeds so subsequent
+ *  calls only retry the ones still un-registered. Best-effort — a
+ *  transport / verification failure is logged but never thrown, so
+ *  wallet creation never fails because the node is briefly
+ *  unreachable. Exported so App.tsx can retry on launch. */
+export async function syncRegisteredAddresses(): Promise<void> {
   let endpoint: string;
   try {
     endpoint = await getEndpoint();
@@ -316,19 +324,48 @@ async function syncRegisteredAddresses(): Promise<void> {
     console.warn(`syncRegisteredAddresses: no RPC endpoint (${String(err)})`);
     return;
   }
+  const installId = await getOrCreateInstallId();
   const list = await readRegistry();
   let dirty = false;
   for (const meta of list) {
     if (meta.registeredAt) continue;
     try {
-      await registerAddress(endpoint, meta.address, meta.label);
+      const privHex = await getSecure(privKey(meta.id));
+      if (!privHex) {
+        // The priv has been migrated into the native signer and erased
+        // from secure-store. Today we can't produce the registration
+        // signature from JS for that wallet; note + skip. (Wallets
+        // created post-this-change register at create-time, before
+        // any sign + migrate, so the common path is unaffected.)
+        // eslint-disable-next-line no-console
+        console.warn(
+          `syncRegisteredAddresses: ${meta.address} priv unreachable ` +
+          `from JS (native signer); registration deferred.`,
+        );
+        continue;
+      }
+      const priv = hexToBytes(privHex);
+      const pub = ed25519.getPublicKey(priv);
+      const timestamp = Math.floor(Date.now() / 1000);
+      const message = new TextEncoder().encode(
+        `register-address|${installId}|${meta.address}|${timestamp}`,
+      );
+      const signature = ed25519.sign(message, priv);
+      const payload: RegisterAddressPayload = {
+        fc_address: meta.address,
+        public_key: bytesToHex(pub),
+        signature: bytesToHex(signature),
+        timestamp,
+        label: meta.label ? meta.label.slice(0, 64) : undefined,
+      };
+      await registerAddress(endpoint, payload);
       meta.registeredAt = Date.now();
       dirty = true;
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn(
         `syncRegisteredAddresses: failed for ${meta.address} ` +
-        `(${String(err)}); will retry on the next launch / create.`,
+        `(${String(err)}); will retry on next launch / create.`,
       );
     }
   }
