@@ -1,0 +1,101 @@
+{
+  "id": "us-nydfs-part-200",
+  "name": "23 NYCRR Part 200 — Virtual Currency Business Activity (BitLicense)",
+  "shortName": "NYDFS Part 200 (BitLicense)",
+  "reference": "23 NYCRR Part 200",
+  "url": "https://www.dfs.ny.gov/virtual_currency_businesses",
+  "inForce": "2015-08-08",
+  "supervisor": "NYDFS",
+  "articleCount": 9,
+  "chapters": [
+    {"number": "1", "title": "§200.2 Definitions", "articles": "§200.2"},
+    {"number": "2", "title": "§200.3 License requirement", "articles": "§200.3"},
+    {"number": "3", "title": "§200.4-§200.10 Licensing process + capital", "articles": "§200.4-§200.10"},
+    {"number": "4", "title": "§200.15 Cybersecurity (cross-ref Part 500)", "articles": "§200.15"},
+    {"number": "5", "title": "§200.16 AML program", "articles": "§200.16"},
+    {"number": "6", "title": "§200.18-§200.19 Books + records + reports", "articles": "§200.18-§200.19"},
+    {"number": "7", "title": "Coin-listing + custody guidance", "articles": "DFS guidance"}
+  ],
+  "themes": [
+    "License requirement",
+    "Licensing process",
+    "Capital + custody",
+    "Cybersecurity",
+    "AML program",
+    "Reporting + disclosure"
+  ],
+  "articles": [
+    {
+      "id": "§200.2",
+      "title": "Definitions — Virtual Currency + Virtual Currency Business Activity",
+      "chapter": "1",
+      "section": "§200.2",
+      "theme": "License requirement",
+      "requirement": "Virtual Currency = any type of digital unit used as a medium of exchange / form of digitally stored value. Excludes online gaming platforms (with carve-outs) + customer affinity / rewards programs. Virtual Currency Business Activity = (1) receiving Virtual Currency for transmission, or transmitting Virtual Currency; (2) storing, holding or maintaining custody / control of Virtual Currency on behalf of others; (3) buying + selling Virtual Currency as a customer business; (4) performing exchange services; (5) controlling, administering or issuing a Virtual Currency."
+    },
+    {
+      "id": "§200.3",
+      "title": "License requirement",
+      "chapter": "2",
+      "section": "§200.3",
+      "theme": "License requirement",
+      "requirement": "No person shall, without a license obtained from the Superintendent, engage in any Virtual Currency Business Activity. Limited exemptions: persons chartered under NY Banking Law authorised to engage in Virtual Currency Business Activity (subject to NYDFS approval); merchants + consumers using Virtual Currency for purchase / sale of goods + services or for investment purposes."
+    },
+    {
+      "id": "§200.4",
+      "title": "Application + licensing",
+      "chapter": "3",
+      "section": "§200.4",
+      "theme": "Licensing process",
+      "requirement": "Application contains: information on principals + officers + directors; biographical + background reports + fingerprints; written business plan; capital plan; AML + Part 500 cybersecurity programs; consumer-protection + complaint procedures; financial statements. Application fee + investigation fee. Approval may include conditions + restrictions."
+    },
+    {
+      "id": "§200.8",
+      "title": "Capital + custody requirements",
+      "chapter": "3",
+      "section": "§200.8",
+      "theme": "Capital + custody",
+      "requirement": "Licensee maintains capital determined by NYDFS based on size + nature + scope + types of products + customers, plus the financial soundness + viability of the licensee. Custody: hold Virtual Currency of the same type + amount as that owed or obligated to a third party; not encumber the assets of any person who is not the licensee; comply with custodial-asset segregation. Coin-listing guidance + green/red-list framework apply."
+    },
+    {
+      "id": "§200.15",
+      "title": "Cybersecurity program — cross-reference Part 500",
+      "chapter": "4",
+      "section": "§200.15",
+      "theme": "Cybersecurity",
+      "requirement": "Licensee maintains a cybersecurity program designed to protect against threats to + meet the regulatory expectations of NYDFS. Operates in concert with 23 NYCRR Part 500 (BitLicense holders are Covered Entities). Cybersecurity program designed to identify, protect against, detect, respond to + recover from cybersecurity events; chief information security officer-equivalent function; written incident-response + business-continuity + disaster-recovery procedures; encryption; access controls; vendor management."
+    },
+    {
+      "id": "§200.16",
+      "title": "AML program",
+      "chapter": "5",
+      "section": "§200.16",
+      "theme": "AML program",
+      "requirement": "Licensee maintains an AML program based on Risk Assessment of the licensee's activities + customers + countries + counterparties. Required elements: CDD + EDD on customers (heightened for non-account-holders + occasional transactions ≥ $3,000); SAR filing to FinCEN; sanctions screening (OFAC); record retention; designated compliance officer; training; independent testing. Aligns with federal FinCEN MSB obligations."
+    },
+    {
+      "id": "§200.18",
+      "title": "Books + records",
+      "chapter": "6",
+      "section": "§200.18",
+      "theme": "Reporting + disclosure",
+      "requirement": "Maintain books + records for at least 7 years from creation: each transaction; each customer; each compliance decision; each cybersecurity + AML event; daily-cumulative reports. Records accessible for NYDFS examination + auditor review."
+    },
+    {
+      "id": "§200.19",
+      "title": "Reports + financial disclosures",
+      "chapter": "6",
+      "section": "§200.19",
+      "theme": "Reporting + disclosure",
+      "requirement": "Annual audited financial statements + quarterly + supplementary reports to NYDFS. Material adverse change reports promptly. Coin-listing changes (additions / removals from approved coin list) require NYDFS prior approval or self-certification under the framework."
+    },
+    {
+      "id": "Coin.List",
+      "title": "Coin listing + custody — NYDFS guidance",
+      "chapter": "7",
+      "section": "DFS guidance (2020 + 2023 updates)",
+      "theme": "Capital + custody",
+      "requirement": "NYDFS maintains a 'green-list' of pre-approved virtual currencies + a framework for licensees self-certifying additional coins per published procedures. 2023 guidance tightens custody segregation + bankruptcy-remote arrangements + customer-asset protection following FTX. Licensees must maintain customer-asset assurance through independent inspection."
+    }
+  ]
+}

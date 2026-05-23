@@ -1,0 +1,74 @@
+{
+  "id": "us-nydfs-part-504",
+  "name": "23 NYCRR Part 504 — Transaction Monitoring and Filtering Programs",
+  "shortName": "NYDFS Part 504",
+  "reference": "23 NYCRR Part 504",
+  "url": "https://www.dfs.ny.gov/system/files/documents/2020/06/rf_23nycrr504_txt.pdf",
+  "inForce": "2017-01-01",
+  "supervisor": "NYDFS",
+  "articleCount": 6,
+  "chapters": [
+    {"number": "1", "title": "§504.1 Background + purpose", "articles": "§504.1"},
+    {"number": "2", "title": "§504.2 Definitions", "articles": "§504.2"},
+    {"number": "3", "title": "§504.3 Programs required", "articles": "§504.3"},
+    {"number": "4", "title": "§504.4 Annual certification", "articles": "§504.4"},
+    {"number": "5", "title": "§504.5 Penalties + enforcement", "articles": "§504.5"}
+  ],
+  "themes": [
+    "Scope — Regulated Institutions",
+    "Transaction Monitoring Program",
+    "Watchlist Filtering Program",
+    "Annual Certification",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "§504.2",
+      "title": "Regulated Institutions",
+      "chapter": "2",
+      "section": "§504.2",
+      "theme": "Scope — Regulated Institutions",
+      "requirement": "Applies to: banks, trust companies, private bankers, savings banks + savings + loan associations chartered under NY Banking Law; branches + agencies of foreign banks licensed by NY; check cashers + money transmitters licensed under NY Banking Law. Other NYDFS-regulated institutions (insurers + virtual currency businesses) operate under Part 500 + sanctions obligations rather than Part 504."
+    },
+    {
+      "id": "§504.3(a)",
+      "title": "Transaction Monitoring Program",
+      "chapter": "3",
+      "section": "§504.3(a)",
+      "theme": "Transaction Monitoring Program",
+      "requirement": "Risk-based program reasonably designed to monitor transactions after their execution for potential BSA/AML violations + suspicious-activity reporting. Required elements include: based on the institution's Risk Assessment; documented; periodically reviewed + updated; threshold-setting + parameter validation; ongoing tuning + governance; investigation + decision-making protocols; staff training; technology validation if technology-driven; documentation of decisions."
+    },
+    {
+      "id": "§504.3(b)",
+      "title": "Watchlist Filtering Program",
+      "chapter": "3",
+      "section": "§504.3(b)",
+      "theme": "Watchlist Filtering Program",
+      "requirement": "Risk-based program reasonably designed to interdict transactions prohibited by OFAC + other applicable sanctions. Required elements include: based on Risk Assessment; documented; technology approved by qualified personnel; matching logic; ongoing tuning + governance; investigation + decision-making; staff training; documentation of decisions."
+    },
+    {
+      "id": "§504.4",
+      "title": "Annual Certification — Senior Officer compliance finding",
+      "chapter": "4",
+      "section": "§504.4",
+      "theme": "Annual Certification",
+      "requirement": "Annually by 15 April: written certification by the Board of Directors or a Senior Officer that the institution's Transaction Monitoring + Filtering Program complies with Part 504. Form prescribed by Appendix A. Records supporting the certification retained for 5 years. Aligns with the Part 500 §500.17(b) cybersecurity certification cycle."
+    },
+    {
+      "id": "§504.5",
+      "title": "Enforcement + penalties",
+      "chapter": "5",
+      "section": "§504.5",
+      "theme": "Enforcement",
+      "requirement": "Civil monetary penalties under the Banking Law + Financial Services Law (per Financial Services Law §408). Part 504 enforcement notable for the precedent set in the 2017 DPB Mashreqbank consent order + subsequent actions tying transaction-monitoring + filtering deficiencies to substantial fines."
+    },
+    {
+      "id": "§504.3.IndepReview",
+      "title": "Independent testing + validation",
+      "chapter": "3",
+      "section": "§504.3",
+      "theme": "Transaction Monitoring Program",
+      "requirement": "Programs subject to independent testing by qualified internal or external party + validation of underlying assumptions, methodologies + design. Frequency proportionate to risk. Findings documented + remediation tracked."
+    }
+  ]
+}

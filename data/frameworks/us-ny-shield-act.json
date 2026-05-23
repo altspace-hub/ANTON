@@ -1,0 +1,80 @@
+{
+  "id": "us-ny-shield-act",
+  "name": "New York Stop Hacks and Improve Electronic Data Security Act (SHIELD Act)",
+  "shortName": "NY SHIELD",
+  "reference": "NY Gen Bus Law §899-aa + §899-bb",
+  "url": "https://ag.ny.gov/internet/data-breach",
+  "inForce": "2020-03-21",
+  "supervisor": "New York Attorney General",
+  "articleCount": 7,
+  "chapters": [
+    {"number": "1", "title": "§899-aa — Breach notification (expanded)", "articles": "§899-aa"},
+    {"number": "2", "title": "§899-bb — Reasonable security (data security)", "articles": "§899-bb"}
+  ],
+  "themes": [
+    "Breach notification",
+    "Reasonable security — administrative",
+    "Reasonable security — technical",
+    "Reasonable security — physical",
+    "Small business proportionality",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "§899-aa(1)(b)",
+      "title": "Private information — expanded definition",
+      "chapter": "1",
+      "section": "§899-aa(1)(b)",
+      "theme": "Breach notification",
+      "requirement": "Private information includes: (i) personal information in combination with (1) Social Security number, (2) driver's license / non-driver ID, (3) financial account or credit / debit card with credentials enabling access, (4) biometric information, or (5) username / email + password / security Q&A enabling account access; (ii) username / email + password / security Q&A as a stand-alone category (account-takeover exposure). NEW (vs pre-SHIELD): biometric data + access credentials added."
+    },
+    {
+      "id": "§899-aa(2)",
+      "title": "Breach notification trigger + 'access' standard",
+      "chapter": "1",
+      "section": "§899-aa(2)",
+      "theme": "Breach notification",
+      "requirement": "Notification triggered by (a) acquisition OR (b) access — SHIELD lowered the trigger from 'acquisition' to 'access' (whether the unauthorised person actually exfiltrated data is not required). Notice to affected NY residents 'in the most expedient time possible + without unreasonable delay'. Notice to NY AG, Department of State + Division of State Police; consumer reporting agencies if > 5,000 affected. Form prescribed."
+    },
+    {
+      "id": "§899-bb(1)(a)",
+      "title": "Reasonable security — administrative safeguards",
+      "chapter": "2",
+      "section": "§899-bb(1)(a)",
+      "theme": "Reasonable security — administrative",
+      "requirement": "Any person or business owning or licensing computerised data which includes private information of a NY resident must develop, implement + maintain reasonable safeguards. Administrative safeguards: (a) designates one or more employees to coordinate the security program; (b) identifies reasonably foreseeable internal + external risks; (c) assesses sufficiency of safeguards in place; (d) trains employees in security-program practices + procedures; (e) selects service providers capable of maintaining appropriate safeguards + requires contractual obligations; (f) adjusts program in light of business changes / new circumstances."
+    },
+    {
+      "id": "§899-bb(1)(b)",
+      "title": "Reasonable security — technical safeguards",
+      "chapter": "2",
+      "section": "§899-bb(1)(b)",
+      "theme": "Reasonable security — technical",
+      "requirement": "Technical safeguards: (a) assesses risks in network + software design; (b) assesses risks in information processing, transmission + storage; (c) detects, prevents + responds to attacks or system failures; (d) regularly tests + monitors effectiveness of key controls, systems + procedures."
+    },
+    {
+      "id": "§899-bb(1)(c)",
+      "title": "Reasonable security — physical safeguards",
+      "chapter": "2",
+      "section": "§899-bb(1)(c)",
+      "theme": "Reasonable security — physical",
+      "requirement": "Physical safeguards: (a) assesses risks of information storage + disposal; (b) detects, prevents + responds to intrusions; (c) protects against unauthorised access to or use of private information during or after collection, transportation + destruction or disposal; (d) disposes of private information within a reasonable time after it is no longer needed for business purposes by erasing electronic media so the information cannot be read or reconstructed."
+    },
+    {
+      "id": "§899-bb(2)",
+      "title": "Small business proportionality",
+      "chapter": "2",
+      "section": "§899-bb(2)",
+      "theme": "Small business proportionality",
+      "requirement": "Small business compliance is deemed achieved when its safeguards are reasonable + appropriate to its size + complexity + the nature + scope of its activities + the sensitivity of the personal information it handles. 'Small business' = fewer than 50 employees + less than $3m in gross annual revenue in the last 3 fiscal years OR less than $5m in year-end total assets."
+    },
+    {
+      "id": "§899-bb(3)",
+      "title": "Compliance with other frameworks",
+      "chapter": "2",
+      "section": "§899-bb(3)",
+      "theme": "Enforcement",
+      "requirement": "Compliant entities deemed compliant with SHIELD where they: (a) comply with regulations promulgated under GLBA (federal); (b) comply with HIPAA / HITECH (health data); (c) comply with NYDFS Part 500 (financial services — Covered Entities). Single-source compliance significantly reduces SHIELD burden for NYDFS-regulated entities. Enforcement: NY AG actions for civil monetary penalties; per-instance penalties up to $20 per failed notice + $250,000 cap (breach notice) + per-incident reasonable-security penalties up to $5,000."
+    }
+  ]
+}

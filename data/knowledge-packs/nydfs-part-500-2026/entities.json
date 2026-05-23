@@ -1,0 +1,542 @@
+[
+  {
+    "ref_id": "REG-NYDFS-500",
+    "entity_type": "regulation",
+    "entity_id": "NYDFS-PART-500",
+    "canonical_name": "23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services Companies",
+    "description": "NYDFS's flagship cybersecurity regulation. Original effective date 1 March 2017 — the first US prudential-style cybersecurity rule for financial-services firms. Imposes a written cybersecurity program + policy + CISO + risk assessment + MFA + incident response + 72-hour notice + annual certification. Substantially expanded by the Second Amendment in 2023.",
+    "metadata": {
+      "citation": "23 NYCRR Part 500",
+      "original_in_force": "2017-03-01",
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NYDFS-500-2A",
+    "entity_type": "regulation",
+    "entity_id": "NYDFS-500-AMENDMENT-2",
+    "canonical_name": "NYDFS Part 500 — Second Amendment (Nov 2023)",
+    "description": "Major overhaul of Part 500: introduces 'Class A Companies' (largest entities — $20m+ NY revenue + 2,000+ employees globally or $1bn+ global revenue) with enhanced obligations; mandates universal MFA; requires asset-management + data-inventory policy; mandates EDR + centralised logging for Class A; tightens incident response + adds 24-hour ransomware notice + dual sign-off on annual certification; phased implementation with final controls effective 1 Nov 2025.",
+    "metadata": {
+      "adopted": "2023-11-01",
+      "phased_implementation_complete": "2025-11-01",
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NYDFS-504",
+    "entity_type": "regulation",
+    "entity_id": "NYDFS-PART-504",
+    "canonical_name": "23 NYCRR Part 504 — Transaction Monitoring and Filtering Programs",
+    "description": "NY's prescriptive AML/sanctions transaction-monitoring + sanctions-screening rule for regulated institutions. Effective 1 Jan 2017. Requires risk-based transaction monitoring + watchlist filtering programs; annual certification by Senior Officer of compliance (similar structure to Part 500 §500.17).",
+    "metadata": {
+      "citation": "23 NYCRR Part 504",
+      "in_force": "2017-01-01",
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NYDFS-200",
+    "entity_type": "regulation",
+    "entity_id": "NYDFS-PART-200",
+    "canonical_name": "23 NYCRR Part 200 — Virtual Currency Business Activity (BitLicense)",
+    "description": "NY's bespoke licensing regime for virtual-currency businesses. Effective 2015. Requires NYDFS license to engage in virtual-currency business activity with NY residents. Covers receiving, transmitting, storing, holding, exchanging, issuing, or controlling virtual currency on behalf of another. Coexists with the federal MSB regime + (where applicable) the federal MiCA-equivalent fragmented framework.",
+    "metadata": {
+      "citation": "23 NYCRR Part 200",
+      "in_force": "2015-08-08",
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NY-SHIELD",
+    "entity_type": "regulation",
+    "entity_id": "NY-SHIELD-2019",
+    "canonical_name": "NY SHIELD Act 2019 (NY Gen Bus Law §899-bb)",
+    "description": "Stop Hacks and Improve Electronic Data Security Act. Broadens the definition of 'private information' to include biometric data + access credentials + medical information. Imposes 'reasonable security' requirements on any person / business owning or licensing private info of a NY resident — administrative, technical + physical safeguards. Applies beyond financial services (any business with NY consumer data).",
+    "metadata": {
+      "citation": "NY Gen Bus L §899-bb",
+      "in_force": "2020-03-21",
+      "supervisor": "NY Attorney General"
+    }
+  },
+  {
+    "ref_id": "REG-NY-BL",
+    "entity_type": "regulation",
+    "entity_id": "NY-BANKING-LAW",
+    "canonical_name": "New York Banking Law",
+    "description": "Foundational state statute governing NY-chartered banks + credit unions + money transmitters + check-cashers + mortgage brokers. Grants NYDFS its prudential + conduct authority over the banking sector. Part 500 covers entities operating under the Banking Law.",
+    "metadata": {
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NY-IL",
+    "entity_type": "regulation",
+    "entity_id": "NY-INSURANCE-LAW",
+    "canonical_name": "New York Insurance Law",
+    "description": "Governs NY-licensed insurers + reinsurers + producers + adjusters. NYDFS is the prudential + conduct regulator. Part 500 covers entities operating under the Insurance Law.",
+    "metadata": {
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-NY-FSL",
+    "entity_type": "regulation",
+    "entity_id": "NY-FIN-SVCS-LAW",
+    "canonical_name": "New York Financial Services Law",
+    "description": "Consolidated 2011 statute creating NYDFS through merger of the Banking + Insurance Departments. Sets NYDFS's umbrella regulatory + enforcement authority. Part 500 covers entities operating under the Financial Services Law.",
+    "metadata": {
+      "in_force": "2011-10-03",
+      "supervisor": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "REG-MARTIN-ACT",
+    "entity_type": "regulation",
+    "entity_id": "MARTIN-ACT",
+    "canonical_name": "Martin Act (NY Gen Bus Law §352-359-h)",
+    "description": "NY's broad securities-fraud + investment-protection statute. Empowers the NY Attorney General to investigate + prosecute securities fraud. No requirement to prove intent; civil + criminal sanctions. Frequently used in high-profile NY-AG cyber + crypto enforcement.",
+    "metadata": {
+      "supervisor": "NY Attorney General"
+    }
+  },
+  {
+    "ref_id": "REG-GLBA",
+    "entity_type": "regulation",
+    "entity_id": "GLBA-1999",
+    "canonical_name": "Gramm-Leach-Bliley Act (Federal)",
+    "description": "Federal statute (15 USC §§6801-6809). Privacy Rule + Safeguards Rule for financial institutions. FTC + federal banking regulators enforce; Part 500 covers similar ground at state level for NY-regulated entities, generally being more prescriptive than the Safeguards Rule.",
+    "metadata": {
+      "in_force": "1999-11-12",
+      "supervisor": "FTC + federal banking regulators"
+    }
+  },
+  {
+    "ref_id": "REG-FED-RES-SR",
+    "entity_type": "regulation",
+    "entity_id": "FED-RES-SR-LETTERS",
+    "canonical_name": "Federal Reserve SR letters (interplay)",
+    "description": "Federal Reserve Supervision + Regulation letters (notably SR 11-7 model risk management, SR 23-4 third-party risk management, SR 24-2 operational resilience). NY state-chartered banks subject to dual federal + state supervision; Part 500 obligations operate alongside FRB expectations.",
+    "metadata": {
+      "supervisor": "Federal Reserve"
+    }
+  },
+  {
+    "ref_id": "AUTH-NYDFS",
+    "entity_type": "authority",
+    "entity_id": "NYDFS",
+    "canonical_name": "New York State Department of Financial Services (NYDFS)",
+    "description": "Integrated prudential + conduct regulator for ~1,500 NY-chartered banks, insurers, money transmitters, mortgage originators, BitLicense holders. The most influential US state-level financial regulator on cyber + virtual-currency. Issued the first US prudential-cyber rule (Part 500) in 2017. With CFPB on pause in 2025 + the SEC pulling back, NYDFS has become a primary US-level enforcer by default.",
+    "metadata": {
+      "type": "Integrated state financial supervisor",
+      "seat": "New York"
+    }
+  },
+  {
+    "ref_id": "AUTH-NY-AG",
+    "entity_type": "authority",
+    "entity_id": "NY-AG",
+    "canonical_name": "New York Attorney General",
+    "description": "Enforces the SHIELD Act + Martin Act + general consumer-protection statutes. Active enforcer on data-breach + crypto fraud + AI bias matters. Coexists with NYDFS on supervised entities — NY-AG handles broader consumer + criminal angles.",
+    "metadata": {
+      "type": "State prosecutor + consumer regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-NYDFS-CYBER",
+    "entity_type": "authority",
+    "entity_id": "NYDFS-CYBER-DIVISION",
+    "canonical_name": "NYDFS Cybersecurity Division",
+    "description": "Dedicated NYDFS division (announced 2023) for examining cybersecurity programs + receiving 72-hour event notices + 24-hour ransomware notices + annual certifications under §500.17. Leads enforcement actions for Part 500 violations.",
+    "metadata": {
+      "type": "NYDFS division",
+      "parent": "NYDFS"
+    }
+  },
+  {
+    "ref_id": "AUTH-OFAC",
+    "entity_type": "authority",
+    "entity_id": "OFAC",
+    "canonical_name": "US Office of Foreign Assets Control (OFAC) — interplay",
+    "description": "US Treasury sanctions authority. NYDFS Part 504 requires sanctions-screening programs aligned with OFAC SDN + non-SDN lists. Part 500 ransomware-notice obligations interact with OFAC ransomware-payment advisories (Oct 2020 + Sep 2021 updates).",
+    "metadata": {
+      "type": "Federal sanctions authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-FED-RES",
+    "entity_type": "authority",
+    "entity_id": "FED-RES",
+    "canonical_name": "Federal Reserve System — interplay",
+    "description": "Federal banking regulator. NY state-chartered banks dual-regulated by NYDFS + FRB. Part 500 + FRB SR letters operate side-by-side; FRB on-site exams often consider Part 500 compliance evidence.",
+    "metadata": {
+      "type": "Federal banking regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-OCC",
+    "entity_type": "authority",
+    "entity_id": "OCC",
+    "canonical_name": "Office of the Comptroller of the Currency (OCC) — interplay",
+    "description": "Federal banking regulator for nationally-chartered banks. Some NY-chartered banks have national charters; OCC + NYDFS coordinate on cyber + AML supervision in those cases.",
+    "metadata": {
+      "type": "Federal banking regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-SEC",
+    "entity_type": "authority",
+    "entity_id": "SEC-CYBER",
+    "canonical_name": "Securities and Exchange Commission (SEC) — Reg S-P + Reg S-ID interplay",
+    "description": "Federal securities regulator. Reg S-P (privacy) + Reg S-ID (identity theft) + 2023 cyber-disclosure rules for public companies overlap with Part 500 for NY-licensed broker-dealers + investment advisers. Less active 2025 (post-Iowa v. SEC climate-rule abandonment) but cyber rules remain in force.",
+    "metadata": {
+      "type": "Federal securities regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-FBI-IC3",
+    "entity_type": "authority",
+    "entity_id": "FBI-IC3",
+    "canonical_name": "FBI Internet Crime Complaint Center (IC3)",
+    "description": "Recipient of voluntary cyber-incident reports. OFAC + NYDFS encourage Covered Entities to report ransomware + business-email-compromise + nation-state intrusions to IC3 in parallel with NYDFS § 500.17 filings.",
+    "metadata": {
+      "type": "Federal cyber-incident clearinghouse"
+    }
+  },
+  {
+    "ref_id": "AUTH-CISA",
+    "entity_type": "authority",
+    "entity_id": "CISA",
+    "canonical_name": "Cybersecurity and Infrastructure Security Agency (CISA)",
+    "description": "DHS agency. Publishes Known Exploited Vulnerabilities (KEV) + cyber-threat alerts. Part 500 risk assessments + vulnerability management programs typically reference CISA KEV in remediation prioritisation.",
+    "metadata": {
+      "type": "Federal cyber agency"
+    }
+  },
+  {
+    "ref_id": "PART500-COVERED-ENTITY",
+    "entity_type": "concept",
+    "entity_id": "500-CE",
+    "canonical_name": "Covered Entity (§500.1(c))",
+    "description": "Any person operating under or required to operate under a license, registration, charter, certificate, permit, accreditation, or similar authorisation under the NY Banking Law, Insurance Law, or Financial Services Law. ~1,500 NYDFS-regulated entities. Limited exemptions under §500.19 for very small entities + reinsurers + captive insurers.",
+    "metadata": {
+      "section": "500.1(c)"
+    }
+  },
+  {
+    "ref_id": "PART500-CLASS-A",
+    "entity_type": "concept",
+    "entity_id": "500-CLASS-A-CO",
+    "canonical_name": "Class A Company (§500.1(d))",
+    "description": "Covered Entity with at least $20 million in gross annual revenue in the last 2 fiscal years from NY-business operations AND either (a) over 2,000 employees averaged over the last 2 fiscal years (employees + independent contractors of the entity + its affiliates), or (b) over $1 billion in gross annual revenue averaged over the last 2 fiscal years from all business operations (entity + affiliates). Enhanced obligations apply.",
+    "metadata": {
+      "section": "500.1(d)",
+      "ny_revenue_threshold_usd": "20000000",
+      "employee_threshold": "2000",
+      "global_revenue_threshold_usd": "1000000000"
+    }
+  },
+  {
+    "ref_id": "PART500-CYBERSEC-PROGRAM",
+    "entity_type": "duty",
+    "entity_id": "500-S2",
+    "canonical_name": "Cybersecurity Program (§500.2)",
+    "description": "Maintain a written cybersecurity program based on the Risk Assessment. Designed to perform the core functions of identifying + assessing cyber risks; protecting the entity's Information Systems + Nonpublic Information; detecting cybersecurity events; responding + recovering; fulfilling regulatory reporting. Documented + provided to NYDFS on request.",
+    "metadata": {
+      "section": "500.2"
+    }
+  },
+  {
+    "ref_id": "PART500-CYBERSEC-POLICY",
+    "entity_type": "duty",
+    "entity_id": "500-S3",
+    "canonical_name": "Cybersecurity Policy (§500.3)",
+    "description": "Written cybersecurity policy(ies) approved by the Senior Governing Body (board or equivalent) or, if none, the Senior Officer responsible for the cybersecurity program. Reviewed at least annually + on material change. Must address 14 enumerated topics including information security, data governance, access controls, vendor management, incident response, BCDR.",
+    "metadata": {
+      "section": "500.3",
+      "review_frequency": "at least annual"
+    }
+  },
+  {
+    "ref_id": "PART500-CISO",
+    "entity_type": "duty",
+    "entity_id": "500-S4",
+    "canonical_name": "Chief Information Security Officer (§500.4)",
+    "description": "Designate a qualified CISO with the authority + resources to implement + enforce the cybersecurity program. May be employed by the Covered Entity, an affiliate, or a third-party service provider (with retained responsibility). CISO presents written report at least annually to the Senior Governing Body on the cybersecurity program + material cyber risks + significant cybersecurity events + plans for remediation. NEW under Second Amendment: CISO must have adequate authority to ensure compliance + report timely to Senior Governing Body or Senior Officer on material cyber issues.",
+    "metadata": {
+      "section": "500.4"
+    }
+  },
+  {
+    "ref_id": "PART500-GOVERNING-BODY",
+    "entity_type": "concept",
+    "entity_id": "500-SGB",
+    "canonical_name": "Senior Governing Body (§500.1(o))",
+    "description": "Board of directors, equivalent governing body, or where neither exists, the Senior Officer responsible for the cybersecurity program. Under the Second Amendment the Senior Governing Body has explicit oversight responsibilities — sufficient understanding + ensuring management implements program + receiving CISO reports + dual sign-off on annual certification.",
+    "metadata": {
+      "section": "500.1(o)"
+    }
+  },
+  {
+    "ref_id": "PART500-VULN-MGMT",
+    "entity_type": "duty",
+    "entity_id": "500-S5",
+    "canonical_name": "Vulnerability Management (§500.5)",
+    "description": "Penetration testing of Information Systems at least annually by a qualified internal or external party (with sufficient independence to ensure objective assessment). Automated scans of Information Systems + manual review designed to identify publicly known + identified vulnerabilities. Documented + prioritised remediation based on risk. NEW for Class A: automated scans on a continuous basis.",
+    "metadata": {
+      "section": "500.5",
+      "pentest_frequency": "at least annual",
+      "class_a_extra": "Continuous automated scans (effective 1 Nov 2025)"
+    }
+  },
+  {
+    "ref_id": "PART500-AUDIT-TRAIL",
+    "entity_type": "duty",
+    "entity_id": "500-S6",
+    "canonical_name": "Audit Trail (§500.6)",
+    "description": "Securely maintain audit trails designed to detect + respond to cybersecurity events that have a reasonable likelihood of materially harming any material part of normal operations. Retain records: 5 years for material cybersecurity events; 3 years for the audit trail itself.",
+    "metadata": {
+      "section": "500.6",
+      "retention_years_event": 5,
+      "retention_years_trail": 3
+    }
+  },
+  {
+    "ref_id": "PART500-ACCESS-PRIVILEGES",
+    "entity_type": "duty",
+    "entity_id": "500-S7",
+    "canonical_name": "Access Privileges and Management (§500.7)",
+    "description": "Limit user access privileges to Information Systems that provide access to Nonpublic Information; periodically (at least annually) review access privileges + remove / disable accounts no longer necessary. NEW under Second Amendment (effective 1 Nov 2025): privileged accounts limited to those reasonably necessary; protections against unauthorized use; MFA on privileged accounts; restrictions on remote privileged access; expiry of privileged-account sessions; secure password policy.",
+    "metadata": {
+      "section": "500.7",
+      "second_amendment_in_force": "2025-11-01"
+    }
+  },
+  {
+    "ref_id": "PART500-APP-SEC",
+    "entity_type": "duty",
+    "entity_id": "500-S8",
+    "canonical_name": "Application Security (§500.8)",
+    "description": "Written procedures, guidelines + standards designed to ensure the use of secure development practices for in-house developed applications + the assessment + testing of externally developed applications used in connection with the Covered Entity's technology environment. Reviewed + updated as necessary at least annually.",
+    "metadata": {
+      "section": "500.8"
+    }
+  },
+  {
+    "ref_id": "PART500-RISK-ASSESSMENT",
+    "entity_type": "duty",
+    "entity_id": "500-S9",
+    "canonical_name": "Risk Assessment (§500.9)",
+    "description": "Periodic written Risk Assessment of the Covered Entity's Information Systems, sufficient to inform the design of the cybersecurity program. Updated at least annually + whenever a change in the business or technology causes a material change to cyber risk. Considers: criteria for identifying + classifying threats + impacts; mitigation; how identified risks will be addressed.",
+    "metadata": {
+      "section": "500.9",
+      "frequency": "at least annual + on material change"
+    }
+  },
+  {
+    "ref_id": "PART500-PERSONNEL",
+    "entity_type": "duty",
+    "entity_id": "500-S10",
+    "canonical_name": "Cybersecurity Personnel and Intelligence (§500.10)",
+    "description": "Use qualified cybersecurity personnel of the Covered Entity, an affiliate, or a third-party service provider sufficient to manage the cybersecurity risks + perform / oversee performance of core cybersecurity functions; provide cybersecurity personnel with cybersecurity updates + training; verify that key cybersecurity personnel maintain current knowledge of changing threats + countermeasures.",
+    "metadata": {
+      "section": "500.10"
+    }
+  },
+  {
+    "ref_id": "PART500-TPSP",
+    "entity_type": "duty",
+    "entity_id": "500-S11",
+    "canonical_name": "Third Party Service Provider Security Policy (§500.11)",
+    "description": "Written policy + procedures for security of Information Systems + Nonpublic Information accessible to, or held by, Third Party Service Providers (TPSPs). Risk-based: TPSP identification + risk assessment; minimum cybersecurity practices; due diligence; periodic assessment based on risk; representations + warranties addressing access controls + encryption + breach notification + commitment to maintain cybersecurity practices.",
+    "metadata": {
+      "section": "500.11"
+    }
+  },
+  {
+    "ref_id": "PART500-MFA",
+    "entity_type": "duty",
+    "entity_id": "500-S12",
+    "canonical_name": "Multi-Factor Authentication (§500.12)",
+    "description": "NEW under Second Amendment (effective 1 May 2025): MFA utilised for any individual accessing any Information System of the Covered Entity (not limited to access from external networks). Exceptions: where the CISO has approved in writing the use of reasonably equivalent or more secure compensating controls (reviewed at least annually). Privileged-account access also requires MFA.",
+    "metadata": {
+      "section": "500.12",
+      "second_amendment_in_force": "2025-05-01"
+    }
+  },
+  {
+    "ref_id": "PART500-ASSET-MGMT",
+    "entity_type": "duty",
+    "entity_id": "500-S13",
+    "canonical_name": "Asset Management and Data Retention (§500.13)",
+    "description": "NEW under Second Amendment (effective 1 May 2025): written policies + procedures designed to produce + maintain a complete, accurate + documented asset inventory of Information Systems — track changes; track tracked-data-flow + key information (owner, location, classification, support expiration, recovery time objective); retention of data only as long as necessary for business or legal purposes.",
+    "metadata": {
+      "section": "500.13",
+      "second_amendment_in_force": "2025-05-01"
+    }
+  },
+  {
+    "ref_id": "PART500-MONITORING-TRAINING",
+    "entity_type": "duty",
+    "entity_id": "500-S14",
+    "canonical_name": "Monitoring and Training (§500.14)",
+    "description": "Risk-based monitoring + filtering web traffic + email to block malicious content (NEW Class A — endpoint detection + response (EDR) solution + centralised logging + security monitoring, effective 1 Nov 2025). Cybersecurity awareness training at least annually for all personnel — includes social engineering training + relates to risks identified in the Risk Assessment. NEW: secure-development training where applicable; phishing simulations.",
+    "metadata": {
+      "section": "500.14",
+      "training_frequency": "at least annual",
+      "class_a_edr_in_force": "2025-11-01"
+    }
+  },
+  {
+    "ref_id": "PART500-ENCRYPTION",
+    "entity_type": "duty",
+    "entity_id": "500-S15",
+    "canonical_name": "Encryption of Nonpublic Information (§500.15)",
+    "description": "Encryption of Nonpublic Information held or transmitted by the Covered Entity, both in transit over external networks + at rest. Where infeasible, the CISO may approve in writing the use of effective alternative compensating controls (reviewed at least annually). NEW under Second Amendment: removes prior 'in lieu of encryption' generic carve-out — alternative controls must be specifically justified.",
+    "metadata": {
+      "section": "500.15"
+    }
+  },
+  {
+    "ref_id": "PART500-INCIDENT-RESPONSE",
+    "entity_type": "duty",
+    "entity_id": "500-S16",
+    "canonical_name": "Incident Response Plan (§500.16)",
+    "description": "Written incident response plan(s) designed to respond to + recover from any cybersecurity event materially affecting confidentiality, integrity, or availability of Information Systems or normal business operations. Addresses: internal response processes; roles + responsibilities + decision-making authority; external + internal communications + information sharing; identification of remediation requirements; documentation + reporting; evaluation + revision following an event. NEW under Second Amendment: separate written BCDR plan; both plans tested at least annually (tabletop + technical).",
+    "metadata": {
+      "section": "500.16",
+      "testing_frequency": "at least annual"
+    }
+  },
+  {
+    "ref_id": "PART500-NOTICE-72H",
+    "entity_type": "duty",
+    "entity_id": "500-S17A",
+    "canonical_name": "72-hour Cybersecurity Event notice (§500.17(a))",
+    "description": "Notice to NYDFS Superintendent as promptly as possible but in no event later than 72 hours from a determination that a cybersecurity event has occurred at the Covered Entity, its affiliates, or a TPSP affecting it, that either: (1) impacts the Covered Entity + notice is required to be provided to any government body, self-regulatory agency, or supervisory body OR (2) has a reasonable likelihood of materially harming any material part of the normal operations of the Covered Entity OR (3) results in deployment of ransomware within a material part of the Covered Entity's Information Systems.",
+    "metadata": {
+      "section": "500.17(a)",
+      "deadline_hours": 72
+    }
+  },
+  {
+    "ref_id": "PART500-NOTICE-24H-RANSOM",
+    "entity_type": "duty",
+    "entity_id": "500-S17C",
+    "canonical_name": "24-hour Ransomware Payment notice (§500.17(c))",
+    "description": "NEW under Second Amendment: Notice to NYDFS Superintendent within 24 hours of any extortion payment made in connection with a cybersecurity event involving the Covered Entity. Plus written description within 30 days of reasons the payment was necessary, alternatives considered, sanctions diligence (OFAC), all diligence performed to find alternatives.",
+    "metadata": {
+      "section": "500.17(c)",
+      "notice_deadline_hours": 24,
+      "description_deadline_days": 30
+    }
+  },
+  {
+    "ref_id": "PART500-ANNUAL-CERT",
+    "entity_type": "duty",
+    "entity_id": "500-S17B",
+    "canonical_name": "Annual Certification (§500.17(b)) — dual sign-off",
+    "description": "Annually by 15 April: certification of material compliance OR acknowledgement of non-compliance with specific identification of areas + remediation efforts. NEW under Second Amendment: dual sign-off — Senior Officer of the Covered Entity AND the highest-ranking executive of the Covered Entity (or alternative as approved by Superintendent). Material records supporting the certification retained for 5 years for examination.",
+    "metadata": {
+      "section": "500.17(b)",
+      "deadline": "April 15 annual",
+      "dual_signoff_in_force": "2024-04-15"
+    }
+  },
+  {
+    "ref_id": "PART500-EXEMPTIONS",
+    "entity_type": "concept",
+    "entity_id": "500-S19",
+    "canonical_name": "Exemptions (§500.19)",
+    "description": "Limited exemptions: (a) Covered Entities with fewer than 20 employees + less than $7.5m in revenue + less than $15m in assets — partial exemption (some §500 obligations apply); (b) certain reinsurers; (c) certain captive insurers; (d) employees / agents / representatives of Covered Entities relying on the Covered Entity's program. File Notice of Exemption with NYDFS to claim.",
+    "metadata": {
+      "section": "500.19"
+    }
+  },
+  {
+    "ref_id": "PART500-PENALTIES",
+    "entity_type": "concept",
+    "entity_id": "500-S20",
+    "canonical_name": "Enforcement + Penalties (§500.20)",
+    "description": "Civil monetary penalties available under the underlying Banking / Insurance / Financial Services Law (per Financial Services Law §408 — up to $1,000 per violation, with each separate cybersecurity event or non-compliance counting as a violation, potentially multiplied across affected records). NYDFS public consent orders + remediation orders also routine.",
+    "metadata": {
+      "section": "500.20"
+    }
+  },
+  {
+    "ref_id": "PART500-CLASS-A-AUDIT",
+    "entity_type": "duty",
+    "entity_id": "500-CLASS-A-S2-AUDIT",
+    "canonical_name": "Class A — Independent cybersecurity audit (§500.2(c))",
+    "description": "Class A Companies must conduct a cybersecurity audit of the Covered Entity's cybersecurity program annually, based on the Risk Assessment, by an internal or external auditor sufficiently independent + qualified. Audit findings + remediation plans reported to Senior Governing Body.",
+    "metadata": {
+      "section": "500.2(c)",
+      "class_a_only": true
+    }
+  },
+  {
+    "ref_id": "PART500-CLASS-A-PAM",
+    "entity_type": "duty",
+    "entity_id": "500-CLASS-A-S7-PAM",
+    "canonical_name": "Class A — Privileged Access Management (§500.7(c))",
+    "description": "Class A Companies must implement a privileged access management (PAM) solution + an automated method of blocking commonly-used compromised passwords. Effective 1 Nov 2025.",
+    "metadata": {
+      "section": "500.7(c)",
+      "class_a_only": true,
+      "in_force": "2025-11-01"
+    }
+  },
+  {
+    "ref_id": "PART500-CLASS-A-EDR",
+    "entity_type": "duty",
+    "entity_id": "500-CLASS-A-S14-EDR",
+    "canonical_name": "Class A — EDR + centralised logging (§500.14(b))",
+    "description": "Class A Companies must implement endpoint detection + response (EDR) solution to monitor anomalous activity + centralised logging + security monitoring solution to alert + investigate cybersecurity events. Effective 1 Nov 2025.",
+    "metadata": {
+      "section": "500.14(b)",
+      "class_a_only": true,
+      "in_force": "2025-11-01"
+    }
+  },
+  {
+    "ref_id": "PART504-TM-FILTERING",
+    "entity_type": "duty",
+    "entity_id": "504-TM",
+    "canonical_name": "Part 504 — Transaction Monitoring + Watchlist Filtering Programs",
+    "description": "Regulated Institutions (broadly: banks + trust companies + private bankers + check cashers + money transmitters licensed under NY Banking Law) must maintain risk-based transaction monitoring + sanctions / watchlist filtering programs reasonably designed to detect potential violations of BSA/AML laws + OFAC requirements. Senior Officer annual certification (Part 504 §504.4) of compliance.",
+    "metadata": {
+      "section": "504.3-504.4",
+      "annual_cert_deadline": "April 15"
+    }
+  },
+  {
+    "ref_id": "PART200-BITLICENSE",
+    "entity_type": "concept",
+    "entity_id": "200-BITLICENSE",
+    "canonical_name": "BitLicense (23 NYCRR Part 200)",
+    "description": "NY's bespoke licensing regime for virtual-currency businesses. License required to engage in 'virtual currency business activity' involving NY or a NY resident: receiving, transmitting, storing, holding, exchanging, buying/selling on customers' behalf, issuing virtual currency. Part 500 fully applies to BitLicense holders.",
+    "metadata": {
+      "section": "200.3"
+    }
+  },
+  {
+    "ref_id": "NY-SHIELD-REASONABLE-SECURITY",
+    "entity_type": "duty",
+    "entity_id": "SHIELD-RS",
+    "canonical_name": "NY SHIELD — Reasonable Security Requirement (Gen Bus L §899-bb)",
+    "description": "Any person or business owning or licensing private information of a NY resident must develop, implement, + maintain reasonable safeguards. Three categories: administrative (e.g. designated coordinator, employee training, risk assessment, vendor selection); technical (e.g. risk assessment of networks, intrusion detection, testing); physical (e.g. risk assessment of physical storage, disposal). Small business proportionality carve-out.",
+    "metadata": {
+      "citation": "NY Gen Bus L §899-bb"
+    }
+  },
+  {
+    "ref_id": "NYDFS-PUBLIC-ORDERS",
+    "entity_type": "concept",
+    "entity_id": "NYDFS-CONSENT-ORDERS",
+    "canonical_name": "NYDFS Cybersecurity Consent Orders (2020-2025)",
+    "description": "Public consent orders document NYDFS Part 500 enforcement patterns: First American Title (2020 — risk assessment failures), Residential Mortgage Services (2021 — incident notice + Cybersecurity Program), Carnival (2022 — MFA + access controls), Verifone (2024 — TPSP risk management), Geico/Travelers (2022 — quote-platform breaches), Eyemed (2022 — phishing + MFA), PayPal (2025 — quote-platform breach + MFA), Coinbase (2023 — BitLicense + Part 500 + Part 200), Robinhood (2022 — VA + cyber). Total penalties exceeded $150m through 2025.",
+    "metadata": {
+      "approx_total_penalties_usd_through_2025": "150000000"
+    }
+  }
+]

@@ -1,0 +1,219 @@
+{
+  "id": "us-nydfs-part-500",
+  "name": "23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services Companies (as amended by Second Amendment, Nov 2023)",
+  "shortName": "NYDFS Part 500",
+  "reference": "23 NYCRR Part 500",
+  "url": "https://www.dfs.ny.gov/industry-guidance/cybersecurity-resource-center",
+  "originalInForce": "2017-03-01",
+  "secondAmendmentInForce": "2023-11-01",
+  "finalControlsInForce": "2025-11-01",
+  "supervisor": "NYDFS — Cybersecurity Division",
+  "articleCount": 22,
+  "chapters": [
+    {"number": "Defs", "title": "§500.1 Definitions", "articles": "§500.1"},
+    {"number": "Core", "title": "Core cybersecurity obligations (§§500.2–500.10)", "articles": "§500.2-§500.10"},
+    {"number": "TPSP", "title": "§500.11 Third Party Service Provider Security Policy", "articles": "§500.11"},
+    {"number": "Tech", "title": "Technology controls (§§500.12–500.15)", "articles": "§500.12-§500.15"},
+    {"number": "IR", "title": "§500.16 Incident Response + BCDR", "articles": "§500.16"},
+    {"number": "Notices", "title": "§500.17 Notices + Annual Certification", "articles": "§500.17"},
+    {"number": "Class A", "title": "Class A enhanced obligations", "articles": "Class A overlay"},
+    {"number": "Admin", "title": "Exemptions + Enforcement + Effective Dates", "articles": "§500.18-§500.23"}
+  ],
+  "themes": [
+    "Definitions + scope",
+    "Program + policy + governance",
+    "Risk assessment",
+    "Technology controls",
+    "Vendor management",
+    "Incident response + BCDR",
+    "Notices + certification",
+    "Class A enhanced obligations",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "§500.1",
+      "title": "Definitions",
+      "chapter": "Defs",
+      "section": "§500.1",
+      "theme": "Definitions + scope",
+      "requirement": "Core definitions: Covered Entity (§500.1(c)); Class A Company (§500.1(d) — $20m+ NY revenue + 2,000+ employees globally or $1bn+ global revenue); Cybersecurity Event (§500.1(g)); Information System (§500.1(i)); Multi-Factor Authentication (§500.1(k)); Nonpublic Information (§500.1(m)); Penetration Testing (§500.1(n)); Senior Governing Body (§500.1(o)); Senior Officer (§500.1(p)); Third Party Service Provider (§500.1(s))."
+    },
+    {
+      "id": "§500.2",
+      "title": "Cybersecurity Program",
+      "chapter": "Core",
+      "section": "§500.2",
+      "theme": "Program + policy + governance",
+      "requirement": "Maintain a written cybersecurity program based on the Covered Entity's Risk Assessment + designed to perform the core functions: (1) identify + assess internal + external cyber risks; (2) protect Information Systems + Nonpublic Information; (3) detect cybersecurity events; (4) respond to detected events; (5) recover from + restore normal operations after events; (6) fulfill reporting obligations. NEW Class A: independent cybersecurity audit conducted annually."
+    },
+    {
+      "id": "§500.3",
+      "title": "Cybersecurity Policy",
+      "chapter": "Core",
+      "section": "§500.3",
+      "theme": "Program + policy + governance",
+      "requirement": "Written cybersecurity policy(ies) approved by the Senior Governing Body or, if none, the Senior Officer. Reviewed + updated at least annually + on material change. Addresses 14 enumerated topics: information security; data governance + classification; asset inventory, device management + end-of-life management; access controls + identity management; business continuity + disaster recovery; systems operations + availability concerns; systems + network security; systems + network monitoring; systems + application development + quality assurance; physical security + environmental controls; customer data privacy; vendor + third-party service provider management; risk assessment; incident response + notification."
+    },
+    {
+      "id": "§500.4",
+      "title": "Cybersecurity Governance — CISO + Senior Governing Body",
+      "chapter": "Core",
+      "section": "§500.4",
+      "theme": "Program + policy + governance",
+      "requirement": "(a) Designate a qualified CISO with the authority + resources to implement + enforce the program. May be employed by the entity, an affiliate, or a TPSP (with retained responsibility). (b) CISO reports in writing at least annually to the Senior Governing Body on the program, material cyber risks, key cybersecurity events, plans for remediation. CISO reports timely on material cyber issues. (c) Senior Governing Body / equivalent has sufficient understanding of cybersecurity matters, exercises oversight, requires executive management to develop + implement program, regularly receives + reviews CISO reports."
+    },
+    {
+      "id": "§500.5",
+      "title": "Vulnerability Management",
+      "chapter": "Core",
+      "section": "§500.5",
+      "theme": "Program + policy + governance",
+      "requirement": "(a) Penetration testing of Information Systems at least annually by qualified independent (internal or external) party, based on the Risk Assessment. (b) Automated scans of Information Systems + manual review designed to identify publicly known + identified vulnerabilities, with frequency based on Risk Assessment. NEW Class A (effective 1 Nov 2025): automated scans on a continuous basis. (c) Risk-based prioritisation + documented remediation."
+    },
+    {
+      "id": "§500.6",
+      "title": "Audit Trail",
+      "chapter": "Core",
+      "section": "§500.6",
+      "theme": "Program + policy + governance",
+      "requirement": "Securely maintain systems that include audit trails designed to detect + respond to cybersecurity events that have a reasonable likelihood of materially harming any material part of normal operations. Material cybersecurity event records retained for 5 years; the audit trail itself retained for 3 years."
+    },
+    {
+      "id": "§500.7",
+      "title": "Access Privileges and Management",
+      "chapter": "Core",
+      "section": "§500.7",
+      "theme": "Program + policy + governance",
+      "requirement": "(a) Limit user access privileges to Information Systems providing access to Nonpublic Information based on the need to perform job functions. Disable / remove accounts no longer necessary. Review access privileges + accounts at least annually. (b) NEW Second Amendment (1 Nov 2025): privileged accounts limited to those reasonably necessary; protections against unauthorized use; MFA on privileged accounts; restrictions on remote privileged access; automatic block / time-out of privileged sessions; secure-password policy or alternative compensating controls approved by CISO. (c) NEW Class A: implement a PAM solution + automated method of blocking commonly-used compromised passwords."
+    },
+    {
+      "id": "§500.8",
+      "title": "Application Security",
+      "chapter": "Core",
+      "section": "§500.8",
+      "theme": "Program + policy + governance",
+      "requirement": "Written procedures, guidelines + standards designed to ensure the use of secure development practices for in-house developed applications + the assessment + testing of externally developed applications used in connection with the Covered Entity's technology environment. Procedures + guidelines + standards reviewed + updated as necessary by the CISO (or qualified designee) at least annually."
+    },
+    {
+      "id": "§500.9",
+      "title": "Risk Assessment",
+      "chapter": "Core",
+      "section": "§500.9",
+      "theme": "Risk assessment",
+      "requirement": "Periodic written Risk Assessment of the Covered Entity's Information Systems, sufficient to inform the design of the cybersecurity program. Reviewed + updated at least annually + whenever a change in the business or technology causes a material change to the Covered Entity's cyber risk. Considers: criteria for identifying + classifying threats to + impacts on Information Systems; criteria for assessing the confidentiality / integrity / security / availability of the entity's Information Systems + Nonpublic Information; how identified risks will be mitigated or accepted; description of how the cybersecurity program will address the risks."
+    },
+    {
+      "id": "§500.10",
+      "title": "Cybersecurity Personnel and Intelligence",
+      "chapter": "Core",
+      "section": "§500.10",
+      "theme": "Program + policy + governance",
+      "requirement": "Use qualified cybersecurity personnel of the Covered Entity, an affiliate or a TPSP sufficient to manage the cybersecurity risks + perform / oversee the core cybersecurity functions. Provide cybersecurity personnel with cybersecurity updates + training sufficient to address relevant cyber risks. Verify that key cybersecurity personnel take steps to maintain current knowledge of changing cybersecurity threats + countermeasures."
+    },
+    {
+      "id": "§500.11",
+      "title": "Third Party Service Provider Security Policy",
+      "chapter": "TPSP",
+      "section": "§500.11",
+      "theme": "Vendor management",
+      "requirement": "Written policy + procedures designed to ensure the security of Information Systems + Nonpublic Information accessible to or held by TPSPs. Risk-based, addressing: (1) TPSP identification + risk assessment; (2) minimum cybersecurity practices required for TPSPs; (3) due-diligence processes used to evaluate the adequacy of TPSPs' cybersecurity practices; (4) periodic assessment of TPSPs based on risk + adequacy of their cybersecurity practices. Required policies + due-diligence cover (where applicable) access controls + encryption; notification by TPSP of security events directly impacting the Covered Entity; representations + warranties addressing TPSP cybersecurity practices."
+    },
+    {
+      "id": "§500.12",
+      "title": "Multi-Factor Authentication",
+      "chapter": "Tech",
+      "section": "§500.12",
+      "theme": "Technology controls",
+      "requirement": "NEW Second Amendment (effective 1 May 2025): MFA shall be utilized for any individual accessing any Information System of the Covered Entity. The CISO may approve in writing the use of reasonably equivalent or more secure compensating controls (reviewed at least annually). MFA is also required for: (a) remote access to the Covered Entity's Information Systems by employees / contractors / customers; (b) all privileged accounts (except service accounts that prohibit interactive login); (c) access to third-party applications including cloud-based applications from which Nonpublic Information is accessible."
+    },
+    {
+      "id": "§500.13",
+      "title": "Asset Management and Data Retention",
+      "chapter": "Tech",
+      "section": "§500.13",
+      "theme": "Technology controls",
+      "requirement": "NEW Second Amendment (effective 1 May 2025): (a) Written policies + procedures designed to produce + maintain a complete, accurate + documented asset inventory of the Covered Entity's Information Systems. Inventory tracks key information for each asset (where applicable): owner, location, classification + sensitivity, support expiration date, recovery time objectives. Policies define frequency of update + validation. (b) Policies for secure disposal on a periodic basis of any Nonpublic Information that is no longer necessary for business operations or for other legitimate business purposes."
+    },
+    {
+      "id": "§500.14",
+      "title": "Monitoring and Training",
+      "chapter": "Tech",
+      "section": "§500.14",
+      "theme": "Technology controls",
+      "requirement": "(a) Risk-based monitoring of authorised user activity + detection of unauthorised access / use / tampering with Nonpublic Information. (b) NEW Class A (effective 1 Nov 2025): endpoint detection + response (EDR) solution to monitor anomalous activity, including but not limited to lateral movement; centralised logging + security monitoring solution that includes an alerting capability + ability to investigate cybersecurity events. (c) Cybersecurity awareness training at least annually for all personnel — including social-engineering training that relates to risks identified in the Risk Assessment. NEW Second Amendment: phishing-simulation exercises; secure-development training where applicable."
+    },
+    {
+      "id": "§500.15",
+      "title": "Encryption of Nonpublic Information",
+      "chapter": "Tech",
+      "section": "§500.15",
+      "theme": "Technology controls",
+      "requirement": "Encryption of Nonpublic Information held or transmitted by the Covered Entity, both in transit over external networks + at rest. Where encryption of Nonpublic Information in transit over external networks or at rest is infeasible, the CISO may approve in writing the use of effective alternative compensating controls. The CISO shall review the feasibility of encryption + the effectiveness of compensating controls at least annually. NEW Second Amendment: removes the prior 'in lieu of encryption' broad carve-out for data at rest — compensating controls must be specifically justified."
+    },
+    {
+      "id": "§500.16",
+      "title": "Incident Response + Business Continuity / Disaster Recovery",
+      "chapter": "IR",
+      "section": "§500.16",
+      "theme": "Incident response + BCDR",
+      "requirement": "(a) Written incident response plan(s) designed to respond to + recover from any cybersecurity event materially affecting confidentiality / integrity / availability of Information Systems or operations. Addresses: internal response processes; goals; roles + responsibilities + decision-making authority; external + internal communications + information sharing; identification of requirements for remediation of any weaknesses; documentation + reporting; evaluation + revision following an event. (b) NEW Second Amendment: separate written BCDR plan(s). (c) NEW: both plans tested at least annually + with sufficient scope (tabletop + technical); senior management + Senior Governing Body participate / are kept informed. (d) Personnel trained on their roles."
+    },
+    {
+      "id": "§500.17(a)",
+      "title": "72-hour Cybersecurity Event notice",
+      "chapter": "Notices",
+      "section": "§500.17(a)",
+      "theme": "Notices + certification",
+      "requirement": "Notice to NYDFS Superintendent as promptly as possible but in no event later than 72 hours from a determination that a cybersecurity event has occurred at the Covered Entity, its affiliates, or a TPSP affecting it, that either: (1) impacts the Covered Entity + notice is required to any other government body, self-regulatory agency or supervisor; (2) has a reasonable likelihood of materially harming any material part of normal operations; (3) results in deployment of ransomware within a material part of the Covered Entity's Information Systems."
+    },
+    {
+      "id": "§500.17(b)",
+      "title": "Annual Certification — dual sign-off",
+      "chapter": "Notices",
+      "section": "§500.17(b)",
+      "theme": "Notices + certification",
+      "requirement": "Annually by 15 April: either (i) written certification of material compliance with Part 500 OR (ii) written acknowledgement of non-compliance — identifying the specific areas + the nature + extent of the non-compliance + the planned + actual remediation efforts + the timeline. NEW Second Amendment: dual sign-off — signed by both the Senior Officer of the Covered Entity AND the highest-ranking executive of the Covered Entity (typically the CEO or equivalent). Material records supporting the certification retained for 5 years for examination."
+    },
+    {
+      "id": "§500.17(c)",
+      "title": "24-hour Ransomware Payment notice",
+      "chapter": "Notices",
+      "section": "§500.17(c)",
+      "theme": "Notices + certification",
+      "requirement": "NEW Second Amendment: Within 24 hours of any extortion payment in connection with a cybersecurity event involving the Covered Entity, notice to the Superintendent. Within 30 days of the payment, written description of: reasons the payment was necessary; alternatives considered; sanctions / OFAC diligence conducted before payment; all due diligence performed to find alternatives. Payments to designated persons / sanctioned jurisdictions remain subject to OFAC enforcement risk."
+    },
+    {
+      "id": "§500.18",
+      "title": "Confidentiality",
+      "chapter": "Admin",
+      "section": "§500.18",
+      "theme": "Enforcement",
+      "requirement": "Information provided by a Covered Entity pursuant to Part 500 is exempt from disclosure under NY's Freedom of Information Law (FOIL) + other comparable public-disclosure laws."
+    },
+    {
+      "id": "§500.19",
+      "title": "Exemptions",
+      "chapter": "Admin",
+      "section": "§500.19",
+      "theme": "Enforcement",
+      "requirement": "Partial exemptions: (a) Covered Entities with fewer than 20 employees AND less than $7.5m in NY revenue AND less than $15m in total assets — exempt from §§500.4 (CISO), 500.5(a) (penetration testing), 500.5(b) (vulnerability scans), 500.6 (audit trail), 500.8 (application security), 500.10 (personnel), 500.12 (MFA), 500.13 (asset management), 500.14 (monitoring + training), 500.15 (encryption), 500.16 (incident response). Still subject to §§500.2, 500.3, 500.7, 500.9, 500.11, 500.17. (b) Certain reinsurers + captive insurers. (c) Employees / agents / representatives covered by the Covered Entity's program. File Notice of Exemption with NYDFS to claim."
+    },
+    {
+      "id": "§500.20",
+      "title": "Enforcement + Penalties",
+      "chapter": "Admin",
+      "section": "§500.20",
+      "theme": "Enforcement",
+      "requirement": "Civil monetary penalties available under the underlying Banking Law / Insurance Law / Financial Services Law (Financial Services Law §408: up to $1,000 per violation, where each separate cybersecurity event or non-compliance counts as a violation). NYDFS public consent orders + remediation orders also routine. Multi-million-dollar penalties have been imposed under Part 500 (~$150m total through 2025)."
+    },
+    {
+      "id": "§500.23",
+      "title": "Effective dates + transition",
+      "chapter": "Admin",
+      "section": "§500.23",
+      "theme": "Enforcement",
+      "requirement": "Original Part 500 in force 1 March 2017. Second Amendment in force 1 November 2023 with phased transition: 30 days from 1 Nov 2023 (most §§); 180 days (§500.17(b) format); 1 year (§500.4 governance, §500.7(a) periodic review, §500.14(a) training); 18 months / 1 May 2025 (§500.12 MFA, §500.13 asset management); 2 years / 1 November 2025 (§500.5(a)(2) automated scans for Class A, §500.7(b)+(c) privileged accounts + PAM, §500.14(b) EDR + centralised logging) — the FINAL controls wave."
+    }
+  ]
+}

@@ -1574,6 +1574,203 @@ export const LUXEMBOURG_AIFMD_II_READINESS: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 10. NYDFS Part 500 — Cybersecurity Compliance Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const NYDFS_PART_500_COMPLIANCE: Playbook = {
+  id: 'nydfs-part-500-compliance',
+  name: 'NYDFS Part 500 — Cybersecurity Compliance Mapping',
+  description:
+    'Maps a Covered Entity\'s cybersecurity-program documentation against 23 NYCRR Part 500 ' +
+    'as amended by the November 2023 Second Amendment — with the final controls phase fully ' +
+    'effective 1 November 2025 (privileged access management, EDR + centralised logging for ' +
+    'Class A, universal MFA, asset management). The annual certification dual sign-off ' +
+    'requirement (§500.17(b), due 15 April) makes this one of the highest-anxiety US ' +
+    'regulatory exams of the year.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['nydfs-part-500-2026'],
+  systemPrompt:
+    'You are an experienced US cybersecurity + financial-services lawyer reviewing a Covered ' +
+    'Entity\'s cybersecurity program against NYDFS 23 NYCRR Part 500 (as amended by the Nov ' +
+    '2023 Second Amendment; final controls fully effective 1 Nov 2025). You assess each ' +
+    'control with the discipline of an NYDFS Cybersecurity Division on-site examiner: ' +
+    'explicit > implicit, evidence > paraphrase, strict > lenient. You distinguish what every ' +
+    'Covered Entity must do from what only Class A Companies must do (PAM solution, EDR + ' +
+    'centralised logging, continuous automated vuln scans, independent cyber audit). You ' +
+    'flag every CISO-approved compensating-control reference that lacks a written CISO ' +
+    'approval evidenced in the document. You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a Covered Entity\'s cybersecurity program / policy / annual ' +
+    'certification / governance document against NYDFS 23 NYCRR Part 500 as amended.',
+  columns: [
+    {
+      id: 'us-ny500-program',
+      header: '§500.2 Cybersecurity Program',
+      regulatoryRef: '23 NYCRR §500.2',
+      question:
+        'Does the document establish a written cybersecurity program designed to perform the ' +
+        'six core functions (identify, protect, detect, respond, recover, fulfill reporting), ' +
+        'based on the Risk Assessment, and (for Class A Companies) reviewed by an independent ' +
+        'cybersecurity audit annually?',
+      expects:
+        'A written program reference + Risk Assessment linkage + the six functions. For Class A: ' +
+        'evidence of independent annual audit. Missing the audit at Class A is "missing".',
+    },
+    {
+      id: 'us-ny500-policy',
+      header: '§500.3 Cybersecurity Policy approved',
+      regulatoryRef: '23 NYCRR §500.3',
+      question:
+        'Does the document evidence a written cybersecurity policy approved by the Senior ' +
+        'Governing Body (or Senior Officer where none), reviewed at least annually, addressing ' +
+        'the 14 enumerated topics (information security, data governance + classification, asset ' +
+        'inventory + EOL, access controls, BCDR, network security, monitoring, application ' +
+        'development, physical, customer data privacy, vendor management, risk assessment, ' +
+        'incident response + notification)?',
+      expects:
+        'Board / SO approval + dated within last 12 months + coverage of all 14 topics. Missing ' +
+        'any of the 14 topics is "partial".',
+    },
+    {
+      id: 'us-ny500-ciso',
+      header: '§500.4 CISO + Senior Governing Body oversight',
+      regulatoryRef: '23 NYCRR §500.4',
+      question:
+        'Does the document identify a named CISO with sufficient authority + resources, ' +
+        'documented annual written report to the Senior Governing Body covering the program + ' +
+        'material risks + key cybersecurity events + remediation, and evidence that the Senior ' +
+        'Governing Body / equivalent has sufficient understanding + exercises oversight?',
+      expects:
+        'Named CISO + annual SGB report + SGB oversight evidence. Missing the SGB-oversight ' +
+        'angle (post-Second-Amendment requirement) is "partial".',
+    },
+    {
+      id: 'us-ny500-risk-assessment',
+      header: '§500.9 Risk Assessment current',
+      regulatoryRef: '23 NYCRR §500.9',
+      question:
+        'Does the document evidence a written Risk Assessment refreshed within the last 12 ' +
+        'months (or following material business / technology change), considering threats + ' +
+        'impacts + mitigations + how the cybersecurity program addresses identified risks?',
+      expects:
+        'Dated within 12 months + threats + impacts + mitigations + program-design linkage. ' +
+        'A risk-register without a Part 500 §500.9-style assessment is "partial".',
+    },
+    {
+      id: 'us-ny500-mfa',
+      header: '§500.12 MFA — universal',
+      regulatoryRef: '23 NYCRR §500.12 (in force 1 May 2025)',
+      question:
+        'Does the document evidence MFA universally implemented for any individual accessing ' +
+        'any Information System of the Covered Entity, including remote access + privileged ' +
+        'accounts + third-party / cloud applications with Nonpublic Information — with written ' +
+        'CISO approval of any compensating-control exceptions, reviewed at least annually?',
+      expects:
+        'Universal MFA + privileged-account MFA + remote-access MFA + third-party-app MFA + ' +
+        'documented CISO exception approvals where applicable. Internal-network MFA exclusion ' +
+        'without CISO-approved compensating controls is "missing".',
+    },
+    {
+      id: 'us-ny500-asset-mgmt',
+      header: '§500.13 Asset Management + data retention',
+      regulatoryRef: '23 NYCRR §500.13 (in force 1 May 2025)',
+      question:
+        'Does the document evidence written policies + procedures producing + maintaining a ' +
+        'complete asset inventory of Information Systems (owner, location, classification, ' +
+        'support expiration, recovery time objective) AND policies for secure disposal of ' +
+        'Nonpublic Information no longer necessary for business operations?',
+      expects:
+        'Both elements: asset inventory with all required attributes + secure-disposal policy. ' +
+        'Asset inventory without owner / classification / EOL is "partial".',
+    },
+    {
+      id: 'us-ny500-privileged-access',
+      header: '§500.7 Privileged Access + PAM',
+      regulatoryRef: '23 NYCRR §500.7 (Second Amendment in force 1 Nov 2025)',
+      question:
+        'Does the document evidence: privileged accounts limited to what is reasonably ' +
+        'necessary; MFA on privileged accounts; restrictions on remote privileged access; ' +
+        'session timeout; secure-password policy; annual review of access privileges? For ' +
+        'Class A Companies: a PAM solution + automated blocking of commonly-used compromised ' +
+        'passwords.',
+      expects:
+        'All six common-CE elements + (for Class A) PAM + compromised-password blocking. ' +
+        'Missing PAM at Class A is "missing".',
+    },
+    {
+      id: 'us-ny500-training-edr',
+      header: '§500.14 Training + EDR + centralised logging',
+      regulatoryRef: '23 NYCRR §500.14 (Class A: in force 1 Nov 2025)',
+      question:
+        'Does the document evidence: risk-based monitoring + filtering of web + email; annual ' +
+        'cybersecurity awareness training including social-engineering + phishing simulations ' +
+        '+ secure-development training where applicable? For Class A Companies: endpoint ' +
+        'detection + response (EDR) solution + centralised logging + security monitoring ' +
+        'solution with alerting.',
+      expects:
+        'Annual training + phishing sims + secure-dev (where apt) + (for Class A) EDR + ' +
+        'centralised logging. Missing EDR at Class A is "missing"; missing phishing sims is ' +
+        '"partial".',
+    },
+    {
+      id: 'us-ny500-encryption',
+      header: '§500.15 Encryption',
+      regulatoryRef: '23 NYCRR §500.15',
+      question:
+        'Does the document evidence encryption of Nonpublic Information both in transit over ' +
+        'external networks AND at rest — with any CISO-approved alternative compensating ' +
+        'controls specifically justified in writing + reviewed at least annually (the broad ' +
+        'pre-Second-Amendment "in lieu of encryption" carve-out is removed)?',
+      expects:
+        'Both encryption regimes + documented CISO approval of any specific compensating ' +
+        'controls. Generic "we use industry-standard encryption" without scope is "partial".',
+    },
+    {
+      id: 'us-ny500-ir-bcdr',
+      header: '§500.16 Incident Response + BCDR',
+      regulatoryRef: '23 NYCRR §500.16',
+      question:
+        'Does the document evidence a written incident response plan addressing internal ' +
+        'response + roles + decision authority + external/internal communications + ' +
+        'remediation + documentation + post-event evaluation, PLUS a separate written ' +
+        'BCDR plan, BOTH tested at least annually (tabletop + technical) with senior management ' +
+        '+ Senior Governing Body participation / awareness?',
+      expects:
+        'IR plan + separate BCDR plan + annual tabletop + technical testing + senior involvement. ' +
+        'Combined IR/BCDR document without separation is "partial" (post-Second Amendment).',
+    },
+    {
+      id: 'us-ny500-tpsp',
+      header: '§500.11 TPSP Security Policy',
+      regulatoryRef: '23 NYCRR §500.11',
+      question:
+        'Does the document evidence a written third-party service provider security policy ' +
+        'covering: TPSP identification + risk assessment; minimum cybersecurity practices; due ' +
+        'diligence; periodic risk-based reassessment; contractual representations on access ' +
+        'controls + encryption + security-event notification + cybersecurity practices?',
+      expects:
+        'All four elements (ID/RA + min practices + DD + periodic reassessment) + contractual ' +
+        'rep coverage. Missing the periodic reassessment is "partial".',
+    },
+    {
+      id: 'us-ny500-cert-notices',
+      header: '§500.17 Notices + Annual Certification dual sign-off',
+      regulatoryRef: '23 NYCRR §500.17',
+      question:
+        'Does the document evidence: (a) procedures to provide NYDFS Superintendent with ' +
+        'cybersecurity event notice within 72 hours of determination; (b) procedures for ' +
+        'ransomware payment notice within 24 hours + 30-day written description (incl. OFAC ' +
+        'sanctions diligence); (c) annual certification process by 15 April with DUAL sign-off ' +
+        '(Senior Officer + highest-ranking executive) OR written acknowledgement of non-' +
+        'compliance with remediation timeline?',
+      expects:
+        'All three notification regimes + dual sign-off mechanism. Missing the dual sign-off ' +
+        '(post-Second-Amendment requirement) is "missing".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1587,6 +1784,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   SWISS_AMLA_LETA_READINESS,
   IRELAND_SEAR_RESPONSIBILITY_MAP,
   LUXEMBOURG_AIFMD_II_READINESS,
+  NYDFS_PART_500_COMPLIANCE,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {
