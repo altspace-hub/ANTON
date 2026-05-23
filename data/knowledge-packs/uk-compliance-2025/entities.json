@@ -1,0 +1,623 @@
+[
+  {
+    "ref_id": "REG-ECCTA-2023",
+    "entity_type": "regulation",
+    "entity_id": "ECCTA-2023",
+    "canonical_name": "Economic Crime and Corporate Transparency Act 2023",
+    "description": "The most significant UK corporate-criminal-liability reform since the Bribery Act 2010. Creates the strict-liability 'failure to prevent fraud' offence under s.199, expands the identification principle for corporate criminal liability (s.196), overhauls Companies House registration powers, and tightens cryptoasset enforcement. The fraud offence applies to 'large organisations' only (s.201).",
+    "metadata": {
+      "citation": "ECCTA 2023 c.56",
+      "royal_assent": "2023-10-26",
+      "ftpf_in_force": "2025-09-01",
+      "identification_principle_in_force": "2023-12-26",
+      "supervisor": "SFO / FCA / HMRC / NCA"
+    }
+  },
+  {
+    "ref_id": "REG-OSA-2023",
+    "entity_type": "regulation",
+    "entity_id": "OSA-2023",
+    "canonical_name": "Online Safety Act 2023",
+    "description": "Establishes Ofcom as the regulator of user-to-user services and search services. Imposes duties to assess and mitigate risks of illegal content, protect children, and comply with categorised-service duties. Fines up to 10% of global qualifying revenue.",
+    "metadata": {
+      "citation": "OSA 2023 c.50",
+      "royal_assent": "2023-10-26",
+      "illegal_harms_duties_live": "2025-03-17",
+      "child_safety_duties_live": "2025-07-25",
+      "supervisor": "Ofcom"
+    }
+  },
+  {
+    "ref_id": "REG-DUAA-2025",
+    "entity_type": "regulation",
+    "entity_id": "DUAA-2025",
+    "canonical_name": "Data (Use and Access) Act 2025",
+    "description": "Reforms the UK GDPR / DPA 2018 / PECR. Introduces 'recognised legitimate interests', reforms automated decision-making rules, modernises cookie consent, creates the Smart Data framework, and reconstitutes the ICO as the Information Commission. Most provisions live 5 Feb 2026; phased implementation continues through 2026.",
+    "metadata": {
+      "citation": "DUAA 2025 c.25",
+      "royal_assent": "2025-06-19",
+      "main_reforms_in_force": "2026-02-05",
+      "supervisor": "Information Commission (formerly ICO)"
+    }
+  },
+  {
+    "ref_id": "REG-FCA-PRIN-2A",
+    "entity_type": "regulation",
+    "entity_id": "FCA-PRIN-2A",
+    "canonical_name": "FCA Principle 12 / PRIN 2A — Consumer Duty",
+    "description": "FCA's overarching consumer-protection principle. Requires firms to deliver good outcomes for retail customers, through four outcomes (products & services, price & value, consumer understanding, consumer support) and three cross-cutting rules (act in good faith, avoid foreseeable harm, enable customers to pursue their financial objectives).",
+    "metadata": {
+      "citation": "FCA Handbook PRIN 2A",
+      "in_force_new_open": "2023-07-31",
+      "in_force_closed_products": "2024-07-31",
+      "supervisor": "FCA"
+    }
+  },
+  {
+    "ref_id": "REG-SAMLA-2018",
+    "entity_type": "regulation",
+    "entity_id": "SAMLA-2018",
+    "canonical_name": "Sanctions and Anti-Money Laundering Act 2018",
+    "description": "The UK's domestic sanctions framework post-Brexit. Empowers HM Treasury (through OFSI) to administer financial sanctions, designate persons, grant licences, and impose civil monetary penalties. 2025 OFSI consultation on turnover-based fines reflects a step-change in enforcement intensity.",
+    "metadata": {
+      "citation": "SAMLA 2018 c.13",
+      "in_force": "2019-12-31",
+      "supervisor": "OFSI / FCDO / HMRC"
+    }
+  },
+  {
+    "ref_id": "REG-FA-2006",
+    "entity_type": "regulation",
+    "entity_id": "FA-2006",
+    "canonical_name": "Fraud Act 2006",
+    "description": "Defines the modern statutory fraud offences in England and Wales. Sections 2 (fraud by false representation), 3 (fraud by failing to disclose), 4 (fraud by abuse of position), and 11 (obtaining services dishonestly) are referenced by ECCTA Schedule 13 as base offences for the failure-to-prevent-fraud regime.",
+    "metadata": {
+      "citation": "FA 2006 c.35",
+      "in_force": "2007-01-15"
+    }
+  },
+  {
+    "ref_id": "REG-BA-2010",
+    "entity_type": "regulation",
+    "entity_id": "BA-2010",
+    "canonical_name": "UK Bribery Act 2010",
+    "description": "The UK's anti-bribery statute. Section 7 — 'failure of commercial organisations to prevent bribery' — is the architectural template for the ECCTA s.199 failure-to-prevent-fraud offence. The s.7 'adequate procedures' defence directly parallels the ECCTA 'reasonable procedures' defence.",
+    "metadata": {
+      "citation": "BA 2010 c.23",
+      "in_force": "2011-07-01",
+      "supervisor": "SFO / CPS"
+    }
+  },
+  {
+    "ref_id": "REG-MLR-2017",
+    "entity_type": "regulation",
+    "entity_id": "MLR-2017",
+    "canonical_name": "Money Laundering, Terrorist Financing and Transfer of Funds (Information on the Payer) Regulations 2017",
+    "description": "UK AML/CTF regulations transposing the 4th and 5th EU AML Directives (retained post-Brexit). Apply to 'relevant persons' — banks, financial institutions, accountants, lawyers, estate agents, CASPs, etc.",
+    "metadata": {
+      "citation": "SI 2017/692",
+      "in_force": "2017-06-26",
+      "supervisor": "FCA / HMRC / professional body supervisors"
+    }
+  },
+  {
+    "ref_id": "REG-POCA-2002",
+    "entity_type": "regulation",
+    "entity_id": "POCA-2002",
+    "canonical_name": "Proceeds of Crime Act 2002",
+    "description": "The UK's primary anti-money-laundering statute. Creates the principal money-laundering offences (ss.327-329), the SAR/DAML regime (ss.330-339), and the tipping-off offence (s.333A).",
+    "metadata": {
+      "citation": "POCA 2002 c.29",
+      "in_force": "2003-02-24",
+      "supervisor": "NCA (UKFIU) / SFO / CPS"
+    }
+  },
+  {
+    "ref_id": "REG-UK-GDPR",
+    "entity_type": "regulation",
+    "entity_id": "UK-GDPR",
+    "canonical_name": "UK General Data Protection Regulation",
+    "description": "The retained EU GDPR as amended for UK law post-Brexit. Read together with the Data Protection Act 2018. Significantly amended by the DUAA 2025.",
+    "metadata": {
+      "citation": "Retained EU Regulation 2016/679; DPA 2018 c.12",
+      "in_force": "2021-01-01",
+      "supervisor": "Information Commission (formerly ICO)"
+    }
+  },
+  {
+    "ref_id": "REG-FSMA-2000",
+    "entity_type": "regulation",
+    "entity_id": "FSMA-2000",
+    "canonical_name": "Financial Services and Markets Act 2000",
+    "description": "The foundational UK financial-services statute. Empowers the FCA and PRA to authorise firms, issue rules in the FCA Handbook / PRA Rulebook, and take enforcement action.",
+    "metadata": {
+      "citation": "FSMA 2000 c.8",
+      "in_force": "2001-12-01",
+      "supervisor": "FCA / PRA"
+    }
+  },
+  {
+    "ref_id": "AUTH-SFO",
+    "entity_type": "authority",
+    "entity_id": "SFO",
+    "canonical_name": "Serious Fraud Office",
+    "description": "The UK's specialist prosecutor for serious or complex fraud, bribery and corruption. Primary prosecutor for ECCTA failure-to-prevent-fraud offences against large organisations.",
+    "metadata": {
+      "type": "Prosecutor"
+    }
+  },
+  {
+    "ref_id": "AUTH-FCA",
+    "entity_type": "authority",
+    "entity_id": "FCA",
+    "canonical_name": "Financial Conduct Authority",
+    "description": "Conduct regulator for ~50,000 UK financial services firms. Owner of the Consumer Duty (PRIN 2A) and SYSC fraud-prevention obligations; co-supervises MLR 2017 obliged entities.",
+    "metadata": {
+      "type": "Conduct regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-PRA",
+    "entity_type": "authority",
+    "entity_id": "PRA",
+    "canonical_name": "Prudential Regulation Authority",
+    "description": "Prudential regulator for banks, insurers and major investment firms (a part of the Bank of England). Owner of Basel 3.1 implementation (PS1/26).",
+    "metadata": {
+      "type": "Prudential regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-OFSI",
+    "entity_type": "authority",
+    "entity_id": "OFSI",
+    "canonical_name": "Office of Financial Sanctions Implementation",
+    "description": "Part of HM Treasury. Administers UK financial sanctions: designates persons, grants licences, imposes civil monetary penalties. Six monetary penalties in 2025 (vs one in 2024); turnover-based fines consultation issued 2025.",
+    "metadata": {
+      "type": "Sanctions authority",
+      "parent": "HM Treasury"
+    }
+  },
+  {
+    "ref_id": "AUTH-OFCOM",
+    "entity_type": "authority",
+    "entity_id": "OFCOM",
+    "canonical_name": "Office of Communications",
+    "description": "UK communications regulator. Sole enforcer of the Online Safety Act 2023 illegal-harms and child-safety duties on user-to-user and search services. By Dec 2025 had opened 92 OSA investigations and fined 3 providers.",
+    "metadata": {
+      "type": "Sectoral regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-ICO",
+    "entity_type": "authority",
+    "entity_id": "ICO",
+    "canonical_name": "Information Commissioner's Office / Information Commission",
+    "description": "UK data protection regulator. The DUAA 2025 reconstitutes the ICO as the 'Information Commission' (a corporate body with a board) — title change effective with main DUAA reforms in February 2026.",
+    "metadata": {
+      "type": "Data protection authority",
+      "post_duaa_name": "Information Commission"
+    }
+  },
+  {
+    "ref_id": "AUTH-NCA",
+    "entity_type": "authority",
+    "entity_id": "NCA",
+    "canonical_name": "National Crime Agency (UKFIU)",
+    "description": "The UK's Financial Intelligence Unit, sitting within the National Crime Agency. Recipient of SARs / DAMLs under POCA Part 7.",
+    "metadata": {
+      "type": "FIU + law enforcement"
+    }
+  },
+  {
+    "ref_id": "AUTH-HMRC",
+    "entity_type": "authority",
+    "entity_id": "HMRC",
+    "canonical_name": "HM Revenue & Customs",
+    "description": "AML supervisor for sectors not covered by FCA or professional body supervisors (estate agents, accountancy outside professional bodies, high-value dealers, trust and company service providers, art market participants).",
+    "metadata": {
+      "type": "AML supervisor + tax authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-FCDO",
+    "entity_type": "authority",
+    "entity_id": "FCDO",
+    "canonical_name": "Foreign, Commonwealth & Development Office",
+    "description": "Owns UK foreign-policy sanctions designations under SAMLA 2018. OFSI implements the financial measures the FCDO designs.",
+    "metadata": {
+      "type": "Sanctions policy"
+    }
+  },
+  {
+    "ref_id": "AUTH-CMA",
+    "entity_type": "authority",
+    "entity_id": "CMA",
+    "canonical_name": "Competition and Markets Authority",
+    "description": "UK competition regulator; lead consumer-enforcement authority under Part 3 of the Digital Markets, Competition and Consumers Act 2024.",
+    "metadata": {
+      "type": "Competition + consumer regulator"
+    }
+  },
+  {
+    "ref_id": "ECCTA-FTPF",
+    "entity_type": "offence",
+    "entity_id": "ECCTA-S199",
+    "canonical_name": "Failure to prevent fraud (ECCTA s.199)",
+    "description": "A strict-liability corporate criminal offence. A large organisation commits this offence where a person 'associated' with it commits a base fraud offence (Sched 13) intending to benefit the organisation. Defence: the organisation had in place reasonable fraud-prevention procedures at the time (s.199(4)).",
+    "metadata": {
+      "section": "199",
+      "in_force": "2025-09-01",
+      "penalty": "Unlimited fine + reputational + barring + DPA exposure",
+      "prosecutor": "SFO (primarily) / CPS"
+    }
+  },
+  {
+    "ref_id": "ECCTA-LARGE-ORG",
+    "entity_type": "definition",
+    "entity_id": "ECCTA-S201",
+    "canonical_name": "Large organisation threshold (ECCTA s.201)",
+    "description": "An organisation is 'large' if in the financial year preceding the fraud it satisfied two or more of: (a) turnover > £36 million, (b) balance sheet total > £18 million, (c) > 250 employees. The threshold is applied at group level for subsidiaries.",
+    "metadata": {
+      "section": "201",
+      "turnover_threshold": "36000000",
+      "balance_sheet_threshold": "18000000",
+      "employee_threshold": "250"
+    }
+  },
+  {
+    "ref_id": "ECCTA-DEFENCE",
+    "entity_type": "concept",
+    "entity_id": "ECCTA-S199-DEF",
+    "canonical_name": "Reasonable procedures defence (ECCTA s.199(4))",
+    "description": "The only statutory defence to the s.199 offence. The organisation must prove, on the balance of probabilities, that at the time of the base offence it had in place 'such prevention procedures as it was reasonable in all the circumstances to expect [it] to have had in place'. Home Office statutory guidance (Nov 2024) sets out six principles.",
+    "metadata": {
+      "section": "199(4)",
+      "burden": "Reverse — organisation must prove",
+      "guidance": "Home Office, 'Guidance to organisations on the offence of failure to prevent fraud' (Nov 2024)"
+    }
+  },
+  {
+    "ref_id": "ECCTA-ASSOC-PERSON",
+    "entity_type": "definition",
+    "entity_id": "ECCTA-S199-ASSOC",
+    "canonical_name": "Associated person (ECCTA s.199(7))",
+    "description": "A person is 'associated' with the organisation if they are an employee, agent or subsidiary, OR a person who otherwise performs services for or on behalf of the organisation. Captures contractors, intermediaries, joint-venture partners.",
+    "metadata": {
+      "section": "199(7)"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-1",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-1",
+    "canonical_name": "Principle 1 — Top-level commitment",
+    "description": "Senior management is committed to preventing fraud, communicates that commitment externally and internally, and fosters a culture where fraud is unacceptable. Board statement + accountable senior owner + sufficient resourcing.",
+    "metadata": {
+      "principle_number": "1",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-2",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-2",
+    "canonical_name": "Principle 2 — Risk assessment",
+    "description": "The organisation conducts a documented assessment of the fraud risks it faces, including risks arising from associated persons. The assessment is proportionate, periodically refreshed, and triggers re-assessment on material change (new business line, M&A, regulatory development).",
+    "metadata": {
+      "principle_number": "2",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-3",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-3",
+    "canonical_name": "Principle 3 — Proportionate risk-based prevention procedures",
+    "description": "Prevention procedures are clear, practical, accessible, effectively implemented and enforced. Each identified fraud risk has at least one targeted control (segregation of duties, approval thresholds, four-eyes review, system-level controls). Procedures are calibrated to risk.",
+    "metadata": {
+      "principle_number": "3",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-4",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-4",
+    "canonical_name": "Principle 4 — Due diligence",
+    "description": "The organisation conducts due diligence on associated persons (employees pre-hire, agents and intermediaries pre-engagement, JV partners, contractors) proportionate to the fraud risk they present. Periodic refresh required.",
+    "metadata": {
+      "principle_number": "4",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-5",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-5",
+    "canonical_name": "Principle 5 — Communication (including training)",
+    "description": "Anti-fraud policies and procedures are embedded through communication and training. Internal: mandatory annual training, role-targeted modules for higher-risk roles, induction modules. External: fraud-prevention expectations communicated to associated persons via contracts, codes of conduct, joint training.",
+    "metadata": {
+      "principle_number": "5",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "ECCTA-PRINC-6",
+    "entity_type": "principle",
+    "entity_id": "FTPF-PRINC-6",
+    "canonical_name": "Principle 6 — Monitoring and review",
+    "description": "The organisation monitors the effectiveness of its fraud-prevention procedures, reviews them periodically, and updates them in response to incidents, near-misses, audit findings and regulatory change. Includes a defined feedback loop from detected fraud back into procedure design.",
+    "metadata": {
+      "principle_number": "6",
+      "source": "Home Office Nov 2024 statutory guidance"
+    }
+  },
+  {
+    "ref_id": "OFF-FA-S2",
+    "entity_type": "offence",
+    "entity_id": "FA-2006-S2",
+    "canonical_name": "Fraud by false representation (FA 2006 s.2)",
+    "description": "Dishonestly making a false representation, intending to make a gain for self/another or to cause loss to another or expose to risk of loss. Listed in ECCTA Sched 13 as a base offence for the s.199 failure-to-prevent-fraud offence.",
+    "metadata": {
+      "act": "Fraud Act 2006",
+      "section": "2",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-FA-S3",
+    "entity_type": "offence",
+    "entity_id": "FA-2006-S3",
+    "canonical_name": "Fraud by failing to disclose information (FA 2006 s.3)",
+    "description": "Dishonestly failing to disclose information which the defendant is under a legal duty to disclose, with the requisite intent. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Fraud Act 2006",
+      "section": "3",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-FA-S4",
+    "entity_type": "offence",
+    "entity_id": "FA-2006-S4",
+    "canonical_name": "Fraud by abuse of position (FA 2006 s.4)",
+    "description": "Dishonestly abusing a position in which the defendant is expected to safeguard the financial interests of another, with the requisite intent. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Fraud Act 2006",
+      "section": "4",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-FA-S11",
+    "entity_type": "offence",
+    "entity_id": "FA-2006-S11",
+    "canonical_name": "Obtaining services dishonestly (FA 2006 s.11)",
+    "description": "Obtaining services by a dishonest act, intending payment to be avoided. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Fraud Act 2006",
+      "section": "11",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-FALSE-ACCT",
+    "entity_type": "offence",
+    "entity_id": "TA-1968-S17",
+    "canonical_name": "False accounting (Theft Act 1968 s.17)",
+    "description": "Dishonestly destroying / defacing / falsifying any account or document made for an accounting purpose. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Theft Act 1968",
+      "section": "17",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-FRAUD-TRADING",
+    "entity_type": "offence",
+    "entity_id": "CA-2006-S993",
+    "canonical_name": "Fraudulent trading (Companies Act 2006 s.993)",
+    "description": "Carrying on the business of a company with intent to defraud creditors. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Companies Act 2006",
+      "section": "993",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OFF-CHEAT-REVENUE",
+    "entity_type": "offence",
+    "entity_id": "COMMON-LAW-CHEAT",
+    "canonical_name": "Cheating the public revenue (common law)",
+    "description": "Common-law offence of any fraudulent conduct designed to prejudice the public revenue. ECCTA Sched 13 base offence.",
+    "metadata": {
+      "act": "Common law",
+      "ftpf_base_offence": true
+    }
+  },
+  {
+    "ref_id": "OSA-DUTY-ILLEGAL",
+    "entity_type": "duty",
+    "entity_id": "OSA-S10",
+    "canonical_name": "Illegal content risk-assessment & safety duties (OSA Part 3)",
+    "description": "User-to-user and search services must assess the risk of illegal content (priority offences listed in Schedule 6: terrorism, CSAM, fraud, sexual exploitation, drugs, etc.) and operate proportionate systems to minimise that risk. In force 17 March 2025.",
+    "metadata": {
+      "act": "Online Safety Act 2023",
+      "sections": "9-11",
+      "in_force": "2025-03-17"
+    }
+  },
+  {
+    "ref_id": "OSA-DUTY-CHILD",
+    "entity_type": "duty",
+    "entity_id": "OSA-S12",
+    "canonical_name": "Child safety duties (OSA Part 3)",
+    "description": "Services likely to be accessed by children must conduct a children's access assessment and a children's risk assessment, and operate systems to prevent harm. In force 25 July 2025 following Ofcom's children's safety codes.",
+    "metadata": {
+      "act": "Online Safety Act 2023",
+      "sections": "11-13, 35-36",
+      "in_force": "2025-07-25"
+    }
+  },
+  {
+    "ref_id": "OSA-ENFORCEMENT",
+    "entity_type": "concept",
+    "entity_id": "OSA-S143",
+    "canonical_name": "Ofcom enforcement powers (OSA s.143-149)",
+    "description": "Ofcom may impose monetary penalties of the greater of £18 million or 10% of qualifying worldwide revenue. May also order business disruption (ISP blocking, payment provider blocking) and seek senior-manager liability.",
+    "metadata": {
+      "act": "Online Safety Act 2023",
+      "max_penalty": "10% global revenue or £18m"
+    }
+  },
+  {
+    "ref_id": "DUAA-LEGITIMATE-INTERESTS",
+    "entity_type": "concept",
+    "entity_id": "DUAA-RLI",
+    "canonical_name": "Recognised legitimate interests (DUAA / UK GDPR Art. 6(1)(ea))",
+    "description": "DUAA adds a new lawful basis: 'recognised legitimate interests' (a closed list including national security, public security, defence, emergencies, safeguarding). No legitimate-interests balancing test required for in-list purposes.",
+    "metadata": {
+      "act": "DUAA 2025",
+      "new_provision": "UK GDPR Art. 6(1)(ea) + Annex 1"
+    }
+  },
+  {
+    "ref_id": "DUAA-AUTOMATED",
+    "entity_type": "concept",
+    "entity_id": "DUAA-ART22",
+    "canonical_name": "Automated decision-making reforms (DUAA / UK GDPR Art. 22A-D)",
+    "description": "DUAA narrows the general prohibition on solely automated decisions producing legal effects: outside special category data, the default flips to 'permitted with safeguards' (notify, explain, contest, human review).",
+    "metadata": {
+      "act": "DUAA 2025",
+      "new_provision": "UK GDPR Art. 22A-D"
+    }
+  },
+  {
+    "ref_id": "DUAA-SMART-DATA",
+    "entity_type": "concept",
+    "entity_id": "DUAA-PART1",
+    "canonical_name": "Smart Data framework (DUAA Part 1)",
+    "description": "Empowers the Secretary of State to extend Open-Banking-style customer-data-portability rights to other sectors (energy, telecoms, finance). Sector-specific regulations expected from late 2026.",
+    "metadata": {
+      "act": "DUAA 2025",
+      "part": "1"
+    }
+  },
+  {
+    "ref_id": "DUAA-COMMISSION",
+    "entity_type": "concept",
+    "entity_id": "DUAA-PART5",
+    "canonical_name": "Information Commission reconstitution (DUAA Part 5)",
+    "description": "Replaces the Information Commissioner (a corporation sole) with the Information Commission (a corporate body with a board, including a chair and chief executive). All ICO functions transfer; supervisory continuity preserved.",
+    "metadata": {
+      "act": "DUAA 2025",
+      "part": "5"
+    }
+  },
+  {
+    "ref_id": "DUAA-PECR",
+    "entity_type": "concept",
+    "entity_id": "DUAA-PART6",
+    "canonical_name": "PECR / cookies reform (DUAA Part 6)",
+    "description": "Modernises the Privacy and Electronic Communications Regulations. Introduces categories of cookies that can be set without consent (analytics, security, functionality), aligns penalty regime with UK GDPR.",
+    "metadata": {
+      "act": "DUAA 2025",
+      "part": "6"
+    }
+  },
+  {
+    "ref_id": "CD-OUTCOME-PRODUCTS",
+    "entity_type": "duty",
+    "entity_id": "PRIN-2A-OUTCOME-1",
+    "canonical_name": "Consumer Duty Outcome 1 — Products and services",
+    "description": "Products are designed to meet the needs, characteristics and objectives of the target market and are distributed appropriately. Manufacturer + distributor responsibilities under PRIN 2A.3.",
+    "metadata": {
+      "handbook_ref": "PRIN 2A.3"
+    }
+  },
+  {
+    "ref_id": "CD-OUTCOME-VALUE",
+    "entity_type": "duty",
+    "entity_id": "PRIN-2A-OUTCOME-2",
+    "canonical_name": "Consumer Duty Outcome 2 — Price and value",
+    "description": "Price provides fair value: the relationship between the price paid and the benefits the retail customer reasonably expects is fair. Fair Value Assessment evidence required. Includes the 'price-and-value-assessment' (PVA) regime under PRIN 2A.4.",
+    "metadata": {
+      "handbook_ref": "PRIN 2A.4"
+    }
+  },
+  {
+    "ref_id": "CD-OUTCOME-UNDERSTAND",
+    "entity_type": "duty",
+    "entity_id": "PRIN-2A-OUTCOME-3",
+    "canonical_name": "Consumer Duty Outcome 3 — Consumer understanding",
+    "description": "Communications are clear, fair and not misleading, and equip retail customers to make effective, timely and properly informed decisions about products and services. Communications testing required where appropriate.",
+    "metadata": {
+      "handbook_ref": "PRIN 2A.5"
+    }
+  },
+  {
+    "ref_id": "CD-OUTCOME-SUPPORT",
+    "entity_type": "duty",
+    "entity_id": "PRIN-2A-OUTCOME-4",
+    "canonical_name": "Consumer Duty Outcome 4 — Consumer support",
+    "description": "Customer support enables retail customers to realise the benefits of products and services they buy. Support is at least as easy and accessible as it is to take out the product. Vulnerability handling required.",
+    "metadata": {
+      "handbook_ref": "PRIN 2A.6"
+    }
+  },
+  {
+    "ref_id": "CD-CROSS-CUTTING",
+    "entity_type": "principle",
+    "entity_id": "PRIN-2A-CC",
+    "canonical_name": "Consumer Duty cross-cutting rules",
+    "description": "Three rules that overlay the four outcomes: (1) act in good faith towards retail customers; (2) avoid causing foreseeable harm to retail customers; (3) enable and support retail customers to pursue their financial objectives.",
+    "metadata": {
+      "handbook_ref": "PRIN 2A.2"
+    }
+  },
+  {
+    "ref_id": "OFSI-PENALTIES",
+    "entity_type": "concept",
+    "entity_id": "SAMLA-S146",
+    "canonical_name": "OFSI civil monetary penalties (SAMLA s.146)",
+    "description": "OFSI may impose civil monetary penalties for sanctions breaches up to the greater of £1 million or 50% of the value of the breach. Six penalties imposed in 2025 (vs one in 2024). 2025 consultation on turnover-based fines (modelled on competition / GDPR).",
+    "metadata": {
+      "act": "SAMLA 2018",
+      "section": "146",
+      "current_cap": "Greater of £1m or 50% of breach value",
+      "consultation": "2025 turnover-based fines consultation"
+    }
+  },
+  {
+    "ref_id": "OFSI-REPORTING",
+    "entity_type": "duty",
+    "entity_id": "OFSI-REG-30A",
+    "canonical_name": "OFSI reporting obligations (Russia (Sanctions) Regs Schedule 5)",
+    "description": "'Relevant firms' (banks, FCA-authorised firms, accountants, lawyers, etc.) must report to OFSI as soon as practicable if they know or have reasonable cause to suspect a person is a designated person or has committed a sanctions offence.",
+    "metadata": {
+      "supervisor": "OFSI"
+    }
+  },
+  {
+    "ref_id": "POCA-SAR",
+    "entity_type": "duty",
+    "entity_id": "POCA-S330",
+    "canonical_name": "SAR / DAML regime (POCA ss.330-339)",
+    "description": "Persons in the regulated sector must disclose suspicion of money laundering to the NCA (UKFIU). DAML applications give a defence to substantive ML offences while the NCA decides whether to consent.",
+    "metadata": {
+      "act": "POCA 2002",
+      "sections": "330-339"
+    }
+  },
+  {
+    "ref_id": "BA-S7",
+    "entity_type": "offence",
+    "entity_id": "BA-2010-S7",
+    "canonical_name": "Failure of commercial organisations to prevent bribery (BA 2010 s.7)",
+    "description": "The architectural template for ECCTA s.199. Strict-liability corporate offence where an associated person bribes for the benefit of the organisation; defence of 'adequate procedures'. Six principles in MoJ guidance closely parallel the ECCTA six.",
+    "metadata": {
+      "act": "Bribery Act 2010",
+      "section": "7"
+    }
+  }
+]

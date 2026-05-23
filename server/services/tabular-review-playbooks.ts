@@ -847,6 +847,178 @@ export const DORA_ART30_REVIEW: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 6. UK ECCTA — Reasonable Procedures Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const UK_ECCTA_REASONABLE_PROCEDURES: Playbook = {
+  id: 'uk-eccta-reasonable-procedures',
+  name: 'UK ECCTA — Reasonable Procedures Mapping',
+  description:
+    'Maps fraud-prevention policies and procedures against the six Home Office principles ' +
+    'for the ECCTA 2023 s.199(4) "reasonable procedures" defence to the failure-to-prevent-' +
+    'fraud offence (live 1 Sept 2025). Each cell asks whether a specific element of the ' +
+    'defence is evidenced in the document, with a quoted passage as proof.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['uk-compliance-2025'],
+  systemPrompt:
+    'You are an experienced UK financial-crime / corporate-criminal lawyer reviewing a ' +
+    'large organisation\'s fraud-prevention programme against the ECCTA 2023 s.199(4) ' +
+    '"reasonable procedures" defence. The Home Office Nov 2024 statutory guidance sets out ' +
+    'six principles (top-level commitment, risk assessment, proportionate procedures, due ' +
+    'diligence, communication & training, monitoring & review). You assess each principle ' +
+    'with the discipline of an SFO prosecutor + a defence reviewer combined: explicit > ' +
+    'implicit, evidence > paraphrase, strict > lenient. Generic "we comply with applicable ' +
+    'law" language is not coverage. You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a corporate fraud-prevention policy, procedure or programme document ' +
+    'against the UK ECCTA 2023 s.199(4) reasonable-procedures defence.',
+  columns: [
+    {
+      id: 'eccta-p1a-board-statement',
+      header: 'P1a — Board statement',
+      regulatoryRef: 'ECCTA Principle 1 — Top-level commitment',
+      question:
+        'Does the document contain a written board / senior-management statement of zero ' +
+        'tolerance for fraud, dated and approved at board / executive-committee level, ' +
+        'communicated internally and externally?',
+      expects:
+        'A board-approved statement (dated; signed or minuted) + evidence of internal + ' +
+        'external communication. Pre-printed mission-statement language is "partial"; ' +
+        'silence is "missing".',
+    },
+    {
+      id: 'eccta-p1b-named-owner',
+      header: 'P1b — Named senior owner',
+      regulatoryRef: 'ECCTA Principle 1 — Top-level commitment',
+      question:
+        'Does the document name a senior individual (SMF / executive committee member) ' +
+        'accountable for fraud prevention, with a clear escalation path to the board?',
+      expects:
+        'A named role / SMF function holder + reporting line to board (or audit/risk ' +
+        'committee). "Compliance owns it" without a board reporting line is "partial".',
+    },
+    {
+      id: 'eccta-p2a-risk-register',
+      header: 'P2a — Fraud risk register',
+      regulatoryRef: 'ECCTA Principle 2 — Risk assessment',
+      question:
+        'Does the document evidence a documented fraud-risk register covering each ECCTA ' +
+        'Schedule 13 base offence (FA 2006 ss.2, 3, 4, 11; false accounting; fraudulent ' +
+        'trading; cheating the public revenue) as a candidate risk?',
+      expects:
+        'A risk register addressing the Schedule 13 offences explicitly. A generic "fraud ' +
+        'risks" list without coverage of the Sched 13 offences is "partial".',
+    },
+    {
+      id: 'eccta-p2b-refresh-cadence',
+      header: 'P2b — Refresh cadence',
+      regulatoryRef: 'ECCTA Principle 2 — Risk assessment',
+      question:
+        'Does the document specify a refresh cadence for the fraud risk assessment (annual ' +
+        'at minimum) plus event-driven triggers (new business line, M&A, regulatory change, ' +
+        'detected fraud incident)?',
+      expects:
+        'Annual cadence + named trigger events. Annual review without trigger events is ' +
+        '"partial".',
+    },
+    {
+      id: 'eccta-p3a-controls-mapped',
+      header: 'P3a — Controls mapped to risks',
+      regulatoryRef: 'ECCTA Principle 3 — Proportionate procedures',
+      question:
+        'Are specific prevention controls mapped to each identified fraud risk (one or more ' +
+        'controls per risk), with the control owner identified?',
+      expects:
+        'Risk-to-control mapping table (or equivalent). A generic controls list not tied to ' +
+        'risks is "partial".',
+    },
+    {
+      id: 'eccta-p3b-financial-controls',
+      header: 'P3b — Financial controls',
+      regulatoryRef: 'ECCTA Principle 3 — Proportionate procedures',
+      question:
+        'Does the document address segregation of duties, approval thresholds, four-eyes ' +
+        'review on payments / journal entries, and system-level controls for high-fraud-risk ' +
+        'processes (vendor onboarding, customer refunds, expense claims)?',
+      expects:
+        'All four (segregation, approval thresholds, four-eyes, system controls) explicitly ' +
+        'addressed for high-risk processes. Generic "we have controls" is "partial".',
+    },
+    {
+      id: 'eccta-p4-associated-person-dd',
+      header: 'P4 — Associated-person DD',
+      regulatoryRef: 'ECCTA Principle 4 — Due diligence',
+      question:
+        'Does the document describe due-diligence procedures for associated persons (s.199(7): ' +
+        'employees pre-hire, agents / intermediaries / JV partners pre-engagement), proportionate ' +
+        'to fraud risk, with periodic refresh?',
+      expects:
+        'DD framework covering employees + agents/intermediaries/JV partners + refresh cadence. ' +
+        'Employee-only DD is "partial"; silence on agents / intermediaries is "missing".',
+    },
+    {
+      id: 'eccta-p5a-internal-training',
+      header: 'P5a — Internal training',
+      regulatoryRef: 'ECCTA Principle 5 — Communication & training',
+      question:
+        'Does the document mandate fraud-prevention training, with annual refresh, role-targeted ' +
+        'modules for higher-risk roles (finance, procurement, sales, customer-facing), ' +
+        'completion tracking, and induction modules for new joiners?',
+      expects:
+        'Annual cadence + role-targeted modules + completion tracking + induction. "Training ' +
+        'available" without mandatory completion is "partial".',
+    },
+    {
+      id: 'eccta-p5b-external-comms',
+      header: 'P5b — External communication',
+      regulatoryRef: 'ECCTA Principle 5 — Communication & training',
+      question:
+        'Are anti-fraud expectations communicated externally to associated persons (suppliers, ' +
+        'agents, JV partners) — through contract clauses, codes of conduct, supplier handbooks, ' +
+        'or joint training?',
+      expects:
+        'Contractual flow-down OR supplier code OR joint training — at least one route, ' +
+        'documented. Silence is "missing".',
+    },
+    {
+      id: 'eccta-p6a-monitoring-kpis',
+      header: 'P6a — Monitoring KPIs',
+      regulatoryRef: 'ECCTA Principle 6 — Monitoring & review',
+      question:
+        'Does the document define KPIs / metrics for fraud-prevention controls (e.g. control ' +
+        'failures detected, audit findings, training completion rates), with internal audit ' +
+        'coverage of the fraud-prevention programme?',
+      expects:
+        'Stated KPIs + internal-audit coverage cycle. KPIs without audit, or audit without KPIs, ' +
+        'is "partial".',
+    },
+    {
+      id: 'eccta-p6b-incident-learning',
+      header: 'P6b — Incident learning loop',
+      regulatoryRef: 'ECCTA Principle 6 — Monitoring & review',
+      question:
+        'Does the document describe a post-incident review process — when a fraud or near-miss ' +
+        'is detected, root cause is analysed and procedures are updated to prevent recurrence?',
+      expects:
+        'Explicit post-incident review + feedback into procedure design. A pure "investigate and ' +
+        'report" process without a procedure-update step is "partial".',
+    },
+    {
+      id: 'eccta-reporting-whistleblower',
+      header: 'Reporting & whistleblower',
+      regulatoryRef: 'ECCTA Principle 1 / FCA SYSC 18',
+      question:
+        'Does the document establish confidential / anonymous reporting channels for suspected ' +
+        'fraud, with whistleblower protection (no retaliation) and a clear reporting line up to ' +
+        'the board / audit committee?',
+      expects:
+        'Confidential / anonymous channel + non-retaliation protection + board-level reporting ' +
+        'line — all three. Missing any element is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -856,6 +1028,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   EMPLOYMENT_CONTRACT_REVIEW,
   GDPR_DPA_COMPLIANCE,
   DORA_ART30_REVIEW,
+  UK_ECCTA_REASONABLE_PROCEDURES,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

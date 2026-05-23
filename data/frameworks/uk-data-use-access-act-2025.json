@@ -1,0 +1,116 @@
+{
+  "id": "uk-data-use-access-act-2025",
+  "name": "Data (Use and Access) Act 2025",
+  "shortName": "DUAA",
+  "reference": "DUAA 2025 c.25",
+  "url": "https://www.legislation.gov.uk/ukpga/2025/25",
+  "royalAssent": "2025-06-19",
+  "mainReformsInForce": "2026-02-05",
+  "supervisor": "Information Commission (formerly ICO)",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "1", "title": "Smart Data", "articles": "Pt.1"},
+    {"number": "2", "title": "Digital identities", "articles": "Pt.2"},
+    {"number": "3", "title": "Health and social-care data", "articles": "Pt.3"},
+    {"number": "4", "title": "Data protection — substantive reforms", "articles": "Pt.4"},
+    {"number": "5", "title": "Information Commission", "articles": "Pt.5"},
+    {"number": "6", "title": "PECR reform", "articles": "Pt.6"}
+  ],
+  "themes": [
+    "Recognised legitimate interests",
+    "Automated decision-making",
+    "Smart Data",
+    "ICO reconstitution",
+    "PECR / cookies"
+  ],
+  "articles": [
+    {
+      "id": "Pt.1",
+      "title": "Smart Data — customer-data-portability framework",
+      "chapter": "1",
+      "section": "Part 1",
+      "theme": "Smart Data",
+      "requirement": "Empowers the Secretary of State to make sector-specific regulations requiring data holders (banks, energy retailers, telcos, etc.) to share customer / business data with authorised third parties on the data subject's request. Modelled on Open Banking. Sector-specific regulations expected from late 2026."
+    },
+    {
+      "id": "Pt.2",
+      "title": "Digital verification services",
+      "chapter": "2",
+      "section": "Part 2",
+      "theme": "Digital identities",
+      "requirement": "Establishes a statutory framework for digital identity verification services: a trust framework (DVS register, trust mark), an information-gateway power letting public bodies share information with registered DVS providers, and rules on accreditation."
+    },
+    {
+      "id": "Pt.4.RLI",
+      "title": "Recognised legitimate interests — new lawful basis",
+      "chapter": "4",
+      "section": "Part 4",
+      "theme": "Recognised legitimate interests",
+      "requirement": "New UK GDPR Art. 6(1)(ea) + Annex 1 — a closed list of 'recognised legitimate interests' (national security, public security, defence, emergencies, safeguarding individuals, crime detection / prevention) for which the legitimate-interests balancing test (LIA) is not required. Use for any other purpose still requires LIA."
+    },
+    {
+      "id": "Pt.4.ADM",
+      "title": "Automated decision-making reform",
+      "chapter": "4",
+      "section": "Part 4",
+      "theme": "Automated decision-making",
+      "requirement": "New UK GDPR Art. 22A-D. The general prohibition on solely automated decisions producing legal / similarly significant effects is reframed: outside special category data, the default flips to 'permitted' provided the controller (a) notifies the data subject; (b) provides information about the decision; (c) enables challenge; (d) ensures human review on request. Special category data: prior consent or substantial-public-interest exception required."
+    },
+    {
+      "id": "Pt.4.SAR",
+      "title": "Subject access — vexatious / manifestly unfounded",
+      "chapter": "4",
+      "section": "Part 4",
+      "theme": "Recognised legitimate interests",
+      "requirement": "Clarifies that the 'manifestly unfounded or excessive' bar to subject access requests is met where the controller can demonstrate that responding would require disproportionate effort. Codifies ICO existing guidance but raises the evidentiary floor for controllers refusing requests."
+    },
+    {
+      "id": "Pt.4.TRANSFERS",
+      "title": "International transfers — risk-based 'data protection test'",
+      "chapter": "4",
+      "section": "Part 4",
+      "theme": "Recognised legitimate interests",
+      "requirement": "Reformed UK GDPR Chapter V. Adequacy assessments adopt a 'data protection test' (substantially similar standard) replacing the strict 'essentially equivalent' Schrems II language. Existing UK adequacy regulations remain in force; transfer mechanisms (UK SCCs / IDTA / BCRs) preserved."
+    },
+    {
+      "id": "Pt.4.RESEARCH",
+      "title": "Research, statistics and archiving",
+      "chapter": "4",
+      "section": "Part 4",
+      "theme": "Recognised legitimate interests",
+      "requirement": "Clarifies that scientific research includes commercial research, that broad consent for areas of research is permitted, and that statistical and archiving purposes benefit from research-purpose safeguards."
+    },
+    {
+      "id": "Pt.5",
+      "title": "Information Commission reconstitution",
+      "chapter": "5",
+      "section": "Part 5",
+      "theme": "ICO reconstitution",
+      "requirement": "Replaces the Information Commissioner (a corporation sole) with the Information Commission — a corporate body with a board comprising chair, chief executive and non-executive members. All ICO functions transfer; existing enforcement notices remain valid. Strategic objectives provision aligns with the new governance model."
+    },
+    {
+      "id": "Pt.6.COOKIES",
+      "title": "PECR reform — cookie consent exceptions",
+      "chapter": "6",
+      "section": "Part 6",
+      "theme": "PECR / cookies",
+      "requirement": "Amends reg.6 of PECR. Introduces categories of cookies that may be set without consent: strictly necessary (existing), and now: analytics (first-party / aggregate / non-tracking), security, functionality (preferences), and emergency communications. Tracking cookies still require consent."
+    },
+    {
+      "id": "Pt.6.PENALTIES",
+      "title": "PECR — penalties aligned with UK GDPR",
+      "chapter": "6",
+      "section": "Part 6",
+      "theme": "PECR / cookies",
+      "requirement": "Maximum PECR fines aligned with UK GDPR (the greater of £17.5m or 4% of global turnover for the highest tier). Direct-marketing breaches, unlawful tracking, unsolicited communications now expose firms to the same penalty regime as personal data breaches."
+    },
+    {
+      "id": "Pt.6.DM",
+      "title": "PECR — soft opt-in for charities",
+      "chapter": "6",
+      "section": "Part 6",
+      "theme": "PECR / cookies",
+      "requirement": "Extends the 'soft opt-in' for electronic-mail marketing to non-commercial charity communications. Charities may market to supporters / donors / past contacts on a similar basis to commercial firms with existing customers, subject to clear opt-out at each contact."
+    }
+  ]
+}
