@@ -76,13 +76,17 @@ export const runEventBus = new RunEventBus();
 // Cell prompt — the core ask
 // ───────────────────────────────────────────────────────────────────────
 
-function renderCellPrompt(column: PlaybookColumn, docName: string, docText: string): string {
+function renderCellPrompt(
+  column: PlaybookColumn,
+  docName: string,
+  docText: string,
+  documentContext: string,
+): string {
   const text = docText.length > MAX_DOC_CHARS ? docText.slice(0, MAX_DOC_CHARS) : docText;
   return [
-    `You are auditing a corporate AML/CFT policy or procedure document against`,
-    `the AMLR (Regulation (EU) 2024/1624).`,
+    documentContext,
     ``,
-    `REGULATORY REFERENCE: ${column.regulatoryRef}`,
+    `REFERENCE: ${column.regulatoryRef}`,
     ``,
     `OBLIGATION TO CHECK: ${column.question}`,
     ``,
@@ -113,12 +117,6 @@ function renderCellPrompt(column: PlaybookColumn, docName: string, docText: stri
   ].join('\n');
 }
 
-const SYSTEM_PROMPT =
-  'You are an experienced AML/CFT compliance auditor. You assess corporate policy ' +
-  'documents against the EU Anti-Money Laundering Regulation (AMLR, (EU) 2024/1624) ' +
-  'with the discipline of a regulatory examiner: explicit > implicit, evidence > ' +
-  'paraphrase, strict > lenient. You respond ONLY with the requested JSON object.';
-
 function parseCellResponse(raw: string): CellResult {
   // Strip ```json``` fences if the model added them anyway.
   let s = raw.trim();
@@ -148,8 +146,9 @@ async function executeCell(
   docName: string,
   docText: string,
   column: PlaybookColumn,
-  model: Playbook['defaultModel'],
+  playbook: Playbook,
 ): Promise<void> {
+  const model = playbook.defaultModel;
   const startedAt = new Date();
   await db.run(
     `UPDATE tabular_review_cells
@@ -169,8 +168,11 @@ async function executeCell(
       callSync({
         model,
         thinking: 'quick',
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: renderCellPrompt(column, docName, docText) }],
+        system: playbook.systemPrompt,
+        messages: [{
+          role: 'user',
+          content: renderCellPrompt(column, docName, docText, playbook.documentContext),
+        }],
       }),
       new Promise<never>((_, rej) =>
         setTimeout(() => rej(new Error('cell timeout (60s)')), PER_CELL_TIMEOUT_MS),
@@ -232,7 +234,7 @@ async function runWorkerPool(
   db: DatabaseAdapter,
   runId: string,
   jobs: CellJob[],
-  model: Playbook['defaultModel'],
+  playbook: Playbook,
   concurrency: number,
 ): Promise<void> {
   let cursor = 0;
@@ -241,7 +243,7 @@ async function runWorkerPool(
       const idx = cursor++;
       if (idx >= jobs.length) return;
       const job = jobs[idx]!;
-      await executeCell(db, runId, job.docId, job.docName, job.docText, job.column, model);
+      await executeCell(db, runId, job.docId, job.docName, job.docText, job.column, playbook);
     }
   });
   await Promise.all(workers);
@@ -281,7 +283,7 @@ export async function startRun(db: DatabaseAdapter, input: StartRunInput): Promi
       }
     }
 
-    await runWorkerPool(db, runId, jobs, playbook.defaultModel, DEFAULT_CONCURRENCY);
+    await runWorkerPool(db, runId, jobs, playbook, DEFAULT_CONCURRENCY);
 
     // Determine final status: any cell errors mean the run is `done` with
     // partial failures (visible via failed_cells > 0). Only a system error

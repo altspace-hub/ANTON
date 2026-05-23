@@ -1,17 +1,17 @@
 /**
- * tabular-review-playbooks.ts — playbook definitions for Wave 1.
+ * tabular-review-playbooks.ts — playbook definitions for Wave 1 + 2.
  *
  * A "playbook" is a column set: N questions to ask about each document
- * dropped into a run. Wave 1 ships ONE playbook (AMLR Obligation Mapping)
- * as a hardcoded constant. Wave 2 moves these to a `tabular_review_playbooks`
- * DB table so customers can build their own.
+ * dropped into a run. Wave 1 shipped one (AMLR Obligation Mapping); Wave 2
+ * adds NDA Review, Employment Contract Review, GDPR DPA Compliance, and
+ * DORA Art. 30 ICT Third-Party Review. Wave 3 will move these to a
+ * `tabular_review_playbooks` DB table so customers can build their own.
  *
- * The column-prompt strategy: each column has a `question` (rendered in the
- * grid header), a `regulatoryRef` (cited in the prompt for grounding), and
- * a `prompt` template that the executor renders with the document text +
- * the regulatory context. Default model is Haiku 4.5 — these are factual
- * "is X covered in this policy doc" calls, not deep legal reasoning, and
- * cheap+fast beats slow+expensive at 12 cols × 20 docs = 240 cells.
+ * Each playbook owns its own auditor role-framing (`systemPrompt`) and
+ * document framing (`documentContext`). The executor renders each cell
+ * with those, so an NDA reviewer thinks like a contracts lawyer, an
+ * AMLR reviewer like a compliance auditor, etc. — without changing the
+ * executor logic.
  */
 
 export interface PlaybookColumn {
@@ -33,22 +33,25 @@ export interface Playbook {
   name: string;
   description: string;
   /** The default model for cells in this playbook. Per-column override
-   *  arrives in Wave 2. */
+   *  arrives in Wave 3. */
   defaultModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-7';
-  /** Knowledge pack(s) to ground every cell prompt in. */
+  /** Knowledge pack(s) to ground every cell prompt in (Wave 3+; today
+   *  recorded but not yet auto-injected). */
   knowledgePackIds: string[];
+  /** Sets the auditor role for every cell. Different playbooks have
+   *  different framings — compliance auditor vs contract lawyer vs
+   *  employment counsel vs ICT-risk lawyer. */
+  systemPrompt: string;
+  /** Per-document framing line rendered at the top of each cell prompt
+   *  — "you are reviewing an NDA / a policy / a DPA / ...". */
+  documentContext: string;
   columns: PlaybookColumn[];
 }
 
-/**
- * AMLR Obligation Mapping — Wave 1 MVP playbook.
- *
- * 12 columns sampled across AMLR Chapters II–VII (Articles 9-78). Each
- * column asks the same question of every uploaded policy/procedure doc:
- * "is this obligation addressed?" with strict evidence requirements.
- *
- * Article references map straight to `data/frameworks/amlr-2024.json`.
- */
+// ───────────────────────────────────────────────────────────────────────
+// 1. AMLR Obligation Mapping  (Wave 1 — the prototype)
+// ───────────────────────────────────────────────────────────────────────
+
 export const AMLR_OBLIGATION_MAPPING: Playbook = {
   id: 'amlr-obligation-mapping',
   name: 'AMLR Obligation Mapping',
@@ -59,6 +62,14 @@ export const AMLR_OBLIGATION_MAPPING: Playbook = {
     'short rationale.',
   defaultModel: 'claude-haiku-4-5-20251001',
   knowledgePackIds: ['amlr-2024'],
+  systemPrompt:
+    'You are an experienced AML/CFT compliance auditor. You assess corporate policy ' +
+    'documents against the EU Anti-Money Laundering Regulation (AMLR, (EU) 2024/1624) ' +
+    'with the discipline of a regulatory examiner: explicit > implicit, evidence > ' +
+    'paraphrase, strict > lenient. You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a corporate AML/CFT policy or procedure document against ' +
+    'the AMLR (Regulation (EU) 2024/1624).',
   columns: [
     {
       id: 'art9-internal-policies',
@@ -200,7 +211,652 @@ export const AMLR_OBLIGATION_MAPPING: Playbook = {
   ],
 };
 
-export const ALL_PLAYBOOKS: Playbook[] = [AMLR_OBLIGATION_MAPPING];
+// ───────────────────────────────────────────────────────────────────────
+// 2. NDA Review
+// ───────────────────────────────────────────────────────────────────────
+
+export const NDA_REVIEW: Playbook = {
+  id: 'nda-review',
+  name: 'NDA Review',
+  description:
+    'Reviews a folder of NDAs / confidentiality agreements against the standard ' +
+    'commercial-contract clause checklist. Flags one-sided terms, missing carve-outs, ' +
+    'and concerning provisions like residuals clauses or unlimited liability.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: [],
+  systemPrompt:
+    'You are an experienced commercial contracts lawyer reviewing non-disclosure agreements ' +
+    '(NDAs). You assess each clause with the discipline of a transaction lawyer: explicit > ' +
+    'implicit, evidence > paraphrase, strict > lenient. You flag one-sided terms and unusual ' +
+    'provisions even when the document is otherwise standard. You respond ONLY with the ' +
+    'requested JSON object.',
+  documentContext:
+    'You are reviewing a Non-Disclosure Agreement (NDA) or confidentiality clause.',
+  columns: [
+    {
+      id: 'nda-mutuality',
+      header: 'Mutuality',
+      regulatoryRef: 'NDA — structure',
+      question:
+        'Is the NDA mutual (both parties have confidentiality obligations) or one-way ' +
+        '(only one party disclosing)?',
+      expects:
+        'Status: "covered" if mutual, "partial" if mutual on the face but materially ' +
+        'asymmetric in carve-outs/obligations, "missing" if one-way against your principal.',
+    },
+    {
+      id: 'nda-definition-confidential',
+      header: 'Definition of Confidential Info',
+      regulatoryRef: 'NDA — Clause 1',
+      question:
+        'Is "Confidential Information" defined with reasonable breadth and the standard ' +
+        'carve-outs (publicly available, already known, independently developed, lawfully ' +
+        'obtained from third party, required by law)?',
+      expects:
+        'All five standard carve-outs should appear. "Covered" requires all; "partial" if ' +
+        'one or two are missing; "missing" if the definition is silent on carve-outs.',
+    },
+    {
+      id: 'nda-term',
+      header: 'Term / Duration',
+      regulatoryRef: 'NDA — Term',
+      question:
+        'What is the term of the confidentiality obligation, and does it survive termination? ' +
+        'Is the survival period reasonable (typically 2–5 years for ordinary commercial info, ' +
+        'longer for trade secrets)?',
+      expects:
+        'A stated term + a stated survival period. Unlimited / perpetual confidentiality for ' +
+        'ordinary commercial information is "partial" (uncommercial); silence is "missing".',
+    },
+    {
+      id: 'nda-permitted-disclosures',
+      header: 'Permitted disclosures',
+      regulatoryRef: 'NDA — Permitted Disclosures',
+      question:
+        'Does the NDA permit disclosure to employees / advisors on a need-to-know basis, ' +
+        'and disclosure required by law / regulator / court order (with notice obligation)?',
+      expects:
+        'Both routes should appear. Notice obligation on legal compulsion is the marker of ' +
+        'a well-drafted clause; its absence is "partial".',
+    },
+    {
+      id: 'nda-use-restriction',
+      header: 'Use restriction',
+      regulatoryRef: 'NDA — Permitted Purpose',
+      question:
+        'Is use of Confidential Information restricted to a defined "Purpose" (e.g. ' +
+        'evaluating a transaction)? Open-ended "any business purpose" language is concerning.',
+      expects:
+        'A specific Purpose defined; use limited to it. Open-ended use is "partial"; absence ' +
+        'of any use restriction is "missing".',
+    },
+    {
+      id: 'nda-return-destruction',
+      header: 'Return / destruction',
+      regulatoryRef: 'NDA — Return of Materials',
+      question:
+        'Is the recipient required to return or destroy Confidential Information on request or ' +
+        'on termination, with a written confirmation/certification?',
+      expects:
+        'Return-or-destroy on request + certification. Silence on either side is "partial".',
+    },
+    {
+      id: 'nda-residuals',
+      header: 'Residuals clause',
+      regulatoryRef: 'NDA — Residuals',
+      question:
+        'Does the NDA contain a "residuals" clause allowing the recipient to use information ' +
+        'retained in the unaided memory of personnel? This is a red flag for the disclosing party.',
+      expects:
+        'For a balanced NDA: "missing" (no residuals clause) is GOOD; "covered" (clause is ' +
+        'present and broadly drafted) is a RISK for the disclosing party. Flag it accordingly.',
+    },
+    {
+      id: 'nda-injunctive-relief',
+      header: 'Injunctive relief',
+      regulatoryRef: 'NDA — Remedies',
+      question:
+        'Does the NDA acknowledge that breach causes irreparable harm and that the ' +
+        'non-breaching party may seek injunctive relief in addition to damages?',
+      expects:
+        'Both elements: irreparable-harm acknowledgement + right to injunctive relief. ' +
+        'Damages-only remedy is "partial".',
+    },
+    {
+      id: 'nda-governing-law',
+      header: 'Governing law',
+      regulatoryRef: 'NDA — Governing Law',
+      question:
+        'What is the governing law and jurisdiction? Is the choice reasonable for the parties ' +
+        '(neutral seat for cross-border, party home jurisdiction for domestic)?',
+      expects:
+        'A clearly stated governing law + exclusive or non-exclusive jurisdiction. Silence ' +
+        'is "missing"; conflicting clauses are "partial".',
+    },
+    {
+      id: 'nda-assignment',
+      header: 'Assignment',
+      regulatoryRef: 'NDA — Assignment',
+      question:
+        'Is assignment restricted? Can the NDA be assigned without consent to affiliates, ' +
+        'successors, or acquirers of the business?',
+      expects:
+        'Standard: no assignment without consent, except to affiliates/successors. Free ' +
+        'assignability is "partial" (risk).',
+    },
+    {
+      id: 'nda-liability-cap',
+      header: 'Liability cap',
+      regulatoryRef: 'NDA — Liability',
+      question:
+        'Is there a cap or limitation on liability for breach of the NDA? Is wilful breach ' +
+        'or breach of confidentiality carved out from the cap?',
+      expects:
+        'Either no cap (more common in NDAs), or a cap with wilful-breach carve-out. A capped ' +
+        'liability with no carve-out for confidentiality breach is "partial".',
+    },
+    {
+      id: 'nda-no-license',
+      header: 'No licence / IP',
+      regulatoryRef: 'NDA — IP',
+      question:
+        'Does the NDA expressly state that no licence to IP or other rights is granted by ' +
+        'disclosure of Confidential Information?',
+      expects:
+        'A "no licence" or "no rights granted" sentence. Silence is "partial" — leaves room ' +
+        'for implied-licence arguments.',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// 3. Employment Contract Review
+// ───────────────────────────────────────────────────────────────────────
+
+export const EMPLOYMENT_CONTRACT_REVIEW: Playbook = {
+  id: 'employment-contract-review',
+  name: 'Employment Contract Review',
+  description:
+    'Reviews employment contracts against key statutory and contractual provisions, ' +
+    'with EU + Nordic practice in mind. Flags non-compete enforceability red flags, ' +
+    'missing statutory minimums, and one-sided restrictive covenants.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['employment-labor-law-eu'],
+  systemPrompt:
+    'You are an experienced employment lawyer reviewing employee contracts under EU + Nordic ' +
+    'practice. You assess each clause with the discipline of a transaction + employment ' +
+    'litigator combined: explicit > implicit, evidence > paraphrase, strict > lenient. You flag ' +
+    'enforceability risks for restrictive covenants and missing statutory minimums. You ' +
+    'respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are reviewing an employment contract / employee agreement.',
+  columns: [
+    {
+      id: 'empl-notice',
+      header: 'Notice period',
+      regulatoryRef: 'Employment — Notice',
+      question:
+        'Is the notice period clearly stated for both employer and employee, and is it at ' +
+        'least the statutory minimum for the jurisdiction (typically 1–3 months, longer with ' +
+        'tenure)?',
+      expects:
+        'Both sides stated; clearly meets statutory floor. Asymmetric notice (longer on the ' +
+        'employee side) is "partial".',
+    },
+    {
+      id: 'empl-probation',
+      header: 'Probationary period',
+      regulatoryRef: 'Employment — Probation',
+      question:
+        'Is there a probationary period? Is its length within the statutory maximum (typically ' +
+        '3–6 months under EU Directive 2019/1152)?',
+      expects:
+        'Length stated, within statutory maximum, with reduced notice during probation. ' +
+        'Longer than 6 months is "partial" or "missing" depending on jurisdiction.',
+    },
+    {
+      id: 'empl-ip-assignment',
+      header: 'IP assignment',
+      regulatoryRef: 'Employment — IP',
+      question:
+        'Does the contract assign IP created by the employee in the course of employment to ' +
+        'the employer, with adequate present-tense assignment language and waiver of moral ' +
+        'rights where lawful?',
+      expects:
+        'Present-tense assignment ("hereby assigns") rather than promise to assign. Moral-rights ' +
+        'waiver where permitted by jurisdiction. Future-IP-only clauses are "partial".',
+    },
+    {
+      id: 'empl-non-compete',
+      header: 'Non-compete',
+      regulatoryRef: 'Employment — Restrictive Covenants',
+      question:
+        'Is there a non-compete? Is its scope (activity, geography, duration) reasonable, and ' +
+        'is it paid (where required, e.g. Germany, Italy, France, Netherlands)?',
+      expects:
+        'Maximum 12 months in most EU jurisdictions; geographic scope must be tied to actual ' +
+        'business; compensation required in several jurisdictions. Overbroad or unpaid clauses ' +
+        'are "partial" (enforceability risk).',
+    },
+    {
+      id: 'empl-non-solicit',
+      header: 'Non-solicitation',
+      regulatoryRef: 'Employment — Restrictive Covenants',
+      question:
+        'Is there a non-solicitation clause covering clients, prospects, employees, and ' +
+        'contractors? Is the duration aligned with the non-compete?',
+      expects:
+        'Clients + employees as a minimum. Duration aligned with non-compete (typically 6–12 ' +
+        'months). Unlimited duration is "partial".',
+    },
+    {
+      id: 'empl-confidentiality',
+      header: 'Confidentiality',
+      regulatoryRef: 'Employment — Confidentiality',
+      question:
+        'Does the contract impose post-termination confidentiality obligations on the employee, ' +
+        'with carve-outs for whistleblowing under EU Directive 2019/1937?',
+      expects:
+        'Post-termination confidentiality + explicit whistleblower carve-out. Missing the ' +
+        'whistleblower carve-out is "partial".',
+    },
+    {
+      id: 'empl-garden-leave',
+      header: 'Garden leave',
+      regulatoryRef: 'Employment — Garden Leave',
+      question:
+        'Does the contract include a garden-leave provision allowing the employer to require ' +
+        'the employee to stay away during notice?',
+      expects:
+        'Express right to require garden leave, with continued pay. Silence is "missing" — ' +
+        'garden leave is not automatic under most EU laws.',
+    },
+    {
+      id: 'empl-severance',
+      header: 'Severance / termination pay',
+      regulatoryRef: 'Employment — Termination',
+      question:
+        'Are termination scenarios (with cause, without cause, redundancy) clearly distinguished, ' +
+        'and is severance pay aligned with the jurisdiction\'s statutory floor?',
+      expects:
+        'Scenarios distinguished + statutory severance referenced or improved upon. ' +
+        '"Termination at will" is uncommon in EU/Nordic — flag it as "partial".',
+    },
+    {
+      id: 'empl-working-time',
+      header: 'Working time / overtime',
+      regulatoryRef: 'EU Working Time Directive 2003/88/EC',
+      question:
+        'Is working time consistent with the Working Time Directive (max 48 hrs/week incl. ' +
+        'overtime, daily rest, weekly rest)? Is overtime addressed (paid, time off in lieu, or ' +
+        'opt-out where permitted)?',
+      expects:
+        'Express 48 hr cap or compliant approach, overtime treatment stated. Silence on ' +
+        'overtime is "partial".',
+    },
+    {
+      id: 'empl-holiday',
+      header: 'Holiday entitlement',
+      regulatoryRef: 'EU Working Time Directive 2003/88/EC',
+      question:
+        'Is the annual holiday entitlement at least the statutory minimum (4 weeks under the ' +
+        'WTD; 25 days in many EU/Nordic countries by national law)?',
+      expects:
+        '20 days (WTD floor) at absolute minimum; 25 days for full EU compliance with most ' +
+        'national norms. Anything below 20 days is "missing".',
+    },
+    {
+      id: 'empl-gdpr',
+      header: 'GDPR / employee data',
+      regulatoryRef: 'GDPR Art. 88 + national employment data rules',
+      question:
+        'Does the contract reference the employer\'s privacy notice for employee personal data ' +
+        'processing, including monitoring, background checks, and international transfers?',
+      expects:
+        'Reference to a standalone privacy notice + lawful-basis statement (typically Art. ' +
+        '6(1)(b) for contract performance, Art. 9 with consent/explicit basis for special-' +
+        'category data). Missing is "partial".',
+    },
+    {
+      id: 'empl-governing-law',
+      header: 'Governing law / forum',
+      regulatoryRef: 'Rome I + Brussels I Recast',
+      question:
+        'Is governing law and forum stated, and does it respect the employee\'s mandatory ' +
+        'protections under the law of the place of habitual work (Rome I Art. 8)?',
+      expects:
+        'Governing law + jurisdiction stated. Choice of foreign law that overrides mandatory ' +
+        'local protections is "partial" — the employee can still rely on local mandatory rules.',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// 4. GDPR DPA Compliance (Art. 28)
+// ───────────────────────────────────────────────────────────────────────
+
+export const GDPR_DPA_COMPLIANCE: Playbook = {
+  id: 'gdpr-dpa-compliance',
+  name: 'GDPR DPA Compliance (Art. 28)',
+  description:
+    'Reviews Data Processing Agreements against GDPR Article 28 mandatory requirements ' +
+    'plus security (Art. 32), breach notification (Art. 33–34), DPIAs (Art. 35), and ' +
+    'international transfer mechanisms (Chapter V).',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['gdpr-ai-act'],
+  systemPrompt:
+    'You are an experienced data protection lawyer reviewing Data Processing Agreements ' +
+    'against GDPR Article 28 and adjacent obligations (security, sub-processors, transfers, ' +
+    'breach notification, audits). You assess each clause with the discipline of a regulatory ' +
+    'examiner: explicit > implicit, evidence > paraphrase, strict > lenient. You respond ' +
+    'ONLY with the requested JSON object.',
+  documentContext:
+    'You are reviewing a Data Processing Agreement (DPA) or processor-controller addendum.',
+  columns: [
+    {
+      id: 'dpa-instructions',
+      header: 'Art. 28(3)(a) — Documented instructions',
+      regulatoryRef: 'GDPR Art. 28(3)(a)',
+      question:
+        'Does the DPA require the processor to act only on documented instructions from the ' +
+        'controller, including for international transfers?',
+      expects:
+        'Express "only on documented instructions" wording + flag for international transfers. ' +
+        'Silence on either is "partial".',
+    },
+    {
+      id: 'dpa-confidentiality',
+      header: 'Art. 28(3)(b) — Confidentiality',
+      regulatoryRef: 'GDPR Art. 28(3)(b)',
+      question:
+        'Does the DPA require that personnel processing the data are bound by confidentiality ' +
+        'or under an appropriate statutory obligation of confidentiality?',
+      expects:
+        'Express staff-confidentiality commitment. Generic "we keep things confidential" ' +
+        'language is "partial".',
+    },
+    {
+      id: 'dpa-security',
+      header: 'Art. 32 — Security measures',
+      regulatoryRef: 'GDPR Art. 32 (via Art. 28(3)(c))',
+      question:
+        'Does the DPA describe technical and organisational measures appropriate to the risk ' +
+        '(pseudonymisation/encryption, integrity, availability, regular testing)?',
+      expects:
+        'A specific list or appendix of TOMs. A general "industry-standard security" reference ' +
+        'is "partial".',
+    },
+    {
+      id: 'dpa-subprocessors',
+      header: 'Art. 28(2),(4) — Sub-processors',
+      regulatoryRef: 'GDPR Art. 28(2) + 28(4)',
+      question:
+        'Does the DPA address sub-processor authorisation (general or specific written consent), ' +
+        'with notice of changes and flow-down of the same data-protection obligations?',
+      expects:
+        'Authorisation regime + notice period + flow-down obligation. Missing any is "partial".',
+    },
+    {
+      id: 'dpa-data-subject-rights',
+      header: 'Art. 28(3)(e) — Data subject rights',
+      regulatoryRef: 'GDPR Art. 28(3)(e)',
+      question:
+        'Does the DPA commit the processor to assist the controller in responding to data ' +
+        'subject requests (access, rectification, erasure, restriction, portability, objection)?',
+      expects:
+        'Assistance commitment covering all six rights. Time-frame for assistance is a plus.',
+    },
+    {
+      id: 'dpa-breach-notification',
+      header: 'Art. 33(2) — Breach notification',
+      regulatoryRef: 'GDPR Art. 33(2) (via Art. 28(3)(f))',
+      question:
+        'Does the DPA require the processor to notify the controller of personal data breaches ' +
+        '"without undue delay" after becoming aware, with content sufficient to support the ' +
+        'controller\'s 72-hour Art. 33(1) notification?',
+      expects:
+        '"Without undue delay" wording + content list (nature, categories, approximate numbers, ' +
+        'mitigation). Fixed-hour notice (e.g. 24h, 48h) is acceptable; silence on content is ' +
+        '"partial".',
+    },
+    {
+      id: 'dpa-dpia-assistance',
+      header: 'Art. 28(3)(f) — DPIA assistance',
+      regulatoryRef: 'GDPR Art. 35 (via Art. 28(3)(f))',
+      question:
+        'Does the DPA require the processor to assist the controller with DPIAs and prior ' +
+        'consultations with supervisory authorities?',
+      expects:
+        'Express DPIA + Art. 36 prior-consultation assistance. Silence is "missing".',
+    },
+    {
+      id: 'dpa-return-deletion',
+      header: 'Art. 28(3)(g) — Return / deletion',
+      regulatoryRef: 'GDPR Art. 28(3)(g)',
+      question:
+        'Does the DPA require return or deletion of personal data at the end of the services, ' +
+        'at controller\'s choice, with deletion certification?',
+      expects:
+        'Choice of return-or-delete + certification on request. One-way "delete only" is ' +
+        '"partial"; silence on certification is "partial".',
+    },
+    {
+      id: 'dpa-audit',
+      header: 'Art. 28(3)(h) — Audit rights',
+      regulatoryRef: 'GDPR Art. 28(3)(h)',
+      question:
+        'Does the DPA grant the controller audit rights (or a third-party auditor), including ' +
+        'making available information necessary to demonstrate compliance?',
+      expects:
+        'Express audit right + information disclosure. Limiting audits to third-party certificates ' +
+        '(SOC 2 / ISO 27001) without an audit right on cause is "partial".',
+    },
+    {
+      id: 'dpa-international-transfers',
+      header: 'Chapter V — International transfers',
+      regulatoryRef: 'GDPR Chapter V (Art. 44–50)',
+      question:
+        'If personal data leaves the EEA, does the DPA identify the transfer mechanism ' +
+        '(SCCs, BCRs, adequacy decision) and include a Transfer Impact Assessment commitment?',
+      expects:
+        'Mechanism named + TIA referenced. SCCs without TIA is "partial"; silence on transfers ' +
+        'where they clearly occur is "missing".',
+    },
+    {
+      id: 'dpa-liability',
+      header: 'Liability allocation',
+      regulatoryRef: 'GDPR Art. 82 + contract',
+      question:
+        'Does the DPA allocate liability for data protection breaches in a balanced way, ' +
+        'including the processor\'s Art. 82 joint-and-several liability to data subjects?',
+      expects:
+        'Express allocation + reflection of Art. 82. A clause that disclaims processor ' +
+        'liability for its own breaches is "missing" (unenforceable).',
+    },
+    {
+      id: 'dpa-records',
+      header: 'Art. 30(2) — Processor records',
+      regulatoryRef: 'GDPR Art. 30(2)',
+      question:
+        'Does the processor commit to maintaining Art. 30(2) records of processing activities ' +
+        'and to making them available to supervisory authorities on request?',
+      expects:
+        'Express Art. 30(2) records commitment. Silence is "missing".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// 5. DORA Art. 30 — ICT Third-Party Risk
+// ───────────────────────────────────────────────────────────────────────
+
+export const DORA_ART30_REVIEW: Playbook = {
+  id: 'dora-art30-review',
+  name: 'DORA Art. 30 — ICT Third-Party Review',
+  description:
+    'Reviews ICT supplier / outsourcing / cloud / managed-services agreements against ' +
+    'DORA Article 30 mandatory contractual provisions for ICT third-party arrangements. ' +
+    'Each cell maps to a specific Art. 30 paragraph.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['dora-nis2'],
+  systemPrompt:
+    'You are an experienced ICT-risk and third-party-risk lawyer reviewing ICT supplier ' +
+    'contracts under DORA (Digital Operational Resilience Act, (EU) 2022/2554). You assess ' +
+    'each clause with the discipline of a financial regulator: explicit > implicit, evidence > ' +
+    'paraphrase, strict > lenient. You distinguish requirements that apply to all ICT services ' +
+    '(Art. 30(2)) from those that apply only to services supporting critical or important ' +
+    'functions (Art. 30(3)). You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are reviewing an ICT supplier / outsourcing / cloud / managed-services agreement.',
+  columns: [
+    {
+      id: 'dora-services-description',
+      header: 'Art. 30(2)(a) — Service description',
+      regulatoryRef: 'DORA Art. 30(2)(a)',
+      question:
+        'Does the contract contain a clear and complete description of all functions and ICT ' +
+        'services to be provided, including whether sub-contracting is permitted?',
+      expects:
+        'A schedule / SoW with explicit service list + sub-contracting position. Vague ' +
+        '"managed services" descriptions are "partial".',
+    },
+    {
+      id: 'dora-locations',
+      header: 'Art. 30(2)(b) — Service locations',
+      regulatoryRef: 'DORA Art. 30(2)(b)',
+      question:
+        'Does the contract identify the countries / regions where services will be performed ' +
+        'and where data will be processed, including for sub-contractors?',
+      expects:
+        'Country list (or region) for delivery + processing + sub-processor locations. ' +
+        '"To be agreed" or unbounded is "partial".',
+    },
+    {
+      id: 'dora-data-protection',
+      header: 'Art. 30(2)(c) — Data protection',
+      regulatoryRef: 'DORA Art. 30(2)(c)',
+      question:
+        'Does the contract include provisions on the availability, authenticity, integrity ' +
+        'and confidentiality of data, including personal data?',
+      expects:
+        'All four (availability, authenticity, integrity, confidentiality) addressed. Missing ' +
+        'any (especially authenticity) is "partial".',
+    },
+    {
+      id: 'dora-data-access',
+      header: 'Art. 30(2)(d) — Data access on termination',
+      regulatoryRef: 'DORA Art. 30(2)(d)',
+      question:
+        'Does the contract guarantee access to, recovery of and return of personal and ' +
+        'non-personal data in an easily accessible format on insolvency, resolution, ' +
+        'discontinuance, or termination?',
+      expects:
+        'Access + recovery + return commitment, including in insolvency. Silence on insolvency ' +
+        'is "partial".',
+    },
+    {
+      id: 'dora-service-levels',
+      header: 'Art. 30(2)(e) — Service levels',
+      regulatoryRef: 'DORA Art. 30(2)(e)',
+      question:
+        'Does the contract include service level descriptions and quantitative / qualitative ' +
+        'performance targets to allow effective monitoring?',
+      expects:
+        'Quantitative SLAs (uptime %, RTO/RPO, response time) + measurement + reporting cadence. ' +
+        '"Best efforts" language is "partial".',
+    },
+    {
+      id: 'dora-incident-support',
+      header: 'Art. 30(2)(f) — Incident assistance',
+      regulatoryRef: 'DORA Art. 30(2)(f)',
+      question:
+        'Does the contract oblige the ICT provider to provide assistance at no additional cost ' +
+        'when an ICT-related incident occurs in the provider\'s services?',
+      expects:
+        '"At no additional cost" wording is the marker. "Reasonable assistance" without cost ' +
+        'clarity is "partial".',
+    },
+    {
+      id: 'dora-cooperate-authorities',
+      header: 'Art. 30(2)(g) — Authority cooperation',
+      regulatoryRef: 'DORA Art. 30(2)(g)',
+      question:
+        'Does the contract require the ICT provider to cooperate fully with the financial ' +
+        'entity\'s competent authorities and resolution authorities?',
+      expects:
+        'Express cooperation duty named to competent + resolution authorities. Missing one ' +
+        '(typically resolution authority) is "partial".',
+    },
+    {
+      id: 'dora-termination-rights',
+      header: 'Art. 30(2)(h) — Termination rights',
+      regulatoryRef: 'DORA Art. 30(2)(h)',
+      question:
+        'Does the contract grant termination rights to the financial entity with adequate ' +
+        'notice, including for breach, supervisory action, vulnerabilities, or material change?',
+      expects:
+        'Multiple termination triggers (breach, regulator-directed, material change, security ' +
+        'failure). A single "for cause" trigger is "partial".',
+    },
+    {
+      id: 'dora-exit-strategy',
+      header: 'Art. 30(2)(i) — Exit strategy',
+      regulatoryRef: 'DORA Art. 30(2)(i)',
+      question:
+        'Does the contract provide for an adequate transition period and transition / exit ' +
+        'assistance after termination?',
+      expects:
+        'Stated exit period (typically 6–12 months) + assistance scope (data migration, ' +
+        'knowledge transfer, parallel running). Silence is "missing".',
+    },
+    {
+      id: 'dora-art30-3-audit',
+      header: 'Art. 30(3)(e) — Audit rights (critical)',
+      regulatoryRef: 'DORA Art. 30(3)(e) — applies to critical/important fns',
+      question:
+        'For ICT services supporting critical or important functions, does the contract grant ' +
+        'unrestricted right of access, inspection and audit to the financial entity, third-party ' +
+        'auditors, and competent authorities?',
+      expects:
+        'Three-tier audit right (FI + auditors + authorities). Limiting to third-party ' +
+        'certifications only is "partial" for critical services.',
+    },
+    {
+      id: 'dora-art30-3-security-testing',
+      header: 'Art. 30(3)(d) — Security testing',
+      regulatoryRef: 'DORA Art. 30(3)(d) — applies to critical/important fns',
+      question:
+        'For critical or important functions, does the contract include the right to ' +
+        'participate in or conduct security testing, including penetration testing and TLPT?',
+      expects:
+        'Express right to perform / participate in security tests. Vendor-only testing is ' +
+        '"partial" for critical services.',
+    },
+    {
+      id: 'dora-art30-3-training',
+      header: 'Art. 30(3)(f) — Training & awareness',
+      regulatoryRef: 'DORA Art. 30(3)(f) — applies to critical/important fns',
+      question:
+        'For critical or important functions, does the contract require the ICT provider to ' +
+        'have its staff trained on relevant security awareness programmes and digital ' +
+        'operational resilience?',
+      expects:
+        'Express training-and-awareness obligation. Generic "competent staff" is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// Registry
+// ───────────────────────────────────────────────────────────────────────
+
+export const ALL_PLAYBOOKS: Playbook[] = [
+  AMLR_OBLIGATION_MAPPING,
+  NDA_REVIEW,
+  EMPLOYMENT_CONTRACT_REVIEW,
+  GDPR_DPA_COMPLIANCE,
+  DORA_ART30_REVIEW,
+];
 
 export function getPlaybook(id: string): Playbook | undefined {
   return ALL_PLAYBOOKS.find((p) => p.id === id);
