@@ -1196,6 +1196,192 @@ export const SWISS_AMLA_LETA_READINESS: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 8. Ireland SEAR — Responsibility Map & SoR Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const IRELAND_SEAR_RESPONSIBILITY_MAP: Playbook = {
+  id: 'ireland-sear-responsibility-map',
+  name: 'Ireland SEAR — Responsibility Map & SoR Mapping',
+  description:
+    'Maps a Management Responsibilities Map (MRM) and the associated Statements of ' +
+    'Responsibilities (SoRs) against the SEAR / IAF Act 2023 requirements. Covers PCF + ' +
+    'Inherent + Prescribed Responsibility allocation, the (I)NED extension live since 1 July ' +
+    '2025, Common + Additional Conduct Standards, F&P certification, handover procedures, ' +
+    'and the interplay with the Companies Act 2014 s.224 directors\' compliance statement.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['ireland-compliance-2026'],
+  systemPrompt:
+    'You are an experienced Irish financial-services lawyer reviewing a Management ' +
+    'Responsibilities Map (MRM) + the related Statements of Responsibilities (SoRs) against ' +
+    'the SEAR Regulations + IAF Act 2023 + CBI guidance. You assess each element with the ' +
+    'discipline of a CBI on-site inspector: explicit > implicit, evidence > paraphrase, ' +
+    'strict > lenient. You flag every Prescribed Responsibility that is unallocated, every ' +
+    'PCF without a current SoR, and every Conduct Standard not reflected in the documentation. ' +
+    'You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a Management Responsibilities Map (MRM), Statement of Responsibilities ' +
+    '(SoR), board / governance document or related SEAR-readiness document for an Irish ' +
+    'regulated financial service provider.',
+  columns: [
+    {
+      id: 'ie-pcf-identification',
+      header: 'PCF identification + holder',
+      regulatoryRef: 'SEAR Regs Pt II + F&P Regs',
+      question:
+        'Does the document identify each applicable PCF role (PCF-1 ED, PCF-2A NED, PCF-2B INED, ' +
+        'PCF-3 Chair, PCF-8 CEO, PCF-11 CFO, PCF-12 Head of Compliance, PCF-14 Head of Risk, ' +
+        'PCF-15 MLRO etc.) with the named individual currently holding the role + their CBI ' +
+        'pre-approval status?',
+      expects:
+        'A complete PCF inventory + named holders + pre-approval status. Missing any PCF ' +
+        'expected at the firm\'s authorisation level is "partial".',
+    },
+    {
+      id: 'ie-sor-completeness',
+      header: 'SoR completeness + currency',
+      regulatoryRef: 'SEAR Regs Pt IV',
+      question:
+        'For each PCF, is there a Statement of Responsibilities that is signed by the ' +
+        'individual, acknowledged by the firm, dated within the last 12 months (or following ' +
+        'the most recent material change), and submitted to CBI within prescribed timeframes?',
+      expects:
+        'Signed + dated + acknowledged + current + filed-with-CBI. Missing any element is ' +
+        '"partial"; missing SoRs entirely is "missing".',
+    },
+    {
+      id: 'ie-inherent-resp',
+      header: 'Inherent Responsibilities documented',
+      regulatoryRef: 'SEAR Regs Sched 1',
+      question:
+        'For each PCF, does the SoR document the Inherent Responsibilities attaching to that ' +
+        'role per CBI guidance (e.g. Chair leading board effectiveness; CEO implementing ' +
+        'strategy; CFO integrity of financial information; Head of Compliance the compliance ' +
+        'framework)?',
+      expects:
+        'Inherent Responsibilities listed verbatim or by clear cross-reference to CBI Sched 1. ' +
+        'Summarising "leading the company" without role-specific Inherent Responsibilities is ' +
+        '"partial".',
+    },
+    {
+      id: 'ie-prescribed-resp-alloc',
+      header: 'Prescribed Responsibilities allocated',
+      regulatoryRef: 'SEAR Regs Sched 2 — PR1-PR10+',
+      question:
+        'Has every Prescribed Responsibility applicable to the firm been explicitly allocated ' +
+        'to a named PCF holder in the MRM — risk-management framework, ICAAP/ILAAP, ' +
+        'financial-crime systems, ICT/cyber resilience, regulatory-reporting integrity, ' +
+        'business-continuity, whistleblowing, conduct + culture, outsourcing, and any ' +
+        'firm-type-specific PRs?',
+      expects:
+        'Per-PR allocation table with named PCF holder. An unallocated PR is "missing"; ' +
+        'multiple PRs concentrated on one holder without rationale is "partial".',
+    },
+    {
+      id: 'ie-other-resp-alloc',
+      header: 'Other (firm-specific) Responsibilities allocated',
+      regulatoryRef: 'SEAR Regs Pt III(3)',
+      question:
+        'Does the MRM allocate material firm-specific responsibilities beyond the Prescribed + ' +
+        'Inherent list — e.g. specific business lines, product responsibilities, geographic ' +
+        'regions, regulatory programmes (DORA, AMLR readiness, CPC 2026 implementation)?',
+      expects:
+        'A material-firm-specific responsibilities section in the MRM with named owners. ' +
+        'Absence at firms with material non-Prescribed activities is "partial".',
+    },
+    {
+      id: 'ie-ined-scope',
+      header: '(I)NED extension (PCF-2B)',
+      regulatoryRef: 'SEAR Regs as amended; in force 1 Jul 2025',
+      question:
+        'Has the MRM been refreshed since 1 July 2025 to include (I)NEDs as PCF-2B with ' +
+        'their Statements of Responsibilities (board committee chair allocations, senior ' +
+        'independent director responsibilities, etc.) — and are F&P pre-approvals in place ' +
+        'for the (I)NED cohort?',
+      expects:
+        'Post-1-July-2025 MRM version + (I)NED SoRs + (I)NED F&P pre-approvals. An MRM dated ' +
+        'before 1 July 2025 without an updated version is "missing".',
+    },
+    {
+      id: 'ie-common-cs',
+      header: 'Common Conduct Standards embedded',
+      regulatoryRef: 'Conduct Standards Regs Reg 5',
+      question:
+        'Are the five Common Conduct Standards (honesty + integrity; due skill, care + ' +
+        'diligence; cooperation with the CBI; customers\' best interests + fair treatment; ' +
+        'standards of market conduct) reflected in role descriptions, employment contracts, ' +
+        'codes of conduct, training, and disciplinary policies for all CFs?',
+      expects:
+        'All five standards reflected across docs covering all CFs. Any standard missing or ' +
+        'standards covering only PCFs (not all CFs) is "partial".',
+    },
+    {
+      id: 'ie-additional-cs',
+      header: 'Additional Conduct Standards reflected in SoRs',
+      regulatoryRef: 'Conduct Standards Regs Reg 6',
+      question:
+        'Are the four Additional Conduct Standards (effective control; regulatory compliance; ' +
+        'appropriate delegation + oversight; appropriate disclosure to CBI) reflected in each ' +
+        'PCF\'s SoR — connecting their allocated responsibilities to the reasonable-steps ' +
+        'test for the Duty of Responsibility?',
+      expects:
+        'Express ACS reflection per SoR + reasonable-steps language. Generic "senior manager ' +
+        'responsibilities" without ACS mapping is "partial".',
+    },
+    {
+      id: 'ie-fp-process',
+      header: 'F&P pre-approval + ongoing certification',
+      regulatoryRef: 'F&P Regs (CBR Act 2010 ss.20-22)',
+      question:
+        'Does the document evidence the F&P process: pre-approval submission (Individual ' +
+        'Questionnaire) for every PCF; annual ongoing certification for every CF + PCF; ' +
+        'material-change reporting; records retention; senior-level sign-off?',
+      expects:
+        'Pre-approval workflow + annual certification + material-change reporting + records. ' +
+        'Missing the ongoing certification cadence is "partial".',
+    },
+    {
+      id: 'ie-handover',
+      header: 'Handover Procedures for PCF transitions',
+      regulatoryRef: 'SEAR Regs Pt IV(4) + CBI Guidance',
+      question:
+        'Does the firm document Handover Procedures for PCF transitions — handover certificate ' +
+        'or note covering material risks, ongoing investigations, open regulatory matters, ' +
+        'pending board decisions, key relationships, with timely MRM + SoR updates and CBI ' +
+        'filing?',
+      expects:
+        'A documented handover process + transition-period MRM/SoR refresh discipline. ' +
+        'Silence on PCF transitions is "partial".',
+    },
+    {
+      id: 'ie-board-oversight',
+      header: 'Board oversight + breach reporting',
+      regulatoryRef: 'SEAR Regs + Conduct Standards Regs + IAF Act 2023',
+      question:
+        'Does the document evidence board / risk-committee oversight of SEAR compliance — ' +
+        'agenda items, annual attestation, MRM review schedule, Conduct Standards breach ' +
+        'reporting to CBI within prescribed timeframes, and integration with the firm\'s ' +
+        'whistleblowing channel (PR8)?',
+      expects:
+        'Board attestation + breach-reporting cadence + whistleblowing integration. Missing ' +
+        'the CBI breach-reporting timeline is "partial".',
+    },
+    {
+      id: 'ie-companies-act-interplay',
+      header: 'Companies Act s.224 interplay',
+      regulatoryRef: 'Companies Act 2014 ss.223-225',
+      question:
+        'Does the document reconcile the SEAR responsibility allocation with the Companies ' +
+        'Act 2014 s.224 directors\' compliance statement + s.225 codified directors\' duties ' +
+        'so that a single set of governance evidence supports both regimes?',
+      expects:
+        'Express cross-reference + a single governance architecture covering both. Silence on ' +
+        'the s.224 / s.225 interplay is "partial"; a complete separation of the two regimes ' +
+        'in the documentation is "missing" (inefficient + risky).',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1207,6 +1393,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   DORA_ART30_REVIEW,
   UK_ECCTA_REASONABLE_PROCEDURES,
   SWISS_AMLA_LETA_READINESS,
+  IRELAND_SEAR_RESPONSIBILITY_MAP,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

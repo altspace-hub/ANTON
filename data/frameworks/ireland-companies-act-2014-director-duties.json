@@ -1,0 +1,88 @@
+{
+  "id": "ireland-companies-act-2014-director-duties",
+  "name": "Companies Act 2014 — Director Duties + Compliance Statement (ss.223-225)",
+  "shortName": "CA 2014 ss.223-225",
+  "reference": "Act No. 38 of 2014",
+  "url": "https://www.irishstatutebook.ie/eli/2014/act/38/section/225/enacted/en/html",
+  "inForce": "2015-06-01",
+  "supervisor": "Corporate Enforcement Authority (CEA) + CRO",
+  "articleCount": 8,
+  "chapters": [
+    {"number": "1", "title": "Section 223 — director acknowledgement", "articles": "s.223"},
+    {"number": "2", "title": "Section 224 — directors' compliance statement", "articles": "s.224"},
+    {"number": "3", "title": "Section 225 — statement of directors' duties", "articles": "s.225"},
+    {"number": "4", "title": "Interplay with SEAR + CPC 2026", "articles": "cross-reg"}
+  ],
+  "themes": [
+    "Director acknowledgement",
+    "Directors' compliance statement",
+    "Statement of directors' duties",
+    "Interplay with SEAR + CPC 2026"
+  ],
+  "articles": [
+    {
+      "id": "s.223",
+      "title": "Acknowledgement of duties on appointment",
+      "chapter": "1",
+      "section": "Pt 5 Chap 3",
+      "theme": "Director acknowledgement",
+      "requirement": "On appointment as a director of an Irish company, the person must acknowledge in writing that they have legal duties + obligations imposed by the Companies Act, other statutes + at common law. Standard form acknowledgement retained by the company."
+    },
+    {
+      "id": "s.224",
+      "title": "Directors' compliance statement (annual)",
+      "chapter": "2",
+      "section": "Pt 5 Chap 3",
+      "theme": "Directors' compliance statement",
+      "requirement": "Directors of large + PIE companies must include in their directors' report an annual compliance statement: (a) acknowledging responsibility for securing compliance with 'relevant obligations' (tax law + Companies Act provisions, the breach of which would attract serious sanction); (b) confirming a compliance policy statement has been drawn up; (c) confirming appropriate arrangements + structures have been put in place to secure material compliance; (d) confirming a review of those arrangements + structures has been conducted during the financial year."
+    },
+    {
+      "id": "s.224.scope",
+      "title": "Section 224 — scope (large companies + PIEs)",
+      "chapter": "2",
+      "section": "Pt 5 Chap 3",
+      "theme": "Directors' compliance statement",
+      "requirement": "Applies to private companies limited by shares + designated activity companies whose balance sheet total exceeds €12.5 million AND turnover exceeds €25 million in the financial year, plus public limited companies + public-interest entities (subject to specified carve-outs)."
+    },
+    {
+      "id": "s.225",
+      "title": "Statement of Directors' Duties (codified)",
+      "chapter": "3",
+      "section": "Pt 5 Chap 3",
+      "theme": "Statement of directors' duties",
+      "requirement": "Eight codified fiduciary + general duties of directors: (1) act in good faith in what the director considers to be the company's interests; (2) act honestly + responsibly in relation to the company's affairs; (3) act in accordance with the company's constitution + exercise powers only for lawful purposes; (4) not use company property / information / opportunities for personal benefit (or benefit of others) unless approved by the company's constitution or members; (5) not agree to restrict the director's power to exercise independent judgment unless expressly permitted; (6) avoid conflicts between the director's duties + personal interests; (7) exercise the care + skill that may reasonably be expected of a person with the director's knowledge + experience; (8) have regard to the interests of members (in addition to creditors / employees as required by other provisions)."
+    },
+    {
+      "id": "s.225(2)",
+      "title": "Section 225 — civil consequences",
+      "chapter": "3",
+      "section": "Pt 5 Chap 3",
+      "theme": "Statement of directors' duties",
+      "requirement": "Breach of the duties at s.225(1) is enforceable in the same manner as a breach of fiduciary duty (and the duty at (7) as a breach of the duty of care). Civil consequences: account of profits, restoration of property, damages, declaration of the validity of contracts. The duties are owed by the director to the company."
+    },
+    {
+      "id": "Interplay.SEAR",
+      "title": "Interplay with SEAR Prescribed Responsibilities",
+      "chapter": "4",
+      "section": "Cross-regime",
+      "theme": "Interplay with SEAR + CPC 2026",
+      "requirement": "The s.224 compliance statement + the SEAR MRM + the SEAR Prescribed Responsibilities should describe a single coherent governance architecture. Directors' compliance-statement arrangements are typically operationalised by allocating ownership to PCFs through the MRM (PR1 risk-management, PR2 ICAAP, PR4 financial-crime, PR9 conduct, etc.) so a single set of evidence supports both regimes."
+    },
+    {
+      "id": "Interplay.CCS",
+      "title": "Interplay with Common + Additional Conduct Standards",
+      "chapter": "4",
+      "section": "Cross-regime",
+      "theme": "Interplay with SEAR + CPC 2026",
+      "requirement": "The s.225 director duties + the SEAR Common + Additional Conduct Standards overlap substantially: skill/care/diligence (CA s.225(7) + CS skill/care); honesty + integrity (CA s.225(1)/(2) + CS honesty); avoidance of conflicts (CA s.225(6) + CS market conduct). Director conduct that breaches both regimes may attract both civil consequences (CA) + CBI administrative sanctions (SEAR / Conduct Standards / F&P)."
+    },
+    {
+      "id": "Interplay.CPC",
+      "title": "Interplay with CPC 2026 Effective Governance",
+      "chapter": "4",
+      "section": "Cross-regime",
+      "theme": "Interplay with SEAR + CPC 2026",
+      "requirement": "CPC 2026 Effective Governance Arrangements (Conduct Regs Pt III) require board / senior management responsibility for embedding Securing Customer Interests outcomes — including MI + outcome monitoring + at-least-annual board review. The same board-level processes used to evidence s.224 compliance + SEAR Prescribed Responsibilities can satisfy the CPC 2026 governance obligation, provided customer-outcomes data is integrated into the MI."
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "id": "ireland-cjmla-2010",
+  "name": "Criminal Justice (Money Laundering and Terrorist Financing) Acts 2010-2021",
+  "shortName": "CJMLA",
+  "reference": "Act No. 6 of 2010 (as amended by 2013, 2018, 2021 Acts)",
+  "inForce": "2010-07-15",
+  "supervisor": "Central Bank of Ireland (FIs) + Department of Justice + Revenue + professional bodies",
+  "euAmlrApplies": "2027-07-10",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "1", "title": "Definitions + Designated Persons (Pt 1, ss.1-29)", "articles": "ss.1-29"},
+    {"number": "2", "title": "Customer Due Diligence (Pt 4 ss.33-39)", "articles": "ss.33-39"},
+    {"number": "3", "title": "Enhanced Due Diligence + PEPs (Pt 4 ss.37, 38A)", "articles": "ss.37, 38A"},
+    {"number": "4", "title": "Reporting (Pt 5 ss.42-48)", "articles": "ss.42-48"},
+    {"number": "5", "title": "Internal Policies, Controls + Training (Pt 4 s.54)", "articles": "s.54"},
+    {"number": "6", "title": "Supervision + Sanctions (Pt 9 ss.60-110)", "articles": "ss.60-110"}
+  ],
+  "themes": [
+    "Designated person scope",
+    "Customer Due Diligence",
+    "EDD + PEPs",
+    "STR reporting",
+    "Internal controls + training",
+    "Supervision + sanctions",
+    "AMLR transition"
+  ],
+  "articles": [
+    {
+      "id": "s.25",
+      "title": "Designated persons",
+      "chapter": "1",
+      "section": "Pt 1",
+      "theme": "Designated person scope",
+      "requirement": "Designated persons obligated under the Acts include: credit + financial institutions; auditors + external accountants + tax advisers + insolvency practitioners; legal professionals (when carrying out specified financial / property / corporate transactions); trust + company service providers; estate agents; property service providers; dealers in goods accepting cash payments of €10,000+; high-value goods dealers (≥€10,000); gambling operators; virtual asset service providers (transitioning to MiCA CASPs)."
+    },
+    {
+      "id": "s.30A",
+      "title": "Business risk assessment",
+      "chapter": "1",
+      "section": "Pt 4",
+      "theme": "Internal controls + training",
+      "requirement": "A designated person must carry out an assessment of the risks of money laundering + terrorist financing involved in the carrying on of business by it as a designated person; document; keep up to date; reflect risk factors including customer, product, service, transaction, delivery channel, geographic + new technologies."
+    },
+    {
+      "id": "s.33",
+      "title": "Customer due diligence — application",
+      "chapter": "2",
+      "section": "Pt 4",
+      "theme": "Customer Due Diligence",
+      "requirement": "CDD measures applied: at establishment of a business relationship; carrying out an occasional transaction of €15,000+ (or €1,000+ for wire transfers); on suspicion of money laundering / terrorist financing irrespective of any threshold; where there are doubts about the veracity or adequacy of previously obtained CDD information."
+    },
+    {
+      "id": "s.33(2)",
+      "title": "CDD measures",
+      "chapter": "2",
+      "section": "Pt 4",
+      "theme": "Customer Due Diligence",
+      "requirement": "CDD measures: identify + verify the customer using documents / data / information from reliable + independent sources; identify the beneficial owner + take reasonable measures to verify; obtain information on the purpose + intended nature of the relationship; conduct ongoing monitoring (transaction scrutiny + record refresh)."
+    },
+    {
+      "id": "s.37",
+      "title": "Enhanced due diligence",
+      "chapter": "3",
+      "section": "Pt 4",
+      "theme": "EDD + PEPs",
+      "requirement": "EDD required for: high-risk third countries; complex / unusual / large transactions with no apparent economic purpose; situations representing a higher risk of money laundering or terrorist financing (assessed by reference to risk factors at s.30A). Senior management approval to enter / continue; documented rationale; enhanced monitoring."
+    },
+    {
+      "id": "s.38",
+      "title": "PEPs — domestic + foreign",
+      "chapter": "3",
+      "section": "Pt 4",
+      "theme": "EDD + PEPs",
+      "requirement": "Enhanced measures for foreign + domestic + international-organisation PEPs + family members + close associates: senior management approval; source of wealth + source of funds checks; ongoing enhanced monitoring. PEP status continues 12 months after the person ceases to hold the prominent public function."
+    },
+    {
+      "id": "s.42",
+      "title": "Suspicious Transaction Reporting (STRs)",
+      "chapter": "4",
+      "section": "Pt 5",
+      "theme": "STR reporting",
+      "requirement": "A designated person who knows, suspects or has reasonable grounds to suspect that another person has been or is engaged in money laundering / terrorist financing shall, as soon as practicable, report the suspicion to the Garda Síochána FIU + Revenue. Statutory immunity for good-faith reports. Tipping-off prohibition under s.49."
+    },
+    {
+      "id": "s.49",
+      "title": "Tipping-off prohibition",
+      "chapter": "4",
+      "section": "Pt 5",
+      "theme": "STR reporting",
+      "requirement": "Designated person commits an offence by disclosing to a third party that an STR has been filed, or that an investigation may be carried out. Carve-outs for legal advice + within the same legal entity + with regulators."
+    },
+    {
+      "id": "s.54",
+      "title": "Internal policies + procedures + controls",
+      "chapter": "5",
+      "section": "Pt 4",
+      "theme": "Internal controls + training",
+      "requirement": "Designated persons must adopt internal policies, controls + procedures to prevent + detect ML/TF, including: customer + business risk assessment + their application; CDD; reliance on third parties; reporting; record retention (5 years minimum); monitoring transactions; staff vetting + training. Reviewed regularly; approved at senior level."
+    },
+    {
+      "id": "s.54A",
+      "title": "Group-wide programmes",
+      "chapter": "5",
+      "section": "Pt 4",
+      "theme": "Internal controls + training",
+      "requirement": "Designated persons that are part of a group must apply group-wide AML/CFT policies + procedures at branch + majority-owned subsidiary level, including information-sharing for ML/TF purposes within group + group-level CDD."
+    },
+    {
+      "id": "AMLR.Prep",
+      "title": "EU AMLR transition + readiness",
+      "chapter": "6",
+      "section": "EU AMLR Reg (EU) 2024/1624",
+      "theme": "AMLR transition",
+      "requirement": "From 10 July 2027 the EU AMLR (directly applicable) governs CDD, EDD, PEPs, beneficial-ownership identification + similar customer-facing AML obligations. The CJMLA framework will be partially superseded; the AMLD6 + AMLA Authority cooperation framework will be transposed via further Irish legislation. Designated persons should plan for: harmonised CDD documentation, AMLA direct supervision for highest-risk obliged entities (from 2028), and the centralised EU-level information-sharing framework."
+    }
+  ]
+}

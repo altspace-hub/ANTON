@@ -1,0 +1,29 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "ireland-compliance-2026",
+  "display_name": "Ireland Compliance 2026 — IAF/SEAR, CBI Consumer Protection Code 2026, AML, Companies Act",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the Irish regulatory wave of 2024-2026: the Individual Accountability Framework Act 2023 + SEAR (Senior Executive Accountability Regime — first wave applied 1 Jul 2024, (I)NED scope expansion live 1 Jul 2025), the CBI Consumer Protection Code 2026 (in force 24 March 2026), the Irish AML framework (CJMLA 2010-2021 awaiting EU AMLR transposition), Companies Act 2014 director duties (ss.223-225) and the related Fitness & Probity Regime. Plus DPA 2018/UK GDPR-divergent DPC enforcement, the Irish MiCA SI 268/2024, CSRD transposition SI 336/2024, CBI UCITS/AIFMD funds rules, and the Criminal Justice (Corruption Offences) Act 2018.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Ireland",
+  "regulatory_area": "Multi-domain compliance",
+  "regulation_ids": [
+    "Central Bank (Individual Accountability Framework) Act 2023",
+    "SEAR — Senior Executive Accountability Regime",
+    "CBI Consumer Protection Code 2026",
+    "Criminal Justice (Money Laundering and Terrorist Financing) Acts 2010-2021",
+    "Companies Act 2014",
+    "Data Protection Act 2018",
+    "Criminal Justice (Corruption Offences) Act 2018",
+    "SI 268/2024 — Irish MiCA Regulations",
+    "SI 336/2024 — CSRD Transposition",
+    "CBI Acts 1942-2018",
+    "CBI UCITS Regulations",
+    "CBI AIF Rulebook"
+  ],
+  "tier": 1,
+  "entity_count": 51,
+  "relationship_count": 75,
+  "alias_entry_count": 33
+}

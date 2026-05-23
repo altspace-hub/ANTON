@@ -1,0 +1,168 @@
+{
+  "id": "ireland-iaf-sear-2023",
+  "name": "Central Bank (Individual Accountability Framework) Act 2023 + SEAR Regulations",
+  "shortName": "IAF / SEAR",
+  "reference": "Act No. 5 of 2023 + CBI SEAR Regulations + Conduct Standards Regulations + F&P Regulations",
+  "iafSigned": "2023-03-09",
+  "conductStandardsInForce": "2023-12-29",
+  "searFirstWaveInForce": "2024-07-01",
+  "inedExtensionInForce": "2025-07-01",
+  "supervisor": "Central Bank of Ireland",
+  "articleCount": 17,
+  "chapters": [
+    {"number": "1", "title": "Foundation — IAF Act 2023", "articles": "IAF Act"},
+    {"number": "2", "title": "SEAR Regulations — Responsibilities", "articles": "SEAR Regs"},
+    {"number": "3", "title": "Conduct Standards Regulations", "articles": "CS Regs"},
+    {"number": "4", "title": "Fitness & Probity Regime", "articles": "F&P Regs + CBR Act 2010"},
+    {"number": "5", "title": "Enforcement + Investigation", "articles": "IAF Act + ASP"}
+  ],
+  "themes": [
+    "PCF + CF identification",
+    "Management Responsibilities Map",
+    "Statement of Responsibilities",
+    "Inherent + Prescribed Responsibilities",
+    "Conduct Standards",
+    "Fitness & Probity",
+    "(I)NED scope expansion",
+    "Duty of Responsibility",
+    "Breach reporting + enforcement"
+  ],
+  "articles": [
+    {
+      "id": "IAF.s20A",
+      "title": "Duty of Responsibility (reasonable-steps)",
+      "chapter": "1",
+      "section": "IAF Act s.20A inserting CBR Act 2010 s.21H",
+      "theme": "Duty of Responsibility",
+      "requirement": "Where a regulated financial service provider commits a prescribed contravention, a person performing a PCF role allocated responsibility for the relevant matter is liable unless they prove they took such reasonable steps as a person in their position could be expected to take to avoid the contravention. Reverse burden — PCF holder must adduce evidence of reasonable steps."
+    },
+    {
+      "id": "IAF.PartIIA",
+      "title": "Conduct Standards — power to make",
+      "chapter": "1",
+      "section": "IAF Act Part IIA (CBR Act 2010 amendments)",
+      "theme": "Conduct Standards",
+      "requirement": "The CBI is empowered to prescribe Conduct Standards for individuals performing Controlled Functions in regulated financial service providers. Standards include Common Conduct Standards (all CFs) and Additional Conduct Standards (PCFs)."
+    },
+    {
+      "id": "IAF.ASP",
+      "title": "Administrative Sanctions Procedure (ASP) extended to individuals",
+      "chapter": "5",
+      "section": "IAF Act amendments to CB(S&E)A 2013",
+      "theme": "Breach reporting + enforcement",
+      "requirement": "Individuals may be sanctioned directly under the ASP without the prior requirement to establish the firm's contravention as a 'participation link'. Penalties up to €1 million for individuals; disqualification, prohibition + censure also available. F&P investigations may run in parallel."
+    },
+    {
+      "id": "SEAR.PCF",
+      "title": "PCF identification + allocation",
+      "chapter": "2",
+      "section": "SEAR Regs Pt II",
+      "theme": "PCF + CF identification",
+      "requirement": "The firm must identify each PCF role applicable to it (from the CBI's PCF list), the individual holding that role, and ensure the appointment has CBI pre-approval. PCF-1 Executive Director, PCF-3 Chair, PCF-8 CEO, PCF-11 CFO, PCF-12 Head of Compliance, PCF-14 Head of Risk, PCF-15 MLRO, PCF-2B (I)NED (added 1 Jul 2025), and 50+ others depending on firm type."
+    },
+    {
+      "id": "SEAR.MRM",
+      "title": "Management Responsibilities Map (MRM)",
+      "chapter": "2",
+      "section": "SEAR Regs Pt III",
+      "theme": "Management Responsibilities Map",
+      "requirement": "The firm maintains a single document — the Management Responsibilities Map — setting out: (a) each PCF role + holder; (b) reporting lines; (c) Inherent Responsibilities; (d) Prescribed Responsibilities + their allocation; (e) Other (firm-specific) Responsibilities + their allocation; (f) board + committee structure; (g) material delegations. Kept current; produced to CBI on request."
+    },
+    {
+      "id": "SEAR.SOR",
+      "title": "Statement of Responsibilities (SoR)",
+      "chapter": "2",
+      "section": "SEAR Regs Pt IV",
+      "theme": "Statement of Responsibilities",
+      "requirement": "For each PCF the firm prepares a Statement of Responsibilities setting out: (a) the individual's allocated responsibilities (Inherent + Prescribed + Other); (b) reporting line; (c) scope of role + business / control areas. Signed by the individual + acknowledged by the firm. Updated on material change; submitted to CBI within prescribed timeframes (new appointment, change of responsibilities, departure)."
+    },
+    {
+      "id": "SEAR.INH",
+      "title": "Inherent Responsibilities",
+      "chapter": "2",
+      "section": "SEAR Regs Sched 1",
+      "theme": "Inherent + Prescribed Responsibilities",
+      "requirement": "Responsibilities inherently attaching to each PCF role per CBI Guidance. Examples: Chair (PCF-3) — leading the board's effectiveness; CEO (PCF-8) — implementation of board strategy + operational performance; CFO (PCF-11) — integrity of financial information + financial controls; Head of Compliance (PCF-12) — compliance framework. Inherent Responsibilities cannot be reallocated."
+    },
+    {
+      "id": "SEAR.PR",
+      "title": "Prescribed Responsibilities",
+      "chapter": "2",
+      "section": "SEAR Regs Sched 2",
+      "theme": "Inherent + Prescribed Responsibilities",
+      "requirement": "Specific responsibilities prescribed by CBI that must be allocated to one or more PCF holders. Includes: PR1 risk-management framework; PR2 ICAAP + capital adequacy; PR3 ILAAP + liquidity adequacy; PR4 financial-crime systems + controls; PR5 ICT / cyber resilience; PR6 regulatory reporting integrity; PR7 business continuity + operational resilience; PR8 whistleblowing; PR9 conduct + culture; PR10 outsourcing + third-party risk; further PRs depending on firm type."
+    },
+    {
+      "id": "SEAR.OTHER",
+      "title": "Other (Firm-Specific) Responsibilities",
+      "chapter": "2",
+      "section": "SEAR Regs Pt III(3)",
+      "theme": "Inherent + Prescribed Responsibilities",
+      "requirement": "Material business + control responsibilities specific to the firm beyond Inherent + Prescribed — allocated by the firm to PCF holders in the MRM. Captures the long tail of accountability (specific product lines, geographies, business units, regulatory programmes)."
+    },
+    {
+      "id": "SEAR.INED",
+      "title": "(I)NED scope expansion (1 July 2025)",
+      "chapter": "2",
+      "section": "SEAR Regs as amended",
+      "theme": "(I)NED scope expansion",
+      "requirement": "From 1 July 2025 (I)NEDs are within SEAR scope as PCF-2B. They are subject to the Common Conduct Standards and (where their role makes them senior management) the Additional Conduct Standards, F&P pre-approval, and require Statements of Responsibilities reflecting their specific board / committee role allocations (chair of a committee, senior independent director, etc.). Every in-scope firm had to refresh its MRM + onboard (I)NED SoRs by this date."
+    },
+    {
+      "id": "CS.Common",
+      "title": "Common Conduct Standards (CCS)",
+      "chapter": "3",
+      "section": "Conduct Standards Regs Reg 5",
+      "theme": "Conduct Standards",
+      "requirement": "Five standards applying to every individual performing a Controlled Function in a regulated financial service provider: (1) act with honesty + integrity; (2) act with due skill, care + diligence; (3) cooperate with the CBI + relevant regulators in an open + cooperative way; (4) act in customers' best interests + treat them fairly + professionally; (5) operate compliance with the standards of market conduct."
+    },
+    {
+      "id": "CS.Additional",
+      "title": "Additional Conduct Standards (ACS)",
+      "chapter": "3",
+      "section": "Conduct Standards Regs Reg 6",
+      "theme": "Conduct Standards",
+      "requirement": "Four additional standards applying to PCFs (and certain CFs with senior management responsibility): (1) take reasonable steps to ensure that the business of the firm for which you are responsible is controlled effectively; (2) take reasonable steps to ensure the business of the firm for which you are responsible complies with relevant regulatory requirements; (3) take reasonable steps to ensure that any delegation of your responsibility is to an appropriate person + you oversee the discharge of the delegated responsibility effectively; (4) disclose appropriately any information of which the CBI would reasonably expect notice."
+    },
+    {
+      "id": "FP.PreApp",
+      "title": "F&P pre-approval (PCFs)",
+      "chapter": "4",
+      "section": "F&P Regs (CBR Act 2010 ss.20-22)",
+      "theme": "Fitness & Probity",
+      "requirement": "An individual may not perform a PCF role without prior CBI approval. The firm submits an Individual Questionnaire + supporting documents covering competence, experience, integrity, financial soundness. CBI may approve, refuse, or attach conditions. Appointment without approval is a regulatory breach."
+    },
+    {
+      "id": "FP.Ongoing",
+      "title": "F&P ongoing certification (CFs + PCFs)",
+      "chapter": "4",
+      "section": "F&P Regs",
+      "theme": "Fitness & Probity",
+      "requirement": "The firm is required to satisfy itself on an ongoing basis (at minimum annually) that each PCF + CF holder remains fit + proper. Material changes (criminal proceedings, bankruptcy, regulatory action elsewhere) must be considered + (where appropriate) reported to CBI. Annual certification by the firm; records retained."
+    },
+    {
+      "id": "FP.Investigation",
+      "title": "F&P investigation + sanction powers",
+      "chapter": "4",
+      "section": "IAF Act amendments to CBR Act 2010",
+      "theme": "Fitness & Probity",
+      "requirement": "CBI may investigate an individual's fitness + probity; suspend the person from CF performance during investigation; issue prohibition notices (temporary or permanent). The IAF Act 2023 substantially widened these powers, including for non-CF persons exercising significant influence."
+    },
+    {
+      "id": "SEAR.BR",
+      "title": "Breach reporting under SEAR + F&P",
+      "chapter": "5",
+      "section": "SEAR Regs + F&P Regs",
+      "theme": "Breach reporting + enforcement",
+      "requirement": "Firms must report to the CBI: (a) any disciplinary action taken against a PCF / CF for breach of Conduct Standards within prescribed timeframes; (b) issues that may affect a person's fitness + probity (criminal, civil, regulatory); (c) the departure of a PCF + the reasons. Standalone of the wider general reporting obligations to CBI."
+    },
+    {
+      "id": "SEAR.HOPS",
+      "title": "Handover Procedures (transitions)",
+      "chapter": "2",
+      "section": "SEAR Regs Pt IV(4) + CBI Guidance",
+      "theme": "Statement of Responsibilities",
+      "requirement": "On a PCF transition the outgoing + incoming individuals must support a documented handover. CBI Guidance expects: a handover certificate or note covering material risks, ongoing investigations, open regulatory matters, pending board decisions, key relationships. The MRM + SoRs are updated; the new SoR filed with CBI as soon as practicable."
+    }
+  ]
+}
