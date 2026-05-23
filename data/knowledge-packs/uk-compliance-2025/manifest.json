@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "uk-compliance-2025",
+  "display_name": "UK Compliance 2025 — ECCTA, Online Safety, DUAA, Consumer Duty, OFSI",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the 2025 wave of UK compliance regimes: Economic Crime and Corporate Transparency Act 2023 (failure-to-prevent-fraud live 1 Sept 2025), Online Safety Act 2023 (illegal-harms duties live 17 Mar 2025), Data (Use and Access) Act 2025 (main reforms 5 Feb 2026), FCA Consumer Duty (PRIN 2A), SAMLA 2018 / OFSI sanctions enforcement, plus cross-references to the UK Bribery Act 2010, MLR 2017, POCA 2002, Fraud Act 2006, and FSMA 2000.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "United Kingdom",
+  "regulatory_area": "Multi-domain compliance",
+  "regulation_ids": [
+    "ECCTA 2023",
+    "Online Safety Act 2023",
+    "Data (Use and Access) Act 2025",
+    "FCA PRIN 2A — Consumer Duty",
+    "SAMLA 2018",
+    "Fraud Act 2006",
+    "UK Bribery Act 2010",
+    "MLR 2017",
+    "POCA 2002",
+    "FSMA 2000",
+    "UK GDPR"
+  ],
+  "tier": 1,
+  "entity_count": 55,
+  "relationship_count": 77,
+  "alias_entry_count": 35
+}

@@ -1,0 +1,124 @@
+{
+  "id": "uk-online-safety-act-2023",
+  "name": "Online Safety Act 2023",
+  "shortName": "OSA",
+  "reference": "OSA 2023 c.50",
+  "url": "https://www.legislation.gov.uk/ukpga/2023/50",
+  "royalAssent": "2023-10-26",
+  "illegalHarmsDutiesInForce": "2025-03-17",
+  "childSafetyDutiesInForce": "2025-07-25",
+  "supervisor": "Ofcom",
+  "articleCount": 12,
+  "chapters": [
+    {"number": "2", "title": "Scope — regulated services", "articles": "ss.2-7"},
+    {"number": "3", "title": "Duties of care", "articles": "ss.8-39"},
+    {"number": "4", "title": "Codes of practice", "articles": "ss.40-50"},
+    {"number": "5", "title": "Supplementary duties (transparency, complaints)", "articles": "ss.64-76"},
+    {"number": "7", "title": "Enforcement", "articles": "ss.130-149"}
+  ],
+  "themes": [
+    "Illegal content duties",
+    "Child safety",
+    "Categorised services",
+    "Ofcom enforcement",
+    "Senior manager liability"
+  ],
+  "articles": [
+    {
+      "id": "s.3",
+      "title": "Regulated user-to-user services",
+      "chapter": "2",
+      "section": "Part 2",
+      "theme": "Scope",
+      "requirement": "A 'regulated user-to-user service' is a user-to-user service with links to the UK (UK users, or targeted at the UK). Captures social-media platforms, messaging services, forums, dating apps, video-sharing platforms; excludes email and most one-to-one voice/SMS."
+    },
+    {
+      "id": "s.7",
+      "title": "Regulated search services",
+      "chapter": "2",
+      "section": "Part 2",
+      "theme": "Scope",
+      "requirement": "A 'search service' that has links to the UK is regulated. Duties are lighter than user-to-user duties."
+    },
+    {
+      "id": "s.9",
+      "title": "Illegal-content risk assessment",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Illegal content duties",
+      "requirement": "Providers must carry out a suitable and sufficient risk assessment of the risk to users of illegal content (priority offences in Sched 6: terrorism, CSEA, fraud, sexual exploitation, drugs, hate, encouraging suicide, weapons, etc.). Documented, kept up to date, available for Ofcom inspection. In force 17 Mar 2025."
+    },
+    {
+      "id": "s.10",
+      "title": "Illegal-content safety duty",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Illegal content duties",
+      "requirement": "Providers must operate proportionate systems to (a) minimise the time priority illegal content is present, (b) prevent users encountering priority illegal content, (c) minimise the risk of the service being used for priority offences. In force 17 Mar 2025."
+    },
+    {
+      "id": "s.11",
+      "title": "Children's access assessment",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Child safety",
+      "requirement": "All regulated user-to-user services must assess whether the service is likely to be accessed by children. The assessment is documented and reviewed. Material change triggers re-assessment."
+    },
+    {
+      "id": "s.12",
+      "title": "Children's risk assessment + safety duties",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Child safety",
+      "requirement": "Services likely to be accessed by children must carry out a children's risk assessment and operate proportionate systems to prevent harm to children. Covers primary priority content (pornography, suicide / self-harm, eating-disorder content) and priority content (bullying, abusive content, hate, dangerous behaviour). In force 25 Jul 2025 following Ofcom's children's safety codes."
+    },
+    {
+      "id": "s.20",
+      "title": "Reporting and complaints",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Illegal content duties",
+      "requirement": "Services must operate easy-to-access reporting tools (illegal content + breach of terms) and complaints mechanisms (rejected reports, takedowns), with prescribed response times."
+    },
+    {
+      "id": "s.64",
+      "title": "Transparency reports",
+      "chapter": "5",
+      "section": "Part 4",
+      "theme": "Transparency",
+      "requirement": "Categorised services (Category 1, 2A, 2B) must publish transparency reports in accordance with Ofcom notice — incidents, takedowns, account suspensions, complaints, age-assurance use."
+    },
+    {
+      "id": "s.95",
+      "title": "Categorised-services duties",
+      "chapter": "3",
+      "section": "Part 3",
+      "theme": "Categorised services",
+      "requirement": "Category 1 services (largest user-to-user) carry additional duties: protection of journalistic / democratic / news-publisher content; user empowerment tools; transparency. Thresholds set by SoS order."
+    },
+    {
+      "id": "s.103",
+      "title": "Senior-manager liability",
+      "chapter": "7",
+      "section": "Part 7",
+      "theme": "Senior manager liability",
+      "requirement": "Where a service fails to comply with a confirmation decision on child-safety duties, an individual senior manager is liable to criminal sanction (up to 2 years' imprisonment and/or fine) where they consented or connived in the failure or it was attributable to their neglect."
+    },
+    {
+      "id": "s.143",
+      "title": "Confirmation decisions and monetary penalties",
+      "chapter": "7",
+      "section": "Part 7",
+      "theme": "Ofcom enforcement",
+      "requirement": "Ofcom may issue confirmation decisions requiring remediation. Failure to comply triggers a monetary penalty of the greater of £18 million or 10% of qualifying worldwide revenue."
+    },
+    {
+      "id": "s.146",
+      "title": "Business disruption measures",
+      "chapter": "7",
+      "section": "Part 7",
+      "theme": "Ofcom enforcement",
+      "requirement": "On a successful application to the Upper Tribunal, Ofcom may order ISP blocking and / or payment-provider / advertising-services blocking of non-compliant services."
+    }
+  ]
+}

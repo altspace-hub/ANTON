@@ -1,0 +1,110 @@
+{
+  "id": "uk-fca-consumer-duty-prin2a",
+  "name": "FCA Consumer Duty (PRIN 2A)",
+  "shortName": "Consumer Duty",
+  "reference": "FCA Handbook PRIN 2A; Principle 12",
+  "url": "https://www.handbook.fca.org.uk/handbook/PRIN/2A/",
+  "policyStatement": "FCA PS22/9",
+  "inForceOpenProducts": "2023-07-31",
+  "inForceClosedProducts": "2024-07-31",
+  "supervisor": "FCA",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "P12", "title": "Principle 12 — Duty of care", "articles": "PRIN 2.1.1R"},
+    {"number": "CC", "title": "Cross-cutting rules (PRIN 2A.2)", "articles": "PRIN 2A.2"},
+    {"number": "OC1", "title": "Outcome 1 — Products and services (PRIN 2A.3)", "articles": "PRIN 2A.3"},
+    {"number": "OC2", "title": "Outcome 2 — Price and value (PRIN 2A.4)", "articles": "PRIN 2A.4"},
+    {"number": "OC3", "title": "Outcome 3 — Consumer understanding (PRIN 2A.5)", "articles": "PRIN 2A.5"},
+    {"number": "OC4", "title": "Outcome 4 — Consumer support (PRIN 2A.6)", "articles": "PRIN 2A.6"},
+    {"number": "GOV", "title": "Governance and accountability", "articles": "SYSC + SMCR"}
+  ],
+  "themes": [
+    "Cross-cutting rules",
+    "Four outcomes",
+    "Price-and-value assessment",
+    "Vulnerability",
+    "Governance"
+  ],
+  "articles": [
+    {
+      "id": "P12",
+      "title": "Principle 12 — Act to deliver good outcomes for retail customers",
+      "chapter": "P12",
+      "section": "PRIN 2.1.1R",
+      "theme": "Cross-cutting rules",
+      "requirement": "A firm must act to deliver good outcomes for retail customers. Replaces the general 'treat customers fairly' standard with a higher, outcomes-focused duty."
+    },
+    {
+      "id": "PRIN.2A.2.1R",
+      "title": "Cross-cutting rule 1 — Act in good faith",
+      "chapter": "CC",
+      "section": "PRIN 2A.2.1R",
+      "theme": "Cross-cutting rules",
+      "requirement": "A firm must act in good faith toward retail customers. Good faith requires consistent dealing characterised by honesty, fair and open dealing, and acting consistently with the reasonable expectations of retail customers."
+    },
+    {
+      "id": "PRIN.2A.2.7R",
+      "title": "Cross-cutting rule 2 — Avoid causing foreseeable harm",
+      "chapter": "CC",
+      "section": "PRIN 2A.2.7R",
+      "theme": "Cross-cutting rules",
+      "requirement": "A firm must avoid causing foreseeable harm to retail customers. Includes harm from product design, distribution, communications, pricing, and customer service. Scams / APP fraud are foreseeable harms — firms must design controls accordingly."
+    },
+    {
+      "id": "PRIN.2A.2.14R",
+      "title": "Cross-cutting rule 3 — Enable customers to pursue financial objectives",
+      "chapter": "CC",
+      "section": "PRIN 2A.2.14R",
+      "theme": "Cross-cutting rules",
+      "requirement": "A firm must enable and support retail customers to pursue their financial objectives. Includes informed choice, accessible information, support for switching."
+    },
+    {
+      "id": "PRIN.2A.3",
+      "title": "Outcome 1 — Products and services",
+      "chapter": "OC1",
+      "section": "PRIN 2A.3",
+      "theme": "Four outcomes",
+      "requirement": "Manufacturers must specify a target market and ensure products are designed to meet its needs, characteristics and objectives. Distributors must ensure their distribution strategy is consistent with the manufacturer's target market. Periodic review of product performance against target-market outcomes."
+    },
+    {
+      "id": "PRIN.2A.4",
+      "title": "Outcome 2 — Price and value (PVA regime)",
+      "chapter": "OC2",
+      "section": "PRIN 2A.4",
+      "theme": "Price-and-value assessment",
+      "requirement": "Firms must conduct a Fair Value Assessment: the price paid is reasonable relative to the benefits the retail customer would reasonably expect. Manufacturers do an FVA per product per target market; distributors assess the value impact of their own remuneration / fees. Documented, refreshed periodically, available for FCA review."
+    },
+    {
+      "id": "PRIN.2A.5",
+      "title": "Outcome 3 — Consumer understanding",
+      "chapter": "OC3",
+      "section": "PRIN 2A.5",
+      "theme": "Four outcomes",
+      "requirement": "Firms' communications equip retail customers to make effective, timely and properly informed decisions. Communications testing required where appropriate. Communications must be clear, fair and not misleading. Tailored communications for vulnerable customers."
+    },
+    {
+      "id": "PRIN.2A.6",
+      "title": "Outcome 4 — Consumer support",
+      "chapter": "OC4",
+      "section": "PRIN 2A.6",
+      "theme": "Four outcomes",
+      "requirement": "Customer support enables retail customers to realise the benefits of the products and services. Support must be at least as easy and accessible as obtaining the product. Includes specific obligations for vulnerable customers, including those facing financial difficulty, ill health, life events, or low capability."
+    },
+    {
+      "id": "GOV.MI",
+      "title": "Management information and outcome monitoring",
+      "chapter": "GOV",
+      "section": "FG22/5 + PRIN 2A.10",
+      "theme": "Governance",
+      "requirement": "Firms must produce MI to monitor retail-customer outcomes and identify whether the Duty is being met. Board / equivalent governing body must review at least annually and approve a board report on Consumer Duty outcomes."
+    },
+    {
+      "id": "GOV.SMCR",
+      "title": "Consumer Duty Champion (SMCR)",
+      "chapter": "GOV",
+      "section": "SMCR",
+      "theme": "Governance",
+      "requirement": "Firms must identify a Consumer Duty Champion — typically an independent non-executive director at the board level — to challenge the firm on its delivery of the Duty. Embedded into SMCR responsibility maps."
+    }
+  ]
+}

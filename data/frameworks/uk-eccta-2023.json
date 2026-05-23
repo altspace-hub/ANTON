@@ -1,0 +1,174 @@
+{
+  "id": "uk-eccta-2023",
+  "name": "Economic Crime and Corporate Transparency Act 2023",
+  "shortName": "ECCTA",
+  "reference": "ECCTA 2023 c.56",
+  "url": "https://www.legislation.gov.uk/ukpga/2023/56",
+  "royalAssent": "2023-10-26",
+  "ftpfInForce": "2025-09-01",
+  "identificationPrincipleInForce": "2023-12-26",
+  "supervisor": "SFO / FCA / HMRC / NCA",
+  "articleCount": 18,
+  "chapters": [
+    {"number": "1", "title": "Companies House reform (Part 1)", "articles": "Pt.1"},
+    {"number": "2", "title": "Limited partnerships, register of overseas entities (Parts 2–3)", "articles": "Pt.2-3"},
+    {"number": "3", "title": "Cryptoassets — civil recovery and confiscation (Part 4)", "articles": "Pt.4"},
+    {"number": "4", "title": "Investigation powers (Part 5)", "articles": "Pt.5"},
+    {"number": "5", "title": "Corporate criminal liability — identification principle (Part 5, s.196)", "articles": "s.196"},
+    {"number": "6", "title": "Failure to prevent fraud (Part 5, ss.199-206 + Sched 13)", "articles": "ss.199-206"}
+  ],
+  "themes": [
+    "Failure-to-prevent fraud",
+    "Reasonable procedures defence",
+    "Base offences",
+    "Corporate criminal liability",
+    "Companies House powers",
+    "Cryptoasset enforcement"
+  ],
+  "articles": [
+    {
+      "id": "s.196",
+      "title": "Identification principle for economic crime",
+      "chapter": "5",
+      "section": "Part 5",
+      "theme": "Corporate criminal liability",
+      "requirement": "A body corporate is treated as committing a listed economic-crime offence if a senior manager, acting within the actual or apparent scope of their authority, commits the offence. Replaces the narrow common-law 'directing mind and will' test for the listed offences (fraud, false accounting, theft, tax offences, sanctions, money laundering, bribery, etc.) — in force 26 Dec 2023; expanded to all economic crimes 1 Sept 2025."
+    },
+    {
+      "id": "s.199",
+      "title": "Failure to prevent fraud",
+      "chapter": "6",
+      "section": "Part 5",
+      "theme": "Failure-to-prevent fraud",
+      "requirement": "A 'large' relevant body (s.201 threshold) commits an offence if a person associated with it commits a base fraud offence (Sched 13) intending to benefit the body or its clients. Strict liability subject to the s.199(4) reasonable-procedures defence. Triable on indictment; unlimited fine. In force 1 Sept 2025."
+    },
+    {
+      "id": "s.199(4)",
+      "title": "Reasonable procedures defence",
+      "chapter": "6",
+      "section": "Part 5",
+      "theme": "Reasonable procedures defence",
+      "requirement": "It is a defence for the body to prove that at the time of the base offence it had in place such fraud-prevention procedures as it was reasonable in all the circumstances to expect it to have had, OR that it was not reasonable in all the circumstances to expect it to have any procedures. The Home Office statutory guidance (Nov 2024) sets out six principles informing this assessment."
+    },
+    {
+      "id": "s.199(7)",
+      "title": "Associated person — definition",
+      "chapter": "6",
+      "section": "Part 5",
+      "theme": "Failure-to-prevent fraud",
+      "requirement": "A person is associated with the body if they are (a) an employee, agent or subsidiary, or (b) a person who otherwise performs services for or on behalf of the body. Captures contractors, intermediaries, joint-venture partners — not arm's-length suppliers."
+    },
+    {
+      "id": "s.201",
+      "title": "Large organisation threshold",
+      "chapter": "6",
+      "section": "Part 5",
+      "theme": "Failure-to-prevent fraud",
+      "requirement": "An organisation is 'large' if in the financial year preceding the alleged offence it satisfied two or more of: (a) turnover > £36 million, (b) balance sheet total > £18 million, (c) more than 250 employees. Applied at parent level for groups; subsidiaries inherit parent's status."
+    },
+    {
+      "id": "Sched.13.1",
+      "title": "Base offence — Fraud by false representation (FA 2006 s.2)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Dishonestly making a false representation, intending to make a gain for self/another or to cause loss to another or expose to risk of loss."
+    },
+    {
+      "id": "Sched.13.2",
+      "title": "Base offence — Fraud by failing to disclose (FA 2006 s.3)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Dishonestly failing to disclose information which the defendant is under a legal duty to disclose, with the requisite intent to gain or cause loss."
+    },
+    {
+      "id": "Sched.13.3",
+      "title": "Base offence — Fraud by abuse of position (FA 2006 s.4)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Dishonestly abusing a position in which the defendant is expected to safeguard the financial interests of another."
+    },
+    {
+      "id": "Sched.13.4",
+      "title": "Base offence — Obtaining services dishonestly (FA 2006 s.11)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Obtaining services by a dishonest act, intending payment to be avoided."
+    },
+    {
+      "id": "Sched.13.5",
+      "title": "Base offence — False accounting (Theft Act 1968 s.17)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Dishonestly destroying, defacing, concealing or falsifying any account or document made for an accounting purpose."
+    },
+    {
+      "id": "Sched.13.6",
+      "title": "Base offence — Fraudulent trading (Companies Act 2006 s.993)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Carrying on the business of a company with intent to defraud creditors, or for any fraudulent purpose."
+    },
+    {
+      "id": "Sched.13.7",
+      "title": "Base offence — Cheating the public revenue (common law)",
+      "chapter": "6",
+      "section": "Schedule 13",
+      "theme": "Base offences",
+      "requirement": "Common-law offence of fraudulent conduct designed to prejudice the public revenue."
+    },
+    {
+      "id": "Princ.1",
+      "title": "Principle 1 — Top-level commitment",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "The organisation's top-level management (board, executive directors) is committed to preventing fraud by associated persons. They demonstrate this through clear, written commitment communicated internally and externally; provide governance and resources; ensure the organisation has a culture in which fraud is unacceptable."
+    },
+    {
+      "id": "Princ.2",
+      "title": "Principle 2 — Risk assessment",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "The organisation assesses the nature and extent of its exposure to the risk of associated persons committing the Sched 13 fraud offences for the benefit of the organisation. The assessment is documented, kept up to date, refreshed on material change (new business line, M&A, regulatory change), and informed by sector / geography / customer / product / transaction risk factors."
+    },
+    {
+      "id": "Princ.3",
+      "title": "Principle 3 — Proportionate risk-based prevention procedures",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "The organisation's fraud-prevention procedures are proportionate to the risks it faces. Each identified fraud risk has at least one targeted control. Procedures are clear, practical, accessible to those who need them, effectively implemented and enforced. Includes financial controls (segregation of duties, approval thresholds, four-eyes review), system-level controls, and sector-specific controls."
+    },
+    {
+      "id": "Princ.4",
+      "title": "Principle 4 — Due diligence",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "The organisation applies due diligence procedures to associated persons proportionate to the fraud risk. Includes employee pre-hire screening, due diligence on agents / intermediaries / JV partners before engagement, periodic refresh, and event-driven re-assessment."
+    },
+    {
+      "id": "Princ.5",
+      "title": "Principle 5 — Communication (including training)",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "Anti-fraud policies are embedded through communication and training. Internal: mandatory training appropriate to risk and role, refreshed periodically, completion tracked. External: anti-fraud expectations communicated to associated persons via contracts, codes of conduct, joint training, supplier handbooks."
+    },
+    {
+      "id": "Princ.6",
+      "title": "Principle 6 — Monitoring and review",
+      "chapter": "6",
+      "section": "Home Office Guidance (Nov 2024)",
+      "theme": "Reasonable procedures defence",
+      "requirement": "The organisation monitors the effectiveness of its fraud-prevention procedures and reviews them periodically. Includes KPIs / metrics, internal audit coverage, incident learning loop (post-incident review feeding back into procedure design), whistleblower channels, and external assurance where proportionate."
+    }
+  ]
+}
