@@ -1,0 +1,137 @@
+{
+  "id": "uk-ofsi-financial-sanctions-2024",
+  "name": "UK OFSI Financial Sanctions Framework — SAMLA 2018 + OFSI General Guidance (2024)",
+  "shortName": "OFSI Framework",
+  "reference": "SAMLA 2018 + OFSI General Guidance for Financial Sanctions (2024 update)",
+  "url": "https://www.gov.uk/government/publications/financial-sanctions-faqs",
+  "samlaInForce": "2018-05-23",
+  "ofsiEstablished": "2016-03-31",
+  "guidance2024Update": "2024",
+  "supervisor": "OFSI — HM Treasury",
+  "articleCount": 13,
+  "chapters": [
+    {"number": "Scope", "title": "Scope — UK persons + relevant firms", "articles": "SAMLA s.21 + Russia Regs Sched 5"},
+    {"number": "List", "title": "UK Consolidated List + designations", "articles": "OFSI Consolidated List"},
+    {"number": "OC", "title": "Ownership + control attribution", "articles": "Russia Regs r.6 + OFSI Guidance"},
+    {"number": "Lic", "title": "Licensing — General + Specific", "articles": "Russia Regs + SAMLA"},
+    {"number": "Rpt", "title": "Reporting obligation", "articles": "Russia Regs Sched 5 + OFSI Guidance"},
+    {"number": "Enf", "title": "Enforcement + Civil Monetary Penalties", "articles": "SAMLA s.146 + OFSI CMP Guidance"},
+    {"number": "2025", "title": "2025 enforcement step-change + turnover-fines consultation", "articles": "OFSI Annual Review 2024-25 + consultation"}
+  ],
+  "themes": [
+    "Scope",
+    "Designations",
+    "Ownership + control",
+    "Licensing",
+    "Reporting obligation",
+    "Civil monetary penalties",
+    "Strict liability + reasonable care",
+    "Voluntary disclosure"
+  ],
+  "articles": [
+    {
+      "id": "Scope",
+      "title": "Scope — UK persons + UK conduct + relevant firms",
+      "chapter": "Scope",
+      "section": "SAMLA + thematic Regs",
+      "theme": "Scope",
+      "requirement": "UK sanctions bind: (a) any person (incl. body corporate) in the UK; (b) any UK national wherever located; (c) any body incorporated under UK law wherever located. Plus conduct partially or wholly performed in the UK regardless of nationality. 'Relevant firms' subject to reporting obligation: banks, FCA-authorised firms, accountants, auditors, lawyers, insolvency practitioners, real-estate agents, casinos, art-market participants, crypto-asset firms (after May 2022 amendments), and others."
+    },
+    {
+      "id": "List",
+      "title": "UK Consolidated List of Financial Sanctions Targets",
+      "chapter": "List",
+      "section": "OFSI Consolidated List",
+      "theme": "Designations",
+      "requirement": "Single consolidated list of all UK financial-sanctions designations across all regimes (Russia, Iran, DPRK, Belarus, Syria, CT-International, CT-Internal, Cyber, Global-AC, Global-HR, etc.). Updated continuously — Russia regime alone has materially expanded since 2022 with each new SI amendment. Available in CSV / XML / JSON. ~5,000+ entries as of 2025."
+    },
+    {
+      "id": "OC",
+      "title": "Ownership + control attribution",
+      "chapter": "OC",
+      "section": "Russia Regs reg 6 + parallel provisions",
+      "theme": "Ownership + control",
+      "requirement": "A non-designated entity is treated as owned + controlled by a designated person where: (a) the designated person holds (directly or indirectly) more than 50% of the shares; OR (b) the designated person holds (directly or indirectly) more than 50% of the voting rights; OR (c) the designated person has the right (directly or indirectly) to appoint or remove a majority of the board; OR (d) it is reasonable to expect that the designated person would (if they chose) be able to ensure the affairs of the entity are conducted in accordance with their wishes (a broad 'control' test going beyond shareholding)."
+    },
+    {
+      "id": "Lic.Gen",
+      "title": "General Licences",
+      "chapter": "Lic",
+      "section": "OFSI General Licences",
+      "theme": "Licensing",
+      "requirement": "Authorise specified categories of activity without need for individual application: humanitarian assistance, basic-needs payments, legal fees + costs, certain wind-down activities post-designation, energy purchases. Conditions strictly applied; reporting often required under the general licence. OFSI has issued an unprecedented volume since 2022 — particularly legal-services + divestment + frozen-funds-management."
+    },
+    {
+      "id": "Lic.Spec",
+      "title": "Specific Licences",
+      "chapter": "Lic",
+      "section": "OFSI Specific Licences",
+      "theme": "Licensing",
+      "requirement": "Case-by-case authorisations issued on application. Process: formal application via OFSI portal + supporting evidence + business case + sanctions-impact analysis. OFSI typically takes 4-12 weeks (longer for complex applications). Conditions attached; reporting + record-keeping obligations apply. Approval not guaranteed; refusal subject to administrative + (in limited circumstances) judicial review."
+    },
+    {
+      "id": "Rpt.Trigger",
+      "title": "Reporting obligation — trigger + content",
+      "chapter": "Rpt",
+      "section": "Russia Regs Sched 5 (parallel in other Regs)",
+      "theme": "Reporting obligation",
+      "requirement": "Relevant firms must report to OFSI as soon as practicable if they: (a) know or have reasonable cause to suspect that a person is a designated person; OR (b) know or have reasonable cause to suspect that a person has committed an offence under a financial-sanctions regime. Report contents: information on the designated person; how the firm knows / suspects; nature + quantum of any funds or economic resources involved."
+    },
+    {
+      "id": "Rpt.Frozen",
+      "title": "Annual frozen-funds reporting",
+      "chapter": "Rpt",
+      "section": "OFSI Annual Frozen Assets Reporting",
+      "theme": "Reporting obligation",
+      "requirement": "Annual reporting (in October each year) by all firms holding frozen funds / economic resources of designated persons. Reports: nature of holdings + quantum + designated person + frozen-since date + any change since previous return. Used by OFSI to track UK frozen-assets totals (>£22bn Russia-related as of 2024 OFSI Annual Review)."
+    },
+    {
+      "id": "Enf.CMP",
+      "title": "Civil Monetary Penalty — assessment framework",
+      "chapter": "Enf",
+      "section": "SAMLA s.146 + OFSI CMP Guidance",
+      "theme": "Civil monetary penalties",
+      "requirement": "OFSI may impose CMPs for sanctions breaches up to the greater of £1 million or 50% of the value of the breach. Assessment factors per OFSI CMP Guidance: scale of breach; circumstances (involvement of vulnerable + designated persons); knowledge / suspicion; deliberateness; cooperation; remediation; voluntary disclosure; prior compliance + breach record. CMP may be applied to senior managers personally where appropriate."
+    },
+    {
+      "id": "Enf.StrictLiab",
+      "title": "Strict liability for many regimes",
+      "chapter": "Enf",
+      "section": "SAMLA + Regs",
+      "theme": "Strict liability + reasonable care",
+      "requirement": "Many UK sanctions regimes operate on a strict-liability basis for civil monetary penalties (no requirement to show knowledge / suspicion). Reasonable-care / reasonable-steps defence available for some regimes. OFSI calibrates penalty quantum partly by reference to moral blameworthiness — but the existence of breach is established without mens rea for CMP purposes."
+    },
+    {
+      "id": "Enf.2025",
+      "title": "2025 enforcement step-change",
+      "chapter": "2025",
+      "section": "OFSI Annual Review 2024-25",
+      "theme": "Civil monetary penalties",
+      "requirement": "OFSI imposed 6 CMPs in 2025 (vs 1 in 2024 + 4 over the entire 2017-2023 period). Penalty quantum ranging from £15k to £450k+. Threat-led + cross-government approach formalised through the June 2025 Cross-Government Sanctions Review. Coordinated enforcement with HMRC (trade sanctions) + FCA (regulated firms) + NCA Combined Sanctions Taskforce (criminal cases)."
+    },
+    {
+      "id": "Enf.Turnover",
+      "title": "Turnover-based fines consultation (2025)",
+      "chapter": "2025",
+      "section": "OFSI consultation 2025",
+      "theme": "Civil monetary penalties",
+      "requirement": "OFSI consultation issued 2025 on moving from the current per-breach cap (greater of £1m or 50% of breach value) to a turnover-based fines model — modelled on competition law + GDPR. Likely outcome 2026. Would dramatically raise the ceiling for the largest firms (analogous to GDPR's 4% global turnover ceiling). Strong driver to ensure sanctions controls are robust before the new regime takes effect."
+    },
+    {
+      "id": "VSD",
+      "title": "Voluntary disclosure mitigation",
+      "chapter": "Enf",
+      "section": "OFSI CMP Guidance",
+      "theme": "Voluntary disclosure",
+      "requirement": "Voluntary disclosure of an apparent breach (before OFSI discovers it through its own enquiries or third-party complaint) results in: substantial mitigation in penalty calculation (typically up to 50% reduction in the recommended penalty); demonstrated cooperation further mitigates; clear remediation reduces penalty. The 2024-25 Annual Review confirmed the value of cooperation in penalty calibration."
+    },
+    {
+      "id": "Coord",
+      "title": "Cross-government coordination",
+      "chapter": "Enf",
+      "section": "Cross-Government Sanctions Review (June 2025)",
+      "theme": "Civil monetary penalties",
+      "requirement": "The June 2025 Cross-Government Sanctions Review formalised closer cooperation across the UK sanctions ecosystem: OFSI (financial), HMRC (trade), FCA (regulated firms), NCA (criminal), Companies House (beneficial-ownership transparency), DBT (export controls). Joint investigations + intelligence-sharing + complementary enforcement. Firms should expect coordinated enforcement across multiple regulators on the same matter."
+    }
+  ]
+}

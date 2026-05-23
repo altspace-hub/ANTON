@@ -1,0 +1,528 @@
+[
+  {
+    "ref_id": "REG-IEEPA",
+    "entity_type": "regulation",
+    "entity_id": "IEEPA-1977",
+    "canonical_name": "International Emergency Economic Powers Act (IEEPA)",
+    "description": "50 USC §§1701-1710. Primary US statutory authority for peacetime economic sanctions. Empowers the President, after declaring a national emergency under the NEA, to regulate or prohibit transactions with designated countries / entities / persons. Underlies most modern OFAC sanctions programs.",
+    "metadata": {
+      "citation": "50 USC §§1701-1710",
+      "in_force": "1977-12-28"
+    }
+  },
+  {
+    "ref_id": "REG-TWEA",
+    "entity_type": "regulation",
+    "entity_id": "TWEA-1917",
+    "canonical_name": "Trading with the Enemy Act (TWEA)",
+    "description": "50 USC §§4301-4341. Wartime sanctions authority. Now only used as the underlying authority for the Cuba sanctions program (CACR) following grandfathering exemption from IEEPA.",
+    "metadata": {
+      "citation": "50 USC §§4301-4341"
+    }
+  },
+  {
+    "ref_id": "REG-NEA",
+    "entity_type": "regulation",
+    "entity_id": "NEA-1976",
+    "canonical_name": "National Emergencies Act (NEA)",
+    "description": "50 USC §§1601-1651. Provides the legal framework for the declaration of national emergencies which then unlock IEEPA + other sanctions authorities. Each OFAC program is typically anchored in a Presidential Executive Order declaring a national emergency.",
+    "metadata": {
+      "citation": "50 USC §§1601-1651"
+    }
+  },
+  {
+    "ref_id": "REG-CAATSA",
+    "entity_type": "regulation",
+    "entity_id": "CAATSA-2017",
+    "canonical_name": "Countering America's Adversaries Through Sanctions Act (CAATSA)",
+    "description": "Public Law 115-44 (Aug 2017). Codifies Russia / Iran / DPRK sanctions, limits Presidential discretion to lift them. Introduces secondary sanctions against persons knowingly facilitating significant transactions with sanctioned Russian persons + entities.",
+    "metadata": {
+      "citation": "Public Law 115-44",
+      "in_force": "2017-08-02"
+    }
+  },
+  {
+    "ref_id": "REG-OFAC-CFCC",
+    "entity_type": "regulation",
+    "entity_id": "OFAC-CFCC-2019",
+    "canonical_name": "OFAC Framework for Compliance Commitments (May 2019)",
+    "description": "Foundational OFAC compliance framework. Identifies 5 essential elements that the agency considers in evaluating sanctions-compliance programs: (1) Management Commitment; (2) Risk Assessment; (3) Internal Controls; (4) Testing + Auditing; (5) Training. Referenced in nearly every OFAC enforcement action since 2019.",
+    "metadata": {
+      "issued": "2019-05-02",
+      "essential_elements": 5
+    }
+  },
+  {
+    "ref_id": "REG-OFAC-SOL-10YR",
+    "entity_type": "regulation",
+    "entity_id": "NDAA-2024-SOL",
+    "canonical_name": "Statute of limitations — extended to 10 years (NDAA 2024)",
+    "description": "FY 2024 National Defense Authorization Act extended the OFAC + IEEPA + TWEA statute of limitations from 5 to 10 years. OFAC guidance (July 2024) confirms applies retroactively to violations occurring on or after 24 April 2019. Significantly expands legacy-exposure for institutions.",
+    "metadata": {
+      "in_force": "2024-04-24",
+      "retroactive_cutoff": "2019-04-24",
+      "prior_sol_years": 5,
+      "new_sol_years": 10
+    }
+  },
+  {
+    "ref_id": "REG-EO-14114",
+    "entity_type": "regulation",
+    "entity_id": "EO-14114",
+    "canonical_name": "Executive Order 14114 — Russia secondary sanctions on foreign banks",
+    "description": "Issued 22 December 2023. Authorises OFAC to impose secondary sanctions on foreign banks that conduct or facilitate significant transactions related to Russia's military-industrial base. Marked a major escalation: any non-US bank touching Russia's military-industrial supply chain is exposed to US correspondent-account termination + designation.",
+    "metadata": {
+      "in_force": "2023-12-22"
+    }
+  },
+  {
+    "ref_id": "REG-OFAC-RANSOM-ADV",
+    "entity_type": "regulation",
+    "entity_id": "OFAC-RANSOM-ADVISORIES",
+    "canonical_name": "OFAC ransomware payment advisories (Oct 2020 + Sep 2021)",
+    "description": "OFAC advisories on the sanctions risk of facilitating ransomware payments. Highlights strict-liability for sanctions violations even where the victim does not know the threat actor is sanctioned. Encourages: (i) victim reporting to FBI IC3 + CISA + OFAC; (ii) cooperation with law enforcement (mitigating factor in any enforcement); (iii) sanctions due diligence before any payment. The September 2021 update tightened expectations.",
+    "metadata": {
+      "first_issued": "2020-10-01",
+      "updated": "2021-09-21"
+    }
+  },
+  {
+    "ref_id": "REG-OFAC-CRYPTO",
+    "entity_type": "regulation",
+    "entity_id": "OFAC-CRYPTO-DESIGNATIONS",
+    "canonical_name": "OFAC crypto designations + mixing-service sanctions",
+    "description": "OFAC has designated multiple crypto mixers (Tornado Cash Aug 2022, Blender May 2022, Sinbad Nov 2023, Garantex 2022, etc.). The Tornado Cash designation was partially vacated by the 5th Circuit (Nov 2024) on the grounds the smart contracts are not 'property of' a person — but most other crypto designations remain in force. OFAC also actively sanctions individual addresses + ransomware-affiliated wallets.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "REG-SAMLA-2018-SANC",
+    "entity_type": "regulation",
+    "entity_id": "SAMLA-2018-S",
+    "canonical_name": "Sanctions and Anti-Money Laundering Act 2018 (sanctions provisions)",
+    "description": "Post-Brexit primary UK statute for financial sanctions. Empowers HM Treasury (through OFSI) to designate persons, grant licences, impose civil monetary penalties, and prescribe reporting obligations. Each thematic / country sanctions regime is established through regulations made under SAMLA.",
+    "metadata": {
+      "citation": "SAMLA 2018 c.13",
+      "supervisor": "OFSI / FCDO / HMRC"
+    }
+  },
+  {
+    "ref_id": "REG-UK-RUSSIA-2019",
+    "entity_type": "regulation",
+    "entity_id": "UK-RUSSIA-REGS",
+    "canonical_name": "Russia (Sanctions) (EU Exit) Regulations 2019",
+    "description": "SI 2019/855 (as substantially amended in 2022-2025). The UK's primary Russia sanctions framework: designations (Schedule), asset freeze, trade restrictions (military / dual-use / luxury / financial-services / oil price cap), prohibition on specified services, reporting obligations. The most-amended UK sanctions instrument.",
+    "metadata": {
+      "citation": "SI 2019/855",
+      "supervisor": "OFSI + DBT (trade) + DfT (transport)"
+    }
+  },
+  {
+    "ref_id": "REG-UK-IRAN-2019",
+    "entity_type": "regulation",
+    "entity_id": "UK-IRAN-REGS",
+    "canonical_name": "Iran (Sanctions) (Human Rights) Regulations 2019 + Iran (Nuclear) (Sanctions) (EU Exit) Regulations 2019",
+    "description": "UK Iran sanctions regimes — human-rights designations + nuclear-programme designations. Aligned with EU + US sanctions but with UK-specific designations.",
+    "metadata": {
+      "supervisor": "OFSI"
+    }
+  },
+  {
+    "ref_id": "REG-UK-COUNTER-TERROR",
+    "entity_type": "regulation",
+    "entity_id": "UK-CT-REGS",
+    "canonical_name": "UK Counter-Terrorism (International Sanctions) Regulations + Counter-Terrorism (Internal Sanctions) Regulations",
+    "description": "UK statutory framework for international + domestic counter-terrorism sanctions. Maintains the UK list of designated terrorist persons, organisations + activities for asset-freeze + financial-services prohibitions.",
+    "metadata": {
+      "supervisor": "OFSI + HMRC"
+    }
+  },
+  {
+    "ref_id": "REG-OFSI-GUIDANCE-2024",
+    "entity_type": "regulation",
+    "entity_id": "OFSI-GENERAL-GUIDANCE-2024",
+    "canonical_name": "OFSI General Guidance for Financial Sanctions (2024 update)",
+    "description": "OFSI's comprehensive guidance on the UK financial sanctions regime. Includes operational guidance on: how to comply, the reporting obligation, licensing process, ownership + control attribution, frozen-funds treatment, monetary-penalty assessment factors. Updated periodically; the 2024 update tightened expectations on relevant firms.",
+    "metadata": {
+      "supervisor": "OFSI"
+    }
+  },
+  {
+    "ref_id": "REG-OFSI-CMP",
+    "entity_type": "regulation",
+    "entity_id": "OFSI-CMP-FRAMEWORK",
+    "canonical_name": "OFSI Civil Monetary Penalty framework (SAMLA s.146 + Russia Regs Sched 5)",
+    "description": "OFSI's powers to impose civil monetary penalties for sanctions breaches: up to the greater of £1 million or 50% of the value of the breach. 6 penalties imposed in 2025 (vs 1 in 2024) — substantial enforcement escalation. 2025 consultation issued on moving to a turnover-based fines model (modelled on competition law + GDPR). Strict liability for many regimes; reasonable-care defence available.",
+    "metadata": {
+      "current_cap": "Greater of £1m or 50% of breach value",
+      "2025_penalties": 6,
+      "2024_penalties": 1,
+      "turnover_fines_consultation": "2025"
+    }
+  },
+  {
+    "ref_id": "REG-EU-269-2014",
+    "entity_type": "regulation",
+    "entity_id": "EU-RUS-269",
+    "canonical_name": "Council Regulation (EU) 269/2014 — Russia asset freeze",
+    "description": "EU's primary Russia asset-freeze instrument. Designations published in Annex I; financial services prohibitions; reporting obligations. Foundational regulation for EU autonomous Russia sanctions; substantially expanded since Feb 2022 across 14+ sanctions packages.",
+    "metadata": {
+      "in_force": "2014-03-17",
+      "supervisor": "EU Member State competent authorities + Commission"
+    }
+  },
+  {
+    "ref_id": "REG-EU-833-2014",
+    "entity_type": "regulation",
+    "entity_id": "EU-RUS-833",
+    "canonical_name": "Council Regulation (EU) 833/2014 — Russia sectoral sanctions",
+    "description": "EU's primary Russia sectoral-sanctions instrument: capital markets restrictions, dual-use + military / energy / financial-services restrictions, oil price cap, deposit ceilings, prohibited services (legal, accounting, business, IT consulting, etc.). The substance of EU's escalation against Russia since 2014 + the 14+ post-2022 packages.",
+    "metadata": {
+      "in_force": "2014-07-31"
+    }
+  },
+  {
+    "ref_id": "REG-EU-CFSP-ART215",
+    "entity_type": "regulation",
+    "entity_id": "EU-CFSP-FRAMEWORK",
+    "canonical_name": "EU CFSP sanctions architecture (Art. 215 TFEU)",
+    "description": "Article 215 TFEU empowers the Council to adopt restrictive measures based on a CFSP decision (typically Council Decision 'common position'). EU sanctions implemented through directly-applicable regulations binding on all Member States. Coordinated with UN regimes but EU autonomous sanctions exist independent of UN action.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "REG-UN-1267",
+    "entity_type": "regulation",
+    "entity_id": "UNSCR-1267-1989-2253",
+    "canonical_name": "UN Security Council Resolutions 1267 / 1989 / 2253 — ISIL/Al-Qaida",
+    "description": "Global UN sanctions regime against ISIL (Da'esh), Al-Qaida + associated individuals + entities. Asset freeze + travel ban + arms embargo. List maintained by 1267/1989/2253 Sanctions Committee. UN Member States bound to implement under Chapter VII of the UN Charter.",
+    "metadata": {
+      "framework_in_force": "1999-10-15"
+    }
+  },
+  {
+    "ref_id": "REG-UN-1718",
+    "entity_type": "regulation",
+    "entity_id": "UNSCR-1718",
+    "canonical_name": "UN Security Council Resolution 1718 — DPRK",
+    "description": "Global UN sanctions regime against the Democratic People's Republic of Korea (North Korea). Arms embargo, financial restrictions, asset freeze, dual-use + nuclear-proliferation prohibitions. Strict + heavily monitored regime under the 1718 Committee.",
+    "metadata": {
+      "in_force": "2006-10-14"
+    }
+  },
+  {
+    "ref_id": "REG-UN-2231",
+    "entity_type": "regulation",
+    "entity_id": "UNSCR-2231",
+    "canonical_name": "UN Security Council Resolution 2231 — Iran",
+    "description": "Endorses the Joint Comprehensive Plan of Action (JCPOA — 14 Jul 2015). Lifts certain UN sanctions on Iran subject to the snap-back mechanism. The substantive UN Iran sanctions regime continues to interact with US (broader, including secondary) + EU + UK (varying scope) regimes.",
+    "metadata": {
+      "adopted": "2015-07-20"
+    }
+  },
+  {
+    "ref_id": "AUTH-OFAC",
+    "entity_type": "authority",
+    "entity_id": "OFAC",
+    "canonical_name": "Office of Foreign Assets Control (OFAC)",
+    "description": "Part of US Department of the Treasury. Administers + enforces US economic sanctions: designations, licensing, civil enforcement, public reporting + advisory issuance. OFAC penalties exceeded $265m in 2025 (down from 2024's Binance-inflated $1.5bn but with materially more individual cases). Statute-of-limitations extension to 10 years materially expanded legacy exposure.",
+    "metadata": {
+      "parent": "US Department of the Treasury",
+      "2025_penalties_usd_approx": "265000000",
+      "2025_sol_years": 10
+    }
+  },
+  {
+    "ref_id": "AUTH-OFSI",
+    "entity_type": "authority",
+    "entity_id": "OFSI",
+    "canonical_name": "Office of Financial Sanctions Implementation (OFSI)",
+    "description": "Part of HM Treasury. The UK's financial sanctions authority. Administers UK financial sanctions: designations, licensing, civil monetary penalties, reporting receipt + enforcement. Step-change in 2025 — 6 penalties (vs 1 in 2024), expanded threat-led approach + cross-government coordination + turnover-fines consultation.",
+    "metadata": {
+      "parent": "HM Treasury",
+      "established": "2016-03-31"
+    }
+  },
+  {
+    "ref_id": "AUTH-FCDO",
+    "entity_type": "authority",
+    "entity_id": "FCDO-SANC",
+    "canonical_name": "Foreign, Commonwealth & Development Office (FCDO) — sanctions designations",
+    "description": "Owns UK foreign-policy sanctions designations under SAMLA 2018. Designs the substance of UK sanctions regimes (which persons / entities / sectors / activities). OFSI implements the financial measures the FCDO designs.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-HMT",
+    "entity_type": "authority",
+    "entity_id": "HMT-SANC",
+    "canonical_name": "HM Treasury (sanctions policy + OFSI parent)",
+    "description": "UK government department within which OFSI sits. Owner of UK financial-sanctions policy + the SAMLA 2018 framework. Coordinates with FCDO + HMRC + FCA + NCA on cross-government enforcement.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-HMRC-SANC",
+    "entity_type": "authority",
+    "entity_id": "HMRC-TRADE-SANC",
+    "canonical_name": "HMRC — UK trade-sanctions enforcement",
+    "description": "Enforces UK trade-sanctions (goods + technology + services prohibitions) — separate from OFSI's financial-sanctions remit. The 2025 Cross-Government Sanctions Review formalised closer cooperation between OFSI + HMRC.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-FCA-SANC",
+    "entity_type": "authority",
+    "entity_id": "FCA-SANC",
+    "canonical_name": "FCA — financial-sanctions enforcement for regulated firms",
+    "description": "Enforces sanctions-related obligations for FCA-regulated firms under SYSC + the Financial Crime Guide (FCG 7). FCA failures-to-control matters frequently include sanctions-systems failings; coordinates with OFSI + NCA.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-NCA-SANC",
+    "entity_type": "authority",
+    "entity_id": "NCA-COMBINED-TASKFORCE",
+    "canonical_name": "NCA Combined Sanctions Taskforce",
+    "description": "Within the National Crime Agency. Coordinates criminal investigations + asset-recovery + sanctions-evasion-typologies work across the UK law-enforcement community.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-EU-COUNCIL",
+    "entity_type": "authority",
+    "entity_id": "EU-COUNCIL",
+    "canonical_name": "Council of the European Union — sanctions designations + sectoral measures",
+    "description": "Adopts EU sanctions decisions + regulations under Article 215 TFEU on the basis of a CFSP common position. Designations published in Council regulation annexes; sectoral measures in the substantive regulations (269/2014 + 833/2014 for Russia; equivalents for other regimes).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AUTH-UN-SC",
+    "entity_type": "authority",
+    "entity_id": "UN-SC-SANCTIONS",
+    "canonical_name": "United Nations Security Council — sanctions regimes",
+    "description": "Adopts global sanctions regimes under Chapter VII of the UN Charter. Implementation by Member States is mandatory under international law. The UN regimes form the floor for national sanctions; many regimes (US / UK / EU) layer additional autonomous sanctions on top.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFAC-SDN-LIST",
+    "entity_type": "concept",
+    "entity_id": "OFAC-SDN",
+    "canonical_name": "Specially Designated Nationals and Blocked Persons List (SDN)",
+    "description": "The flagship OFAC list. ~14,000 entries (individuals + entities + vessels + aircraft) as of 2025. US persons prohibited from transacting; all property + interests in property within US jurisdiction blocked. The 50% Rule extends blocking to entities owned ≥50% (directly or indirectly) by SDNs.",
+    "metadata": {
+      "approx_entries": 14000
+    }
+  },
+  {
+    "ref_id": "OFAC-NON-SDN",
+    "entity_type": "concept",
+    "entity_id": "OFAC-NON-SDN-LISTS",
+    "canonical_name": "OFAC Non-SDN Lists (CAPTA, NS-MBS, NS-PLC, Sectoral Sanctions)",
+    "description": "Targeted non-blocking restrictions: Sectoral Sanctions Identifications (SSI — Russia debt/equity restrictions); CAPTA (Correspondent Account or Payable-Through Account Sanctions); Non-SDN Menu-Based Sanctions; Non-SDN Palestinian Legislative Council. Less than blocking but commercially significant.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFAC-50-RULE",
+    "entity_type": "concept",
+    "entity_id": "OFAC-50PCT",
+    "canonical_name": "OFAC 50% Rule",
+    "description": "Any entity owned 50% or more, directly or indirectly, by one or more SDNs is itself blocked even if not separately named on the SDN list. Aggregation rule applies to combined holdings. Beneficial-ownership analysis required for sanctions screening at onboarding + on material change.",
+    "metadata": {
+      "ownership_threshold": "50%",
+      "aggregation": true
+    }
+  },
+  {
+    "ref_id": "OFAC-CFCC-MGMT",
+    "entity_type": "duty",
+    "entity_id": "OFAC-EE1",
+    "canonical_name": "CFCC Element 1 — Management Commitment",
+    "description": "Senior management has reviewed + approved the sanctions compliance program; provides adequate resources (technology, staff, training); has appointed a compliance officer with sufficient authority + independence + access to senior management; supports culture of compliance.",
+    "metadata": {
+      "essential_element": 1
+    }
+  },
+  {
+    "ref_id": "OFAC-CFCC-RA",
+    "entity_type": "duty",
+    "entity_id": "OFAC-EE2",
+    "canonical_name": "CFCC Element 2 — Risk Assessment",
+    "description": "Documented assessment of sanctions risks: customer / counterparty risk; product + service risk; geographic risk; channel risk. Refreshed periodically + on material change. Drives the calibration of internal controls + screening intensity.",
+    "metadata": {
+      "essential_element": 2
+    }
+  },
+  {
+    "ref_id": "OFAC-CFCC-IC",
+    "entity_type": "duty",
+    "entity_id": "OFAC-EE3",
+    "canonical_name": "CFCC Element 3 — Internal Controls",
+    "description": "Policies + procedures + technological solutions + business processes that operationalise sanctions compliance: screening (onboarding + ongoing + transactional); record-keeping; escalation; clear lines of responsibility; assignment of accountability; integration with customer due diligence + payment processing.",
+    "metadata": {
+      "essential_element": 3
+    }
+  },
+  {
+    "ref_id": "OFAC-CFCC-TA",
+    "entity_type": "duty",
+    "entity_id": "OFAC-EE4",
+    "canonical_name": "CFCC Element 4 — Testing + Auditing",
+    "description": "Comprehensive, independent + objective testing of the sanctions compliance program by qualified internal or external auditor. Identifies deficiencies; tracks remediation. Alert-testing of screening systems (false-positive + false-negative analysis). Frequency proportionate to risk.",
+    "metadata": {
+      "essential_element": 4
+    }
+  },
+  {
+    "ref_id": "OFAC-CFCC-TR",
+    "entity_type": "duty",
+    "entity_id": "OFAC-EE5",
+    "canonical_name": "CFCC Element 5 — Training",
+    "description": "Role-specific, periodic, documented training on sanctions obligations. Recipients: all employees with sanctions-related responsibilities + senior management + compliance staff. Content reflects current regime + identified risks + red flags.",
+    "metadata": {
+      "essential_element": 5
+    }
+  },
+  {
+    "ref_id": "OFAC-VSD",
+    "entity_type": "concept",
+    "entity_id": "OFAC-VSD-FRAMEWORK",
+    "canonical_name": "OFAC Voluntary Self-Disclosure (VSD) framework",
+    "description": "Self-reporting an apparent violation to OFAC before discovery by OFAC results in: substantial mitigation (typically 50% reduction in base penalty); favourable consideration in enforcement-action determination. Process: prompt initial notification + comprehensive written disclosure within statutory periods + cooperation.",
+    "metadata": {
+      "typical_mitigation": "50% base-penalty reduction"
+    }
+  },
+  {
+    "ref_id": "OFAC-GEN-LIC",
+    "entity_type": "concept",
+    "entity_id": "OFAC-GLs",
+    "canonical_name": "OFAC General Licences",
+    "description": "Authorise specified categories of transactions without need for a specific licence — e.g. humanitarian aid, telecommunications, certain wind-down activities post-designation. Often time-limited; frequently amended; conditions must be strictly observed. Critical for any business operating in or around sanctioned jurisdictions.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFAC-SPEC-LIC",
+    "entity_type": "concept",
+    "entity_id": "OFAC-SLs",
+    "canonical_name": "OFAC Specific Licences",
+    "description": "Case-by-case authorisations issued in response to an application. Process: formal application + supporting evidence + business case + sanctions-impact analysis. OFAC may approve, deny, or attach conditions. Often used to permit transactions otherwise prohibited (e.g. payment to a designated entity for legacy obligation; humanitarian transaction).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFAC-SECONDARY-SANC",
+    "entity_type": "concept",
+    "entity_id": "OFAC-SECONDARY",
+    "canonical_name": "Secondary sanctions (foreign-person exposure)",
+    "description": "Sanctions targeting non-US persons / entities that engage in certain conduct (typically Iran / DPRK / Russia / Venezuela). Consequences: designation onto SDN list, loss of US correspondent-banking access, prohibition on entering US. EO 14114 (Dec 2023) materially expanded secondary-sanctions risk for foreign banks touching Russia's military-industrial base.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFSI-UK-CONSOL-LIST",
+    "entity_type": "concept",
+    "entity_id": "OFSI-CONSOLIDATED-LIST",
+    "canonical_name": "UK Consolidated List of Financial Sanctions Targets",
+    "description": "OFSI's single consolidated list of all persons + entities subject to UK financial sanctions across all regimes. Updated continuously; available in CSV / XML / JSON formats. ~5,000+ entries as of 2025 (post-Russia expansion). Comparable to OFAC SDN list in function.",
+    "metadata": {
+      "approx_entries_2025": 5000
+    }
+  },
+  {
+    "ref_id": "OFSI-LICENCE",
+    "entity_type": "concept",
+    "entity_id": "OFSI-LICENSING",
+    "canonical_name": "OFSI Licences — General + Specific",
+    "description": "General Licences authorise specified categories of activity (humanitarian, legal fees, basic-needs, certain wind-down). Specific Licences are case-by-case authorisations. OFSI has issued an unprecedented volume of general + specific licences since 2022 Russia sanctions — particularly for legal services, energy, divestment, and humanitarian operations.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFSI-REPORTING-OBL",
+    "entity_type": "duty",
+    "entity_id": "OFSI-REPORT",
+    "canonical_name": "OFSI mandatory reporting obligation",
+    "description": "'Relevant firms' (banks, FCA-authorised firms, accountants, lawyers, auditors, insolvency practitioners, real-estate agents, casinos, art-market participants, crypto-asset firms, etc.) must report to OFSI as soon as practicable if they know or have reasonable cause to suspect that a person is a designated person, or has committed a financial-sanctions offence. Includes ongoing reporting on frozen funds (annual) + any change in frozen-funds holdings.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFSI-OWNERSHIP-CONTROL",
+    "entity_type": "concept",
+    "entity_id": "OFSI-OC",
+    "canonical_name": "OFSI ownership + control attribution",
+    "description": "UK regime: a non-designated entity is treated as owned + controlled by a designated person where the designated person (a) holds directly or indirectly more than 50% of the shares or voting rights, OR (b) holds the right (directly or indirectly) to appoint or remove a majority of the board, OR (c) has the ability to ensure the affairs of the entity are conducted in accordance with the designated person's wishes. Broader than OFAC's 50% Rule (incorporates 'control' beyond ownership).",
+    "metadata": {
+      "ownership_threshold": ">50% (or control)"
+    }
+  },
+  {
+    "ref_id": "OFSI-STRICT-LIAB",
+    "entity_type": "concept",
+    "entity_id": "OFSI-SL",
+    "canonical_name": "OFSI strict liability for many regimes",
+    "description": "Many UK sanctions regimes operate on strict-liability for civil monetary penalties (no requirement to show knowledge / suspicion). 'Reasonable steps + reasonable suspicion' defence available for some regimes. OFSI assesses moral blameworthiness in setting penalty quantum (Annual Review 2024-25 + supplementary guidance).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OFSI-TURNOVER-FINES",
+    "entity_type": "concept",
+    "entity_id": "OFSI-TURNOVER-CONSULT",
+    "canonical_name": "OFSI turnover-based fines (2025 consultation)",
+    "description": "OFSI consultation issued 2025 on moving from the current per-breach cap (greater of £1m or 50% of breach value) to a turnover-based fines model (modelled on competition law + GDPR — % of group worldwide turnover). Likely outcome in 2026; would substantially raise the ceiling for the largest firms (analogous to GDPR's 4% global turnover ceiling).",
+    "metadata": {
+      "consultation_year": 2025
+    }
+  },
+  {
+    "ref_id": "SANC-RISK-ASSESS",
+    "entity_type": "duty",
+    "entity_id": "SANC-RA",
+    "canonical_name": "Sanctions Risk Assessment (cross-regime)",
+    "description": "Documented assessment of sanctions risks across customer / counterparty + product + geographic + delivery-channel + transaction-type dimensions. Required by OFAC CFCC Element 2 + by FCA SYSC + by OFSI General Guidance + by EU + national supervisor expectations. Drives calibration of all other controls.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SANC-SCREENING-ONB",
+    "entity_type": "duty",
+    "entity_id": "SANC-SCR-ONB",
+    "canonical_name": "Sanctions screening at onboarding",
+    "description": "Screening of customers, beneficial owners (per OFAC 50% Rule + OFSI ownership/control + EU criteria) + related parties against all applicable sanctions lists (OFAC SDN + Non-SDN + UK Consolidated + EU + UN + national designations) at relationship inception. Block + escalate any match before relationship goes live.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SANC-SCREENING-ONG",
+    "entity_type": "duty",
+    "entity_id": "SANC-SCR-ONG",
+    "canonical_name": "Ongoing sanctions screening",
+    "description": "Periodic re-screening of existing customer base + beneficial owners against updated sanctions lists. Frequency proportionate to risk (typically continuous for tier-1 risk, daily-or-better for tier-2, periodic for tier-3). Trigger-based re-screening on customer profile change. Real-time alerting on new designations affecting existing relationships.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SANC-TX-FILTERING",
+    "entity_type": "duty",
+    "entity_id": "SANC-TXF",
+    "canonical_name": "Transaction filtering",
+    "description": "Real-time filtering of payment / transaction instructions against sanctions lists at points of authorisation + execution. Covers: payer / payee / intermediary banks; goods + ship + aircraft references; geographic indicators; commodity codes; vessel IMO numbers; cryptocurrency wallet addresses. Hold + escalate flagged transactions for compliance review.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SANC-PRICE-CAP",
+    "entity_type": "concept",
+    "entity_id": "RUSSIA-OIL-PRICE-CAP",
+    "canonical_name": "Russia oil price cap (G7 + EU + UK)",
+    "description": "Coordinated G7 + EU + UK price cap on Russian crude oil ($60/barrel, set Dec 2022) + petroleum products. Maritime services prohibitions for trades above the cap. Enforced through OFAC / OFSI / EU competent authorities with overlapping but coordinated regimes. Attestation framework for shipping + insurance services. Lowered to $47.60/barrel (G7 + EU + UK) in late 2025.",
+    "metadata": {
+      "current_cap_usd_barrel": "47.60",
+      "in_force_initial": "2022-12-05"
+    }
+  },
+  {
+    "ref_id": "SANC-CRYPTO",
+    "entity_type": "concept",
+    "entity_id": "SANC-CRYPTO-EXPOSURE",
+    "canonical_name": "Crypto sanctions exposure",
+    "description": "Sanctions-exposure for crypto-asset service providers + virtual-asset transactions. Includes: designated individual addresses; designated entities (mixers, exchanges); sanctioned jurisdictions (Iran / DPRK / Cuba / Crimea / Donetsk / Luhansk / Zaporizhzhia / Kherson); travel-rule-aligned beneficial-ownership flow-through. Tornado Cash designation partially vacated by 5th Circuit (Nov 2024) but most other crypto designations remain.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SANC-VSD-OFSI",
+    "entity_type": "concept",
+    "entity_id": "OFSI-VSD-EQUIV",
+    "canonical_name": "OFSI Voluntary Disclosure (mitigation)",
+    "description": "OFSI's equivalent of OFAC's VSD framework. Voluntary disclosure of an apparent breach (before OFSI discovers it) results in: substantial mitigation in penalty calculation (typically up to 50%); demonstrated cooperation increases mitigation; clear remediation reduces penalty. OFSI Annual Review 2024-25 confirmed the value of cooperation in penalty calibration.",
+    "metadata": {
+      "typical_mitigation": "Up to 50%"
+    }
+  }
+]

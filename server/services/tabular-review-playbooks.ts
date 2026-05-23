@@ -1771,6 +1771,202 @@ export const NYDFS_PART_500_COMPLIANCE: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 11. Sanctions Compliance Program — OFAC + OFSI Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const SANCTIONS_OFAC_OFSI_COMPLIANCE: Playbook = {
+  id: 'sanctions-ofac-ofsi-compliance',
+  name: 'Sanctions Compliance — OFAC + OFSI Mapping',
+  description:
+    'Maps a sanctions-compliance-program document against the cross-jurisdictional ' +
+    'expectations: the OFAC Framework for Compliance Commitments (5 essential elements ' +
+    'with 2024 NDAA 10-year SoL exposure), the OFSI General Guidance (2024 update) + ' +
+    'reporting + CMP regime (6 penalties in 2025 vs 1 in 2024 + turnover-fines ' +
+    'consultation), and the EU + UN baseline framework. Anchored on the program shape that ' +
+    'satisfies both OFAC + OFSI examiners simultaneously.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['sanctions-ofac-ofsi-2026'],
+  systemPrompt:
+    'You are an experienced US + UK financial-sanctions lawyer reviewing a sanctions ' +
+    'compliance program (SCP) against OFAC (Framework for Compliance Commitments, May 2019) ' +
+    'and OFSI (General Guidance 2024 + CMP framework) expectations, with secondary reference ' +
+    'to EU + UN baselines. You assess each control with the discipline of a dual OFAC/OFSI ' +
+    'examiner: explicit > implicit, evidence > paraphrase, strict > lenient. You distinguish ' +
+    'between strict-liability obligations (OFAC blocking + many OFSI regimes) and reasonable-' +
+    'cause-to-suspect triggers (OFSI reporting + some OFSI breach categories), and you flag ' +
+    'every gap that would expose the institution to the 10-year OFAC SoL or the prospective ' +
+    'OFSI turnover-based fines. You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a sanctions compliance program / policy / risk assessment / annual ' +
+    'attestation document against the cross-jurisdictional OFAC + OFSI + EU + UN sanctions ' +
+    'framework.',
+  columns: [
+    {
+      id: 'sanc-mgmt-commitment',
+      header: 'OFAC EE1 — Management commitment',
+      regulatoryRef: 'OFAC CFCC EE1',
+      question:
+        'Does the document evidence: senior-management (board / equivalent) approval of the ' +
+        'SCP + a named sanctions compliance officer with sufficient authority, autonomy + ' +
+        'resources + access to senior management, and an explicit culture-of-compliance ' +
+        'statement that sanctions are not subordinated to business objectives?',
+      expects:
+        'Board/SO approval + named CO + autonomy + culture statement. Missing the autonomy / ' +
+        'access-to-senior-management element is "partial".',
+    },
+    {
+      id: 'sanc-risk-assessment',
+      header: 'OFAC EE2 / OFSI Risk Assessment',
+      regulatoryRef: 'OFAC CFCC EE2 + OFSI General Guidance 2024',
+      question:
+        'Does the document evidence a documented sanctions risk assessment covering customer / ' +
+        'counterparty, product / service, geographic + delivery-channel + transaction-type ' +
+        'dimensions, refreshed at least annually and on material change (new regime, designations, ' +
+        'incidents, business change)?',
+      expects:
+        'All five risk dimensions + refresh cadence + trigger events. A generic AML risk ' +
+        'assessment without sanctions-specific dimensions is "partial".',
+    },
+    {
+      id: 'sanc-screening-onboarding',
+      header: 'Onboarding screening — incl. OFAC 50% + OFSI control',
+      regulatoryRef: 'OFAC CFCC EE3 + OFAC 50% Rule + OFSI Ownership/Control',
+      question:
+        'Does the document evidence onboarding screening of customers, beneficial owners + ' +
+        'related parties against ALL applicable lists (OFAC SDN + Non-SDN + UK Consolidated + ' +
+        'EU + UN), applying the OFAC 50% Rule (aggregated direct + indirect ownership) AND ' +
+        'the OFSI ownership-or-control test (>50% OR board-appointment OR de facto control)?',
+      expects:
+        'All applicable list coverage + 50% Rule + control attribution. Missing OFSI\'s broader ' +
+        '"control" test (going beyond shareholding) is "partial" — frequent gap in US-rooted ' +
+        'programs.',
+    },
+    {
+      id: 'sanc-screening-ongoing',
+      header: 'Ongoing + transaction screening',
+      regulatoryRef: 'OFAC CFCC EE3 + OFSI General Guidance 2024',
+      question:
+        'Does the document evidence ongoing re-screening of existing customer base on list ' +
+        'updates (frequency proportionate to risk; real-time for tier-1) AND real-time ' +
+        'transaction filtering at payment / instruction execution (payer / payee / intermediary / ' +
+        'goods / vessel / commodity / crypto-address)?',
+      expects:
+        'Both ongoing-base screening + real-time transaction filtering. Frequency stated; alert ' +
+        'workflow + decision authority + audit trail. Static one-time screening alone is ' +
+        '"missing".',
+    },
+    {
+      id: 'sanc-watchlist-coverage',
+      header: 'Watchlist coverage + tuning',
+      regulatoryRef: 'OFAC CFCC EE3 + OFSI screening expectations',
+      question:
+        'Does the document specify which sanctions lists are screened against (OFAC SDN + ' +
+        'Non-SDN + sectoral; OFSI Consolidated; EU; UN; national designations of major ' +
+        'jurisdictions of operation), the screening-technology matching logic (fuzzy + ' +
+        'transliteration + alias + script-conversion), and the false-positive + false-negative ' +
+        'tuning cadence?',
+      expects:
+        'Full list inventory + matching-logic detail + tuning cadence. Missing UN or EU coverage ' +
+        'is "partial"; missing tuning cadence is "partial".',
+    },
+    {
+      id: 'sanc-testing-audit',
+      header: 'OFAC EE4 — Testing + audit',
+      regulatoryRef: 'OFAC CFCC EE4',
+      question:
+        'Does the document evidence periodic independent testing + auditing of the SCP — ' +
+        'covering governance, risk assessment, screening-system tuning + alert-workflow ' +
+        'effectiveness, sample reperformance of compliance decisions, change-management + ' +
+        'remediation tracking — by qualified internal-audit or external party?',
+      expects:
+        'Documented audit programme + cadence + scope + tracking of findings to closure. ' +
+        'Compliance-self-testing only (no independent function) is "partial".',
+    },
+    {
+      id: 'sanc-training',
+      header: 'OFAC EE5 / OFSI training',
+      regulatoryRef: 'OFAC CFCC EE5 + OFSI General Guidance',
+      question:
+        'Does the document evidence role-specific periodic sanctions training: front-line (red ' +
+        'flags + escalation); compliance staff (current regimes + screening systems); senior ' +
+        'management (governance + accountability + program status); board (overview + key ' +
+        'risks)? Completion tracked + content updated for regime changes?',
+      expects:
+        'Role-specific content + cadence + tracking + content-refresh discipline. Generic ' +
+        'annual training without role differentiation is "partial".',
+    },
+    {
+      id: 'sanc-licensing',
+      header: 'OFAC + OFSI licensing process',
+      regulatoryRef: 'OFAC General + Specific Licences + OFSI Licensing',
+      question:
+        'Does the document describe the process for: (a) checking + relying on OFAC + OFSI ' +
+        'general licences (incl. condition compliance + reporting); (b) applying for OFAC / ' +
+        'OFSI specific licences when general licences do not cover the activity; (c) parallel ' +
+        'licensing across both regimes where activity is cross-jurisdictional?',
+      expects:
+        'GL reliance procedure + condition tracking + SL application path + parallel-licensing ' +
+        'awareness. Missing the parallel-licensing point is a frequent gap — flag it.',
+    },
+    {
+      id: 'sanc-ransomware-crypto',
+      header: 'Ransomware + crypto sanctions',
+      regulatoryRef: 'OFAC Ransomware Advisory (Sept 2021) + crypto designations',
+      question:
+        'Does the document describe specific procedures for sanctions analysis before any ' +
+        'ransomware payment (incl. OFAC SDN + 50% Rule + designated-address screening), AND ' +
+        'crypto-sanctions screening of customer wallet addresses + transaction counterparties ' +
+        'where the institution has crypto exposure?',
+      expects:
+        'Ransomware due-diligence procedure + IC3/OFAC notification path + crypto-address ' +
+        'screening where applicable. Marked "not_applicable" only for institutions with zero ' +
+        'crypto exposure + zero ransomware risk (rare).',
+    },
+    {
+      id: 'sanc-secondary-sanctions',
+      header: 'Secondary sanctions risk assessment',
+      regulatoryRef: 'EO 14114 + CAATSA secondary sanctions',
+      question:
+        'Does the document evidence specific analysis of secondary-sanctions exposure (e.g. ' +
+        'foreign-bank exposure under EO 14114 for transactions touching Russia\'s military-' +
+        'industrial base; CAATSA risks for significant transactions with sanctioned Russian / ' +
+        'Iranian persons), with controls calibrated to non-US persons\' direct sanctions risk?',
+      expects:
+        'Express secondary-sanctions analysis + targeted controls (correspondent-banking ' +
+        'review, customer-onboarding flags). Generic "we comply with OFAC" without the ' +
+        'foreign-person secondary-sanctions dimension is "partial".',
+    },
+    {
+      id: 'sanc-ofsi-reporting',
+      header: 'OFSI mandatory reporting obligation',
+      regulatoryRef: 'OFSI Reporting (Russia Regs Sched 5 + parallel)',
+      question:
+        'Does the document evidence (a) recognition that the institution is a "relevant firm" ' +
+        'subject to the OFSI reporting obligation, (b) procedures for reporting to OFSI as soon ' +
+        'as practicable on knowledge or reasonable cause to suspect a designated person OR a ' +
+        'sanctions offence, AND (c) annual frozen-funds reporting in October each year?',
+      expects:
+        'All three elements (relevant-firm scope + reasonable-cause trigger + annual frozen-' +
+        'funds report). Missing the annual frozen-funds report is "partial".',
+    },
+    {
+      id: 'sanc-incident-disclosure',
+      header: 'Incident response + voluntary disclosure',
+      regulatoryRef: 'OFAC VSD + OFSI Voluntary Disclosure mitigation',
+      question:
+        'Does the document define the process for: detecting an apparent sanctions violation; ' +
+        'root-cause analysis; remediation; and (where appropriate) voluntary self-disclosure ' +
+        'to OFAC (substantial mitigation up to ~50%) + OFSI (similar mitigation regime), with ' +
+        'specific cross-jurisdictional coordination where the violation touches both regimes?',
+      expects:
+        'Full incident-to-disclosure workflow + dual VSD/voluntary-disclosure consideration + ' +
+        'coordination. Missing the dual-disclosure coordination is "partial" — VSD timing in ' +
+        'one regime can affect VSD eligibility in the other.',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1785,6 +1981,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   IRELAND_SEAR_RESPONSIBILITY_MAP,
   LUXEMBOURG_AIFMD_II_READINESS,
   NYDFS_PART_500_COMPLIANCE,
+  SANCTIONS_OFAC_OFSI_COMPLIANCE,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {
