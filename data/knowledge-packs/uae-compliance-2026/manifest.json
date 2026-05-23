@@ -1,0 +1,32 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "uae-compliance-2026",
+  "display_name": "UAE Compliance 2026 — FDL 10/2025 + CR 134/2025, DIFC, ADGM, VARA, PDPL",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the UAE's multi-regulator financial-compliance architecture as of 2026: Federal Decree-Law 10/2025 (in force 14 Oct 2025) + Cabinet Resolution 134/2025 (executive regulations) replacing FDL 20/2018 as the federal AML/CTF/PF statute; CBUAE Payment Token Services Regulation 2024 (stablecoin + payment token licensing); SCA crypto-asset framework; DFSA (DIFC common-law financial regulator) + ADGM FSRA Digital Asset framework (amended 10 June 2025 — privacy-token + algorithmic-stablecoin prohibitions); VARA Rulebooks (Dubai-level VASP licensing); Federal Decree-Law 45/2021 (UAE PDPL) + DIFC DP Law 5/2020 + ADGM Data Protection Regulations 2021; Federal Penal Code anti-bribery; Federal Competition Law 36/2023; Federal Decree-Law 33/2021 (Labour); Federal Decree-Law 48/2023 (Insurance Regulation, post-merger of IA into CBUAE).",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "United Arab Emirates (Federal + DIFC + ADGM + Dubai/VARA)",
+  "regulatory_area": "Multi-domain compliance + multi-regulator overlay",
+  "regulation_ids": [
+    "Federal Decree-Law 10/2025 (AML/CTF/PF)",
+    "Cabinet Resolution 134/2025 (executive regulations)",
+    "Federal Decree-Law 20/2018 (predecessor — replaced)",
+    "CBUAE Payment Token Services Regulation 2024",
+    "SCA Crypto-Asset Activities Regulation",
+    "DFSA Rulebook (Conduct of Business + AML)",
+    "ADGM FSRA Rulebook + Digital Asset Framework (amended 10 Jun 2025)",
+    "VARA Rulebooks (Virtual Asset Service Providers)",
+    "Federal Decree-Law 45/2021 (PDPL)",
+    "DIFC Data Protection Law No. 5 of 2020",
+    "ADGM Data Protection Regulations 2021",
+    "Federal Decree-Law 48/2023 (Insurance Regulation)",
+    "Federal Penal Code (anti-bribery)",
+    "Federal Competition Law 36/2023",
+    "Federal Decree-Law 33/2021 (Labour)"
+  ],
+  "tier": 1,
+  "entity_count": 52,
+  "relationship_count": 83,
+  "alias_entry_count": 35
+}

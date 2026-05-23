@@ -2161,6 +2161,205 @@ export const SINGAPORE_MAS_626_DTSP_READINESS: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 13. UAE FDL 10/2025 + Multi-Regulator Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const UAE_FDL_10_MULTI_REGULATOR_READINESS: Playbook = {
+  id: 'uae-fdl-10-multi-regulator-readiness',
+  name: 'UAE FDL 10/2025 + Multi-Regulator Readiness Mapping',
+  description:
+    'Maps a UAE-regulated firm\'s AML/CFT/PF programme + multi-regulator readiness against ' +
+    'Federal Decree-Law 10/2025 + Cabinet Resolution 134/2025 (in force 14 October 2025), with ' +
+    'overlay coverage of the four-regulator architecture (CBUAE / SCA + DIFC DFSA + ADGM FSRA ' +
+    '+ Dubai VARA). Specifically anchored on the post-grey-list-exit operational standards UAE ' +
+    'supervisors now expect.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['uae-compliance-2026'],
+  systemPrompt:
+    'You are an experienced UAE financial-services + AML lawyer reviewing an AML/CFT/PF ' +
+    'compliance programme + multi-regulator readiness document against Federal Decree-Law ' +
+    '10/2025 + Cabinet Resolution 134/2025 (in force 14 Oct 2025) plus the four-regulator ' +
+    'overlay (CBUAE / SCA + DFSA + FSRA + VARA). You assess each control with the discipline ' +
+    'of a CBUAE on-site examiner working alongside an EOCN-AML/CTF cross-supervisor reviewer: ' +
+    'explicit > implicit, evidence > paraphrase, strict > lenient. You explicitly distinguish ' +
+    'obligations applying onshore UAE (CBUAE / SCA / MOE) from those applying in DIFC (DFSA) / ' +
+    'ADGM (FSRA) / Dubai-VA (VARA), and flag every multi-regulator coordination gap. You ' +
+    'respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a UAE-regulated FI\'s AML/CFT/PF programme + multi-regulator readiness ' +
+    'document against FDL 10/2025 + CR 134/2025 (in force 14 October 2025) and the four-' +
+    'regulator overlay (CBUAE / SCA + DFSA + FSRA + VARA).',
+  columns: [
+    {
+      id: 'ae-fdl10-scope-multireg',
+      header: 'Multi-regulator scope assessment',
+      regulatoryRef: 'FDL 10/2025 Arts 2-3 + supervisor mandates',
+      question:
+        'Does the document evidence a documented scope assessment identifying which UAE ' +
+        'regulators apply to the firm\'s activities: CBUAE (banking, insurance, payments, ' +
+        'stablecoins, money exchange), SCA (onshore securities + commodities + tokens), DFSA ' +
+        '(DIFC operations), FSRA (ADGM operations), VARA (Dubai VA ex-DIFC), MOE (DNFBP), and ' +
+        'how the multi-regulator architecture is coordinated?',
+      expects:
+        'Per-activity-per-regulator scope table + coordination model. Generic "we comply with ' +
+        'UAE law" without per-regulator mapping is "missing".',
+    },
+    {
+      id: 'ae-fdl10-rba-pf',
+      header: 'Entity-wide RBA + PF risk',
+      regulatoryRef: 'FDL 10/2025 + CR 134/2025',
+      question:
+        'Does the document evidence a documented entity-wide ML/TF/PF risk assessment covering ' +
+        'customer, geographic, product/service, delivery-channel + new-technology risk factors, ' +
+        'with PF as a distinct dimension (DPRK + Iran focus, dual-use goods, complex BO masking, ' +
+        'UN-designated entities), refreshed at least annually + on material change, senior-' +
+        'management approved?',
+      expects:
+        'All five risk dimensions + PF as a distinct dimension + refresh cadence + SM approval. ' +
+        'Pre-14-October-2025 risk assessment without PF integration is "missing".',
+    },
+    {
+      id: 'ae-fdl10-cdd',
+      header: 'CDD chain — incl. UAE BO registry',
+      regulatoryRef: 'FDL 10/2025 Arts 5-6 + CR 134/2025',
+      question:
+        'Does the document evidence the full CDD chain: customer identification + verification ' +
+        '(reliable independent sources); UBO identification + verification (25% threshold + ' +
+        'senior-managing-official fallback; UAE BO registry reliance where appropriate); purpose ' +
+        '+ intended nature of relationship; ongoing monitoring; CDD-triggering thresholds (AED ' +
+        '55,000 occasional / AED 3,500 wire transfers)?',
+      expects:
+        'All four CDD elements + concrete thresholds + UAE BO registry reliance procedure ' +
+        '(where applicable). Missing the threshold detail is "partial".',
+    },
+    {
+      id: 'ae-fdl10-edd-peps',
+      header: 'EDD + PEPs (incl. UAE Domestic PEPs)',
+      regulatoryRef: 'FDL 10/2025 Arts 7-8',
+      question:
+        'Does the document specify EDD triggers (foreign PEPs always, high-risk jurisdictions, ' +
+        'complex / unusual / large transactions, correspondent banking, new technologies) AND ' +
+        'address treatment of UAE Domestic PEPs (federal / emirate / state-owned-enterprise ' +
+        'leadership — risk-sensitive but typically EDD-triggering for politically-significant ' +
+        'positions)? SoW + SoF + senior-management approval?',
+      expects:
+        'All EDD triggers + UAE Domestic PEP treatment + senior-management approval + SoW/SoF. ' +
+        'Missing UAE Domestic PEP categorisation (post-EOCN advisories) is "partial".',
+    },
+    {
+      id: 'ae-fdl10-pf',
+      header: 'Proliferation Financing controls',
+      regulatoryRef: 'FDL 10/2025 Art 12 + EOCN guidance',
+      question:
+        'Does the document evidence specific PF controls: UN-designated entity screening (DPRK ' +
+        '+ Iran focus); dual-use goods + sensitive-technology trade-finance scrutiny; sanctions-' +
+        'evasion typology integration; sanctions screening integration; staff training on PF ' +
+        'typologies (post-FATF R.1/R.7 expectations)?',
+      expects:
+        'All four PF control elements. Marked "covered" only if PF is operationalised — not ' +
+        'just mentioned. Generic AML controls without PF-specific operationalisation is "partial".',
+    },
+    {
+      id: 'ae-fdl10-sar-goaml',
+      header: 'SAR via goAML',
+      regulatoryRef: 'FDL 10/2025 Arts 15-17 + CR 134/2025',
+      question:
+        'Does the document evidence: SAR filing procedure via goAML to FIU UAE; structured ' +
+        'content requirements per CR 134/2025 + goAML guidance; explicit PF reportability; ' +
+        'tipping-off prohibition (FDL 10/2025 Art 17); internal escalation path; emphasis on ' +
+        'quality + timeliness; designated person responsible for filing?',
+      expects:
+        'All five elements (goAML + 134/2025 content + PF + tipping-off + escalation + named ' +
+        'filing officer). Missing the PF reportability dimension is "partial".',
+    },
+    {
+      id: 'ae-fdl10-sanctions',
+      header: 'Sanctions + UAE Local Terrorist List',
+      regulatoryRef: 'FDL 10/2025 Arts 18-19 + EOCN guidance',
+      question:
+        'Does the document evidence sanctions-screening program covering UN Consolidated List + ' +
+        'UAE Local Terrorist List + targeted UAE designations + OFAC + UK + EU lists for cross-' +
+        'jurisdictional firms; real-time customer + transaction screening; freeze + report ' +
+        'procedures; cooperation with EOCN-AML/CTF + Federal Public Prosecution?',
+      expects:
+        'UN + UAE LTL + cross-jurisdictional list coverage + operational procedures. Missing ' +
+        'UAE LTL coverage is "missing" (frequent gap in foreign-firm-led UAE operations).',
+    },
+    {
+      id: 'ae-fdl10-governance',
+      header: 'Governance + AML compliance officer',
+      regulatoryRef: 'FDL 10/2025 Arts 20-21 + CR 134/2025',
+      question:
+        'Does the document evidence: senior-management-approved AML/CFT/PF policies + ' +
+        'procedures; named AML compliance officer (MLRO) at sufficient seniority + independence ' +
+        '+ resources + access to senior management + supervisor approval where required; ' +
+        'internal audit + compliance-function review; transaction-monitoring + screening-system ' +
+        'calibration + tuning?',
+      expects:
+        'All four elements + named individual + supervisor approval. "AML responsibility is ' +
+        'shared" without a named senior-level CO is "missing".',
+    },
+    {
+      id: 'ae-fdl10-training',
+      header: 'Training + PF + multi-regulator content',
+      regulatoryRef: 'FDL 10/2025 Art 22',
+      question:
+        'Does the training programme address: applicable laws + FDL 10/2025 + CR 134/2025 + ' +
+        'internal policies; current ML/TF/PF typologies + red flags (incl. PF-specific scenarios); ' +
+        'role-targeted modules; tipping-off prohibition; multi-regulator landscape (CBUAE / SCA ' +
+        '/ DFSA / FSRA / VARA where applicable); refresher cadence + completion tracking + ' +
+        'effectiveness assessment?',
+      expects:
+        'All six elements + multi-regulator content where applicable. Missing PF + multi-' +
+        'regulator content is "partial".',
+    },
+    {
+      id: 'ae-fdl10-retention-transition',
+      header: 'Record retention + FDL 20/2018 transition',
+      regulatoryRef: 'FDL 10/2025 Art 23 + CR 134/2025 transitional',
+      question:
+        'Does the document evidence: 5-year minimum retention of CDD documentation + ' +
+        'transaction records + SAR working papers + extension for ongoing investigation / ' +
+        'supervisory request; documented transition plan for legacy relationships established ' +
+        'under FDL 20/2018 (refresh of risk assessment + customer risk profile post-14-' +
+        'October-2025)?',
+      expects:
+        'Both retention period + transition plan from FDL 20/2018. Missing the transition ' +
+        'plan (specific to UAE post-14-October-2025 environment) is "partial".',
+    },
+    {
+      id: 'ae-multireg-crypto',
+      header: 'Cross-jurisdictional crypto compliance (where applicable)',
+      regulatoryRef: 'CBUAE PTSR + SCA + DFSA + FSRA + VARA',
+      question:
+        'For firms with virtual-asset / payment-token activities: does the document evidence ' +
+        'identification of which UAE crypto regulator(s) apply (CBUAE PTSR for payment tokens; ' +
+        'SCA for onshore securities tokens; DFSA for DIFC; FSRA for ADGM; VARA for Dubai non-' +
+        'DIFC), licensing status + readiness for each, compliance with prohibited-token rules ' +
+        '(privacy tokens + algorithmic stablecoins prohibited under VARA + FSRA)?',
+      expects:
+        'Per-activity-per-regulator licensing status + prohibition compliance. Marked ' +
+        '"not_applicable" only for firms with zero VA / payment-token exposure. Silence at ' +
+        'any crypto firm is "missing".',
+    },
+    {
+      id: 'ae-pdpl-multireg',
+      header: 'Data protection + multi-regulator overlay',
+      regulatoryRef: 'PDPL (federal) + DIFC DP Law + ADGM DP Regs',
+      question:
+        'Does the document evidence the data-protection overlay for AML/CTF/PF processing: ' +
+        'federal PDPL for onshore UAE; DIFC DP Law 5/2020 for DIFC operations; ADGM Data ' +
+        'Protection Regulations 2021 for ADGM operations; lawful basis for AML CDD processing; ' +
+        'cross-border-transfer arrangements; breach-notification procedures per the applicable ' +
+        'regime(s)?',
+      expects:
+        'Per-jurisdiction DP coverage + lawful basis + transfer + breach procedures. Treating ' +
+        'all UAE jurisdictions as a single DP regime is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -2177,6 +2376,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   NYDFS_PART_500_COMPLIANCE,
   SANCTIONS_OFAC_OFSI_COMPLIANCE,
   SINGAPORE_MAS_626_DTSP_READINESS,
+  UAE_FDL_10_MULTI_REGULATOR_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

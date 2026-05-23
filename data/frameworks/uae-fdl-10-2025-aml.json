@@ -1,0 +1,155 @@
+{
+  "id": "uae-fdl-10-2025-aml",
+  "name": "UAE Federal Decree-Law 10/2025 + Cabinet Resolution 134/2025 (AML/CTF/PF)",
+  "shortName": "UAE FDL 10/2025",
+  "reference": "Federal Decree-Law 10/2025 + Cabinet Resolution 134/2025",
+  "url": "https://www.namgr.gov.ae/",
+  "supersedes": "Federal Decree-Law 20/2018 + Cabinet Decision 10/2019",
+  "inForce": "2025-10-14",
+  "supervisor": "CBUAE + EOCN-AML/CTF + SCA + MOE + DFSA + FSRA + VARA (per scope)",
+  "articleCount": 15,
+  "chapters": [
+    {"number": "Scope", "title": "Designated persons + sectoral scope", "articles": "FDL 10/2025 Arts 2-3"},
+    {"number": "CDD", "title": "Customer Due Diligence + Enhanced Due Diligence + PEPs", "articles": "FDL 10/2025 Arts 5-9"},
+    {"number": "BO", "title": "Beneficial Ownership", "articles": "FDL 10/2025 + CR 134/2025"},
+    {"number": "PF", "title": "Proliferation Financing controls", "articles": "FDL 10/2025 + CR 134/2025"},
+    {"number": "SAR", "title": "Reporting + tipping-off", "articles": "FDL 10/2025 Arts 15-17"},
+    {"number": "Sanctions", "title": "Sanctions + targeted measures", "articles": "FDL 10/2025 Arts 18-19"},
+    {"number": "Governance", "title": "Internal organisation + training + retention", "articles": "FDL 10/2025 Arts 20-23"},
+    {"number": "Enforcement", "title": "Sanctions + supervisory measures", "articles": "FDL 10/2025 Arts 25-30"}
+  ],
+  "themes": [
+    "Scope + designated persons",
+    "Multi-regulator architecture",
+    "CDD + EDD",
+    "PEPs",
+    "Beneficial ownership",
+    "Proliferation Financing",
+    "SAR + goAML",
+    "Sanctions + targeted measures",
+    "Governance + training + retention",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "FDL10.Scope",
+      "title": "Designated persons + sectoral scope",
+      "chapter": "Scope",
+      "section": "FDL 10/2025 Arts 2-3",
+      "theme": "Scope + designated persons",
+      "requirement": "Captures: Financial Institutions (banks, finance companies, insurers, payment service providers, money exchange houses, hawala providers — supervised by CBUAE; securities + commodities firms supervised by SCA; DIFC FIs supervised by DFSA; ADGM FIs supervised by FSRA); VASPs (per CBUAE / SCA / DFSA / FSRA / VARA scope); DNFBPs (real-estate agents, dealers in precious metals + stones, lawyers + notaries + accountants, corporate service providers, etc. — supervised by MOE primarily). Multi-regulator architecture; same federal substantive obligations apply across regulators."
+    },
+    {
+      "id": "FDL10.MultiReg",
+      "title": "Multi-regulator architecture",
+      "chapter": "Scope",
+      "section": "FDL 10/2025 + supervisor mandates",
+      "theme": "Multi-regulator architecture",
+      "requirement": "Firms operating across multiple UAE jurisdictions face simultaneous regimes: federal CBUAE / SCA / MOE (onshore UAE); DIFC DFSA (DIFC); ADGM FSRA (ADGM); Dubai VARA (Dubai excluding DIFC, VA-only). Each regulator issues its own sectoral AML guidance + supervisory expectations; the federal FDL 10/2025 substantive obligations operate as the baseline. Cross-regulator program design + coordination is a distinct compliance discipline."
+    },
+    {
+      "id": "FDL10.CDD",
+      "title": "Customer Due Diligence (Art. 5-6)",
+      "chapter": "CDD",
+      "section": "FDL 10/2025 Arts 5-6 + CR 134/2025",
+      "theme": "CDD + EDD",
+      "requirement": "CDD applied: at establishment of a business relationship; on occasional transactions ≥ AED 55,000 (~US$15,000) — or AED 3,500 (~US$1,000) for wire transfers; on suspicion of ML/TF/PF; on doubts about prior CDD adequacy. Measures: identify + verify customer + UBO using reliable independent sources; understand purpose + intended nature; conduct ongoing monitoring (transaction scrutiny + record refresh). Risk-based intensity. Reliance on third-party CDD subject to conditions (regulated + supervised + immediate-information-access + ultimate-responsibility-retained)."
+    },
+    {
+      "id": "FDL10.EDD",
+      "title": "Enhanced Due Diligence (Art. 7)",
+      "chapter": "CDD",
+      "section": "FDL 10/2025 Art 7 + CR 134/2025",
+      "theme": "CDD + EDD",
+      "requirement": "EDD required for: foreign + domestic + IO PEPs; high-risk jurisdictions (FATF-identified + UAE national identifications); complex / unusual / large transactions without apparent economic / legal purpose; correspondent banking with respondent banks in higher-risk jurisdictions; new products + business practices including new delivery mechanisms + new technologies (incl. crypto / DeFi exposure). Senior-management approval; SoW + SoF verification; enhanced ongoing monitoring; documented rationale. CR 134/2025 prescribes specific operational requirements per risk category."
+    },
+    {
+      "id": "FDL10.PEPs",
+      "title": "PEP obligations (Art. 8)",
+      "chapter": "CDD",
+      "section": "FDL 10/2025 Art 8",
+      "theme": "PEPs",
+      "requirement": "Foreign PEPs: always heightened risk + full EDD. Domestic PEPs (federal-level officials, senior emirate-level officials, federal court judges, senior military / police, leadership of state-owned enterprises): risk-sensitive assessment — typically still triggering EDD for politically-significant positions. International organisation PEPs: similar risk-sensitive treatment. Family members + close associates within scope; 12-month tail after PEP function ends. EOCN-AML/CTF advisories provide operational guidance on PEP categorisation."
+    },
+    {
+      "id": "FDL10.BO",
+      "title": "Beneficial Ownership (Art. 10-11)",
+      "chapter": "BO",
+      "section": "FDL 10/2025 Arts 10-11 + CR 134/2025",
+      "theme": "Beneficial ownership",
+      "requirement": "Identify + verify the beneficial owner of every customer (legal entity, legal arrangement, trust). 25% ownership / voting / control threshold + senior-managing-official fallback. UAE BO registry maintained by Ministry of Economy + sector-specific registries; FIs may access for CDD purposes. Particular focus on complex group structures + nominee arrangements + foundations. Operational requirements per CR 134/2025 + supervisor guidance."
+    },
+    {
+      "id": "FDL10.PF",
+      "title": "Proliferation Financing controls (Art. 12)",
+      "chapter": "PF",
+      "section": "FDL 10/2025 Art 12 + CR 134/2025",
+      "theme": "Proliferation Financing",
+      "requirement": "Expanded vs FDL 20/2018. PF risk assessment as a distinct dimension of the entity-wide RBA + customer risk profile (aligns with FATF R.1 + R.7 updates). Controls for UN-designated entities (DPRK + Iran focus); dual-use goods + sensitive-technology trade-finance scrutiny; sanctions-evasion typology training; integration with sanctions screening. EOCN-AML/CTF issues operational PF guidance."
+    },
+    {
+      "id": "FDL10.SAR",
+      "title": "Suspicious Activity Reporting via goAML (Art. 15)",
+      "chapter": "SAR",
+      "section": "FDL 10/2025 Art 15 + CR 134/2025",
+      "theme": "SAR + goAML",
+      "requirement": "Designated persons must report to the FIU UAE via the goAML platform without delay on knowledge or reasonable suspicion of ML / TF / PF or related predicate offences. Structured XML / form-based submission per CR 134/2025 + goAML guidance. Tipping-off prohibition (FDL 10/2025 Art 17). Statutory immunity for good-faith reports. Operational + format updates vs predecessor framework; emphasis on quality + timeliness."
+    },
+    {
+      "id": "FDL10.TippingOff",
+      "title": "Tipping-off prohibition (Art. 17)",
+      "chapter": "SAR",
+      "section": "FDL 10/2025 Art 17",
+      "theme": "SAR + goAML",
+      "requirement": "Designated persons + staff prohibited from disclosing to a customer or third party that an SAR has been filed or that an ML/TF investigation may be carried out. Carve-outs: sharing with supervisors (CBUAE / DFSA / FSRA / VARA / SCA) + within group on need-to-know for ML/TF purposes + legal advice. Criminal sanction for breach."
+    },
+    {
+      "id": "FDL10.Sanctions",
+      "title": "Sanctions + targeted financial measures (Art. 18-19)",
+      "chapter": "Sanctions",
+      "section": "FDL 10/2025 Arts 18-19 + EOCN guidance",
+      "theme": "Sanctions + targeted measures",
+      "requirement": "Mandatory screening against UN Security Council Consolidated List + the UAE Local Terrorist List + targeted UAE designations. Real-time customer + transaction screening; freeze + report regime; cooperation with EOCN-AML/CTF + Federal Public Prosecution. Continued operational focus following October 2024 FATF grey-list exit. Particular operational focus on DPRK + Iran + Russia / Belarus where international + UAE designations overlap."
+    },
+    {
+      "id": "FDL10.Governance",
+      "title": "Internal organisation + AML compliance officer (Art. 20-21)",
+      "chapter": "Governance",
+      "section": "FDL 10/2025 Arts 20-21 + CR 134/2025",
+      "theme": "Governance + training + retention",
+      "requirement": "Documented written policies + procedures + senior-management approval; designated AML compliance officer (MLRO) at sufficient seniority + independence + resources + access to senior management; internal audit + compliance-function review of the AML programme. Transaction-monitoring + screening systems calibrated to the risk assessment + tuned periodically. Supervisor (CBUAE / DFSA / FSRA / VARA / SCA / MOE) approves the AML compliance officer where required."
+    },
+    {
+      "id": "FDL10.Training",
+      "title": "Training (Art. 22)",
+      "chapter": "Governance",
+      "section": "FDL 10/2025 Art 22",
+      "theme": "Governance + training + retention",
+      "requirement": "All employees with AML/CFT/PF-relevant responsibilities trained on: applicable laws + FDL 10/2025 + CR 134/2025 + internal policies; current ML/TF/PF typologies + red flags (incl. PF-specific scenarios); their role in the AML/CFT framework; how to escalate suspicion; tipping-off prohibition. Refresher training on regulatory + typology changes. Records retained; training-effectiveness assessment (testing or scenario-based)."
+    },
+    {
+      "id": "FDL10.Retention",
+      "title": "Record retention — 5 years minimum (Art. 23)",
+      "chapter": "Governance",
+      "section": "FDL 10/2025 Art 23",
+      "theme": "Governance + training + retention",
+      "requirement": "CDD documentation + business correspondence + transaction records + SAR working papers retained for at least 5 years after the end of the business relationship or the completion of the occasional transaction; longer where ongoing investigation or supervisory request. Records sufficient to enable reconstruction of individual transactions + accessibility to FIU UAE + supervisors on request."
+    },
+    {
+      "id": "FDL10.Enforcement",
+      "title": "Sanctions + supervisory measures (Art. 25-30)",
+      "chapter": "Enforcement",
+      "section": "FDL 10/2025 Arts 25-30",
+      "theme": "Enforcement",
+      "requirement": "Administrative + criminal sanctions: administrative fines (substantially increased vs predecessor — supervisor-imposed CMPs up to AED 5m for the most serious failings); licence suspension or withdrawal; prohibition orders against individuals; remediation orders; criminal sanctions for ML offences (imprisonment + asset forfeiture) + tipping-off (imprisonment + fine). Multi-regulator enforcement coordination via EOCN-AML/CTF. Post-grey-list-exit enforcement intensity continues."
+    },
+    {
+      "id": "FDL10.Transition",
+      "title": "Transition from FDL 20/2018 + CD 10/2019",
+      "chapter": "Scope",
+      "section": "FDL 10/2025 + CR 134/2025 transitional provisions",
+      "theme": "Scope + designated persons",
+      "requirement": "Existing CBUAE + DFSA + FSRA + VARA + SCA + MOE supervisor guidance issued under FDL 20/2018 continues to apply where not inconsistent with FDL 10/2025 + CR 134/2025. Legacy relationships established under FDL 20/2018 transitioned per CR 134/2025 — refresh of risk assessment + customer risk profile required, but not automatic re-onboarding. Supervisors expect documented transition plans + tracking through the post-14-October-2025 period."
+    }
+  ]
+}

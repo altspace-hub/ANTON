@@ -1,0 +1,115 @@
+{
+  "id": "uae-difc-adgm-digital-asset",
+  "name": "DIFC + ADGM Digital Asset Frameworks — DFSA Crypto Tokens + FSRA Digital Asset Framework (2025)",
+  "shortName": "DIFC + ADGM DA",
+  "reference": "DFSA Crypto Token regime + ADGM FSRA Digital Asset Framework (amended 10 June 2025)",
+  "dfsaUrl": "https://www.dfsa.ae/what-we-do/financial-services-product-development/crypto-tokens",
+  "fsraUrl": "https://www.adgm.com/operating-in-adgm/financial-services-regulation-authority/digital-assets",
+  "adgmAmendmentInForce": "2025-06-10",
+  "supervisor": "DFSA (DIFC) + FSRA (ADGM)",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "DFSA", "title": "DFSA Crypto Token regime (DIFC)", "articles": "DFSA CTKN module"},
+    {"number": "FSRA", "title": "ADGM FSRA Digital Asset framework (amended 10 Jun 2025)", "articles": "ADGM FSRA Rulebook"},
+    {"number": "Crosscutting", "title": "Cross-cutting standards", "articles": "AML + market conduct + custody"}
+  ],
+  "themes": [
+    "DFSA Crypto Token",
+    "ADGM FSRA Digital Asset",
+    "Notification-based regime (ADGM 2025)",
+    "Prohibitions",
+    "Custody",
+    "AML alignment",
+    "Market conduct"
+  ],
+  "articles": [
+    {
+      "id": "DFSA.CTKN.Scope",
+      "title": "DFSA Crypto Token scope",
+      "chapter": "DFSA",
+      "section": "DFSA CTKN module",
+      "theme": "DFSA Crypto Token",
+      "requirement": "Captures DIFC-licensed firms providing services relating to Recognised Crypto Tokens (DFSA-recognised tokens) + Security Tokens. Activities: dealing as principal / agent, arranging deals, advising, managing assets, providing custody, operating an exchange or alternative trading system."
+    },
+    {
+      "id": "DFSA.CTKN.Authorisation",
+      "title": "DFSA authorisation",
+      "chapter": "DFSA",
+      "section": "DFSA Authorisation Module",
+      "theme": "DFSA Crypto Token",
+      "requirement": "Crypto-token activities require an additional endorsement to a DFSA licence; fit-and-proper criteria; capital + organisational + governance requirements proportionate to scale; technology-risk + cybersecurity framework. High approval bar — DFSA has issued a deliberately limited number of crypto endorsements."
+    },
+    {
+      "id": "DFSA.CTKN.Custody",
+      "title": "DFSA custody of crypto tokens",
+      "chapter": "DFSA",
+      "section": "DFSA CTKN module + DIFC Investment Trust rules",
+      "theme": "Custody",
+      "requirement": "Customer-asset segregation; insolvency-remote arrangements; cold + hot wallet architecture proportionate to risk; key-management standards (MPC, HSM, multi-sig); independent assurance over custody arrangements; reporting customer-asset balances to DFSA. Alignment with international custody standards + IOSCO crypto standards."
+    },
+    {
+      "id": "DFSA.CTKN.AML",
+      "title": "DFSA AML alignment",
+      "chapter": "Crosscutting",
+      "section": "DFSA AML Module",
+      "theme": "AML alignment",
+      "requirement": "DIFC AML rules under DFSA AML Module substantially aligned with FATF + FDL 10/2025. CDD + EDD + PEPs + SAR + sanctions screening. SARs filed to FIU UAE via goAML (DIFC firms still subject to federal SAR obligations). Tipping-off prohibition. Risk-based approach."
+    },
+    {
+      "id": "FSRA.DA.Scope",
+      "title": "ADGM FSRA Digital Asset scope",
+      "chapter": "FSRA",
+      "section": "ADGM FSRA Rulebook (Digital Asset)",
+      "theme": "ADGM FSRA Digital Asset",
+      "requirement": "Captures ADGM-licensed firms providing digital-asset services: trading + custody + arranging + advising + managing. Distinct from federal CBUAE / SCA + DIFC DFSA + Dubai VARA scope. ADGM operates as a separate common-law jurisdiction with its own courts."
+    },
+    {
+      "id": "FSRA.DA.Notification",
+      "title": "ADGM notification-based regime (amended 10 June 2025)",
+      "chapter": "FSRA",
+      "section": "ADGM FSRA Digital Asset Framework (June 2025 amendment)",
+      "theme": "Notification-based regime (ADGM 2025)",
+      "requirement": "June 2025 amendment introduced a notification-based regime for certain established digital-asset activities — faster market entry for firms already licensed in equivalent jurisdictions with substance + governance demonstrably equivalent to FSRA standards. Maintained a full authorisation track for novel or higher-risk activities. Reflects ADGM's strategic push to attract crypto firms exiting other jurisdictions."
+    },
+    {
+      "id": "FSRA.DA.Prohibitions",
+      "title": "ADGM prohibitions (June 2025 amendment)",
+      "chapter": "FSRA",
+      "section": "ADGM FSRA Digital Asset Framework (June 2025 amendment)",
+      "theme": "Prohibitions",
+      "requirement": "Express prohibitions on: privacy tokens (Monero, Zcash, similar); algorithmic stablecoins (post-Terra collapse). Aligned with VARA prohibitions. Existing licensees with these exposures had transition windows to exit. Periodic review of the prohibited-token list."
+    },
+    {
+      "id": "FSRA.DA.Custody",
+      "title": "ADGM custody of digital assets (tightened June 2025)",
+      "chapter": "FSRA",
+      "section": "ADGM FSRA Digital Asset Framework — Custody",
+      "theme": "Custody",
+      "requirement": "Customer-asset segregation; insolvency-remote arrangements; cold-wallet majority + multi-party computation (MPC) or HSM-based hot wallets; key-management standards; independent assurance; reporting customer-asset balances to FSRA. June 2025 amendment tightened: stricter MPC / multi-sig expectations + clearer accountability for key-holders + scenario testing requirements."
+    },
+    {
+      "id": "FSRA.DA.AML",
+      "title": "ADGM AML alignment",
+      "chapter": "Crosscutting",
+      "section": "ADGM FSRA AML Module",
+      "theme": "AML alignment",
+      "requirement": "ADGM AML rules substantially aligned with FATF + FDL 10/2025. CDD + EDD + PEPs + SAR + sanctions screening. SARs filed to FIU UAE via goAML; ADGM firms remain subject to federal SAR obligations. Tipping-off prohibition. Risk-based approach. ADGM Office of Data Protection coordination for personal-data dimensions of AML CDD."
+    },
+    {
+      "id": "FSRA.DA.MarketConduct",
+      "title": "ADGM market conduct rules",
+      "chapter": "FSRA",
+      "section": "ADGM FSRA Rulebook (Market Conduct)",
+      "theme": "Market conduct",
+      "requirement": "Anti-market-manipulation rules; surveillance + reporting of suspicious orders + transactions; insider-dealing prohibition; appropriate-customer-categorisation (retail / professional / institutional); KIDs / disclosures + suitability rules for retail-facing services."
+    },
+    {
+      "id": "DFSA-FSRA.Coord",
+      "title": "DIFC + ADGM coordination + comparison",
+      "chapter": "Crosscutting",
+      "section": "Cross-regulatory",
+      "theme": "AML alignment",
+      "requirement": "DIFC DFSA + ADGM FSRA digital-asset regimes are substantially aligned in substance (FATF + IOSCO + Travel Rule + custody standards) but distinct in process: DFSA endorsement-based, lower approval volume; FSRA more recently moving to notification-based for established firms, larger licensee population. Cross-licensee firms (operating in both DIFC + ADGM) must comply with both rulebooks simultaneously."
+    }
+  ]
+}

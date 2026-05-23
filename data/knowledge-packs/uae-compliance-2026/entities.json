@@ -1,0 +1,520 @@
+[
+  {
+    "ref_id": "REG-UAE-FDL-10-2025",
+    "entity_type": "regulation",
+    "entity_id": "FDL-10-2025",
+    "canonical_name": "Federal Decree-Law 10/2025 — Anti-Money Laundering, Counter-Terrorism Financing + Proliferation Financing",
+    "description": "The UAE's primary federal AML/CTF/PF statute. Replaces Federal Decree-Law 20/2018 (in force from October 2018). In force 14 October 2025. Strengthens supervisory powers + sanctions, updates beneficial-ownership requirements, expands PF coverage, aligns with FATF standards (post-grey-list-exit period). Cabinet Resolution 134/2025 issued in parallel as executive regulations.",
+    "metadata": {
+      "in_force": "2025-10-14",
+      "supersedes": "Federal Decree-Law 20/2018",
+      "supervisor": "CBUAE + EOCN-AML/CTF + sectoral supervisors"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-CR-134-2025",
+    "entity_type": "regulation",
+    "entity_id": "CR-134-2025",
+    "canonical_name": "Cabinet Resolution 134/2025 — Executive Regulations of FDL 10/2025",
+    "description": "Executive regulations operationalising FDL 10/2025: detailed CDD + EDD + PEPs + SAR + sanctions screening + record retention requirements; designated-persons scope; supervisory cooperation; specific sectoral rules. Replaces Cabinet Decision 10/2019 (executive regulations of FDL 20/2018).",
+    "metadata": {
+      "in_force": "2025-10-14",
+      "supervisor": "CBUAE + sectoral supervisors"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-FDL-20-2018-PREV",
+    "entity_type": "regulation",
+    "entity_id": "FDL-20-2018",
+    "canonical_name": "Federal Decree-Law 20/2018 (replaced)",
+    "description": "Predecessor AML/CTF/PF statute. In force October 2018 to 13 October 2025. Replaced by FDL 10/2025. Historical context for legacy compliance + transitional matters; existing CBUAE + sectoral guidance largely continues to apply where not inconsistent with the new framework.",
+    "metadata": {
+      "in_force": "2018-10-30",
+      "replaced": "2025-10-14"
+    }
+  },
+  {
+    "ref_id": "REG-CBUAE-PTSR-2024",
+    "entity_type": "regulation",
+    "entity_id": "CBUAE-PTSR",
+    "canonical_name": "CBUAE Payment Token Services Regulation 2024",
+    "description": "Licensing + supervision framework for fiat-backed stablecoin issuers + payment token service providers operating in onshore UAE. In force progressively from late 2024. Establishes minimum capital, reserves backing, redemption rights, custody, AML/CFT alignment with FDL 10/2025, technology-risk requirements. Distinct from VARA + DIFC + ADGM frameworks for non-stablecoin virtual assets.",
+    "metadata": {
+      "supervisor": "CBUAE"
+    }
+  },
+  {
+    "ref_id": "REG-SCA-CRYPTO",
+    "entity_type": "regulation",
+    "entity_id": "SCA-CRYPTO-REGS",
+    "canonical_name": "SCA Crypto-Asset Activities Regulation",
+    "description": "Securities and Commodities Authority framework for crypto-asset activities classified as securities or commodities under SCA jurisdiction (onshore UAE, outside Dubai/VARA + DIFC + ADGM scope). Covers token issuance, trading platforms, custody. Updated 2024-2025 to align with FDL 10/2025 + international standards.",
+    "metadata": {
+      "supervisor": "SCA"
+    }
+  },
+  {
+    "ref_id": "REG-DFSA-RULEBOOK",
+    "entity_type": "regulation",
+    "entity_id": "DFSA-RULEBOOK",
+    "canonical_name": "DFSA Rulebook (Conduct of Business + AML + Crypto Tokens)",
+    "description": "Comprehensive DIFC regulatory framework. Conduct-of-Business module (COB), AML/CFT module (AML), Crypto Tokens regime (CTKN — covers DIFC-licensed crypto activity). DFSA operates under DIFC's common-law system. AML alignment with FATF + federal UAE framework but DIFC-specific rules apply.",
+    "metadata": {
+      "supervisor": "DFSA"
+    }
+  },
+  {
+    "ref_id": "REG-ADGM-FSRA-RULEBOOK",
+    "entity_type": "regulation",
+    "entity_id": "ADGM-FSRA-RULEBOOK",
+    "canonical_name": "ADGM FSRA Rulebook + Digital Asset Framework (amended 10 June 2025)",
+    "description": "ADGM Financial Services Regulatory Authority rulebook. Covers banking, insurance, asset management, securities, digital assets. The Digital Asset Framework was substantially amended 10 June 2025: notification-based regime for certain virtual asset activities; express prohibitions on privacy tokens + algorithmic stablecoins; tightened custody + AML requirements. ADGM operates under common-law system.",
+    "metadata": {
+      "digital_asset_amendment_in_force": "2025-06-10",
+      "supervisor": "FSRA"
+    }
+  },
+  {
+    "ref_id": "REG-VARA-RULEBOOKS",
+    "entity_type": "regulation",
+    "entity_id": "VARA-RULEBOOKS",
+    "canonical_name": "VARA Rulebooks (VASP licensing — Dubai)",
+    "description": "Virtual Assets Regulatory Authority rulebooks. Comprehensive Dubai-level licensing regime for Virtual Asset Service Providers (excluding DIFC + onshore UAE). 7 activity categories — advisory + broker-dealer + custody + exchange + lending-borrowing + management-investment + transfer-settlement. Each with detailed compliance, capital, governance + AML rules. Regularly updated; the most comprehensive standalone VA-regulator framework globally.",
+    "metadata": {
+      "established": "2022",
+      "supervisor": "VARA"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-PDPL-2021",
+    "entity_type": "regulation",
+    "entity_id": "FDL-45-2021-PDPL",
+    "canonical_name": "Federal Decree-Law 45/2021 — Personal Data Protection Law (UAE PDPL)",
+    "description": "Federal UAE data-protection law. In force 2 January 2022. GDPR-inspired but with UAE-specific features. UAE Data Office is the supervisory authority. Applies to onshore UAE; DIFC + ADGM operate their own DP regimes. Implementing regulations (Executive Regulations) still being finalised in stages — limited enforcement to date.",
+    "metadata": {
+      "in_force": "2022-01-02",
+      "supervisor": "UAE Data Office"
+    }
+  },
+  {
+    "ref_id": "REG-DIFC-DP-2020",
+    "entity_type": "regulation",
+    "entity_id": "DIFC-DP-LAW-5-2020",
+    "canonical_name": "DIFC Data Protection Law No. 5 of 2020",
+    "description": "DIFC data-protection law. Adequacy with EU GDPR + UK GDPR. In force 1 July 2020. Mature enforcement track record under DIFC Commissioner of Data Protection. Frequently regarded as the most GDPR-equivalent regime in the GCC.",
+    "metadata": {
+      "in_force": "2020-07-01",
+      "supervisor": "DIFC Commissioner of Data Protection"
+    }
+  },
+  {
+    "ref_id": "REG-ADGM-DP-2021",
+    "entity_type": "regulation",
+    "entity_id": "ADGM-DP-REGS-2021",
+    "canonical_name": "ADGM Data Protection Regulations 2021",
+    "description": "ADGM data-protection law. In force 14 February 2021. Substantially aligned with GDPR. ADGM Office of Data Protection enforces. Mandatory breach notification, DPIA, DPO, international-transfer rules.",
+    "metadata": {
+      "in_force": "2021-02-14",
+      "supervisor": "ADGM Office of Data Protection"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-INSURANCE-48-2023",
+    "entity_type": "regulation",
+    "entity_id": "FDL-48-2023-INSURANCE",
+    "canonical_name": "Federal Decree-Law 48/2023 (Insurance Regulation)",
+    "description": "Modern UAE insurance regulation. Confirms CBUAE's role as integrated insurance supervisor (post-merger of the Insurance Authority into CBUAE in 2020). Sets capital, conduct, market-conduct, brokerage + intermediary rules. Aligned with international insurance standards.",
+    "metadata": {
+      "supervisor": "CBUAE"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-PENAL-BRIBERY",
+    "entity_type": "regulation",
+    "entity_id": "UAE-PENAL-BRIBERY",
+    "canonical_name": "UAE Federal Penal Code — anti-bribery offences",
+    "description": "Active + passive bribery of public officials + private-sector bribery (Federal Decree-Law 31/2021 Penal Code Articles 234-249). Penalties up to 10 years' imprisonment + significant fines. Investigated + prosecuted by the Federal Public Prosecution + Federal Court system.",
+    "metadata": {
+      "supervisor": "Federal Public Prosecution"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-COMPETITION-36-2023",
+    "entity_type": "regulation",
+    "entity_id": "FCL-36-2023",
+    "canonical_name": "Federal Competition Law 36/2023",
+    "description": "Modernised UAE competition law. Anti-competitive agreements + abuse of dominant position + merger control. Ministry of Economy + the Competition Regulation Committee enforce. Material divergence from prior 2012 framework — increased fine ceilings + clearer merger thresholds.",
+    "metadata": {
+      "supervisor": "Ministry of Economy + Competition Regulation Committee"
+    }
+  },
+  {
+    "ref_id": "REG-UAE-LABOUR-33-2021",
+    "entity_type": "regulation",
+    "entity_id": "FDL-33-2021-LABOUR",
+    "canonical_name": "Federal Decree-Law 33/2021 — Labour Relations",
+    "description": "Modern UAE federal labour law. In force 2 February 2022. Replaces FDL 8/1980. Multiple employment-type categories (full-time / part-time / temporary / flexible / shared / remote); end-of-service gratuity; non-discrimination; work permits + Emiratisation. DIFC + ADGM operate distinct employment laws.",
+    "metadata": {
+      "in_force": "2022-02-02",
+      "supervisor": "MOHRE"
+    }
+  },
+  {
+    "ref_id": "AUTH-CBUAE",
+    "entity_type": "authority",
+    "entity_id": "CBUAE",
+    "canonical_name": "Central Bank of the UAE (CBUAE)",
+    "description": "Integrated central bank + financial supervisor + insurance authority + payment systems regulator (post-merger of the Insurance Authority in 2020). Supervises banks, finance companies, insurance, payment service providers, money exchange houses, hawala providers, stablecoin/payment token issuers. Primary AML/CTF/PF supervisor for the federal-licensed financial sector.",
+    "metadata": {
+      "type": "Integrated central bank + financial supervisor",
+      "seat": "Abu Dhabi"
+    }
+  },
+  {
+    "ref_id": "AUTH-SCA",
+    "entity_type": "authority",
+    "entity_id": "SCA-UAE",
+    "canonical_name": "Securities and Commodities Authority (SCA)",
+    "description": "Onshore UAE securities + commodities + crypto-asset supervisor (outside DIFC + ADGM). Licenses + supervises capital-markets intermediaries, public companies, securities exchanges (Dubai Financial Market + Abu Dhabi Securities Exchange), crypto-asset activities classified as securities.",
+    "metadata": {
+      "type": "Securities + commodities supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-EOCN",
+    "entity_type": "authority",
+    "entity_id": "EOCN-AML-CTF",
+    "canonical_name": "Executive Office of Anti-Money Laundering and Countering the Financing of Terrorism (EOCN)",
+    "description": "Federal AML/CTF policy coordinator + lead for FATF engagement. Established after the UAE's grey-listing in 2022; instrumental in the UAE's October 2024 grey-list exit. Coordinates across CBUAE + SCA + Ministry of Justice + Ministry of Economy + sectoral supervisors.",
+    "metadata": {
+      "type": "AML/CTF policy authority",
+      "established": "2022"
+    }
+  },
+  {
+    "ref_id": "AUTH-FIU-UAE",
+    "entity_type": "authority",
+    "entity_id": "FIU-UAE",
+    "canonical_name": "Financial Intelligence Unit (FIU) UAE",
+    "description": "Within CBUAE. Receives + analyses SARs/STRs via the goAML platform; disseminates intelligence to law enforcement (Federal Public Prosecution, Federal Customs Authority) + foreign FIUs via Egmont Group. Operational expansion following the UAE's grey-list exit.",
+    "metadata": {
+      "type": "FIU",
+      "parent": "CBUAE",
+      "filing_platform": "goAML"
+    }
+  },
+  {
+    "ref_id": "AUTH-DFSA",
+    "entity_type": "authority",
+    "entity_id": "DFSA",
+    "canonical_name": "Dubai Financial Services Authority (DFSA)",
+    "description": "DIFC's integrated financial-services regulator. Operates DIFC's common-law-based regulatory regime: banking, insurance, asset management, securities + derivatives, crypto tokens, conduct + AML/CFT. Independent from federal CBUAE / SCA. DIFC is a separate jurisdiction with its own courts + laws (DIFC Court of First Instance + Appeal Court).",
+    "metadata": {
+      "type": "Free-zone financial supervisor",
+      "jurisdiction": "DIFC"
+    }
+  },
+  {
+    "ref_id": "AUTH-FSRA",
+    "entity_type": "authority",
+    "entity_id": "FSRA",
+    "canonical_name": "ADGM Financial Services Regulatory Authority (FSRA)",
+    "description": "ADGM's integrated financial-services regulator. Operates ADGM's common-law-based regulatory regime: banking, insurance, asset management, securities, digital assets (significantly expanded), AML/CFT. Independent from federal CBUAE / SCA + from DIFC DFSA. ADGM is a separate jurisdiction (ADGM Courts).",
+    "metadata": {
+      "type": "Free-zone financial supervisor",
+      "jurisdiction": "ADGM"
+    }
+  },
+  {
+    "ref_id": "AUTH-VARA",
+    "entity_type": "authority",
+    "entity_id": "VARA",
+    "canonical_name": "Virtual Assets Regulatory Authority (VARA)",
+    "description": "Dubai-level dedicated VASP regulator. Established March 2022. Licenses 7 categories of virtual-asset services (excluding DIFC + onshore UAE-supervised activities). The most comprehensive standalone VASP regulator globally. Operates under Dubai's local emirate-level authority.",
+    "metadata": {
+      "type": "Virtual asset supervisor",
+      "jurisdiction": "Dubai (excl. DIFC)",
+      "established": "2022-03"
+    }
+  },
+  {
+    "ref_id": "AUTH-UAE-DATA-OFFICE",
+    "entity_type": "authority",
+    "entity_id": "UAE-DO",
+    "canonical_name": "UAE Data Office",
+    "description": "Federal data-protection regulator established under FDL 45/2021. Supervises PDPL compliance across onshore UAE (excluding DIFC + ADGM). Executive regulations still being finalised in stages — enforcement track record is limited.",
+    "metadata": {
+      "type": "Federal data protection authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-DIFC-DP",
+    "entity_type": "authority",
+    "entity_id": "DIFC-DP-COMMISSIONER",
+    "canonical_name": "DIFC Commissioner of Data Protection",
+    "description": "DIFC's data-protection authority. Independent regulator under DIFC Law No. 5 of 2020. Active enforcer with mature track record; among the most GDPR-equivalent supervisory regimes in the GCC. Adequacy recognised with EU + UK.",
+    "metadata": {
+      "type": "DIFC data protection authority",
+      "jurisdiction": "DIFC"
+    }
+  },
+  {
+    "ref_id": "AUTH-ADGM-DP",
+    "entity_type": "authority",
+    "entity_id": "ADGM-DP-OFFICE",
+    "canonical_name": "ADGM Office of Data Protection",
+    "description": "ADGM's data-protection authority. Independent regulator under ADGM Data Protection Regulations 2021. Operates under common-law jurisdiction; adequacy recognised with EU + UK.",
+    "metadata": {
+      "type": "ADGM data protection authority",
+      "jurisdiction": "ADGM"
+    }
+  },
+  {
+    "ref_id": "AUTH-MOE-UAE",
+    "entity_type": "authority",
+    "entity_id": "MOE-UAE",
+    "canonical_name": "Ministry of Economy (UAE)",
+    "description": "Federal ministry covering competition + consumer protection + economic policy + DNFBP AML supervision (real-estate agents, dealers in precious metals + stones, accountants, lawyers, corporate service providers outside the financial-sector supervisors).",
+    "metadata": {
+      "type": "Federal economic ministry + DNFBP AML supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-FED-PUB-PROSEC",
+    "entity_type": "authority",
+    "entity_id": "FED-PUB-PROSEC-UAE",
+    "canonical_name": "Federal Public Prosecution + Federal Courts",
+    "description": "Investigates + prosecutes federal financial-crime offences: money laundering (FDL 10/2025), terrorism financing, bribery (Penal Code), fraud. Federal Courts adjudicate; Court of Cassation as supreme appellate court.",
+    "metadata": {
+      "type": "Federal prosecutor + court system"
+    }
+  },
+  {
+    "ref_id": "AUTH-MOHRE",
+    "entity_type": "authority",
+    "entity_id": "MOHRE",
+    "canonical_name": "Ministry of Human Resources and Emiratisation (MOHRE)",
+    "description": "Federal labour + employment regulator. Administers FDL 33/2021 labour law + work-permit regime + Emiratisation quotas + dispute-resolution framework. Onshore UAE only; DIFC + ADGM operate their own employment regulators (DIFC Employment + ADGM Employment Regulations).",
+    "metadata": {
+      "type": "Federal labour regulator"
+    }
+  },
+  {
+    "ref_id": "FDL10-2025-SCOPE",
+    "entity_type": "concept",
+    "entity_id": "FDL10-SCOPE",
+    "canonical_name": "FDL 10/2025 — designated persons + sectoral scope",
+    "description": "Captures Financial Institutions (regulated by CBUAE + SCA + DFSA + FSRA per their respective scopes) + Designated Non-Financial Businesses + Professions (DNFBPs — real-estate agents, dealers in precious metals + stones, lawyers + notaries + accountants, corporate service providers, etc.) + VASPs (where regulated by CBUAE + SCA + DFSA + FSRA + VARA per scope). Multi-regulator architecture; same federal substantive obligations apply across regulators.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FDL10-2025-CDD",
+    "entity_type": "duty",
+    "entity_id": "FDL10-CDD-OBL",
+    "canonical_name": "FDL 10/2025 — Customer Due Diligence",
+    "description": "CDD applied at relationship establishment, occasional transactions above threshold (AED 55,000 / ~$15,000), wire transfers above threshold, suspicion of ML/TF/PF, doubts about prior CDD adequacy. Measures: identify + verify customer + UBO using reliable independent sources; understand purpose + intended nature; ongoing monitoring. Risk-based intensity; reliance on third parties subject to conditions.",
+    "metadata": {
+      "occasional_tx_threshold_aed": "55000"
+    }
+  },
+  {
+    "ref_id": "FDL10-2025-EDD",
+    "entity_type": "duty",
+    "entity_id": "FDL10-EDD-OBL",
+    "canonical_name": "FDL 10/2025 — Enhanced Due Diligence + PEPs",
+    "description": "EDD for higher-risk situations: foreign + domestic + IO PEPs (with risk-based assessment of domestic PEPs); high-risk jurisdictions (FATF + national identifications); complex / unusual / large transactions; correspondent banking; new products / technologies. Senior-management approval; SoW + SoF; enhanced ongoing monitoring; documented rationale. PEP family members + close associates within scope; 12-month tail after PEP function ends.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FDL10-2025-BO",
+    "entity_type": "duty",
+    "entity_id": "FDL10-BO-OBL",
+    "canonical_name": "FDL 10/2025 — Beneficial Ownership",
+    "description": "Identify + verify the beneficial owner of every customer (legal entity, legal arrangement, trust). 25% ownership / voting / control threshold + senior-managing-official fallback. UAE BO registry maintained by Ministry of Economy + sector-specific registries; FIs may access for CDD purposes. Particular focus on complex group structures + nominee arrangements.",
+    "metadata": {
+      "ownership_threshold": "25%"
+    }
+  },
+  {
+    "ref_id": "FDL10-2025-PF",
+    "entity_type": "duty",
+    "entity_id": "FDL10-PF-OBL",
+    "canonical_name": "FDL 10/2025 — Proliferation Financing controls",
+    "description": "Expanded PF obligations in FDL 10/2025 vs predecessor FDL 20/2018. PF risk assessment as a dimension of the entity-wide RBA; controls for UN-designated entities (DPRK + Iran focus); dual-use goods + sensitive-technology trade-finance scrutiny; sanctions-evasion typology training. Aligns with FATF R.1 + R.7 updates.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FDL10-2025-SAR",
+    "entity_type": "duty",
+    "entity_id": "FDL10-SAR-OBL",
+    "canonical_name": "FDL 10/2025 — Suspicious Activity Reporting (via goAML)",
+    "description": "Designated persons must report to the FIU via the goAML platform without delay on knowledge or reasonable suspicion of ML / TF / PF or related predicate offences. Tipping-off prohibition. Statutory immunity for good-faith reports. The 2025 framework retains the predecessor reporting structure with operational + format updates.",
+    "metadata": {
+      "filing_platform": "goAML",
+      "report_to": "FIU UAE"
+    }
+  },
+  {
+    "ref_id": "FDL10-2025-SANCTIONS",
+    "entity_type": "duty",
+    "entity_id": "FDL10-SANC-OBL",
+    "canonical_name": "FDL 10/2025 — Sanctions screening (UN + UAE designations)",
+    "description": "Mandatory screening against UN Security Council Consolidated List + the UAE Local Terrorist List + targeted UAE-specific designations. Real-time customer + transaction screening; freeze + report regime; cooperation with EOCN-AML/CTF + Federal Public Prosecution. Continued operational focus following the UAE's October 2024 FATF grey-list exit.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FDL10-2025-GOVERNANCE",
+    "entity_type": "duty",
+    "entity_id": "FDL10-GOV-OBL",
+    "canonical_name": "FDL 10/2025 — Governance + AML compliance officer + training + retention",
+    "description": "Documented written policies + procedures + senior-management approval; designated AML compliance officer (MLRO) at sufficient seniority + independence + resources; internal audit + compliance-function review; staff training proportionate to role + risk (incl. PF + sanctions typologies); record retention for at least 5 years after end of relationship or transaction.",
+    "metadata": {
+      "retention_years": 5
+    }
+  },
+  {
+    "ref_id": "CR134-2025-OPERATIONAL",
+    "entity_type": "duty",
+    "entity_id": "CR134-OPS",
+    "canonical_name": "Cabinet Resolution 134/2025 — operational requirements",
+    "description": "Detailed operational rules under FDL 10/2025: prescribed CDD documentation; structured SAR content; specific PEP categorisation; risk-assessment minimum dimensions; transitional treatment of legacy relationships established under FDL 20/2018; supervisory reporting cadences + formats. Treated as the operational handbook by examiners.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CBUAE-PTSR-LICENSING",
+    "entity_type": "duty",
+    "entity_id": "CBUAE-PTSR-LIC",
+    "canonical_name": "CBUAE Payment Token Services — licensing",
+    "description": "Licensing for: payment token issuance (fiat-backed stablecoins denominated in AED or major currencies); payment token service provision (custody, exchange, transmission of payment tokens). Requirements: minimum capital, 100% reserve backing in high-quality liquid assets, daily reconciliation, redemption-at-par right, AML/CFT alignment with FDL 10/2025, technology-risk management. Distinct regime from VARA + DIFC + ADGM crypto frameworks.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "DFSA-CTKN",
+    "entity_type": "concept",
+    "entity_id": "DFSA-CRYPTO-TOKEN",
+    "canonical_name": "DFSA Crypto Token regime (DIFC)",
+    "description": "DIFC regulatory regime for crypto tokens. Recognised tokens + securities tokens regulated; comprehensive AML, custody, market-conduct + technology-risk rules. Regularly updated; high approval bar similar to ADGM FSRA. Distinct from federal CBUAE / SCA + VARA scope.",
+    "metadata": {
+      "supervisor": "DFSA"
+    }
+  },
+  {
+    "ref_id": "ADGM-DIGITAL-ASSETS",
+    "entity_type": "concept",
+    "entity_id": "ADGM-DA",
+    "canonical_name": "ADGM FSRA Digital Asset framework (amended 10 June 2025)",
+    "description": "ADGM Digital Asset framework substantially amended on 10 June 2025. Notification-based regime for certain virtual asset activities (faster market entry for established firms); express prohibitions on privacy tokens + algorithmic stablecoins; tightened custody requirements (cold-wallet + multi-party-computation expectations); MiCA-equivalent AML + market-conduct rules.",
+    "metadata": {
+      "amendment_in_force": "2025-06-10"
+    }
+  },
+  {
+    "ref_id": "VARA-LICENSING",
+    "entity_type": "duty",
+    "entity_id": "VARA-7-CATEGORIES",
+    "canonical_name": "VARA — 7-category VASP licensing",
+    "description": "VASP licence required to provide any of: (1) Advisory services; (2) Broker-Dealer services; (3) Custody services; (4) Exchange services; (5) Lending + Borrowing services; (6) Management + Investment services; (7) Transfer + Settlement services. Each category has detailed rulebook: capital, governance, technology, AML, conduct + market-conduct requirements. Cross-category licensing common.",
+    "metadata": {
+      "categories_count": 7
+    }
+  },
+  {
+    "ref_id": "VARA-PROHIBITIONS",
+    "entity_type": "concept",
+    "entity_id": "VARA-PROHIBITED",
+    "canonical_name": "VARA prohibited virtual assets + activities",
+    "description": "VARA prohibits: privacy tokens (Monero, Zcash, similar); algorithmic stablecoins (post-Terra collapse); anonymity-enhancing mixers / tumblers; specific high-risk DeFi structures. Quarterly review + supplement. Aligned with ADGM FSRA prohibitions but distinct legal authority.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "UAE-LIST-LOCAL-TERRORIST",
+    "entity_type": "concept",
+    "entity_id": "UAE-LOCAL-TERROR-LIST",
+    "canonical_name": "UAE Local Terrorist List + designated entities",
+    "description": "UAE-maintained list of designated terrorist organisations + supporters. Cabinet Resolution publication. Supplements UN Consolidated List for AML/CFT screening + asset-freeze obligations. Distinct from OFAC / OFSI / EU national lists; UAE firms operating internationally must screen against multiple lists.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "GOAML-PLATFORM",
+    "entity_type": "concept",
+    "entity_id": "GOAML",
+    "canonical_name": "goAML platform — SAR / STR filing",
+    "description": "FIU UAE's secure online platform for SAR + STR filing. Structured XML / form-based submission; supports designated-persons reporting; intelligence-dissemination to law enforcement + foreign FIUs. Mandatory channel under FDL 10/2025 + Cabinet Resolution 134/2025.",
+    "metadata": {
+      "operator": "FIU UAE"
+    }
+  },
+  {
+    "ref_id": "MULTI-REG-OVERLAY",
+    "entity_type": "concept",
+    "entity_id": "UAE-MULTI-REGULATOR",
+    "canonical_name": "UAE multi-regulator overlay — federal + DIFC + ADGM + VARA",
+    "description": "Firms operating across multiple UAE jurisdictions face simultaneous regulatory regimes: (a) onshore UAE federal (CBUAE / SCA + EOCN AML); (b) DIFC (DFSA + DIFC DP); (c) ADGM (FSRA + ADGM DP); (d) Dubai-VARA (excluding DIFC). Each regime has its own conduct + AML + DP + custody rules. Cross-regulator coordination + program design is a distinct compliance discipline.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "UAE-FATF-EXIT",
+    "entity_type": "concept",
+    "entity_id": "UAE-GREY-LIST-EXIT",
+    "canonical_name": "UAE FATF grey-list exit (October 2024)",
+    "description": "UAE was placed on FATF's increased-monitoring list (grey list) in March 2022 due to deficiencies in AML/CTF supervision + enforcement. Significant reforms 2022-2024 (incl. EOCN establishment, sectoral enforcement escalation, BO transparency, VASP supervision) led to October 2024 grey-list exit. FDL 10/2025 + CR 134/2025 are part of the post-exit consolidation phase.",
+    "metadata": {
+      "grey_listed": "2022-03",
+      "grey_list_exit": "2024-10"
+    }
+  },
+  {
+    "ref_id": "DIFC-EMPLOYMENT-LAW",
+    "entity_type": "concept",
+    "entity_id": "DIFC-EMPLOYMENT",
+    "canonical_name": "DIFC Employment Law (DIFC Law No. 4 of 2021)",
+    "description": "DIFC's standalone employment regime. Mandatory written contracts; end-of-service gratuity calculation; non-discrimination; whistleblower protection; restrictive covenants; cross-border employment. Independent from federal FDL 33/2021. DIFC Court enforcement.",
+    "metadata": {
+      "supervisor": "DIFC Courts"
+    }
+  },
+  {
+    "ref_id": "ADGM-EMPLOYMENT-LAW",
+    "entity_type": "concept",
+    "entity_id": "ADGM-EMPLOYMENT",
+    "canonical_name": "ADGM Employment Regulations 2024",
+    "description": "ADGM's standalone employment regime. Substantially aligned with common-law employment practice. Independent from federal FDL 33/2021 + DIFC Employment Law. ADGM Court enforcement.",
+    "metadata": {
+      "supervisor": "ADGM Courts"
+    }
+  },
+  {
+    "ref_id": "UAE-PEPS-DOMESTIC",
+    "entity_type": "concept",
+    "entity_id": "UAE-DOMESTIC-PEP",
+    "canonical_name": "UAE Domestic PEP treatment",
+    "description": "Under FDL 10/2025: UAE Government PEPs (federal-level officials, senior emirate-level officials, federal court judges, senior military / police, leadership of state-owned enterprises) assessed on a risk-sensitive basis — typically still triggering EDD for politically-significant positions. Family members + close associates within scope. Specific operational guidance via EOCN-AML/CTF advisories.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MOHRE-WPS",
+    "entity_type": "concept",
+    "entity_id": "MOHRE-WAGES-PROT",
+    "canonical_name": "MOHRE Wages Protection System (WPS) + Emiratisation",
+    "description": "Mandatory wage payment via banking channels for onshore private-sector employees; cross-checked against the WPS; non-compliance leads to permit + sanction risk. Emiratisation: minimum-Emirati-employee quotas for private-sector firms above thresholds (UAE Nafis programme). Distinct compliance discipline operating alongside FDL 33/2021 labour law.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "UAE-ENFORCEMENT-PATTERN",
+    "entity_type": "concept",
+    "entity_id": "UAE-ENF-PATTERN",
+    "canonical_name": "UAE enforcement pattern + 2024-2025 escalation",
+    "description": "Following the 2022 FATF grey-listing, UAE supervisors materially escalated enforcement: CBUAE imposed AED 9.4m+ in AML-related fines in 2024 alone (vs near-zero pre-2022); DFSA + FSRA + VARA + SCA active enforcement; Federal Public Prosecution pursued high-profile financial-crime convictions. Post-exit consolidation continues; FDL 10/2025 explicitly enhances supervisor sanctions powers.",
+    "metadata": {
+      "cbuae_2024_aml_fines_aed": "9400000"
+    }
+  },
+  {
+    "ref_id": "UAE-CROSS-DTSP-LIKE",
+    "entity_type": "concept",
+    "entity_id": "UAE-CRYPTO-CROSS-JURIS",
+    "canonical_name": "Cross-jurisdictional crypto firms — UAE 4-way overlap",
+    "description": "Crypto firms commonly face 4-way regulatory consideration: CBUAE (where activities involve fiat-backed payment tokens); SCA (where tokens classified as securities/commodities onshore); DFSA (for DIFC operations); FSRA (for ADGM operations); VARA (for Dubai operations excluding DIFC). Firms must determine which authority licenses each activity + coordinate compliance accordingly. The most complex multi-regulator overlap in the UAE financial system.",
+    "metadata": {}
+  }
+]
