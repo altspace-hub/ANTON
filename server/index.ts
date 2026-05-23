@@ -109,6 +109,7 @@ import { createOrgContextRoutes } from './routes/org-context.js';
 import { createKnowledgePacksRoutes } from './routes/knowledge-packs.js';
 import { createLegalResearchRoutes } from './routes/legal-research.js';
 import { createGapAssessmentsRoutes } from './routes/gap-assessments.js';
+import { createTabularReviewRoutes } from './routes/tabular-review.js';
 import { createAiAssistRoutes } from './routes/ai-assist.js';
 import { createTaskAgentRoutes } from './routes/task-agent.js';
 import { createRoaringRoutes } from './routes/roaring.js';
@@ -726,6 +727,7 @@ app.use('/api', await createContinuityRoutes(db));         // Org Continuity (ke
 app.use('/api', await createKnowledgePacksRoutes(db));     // Regulatory Knowledge Packs
 app.use('/api', await createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
 app.use('/api', await createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
+app.use('/api', createTabularReviewRoutes(db));                    // Tabular Review — folder-of-docs → AI grid (Wave 1: AMLR Obligation Mapping)
 app.use('/api', await createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
 app.use('/api/task-agent', await createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
 app.use('/api', await createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
