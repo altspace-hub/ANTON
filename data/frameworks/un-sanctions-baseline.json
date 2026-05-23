@@ -1,0 +1,91 @@
+{
+  "id": "un-sanctions-baseline",
+  "name": "UN Security Council Sanctions — Baseline Regimes",
+  "shortName": "UN Sanctions",
+  "reference": "UNSC Sanctions Regimes adopted under Chapter VII",
+  "url": "https://main.un.org/securitycouncil/en/sanctions/information",
+  "supervisor": "UN Security Council Sanctions Committees + Member States",
+  "articleCount": 8,
+  "chapters": [
+    {"number": "Framework", "title": "UN Sanctions architecture", "articles": "UN Charter Ch. VII"},
+    {"number": "1267", "title": "1267/1989/2253 — ISIL/Al-Qaida", "articles": "UNSCR 1267 + successor"},
+    {"number": "1718", "title": "1718 — DPRK", "articles": "UNSCR 1718 + successor"},
+    {"number": "2231", "title": "2231 — Iran (JCPOA)", "articles": "UNSCR 2231"},
+    {"number": "Other", "title": "Other UN regimes (1591 Sudan, 1533 DRC, 2140 Yemen, etc.)", "articles": "Various UNSCRs"}
+  ],
+  "themes": [
+    "UN Charter Chapter VII authority",
+    "Designations + asset freeze",
+    "Arms embargo",
+    "Travel ban",
+    "Sectoral measures",
+    "Member State implementation",
+    "National layer-ons"
+  ],
+  "articles": [
+    {
+      "id": "Framework.Ch7",
+      "title": "Authority — UN Charter Chapter VII",
+      "chapter": "Framework",
+      "section": "UN Charter Arts. 39-51",
+      "theme": "UN Charter Chapter VII authority",
+      "requirement": "UN Security Council determines a threat to international peace + security under Art. 39 and adopts measures under Art. 41 (sanctions, non-military) or Art. 42 (military). Sanctions resolutions are binding on all Member States under Art. 25. Each thematic / country regime is administered by a Sanctions Committee. Implementation is via national law; UN regimes form the floor for national + regional sanctions architecture."
+    },
+    {
+      "id": "1267.AssetFreeze",
+      "title": "1267 — ISIL/Al-Qaida asset freeze + travel ban + arms embargo",
+      "chapter": "1267",
+      "section": "UNSCR 1267 (1999) + 1989 (2011) + 2253 (2015)",
+      "theme": "Designations + asset freeze",
+      "requirement": "Asset freeze on listed individuals + entities (ISIL (Da'esh) + Al-Qaida + associated individuals + entities). Travel ban. Arms embargo. List maintained by 1267/1989/2253 Sanctions Committee — typically 250-300 listings. Implementation by Member States through national designations (OFAC SDN + UK Consolidated + EU). Periodic review + de-listing mechanism through the Ombudsperson."
+    },
+    {
+      "id": "1718.DPRK",
+      "title": "1718 — DPRK comprehensive regime",
+      "chapter": "1718",
+      "section": "UNSCR 1718 (2006) + 1874 + 2087 + 2094 + 2270 + 2321 + 2371 + 2375 + 2397",
+      "theme": "Sectoral measures",
+      "requirement": "Strict global sanctions: arms embargo (full); financial-services restrictions; designations (individuals + entities); prohibition on luxury goods exports; sectoral measures on coal + iron + ferrous metals + lead + seafood + textiles; restrictions on DPRK workers abroad; petroleum-products import caps. Detailed implementation guidance through the 1718 Committee Panel of Experts reports. Largest set of sectoral measures of any UN regime."
+    },
+    {
+      "id": "2231.JCPOA",
+      "title": "2231 — Iran (JCPOA framework)",
+      "chapter": "2231",
+      "section": "UNSCR 2231 (2015)",
+      "theme": "Sectoral measures",
+      "requirement": "Endorses the Joint Comprehensive Plan of Action (14 July 2015). Lifts certain UN sanctions on Iran subject to the snap-back mechanism (Annex B). Maintains restrictions on certain nuclear-related items + designated individuals + entities. The snap-back mechanism allows a JCPOA participant to trigger re-imposition of pre-2015 UN sanctions in 30 days. Iran-related UN measures continue to interact with US (broader, including secondary) + EU + UK sanctions architectures."
+    },
+    {
+      "id": "Other.Regimes",
+      "title": "Other UN regimes (Sudan / DRC / Yemen / Libya / Mali / CAR / Haiti / Somalia)",
+      "chapter": "Other",
+      "section": "Various UNSCRs",
+      "theme": "Designations + asset freeze",
+      "requirement": "Other active UN regimes: Sudan (UNSCR 1591); DRC (UNSCR 1533); Libya (UNSCR 1970 + 2011); Mali (UNSCR 2374 + 2723); CAR (UNSCR 2127); Yemen (UNSCR 2140); Somalia (UNSCR 751 + 1907); ISIL/Al-Qaida (UNSCR 1267); Haiti (UNSCR 2653). Each regime has its own Sanctions Committee + Panel of Experts + listing criteria. National implementation follows the same pattern as for 1267 / 1718 / 2231."
+    },
+    {
+      "id": "Implementation.National",
+      "title": "Member State implementation",
+      "chapter": "Framework",
+      "section": "UN Charter Art. 25 + Member State law",
+      "theme": "Member State implementation",
+      "requirement": "All UN Member States are bound to implement UN sanctions under Art. 25 of the UN Charter. Implementation modalities: (a) national designation legislation reflecting UN listings (US — OFAC; UK — OFSI; EU — Council Reg incorporating UN list); (b) trade controls per UN sectoral measures; (c) reporting + cooperation with the Sanctions Committee; (d) implementation reports to the Sanctions Committee (annually or as requested)."
+    },
+    {
+      "id": "LayerOn.National",
+      "title": "National layer-ons (autonomous sanctions)",
+      "chapter": "Framework",
+      "section": "National law",
+      "theme": "National layer-ons",
+      "requirement": "UN regimes form the floor; national + regional sanctions architectures layer additional autonomous measures (US OFAC autonomous programs; UK SAMLA regimes; EU CFSP autonomous regimes). Compliance requires screening against the UN-baseline + the more expansive national layers. Where the layers conflict (e.g. UN sanctions lifted but national sanctions remain), national sanctions prevail for that jurisdiction's persons."
+    },
+    {
+      "id": "DeList.Ombud",
+      "title": "Listing review + de-listing mechanisms",
+      "chapter": "Framework",
+      "section": "UN Sanctions Committees + 1267 Ombudsperson",
+      "theme": "Designations + asset freeze",
+      "requirement": "UN listings are reviewed periodically by the responsible Sanctions Committee. The 1267 Ombudsperson handles independent de-listing petitions for the ISIL/Al-Qaida regime (the only UN regime with an Ombudsperson). For other regimes, de-listing requires consensus in the relevant Sanctions Committee. Court challenge available in some Member States (e.g. CJEU Kadi line of cases) on procedural due process."
+    }
+  ]
+}

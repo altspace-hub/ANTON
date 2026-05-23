@@ -1,0 +1,140 @@
+{
+  "id": "us-ofac-cfcc-2019",
+  "name": "OFAC Framework for Compliance Commitments — Sanctions Compliance Program",
+  "shortName": "OFAC CFCC",
+  "reference": "OFAC Framework for OFAC Compliance Commitments (May 2019)",
+  "url": "https://ofac.treasury.gov/media/16331/download?inline",
+  "issued": "2019-05-02",
+  "supervisor": "OFAC — US Department of the Treasury",
+  "articleCount": 14,
+  "chapters": [
+    {"number": "EE1", "title": "Essential Element 1 — Management Commitment", "articles": "EE1"},
+    {"number": "EE2", "title": "Essential Element 2 — Risk Assessment", "articles": "EE2"},
+    {"number": "EE3", "title": "Essential Element 3 — Internal Controls", "articles": "EE3"},
+    {"number": "EE4", "title": "Essential Element 4 — Testing + Auditing", "articles": "EE4"},
+    {"number": "EE5", "title": "Essential Element 5 — Training", "articles": "EE5"},
+    {"number": "RA", "title": "Root-cause analysis + remediation (Enforcement Guidance)", "articles": "Common deficiencies"}
+  ],
+  "themes": [
+    "Management commitment",
+    "Risk assessment",
+    "Internal controls",
+    "Testing + auditing",
+    "Training",
+    "Root-cause analysis"
+  ],
+  "articles": [
+    {
+      "id": "EE1.1",
+      "title": "Senior-management review + approval",
+      "chapter": "EE1",
+      "section": "EE 1",
+      "theme": "Management commitment",
+      "requirement": "Senior management (board / equivalent) reviews + approves the sanctions compliance program (SCP) at inception + on material change; demonstrates ownership through written commitment + governance involvement; SCP integrated into the institution's broader compliance + risk-management framework."
+    },
+    {
+      "id": "EE1.2",
+      "title": "Sanctions compliance officer + resources",
+      "chapter": "EE1",
+      "section": "EE 1",
+      "theme": "Management commitment",
+      "requirement": "A compliance officer is appointed with sufficient authority + autonomy + qualifications + access to senior management. Adequate resources allocated to the SCP: budget for technology + staff + training + auditing; the SCP is not under-resourced relative to the institution's risk profile."
+    },
+    {
+      "id": "EE1.3",
+      "title": "Culture of compliance",
+      "chapter": "EE1",
+      "section": "EE 1",
+      "theme": "Management commitment",
+      "requirement": "Senior management promotes a culture of compliance — through internal communications, performance metrics, recognition + escalation channels free from retaliation. Avoids any messaging that suggests sanctions compliance is subordinate to business objectives."
+    },
+    {
+      "id": "EE2.1",
+      "title": "Documented sanctions risk assessment",
+      "chapter": "EE2",
+      "section": "EE 2",
+      "theme": "Risk assessment",
+      "requirement": "Documented assessment of the institution's sanctions exposure: customer / counterparty risk (jurisdictions of origin / residence, sanctions screening hits, beneficial-ownership exposure); product + service risk (correspondent banking, trade finance, payment processing, crypto); geographic risk (sanctioned + adjacent jurisdictions, transit countries); delivery-channel risk (face-to-face vs remote, intermediaries); transaction risk (single vs structured, frequency, value)."
+    },
+    {
+      "id": "EE2.2",
+      "title": "Refresh cadence + triggers",
+      "chapter": "EE2",
+      "section": "EE 2",
+      "theme": "Risk assessment",
+      "requirement": "Risk assessment refreshed periodically (at least annually) + on material change: new business line, M&A, regulatory change (new sanctions regime / new designations), detected red flag or breach. Updates flow through to internal-controls calibration + training + screening-system tuning."
+    },
+    {
+      "id": "EE3.1",
+      "title": "Written policies + procedures",
+      "chapter": "EE3",
+      "section": "EE 3",
+      "theme": "Internal controls",
+      "requirement": "Written policies + procedures operationalising the SCP: governance + accountability; screening (onboarding + ongoing + transaction); 50% Rule + beneficial-ownership attribution; escalation + decision authority; record-keeping (5+ years; now 10 years per NDAA 2024 SoL extension); license-management; secondary-sanctions analysis; integration with customer due diligence."
+    },
+    {
+      "id": "EE3.2",
+      "title": "Technological solutions — screening + filtering",
+      "chapter": "EE3",
+      "section": "EE 3",
+      "theme": "Internal controls",
+      "requirement": "Sanctions screening systems calibrated to the institution's risk profile: list coverage (OFAC SDN + Non-SDN + sectoral; UK + EU + UN; local national lists); matching logic (fuzzy + transliteration + alias + script-conversion); ongoing list updates (real-time / daily); false-positive + false-negative tuning; alert workflow + decision audit trail."
+    },
+    {
+      "id": "EE3.3",
+      "title": "Lines of responsibility + accountability",
+      "chapter": "EE3",
+      "section": "EE 3",
+      "theme": "Internal controls",
+      "requirement": "Clear allocation of responsibility for SCP execution: who screens, who investigates alerts, who decides on alerts, who escalates, who reports to senior management. First-line + second-line + internal-audit responsibilities differentiated. Documented escalation paths for alerts + apparent violations."
+    },
+    {
+      "id": "EE4.1",
+      "title": "Comprehensive + independent + objective testing",
+      "chapter": "EE4",
+      "section": "EE 4",
+      "theme": "Testing + auditing",
+      "requirement": "Periodic testing + auditing of the SCP by qualified + independent (internal-audit or external) party. Scope: governance, risk assessment, policies + procedures, screening-system tuning + alert-workflow effectiveness, training programme. Identifies deficiencies; remediation tracked through to closure."
+    },
+    {
+      "id": "EE4.2",
+      "title": "Screening-system testing",
+      "chapter": "EE4",
+      "section": "EE 4",
+      "theme": "Testing + auditing",
+      "requirement": "Specific testing of sanctions-screening systems: false-positive analysis (effective tuning); false-negative analysis (designated entries reaching the system that should be matched); alert disposition quality; sample-based reperformance of compliance decisions; technology change-management testing on configuration updates."
+    },
+    {
+      "id": "EE5.1",
+      "title": "Role-specific training",
+      "chapter": "EE5",
+      "section": "EE 5",
+      "theme": "Training",
+      "requirement": "Periodic + role-specific training: front-line (red flags, escalation); compliance staff (regime detail, current designations, screening-system); senior management (governance + accountability + program status); board (overview + key risks). Training content reflects current regimes + emerging risks + lessons-learned from incidents."
+    },
+    {
+      "id": "EE5.2",
+      "title": "Documentation + acknowledgement",
+      "chapter": "EE5",
+      "section": "EE 5",
+      "theme": "Training",
+      "requirement": "Training completion tracked + recorded; staff acknowledgement of training receipt + understanding; refresher cycle (typically annual at minimum); content updated for regime changes + emerging typologies; testing of staff knowledge through assessments or scenario exercises."
+    },
+    {
+      "id": "RA.RootCause",
+      "title": "Root-cause analysis on apparent violations",
+      "chapter": "RA",
+      "section": "OFAC Enforcement Guidelines + 2019 CFCC",
+      "theme": "Root-cause analysis",
+      "requirement": "On any apparent violation: prompt root-cause analysis identifying the specific failure (controls, technology, training, governance); remediation plan addressing the root cause (not just the symptom); evaluation of related risks for similar exposures elsewhere in the institution; documentation suitable for sharing with OFAC in a Voluntary Self-Disclosure or response to administrative subpoena."
+    },
+    {
+      "id": "RA.Mitigation",
+      "title": "Mitigating factors in OFAC enforcement",
+      "chapter": "RA",
+      "section": "OFAC Enforcement Guidelines",
+      "theme": "Root-cause analysis",
+      "requirement": "OFAC's published Enforcement Guidelines identify factors that mitigate penalties: existence of an effective SCP at the time of the violation (CFCC compliance); prompt voluntary self-disclosure; comprehensive cooperation; substantive remedial measures; the absence of similar past violations within the relevant SoL period (now 10 years). Strong programs reduce penalty exposure by 50%+."
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "id": "eu-sanctions-russia-269-833",
+  "name": "EU Russia Sanctions — Council Regulation (EU) 269/2014 + 833/2014",
+  "shortName": "EU Russia Sanctions",
+  "reference": "Council Reg (EU) 269/2014 + Council Reg (EU) 833/2014 + CFSP Decision 2014/145 + 2014/512",
+  "inForce269": "2014-03-17",
+  "inForce833": "2014-07-31",
+  "supervisor": "EU Member State competent authorities + Commission",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "Designations", "title": "Reg 269/2014 — asset freeze + designations (Annex I)", "articles": "Reg 269/2014"},
+    {"number": "Sectoral", "title": "Reg 833/2014 — sectoral restrictions", "articles": "Reg 833/2014"},
+    {"number": "OwnershipControl", "title": "EU ownership + control attribution", "articles": "Commission Guidance"},
+    {"number": "Enforcement", "title": "Penalties + enforcement (national)", "articles": "Art. 215 TFEU + national implementing legislation"}
+  ],
+  "themes": [
+    "Asset freeze + designations",
+    "Sectoral restrictions",
+    "Capital markets restrictions",
+    "Dual-use + military restrictions",
+    "Energy + oil price cap",
+    "Prohibited services",
+    "Ownership + control attribution",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "269.Art2",
+      "title": "Asset freeze on designated persons (Reg 269/2014 Art. 2)",
+      "chapter": "Designations",
+      "section": "Reg 269/2014 Art. 2",
+      "theme": "Asset freeze + designations",
+      "requirement": "All funds + economic resources belonging to, owned, held or controlled by natural / legal persons + entities + bodies listed in Annex I are frozen. No funds or economic resources made available, directly or indirectly, to or for their benefit. Annex I substantially expanded since February 2022 (>2,200 entries by 2025)."
+    },
+    {
+      "id": "269.Art9",
+      "title": "Reporting obligation (Reg 269/2014 Art. 9)",
+      "chapter": "Designations",
+      "section": "Reg 269/2014 Art. 9",
+      "theme": "Asset freeze + designations",
+      "requirement": "Natural / legal persons + entities + bodies supply, immediately, to the competent authority of the Member State where they are resident or located, any information they hold about frozen funds + economic resources, accounts + amounts frozen. Cooperate with the competent authority on verification."
+    },
+    {
+      "id": "833.Art1",
+      "title": "Capital markets restrictions (Reg 833/2014 Art. 1-5)",
+      "chapter": "Sectoral",
+      "section": "Reg 833/2014 Art. 1-5",
+      "theme": "Capital markets restrictions",
+      "requirement": "Prohibition on dealing in transferable securities + money-market instruments of certain Russian state-owned credit institutions + designated entities with maturity exceeding stated thresholds (initially 30 days then progressively tightened). Loan provisioning + correspondent-account restrictions for designated banks. Foreign-currency-denominated transferable securities issued by Russia + designated entities prohibited."
+    },
+    {
+      "id": "833.Art3",
+      "title": "Dual-use + advanced-technology export restrictions",
+      "chapter": "Sectoral",
+      "section": "Reg 833/2014 Art. 2-2c",
+      "theme": "Dual-use + military restrictions",
+      "requirement": "Export to Russia of dual-use items + advanced-technology items (semiconductors, certain electronics, aerospace, navigation, sensors, materials) prohibited or subject to licensing. List in Annex VII. Re-export controls for transit jurisdictions. Substantially expanded across the 14+ sanctions packages adopted since February 2022."
+    },
+    {
+      "id": "833.Art3n",
+      "title": "Oil + petroleum products + price cap (Reg 833/2014 Art. 3m-3n)",
+      "chapter": "Sectoral",
+      "section": "Reg 833/2014 Art. 3m-3n",
+      "theme": "Energy + oil price cap",
+      "requirement": "Import of Russian crude oil + petroleum products into EU prohibited (with limited transitional exceptions). Maritime services (insurance + financing + brokering + flagging + classification) for transport of Russian crude / products to third countries prohibited unless the oil is purchased at or below the G7 + EU + UK price cap ($60/barrel initial; lowered to $47.60/barrel in late 2025). Attestation regime + record-keeping for compliant trades."
+    },
+    {
+      "id": "833.Art5n",
+      "title": "Prohibited services (Reg 833/2014 Art. 5n)",
+      "chapter": "Sectoral",
+      "section": "Reg 833/2014 Art. 5n",
+      "theme": "Prohibited services",
+      "requirement": "Provision (directly or indirectly) of specified services to the Russian Government, persons established in Russia, or for their benefit prohibited: legal advisory services, accounting, auditing, bookkeeping, tax consulting, business + management consulting, public-relations services, architectural + engineering, IT consulting + cloud services, market research, advertising. Limited carve-outs for humanitarian + government-mandated services."
+    },
+    {
+      "id": "833.Art5aa",
+      "title": "Transaction prohibition with designated state-owned entities (Art. 5aa)",
+      "chapter": "Sectoral",
+      "section": "Reg 833/2014 Art. 5aa",
+      "theme": "Asset freeze + designations",
+      "requirement": "Prohibition on directly or indirectly engaging in any transactions with specified state-owned + state-controlled legal persons + entities + bodies established in Russia (extensive list in Annex XIX). Limited general exceptions for humanitarian + medical + food + judicial proceedings."
+    },
+    {
+      "id": "OC.Commission",
+      "title": "EU ownership + control attribution",
+      "chapter": "OwnershipControl",
+      "section": "Commission Notice + FAQ",
+      "theme": "Ownership + control attribution",
+      "requirement": "EU rule: an entity is considered owned by a designated person where >50% of property rights are held by designated persons (aggregated). Control is assessed through criteria including: majority of voting rights; right to appoint / remove a majority of board; dominant influence (de facto control). Commission FAQ + 2024 Notice provides operational guidance — narrower 'control' test than OFSI but with similar substantive effect."
+    },
+    {
+      "id": "215.Enforcement",
+      "title": "Enforcement (Member State responsibility — Art. 215 TFEU)",
+      "chapter": "Enforcement",
+      "section": "Art. 215 TFEU + national implementing law",
+      "theme": "Enforcement",
+      "requirement": "EU sanctions are directly applicable but enforcement is via national competent authorities. Penalties set by Member State law (must be effective, proportionate + dissuasive — Directive (EU) 2024/1226 establishing minimum criminal penalties for breaches of EU sanctions adopted 2024, in force from May 2025). Significant national divergence in enforcement intensity — Germany / Netherlands / France most active prosecutors."
+    },
+    {
+      "id": "Penalty.Dir-2024-1226",
+      "title": "Sanctions criminalisation Directive (EU) 2024/1226",
+      "chapter": "Enforcement",
+      "section": "Directive (EU) 2024/1226",
+      "theme": "Enforcement",
+      "requirement": "EU Directive establishing minimum criminal penalties for breaches of EU sanctions, including circumvention. Member States required to transpose by May 2025. Harmonises sanctions-evasion as a serious criminal offence across the EU; mandates corporate criminal liability + minimum maximum penalty thresholds. Closes the prior 'forum-shopping' gap where some Member States had minimal criminal sanctions enforcement."
+    }
+  ]
+}
