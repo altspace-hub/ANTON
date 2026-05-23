@@ -1019,6 +1019,183 @@ export const UK_ECCTA_REASONABLE_PROCEDURES: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 7. Swiss AMLA/LETA Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const SWISS_AMLA_LETA_READINESS: Playbook = {
+  id: 'swiss-amla-leta-readiness',
+  name: 'Swiss AMLA/LETA — Readiness Mapping',
+  description:
+    'Maps a Swiss organisation\'s preparation against the two paired 2025/2026 reforms: ' +
+    'the LETA federal UBO register (in-scope + reporting + verification) and the revised ' +
+    'AMLA (extended adviser scope + tightened CDD documentation). Both adopted 26 Sept 2025 ' +
+    'and expected to enter force mid-2026. Each cell asks whether a specific readiness ' +
+    'element is evidenced in the document, with verbatim quoted evidence.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['swiss-compliance-2026'],
+  systemPrompt:
+    'You are an experienced Swiss financial-crime and corporate lawyer reviewing a firm\'s ' +
+    'readiness for the 2026 LETA UBO-register regime and the revised AMLA. You assess each ' +
+    'readiness element with the discipline of a FINMA examiner: explicit > implicit, ' +
+    'evidence > paraphrase, strict > lenient. You distinguish obligations under LETA ' +
+    '(reporting + verification + retention + access controls) from those under the revised ' +
+    'AMLA (financial-intermediary scope + new adviser scope + CDD + SAR + organisational). ' +
+    'You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a Swiss organisation\'s implementation or readiness document for the ' +
+    'LETA UBO-register regime and the revised AMLA (both expected in force mid-2026).',
+  columns: [
+    {
+      id: 'ch-leta-scope',
+      header: 'LETA — entity-scope determination',
+      regulatoryRef: 'LETA Art. 2 (in-scope entities)',
+      question:
+        'Does the document evidence a documented scope assessment — which group entities ' +
+        '(Swiss AGs, GmbHs, foundations, associations, trusts with Swiss link) are caught by ' +
+        'LETA reporting, and which qualify for equivalence carve-outs (listed + regulated)?',
+      expects:
+        'A per-entity scope table + carve-out reasoning. A blanket "all Swiss subsidiaries are ' +
+        'in scope" without entity-level analysis is "partial".',
+    },
+    {
+      id: 'ch-leta-ubo-methodology',
+      header: 'LETA — UBO identification methodology',
+      regulatoryRef: 'LETA Art. 3 (definition of UBO)',
+      question:
+        'Does the document describe the UBO-identification methodology: ≥25% ownership / voting / ' +
+        'profit-entitlement threshold; control by other means (board appointment, contractual); ' +
+        'senior-managing-official fallback; trust-specific roles (settlor, trustee, protector, ' +
+        'beneficiaries)?',
+      expects:
+        'All four elements (threshold + other-means + fallback + trust roles) addressed. ' +
+        'Missing the fallback or trust roles is "partial".',
+    },
+    {
+      id: 'ch-leta-verification',
+      header: 'LETA — verification procedure',
+      regulatoryRef: 'LETA Art. 8 (verification)',
+      question:
+        'Does the document specify the source documents required to verify UBO information ' +
+        '(certified ID, corporate registry extracts, trust deeds, shareholder agreements) and ' +
+        'prohibit reliance on undocumented self-declarations alone?',
+      expects:
+        'Concrete document list + explicit prohibition on declaration-only verification. ' +
+        'Generic "verify with reliable sources" is "partial".',
+    },
+    {
+      id: 'ch-leta-refresh',
+      header: 'LETA — refresh + 30-day trigger',
+      regulatoryRef: 'LETA Art. 5 (material-change refresh)',
+      question:
+        'Does the document mandate (a) refiling within 30 days of a material change (UBO ' +
+        'change, threshold crossing, control change, dissolution) and (b) annual confirmation ' +
+        'of accuracy regardless of change?',
+      expects:
+        'Both the 30-day material-change trigger AND the annual confirmation. Either alone ' +
+        'is "partial".',
+    },
+    {
+      id: 'ch-leta-retention',
+      header: 'LETA — 10-year retention',
+      regulatoryRef: 'LETA Art. 9 (document retention)',
+      question:
+        'Does the document mandate retention of supporting UBO documentation for at least ' +
+        '10 years after the UBO ceases to qualify or the entity is dissolved, with access ' +
+        'preserved for authorities, FIs and DNFBPs?',
+      expects:
+        'The 10-year retention period stated explicitly; access provisions referenced. ' +
+        'Silence on the duration is "missing".',
+    },
+    {
+      id: 'ch-amla-adviser-scope',
+      header: 'AMLA revised — adviser scope assessment',
+      regulatoryRef: 'AMLA Art. 2(1bis) (revised — new adviser scope)',
+      question:
+        'Has the firm assessed whether its activities (or those of any group function) fall ' +
+        'within the new adviser scope: assisting with formation/management/administration of ' +
+        'legal persons, real-estate / capital / asset transfers above thresholds, or M&A?',
+      expects:
+        'A documented scope assessment per practice area + jurisdiction. A generic "we are ' +
+        'not advisers" without analysis of the specific activities is "missing".',
+    },
+    {
+      id: 'ch-amla-adviser-cdd',
+      header: 'AMLA — adviser CDD process',
+      regulatoryRef: 'AMLA Art. 3-7 (CDD applied to advisers)',
+      question:
+        'For in-scope adviser activities, does the document set out the CDD process: identify ' +
+        'contracting party, identify UBO, clarify background/purpose, document Form-A-equivalent, ' +
+        'apply EDD for higher-risk situations?',
+      expects:
+        'All five CDD steps adapted for adviser engagements + Form-A-equivalent documentation. ' +
+        'Lawyer-style "we keep client files" without CDD specifics is "partial".',
+    },
+    {
+      id: 'ch-amla-adviser-sar',
+      header: 'AMLA — adviser SAR procedure',
+      regulatoryRef: 'AMLA Art. 9 (SAR to MROS) + Art. 10a (tipping-off)',
+      question:
+        'Does the document describe the SAR procedure for in-scope adviser activities: ' +
+        'identifying well-founded suspicion, internal escalation, filing to MROS, asset blocking, ' +
+        'tipping-off prohibition (including the legal-privilege carve-out limits)?',
+      expects:
+        'All five elements (suspicion, escalation, MROS filing, blocking, tipping-off). ' +
+        'Missing the privilege-carve-out analysis is a frequent red flag — flag it.',
+    },
+    {
+      id: 'ch-amla-bwra-refresh',
+      header: 'AMLA — institution-wide risk assessment refresh',
+      regulatoryRef: 'AMLA Art. 8 + AMLO-FINMA Art. 25',
+      question:
+        'Does the document evidence an updated institution-wide ML/TF risk assessment ' +
+        'reflecting the new adviser scope (where applicable) and the LETA UBO-register interplay ' +
+        '(register-data reliance + risks of over-reliance)?',
+      expects:
+        'Risk assessment dated within the last 12 months + addresses adviser scope (where ' +
+        'relevant) + addresses LETA reliance. Generic risk assessment not refreshed is "partial".',
+    },
+    {
+      id: 'ch-amla-training',
+      header: 'AMLA — training updated',
+      regulatoryRef: 'AMLO-FINMA Art. 24 (training)',
+      question:
+        'Does the training programme include role-targeted modules on: the new LETA filing + ' +
+        'verification obligations; the revised AMLA adviser scope (where relevant); the ' +
+        'tightened CDD documentation expectations; tipping-off + privilege carve-out limits?',
+      expects:
+        'All four topics + role-targeted delivery. Annual generic AML training without the ' +
+        '2025/2026 reform content is "partial".',
+    },
+    {
+      id: 'ch-leta-nfadp-interplay',
+      header: 'nFADP — UBO data handling',
+      regulatoryRef: 'nFADP Art. 7 + 12 (privacy by design + ROPA)',
+      question:
+        'Does the document address the personal-data dimensions of UBO processing: lawful basis ' +
+        '(legal obligation under LETA + legitimate interest under AMLA), records of processing ' +
+        '(ROPA entry), privacy-by-design (collect only what LETA requires), data subjects\' ' +
+        'rights handling, retention alignment with the 10-year LETA period?',
+      expects:
+        'Lawful basis stated + ROPA entry + retention alignment. Missing the ROPA reference is ' +
+        '"partial"; silence on lawful basis is "missing".',
+    },
+    {
+      id: 'ch-governance-penalty',
+      header: 'Governance + penalty exposure',
+      regulatoryRef: 'LETA Art. 15 / AMLA Art. 37',
+      question:
+        'Does the document identify the accountable senior individual(s) for LETA + AMLA ' +
+        'compliance, the escalation path to the board / audit committee, and the criminal + ' +
+        'administrative penalty exposure (LETA: up to CHF 500,000; AMLA Art. 37 FINMA measures ' +
+        '+ CC 305bis/305ter criminal liability) including director-personal liability?',
+      expects:
+        'Named senior individual + board escalation + named penalty exposure (LETA fine + AMLA ' +
+        'sanctions). Missing the director-personal-liability angle is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1029,6 +1206,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   GDPR_DPA_COMPLIANCE,
   DORA_ART30_REVIEW,
   UK_ECCTA_REASONABLE_PROCEDURES,
+  SWISS_AMLA_LETA_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

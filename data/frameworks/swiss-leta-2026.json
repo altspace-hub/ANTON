@@ -1,0 +1,150 @@
+{
+  "id": "swiss-leta-2026",
+  "name": "Loi fédérale sur la transparence des personnes morales (LETA — Federal UBO Register Act)",
+  "shortName": "LETA",
+  "reference": "Pending publication in SR; adopted 26 Sept 2025",
+  "adopted": "2025-09-26",
+  "inForceExpected": "2026",
+  "registerOperator": "Federal Office of Justice (BJ / OFJ)",
+  "supervisor": "Federal Office of Justice + FINMA + MROS",
+  "approxEntitiesAffected": 600000,
+  "fatfAlignment": "R.24 + R.25 (beneficial ownership transparency)",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "1", "title": "Object and scope", "articles": "1-3"},
+    {"number": "2", "title": "Reporting obligations", "articles": "4-7"},
+    {"number": "3", "title": "Verification + retention", "articles": "8-10"},
+    {"number": "4", "title": "Register access", "articles": "11-14"},
+    {"number": "5", "title": "Sanctions", "articles": "15-18"}
+  ],
+  "themes": [
+    "Scope determination",
+    "UBO identification",
+    "Reporting + refresh",
+    "Verification + retention",
+    "Register access regime",
+    "Sanctions"
+  ],
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Purpose",
+      "chapter": "1",
+      "section": "Chapter 1",
+      "theme": "Scope determination",
+      "requirement": "Creates a central federal register of beneficial owners of Swiss legal persons and arrangements to combat misuse for ML/TF and tax evasion, and to fulfil Switzerland's FATF R.24 + R.25 obligations."
+    },
+    {
+      "id": "Art.2",
+      "title": "In-scope entities",
+      "chapter": "1",
+      "section": "Chapter 1",
+      "theme": "Scope determination",
+      "requirement": "Swiss-registered companies (AG / SA, Sàrl / GmbH, partnerships, cooperatives), associations and foundations meeting threshold criteria, and trusts with a Swiss link (Swiss trustee, Swiss assets, or Swiss settlor). Listed companies and certain regulated entities may benefit from equivalence carve-outs."
+    },
+    {
+      "id": "Art.3",
+      "title": "Definition of beneficial owner",
+      "chapter": "1",
+      "section": "Chapter 1",
+      "theme": "UBO identification",
+      "requirement": "Natural person(s) ultimately owning or controlling the entity. Threshold: ≥25% ownership (direct or indirect) of shares / voting rights / profit entitlement, OR control by other means (board appointment power, contractual arrangements). Fallback: senior managing official where no UBO can be identified."
+    },
+    {
+      "id": "Art.4",
+      "title": "Initial reporting obligation",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Reporting + refresh",
+      "requirement": "Reporting entities must file UBO information with the federal register at incorporation / first registration. Filing includes: name, nationality, date of birth, residence, type and extent of beneficial ownership, basis of control. Transitional period for existing entities (typically 18-24 months after entry into force)."
+    },
+    {
+      "id": "Art.5",
+      "title": "Refresh on material change",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Reporting + refresh",
+      "requirement": "Re-filing required within 30 days of any material change: change of UBO, change in ownership percentage crossing the 25% threshold, change in control arrangements, dissolution. Annual confirmation of accuracy required regardless of change."
+    },
+    {
+      "id": "Art.6",
+      "title": "Reporting for trusts and similar arrangements",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "UBO identification",
+      "requirement": "Trusts with a Swiss link: settlor, trustee, protector (if any), beneficiaries (or class), and any other natural person exercising ultimate effective control. Foundations: founder, board members, beneficiaries."
+    },
+    {
+      "id": "Art.7",
+      "title": "Reporting persons within the entity",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Reporting + refresh",
+      "requirement": "Directors / managing officers are responsible for filing accurate and complete information. Internal procedures must enable the entity to identify UBOs from shareholders / nominees / control documentation. UBOs themselves must cooperate."
+    },
+    {
+      "id": "Art.8",
+      "title": "Verification obligation",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "Verification + retention",
+      "requirement": "Reporting entities must verify the accuracy of reported information using reliable independent sources: certified ID copies (passport / national ID), corporate registry extracts, trust deeds and amendments, shareholder agreements. Reliance on family declarations alone is insufficient."
+    },
+    {
+      "id": "Art.9",
+      "title": "Document retention",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "Verification + retention",
+      "requirement": "Supporting documentation retained for at least 10 years after the relevant UBO ceases to be beneficial owner or the entity is dissolved. Available for inspection by authorities + (where authorised) by FIs and DNFBPs for AML purposes."
+    },
+    {
+      "id": "Art.11",
+      "title": "Register access — authorities",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Register access regime",
+      "requirement": "Federal and cantonal authorities (FINMA, MROS, OAG, tax authorities, criminal prosecutors, sanctions enforcement) have broad access for the performance of their legal tasks. Logged + audited."
+    },
+    {
+      "id": "Art.12",
+      "title": "Register access — FIs and DNFBPs",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Register access regime",
+      "requirement": "Financial intermediaries (AMLA Art. 2) and (post-revision) in-scope advisers may access the register for AMLA CDD purposes. Per-query authorisation; logging; data-minimisation principle — access only what is necessary for the specific CDD task."
+    },
+    {
+      "id": "Art.13",
+      "title": "Register access — foreign counterparties",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Register access regime",
+      "requirement": "Foreign authorities access register data through mutual administrative assistance under existing tax + criminal cooperation channels. No direct public access from abroad."
+    },
+    {
+      "id": "Art.14",
+      "title": "Non-public register",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Register access regime",
+      "requirement": "No public access. Departs from the original EU AMLR public-register model in line with the CJEU Luxembourg Business Registers judgment (Case C-37/20 and C-601/20) which struck down public-access provisions on Charter Art. 7 + 8 grounds."
+    },
+    {
+      "id": "Art.15",
+      "title": "Sanctions — non-reporting",
+      "chapter": "5",
+      "section": "Chapter 5",
+      "theme": "Sanctions",
+      "requirement": "Criminal sanction for wilful failure to report, providing false information, or wilful failure to update. Fine up to CHF 500,000 for legal persons; lesser fines for negligence. Directors / managing officers personally liable."
+    },
+    {
+      "id": "Art.18",
+      "title": "Sanctions — UBO non-cooperation",
+      "chapter": "5",
+      "section": "Chapter 5",
+      "theme": "Sanctions",
+      "requirement": "Beneficial owners who refuse to provide information to enable accurate reporting may be sanctioned (administrative fine + civil consequences for the entity). Repeated non-cooperation may trigger reporting to MROS as a red flag."
+    }
+  ]
+}
