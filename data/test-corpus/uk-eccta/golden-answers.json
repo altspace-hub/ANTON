@@ -1,0 +1,293 @@
+{
+  "version": "1.0",
+  "jurisdiction": "uk-eccta",
+  "playbook_id": "uk-eccta-reasonable-procedures",
+  "schema": "Per-(document × column) annotation, separating BASELINE (corpus-curator's document-type expectation) from PANEL (reviewer-consensus golden answer) from AI (most-recent run's verdict). Calibration metric = agreement between AI and PANEL columns, per-column kappa.",
+  "annotations": [
+    {
+      "document_id": "01-home-office-statutory-guidance",
+      "baseline_source": "corpus-curator (2026-05-23) — derived from document-type analysis, refine after actual reading",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "02-cabinet-office-govs-013",
+      "baseline_source": "corpus-curator (2026-05-23)",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "03-nao-tackling-fraud-corruption-2023",
+      "baseline_source": "corpus-curator (2026-05-23) — note: this is an audit report describing INADEQUATE programs, hence many 'missing' baselines",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "04-sfo-evaluating-a-compliance-programme",
+      "baseline_source": "corpus-curator (2026-05-23) — prosecutor's yardstick; expected to score Covered across the board",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "05-sfo-v-standard-bank-statement-of-facts",
+      "baseline_source": "corpus-curator (2026-05-23) — pre-failure program; baseline reflects what SFO found, NOT post-DPA undertakings",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "06-sfo-rolls-royce-dpa-details-of-compliance",
+      "baseline_source": "corpus-curator (2026-05-23) — post-DPA remediation program (gold standard)",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "07-sfo-amec-foster-wheeler-dpa",
+      "baseline_source": "corpus-curator (2026-05-23) — inherited-liability scenario; baseline reflects pre-DPA + post-DPA Wood undertakings blended",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "08-hsbc-risk-review-2024",
+      "baseline_source": "corpus-curator (2026-05-23) — AML/financial-crime framing; tests AML-vs-fraud trap",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "09-barclays-modern-slavery-2024",
+      "baseline_source": "corpus-curator (2026-05-23) — ADJACENCY TRAP; structure looks similar but scores a different harm",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "10-bae-systems-ethics-anti-corruption",
+      "baseline_source": "corpus-curator (2026-05-23) — strong private-sector exemplar (post-Al-Yamamah / Woolf Committee)",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "11-gsk-anti-bribery-corruption-policy",
+      "baseline_source": "corpus-curator (2026-05-23) — BRIBERY-VS-FRAUD TRAP; strong on bribery, must not silently transfer",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "12-diageo-code-of-business-conduct-fy24",
+      "baseline_source": "corpus-curator (2026-05-23) — DOCUMENT-BOUNDARY TRAP; principles 2 + 6 live elsewhere",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "13-bt-group-esg-addendum-2024",
+      "baseline_source": "corpus-curator (2026-05-23) — telco + post-Italian-subsidiary-fraud-incident lens",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "covered", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "14-uk-finance-annual-fraud-report-2025",
+      "baseline_source": "corpus-curator (2026-05-23) — N/A DISCIPLINE TRAP; industry data, not a single firm's program",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    },
+    {
+      "document_id": "15-patisserie-valerie-forensic-analyses",
+      "baseline_source": "corpus-curator (2026-05-23) — NEGATIVE ANCHOR on Sched 13 territory (false accounting, false representation)",
+      "panel_status": "not yet annotated",
+      "cells": {
+        "eccta-p1a-board-statement":   { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p1b-named-owner":       { "baseline": "partial", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2a-risk-register":     { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p2b-refresh-cadence":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3a-controls-mapped":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p3b-financial-controls":{ "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p4-associated-person-dd": { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5a-internal-training": { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p5b-external-comms":    { "baseline": "not_applicable", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6a-monitoring-kpis":   { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-p6b-incident-learning": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null },
+        "eccta-reporting-whistleblower": { "baseline": "missing", "panel": null, "panel_evidence": null, "panel_note": null }
+      }
+    }
+  ]
+}

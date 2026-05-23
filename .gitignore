@@ -96,3 +96,12 @@ ANTON-portable*.zip
 android-business/app/src/main/assets/public/
 android-pay/app/src/main/assets/public/
 android-comm/app/src/main/assets/public/
+
+# Test-corpus documents — downloaded on demand by
+# `node data/test-corpus/<jurisdiction>/scripts/fetch-government-docs.cjs`.
+# Crown Copyright / OGL documents could in principle be committed, but
+# keeping the docs/ dirs out of the repo keeps things consistent across
+# jurisdictions (some corpora include non-redistributable corporate docs)
+# and stops binary-PDF noise in diffs.
+data/test-corpus/*/docs/*
+!data/test-corpus/*/docs/.gitkeep
