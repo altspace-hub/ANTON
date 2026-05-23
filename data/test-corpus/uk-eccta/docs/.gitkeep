@@ -1,0 +1,2 @@
+# Documents downloaded here are gitignored.
+# Run `node data/test-corpus/uk-eccta/scripts/fetch-government-docs.cjs` to populate.
