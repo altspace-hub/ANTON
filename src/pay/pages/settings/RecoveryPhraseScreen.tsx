@@ -9,17 +9,27 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getMnemonicWithBiometric } from '../../services/wallet';
+import PassphrasePromptModal from '../../components/PassphrasePromptModal';
+import { requireBiometric } from '../../services/biometric';
+import {
+  activeWalletHasPassphrase, getMnemonicForActive,
+  getMnemonicForActiveWithPassphrase,
+} from '../../services/wallets';
+import { BadPassphraseError } from '../../services/wallet-passphrase';
 
 interface Props {
   onBack: () => void;
 }
+
+const MAX_ATTEMPTS = 5;
 
 export default function RecoveryPhraseScreen({ onBack }: Props) {
   const { t } = useTranslation();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
+  const [passphraseOpen, setPassphraseOpen] = useState(false);
+  const [passphraseFailures, setPassphraseFailures] = useState(0);
 
   // Wipe any lingering plaintext from state when the screen unmounts —
   // belt-and-braces; React will GC anyway but this makes the lifetime
@@ -28,13 +38,41 @@ export default function RecoveryPhraseScreen({ onBack }: Props) {
 
   async function onReveal() {
     setGateError(null);
+    const bio = await requireBiometric({ reason: 'Show recovery phrase' });
+    if (!bio.ok && bio.reason !== 'unavailable') {
+      setGateError(t('recoveryPhrase.gateDenied',
+        'Biometric check did not pass. Recovery phrase remains hidden.'));
+      return;
+    }
+    if (await activeWalletHasPassphrase()) {
+      setPassphraseFailures(0);
+      setPassphraseOpen(true);
+      return;
+    }
+    const m = await getMnemonicForActive();
+    setMnemonic(m);
+    setAcknowledged(true);
+  }
+
+  async function onPassphraseSubmit(p: string) {
     try {
-      const m = await getMnemonicWithBiometric();
+      const m = await getMnemonicForActiveWithPassphrase(p);
+      setPassphraseOpen(false);
       setMnemonic(m);
       setAcknowledged(true);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setGateError(msg);
+      if (e instanceof BadPassphraseError) {
+        const next = passphraseFailures + 1;
+        setPassphraseFailures(next);
+        if (next >= MAX_ATTEMPTS) {
+          setPassphraseOpen(false);
+          setGateError(t('passphrase.exhausted',
+            'Too many wrong attempts. Cancel and try again later, or ' +
+            'restore from your 24-word recovery phrase.'));
+        }
+        return;
+      }
+      throw e;
     }
   }
 
@@ -114,6 +152,15 @@ export default function RecoveryPhraseScreen({ onBack }: Props) {
           </div>
         )}
       </div>
+      {passphraseOpen ? (
+        <PassphrasePromptModal
+          reason={t('passphrase.reasonShowSeed',
+            'Confirm to reveal your 24-word recovery phrase')}
+          attemptFailures={passphraseFailures}
+          onSubmit={(p) => void onPassphraseSubmit(p)}
+          onCancel={() => setPassphraseOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
