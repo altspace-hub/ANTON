@@ -167,6 +167,7 @@ const OrchestrationDashboard = lazy(() => import('./pages/OrchestrationDashboard
 
 // FCP Interactive Modes
 const CounselsDesk = lazy(() => import('./pages/CounselsDesk'));
+const TabularReview = lazy(() => import('./pages/TabularReview'));
 const OrchestratorDashboard = lazy(() => import('./pages/OrchestratorDashboard'));
 const OrchestratorTrailViewer = lazy(() => import('./pages/OrchestratorTrailViewer'));
 const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
@@ -692,6 +693,7 @@ export default function App() {
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           {/* FCP Interactive Modes */}
           <Route path="/counsels-desk" element={<CounselsDesk />} />
+          <Route path="/tabular-review" element={<TabularReview />} />
           <Route path="/orchestrator" element={<OrchestratorDashboard />} />
           <Route path="/orchestrator/trail/:id" element={<OrchestratorTrailViewer />} />
           <Route path="/gap-assessment" element={<GapAssessmentHub />} />
