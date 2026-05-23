@@ -1,0 +1,119 @@
+{
+  "id": "hk-pdpo-cap-486",
+  "name": "Hong Kong Personal Data (Privacy) Ordinance (Cap. 486)",
+  "shortName": "HK PDPO",
+  "reference": "Cap. 486 + 2021 Doxxing Amendment Ordinance + PCPD Guidance",
+  "url": "https://www.pcpd.org.hk/english/data_privacy_law/ordinance_at_a_Glance/ordinance.html",
+  "originalInForce": "1995-12-20",
+  "doxxingAmendmentsInForce": "2021-10-08",
+  "supervisor": "PCPD",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "Principles", "title": "Six Data Protection Principles (DPPs)", "articles": "Schedule 1"},
+    {"number": "Rights", "title": "Data subject rights", "articles": "PDPO Part V"},
+    {"number": "Direct", "title": "Direct marketing", "articles": "PDPO Part VIA"},
+    {"number": "Cross-border", "title": "Cross-border transfer (S.33 dormant)", "articles": "PDPO Section 33"},
+    {"number": "Doxxing", "title": "Doxxing offences (2021 amendment)", "articles": "PDPO Sections 64(3A)-(3D)"},
+    {"number": "Enforcement", "title": "PCPD enforcement", "articles": "PDPO Part VIII"},
+    {"number": "Reform", "title": "Pending reform proposals", "articles": "Government study"}
+  ],
+  "themes": [
+    "Six DPPs",
+    "Data subject rights",
+    "Direct marketing",
+    "Cross-border transfer (dormant)",
+    "Doxxing offences",
+    "PCPD enforcement",
+    "Pending reform"
+  ],
+  "articles": [
+    {
+      "id": "DPP1",
+      "title": "DPP1 — Purpose + manner of collection",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP1",
+      "theme": "Six DPPs",
+      "requirement": "Personal data collected only for a lawful purpose related to a function or activity of the data user. Collection necessary + not excessive. Means of collection lawful + fair. Data subject notified (Personal Information Collection Statement — PICS) of purpose + transferees + rights at or before collection."
+    },
+    {
+      "id": "DPP2",
+      "title": "DPP2 — Accuracy + retention",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP2",
+      "theme": "Six DPPs",
+      "requirement": "Practicable steps to ensure personal data is accurate. Data not kept longer than necessary for the purpose. Engagement of data processors: contractual + practical measures to ensure DPP-compliant processing + retention by the processor (data user retains responsibility)."
+    },
+    {
+      "id": "DPP3",
+      "title": "DPP3 — Use of data",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP3",
+      "theme": "Six DPPs",
+      "requirement": "Personal data must not be used for any new purpose without the prescribed consent of the data subject (or limited exemptions: legal compulsion, vital interest, public interest, etc.). 'Use' includes disclosure + transfer."
+    },
+    {
+      "id": "DPP4",
+      "title": "DPP4 — Security",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP4",
+      "theme": "Six DPPs",
+      "requirement": "Practicable steps to protect personal data against unauthorised or accidental access, processing, erasure, loss or use. Consider sensitivity + harm risk + storage location + access controls + integrity of data processors. No statutory mandatory breach-notification (under pending reform)."
+    },
+    {
+      "id": "DPP5",
+      "title": "DPP5 — Information availability",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP5",
+      "theme": "Six DPPs",
+      "requirement": "Data user must take practicable steps to ensure data subjects are informed of: kinds of personal data held, main purposes for which data is used, name + address of data protection officer (or equivalent). Privacy Policy Statement (PPS) typically discharges this."
+    },
+    {
+      "id": "DPP6",
+      "title": "DPP6 — Data access + correction",
+      "chapter": "Principles",
+      "section": "Schedule 1 DPP6 + PDPO Part V",
+      "theme": "Data subject rights",
+      "requirement": "Data subject right to: data-access request (40-day response window) including identification of types + sources + purposes of use; data-correction request where inaccurate. Refusal grounds (limited): third-party prejudice, manifestly excessive request, statutory exemption, criminal-investigation impediment."
+    },
+    {
+      "id": "PDPO.DirectMarketing",
+      "title": "Direct marketing — opt-in + opt-out",
+      "chapter": "Direct",
+      "section": "PDPO Part VIA",
+      "theme": "Direct marketing",
+      "requirement": "Before using personal data for direct marketing or providing personal data to a third party for use in direct marketing, data user must: notify the data subject of intended use; provide opt-out / consent channel; obtain explicit consent for use in marketing (opt-in) + for transfer to third party (especially if for gain). Criminal sanction for non-compliance."
+    },
+    {
+      "id": "PDPO.S33",
+      "title": "Cross-border transfer (Section 33 — dormant)",
+      "chapter": "Cross-border",
+      "section": "PDPO Section 33",
+      "theme": "Cross-border transfer (dormant)",
+      "requirement": "Section 33 provides a statutory framework for cross-border-transfer restrictions but has NEVER been brought into force since enactment in 1995. PCPD has issued guidance recommending the same standard (only transfer if recipient jurisdiction has adequate protection, or with safeguards). Pending reform proposals include activation of S.33 with modern transfer mechanisms."
+    },
+    {
+      "id": "PDPO.Doxxing",
+      "title": "Doxxing offences (Sections 64(3A)-(3D))",
+      "chapter": "Doxxing",
+      "section": "PDPO Sections 64(3A)-(3D) (2021 amendment)",
+      "theme": "Doxxing offences",
+      "requirement": "Criminal offences for disclosure of personal data without consent: (3A) summary — disclosure with intent or recklessness to cause specified harm — fine up to HK$100,000 + imprisonment up to 2 years; (3D) indictable — disclosure with intent + specified harm actually caused — fine up to HK$1m + imprisonment up to 5 years. PCPD given investigation + cease-and-desist + cross-border removal powers."
+    },
+    {
+      "id": "PDPO.Enforcement",
+      "title": "PCPD enforcement",
+      "chapter": "Enforcement",
+      "section": "PDPO Part VIII + Doxxing Amendment",
+      "theme": "PCPD enforcement",
+      "requirement": "PCPD investigation powers; enforcement notices (direct compliance); contravention findings (publicised); criminal-referral for indictable offences (incl. doxxing). PCPD has NO administrative-fining power for breaches of DPPs (under pending reform); contravention of an enforcement notice is itself a criminal offence with HK$50,000 fine + imprisonment up to 2 years."
+    },
+    {
+      "id": "PDPO.PendingReform",
+      "title": "Pending reform proposals (government study 2024-)",
+      "chapter": "Reform",
+      "section": "Government study + PCPD recommendations",
+      "theme": "Pending reform",
+      "requirement": "Government-announced PDPO reform proposals (pending bill introduction): (a) mandatory data-breach notification to PCPD + affected individuals; (b) direct regulation of data processors (currently only data users regulated); (c) administrative-fining powers for PCPD (proposed up to 4% global turnover or capped figure); (d) activation of section 33 cross-border-transfer regime with modern transfer mechanisms; (e) clearer regulation of automated decisions + AI-driven personal-data processing. Reforms expected 2026-2027."
+    }
+  ]
+}

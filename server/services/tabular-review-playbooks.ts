@@ -2360,6 +2360,207 @@ export const UAE_FDL_10_MULTI_REGULATOR_READINESS: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 14. Hong Kong Stablecoins Ordinance + AMLO/VATP Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const HONGKONG_STABLECOINS_VATP_READINESS: Playbook = {
+  id: 'hongkong-stablecoins-vatp-readiness',
+  name: 'Hong Kong Stablecoins Ordinance + AMLO/VATP — Readiness Mapping',
+  description:
+    'Maps a Hong Kong-regulated firm\'s readiness against the Stablecoins Ordinance (Cap. ' +
+    '643, live 1 August 2025 — first licences expected Q1 2026), the AMLO (Cap. 615) ' +
+    'baseline + the post-June-2023 VATP regime, with HKMA + SFC supervisory expectations. ' +
+    'Anchored on the program shape that satisfies HKMA + SFC examiners simultaneously.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['hongkong-compliance-2026'],
+  systemPrompt:
+    'You are an experienced Hong Kong financial-services lawyer reviewing a stablecoin-' +
+    'issuer / VATP / FI readiness document against the Stablecoins Ordinance (Cap. 643, in ' +
+    'force 1 August 2025), the AMLO (Cap. 615) baseline + post-June-2023 VATP regime, and ' +
+    'HKMA + SFC supervisory expectations. You assess each control with the discipline of an ' +
+    'HKMA on-site examiner working alongside an SFC supervisor: explicit > implicit, ' +
+    'evidence > paraphrase, strict > lenient. You distinguish obligations specific to ' +
+    'fiat-backed-stablecoin issuance (HKMA SO regime) from those applying to centralised ' +
+    'VATP operations (SFC AMLO regime) from those applying to traditional FIs (HKMA + SFC ' +
+    'baseline). You flag every cross-regulator coordination gap. You respond ONLY with the ' +
+    'requested JSON object.',
+  documentContext:
+    'You are auditing a HK-regulated firm\'s stablecoin-issuer / VATP / FI readiness document ' +
+    'against the Stablecoins Ordinance + AMLO/VATP regime + HKMA + SFC supervisory ' +
+    'expectations.',
+  columns: [
+    {
+      id: 'hk-so-scope',
+      header: 'Stablecoins Ordinance scope assessment',
+      regulatoryRef: 'SO Part 1 (Cap. 643)',
+      question:
+        'For firms with stablecoin-related activities: does the document evidence a documented ' +
+        'scope assessment under the SO — covering whether the firm issues fiat-backed ' +
+        'stablecoins in HK or actively markets to the HK public; whether the firm is in scope ' +
+        'of the SO licensing requirement; the firm\'s current legal position (Sandbox / ' +
+        'licensed / migrated / never in scope)?',
+      expects:
+        'Documented scope assessment + concluded position + Sandbox-participation status (if ' +
+        'applicable). Marked "not_applicable" for firms with zero stablecoin-related exposure. ' +
+        'Silence at any stablecoin-related firm is "missing".',
+    },
+    {
+      id: 'hk-so-reserves',
+      header: 'SO 100% reserves + redemption-at-par',
+      regulatoryRef: 'SO Part 3 + HKMA Notices',
+      question:
+        'For SO-applicable firms: does the document evidence a reserve-management framework — ' +
+        '100% backing of outstanding stablecoin value in HQLA (cash + short-term sovereign + ' +
+        'supra + HKMA-approved categories); diversification; daily valuation + reconciliation; ' +
+        'restrictions on encumbrance + lending; redemption-at-par mechanism + timing (T+1 or ' +
+        'better for retail); stressed-redemption scenario testing?',
+      expects:
+        'All five elements (100% reserves + HQLA composition + daily reconciliation + ' +
+        'redemption mechanism + stress testing). Marked "not_applicable" for non-stablecoin ' +
+        'firms. Partial is one or more missing elements.',
+    },
+    {
+      id: 'hk-so-custody',
+      header: 'SO custody + insolvency-remote arrangements',
+      regulatoryRef: 'SO Part 3 + Customer Asset Protection',
+      question:
+        'For SO-applicable firms: does the document evidence reserve-asset custody arrangements ' +
+        '— segregated accounts with approved custodians (licensed banks or HKMA-approved ' +
+        'custodians); insolvency-remote structure protecting stablecoin holders; periodic ' +
+        'independent assurance; HKMA reporting cadence; trust + safekeeping documentation?',
+      expects:
+        'All four elements (segregated + insolvency-remote + independent assurance + HKMA ' +
+        'reporting). Marked "not_applicable" for non-stablecoin firms.',
+    },
+    {
+      id: 'hk-so-tech-key',
+      header: 'SO technology + private-key custody',
+      regulatoryRef: 'SO Part 5 + HKMA SPM TM-G-1 + CRAF',
+      question:
+        'For SO-applicable firms: does the document evidence technology-risk framework + ' +
+        'private-key custody arrangements — HKMA SPM + CRAF alignment; cybersecurity (incl. ' +
+        'wallet + key management); MPC OR multi-sig OR HSM controls for issuer-controlled ' +
+        'private keys; key-generation + storage + rotation procedures; geographically-' +
+        'distributed key shares; IT-incident reporting to HKMA?',
+      expects:
+        'All six elements + specific key-management architecture. Marked "not_applicable" for ' +
+        'non-stablecoin firms. Generic "we have cybersecurity" without key-management ' +
+        'specificity is "partial".',
+    },
+    {
+      id: 'hk-so-recovery',
+      header: 'SO recovery + resolution + wind-down',
+      regulatoryRef: 'SO Part 7',
+      question:
+        'For SO-applicable firms: does the document evidence recovery + resolution + wind-down ' +
+        'planning — mass-redemption scenario; custodian failure; reserve-asset write-down; ' +
+        'technology / cyber failure; key-person departure; orderly stablecoin-termination ' +
+        'with customer-asset protection; annual testing + board approval + HKMA submission?',
+      expects:
+        'All six elements (5 stress scenarios + orderly termination + testing/board/HKMA). ' +
+        'Marked "not_applicable" for non-stablecoin firms.',
+    },
+    {
+      id: 'hk-vatp-licensing',
+      header: 'VATP licensing readiness (SFC)',
+      regulatoryRef: 'AMLO Schedule 3B + SFC VATP Guidelines',
+      question:
+        'For firms with VATP / centralised crypto-exchange activities: does the document ' +
+        'evidence VATP-licensing readiness — fit-and-proper persons; minimum capital (HK$5m+); ' +
+        'HK incorporation / branch; AML/CFT framework; technology + cybersecurity; custody ' +
+        '(cold/hot wallet + key management); market-conduct + token-listing procedures; retail-' +
+        'access conditions where applicable?',
+      expects:
+        'All seven elements + retail-permission status. Marked "not_applicable" for non-VATP ' +
+        'firms. Silence at any active VATP is "missing".',
+    },
+    {
+      id: 'hk-amlo-cdd',
+      header: 'AMLO CDD + Schedule 2',
+      regulatoryRef: 'AMLO Schedule 2 + sectoral guidelines',
+      question:
+        'Does the document evidence the AMLO CDD chain: customer identification + verification ' +
+        '(reliable independent sources); UBO identification + verification (25% threshold + ' +
+        'senior-managing-official fallback; SCR access where appropriate); purpose + intended ' +
+        'nature of relationship; ongoing monitoring; triggering thresholds (HK$120,000 / ' +
+        'HK$8,000 wire transfer)?',
+      expects:
+        'All four elements + concrete thresholds + SCR access where applicable. Missing the ' +
+        'threshold detail or SCR access procedure is "partial".',
+    },
+    {
+      id: 'hk-amlo-edd-peps',
+      header: 'AMLO EDD + PEPs (incl. HK Domestic PEPs)',
+      regulatoryRef: 'AMLO Schedule 2 + HKMA / SFC AML Guidelines',
+      question:
+        'Does the document specify EDD triggers (foreign PEPs always, high-risk jurisdictions, ' +
+        'complex / unusual / large transactions, correspondent banking, new technologies incl. ' +
+        'crypto) AND address treatment of HK Domestic PEPs (HKSAR Government officials, judges, ' +
+        'senior military / police, leadership of HK Government-related bodies — risk-sensitive ' +
+        'but typically EDD-triggering)?',
+      expects:
+        'All EDD triggers + HK Domestic PEP treatment + senior-management approval + SoW/SoF. ' +
+        'Missing HK Domestic PEP treatment is "partial".',
+    },
+    {
+      id: 'hk-amlo-str',
+      header: 'STR via STREAMS to JFIU + tipping-off',
+      regulatoryRef: 'DTROP/OSCO/UNATMO + STREAMS',
+      question:
+        'Does the document evidence: STR filing procedure via STREAMS to JFIU; clear thresholds ' +
+        'for knowledge / suspicion of ML / TF / proliferation (under UNATMO); tipping-off ' +
+        'prohibition + criminal-sanction consequences; internal escalation path; designated ' +
+        'MLRO; consent / no-consent process for transactions after STR filing?',
+      expects:
+        'All five elements (STREAMS + threshold + tipping-off + escalation + MLRO + consent ' +
+        'process). Missing the consent-process detail is "partial".',
+    },
+    {
+      id: 'hk-amlo-sanctions',
+      header: 'Sanctions screening (UN-only + foreign considerations)',
+      regulatoryRef: 'UNSO Cap. 537 + AMLO + HKMA / SFC guidelines',
+      question:
+        'Does the document evidence sanctions-screening covering UN Consolidated List ' +
+        '(implemented via UNSO + HK-specific regulations); operational screening of customers + ' +
+        'transactions + freeze + report procedures; consideration of OFAC + OFSI + EU sanctions ' +
+        'risk for international operations + correspondent relationships (even though not ' +
+        'directly implemented in HK)?',
+      expects:
+        'UN baseline + operational procedures + foreign-sanctions risk consideration. Missing ' +
+        'foreign-sanctions consideration for international firms is "partial".',
+    },
+    {
+      id: 'hk-governance-mlro',
+      header: 'Governance + AML compliance officer + MLRO',
+      regulatoryRef: 'AMLO + HKMA SPM + SFC Code GP9-GP10',
+      question:
+        'Does the document evidence: senior-management-approved AML/CFT policies + procedures; ' +
+        'designated AML compliance officer at sufficient seniority + MLRO for STR coordination; ' +
+        'internal-audit + compliance-function review; transaction-monitoring + screening-system ' +
+        'calibration + tuning; HKMA / SFC supervisor approval of key persons where required?',
+      expects:
+        'All five elements + named individuals + supervisor approval. "AML responsibility is ' +
+        'shared" without named senior-level officers is "missing".',
+    },
+    {
+      id: 'hk-multireg-pdpo',
+      header: 'Multi-regulator overlap + PDPO',
+      regulatoryRef: 'HK crypto multi-regulator + PDPO + reform proposals',
+      question:
+        'Does the document address: (a) cross-regulator coordination for firms with both SO ' +
+        '(HKMA) + VATP (SFC) + traditional FI activities; (b) PDPO compliance for personal-data ' +
+        'aspects of AML CDD (DPPs + 2021 doxxing offences + readiness for pending PDPO reforms ' +
+        'incl. mandatory breach notification); (c) AML data-sharing within group + with ' +
+        'supervisors?',
+      expects:
+        'All three elements (cross-regulator + PDPO + data sharing). Missing the pending-PDPO-' +
+        'reform readiness is "partial"; missing the cross-regulator coordination for multi-' +
+        'activity firms is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -2377,6 +2578,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   SANCTIONS_OFAC_OFSI_COMPLIANCE,
   SINGAPORE_MAS_626_DTSP_READINESS,
   UAE_FDL_10_MULTI_REGULATOR_READINESS,
+  HONGKONG_STABLECOINS_VATP_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

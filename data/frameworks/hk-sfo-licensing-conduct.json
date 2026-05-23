@@ -1,0 +1,105 @@
+{
+  "id": "hk-sfo-licensing-conduct",
+  "name": "Securities and Futures Ordinance (Cap. 571) — licensing + conduct",
+  "shortName": "HK SFO",
+  "reference": "Cap. 571 + SFC Code of Conduct + SFC Guidelines",
+  "inForce": "2003-04-01",
+  "supervisor": "SFC",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "Licensing", "title": "Type 1-12 + Type VA regulated activities", "articles": "Schedule 5 SFO"},
+    {"number": "Conduct", "title": "SFC Code of Conduct general principles", "articles": "SFC Code"},
+    {"number": "MarketAbuse", "title": "Market misconduct + insider dealing", "articles": "SFO Parts XIII + XIV"},
+    {"number": "Conduct.Guidelines", "title": "SFC topic-specific Guidelines", "articles": "AMLG, FMG, VATP, Custody"},
+    {"number": "Enforcement", "title": "SFC enforcement framework", "articles": "SFO + MMT"}
+  ],
+  "themes": [
+    "Licensing — Type 1-12 + Type VA",
+    "SFC Code of Conduct",
+    "Market misconduct",
+    "AML + custody guidelines",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "SFO.Type1-7",
+      "title": "Regulated activities Type 1-7",
+      "chapter": "Licensing",
+      "section": "Schedule 5 SFO",
+      "theme": "Licensing — Type 1-12 + Type VA",
+      "requirement": "Type 1: dealing in securities; Type 2: dealing in futures contracts; Type 3: leveraged FX trading; Type 4: advising on securities; Type 5: advising on futures contracts; Type 6: advising on corporate finance; Type 7: providing automated trading services (ATS) — captures security-token + certain crypto trading platforms. Persons carrying on any regulated activity in HK or to HK clients require SFC licensing or authorisation."
+    },
+    {
+      "id": "SFO.Type8-12",
+      "title": "Regulated activities Type 8-12 + Type VA",
+      "chapter": "Licensing",
+      "section": "Schedule 5 SFO + AMLO Schedule 3B",
+      "theme": "Licensing — Type 1-12 + Type VA",
+      "requirement": "Type 8: securities margin financing; Type 9: asset management; Type 10: credit-rating services; Type 11 + 12: OTC derivatives (designated). Type VA (via AMLO Schedule 3B, June 2023): VATP services — operating a centralised virtual asset trading platform. Cross-type licensing common (e.g. asset manager dealing in securities for own funds — Type 1 + Type 9)."
+    },
+    {
+      "id": "SFC.Code.GP",
+      "title": "SFC Code of Conduct General Principles",
+      "chapter": "Conduct",
+      "section": "SFC Code GP1-GP10",
+      "theme": "SFC Code of Conduct",
+      "requirement": "Ten General Principles: GP1 honesty + fairness; GP2 diligence; GP3 capabilities; GP4 information about clients; GP5 information for clients (clear + balanced + not misleading); GP6 conflicts of interest; GP7 compliance with laws; GP8 client assets (proper safekeeping); GP9 responsibility of senior management; GP10 management, supervision + internal control. Mandatory baseline for all SFC-licensed persons."
+    },
+    {
+      "id": "SFC.Code.Suitability",
+      "title": "SFC Suitability + KYC",
+      "chapter": "Conduct",
+      "section": "SFC Code paragraphs 5 + 6",
+      "theme": "SFC Code of Conduct",
+      "requirement": "Know-Your-Client requirements (paragraph 5.1): client identification + financial situation + investment experience + objectives. Suitability requirement (paragraph 5.2): recommend only investments suitable for the client's circumstances + reasonable basis. Strict-liability misrepresentation rule per 2017 Lufax decision. Suitability assessment + records retained for review."
+    },
+    {
+      "id": "SFO.MarketMisconduct",
+      "title": "Market misconduct + insider dealing (Parts XIII + XIV)",
+      "chapter": "MarketAbuse",
+      "section": "SFO Parts XIII + XIV",
+      "theme": "Market misconduct",
+      "requirement": "Six market misconduct offences (Part XIII civil + Part XIV criminal): insider dealing; false trading; price rigging; disclosure of false or misleading information inducing transactions; stock market manipulation; disclosure of information about prohibited transactions. Market Misconduct Tribunal (civil) + criminal courts. SFC investigation + enforcement powers; cooperation with HK Police + ICAC."
+    },
+    {
+      "id": "SFC.Guidelines.AML",
+      "title": "SFC AML/CFT Guideline (sectoral)",
+      "chapter": "Conduct.Guidelines",
+      "section": "SFC Guideline on AML/CFT",
+      "theme": "AML + custody guidelines",
+      "requirement": "SFC's sectoral AML/CFT guideline for licensed corporations + Type VA VATPs. Aligned with AMLO Schedule 2 + tailored for capital-markets + VA risks. CDD + EDD + PEPs + ongoing monitoring + STR + sanctions + tipping-off + record-keeping. Periodic updates (most recently 2024 for VATP enhancements)."
+    },
+    {
+      "id": "SFC.Guidelines.FundMgmt",
+      "title": "SFC Fund Manager Code of Conduct",
+      "chapter": "Conduct.Guidelines",
+      "section": "SFC Fund Manager Code of Conduct",
+      "theme": "AML + custody guidelines",
+      "requirement": "Fund management-specific conduct + governance + risk-management + valuation + liquidity + custody + investor-disclosure obligations. Applies to Type 9 licensees managing collective investment schemes + discretionary portfolios. Sustainability disclosures aligned with global standards from 2022 onwards."
+    },
+    {
+      "id": "SFC.Guidelines.VATP",
+      "title": "SFC VATP Guidelines + Code of Conduct adaptations",
+      "chapter": "Conduct.Guidelines",
+      "section": "SFC VATP Guidelines",
+      "theme": "AML + custody guidelines",
+      "requirement": "Detailed conduct + custody + AML + market-conduct + token-listing + retail-investor-protection obligations for licensed VATPs. Custody: 98%+ cold-wallet for customer assets; multi-party computation / multi-sig controls; insurance over hot wallet. Token listing: SFC approval for retail-permitted tokens; due-diligence requirements. Market conduct: anti-manipulation surveillance + reporting; fair-pricing standards."
+    },
+    {
+      "id": "SFC.Guidelines.Custody",
+      "title": "SFC client-asset custody (general)",
+      "chapter": "Conduct.Guidelines",
+      "section": "SFC Securities + Futures (Client Securities) Rules + Custody Guidelines",
+      "theme": "AML + custody guidelines",
+      "requirement": "Client-asset segregation from licensee's own holdings; specific custody account requirements with authorised institutions; client-money rules (Client Money Rules under SFO); periodic reconciliation; client-asset insurance / indemnity. Distinct from VATP-specific custody but with similar substantive protection principles."
+    },
+    {
+      "id": "SFC.Enforcement",
+      "title": "SFC enforcement framework",
+      "chapter": "Enforcement",
+      "section": "SFO + SFC Enforcement Reporter",
+      "theme": "Enforcement",
+      "requirement": "SFC powers: licence suspension or revocation; revocation of approved person status; CMPs; prohibition orders against individuals; remediation + restitution orders; criminal-referral for criminal-tier offences. Active enforcement track record — published case decisions + Enforcement Reporter quarterly. Coordination with HKMA + ICAC + HK Police + Customs + foreign regulators."
+    }
+  ]
+}
