@@ -1,0 +1,505 @@
+[
+  {
+    "ref_id": "REG-IAF-2023",
+    "entity_type": "regulation",
+    "entity_id": "IAF-ACT-2023",
+    "canonical_name": "Central Bank (Individual Accountability Framework) Act 2023",
+    "description": "Foundational statute creating the Individual Accountability Framework in Ireland. Empowers the CBI to make SEAR regulations, sets out Conduct Standards for individuals, expands Fitness & Probity powers, and creates direct civil-administrative-sanctions accountability for individuals (removing the prior 'participation link' requirement).",
+    "metadata": {
+      "citation": "Act No. 5 of 2023",
+      "signed": "2023-03-09",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-SEAR",
+    "entity_type": "regulation",
+    "entity_id": "SEAR",
+    "canonical_name": "Senior Executive Accountability Regime (SEAR)",
+    "description": "CBI regulations made under the IAF Act 2023. Applies to in-scope firms (initial scope: banks, insurers excluding reinsurance / captives, investment firms, third-country branches) with the (I)NED extension since 1 Jul 2025. Requires the firm to identify each PCF, prepare a Management Responsibilities Map, allocate Prescribed Responsibilities, and produce a signed Statement of Responsibilities per PCF holder.",
+    "metadata": {
+      "first_wave_in_force": "2024-07-01",
+      "ined_extension_in_force": "2025-07-01",
+      "next_wave_under_consideration": "Credit unions + larger fund services + broader investment firms",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-FP",
+    "entity_type": "regulation",
+    "entity_id": "F-AND-P",
+    "canonical_name": "CBI Fitness and Probity Regime",
+    "description": "Long-standing CBI regulatory regime (Central Bank Reform Act 2010, ss.20-22) overhauled by the IAF Act 2023. Pre-approval required for PCFs; ongoing certification of fitness + probity for CFs by the firm; expanded CBI investigation + suspension powers.",
+    "metadata": {
+      "original_in_force": "2011-12-01",
+      "iaf_overhaul_in_force": "2023-12-29",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-CPC-2026",
+    "entity_type": "regulation",
+    "entity_id": "CPC-2026",
+    "canonical_name": "CBI Consumer Protection Code 2026",
+    "description": "Major recast of the 2012 Consumer Protection Code. Two new CBI regulations + revised general principles + dedicated chapters on Standards for Business, Securing Customer Interests, Effective Governance, Frauds + Scams + Financial Abuse, Vulnerable Customers + Consumers in Financial Difficulty, Mortgages, Insurance Distribution, Cards + Payments. In force 24 March 2026.",
+    "metadata": {
+      "in_force": "2026-03-24",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-CJMLA",
+    "entity_type": "regulation",
+    "entity_id": "CJMLA-2010-2021",
+    "canonical_name": "Criminal Justice (Money Laundering and Terrorist Financing) Acts 2010-2021",
+    "description": "The Irish AML/CFT statute (Act No. 6 of 2010, amended by 2013, 2018, 2021 Acts) transposing AMLD 3-5. Defines designated persons, CDD obligations, SAR regime to Garda + Revenue, supervision regime. Updates expected via separate transposition of AMLD6; EU AMLR (direct effect) applies from 10 July 2027.",
+    "metadata": {
+      "citation": "Act No. 6 of 2010 (as amended)",
+      "supervisor": "Central Bank of Ireland (FIs) / Department of Justice / Revenue / professional bodies"
+    }
+  },
+  {
+    "ref_id": "REG-CA-2014",
+    "entity_type": "regulation",
+    "entity_id": "CA-2014",
+    "canonical_name": "Companies Act 2014",
+    "description": "The consolidated Irish companies statute. Director duties codified in ss.223-225 (including the s.224 compliance statement for large companies and the s.225 directors' duties code). Interacts directly with SEAR — SEAR responsibilities at PCF level dovetail with the directors' compliance statement at board level.",
+    "metadata": {
+      "citation": "Act No. 38 of 2014",
+      "supervisor": "Corporate Enforcement Authority (CEA) / Companies Registration Office"
+    }
+  },
+  {
+    "ref_id": "REG-DPA-2018-IE",
+    "entity_type": "regulation",
+    "entity_id": "DPA-2018-IE",
+    "canonical_name": "Data Protection Act 2018",
+    "description": "Implements the GDPR + transposes the Law Enforcement Directive into Irish law. The DPC is among the most active EU data protection authorities — leading authority for many cross-border tech investigations under the one-stop-shop. Diverges from the UK GDPR (post-DUAA 2025) on automated decisions, legitimate interests, transfer regime.",
+    "metadata": {
+      "citation": "Act No. 7 of 2018",
+      "in_force": "2018-05-25",
+      "supervisor": "Data Protection Commission (DPC)"
+    }
+  },
+  {
+    "ref_id": "REG-CJCO-2018",
+    "entity_type": "regulation",
+    "entity_id": "CJCO-2018",
+    "canonical_name": "Criminal Justice (Corruption Offences) Act 2018",
+    "description": "Consolidates Irish anti-bribery + corruption law. Active + passive bribery of Irish and foreign public officials, private-sector bribery, trading in influence. Corporate liability under s.18 — body corporate liable for offences committed by directors, officers, employees and agents acting for its benefit, with a defence if the body took all reasonable steps to prevent.",
+    "metadata": {
+      "citation": "Act No. 9 of 2018",
+      "in_force": "2018-07-30"
+    }
+  },
+  {
+    "ref_id": "REG-MICA-IE",
+    "entity_type": "regulation",
+    "entity_id": "SI-268-2024",
+    "canonical_name": "European Union (Markets in Crypto-Assets) Regulations 2024",
+    "description": "Statutory Instrument 268/2024 — Irish implementation of MiCA. Designates CBI as competent authority; sets out cooperation, enforcement, transitional regime for VASPs migrating to CASP authorisation.",
+    "metadata": {
+      "citation": "S.I. No. 268 of 2024",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-CSRD-IE",
+    "entity_type": "regulation",
+    "entity_id": "SI-336-2024",
+    "canonical_name": "European Union (Corporate Sustainability Reporting) Regulations 2024",
+    "description": "S.I. 336/2024 — Irish transposition of CSRD. Applies to in-scope large companies + listed SMEs. Sustainability statement embedded in management report; ESRS application; assurance regime; IAASA-supervised reporting standards.",
+    "metadata": {
+      "citation": "S.I. No. 336 of 2024",
+      "supervisor": "IAASA / CBI for FIs"
+    }
+  },
+  {
+    "ref_id": "REG-CBI-ACTS",
+    "entity_type": "regulation",
+    "entity_id": "CBI-ACTS",
+    "canonical_name": "Central Bank Acts 1942-2018",
+    "description": "The composite statutory framework underpinning the Central Bank of Ireland's functions, powers and structure. The Central Bank Reform Act 2010 introduced Fitness & Probity; the Central Bank (Supervision and Enforcement) Act 2013 introduced the Administrative Sanctions Procedure; the IAF Act 2023 extended individual accountability.",
+    "metadata": {
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-UCITS-IE",
+    "entity_type": "regulation",
+    "entity_id": "CBI-UCITS-REGS",
+    "canonical_name": "CBI UCITS Regulations + UCITS Notices",
+    "description": "Irish UCITS rulebook implementing the EU UCITS Directive (2009/65/EC as amended). Dublin is the largest EU UCITS domicile by AUM in some product categories; CBI sets standards on ManCo governance, prospectus, investor protection, leverage, custody.",
+    "metadata": {
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "REG-AIF-IE",
+    "entity_type": "regulation",
+    "entity_id": "CBI-AIF-RULEBOOK",
+    "canonical_name": "CBI AIF Rulebook",
+    "description": "Irish AIF rulebook implementing the EU AIFMD (2011/61/EU as amended by AIFMD II / 2024/927, in force from 16 Apr 2026). Establishes the QIAIF and RIAIF regimes; CBI authorises AIFMs + AIFs; product-specific rules per fund type (Liquid Alternative, Real Estate, Loan-Originating).",
+    "metadata": {
+      "aifmd2_in_force": "2026-04-16",
+      "supervisor": "Central Bank of Ireland"
+    }
+  },
+  {
+    "ref_id": "AUTH-CBI",
+    "entity_type": "authority",
+    "entity_id": "CBI",
+    "canonical_name": "Central Bank of Ireland (CBI)",
+    "description": "Integrated central bank + financial-services supervisor. SSM banking participant (with ECB for significant institutions). Designed and supervises SEAR, F&P, CPC 2026; co-supervises EU directly applicable regulations (CRR, MiCA, DORA). Headquarters North Wall Quay, Dublin.",
+    "metadata": {
+      "type": "Integrated central bank + financial supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-DPC",
+    "entity_type": "authority",
+    "entity_id": "DPC-IE",
+    "canonical_name": "Data Protection Commission (DPC)",
+    "description": "Irish data protection authority. Lead supervisory authority for many large tech / fintech entities with EU HQ in Ireland under the GDPR one-stop-shop. Imposed €1.5bn+ in fines in the 2023-2025 period (record fines including Meta €1.2bn, TikTok €530m / €310m).",
+    "metadata": {
+      "type": "Data protection authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-CCPC",
+    "entity_type": "authority",
+    "entity_id": "CCPC-IE",
+    "canonical_name": "Competition and Consumer Protection Commission (CCPC)",
+    "description": "Irish competition + consumer protection authority. Owns merger control (Competition Act 2002 as amended in 2022), competition enforcement, consumer protection legislation including unfair commercial practices, and the digital services / DMA national enforcement role.",
+    "metadata": {
+      "type": "Competition + consumer regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-FSPO",
+    "entity_type": "authority",
+    "entity_id": "FSPO-IE",
+    "canonical_name": "Financial Services and Pensions Ombudsman (FSPO)",
+    "description": "Statutory dispute-resolution body for retail customers of financial services + occupational pension scheme members. Binding decisions on FSPs; published case-decision database growing in influence on CPC 2026 interpretation.",
+    "metadata": {
+      "type": "Ombudsman"
+    }
+  },
+  {
+    "ref_id": "AUTH-CEA",
+    "entity_type": "authority",
+    "entity_id": "CEA-IE",
+    "canonical_name": "Corporate Enforcement Authority (CEA)",
+    "description": "Statutory body (operational since July 2022, replacing the ODCE) responsible for prosecuting Companies Act offences, supervising directors' duties + insolvency obligations, and prosecuting fraudulent / reckless trading.",
+    "metadata": {
+      "type": "Corporate enforcement",
+      "predecessor": "Office of the Director of Corporate Enforcement (ODCE)"
+    }
+  },
+  {
+    "ref_id": "AUTH-IAASA",
+    "entity_type": "authority",
+    "entity_id": "IAASA-IE",
+    "canonical_name": "Irish Auditing and Accounting Supervisory Authority (IAASA)",
+    "description": "Audit + financial-reporting + sustainability-reporting supervisor. Supervises auditors of public-interest entities; reviews PIE annual reports + sustainability statements (CSRD/ESRS).",
+    "metadata": {
+      "type": "Audit + reporting supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-FIU-IE",
+    "entity_type": "authority",
+    "entity_id": "FIU-IRELAND",
+    "canonical_name": "Financial Intelligence Unit Ireland (FIU)",
+    "description": "Located within An Garda Síochána. Recipient of suspicious transaction reports under the CJMLA. Egmont Group member. Increasingly co-located with Revenue Investigations in cross-border AML investigations.",
+    "metadata": {
+      "type": "FIU",
+      "parent": "An Garda Síochána"
+    }
+  },
+  {
+    "ref_id": "AUTH-REVENUE",
+    "entity_type": "authority",
+    "entity_id": "REVENUE-IE",
+    "canonical_name": "Revenue Commissioners",
+    "description": "Irish tax + customs authority. AML co-recipient of STRs alongside the FIU. Designated competent authority for tax-related sanctions implementation + DAC implementation.",
+    "metadata": {
+      "type": "Tax + customs authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-DOJ-IE",
+    "entity_type": "authority",
+    "entity_id": "DOJ-IE",
+    "canonical_name": "Department of Justice",
+    "description": "Policy lead on Irish AML/CFT framework + financial sanctions. Co-author of the National Risk Assessment + transposition of EU AMLD/AMLR.",
+    "metadata": {
+      "type": "Government policy department"
+    }
+  },
+  {
+    "ref_id": "SEAR-PCF",
+    "entity_type": "concept",
+    "entity_id": "SEAR-PCF-LIST",
+    "canonical_name": "Pre-Approval Controlled Functions (PCFs)",
+    "description": "List of senior roles requiring CBI pre-approval before appointment. Includes Executive Directors (PCF-1), Chair (PCF-3), CEO (PCF-8), CFO (PCF-11), Head of Compliance (PCF-12), Head of Risk (PCF-14), MLRO (PCF-15), Independent Non-Executive Directors (PCF-2B, added 1 Jul 2025) and many others — 60+ total roles.",
+    "metadata": {
+      "roles_count_approx": "60",
+      "ined_added": "2025-07-01"
+    }
+  },
+  {
+    "ref_id": "SEAR-CF",
+    "entity_type": "concept",
+    "entity_id": "SEAR-CF-LIST",
+    "canonical_name": "Controlled Functions (CFs)",
+    "description": "Broader category of regulated functions in regulated financial service providers. CFs include CF-1 (giving advice on financial services to customers), CF-2 (arranging / offering / providing), CF-3 (controlled functions in respect of the entity), CF-4 (advisory), among others. All Common Conduct Standards apply to all CFs (and to PCFs by inclusion).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SEAR-INHERENT-RESP",
+    "entity_type": "concept",
+    "entity_id": "SEAR-INH-RESP",
+    "canonical_name": "Inherent Responsibilities",
+    "description": "Responsibilities flowing inherently from a PCF role — defined by CBI in the SEAR Regulations + Guidance (e.g. the Chair has inherent responsibility for leading the board's effectiveness; the CFO for financial information integrity).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SEAR-PRESCRIBED-RESP",
+    "entity_type": "concept",
+    "entity_id": "SEAR-PRES-RESP",
+    "canonical_name": "Prescribed Responsibilities",
+    "description": "Specific responsibilities prescribed by CBI in the SEAR Regulations that must be allocated to one or more PCF holders by the firm. Examples: responsibility for the firm's policies + procedures on risk-management, internal capital + liquidity adequacy, financial-crime systems + controls, business continuity, ICT/cyber resilience, regulatory reporting integrity, whistleblowing.",
+    "metadata": {
+      "prescribed_responsibilities_count": "20+"
+    }
+  },
+  {
+    "ref_id": "SEAR-OTHER-RESP",
+    "entity_type": "concept",
+    "entity_id": "SEAR-OTH-RESP",
+    "canonical_name": "Other (Firm-Specific) Responsibilities",
+    "description": "Material business + control responsibilities specific to the firm (not on the Prescribed list) that the firm must allocate to PCF holders in the Management Responsibilities Map. Captures the long tail of accountability after Prescribed + Inherent are assigned.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SEAR-MRM",
+    "entity_type": "duty",
+    "entity_id": "SEAR-MRM-OBL",
+    "canonical_name": "Management Responsibilities Map (MRM)",
+    "description": "Single document required by SEAR setting out the firm's overall management + governance arrangements: PCFs, holders, reporting lines, Inherent + Prescribed + Other Responsibilities, committee structure, key delegations. Maintained current; provided to CBI on request.",
+    "metadata": {
+      "kept_current_at_all_times": true
+    }
+  },
+  {
+    "ref_id": "SEAR-SOR",
+    "entity_type": "duty",
+    "entity_id": "SEAR-SOR-OBL",
+    "canonical_name": "Statement of Responsibilities (SoR)",
+    "description": "Per-PCF document setting out the individual's allocated responsibilities (Inherent + Prescribed + Other), reporting line, scope of role. Signed by the individual and acknowledged by the firm; updated on material change; provided to CBI within prescribed timeframes for new appointments + role changes.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SEAR-COMMON-CS",
+    "entity_type": "duty",
+    "entity_id": "SEAR-CCS",
+    "canonical_name": "Common Conduct Standards",
+    "description": "Apply to ALL persons performing a Controlled Function (PCFs + CFs) in regulated financial service providers. The standards: (1) act with honesty + integrity; (2) act with due skill, care + diligence; (3) cooperate with the CBI + relevant regulators; (4) act in customers' best interests + treat them fairly; (5) operate compliance with the standards of market conduct.",
+    "metadata": {
+      "in_force": "2023-12-29",
+      "standards_count": 5
+    }
+  },
+  {
+    "ref_id": "SEAR-ADDITIONAL-CS",
+    "entity_type": "duty",
+    "entity_id": "SEAR-ACS",
+    "canonical_name": "Additional Conduct Standards",
+    "description": "Apply only to PCFs (and certain CFs with senior management responsibility). The additional standards: (1) take reasonable steps to ensure the part of the business for which you are responsible is controlled effectively; (2) take reasonable steps to ensure it complies with regulatory requirements; (3) take reasonable steps to ensure delegation is appropriate + you oversee the discharge of delegated responsibility; (4) disclose appropriately information of which the CBI would reasonably expect notice.",
+    "metadata": {
+      "in_force": "2024-07-01",
+      "standards_count": 4
+    }
+  },
+  {
+    "ref_id": "SEAR-INED-SCOPE",
+    "entity_type": "concept",
+    "entity_id": "SEAR-INED-EXT",
+    "canonical_name": "(I)NED scope expansion (1 July 2025)",
+    "description": "From 1 July 2025 SEAR was extended to Independent Non-Executive Directors and Non-Executive Directors. (I)NEDs are subject to the Common + Additional Conduct Standards (where applicable to their role), to F&P pre-approval, and must have Statements of Responsibilities. The expansion required every in-scope firm to refresh its MRM + onboard SoRs for the (I)NED cohort.",
+    "metadata": {
+      "in_force": "2025-07-01"
+    }
+  },
+  {
+    "ref_id": "SEAR-DUTY-RESP",
+    "entity_type": "concept",
+    "entity_id": "SEAR-DOR",
+    "canonical_name": "Duty of Responsibility / reasonable-steps test",
+    "description": "Under IAF Act s.20A(2) (inserting Central Bank Reform Act 2010 s.21H), where an entity contravenes a regulatory obligation, a PCF holder allocated responsibility for that obligation is liable unless they prove they took such reasonable steps as a person in their position could be expected to take to avoid the contravention. Mirrors the UK SMCR Senior Manager Conduct Rule 4 / Duty of Responsibility.",
+    "metadata": {
+      "burden": "Reverse — PCF holder must prove reasonable steps"
+    }
+  },
+  {
+    "ref_id": "SEAR-BREACH-REPORT",
+    "entity_type": "duty",
+    "entity_id": "SEAR-BR-OBL",
+    "canonical_name": "Breach reporting under SEAR + F&P",
+    "description": "Firms must report to the CBI: (a) any disciplinary action taken against a PCF / CF for breach of Conduct Standards within prescribed timeframes; (b) issues that may affect a person's fitness + probity; (c) any departure of a PCF + the reasons. Coordinated with the wider 'notification' obligations under CBI Acts.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FP-PRE-APPROVAL",
+    "entity_type": "duty",
+    "entity_id": "FP-PRE",
+    "canonical_name": "F&P pre-approval (PCFs)",
+    "description": "An individual cannot be appointed to a PCF role without CBI prior approval. The firm submits a fitness + probity assessment (Individual Questionnaire) + supporting documents; the CBI reviews competence, experience, integrity, financial soundness; the firm cannot proceed with the appointment until approval is granted.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FP-ONGOING-CERT",
+    "entity_type": "duty",
+    "entity_id": "FP-ONGOING",
+    "canonical_name": "F&P ongoing certification (CFs + PCFs)",
+    "description": "The firm must satisfy itself on an ongoing basis (at minimum annually) that each PCF + CF holder remains fit and proper. Material changes (criminal proceedings, bankruptcy, regulatory action) must be reflected; annual certification by the firm.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FP-INVESTIGATION",
+    "entity_type": "concept",
+    "entity_id": "FP-INV",
+    "canonical_name": "CBI Fitness & Probity investigation + sanction powers",
+    "description": "Under the IAF Act 2023 the CBI's F&P powers are substantially expanded: prohibition notices (temporary + permanent), suspension during investigation, broader information-gathering, civil-administrative sanctions for individuals separate from firm sanctions (Administrative Sanctions Procedure).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CPC-STD-BUSINESS",
+    "entity_type": "duty",
+    "entity_id": "CPC-SFB",
+    "canonical_name": "CPC 2026 — Standards for Business",
+    "description": "New CPC 2026 chapter setting baseline conduct standards for regulated firms: act honestly, fairly + professionally in customers' best interests; communicate clearly; manage conflicts of interest; act with due skill, care + diligence. Functions as the firm-level analogue of the Common Conduct Standards.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CPC-CUST-INTERESTS",
+    "entity_type": "duty",
+    "entity_id": "CPC-SCI",
+    "canonical_name": "CPC 2026 — Securing Customer Interests",
+    "description": "Embeds an outcomes-focused approach: products + services designed for target market; price + value assessment; clear understanding + support. Closely mirrors the UK FCA Consumer Duty's four outcomes (products + price + understanding + support).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CPC-GOVERNANCE",
+    "entity_type": "duty",
+    "entity_id": "CPC-EGA",
+    "canonical_name": "CPC 2026 — Effective Governance Arrangements",
+    "description": "Mandates governance + oversight arrangements proportionate to the firm. Board / senior management responsible for embedding Customer Interests in strategy + operations; MI to monitor outcomes; review at least annually. Direct interaction with SEAR Prescribed Responsibilities.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CPC-FRAUDS",
+    "entity_type": "duty",
+    "entity_id": "CPC-FRD",
+    "canonical_name": "CPC 2026 — Frauds, Scams & Financial Abuse",
+    "description": "Firms must take reasonable steps to identify + mitigate fraud, scams + financial abuse affecting customers. Includes Authorised Push Payment fraud protections, victim support, mandatory reporting + responding to evolving threat typologies.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CPC-VULNERABLE",
+    "entity_type": "duty",
+    "entity_id": "CPC-VC-CIFD",
+    "canonical_name": "CPC 2026 — Vulnerable Customers + Consumers in Financial Difficulty",
+    "description": "Defines vulnerability indicators + obligations to identify + support vulnerable customers. Strengthened Mortgage Arrears Resolution Process (MARP) + Standard Financial Statement (SFS) for consumers in financial difficulty. Carry-over + extension of the existing CCMA + CPC 2012 protections.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AML-DESIGNATED-PERSONS",
+    "entity_type": "concept",
+    "entity_id": "CJMLA-S25-DP",
+    "canonical_name": "Designated persons (CJMLA s.25)",
+    "description": "Persons obligated under the CJMLA. Includes credit + financial institutions, accountants + auditors, tax advisers, legal professionals (when carrying out specified financial / property transactions), trust + company service providers, estate agents, dealers in goods over €10k cash, gambling operators, virtual-asset service providers (as transitioned to MiCA CASPs).",
+    "metadata": {
+      "citation": "CJMLA 2010 s.25"
+    }
+  },
+  {
+    "ref_id": "AML-EU-AMLR-PREP",
+    "entity_type": "concept",
+    "entity_id": "IE-AMLR-PREP",
+    "canonical_name": "EU AMLR transposition + readiness",
+    "description": "The EU AMLR (Reg 2024/1624) is directly applicable from 10 July 2027. Ireland is preparing the necessary transposition for AMLD6 (Dir 2024/1640) + the AMLA Authority cooperation framework. CBI consultations on transition began in 2025.",
+    "metadata": {
+      "amlr_applies_from": "2027-07-10"
+    }
+  },
+  {
+    "ref_id": "AML-STR",
+    "entity_type": "duty",
+    "entity_id": "CJMLA-STR-OBL",
+    "canonical_name": "Suspicious Transaction Reports (STRs)",
+    "description": "Designated persons must report to the FIU and Revenue as soon as practicable where they know, suspect or have reasonable grounds to suspect that a transaction is connected to money laundering or terrorist financing. Defence to ML offences for STR-filers acting in good faith.",
+    "metadata": {
+      "report_to": "FIU Ireland + Revenue"
+    }
+  },
+  {
+    "ref_id": "CA-S224",
+    "entity_type": "duty",
+    "entity_id": "CA-2014-S224",
+    "canonical_name": "Companies Act 2014 s.224 — Directors' compliance statement",
+    "description": "Annual compliance statement required of directors of certain large + PIE companies. Acknowledge responsibility for securing compliance with 'relevant obligations'; confirm a compliance policy statement + arrangements / structures have been put in place + reviewed during the year. Direct interplay with SEAR Prescribed Responsibilities — the same governance arrangements should evidence both.",
+    "metadata": {
+      "applies_to": "Companies with balance sheet > €12.5m + turnover > €25m + PIEs",
+      "citation": "CA 2014 s.224"
+    }
+  },
+  {
+    "ref_id": "CA-S225",
+    "entity_type": "duty",
+    "entity_id": "CA-2014-S225",
+    "canonical_name": "Companies Act 2014 s.225 — Statement of directors' duties",
+    "description": "Codifies the eight fiduciary + general duties of directors: act in good faith; act honestly + responsibly; act in accordance with the company's constitution; not use property / information / opportunities for personal benefit; not agree to restrict their independent judgment; avoid conflicts of interest; exercise care, skill + diligence; have regard to the interests of members.",
+    "metadata": {
+      "citation": "CA 2014 s.225"
+    }
+  },
+  {
+    "ref_id": "DPC-ENF",
+    "entity_type": "concept",
+    "entity_id": "DPC-ENFORCEMENT",
+    "canonical_name": "DPC enforcement profile",
+    "description": "Among the most active EU DPAs in cross-border enforcement under the GDPR one-stop-shop. Fines exceeding €1.5bn in 2023-2025 against Meta, TikTok, Microsoft / LinkedIn, others. Specific Irish carve-outs: more permissive legitimate-interests stance for credit referencing; specific public-body grounds under DPA 2018.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MICA-CASP-IE",
+    "entity_type": "concept",
+    "entity_id": "MICA-CASP-CBI",
+    "canonical_name": "CBI MiCA CASP authorisation",
+    "description": "CASPs operating in Ireland authorised by the CBI under SI 268/2024 + MiCA. Existing VASPs (registered with CBI for AML purposes) may use the transitional regime to migrate. Authorisation requires governance, capital, organisational, conduct + AML standards aligned with MiCA Titles V/VI.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUNDS-IE-HUB",
+    "entity_type": "concept",
+    "entity_id": "IE-FUNDS-HUB",
+    "canonical_name": "Ireland as EU funds hub",
+    "description": "Dublin is the #2 EU funds domicile by AUM (€4tn+ across UCITS + AIFs as of 2025). Every major global asset manager has an Irish ManCo + product range. Drives the cross-jurisdictional relevance of SEAR + CPC 2026 + AML to multinational compliance teams.",
+    "metadata": {
+      "aum_approx_tn_eur": 4
+    }
+  },
+  {
+    "ref_id": "CRA-2024",
+    "entity_type": "regulation",
+    "entity_id": "CRA-2024-IE",
+    "canonical_name": "Consumer Rights Act 2022",
+    "description": "Modern consolidation of Irish consumer-protection law (in force 29 Nov 2022). Goods + services + digital content + unfair terms + unsolicited contracts. Applies in parallel with CPC 2026 (the CPC focuses on regulated financial services; CRA on consumer law generally).",
+    "metadata": {
+      "citation": "Act No. 37 of 2022",
+      "supervisor": "CCPC + sectoral regulators"
+    }
+  }
+]

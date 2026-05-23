@@ -1,0 +1,125 @@
+{
+  "id": "ireland-cpc-2026",
+  "name": "Central Bank of Ireland Consumer Protection Code 2026",
+  "shortName": "CPC 2026",
+  "reference": "Central Bank (Supervision and Enforcement) Act 2013 (Section 48(1)) (Conduct of Business) Regulations 2025 + Central Bank Consumer Protection (Standards for Business) Regulations 2025",
+  "inForce": "2026-03-24",
+  "supersedes": "Consumer Protection Code 2012",
+  "supervisor": "Central Bank of Ireland",
+  "articleCount": 12,
+  "chapters": [
+    {"number": "1", "title": "General principles + scope", "articles": "Gen Princ"},
+    {"number": "2", "title": "Standards for Business", "articles": "SfB Regs"},
+    {"number": "3", "title": "Securing Customer Interests", "articles": "Conduct Regs Pt II"},
+    {"number": "4", "title": "Effective Governance Arrangements", "articles": "Conduct Regs Pt III"},
+    {"number": "5", "title": "Frauds, Scams + Financial Abuse", "articles": "Conduct Regs Pt IV"},
+    {"number": "6", "title": "Vulnerable Customers + Consumers in Financial Difficulty", "articles": "Conduct Regs Pt V + VI"},
+    {"number": "7", "title": "Sector-specific (Mortgages, Insurance, Cards + Payments)", "articles": "Conduct Regs Pt VII-IX"}
+  ],
+  "themes": [
+    "Standards for Business",
+    "Securing Customer Interests",
+    "Effective Governance",
+    "Frauds, scams + financial abuse",
+    "Vulnerability + financial difficulty",
+    "Sector-specific obligations"
+  ],
+  "articles": [
+    {
+      "id": "GP",
+      "title": "General Principles",
+      "chapter": "1",
+      "section": "Code Pt 1",
+      "theme": "Standards for Business",
+      "requirement": "12 General Principles applying to all regulated financial service providers (RFSPs): act honestly + fairly + in customers' best interests; act with due skill, care + diligence; manage conflicts of interest; communicate in a way that is clear, fair + not misleading; have effective governance + resources; identify + support vulnerable customers; safeguard customer assets; maintain appropriate records."
+    },
+    {
+      "id": "SfB.1",
+      "title": "Standards for Business — Acting in Customers' Best Interests",
+      "chapter": "2",
+      "section": "SfB Regs Reg 4",
+      "theme": "Standards for Business",
+      "requirement": "RFSPs must act in their customers' best interests. Functions as the firm-level analogue of the Common Conduct Standard 4. Embedded into product design, distribution, pricing, communications + ongoing relationship management."
+    },
+    {
+      "id": "SfB.2",
+      "title": "Standards for Business — Securing Customer Interests Outcomes",
+      "chapter": "2",
+      "section": "SfB Regs Reg 5",
+      "theme": "Securing Customer Interests",
+      "requirement": "RFSPs must take steps to deliver: (a) products + services that meet identified target-market needs; (b) fair value; (c) clear understanding; (d) appropriate support throughout the lifecycle. Outcomes-focused, mirroring (but not identical to) the UK Consumer Duty's four outcomes."
+    },
+    {
+      "id": "SCI.Target",
+      "title": "Securing Customer Interests — Target market + product oversight",
+      "chapter": "3",
+      "section": "Conduct Regs Pt II",
+      "theme": "Securing Customer Interests",
+      "requirement": "Manufacturers must define a target market for each product + ensure design meets its needs. Distributors must ensure distribution strategy is consistent with the manufacturer's target market. Product oversight + governance (POG) framework required. Periodic review of product outcomes."
+    },
+    {
+      "id": "SCI.Value",
+      "title": "Securing Customer Interests — Fair Value Assessment",
+      "chapter": "3",
+      "section": "Conduct Regs Pt II",
+      "theme": "Securing Customer Interests",
+      "requirement": "RFSPs must conduct a Fair Value Assessment: price paid is reasonable relative to the benefits the customer would reasonably expect. Documented; refreshed periodically; available for CBI inspection. Distributor remuneration / fees assessed for value impact."
+    },
+    {
+      "id": "SCI.Comms",
+      "title": "Securing Customer Interests — Clear Communications",
+      "chapter": "3",
+      "section": "Conduct Regs Pt II",
+      "theme": "Securing Customer Interests",
+      "requirement": "All communications clear, fair + not misleading. Tailored to the audience (retail, vulnerable, professional); pre-contract information disclosed in good time. Where complexity is high, key information document or equivalent + comprehension safeguards required."
+    },
+    {
+      "id": "EGA",
+      "title": "Effective Governance Arrangements",
+      "chapter": "4",
+      "section": "Conduct Regs Pt III",
+      "theme": "Effective Governance",
+      "requirement": "RFSPs maintain governance + oversight arrangements proportionate to size, complexity + risk: board + senior management responsibility for embedding Securing Customer Interests; MI + outcome monitoring; annual board review; clear allocation of accountability (interfaces with SEAR Prescribed Responsibilities)."
+    },
+    {
+      "id": "Frauds",
+      "title": "Frauds, Scams + Financial Abuse",
+      "chapter": "5",
+      "section": "Conduct Regs Pt IV",
+      "theme": "Frauds, scams + financial abuse",
+      "requirement": "RFSPs must take reasonable steps to identify + mitigate fraud, scams + financial abuse affecting customers. Includes: APP fraud + impersonation-scam controls; customer education; warning + intervention triggers at suspicious-transaction risk points; victim support + reimbursement consideration; recordkeeping; mandatory reporting; cooperation with industry / law-enforcement initiatives."
+    },
+    {
+      "id": "VC",
+      "title": "Vulnerable Customers",
+      "chapter": "6",
+      "section": "Conduct Regs Pt V",
+      "theme": "Vulnerability + financial difficulty",
+      "requirement": "Definition: a customer who, due to personal circumstances, is especially susceptible to detriment (ill health, life events, low capability, low financial resilience). RFSPs must identify, record + support vulnerable customers — adjustments to communications, products, processes; trained staff; specialised support channels; review + escalation triggers."
+    },
+    {
+      "id": "CIFD",
+      "title": "Consumers in Financial Difficulty",
+      "chapter": "6",
+      "section": "Conduct Regs Pt VI (+ MARP + SFS)",
+      "theme": "Vulnerability + financial difficulty",
+      "requirement": "Strengthened Mortgage Arrears Resolution Process (MARP) + Standard Financial Statement (SFS) for consumers in arrears or pre-arrears. Forbearance options assessment; affordability + sustainability tests; communication standards; protection from inappropriate enforcement action; signposting to MABS / advice services."
+    },
+    {
+      "id": "Mortgage",
+      "title": "Mortgages",
+      "chapter": "7",
+      "section": "Conduct Regs Pt VII",
+      "theme": "Sector-specific obligations",
+      "requirement": "Lifecycle requirements for mortgages: pre-contract information + the European Standardised Information Sheet; affordability + suitability assessments; switching support; arrears handling (MARP); buy-to-let carve-outs; carry-over of consumer protections under the CCMA + the Code of Conduct on Mortgage Arrears."
+    },
+    {
+      "id": "InsCards",
+      "title": "Insurance + Cards + Payments",
+      "chapter": "7",
+      "section": "Conduct Regs Pt VIII + IX",
+      "theme": "Sector-specific obligations",
+      "requirement": "Insurance — claims handling standards, product oversight, demands + needs assessment, conflicts of interest for intermediaries. Cards + Payments — PSD2/PSR-aligned authorisation + transparency requirements; APP-fraud protections incorporated."
+    }
+  ]
+}
