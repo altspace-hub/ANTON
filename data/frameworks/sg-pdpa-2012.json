@@ -1,0 +1,121 @@
+{
+  "id": "sg-pdpa-2012",
+  "name": "Personal Data Protection Act 2012 (PDPA) — Singapore",
+  "shortName": "PDPA SG",
+  "reference": "Personal Data Protection Act 2012",
+  "url": "https://www.pdpc.gov.sg/Overview-of-PDPA/The-Legislation/Personal-Data-Protection-Act",
+  "inForce": "2014-07-02",
+  "majorAmendmentsInForce": "2021-02-01",
+  "supervisor": "PDPC",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "1", "title": "Scope + key concepts", "articles": "Parts I-II"},
+    {"number": "2", "title": "Consent + notification + purpose", "articles": "Part IV"},
+    {"number": "3", "title": "Access + correction + transfer", "articles": "Parts V-VI"},
+    {"number": "4", "title": "Care of personal data (protection + retention + transfer limit)", "articles": "Part VI"},
+    {"number": "5", "title": "Mandatory data-breach notification (2020 amendments)", "articles": "Part VIB"},
+    {"number": "6", "title": "Do Not Call registry", "articles": "Part IX"},
+    {"number": "7", "title": "Enforcement + penalties", "articles": "Part X"},
+    {"number": "8", "title": "PDPC guidance + AI Model Governance Framework", "articles": "PDPC publications"}
+  ],
+  "themes": [
+    "Scope",
+    "Consent + purpose",
+    "Data subject rights",
+    "Care of data",
+    "Breach notification",
+    "Do Not Call",
+    "Enforcement",
+    "AI governance"
+  ],
+  "articles": [
+    {
+      "id": "S2",
+      "title": "Personal data + organisation definitions",
+      "chapter": "1",
+      "section": "Section 2",
+      "theme": "Scope",
+      "requirement": "Personal data = data about an individual who can be identified from that data + other accessible information. Organisation = any individual / company / association / body of persons in or outside Singapore that collects, uses, or discloses personal data. Sectoral carve-outs: business contact information (limited scope); publicly-available information (limited consent requirement); journalistic / artistic / literary purposes (limited scope)."
+    },
+    {
+      "id": "S13",
+      "title": "Consent + notification + purpose obligations",
+      "chapter": "2",
+      "section": "Sections 13-17 + 20",
+      "theme": "Consent + purpose",
+      "requirement": "Organisation must: obtain consent (express + deemed) before collection, use or disclosure of personal data; notify the data subject of the purposes; not exceed reasonable purposes; offer withdrawal of consent. Legitimate-interests exception + business-improvement exception + research exception added in 2020 amendments — narrow scope + documented assessment required."
+    },
+    {
+      "id": "S21",
+      "title": "Access + correction rights",
+      "chapter": "3",
+      "section": "Sections 21-22",
+      "theme": "Data subject rights",
+      "requirement": "Individual entitled to: access personal data about themselves + information on how it has been used / disclosed (within 30 days, with fee + redaction permitted in limited cases); correct any error / omission in personal data + receive correction confirmation. Refusal permitted in limited circumstances (third-party rights, manifest excess, security)."
+    },
+    {
+      "id": "S24",
+      "title": "Protection obligation",
+      "chapter": "4",
+      "section": "Section 24",
+      "theme": "Care of data",
+      "requirement": "Organisation must protect personal data in its possession or under its control by making reasonable security arrangements to prevent unauthorised access, collection, use, disclosure, copying, modification or disposal, or similar risks. Risk-based; the PDPC has issued guidance on security arrangements proportionate to data sensitivity + processing scale."
+    },
+    {
+      "id": "S25",
+      "title": "Retention limitation",
+      "chapter": "4",
+      "section": "Section 25",
+      "theme": "Care of data",
+      "requirement": "Organisation must cease to retain personal data + must anonymise or dispose of it as soon as it is reasonable to assume that the purpose for which the personal data was collected is no longer served by retention, and retention is no longer necessary for legal or business purposes. Specific retention obligations under other laws (e.g. AML 5-year) apply."
+    },
+    {
+      "id": "S26",
+      "title": "Transfer-limitation obligation",
+      "chapter": "4",
+      "section": "Section 26",
+      "theme": "Care of data",
+      "requirement": "Personal data must not be transferred to any country outside Singapore except in accordance with the PDPA. Conditions: (a) recipient is bound by legally enforceable obligations equivalent to PDPA (contracts, BCRs, certification schemes); (b) data subject consents to the specific transfer; (c) other specific exceptions (necessity for performance of contract, emergency, etc.)."
+    },
+    {
+      "id": "S26A",
+      "title": "Mandatory data-breach notification (2020 amendments)",
+      "chapter": "5",
+      "section": "Part VIB",
+      "theme": "Breach notification",
+      "requirement": "Organisation must notify PDPC + affected individuals where a data breach: (a) results in or is likely to result in significant harm to the affected individuals, OR (b) is of a significant scale (500+ individuals). Notification to PDPC as soon as practicable + in any case no later than 3 calendar days from determination. Notification to individuals where the breach is likely to result in significant harm — concurrent with PDPC notification + with remediation guidance."
+    },
+    {
+      "id": "S29",
+      "title": "Do Not Call registry",
+      "chapter": "6",
+      "section": "Part IX",
+      "theme": "Do Not Call",
+      "requirement": "Organisations sending specified marketing messages (voice calls, text messages, fax) to Singapore telephone numbers must check the Do Not Call registry before sending + must not send to registered numbers unless the recipient has provided clear + unambiguous consent. Voice + SMS + fax channels separately registrable."
+    },
+    {
+      "id": "S48J",
+      "title": "Financial penalties — 10% of turnover or S$1m",
+      "chapter": "7",
+      "section": "Section 48J + amendments",
+      "theme": "Enforcement",
+      "requirement": "PDPC may impose financial penalties up to: (a) for organisations with annual turnover in Singapore > S$10m: 10% of annual turnover in Singapore; (b) for smaller organisations: S$1 million. Substantially increased from the pre-2022 cap (S$1m flat). PDPC publishes decisions with company names + facts + remediation orders."
+    },
+    {
+      "id": "PDPC-AI",
+      "title": "PDPC AI Model Governance Framework (Jan 2024)",
+      "chapter": "8",
+      "section": "PDPC publications",
+      "theme": "AI governance",
+      "requirement": "Voluntary framework on responsible AI deployment. 4 key pillars: (1) internal governance structures + measures (org policies + accountability + training); (2) determining the level of human involvement in AI-augmented decision-making (in-the-loop / out-of-loop / on-the-loop); (3) operations management (data + model + risk management); (4) stakeholder interaction + communication (transparency + explanations + redress)."
+    },
+    {
+      "id": "PDPC-Children",
+      "title": "PDPC Children's Personal Data Guidelines (Mar 2024)",
+      "chapter": "8",
+      "section": "PDPC publications",
+      "theme": "AI governance",
+      "requirement": "Heightened expectations for organisations processing children's (< 18) personal data — particularly age verification + age-appropriate design; default privacy-protective settings for children's accounts; reduced reliance on automated decision-making affecting children; restricted personalised advertising to children; specific consent + parental-consent requirements for children under 13."
+    }
+  ]
+}

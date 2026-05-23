@@ -1,0 +1,533 @@
+[
+  {
+    "ref_id": "REG-MAS-N626",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-626",
+    "canonical_name": "MAS Notice 626 — AML/CFT Notice to Banks (revised 30 June 2025)",
+    "description": "MAS's primary AML/CFT notice for banks (issued under the Banking Act). Revised effective 30 June 2025 to: (a) introduce a mandatory proliferation-financing (PF) risk assessment dimension in the entity-wide risk-based approach + customer risk profile (aligning with FATF R.1 update); (b) streamline STR thresholds + content requirements; (c) update PEP treatment incl. Singapore Government PEPs; (d) clarify beneficial-ownership identification + verification expectations; (e) tighten training programme expectations.",
+    "metadata": {
+      "issued_by": "MAS",
+      "in_force_current": "2025-06-30",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-N824",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-824",
+    "canonical_name": "MAS Notice 824 — AML/CFT Notice to Approved Trustees",
+    "description": "Parallel AML/CFT notice for approved trustees under the Securities and Futures Act. Substantially aligned with MAS 626 in structure + content. Updated in tandem with the June 2025 MAS Notice 626 amendments.",
+    "metadata": {
+      "issued_by": "MAS",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-NSFA04",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-SFA04-N02",
+    "canonical_name": "MAS Notice SFA04-N02 — AML/CFT Notice to Capital Markets Intermediaries",
+    "description": "AML/CFT notice for CMIs (asset managers, fund managers, broker-dealers, advisors) under the SFA. Aligned with MAS 626; refreshed 30 June 2025 with the same PF / STR / PEP / BO updates as MAS 626.",
+    "metadata": {
+      "issued_by": "MAS",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-N314",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-314",
+    "canonical_name": "MAS Notice 314 — AML/CFT Notice to Direct Insurers",
+    "description": "AML/CFT notice for direct insurers (life sector primarily). Similar 2025 PF/STR/PEP refresh; sector-specific adaptations for insurance-specific risks (policy redemption, single-premium, surrender).",
+    "metadata": {
+      "issued_by": "MAS",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-PSN01",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-PSN01",
+    "canonical_name": "MAS Notice PSN01/PSN02 — AML/CFT Notice to Payment Service Providers",
+    "description": "AML/CFT notices for PSA-licensed payment institutions + Major Payment Institutions. Cover account-issuance, domestic + cross-border money transfer, merchant acquisition, e-money issuance, digital payment token services. Substantially aligned with MAS 626 + with the June 2025 refresh.",
+    "metadata": {
+      "issued_by": "MAS",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-FSM-N01",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-FSM-N01",
+    "canonical_name": "MAS Notice FSM-N01 — AML/CFT Notice to Variable Capital Companies",
+    "description": "AML/CFT notice for VCCs (Singapore's bespoke fund-vehicle structure). Allocates AML obligations to the VCC's eligible financial-institution administrator (typically a fund manager or fund administrator). Aligned with the broader MAS notice set.",
+    "metadata": {
+      "issued_by": "MAS",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-FSMA-2022",
+    "entity_type": "regulation",
+    "entity_id": "FSMA-2022-SG",
+    "canonical_name": "Financial Services and Markets Act 2022 (FSMA)",
+    "description": "Cross-sectoral supervisory + enforcement statute consolidating MAS's powers across the financial-services ecosystem. Includes: enhanced AML/CFT enforcement; PSA + SFA + BA interlocking provisions; technology-risk + operational-resilience; Part 9 Digital Token Service Provider framework (in force 30 June 2025); mediation framework; targeted financial-measures regime.",
+    "metadata": {
+      "in_force": "2024-04-28",
+      "dtsp_part9_in_force": "2025-06-30",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-FSMA-PART9-DTSP",
+    "entity_type": "regulation",
+    "entity_id": "FSMA-PART-9",
+    "canonical_name": "FSMA Part 9 — Digital Token Service Providers (DTSP)",
+    "description": "Closes the Singapore-domiciled outbound-only VASP loophole: any Singapore-incorporated person providing digital token services solely to persons outside Singapore now requires an MAS DTSP licence (previously fell outside both PSA + SFA scope). High approval bar — most affected firms had to either apply for licensing OR exit Singapore. Same AML/CFT + technology-risk + capital + conduct obligations as PSA-regulated DPT service providers.",
+    "metadata": {
+      "in_force": "2025-06-30",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-PSA-2019",
+    "entity_type": "regulation",
+    "entity_id": "PSA-2019",
+    "canonical_name": "Payment Services Act 2019 (PSA)",
+    "description": "Singapore's primary payment-services statute. Licensing for 7 payment activities incl. account-issuance, domestic + cross-border transfers, merchant acquisition, e-money, digital payment token (DPT) services, money-changing. Three licence tiers (Money-Changing, Standard Payment Institution, Major Payment Institution). April 2024 amendments expanded DPT user-protection requirements (segregation, custody, risk warnings).",
+    "metadata": {
+      "in_force": "2020-01-28",
+      "dpt_amendments_in_force": "2024-04-04",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-SFA",
+    "entity_type": "regulation",
+    "entity_id": "SFA-SG",
+    "canonical_name": "Securities and Futures Act (Cap 289)",
+    "description": "Singapore's foundational capital-markets statute. Capital-markets-product offerings, securities, futures, fund management, market conduct, prospectus regime. CMS licensing regime; AML/CFT notice (SFA04-N02) issued under it. Includes Part XII market-conduct regime + Part XIIIB civil-penalty enforcement.",
+    "metadata": {
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-BA-SG",
+    "entity_type": "regulation",
+    "entity_id": "BANKING-ACT-SG",
+    "canonical_name": "Banking Act (Cap 19)",
+    "description": "Singapore's banking statute. Licensing of commercial + merchant banks, Qualifying Full Banks, branches of foreign banks. Includes Basel III + MAS Notice 637 capital framework. AML/CFT Notice 626 issued under the Banking Act for banks.",
+    "metadata": {
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-INSURANCE-ACT-SG",
+    "entity_type": "regulation",
+    "entity_id": "INSURANCE-ACT-SG",
+    "canonical_name": "Insurance Act (Cap 142)",
+    "description": "Singapore's insurance statute. Licensing of direct insurers, reinsurers, captives, brokers; conduct of insurance business; insurance intermediary regulation. MAS Notice 314 issued under it for life-sector AML/CFT.",
+    "metadata": {
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-FAA-SG",
+    "entity_type": "regulation",
+    "entity_id": "FAA-SG",
+    "canonical_name": "Financial Advisers Act (Cap 110)",
+    "description": "Singapore's financial advisory statute. Licensing of financial advisers; product-recommendation + suitability framework; the Balanced Scorecard remuneration framework. MAS conducts coordinated supervision with SFA / Insurance Act for cross-cutting matters.",
+    "metadata": {
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-PDPA-SG",
+    "entity_type": "regulation",
+    "entity_id": "PDPA-SG-2012",
+    "canonical_name": "Personal Data Protection Act 2012 (PDPA)",
+    "description": "Singapore's data-protection statute. Substantially aligned with international norms (GDPR-equivalent in many respects). 2020 amendments introduced mandatory data-breach notification + financial penalties up to S$1m or 10% of annual turnover. PDPC AI Model Governance Framework (Jan 2024) + Children's Personal Data Guidelines (Mar 2024) clarify expectations.",
+    "metadata": {
+      "in_force": "2014-07-02",
+      "supervisor": "PDPC"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-TRM",
+    "entity_type": "regulation",
+    "entity_id": "MAS-TRM-2021",
+    "canonical_name": "MAS Technology Risk Management (TRM) Guidelines 2021",
+    "description": "Comprehensive technology-risk framework for MAS-regulated FIs. Covers technology-risk governance, IT asset management, system development, security controls, cybersecurity, IT incident management, cloud computing, IT third-party services. Aligned with international cyber frameworks (NIST CSF, ISO 27001) but with MAS-specific expectations.",
+    "metadata": {
+      "issued": "2021-01-18",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-BCM",
+    "entity_type": "regulation",
+    "entity_id": "MAS-BCM-2022",
+    "canonical_name": "MAS Business Continuity Management (BCM) Guidelines 2022",
+    "description": "Operational-resilience framework. Identifies critical business functions, sets recovery-time + recovery-point objectives, mandates impact tolerance + scenario testing. Significantly tightened post-2022 to reflect cyber + third-party + climate operational-resilience expectations.",
+    "metadata": {
+      "issued": "2022-06-06",
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-MAS-OUTSOURCING",
+    "entity_type": "regulation",
+    "entity_id": "MAS-OUT-2024",
+    "canonical_name": "MAS Outsourcing Guidelines (revised 2024)",
+    "description": "Third-party-risk management framework. Pre-contract due diligence, contractual minimums, ongoing monitoring, audit access, sub-outsourcing controls, exit-strategy planning. Notification + non-objection for material outsourcings. Updated 2024 to reflect cloud-specific + AI-vendor specific expectations.",
+    "metadata": {
+      "supervisor": "MAS"
+    }
+  },
+  {
+    "ref_id": "REG-VCC-2018",
+    "entity_type": "regulation",
+    "entity_id": "VCC-ACT-2018",
+    "canonical_name": "Variable Capital Companies Act 2018",
+    "description": "Establishes the VCC as a Singapore-bespoke corporate structure for collective investment schemes. Permits umbrella + sub-fund structures with ring-fenced liability; supports retail + accredited + institutional investor segments. Managed by an MAS-regulated CMS-holder. Captured by MAS Notice FSM-N01 for AML/CFT.",
+    "metadata": {
+      "in_force": "2020-01-14",
+      "supervisor": "MAS + ACRA"
+    }
+  },
+  {
+    "ref_id": "REG-WFA-2025",
+    "entity_type": "regulation",
+    "entity_id": "WFA-SG-2025",
+    "canonical_name": "Workplace Fairness Act 2025",
+    "description": "Statutory anti-discrimination framework codifying prior TAFEP guidelines. Prohibits workplace discrimination on protected characteristics (age, nationality, sex, marital status, pregnancy, race, religion, language, disability, mental health). Tribunal-based enforcement. In force 2025 with phased implementation through 2026.",
+    "metadata": {
+      "in_force": "2025-04-01",
+      "supervisor": "MOM + Workplace Fairness Tribunal"
+    }
+  },
+  {
+    "ref_id": "REG-SGX-SUST",
+    "entity_type": "regulation",
+    "entity_id": "SGX-SUST-REPORTING",
+    "canonical_name": "SGX Sustainability Reporting Rules + IFRS S1/S2 phased adoption",
+    "description": "Mainboard + Catalist listed companies must publish sustainability reports on a 'comply or explain' basis (covering material ESG factors, climate, governance). Phased adoption of IFRS S1 + S2 climate-related disclosures aligned with ISSB standards from FY2025 (large-cap issuers) through FY2027 (broader). Assurance regime phased in similarly.",
+    "metadata": {
+      "supervisor": "SGX + ACRA + MAS for FI listings"
+    }
+  },
+  {
+    "ref_id": "REG-CPIB-PCA",
+    "entity_type": "regulation",
+    "entity_id": "PCA-SG",
+    "canonical_name": "Prevention of Corruption Act + amendments",
+    "description": "Singapore's primary anti-corruption statute. Active + passive bribery of public servants + private-sector bribery; extraterritorial reach for Singapore-citizen / resident conduct. Penalties up to 7 years' imprisonment + significant fines. Investigated + prosecuted by the CPIB.",
+    "metadata": {
+      "supervisor": "CPIB",
+      "max_imprisonment_years": 7
+    }
+  },
+  {
+    "ref_id": "REG-CDSA",
+    "entity_type": "regulation",
+    "entity_id": "CDSA-SG",
+    "canonical_name": "Corruption, Drug Trafficking and Other Serious Crimes (Confiscation of Benefits) Act (CDSA)",
+    "description": "Singapore's underlying ML statute. Defines the predicate-offence framework + the ML offences (Sections 43-47); creates the statutory STR obligation (Section 39); tipping-off prohibition (Section 48). Operates with the MAS AML/CFT notices for licensed sector + with the AGD AML supervision for non-licensed designated persons.",
+    "metadata": {
+      "supervisor": "Singapore Police (CAD/STRO) + AGD for non-MAS sector"
+    }
+  },
+  {
+    "ref_id": "AUTH-MAS",
+    "entity_type": "authority",
+    "entity_id": "MAS",
+    "canonical_name": "Monetary Authority of Singapore (MAS)",
+    "description": "Singapore's integrated central bank + financial supervisor + insurance authority + payment systems regulator. Among the most respected APAC financial regulators; known for principles-based + outcomes-focused regulation + strong fintech / digital asset / sustainability orientation. Acts under the MAS Act + sector-specific statutes (Banking / Insurance / SFA / FAA / PSA / FSMA / VCC Act).",
+    "metadata": {
+      "type": "Integrated financial supervisor + central bank",
+      "seat": "Singapore"
+    }
+  },
+  {
+    "ref_id": "AUTH-STRO",
+    "entity_type": "authority",
+    "entity_id": "STRO",
+    "canonical_name": "Suspicious Transaction Reporting Office (STRO)",
+    "description": "Singapore's Financial Intelligence Unit, within the Singapore Police Force's Commercial Affairs Department (CAD). Receives + analyses STRs filed under CDSA + the MAS sector AML notices; disseminates intelligence to law enforcement + foreign FIUs (Egmont Group member).",
+    "metadata": {
+      "type": "FIU",
+      "parent": "Singapore Police Force — CAD"
+    }
+  },
+  {
+    "ref_id": "AUTH-PDPC",
+    "entity_type": "authority",
+    "entity_id": "PDPC-SG",
+    "canonical_name": "Personal Data Protection Commission (PDPC)",
+    "description": "Singapore's data-protection authority, within the Infocomm Media Development Authority (IMDA). Administers + enforces the PDPA; issues the AI Model Governance Framework + sector-specific guidelines; active enforcer with growing fine quantum since 2020 amendments.",
+    "metadata": {
+      "type": "Data protection authority",
+      "parent": "IMDA"
+    }
+  },
+  {
+    "ref_id": "AUTH-ACRA",
+    "entity_type": "authority",
+    "entity_id": "ACRA",
+    "canonical_name": "Accounting and Corporate Regulatory Authority (ACRA)",
+    "description": "Companies + corporate-services + accountancy + insolvency-practitioner registrar + regulator. Operates BizFile (companies registry). Maintains beneficial-ownership-information regime (the Register of Registrable Controllers — RORC); upcoming central UBO register reforms align with FATF R.24 expectations.",
+    "metadata": {
+      "type": "Companies registry + corporate regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-CPIB",
+    "entity_type": "authority",
+    "entity_id": "CPIB",
+    "canonical_name": "Corrupt Practices Investigation Bureau (CPIB)",
+    "description": "Singapore's anti-corruption agency, reporting to the Prime Minister's Office. Investigates + assists in prosecuting offences under the Prevention of Corruption Act + related statutes. Independent from MAS + Police; high-profile enforcer.",
+    "metadata": {
+      "type": "Anti-corruption agency",
+      "parent": "PMO"
+    }
+  },
+  {
+    "ref_id": "AUTH-CCCS",
+    "entity_type": "authority",
+    "entity_id": "CCCS",
+    "canonical_name": "Competition and Consumer Commission of Singapore (CCCS)",
+    "description": "Singapore's competition + consumer-protection authority. Antitrust enforcement, merger review (Competition Act 2004) + consumer protection (Consumer Protection (Fair Trading) Act, CPFTA).",
+    "metadata": {
+      "type": "Competition + consumer regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-IRAS",
+    "entity_type": "authority",
+    "entity_id": "IRAS",
+    "canonical_name": "Inland Revenue Authority of Singapore (IRAS)",
+    "description": "Singapore's tax authority. Administers Income Tax Act + GST + Stamp Duty + Property Tax + international tax cooperation (FATCA + CRS reporting). Designated AML supervisor for certain non-FI designated persons (e.g. precious-metals dealers).",
+    "metadata": {
+      "type": "Tax authority + AML supervisor (non-FI)"
+    }
+  },
+  {
+    "ref_id": "AUTH-AGD",
+    "entity_type": "authority",
+    "entity_id": "AGD-SG",
+    "canonical_name": "Accounting and Governance Development (AGD) — DNFBP supervisor",
+    "description": "Supervises certain Designated Non-Financial Business and Professions (DNFBPs) outside MAS scope — corporate service providers, certain professional services. Coordinates AML supervision with MAS + IRAS + Bar Council + ACRA.",
+    "metadata": {
+      "type": "DNFBP AML supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-MOM",
+    "entity_type": "authority",
+    "entity_id": "MOM-SG",
+    "canonical_name": "Ministry of Manpower (MOM) + Workplace Fairness Tribunal",
+    "description": "Labour + employment + workplace-fairness regulator. Administers Employment Act + the new Workplace Fairness Act 2025 + work-pass regimes for foreign employees. The Workplace Fairness Tribunal hears anti-discrimination claims under the WFA.",
+    "metadata": {
+      "type": "Labour regulator + tribunal"
+    }
+  },
+  {
+    "ref_id": "AUTH-MAS-AGC-SANC",
+    "entity_type": "authority",
+    "entity_id": "MAS-SANCTIONS-COORD",
+    "canonical_name": "MAS + AGC sanctions coordination",
+    "description": "MAS issues sanctions notices implementing UN + targeted financial measures into Singapore law; the Attorney-General's Chambers (AGC) handles policy. UN + targeted financial measures notices are published by MAS for FIs; non-FI persons subject to direct UN designations also bound.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-PF-RISK",
+    "entity_type": "duty",
+    "entity_id": "MAS626-PFRA",
+    "canonical_name": "MAS Notice 626 — Proliferation Financing risk assessment (NEW 2025)",
+    "description": "Mandatory PF risk assessment as a distinct dimension within the entity-wide ML/TF risk assessment + customer risk profile. Aligns with FATF R.1 update (Oct 2020) requiring PF risk to be assessed. Banks must identify, assess + understand PF risks arising from customers, geographies, products, transactions + delivery channels; calibrate controls accordingly. Effective 30 June 2025.",
+    "metadata": {
+      "in_force": "2025-06-30",
+      "fatf_alignment": "R.1 (PF)"
+    }
+  },
+  {
+    "ref_id": "MAS626-RBA",
+    "entity_type": "duty",
+    "entity_id": "MAS626-EWRA",
+    "canonical_name": "Entity-wide risk-based approach + risk assessment",
+    "description": "Bank to identify, assess, monitor + manage ML/TF/PF risks proportionate to its size, nature + complexity. Documented risk assessment covering customer, geographic, product/service/transaction, delivery-channel risk factors; refreshed at least annually + on material change; senior-management approved.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-CDD",
+    "entity_type": "duty",
+    "entity_id": "MAS626-CDD-OBL",
+    "canonical_name": "Customer due diligence (MAS Notice 626 Section 6)",
+    "description": "Standard CDD chain: identify + verify the customer using reliable, independent sources; identify the beneficial owner + take reasonable measures to verify (using the registers / corporate searches / external sources); understand the purpose + intended nature of the business relationship; conduct ongoing monitoring (transaction scrutiny + record refresh). Risk-based intensity; reliance on third-party CDD only under specified conditions.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-EDD",
+    "entity_type": "duty",
+    "entity_id": "MAS626-EDD-OBL",
+    "canonical_name": "Enhanced due diligence — higher-risk situations",
+    "description": "EDD required for higher-risk situations: foreign + domestic + IO PEPs; customers + transactions from FATF-listed high-risk jurisdictions; complex / unusual / large transactions without apparent economic purpose; correspondent-banking relationships; new technologies / products. Senior-management approval required; source-of-wealth + source-of-funds verification; enhanced ongoing monitoring.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-PEPS",
+    "entity_type": "duty",
+    "entity_id": "MAS626-PEP-OBL",
+    "canonical_name": "PEP obligations (incl. Singapore Government PEPs)",
+    "description": "Foreign PEPs always trigger heightened risk + EDD. Domestic PEPs + IO PEPs assessed on a risk-sensitive basis. 2025 refresh clarifies treatment of Singapore Government PEPs (those holding prominent public functions in Singapore — assessed on risk-sensitive basis, with PEPs from politically-aligned positions still typically requiring EDD). Family members + close associates within scope.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-SOW-SOF",
+    "entity_type": "duty",
+    "entity_id": "MAS626-SOWSOF",
+    "canonical_name": "Source of wealth / source of funds verification",
+    "description": "Required for higher-risk customers + relationships. SoW = overall economic activities that generated the customer's net worth; SoF = origin of the specific funds in the transaction. Documented; corroborated against independent evidence where possible; refreshed on material change.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-STR",
+    "entity_type": "duty",
+    "entity_id": "MAS626-STR-OBL",
+    "canonical_name": "Suspicious Transaction Reporting (STR) — 2025 streamlining",
+    "description": "Bank must promptly file STRs with STRO when it knows or has reasonable grounds to suspect that any property is connected to drug trafficking, serious crime (predicate offences per CDSA), terrorism financing, or proliferation financing. 2025 refresh streamlined: clearer trigger thresholds; structured STR content requirements; tipping-off prohibition under CDSA Section 48 + TSOFA Section 12. Quality + timeliness of STRs increasingly emphasised by MAS + STRO.",
+    "metadata": {
+      "report_to": "STRO"
+    }
+  },
+  {
+    "ref_id": "MAS626-SANCTIONS",
+    "entity_type": "duty",
+    "entity_id": "MAS626-SANC-OBL",
+    "canonical_name": "Sanctions screening + targeted financial measures",
+    "description": "Banks must implement sanctions-screening programs against UN + Singapore targeted financial measures + relevant designated lists. Particularly DPRK + Iran focus given strong Singapore enforcement signal. MAS publishes guidance + targeted-measures notices; AGC manages designations policy.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-POLICIES-GOVERNANCE",
+    "entity_type": "duty",
+    "entity_id": "MAS626-IP",
+    "canonical_name": "Internal policies, procedures + governance",
+    "description": "Documented written AML/CFT internal policies, procedures + controls; senior-management approved; reviewed at least annually + on material change. Designated AML compliance officer at senior management level + alternate compliance officer. Independent audit + compliance function review. Customer + transaction monitoring systems calibrated to the risk assessment.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-TRAINING",
+    "entity_type": "duty",
+    "entity_id": "MAS626-TR",
+    "canonical_name": "AML/CFT training programme",
+    "description": "All employees with AML/CFT-relevant responsibilities trained on: applicable laws + MAS notices + internal policies; current ML/TF/PF typologies + red flags; their role in the AML/CFT framework; how to escalate suspicion. Refresher training on regulatory + typology changes. Records retained; training effectiveness assessed (testing or scenario-based assessment).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS626-RECORD-RETENTION",
+    "entity_type": "duty",
+    "entity_id": "MAS626-RR",
+    "canonical_name": "Record retention — 5 years minimum",
+    "description": "CDD records + transaction records retained for at least 5 years after the end of the business relationship or the completion of the occasional transaction; longer retention required where ongoing investigation or supervisory request. Records sufficient to enable reconstruction of individual transactions + accessibility to STRO + MAS on request.",
+    "metadata": {
+      "retention_years": 5
+    }
+  },
+  {
+    "ref_id": "FSMA-PART9-SCOPE",
+    "entity_type": "concept",
+    "entity_id": "DTSP-SCOPE",
+    "canonical_name": "DTSP scope — Singapore-domiciled outbound-only services",
+    "description": "Singapore-incorporated person providing one or more digital token services (similar to PSA DPT services) solely to customers outside Singapore. Captures Singapore-domiciled entities that previously fell outside the PSA scope (which captures only services to Singapore customers) + the SFA (which doesn't typically cover DPT). Closes a deliberate regulatory-arbitrage opportunity. Same digital token service activities as PSA DPT (dealing, exchange, custody, transmission, advice).",
+    "metadata": {
+      "in_force": "2025-06-30"
+    }
+  },
+  {
+    "ref_id": "FSMA-PART9-LICENSING",
+    "entity_type": "duty",
+    "entity_id": "DTSP-LIC",
+    "canonical_name": "DTSP licensing — high approval bar",
+    "description": "MAS DTSP licence required for in-scope activities. Application requirements include: fit-and-proper directors + key officers + substantial shareholders; minimum capital; AML/CFT framework aligned with MAS notices; technology-risk management; conduct framework; safe-keeping + custody arrangements for customer assets. MAS approval bar deliberately narrow — many existing outbound-only entities chose to exit Singapore rather than apply.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "PSA-DPT-PROTECTION",
+    "entity_type": "duty",
+    "entity_id": "PSA-DPT-AMEND-2024",
+    "canonical_name": "PSA Digital Payment Token user-protection (April 2024 amendments)",
+    "description": "Expanded user-protection requirements for DPT service providers: customer-asset segregation (separation of customer DPT from own holdings); custody safeguards (Bahamas-FTX-style insolvency-remote arrangements); pre-contract risk disclosures (warning on volatility + loss); ban on offering retail credit for DPT purchase; prohibition on incentivising DPT trading (loyalty rewards, referral bonuses); marketing restrictions to retail audiences.",
+    "metadata": {
+      "in_force": "2024-04-04"
+    }
+  },
+  {
+    "ref_id": "PDPA-BREACH",
+    "entity_type": "duty",
+    "entity_id": "PDPA-BREACH-NOT",
+    "canonical_name": "PDPA mandatory breach notification (2020 amendments)",
+    "description": "Mandatory notification to PDPC + affected individuals for personal-data breaches that result (or are likely to result) in significant harm or affect 500+ individuals. Notification to PDPC as soon as practicable + no later than 3 calendar days; notification to individuals + remediation when significant harm reasonably likely. Penalties up to S$1m or 10% of annual turnover.",
+    "metadata": {
+      "in_force": "2021-02-01",
+      "notification_days": 3
+    }
+  },
+  {
+    "ref_id": "PDPC-AI-GOV",
+    "entity_type": "concept",
+    "entity_id": "PDPC-AI-FRAMEWORK",
+    "canonical_name": "PDPC AI Model Governance Framework (Jan 2024)",
+    "description": "Voluntary framework on responsible AI deployment: human-in-the-loop / out-of-loop / on-the-loop calibration; data + model governance; risk-based decision-making; transparency + explainability; accountability + audit. Aligned with PDPA + Singapore National AI Strategy 2.0. Implementation guidelines + sector-specific updates expected through 2026.",
+    "metadata": {
+      "issued": "2024-01-17"
+    }
+  },
+  {
+    "ref_id": "MAS-TRM-CYBER",
+    "entity_type": "duty",
+    "entity_id": "TRM-CYBER",
+    "canonical_name": "MAS TRM — cybersecurity framework",
+    "description": "Technology-risk governance: CISO function (where applicable); risk-management process; system development controls; access controls + MFA; cybersecurity (network + endpoint + application + threat-intelligence); IT-incident management + reporting to MAS; cloud-computing controls; IT-third-party management. Aligned with international cyber frameworks but with MAS-specific expectations (notification thresholds, root-cause + remediation reporting).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "MAS-BCM-RESILIENCE",
+    "entity_type": "duty",
+    "entity_id": "BCM-OBL",
+    "canonical_name": "BCM Guidelines — operational resilience",
+    "description": "Identify critical business functions + dependencies; set recovery-time + recovery-point objectives proportionate to criticality; define impact tolerance; conduct scenario testing including severe-but-plausible scenarios; integrate with cyber + third-party + climate-resilience considerations. Annual board attestation on BCM framework effectiveness expected.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "ACRA-RORC",
+    "entity_type": "concept",
+    "entity_id": "ACRA-RORC-BO",
+    "canonical_name": "ACRA Register of Registrable Controllers (beneficial ownership)",
+    "description": "Singapore's beneficial-ownership transparency regime. All Singapore-registered companies + LLPs maintain a Register of Registrable Controllers identifying beneficial owners (25% threshold + senior-managing-official fallback). Filings to ACRA where required + accessible to law-enforcement + MAS for AML purposes. Upcoming central UBO register reforms align with FATF R.24 expectations.",
+    "metadata": {
+      "supervisor": "ACRA"
+    }
+  },
+  {
+    "ref_id": "STRO-FILING",
+    "entity_type": "concept",
+    "entity_id": "STRO-FILING-WORKFLOW",
+    "canonical_name": "STRO filing workflow + STRONet",
+    "description": "STRs filed electronically via STRONet (the STRO secure portal); content + structured fields per STRO Guidelines. STRO disseminates intelligence to law-enforcement, MAS + foreign FIUs (Egmont Group). Quality + timeliness emphasised in MAS Enforcement Reports + STRO Annual Reports.",
+    "metadata": {
+      "filing_portal": "STRONet"
+    }
+  },
+  {
+    "ref_id": "SG-ENFORCEMENT-PATTERN",
+    "entity_type": "concept",
+    "entity_id": "MAS-ENF-PATTERN",
+    "canonical_name": "MAS enforcement pattern + Singapore AML cases",
+    "description": "Major Singapore AML cases since 2017 establish MAS's expectations: 1MDB-related enforcement (BSI + Falcon + Standard Chartered + Coutts + UBS + DBS — S$29.1m total fines across 8 banks); August 2023 S$3bn money-laundering case (10 foreign nationals convicted, MAS-supervised firms fined S$27.5m collectively in 2024 for related AML control gaps); ongoing DBS + UOB + others enforcement-action signals. MAS enforcement pattern + STRO output is the operational benchmark.",
+    "metadata": {
+      "1mdb_total_fines_sgd": "29100000",
+      "2023_3bn_case_fines_sgd": "27500000"
+    }
+  }
+]

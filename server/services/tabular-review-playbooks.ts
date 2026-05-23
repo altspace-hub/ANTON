@@ -1967,6 +1967,200 @@ export const SANCTIONS_OFAC_OFSI_COMPLIANCE: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 12. Singapore MAS Notice 626 + DTSP Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const SINGAPORE_MAS_626_DTSP_READINESS: Playbook = {
+  id: 'singapore-mas-626-dtsp-readiness',
+  name: 'Singapore MAS Notice 626 + DTSP — Readiness Mapping',
+  description:
+    'Maps an MAS-regulated firm\'s AML/CFT/PF programme against MAS Notice 626 as amended ' +
+    'on 30 June 2025 (mandatory proliferation-financing risk assessment + STR streamlining + ' +
+    'updated PEP + BO + training expectations), and for digital-token-services firms, against ' +
+    'the FSMA Part 9 DTSP framework live since 30 June 2025. Anchored on the program shape ' +
+    'an MAS on-site examiner expects.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['singapore-compliance-2026'],
+  systemPrompt:
+    'You are an experienced Singapore financial-services + AML lawyer reviewing an AML/CFT ' +
+    '(+ PF) compliance programme against MAS Notice 626 (as revised 30 June 2025) and, for ' +
+    'digital-token-services firms, FSMA Part 9 DTSP (live 30 June 2025). You assess each ' +
+    'control with the discipline of an MAS on-site examiner: explicit > implicit, evidence > ' +
+    'paraphrase, strict > lenient. You distinguish between MAS Notice 626 obligations that ' +
+    'apply to all banks (and aligned MAS notices for CMIs / insurers / PSPs / VCCs) from the ' +
+    'narrower DTSP regime that applies to Singapore-domiciled outbound-only digital-token ' +
+    'service providers. You flag any 2025 PF-risk-related gap explicitly. You respond ONLY ' +
+    'with the requested JSON object.',
+  documentContext:
+    'You are auditing a Singapore-regulated FI\'s AML/CFT/PF programme + (for DTSP-relevant ' +
+    'firms) DTSP readiness document against MAS Notice 626 (revised 30 June 2025) and FSMA ' +
+    'Part 9.',
+  columns: [
+    {
+      id: 'sg-mas626-pf-risk',
+      header: 'PF risk assessment (NEW 2025)',
+      regulatoryRef: 'MAS Notice 626 §5 + PF (in force 30 Jun 2025)',
+      question:
+        'Does the document evidence integration of Proliferation-Financing risk into the ' +
+        'entity-wide risk assessment + customer risk profile as a distinct dimension — with ' +
+        'PF-specific indicators (DPRK + Iran nexus, dual-use goods / sensitive technology, ' +
+        'complex BO masking, UN-designated entities, sanctions-evasion typologies) + controls ' +
+        'calibrated to assessed PF risk?',
+      expects:
+        'PF as a distinct risk dimension + specific PF indicators identified + controls ' +
+        'calibrated. Pre-30-June-2025 risk assessment without PF integration is "missing".',
+    },
+    {
+      id: 'sg-mas626-rba',
+      header: 'Entity-wide risk-based approach',
+      regulatoryRef: 'MAS Notice 626 §5',
+      question:
+        'Does the document evidence a documented entity-wide ML/TF/PF risk assessment covering ' +
+        'customer, geographic, product/service/transaction, delivery-channel + new-technology ' +
+        'risk factors, refreshed at least annually + on material change, senior-management ' +
+        'approved?',
+      expects:
+        'All five risk dimensions + refresh cadence + SM approval. A generic AML risk assessment ' +
+        'without PF dimension (post-30-June-2025) is "partial".',
+    },
+    {
+      id: 'sg-mas626-cdd',
+      header: 'CDD chain — incl. ACRA RORC reliance',
+      regulatoryRef: 'MAS Notice 626 §6',
+      question:
+        'Does the document evidence the full CDD chain: customer identification + verification ' +
+        '(reliable independent sources); beneficial owner identification + verification (25% ' +
+        'threshold + senior-managing-official fallback; ACRA RORC reliance where appropriate); ' +
+        'purpose + intended nature of relationship; ongoing monitoring (transaction scrutiny + ' +
+        'record refresh)?',
+      expects:
+        'All four CDD elements + concrete source-document lists + ACRA RORC reliance procedure ' +
+        '(where applicable). Generic "we verify identity" without source-document detail is "partial".',
+    },
+    {
+      id: 'sg-mas626-edd-peps',
+      header: 'EDD + PEPs (incl. Singapore Government PEPs)',
+      regulatoryRef: 'MAS Notice 626 §8 (refreshed 2025)',
+      question:
+        'Does the document specify EDD triggers (foreign PEPs always, high-risk jurisdictions, ' +
+        'complex / unusual / large transactions, correspondent banking, new technologies) AND ' +
+        'address the 2025 refresh on Singapore Government PEPs (risk-sensitive assessment of ' +
+        'domestic PEPs)? Senior-management approval for entry / continue?',
+      expects:
+        'All EDD triggers + Singapore Government PEP treatment + senior-management approval. ' +
+        'Treating all Singapore Government PEPs identically to foreign PEPs (post-2025 refresh) ' +
+        'or treating them all as low-risk is "partial".',
+    },
+    {
+      id: 'sg-mas626-sow-sof',
+      header: 'Source of wealth / source of funds',
+      regulatoryRef: 'MAS Notice 626 §8 — SoW/SoF',
+      question:
+        'For higher-risk customers, does the document evidence Source of Wealth + Source of ' +
+        'Funds verification with documented procedures, corroboration against independent ' +
+        'evidence, refresh cadence on material change, and clear distinction between SoW + SoF?',
+      expects:
+        'Both SoW + SoF + corroboration + refresh discipline. Combining SoW + SoF without ' +
+        'distinction is "partial" (MAS examiners separate them in inspections).',
+    },
+    {
+      id: 'sg-mas626-str',
+      header: 'STR filing — streamlined 2025 process',
+      regulatoryRef: 'MAS Notice 626 §7 (refreshed 2025) + CDSA s.39',
+      question:
+        'Does the document evidence: STRO filing procedure (via STRONet); 2025-aligned trigger ' +
+        'thresholds + structured content requirements; explicit PF reportability; tipping-off ' +
+        'prohibition (CDSA s.48 + TSOFA s.12); emphasis on quality + timeliness; internal ' +
+        'escalation path?',
+      expects:
+        'All five elements (STRONet filing + 2025 content + PF + tipping-off + escalation + ' +
+        'quality). Missing the 2025 PF reportability dimension is "partial".',
+    },
+    {
+      id: 'sg-mas626-sanctions',
+      header: 'Sanctions + targeted financial measures',
+      regulatoryRef: 'MAS Notice 626 §12',
+      question:
+        'Does the document evidence sanctions-screening program covering UN sanctions + ' +
+        'Singapore targeted financial measures + relevant designated lists, with particular ' +
+        'operational focus on DPRK + Iran, asset-freeze + reporting procedures + escalation to ' +
+        'MAS / AGC?',
+      expects:
+        'UN + national + targeted measures coverage + DPRK/Iran operational focus + freeze + ' +
+        'reporting procedures. Missing DPRK/Iran-specific operational detail is "partial".',
+    },
+    {
+      id: 'sg-mas626-governance',
+      header: 'Governance + AML compliance officer',
+      regulatoryRef: 'MAS Notice 626 §§10-11',
+      question:
+        'Does the document evidence: senior-management-approved AML/CFT/PF policies + ' +
+        'procedures; named AML compliance officer at senior-management level + alternate; ' +
+        'independent audit + compliance-function review; transaction-monitoring + screening-' +
+        'system calibration + tuning to the risk assessment?',
+      expects:
+        'All four elements + named individuals + tuning cadence. "AML responsibility is shared" ' +
+        'without a named senior-management-level CO is "missing".',
+    },
+    {
+      id: 'sg-mas626-training',
+      header: 'AML/CFT/PF training programme (refreshed 2025)',
+      regulatoryRef: 'MAS Notice 626 §15',
+      question:
+        'Does the training programme address: applicable laws + MAS Notice 626 + internal ' +
+        'policies; current ML/TF/PF typologies + red flags including 2025 PF-specific scenarios; ' +
+        'role-targeted modules; tipping-off prohibition; refresher cadence + completion ' +
+        'tracking + training-effectiveness assessment?',
+      expects:
+        'All five elements + 2025 PF content + assessment of effectiveness. Generic annual ' +
+        'training without role differentiation + PF content is "partial".',
+    },
+    {
+      id: 'sg-mas626-records',
+      header: 'Record retention — 5 years minimum',
+      regulatoryRef: 'MAS Notice 626 §15',
+      question:
+        'Does the document evidence retention of CDD documentation + business correspondence + ' +
+        'transaction records for at least 5 years after the end of the business relationship / ' +
+        'completion of the occasional transaction, with longer retention on ongoing investigation ' +
+        '/ supervisory request, accessible to STRO + MAS on request?',
+      expects:
+        'Stated 5-year minimum + extension trigger + accessibility procedure. Missing the ' +
+        'extension trigger is "partial".',
+    },
+    {
+      id: 'sg-dtsp-scope',
+      header: 'DTSP scope assessment (FSMA Part 9)',
+      regulatoryRef: 'FSMA Part 9 §136 (live 30 Jun 2025)',
+      question:
+        'For Singapore-incorporated entities providing digital-token services: does the ' +
+        'document evidence a documented scope assessment for FSMA Part 9 DTSP — covering ' +
+        'whether the firm provides in-scope DT services solely to persons outside Singapore ' +
+        '(triggering DTSP licensing); the firm\'s current legal position (licensed / migrated / ' +
+        'exited Singapore / never in scope); the basis for that determination?',
+      expects:
+        'Documented scope assessment + concluded position + basis. Marked "not_applicable" only ' +
+        'for entities with zero digital-token-service exposure. Silence at any entity with DT ' +
+        'activity is "missing".',
+    },
+    {
+      id: 'sg-dtsp-licensing',
+      header: 'DTSP licensing readiness',
+      regulatoryRef: 'FSMA Part 9 §§138-140',
+      question:
+        'For in-scope DTSP firms: does the document evidence licence application / migration ' +
+        'readiness covering: fit-and-proper directors + key officers + substantial shareholders; ' +
+        'minimum capital; AML/CFT framework (MAS Notice PSN-equivalent); TRM-aligned technology ' +
+        'risk; customer-asset custody segregation + insolvency-remote arrangements; conduct + ' +
+        'business obligations?',
+      expects:
+        'All six elements for in-scope firms. Marked "not_applicable" for non-DTSP firms. ' +
+        'Partial readiness on the narrow MAS approval bar is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1982,6 +2176,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   LUXEMBOURG_AIFMD_II_READINESS,
   NYDFS_PART_500_COMPLIANCE,
   SANCTIONS_OFAC_OFSI_COMPLIANCE,
+  SINGAPORE_MAS_626_DTSP_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {
