@@ -168,6 +168,7 @@ const OrchestrationDashboard = lazy(() => import('./pages/OrchestrationDashboard
 // FCP Interactive Modes
 const CounselsDesk = lazy(() => import('./pages/CounselsDesk'));
 const TabularReview = lazy(() => import('./pages/TabularReview'));
+const SharedTabularReview = lazy(() => import('./pages/SharedTabularReview'));
 const OrchestratorDashboard = lazy(() => import('./pages/OrchestratorDashboard'));
 const OrchestratorTrailViewer = lazy(() => import('./pages/OrchestratorTrailViewer'));
 const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
@@ -497,6 +498,9 @@ export default function App() {
 
         {/* Standalone public regulator view of an evidence pack — no nav chrome */}
         <Route path="/shared/pack/:token" element={<RegulatorSharedPackPage />} />
+
+        {/* Public Tabular Review share link — for external reviewers (no auth required) */}
+        <Route path="/shared/review/:token" element={<SharedTabularReview />} />
 
         {/* Password reset — public, standalone */}
         <Route path="/reset-password" element={<ResetPasswordPage />} />

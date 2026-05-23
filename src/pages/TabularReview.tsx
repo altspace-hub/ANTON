@@ -85,6 +85,55 @@ const STATUS_COLOURS: Record<string, { bg: string; fg: string; label: string }> 
   error:          { bg: '#FFEEEE', fg: '#9F2424', label: '⚠ error' },
 };
 
+interface CellFeedback {
+  verdict: 'correct' | 'false_positive' | 'false_negative' | 'partial' | 'unclear';
+  reviewerStatus?: 'covered' | 'partial' | 'missing' | 'not_applicable' | null;
+  note?: string | null;
+}
+
+interface CalibrationSummary {
+  overall: {
+    feedbackCount: number;
+    reviewerCount: number;
+    correctPct: number;
+    falsePositivePct: number;
+    falseNegativePct: number;
+    partialPct: number;
+    unclearPct: number;
+  };
+  perColumn: Array<{
+    columnId: string;
+    header: string;
+    feedbackCount: number;
+    correctPct: number;
+    falsePositivePct: number;
+    falseNegativePct: number;
+  }>;
+  perReviewer: Array<{
+    reviewerId: string;
+    reviewerName: string | null;
+    feedbackCount: number;
+    correctPct: number;
+  }>;
+}
+
+interface ShareSummary {
+  token: string;
+  created_at: string;
+  expires_at: string;
+  allow_feedback: boolean;
+  message: string | null;
+  revoked_at: string | null;
+}
+
+const VERDICT_LABELS: Record<CellFeedback['verdict'], { label: string; bg: string; fg: string }> = {
+  correct:         { label: '✓ Correct',          bg: '#E6F5EA', fg: '#1F7A3A' },
+  false_positive:  { label: '✗ False positive',   bg: '#FBE6E6', fg: '#9F2424' },
+  false_negative:  { label: '✗ False negative',   bg: '#FBE6E6', fg: '#9F2424' },
+  partial:         { label: '🟡 Partial / mixed', bg: '#FBF3DC', fg: '#8A6A12' },
+  unclear:         { label: '🤷 Unclear / N/A',   bg: '#F0F0F0', fg: '#666'    },
+};
+
 export default function TabularReview() {
   const [playbooks, setPlaybooks] = useState<PlaybookSummary[]>([]);
   const [selectedPlaybookId, setSelectedPlaybookId] = useState<string>('amlr-obligation-mapping');
@@ -98,6 +147,13 @@ export default function TabularReview() {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // ── Phase 1 customer-testing — feedback / calibration / share state ──
+  const [feedback, setFeedback] = useState<Map<string, CellFeedback>>(new Map());
+  const [calibration, setCalibration] = useState<CalibrationSummary | null>(null);
+  const [calibrationOpen, setCalibrationOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shares, setShares] = useState<ShareSummary[]>([]);
 
   const selectedPlaybook = useMemo(
     () => playbooks.find((p) => p.id === selectedPlaybookId),
@@ -142,6 +198,9 @@ export default function TabularReview() {
       if (data.run.status === 'done' || data.run.status === 'error') {
         setPhase(data.run.status === 'done' ? 'done' : 'error');
       }
+      // Pull any existing reviewer feedback + the active share-tokens.
+      // Calibration is recomputed server-side from the same feedback rows.
+      void loadFeedbackBundle(runId);
     })();
 
     // EventSource doesn't natively send auth headers — for solo-mode this
@@ -285,6 +344,110 @@ export default function TabularReview() {
     window.location.href = `/api/tabular-review/runs/${runId}/export.xlsx`;
   };
 
+  const downloadFeedbackXlsx = () => {
+    if (!runId) return;
+    window.location.href = `/api/tabular-review/runs/${runId}/feedback-export.xlsx`;
+  };
+
+  // ── Feedback / calibration / share helpers ─────────────────────────
+  const loadFeedbackBundle = async (id: string): Promise<void> => {
+    try {
+      const [fbRes, calRes, sharesRes] = await Promise.all([
+        fetch(`/api/tabular-review/runs/${id}/feedback`, { headers: getAuthHeader() }),
+        fetch(`/api/tabular-review/runs/${id}/calibration`, { headers: getAuthHeader() }),
+        fetch(`/api/tabular-review/runs/${id}/shares`, { headers: getAuthHeader() }),
+      ]);
+      if (fbRes.ok) {
+        const data = (await fbRes.json()) as {
+          feedback: Array<{
+            doc_id: string; column_id: string;
+            verdict: string; reviewer_status?: string | null; note?: string | null;
+            reviewer_id?: string;
+          }>;
+        };
+        const map = new Map<string, CellFeedback>();
+        // Keep the most recent feedback per cell (server orders by updated_at DESC).
+        // For internal reviewer view we just show this user's feedback if it exists,
+        // falling back to the most recent feedback otherwise (e.g. when shared).
+        for (const f of data.feedback) {
+          const k = `${f.doc_id}::${f.column_id}`;
+          if (!map.has(k)) {
+            map.set(k, {
+              verdict: f.verdict as CellFeedback['verdict'],
+              reviewerStatus: (f.reviewer_status ?? null) as CellFeedback['reviewerStatus'],
+              note: f.note ?? null,
+            });
+          }
+        }
+        setFeedback(map);
+      }
+      if (calRes.ok) {
+        const data = (await calRes.json()) as { calibration: CalibrationSummary };
+        setCalibration(data.calibration);
+      }
+      if (sharesRes.ok) {
+        const data = (await sharesRes.json()) as { shares: ShareSummary[] };
+        setShares(data.shares);
+      }
+    } catch { /* swallow — the workspace is still usable without feedback */ }
+  };
+
+  const saveFeedback = async (
+    docId: string, columnId: string,
+    fb: CellFeedback,
+  ): Promise<void> => {
+    if (!runId) return;
+    // Optimistic local update — the user sees the verdict immediately.
+    setFeedback((prev) => {
+      const next = new Map(prev);
+      next.set(`${docId}::${columnId}`, fb);
+      return next;
+    });
+    try {
+      await fetchWithAuth(
+        `/api/tabular-review/runs/${runId}/cells/${docId}/${columnId}/feedback`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            verdict: fb.verdict,
+            reviewerStatus: fb.reviewerStatus ?? null,
+            note: fb.note ?? null,
+          }),
+        },
+      );
+      // Refresh calibration after each save so the header agreement % stays current.
+      void loadFeedbackBundle(runId);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const createShare = async (
+    expiresInDays: number, allowFeedback: boolean, message: string,
+  ): Promise<void> => {
+    if (!runId) return;
+    try {
+      const r = await fetchWithAuth(`/api/tabular-review/runs/${runId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresInDays, allowFeedback, message }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error ?? `HTTP ${r.status}`);
+      void loadFeedbackBundle(runId);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const revokeShare = async (token: string): Promise<void> => {
+    if (!runId) return;
+    try {
+      await fetchWithAuth(`/api/tabular-review/runs/${runId}/share/${token}`, { method: 'DELETE' });
+      void loadFeedbackBundle(runId);
+    } catch { /* surface via shares list */ }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────
   const showGrid = phase === 'running' || phase === 'done' || phase === 'error';
 
@@ -302,12 +465,29 @@ export default function TabularReview() {
         </div>
         <div className="flex items-center gap-2">
           {phase === 'done' && (
-            <button
-              onClick={downloadXlsx}
-              className="px-3 py-1.5 text-sm rounded-md bg-[#0D7D6C] text-white hover:bg-[#06655A]"
-            >
-              Export to XLSX
-            </button>
+            <>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="px-3 py-1.5 text-sm rounded-md border border-[#D9D9CE] text-[#1C1A14] hover:bg-[#F4F4F0]"
+              >
+                Share for review
+              </button>
+              {calibration && calibration.overall.feedbackCount > 0 && (
+                <button
+                  onClick={downloadFeedbackXlsx}
+                  className="px-3 py-1.5 text-sm rounded-md border border-[#D9D9CE] text-[#1C1A14] hover:bg-[#F4F4F0]"
+                  title="Download reviewer feedback as XLSX"
+                >
+                  Feedback XLSX
+                </button>
+              )}
+              <button
+                onClick={downloadXlsx}
+                className="px-3 py-1.5 text-sm rounded-md bg-[#0D7D6C] text-white hover:bg-[#06655A]"
+              >
+                Export to XLSX
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -435,6 +615,20 @@ export default function TabularReview() {
             )}
             {phase === 'done' && <span className="text-[#1F7A3A]">complete</span>}
             {phase === 'error' && <span className="text-[#9F2424]">{errorMsg || 'errored'}</span>}
+            {calibration && calibration.overall.feedbackCount > 0 && (
+              <>
+                <span className="text-[#666]">·</span>
+                <button
+                  onClick={() => setCalibrationOpen(true)}
+                  className="text-[#0D7D6C] hover:underline font-medium"
+                >
+                  {Math.round(calibration.overall.correctPct * 100)}% reviewer agreement
+                  {' '}(n={calibration.overall.feedbackCount}
+                  {' '}from {calibration.overall.reviewerCount}
+                  {' '}reviewer{calibration.overall.reviewerCount !== 1 ? 's' : ''})
+                </button>
+              </>
+            )}
           </div>
 
           {/* Grid */}
@@ -544,10 +738,329 @@ export default function TabularReview() {
                   <div className="mt-1 text-[#9F2424] font-mono text-xs">{drawerCell.cell.error}</div>
                 </div>
               )}
+
+              {/* Reviewer feedback — only available on settled cells. */}
+              {drawerCell.cell.status !== 'pending' &&
+               drawerCell.cell.status !== 'running' && (
+                <FeedbackBlock
+                  current={
+                    feedback.get(
+                      `${snapshot?.documents.find((d) => d.file_name === drawerCell.docName)?.doc_id ?? ''}::${drawerCell.column.id}`,
+                    ) ?? null
+                  }
+                  onSave={(fb) => {
+                    const doc = snapshot?.documents.find((d) => d.file_name === drawerCell.docName);
+                    if (!doc) return;
+                    void saveFeedback(doc.doc_id, drawerCell.column.id, fb);
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Calibration modal — opened from the run-header agreement button */}
+      {calibrationOpen && calibration && (
+        <div
+          className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4"
+          onClick={() => setCalibrationOpen(false)}
+        >
+          <div
+            className="bg-white w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E5DC]">
+              <h3 className="font-semibold text-sm">Calibration</h3>
+              <button onClick={() => setCalibrationOpen(false)} className="text-[#666] hover:text-[#1C1A14]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <Stat label="Overall agreement" value={`${Math.round(calibration.overall.correctPct * 100)}%`} />
+                <Stat label="Total reviews" value={String(calibration.overall.feedbackCount)} />
+                <Stat label="Reviewers" value={String(calibration.overall.reviewerCount)} />
+                <Stat label="False negatives" value={`${Math.round(calibration.overall.falseNegativePct * 100)}%`} fg="#9F2424" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-[#666] mb-1">Per-column agreement</div>
+                <div className="border border-[#EBEBE2] rounded-md divide-y divide-[#EBEBE2]">
+                  {calibration.perColumn.map((c) => (
+                    <div key={c.columnId} className="flex items-center justify-between px-3 py-2">
+                      <div className="text-xs flex-1 truncate" title={c.header}>{c.header}</div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-[#666]">n={c.feedbackCount}</span>
+                        <span className={c.correctPct >= 0.8 ? 'text-[#1F7A3A]' : c.correctPct >= 0.6 ? 'text-[#8A6A12]' : 'text-[#9F2424]'}>
+                          {c.feedbackCount === 0 ? '—' : `${Math.round(c.correctPct * 100)}%`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {calibration.perReviewer.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-[#666] mb-1">Per reviewer</div>
+                  <div className="border border-[#EBEBE2] rounded-md divide-y divide-[#EBEBE2]">
+                    {calibration.perReviewer.map((r) => (
+                      <div key={r.reviewerId} className="flex items-center justify-between px-3 py-2 text-xs">
+                        <span>{r.reviewerName || r.reviewerId}</span>
+                        <span>{r.feedbackCount} reviews · {Math.round(r.correctPct * 100)}% agreement</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share modal — opened from the top header */}
+      {shareOpen && runId && (
+        <ShareModal
+          shares={shares}
+          baseUrl={typeof window !== 'undefined' ? window.location.origin : ''}
+          onCreate={async (days, allowFb, msg) => { await createShare(days, allowFb, msg); }}
+          onRevoke={(t) => { void revokeShare(t); }}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Sub-components — kept inline to keep the page self-contained
+// ───────────────────────────────────────────────────────────────────────
+
+function Stat({ label, value, fg }: { label: string; value: string; fg?: string }) {
+  return (
+    <div className="border border-[#EBEBE2] rounded-md p-3">
+      <div className="text-xs uppercase tracking-wide text-[#666]">{label}</div>
+      <div className="mt-1 text-lg font-semibold" style={{ color: fg ?? '#1C1A14' }}>{value}</div>
+    </div>
+  );
+}
+
+function FeedbackBlock({
+  current,
+  onSave,
+}: {
+  current: CellFeedback | null;
+  onSave: (fb: CellFeedback) => void;
+}) {
+  const [verdict, setVerdict] = useState<CellFeedback['verdict'] | null>(current?.verdict ?? null);
+  const [reviewerStatus, setReviewerStatus] = useState<CellFeedback['reviewerStatus']>(current?.reviewerStatus ?? null);
+  const [note, setNote] = useState<string>(current?.note ?? '');
+  const [saved, setSaved] = useState(false);
+
+  // Re-sync when the user navigates to a different cell drawer.
+  useEffect(() => {
+    setVerdict(current?.verdict ?? null);
+    setReviewerStatus(current?.reviewerStatus ?? null);
+    setNote(current?.note ?? '');
+    setSaved(false);
+  }, [current]);
+
+  const handleSave = () => {
+    if (!verdict) return;
+    onSave({ verdict, reviewerStatus, note: note.trim() || null });
+    setSaved(true);
+  };
+
+  const verdicts: CellFeedback['verdict'][] = ['correct', 'false_positive', 'false_negative', 'partial', 'unclear'];
+
+  return (
+    <div className="border-t border-[#EBEBE2] pt-4">
+      <div className="text-xs uppercase tracking-wide text-[#666] mb-2">Your review</div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {verdicts.map((v) => {
+          const colours = VERDICT_LABELS[v];
+          const active = verdict === v;
+          return (
+            <button
+              key={v}
+              onClick={() => { setVerdict(v); setSaved(false); }}
+              className={`px-2.5 py-1 text-xs rounded-md border ${active ? 'border-[#1C1A14] font-medium' : 'border-[#D9D9CE]'} hover:border-[#1C1A14]`}
+              style={{ backgroundColor: active ? colours.bg : 'transparent', color: active ? colours.fg : '#444' }}
+            >
+              {colours.label}
+            </button>
+          );
+        })}
+      </div>
+      {verdict && verdict !== 'correct' && verdict !== 'unclear' && (
+        <div className="mb-3">
+          <div className="text-xs uppercase tracking-wide text-[#666] mb-1">Right answer was…</div>
+          <select
+            className="w-full px-2 py-1.5 text-sm border border-[#D9D9CE] rounded-md bg-white"
+            value={reviewerStatus ?? ''}
+            onChange={(e) => { setReviewerStatus((e.target.value || null) as CellFeedback['reviewerStatus']); setSaved(false); }}
+          >
+            <option value="">(don&apos;t specify)</option>
+            <option value="covered">🟢 covered</option>
+            <option value="partial">🟡 partial</option>
+            <option value="missing">🔴 missing</option>
+            <option value="not_applicable">⚪ not applicable</option>
+          </select>
+        </div>
+      )}
+      <textarea
+        className="w-full px-2 py-1.5 text-sm border border-[#D9D9CE] rounded-md bg-white"
+        placeholder="Optional — why? (helps prompt iteration)"
+        rows={2}
+        value={note}
+        onChange={(e) => { setNote(e.target.value); setSaved(false); }}
+      />
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          onClick={handleSave}
+          disabled={!verdict}
+          className="px-3 py-1 text-xs rounded-md bg-[#0D7D6C] text-white hover:bg-[#06655A] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Save review
+        </button>
+        {saved && <span className="text-xs text-[#1F7A3A]">Saved ✓</span>}
+      </div>
+    </div>
+  );
+}
+
+function ShareModal({
+  shares,
+  baseUrl,
+  onCreate,
+  onRevoke,
+  onClose,
+}: {
+  shares: ShareSummary[];
+  baseUrl: string;
+  onCreate: (days: number, allowFeedback: boolean, message: string) => Promise<void>;
+  onRevoke: (token: string) => void;
+  onClose: () => void;
+}) {
+  const [days, setDays] = useState<number>(30);
+  const [allowFb, setAllowFb] = useState<boolean>(true);
+  const [message, setMessage] = useState<string>('');
+  const [creating, setCreating] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const active = shares.filter((s) => !s.revoked_at && new Date(s.expires_at).getTime() > Date.now());
+
+  const handleCreate = async () => {
+    setCreating(true);
+    await onCreate(days, allowFb, message.trim());
+    setCreating(false);
+    setMessage('');
+  };
+
+  const copyLink = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(`${baseUrl}/shared/review/${token}`);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    } catch { /* clipboard blocked */ }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E5DC]">
+          <h3 className="font-semibold text-sm">Share for review</h3>
+          <button onClick={onClose} className="text-[#666] hover:text-[#1C1A14]">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4 space-y-4 text-sm">
+          <p className="text-xs text-[#666]">
+            Generates a private link to this run. Anyone with the link sees the grid + drills
+            into cells; if &quot;allow feedback&quot; is on they can mark each cell ✓ correct /
+            ✗ false-positive / ✗ false-negative + leave a note. No ANTON account required.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs uppercase tracking-wide text-[#666] block mb-1">Expires in</label>
+              <select
+                className="w-full px-2 py-1.5 border border-[#D9D9CE] rounded-md bg-white"
+                value={days}
+                onChange={(e) => setDays(Number(e.target.value))}
+              >
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+                <option value={60}>60 days</option>
+                <option value={90}>90 days</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 mt-5">
+              <input
+                type="checkbox"
+                checked={allowFb}
+                onChange={(e) => setAllowFb(e.target.checked)}
+              />
+              <span className="text-xs">Allow feedback</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="text-xs uppercase tracking-wide text-[#666] block mb-1">Message to reviewer (optional)</label>
+            <textarea
+              className="w-full px-2 py-1.5 border border-[#D9D9CE] rounded-md bg-white"
+              rows={3}
+              placeholder="e.g. Sarah — would love your read on the AMLR risk-assessment column. 20 mins?"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="px-3 py-1.5 text-sm rounded-md bg-[#0D7D6C] text-white hover:bg-[#06655A] disabled:opacity-40"
+          >
+            {creating ? 'Creating…' : 'Create link'}
+          </button>
+
+          {active.length > 0 && (
+            <div className="pt-3 border-t border-[#EBEBE2]">
+              <div className="text-xs uppercase tracking-wide text-[#666] mb-2">Active links</div>
+              <div className="space-y-2">
+                {active.map((s) => (
+                  <div key={s.token} className="border border-[#EBEBE2] rounded-md p-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 truncate font-mono text-[10px] text-[#444]">
+                        {baseUrl}/shared/review/{s.token}
+                      </code>
+                      <button
+                        onClick={() => void copyLink(s.token)}
+                        className="px-2 py-0.5 border border-[#D9D9CE] rounded hover:bg-[#F4F4F0]"
+                      >
+                        {copiedToken === s.token ? 'Copied ✓' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => onRevoke(s.token)}
+                        className="px-2 py-0.5 border border-[#D9D9CE] rounded hover:bg-[#FBE6E6] text-[#9F2424]"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                    <div className="mt-1 text-[#666]">
+                      Expires {new Date(s.expires_at).toLocaleDateString()}
+                      {' · '}{s.allow_feedback ? 'feedback enabled' : 'read-only'}
+                      {s.message ? ` · "${s.message.slice(0, 40)}${s.message.length > 40 ? '…' : ''}"` : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
