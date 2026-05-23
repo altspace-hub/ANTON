@@ -1,0 +1,33 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "hongkong-compliance-2026",
+  "display_name": "Hong Kong Compliance 2026 — Stablecoins Ordinance, AMLO + VATP, SFO, PDPO",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Hong Kong's 2025-2026 regulatory wave: the Stablecoins Ordinance (Cap. 643) live 1 August 2025 — the world's only dedicated stablecoin statute outside MiCA; HKMA expected to issue first licences Q1 2026. Plus the AMLO (Cap. 615) framework with June 2023 amendments bringing VATPs under SFC Type 1 + Type 7 licensing; SFO (Cap. 571) capital-markets foundation; Banking Ordinance + Insurance Ordinance; PDPO (Cap. 486) data protection + 2021 doxxing amendments + pending mandatory breach notification reform; Prevention of Bribery Ordinance (Cap. 201); UN Sanctions Ordinance (Cap. 537); HKEX Listing Rules + ESG Reporting Guide (ISSB-aligned climate phased); HKMA Supervisory Policy Manual; SFC Code of Conduct + guidelines.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Hong Kong SAR",
+  "regulatory_area": "Multi-domain compliance + virtual assets + stablecoins",
+  "regulation_ids": [
+    "Stablecoins Ordinance (Cap. 643)",
+    "Anti-Money Laundering and Counter-Terrorist Financing Ordinance (Cap. 615)",
+    "AMLO Amendment Ordinance 2022 (VATP regime)",
+    "Securities and Futures Ordinance (Cap. 571)",
+    "Banking Ordinance (Cap. 155)",
+    "Insurance Ordinance (Cap. 41)",
+    "Personal Data (Privacy) Ordinance (Cap. 486)",
+    "Personal Data Privacy (Amendment) Ordinance 2021 (doxxing)",
+    "Prevention of Bribery Ordinance (Cap. 201)",
+    "United Nations Sanctions Ordinance (Cap. 537)",
+    "Companies Ordinance (Cap. 622)",
+    "Competition Ordinance (Cap. 619)",
+    "HKMA Supervisory Policy Manual (SPM)",
+    "HKMA Guideline on AML/CFT (LP/RA-1)",
+    "SFC Code of Conduct + Guidelines",
+    "HKEX Listing Rules + ESG Reporting Guide"
+  ],
+  "tier": 1,
+  "entity_count": 51,
+  "relationship_count": 81,
+  "alias_entry_count": 33
+}

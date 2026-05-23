@@ -1,0 +1,146 @@
+{
+  "id": "hk-stablecoins-ordinance-2025",
+  "name": "Stablecoins Ordinance (Cap. 643) — Hong Kong",
+  "shortName": "HK Stablecoins Ordinance",
+  "reference": "Cap. 643 (Stablecoins Ordinance) + HKMA Notices + Guideline on the Supervision of Licensed Stablecoin Issuers",
+  "url": "https://www.hkma.gov.hk/eng/key-functions/financial-stability/stablecoin-issuer-licensing-regime/",
+  "inForce": "2025-08-01",
+  "firstLicencesExpected": "2026-Q1",
+  "supervisor": "HKMA",
+  "articleCount": 14,
+  "chapters": [
+    {"number": "Scope", "title": "Scope + key definitions", "articles": "SO Part 1"},
+    {"number": "Licensing", "title": "Licensing requirement + criteria", "articles": "SO Part 2"},
+    {"number": "Reserves", "title": "Reserve assets + custody + redemption", "articles": "SO Part 3"},
+    {"number": "AML", "title": "AML/CFT integration", "articles": "SO Part 4 + AMLO"},
+    {"number": "Tech", "title": "Technology risk management", "articles": "SO Part 5 + HKMA SPM"},
+    {"number": "Conduct", "title": "Conduct + customer disclosure + marketing", "articles": "SO Part 6"},
+    {"number": "Wind-down", "title": "Recovery + resolution + wind-down", "articles": "SO Part 7"},
+    {"number": "Supervision", "title": "Supervision + enforcement", "articles": "SO Part 8"}
+  ],
+  "themes": [
+    "Scope",
+    "Licensing",
+    "Reserves + redemption",
+    "Customer asset segregation",
+    "AML/CFT alignment",
+    "Technology + cyber",
+    "Conduct + marketing",
+    "Recovery + wind-down",
+    "Supervision"
+  ],
+  "articles": [
+    {
+      "id": "SO.Scope",
+      "title": "Scope — fiat-backed stablecoins issued in Hong Kong",
+      "chapter": "Scope",
+      "section": "SO Part 1",
+      "theme": "Scope",
+      "requirement": "Captures: (a) issuance of a 'fiat-backed stablecoin' (a stablecoin that purports to maintain a stable value with reference to one or more specified fiat currencies); (b) where the stablecoin is issued in Hong Kong, OR where issuance is actively marketed to the Hong Kong public, OR where the stablecoin references the HK dollar regardless of issuer location. Distinct from non-fiat-backed digital assets (which fall under SFC VATP regime where applicable). Excludes: tokenised deposits issued by Authorised Institutions; e-money; certain centralised payment-instrument tokens already regulated under other frameworks."
+    },
+    {
+      "id": "SO.Licensing.Requirement",
+      "title": "Licensing requirement",
+      "chapter": "Licensing",
+      "section": "SO Part 2",
+      "theme": "Licensing",
+      "requirement": "No person may carry on a business of issuing a fiat-backed stablecoin in scope of the Ordinance unless granted a licence by HKMA. HKMA approval bar is deliberately narrow — informed by the March 2024 HKMA Stablecoin Issuer Sandbox pilot. First licences expected Q1 2026. Unlicensed issuance to the HK public is a criminal offence (imprisonment + fine)."
+    },
+    {
+      "id": "SO.Licensing.Criteria",
+      "title": "Licensing criteria — fit + proper + capital + governance",
+      "chapter": "Licensing",
+      "section": "SO Part 2",
+      "theme": "Licensing",
+      "requirement": "Applicant must satisfy: fit-and-proper criteria for directors + key officers + substantial shareholders; minimum capital (proportionate to scale + risk; HKMA-prescribed); Hong Kong incorporation OR HK branch with adequate governance + management presence; demonstrated business + technology + risk-management capability + sound business plan; AML/CFT framework aligned with AMLO + HKMA Guideline."
+    },
+    {
+      "id": "SO.Reserves.100pct",
+      "title": "100% reserve backing in high-quality liquid assets",
+      "chapter": "Reserves",
+      "section": "SO Part 3",
+      "theme": "Reserves + redemption",
+      "requirement": "Licensed issuer must maintain reserve assets equal to at least 100% of outstanding stablecoin value at all times. Eligible reserve assets: cash deposits with licensed banks; short-term sovereign debt of high-credit-quality jurisdictions; short-term supra debt; specified categories per HKMA Notice. Diversification requirements; daily valuation + reconciliation; restrictions on encumbrance + lending."
+    },
+    {
+      "id": "SO.Reserves.Custody",
+      "title": "Custody of reserve assets",
+      "chapter": "Reserves",
+      "section": "SO Part 3",
+      "theme": "Customer asset segregation",
+      "requirement": "Reserve assets held in segregated accounts with approved custodians (licensed banks or HKMA-approved custodians) + structured as insolvency-remote arrangements protecting stablecoin holders in the event of issuer insolvency. Trust + safekeeping documentation required; periodic independent assurance reports submitted to HKMA."
+    },
+    {
+      "id": "SO.Reserves.Redemption",
+      "title": "Redemption-at-par",
+      "chapter": "Reserves",
+      "section": "SO Part 3",
+      "theme": "Reserves + redemption",
+      "requirement": "Stablecoin holders entitled to redeem stablecoins at face value (par) in the underlying fiat currency. Redemption obligation enforceable; redemption process documented; redemption timing standards (T+1 or better for retail; T+0 for institutional where applicable). Restrictions on issuer-imposed redemption fees + delay + minimum-redemption-amount thresholds. Stress-tested redemption scenarios required as part of risk-management."
+    },
+    {
+      "id": "SO.AML.Integration",
+      "title": "AML/CFT integration with AMLO + HKMA Guideline",
+      "chapter": "AML",
+      "section": "SO Part 4 + AMLO + HKMA AML Guideline (LP/RA-1)",
+      "theme": "AML/CFT alignment",
+      "requirement": "Licensed issuer is a designated person under AMLO + subject to full AML/CFT obligations: entity-wide risk assessment (incl. PF); CDD (incl. for retail purchasers of stablecoins above thresholds) + EDD; PEPs; ongoing monitoring; suspicious-transaction reporting via STREAMS to JFIU; sanctions screening (UN under UNSO + applicable foreign sanctions for cross-border-relevance); tipping-off prohibition; record retention 5 years. Operational adaptations for blockchain-specific risks (mixer / blockchain-analytics integration, FATF Travel Rule for transfers)."
+    },
+    {
+      "id": "SO.Tech.HKMA-Aligned",
+      "title": "Technology risk management — HKMA SPM + CRAF aligned",
+      "chapter": "Tech",
+      "section": "SO Part 5 + HKMA SPM TM-G-1 + CRAF",
+      "theme": "Technology + cyber",
+      "requirement": "Robust technology-risk framework: technology-risk governance; secure development; cybersecurity (incl. wallet + key management; cold + hot wallet architecture; multi-party computation / HSM standards); IT-incident management + mandatory reporting to HKMA; cloud + IT third-party management; data centre + system availability; smart-contract security where applicable. Aligned with HKMA SPM Module TM-G-1 + the Cyber Resilience Assessment Framework (CRAF). Annual penetration testing + iCAST for systemically-significant issuers."
+    },
+    {
+      "id": "SO.Tech.PrivateKey",
+      "title": "Private key + wallet custody",
+      "chapter": "Tech",
+      "section": "SO Part 5",
+      "theme": "Technology + cyber",
+      "requirement": "Issuer-controlled private keys (for issuance / redemption / settlement on the underlying blockchain): multi-party computation (MPC) OR multi-signature OR hardware security module (HSM) controls; key-generation + key-storage + key-rotation procedures; restricted access with logging + alerting; geographically-distributed key shares for resilience; documented key-management policy reviewed by HKMA + independent assurance."
+    },
+    {
+      "id": "SO.Governance",
+      "title": "Governance + risk management + compliance officer",
+      "chapter": "Conduct",
+      "section": "SO Part 6 + HKMA SPM CG-1 + CG-3",
+      "theme": "Governance + risk management",
+      "requirement": "Board of directors with at least 2 independent non-executive directors (HK-resident requirement); senior management with relevant fitness + probity; risk-management + compliance + internal-audit functions (independent); compliance officer at senior management level; documented risk-management framework + risk appetite; periodic board oversight + reporting on stablecoin operations, reserve adequacy, AML/CFT, technology, conduct, customer outcomes."
+    },
+    {
+      "id": "SO.Conduct.Disclosure",
+      "title": "Customer disclosure + marketing",
+      "chapter": "Conduct",
+      "section": "SO Part 6",
+      "theme": "Conduct + marketing",
+      "requirement": "Pre-contract risk disclosures to customers: volatility / loss risk (where applicable); insolvency-risk + customer-asset protection mechanisms; redemption mechanics + timing; reserve composition + custody arrangements; dispute-resolution + complaint-handling framework. Fair-marketing rules: restrictions on retail-facing marketing for higher-risk stablecoin features; prohibition on misleading 'risk-free' or 'guaranteed redemption' representations; cross-border marketing scrutiny where issuer is outside HK but targeting HK public."
+    },
+    {
+      "id": "SO.Conduct.UnbackedProhibition",
+      "title": "Prohibition on issuing unbacked / algorithmic stablecoins",
+      "chapter": "Conduct",
+      "section": "SO Part 6 + HKMA policy",
+      "theme": "Conduct + marketing",
+      "requirement": "The Ordinance + HKMA implementation effectively prohibit issuance of unbacked stablecoins + algorithmic stablecoins in scope of the regime (post-Terra collapse policy). Only fiat-backed stablecoins with 100% high-quality liquid asset reserves can be licensed; non-fiat-backed digital assets fall outside the Ordinance + may be subject to SFC VATP regime where applicable."
+    },
+    {
+      "id": "SO.Recovery",
+      "title": "Recovery + resolution + wind-down planning",
+      "chapter": "Wind-down",
+      "section": "SO Part 7",
+      "theme": "Recovery + wind-down",
+      "requirement": "Licensed issuer must maintain: recovery plan addressing severe stress scenarios (mass redemption / 'run', custodian failure, reserve-asset write-down or impairment, technology failure or cyber incident, key-person departure); resolution + wind-down plan addressing orderly termination of stablecoin issuance with customer-asset protection (return of fiat to holders, transition arrangements, residual-claims process). Annual testing + board approval + submission to HKMA on prescribed cadence."
+    },
+    {
+      "id": "SO.Supervision.Enforcement",
+      "title": "Supervision + enforcement",
+      "chapter": "Supervision",
+      "section": "SO Part 8",
+      "theme": "Supervision",
+      "requirement": "HKMA supervisory powers: licence suspension or revocation; civil monetary penalties (substantial — proportionate to scale + severity, up to HK$10m or higher for the most serious failings); prohibition orders against individuals; remediation + restitution orders; criminal sanctions for unlicensed issuance (imprisonment + fine). Periodic + ad-hoc reporting (capital + reserves + reconciliation + cyber + AML metrics). HKMA on-site inspections + thematic reviews; coordination with SFC where issuer also engages in VATP activity."
+    }
+  ]
+}

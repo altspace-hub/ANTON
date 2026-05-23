@@ -1,0 +1,499 @@
+[
+  {
+    "ref_id": "REG-HK-SO-2025",
+    "entity_type": "regulation",
+    "entity_id": "STABLECOINS-ORD-HK",
+    "canonical_name": "Stablecoins Ordinance (Cap. 643)",
+    "description": "Hong Kong's dedicated stablecoin licensing + supervision statute. Live 1 August 2025. The world's only dedicated stablecoin statute outside the EU's MiCA. Establishes HKMA as the licensing authority; covers issuance of fiat-backed stablecoins offered to the public in Hong Kong. HKMA expected to issue first licences Q1 2026 following a narrow + deliberate evaluation process.",
+    "metadata": {
+      "citation": "Cap. 643",
+      "in_force": "2025-08-01",
+      "first_licences_expected": "2026-Q1",
+      "supervisor": "HKMA"
+    }
+  },
+  {
+    "ref_id": "REG-HK-AMLO",
+    "entity_type": "regulation",
+    "entity_id": "AMLO-HK",
+    "canonical_name": "Anti-Money Laundering and Counter-Terrorist Financing Ordinance (Cap. 615)",
+    "description": "Hong Kong's primary AML/CFT statute. Original in force 1 April 2012; substantially amended over time. 2022 Amendment Ordinance (in force 1 June 2023) brought Virtual Asset Service Providers under SFC supervision via Type 1 + Type 7 licensing. Schedule 2 sets out CDD + record-keeping requirements applying to FIs + DNFBPs + VASPs.",
+    "metadata": {
+      "citation": "Cap. 615",
+      "original_in_force": "2012-04-01",
+      "vatp_amendments_in_force": "2023-06-01",
+      "supervisor": "HKMA + SFC + IA + Customs (per scope)"
+    }
+  },
+  {
+    "ref_id": "REG-HK-AMLO-VATP-2022",
+    "entity_type": "regulation",
+    "entity_id": "AMLO-VATP-AMENDMENT",
+    "canonical_name": "AMLO Amendment Ordinance 2022 — Virtual Asset Service Provider regime",
+    "description": "Brought VASPs (centralised virtual-asset trading platforms) under SFC supervision via new Schedule 3B. Licensing required for any person carrying on a business of providing a virtual-asset service (operating a VATP) in Hong Kong or actively marketing to Hong Kong. Distinct from the SFO Type 1 (dealing in securities) + Type 7 (automated trading services) licensing that captures security-token + crypto-trading-platform activities.",
+    "metadata": {
+      "in_force": "2023-06-01",
+      "supervisor": "SFC"
+    }
+  },
+  {
+    "ref_id": "REG-HK-SFO",
+    "entity_type": "regulation",
+    "entity_id": "SFO-HK",
+    "canonical_name": "Securities and Futures Ordinance (Cap. 571)",
+    "description": "Hong Kong's foundational securities + futures statute. Captures: securities trading (Type 1), futures trading (Type 2), leveraged FX (Type 3), advising on securities (Type 4), advising on futures (Type 5), advising on corporate finance (Type 6), automated trading services (Type 7 — captures crypto-trading platforms dealing in security tokens + certain VATPs), securities margin financing (Type 8), asset management (Type 9), credit-rating services (Type 10), VASP (Type VA via 2022 amendments). SFC is the supervisor.",
+    "metadata": {
+      "citation": "Cap. 571",
+      "supervisor": "SFC"
+    }
+  },
+  {
+    "ref_id": "REG-HK-BANKING-ORD",
+    "entity_type": "regulation",
+    "entity_id": "BANKING-ORD-HK",
+    "canonical_name": "Banking Ordinance (Cap. 155)",
+    "description": "Hong Kong's banking statute. Authorisation regime for Authorised Institutions: licensed banks, restricted-licence banks, deposit-taking companies. Foundational HKMA statute; integrated with Basel III implementation via HKMA SPM Capital Requirements modules.",
+    "metadata": {
+      "citation": "Cap. 155",
+      "supervisor": "HKMA"
+    }
+  },
+  {
+    "ref_id": "REG-HK-INSURANCE-ORD",
+    "entity_type": "regulation",
+    "entity_id": "INSURANCE-ORD-HK",
+    "canonical_name": "Insurance Ordinance (Cap. 41)",
+    "description": "Hong Kong's insurance statute. Authorisation + supervision of insurers, intermediaries, brokers, agents. IA is the supervisor (became independent statutory body in 2017 — previously the Insurance Authority sat within government).",
+    "metadata": {
+      "citation": "Cap. 41",
+      "supervisor": "IA"
+    }
+  },
+  {
+    "ref_id": "REG-HK-PDPO",
+    "entity_type": "regulation",
+    "entity_id": "PDPO-HK",
+    "canonical_name": "Personal Data (Privacy) Ordinance (Cap. 486)",
+    "description": "Hong Kong's data-protection statute. In force 1995; substantially amended in 2012 + 2021. 2021 doxxing amendments created criminal offences for disclosure of personal data without consent. Pending reforms (under government study since 2024): mandatory breach notification, regulation of data processors, administrative fines, cross-border transfer regime activation.",
+    "metadata": {
+      "citation": "Cap. 486",
+      "original_in_force": "1995-12-20",
+      "doxxing_amendments_in_force": "2021-10-08",
+      "supervisor": "PCPD"
+    }
+  },
+  {
+    "ref_id": "REG-HK-PDPO-DOXXING-2021",
+    "entity_type": "regulation",
+    "entity_id": "PDPO-DOXXING-AMD",
+    "canonical_name": "Personal Data Privacy (Amendment) Ordinance 2021 — doxxing offences",
+    "description": "Adds new sections 64(3A)–(3D) to PDPO creating criminal offences for: (a) disclosing personal data of a data subject without consent + with intent to cause specified harm; (b) similar disclosure with reckless intent. Penalties up to HK$1m + 5 years' imprisonment. PCPD given criminal investigation + summons + cease-and-desist powers.",
+    "metadata": {
+      "in_force": "2021-10-08",
+      "supervisor": "PCPD"
+    }
+  },
+  {
+    "ref_id": "REG-HK-POBO",
+    "entity_type": "regulation",
+    "entity_id": "POBO-HK",
+    "canonical_name": "Prevention of Bribery Ordinance (Cap. 201)",
+    "description": "Hong Kong's anti-corruption statute. Active + passive bribery of public officials + private-sector employees. Sections 4 (bribery), 9 (corrupt transactions with agents). Extraterritorial reach: applies to Hong Kong public servants regardless of where the act occurs. Investigated + prosecuted by the ICAC.",
+    "metadata": {
+      "citation": "Cap. 201",
+      "supervisor": "ICAC + Department of Justice"
+    }
+  },
+  {
+    "ref_id": "REG-HK-UNSO",
+    "entity_type": "regulation",
+    "entity_id": "UNSO-HK",
+    "canonical_name": "United Nations Sanctions Ordinance (Cap. 537)",
+    "description": "Hong Kong's UN sanctions implementation statute. Empowers the Chief Executive in Council to make regulations to implement UN Security Council sanctions decisions. Per-country / per-regime regulations made under the UNSO. Hong Kong does NOT implement autonomous sanctions (no equivalent of OFAC + OFSI); only UN-mandated measures.",
+    "metadata": {
+      "citation": "Cap. 537",
+      "supervisor": "HKMA (financial measures) + Customs (trade measures)"
+    }
+  },
+  {
+    "ref_id": "REG-HK-COMPANIES-ORD",
+    "entity_type": "regulation",
+    "entity_id": "COMPANIES-ORD-HK",
+    "canonical_name": "Companies Ordinance (Cap. 622)",
+    "description": "Hong Kong's companies statute. Director duties, financial reporting, corporate governance, takeovers + restructuring. Significant Controllers Register (SCR) regime for beneficial-ownership transparency at company-level — accessible to specified authorities for AML purposes; not publicly searchable.",
+    "metadata": {
+      "citation": "Cap. 622",
+      "supervisor": "Companies Registry"
+    }
+  },
+  {
+    "ref_id": "REG-HK-COMPETITION-ORD",
+    "entity_type": "regulation",
+    "entity_id": "COMP-ORD-HK",
+    "canonical_name": "Competition Ordinance (Cap. 619)",
+    "description": "Hong Kong's competition statute. First Conduct Rule (anti-competitive agreements + concerted practices); Second Conduct Rule (abuse of substantial market power); Merger Rule (telecoms only). Competition Commission investigates; Competition Tribunal adjudicates.",
+    "metadata": {
+      "citation": "Cap. 619",
+      "supervisor": "Competition Commission"
+    }
+  },
+  {
+    "ref_id": "REG-HKMA-SPM",
+    "entity_type": "regulation",
+    "entity_id": "HKMA-SPM",
+    "canonical_name": "HKMA Supervisory Policy Manual (SPM)",
+    "description": "Comprehensive HKMA supervisory framework for Authorised Institutions. Modules: CG-1 corporate governance, CG-3 board effectiveness, OR-1 operational risk management, OR-2 technology risk management, TM-G-1 supervision of technology risk, IC-G-1 internal controls, LM-1 liquidity risk, CR-G-9 sound credit risk, AML-CFT module, SA-1 risk-based supervision. Periodically updated; aligned with international standards but with HK-specific expectations.",
+    "metadata": {
+      "supervisor": "HKMA"
+    }
+  },
+  {
+    "ref_id": "REG-HKMA-AML-GUIDELINE",
+    "entity_type": "regulation",
+    "entity_id": "HKMA-AML-GUIDE",
+    "canonical_name": "HKMA Guideline on AML/CFT (LP/RA-1)",
+    "description": "HKMA's principal AML/CFT guideline for Authorised Institutions. Comprehensive operational guidance on: risk-based approach, CDD + EDD + PEPs, ongoing monitoring, suspicious-transaction reporting, sanctions screening, internal controls, training, record-keeping. Operationalises AMLO obligations for the banking sector.",
+    "metadata": {
+      "supervisor": "HKMA"
+    }
+  },
+  {
+    "ref_id": "REG-SFC-CODE-OF-CONDUCT",
+    "entity_type": "regulation",
+    "entity_id": "SFC-CODE",
+    "canonical_name": "SFC Code of Conduct for Persons Licensed by or Registered with the SFC",
+    "description": "Foundational SFC code: general principles (honesty + fairness + diligence + capabilities + information about clients + information for clients + conflicts + compliance with laws + client assets + responsibility of senior management). Supplemented by detailed Guidelines on specific topics (AML, VATP, asset management, fund management, custody, technology risk, etc.).",
+    "metadata": {
+      "supervisor": "SFC"
+    }
+  },
+  {
+    "ref_id": "REG-HKEX-LISTING",
+    "entity_type": "regulation",
+    "entity_id": "HKEX-LISTING-RULES",
+    "canonical_name": "HKEX Listing Rules + ESG Reporting Guide",
+    "description": "Listing rules + governance + disclosure obligations for HKEX-listed companies. ESG Reporting Guide (Appendix 27) mandates annual ESG reporting on a comply-or-explain basis. ISSB-aligned climate-related disclosures phased from FY 2025 (large-cap issuers) through FY 2027 (broader scope). SFC + HKEX co-supervise compliance.",
+    "metadata": {
+      "supervisor": "HKEX + SFC"
+    }
+  },
+  {
+    "ref_id": "AUTH-HKMA",
+    "entity_type": "authority",
+    "entity_id": "HKMA",
+    "canonical_name": "Hong Kong Monetary Authority (HKMA)",
+    "description": "Hong Kong's de facto central bank + integrated banking + payment + monetary supervisor + (since 1 August 2025) the stablecoin-issuer licensing authority. Supervises Authorised Institutions (banks, restricted-licence banks, deposit-taking companies); operates the linked exchange rate system; administers UN financial sanctions via the UNSO; implements HK's BIS Basel III. Significant HK supervisory authority.",
+    "metadata": {
+      "type": "Central bank + integrated supervisor",
+      "seat": "Hong Kong"
+    }
+  },
+  {
+    "ref_id": "AUTH-SFC",
+    "entity_type": "authority",
+    "entity_id": "SFC-HK",
+    "canonical_name": "Securities and Futures Commission (SFC)",
+    "description": "Hong Kong's integrated securities + futures + asset-management supervisor. Licenses + supervises Type 1-12 regulated activities + (since 2023) VATP regime. Active enforcer; comprehensive Code of Conduct + Guidelines + Circulars regime. Operates under common-law jurisdiction with the SFC Tribunal + Hong Kong courts.",
+    "metadata": {
+      "type": "Securities + asset-management supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-IA",
+    "entity_type": "authority",
+    "entity_id": "IA-HK",
+    "canonical_name": "Insurance Authority (IA)",
+    "description": "Hong Kong's insurance supervisor. Became independent statutory body in 2017 (previously sat within government). Supervises insurers (life + general + reinsurance), insurance brokers + agents + intermediaries; conducts conduct-of-business supervision; administers the Insurance Ordinance.",
+    "metadata": {
+      "type": "Insurance supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-MPFA",
+    "entity_type": "authority",
+    "entity_id": "MPFA-HK",
+    "canonical_name": "Mandatory Provident Fund Schemes Authority (MPFA)",
+    "description": "Hong Kong's pension supervisor. Administers the MPF system (compulsory contributory pension scheme for employees). Licenses + supervises MPF service providers (trustees, investment managers, custodians). Coordinates with SFC + IA on cross-sector matters.",
+    "metadata": {
+      "type": "Pension supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-PCPD",
+    "entity_type": "authority",
+    "entity_id": "PCPD-HK",
+    "canonical_name": "Privacy Commissioner for Personal Data (PCPD)",
+    "description": "Hong Kong's data-protection authority. Independent statutory body. Administers + enforces the PDPO; has criminal investigation powers since the 2021 doxxing amendments. Active enforcer + guidance issuer; pending reforms expected to expand fining powers + introduce mandatory breach notification.",
+    "metadata": {
+      "type": "Data protection authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-JFIU",
+    "entity_type": "authority",
+    "entity_id": "JFIU-HK",
+    "canonical_name": "Joint Financial Intelligence Unit (JFIU)",
+    "description": "Hong Kong's Financial Intelligence Unit. Jointly operated by the Hong Kong Police Force + Customs and Excise Department. Receives + analyses Suspicious Transaction Reports filed via the STREAMS online system; disseminates intelligence to law enforcement + foreign FIUs (Egmont Group).",
+    "metadata": {
+      "type": "FIU",
+      "parent": "Hong Kong Police + Customs"
+    }
+  },
+  {
+    "ref_id": "AUTH-ICAC",
+    "entity_type": "authority",
+    "entity_id": "ICAC-HK",
+    "canonical_name": "Independent Commission Against Corruption (ICAC)",
+    "description": "Hong Kong's anti-corruption agency. Established 1974; reports directly to the Chief Executive. Investigates + prosecutes offences under the Prevention of Bribery Ordinance + related corruption offences. Globally-respected anti-corruption institution with strong enforcement record.",
+    "metadata": {
+      "type": "Anti-corruption agency",
+      "established": "1974"
+    }
+  },
+  {
+    "ref_id": "AUTH-CR-HK",
+    "entity_type": "authority",
+    "entity_id": "CR-HK",
+    "canonical_name": "Companies Registry (CR)",
+    "description": "Hong Kong's companies registrar. Administers the Companies Ordinance, the Significant Controllers Register (SCR) regime for beneficial-ownership transparency, the Business Registration Ordinance. Coordinates with HKMA + SFC + JFIU on AML BO data access.",
+    "metadata": {
+      "type": "Companies registrar"
+    }
+  },
+  {
+    "ref_id": "AUTH-COMP-COMM",
+    "entity_type": "authority",
+    "entity_id": "HK-COMPETITION-COMM",
+    "canonical_name": "Competition Commission",
+    "description": "Hong Kong's competition authority. Investigates contraventions of the First Conduct Rule + Second Conduct Rule + the Merger Rule (telecoms only). Pursues cases in the Competition Tribunal. Active enforcement record since 2015.",
+    "metadata": {
+      "type": "Competition authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-CUSTOMS-HK",
+    "entity_type": "authority",
+    "entity_id": "HK-CUSTOMS",
+    "canonical_name": "Customs and Excise Department",
+    "description": "Hong Kong's customs + trade-sanctions authority + AML supervisor for non-FI designated persons (precious metals + stones dealers, money service operators). Joint operator of JFIU. Active in cross-border AML + sanctions investigations.",
+    "metadata": {
+      "type": "Customs + trade sanctions + DNFBP AML supervisor"
+    }
+  },
+  {
+    "ref_id": "SO-LICENSING",
+    "entity_type": "duty",
+    "entity_id": "SO-LICENSING-OBL",
+    "canonical_name": "Stablecoins Ordinance — licensing requirement",
+    "description": "Any person who issues a fiat-backed stablecoin (a stablecoin that purports to maintain a stable value with reference to one or more fiat currencies) in Hong Kong, or actively markets the issuance of such a stablecoin to the Hong Kong public, requires an HKMA licence under the Stablecoins Ordinance. Narrow approval bar — HKMA conducting deliberate, sandbox-informed evaluation of applicants since the 'Sandbox' pilot launch in 2024.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-RESERVES",
+    "entity_type": "duty",
+    "entity_id": "SO-RESERVES-OBL",
+    "canonical_name": "Stablecoins Ordinance — reserve assets + redemption",
+    "description": "Licensed issuer must maintain reserves backing 100% of outstanding stablecoin value in high-quality liquid assets (cash + short-term sovereign / supra debt + specified categories per HKMA Notice). Daily reconciliation; independent assurance; reserves held in segregated accounts with approved custodians + insolvency-remote arrangements. Redemption at par enforceable; redemption process documented; T+1 or better for retail; restrictions on issuer-imposed delays + fees.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-CUSTODY",
+    "entity_type": "duty",
+    "entity_id": "SO-CUSTODY-OBL",
+    "canonical_name": "Stablecoins Ordinance — customer asset custody",
+    "description": "Where the issuer holds customer assets (e.g. fiat received during issuance / redemption, customer stablecoin balances pending settlement): customer-asset segregation from issuer's own holdings; insolvency-remote arrangements; secure custody architecture for the underlying reserves (cold + hot wallet structures where applicable; key-management standards proportionate to scale); independent assurance over custody arrangements; reporting customer-asset balances to HKMA.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-AML",
+    "entity_type": "duty",
+    "entity_id": "SO-AML-OBL",
+    "canonical_name": "Stablecoins Ordinance — AML alignment with AMLO + HKMA Guideline",
+    "description": "Licensed issuer subject to AMLO obligations: CDD + EDD; PEPs; ongoing monitoring; suspicious-transaction reporting to JFIU via STREAMS; sanctions screening (UN under UNSO + other applicable measures); tipping-off prohibition; record retention 5 years. Operationalised through the HKMA Guideline on AML/CFT (LP/RA-1) as adapted for stablecoin-specific risks (incl. cross-border-transfer scrutiny, mixer / blockchain-analytics integration).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-TECH-RISK",
+    "entity_type": "duty",
+    "entity_id": "SO-TECH-RISK-OBL",
+    "canonical_name": "Stablecoins Ordinance — technology + cyber risk management",
+    "description": "Robust technology-risk framework aligned with HKMA SPM Module TM-G-1 (Supervision of Technology Risk) + the HKMA Cyber Resilience Assessment Framework (CRAF). Governance, secure development, cybersecurity (incl. wallet + key management), IT-incident management + reporting to HKMA, cloud + IT third-party management. Particular emphasis on private-key custody + smart-contract risk for the stablecoin issuance / redemption / settlement infrastructure.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-GOVERNANCE",
+    "entity_type": "duty",
+    "entity_id": "SO-GOV-OBL",
+    "canonical_name": "Stablecoins Ordinance — governance + risk management",
+    "description": "Licensed issuer must have: board of directors with at least 2 independent non-executive directors (HK-resident requirement); senior management with relevant fitness + probity; risk-management function + compliance function + internal audit function (independent); compliance officer at senior level; documented risk-management framework + risk-appetite; periodic board oversight + reporting.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-CONDUCT",
+    "entity_type": "duty",
+    "entity_id": "SO-CONDUCT-OBL",
+    "canonical_name": "Stablecoins Ordinance — conduct + customer disclosure",
+    "description": "Pre-contract risk disclosures to customers (volatility risk where applicable, insolvency risk, redemption mechanics + timing, reserve composition + custody arrangements, dispute-resolution); fair-marketing rules; complaint-handling framework; restrictions on retail-facing marketing of unbacked / algorithmic stablecoins (effectively prohibited under the Ordinance). Cross-border-marketing rules where issuer markets to HK from abroad — licence required if actively marketing in HK.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SO-RECOVERY",
+    "entity_type": "duty",
+    "entity_id": "SO-RECOVERY-OBL",
+    "canonical_name": "Stablecoins Ordinance — recovery + resolution + wind-down planning",
+    "description": "Licensed issuer must maintain: recovery plan addressing severe stress scenarios (mass redemption, custodian failure, reserve-asset write-down, technology failure); resolution + wind-down plan addressing orderly termination of stablecoin issuance with customer-asset protection. Annual testing + board approval + submission to HKMA on prescribed cadence.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "VATP-SFC-LICENSING",
+    "entity_type": "duty",
+    "entity_id": "VATP-SFC-OBL",
+    "canonical_name": "VATP SFC Type 1 + Type 7 licensing (post-AMLO 2022 amendment)",
+    "description": "Centralised Virtual Asset Trading Platforms operating in or marketing to Hong Kong require SFC licensing under: (a) Schedule 3B of AMLO (VATP-specific licence); (b) Type 1 (dealing in securities) where security tokens are traded; (c) Type 7 (automated trading services). Comprehensive Code of Conduct + VATP Guidelines apply: token-listing standards, custody, market-conduct, AML / FATF Travel Rule, KYC, technology risk.",
+    "metadata": {
+      "in_force": "2023-06-01"
+    }
+  },
+  {
+    "ref_id": "VATP-RETAIL",
+    "entity_type": "concept",
+    "entity_id": "VATP-RETAIL-ACCESS",
+    "canonical_name": "VATP retail access (since June 2023)",
+    "description": "Since the June 2023 SFC reforms, licensed VATPs may serve retail clients in Hong Kong under prescribed conditions: token-listing approval by SFC for retail-permitted tokens; suitability assessment; product-disclosure obligations; investor-protection standards. Distinct from the pre-2023 professional-investor-only regime. SFC issued limited number of VATP licences with retail permission as of 2026.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLO-CDD",
+    "entity_type": "duty",
+    "entity_id": "AMLO-CDD-OBL",
+    "canonical_name": "AMLO CDD (Schedule 2)",
+    "description": "Designated persons (FIs + DNFBPs + VATPs + post-2025 Stablecoin Issuers) must perform CDD: identify + verify the customer; identify the beneficial owner; understand the purpose + intended nature of the relationship; conduct ongoing monitoring. Triggered at relationship establishment, occasional transactions ≥ HK$120,000 (~US$15,000), suspicion of ML/TF, doubts about prior CDD adequacy.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLO-EDD-PEPS",
+    "entity_type": "duty",
+    "entity_id": "AMLO-EDD-OBL",
+    "canonical_name": "AMLO EDD + PEPs",
+    "description": "EDD for higher-risk situations: foreign + domestic PEPs (risk-sensitive for domestic), high-risk jurisdictions (per FATF + HKMA notices), complex / unusual / large transactions, correspondent banking, new products / technologies. Senior-management approval; SoW + SoF verification; enhanced ongoing monitoring; documented rationale.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLO-STR",
+    "entity_type": "duty",
+    "entity_id": "AMLO-STR-OBL",
+    "canonical_name": "AMLO STR via STREAMS to JFIU",
+    "description": "Designated persons must report to JFIU via the STREAMS online system without delay on knowledge or suspicion that property is connected to drug trafficking, indictable offence (predicate offences), terrorist financing, or proliferation financing. Defence to ML offences (s.25A) where STR filed before relevant act; tipping-off prohibition.",
+    "metadata": {
+      "filing_platform": "STREAMS"
+    }
+  },
+  {
+    "ref_id": "AMLO-TIPPING",
+    "entity_type": "duty",
+    "entity_id": "AMLO-TIPPING-OBL",
+    "canonical_name": "AMLO tipping-off prohibition",
+    "description": "Designated persons + staff prohibited from disclosing to a person concerned that an STR has been filed or that an ML/TF investigation may be carried out. Limited carve-outs: sharing with supervisors (HKMA / SFC / IA / Customs), legal advice. Criminal sanction for breach."
+  },
+  {
+    "ref_id": "AMLO-SANCTIONS",
+    "entity_type": "duty",
+    "entity_id": "AMLO-SANC-OBL",
+    "canonical_name": "UN sanctions screening (UNSO-based)",
+    "description": "Designated persons must screen against UN Security Council Consolidated List (implemented via UNSO regulations) + sanctions-specific HK regulations made under UNSO. Real-time customer + transaction screening; freeze + report. Hong Kong does NOT implement autonomous sanctions (no OFAC / OFSI equivalent); BUT firms must consider OFAC + OFSI + EU sanctions risk for international operations + correspondent relationships.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLO-RECORDS",
+    "entity_type": "duty",
+    "entity_id": "AMLO-RR-OBL",
+    "canonical_name": "AMLO 5-year record retention",
+    "description": "CDD documentation + transaction records + business correspondence retained for at least 5 years from the end of the business relationship / completion of the occasional transaction; longer for ongoing investigation or supervisory request. Accessible to supervisors + JFIU on request.",
+    "metadata": {
+      "retention_years": 5
+    }
+  },
+  {
+    "ref_id": "AMLO-GOVERNANCE",
+    "entity_type": "duty",
+    "entity_id": "AMLO-GOV-OBL",
+    "canonical_name": "AMLO internal organisation + compliance officer + training",
+    "description": "Documented written AML/CFT policies + procedures; senior-management approval; designated compliance officer at sufficient seniority; MLRO for STR coordination; internal-audit / compliance-function review; staff training proportionate to role + risk; refresher cycle. Operationalised per HKMA / SFC / IA / Customs sectoral guidelines.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CR-SCR",
+    "entity_type": "concept",
+    "entity_id": "HK-SCR-REGISTER",
+    "canonical_name": "Significant Controllers Register (SCR) — Companies Ordinance",
+    "description": "Hong Kong companies (other than listed companies) must maintain an SCR identifying significant controllers (25% ownership threshold + alternative control routes). SCR accessible to law-enforcement + tax authorities + selected supervisors for AML / tax / criminal purposes; not publicly searchable. Reforms under consideration for a centralised + more accessible BO register (post-FATF Mutual Evaluation feedback).",
+    "metadata": {
+      "supervisor": "Companies Registry"
+    }
+  },
+  {
+    "ref_id": "STREAMS-PLATFORM",
+    "entity_type": "concept",
+    "entity_id": "STREAMS-JFIU",
+    "canonical_name": "STREAMS — STR filing platform",
+    "description": "JFIU's secure online platform for STR filing. Structured XML / form-based submission; supports cross-sector reporting (FI + DNFBP + VATP + post-2025 Stablecoin Issuer); intelligence-dissemination to law enforcement + foreign FIUs via Egmont channels.",
+    "metadata": {
+      "operator": "JFIU"
+    }
+  },
+  {
+    "ref_id": "PDPO-REFORM-PENDING",
+    "entity_type": "concept",
+    "entity_id": "PDPO-PENDING-REFORM",
+    "canonical_name": "PDPO reform proposals (under government study since 2024)",
+    "description": "Government-announced PDPO reform proposals (pending introduction as a bill): (a) mandatory data-breach notification to PCPD + affected individuals; (b) direct regulation of data processors (currently only controllers regulated); (c) administrative-fining powers for PCPD (currently capped at criminal penalties); (d) activation of section 33 cross-border-transfer regime (currently dormant); (e) clearer regulation of automated decisions + AI-driven personal-data processing.",
+    "metadata": {
+      "status": "Under government study"
+    }
+  },
+  {
+    "ref_id": "HKMA-CYBER-CRAF",
+    "entity_type": "concept",
+    "entity_id": "HKMA-CRAF",
+    "canonical_name": "HKMA Cyber Resilience Assessment Framework (CRAF)",
+    "description": "HKMA's cyber-resilience framework for Authorised Institutions. Three-pillar approach: inherent-risk assessment; maturity assessment of cybersecurity controls; iCAST (intelligence-led cyber-attack simulation testing) for systemically important AIs. Periodically updated; aligns with international cyber-resilience standards.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "HK-SANDBOX-2024",
+    "entity_type": "concept",
+    "entity_id": "HK-STABLECOIN-SANDBOX",
+    "canonical_name": "HKMA Stablecoin Issuer Sandbox (2024 pilot)",
+    "description": "HKMA launched the Stablecoin Issuer Sandbox in March 2024 — pre-licensing pilot for prospective stablecoin issuers to test business models + compliance arrangements under HKMA supervisory dialogue. Three participants admitted in the initial cohort (JD Coinlink + Standard Chartered consortium + RD Innotech). Sandbox-informed evaluation feeding the post-1-August-2025 SO licensing process.",
+    "metadata": {
+      "launched": "2024-03",
+      "first_cohort_size": 3
+    }
+  },
+  {
+    "ref_id": "HK-FATF-ME",
+    "entity_type": "concept",
+    "entity_id": "HK-FATF-MUTUAL-EVAL",
+    "canonical_name": "Hong Kong FATF Mutual Evaluation (2019 + ongoing follow-up)",
+    "description": "Hong Kong was rated overall 'compliant' or 'largely compliant' on most FATF Recommendations in the 2019 Mutual Evaluation. Subsequent follow-up reports tracked progress on identified deficiencies (notably FATF R.24 beneficial-ownership transparency — partly addressed via SCR but reforms continue). Next Mutual Evaluation expected in late 2020s.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "HK-ENFORCEMENT-PATTERN",
+    "entity_type": "concept",
+    "entity_id": "HK-ENF-PATTERN",
+    "canonical_name": "HK enforcement pattern + 2024-2025 escalation",
+    "description": "HKMA AML enforcement: HK$15m+ in fines across major banks 2024-2025 for CDD + transaction-monitoring failings. SFC active enforcement of VATP regime including JPEX-related actions + ongoing investigations. ICAC active corruption enforcement. PCPD active doxxing enforcement post-2021 amendments. Overall trend: tighter supervisory expectations + more public enforcement signalling post-2023 reforms.",
+    "metadata": {
+      "hkma_2024_2025_aml_fines_hkd": "15000000+"
+    }
+  },
+  {
+    "ref_id": "HK-MULTIREG-CRYPTO",
+    "entity_type": "concept",
+    "entity_id": "HK-CRYPTO-MULTI-REG",
+    "canonical_name": "HK crypto multi-regulator overlap",
+    "description": "Crypto-asset firms in HK face overlapping regulators: HKMA for fiat-backed stablecoin issuance (Stablecoins Ordinance, 1 Aug 2025); SFC for VATP centralised trading (AMLO + Type 1/7 SFO); SFC for security-token activities. Coordinating compliance across HKMA + SFC + JFIU is a distinct compliance discipline for cross-activity firms. Some activities (e.g. DeFi, non-fiat-backed stablecoins) currently fall outside the licensing perimeter — operational uncertainty.",
+    "metadata": {}
+  }
+]

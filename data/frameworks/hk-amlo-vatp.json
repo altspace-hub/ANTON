@@ -1,0 +1,125 @@
+{
+  "id": "hk-amlo-vatp",
+  "name": "Hong Kong AMLO (Cap. 615) + VATP regime — Anti-Money Laundering and Counter-Terrorist Financing Ordinance",
+  "shortName": "HK AMLO + VATP",
+  "reference": "AMLO Cap. 615 + AMLO Amendment Ordinance 2022 (Schedule 3B VATP regime)",
+  "amloInForce": "2012-04-01",
+  "vatpAmendmentsInForce": "2023-06-01",
+  "supervisor": "HKMA + SFC + IA + Customs (per scope)",
+  "articleCount": 12,
+  "chapters": [
+    {"number": "Scope", "title": "Designated persons + scope", "articles": "AMLO Section 5 + Schedule 1 + Schedule 3B"},
+    {"number": "CDD", "title": "CDD obligations (Schedule 2)", "articles": "Schedule 2"},
+    {"number": "STR", "title": "Suspicious-transaction reporting + tipping-off", "articles": "AMLO + DTROP + OSCO + UNATMO"},
+    {"number": "Records", "title": "Record keeping (Schedule 2)", "articles": "Schedule 2"},
+    {"number": "VATP", "title": "VATP-specific regime (Schedule 3B)", "articles": "Schedule 3B"},
+    {"number": "Enforcement", "title": "Sanctions + enforcement", "articles": "AMLO Part 4"}
+  ],
+  "themes": [
+    "Designated persons",
+    "CDD + EDD",
+    "STR via STREAMS to JFIU",
+    "Tipping-off prohibition",
+    "Record keeping",
+    "VATP licensing",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "AMLO.S5",
+      "title": "Designated persons (Section 5 + Schedule 1)",
+      "chapter": "Scope",
+      "section": "AMLO Section 5 + Schedule 1",
+      "theme": "Designated persons",
+      "requirement": "Designated persons include: Authorised Institutions (banks, restricted-licence banks, deposit-taking companies) supervised by HKMA; licensed corporations (SFC Type 1-12 + Type VA) supervised by SFC; authorised insurers + intermediaries supervised by IA; money service operators (MSOs) supervised by Customs; trust + company service providers; precious metals + stones dealers supervised by Customs; lawyers + accountants when performing specified financial / property activities. VATPs added via Schedule 3B (2022 amendment, in force June 2023)."
+    },
+    {
+      "id": "AMLO.SchedB.CDD",
+      "title": "CDD obligations (Schedule 2 Part 2)",
+      "chapter": "CDD",
+      "section": "Schedule 2 Parts 2-3",
+      "theme": "CDD + EDD",
+      "requirement": "Designated persons must perform CDD: identify + verify the customer (using reliable, independent source documents); identify the beneficial owner + take reasonable measures to verify (25% threshold + senior-managing-official fallback); understand the purpose + intended nature of the relationship; conduct ongoing monitoring (transaction scrutiny + record refresh). Triggered at: relationship establishment; occasional transactions ≥ HK$120,000 (~US$15,000) or HK$8,000 (~US$1,000) for wire transfers; suspicion of ML/TF; doubts about prior CDD adequacy."
+    },
+    {
+      "id": "AMLO.SchedB.EDD",
+      "title": "EDD + PEPs (Schedule 2 Parts 3-4)",
+      "chapter": "CDD",
+      "section": "Schedule 2",
+      "theme": "CDD + EDD",
+      "requirement": "EDD for higher-risk situations: foreign + domestic PEPs (risk-sensitive for domestic — including HK Government PEPs); high-risk jurisdictions (FATF + HKMA / SFC / IA notices); complex / unusual / large transactions; correspondent banking with respondent banks in higher-risk jurisdictions; new products + technologies (incl. crypto). Senior-management approval; SoW + SoF; enhanced ongoing monitoring; documented rationale."
+    },
+    {
+      "id": "AMLO.STR",
+      "title": "Suspicious-transaction reporting (DTROP s.25A + OSCO s.25A + UNATMO s.12)",
+      "chapter": "STR",
+      "section": "DTROP / OSCO / UNATMO",
+      "theme": "STR via STREAMS to JFIU",
+      "requirement": "Designated persons must report to JFIU via the STREAMS online system without delay on knowledge or suspicion that property is connected to: drug-trafficking proceeds (DTROP); indictable-offence proceeds — broader predicate-offence basis (OSCO); terrorist financing or terrorist property (UNATMO). Defence to ML offences where STR filed before relevant act + further dealing made with JFIU consent. Same-or-equivalent obligations apply to all designated persons across sectors."
+    },
+    {
+      "id": "AMLO.TippingOff",
+      "title": "Tipping-off prohibition (DTROP s.25A(5)(a) + OSCO s.25A(5)(a))",
+      "chapter": "STR",
+      "section": "DTROP / OSCO",
+      "theme": "Tipping-off prohibition",
+      "requirement": "Designated persons + staff prohibited from disclosing to the person concerned (or any other person) that an STR has been filed or that an ML/TF investigation may be carried out. Limited carve-outs: sharing with supervisors (HKMA / SFC / IA / Customs); legal advice. Criminal sanction (imprisonment + fine) for breach."
+    },
+    {
+      "id": "AMLO.Records",
+      "title": "Record keeping (Schedule 2 Part 5)",
+      "chapter": "Records",
+      "section": "Schedule 2 Part 5",
+      "theme": "Record keeping",
+      "requirement": "CDD documentation + transaction records + business correspondence retained for at least 5 years from the end of the business relationship / completion of the occasional transaction; longer for ongoing investigation or supervisory request. Records sufficient to enable reconstruction of individual transactions + accessibility to supervisors + JFIU on request."
+    },
+    {
+      "id": "AMLO.VATP.Scope",
+      "title": "VATP regime — scope (Schedule 3B)",
+      "chapter": "VATP",
+      "section": "Schedule 3B",
+      "theme": "VATP licensing",
+      "requirement": "Any person carrying on a business of providing a 'virtual asset service' (operating a centralised virtual asset trading platform — VATP) in Hong Kong, OR actively marketing such a service to the Hong Kong public, requires an SFC licence under Schedule 3B. Captures centralised exchanges providing VA trading services. Distinct from VAs classified as 'securities' under SFO (which engage Type 1 + Type 7 SFO licensing in parallel)."
+    },
+    {
+      "id": "AMLO.VATP.Licensing",
+      "title": "VATP licensing requirements",
+      "chapter": "VATP",
+      "section": "Schedule 3B + SFC VATP Guidelines",
+      "theme": "VATP licensing",
+      "requirement": "VATP licensing requirements: fit-and-proper directors + responsible officers + substantial shareholders; minimum paid-up capital (HK$5m or higher per scale); HK incorporation OR HK branch with adequate governance + management presence; sound business plan; AML/CFT framework aligned with AMLO + SFC AML guidelines; technology + cybersecurity framework; custody arrangements (cold/hot wallet architecture, key management, insolvency-remote customer-asset segregation); market-conduct framework (anti-manipulation surveillance, fair dealing); token-listing approval procedures."
+    },
+    {
+      "id": "AMLO.VATP.Retail",
+      "title": "VATP retail access (June 2023 reforms)",
+      "chapter": "VATP",
+      "section": "Schedule 3B + SFC VATP Guidelines",
+      "theme": "VATP licensing",
+      "requirement": "From June 2023 reforms: licensed VATPs may serve retail clients under prescribed conditions — token-listing approval by SFC for retail-permitted tokens (admitted Bitcoin + Ethereum initially; expanded gradually); suitability assessment; product-disclosure obligations; investor-protection standards; trading limits per client risk profile; cross-border / overseas-customer treatment. Number of fully-licensed VATPs with retail permission deliberately limited."
+    },
+    {
+      "id": "AMLO.VATP.Custody",
+      "title": "VATP customer asset custody",
+      "chapter": "VATP",
+      "section": "SFC VATP Guidelines on customer protection",
+      "theme": "VATP licensing",
+      "requirement": "Customer-asset segregation from VATP's own holdings; insolvency-remote arrangements; secure custody (cold wallet majority + hot wallet limited to operational needs + multi-party computation / multi-sig / HSM controls); independent assurance over custody arrangements; customer-asset balance reporting to SFC on prescribed cadence; insurance / indemnity arrangements covering customer-asset loss."
+    },
+    {
+      "id": "AMLO.VATP.TravelRule",
+      "title": "VATP FATF Travel Rule alignment",
+      "chapter": "VATP",
+      "section": "SFC VATP AML Guidelines",
+      "theme": "VATP licensing",
+      "requirement": "VATPs subject to FATF Recommendation 16 (Travel Rule) for VA transfers: originator + beneficiary information required for VA transfers ≥ HK$8,000 (~US$1,000); intermediary VASP must transmit required information; receiving VASP must verify presence of required information; suspicious-transaction reporting where Travel Rule data is missing or inadequate."
+    },
+    {
+      "id": "AMLO.Enforcement",
+      "title": "Sanctions + enforcement (AMLO Part 4 + sector-specific powers)",
+      "chapter": "Enforcement",
+      "section": "AMLO Part 4 + DTROP / OSCO + supervisor powers",
+      "theme": "Enforcement",
+      "requirement": "Administrative + criminal sanctions: administrative — supervisor-imposed disciplinary action (revocation + suspension + restriction + reprimand + CMPs), proportionate to scale + severity; criminal — for failure to comply with CDD / record-keeping / STR / tipping-off obligations (imprisonment + fine). Active enforcement track record across HKMA + SFC + IA, with significant fines for major banks (HK$15m+ across major banks 2024-2025) + ongoing JPEX-related investigations under SFC VATP regime."
+    }
+  ]
+}
