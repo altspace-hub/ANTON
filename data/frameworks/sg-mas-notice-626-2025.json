@@ -1,0 +1,164 @@
+{
+  "id": "sg-mas-notice-626-2025",
+  "name": "MAS Notice 626 — Prevention of Money Laundering and Countering the Financing of Terrorism (Banks) — revised 30 June 2025",
+  "shortName": "MAS Notice 626",
+  "reference": "MAS Notice 626 (Banking Act)",
+  "url": "https://www.mas.gov.sg/regulation/notices/notice-626",
+  "originallyIssued": "2007-04-02",
+  "currentRevisionInForce": "2025-06-30",
+  "supervisor": "MAS",
+  "articleCount": 16,
+  "chapters": [
+    {"number": "1", "title": "Scope + risk-based approach", "articles": "Sections 1-5"},
+    {"number": "2", "title": "Customer Due Diligence", "articles": "Section 6"},
+    {"number": "3", "title": "Enhanced + Simplified Due Diligence", "articles": "Sections 8-9"},
+    {"number": "4", "title": "PEPs", "articles": "Section 8"},
+    {"number": "5", "title": "Wire transfers + reliance on third parties", "articles": "Sections 13-14"},
+    {"number": "6", "title": "Suspicious Transaction Reporting + tipping-off", "articles": "Section 7"},
+    {"number": "7", "title": "Sanctions + targeted financial measures", "articles": "Section 12"},
+    {"number": "8", "title": "Internal policies + governance + training + records", "articles": "Sections 10-11, 15"},
+    {"number": "9", "title": "Proliferation financing (NEW 2025)", "articles": "PF Section"}
+  ],
+  "themes": [
+    "Scope + risk-based approach",
+    "Proliferation Financing (NEW 2025)",
+    "Customer Due Diligence",
+    "Enhanced Due Diligence + PEPs",
+    "Source of wealth + source of funds",
+    "Suspicious Transaction Reporting",
+    "Sanctions",
+    "Internal organisation",
+    "Training",
+    "Record retention"
+  ],
+  "articles": [
+    {
+      "id": "S1",
+      "title": "Scope + application",
+      "chapter": "1",
+      "section": "Section 1",
+      "theme": "Scope + risk-based approach",
+      "requirement": "Applies to all banks licensed under the Banking Act in respect of business carried on in Singapore. Group-wide application required for branches + majority-owned subsidiaries; equivalent or higher standards required for foreign branches + subsidiaries where Singapore standards are stricter than local."
+    },
+    {
+      "id": "S5",
+      "title": "Risk-based approach + entity-wide risk assessment",
+      "chapter": "1",
+      "section": "Section 5",
+      "theme": "Scope + risk-based approach",
+      "requirement": "Bank must identify, assess + understand ML/TF/PF risks across the institution. Documented risk assessment covering customer, geographic, product/service/transaction, delivery-channel + new-technology risk factors. Refreshed at least annually + on material change (new business line, M&A, regulatory change, detected red flag). Senior-management approved."
+    },
+    {
+      "id": "S5-PF",
+      "title": "Proliferation Financing risk assessment (NEW 30 June 2025)",
+      "chapter": "9",
+      "section": "Section 5 + PF",
+      "theme": "Proliferation Financing (NEW 2025)",
+      "requirement": "Bank must integrate PF risk into the entity-wide risk assessment + customer risk profile as a distinct dimension. Aligns with FATF R.1 update (Oct 2020). Specific PF-risk indicators: DPRK + Iran nexus; dual-use goods / sensitive technology; complex ownership structures masking ultimate beneficial owners; UN-designated entities; sanctions-evasion typologies. PF controls calibrated to assessed risk."
+    },
+    {
+      "id": "S6.1",
+      "title": "CDD — application triggers",
+      "chapter": "2",
+      "section": "Section 6.1",
+      "theme": "Customer Due Diligence",
+      "requirement": "CDD applied: at establishment of a business relationship; on occasional transactions ≥ S$20,000 (or ≥ S$1,500 for designated cross-border wire transfers); when there is suspicion of ML/TF/PF; when there are doubts about the veracity or adequacy of previously obtained CDD information."
+    },
+    {
+      "id": "S6.2",
+      "title": "CDD — identification + verification",
+      "chapter": "2",
+      "section": "Section 6.2",
+      "theme": "Customer Due Diligence",
+      "requirement": "Identify the customer + verify identity using reliable + independent source documents (NRIC / passport / company registry extract / trust deed). Identify beneficial owners + take reasonable measures to verify (25% ownership threshold + senior-managing-official fallback). Understand the purpose + intended nature of the business relationship. Conduct ongoing monitoring (transaction scrutiny + record refresh)."
+    },
+    {
+      "id": "S8",
+      "title": "Enhanced Due Diligence",
+      "chapter": "3",
+      "section": "Section 8",
+      "theme": "Enhanced Due Diligence + PEPs",
+      "requirement": "EDD required for: foreign PEPs (always); business relationships + transactions from FATF-listed high-risk jurisdictions; complex / unusual / large transactions without apparent economic / legal purpose; correspondent banking relationships with respondent banks in jurisdictions presenting higher AML/CFT/PF risk; new products + business practices including new delivery mechanisms + new technologies. Senior-management approval; source-of-wealth + source-of-funds; enhanced ongoing monitoring; documented rationale."
+    },
+    {
+      "id": "S8-PEP",
+      "title": "PEP obligations — foreign / domestic / IO + Singapore Government PEPs (refreshed 2025)",
+      "chapter": "4",
+      "section": "Section 8",
+      "theme": "Enhanced Due Diligence + PEPs",
+      "requirement": "Foreign PEPs: always heightened risk + full EDD. Domestic PEPs (incl. Singapore Government PEPs holding prominent public functions in Singapore): assessed on a risk-sensitive basis — many positions still trigger EDD based on actual risk profile (cross-border exposure, political position, sectoral risk). International organisation PEPs: similar risk-sensitive treatment. Family members + close associates within scope; 12-month tail after the PEP ceases holding the function (risk-sensitive thereafter)."
+    },
+    {
+      "id": "S9",
+      "title": "Simplified Due Diligence — narrow scope",
+      "chapter": "3",
+      "section": "Section 9",
+      "theme": "Enhanced Due Diligence + PEPs",
+      "requirement": "Simplified CDD permitted only where the bank's risk assessment + the supranational/national risk assessment supports lower risk + the customer category is specifically permitted (e.g. publicly-listed companies subject to disclosure rules + their wholly-owned subsidiaries; Singapore Government entities). Does not exempt from any CDD obligation; permits delayed verification within strict limits."
+    },
+    {
+      "id": "S13",
+      "title": "Wire transfers + Travel Rule",
+      "chapter": "5",
+      "section": "Section 13",
+      "theme": "Source of wealth + source of funds",
+      "requirement": "Banks must include complete originator + beneficiary information on cross-border wire transfers in line with FATF R.16 (Travel Rule). Cross-border wire transfers ≥ S$1,500: full information required. Domestic wire transfers: simpler requirements (account number or transaction reference). Intermediary + beneficiary banks must verify presence of required information."
+    },
+    {
+      "id": "S14",
+      "title": "Reliance on third parties for CDD",
+      "chapter": "5",
+      "section": "Section 14",
+      "theme": "Source of wealth + source of funds",
+      "requirement": "Bank may rely on a third party to perform CDD steps (identification + verification + beneficial ownership + purpose) only where: (a) the third party is regulated, supervised + monitored for AML/CFT/PF + has measures in place to comply with CDD + record-keeping; (b) the bank obtains the required information immediately + can obtain CDD documentation upon request without delay; (c) the bank remains responsible for CDD."
+    },
+    {
+      "id": "S7-STR",
+      "title": "Suspicious Transaction Reporting (streamlined 2025)",
+      "chapter": "6",
+      "section": "Section 7",
+      "theme": "Suspicious Transaction Reporting",
+      "requirement": "Bank must promptly file STRs with STRO (via STRONet) when it knows or has reasonable grounds to suspect that any property is connected to: drug trafficking (CDSA); other serious crime (predicate offences per CDSA); terrorism financing (TSOFA); proliferation financing. The 2025 refresh streamlined: clearer trigger thresholds; structured STR content requirements; explicit PF reportability; emphasis on quality + timeliness."
+    },
+    {
+      "id": "S7-TIPOFF",
+      "title": "Tipping-off prohibition (CDSA s.48 + TSOFA s.12)",
+      "chapter": "6",
+      "section": "Section 7",
+      "theme": "Suspicious Transaction Reporting",
+      "requirement": "Bank + staff prohibited from disclosing to a customer or third party that an STR has been filed or that an ML/TF investigation may be carried out. Limited carve-outs: sharing with regulators (MAS, STRO, foreign FIUs via Egmont channels); intra-group sharing for ML/TF purposes under specific safeguards; legal advice."
+    },
+    {
+      "id": "S12",
+      "title": "Sanctions + targeted financial measures",
+      "chapter": "7",
+      "section": "Section 12",
+      "theme": "Sanctions",
+      "requirement": "Banks must implement programs to comply with UN + Singapore targeted financial measures: real-time customer + transaction screening; freezing of designated-person funds; reporting to MAS + Attorney-General's Chambers; non-engagement with designated persons. Particular operational focus on DPRK (UNSCR 1718 + Singapore implementing notices) + Iran (UNSCR 2231 + UK + EU coordinated measures + Singapore implementation). Specific focus on shell company structures + dual-use trade."
+    },
+    {
+      "id": "S10-11",
+      "title": "Internal policies + procedures + governance + AML compliance officer",
+      "chapter": "8",
+      "section": "Sections 10-11",
+      "theme": "Internal organisation",
+      "requirement": "Documented written AML/CFT/PF internal policies, procedures + controls; senior-management approved; reviewed at least annually + on material change. Designated AML compliance officer at senior-management level (independent + sufficient seniority + resources + access to senior management); alternate compliance officer. Independent audit + compliance-function review of the AML programme. Transaction-monitoring + screening systems calibrated to the risk assessment + tuned periodically."
+    },
+    {
+      "id": "S15-TR",
+      "title": "AML/CFT/PF training (refreshed 2025)",
+      "chapter": "8",
+      "section": "Section 15",
+      "theme": "Training",
+      "requirement": "All employees with AML/CFT/PF-relevant responsibilities trained on: applicable laws + MAS Notice 626 + internal policies; current ML/TF/PF typologies + red flags (incl. 2025 PF-specific scenarios); their role in the AML/CFT framework; how to escalate suspicion; tipping-off prohibition. Refresher training on regulatory + typology changes. Records retained; training effectiveness assessed."
+    },
+    {
+      "id": "S15-RR",
+      "title": "Record retention — minimum 5 years",
+      "chapter": "8",
+      "section": "Section 15",
+      "theme": "Record retention",
+      "requirement": "CDD documentation + business correspondence + transaction records retained for at least 5 years after the end of the business relationship or the completion of the occasional transaction; longer where ongoing investigation or supervisory request. Records sufficient to enable reconstruction of individual transactions + accessibility to STRO + MAS on request."
+    }
+  ]
+}

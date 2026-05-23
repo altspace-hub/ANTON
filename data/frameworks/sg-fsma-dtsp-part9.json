@@ -1,0 +1,116 @@
+{
+  "id": "sg-fsma-dtsp-part9",
+  "name": "FSMA Part 9 — Digital Token Service Provider (DTSP) framework",
+  "shortName": "FSMA Part 9 DTSP",
+  "reference": "Financial Services and Markets Act 2022 (FSMA), Part 9",
+  "url": "https://www.mas.gov.sg/regulation/acts/fsma",
+  "fsmaInForce": "2024-04-28",
+  "part9InForce": "2025-06-30",
+  "supervisor": "MAS",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "1", "title": "Scope + DTSP definition", "articles": "Part 9 Division 1"},
+    {"number": "2", "title": "Licensing requirements", "articles": "Part 9 Division 2"},
+    {"number": "3", "title": "AML/CFT obligations (cross-ref MAS notices)", "articles": "Part 9 + MAS Notice PSN01-equivalent"},
+    {"number": "4", "title": "Technology + operational risk + custody", "articles": "Part 9 + MAS TRM"},
+    {"number": "5", "title": "Enforcement", "articles": "Part 9 Division 4"}
+  ],
+  "themes": [
+    "Scope — outbound-only DTSP",
+    "Digital token services",
+    "Licensing — high approval bar",
+    "AML/CFT obligations",
+    "Technology + operational + custody",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "Pt9.S136",
+      "title": "DTSP scope — outbound-only digital token services",
+      "chapter": "1",
+      "section": "Part 9 §136",
+      "theme": "Scope — outbound-only DTSP",
+      "requirement": "A person carrying on a business of providing one or more digital token services, where the person is incorporated / formed / based in Singapore + provides the service solely to persons outside Singapore, is a DTSP. Closes a previously deliberate scope gap: the PSA covers DPT service providers serving Singapore customers; the SFA covers capital-markets DPTs; outbound-only Singapore-domiciled providers previously fell between both Acts."
+    },
+    {
+      "id": "Pt9.S137",
+      "title": "Digital token service — definition",
+      "chapter": "1",
+      "section": "Part 9 §137",
+      "theme": "Digital token services",
+      "requirement": "Means any of: (a) dealing in digital tokens; (b) facilitating the exchange of digital tokens; (c) accepting custody, control or possession of digital tokens belonging to another person; (d) facilitating the transmission of digital tokens; (e) inducing or attempting to induce any person to enter into a digital token transaction; (f) facilitating + carrying out any other activity that may from time to time be prescribed."
+    },
+    {
+      "id": "Pt9.S138",
+      "title": "Licensing requirement",
+      "chapter": "2",
+      "section": "Part 9 §138",
+      "theme": "Licensing — high approval bar",
+      "requirement": "No person may carry on a business of providing any digital token service in scope of §136 unless granted a licence by MAS under §139. MAS may refuse a licence on broad grounds incl. concerns about money-laundering risk, terrorism-financing risk, proliferation-financing risk, operational soundness, or the suitability of directors / key officers / substantial shareholders. The approval bar is deliberately narrow."
+    },
+    {
+      "id": "Pt9.S139",
+      "title": "Fit + proper requirements",
+      "chapter": "2",
+      "section": "Part 9 §139",
+      "theme": "Licensing — high approval bar",
+      "requirement": "Applicant must satisfy fit + proper criteria for: directors, key officers (incl. CEO, AML compliance officer, technology risk officer), substantial shareholders + controllers. Standard MAS fit-and-proper criteria: integrity, competence, financial soundness. Applicant must also demonstrate adequate AML/CFT/PF systems, technology-risk framework, capital adequacy, sound business plan."
+    },
+    {
+      "id": "Pt9.S140",
+      "title": "Capital + financial soundness",
+      "chapter": "2",
+      "section": "Part 9 §140",
+      "theme": "Licensing — high approval bar",
+      "requirement": "Minimum capital requirements prescribed by MAS Notice — similar to PSA MPI/SPI structure proportionate to business scale + risk profile. Ongoing financial-soundness reporting + capital adequacy maintenance required."
+    },
+    {
+      "id": "Pt9.AML",
+      "title": "AML/CFT obligations — MAS Notice PSN01-equivalent",
+      "chapter": "3",
+      "section": "Part 9 + MAS Notices",
+      "theme": "AML/CFT obligations",
+      "requirement": "DTSP licensees subject to AML/CFT/PF obligations equivalent to those imposed on PSA DPT service providers (i.e. MAS Notice PSN02 structure, aligned with MAS Notice 626). Includes: entity-wide risk assessment with PF dimension; CDD; EDD for high-risk; PEPs; STR to STRO; sanctions screening + targeted financial measures; tipping-off prohibition; internal policies + training + record retention."
+    },
+    {
+      "id": "Pt9.TRM",
+      "title": "Technology risk management",
+      "chapter": "4",
+      "section": "Part 9 + MAS TRM",
+      "theme": "Technology + operational + custody",
+      "requirement": "DTSP licensees must implement technology-risk management aligned with MAS TRM Guidelines proportionate to scale + risk: technology-risk governance; security controls; cybersecurity (incl. wallet + key management); IT-incident management + reporting to MAS; cloud + IT third-party management. Particular emphasis on private-key custody + wallet-security given the bearer-instrument nature of digital tokens."
+    },
+    {
+      "id": "Pt9.Custody",
+      "title": "Custody + safeguarding of customer digital tokens",
+      "chapter": "4",
+      "section": "Part 9 §142",
+      "theme": "Technology + operational + custody",
+      "requirement": "Where DTSP holds custody of customer digital tokens: customer-asset segregation (separation of customer DT from own holdings); insolvency-remote arrangements; secure custody (cold + hot wallet structure proportionate to risk; key-management framework; multi-party computation or HSM-style controls); reporting customer-asset balances to MAS on prescribed cadence; independent assurance over custody arrangements."
+    },
+    {
+      "id": "Pt9.Conduct",
+      "title": "Conduct + business obligations",
+      "chapter": "4",
+      "section": "Part 9 §143",
+      "theme": "Technology + operational + custody",
+      "requirement": "DTSP licensees subject to MAS conduct expectations: fit-and-proper customer onboarding; clear + fair customer communications; suitability + appropriateness where advisory services provided; complaint-handling; protection of customer assets. Where the DTSP also conducts PSA DPT services for Singapore customers, the more onerous of the two regimes applies."
+    },
+    {
+      "id": "Pt9.Enf",
+      "title": "Enforcement powers",
+      "chapter": "5",
+      "section": "Part 9 §145-148",
+      "theme": "Enforcement",
+      "requirement": "MAS enforcement powers under Part 9 include: civil + criminal sanctions for unlicensed operation; licence suspension or revocation for breaches; civil monetary penalties for AML/CFT failures; prohibition orders against individuals; remediation orders. Criminal offence carries up to 3 years' imprisonment + S$250,000 fine for individuals or S$500,000 for bodies corporate for unlicensed operation."
+    },
+    {
+      "id": "Pt9.Transition",
+      "title": "Transition + exit for outbound-only DTSPs",
+      "chapter": "1",
+      "section": "Part 9 + MAS guidance",
+      "theme": "Scope — outbound-only DTSP",
+      "requirement": "Persons that were providing in-scope outbound-only DT services prior to 30 June 2025 had to either apply for a DTSP licence by the deadline OR cease the in-scope activities by 30 June 2025. Many established Singapore-based outbound-only DT entities chose to exit Singapore (relocating to Hong Kong, UAE, or other crypto-permissive jurisdictions) rather than face the narrow approval bar. MAS has issued few DTSP licences in the first 6 months of the regime."
+    }
+  ]
+}

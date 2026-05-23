@@ -1,0 +1,111 @@
+{
+  "id": "sg-psa-payment-services-2019",
+  "name": "Payment Services Act 2019 (PSA) — Singapore",
+  "shortName": "PSA SG",
+  "reference": "Payment Services Act 2019",
+  "url": "https://www.mas.gov.sg/regulation/acts/payment-services-act",
+  "inForce": "2020-01-28",
+  "dptAmendmentsInForce": "2024-04-04",
+  "supervisor": "MAS",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "1", "title": "Scope — 7 regulated payment activities", "articles": "Part 1 + 2"},
+    {"number": "2", "title": "Licensing — MC / SPI / MPI tiers", "articles": "Part 2"},
+    {"number": "3", "title": "DPT service requirements", "articles": "Sections 6, 13 + DPT amendments 2024"},
+    {"number": "4", "title": "Safeguarding of customer money + assets", "articles": "Sections 23-25"},
+    {"number": "5", "title": "AML/CFT obligations (cross-ref MAS notices)", "articles": "MAS Notice PSN01/PSN02"},
+    {"number": "6", "title": "Cyber + technology + outsourcing", "articles": "MAS TRM + Outsourcing"},
+    {"number": "7", "title": "Enforcement", "articles": "Part 7"}
+  ],
+  "themes": [
+    "Scope",
+    "Licensing tiers",
+    "Digital Payment Tokens",
+    "Safeguarding",
+    "AML/CFT",
+    "Technology + cyber",
+    "Enforcement"
+  ],
+  "articles": [
+    {
+      "id": "S6.Activities",
+      "title": "7 regulated payment activities",
+      "chapter": "1",
+      "section": "Section 6",
+      "theme": "Scope",
+      "requirement": "Licence required for any of: (a) account-issuance service; (b) domestic money-transfer service; (c) cross-border money-transfer service; (d) merchant-acquisition service; (e) e-money issuance service; (f) digital payment token service (DPT); (g) money-changing service. A licensee may be authorised for multiple activities; activity scope drives capital + AML + safeguarding obligations."
+    },
+    {
+      "id": "S6.Tiers",
+      "title": "Licensing tiers — MC / SPI / MPI",
+      "chapter": "2",
+      "section": "Section 6",
+      "theme": "Licensing tiers",
+      "requirement": "Three tiers based on activity + scale: (a) Money-Changing licence (money-changing only); (b) Standard Payment Institution (SPI) — for limited-scale providers (monthly transaction threshold-based); (c) Major Payment Institution (MPI) — for high-volume providers above threshold. Capital, AML, safeguarding obligations scale with tier; DPT activities typically MPI tier due to risk profile."
+    },
+    {
+      "id": "S13.DPT",
+      "title": "DPT service — pre-2024 framework",
+      "chapter": "3",
+      "section": "Section 13",
+      "theme": "Digital Payment Tokens",
+      "requirement": "DPT service (since 2020) covers: dealing in DPTs (buying / selling DPTs against money or other DPTs); facilitating DPT exchange (operating an exchange platform); accepting custody, control or possession of DPTs belonging to another person; facilitating DPT transmission. Triggers full AML/CFT + technology-risk + safeguarding obligations."
+    },
+    {
+      "id": "S13.DPT.2024",
+      "title": "DPT user-protection expansion (April 2024 amendments)",
+      "chapter": "3",
+      "section": "Sections 22 + amendments",
+      "theme": "Digital Payment Tokens",
+      "requirement": "New user-protection requirements effective 4 April 2024: customer-asset segregation (separation of customer DPTs from own holdings); custody safeguards (insolvency-remote arrangements + secure custody); pre-contract risk disclosures (volatility + loss + investor-protection limitations); ban on offering retail credit for DPT purchase; prohibition on incentivising DPT trading (loyalty rewards, referral bonuses); marketing restrictions targeting retail audiences."
+    },
+    {
+      "id": "S23",
+      "title": "Safeguarding of customer money (SPI / MPI)",
+      "chapter": "4",
+      "section": "Section 23",
+      "theme": "Safeguarding",
+      "requirement": "MPI for account-issuance + money-transfer + e-money issuance must safeguard customer money via approved mechanisms: (a) safeguarding account with a safeguarding institution; (b) safeguarding undertaking (e.g. guarantee from a safeguarding institution); (c) insurance covering the customer money. Daily reconciliation + reporting required. Customer protection in MPI insolvency."
+    },
+    {
+      "id": "S25.DPT",
+      "title": "Safeguarding of customer DPTs",
+      "chapter": "4",
+      "section": "Section 25 + 2024 amendments",
+      "theme": "Safeguarding",
+      "requirement": "DPT service providers holding customer DPTs must segregate customer DPTs from own holdings; maintain insolvency-remote arrangements; implement secure custody (cold + hot wallet structure proportionate to risk; key-management; multi-party computation or HSM-style controls where appropriate); reporting of customer-asset balances to MAS on prescribed cadence."
+    },
+    {
+      "id": "AML.Cross",
+      "title": "AML/CFT obligations — MAS Notice PSN01 + PSN02",
+      "chapter": "5",
+      "section": "MAS Notices PSN01 + PSN02",
+      "theme": "AML/CFT",
+      "requirement": "All PSA licensees subject to AML/CFT obligations under MAS Notice PSN01 (for non-DPT payment service providers) + PSN02 (for DPT service providers). Structure mirrors MAS Notice 626: entity-wide risk assessment with PF dimension (post-30 June 2025); CDD + EDD; PEPs; STR to STRO; sanctions screening; tipping-off prohibition; internal policies + training + record retention."
+    },
+    {
+      "id": "TRM.Cross",
+      "title": "Technology + cybersecurity",
+      "chapter": "6",
+      "section": "MAS TRM Guidelines + Notice on Cyber Hygiene",
+      "theme": "Technology + cyber",
+      "requirement": "PSA licensees subject to MAS TRM Guidelines proportionate to scale + risk + activity: technology-risk governance; cybersecurity (incl. wallet + key management for DPT); IT-incident management; cloud + IT third-party management; data centre + system availability. MAS Notice on Cyber Hygiene mandates baseline cyber controls (admin-access controls, vulnerability management, security patches, MFA, account lockout)."
+    },
+    {
+      "id": "Out.Cross",
+      "title": "Outsourcing — MAS Outsourcing Guidelines",
+      "chapter": "6",
+      "section": "MAS Outsourcing Guidelines",
+      "theme": "Technology + cyber",
+      "requirement": "Outsourcing arrangements subject to MAS Outsourcing Guidelines: pre-contract due diligence on the service provider; written contract with required minimums (access, audit, security, exit, sub-outsourcing); ongoing monitoring + reporting of material issues; notification to MAS for material outsourcings; exit-strategy planning. Updated 2024 to reflect cloud-specific + AI-vendor specific expectations."
+    },
+    {
+      "id": "Enf.Cross",
+      "title": "Enforcement",
+      "chapter": "7",
+      "section": "Part 7",
+      "theme": "Enforcement",
+      "requirement": "MAS enforcement under PSA includes: civil + criminal sanctions for unlicensed operation; licence suspension or revocation; civil monetary penalties for breaches; prohibition orders against directors / key officers; remediation orders. Enforcement actions published with names + facts via MAS Enforcement Reports + media releases — significant reputational consequence."
+    }
+  ]
+}
