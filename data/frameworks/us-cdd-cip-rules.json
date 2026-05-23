@@ -1,0 +1,104 @@
+{
+  "id": "us-cdd-cip-rules",
+  "name": "FinCEN CDD Rule + CIP Rule — operational detail (31 CFR 1010.230 + 31 CFR 1020.220)",
+  "shortName": "US CDD + CIP Rules",
+  "reference": "31 CFR 1010.230 (CDD Rule) + 31 CFR 1020.220 (CIP Rule for banks; parallel rules for broker-dealers + mutual funds + futures merchants)",
+  "cddRuleInForce": "2018-05-11",
+  "cipRuleInForce": "2003-10-01",
+  "supervisor": "FinCEN + functional regulators",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "CIP", "title": "Customer Identification Program (31 CFR 1020.220)", "articles": "CIP rules"},
+    {"number": "CDD", "title": "Customer Due Diligence (31 CFR 1010.230)", "articles": "CDD Rule"},
+    {"number": "BO", "title": "Beneficial Ownership identification + verification", "articles": "CDD Rule §(b)(1)-(2)"},
+    {"number": "Ongoing", "title": "Ongoing monitoring + risk-based update", "articles": "CDD Rule §(b)(4)"}
+  ],
+  "themes": [
+    "CIP",
+    "CDD",
+    "Beneficial ownership",
+    "Ongoing monitoring"
+  ],
+  "articles": [
+    {
+      "id": "CIP.Info",
+      "title": "CIP minimum identifying information (31 CFR 1020.220(a)(2)(i)(A))",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220",
+      "theme": "CIP",
+      "requirement": "At account opening, the FI must collect: (i) name; (ii) date of birth (for individuals); (iii) address (residential for individuals, principal place of business for entities; PO box not sufficient by itself); (iv) identifying number — for US persons, taxpayer identification number (SSN, EIN, ITIN); for non-US persons, one or more of TIN, passport number + country, alien-id, government-issued identification number. Information collected before opening (or in some cases promptly after, with reasonable basis)."
+    },
+    {
+      "id": "CIP.Verification",
+      "title": "CIP identity verification (31 CFR 1020.220(a)(2)(ii))",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220",
+      "theme": "CIP",
+      "requirement": "Identity verified using documentary methods (government-issued photo ID for individuals; certified articles of incorporation / business licence for entities) OR non-documentary methods (independent reference data, credit-bureau, consumer reporting agencies, contacting the customer, comparing to other reliable independent sources) OR a combination. Risk-based — FI determines methods reasonable + sufficient given customer profile + risk. Verification completed within a reasonable time after account opening (typically before customer transacts)."
+    },
+    {
+      "id": "CIP.Sanctions",
+      "title": "CIP — government list comparison (OFAC SDN)",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220(a)(4)",
+      "theme": "CIP",
+      "requirement": "FI must determine whether the customer appears on any federal-government list of known or suspected terrorists or terrorist organisations issued by any federal government agency + designated as such by the Treasury. In practice this is operationalised as OFAC SDN screening at onboarding + continuous re-screening on list updates."
+    },
+    {
+      "id": "CIP.Notice",
+      "title": "CIP — customer notice",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220(a)(5)",
+      "theme": "CIP",
+      "requirement": "FI must provide notice to customers that the FI is requesting information to verify their identities. Notice typically posted at branches + on FI's website; pre-account-opening exposure required. Boilerplate language commonly used."
+    },
+    {
+      "id": "CIP.Records",
+      "title": "CIP recordkeeping (31 CFR 1020.220(a)(3))",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220",
+      "theme": "CIP",
+      "requirement": "FI retains: (i) all identifying information collected (for 5 years post-account-closing); (ii) for documentary verification, a description of the document including type + identifying number + issuing place + dates (for 5 years post-account-closing); (iii) for non-documentary verification, a description of methods + results (for 5 years post-account-closing); (iv) a description of the resolution of any discrepancy."
+    },
+    {
+      "id": "CDD.UnderstandNature",
+      "title": "CDD — understanding nature + purpose of customer relationship (31 CFR 1010.230(a)(4))",
+      "chapter": "CDD",
+      "section": "31 CFR 1010.230(a)(4)",
+      "theme": "CDD",
+      "requirement": "FI must develop a customer risk profile based on: nature + purpose of customer relationship (anticipated activity, source of funds, source of wealth where appropriate, geographies, products + services to be used). The customer risk profile is used to detect activity inconsistent with that profile — the operational basis for SAR detection."
+    },
+    {
+      "id": "CDD.BO.Ownership",
+      "title": "Beneficial Ownership — 25% ownership prong (31 CFR 1010.230(d)(1))",
+      "chapter": "BO",
+      "section": "31 CFR 1010.230(d)(1)",
+      "theme": "Beneficial ownership",
+      "requirement": "For each new legal-entity customer, FI must identify + verify the identity of each natural person who, directly or indirectly, owns 25% or more of the equity interests of the legal-entity customer. The ownership threshold is calculated through any chain of intermediary entities. Identification + verification standards parallel CIP requirements."
+    },
+    {
+      "id": "CDD.BO.Control",
+      "title": "Beneficial Ownership — control prong (31 CFR 1010.230(d)(2))",
+      "chapter": "BO",
+      "section": "31 CFR 1010.230(d)(2)",
+      "theme": "Beneficial ownership",
+      "requirement": "FI must additionally identify + verify the identity of a single individual with significant responsibility to control, manage, or direct the legal-entity customer (CEO, CFO, COO, Managing Member, General Partner, President, Vice President, Treasurer — or any other individual who regularly performs similar functions). Even if no individual owns 25%, the control person is identified."
+    },
+    {
+      "id": "CDD.BO.Form",
+      "title": "Beneficial Ownership Form / equivalent (31 CFR 1010.230(b)(2))",
+      "chapter": "BO",
+      "section": "31 CFR 1010.230 Appendix A",
+      "theme": "Beneficial ownership",
+      "requirement": "FI may use FinCEN's Beneficial Ownership Form (Appendix A) or an equivalent form to capture BO information at account opening. The form is completed + certified by the individual opening the account on behalf of the legal-entity customer. FI must retain the form for 5 years after the account is closed."
+    },
+    {
+      "id": "CDD.Ongoing",
+      "title": "Ongoing monitoring + risk-based update (31 CFR 1010.230(a)(5))",
+      "chapter": "Ongoing",
+      "section": "31 CFR 1010.230(a)(5)",
+      "theme": "Ongoing monitoring",
+      "requirement": "FI conducts ongoing monitoring to: (a) identify + report suspicious transactions; (b) update customer information including beneficial ownership, on a risk basis. There is no fixed refresh cadence — risk-based per customer profile. Common practice: annual refresh for high-risk customers (PEPs, correspondent banks, MSBs); 2-3 years for medium-risk; longer for low-risk; trigger-based refresh on material change (new product, jurisdictional change, regulatory event, SAR filing)."
+    }
+  ]
+}

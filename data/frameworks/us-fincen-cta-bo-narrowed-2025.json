@@ -1,0 +1,89 @@
+{
+  "id": "us-fincen-cta-bo-narrowed-2025",
+  "name": "Corporate Transparency Act + BO Reporting — narrowed by FinCEN Interim Final Rule (March 2025)",
+  "shortName": "US CTA + BOIR (narrowed)",
+  "reference": "AMLA 2020 Title LXIV (CTA) + FinCEN BOIR Final Rule (Sept 2022) + FinCEN Interim Final Rule (26 March 2025)",
+  "ctaInForce": "2024-01-01",
+  "ifrNarrowedScope": "2025-03-26",
+  "supervisor": "FinCEN",
+  "articleCount": 8,
+  "chapters": [
+    {"number": "Hist", "title": "Original CTA / BOIR framework + litigation history", "articles": "CTA + BOIR + NSBA v Yellen + Top Cop Shop"},
+    {"number": "IFR", "title": "FinCEN Interim Final Rule (26 March 2025) — narrowed scope", "articles": "IFR + Notice of Proposed Rulemaking"},
+    {"number": "Current", "title": "Current in-scope regime (foreign reporting companies + foreign-individual BOs)", "articles": "Post-IFR rules"},
+    {"number": "Reliance", "title": "FI reliance on BO data for CDD", "articles": "BSA CDD Rule interaction"}
+  ],
+  "themes": [
+    "Original CTA framework",
+    "Litigation + executive narrowing",
+    "Narrowed scope (post-IFR)",
+    "Reliance on FinCEN BO data",
+    "Penalties"
+  ],
+  "articles": [
+    {
+      "id": "Original",
+      "title": "Original CTA framework — purpose + universal scope",
+      "chapter": "Hist",
+      "section": "AMLA 2020 Title LXIV §§6401-6403",
+      "theme": "Original CTA framework",
+      "requirement": "Originally enacted to bring US-formed companies into BO transparency on par with most G7 jurisdictions. Required all 'reporting companies' (corporations + LLCs + similar entities formed or registered to do business in the US — initially estimated ~32 million entities) to file beneficial-ownership information (BOI) with FinCEN: each beneficial owner (25% ownership or substantial control) + each company applicant. Initial filing deadline 1 January 2025 for pre-existing entities; 30-day for newly-formed."
+    },
+    {
+      "id": "Litigation",
+      "title": "Litigation history (NSBA v Yellen + Top Cop Shop)",
+      "chapter": "Hist",
+      "section": "ED Texas + 5th Circuit",
+      "theme": "Litigation + executive narrowing",
+      "requirement": "NSBA v Yellen (NDAL, March 2024) — held CTA's BOI reporting requirement unconstitutional for the NSBA's members. Texas Top Cop Shop v Garland (EDTX, December 2024) — nationwide preliminary injunction. 5th Circuit + Supreme Court interim activity through Q1 2025. Trump administration declined to defend the rule for US persons; Treasury issued the March 2025 Interim Final Rule narrowing the scope."
+    },
+    {
+      "id": "IFR",
+      "title": "FinCEN Interim Final Rule (26 March 2025) — substantive narrowing",
+      "chapter": "IFR",
+      "section": "90 Fed Reg 13,688 (26 March 2025)",
+      "theme": "Litigation + executive narrowing",
+      "requirement": "FinCEN exempted from BOI reporting requirements: (a) US-formed (domestic) reporting companies; (b) US-person beneficial owners of foreign reporting companies. Effect: only foreign reporting companies (those formed under foreign law + registered to do business in a US state) remain in scope, and only their foreign-individual beneficial owners. ~99% of original reporting population now exempt. FinCEN retains authority to broaden again by future rulemaking."
+    },
+    {
+      "id": "Scope-Foreign-Co",
+      "title": "Current scope — foreign reporting companies",
+      "chapter": "Current",
+      "section": "Post-IFR 31 CFR 1010.380",
+      "theme": "Narrowed scope (post-IFR)",
+      "requirement": "Foreign reporting company = an entity formed under foreign law that is registered to do business in any US state by filing a document with a Secretary of State or similar office. These entities continue to file BOI within prescribed timeframes. Exemptions in 31 CFR 1010.380(c)(2) carve out 23 categories (banks, public-trust companies, regulated insurers, registered broker-dealers, registered investment advisers, etc.) — already-regulated entities that have BO transparency via their primary regulator."
+    },
+    {
+      "id": "Scope-Foreign-BO",
+      "title": "Current scope — foreign-individual beneficial owners only",
+      "chapter": "Current",
+      "section": "Post-IFR 31 CFR 1010.380",
+      "theme": "Narrowed scope (post-IFR)",
+      "requirement": "BOI report for a foreign reporting company need only identify foreign-individual beneficial owners (25% ownership OR substantial control). US-person beneficial owners (US citizens + US permanent residents + US-formed entities owning indirectly) are EXEMPT from BOI reporting under the IFR. Foreign reporting companies with only US-person beneficial owners report 'no beneficial owners' for the foreign-BO section of the form."
+    },
+    {
+      "id": "Reliance",
+      "title": "FI reliance on FinCEN BO data for CDD",
+      "chapter": "Reliance",
+      "section": "31 CFR 1010.230 + FinCEN access protocols",
+      "theme": "Reliance on FinCEN BO data",
+      "requirement": "FinCEN BO data may be accessed by FIs for BSA CDD purposes subject to: (a) customer consent (where required by access tier); (b) compliance with FinCEN access protocols; (c) appropriate security + data handling. Given the IFR's narrowing, FI reliance now realistically applies only when the customer is a foreign-formed reporting company with foreign-individual beneficial owners — a small subset of the FI's customer book. For US domestic customers, FIs continue to collect BO directly under the CDD Rule + Beneficial Ownership Form."
+    },
+    {
+      "id": "Penalties",
+      "title": "Civil + criminal penalties (where still applicable)",
+      "chapter": "Current",
+      "section": "31 USC §5336(h)",
+      "theme": "Penalties",
+      "requirement": "For in-scope foreign reporting companies + their foreign-individual BOs: civil penalty up to $500 per day (adjusted for inflation) for ongoing reporting failures; criminal penalty up to 2 years' imprisonment + $10,000 fine for willful failure to report or providing false information. Safe-harbour for correcting inaccurate information within 90 days."
+    },
+    {
+      "id": "Future",
+      "title": "Forward-look — potential re-broadening",
+      "chapter": "Current",
+      "section": "FinCEN rulemaking + executive direction",
+      "theme": "Litigation + executive narrowing",
+      "requirement": "FinCEN's IFR explicitly preserves authority to broaden BOI scope again by future rulemaking. A new administration or significant FATF Mutual Evaluation pressure could re-expand scope. Practitioners should treat the current narrowed regime as the operational reality + monitor FinCEN rulemaking + legislative activity. The substantive AML CDD/BO obligation on FIs (Pillar 5) is unchanged regardless of CTA scope — FIs continue to collect BO directly for all legal-entity customers."
+    }
+  ]
+}

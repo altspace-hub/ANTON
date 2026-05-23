@@ -1,0 +1,165 @@
+{
+  "id": "us-bsa-aml-program-2026",
+  "name": "US Federal BSA AML Program — Five Pillars + CIP + SAR/CTR + EDD + 314 + Priorities",
+  "shortName": "US BSA AML Program",
+  "reference": "BSA + USA PATRIOT Act + AMLA 2020 + 31 CFR Chapter X + CDD Rule + FFIEC Manual",
+  "supervisor": "FinCEN + functional regulators (OCC / FRB / FDIC / NCUA / SEC / CFTC / IRS-CI)",
+  "articleCount": 16,
+  "chapters": [
+    {"number": "Prog", "title": "Written AML Program (§352)", "articles": "USA PATRIOT §352 + 31 CFR per category"},
+    {"number": "P1", "title": "Pillar 1 — Internal policies, procedures + controls", "articles": "31 CFR 1020.210 et al"},
+    {"number": "P2", "title": "Pillar 2 — Designated BSA Compliance Officer", "articles": "31 CFR 1020.210 et al"},
+    {"number": "P3", "title": "Pillar 3 — Ongoing employee training", "articles": "31 CFR 1020.210 et al"},
+    {"number": "P4", "title": "Pillar 4 — Independent testing", "articles": "31 CFR 1020.210 et al"},
+    {"number": "P5", "title": "Pillar 5 — CDD + Beneficial Ownership", "articles": "31 CFR 1010.230"},
+    {"number": "CIP", "title": "Customer Identification Program (§326)", "articles": "31 CFR 1020.220"},
+    {"number": "SAR", "title": "Suspicious Activity Reporting", "articles": "31 CFR 1020.320"},
+    {"number": "CTR", "title": "Currency Transaction Reporting", "articles": "31 CFR 1010.310-313"},
+    {"number": "EDD", "title": "Enhanced Due Diligence (§312, §313)", "articles": "31 CFR 1010.605 et al"},
+    {"number": "Sanc", "title": "OFAC sanctions integration", "articles": "31 CFR Chapter V (cross-ref)"},
+    {"number": "Info", "title": "§314(a) + §314(b) info sharing", "articles": "USA PATRIOT §314"},
+    {"number": "Prior", "title": "8 AML/CFT National Priorities", "articles": "AMLA 2020 + FinCEN June 2021"},
+    {"number": "Rec", "title": "Recordkeeping (5-year minimum)", "articles": "31 CFR 1010.430"}
+  ],
+  "themes": [
+    "AML Program (5 pillars)",
+    "Customer Identification Program",
+    "Suspicious Activity Reporting",
+    "Currency Transaction Reporting",
+    "Enhanced Due Diligence",
+    "OFAC integration",
+    "Information sharing",
+    "AML/CFT National Priorities",
+    "Recordkeeping"
+  ],
+  "articles": [
+    {
+      "id": "Prog.§352",
+      "title": "Written AML Program — USA PATRIOT §352",
+      "chapter": "Prog",
+      "section": "31 USC §5318(h) + USA PATRIOT §352 + 31 CFR per category",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "Each covered FI must develop, implement + maintain a written AML program reasonably designed to prevent the FI from being used to facilitate ML / TF / other BSA violations. The program is risk-based + senior-management or board approved + periodically reviewed + updated. The program must satisfy the five pillars: (1) internal policies, procedures + controls; (2) designated BSA Compliance Officer; (3) ongoing employee training; (4) independent testing; (5) CDD + Beneficial Ownership (added by CDD Rule 11 May 2018). Risk assessment is the foundation that informs all five pillars."
+    },
+    {
+      "id": "P1",
+      "title": "Pillar 1 — Internal policies, procedures + controls",
+      "chapter": "P1",
+      "section": "31 CFR 1020.210 + parallel category rules",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "Written, risk-based policies + procedures + internal controls reasonably designed to assure ongoing BSA / AML / OFAC compliance. Coverage: customer-onboarding workflow + transaction-monitoring framework + alert-disposition + escalation + reporting (SAR/CTR/CIP/BO) + sanctions integration + recordkeeping. Senior-management or board approval + dated. Refreshed at least annually + on material change (new product, new jurisdiction, M&A, regulatory change, detected program weakness). Risk-tiering of customers calibrated to the risk assessment."
+    },
+    {
+      "id": "P2",
+      "title": "Pillar 2 — BSA Compliance Officer",
+      "chapter": "P2",
+      "section": "31 CFR 1020.210 + parallel category rules",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "FI must designate a qualified individual as BSA Compliance Officer (BSAO). The BSAO has: (a) sufficient seniority + authority to enforce the program across all business lines; (b) sufficient autonomy + independence from operational pressures; (c) sufficient resources (staff + budget + technology); (d) direct access to senior management / board; (e) responsibility for day-to-day compliance + reporting on program effectiveness. Examiners specifically assess whether the BSAO has the authority to be heard + the resources to do the job — a 'BSAO in name only' fails."
+    },
+    {
+      "id": "P3",
+      "title": "Pillar 3 — Ongoing employee training",
+      "chapter": "P3",
+      "section": "31 CFR 1020.210 + parallel category rules",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "Ongoing training program for appropriate personnel based on their role + AML/BSA exposure: foundational training at hire + annual refresher minimum for AML-relevant staff; role-targeted modules (front-line vs operations vs compliance vs senior management vs board); current ML/TF/PF typologies + red flags; updated for the 8 National Priorities + sanctions evolutions + product changes; completion tracked + records retained 5 years; periodic effectiveness assessment (testing or scenario exercises)."
+    },
+    {
+      "id": "P4",
+      "title": "Pillar 4 — Independent testing",
+      "chapter": "P4",
+      "section": "31 CFR 1020.210 + FFIEC Manual",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "Periodic + comprehensive + independent testing of the AML program by a qualified party independent of the AML compliance function — typically internal audit, an external audit firm, or qualified consultancy. Frequency proportionate to risk (annual is the de facto standard for larger FIs; minimum biennial for smaller). Scope covers: risk-assessment adequacy + program effectiveness + transaction monitoring + alert disposition + sample SAR/CTR + sanctions screening + training + BSAO authority + resources. Findings documented + remediation tracked through to closure. Senior management + board / audit committee notified."
+    },
+    {
+      "id": "P5",
+      "title": "Pillar 5 — CDD + Beneficial Ownership (31 CFR 1010.230)",
+      "chapter": "P5",
+      "section": "31 CFR 1010.230 (Fifth Pillar, in force 11 May 2018)",
+      "theme": "AML Program (5 pillars)",
+      "requirement": "For all new legal-entity customers (subject to exceptions): (a) identify + verify each beneficial owner — 25% ownership prong (one or more individuals owning ≥25% directly or indirectly) AND one control prong (one individual with significant managerial control); (b) understand the nature + purpose of the customer relationship to develop a customer risk profile; (c) ongoing monitoring + risk-based update of customer information including BO. Reliance on FinCEN BO data (post-CTA, narrowed scope) permitted subject to conditions. Documented in a Beneficial Ownership Form or equivalent."
+    },
+    {
+      "id": "CIP",
+      "title": "Customer Identification Program — USA PATRIOT §326",
+      "chapter": "CIP",
+      "section": "31 CFR 1020.220 (banks) + parallel rules for broker-dealers + mutual funds + futures merchants",
+      "theme": "Customer Identification Program",
+      "requirement": "Written CIP appropriate to size + nature of business. Minimum requirements: (a) collect identifying information — name, date of birth, address, taxpayer identification number (or passport / alien-id number for non-US persons); (b) verify identity using documentary methods (government-issued ID with photograph) OR non-documentary methods (independent reference data, credit bureau, consumer reporting agency) OR a combination — within reasonable time after opening; (c) compare with government lists (OFAC SDN); (d) provide customer notice (typically posted at branches + on website); (e) recordkeeping — 5 years post-account-closing. CIP integrates with CDD Pillar 5 for legal-entity customers."
+    },
+    {
+      "id": "SAR",
+      "title": "Suspicious Activity Report (SAR) filing — 31 CFR 1020.320 et al",
+      "chapter": "SAR",
+      "section": "31 CFR 1020.320 (banks) + parallel category rules",
+      "theme": "Suspicious Activity Reporting",
+      "requirement": "Covered FI files a SAR via the BSA E-Filing System to FinCEN within 30 calendar days of initial detection (60 calendar days max with reasonable need for additional information). Threshold: transactions involving / aggregating ≥ $5,000 (banks; varies for other categories) where the FI knows / suspects / has reason to suspect: ML / fraud / structuring / BSA violation / no apparent lawful business purpose. SAR narrative quality is critical — FinCEN + LEAs investigate based on narrative clarity. Confidentiality: SAR existence + content must not be disclosed (federal privilege under 31 USC §5318(g)(2)). Annual SAR statistics published by FinCEN."
+    },
+    {
+      "id": "CTR",
+      "title": "Currency Transaction Report (CTR) filing — 31 CFR 1010.310-313",
+      "chapter": "CTR",
+      "section": "31 CFR 1010.310-313",
+      "theme": "Currency Transaction Reporting",
+      "requirement": "Covered FI files a CTR via the BSA E-Filing System within 15 calendar days for each currency transaction > $10,000 in a single business day, by or on behalf of one person. Aggregation rule: multiple transactions by same customer same business day must be aggregated when known. Structured transactions (transactions designed to evade — $9,500 + $9,500 in same day) trigger SAR + are themselves a substantive federal offence (31 USC §5324). Exemption regime under 31 CFR 1020.315 for certain qualified business customers (Phase I + Phase II exemptions)."
+    },
+    {
+      "id": "8300",
+      "title": "Form 8300 (joint FinCEN + IRS) — non-financial businesses",
+      "chapter": "CTR",
+      "section": "31 CFR 1010.330 + 26 USC §6050I",
+      "theme": "Currency Transaction Reporting",
+      "requirement": "Non-financial trade or business (auto dealers, jewellers, real-estate, attorneys etc.) receiving > $10,000 cash in single or related transactions files Form 8300 with IRS within 15 days. Joint filing through BSA E-Filing System since 2012. Cumulative aggregation rule for related transactions within 12 months. Subject to civil + criminal penalties."
+    },
+    {
+      "id": "EDD-S312",
+      "title": "Enhanced Due Diligence — correspondent + private banking (USA PATRIOT §312)",
+      "chapter": "EDD",
+      "section": "31 CFR 1010.605 (correspondent) + 31 CFR 1010.620 (private banking)",
+      "theme": "Enhanced Due Diligence",
+      "requirement": "EDD obligations for: (a) Correspondent accounts of foreign banks — heightened scrutiny for foreign banks operating under offshore banking licences, in non-compliant jurisdictions, or with PEP / sanctions / criminal exposure. Includes obtaining + maintaining records of FB ownership + AML controls + activity patterns. (b) Private banking accounts of foreign senior political figures (SFPFs / foreign PEPs) with aggregate funds ≥ $1m. EDD includes documented purpose of relationship + source of funds + source of wealth + ongoing enhanced monitoring + senior-management approval for new + continuing PEP relationships."
+    },
+    {
+      "id": "S313",
+      "title": "Shell-bank correspondent prohibition (USA PATRIOT §313)",
+      "chapter": "EDD",
+      "section": "31 CFR 1010.630",
+      "theme": "Enhanced Due Diligence",
+      "requirement": "Prohibits US FIs from establishing, maintaining, administering or managing a correspondent account in the US for or on behalf of a foreign shell bank (= foreign bank without physical presence in any country, NOT affiliated with a regulated financial group). Affirmative obligation to take reasonable steps to ensure correspondent accounts for non-US banks are not used to indirectly provide banking services to foreign shell banks. Annual certification process for foreign-bank correspondents."
+    },
+    {
+      "id": "OFAC-Int",
+      "title": "OFAC sanctions integration",
+      "chapter": "Sanc",
+      "section": "31 CFR Chapter V (OFAC) — operational integration with BSA program",
+      "theme": "OFAC integration",
+      "requirement": "OFAC sanctions screening is separate from but operationally integrated with the BSA program: shared customer-onboarding workflow + shared transaction-screening systems + shared alert-disposition + shared governance. Substantive differences preserved: OFAC = strict liability + immediate blocking + 10-business-day blocking report. BSA = risk-based + 30-day SAR window. Examiners look at the integrated financial-crime function as a whole; failure to integrate (siloed OFAC + BSA programs) is a common finding."
+    },
+    {
+      "id": "S314A",
+      "title": "§314(a) Law enforcement information requests",
+      "chapter": "Info",
+      "section": "USA PATRIOT §314(a) + 31 CFR 1010.520",
+      "theme": "Information sharing",
+      "requirement": "FinCEN, on behalf of federal/state/local LE, transmits 314(a) information requests to FIs (every 2 weeks typically) — searches by name + identifying information; FIs search their records (typically 2-week response window) + report matches to FinCEN. Confidential — FIs may not disclose existence of a 314(a) request to the subject or any third party. FIs designate a 314(a) contact + maintain documented procedures."
+    },
+    {
+      "id": "S314B",
+      "title": "§314(b) FI-to-FI voluntary information sharing safe harbour",
+      "chapter": "Info",
+      "section": "USA PATRIOT §314(b) + 31 CFR 1010.540",
+      "theme": "Information sharing",
+      "requirement": "Voluntary regime allowing FIs (or qualifying associations of FIs) to share information among themselves regarding suspected ML / TF, with safe-harbour protection from civil liability if the FI: (a) registers with FinCEN; (b) verifies registration of the other FI before sharing; (c) limits sharing to the purposes set out in §314(b); (d) takes reasonable steps to maintain confidentiality. AMLA 2020 expanded the permissible purposes + clarified the safe harbour."
+    },
+    {
+      "id": "Priorities",
+      "title": "8 AML/CFT National Priorities — incorporation into program",
+      "chapter": "Prior",
+      "section": "AMLA 2020 §6101(b)(2) + FinCEN June 2021",
+      "theme": "AML/CFT National Priorities",
+      "requirement": "Each covered FI must incorporate FinCEN's 8 AML/CFT National Priorities into its risk-based AML program: (1) Corruption; (2) Cybercrime + virtual currency; (3) Foreign + Domestic Terrorism Financing; (4) Fraud; (5) Transnational Criminal Organization activity; (6) Drug Trafficking; (7) Human Trafficking + Smuggling; (8) Proliferation Financing. Incorporation expected in the risk assessment, in transaction-monitoring scenarios, in EDD triggers, in training content. FinCEN's final implementing regulations remain pending as of 2026; current expectation per joint federal-agency Q&A is that FIs document risk-based incorporation."
+    }
+  ]
+}

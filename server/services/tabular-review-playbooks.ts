@@ -2561,6 +2561,202 @@ export const HONGKONG_STABLECOINS_VATP_READINESS: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 15. US BSA AML Program — Five-Pillar Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const US_BSA_AML_PROGRAM_READINESS: Playbook = {
+  id: 'us-bsa-aml-program-readiness',
+  name: 'US BSA AML Program — Five-Pillar Readiness Mapping',
+  description:
+    'Maps a US-supervised financial institution\'s BSA AML programme documentation against the ' +
+    'federal five-pillar structure (USA PATRIOT §352 + CDD Rule 31 CFR 1010.230) plus CIP, ' +
+    'SAR/CTR, EDD (PATRIOT §312/§313), 314(a)/(b) info-sharing, OFAC integration, and the 8 ' +
+    'AML/CFT National Priorities incorporation. Anchored on the FFIEC BSA/AML Examination ' +
+    'Manual — what an examiner actually looks for.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['us-bsa-aml-2026'],
+  systemPrompt:
+    'You are an experienced US BSA/AML examiner (FFIEC manual + functional regulator background) ' +
+    'reviewing a covered financial institution\'s AML programme documentation. You assess each ' +
+    'control with the discipline of an on-site examiner: explicit > implicit, evidence > ' +
+    'paraphrase, strict > lenient. You distinguish the five program pillars from the operational ' +
+    'obligations (SAR/CTR/CIP) from the EDD-specific obligations (correspondent + private ' +
+    'banking) from the program-architecture obligations (314 + sanctions integration + ' +
+    'Priorities). You flag missing-or-stale BSA risk assessments as a fundamental Pillar 1 ' +
+    'finding. You respond ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a US-supervised financial institution\'s BSA AML programme document ' +
+    '(written program, policies + procedures, risk assessment, BSAO designation, training plan, ' +
+    'audit report, or related compliance artefact).',
+  columns: [
+    {
+      id: 'us-bsa-p1-policies',
+      header: 'Pillar 1 — Written, risk-based policies + procedures',
+      regulatoryRef: 'USA PATRIOT §352 + 31 CFR 1020.210 + FFIEC Manual',
+      question:
+        'Does the document evidence a written, risk-based AML programme — senior-management or ' +
+        'board approved + dated, refreshed at least annually, covering the major BSA obligations ' +
+        '(CIP, CDD, SAR, CTR, sanctions, EDD, recordkeeping), with risk-tiering of customers ' +
+        'calibrated to a documented BSA/AML risk assessment?',
+      expects:
+        'Board / SO approval + risk assessment linkage + risk-based tiering + dated within 12 ' +
+        'months. Generic template programme without risk-tailoring is "partial"; missing or ' +
+        'stale risk assessment is "missing".',
+    },
+    {
+      id: 'us-bsa-p2-bsao',
+      header: 'Pillar 2 — Designated BSA Compliance Officer',
+      regulatoryRef: '31 CFR 1020.210 + FFIEC Manual',
+      question:
+        'Does the document identify a named, qualified BSA Compliance Officer with sufficient ' +
+        'seniority + authority + autonomy + resources + access to senior management/board, with ' +
+        'demonstrable ability to enforce compliance across business lines?',
+      expects:
+        'Named individual + seniority evidence + resources + reporting line to senior management/' +
+        'board. "Compliance function" without a named senior-level BSAO is "missing".',
+    },
+    {
+      id: 'us-bsa-p3-training',
+      header: 'Pillar 3 — Ongoing employee training',
+      regulatoryRef: '31 CFR 1020.210 + FFIEC Manual',
+      question:
+        'Does the document evidence ongoing AML training: foundational at hire + annual refresher ' +
+        'for AML-relevant staff; role-targeted (front-line vs operations vs compliance vs senior ' +
+        'management vs board); current ML/TF/PF typologies + 8 National Priorities + sanctions; ' +
+        'completion tracked + records retained?',
+      expects:
+        'Annual refresher + role-targeted + Priorities + completion tracking + records. Generic ' +
+        '"staff are trained" without cadence/role differentiation is "partial".',
+    },
+    {
+      id: 'us-bsa-p4-audit',
+      header: 'Pillar 4 — Independent testing',
+      regulatoryRef: '31 CFR 1020.210 + FFIEC Manual',
+      question:
+        'Does the document evidence independent testing of the AML programme by a qualified party ' +
+        'independent of the AML compliance function (internal audit / external auditor / qualified ' +
+        'consultancy), with frequency proportionate to risk (annual for larger FIs), covering ' +
+        'risk assessment + programme effectiveness + transaction monitoring + SAR/CTR quality + ' +
+        'sanctions + training + BSAO authority, with findings tracked to remediation?',
+      expects:
+        'Audit cadence + independent function + scope coverage + tracking to closure. Compliance-' +
+        'self-testing only (no independent audit function) is "partial".',
+    },
+    {
+      id: 'us-bsa-p5-cdd-bo',
+      header: 'Pillar 5 — CDD + Beneficial Ownership',
+      regulatoryRef: '31 CFR 1010.230 (CDD Rule, in force 11 May 2018)',
+      question:
+        'Does the document evidence the CDD Rule implementation: identify + verify beneficial ' +
+        'owners (25% ownership prong + 1 control-person prong) for legal-entity customers; ' +
+        'understand the nature + purpose of each customer relationship to develop a customer ' +
+        'risk profile; conduct ongoing monitoring + risk-based update of customer information ' +
+        '+ beneficial ownership?',
+      expects:
+        'All four CDD elements + concrete Beneficial Ownership Form / equivalent process + ' +
+        'ongoing-monitoring discipline. Missing the ongoing-monitoring + refresh trigger is ' +
+        '"partial".',
+    },
+    {
+      id: 'us-bsa-cip',
+      header: 'CIP — Customer Identification Program',
+      regulatoryRef: 'USA PATRIOT §326 + 31 CFR 1020.220',
+      question:
+        'Does the document evidence a written CIP: minimum identifying information (name, DoB, ' +
+        'address, TIN); identity verification (documentary + non-documentary); OFAC SDN screening ' +
+        'at onboarding + ongoing; customer notice; 5-year post-account-closing recordkeeping; ' +
+        'integration with CDD Pillar 5 for legal-entity customers?',
+      expects:
+        'All five elements (info + verification + sanctions screening + customer notice + ' +
+        'records). Missing the OFAC SDN comparison at onboarding is "missing".',
+    },
+    {
+      id: 'us-bsa-sar',
+      header: 'SAR filing process — 30-day window + narrative quality',
+      regulatoryRef: '31 CFR 1020.320 + FinCEN guidance',
+      question:
+        'Does the document evidence: SAR detection + escalation process; 30-day initial filing ' +
+        'window (max 60 days with documented reasonable basis for extension); BSA E-Filing System ' +
+        'submission; narrative-quality discipline (the 5Ws + how); supporting documentation ' +
+        'retention; confidentiality + privilege (31 USC §5318(g)(2)); no-file decision documentation?',
+      expects:
+        'All five elements (detection + window + filing channel + narrative + confidentiality). ' +
+        'Missing the no-file documentation discipline is "partial".',
+    },
+    {
+      id: 'us-bsa-ctr',
+      header: 'CTR + Form 8300 + structuring detection',
+      regulatoryRef: '31 CFR 1010.310-313 + 31 USC §5324',
+      question:
+        'Does the document evidence: CTR filing for >$10k currency transactions (15-day window, ' +
+        'aggregation rule, Phase I/II exemption maintenance); Form 8300 process for any non-' +
+        'financial business activities; structuring-detection scenarios in transaction monitoring; ' +
+        'SAR filing on detected structuring (transactions designed to evade)?',
+      expects:
+        'All four elements (CTR filing + 8300 where relevant + structuring detection + SAR-on-' +
+        'structuring). Missing structuring-detection is "partial".',
+    },
+    {
+      id: 'us-bsa-edd-correspondent-pep',
+      header: 'EDD — Correspondent + Private Banking (§312, §313)',
+      regulatoryRef: 'USA PATRIOT §312 + §313 + 31 CFR 1010.605/.620/.630',
+      question:
+        'Does the document evidence EDD for: (a) foreign-bank correspondent accounts (offshore ' +
+        'licences + non-compliant jurisdictions scrutiny + shell-bank prohibition + annual ' +
+        'certification); (b) private banking accounts ≥$1m for foreign senior political figures ' +
+        '(source-of-wealth + source-of-funds + senior-management approval + enhanced ongoing ' +
+        'monitoring); (c) heightened scrutiny for high-risk customer types (MSBs as customers, ' +
+        'cash-intensive businesses, digital-asset exposure)?',
+      expects:
+        'All three elements (correspondent + private banking + high-risk customer types). ' +
+        'Missing the shell-bank annual-certification process is "partial".',
+    },
+    {
+      id: 'us-bsa-ofac-integration',
+      header: 'OFAC sanctions integration',
+      regulatoryRef: '31 CFR Chapter V (OFAC) operationalised within BSA program',
+      question:
+        'Does the document evidence operational integration of OFAC sanctions screening with the ' +
+        'BSA program: shared customer-onboarding workflow + screening systems + alert disposition; ' +
+        'preservation of substantive differences (OFAC strict-liability blocking + 10-business-day ' +
+        'blocking report vs BSA risk-based + 30-day SAR window); coordination with the integrated ' +
+        'financial-crime function?',
+      expects:
+        'Integration with preserved substantive differences. Siloed OFAC + BSA programs are ' +
+        '"partial" — a common FFIEC examiner finding.',
+    },
+    {
+      id: 'us-bsa-314',
+      header: '§314(a) + §314(b) information sharing',
+      regulatoryRef: 'USA PATRIOT §314(a) + §314(b) + 31 CFR 1010.520 + .540',
+      question:
+        'Does the document evidence: (a) §314(a) procedure — designated FI contact, 2-week ' +
+        'response window for FinCEN requests, confidentiality discipline, document records of ' +
+        'searches + matches; (b) §314(b) participation — FinCEN registration + verification of ' +
+        'sharing partners + permissible-purpose limits + safe-harbour reliance documentation?',
+      expects:
+        'Both elements + 314(b) registration evidence. Missing 314(b) participation is "partial" ' +
+        '— increasingly an examiner expectation post-AMLA expansion.',
+    },
+    {
+      id: 'us-bsa-priorities',
+      header: '8 AML/CFT National Priorities incorporation',
+      regulatoryRef: 'AMLA 2020 §6101(b)(2) + FinCEN June 2021 + pending implementing rules',
+      question:
+        'Does the document evidence incorporation of the 8 AML/CFT National Priorities into the ' +
+        'risk-based AML programme: (1) Corruption; (2) Cybercrime + virtual currency; (3) ' +
+        'Terrorism Financing; (4) Fraud; (5) TCO; (6) Drug Trafficking; (7) Human Trafficking + ' +
+        'Smuggling; (8) Proliferation Financing — addressed in the risk assessment, in ' +
+        'transaction-monitoring scenarios, in EDD triggers, in training content?',
+      expects:
+        'All 8 Priorities + integration into risk assessment + monitoring + EDD + training. ' +
+        'A generic "we consider the FinCEN Priorities" without per-priority operationalisation ' +
+        'is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -2579,6 +2775,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   SINGAPORE_MAS_626_DTSP_READINESS,
   UAE_FDL_10_MULTI_REGULATOR_READINESS,
   HONGKONG_STABLECOINS_VATP_READINESS,
+  US_BSA_AML_PROGRAM_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

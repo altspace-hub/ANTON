@@ -1,0 +1,105 @@
+{
+  "id": "us-ffiec-bsa-aml-exam-manual",
+  "name": "FFIEC BSA / AML Examination Manual — operational examination yardstick",
+  "shortName": "FFIEC BSA/AML Manual",
+  "reference": "FFIEC BSA/AML Examination Manual",
+  "url": "https://bsaaml.ffiec.gov/manual",
+  "supervisor": "FFIEC (FRB + FDIC + NCUA + OCC + CFPB + state liaison)",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "Found", "title": "Foundation + risk assessment", "articles": "Manual Pt I"},
+    {"number": "BSA", "title": "BSA / AML program (5 pillars examination)", "articles": "Manual Pt II"},
+    {"number": "Op", "title": "Operational compliance (SAR/CTR/CIP/sanctions)", "articles": "Manual Pt III"},
+    {"number": "EDD", "title": "EDD + special accounts", "articles": "Manual Pt IV"},
+    {"number": "Special", "title": "Special topics (digital assets + RIAs + cyber)", "articles": "Manual updates 2022-2024"}
+  ],
+  "themes": [
+    "Risk assessment",
+    "5-pillar program examination",
+    "Operational compliance",
+    "EDD + special accounts",
+    "Special topics"
+  ],
+  "articles": [
+    {
+      "id": "RA",
+      "title": "Risk assessment — examiner expectation",
+      "chapter": "Found",
+      "section": "FFIEC Manual — Risk Assessment chapter",
+      "theme": "Risk assessment",
+      "requirement": "Examiner first reviews the FI's BSA/AML risk assessment. The expectation: (a) documented + comprehensive; (b) covers customer, geographic, product/service + transaction risk factors; (c) refreshed at least annually + on material change; (d) integrates the 8 AML/CFT National Priorities; (e) drives risk-tiering of customers + calibration of monitoring + EDD triggers. Inadequate risk assessment is the single most-cited Pillar 1 finding."
+    },
+    {
+      "id": "P1-Exam",
+      "title": "Pillar 1 examination — policies + procedures + internal controls",
+      "chapter": "BSA",
+      "section": "FFIEC Manual — BSA/AML Compliance Program",
+      "theme": "5-pillar program examination",
+      "requirement": "Examiner reviews: written program documentation; senior-management or board approval evidence + dates; risk-based design proportionate to size/complexity; coverage of all key BSA obligations (CIP, CDD, SAR, CTR, sanctions, EDD, recordkeeping); periodic review; updates to reflect regulatory change. Common findings: generic/template program not tailored to risk profile; weak controls in particular product lines (correspondent, private banking, digital assets); missing or stale BSA risk assessment."
+    },
+    {
+      "id": "P2-Exam",
+      "title": "Pillar 2 examination — BSA Compliance Officer",
+      "chapter": "BSA",
+      "section": "FFIEC Manual — BSA/AML Compliance Program",
+      "theme": "5-pillar program examination",
+      "requirement": "Examiner verifies: BSAO named + qualified; sufficient authority + autonomy + access to senior management/board; sufficient resources (staff + technology + budget); demonstrable ability to enforce compliance across business lines. Examiners test by interviewing the BSAO + tracing their decision authority + reviewing escalations. Common finding: BSAO understaffed relative to FI size or complexity; BSAO reports too far below CEO/COO to be heard."
+    },
+    {
+      "id": "P3-Exam",
+      "title": "Pillar 3 examination — training",
+      "chapter": "BSA",
+      "section": "FFIEC Manual — BSA/AML Compliance Program",
+      "theme": "5-pillar program examination",
+      "requirement": "Examiner reviews: training programme content + frequency + completion records; role-targeted delivery; refresher cycle (at least annual for AML staff); inclusion of current ML/TF/PF typologies + 8 National Priorities + sanctions evolutions + product changes; effectiveness assessment. Common finding: training generic + not role-targeted; senior management + board training thin; new-hire onboarding training delayed."
+    },
+    {
+      "id": "P4-Exam",
+      "title": "Pillar 4 examination — independent testing",
+      "chapter": "BSA",
+      "section": "FFIEC Manual — BSA/AML Compliance Program",
+      "theme": "5-pillar program examination",
+      "requirement": "Examiner reviews: most recent independent audit report; auditor qualifications + independence from AML function; frequency (annual is de facto standard for larger FIs); scope coverage (risk assessment + program effectiveness + transaction-monitoring + alert disposition + SAR/CTR quality + sanctions + training + BSAO authority); findings tracked to remediation through to closure. Common finding: audit scope too narrow; remediation tracking weak; auditor independence concerns."
+    },
+    {
+      "id": "P5-Exam",
+      "title": "Pillar 5 examination — CDD + Beneficial Ownership",
+      "chapter": "BSA",
+      "section": "FFIEC Manual — Customer Due Diligence + Beneficial Ownership",
+      "theme": "5-pillar program examination",
+      "requirement": "Examiner reviews: CDD methodology for understanding nature + purpose of customer relationships; BO collection at account-opening (Beneficial Ownership Form or equivalent); 25% + control prong identification; ongoing monitoring + risk-based update of customer information; integration with CIP. Common finding: BO information stale + not refreshed; customer risk profile not updated on material change; CDD documentation inconsistent across business lines."
+    },
+    {
+      "id": "SAR-Exam",
+      "title": "SAR filing — quality + timeliness examination",
+      "chapter": "Op",
+      "section": "FFIEC Manual — Suspicious Activity Reporting",
+      "theme": "Operational compliance",
+      "requirement": "Examiner tests: SAR filing timeliness (30/60-day windows); narrative quality (the 5W's — who, what, where, when, why — plus how); supporting documentation retention; non-filing decision documentation; SAR escalation + governance. Examiners pull a sample of SARs filed + a sample of cases not escalated to SAR + reverse-engineer the FI's judgement. Common finding: late SARs; poor narratives; thin or missing investigation files; no documented basis for no-file decisions."
+    },
+    {
+      "id": "CTR-Exam",
+      "title": "CTR filing + structuring detection examination",
+      "chapter": "Op",
+      "section": "FFIEC Manual — Currency Transaction Reporting",
+      "theme": "Operational compliance",
+      "requirement": "Examiner tests: CTR filing accuracy + timeliness (15-day); aggregation rule application (same-day, same customer); CTR exemption Phase I + II maintenance; structured-transaction detection (the 'structuring scenarios' — multiple sub-threshold transactions designed to evade reporting); SAR filing for detected structuring. Common finding: missed aggregations; weak structuring-detection scenarios in transaction monitoring."
+    },
+    {
+      "id": "EDD-Exam",
+      "title": "EDD examination — correspondent + private banking + high-risk customers",
+      "chapter": "EDD",
+      "section": "FFIEC Manual — Correspondent / Private Banking / High-Risk Customers",
+      "theme": "EDD + special accounts",
+      "requirement": "Examiner reviews: identification of high-risk customers + accounts (correspondent / PEPs / SFPFs / cash-intensive businesses / MSBs as customers / nested correspondent / virtual-asset exposure); EDD methodology proportionate to risk (source of wealth + source of funds + enhanced ongoing monitoring + senior-management approval); periodic refresh. Common finding: PEP identification incomplete (especially domestic PEPs + family members); SFPF accounts without adequate SoW/SoF; correspondent EDD documentation thin."
+    },
+    {
+      "id": "Special",
+      "title": "Special topics — digital assets + RIAs + cyber",
+      "chapter": "Special",
+      "section": "FFIEC Manual updates 2022-2026",
+      "theme": "Special topics",
+      "requirement": "Recent FFIEC + agency updates incorporate: (a) digital-asset exposure (CVCs in customer-onboarding + transaction monitoring + sanctions screening; blockchain-analytics integration); (b) Registered Investment Advisers (in BSA scope from 1 January 2026 per FinCEN final rule); (c) cyber-incident SARs + ransomware-specific procedures (post-OFAC ransomware advisories); (d) trade-based money-laundering (TBML) typology integration; (e) elder-fraud-specific procedures (per FinCEN 2022 advisory)."
+    }
+  ]
+}
