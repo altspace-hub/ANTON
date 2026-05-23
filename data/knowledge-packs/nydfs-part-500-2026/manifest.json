@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "nydfs-part-500-2026",
+  "display_name": "NYDFS Part 500 + 504 + 200 + NY SHIELD — Cyber, AML & Virtual Currency",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the New York Department of Financial Services Cybersecurity Regulation (23 NYCRR Part 500) following the Second Amendment of 1 November 2023 — with the final controls phase fully effective 1 November 2025 (privileged-access management, endpoint detection + response, automated vulnerability scans for Class A Companies). Plus the AML transaction-monitoring overlay (23 NYCRR Part 504), the virtual-currency BitLicense regime (23 NYCRR Part 200), and the NY SHIELD Act 2019 state-level data-security floor. NYDFS gained de facto US bank-cyber + AML primacy in 2025 as CFPB enforcement was paused.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "United States — New York State",
+  "regulatory_area": "Cybersecurity + AML + Virtual Currency",
+  "regulation_ids": [
+    "23 NYCRR Part 500 (Cybersecurity Regulation)",
+    "23 NYCRR Part 500 — Second Amendment (Nov 2023)",
+    "23 NYCRR Part 504 (Transaction Monitoring and Filtering)",
+    "23 NYCRR Part 200 (BitLicense — Virtual Currency)",
+    "NY SHIELD Act (NY Gen Bus L §899-bb)",
+    "NY Banking Law",
+    "NY Insurance Law",
+    "NY Financial Services Law",
+    "Martin Act (NY Gen Bus L §352-359-h)",
+    "Gramm-Leach-Bliley Act (Federal — interplay)",
+    "Federal Reserve SR letters (interplay)"
+  ],
+  "tier": 1,
+  "entity_count": 50,
+  "relationship_count": 75,
+  "alias_entry_count": 30
+}
