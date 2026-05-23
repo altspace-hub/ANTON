@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "us-bsa-aml-2026",
+  "display_name": "US Federal BSA / AML — FinCEN, USA PATRIOT Act, AML Act 2020, CTA (narrowed 2025)",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the US Federal AML framework: Bank Secrecy Act (31 USC §§5311-5336); USA PATRIOT Act 2001 Title III (CIP §326, §314(a)/(b) info-sharing, §312 correspondent + private-banking EDD, §313 shell-bank prohibition); Anti-Money Laundering Act 2020 (NDAA 2021 Title LXIV) with the SARs reform + AML whistleblower programme + national AML/CFT priorities mandate; FinCEN Corporate Transparency Act framework — substantially narrowed by the March 2025 Interim Final Rule (US domestic reporting companies + US-person beneficial owners now essentially exempt; only FOREIGN reporting companies + foreign-individual BOs in scope); 31 CFR Chapter X operational FinCEN regulations (incl. CDD Rule 1010.230 + CIP Rule 1020.220); FFIEC BSA/AML Examination Manual; FinCEN's 8 AML/CFT National Priorities (June 2021); plus federal supervisor interplay (OCC + Federal Reserve + FDIC + NCUA + SEC + CFTC + IRS-CI).",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "United States — Federal",
+  "regulatory_area": "AML/CFT — Federal",
+  "regulation_ids": [
+    "Bank Secrecy Act (31 USC §§5311-5336)",
+    "USA PATRIOT Act 2001 Title III",
+    "Anti-Money Laundering Act 2020 (NDAA 2021 Title LXIV)",
+    "Corporate Transparency Act 2020 — narrowed by FinCEN IFR (March 2025)",
+    "31 CFR Chapter X (FinCEN regulations)",
+    "31 CFR 1010.230 (Customer Due Diligence Rule)",
+    "31 CFR 1020.220 (Customer Identification Program — Banks)",
+    "FFIEC BSA/AML Examination Manual",
+    "FinCEN AML/CFT National Priorities (June 2021)",
+    "AML Whistleblower Improvement Act 2022",
+    "Beneficial Ownership Information Reporting Rule (FinCEN, Sept 2022; narrowed March 2025)"
+  ],
+  "tier": 1,
+  "entity_count": 51,
+  "relationship_count": 82,
+  "alias_entry_count": 32
+}

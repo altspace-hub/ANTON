@@ -1,0 +1,491 @@
+[
+  {
+    "ref_id": "REG-BSA-1970",
+    "entity_type": "regulation",
+    "entity_id": "BSA-1970",
+    "canonical_name": "Bank Secrecy Act (Currency and Foreign Transactions Reporting Act) — 31 USC §§5311-5336",
+    "description": "Foundational US AML statute (1970). Establishes the basic recordkeeping + reporting framework: SARs, CTRs, identification + verification, retention. The substantive obligations are operationalized in 31 CFR Chapter X. Has been amended materially by the USA PATRIOT Act 2001 + the AML Act 2020 — most current substantive content comes from those amendments + the FinCEN regs.",
+    "metadata": {
+      "citation": "31 USC §§5311-5336",
+      "original_in_force": "1970-10-26",
+      "supervisor": "FinCEN + functional regulators (OCC / FRB / FDIC / NCUA / SEC / CFTC / IRS-CI)"
+    }
+  },
+  {
+    "ref_id": "REG-PATRIOT-2001",
+    "entity_type": "regulation",
+    "entity_id": "USA-PATRIOT-2001",
+    "canonical_name": "USA PATRIOT Act 2001 — Title III (International Money Laundering Abatement and Anti-Terrorist Financing Act)",
+    "description": "Major BSA expansion post-9/11. Key Title III provisions: §312 (EDD for foreign correspondent + private-banking accounts); §313 (shell-bank correspondent prohibition); §314(a) (LE info-sharing requests to FIs); §314(b) (voluntary FI-to-FI info-sharing safe harbour); §326 (CIP rule for banks); §352 (mandatory AML programs for FIs); §319 (forfeiture of foreign bank funds in US correspondent accounts).",
+    "metadata": {
+      "in_force": "2001-10-26",
+      "supervisor": "FinCEN + functional regulators"
+    }
+  },
+  {
+    "ref_id": "REG-AMLA-2020",
+    "entity_type": "regulation",
+    "entity_id": "AMLA-2020",
+    "canonical_name": "Anti-Money Laundering Act of 2020 (NDAA 2021 Title LXIV)",
+    "description": "Most significant BSA reform since the USA PATRIOT Act. Establishes the Corporate Transparency Act framework; modernizes BSA risk-based approach; reforms SAR information-sharing; creates the AML whistleblower bounty programme (AML Whistleblower Improvement Act 2022 strengthens); mandates the FinCEN AML/CFT National Priorities (published June 2021); expands FinCEN authority; pilots overseas information-sharing. Multi-year rollout — significant implementing rules still pending as of 2026.",
+    "metadata": {
+      "in_force": "2021-01-01",
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-CTA-2020",
+    "entity_type": "regulation",
+    "entity_id": "CTA-2020",
+    "canonical_name": "Corporate Transparency Act (CTA — AMLA 2020 Title LXIV §§6401-6403)",
+    "description": "Original purpose: beneficial-ownership transparency for US-formed reporting companies. Substantially NARROWED by FinCEN's Interim Final Rule of 26 March 2025: US domestic reporting companies + US-person beneficial owners are now essentially EXEMPT from filing. Only foreign reporting companies registered to do business in the US + their foreign-individual beneficial owners remain in scope. The change followed extensive litigation (NSBA v Yellen + Texas Top Cop Shop) + executive action.",
+    "metadata": {
+      "in_force_original": "2024-01-01",
+      "narrowed_by_ifr": "2025-03-26",
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-BOIR-FINAL-2022",
+    "entity_type": "regulation",
+    "entity_id": "FINCEN-BOIR-RULE",
+    "canonical_name": "FinCEN Beneficial Ownership Information Reporting Rule (RIN 1506-AB49, Sept 2022)",
+    "description": "Implementing rule for the CTA BOIR regime. Originally captured ~32 million US reporting companies. The March 2025 IFR narrowed the scope (see CTA entity). Currently in scope: foreign reporting companies registered to do business in US states; foreign-individual beneficial owners (defined as 25% ownership or substantial control). FIs may rely on FinCEN BO data for their own CDD subject to conditions.",
+    "metadata": {
+      "in_force_original": "2024-01-01",
+      "scope_narrowed": "2025-03-26",
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-AMLA-WHISTLEBLOWER",
+    "entity_type": "regulation",
+    "entity_id": "AMLA-WB-2022",
+    "canonical_name": "Anti-Money Laundering Whistleblower Improvement Act 2022",
+    "description": "Strengthens the AMLA 2020 whistleblower programme: 10-30% bounty of monetary sanctions > $1m; mandatory reward floor; expanded anti-retaliation; specific protections for foreign whistleblowers. Materially raised the FinCEN whistleblower-tip volume from 2023 onwards.",
+    "metadata": {
+      "in_force": "2023-01-01",
+      "supervisor": "FinCEN + Treasury OIG"
+    }
+  },
+  {
+    "ref_id": "REG-31-CFR-CHX",
+    "entity_type": "regulation",
+    "entity_id": "31-CFR-CHX",
+    "canonical_name": "31 CFR Chapter X — FinCEN regulations",
+    "description": "FinCEN's operational regulations implementing BSA obligations. Organized by FI category: 1010 (general), 1020 (banks), 1021 (casinos), 1022 (MSBs), 1023 (broker-dealers), 1024 (mutual funds), 1025 (insurance companies), 1026 (futures commission merchants + IBs), 1027 (precious-metals dealers), 1028 (loan/finance companies), 1029 (non-bank residential mortgage), 1030 (housing GSEs). Each part has parallel structure: AML program, CIP (where applicable), SAR/CTR, EDD, record retention.",
+    "metadata": {
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-CDD-RULE",
+    "entity_type": "regulation",
+    "entity_id": "CDD-RULE-1010-230",
+    "canonical_name": "FinCEN CDD Rule (31 CFR 1010.230) — the \"Fifth Pillar\"",
+    "description": "In force 11 May 2018. Requires covered FIs (banks, broker-dealers, mutual funds, futures merchants) to: (a) identify + verify the identity of the beneficial owners (25% threshold + 1 control person) of all legal-entity customers at account opening; (b) understand the nature + purpose of each customer relationship; (c) conduct ongoing monitoring. The rule explicitly added the 'fifth pillar' to the long-standing four AML-program pillars.",
+    "metadata": {
+      "in_force": "2018-05-11",
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-CIP-RULE",
+    "entity_type": "regulation",
+    "entity_id": "CIP-RULE-1020-220",
+    "canonical_name": "Customer Identification Program Rule (31 CFR 1020.220 for banks; parallel rules for other categories)",
+    "description": "Implementation of USA PATRIOT Act §326. Each covered FI must have a written CIP appropriate for its size and business: minimum identifying information (name, DoB, address, TIN); identity verification (documentary or non-documentary methods); recordkeeping; comparison with government lists (OFAC SDN); customer notice (typically posted at branches + on websites).",
+    "metadata": {
+      "in_force": "2003-10-01",
+      "supervisor": "FinCEN + functional regulators"
+    }
+  },
+  {
+    "ref_id": "REG-FFIEC-MANUAL",
+    "entity_type": "regulation",
+    "entity_id": "FFIEC-BSA-AML-MANUAL",
+    "canonical_name": "FFIEC Bank Secrecy Act / Anti-Money Laundering Examination Manual",
+    "description": "The federally-coordinated examination manual used by FFIEC member agencies (FRB / FDIC / NCUA / OCC) when examining banks for BSA/AML compliance. Continually updated; reorganized 2020-2023. Operational gold standard — what an examiner actually looks for. Industry treats it as binding even though it's technically guidance.",
+    "metadata": {
+      "supervisor": "FFIEC (FRB + FDIC + NCUA + OCC + CFPB + state liaison)"
+    }
+  },
+  {
+    "ref_id": "REG-AML-PRIORITIES",
+    "entity_type": "regulation",
+    "entity_id": "AML-CFT-PRIORITIES-2021",
+    "canonical_name": "FinCEN AML/CFT National Priorities (June 2021)",
+    "description": "Eight national AML/CFT priorities mandated by AMLA 2020 §6101(b)(2): (1) Corruption; (2) Cybercrime including cybersecurity + virtual currency; (3) Foreign + Domestic Terrorism Financing; (4) Fraud; (5) Transnational Criminal Organization activity; (6) Drug Trafficking; (7) Human Trafficking + Smuggling; (8) Proliferation Financing. Covered FIs must incorporate the priorities into their risk-based AML programs; final implementing regulations remain pending as of 2026.",
+    "metadata": {
+      "issued": "2021-06-30",
+      "priorities_count": 8,
+      "supervisor": "FinCEN"
+    }
+  },
+  {
+    "ref_id": "REG-OFAC-FRAMEWORK",
+    "entity_type": "regulation",
+    "entity_id": "OFAC-CFCC-CROSSREF",
+    "canonical_name": "OFAC Framework for Compliance Commitments (cross-ref)",
+    "description": "OFAC sanctions screening obligations operate IN PARALLEL with BSA AML obligations. The OFAC CFCC five essential elements + 10-year SoL extension (NDAA 2024) apply to every US person + every US-touchpoint transaction. Most large FIs operate their OFAC + BSA programs as a single integrated financial-crime function — separate substantive frameworks but shared infrastructure (screening systems, alert workflow, governance).",
+    "metadata": {
+      "cross_ref": "See sanctions-ofac-ofsi-2026 knowledge pack"
+    }
+  },
+  {
+    "ref_id": "AUTH-FINCEN",
+    "entity_type": "authority",
+    "entity_id": "FINCEN",
+    "canonical_name": "Financial Crimes Enforcement Network (FinCEN)",
+    "description": "Bureau of the US Treasury. The US Financial Intelligence Unit + the BSA administrator. Receives + analyses SARs/CTRs (~25 million SARs filed 2014-2024 cumulative); issues + enforces 31 CFR Chapter X regulations; coordinates with functional regulators on supervisory matters; issues geographic targeting orders (GTOs); operates the §314(a) info-sharing channel + the BO register.",
+    "metadata": {
+      "type": "Treasury bureau + FIU",
+      "parent": "US Department of the Treasury"
+    }
+  },
+  {
+    "ref_id": "AUTH-OCC",
+    "entity_type": "authority",
+    "entity_id": "OCC-US",
+    "canonical_name": "Office of the Comptroller of the Currency (OCC)",
+    "description": "Charters + supervises national banks + federal savings associations + federal branches/agencies of foreign banks. ~1,100 institutions. Examines for BSA/AML using FFIEC manual; can impose CMPs, cease-and-desist orders, remediation orders. Most active federal BSA enforcer for the national-bank population.",
+    "metadata": {
+      "type": "Federal banking regulator",
+      "parent": "US Department of the Treasury"
+    }
+  },
+  {
+    "ref_id": "AUTH-FRB",
+    "entity_type": "authority",
+    "entity_id": "FRB-US",
+    "canonical_name": "Federal Reserve Board / Federal Reserve System",
+    "description": "Supervises state-chartered member banks + bank holding companies + savings + loan holding companies + intermediate holding companies of foreign banking organizations. Issues Supervision and Regulation (SR) letters operationalising BSA/AML expectations (SR 21-3 BSA examiner update, SR 22-6 third-party risk, etc.). FFIEC member.",
+    "metadata": {
+      "type": "Federal banking regulator + central bank"
+    }
+  },
+  {
+    "ref_id": "AUTH-FDIC",
+    "entity_type": "authority",
+    "entity_id": "FDIC-US",
+    "canonical_name": "Federal Deposit Insurance Corporation (FDIC)",
+    "description": "Supervises insured state-chartered non-member banks (~3,000 institutions) + insured state savings associations. Deposit-insurance backstop. FFIEC member; uses FFIEC manual for BSA/AML examinations. Active BSA enforcer for the community + mid-tier bank population.",
+    "metadata": {
+      "type": "Federal banking regulator + deposit insurer"
+    }
+  },
+  {
+    "ref_id": "AUTH-NCUA",
+    "entity_type": "authority",
+    "entity_id": "NCUA-US",
+    "canonical_name": "National Credit Union Administration (NCUA)",
+    "description": "Charters + supervises federal credit unions; insures member share deposits (NCUSIF). ~4,500 federally-insured credit unions. FFIEC member; uses FFIEC manual for BSA/AML.",
+    "metadata": {
+      "type": "Federal credit union regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-SEC-BSA",
+    "entity_type": "authority",
+    "entity_id": "SEC-BSA",
+    "canonical_name": "Securities and Exchange Commission (SEC) — BSA / AML supervision",
+    "description": "Supervises BSA/AML compliance for SEC-registered broker-dealers + investment advisers (with the latter coming into scope per FinCEN final rule effective 1 Jan 2026 — long-awaited expansion of the BSA AML program + SAR + CIP regime to RIAs/ERAs).",
+    "metadata": {
+      "type": "Federal securities regulator",
+      "ia_in_scope_from": "2026-01-01"
+    }
+  },
+  {
+    "ref_id": "AUTH-CFTC",
+    "entity_type": "authority",
+    "entity_id": "CFTC-US",
+    "canonical_name": "Commodity Futures Trading Commission (CFTC) — BSA supervision",
+    "description": "Supervises BSA/AML compliance for futures commission merchants (FCMs) + introducing brokers + swap dealers. Coordinates with FinCEN + NFA on examination programmes.",
+    "metadata": {
+      "type": "Federal derivatives regulator"
+    }
+  },
+  {
+    "ref_id": "AUTH-IRS-CI",
+    "entity_type": "authority",
+    "entity_id": "IRS-CI",
+    "canonical_name": "Internal Revenue Service — Criminal Investigation (IRS-CI)",
+    "description": "Investigates criminal tax + financial-crime offences including BSA violations + money laundering. Statutory examiner for MSBs + non-bank financial institutions that don't have a functional federal regulator. Co-operates with FinCEN + functional regulators.",
+    "metadata": {
+      "type": "Criminal investigation arm of Treasury"
+    }
+  },
+  {
+    "ref_id": "AUTH-DOJ",
+    "entity_type": "authority",
+    "entity_id": "DOJ-US",
+    "canonical_name": "US Department of Justice — Money Laundering and Asset Recovery Section (MLARS)",
+    "description": "Prosecutes BSA + money-laundering criminal offences (18 USC §§1956-1957, 31 USC §5322). Coordinates with FinCEN + functional regulators on cases. Joint cases with US Attorneys' Offices. Forfeiture authority under 18 USC §§981-984.",
+    "metadata": {
+      "type": "Federal prosecutor"
+    }
+  },
+  {
+    "ref_id": "AUTH-OFAC-CROSSREF",
+    "entity_type": "authority",
+    "entity_id": "OFAC-CROSSREF",
+    "canonical_name": "OFAC (cross-reference)",
+    "description": "Sanctions screening obligations operate alongside BSA AML. See sanctions-ofac-ofsi-2026 knowledge pack for full OFAC framework.",
+    "metadata": {
+      "cross_ref": "sanctions-ofac-ofsi-2026"
+    }
+  },
+  {
+    "ref_id": "BSA-AML-PROGRAM",
+    "entity_type": "duty",
+    "entity_id": "BSA-AML-PROGRAM-OBL",
+    "canonical_name": "Written AML Program (USA PATRIOT Act §352 + 31 CFR per category)",
+    "description": "Every covered FI must have a written AML program designed to prevent the FI from being used to facilitate money laundering or terrorist financing. Risk-based; senior-management/board-approved; reviewed periodically (typically annually + on material change). The program must satisfy the five pillars (post-2018 CDD Rule).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "BSA-PILLAR-1-PP",
+    "entity_type": "duty",
+    "entity_id": "PILLAR-1-POLICIES",
+    "canonical_name": "Pillar 1 — Internal policies, procedures + controls",
+    "description": "Written, risk-based AML policies + procedures + internal controls reasonably designed to assure ongoing BSA/AML compliance. Covers governance + risk assessment + customer onboarding + transaction monitoring + escalation + reporting + recordkeeping + sanctions integration. Senior-management or board approval mandatory; periodic review.",
+    "metadata": {
+      "pillar_number": 1
+    }
+  },
+  {
+    "ref_id": "BSA-PILLAR-2-BSAO",
+    "entity_type": "duty",
+    "entity_id": "PILLAR-2-BSAO",
+    "canonical_name": "Pillar 2 — Designated BSA Compliance Officer",
+    "description": "FI must designate a qualified BSA Compliance Officer (BSAO) at senior level with sufficient authority + autonomy + resources + access to senior management/board. The BSAO has overall responsibility for the AML program. Examiners look at fit-for-purpose, time allocated, line of sight to senior leadership, ability to access information across business lines.",
+    "metadata": {
+      "pillar_number": 2
+    }
+  },
+  {
+    "ref_id": "BSA-PILLAR-3-TRAINING",
+    "entity_type": "duty",
+    "entity_id": "PILLAR-3-TRAINING",
+    "canonical_name": "Pillar 3 — Ongoing employee training",
+    "description": "Ongoing training of appropriate personnel on BSA/AML obligations, current ML/TF typologies + red flags, internal policies + procedures, escalation. Frequency proportionate to role + risk (annual minimum for AML-relevant staff; new-hire onboarding; refresher on material change). Records retained.",
+    "metadata": {
+      "pillar_number": 3
+    }
+  },
+  {
+    "ref_id": "BSA-PILLAR-4-AUDIT",
+    "entity_type": "duty",
+    "entity_id": "PILLAR-4-AUDIT",
+    "canonical_name": "Pillar 4 — Independent testing / audit",
+    "description": "Independent testing of the AML program conducted by an internal/external party independent of the AML compliance function. Frequency proportionate to risk (typically annual for large/complex; biennial-triennial for smaller). Tests adequacy of risk assessment, programme effectiveness, training, transaction monitoring + alerts, SAR/CTR filing quality, sanctions screening, BSAO authority + resources. Findings tracked to remediation.",
+    "metadata": {
+      "pillar_number": 4
+    }
+  },
+  {
+    "ref_id": "BSA-PILLAR-5-CDD-BO",
+    "entity_type": "duty",
+    "entity_id": "PILLAR-5-CDD-BO",
+    "canonical_name": "Pillar 5 — CDD + Beneficial Ownership (post-May 2018)",
+    "description": "Per CDD Rule (31 CFR 1010.230): (a) identify + verify the customer at account opening (CIP overlap); (b) identify + verify the beneficial owners of legal-entity customers (25% ownership prong + 1 control-person prong) using a Beneficial Ownership Form or equivalent; (c) understand the nature + purpose of each customer relationship; (d) conduct ongoing monitoring + risk-based update of customer information.",
+    "metadata": {
+      "pillar_number": 5,
+      "in_force": "2018-05-11"
+    }
+  },
+  {
+    "ref_id": "BSA-CIP",
+    "entity_type": "duty",
+    "entity_id": "BSA-CIP-OBL",
+    "canonical_name": "Customer Identification Program (CIP) — USA PATRIOT Act §326",
+    "description": "Each covered FI must have a written CIP appropriate to size + nature: collect minimum identifying information (name, DoB, address, TIN — or alternative for non-US persons); verify identity via documentary or non-documentary methods (or both); recordkeeping (5 years post-account-closing); compare with government lists (OFAC SDN); customer notice (typically by branch posting / website disclosure).",
+    "metadata": {
+      "min_record_retention_years": 5
+    }
+  },
+  {
+    "ref_id": "BSA-SAR",
+    "entity_type": "duty",
+    "entity_id": "BSA-SAR-OBL",
+    "canonical_name": "Suspicious Activity Reporting (SAR) — 31 CFR 1020.320 et al.",
+    "description": "Covered FI files a SAR (via the BSA E-Filing System to FinCEN) within 30 calendar days of initial detection of facts that may constitute a basis for filing — extendable by an additional 30 days for additional information (60 days max). Threshold: transactions involving / aggregating ≥ $5,000 (banks; varies for other categories) where the FI knows / suspects / has reason to suspect ML / fraud / BSA violation / no apparent lawful purpose. Narrative quality + clarity is critical — FinCEN + LEAs use the narrative to make investigation decisions.",
+    "metadata": {
+      "initial_deadline_days": 30,
+      "max_deadline_days_with_extension": 60,
+      "filing_channel": "BSA E-Filing System"
+    }
+  },
+  {
+    "ref_id": "BSA-CTR",
+    "entity_type": "duty",
+    "entity_id": "BSA-CTR-OBL",
+    "canonical_name": "Currency Transaction Report (CTR) — 31 CFR 1010.310-313",
+    "description": "Covered FI files a CTR (via BSA E-Filing System to FinCEN) for each currency transaction > $10,000 in a single business day, by or on behalf of one person. Aggregation rules apply (multiple transactions by same person on same day). Filing window: 15 calendar days. Structured transactions (designed to evade) trigger SAR + are themselves a substantive offence (31 USC §5324).",
+    "metadata": {
+      "threshold_usd": 10000,
+      "deadline_days": 15
+    }
+  },
+  {
+    "ref_id": "BSA-FORM-8300",
+    "entity_type": "duty",
+    "entity_id": "FORM-8300",
+    "canonical_name": "IRS Form 8300 — non-financial trade or business cash reporting",
+    "description": "Non-bank trade or business (auto dealers, jewellers, real-estate, etc.) that receives > $10,000 cash in single or related transactions files Form 8300 with IRS (within 15 days). Joint filing with FinCEN through the BSA E-Filing System since 2012. Counterpart to CTR for the non-banking sector.",
+    "metadata": {
+      "threshold_usd": 10000,
+      "deadline_days": 15
+    }
+  },
+  {
+    "ref_id": "BSA-FBAR",
+    "entity_type": "duty",
+    "entity_id": "FBAR-114",
+    "canonical_name": "FBAR — FinCEN Form 114 (Report of Foreign Bank and Financial Accounts)",
+    "description": "US persons with aggregate value > $10,000 in foreign financial accounts during the calendar year file FBAR with FinCEN by 15 April (automatic 6-month extension to 15 October). Includes US citizens, residents + US-formed entities holding accounts abroad. Civil penalties up to greater of $129,210 or 50% of account balance per violation (2024 figures, adjusted annually for inflation); criminal penalties for willful violations.",
+    "metadata": {
+      "threshold_usd": 10000,
+      "filing_deadline": "April 15 (auto-extended to October 15)"
+    }
+  },
+  {
+    "ref_id": "BSA-EDD-S312",
+    "entity_type": "duty",
+    "entity_id": "EDD-CORRESPONDENT",
+    "canonical_name": "Enhanced Due Diligence — Correspondent + Private Banking (USA PATRIOT Act §312)",
+    "description": "EDD for: (a) correspondent accounts of foreign banks — heightened scrutiny for those operating under offshore banking licences, in non-compliant jurisdictions, or in jurisdictions where adequate AML laws are not in place; (b) private banking accounts ≥ $1m for foreign senior political figures (Senior Foreign Political Figures — SFPFs / foreign PEPs). Documented EDD; ongoing enhanced monitoring; senior management approval; source-of-wealth verification.",
+    "metadata": {
+      "private_banking_threshold_usd": 1000000
+    }
+  },
+  {
+    "ref_id": "BSA-SHELL-BANK-S313",
+    "entity_type": "duty",
+    "entity_id": "SHELL-BANK-PROHIBITION",
+    "canonical_name": "Shell-bank correspondent prohibition (USA PATRIOT Act §313)",
+    "description": "US FIs prohibited from establishing, maintaining, administering or managing a correspondent account in the US for a foreign shell bank (a foreign bank without physical presence in any country + not affiliated with a regulated financial group). Mandatory reasonable steps to ensure correspondent accounts for non-US banks are not used to indirectly provide banking services to shell banks. Annual certification framework.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "BSA-S314A",
+    "entity_type": "duty",
+    "entity_id": "INFO-SHARING-314A",
+    "canonical_name": "Section 314(a) — Law enforcement information-sharing requests",
+    "description": "FinCEN, acting on a federal/state/local LE agency request, can transmit information requests to FIs about specific persons suspected of ML/TF. FIs search their records (typically a 2-week window for response) + report matches to FinCEN. Confidential — FIs may not disclose existence of a 314(a) request to the subject. ~30 information sharing requests issued per year on average.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "BSA-S314B",
+    "entity_type": "duty",
+    "entity_id": "INFO-SHARING-314B",
+    "canonical_name": "Section 314(b) — Voluntary FI-to-FI information sharing safe harbour",
+    "description": "Voluntary regime allowing FIs (or associations of FIs) to share information among themselves regarding suspected ML/TF, with statutory protection from liability (safe harbour) if the FI registers with FinCEN + meets the requirements. AMLA 2020 expanded 314(b) — broader purposes + more flexibility. Underutilised historically; FinCEN actively encouraging take-up.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "BSA-OFAC-INTEGRATION",
+    "entity_type": "duty",
+    "entity_id": "OFAC-INTEGRATION",
+    "canonical_name": "OFAC sanctions integration into BSA program",
+    "description": "BSA AML programs typically integrate OFAC screening operationally: shared screening systems + customer-onboarding workflow + transaction-monitoring + alert disposition + SAR-and-blocking-report split. The substantive frameworks remain separate (OFAC = sanctions strict liability; BSA = AML risk-based) but examiners look at the integrated financial-crime program as a whole.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "BSA-RECORD-RETENTION",
+    "entity_type": "duty",
+    "entity_id": "BSA-RECORDS",
+    "canonical_name": "BSA recordkeeping — 5-year minimum retention",
+    "description": "Covered FIs must retain BSA/AML records for at least 5 years from creation / from end of customer relationship. Includes CDD/CIP records, BO information, SAR + CTR working papers + filings, training records, audit reports + remediation, account statements + transaction records, internal investigations.",
+    "metadata": {
+      "retention_years": 5
+    }
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-CORRUPTION",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-CORRUPTION",
+    "canonical_name": "Priority 1 — Corruption",
+    "description": "Foreign + domestic corruption: kleptocracy, asset misappropriation, public-procurement bribery, sanctions-evasion-via-corruption. FinCEN expects FIs to develop typology-aware monitoring + EDD for high-risk countries + politically-exposed persons + sectors with elevated corruption risk."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-CYBERCRIME",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-CYBERCRIME",
+    "canonical_name": "Priority 2 — Cybercrime + virtual currency considerations",
+    "description": "Ransomware + business-email-compromise + fraud-using-cryptocurrency + cyber-enabled fund-flows. Integration with the OFAC ransomware advisories; cyber-incident SARs; blockchain-analytics in transaction monitoring; CVC (convertible virtual currency) typologies."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-TERROR",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-TF",
+    "canonical_name": "Priority 3 — Foreign + Domestic Terrorism Financing",
+    "description": "Foreign terrorist organisation financing (FTOs); domestic terrorism financing (post-2021 expanded focus); financing typologies including crowdfunding + cryptocurrency + cash-based channels + remittance abuse + charitable-organisation misuse."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-FRAUD",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-FRAUD",
+    "canonical_name": "Priority 4 — Fraud",
+    "description": "Including BEC + romance scams + identity theft + government-program fraud + securities fraud + check fraud + check-kiting + healthcare fraud + COVID-era programme fraud (still being unwound). The fraud priority overlaps with the OFAC ransomware advisory + with cybercrime priority + with elder-fraud-specific FinCEN advisories."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-TCO",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-TCO",
+    "canonical_name": "Priority 5 — Transnational Criminal Organization (TCO) activity",
+    "description": "TCO financial activity: cartel + organised-crime money flows; trade-based money laundering (TBML); funnel accounts; informal value-transfer systems; cash-intensive business misuse; bulk-cash smuggling-adjacent. Heightened focus on Mexico/Central America + Southeast Asia + West Africa cartels + organised criminal networks."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-DRUG",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-DRUG",
+    "canonical_name": "Priority 6 — Drug Trafficking",
+    "description": "Drug-trafficking proceeds + chemical-precursor financing + fentanyl-supply-chain financial flows. Overlaps with the TCO priority but treated as a distinct lens given the public-health dimension. Specific FinCEN advisories on fentanyl-related financial activity (2019, 2024) provide typology indicators."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-HUMAN",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-HUMAN",
+    "canonical_name": "Priority 7 — Human Trafficking + Human Smuggling",
+    "description": "Financial typologies of human trafficking + smuggling: structured cash deposits + unusual hotel/short-term-rental usage + recruitment-fee patterns + cash-intensive business fronts + remittance + child-exploitation-material proceeds. FinCEN issued specific advisories (2014, 2020, 2024 update) with typology indicators."
+  },
+  {
+    "ref_id": "FINCEN-PRIORITIES-PF",
+    "entity_type": "concept",
+    "entity_id": "PRIORITY-PF",
+    "canonical_name": "Priority 8 — Proliferation Financing (PF)",
+    "description": "Financing of weapons of mass destruction proliferation, particularly North Korea + Iran. Overlaps with OFAC sanctions but distinct typology framing. PF risk assessment now a baseline expectation under FATF R.1/R.7 updates + (after pending FinCEN final rules) a programmatic requirement in the US."
+  },
+  {
+    "ref_id": "AMLA-EXAM-MODERNISATION",
+    "entity_type": "concept",
+    "entity_id": "AMLA-EXAM-MOD",
+    "canonical_name": "AMLA 2020 — risk-based examination modernisation",
+    "description": "AMLA mandates risk-based examination — moving examiners from procedural-checklist approach toward outcomes/effectiveness lens. Resource-allocation reflects FI's risk profile. FinCEN + federal regulators working through this modernisation alongside the National Priorities incorporation."
+  },
+  {
+    "ref_id": "BSA-RIA-2026",
+    "entity_type": "concept",
+    "entity_id": "RIA-INSCOPE-2026",
+    "canonical_name": "BSA expansion to Investment Advisers (effective 1 Jan 2026)",
+    "description": "FinCEN final rule (Sept 2024) brings SEC-registered investment advisers (RIAs) + exempt reporting advisers (ERAs) into BSA scope effective 1 January 2026. RIAs/ERAs become covered FIs: must have a written AML program (5 pillars), file SARs/CTRs, comply with CIP-equivalent + record-keeping + sanctions screening. Long-awaited closure of the IA loophole. ~15,000 RIAs + ERAs affected.",
+    "metadata": {
+      "in_force": "2026-01-01"
+    }
+  },
+  {
+    "ref_id": "BSA-ENFORCEMENT-PATTERN",
+    "entity_type": "concept",
+    "entity_id": "BSA-ENF-PATTERN",
+    "canonical_name": "BSA enforcement pattern + landmark cases",
+    "description": "Landmark enforcement: TD Bank $3.09bn FinCEN + OCC + DOJ settlement (October 2024 — the largest BSA enforcement action in US history); Binance $4.3bn (November 2023); Goldman 1MDB $2.9bn (October 2020); Western Union $586m (January 2017); HSBC $1.92bn (December 2012). Pattern: enforcement targets failure of the AML PROGRAM (Pillar 1 weakness, Pillar 2 understaffing, Pillar 4 audit failure), not individual transaction failures. Penalties typically aggregate AML + OFAC + DOJ criminal forfeiture."
+  },
+  {
+    "ref_id": "FFIEC-RISK-ASSESSMENT",
+    "entity_type": "duty",
+    "entity_id": "FFIEC-RA-OBL",
+    "canonical_name": "FFIEC-style risk assessment expectation",
+    "description": "FFIEC Manual sets the operational standard: each FI maintains a documented risk assessment covering customer, geographic, product/service, and transaction risk factors. Refreshed at least annually + on material change. Output drives risk-tiering of customers + calibration of transaction monitoring + EDD triggers + AML program resources. The risk assessment is examined as a first-pass artefact in every BSA exam."
+  }
+]
