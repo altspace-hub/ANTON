@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "swiss-compliance-2026",
+  "display_name": "Swiss Compliance 2026 — revised AMLA, LETA UBO register, FinSA/FinIA, nFADP",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the 2026 wave of Swiss compliance reform: the revised AMLA (Anti-Money Laundering Act) and companion LETA (Loi fédérale sur la transparence des personnes morales) — both adopted by Federal Parliament 26 Sept 2025, central beneficial-ownership register and extended adviser obligations entering force mid-2026 and affecting ~600,000 entities. Plus the FinSA / FinIA conduct framework (FINMA's new FinSA conduct circular in force 1 Jan 2025), the nFADP data protection regime (in force since 1 Sept 2023), the DLT Act, Embargo Act / SECO sanctions, and Swiss Criminal Code financial-crime offences.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Switzerland",
+  "regulatory_area": "Multi-domain compliance",
+  "regulation_ids": [
+    "AMLA (revised 2025)",
+    "LETA 2025 — Loi sur la transparence des personnes morales",
+    "FinSA / FIDLEG / LSFin",
+    "FinIA / FINIG / LEFin",
+    "nFADP — revised Federal Act on Data Protection",
+    "DLT Act 2021",
+    "Code of Obligations Art. 964a-c",
+    "Swiss Criminal Code Art. 305bis (money laundering)",
+    "Swiss Criminal Code Art. 322 (bribery)",
+    "Embargo Act",
+    "FMIA / FinfraG"
+  ],
+  "tier": 1,
+  "entity_count": 52,
+  "relationship_count": 74,
+  "alias_entry_count": 32
+}

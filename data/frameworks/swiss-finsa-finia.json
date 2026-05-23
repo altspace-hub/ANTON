@@ -1,0 +1,144 @@
+{
+  "id": "swiss-finsa-finia",
+  "name": "Swiss Financial Services Act (FinSA) + Financial Institutions Act (FinIA)",
+  "shortName": "FinSA / FinIA",
+  "reference": "SR 950.1 (FinSA) + SR 954.1 (FinIA)",
+  "finsaUrl": "https://www.fedlex.admin.ch/eli/cc/2019/758/en",
+  "finiaUrl": "https://www.fedlex.admin.ch/eli/cc/2018/801/en",
+  "inForce": "2020-01-01",
+  "finsaCircularInForce": "2025-01-01",
+  "supervisor": "FINMA + Supervisory Organisations (SOs)",
+  "articleCount": 14,
+  "chapters": [
+    {"number": "1", "title": "FinSA — Client classification (Art. 4-5)", "articles": "FinSA 4-5"},
+    {"number": "2", "title": "FinSA — Information duties (Art. 8-9)", "articles": "FinSA 8-9"},
+    {"number": "3", "title": "FinSA — Suitability + appropriateness (Art. 10-14)", "articles": "FinSA 10-14"},
+    {"number": "4", "title": "FinSA — Conflicts of interest (Art. 24-26)", "articles": "FinSA 24-26"},
+    {"number": "5", "title": "FinSA — Prospectus regime (Art. 35-58)", "articles": "FinSA 35-58"},
+    {"number": "6", "title": "FinIA — Authorisation categories (Art. 2 + Title 2)", "articles": "FinIA 2 + Title 2"},
+    {"number": "7", "title": "FinIA — Organisational + capital requirements (Art. 9-15)", "articles": "FinIA 9-15"}
+  ],
+  "themes": [
+    "Client classification",
+    "Information disclosure",
+    "Suitability + appropriateness",
+    "Conflicts of interest",
+    "Prospectus regime",
+    "Authorisation",
+    "Capital + organisation"
+  ],
+  "articles": [
+    {
+      "id": "FinSA.4",
+      "title": "Client classification",
+      "chapter": "1",
+      "section": "FinSA Chapter 1",
+      "theme": "Client classification",
+      "requirement": "Three categories: (a) retail clients (default; full conduct protection); (b) professional clients (per-se: pension schemes ≥CHF 5m, large companies, public entities, ultra-HNW with declaration); (c) institutional clients (regulated FIs + similar). Opting-up / opting-down possible with written declaration."
+    },
+    {
+      "id": "FinSA.8",
+      "title": "Information duties — pre-contractual",
+      "chapter": "2",
+      "section": "FinSA Chapter 2",
+      "theme": "Information disclosure",
+      "requirement": "Disclose: name + contact, services + financial instruments, risks + costs (per service / instrument), market offering considered, intermediaries used, redress / Ombudsman scheme, conflicts of interest, third-party benefits / retrocessions, distinct adviser fees. Provided in good time before the service is rendered."
+    },
+    {
+      "id": "FinSA.9",
+      "title": "Key information document (KID)",
+      "chapter": "2",
+      "section": "FinSA Chapter 2",
+      "theme": "Information disclosure",
+      "requirement": "KID required for any financial instrument recommended to a retail client (other than shares + simple bonds). Standardised 3-page format. Equivalent foreign KIDs (PRIIPs KID) accepted."
+    },
+    {
+      "id": "FinSA.10",
+      "title": "Appropriateness — execution with advice",
+      "chapter": "3",
+      "section": "FinSA Chapter 3",
+      "theme": "Suitability + appropriateness",
+      "requirement": "For execution-only with advice for retail / professional clients: assess client's knowledge and experience to ensure the recommended instrument is appropriate. Warn the client if not appropriate. Records kept."
+    },
+    {
+      "id": "FinSA.11-12",
+      "title": "Suitability — advisory + portfolio management",
+      "chapter": "3",
+      "section": "FinSA Chapter 3",
+      "theme": "Suitability + appropriateness",
+      "requirement": "For advisory + portfolio-management services: assess knowledge, experience, financial situation, investment objectives, and risk tolerance. Suitability statement provided to retail clients. FINMA's new FinSA conduct circular (1 Jan 2025) tightens evidentiary expectations for the suitability assessment."
+    },
+    {
+      "id": "FinSA.13-14",
+      "title": "Documentation + reporting to clients",
+      "chapter": "3",
+      "section": "FinSA Chapter 3",
+      "theme": "Suitability + appropriateness",
+      "requirement": "Document services agreed, instruments selected, suitability assessment, client instructions. Annual reporting to clients on portfolio performance, costs, third-party benefits received."
+    },
+    {
+      "id": "FinSA.24-26",
+      "title": "Conflicts of interest",
+      "chapter": "4",
+      "section": "FinSA Chapter 4",
+      "theme": "Conflicts of interest",
+      "requirement": "Identify conflicts of interest; avoid where possible; manage and disclose where avoidance not feasible. Third-party benefits (retrocessions): permissible only with informed-consent disclosure (nature, amount, calculation method) + client right to claim back undisclosed retrocessions."
+    },
+    {
+      "id": "FinSA.35-43",
+      "title": "Prospectus — duty and content",
+      "chapter": "5",
+      "section": "FinSA Chapter 5",
+      "theme": "Prospectus regime",
+      "requirement": "Prospectus required for public offerings of securities + admission to trading on a Swiss trading venue. Content: company, securities, risk factors, financials, governance, use of proceeds. Reviewed by an approved Swiss Review Body (SIX Exchange Regulation; BX Swiss)."
+    },
+    {
+      "id": "FinSA.44-58",
+      "title": "Prospectus — exemptions",
+      "chapter": "5",
+      "section": "FinSA Chapter 5",
+      "theme": "Prospectus regime",
+      "requirement": "Exemptions for: qualified investors only; ≤500 investors; minimum denomination ≥CHF 100,000; minimum investment ≥CHF 100,000; total consideration ≤CHF 8m (12-month period); employee participation. Equivalence framework for foreign prospectuses (EU + others)."
+    },
+    {
+      "id": "FinIA.2",
+      "title": "Scope of authorisation",
+      "chapter": "6",
+      "section": "FinIA Title 1",
+      "theme": "Authorisation",
+      "requirement": "Five categories requiring FINMA authorisation: (a) portfolio managers + trustees (smaller; ongoing supervision by SOs); (b) managers of collective assets (asset managers of pension assets / collective investment schemes); (c) fund management companies; (d) securities firms; (e) banks regulated under the Banking Act."
+    },
+    {
+      "id": "FinIA.9",
+      "title": "Organisation",
+      "chapter": "7",
+      "section": "FinIA Title 2",
+      "theme": "Capital + organisation",
+      "requirement": "Adequate organisation: appropriate rules on internal organisation, control + risk-management functions, IT systems, business continuity. Proportionate to size + risk profile. Persons in charge of administration + management of qualified personal good repute, professional qualifications, technical knowledge."
+    },
+    {
+      "id": "FinIA.11-15",
+      "title": "Capital + own funds",
+      "chapter": "7",
+      "section": "FinIA Title 2",
+      "theme": "Capital + organisation",
+      "requirement": "Minimum capital + own funds by category: portfolio manager + trustee CHF 100,000 (with one-quarter of fixed annual costs ongoing); manager of collective assets CHF 200,000; fund management company CHF 1 million; securities firm CHF 1.5 million."
+    },
+    {
+      "id": "FinIA.SOs",
+      "title": "Supervisory Organisations (SOs)",
+      "chapter": "7",
+      "section": "FinIA Title 5",
+      "theme": "Authorisation",
+      "requirement": "Portfolio managers + trustees ongoing-supervised by FINMA-authorised SOs (currently AOOS, OSIF, OSFIN, SO-FIT, OSIF). SOs conduct on-site reviews, compliance checks, audit-based assessments; FINMA retains licensing + enforcement powers."
+    },
+    {
+      "id": "FINSA-CIRC.2025",
+      "title": "FINMA FinSA conduct circular (1 Jan 2025)",
+      "chapter": "3",
+      "section": "FINMA Circular",
+      "theme": "Suitability + appropriateness",
+      "requirement": "FINMA's first standalone FinSA circular: codifies expectations on client classification documentation, conflict-of-interest registers, suitability assessment evidence quality, KID equivalence + retention, ombudsman affiliation. Effective 1 January 2025."
+    }
+  ]
+}

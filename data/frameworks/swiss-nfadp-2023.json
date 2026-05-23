@@ -1,0 +1,126 @@
+{
+  "id": "swiss-nfadp-2023",
+  "name": "Federal Act on Data Protection (revised — nFADP)",
+  "shortName": "nFADP",
+  "reference": "SR 235.1",
+  "url": "https://www.fedlex.admin.ch/eli/cc/2022/491/en",
+  "inForce": "2023-09-01",
+  "supervisor": "FDPIC",
+  "articleCount": 12,
+  "chapters": [
+    {"number": "1", "title": "General provisions (Art. 1-6)", "articles": "1-6"},
+    {"number": "2", "title": "Principles + lawful basis (Art. 6-9)", "articles": "6-9"},
+    {"number": "3", "title": "Information + access rights (Art. 19-21, 25-27)", "articles": "19-21, 25-27"},
+    {"number": "4", "title": "Special obligations (Art. 7, 12, 22, 24)", "articles": "7, 12, 22, 24"},
+    {"number": "5", "title": "International transfers (Art. 16-17)", "articles": "16-17"},
+    {"number": "6", "title": "Supervision + sanctions (Art. 49-66)", "articles": "49-66"}
+  ],
+  "themes": [
+    "Lawful basis + principles",
+    "Privacy by design + default",
+    "Records of processing",
+    "DPIA",
+    "Breach notification",
+    "International transfers",
+    "Data subject rights",
+    "Sanctions"
+  ],
+  "articles": [
+    {
+      "id": "Art.6",
+      "title": "Processing principles",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Lawful basis + principles",
+      "requirement": "Personal data processed lawfully, in good faith, and proportionately. Purpose specification; data minimisation; accuracy; integrity & confidentiality. Sensitive data + profiling triggers heightened safeguards."
+    },
+    {
+      "id": "Art.7",
+      "title": "Privacy by design and by default",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Privacy by design + default",
+      "requirement": "Controllers implement appropriate technical and organisational measures from the design stage. Default settings restrict processing to what is strictly necessary for the purpose (data minimisation by default)."
+    },
+    {
+      "id": "Art.8",
+      "title": "Data security",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Privacy by design + default",
+      "requirement": "Appropriate technical and organisational measures against unauthorised processing — confidentiality, integrity, availability, traceability. Federal Council ordinance (DPO) sets minimum standards."
+    },
+    {
+      "id": "Art.12",
+      "title": "Records of processing activities",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Records of processing",
+      "requirement": "Controllers and processors maintain a record of processing activities (purpose, categories, recipients, retention, TOMs, transfer countries). Simplified version for SMEs (< 250 employees and no high-risk processing). Production to FDPIC on request."
+    },
+    {
+      "id": "Art.16",
+      "title": "International transfers — adequacy",
+      "chapter": "5",
+      "section": "Chapter 5",
+      "theme": "International transfers",
+      "requirement": "Transfer to a country with adequate protection (as listed by Federal Council). EU/EEA, UK, Andorra, Canada (commercial), etc. on the adequacy list. Otherwise transfer permitted only with safeguards under Art. 17."
+    },
+    {
+      "id": "Art.17",
+      "title": "International transfers — safeguards",
+      "chapter": "5",
+      "section": "Chapter 5",
+      "theme": "International transfers",
+      "requirement": "Non-adequate countries: transfer allowed with (a) FDPIC-approved SCCs / IDTA-equivalent; (b) BCRs; (c) approved codes of conduct or certification; (d) approved contractual clauses. Specific exceptions: consent, performance of contract, public interest, vital interests, manifestly public data, legal claims."
+    },
+    {
+      "id": "Art.19",
+      "title": "Right to information",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "Data subject rights",
+      "requirement": "Data subjects informed of collection — identity of controller, processing purpose, categories of data, retention, recipients (especially in non-adequate countries), automated decisions with legal effect. Information provided actively at point of collection."
+    },
+    {
+      "id": "Art.21",
+      "title": "Automated individual decisions",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "Data subject rights",
+      "requirement": "Where a decision producing legal effect or substantially affecting the data subject is based solely on automated processing, the controller must inform the data subject + provide an opportunity to express their views + obtain human review. Exceptions: contract necessity (with safeguards), legal authorisation, consent."
+    },
+    {
+      "id": "Art.22",
+      "title": "Data protection impact assessment (DPIA)",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "DPIA",
+      "requirement": "DPIA mandatory where processing is likely to result in high risk to personality / fundamental rights: large-scale special-category data, systematic monitoring of publicly accessible areas, evaluation / scoring including profiling, new technologies. Consultation of FDPIC where residual high risk remains."
+    },
+    {
+      "id": "Art.24",
+      "title": "Breach notification",
+      "chapter": "4",
+      "section": "Chapter 4",
+      "theme": "Breach notification",
+      "requirement": "Controllers notify the FDPIC of personal-data breaches likely to result in high risk to data subjects 'as soon as possible'. Notification covers: nature, contact details, likely consequences, mitigation measures. Data subjects notified when necessary for their protection."
+    },
+    {
+      "id": "Art.25-27",
+      "title": "Right of access",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "Data subject rights",
+      "requirement": "Data subjects entitled to free access to their personal data, including: data + categories, processing purpose, source where known, recipients, retention, automated-decision logic. Response within 30 days; extension possible with reasons. Restrictions for overriding interests, third-party rights, or manifestly excessive requests."
+    },
+    {
+      "id": "Art.60-66",
+      "title": "Criminal sanctions",
+      "chapter": "6",
+      "section": "Chapter 6",
+      "theme": "Sanctions",
+      "requirement": "Criminal sanction (against the responsible individual — not the company) up to CHF 250,000 for wilful breach of information / access / data security / cross-border-transfer / DPIA / professional-secrecy obligations. Prosecution is by cantonal authority on complaint by FDPIC or data subject."
+    }
+  ]
+}

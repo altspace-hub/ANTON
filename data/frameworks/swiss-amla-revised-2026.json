@@ -1,0 +1,159 @@
+{
+  "id": "swiss-amla-revised-2026",
+  "name": "Federal Act on Combating Money Laundering and the Financing of Terrorism (AMLA — revised 2025/2026)",
+  "shortName": "AMLA (CH)",
+  "reference": "SR 955.0",
+  "url": "https://www.fedlex.admin.ch/eli/cc/1998/892_892_892/en",
+  "originalInForce": "1998-04-01",
+  "revisionAdopted": "2025-09-26",
+  "revisionInForceExpected": "2026",
+  "supervisor": "FINMA + MROS",
+  "articleCount": 16,
+  "chapters": [
+    {"number": "1", "title": "General provisions + scope (Art. 1-2)", "articles": "1-2"},
+    {"number": "1a", "title": "New adviser scope (revised — Art. 2 para 1bis)", "articles": "2(1bis)"},
+    {"number": "2", "title": "Due diligence obligations (Art. 3-8)", "articles": "3-8"},
+    {"number": "3", "title": "Reporting obligations (Art. 9-11a)", "articles": "9-11a"},
+    {"number": "4", "title": "Organisational measures (Art. 8 + AMLO-FINMA)", "articles": "8 + AMLO-FINMA 22-26"},
+    {"number": "5", "title": "Sanctions (Art. 37 + Criminal Code)", "articles": "37 + CC 305bis/305ter"}
+  ],
+  "themes": [
+    "Scope — financial intermediaries",
+    "Scope — new advisers (revised)",
+    "Customer due diligence",
+    "Enhanced due diligence + PEPs",
+    "SAR / MROS reporting",
+    "Organisational measures",
+    "Sanctions"
+  ],
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Purpose and scope",
+      "chapter": "1",
+      "section": "Chapter 1",
+      "theme": "Scope — financial intermediaries",
+      "requirement": "Combats money laundering and terrorist financing and ensures due diligence in financial transactions. Applies to financial intermediaries within the meaning of Art. 2."
+    },
+    {
+      "id": "Art.2(1)",
+      "title": "Financial intermediaries (existing scope)",
+      "chapter": "1",
+      "section": "Chapter 1",
+      "theme": "Scope — financial intermediaries",
+      "requirement": "Banks (Banking Act), fund management companies, asset managers, trustees, securities firms (FINIA), insurance institutions (life), DLT trading facilities, payment institutions, and persons commercially exchanging or transferring assets on behalf of clients."
+    },
+    {
+      "id": "Art.2(1bis)",
+      "title": "New adviser scope (revised 2025)",
+      "chapter": "1a",
+      "section": "Chapter 1",
+      "theme": "Scope — new advisers (revised)",
+      "requirement": "Advisers who by way of profession assist with or carry out (a) formation, management or administration of legal persons or arrangements; (b) transfer of real estate, share capital or business assets above thresholds set by ordinance; (c) M&A transactions or capital raises. Captures lawyers, notaries and fiduciaries even when not handling funds. Limited legal-professional-privilege carve-out for typical-litigation activities."
+    },
+    {
+      "id": "Art.3",
+      "title": "Identification of the contracting party",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Customer due diligence",
+      "requirement": "The financial intermediary must verify the identity of the contracting party with a probative document on entering a business relationship. For natural persons: official ID. For legal persons: registry extract or equivalent. Identification before any transaction over CHF 25,000 (occasional) or starting a relationship."
+    },
+    {
+      "id": "Art.4",
+      "title": "Identification of the beneficial owner",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Customer due diligence",
+      "requirement": "Identify the beneficial owner (natural person ultimately owning/controlling): for legal persons, the natural person(s) holding ≥25% ownership or otherwise controlling; if none can be identified, the senior managing official. For trusts: settlor, trustee, protector, beneficiaries. Document on Form A (or AMLA equivalent)."
+    },
+    {
+      "id": "Art.6",
+      "title": "Enhanced due diligence",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Enhanced due diligence + PEPs",
+      "requirement": "Heightened diligence required for: foreign PEPs (always); business relationships with persons from countries presenting increased risk; complex, unusual or large transactions with no apparent economic purpose. Requires clarification of background + purpose; senior-management approval; ongoing monitoring."
+    },
+    {
+      "id": "Art.7",
+      "title": "Documentation",
+      "chapter": "2",
+      "section": "Chapter 2",
+      "theme": "Customer due diligence",
+      "requirement": "Records of all CDD documentation must enable a third party (auditor, prosecutor) to reconstruct the business relationship and individual transactions. Documents retained for at least 10 years after end of relationship / transaction."
+    },
+    {
+      "id": "Art.8",
+      "title": "Organisational measures",
+      "chapter": "4",
+      "section": "Chapter 2",
+      "theme": "Organisational measures",
+      "requirement": "Internal directives, training, controls and a designated AML function. AMLO-FINMA Art. 22-26 implements: an AML compliance unit, a risk assessment refreshed at least annually (Art. 25), staff training (Art. 24), and a named compliance officer (Art. 26)."
+    },
+    {
+      "id": "Art.9",
+      "title": "Reporting obligation (SAR to MROS)",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "SAR / MROS reporting",
+      "requirement": "Mandatory report to MROS where there is well-founded suspicion that funds are connected to money laundering, a predicate offence, terrorist financing, or are subject to the power of disposal of a criminal organisation. Tipping-off prohibition under Art. 10a. The 2025 revision tightens reporting deadlines + reasoning requirements."
+    },
+    {
+      "id": "Art.10",
+      "title": "Asset blocking",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "SAR / MROS reporting",
+      "requirement": "Assets connected to a report under Art. 9 must be frozen by the FI; the freeze continues until MROS releases or law enforcement directs otherwise. Statutory immunity for FIs reporting in good faith."
+    },
+    {
+      "id": "Art.10a",
+      "title": "Tipping-off prohibition",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "SAR / MROS reporting",
+      "requirement": "FIs may not inform persons concerned by the report, or third parties, that a report under Art. 9 has been filed. Carve-outs for sharing within group + with auditor on a need-to-know basis."
+    },
+    {
+      "id": "Art.11",
+      "title": "Right to report (voluntary disclosure)",
+      "chapter": "3",
+      "section": "Chapter 3",
+      "theme": "SAR / MROS reporting",
+      "requirement": "Right (not obligation) to report observations giving rise to reasonable cause to suspect ML/TF / predicate offences even where the Art. 9 threshold is not met. Statutory immunity for good-faith reports."
+    },
+    {
+      "id": "Art.37",
+      "title": "Administrative + criminal sanctions",
+      "chapter": "5",
+      "section": "Chapter 5",
+      "theme": "Sanctions",
+      "requirement": "FINMA administrative measures (warning, prohibition, recovery of profits, licence revocation). Criminal sanctions under Art. 305bis (money laundering) + 305ter (failure to verify) of the Criminal Code. The 2025 revision raises fine ceilings and tightens criminal-liability triggers for advisers."
+    },
+    {
+      "id": "AMLO-FINMA.25",
+      "title": "Institution-wide risk assessment",
+      "chapter": "4",
+      "section": "AMLO-FINMA",
+      "theme": "Organisational measures",
+      "requirement": "FIs (and, post-revision, in-scope advisers) must conduct and document an institution-wide ML/TF risk assessment, refreshed at least annually and on material change. Drives the RBA — controls + monitoring intensity calibrated to assessed risk."
+    },
+    {
+      "id": "AMLO-FINMA.24",
+      "title": "Staff training",
+      "chapter": "4",
+      "section": "AMLO-FINMA",
+      "theme": "Organisational measures",
+      "requirement": "Staff dealing with ML-sensitive matters trained on AMLA obligations, internal directives, and red flags. Frequency proportionate to risk; completion tracked; refresher on material change."
+    },
+    {
+      "id": "AMLO-FINMA.26",
+      "title": "Compliance officer / AML function",
+      "chapter": "4",
+      "section": "AMLO-FINMA",
+      "theme": "Organisational measures",
+      "requirement": "Designated AML compliance function with sufficient seniority, independence, and resources. Reporting line to senior management; access to all relevant data; involvement in product / client onboarding decisions."
+    }
+  ]
+}

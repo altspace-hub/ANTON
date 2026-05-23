@@ -1,0 +1,546 @@
+[
+  {
+    "ref_id": "REG-AMLA-CH",
+    "entity_type": "regulation",
+    "entity_id": "AMLA-CH",
+    "canonical_name": "Federal Act on Combating Money Laundering and the Financing of Terrorism (AMLA)",
+    "description": "The Swiss AML statute (SR 955.0). The 2025 revision (adopted by Federal Parliament 26 Sept 2025, in force expected mid-2026) extends scope to certain 'advisers' (lawyers, notaries, fiduciaries arranging structures, asset transfers, capital, M&A), strengthens sanctions, and underpins the new federal UBO register (LETA).",
+    "metadata": {
+      "citation": "SR 955.0",
+      "original_in_force": "1998-04-01",
+      "revision_adopted": "2025-09-26",
+      "revision_in_force_expected": "2026",
+      "supervisor": "FINMA + MROS"
+    }
+  },
+  {
+    "ref_id": "REG-LETA-2026",
+    "entity_type": "regulation",
+    "entity_id": "LETA-2026",
+    "canonical_name": "Loi fédérale sur la transparence des personnes morales (LETA)",
+    "description": "New federal act adopted alongside the AMLA revision (26 Sept 2025) creating a central beneficial-ownership register maintained by the Federal Office of Justice. Captures ~600,000 Swiss-registered legal persons and arrangements (companies, foundations, associations, certain trusts with Swiss nexus). Closes Switzerland's longstanding gap against FATF Recommendation 24/25.",
+    "metadata": {
+      "adopted": "2025-09-26",
+      "in_force_expected": "2026",
+      "register_operator": "Federal Office of Justice (BJ / OFJ)",
+      "fatf_alignment": "R.24 + R.25"
+    }
+  },
+  {
+    "ref_id": "REG-NFADP-2023",
+    "entity_type": "regulation",
+    "entity_id": "NFADP-2023",
+    "canonical_name": "Federal Act on Data Protection (revised — nFADP)",
+    "description": "Revised Swiss data-protection statute (SR 235.1). In force since 1 Sept 2023. Aligned with the EU GDPR principles (privacy by design, records of processing, DPIA, breach notification, international transfer rules) without being a direct copy. Confirms Swiss adequacy status with the EU.",
+    "metadata": {
+      "citation": "SR 235.1",
+      "in_force": "2023-09-01",
+      "supervisor": "FDPIC"
+    }
+  },
+  {
+    "ref_id": "REG-FINSA",
+    "entity_type": "regulation",
+    "entity_id": "FINSA",
+    "canonical_name": "Financial Services Act (FinSA / FIDLEG / LSFin)",
+    "description": "Swiss conduct-of-business statute for financial services (SR 950.1). In force since 2020. Imposes client classification (retail / professional / institutional), suitability and appropriateness duties, information disclosure, and prospectus rules. FINMA's new FinSA conduct circular came into force 1 Jan 2025.",
+    "metadata": {
+      "citation": "SR 950.1",
+      "in_force": "2020-01-01",
+      "finsa_circular_in_force": "2025-01-01",
+      "supervisor": "FINMA"
+    }
+  },
+  {
+    "ref_id": "REG-FINIA",
+    "entity_type": "regulation",
+    "entity_id": "FINIA",
+    "canonical_name": "Financial Institutions Act (FinIA / FINIG / LEFin)",
+    "description": "Authorisation statute for asset managers, trustees, portfolio managers, fund managers and securities firms (SR 954.1). In force since 2020 with a 3-year transitional regime that ended December 2022. FINMA is the licensing authority; SOs (supervisory organisations) supervise smaller managers on a day-to-day basis.",
+    "metadata": {
+      "citation": "SR 954.1",
+      "in_force": "2020-01-01",
+      "supervisor": "FINMA"
+    }
+  },
+  {
+    "ref_id": "REG-DLT-ACT",
+    "entity_type": "regulation",
+    "entity_id": "DLT-ACT-2021",
+    "canonical_name": "Federal Act on the Adaptation of Federal Law to Developments in Distributed Ledger Technology",
+    "description": "Multi-statute amendment act (in force from 1 Feb 2021 / 1 Aug 2021). Creates registered ledger-based securities (CO Art. 973d-i), DLT trading facilities (FMIA), and extends FINSA/FINIA to crypto activities. Switzerland was an early jurisdiction to codify a token taxonomy.",
+    "metadata": {
+      "in_force": "2021-08-01",
+      "supervisor": "FINMA"
+    }
+  },
+  {
+    "ref_id": "REG-CO-964",
+    "entity_type": "regulation",
+    "entity_id": "CO-964A-C",
+    "canonical_name": "Code of Obligations Art. 964a-c (climate / non-financial reporting)",
+    "description": "Mandatory non-financial reporting for large Swiss companies (public-interest entities with 500+ employees and CHF 20m balance sheet / CHF 40m turnover). Climate-related disclosures aligned with TCFD from financial year 2024.",
+    "metadata": {
+      "in_force": "2022-01-01",
+      "climate_in_force": "2024-01-01",
+      "supervisor": "Federal Council / FINMA (for FINMA-supervised entities)"
+    }
+  },
+  {
+    "ref_id": "REG-CC-305BIS",
+    "entity_type": "regulation",
+    "entity_id": "CC-305BIS",
+    "canonical_name": "Swiss Criminal Code Art. 305bis (money laundering)",
+    "description": "Criminal offence of money laundering. Penalty up to 3 years imprisonment or monetary penalty; up to 5 years in qualified cases.",
+    "metadata": {
+      "citation": "SR 311.0 Art. 305bis",
+      "in_force": "1990-08-01"
+    }
+  },
+  {
+    "ref_id": "REG-CC-305TER",
+    "entity_type": "regulation",
+    "entity_id": "CC-305TER",
+    "canonical_name": "Swiss Criminal Code Art. 305ter (failure to verify identity)",
+    "description": "Criminal offence of failure to exercise required care in financial transactions — identifying the contracting party and the beneficial owner. Maximum penalty: 1 year imprisonment.",
+    "metadata": {
+      "citation": "SR 311.0 Art. 305ter",
+      "in_force": "1990-08-01"
+    }
+  },
+  {
+    "ref_id": "REG-CC-322",
+    "entity_type": "regulation",
+    "entity_id": "CC-322",
+    "canonical_name": "Swiss Criminal Code Art. 322 (bribery)",
+    "description": "Active and passive bribery of Swiss and foreign public officials, plus private-sector bribery (Art. 322octies / novies). Maximum penalties 5 years' imprisonment + corporate liability under Art. 102.",
+    "metadata": {
+      "citation": "SR 311.0 Art. 322",
+      "supervisor": "Office of the Attorney General (OAG)"
+    }
+  },
+  {
+    "ref_id": "REG-EMBARGO-ACT",
+    "entity_type": "regulation",
+    "entity_id": "EMBARGO-ACT",
+    "canonical_name": "Federal Embargo Act (SR 946.231)",
+    "description": "Enables the Federal Council to impose economic sanctions implementing UN, OSCE and (since 2022) EU restrictive measures. Russia/Belarus regimes implemented under the Embargo Act. SECO administers the financial measures; designations follow EU lists with Swiss adaptations.",
+    "metadata": {
+      "in_force": "2003-01-01",
+      "supervisor": "SECO"
+    }
+  },
+  {
+    "ref_id": "REG-FMIA",
+    "entity_type": "regulation",
+    "entity_id": "FMIA",
+    "canonical_name": "Financial Market Infrastructure Act (FMIA / FinfraG / LIMF)",
+    "description": "Regulates FMIs (stock exchanges, central counterparties, securities depositories, payment systems), reporting and derivatives trading. Includes Art. 142 (market abuse / insider trading).",
+    "metadata": {
+      "citation": "SR 958.1",
+      "in_force": "2016-01-01",
+      "supervisor": "FINMA"
+    }
+  },
+  {
+    "ref_id": "AUTH-FINMA",
+    "entity_type": "authority",
+    "entity_id": "FINMA",
+    "canonical_name": "Swiss Financial Market Supervisory Authority (FINMA)",
+    "description": "Integrated prudential and conduct regulator for banks, insurers, asset managers, fund managers, securities firms, FMIs and DLT trading facilities. Issues binding circulars + supervisory communications.",
+    "metadata": {
+      "type": "Integrated financial supervisor",
+      "seat": "Bern"
+    }
+  },
+  {
+    "ref_id": "AUTH-MROS",
+    "entity_type": "authority",
+    "entity_id": "MROS",
+    "canonical_name": "Money Laundering Reporting Office Switzerland (MROS)",
+    "description": "Switzerland's Financial Intelligence Unit, within the Federal Office of Police (fedpol). Recipient of SARs (mandatory reports under AMLA Art. 9) and voluntary disclosures. Egmont Group member.",
+    "metadata": {
+      "type": "FIU",
+      "parent": "fedpol"
+    }
+  },
+  {
+    "ref_id": "AUTH-FDPIC",
+    "entity_type": "authority",
+    "entity_id": "FDPIC",
+    "canonical_name": "Federal Data Protection and Information Commissioner (FDPIC)",
+    "description": "Swiss data protection supervisory authority. Independent body reporting to Parliament; oversees nFADP compliance + cross-border-transfer adequacy assessments.",
+    "metadata": {
+      "type": "Data protection authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-SECO",
+    "entity_type": "authority",
+    "entity_id": "SECO",
+    "canonical_name": "State Secretariat for Economic Affairs (SECO)",
+    "description": "Administers Swiss sanctions under the Embargo Act + the financial measures implementing UN / EU restrictive measures. Issues licences and grants exemptions.",
+    "metadata": {
+      "type": "Sanctions authority",
+      "parent": "Federal Department of Economic Affairs, Education and Research"
+    }
+  },
+  {
+    "ref_id": "AUTH-SIF",
+    "entity_type": "authority",
+    "entity_id": "SIF",
+    "canonical_name": "State Secretariat for International Finance (SIF)",
+    "description": "Policy lead for Swiss financial-services international relations: FATF representation, tax policy, sanctions policy. Coordinates national AML/CFT policy.",
+    "metadata": {
+      "type": "Policy authority",
+      "parent": "Federal Department of Finance"
+    }
+  },
+  {
+    "ref_id": "AUTH-OAG",
+    "entity_type": "authority",
+    "entity_id": "OAG",
+    "canonical_name": "Office of the Attorney General of Switzerland (OAG)",
+    "description": "Federal prosecutor for serious financial crime including cross-border money laundering, corruption, and complex fraud. Handles AMLA Art. 9 referrals.",
+    "metadata": {
+      "type": "Federal prosecutor"
+    }
+  },
+  {
+    "ref_id": "AUTH-FED-DOJ",
+    "entity_type": "authority",
+    "entity_id": "BJ-OFJ",
+    "canonical_name": "Federal Office of Justice (Bundesamt für Justiz / OFJ)",
+    "description": "Federal office responsible for operating the new LETA central UBO register. Sets the technical / procedural rules for filings, supervises access by authorities, FIs and DNFBPs.",
+    "metadata": {
+      "type": "Federal office",
+      "parent": "Federal Department of Justice and Police"
+    }
+  },
+  {
+    "ref_id": "AUTH-SBA",
+    "entity_type": "authority",
+    "entity_id": "SBA",
+    "canonical_name": "Swiss Bankers Association (SBA / SwissBanking)",
+    "description": "Industry self-regulatory body. Authors the Agreement on the Swiss Banks' Code of Conduct with regard to the Exercise of Due Diligence (CDB 20) — the bank-sector self-regulation supplementing AMLA.",
+    "metadata": {
+      "type": "Self-regulatory organisation (SRO)"
+    }
+  },
+  {
+    "ref_id": "LETA-UBO-REG",
+    "entity_type": "concept",
+    "entity_id": "LETA-REG",
+    "canonical_name": "Federal Beneficial Ownership Register (LETA)",
+    "description": "Central register of beneficial owners of Swiss legal persons and arrangements, maintained by the Federal Office of Justice. Filings required at incorporation + on material change. Access granted to authorities, FIs and DNFBPs for AML purposes; not publicly searchable.",
+    "metadata": {
+      "operator": "Federal Office of Justice",
+      "access": "Authorities + FIs + DNFBPs (AML purpose); no public access"
+    }
+  },
+  {
+    "ref_id": "LETA-SCOPE",
+    "entity_type": "concept",
+    "entity_id": "LETA-SCOPE",
+    "canonical_name": "LETA in-scope entities",
+    "description": "Swiss-registered companies (AG / Sàrl / Genossenschaft), associations and foundations exceeding stated thresholds, plus trusts with a Swiss link (Swiss trustee, Swiss assets, Swiss settlor). Listed companies and certain regulated entities benefit from carve-outs / equivalence provisions.",
+    "metadata": {
+      "approx_entity_count": "600000"
+    }
+  },
+  {
+    "ref_id": "LETA-REPORTING",
+    "entity_type": "duty",
+    "entity_id": "LETA-RPT",
+    "canonical_name": "LETA reporting obligation",
+    "description": "In-scope entities must report their beneficial owners (25%+ ownership / control threshold; senior-managing-official fallback when no UBO can be identified) to the federal UBO register at incorporation, on material change (typically 30 days), and on annual confirmation. Trusts: settlor, trustee, protector, beneficiaries.",
+    "metadata": {
+      "ownership_threshold": "25%",
+      "material_change_deadline_days": "30",
+      "fallback": "Senior managing official"
+    }
+  },
+  {
+    "ref_id": "LETA-VERIFICATION",
+    "entity_type": "duty",
+    "entity_id": "LETA-VER",
+    "canonical_name": "LETA verification obligation",
+    "description": "Entities must verify the accuracy of reported UBO information using reliable independent sources (ID documents, corporate registry extracts, trust deeds), keep supporting documentation for review by authorities, and refresh data on material change.",
+    "metadata": {
+      "retention_years": "10"
+    }
+  },
+  {
+    "ref_id": "LETA-ACCESS",
+    "entity_type": "concept",
+    "entity_id": "LETA-ACC",
+    "canonical_name": "LETA register access regime",
+    "description": "Tiered access: federal and cantonal authorities (broad access for AML, tax, criminal purposes); FIs and DNFBPs (access for CDD purposes under AMLA); foreign counterparties via mutual administrative assistance; public access NOT granted (departing from the EU AMLR public-register model, in line with the CJEU Luxembourg Business Registers judgment).",
+    "metadata": {
+      "public_access": "No"
+    }
+  },
+  {
+    "ref_id": "LETA-PENALTIES",
+    "entity_type": "concept",
+    "entity_id": "LETA-PEN",
+    "canonical_name": "LETA non-compliance sanctions",
+    "description": "Criminal sanctions for wilful failure to report, providing false information, or wilful failure to update. Fines up to CHF 500,000 for legal persons; lesser administrative sanctions for negligence.",
+    "metadata": {
+      "max_fine_chf": "500000"
+    }
+  },
+  {
+    "ref_id": "AMLA-FI",
+    "entity_type": "concept",
+    "entity_id": "AMLA-FI-SCOPE",
+    "canonical_name": "AMLA financial-intermediary scope (existing)",
+    "description": "Banks, securities firms, fund managers, insurers (life), payment service providers, asset managers, money-changers, and persons commercially exchanging or transferring assets on behalf of clients. Distinct from the new adviser scope; financial intermediaries have been subject to full AMLA obligations since 1998.",
+    "metadata": {
+      "in_force": "1998-04-01"
+    }
+  },
+  {
+    "ref_id": "AMLA-ADVISERS",
+    "entity_type": "concept",
+    "entity_id": "AMLA-ADV-SCOPE",
+    "canonical_name": "AMLA new adviser scope (revised 2025)",
+    "description": "The revised AMLA extends obligations to advisers who, by way of profession, assist with or carry out: (a) formation, management or administration of legal persons or arrangements; (b) transfer of real estate, share capital, or business assets above stated thresholds; (c) M&A transactions; (d) capital raises. Captures lawyers, notaries, fiduciaries — even when not handling funds. Subject to limited legal-professional-privilege carve-out (typical-litigation only).",
+    "metadata": {
+      "in_force_expected": "2026"
+    }
+  },
+  {
+    "ref_id": "AMLA-CDD",
+    "entity_type": "duty",
+    "entity_id": "AMLA-CDD-OBL",
+    "canonical_name": "AMLA customer due diligence (Art. 3-6)",
+    "description": "Identify and verify the contracting party; identify the beneficial owner; clarify the purpose and background of the business relationship; document evidence. The 2025 revision tightens the documentation requirements + extends to the new adviser scope.",
+    "metadata": {
+      "articles": "3-6"
+    }
+  },
+  {
+    "ref_id": "AMLA-EDD",
+    "entity_type": "duty",
+    "entity_id": "AMLA-EDD-OBL",
+    "canonical_name": "AMLA enhanced due diligence (Art. 6)",
+    "description": "Triggers: high-risk countries, PEPs, complex / unusual transactions, transactions with no apparent economic purpose, large cash transactions. Requires senior-management approval; documented rationale.",
+    "metadata": {
+      "articles": "6"
+    }
+  },
+  {
+    "ref_id": "AMLA-PEPS",
+    "entity_type": "duty",
+    "entity_id": "AMLA-PEP-OBL",
+    "canonical_name": "AMLA PEP obligations (Art. 6 + AMLO-FINMA)",
+    "description": "Foreign PEPs always trigger heightened risk; Swiss PEPs and PEPs in IGOs trigger risk-based assessment. Senior-management approval to enter / continue; ongoing monitoring; source-of-wealth checks.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLA-SAR",
+    "entity_type": "duty",
+    "entity_id": "AMLA-SAR-OBL",
+    "canonical_name": "AMLA suspicious activity reporting (Art. 9)",
+    "description": "Mandatory reporting to MROS when there is well-founded suspicion of money laundering, predicate offence, terrorist financing, or that assets are subject to a power of disposal of a criminal organisation. Tipping-off prohibition applies. The 2025 revision retains the 'reasonable suspicion' threshold but tightens deadlines.",
+    "metadata": {
+      "report_to": "MROS",
+      "tipping_off": "Prohibited"
+    }
+  },
+  {
+    "ref_id": "AMLA-BWRA",
+    "entity_type": "duty",
+    "entity_id": "AMLA-BWRA-OBL",
+    "canonical_name": "AMLA risk-based approach / institution-wide risk assessment",
+    "description": "AMLO-FINMA Art. 25 — financial intermediaries must conduct and document an institution-wide ML/TF risk assessment, reviewed at least annually. The 2025 revision aligns this with the new adviser scope.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLA-TRAINING",
+    "entity_type": "duty",
+    "entity_id": "AMLA-TR-OBL",
+    "canonical_name": "AMLA staff training",
+    "description": "Ongoing training of staff in AML obligations, with content tailored to role and risk. AMLO-FINMA Art. 24.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AMLA-RETENTION",
+    "entity_type": "duty",
+    "entity_id": "AMLA-RET-OBL",
+    "canonical_name": "AMLA record-retention obligation",
+    "description": "Documentation of CDD, EDD, monitoring decisions, SARs, training records retained for at least 10 years after the end of the business relationship or transaction.",
+    "metadata": {
+      "retention_years": "10"
+    }
+  },
+  {
+    "ref_id": "AMLA-COMP-OFFICER",
+    "entity_type": "duty",
+    "entity_id": "AMLA-CO-OBL",
+    "canonical_name": "AMLA compliance officer designation",
+    "description": "Financial intermediaries (and, post-2025, in-scope advisers) must designate a person responsible for AML compliance with sufficient seniority, independence and resources. AMLO-FINMA Art. 26.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FINSA-CLASSIFICATION",
+    "entity_type": "duty",
+    "entity_id": "FINSA-CL",
+    "canonical_name": "FinSA client classification (Art. 4)",
+    "description": "Three categories: retail clients, professional clients, institutional clients. Opting-up / opting-down possible. Determines the level of conduct protection (information disclosure, suitability, appropriateness, prospectus) applicable.",
+    "metadata": {
+      "article": "4"
+    }
+  },
+  {
+    "ref_id": "FINSA-SUITABILITY",
+    "entity_type": "duty",
+    "entity_id": "FINSA-SUIT",
+    "canonical_name": "FinSA suitability and appropriateness (Art. 10-14)",
+    "description": "Suitability assessment for advisory + portfolio management; appropriateness for execution-only with advice; no obligation for execution-only without advice (provided proper disclosure). FINMA's new FinSA circular (1 Jan 2025) tightens documentation expectations.",
+    "metadata": {
+      "articles": "10-14"
+    }
+  },
+  {
+    "ref_id": "FINSA-INFO",
+    "entity_type": "duty",
+    "entity_id": "FINSA-INFO-DUTY",
+    "canonical_name": "FinSA information duties (Art. 8)",
+    "description": "Pre-contractual + ongoing disclosure: name and contact, services + financial instruments, costs and fees, conflicts of interest, market offering considered, key information document (KID/PRIIPS-equivalent).",
+    "metadata": {
+      "article": "8"
+    }
+  },
+  {
+    "ref_id": "FINSA-PROSPECTUS",
+    "entity_type": "duty",
+    "entity_id": "FINSA-PROSP",
+    "canonical_name": "FinSA prospectus regime (Art. 35-58)",
+    "description": "Prospectus required for public offerings of securities + admission to trading. Reviewed by an approved Swiss Review Body. Exemptions: qualified investors, threshold-based, employee participation. Aligned with EU prospectus regime.",
+    "metadata": {
+      "articles": "35-58"
+    }
+  },
+  {
+    "ref_id": "FINIA-AUTHORISATION",
+    "entity_type": "duty",
+    "entity_id": "FINIA-AUTH",
+    "canonical_name": "FinIA authorisation regime",
+    "description": "Five categories: portfolio managers + trustees (lighter regime under SOs), managers of collective assets, fund managers, securities firms. Each has tailored capital, governance, organisational, and risk-management requirements.",
+    "metadata": {
+      "supervisor": "FINMA + Supervisory Organisations (SOs)"
+    }
+  },
+  {
+    "ref_id": "NFADP-BREACH",
+    "entity_type": "duty",
+    "entity_id": "NFADP-BR",
+    "canonical_name": "nFADP breach notification (Art. 24)",
+    "description": "Data controllers must notify the FDPIC of personal-data breaches likely to result in high risk to data subjects 'as soon as possible'. Includes information on the breach, consequences, and remediation. Data subjects to be notified when necessary for their protection.",
+    "metadata": {
+      "article": "24"
+    }
+  },
+  {
+    "ref_id": "NFADP-DPIA",
+    "entity_type": "duty",
+    "entity_id": "NFADP-DPIA-OBL",
+    "canonical_name": "nFADP data protection impact assessment (Art. 22)",
+    "description": "Mandatory DPIA for processing that is likely to result in high risk to the personality or fundamental rights of data subjects (e.g. large-scale processing of sensitive data, systematic monitoring, automated decisions with legal effect).",
+    "metadata": {
+      "article": "22"
+    }
+  },
+  {
+    "ref_id": "NFADP-INTL",
+    "entity_type": "duty",
+    "entity_id": "NFADP-INTL-TR",
+    "canonical_name": "nFADP international transfers (Art. 16-17)",
+    "description": "Transfer to a country with adequate protection: permitted. Otherwise: SCCs, BCRs, codes of conduct, certification, or specific safeguards (consent, performance of contract, public interest, vital interest, manifestly made public, legal claims). Federal Council maintains the adequacy list.",
+    "metadata": {
+      "articles": "16-17"
+    }
+  },
+  {
+    "ref_id": "NFADP-ROPA",
+    "entity_type": "duty",
+    "entity_id": "NFADP-ROPA-OBL",
+    "canonical_name": "nFADP records of processing (Art. 12)",
+    "description": "Controllers and processors must maintain a record of processing activities. SMEs (< 250 employees + no high-risk processing) benefit from a simplified version. Production to FDPIC on request.",
+    "metadata": {
+      "article": "12"
+    }
+  },
+  {
+    "ref_id": "NFADP-PRIVACY-BD",
+    "entity_type": "duty",
+    "entity_id": "NFADP-PBD",
+    "canonical_name": "nFADP privacy by design + default (Art. 7)",
+    "description": "Technical and organisational measures embedded in the processing from the design stage. Default settings restrict processing to what is strictly necessary for the purpose.",
+    "metadata": {
+      "article": "7"
+    }
+  },
+  {
+    "ref_id": "FMIA-MAR",
+    "entity_type": "concept",
+    "entity_id": "FMIA-ART142",
+    "canonical_name": "FMIA market abuse (Art. 142 / 143)",
+    "description": "Swiss market-abuse regime: insider trading (Art. 142), market manipulation (Art. 143). Civil + criminal sanctions; FINMA may strip profits and impose business prohibitions.",
+    "metadata": {
+      "articles": "142-143",
+      "supervisor": "FINMA + OAG"
+    }
+  },
+  {
+    "ref_id": "DLT-LBS",
+    "entity_type": "concept",
+    "entity_id": "DLT-LEDGER-SEC",
+    "canonical_name": "Ledger-based securities (CO Art. 973d-i)",
+    "description": "DLT Act creation: securities tokens registered on a distributed ledger with the same legal effect as certificated / book-entry securities. Foundational for Switzerland's tokenisation framework.",
+    "metadata": {
+      "in_force": "2021-02-01"
+    }
+  },
+  {
+    "ref_id": "DLT-TRADING",
+    "entity_type": "concept",
+    "entity_id": "DLT-TRADING-FAC",
+    "canonical_name": "DLT trading facilities (FMIA)",
+    "description": "Authorisation category for trading platforms admitting DLT securities to trading + offering post-trade services (settlement, central custody). Lower-than-exchange capital requirements; FINMA authorised SIX Digital Exchange / BX Swiss for related activities.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "SWISS-DAC8",
+    "entity_type": "concept",
+    "entity_id": "CH-FATCA-CRS",
+    "canonical_name": "Swiss FATCA / CRS implementation",
+    "description": "Switzerland implements FATCA (intergovernmental agreement Model 2) and OECD CRS (multilateral). Reporting financial institutions submit annual returns to the Federal Tax Administration; CRS partner-jurisdiction list set by federal ordinance.",
+    "metadata": {
+      "fatca_in_force": "2014-07-01",
+      "crs_in_force": "2017-01-01"
+    }
+  },
+  {
+    "ref_id": "SECO-RUS",
+    "entity_type": "concept",
+    "entity_id": "SECO-RUSSIA-REGIME",
+    "canonical_name": "SECO Russia/Belarus sanctions regime",
+    "description": "Federal ordinances implementing EU sanctions packages against Russia and Belarus, with Swiss-specific adaptations. SECO administers asset freezes, designations, sectoral measures, energy / financial-services restrictions; license regime for humanitarian + permitted activities.",
+    "metadata": {
+      "authority": "SECO"
+    }
+  },
+  {
+    "ref_id": "CDB-20",
+    "entity_type": "concept",
+    "entity_id": "SBA-CDB20",
+    "canonical_name": "SBA Agreement on the Swiss Banks' Code of Conduct (CDB 20)",
+    "description": "Swiss Bankers Association self-regulation supplementing AMLA. Sets out the banks' due-diligence rules for identifying the contracting party + beneficial owner. The current revision (CDB 20) entered into force 1 Jan 2020. Recognised by FINMA as minimum AML standard for banks.",
+    "metadata": {
+      "in_force": "2020-01-01"
+    }
+  }
+]
