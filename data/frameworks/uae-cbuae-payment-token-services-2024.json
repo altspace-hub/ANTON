@@ -1,0 +1,101 @@
+{
+  "id": "uae-cbuae-payment-token-services-2024",
+  "name": "CBUAE Payment Token Services Regulation 2024",
+  "shortName": "CBUAE PTSR 2024",
+  "reference": "CBUAE Payment Token Services Regulation 2024",
+  "url": "https://www.centralbank.ae/",
+  "issued": "2024",
+  "inForceProgressivelyFrom": "2024-Q4",
+  "supervisor": "CBUAE",
+  "articleCount": 9,
+  "chapters": [
+    {"number": "Scope", "title": "Scope — payment tokens + payment token services", "articles": "PTSR Part A"},
+    {"number": "Licensing", "title": "Licensing categories + capital", "articles": "PTSR Part B"},
+    {"number": "Reserves", "title": "Reserve assets + redemption", "articles": "PTSR Part C"},
+    {"number": "Operations", "title": "AML + technology + custody + conduct", "articles": "PTSR Part D"},
+    {"number": "Supervision", "title": "Supervision + enforcement", "articles": "PTSR Part E"}
+  ],
+  "themes": [
+    "Scope",
+    "Licensing",
+    "Reserves + redemption",
+    "AML / FDL 10/2025 alignment",
+    "Technology + custody",
+    "Conduct",
+    "Supervision"
+  ],
+  "articles": [
+    {
+      "id": "PTSR.Scope",
+      "title": "Scope — payment tokens + activities",
+      "chapter": "Scope",
+      "section": "PTSR Part A",
+      "theme": "Scope",
+      "requirement": "Captures: (a) Payment Token Issuance — issuing AED-denominated fiat-backed stablecoins + non-AED fiat-backed payment tokens for use in payment within UAE; (b) Payment Token Service Provision — custody, exchange, transmission of payment tokens. Distinct from non-stablecoin virtual assets (which fall under VARA / DFSA / FSRA / SCA scope). CBUAE-supervised; aligned with FDL 10/2025 AML framework."
+    },
+    {
+      "id": "PTSR.Licensing",
+      "title": "Licensing categories",
+      "chapter": "Licensing",
+      "section": "PTSR Part B",
+      "theme": "Licensing",
+      "requirement": "Licence categories: (a) Issuer of AED Payment Tokens (Issuer of the AED dirham-pegged stablecoin); (b) Issuer of Other Payment Tokens (non-AED fiat-backed); (c) Payment Token Service Provider (custody, exchange, transmission). Minimum capital prescribed per category proportionate to scale + risk; ongoing capital adequacy reporting."
+    },
+    {
+      "id": "PTSR.Reserves",
+      "title": "Reserve assets + 100% backing",
+      "chapter": "Reserves",
+      "section": "PTSR Part C",
+      "theme": "Reserves + redemption",
+      "requirement": "Issuers must maintain 100% reserve backing of outstanding payment tokens in high-quality liquid assets (cash deposits, short-term sovereign debt, narrow category of liquid assets per CBUAE notice). Daily reconciliation; independent assurance over reserve balance. Reserves held in segregated accounts with approved custodians + insolvency-remote arrangements."
+    },
+    {
+      "id": "PTSR.Redemption",
+      "title": "Redemption-at-par right",
+      "chapter": "Reserves",
+      "section": "PTSR Part C",
+      "theme": "Reserves + redemption",
+      "requirement": "Token holders entitled to redeem payment tokens at face value (par) in the underlying fiat currency. Redemption obligation enforceable; redemption process documented; redemption-time standards (T+1 or better for retail; T+0 for institutional where applicable). Restrictions on issuer-imposed redemption fees + delay."
+    },
+    {
+      "id": "PTSR.AML",
+      "title": "AML alignment with FDL 10/2025",
+      "chapter": "Operations",
+      "section": "PTSR Part D",
+      "theme": "AML / FDL 10/2025 alignment",
+      "requirement": "Issuers + service providers subject to AML/CFT/PF obligations under FDL 10/2025 + CR 134/2025 + CBUAE AML notices: entity-wide risk assessment (incl. PF); CDD + EDD; PEPs; SAR via goAML to FIU UAE; sanctions screening; tipping-off prohibition; record retention 5 years."
+    },
+    {
+      "id": "PTSR.Technology",
+      "title": "Technology + cybersecurity",
+      "chapter": "Operations",
+      "section": "PTSR Part D",
+      "theme": "Technology + custody",
+      "requirement": "Robust technology-risk management: governance + accountability; secure development; cybersecurity (incl. wallet + key management); IT-incident management + reporting to CBUAE; cloud + IT third-party management; data centre + system availability. Particular emphasis on private-key custody + wallet-security given the bearer-instrument nature of payment tokens."
+    },
+    {
+      "id": "PTSR.Custody",
+      "title": "Custody + segregation",
+      "chapter": "Operations",
+      "section": "PTSR Part D",
+      "theme": "Technology + custody",
+      "requirement": "Customer-asset segregation; insolvency-remote arrangements; secure custody (cold + hot wallet structure proportionate to risk; MPC / multi-sig / HSM-based controls); customer-asset reconciliation on prescribed cadence; independent assurance over custody arrangements."
+    },
+    {
+      "id": "PTSR.Conduct",
+      "title": "Conduct + customer disclosure",
+      "chapter": "Operations",
+      "section": "PTSR Part D",
+      "theme": "Conduct",
+      "requirement": "Pre-contract risk disclosures to customers (volatility risk where applicable + insolvency risk + redemption mechanics + reserve composition + dispute-resolution); fair-marketing rules; complaint-handling framework; vulnerable-customer treatment. Marketing restrictions for retail audiences; specific disclosures for cross-border use."
+    },
+    {
+      "id": "PTSR.Supervision",
+      "title": "Supervision + enforcement",
+      "chapter": "Supervision",
+      "section": "PTSR Part E",
+      "theme": "Supervision",
+      "requirement": "CBUAE supervisory powers: licence suspension or revocation; CMPs; prohibition orders against individuals; remediation orders. Periodic + ad-hoc reporting (capital + reserves + reconciliation + cybersecurity + AML metrics). Coordination with VARA + DFSA + FSRA + SCA where payment-token issuers also engage in virtual-asset activities across multiple UAE regulators."
+    }
+  ]
+}

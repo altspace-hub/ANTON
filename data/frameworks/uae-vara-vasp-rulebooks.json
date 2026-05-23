@@ -1,0 +1,114 @@
+{
+  "id": "uae-vara-vasp-rulebooks",
+  "name": "VARA Rulebooks — Virtual Asset Service Provider Licensing (Dubai)",
+  "shortName": "VARA Rulebooks",
+  "reference": "VARA Rulebooks (Compliance + per-category Rulebooks)",
+  "url": "https://www.vara.ae/en/regulations/rulebooks/",
+  "established": "2022-03",
+  "supervisor": "VARA — Virtual Assets Regulatory Authority",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "Scope", "title": "Scope + the 7 licensable activities", "articles": "VARA Compliance Rulebook + Regulations"},
+    {"number": "Compliance", "title": "Compliance Rulebook (cross-cutting)", "articles": "VARA Compliance Rulebook"},
+    {"number": "Activities", "title": "Per-category activity rulebooks", "articles": "7 activity Rulebooks"},
+    {"number": "Prohibitions", "title": "Prohibited virtual assets + activities", "articles": "VARA quarterly review"},
+    {"number": "Enforcement", "title": "Supervision + enforcement", "articles": "VARA enforcement framework"}
+  ],
+  "themes": [
+    "Scope",
+    "Compliance Rulebook",
+    "7 activity categories",
+    "Prohibitions",
+    "Supervision + enforcement"
+  ],
+  "articles": [
+    {
+      "id": "VARA.Scope",
+      "title": "Scope — Dubai (excluding DIFC)",
+      "chapter": "Scope",
+      "section": "VARA Regulations",
+      "theme": "Scope",
+      "requirement": "Captures Virtual Asset Service Providers operating in Dubai, excluding DIFC (which is supervised by DFSA). Activities covered by VARA: advisory, broker-dealer, custody, exchange, lending + borrowing, management + investment, transfer + settlement. Cross-VARA-with-onshore-UAE activities subject to additional federal supervision (CBUAE / SCA) where applicable."
+    },
+    {
+      "id": "VARA.Activities.Advisory",
+      "title": "Category 1 — Advisory services",
+      "chapter": "Activities",
+      "section": "VARA Advisory Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Provision of advice on virtual assets, including investment recommendations, portfolio composition, transactions. Capital, fit-and-proper, conduct + market-conduct, conflicts-of-interest rules. AML/CFT alignment with FDL 10/2025 mandatory. Notification + record-keeping requirements."
+    },
+    {
+      "id": "VARA.Activities.BrokerDealer",
+      "title": "Category 2 — Broker-Dealer services",
+      "chapter": "Activities",
+      "section": "VARA Broker-Dealer Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Buying / selling virtual assets for own account or on behalf of customers; market-making. Substantial capital + segregation-of-customer-asset requirements. Best-execution standard. AML/CFT alignment with FDL 10/2025 + custody alignment with the VARA Custody Services Rulebook."
+    },
+    {
+      "id": "VARA.Activities.Custody",
+      "title": "Category 3 — Custody services",
+      "chapter": "Activities",
+      "section": "VARA Custody Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Holding + safekeeping of virtual assets on behalf of customers. Customer-asset segregation (insolvency-remote); cold + hot wallet architecture proportionate to risk; key-management (MPC, HSM, multi-sig — proportionate to scale); independent assurance; reporting of customer balances. The most-scrutinised category given the bearer-instrument nature of virtual assets."
+    },
+    {
+      "id": "VARA.Activities.Exchange",
+      "title": "Category 4 — Exchange services",
+      "chapter": "Activities",
+      "section": "VARA Exchange Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Operating an exchange platform for virtual assets (matching buyers + sellers; price discovery; trade execution). Market-conduct rules (anti-manipulation, fair-pricing, surveillance), KYC + AML alignment, listing standards, customer asset-safeguarding, technology resilience. Large operational + governance footprint."
+    },
+    {
+      "id": "VARA.Activities.LendingBorrowing",
+      "title": "Category 5 — Lending + Borrowing services",
+      "chapter": "Activities",
+      "section": "VARA Lending + Borrowing Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Facilitating lending or borrowing of virtual assets. Counterparty-risk + collateral-management standards; disclosure to customers of the risk of loss; mandatory liquidation procedures; conflicts-of-interest controls. Tightened post-Celsius / Voyager / FTX collapses."
+    },
+    {
+      "id": "VARA.Activities.Management",
+      "title": "Category 6 — Management + Investment services",
+      "chapter": "Activities",
+      "section": "VARA Management + Investment Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Discretionary investment management of virtual-asset portfolios; collective investment scheme management. Suitability + appropriateness assessment; conflicts-of-interest; client-asset segregation; performance reporting; redemption / withdrawal procedures."
+    },
+    {
+      "id": "VARA.Activities.Transfer",
+      "title": "Category 7 — Transfer + Settlement services",
+      "chapter": "Activities",
+      "section": "VARA Transfer + Settlement Services Rulebook",
+      "theme": "7 activity categories",
+      "requirement": "Facilitating transfer or settlement of virtual assets. AML / Travel Rule alignment (FATF R.16); transaction-monitoring; cybersecurity around transfer infrastructure; customer-asset protection. Captures cross-border transfer services."
+    },
+    {
+      "id": "VARA.Compliance",
+      "title": "Compliance Rulebook (cross-cutting)",
+      "chapter": "Compliance",
+      "section": "VARA Compliance Rulebook",
+      "theme": "Compliance Rulebook",
+      "requirement": "Cross-cutting AML / market conduct / governance / risk management / technology / customer-asset-protection / disclosure rules applying to all licensed activities. Specific obligations: institution-wide risk assessment (incl. PF); CDD + EDD aligned with FDL 10/2025; SAR via goAML; sanctions screening; market-conduct rules + manipulation prevention; technology + cybersecurity standards; customer-asset segregation."
+    },
+    {
+      "id": "VARA.Prohibitions",
+      "title": "Prohibited virtual assets + activities",
+      "chapter": "Prohibitions",
+      "section": "VARA Compliance Rulebook + supplements",
+      "theme": "Prohibitions",
+      "requirement": "VARA prohibits: privacy tokens (Monero, Zcash, similar — anonymity-enhancing); algorithmic stablecoins (post-Terra collapse); anonymity-enhancing mixers / tumblers; specific high-risk DeFi structures lacking accountable parties. Quarterly review + supplement; aligned with ADGM FSRA prohibitions but distinct legal authority. Existing licensees with these exposures had transition windows to exit."
+    },
+    {
+      "id": "VARA.Enforcement",
+      "title": "Supervision + enforcement",
+      "chapter": "Enforcement",
+      "section": "VARA enforcement framework",
+      "theme": "Supervision + enforcement",
+      "requirement": "VARA supervisory powers: licence suspension or revocation; CMPs (substantial — multi-AED-millions for serious failings); prohibition orders against individuals; remediation orders; public censure. Active enforcement track record since 2023; coordinated with CBUAE + EOCN + Federal Public Prosecution for cross-jurisdictional cases. Licensees + applicants subject to ongoing supervisory engagement + on-site inspections."
+    }
+  ]
+}
