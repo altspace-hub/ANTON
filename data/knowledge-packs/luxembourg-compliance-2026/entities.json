@@ -1,0 +1,520 @@
+[
+  {
+    "ref_id": "REG-AIFMD-II",
+    "entity_type": "regulation",
+    "entity_id": "AIFMD-II-2024",
+    "canonical_name": "AIFMD II — Directive (EU) 2024/927",
+    "description": "Major reform to the EU AIFMD (and UCITS Directive) regime: rules for loan-originating AIFs, mandatory liquidity-management tools (LMTs), tightened delegation + substance, harmonised AIF marketing (incl. to retail clients where permitted by Member State law), expanded supervisory reporting + cooperation. Member States transpose by 16 April 2026.",
+    "metadata": {
+      "citation": "Directive (EU) 2024/927",
+      "in_force_eu": "2024-04-15",
+      "transposition_deadline": "2026-04-16",
+      "supervisor": "CSSF + ESMA"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-BILL-8628",
+    "entity_type": "regulation",
+    "entity_id": "LUX-AIFMD-II-BILL",
+    "canonical_name": "Luxembourg Bill 8628 — AIFMD II transposition",
+    "description": "Luxembourg's transposition of AIFMD II. Amends the AIFM Law of 12 July 2013, the UCITS Law of 17 December 2010, the SIF Law of 13 February 2007 and the RAIF Law of 23 July 2016 in a single package. In force 16 April 2026 — same date as the Directive's transposition deadline.",
+    "metadata": {
+      "in_force": "2026-04-16",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-CSSF-25-901",
+    "entity_type": "regulation",
+    "entity_id": "CSSF-25-901",
+    "canonical_name": "CSSF Circular 25/901",
+    "description": "Issued 19 Dec 2025 — consolidates Investment Fund Manager (IFM) reporting across UCITS ManCos, AIFMs, SIF / SICAR / Part II UCI structures, and Reserved AIF managers. Replaces Circular 15/612 + related circulars; aligned with AIFMD II's expanded supervisory reporting framework. First annual reporting cycle under the new template covers 2026.",
+    "metadata": {
+      "issued": "2025-12-19",
+      "first_reporting_cycle": "FY 2026",
+      "supersedes": "CSSF Circular 15/612 + related",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-CSSF-25-894",
+    "entity_type": "regulation",
+    "entity_id": "CSSF-25-894",
+    "canonical_name": "CSSF Circular 25/894",
+    "description": "Issued Dec 2025 — expands IFM reporting obligations (covering organisational + governance + delegation arrangements) ahead of full AIFMD II application. Operates alongside Circular 25/901 in the transition window.",
+    "metadata": {
+      "issued": "2025-12-19",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-AIFM-2013",
+    "entity_type": "regulation",
+    "entity_id": "LUX-AIFM-2013",
+    "canonical_name": "Luxembourg AIFM Law of 12 July 2013",
+    "description": "Original Luxembourg transposition of AIFMD (Directive 2011/61/EU). Sets out authorisation requirements for AIFMs, organisational rules, delegation framework, depositary obligations, risk + liquidity management, leverage reporting, marketing rules. Substantially amended by Bill 8628 (AIFMD II).",
+    "metadata": {
+      "citation": "Mémorial A No 119, 15 July 2013",
+      "in_force": "2013-07-15",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-UCITS-2010",
+    "entity_type": "regulation",
+    "entity_id": "LUX-UCITS-2010",
+    "canonical_name": "Luxembourg UCITS Law of 17 December 2010",
+    "description": "Luxembourg transposition of the UCITS Directive (2009/65/EC as amended). Covers UCITS authorisation, ManCo governance, prospectus, KIID/KID, investor protection, investment limits, depositary obligations. Amended by Bill 8628 to align with AIFMD II changes on LMTs + delegation.",
+    "metadata": {
+      "citation": "Mémorial A No 239, 24 December 2010",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-SIF-2007",
+    "entity_type": "regulation",
+    "entity_id": "LUX-SIF-2007",
+    "canonical_name": "Luxembourg SIF Law of 13 February 2007",
+    "description": "Specialised Investment Funds — reserved to well-informed investors. Lighter regulatory framework than UCITS / Part II UCIs; CSSF authorised. SIFs typically structured as FCP (common fund) or SICAV (variable-capital corporate). AIFMD applies where SIF is an AIF.",
+    "metadata": {
+      "citation": "Mémorial A No 13, 13 February 2007",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-SICAR-2004",
+    "entity_type": "regulation",
+    "entity_id": "LUX-SICAR-2004",
+    "canonical_name": "Luxembourg SICAR Law of 15 June 2004",
+    "description": "Société d'Investissement en Capital à Risque — investment company in risk capital. Designed for private-equity + venture-capital + opportunistic investments. Well-informed investors only; CSSF authorised; AIFMD applies where SICAR is an AIF.",
+    "metadata": {
+      "citation": "Mémorial A No 95, 24 June 2004",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-RAIF-2016",
+    "entity_type": "regulation",
+    "entity_id": "LUX-RAIF-2016",
+    "canonical_name": "Luxembourg RAIF Law of 23 July 2016",
+    "description": "Reserved Alternative Investment Fund — not subject to direct CSSF product authorisation; supervision relies on the AIFM-level CSSF authorisation. Speed-to-market vehicle for well-informed investors. Subject to AIFMD via the AIFM.",
+    "metadata": {
+      "citation": "Mémorial A No 140, 28 July 2016",
+      "supervisor": "CSSF (via AIFM)"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-AML-2004",
+    "entity_type": "regulation",
+    "entity_id": "LUX-AML-2004",
+    "canonical_name": "Luxembourg AML Law of 12 November 2004 (as amended)",
+    "description": "Luxembourg's primary AML/CTF statute (multiple amendments — most recently 2025 for CASPs). Establishes designated-person obligations (FIs, professionals of the financial sector, lawyers, notaries, fiduciaries, accountants, tax advisers, real-estate agents, CASPs, etc.), CDD, EDD, PEPs, SAR/CRF, internal controls, training, retention.",
+    "metadata": {
+      "citation": "Mémorial A No 183, 16 November 2004",
+      "supervisor": "CSSF + CAA + AED + Bar Council + Notarial Chamber + ICCC"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-RBE",
+    "entity_type": "regulation",
+    "entity_id": "LUX-RBE-LAW",
+    "canonical_name": "Luxembourg RBE Law of 13 January 2019",
+    "description": "Establishes the Registre des Bénéficiaires Effectifs — the Luxembourg UBO register operated by LBR (Luxembourg Business Registers). All Luxembourg-registered legal entities must register UBOs (25% threshold + senior-managing-official fallback). Following the CJEU Luxembourg Business Registers judgment (Case C-37/20 and C-601/20), public access has been restricted to specified-interest claimants + competent authorities + FIs/DNFBPs for AML purposes.",
+    "metadata": {
+      "citation": "Mémorial A No 15, 15 January 2019",
+      "supervisor": "LBR + Ministry of Justice"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-MICA-2024",
+    "entity_type": "regulation",
+    "entity_id": "LUX-MICA-2024",
+    "canonical_name": "Luxembourg MiCA Law of 22 March 2024",
+    "description": "Designates CSSF as competent authority for MiCA; establishes the licensing regime for CASPs operating in Luxembourg; sets out cooperation, supervision + enforcement framework. Adopted to align with directly-applicable EU MiCA Regulation 2023/1114.",
+    "metadata": {
+      "citation": "Mémorial A No 144, 22 March 2024",
+      "supervisor": "CSSF"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-CSRD-2024",
+    "entity_type": "regulation",
+    "entity_id": "LUX-CSRD-2024",
+    "canonical_name": "Luxembourg CSRD Law of 17 December 2024",
+    "description": "Transposes CSRD into Luxembourg law. In-scope large companies + listed SMEs must prepare a sustainability statement embedded in the management report under ESRS; assurance by an authorised réviseur d'entreprises agréé.",
+    "metadata": {
+      "supervisor": "CSSF + CSSF for FIs + CAA for insurers + LFR for audit"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-DPA-2018",
+    "entity_type": "regulation",
+    "entity_id": "LUX-DPA-2018",
+    "canonical_name": "Luxembourg Data Protection Law of 1 August 2018",
+    "description": "Implements GDPR in Luxembourg law + provides national specifications (Member State derogations on Art. 9 special categories, employment data, scientific research, etc.). CNPD is the supervisory authority.",
+    "metadata": {
+      "supervisor": "CNPD"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-SANCTIONS-2020",
+    "entity_type": "regulation",
+    "entity_id": "LUX-SANCTIONS-2020",
+    "canonical_name": "Luxembourg Law of 19 December 2020 on sanctions implementation",
+    "description": "Establishes Luxembourg's implementation of UN + EU restrictive measures: designates competent authority (Ministry of Finance), licensing framework, civil + criminal penalties, reporting obligations for relevant entities + persons. Underpins Lux-specific implementation of EU sanctions packages (Russia, Belarus, etc.).",
+    "metadata": {
+      "supervisor": "Ministry of Finance + CSSF (for FI compliance)"
+    }
+  },
+  {
+    "ref_id": "REG-LUX-COMP-2022",
+    "entity_type": "regulation",
+    "entity_id": "LUX-COMP-2022",
+    "canonical_name": "Luxembourg Competition Law of 30 November 2022",
+    "description": "Modern Luxembourg competition statute. Empowers the Conseil de la Concurrence on antitrust + merger control + abuse of dominance. Aligns Luxembourg with EU competition framework + the ECN+ Directive.",
+    "metadata": {
+      "supervisor": "Conseil de la Concurrence"
+    }
+  },
+  {
+    "ref_id": "AUTH-CSSF",
+    "entity_type": "authority",
+    "entity_id": "CSSF",
+    "canonical_name": "Commission de Surveillance du Secteur Financier (CSSF)",
+    "description": "Luxembourg's integrated financial supervisor — banks, investment firms, payment + e-money institutions, IFMs (UCITS ManCos + AIFMs), funds (UCITS + AIFs + SIFs + SICARs + RAIFs via AIFM + Part II UCIs), CASPs, securitisation vehicles, audit oversight (in part). SSM banking participant (with ECB for significant institutions).",
+    "metadata": {
+      "type": "Integrated financial supervisor",
+      "seat": "Luxembourg-Ville"
+    }
+  },
+  {
+    "ref_id": "AUTH-CNPD",
+    "entity_type": "authority",
+    "entity_id": "CNPD",
+    "canonical_name": "Commission Nationale pour la Protection des Données (CNPD)",
+    "description": "Luxembourg's data protection authority. Active enforcer particularly on financial-sector data processing + cross-border employment data; lead authority for several Luxembourg-headquartered EU operations under the one-stop-shop.",
+    "metadata": {
+      "type": "Data protection authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-BCL",
+    "entity_type": "authority",
+    "entity_id": "BCL",
+    "canonical_name": "Banque centrale du Luxembourg (BCL)",
+    "description": "Luxembourg central bank. Eurosystem participant; supervises payment systems oversight + financial-market infrastructure stability in coordination with CSSF + ECB.",
+    "metadata": {
+      "type": "Central bank"
+    }
+  },
+  {
+    "ref_id": "AUTH-CRF",
+    "entity_type": "authority",
+    "entity_id": "CRF-LU",
+    "canonical_name": "Cellule de Renseignement Financier (CRF)",
+    "description": "Luxembourg Financial Intelligence Unit, within the Parquet de Luxembourg (Office of the Public Prosecutor). Recipient of suspicious-transaction reports (déclarations de soupçon) under the AML Law of 12 Nov 2004. Egmont Group member.",
+    "metadata": {
+      "type": "FIU",
+      "parent": "Parquet de Luxembourg"
+    }
+  },
+  {
+    "ref_id": "AUTH-CAA",
+    "entity_type": "authority",
+    "entity_id": "CAA-LU",
+    "canonical_name": "Commissariat aux Assurances (CAA)",
+    "description": "Luxembourg insurance supervisor. Solvency II + IDD + insurance-AML supervision; cooperates with CSSF on cross-sector matters.",
+    "metadata": {
+      "type": "Insurance supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-CONCURRENCE",
+    "entity_type": "authority",
+    "entity_id": "CONSEIL-CONCURRENCE-LU",
+    "canonical_name": "Conseil de la Concurrence (Luxembourg)",
+    "description": "Luxembourg competition authority. Investigates + sanctions cartels, abuses of dominance + reviews mergers under the Competition Law of 30 November 2022.",
+    "metadata": {
+      "type": "Competition authority"
+    }
+  },
+  {
+    "ref_id": "AUTH-MINFIN",
+    "entity_type": "authority",
+    "entity_id": "MINFIN-LU",
+    "canonical_name": "Ministère des Finances (Luxembourg)",
+    "description": "Luxembourg Ministry of Finance. Policy lead on financial services regulation + AML/CFT framework + sanctions. Owner of UN/EU sanctions designations + licence regime.",
+    "metadata": {
+      "type": "Government policy department"
+    }
+  },
+  {
+    "ref_id": "AUTH-AED",
+    "entity_type": "authority",
+    "entity_id": "AED-LU",
+    "canonical_name": "Administration de l'Enregistrement, des Domaines et de la TVA (AED)",
+    "description": "Luxembourg tax + indirect tax authority. AML supervisor for certain non-financial designated persons (real-estate agents, tax advisers outside CSSF/Bar/Notary supervision). Recipient of certain AML reports in addition to the CRF.",
+    "metadata": {
+      "type": "Tax authority + AML supervisor"
+    }
+  },
+  {
+    "ref_id": "AUTH-LBR",
+    "entity_type": "authority",
+    "entity_id": "LBR-LU",
+    "canonical_name": "Luxembourg Business Registers (LBR)",
+    "description": "Operates the Registre de Commerce et des Sociétés (RCS) + the Registre des Bénéficiaires Effectifs (RBE). Receives + manages UBO filings under the RBE Law of 13 January 2019.",
+    "metadata": {
+      "type": "Companies + UBO registers"
+    }
+  },
+  {
+    "ref_id": "AIFMD2-LO-AIF",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-LOAIF",
+    "canonical_name": "Loan-Originating AIF framework",
+    "description": "AIFMD II concept. An AIF is 'loan-originating' if its strategy is mainly origination of loans, or it has substantial loan-origination notional exposure. Triggers: a 175% leverage cap (closed-ended); single-borrower limit (20% of NAV); 5% retention on transferred loans; specific risk-management + liquidity-management policies; reporting; restrictions on originate-to-distribute structures.",
+    "metadata": {
+      "leverage_cap_closed_ended": "175%",
+      "single_borrower_limit": "20% NAV",
+      "retention": "5%"
+    }
+  },
+  {
+    "ref_id": "AIFMD2-LMT",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-LMTS",
+    "canonical_name": "Liquidity Management Tools (LMTs) — mandatory selection",
+    "description": "AIFMD II requires open-ended AIFs (and UCITS) to select at least 2 LMTs from a harmonised CSSF list. List: redemption gates, redemption notice extension, redemption fees, swing pricing, dual pricing, anti-dilution levy, side pockets, suspension, redemption in kind. ESMA RTS on LMT selection + activation expected to enter force alongside AIFMD II.",
+    "metadata": {
+      "minimum_lmt_count": 2
+    }
+  },
+  {
+    "ref_id": "AIFMD2-LMT-ACTIVATION",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-LMT-ACT",
+    "canonical_name": "LMT activation governance",
+    "description": "AIFMD II requires AIFMs (+ UCITS ManCos) to document the procedural + governance arrangements for selecting + activating LMTs: criteria triggers, approval authority, investor disclosure, CSSF notification timing. Activation of suspension or side-pockets specifically requires senior-management decision + CSSF notification.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AIFMD2-DELEGATION",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-DELEG",
+    "canonical_name": "Delegation framework reform",
+    "description": "AIFMD II tightens delegation: (a) prohibits 'letter-box entity' structures where the IFM delegates so much that it ceases to be the IFM in substance; (b) requires identification + reporting of all delegations + sub-delegations (incl. function, delegate, jurisdiction); (c) substance + supervision conditions; (d) particular attention to portfolio + risk management delegation outside the EU.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AIFMD2-RETAIL-MKT",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-RETAIL",
+    "canonical_name": "Marketing of AIFs to retail clients",
+    "description": "AIFMD II harmonises the framework for marketing AIFs to retail investors where Member State law permits. Includes specific disclosure + suitability + appropriateness assessment requirements. Member State law continues to drive permission + product-type limits (Lux Part II UCIs are the typical retail-permitted Lux AIF vehicle).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AIFMD2-REPORTING",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-REP",
+    "canonical_name": "AIFMD II supervisory reporting expansion",
+    "description": "Expanded periodic + ad-hoc reporting to CSSF + ESMA: leverage methods, LMT activations, delegation chains, loan-origination concentration, sustainability-risk integration, ICT-risk integration. Operational details set by ESMA RTS + CSSF Circular 25/901.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AIFMD2-SUBSTANCE",
+    "entity_type": "concept",
+    "entity_id": "AIFMD2-SUB",
+    "canonical_name": "Substance requirements for IFMs",
+    "description": "Reinforced AIFMD II substance: minimum two natural persons resident in the Member State, dedicated to managing the AIFM, employed by the AIFM or appointed as members of the governing body; sufficient resources for the activities; documented decision-making at the AIFM level; pre-emptive notification of delegation arrangements.",
+    "metadata": {
+      "minimum_natural_persons": 2
+    }
+  },
+  {
+    "ref_id": "IFM-UCITS-MANCO",
+    "entity_type": "concept",
+    "entity_id": "UCITS-MANCO-CSSF",
+    "canonical_name": "UCITS Management Company (UCITS ManCo)",
+    "description": "CSSF-authorised undertaking managing one or more UCITS. Activities permitted: collective portfolio management + (with sufficient capital) the additional MiFID services of discretionary portfolio management + investment advice + safekeeping for collective investment vehicles. AIFMD II amendments to UCITS Law align LMTs + delegation rules.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "IFM-AIFM",
+    "entity_type": "concept",
+    "entity_id": "AIFM-CSSF",
+    "canonical_name": "Alternative Investment Fund Manager (AIFM)",
+    "description": "CSSF-authorised AIFM under the AIFM Law of 12 July 2013. Activities: managing one or more AIFs; (with sufficient capital) MiFID-equivalent discretionary portfolio management + advice. Most reforms in Bill 8628 target the AIFM regime.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "IFM-SUPER-MANCO",
+    "entity_type": "concept",
+    "entity_id": "SUPER-MANCO",
+    "canonical_name": "Super ManCo (UCITS ManCo + AIFM)",
+    "description": "Single CSSF-authorised entity holding both UCITS ManCo + AIFM licences. Common Luxembourg structure for asset managers offering both regulated retail UCITS + alternative funds from a single Lux operating platform.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "IFM-CONDUCTING-OFFICERS",
+    "entity_type": "concept",
+    "entity_id": "LU-COs",
+    "canonical_name": "Conducting Officers (dirigeants)",
+    "description": "The minimum two natural persons responsible for the day-to-day management of an IFM under Luxembourg law (CSSF Circular 18/698 + AIFM Law + UCITS Law). Each conducting officer owns specific functions (portfolio management, risk management, distribution, valuation, etc.). AIFMD II's reinforced substance requirements raise expectations on conducting-officer presence + decision-making.",
+    "metadata": {
+      "minimum_count": 2,
+      "csif_circular": "18/698"
+    }
+  },
+  {
+    "ref_id": "FUND-UCITS",
+    "entity_type": "concept",
+    "entity_id": "FUND-UCITS-LU",
+    "canonical_name": "UCITS (Luxembourg)",
+    "description": "Retail-passportable open-ended investment fund authorised under the UCITS Law of 17 December 2010. Strict investment limits + diversification + liquidity rules + KIID/KID + ManCo oversight + depositary obligations. Luxembourg is the world's #1 UCITS domicile for cross-border distribution.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-AIF",
+    "entity_type": "concept",
+    "entity_id": "FUND-AIF-LU",
+    "canonical_name": "Alternative Investment Fund (Luxembourg)",
+    "description": "Any collective investment undertaking that is not a UCITS — SIFs, SICARs, RAIFs, Part II UCIs structured as AIFs, dedicated SCSp/SCS partnership AIFs. Subject to the AIFM Law via the AIFM.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-SIF",
+    "entity_type": "concept",
+    "entity_id": "FUND-SIF",
+    "canonical_name": "Specialised Investment Fund (SIF)",
+    "description": "AIF under the SIF Law 2007, reserved to well-informed investors. Lighter product authorisation than UCITS / Part II UCIs; CSSF authorisation required for the SIF itself.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-SICAR",
+    "entity_type": "concept",
+    "entity_id": "FUND-SICAR",
+    "canonical_name": "Société d'Investissement en Capital à Risque (SICAR)",
+    "description": "AIF under the SICAR Law 2004, dedicated to risk-capital investing. Well-informed investors only; tax-transparent in many cases; CSSF product authorisation.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-RAIF",
+    "entity_type": "concept",
+    "entity_id": "FUND-RAIF",
+    "canonical_name": "Reserved Alternative Investment Fund (RAIF)",
+    "description": "AIF under the RAIF Law 2016. No direct CSSF product authorisation; supervision flows via the AIFM. Speed-to-market AIF vehicle; well-informed investors only; can adopt SIF-like or SICAR-like investment policy.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-PART2-UCI",
+    "entity_type": "concept",
+    "entity_id": "FUND-PART2",
+    "canonical_name": "Part II UCI",
+    "description": "UCI authorised under Part II of the UCITS Law of 2010 — not a UCITS. Typical retail-permitted AIF vehicle in Luxembourg; subject to CSSF product authorisation + AIFM Law via the AIFM. Often used for retail real-estate + private-credit funds.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUND-DEPOSITARY",
+    "entity_type": "concept",
+    "entity_id": "LU-DEPOSITARY",
+    "canonical_name": "Depositary obligations",
+    "description": "Every Luxembourg UCITS + AIF requires a single depositary — a CSSF-authorised credit institution / investment firm / specialised PSF. Duties: safekeeping of assets, cash-flow monitoring, oversight of NAV calculation + investor subscription/redemption flows. AIFMD II expands depositary cooperation obligations + reporting.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "REG-RBE-OBL",
+    "entity_type": "duty",
+    "entity_id": "LU-RBE-OBL",
+    "canonical_name": "RBE — UBO register filing obligation",
+    "description": "All Luxembourg-registered legal entities (commercial companies, civil companies, foundations, associations, mutual insurance, EEIGs, AIFs in scope, etc.) must file UBO information (25% threshold + senior-managing-official fallback) with LBR; refresh within 1 month of material change; criminal sanctions for non-compliance.",
+    "metadata": {
+      "ownership_threshold": "25%",
+      "refresh_deadline_months": 1
+    }
+  },
+  {
+    "ref_id": "AML-CDD-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-CDD-OBL",
+    "canonical_name": "Luxembourg AML CDD obligations",
+    "description": "Designated persons must perform CDD: identify + verify the customer + UBO using reliable independent sources; understand the purpose + intended nature of the relationship; conduct ongoing monitoring. Risk-based intensity. CSSF Regulation 12-02 specifies the detailed CDD/EDD requirements for FIs.",
+    "metadata": {
+      "primary_regulation": "CSSF Reg 12-02 + AML Law 12 Nov 2004"
+    }
+  },
+  {
+    "ref_id": "AML-EDD-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-EDD-OBL",
+    "canonical_name": "Luxembourg AML EDD + PEP obligations",
+    "description": "Enhanced due diligence triggered for high-risk situations: high-risk third countries; PEPs (domestic + foreign + IO); complex / unusual / large transactions without apparent economic purpose; cross-border correspondent relationships. Senior-management approval; source-of-wealth + source-of-funds; enhanced ongoing monitoring.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AML-SAR-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-SAR-OBL",
+    "canonical_name": "Suspicious-transaction reporting (déclaration de soupçon)",
+    "description": "Designated persons file SARs to the CRF without delay where they know, suspect or have reasonable grounds to suspect ML/TF. Tipping-off prohibition. Statutory immunity for good-faith reporters. AML Law of 12 Nov 2004 Article 5.",
+    "metadata": {
+      "report_to": "CRF (Cellule de Renseignement Financier)"
+    }
+  },
+  {
+    "ref_id": "AML-RBA-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-RBA-OBL",
+    "canonical_name": "Luxembourg AML risk-based approach + risk assessment",
+    "description": "Designated persons must conduct a documented entity-wide ML/TF risk assessment, refreshed at least annually + on material change. Risk factors: customer, geographic, product/service, distribution channel, new technologies. Drives the calibration of all other AML controls.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AML-TRAINING-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-TR-OBL",
+    "canonical_name": "Luxembourg AML staff training",
+    "description": "Designated persons must train staff (initial + ongoing, role-targeted) on AML/CFT obligations, red flags, internal policies + procedures, escalation. Records retained. CSSF Reg 12-02 specifies the detailed framework for FIs.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "AML-COMP-OFFICER-LU",
+    "entity_type": "duty",
+    "entity_id": "LU-AML-CO-OBL",
+    "canonical_name": "Luxembourg AML compliance officer (RC + RR)",
+    "description": "Designated persons must appoint a Responsable du Contrôle du respect des obligations professionnelles (RC) at senior management level + a Responsable du Respect des obligations professionnelles (RR) at board / executive-committee level. Both subject to CSSF assessment.",
+    "metadata": {
+      "rc_role": "Operational compliance officer",
+      "rr_role": "Senior governance officer"
+    }
+  },
+  {
+    "ref_id": "CSSF-25-901-REPORTING",
+    "entity_type": "duty",
+    "entity_id": "CSSF-25-901-OBL",
+    "canonical_name": "CSSF 25/901 IFM reporting obligations",
+    "description": "Consolidated annual reporting framework for IFMs across UCITS ManCos + AIFMs + Part II UCIs + SIFs + SICARs + RAIFs. Covers: governance, delegation chain, conducting officers + business model, AUM by fund type, leverage + LMT activations (AIFMD II), risks managed + risk-management resources, AML integration, ICT-risk integration, sustainability-risk integration.",
+    "metadata": {
+      "first_cycle": "FY 2026"
+    }
+  },
+  {
+    "ref_id": "MICA-CASP-LU",
+    "entity_type": "concept",
+    "entity_id": "LU-MICA-CASP",
+    "canonical_name": "CSSF MiCA CASP authorisation",
+    "description": "CASPs operating from or into Luxembourg require CSSF authorisation under MiCA (via the Lux MiCA Law of 22 March 2024 + the directly-applicable MiCA Regulation). Existing CSSF-registered VASPs benefited from the transitional regime. Authorisation covers governance, capital, organisational, conduct, AML standards aligned with MiCA Titles V/VI.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "FUNDS-LU-HUB",
+    "entity_type": "concept",
+    "entity_id": "LU-FUNDS-HUB",
+    "canonical_name": "Luxembourg as global funds hub",
+    "description": "Luxembourg is the #1 EU funds domicile by AUM (€5tn+ across UCITS + AIFs as of 2025) and the world's largest cross-border-distribution UCITS centre. Every major global asset manager has a Lux ManCo + AIF range — making AIFMD II + CSSF 25/901 reforms a critical operational event for the asset-management industry globally.",
+    "metadata": {
+      "aum_approx_tn_eur": 5
+    }
+  }
+]

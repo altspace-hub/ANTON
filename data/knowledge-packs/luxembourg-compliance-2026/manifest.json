@@ -1,0 +1,32 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "luxembourg-compliance-2026",
+  "display_name": "Luxembourg Compliance 2026 — AIFMD II, CSSF Circular 25/901, fund laws, AML, GDPR",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for the Luxembourg regulatory wave of 2025–2026: AIFMD II (Directive (EU) 2024/927) transposed via Bill 8628 in force 16 April 2026 — major reforms to loan-originating AIFs, mandatory liquidity-management tools, delegation framework + substance requirements, retail-marketing of AIFs; CSSF Circular 25/901 (19 Dec 2025) consolidating IFM reporting across SIF / SICAR / Part II UCI and replacing Circular 15/612; CSSF Circular 25/894 (IFM reporting expansion); plus the foundational fund laws (UCITS Law 2010, AIFM Law 2013, SIF Law 2007, SICAR Law 2004, RAIF Law 2016), the AML Law of 12 Nov 2004, the MiCA Law of 22 March 2024, the CSRD Law of 17 Dec 2024, the GDPR Law of 1 Aug 2018, the sanctions Law of 19 Dec 2020 and the Competition Law of 30 Nov 2022.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Luxembourg",
+  "regulatory_area": "Investment funds + multi-domain compliance",
+  "regulation_ids": [
+    "AIFMD II — Directive (EU) 2024/927",
+    "Luxembourg Bill 8628 — AIFMD II transposition",
+    "CSSF Circular 25/901",
+    "CSSF Circular 25/894",
+    "AIFM Law of 12 July 2013",
+    "UCITS Law of 17 December 2010",
+    "SIF Law of 13 February 2007",
+    "SICAR Law of 15 June 2004",
+    "RAIF Law of 23 July 2016",
+    "Luxembourg AML Law of 12 November 2004",
+    "Luxembourg MiCA Law of 22 March 2024",
+    "Luxembourg CSRD Law of 17 December 2024",
+    "Luxembourg GDPR Law of 1 August 2018",
+    "Luxembourg Sanctions Law of 19 December 2020",
+    "Luxembourg Competition Law of 30 November 2022"
+  ],
+  "tier": 1,
+  "entity_count": 53,
+  "relationship_count": 80,
+  "alias_entry_count": 33
+}
