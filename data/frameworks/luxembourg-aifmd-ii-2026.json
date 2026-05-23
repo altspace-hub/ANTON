@@ -1,0 +1,144 @@
+{
+  "id": "luxembourg-aifmd-ii-2026",
+  "name": "AIFMD II — Directive (EU) 2024/927 + Luxembourg Bill 8628",
+  "shortName": "AIFMD II (LU)",
+  "reference": "Directive (EU) 2024/927 + Lux Bill 8628",
+  "url": "https://eur-lex.europa.eu/eli/dir/2024/927/oj",
+  "euInForce": "2024-04-15",
+  "transpositionDeadline": "2026-04-16",
+  "luxInForce": "2026-04-16",
+  "supervisor": "CSSF (+ ESMA)",
+  "articleCount": 14,
+  "chapters": [
+    {"number": "1", "title": "Loan-Originating AIFs (LO-AIFs)", "articles": "Art. 15, 16"},
+    {"number": "2", "title": "Liquidity Management Tools (LMTs)", "articles": "Art. 16, Annex V"},
+    {"number": "3", "title": "Delegation + substance", "articles": "Art. 20"},
+    {"number": "4", "title": "Marketing of AIFs (incl. retail)", "articles": "Art. 30a, 43-43b"},
+    {"number": "5", "title": "Reporting + cooperation", "articles": "Art. 24, 50"},
+    {"number": "6", "title": "Depositary cooperation", "articles": "Art. 21"},
+    {"number": "7", "title": "UCITS alignment", "articles": "Dir 2009/65 amendments"}
+  ],
+  "themes": [
+    "Loan-Originating AIFs",
+    "Liquidity Management Tools",
+    "Delegation + substance",
+    "Retail marketing",
+    "Supervisory reporting",
+    "Depositary",
+    "UCITS alignment"
+  ],
+  "articles": [
+    {
+      "id": "Art.15.LO",
+      "title": "Loan-Originating AIF framework",
+      "chapter": "1",
+      "section": "Title III",
+      "theme": "Loan-Originating AIFs",
+      "requirement": "Where an AIF originates loans as part of its strategy or has substantial loan-origination exposure, the AIFM must apply: a leverage cap of 175% (closed-ended LO-AIF) or 300% (open-ended LO-AIF) calculated on a commitment basis; single-borrower concentration limit of 20% NAV; a 5% retention obligation on transferred loans (with carve-outs); robust risk-management + liquidity-management policies + procedures; prohibition on originating loans to specified counterparties (the AIFM itself, the depositary, group entities)."
+    },
+    {
+      "id": "Art.15a.Strategy",
+      "title": "LO-AIF strategy + open-ended carve-outs",
+      "chapter": "1",
+      "section": "Title III",
+      "theme": "Loan-Originating AIFs",
+      "requirement": "An LO-AIF is (a) one whose investment strategy is mainly origination of loans, OR (b) one where the notional value of originated loans exceeds 50% of NAV. Open-ended LO-AIFs permitted only where the AIFM demonstrates the liquidity-management framework supports the redemption profile (ESMA RTS sets the specifics)."
+    },
+    {
+      "id": "Art.16.LMT.Selection",
+      "title": "LMT selection — minimum two",
+      "chapter": "2",
+      "section": "Title III",
+      "theme": "Liquidity Management Tools",
+      "requirement": "Open-ended AIFs (and UCITS) must select at least 2 LMTs from the harmonised list (Annex V): redemption gates, redemption notice period extensions, redemption fees, swing pricing, dual pricing, anti-dilution levy, side pockets, suspension, redemption in kind. Money-market funds + open-ended LO-AIFs subject to specific selection rules."
+    },
+    {
+      "id": "Art.16.LMT.Activation",
+      "title": "LMT activation governance + disclosure",
+      "chapter": "2",
+      "section": "Title III",
+      "theme": "Liquidity Management Tools",
+      "requirement": "AIFMs (+ UCITS ManCos) must document procedural + governance arrangements for selecting + activating LMTs: triggers + criteria, approval authority, investor disclosure (prospectus + ad-hoc), CSSF notification (immediate for suspension / side pockets, periodic for other LMTs). Annual review of LMT framework."
+    },
+    {
+      "id": "Art.20.Delegation",
+      "title": "Delegation framework reform",
+      "chapter": "3",
+      "section": "Title III",
+      "theme": "Delegation + substance",
+      "requirement": "AIFMs must (a) ensure they retain substance + cannot become letter-box entities; (b) notify CSSF of all delegation arrangements (function, delegate identity, jurisdiction, sub-delegations); (c) demonstrate ongoing monitoring of delegates; (d) apply heightened scrutiny to portfolio + risk-management delegation outside the EU. CSSF Circular 18/698 expectations remain authoritative, supplemented by AIFMD II."
+    },
+    {
+      "id": "Art.20.Substance",
+      "title": "Minimum substance requirement",
+      "chapter": "3",
+      "section": "Title III",
+      "theme": "Delegation + substance",
+      "requirement": "Each AIFM (and UCITS ManCo) must have at least 2 natural persons either resident in the Member State who are employed full-time by the AIFM, or members of the governing body of the AIFM who are committed to its activities + present in the Member State sufficiently to conduct effective decision-making. Reinforces the existing Lux 'conducting officer' framework."
+    },
+    {
+      "id": "Art.30a.RetailMkt",
+      "title": "Retail marketing of AIFs — harmonised framework",
+      "chapter": "4",
+      "section": "Title VI",
+      "theme": "Retail marketing",
+      "requirement": "Where Member State law permits AIF marketing to retail investors, AIFMs marketing must provide retail-appropriate disclosures (KID/PRIIPS-equivalent), apply suitability or appropriateness assessment per MiFID/PRIIPS principles, and follow the same conduct-of-business standards as for professional clients (where applicable). In Luxembourg, Part II UCIs continue to be the typical retail-permitted AIF vehicle."
+    },
+    {
+      "id": "Art.24.Reporting",
+      "title": "Expanded supervisory reporting",
+      "chapter": "5",
+      "section": "Title IV",
+      "theme": "Supervisory reporting",
+      "requirement": "AIFMs report to CSSF + ESMA on a periodic basis covering: leverage methods + ratios; LMT selections + activations; delegation chain detail; loan-origination concentration (for LO-AIFs); sustainability-risk integration; ICT-risk integration; key risks managed. ESMA technical standards specify the report format; CSSF Circular 25/901 operationalises for Luxembourg."
+    },
+    {
+      "id": "Art.50.Cooperation",
+      "title": "Supervisory cooperation + ESMA powers",
+      "chapter": "5",
+      "section": "Title VII",
+      "theme": "Supervisory reporting",
+      "requirement": "ESMA's coordination role expanded — peer reviews + comparative analyses of national authorisation + supervisory practices; specific powers on LMT activation oversight; cross-border enforcement coordination. Reduces forum-shopping risk for AIFMs structuring across Member States."
+    },
+    {
+      "id": "Art.21.Depositary",
+      "title": "Depositary cooperation + reporting",
+      "chapter": "6",
+      "section": "Title III",
+      "theme": "Depositary",
+      "requirement": "Depositary obligations clarified: must cooperate with AIFM + delegates; report concerns to CSSF directly where AIFM failures detected; specific obligations on cash-flow monitoring + safekeeping of crypto-assets where AIF holds them. Depositary agreement must be updated to reflect AIFMD II amendments."
+    },
+    {
+      "id": "Art.UCITS.LMT",
+      "title": "UCITS amendments — LMT alignment",
+      "chapter": "7",
+      "section": "Dir 2009/65 amendments",
+      "theme": "UCITS alignment",
+      "requirement": "UCITS Directive amended to require UCITS ManCos to select + operate LMTs on the same basis as AIFMs. CSSF expectations: UCITS prospectus updates by 16 April 2026 to disclose selected LMTs; governance framework parity with AIF process."
+    },
+    {
+      "id": "Art.UCITS.Delegation",
+      "title": "UCITS amendments — delegation parity",
+      "chapter": "7",
+      "section": "Dir 2009/65 amendments",
+      "theme": "UCITS alignment",
+      "requirement": "Delegation provisions aligned with AIFMD II — letter-box prohibition, notification, sub-delegation transparency. Applies equally to UCITS ManCos as to AIFMs."
+    },
+    {
+      "id": "Art.LO.RiskMgmt",
+      "title": "LO-AIF risk-management framework",
+      "chapter": "1",
+      "section": "Title III",
+      "theme": "Loan-Originating AIFs",
+      "requirement": "AIFMs of LO-AIFs must implement specific risk-management policies + procedures covering: credit + concentration risk; valuation of loans; recovery + collateral; conflict-of-interest avoidance (where the AIFM also originates loans for related parties); stress-testing of credit + liquidity scenarios; independent review by risk-management function."
+    },
+    {
+      "id": "Art.LO.LiqMgmt",
+      "title": "LO-AIF liquidity-management framework",
+      "chapter": "1",
+      "section": "Title III",
+      "theme": "Loan-Originating AIFs",
+      "requirement": "AIFMs of open-ended LO-AIFs must implement specific liquidity-management procedures: cash + cash-equivalent buffers; modelling of loan cash flows; restrictions on redemption frequency reflecting underlying loan tenor; stress-testing under multiple redemption + drawdown scenarios; LMT activation framework specifically calibrated for credit-fund vehicles."
+    }
+  ]
+}

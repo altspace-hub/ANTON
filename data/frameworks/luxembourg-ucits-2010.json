@@ -1,0 +1,111 @@
+{
+  "id": "luxembourg-ucits-2010",
+  "name": "Luxembourg UCITS Law of 17 December 2010 (+ Part II UCIs)",
+  "shortName": "UCITS Law (LU)",
+  "reference": "Law of 17 December 2010 — relating to undertakings for collective investment",
+  "url": "https://legilux.public.lu/eli/etat/leg/loi/2010/12/17/n2/jo",
+  "inForce": "2010-12-24",
+  "amendedBy": "Bill 8628 (AIFMD II) — 16 April 2026",
+  "supervisor": "CSSF",
+  "articleCount": 10,
+  "chapters": [
+    {"number": "1", "title": "Part I — UCITS (retail-passportable)", "articles": "Pt I, Chap 1-14"},
+    {"number": "2", "title": "Part II — UCIs (non-UCITS)", "articles": "Pt II, Chap 15-16"},
+    {"number": "3", "title": "Chapter 15 — Management Companies", "articles": "Chap 15"},
+    {"number": "4", "title": "Investment policy + limits", "articles": "Chap 5"},
+    {"number": "5", "title": "Depositary obligations", "articles": "Chap 6"},
+    {"number": "6", "title": "Investor information (Prospectus + KID + reports)", "articles": "Chap 7"},
+    {"number": "7", "title": "Cross-border marketing (passport)", "articles": "Chap 9"}
+  ],
+  "themes": [
+    "UCITS authorisation",
+    "Part II UCIs",
+    "ManCo governance",
+    "Investment limits",
+    "Depositary",
+    "Investor information",
+    "Cross-border passport"
+  ],
+  "articles": [
+    {
+      "id": "Pt.I",
+      "title": "UCITS — definition + authorisation",
+      "chapter": "1",
+      "section": "Pt I",
+      "theme": "UCITS authorisation",
+      "requirement": "UCITS is an open-ended collective investment undertaking with the sole purpose of collective investment in transferable securities (+ other liquid financial instruments) and operating on the principle of risk-spreading. Authorised by CSSF after review of constitutional documents, prospectus, ManCo, depositary; passportable for cross-border marketing under the UCITS Directive."
+    },
+    {
+      "id": "Pt.II",
+      "title": "Part II UCIs — non-UCITS Lux funds",
+      "chapter": "2",
+      "section": "Pt II",
+      "theme": "Part II UCIs",
+      "requirement": "UCIs authorised under Part II — not UCITS. Typical retail-permitted Lux AIF vehicle. CSSF product authorisation required; AIFM Law applies via the AIFM (post-AIFMD II amendments). Investment-policy + leverage rules less restrictive than UCITS but more demanding than SIF / SICAR / RAIF."
+    },
+    {
+      "id": "Chap.15.ManCo",
+      "title": "UCITS Management Company authorisation",
+      "chapter": "3",
+      "section": "Chap 15",
+      "theme": "ManCo governance",
+      "requirement": "UCITS ManCos require CSSF authorisation. Minimum initial capital €125,000 (+ 0.02% of AUM > €250m); 2 conducting officers; suitable shareholders + governance; risk-management + compliance + internal-audit functions. AIFMD II amends governance + delegation + LMT obligations."
+    },
+    {
+      "id": "Chap.5.Limits",
+      "title": "UCITS investment limits (5/10/40 rule)",
+      "chapter": "4",
+      "section": "Chap 5",
+      "theme": "Investment limits",
+      "requirement": "Maximum 5% NAV per single issuer (raisable to 10% subject to a 40% NAV cap on all 5%+ positions combined); enhanced limits for sovereign debt; eligible asset rules (transferable securities, money-market instruments, deposits, derivatives, fund units); leverage limited to 100% NAV via derivatives commitment basis or VaR."
+    },
+    {
+      "id": "Chap.6.Depositary",
+      "title": "Depositary obligations",
+      "chapter": "5",
+      "section": "Chap 6",
+      "theme": "Depositary",
+      "requirement": "Single depositary required — a CSSF-authorised credit institution / investment firm / specialised PSF in Luxembourg (or branch of EU credit institution). Duties: safekeeping; cash-flow monitoring; oversight of NAV calculation + subscription/redemption flows + compliance with UCITS rules. AIFMD II expands cooperation + reporting obligations + clarifies safekeeping of crypto-assets."
+    },
+    {
+      "id": "Chap.7.Prospectus",
+      "title": "Prospectus + KID + reports",
+      "chapter": "6",
+      "section": "Chap 7",
+      "theme": "Investor information",
+      "requirement": "Each UCITS / Part II UCI must publish: full prospectus + simplified prospectus replaced by PRIIPs KID for retail clients; annual + semi-annual reports; NAV calculation rules. Material changes trigger prospectus update + investor notice. CSSF approval before any new sub-fund or material amendment."
+    },
+    {
+      "id": "Chap.7.LMT",
+      "title": "LMT disclosure in prospectus (post-AIFMD II)",
+      "chapter": "6",
+      "section": "Chap 7",
+      "theme": "Investor information",
+      "requirement": "Following Bill 8628 (AIFMD II transposition), UCITS prospectuses must disclose the selected LMTs (minimum 2 from Annex V), the activation triggers + governance, and the investor-protection consequences. Prospectus updates required by 16 April 2026."
+    },
+    {
+      "id": "Chap.9.Passport",
+      "title": "UCITS cross-border passport",
+      "chapter": "7",
+      "section": "Chap 9",
+      "theme": "Cross-border passport",
+      "requirement": "Authorised UCITS may be marketed across the EU under the UCITS passport: CSSF notification of host-state regulator + provision of marketing documents in host-state language(s); ongoing compliance with marketing-communications rules (ESMA Guidelines on marketing communications). Luxembourg UCITS dominate cross-border distribution in many EU markets."
+    },
+    {
+      "id": "AIFMD2.UCITS.Delegation",
+      "title": "AIFMD II delegation alignment for UCITS",
+      "chapter": "3",
+      "section": "Chap 15 (post-AIFMD II)",
+      "theme": "ManCo governance",
+      "requirement": "Bill 8628 aligns UCITS ManCo delegation rules with AIFMD II: letter-box prohibition, comprehensive delegation notification, sub-delegation transparency, particular scrutiny of out-of-EU delegation of portfolio + risk management. CSSF Circular 18/698 expectations remain authoritative."
+    },
+    {
+      "id": "AIFMD2.UCITS.Substance",
+      "title": "AIFMD II substance for UCITS ManCo",
+      "chapter": "3",
+      "section": "Chap 15 (post-AIFMD II)",
+      "theme": "ManCo governance",
+      "requirement": "Minimum 2 natural persons resident in Luxembourg dedicated to managing the UCITS ManCo, either as employees or as members of the governing body; sufficient resources for the activities; documented decision-making at the ManCo level. Reinforces existing Lux conducting-officer practice."
+    }
+  ]
+}

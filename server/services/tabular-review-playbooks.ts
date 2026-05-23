@@ -1382,6 +1382,198 @@ export const IRELAND_SEAR_RESPONSIBILITY_MAP: Playbook = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// 9. Luxembourg AIFMD II — ManCo Readiness Mapping
+// ───────────────────────────────────────────────────────────────────────
+
+export const LUXEMBOURG_AIFMD_II_READINESS: Playbook = {
+  id: 'luxembourg-aifmd-ii-readiness',
+  name: 'Luxembourg AIFMD II — ManCo Readiness Mapping',
+  description:
+    'Maps a Luxembourg IFM (UCITS ManCo / AIFM / Super ManCo) preparation against the AIFMD ' +
+    'II reforms (Directive (EU) 2024/927 transposed by Bill 8628 in force 16 April 2026) and ' +
+    'the CSSF Circular 25/901 IFM-reporting overhaul. Each cell asks whether a specific ' +
+    'readiness element is evidenced in the document, with verbatim quoted evidence.',
+  defaultModel: 'claude-haiku-4-5-20251001',
+  knowledgePackIds: ['luxembourg-compliance-2026'],
+  systemPrompt:
+    'You are an experienced Luxembourg funds + financial-services lawyer reviewing an IFM ' +
+    '(UCITS Management Company / AIFM / Super ManCo) readiness document against AIFMD II ' +
+    '(Directive (EU) 2024/927 + Lux Bill 8628 in force 16 April 2026) and CSSF Circular ' +
+    '25/901 (consolidated IFM reporting, first cycle FY 2026). You assess each readiness ' +
+    'element with the discipline of a CSSF on-site inspector: explicit > implicit, evidence ' +
+    '> paraphrase, strict > lenient. You distinguish what every IFM must do (LMT selection + ' +
+    'delegation review + substance + 25/901 reporting) from what only LO-AIF managers must do ' +
+    '(leverage cap + retention + concentration + LO-specific risk-management). You respond ' +
+    'ONLY with the requested JSON object.',
+  documentContext:
+    'You are auditing a Luxembourg IFM\'s AIFMD II + CSSF Circular 25/901 readiness, ' +
+    'governance, or implementation document.',
+  columns: [
+    {
+      id: 'lu-scope-impact',
+      header: 'Scope + impact assessment',
+      regulatoryRef: 'AIFMD II + Bill 8628',
+      question:
+        'Does the document evidence a documented impact assessment of AIFMD II across the ' +
+        'IFM\'s products: identification of LO-AIFs (if any), open-ended funds requiring LMT ' +
+        'selection, retail-marketed AIFs, delegations to be revisited, conducting-officer + ' +
+        'substance arrangements?',
+      expects:
+        'A product-by-product impact table referencing AIFMD II articles. Generic "we are ' +
+        'preparing" language without specific impacts identified is "partial".',
+    },
+    {
+      id: 'lu-lo-aif-framework',
+      header: 'LO-AIF framework',
+      regulatoryRef: 'AIFMD II Art. 15-15a — Loan-Originating AIFs',
+      question:
+        'For any LO-AIF managed, does the document evidence: the closed-ended 175% leverage ' +
+        'cap (or open-ended 300%) computed on a commitment basis, the 20% NAV single-borrower ' +
+        'concentration limit, the 5% retention obligation on transferred loans, and LO-AIF-' +
+        'specific risk-management + liquidity policies?',
+      expects:
+        'All four elements (leverage, concentration, retention, policies). Marked "not_applicable" ' +
+        'is acceptable if the IFM manages no LO-AIFs. Partial coverage at any IFM with LO-AIFs ' +
+        'is "missing".',
+    },
+    {
+      id: 'lu-lmt-selection',
+      header: 'LMT selection — minimum two',
+      regulatoryRef: 'AIFMD II Art. 16 + Annex V',
+      question:
+        'For each open-ended AIF + UCITS, does the document evidence selection of at least 2 ' +
+        'Liquidity Management Tools from the AIFMD II / UCITS harmonised list (Annex V — ' +
+        'gates / notice extension / fees / swing pricing / dual pricing / anti-dilution levy ' +
+        '/ side pockets / suspension / redemption in kind)?',
+      expects:
+        'A per-fund LMT-selection table with at least 2 LMTs each. Selecting only suspension + ' +
+        'in-kind redemption (the legal defaults) is "partial" — the spirit is active selection.',
+    },
+    {
+      id: 'lu-lmt-activation',
+      header: 'LMT activation governance',
+      regulatoryRef: 'AIFMD II Art. 16 — activation procedure',
+      question:
+        'Does the document define LMT activation governance: triggers + criteria, approval ' +
+        'authority (senior management for suspension + side pockets; portfolio function for ' +
+        'others), investor disclosure mechanism, CSSF notification timing (immediate for ' +
+        'suspension / side pockets), annual review of the framework?',
+      expects:
+        'All five elements (triggers, approval authority, disclosure, CSSF notification, ' +
+        'annual review). Missing CSSF notification cadence is "partial".',
+    },
+    {
+      id: 'lu-delegation-review',
+      header: 'Delegation framework review',
+      regulatoryRef: 'AIFMD II Art. 20',
+      question:
+        'Does the document evidence a comprehensive delegation review against AIFMD II: ' +
+        'letter-box-entity self-assessment, full notification of delegation chain (function, ' +
+        'delegate identity, jurisdiction, sub-delegations) to CSSF, oversight model, ' +
+        'heightened scrutiny of out-of-EU portfolio + risk-management delegation?',
+      expects:
+        'A delegation register + letter-box self-assessment + CSSF notification plan. CSSF ' +
+        'Circular 18/698 reference strengthens coverage. Silence on letter-box self-assessment ' +
+        'is "partial".',
+    },
+    {
+      id: 'lu-substance',
+      header: 'Substance — conducting officers + governance',
+      regulatoryRef: 'AIFMD II Art. 20 + Lux conducting-officer framework',
+      question:
+        'Does the document evidence sufficient Lux substance: at least 2 conducting officers ' +
+        'resident in Luxembourg (or governing-body members committed full-time), allocation of ' +
+        'functions across them, sufficient resources per function, documented decision-making ' +
+        'at IFM level (not the parent / delegate)?',
+      expects:
+        'Named conducting officers + function allocation + resources stated + decision-making ' +
+        'locus. Reference to CSSF Circular 18/698 reinforces. Silence on resources is "partial".',
+    },
+    {
+      id: 'lu-cssf-25-901-reporting',
+      header: 'CSSF Circular 25/901 reporting readiness',
+      regulatoryRef: 'CSSF Circular 25/901',
+      question:
+        'Does the document evidence readiness for the consolidated CSSF 25/901 IFM report (first ' +
+        'cycle FY 2026): data-collection for governance, delegation chain, AUM + leverage + ' +
+        'LMT metrics, risk-management, ICT-risk (DORA), sustainability (SFDR), AML, with ' +
+        'planned submission via CSSF eDesk within 4 months of year-end?',
+      expects:
+        'A data-collection plan covering all 25/901 Parts (II-VI) + the submission timeline. ' +
+        'Missing any of the cross-functional integrations (ICT / SFDR / AML) is "partial".',
+    },
+    {
+      id: 'lu-risk-management',
+      header: 'Risk-management uplift',
+      regulatoryRef: 'AIFMD II Art. 15 + AIFM Law Art. 14',
+      question:
+        'Does the document evidence the risk-management framework uplift required for LO-AIFs + ' +
+        'open-ended funds: stress-testing programme (credit + liquidity scenarios for LO-AIFs, ' +
+        'multi-redemption + drawdown for open-ended), reverse stress-testing for liquidity, ' +
+        'independent risk-management function review, integration with LMT activation?',
+      expects:
+        'Stress-testing scope + reverse stress-testing + independent review + LMT integration. ' +
+        'For non-LO IFMs the LO-specific elements are "not_applicable", but open-ended stress-' +
+        'testing + reverse stress-testing remain required.',
+    },
+    {
+      id: 'lu-depositary',
+      header: 'Depositary arrangements updated',
+      regulatoryRef: 'AIFMD II Art. 21 (depositary)',
+      question:
+        'Does the document evidence updates to depositary agreements + arrangements: ' +
+        'cooperation + reporting obligations clarified, cash-flow monitoring scope, safekeeping ' +
+        'of crypto-assets where AIFs hold them, depositary direct-to-CSSF reporting in case of ' +
+        'AIFM failure?',
+      expects:
+        'Updated depositary agreement reference + cash-flow + crypto-safekeeping treatment + ' +
+        'direct-reporting acknowledgement. Silence on crypto-safekeeping is "partial" only for ' +
+        'IFMs holding crypto-assets; otherwise "not_applicable".',
+    },
+    {
+      id: 'lu-retail-marketing',
+      header: 'Retail AIF marketing readiness',
+      regulatoryRef: 'AIFMD II Art. 30a',
+      question:
+        'Where the IFM markets AIFs to retail clients (typically via Part II UCIs), does the ' +
+        'document evidence retail-appropriate disclosures (PRIIPS KID), suitability or ' +
+        'appropriateness assessment, conduct-of-business standards alignment, host-state ' +
+        'requirements where cross-border-marketed?',
+      expects:
+        'All four elements (KID, suitability/appropriateness, conduct standards, host-state). ' +
+        'Marked "not_applicable" is acceptable if the IFM only markets to professional / ' +
+        'well-informed investors.',
+    },
+    {
+      id: 'lu-aml-integration',
+      header: 'AML integration (RC/RR + RBE)',
+      regulatoryRef: 'Lux AML Law 12 Nov 2004 + CSSF Reg 12-02 + RBE Law',
+      question:
+        'Does the document evidence ongoing AML readiness: RC + RR roles + CSSF assessment ' +
+        'status, business-wide risk assessment refreshed within 12 months, RBE register ' +
+        'filings for in-scope Lux entities + UBO-data quality, investor-due-diligence ' +
+        'arrangements (incl. delegation to administrator) + delegated-DD oversight?',
+      expects:
+        'RC/RR + BWRA refresh + RBE filings + investor-DD-delegation oversight. Missing the ' +
+        'delegated-DD oversight element is "partial".',
+    },
+    {
+      id: 'lu-board-sign-off',
+      header: 'Board sign-off + change management',
+      regulatoryRef: 'AIFMD II + CSSF Circular 18/698 governance',
+      question:
+        'Does the document evidence board / governing-body sign-off of the AIFMD II + CSSF ' +
+        '25/901 implementation programme: dated board minutes, named executive sponsor, key ' +
+        'milestones + status, residual risks + mitigations, change-management for any board / ' +
+        'committee composition changes triggered by substance requirements?',
+      expects:
+        'Board sign-off + named sponsor + milestone tracking + residual risks. Silence on ' +
+        'residual risks + mitigations is "partial".',
+    },
+  ],
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Registry
 // ───────────────────────────────────────────────────────────────────────
 
@@ -1394,6 +1586,7 @@ export const ALL_PLAYBOOKS: Playbook[] = [
   UK_ECCTA_REASONABLE_PROCEDURES,
   SWISS_AMLA_LETA_READINESS,
   IRELAND_SEAR_RESPONSIBILITY_MAP,
+  LUXEMBOURG_AIFMD_II_READINESS,
 ];
 
 export function getPlaybook(id: string): Playbook | undefined {

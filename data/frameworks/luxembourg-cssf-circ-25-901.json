@@ -1,0 +1,119 @@
+{
+  "id": "luxembourg-cssf-circ-25-901",
+  "name": "CSSF Circular 25/901 — Consolidated IFM Reporting",
+  "shortName": "CSSF 25/901",
+  "reference": "CSSF Circular 25/901",
+  "issued": "2025-12-19",
+  "supersedes": "CSSF Circular 15/612 + related circulars",
+  "firstReportingCycle": "FY 2026",
+  "supervisor": "CSSF",
+  "articleCount": 11,
+  "chapters": [
+    {"number": "1", "title": "Scope + applicable IFMs", "articles": "Pt I"},
+    {"number": "2", "title": "Governance + organisational reporting", "articles": "Pt II"},
+    {"number": "3", "title": "Delegation chain reporting", "articles": "Pt III"},
+    {"number": "4", "title": "Funds + AUM reporting", "articles": "Pt IV"},
+    {"number": "5", "title": "Risk + AIFMD II indicators", "articles": "Pt V"},
+    {"number": "6", "title": "ICT + sustainability + AML integration", "articles": "Pt VI"},
+    {"number": "7", "title": "Submission + frequency", "articles": "Pt VII"}
+  ],
+  "themes": [
+    "Scope",
+    "Governance",
+    "Delegation",
+    "Funds + AUM",
+    "Risk + AIFMD II",
+    "Cross-functional integration",
+    "Submission cadence"
+  ],
+  "articles": [
+    {
+      "id": "Pt.I.Scope",
+      "title": "Scope — all Luxembourg IFMs",
+      "chapter": "1",
+      "section": "Part I",
+      "theme": "Scope",
+      "requirement": "Applies to all CSSF-authorised Investment Fund Managers: UCITS Management Companies (Chapter 15 of UCITS Law), Authorised AIFMs, Registered AIFMs (where relevant), Super ManCos (dual-licensed). Includes IFMs managing SIFs / SICARs / RAIFs / Part II UCIs. Replaces Circular 15/612 reporting for the IFM population."
+    },
+    {
+      "id": "Pt.II.Gov",
+      "title": "Governance + organisational reporting",
+      "chapter": "2",
+      "section": "Part II",
+      "theme": "Governance",
+      "requirement": "Reports must cover: governance structure (board, audit committee, risk committee, remuneration committee); conducting officers + their allocated functions + time commitment; head-count per function (portfolio management, risk, compliance, internal audit, distribution, valuation); changes since last report; material organisational changes within the year."
+    },
+    {
+      "id": "Pt.III.Deleg",
+      "title": "Delegation chain reporting",
+      "chapter": "3",
+      "section": "Part III",
+      "theme": "Delegation",
+      "requirement": "Full delegation chain by function (portfolio management, risk management, distribution, valuation, transfer agency, fund administration, depositary): delegate identity + LEI + jurisdiction + group relationship; nature + scope; sub-delegations; oversight model + cadence; material delegate findings during the year. Required at the granularity of individual delegate + sub-delegate (post-AIFMD II)."
+    },
+    {
+      "id": "Pt.IV.Funds",
+      "title": "Funds + AUM reporting",
+      "chapter": "4",
+      "section": "Part IV",
+      "theme": "Funds + AUM",
+      "requirement": "Per fund managed (UCITS / AIF — by type): name + LEI, ISIN(s), NAV + AUM (year-end + average), unit / share class structure, redemption frequency + notice, leverage method + ratios (commitment + gross), liquidity profile bucket, primary distribution geography, KID/KIID reference."
+    },
+    {
+      "id": "Pt.V.LMT",
+      "title": "LMT selection + activation reporting",
+      "chapter": "5",
+      "section": "Part V",
+      "theme": "Risk + AIFMD II",
+      "requirement": "Per open-ended fund: list of selected LMTs (minimum 2, from Annex V); LMT activation events in the reporting period (date, trigger, decision authority, investor disclosure, CSSF notification timing). Annual LMT framework review attestation by senior management."
+    },
+    {
+      "id": "Pt.V.LO",
+      "title": "Loan-origination metrics (LO-AIFs)",
+      "chapter": "5",
+      "section": "Part V",
+      "theme": "Risk + AIFMD II",
+      "requirement": "Where the AIFM manages LO-AIFs: leverage ratio vs cap (175% closed-ended / 300% open-ended); single-borrower concentration vs 20% NAV limit; 5% retention compliance per transferred loan; recovery + workout statistics; credit-loss provisions."
+    },
+    {
+      "id": "Pt.V.Risk",
+      "title": "Risk-management metrics",
+      "chapter": "5",
+      "section": "Part V",
+      "theme": "Risk + AIFMD II",
+      "requirement": "Risk-management framework: identified material risks per fund; risk-management resources (head-count + budget); stress-testing programme + key results; risk-limit framework + breaches in the year; reverse stress-testing for liquidity (where applicable). Linked to the AIFM's risk-management policy required under AIFM Law Art. 14."
+    },
+    {
+      "id": "Pt.VI.ICT",
+      "title": "ICT-risk integration (DORA)",
+      "chapter": "6",
+      "section": "Part VI",
+      "theme": "Cross-functional integration",
+      "requirement": "ICT-risk framework integration: DORA Art. 5 governance arrangements; ICT third-party arrangements (Art. 28 register); reporting of major ICT-related incidents + the year's experience; resilience-testing programme + TLPT participation (where applicable)."
+    },
+    {
+      "id": "Pt.VI.SFDR",
+      "title": "Sustainability-risk integration",
+      "chapter": "6",
+      "section": "Part VI",
+      "theme": "Cross-functional integration",
+      "requirement": "Sustainability-risk integration (SFDR Art. 4 + 6): policies + procedures; PAI consideration; per-product classification (Art. 8 / 9 / 6); year's portfolio-level sustainability indicators; integration into investment + risk-management decisions."
+    },
+    {
+      "id": "Pt.VI.AML",
+      "title": "AML integration",
+      "chapter": "6",
+      "section": "Part VI",
+      "theme": "Cross-functional integration",
+      "requirement": "AML/CFT integration: RC + RR roles + reporting lines; risk-based approach + business-wide risk assessment (refresh + date); CDD documentation + record retention; year's SAR statistics; training completion + content; specific arrangements for investor onboarding (incl. delegated investor-due-diligence)."
+    },
+    {
+      "id": "Pt.VII.Frequency",
+      "title": "Submission frequency + format",
+      "chapter": "7",
+      "section": "Part VII",
+      "theme": "Submission cadence",
+      "requirement": "Annual report covering the financial year, submitted within 4 months of year-end. Ad-hoc reports required for material change (delegation changes, conducting officer change, LMT activation, ICT major incidents). Submission via CSSF's secure eDesk portal in prescribed XML / structured format."
+    }
+  ]
+}
