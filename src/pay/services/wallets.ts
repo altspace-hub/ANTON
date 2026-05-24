@@ -48,15 +48,24 @@ import {
   enableWalletPassphrase,
   changeWalletPassphrase as changeWalletPassphraseRaw,
   removeWalletPassphrase as removeWalletPassphraseRaw,
+  generateFalconKeyPair,
 } from './wallet-passphrase';
 
 // ── Secure-store key layout ─────────────────────────────────────────
 const IDS_KEY     = 'fc.wallet.ids';
 const ACTIVE_KEY  = 'fc.wallet.active';
-const privKey     = (id: string) => `fc.wallet.${id}.priv`;
-const addrKey     = (id: string) => `fc.wallet.${id}.addr`;
-const mnemonicKey = (id: string) => `fc.wallet.${id}.mnemonic`;
-const backedUpKey = (id: string) => `fc.wallet.${id}.backedUp`;
+const privKey       = (id: string) => `fc.wallet.${id}.priv`;
+const addrKey       = (id: string) => `fc.wallet.${id}.addr`;
+const mnemonicKey   = (id: string) => `fc.wallet.${id}.mnemonic`;
+const backedUpKey   = (id: string) => `fc.wallet.${id}.backedUp`;
+const falconPrivKey = (id: string) => `fc.wallet.${id}.falcon_priv`;
+const falconPubKey  = (id: string) => `fc.wallet.${id}.falcon_pub`;
+
+function falconBytesToHex(b: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < b.length; i++) s += b[i]!.toString(16).padStart(2, '0');
+  return s;
+}
 
 // ── Legacy (v1) keys, kept for one-way migration ────────────────────
 const LEGACY_PRIV       = 'fc.wallet.priv';
@@ -259,6 +268,15 @@ export async function createWallet(
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
   await setSecure(mnemonicKey(id), mnemonic);
+  // FALCON-512 keypair (envelope v3, post-quantum prep). Generated
+  // here so the future user-side PQ hard fork is a no-UX-change event.
+  // FALCON keygen is non-deterministic — the priv must be stored, not
+  // derived from the BIP-39 mnemonic; see docs/PAY_WALLET_PASSPHRASE_SPEC.md
+  // §3.2.1 for the envelope v3 schema and task #289 for the
+  // post-hard-fork rotation UX that handles restore-from-seed.
+  const falcon = generateFalconKeyPair();
+  await setSecure(falconPrivKey(id), falconBytesToHex(falcon.falconPriv));
+  await setSecure(falconPubKey(id),  falconBytesToHex(falcon.falconPub));
   const list = await readRegistry();
   list.push(meta);
   await writeRegistry(list);
@@ -300,6 +318,13 @@ export async function importWalletFromMnemonic(
   await setSecure(addrKey(id), wallet.address);
   await setSecure(mnemonicKey(id), trimmed);
   await setSecure(backedUpKey(id), '1');
+  // FALCON-512 keypair (envelope v3). FALCON keygen is non-deterministic
+  // so a wallet restored from the same mnemonic on a different device
+  // gets a DIFFERENT FALCON keypair — task #289 covers the
+  // post-hard-fork rotation UX that handles this.
+  const falcon = generateFalconKeyPair();
+  await setSecure(falconPrivKey(id), falconBytesToHex(falcon.falconPriv));
+  await setSecure(falconPubKey(id),  falconBytesToHex(falcon.falconPub));
   list.push(meta);
   await writeRegistry(list);
   await setSecure(ACTIVE_KEY, id);
@@ -403,6 +428,8 @@ export async function deleteWallet(id: string): Promise<void> {
   await removeSecure(addrKey(id));
   await removeSecure(mnemonicKey(id));
   await removeSecure(backedUpKey(id));
+  await removeSecure(falconPrivKey(id));
+  await removeSecure(falconPubKey(id));
   await wipePassphraseEnvelope(id);
   const next = list.filter(w => w.id !== id);
   await writeRegistry(next);
@@ -462,6 +489,8 @@ export async function wipeAllWallets(): Promise<void> {
     await removeSecure(addrKey(w.id));
     await removeSecure(mnemonicKey(w.id));
     await removeSecure(backedUpKey(w.id));
+    await removeSecure(falconPrivKey(w.id));
+    await removeSecure(falconPubKey(w.id));
     await wipePassphraseEnvelope(w.id);
   }
   await removeSecure(IDS_KEY);
