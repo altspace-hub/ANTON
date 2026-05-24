@@ -31,6 +31,10 @@ import { buildMcpServer } from './mcp.js';
 import {
   Wallet, FileStorageBackend, NoWalletError,
 } from './wallet/index.js';
+import {
+  submitPayment as chainSubmitPayment,
+  fetchRecentTransactions, getChainClient,
+} from './chain.js';
 
 // (We resolve only the discovery file path below; no __dirname/__filename
 // needed in this entry — the modal preload path lives in electron-modal.ts.)
@@ -76,31 +80,36 @@ async function buildDepsForBoot(
 ): Promise<{ deps: ServerDeps }> {
   const { pairings, proposals, wallet } = shared;
 
-  // Wallet info — uses the real wallet module. When no wallet has been
-  // created yet (fresh install), walletStatus returns a sentinel so
-  // getStatus / getBalance succeed gracefully and the agent / UI can
-  // surface "no wallet yet — create one in Settings".
+  // Wallet info — uses the real wallet module + a single RpcClient
+  // hop for live balance + tip. When no wallet has been created yet
+  // (fresh install), walletStatus returns a sentinel so getStatus /
+  // getBalance succeed gracefully and the agent / UI can surface
+  // "no wallet yet — create one in Settings".
   async function walletStatus() {
+    let address: string;
     try {
       const info = await wallet.publicInfo();
-      return {
-        walletAddress: info.address,
-        // FIXME(phase2-chain): wire to @futurechain/sdk RpcClient for
-        //   live balance + tip lookup. For now report 0 / 0 — the
-        //   modal still renders correctly with sample data.
-        balanceFtc: 0,
-        lastSeenBlock: 0,
-      };
+      address = info.address;
     } catch (e) {
       if (e instanceof NoWalletError) {
-        return {
-          walletAddress: 'fc_NO_WALLET_YET',
-          balanceFtc: 0,
-          lastSeenBlock: 0,
-        };
+        return { walletAddress: 'fc_NO_WALLET_YET', balanceFtc: 0, lastSeenBlock: 0 };
       }
       throw e;
     }
+    // Best-effort balance + tip — swallow RPC failures so the JSON-RPC
+    // surface stays responsive even when the chain is unreachable.
+    let balanceFtc = 0;
+    let lastSeenBlock = 0;
+    try {
+      const client = getChainClient();
+      const [bal, info] = await Promise.all([
+        client.getBalance(address).catch(() => null),
+        client.getInfo().catch(() => null),
+      ]);
+      if (bal) balanceFtc = bal.balance_ftc;
+      if (info) lastSeenBlock = info.latest_block_height;
+    } catch { /* swallow */ }
+    return { walletAddress: address, balanceFtc, lastSeenBlock };
   }
 
   const deps: ServerDeps = {
@@ -117,30 +126,36 @@ async function buildDepsForBoot(
       }
     },
 
-    // FIXME(phase2-chain): replace with @futurechain/sdk RpcClient calls.
-    recentTransactions: async () => [],
+    recentTransactions: async (limit) => {
+      try {
+        const info = await wallet.publicInfo();
+        const rows = await fetchRecentTransactions(info.address, limit);
+        return rows.map(r => ({
+          txId: r.txId, amount: r.amount, direction: r.direction,
+          counterparty: r.counterparty, ts: r.ts, confirmed: r.confirmed,
+        }));
+      } catch { return []; }
+    },
+    // FIXME(phase2c): counterparty address book — surface a label +
+    // a seen-count for the modal "Acme Corp — seen 4×" hint. Today
+    // we don't have a local address book; returning null is fine.
     counterpartyHint: async () => null,
 
     submitPayment: async (req) => {
-      // Real wallet unlock — proves the modal-to-wallet plumbing works
-      // end-to-end. The actual tx build + chain submit is still
-      // pending the @futurechain/sdk RpcClient wiring. Until that
-      // lands we surface a clearly-labelled error so the agent gets
-      // a specific failure rather than a silent hang.
+      // Real end-to-end submit: unlock the wallet, hand off to
+      // chain.submitPayment (which builds the PACS.008, signs with
+      // the in-process Ed25519 priv, and POSTs via the SDK
+      // RpcClient), zero the priv on the way out.
       const unlocked = await wallet.unlock(req.passphrase);
       try {
-        // FIXME(phase2-chain): use @futurechain/sdk to:
-        //   1. build a PACS.008 tx to req.to for req.amountFtc
-        //   2. sign with unlocked.privateKey
-        //   3. submit via RpcClient.submitSignedTransaction
-        //   4. return { txId, feeFtc }
-        throw new Error(
-          'submitPayment: wallet unlocked OK; chain wiring still pending '
-          + '(see main.ts FIXME(phase2-chain)). Address=' + unlocked.address
-          + ' tx=' + JSON.stringify({ to: req.to, amountFtc: req.amountFtc }),
-        );
+        const result = await chainSubmitPayment({
+          unlocked,
+          to: req.to,
+          amountFtc: req.amountFtc,
+          ...(req.reference !== undefined ? { reference: req.reference } : {}),
+        });
+        return { txId: result.txId, feeFtc: result.feeFtc };
       } finally {
-        // Zero the unlocked priv even on the throw path.
         unlocked.zero();
       }
     },
