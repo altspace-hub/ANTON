@@ -4,3 +4,6 @@ packages:
   # full story. The futurechain-sdk package below stays — src/business/
   # imports it as @futurechain/sdk.
   - 'anton-business/packages/*'
+  # Desktop apps (Anton Agent Pay etc) live under apps/. Each app has
+  # its own package.json and may consume @futurechain/sdk via workspace:*.
+  - 'apps/*'
