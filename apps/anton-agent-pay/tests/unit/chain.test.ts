@@ -267,4 +267,67 @@ describe('chain', () => {
       expect(rows).toHaveLength(3);
     });
   });
+
+  // ── attestation-token fetch wrap ─────────────────────────────────
+
+  describe('attestationProvider fetch wrap', () => {
+    /** Record every header that hit each URL so we can prove the wrap
+     *  only fires for /submit_signed_transaction. */
+    function trackingStub() {
+      const calls: Array<{ url: string; headers: Record<string, string> }> = [];
+      const fn: FetchFn = async (url, init) => {
+        const u = typeof url === 'string'
+          ? url
+          : url instanceof URL ? url.toString() : (url as Request).url;
+        calls.push({ url: u, headers: collect(init?.headers) });
+        // Tiny canned response — body shape doesn't matter for this test.
+        const txt = JSON.stringify({ ok: true });
+        return {
+          ok: true, status: 200,
+          text: async () => txt, json: async () => ({ ok: true }),
+        } as Response;
+      };
+      return { fn, calls };
+    }
+    function collect(h: HeadersInit | undefined): Record<string, string> {
+      const out: Record<string, string> = {};
+      if (!h) return out;
+      if (h instanceof Headers) h.forEach((v, k) => { out[k.toLowerCase()] = v; });
+      else if (Array.isArray(h)) for (const [k, v] of h) out[k.toLowerCase()] = v;
+      else for (const [k, v] of Object.entries(h)) out[k.toLowerCase()] = String(v);
+      return out;
+    }
+
+    it('adds X-Attestation-Token to /submit_signed_transaction calls', async () => {
+      const { fn, calls } = trackingStub();
+      let provided = 0;
+      const client = getChainClient({
+        endpoint: 'http://test.local:8545',
+        fetch: fn as typeof globalThis.fetch,
+        attestationProvider: async () => { provided += 1; return 'session-abc'; },
+      });
+      // Issue a raw POST to /submit_signed_transaction via the SDK.
+      await client.submitSignedTransaction({} as never).catch(() => { /* response shape doesn't matter */ });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.url).toContain('/submit_signed_transaction');
+      expect(calls[0]!.headers['x-attestation-token']).toBe('session-abc');
+      expect(provided).toBe(1);
+    });
+
+    it('does NOT add X-Attestation-Token to other endpoints (saves bandwidth)', async () => {
+      const { fn, calls } = trackingStub();
+      let provided = 0;
+      const client = getChainClient({
+        endpoint: 'http://test.local:8545',
+        fetch: fn as typeof globalThis.fetch,
+        attestationProvider: async () => { provided += 1; return 'session-abc'; },
+      });
+      // Hit a non-high-risk endpoint — wrap should NOT consult the provider.
+      await client.getBalance('fc_x').catch(() => { /* */ });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.url).toContain('/balance');
+      expect(calls[0]!.headers['x-attestation-token']).toBeUndefined();
+      expect(provided).toBe(0);
+    });
+  });
 });
