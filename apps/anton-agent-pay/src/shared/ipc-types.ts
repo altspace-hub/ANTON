@@ -44,9 +44,16 @@ export type ProposalState =
 
 /** Result of asking the user via the modal whether to approve a proposal.
  *  The modal abstraction (see modal.ts) returns one of these synchronously
- *  once the user clicks / dismisses. */
+ *  once the user clicks / dismisses.
+ *
+ *  Approve may optionally carry a passphrase — the modal renderer collects
+ *  it from the user when the wallet is passphrase-protected (see modal.js
+ *  in src/renderer/modal/). When unset, the wallet is expected to be
+ *  unlockable without one. The passphrase NEVER leaves the main process
+ *  (and is dropped from memory as soon as the unlock-and-sign cycle
+ *  completes). */
 export type ModalDecision =
-  | { kind: 'approve' }
+  | { kind: 'approve'; passphrase?: string }
   | { kind: 'reject'; reason: string };
 
 /** Payload that the main process sends to the modal renderer when a

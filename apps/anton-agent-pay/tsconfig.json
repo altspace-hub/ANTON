@@ -20,5 +20,8 @@
     "verbatimModuleSyntax": false
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  // The workspace `@futurechain/sdk` lives outside node_modules. Its
+  // own tsconfig is less strict than ours; we don't re-type-check it
+  // here (it has its own test+typecheck pipeline that runs green).
+  "exclude": ["node_modules", "dist", "../../anton-business/packages/futurechain-sdk"]
 }

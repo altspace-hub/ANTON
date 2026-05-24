@@ -32,7 +32,7 @@
  * Every output carries the §3 disclaimer or this function throws.
  * That's a hard rule per §2 of the spec.
  */
-import { resolveCostBasisForRule, type GainLossEntry } from './cost-basis/index.js';
+import { resolveCostBasisForRule } from './cost-basis/index.js';
 import { buildDisclaimer, type DisclaimerLocale } from './disclaimer.js';
 import { applyHoldingPeriod, type HeldEntry } from './holding-period.js';
 import { applyLossOffset, type LossOffsetResult } from './loss-offset.js';
