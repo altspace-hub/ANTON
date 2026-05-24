@@ -35,6 +35,7 @@ import {
   submitPayment as chainSubmitPayment,
   fetchRecentTransactions, getChainClient,
 } from './chain.js';
+import { makeSettingsHandlers, registerSettingsIpc } from './settings-ipc.js';
 
 // (We resolve only the discovery file path below; no __dirname/__filename
 // needed in this entry — the modal preload path lives in electron-modal.ts.)
@@ -242,41 +243,36 @@ async function startMcpStdio(deps: ServerDeps): Promise<void> {
 
 let settingsWindow: BrowserWindow | null = null;
 
+/** Path resolution for the renderer files. After `pnpm build` the
+ *  compiled layout is `dist/main/main.js` + `dist/renderer/...`. In
+ *  dev (electron .) main runs from `src/main/main.ts` and the renderer
+ *  files are at `src/renderer/...`. We try the dist path first, fall
+ *  back to src — works for both contexts without conditionals. */
+function rendererPath(relative: string): string {
+  const dist = path.resolve(__dirname, '../renderer/settings', relative);
+  return dist;
+}
+
 function openSettingsWindow(boot: BootContext): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.focus();
     return;
   }
   settingsWindow = new BrowserWindow({
-    width: 720,
-    height: 560,
+    width: 760,
+    height: 640,
     title: 'Anton Agent Pay — Settings',
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
-      // Phase 2 PENDING: settings preload + HTML.
-      // preload: path.resolve(__dirname, '../renderer/settings/preload.cjs'),
+      preload: rendererPath('preload.cjs'),
     },
   });
-  // Phase 2 PENDING: actual settings UI (pair, wallet, RPC URL).
-  // For now, show a placeholder page baked into a data URL.
-  void settingsWindow.loadURL(
-    'data:text/html;charset=utf-8,' + encodeURIComponent(
-      `<!doctype html><html><head><title>Settings</title>
-       <style>body{font:14px -apple-system,sans-serif;padding:24px;color:#0f1a26}
-       code{background:#f1f5f9;padding:2px 6px;border-radius:4px}</style>
-       </head><body>
-       <h2>Anton Agent Pay — Phase 1 dev shell</h2>
-       <p>Local JSON-RPC: <code>http://127.0.0.1:${boot.port}/rpc</code></p>
-       <p>Pairing: <code>POST /pair { name, code }</code></p>
-       <p>Discovery file: <code>${DISCOVERY_FILE}</code></p>
-       <p>Pair an agent: <strong>(Phase 2 — UI pending)</strong>.
-       For now, generate a code programmatically and POST to <code>/pair</code>.</p>
-       </body></html>`
-    )
-  );
+  void settingsWindow.loadFile(rendererPath('index.html'));
   settingsWindow.on('closed', () => { settingsWindow = null; });
+  // Surface boot details for the Network tab.
+  void boot;
 }
 
 // ─── Electron app lifecycle ──────────────────────────────────
@@ -290,6 +286,21 @@ app.whenReady().then(async () => {
     // FIXME about duplicate stores is now closed.
     const { deps: mcpDeps } = await buildDepsForBoot(boot.modal, shared);
     await startMcpStdio(mcpDeps);
+
+    // Register Settings IPC handlers BEFORE opening the window so the
+    // renderer's first walletInfo() call has a handler waiting.
+    const settingsHandlers = makeSettingsHandlers({
+      wallet: shared.wallet,
+      pairings: shared.pairings,
+      getBootInfo: () => ({
+        port: boot.port,
+        pid: process.pid,
+        discoveryFile: DISCOVERY_FILE,
+        endpoint: process.env.AGENT_PAY_NODE_URL ?? 'https://rpc.futurechain.eu',
+      }),
+    });
+    registerSettingsIpc(ipcMain, settingsHandlers);
+
     openSettingsWindow(boot);
 
     ipcMain.handle('agent-pay:get-boot-info', () => ({

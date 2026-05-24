@@ -90,3 +90,56 @@ export interface PairedAgent {
   /** When the bearer was last used. */
   lastUsedAt?: number;
 }
+
+// ── Settings IPC channels (main ↔ settings renderer) ─────────────
+//
+// Used by src/renderer/settings/preload.cjs to expose a typed API to
+// the settings window. main.ts registers the matching ipcMain.handle
+// for each channel. Renderer sends a payload, gets back a result OR
+// an `{ error: string }` shape on failure (renderer surfaces inline).
+
+export const IPC_SETTINGS = {
+  // Wallet state + actions
+  WALLET_INFO: 'agent-pay:settings:wallet:info',
+  WALLET_CREATE: 'agent-pay:settings:wallet:create',
+  WALLET_IMPORT: 'agent-pay:settings:wallet:import',
+  WALLET_REVEAL_MNEMONIC: 'agent-pay:settings:wallet:reveal-mnemonic',
+  WALLET_DELETE: 'agent-pay:settings:wallet:delete',
+  WALLET_ENABLE_PASSPHRASE: 'agent-pay:settings:wallet:enable-passphrase',
+  WALLET_CHANGE_PASSPHRASE: 'agent-pay:settings:wallet:change-passphrase',
+  WALLET_REMOVE_PASSPHRASE: 'agent-pay:settings:wallet:remove-passphrase',
+  // Pairing
+  PAIRING_NEW_CODE: 'agent-pay:settings:pairing:new-code',
+  PAIRING_LIST: 'agent-pay:settings:pairing:list',
+  PAIRING_REVOKE: 'agent-pay:settings:pairing:revoke',
+  // Network / boot info
+  BOOT_INFO: 'agent-pay:settings:boot-info',
+} as const;
+
+/** Renderer-side typed surface. settings preload.cjs exposes this on
+ *  window.agentPaySettings. Each method returns either the success
+ *  result OR `{ error: string }`. */
+export interface SettingsApi {
+  // Wallet
+  walletInfo(): Promise<{ exists: boolean; address?: string; hasPassphrase?: boolean }>;
+  walletCreate(): Promise<{ address: string; mnemonic: string } | { error: string }>;
+  walletImport(args: { mnemonic: string }): Promise<{ address: string } | { error: string }>;
+  walletRevealMnemonic(args: { passphrase?: string }): Promise<{ mnemonic: string | null } | { error: string }>;
+  walletDelete(args: { confirm: string }): Promise<{ ok: true } | { error: string }>;
+  walletEnablePassphrase(args: { passphrase: string }): Promise<{ ok: true } | { error: string }>;
+  walletChangePassphrase(args: { oldPassphrase: string; newPassphrase: string }): Promise<{ ok: true } | { error: string }>;
+  walletRemovePassphrase(args: { passphrase: string }): Promise<{ ok: true } | { error: string }>;
+
+  // Pairing
+  pairingNewCode(): Promise<{ code: string; expiresInMs: number }>;
+  pairingList(): Promise<{ agents: PairedAgent[] }>;
+  pairingRevoke(args: { agentId: string }): Promise<{ ok: boolean }>;
+
+  // Network / boot info
+  bootInfo(): Promise<{
+    port: number;
+    pid: number;
+    discoveryFile: string;
+    endpoint: string;
+  }>;
+}
