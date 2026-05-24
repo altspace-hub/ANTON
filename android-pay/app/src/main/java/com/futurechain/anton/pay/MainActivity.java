@@ -7,6 +7,7 @@ import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
 import com.futurechain.anton.pay.plugins.FcSecureSignerPlugin;
+import com.futurechain.anton.pay.plugins.FcDeviceAttestationPlugin;
 
 /**
  * MainActivity for ANTON Pay.
@@ -28,6 +29,11 @@ public class MainActivity extends BridgeActivity {
         // available to the WebView from the first JS call. Wave 7
         // native Ed25519 signing.
         registerPlugin(FcSecureSignerPlugin.class);
+
+        // FcDeviceAttestation — Play Integrity hook (Phase 1 scaffold;
+        // Phase 2 real Play Integrity SDK wiring pending Windows
+        // machine + test phone). See PAY_DEVICE_ATTESTATION_SPEC.md.
+        registerPlugin(FcDeviceAttestationPlugin.class);
 
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!isDebuggable) {

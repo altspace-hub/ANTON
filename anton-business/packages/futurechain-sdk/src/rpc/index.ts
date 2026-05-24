@@ -38,6 +38,18 @@ export interface RpcConfig {
    *  into a reverse-proxy access log on every `getBalance` /
    *  `getHealth` poll. See {@link AUTH_REQUIRED_PATHS}. */
   apiKey?: string;
+  /** Optional device-attestation session-token provider — called
+   *  before every auth-required request and the returned value (if
+   *  any) is set as the `X-Attestation-Token` header. See
+   *  PAY_DEVICE_ATTESTATION_SPEC.md.
+   *
+   *  Provider model rather than a static field so the client doesn't
+   *  need to be recreated when the underlying 24-h session token
+   *  rotates. Returning `null` from the provider sends no header (the
+   *  request still goes; the gate then rejects with 401 +
+   *  `WWW-Authenticate: attestation-required`, which the caller can
+   *  use as a refresh signal). */
+  attestationTokenProvider?: () => Promise<string | null>;
   /** Request timeout in ms. Default 10_000. */
   timeoutMs?: number;
   /** Optional `fetch` override — useful for tests / non-browser
@@ -219,6 +231,10 @@ export class RpcClient {
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (this.config.apiKey && isAuthRequired(method, path)) {
       headers['X-API-Key'] = this.config.apiKey;
+    }
+    if (this.config.attestationTokenProvider && isAuthRequired(method, path)) {
+      const tok = await this.config.attestationTokenProvider();
+      if (tok) headers['X-Attestation-Token'] = tok;
     }
 
     const controller = new AbortController();
