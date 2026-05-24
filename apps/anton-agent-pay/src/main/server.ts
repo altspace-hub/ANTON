@@ -61,11 +61,15 @@ export interface ServerDeps {
   walletStatus: () => Promise<WalletStatusSnapshot>;
   /** Submits a previously-approved payment to the chain. Returns the
    *  resulting tx_id. Called from the proposePayment handler after the
-   *  modal returns Approve. */
+   *  modal returns Approve. The optional `passphrase` is the one the
+   *  user typed in the modal (when the wallet is passphrase-protected);
+   *  undefined means "no passphrase set, unlock plain". The implementation
+   *  MUST drop the passphrase as soon as the unlock+sign cycle ends. */
   submitPayment: (req: {
     to: string;
     amountFtc: number;
     reference?: string;
+    passphrase?: string;
   }) => Promise<{ txId: string; feeFtc: number }>;
   /** Returns recent transactions for the active wallet. */
   recentTransactions: (limit: number) => Promise<TransactionSummary[]>;
@@ -370,6 +374,9 @@ async function runModalFlow(
       amountFtc: proposal.amountFtc,
       ...(proposal.reference !== undefined
           ? { reference: proposal.reference }
+          : {}),
+      ...(decision.passphrase !== undefined
+          ? { passphrase: decision.passphrase }
           : {}),
     });
     deps.proposals.markSent(proposalId, txId);
