@@ -1,10 +1,8 @@
 /**
  * chain.ts — bridge from the Wallet module + the JSON-RPC server into
- * the @futurechain/sdk RpcClient + PACS.008 builders. This is the
- * "actually submit a payment to the chain" half that the prior Phase 2
- * commit deferred behind FIXME(phase2-chain).
+ * the @futurechain/sdk RpcClient + PACS.008 builders.
  *
- * Surface (minimal — just what server.ts needs):
+ * Surface:
  *   - getChainClient()             returns a cached RpcClient
  *   - submitPayment(args)          build PACS.008 + sign + submit
  *                                  → { txId, feeFtc }
@@ -13,16 +11,17 @@
  * Endpoint + auth come from env vars for MVP:
  *   AGENT_PAY_NODE_URL   (default https://rpc.futurechain.eu)
  *   AGENT_PAY_API_KEY    (Bahnhof install bearer; required for prod
- *                         endpoints — the Phase 2c enrollment flow
- *                         issues this automatically. For now the user
- *                         pastes the value into env.)
+ *                         endpoints — issued automatically by the
+ *                         enrollment flow in src/main/enrollment.ts.)
  *
- * NB: Bahnhof's /submit_signed_transaction also requires a valid
- * X-Attestation-Token now (per PAY_DEVICE_ATTESTATION_SPEC.md §3.3).
- * Agent Pay's desktop-attestation primitive is Phase 2 follow-up #290;
- * for now the AGENT_PAY_API_KEY path returns 401 against prod Bahnhof
- * because attestation is missing. Local dev nodes (Node 1 on 127.0.0.1)
- * have no Caddy gate and accept the submission directly.
+ * Attestation: Bahnhof's /submit_signed_transaction also requires a
+ * valid `X-Attestation-Token` per PAY_DEVICE_ATTESTATION_SPEC.md §3.3.
+ * Agent Pay obtains the session token via the desktop-attestation
+ * primitive in src/main/attestation/ (DESKTOP_ATTESTATION_SPEC.md). The
+ * `attestationProvider` field on ChainConfig is the hookpoint — when
+ * present, the chain client wraps `fetch` to inject the header on
+ * submit calls. When absent, no attestation header is sent (suitable
+ * for local dev nodes that have no Caddy gate).
  *
  * Spec: docs/ANTON_AGENT_PAY_SPEC.md §9 + §10
  */
@@ -50,6 +49,12 @@ export interface ChainConfig {
   /** Bahnhof install bearer for the auth-required submit endpoint.
    *  Optional — local dev nodes accept submits without auth. */
   apiKey?: string;
+  /** Optional attestation-token provider. When set, the chain client
+   *  wraps `fetch` to add `X-Attestation-Token: <session_token>` on
+   *  requests to /submit_signed_transaction (the only HIGH_RISK path
+   *  Bahnhof's /verify gate currently enforces). When unset, no
+   *  attestation header is sent — suitable for local dev nodes. */
+  attestationProvider?: () => Promise<string>;
   /** Override the fetch impl (tests use this to stub the network). */
   fetch?: typeof fetch;
 }
@@ -66,16 +71,51 @@ export function getChainClient(cfg?: ChainConfig): rpc.RpcClient {
     ?? process.env.AGENT_PAY_NODE_URL
     ?? DEFAULT_NODE_URL;
   const apiKey = cfg?.apiKey ?? process.env.AGENT_PAY_API_KEY;
-  const key = `${endpoint}|${apiKey ?? ''}`;
-  if (_cached && _cachedKey === key && !cfg?.fetch) return _cached;
+  const key = `${endpoint}|${apiKey ?? ''}|${cfg?.attestationProvider ? 'att' : 'noatt'}`;
+  if (_cached && _cachedKey === key && !cfg?.fetch && !cfg?.attestationProvider) {
+    return _cached;
+  }
+  // Wrap fetch to inject X-Attestation-Token when an attestationProvider
+  // is configured. The wrap is per-call so a token refresh between calls
+  // doesn't need to recreate the client.
+  const baseFetch = cfg?.fetch ?? (globalThis.fetch?.bind(globalThis) as typeof fetch | undefined);
+  const fetchImpl: typeof fetch | undefined = cfg?.attestationProvider && baseFetch
+    ? _wrapFetchWithAttestation(baseFetch, cfg.attestationProvider)
+    : baseFetch;
   _cached = new rpc.RpcClient({
     endpoint,
     ...(apiKey ? { apiKey } : {}),
-    ...(cfg?.fetch ? { fetch: cfg.fetch } : {}),
+    ...(fetchImpl ? { fetch: fetchImpl } : {}),
     timeoutMs: 20_000,
   });
   _cachedKey = key;
   return _cached;
+}
+
+/** Wrap `fetch` so any POST to /submit_signed_transaction gets
+ *  X-Attestation-Token added from the configured provider. Other
+ *  paths pass through unchanged (no extra round-trip cost on
+ *  /balance / /utxos / /info / etc). */
+function _wrapFetchWithAttestation(
+  base: typeof fetch, provider: () => Promise<string>,
+): typeof fetch {
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string'
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+    // Match the high-risk path the Bahnhof Caddyfile forward_auth gates.
+    // We don't try to match other paths defensively — Bahnhof only
+    // enforces attestation on this one; sending the header on other
+    // calls is harmless but wasted bandwidth.
+    const needsAttestation = url.includes('/submit_signed_transaction');
+    if (!needsAttestation) return base(input, init);
+    const sessionToken = await provider();
+    const headers = new Headers(init?.headers ?? {});
+    headers.set('X-Attestation-Token', sessionToken);
+    return base(input, { ...init, headers });
+  }) as typeof fetch;
 }
 
 /** Test helper — force the singleton to drop on the next get. */
