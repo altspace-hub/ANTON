@@ -4,4 +4,13 @@
     <string name="title_activity_main">ANTON Pay</string>
     <string name="package_name">com.futurechain.anton.pay</string>
     <string name="custom_url_scheme">com.futurechain.anton.pay</string>
+    <!-- Phase 2 device-attestation. Google Cloud project number that
+         Play Integrity verdicts are bound to. Must MATCH Bahnhof's
+         GOOGLE_CLOUD_PROJECT_NUMBER env var. The value here is a
+         placeholder (zero) so an emulator / unconfigured-cloud build
+         fails the FcDeviceAttestationPlugin.isAvailable() check
+         (computeAvailable() rejects values <= 0), making the JS layer
+         fall back to dev-mode tokens — which Bahnhof rejects in prod.
+         Replace with the real project number before shipping the prod APK. -->
+    <string name="google_cloud_project_number">0</string>
 </resources>
