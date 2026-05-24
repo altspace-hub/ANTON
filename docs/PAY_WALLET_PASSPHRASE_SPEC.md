@@ -75,6 +75,81 @@ Order rationale:
 Without a passphrase (default today), the envelope stays as today:
 single Keystore-bound AES-GCM wrap, `version: 1`.
 
+### 3.2.1 Envelope v3 — FALCON-512 keypair material (2026-05-24)
+
+Envelope `version: 3` extends v2 with FALCON-512 keypair material so
+the future user-side post-quantum hard fork is a no-UX-change event.
+FALCON-512 is the same scheme our chain's HSM-backed compliance signers
+already use (Phase 4, see `ey_audit_package/14_*.md`). User-side
+adoption is a separate future hard fork; this envelope upgrade just
+pre-stashes the material so that when the fork lands, every wallet
+already has a registered FALCON pub bound to its Ed25519 identity.
+
+Schema:
+
+```
+v3 envelope (per-wallet, JSON in secure-store under
+             `fc.wallet.<id>.passphrase_envelope`):
+
+  v               = 3
+  salt            = base64(16 bytes)   // PBKDF2 salt, same KDF as v2
+  iv_priv         = base64(12 bytes)
+  priv_ct         = base64(AES-256-GCM(priv_hex, passphraseKey, iv_priv))
+  iv_mnem?        = base64(12 bytes)   // optional, present iff mnemonic exists
+  mnem_ct?        = base64(AES-256-GCM(mnemonic, passphraseKey, iv_mnem))
+  iv_falcon       = base64(12 bytes)
+  falcon_priv_ct  = base64(AES-256-GCM(falcon_priv_hex, passphraseKey, iv_falcon))
+  falcon_pub      = base64(897 bytes)  // raw FALCON-512 pub — public, plaintext
+```
+
+KDF is unchanged (PBKDF2-HMAC-SHA256, 600,000 iterations, same salt
+across all four ciphertext slots — derives one AES-256 key, reused
+with fresh IVs per slot). The FALCON pub is stored plaintext because
+it IS public — the verifier reads it to check signatures, and there's
+no privacy cost.
+
+**Wallet without a passphrase** stores FALCON in two extra plaintext
+secure-store rows alongside the existing `priv` + `mnemonic` rows:
+
+```
+fc.wallet.<id>.falcon_priv  hex(FALCON-512 secret key)
+fc.wallet.<id>.falcon_pub   hex(FALCON-512 public key)
+```
+
+Enable-passphrase scoops up all four (priv + mnemonic + falcon_priv +
+falcon_pub) into a v3 envelope and drops the plaintext rows.
+
+**FALCON keygen is non-deterministic.** Unlike Ed25519 (which can be
+derived from a BIP-39 seed), FALCON keypair generation has no
+seed-based reproducibility in the standard. The library author
+(Paul Miller's `@noble/post-quantum/falcon.js`) confirms this in source:
+*"we cannot use any key derivation schemes here: same seed will return
+different keys."* Implication: a wallet restored from a 24-word
+mnemonic on a **different device** will get a different FALCON
+keypair than the original. The post-hard-fork rotation UX (one-time,
+gated behind the activation height) is tracked separately as
+[task #289 / PAY_FALCON_ROTATION_SPEC.md to-write].
+
+### 3.2.2 Lazy v2 → v3 migration
+
+Existing wallets on v2 are migrated transparently on the next
+unlock-with-passphrase. The flow:
+
+1. `unlockPriv` / `unlockMnemonic` / `changeWalletPassphrase` /
+   `removeWalletPassphrase` reads the envelope and sees `v: 2`.
+2. The supplied passphrase + the existing salt re-derive the same
+   AES-256 key the v2 envelope was encrypted under. Decrypting `priv`
+   validates the passphrase (same `BadPassphraseError` semantics).
+3. A fresh FALCON-512 keypair is generated.
+4. The FALCON priv is encrypted with the **same** key + a fresh IV.
+5. A v3 envelope is written with: the original salt + priv_ct + mnem_ct
+   preserved, plus the new `iv_falcon` + `falcon_priv_ct` + `falcon_pub`.
+6. The original unlock call returns its requested data unchanged.
+
+Migration is idempotent — once an envelope is v3, future unlocks see
+v3 directly and never re-migrate (tested explicitly:
+"v2 → v3 migration is idempotent — repeated unlocks are no-ops").
+
 ### 3.3 On-device storage
 
 - The on-disk record lives in `@aparajita/capacitor-secure-storage`, exactly
@@ -215,6 +290,19 @@ the other.
 - [ ] No passphrase material in logs, audit entries, or Capacitor bridge
       traces (verify with `loggingBehavior: 'production'` and a packet
       capture / logcat).
+- [x] **(v3, 2026-05-24)** Wallet create + restore generate a FALCON-512
+      keypair and stash it in secure-store (plaintext rows or v3 envelope
+      depending on passphrase state). Verified by `wallet-passphrase.test.ts`
+      cases "enable creates a v3 envelope with FALCON fields" + "getFalconPub
+      works without a passphrase on a plaintext-only wallet".
+- [x] **(v3, 2026-05-24)** v2 envelopes lazily migrate to v3 on first
+      unlock without losing the existing passphrase or any wallet
+      material. Verified by `wallet-passphrase.test.ts` case
+      "v2 envelopes lazily migrate to v3 on first unlock".
+- [x] **(v3, 2026-05-24)** change-passphrase and remove-passphrase preserve
+      FALCON across operations. Verified by `wallet-passphrase.test.ts`
+      cases "change passphrase preserves the FALCON keypair" + "remove
+      passphrase restores the FALCON plaintext rows".
 
 ---
 
@@ -226,9 +314,9 @@ the other.
   defence.
 - Server-side passphrase recovery via SSS or social recovery. Architectural
   shift; separate spec.
-- FALCON priv covered by the same envelope: when the PQ hard fork lands,
+- ~~FALCON priv covered by the same envelope: when the PQ hard fork lands,
   add the FALCON priv into the same plaintext blob, version: 3. No KDF or
-  UI change required.
+  UI change required.~~ **SHIPPED 2026-05-24** — see §3.2.1 + §3.2.2.
 
 ---
 
