@@ -31,18 +31,15 @@ Per-mission documentation lives in [`use-cases/`](use-cases/). Each page covers 
 |---|---|---|
 | Knowledge Synthesis | [`use-cases/knowledge-synthesis.md`](use-cases/knowledge-synthesis.md) | ✅ seeded (Phase 1) |
 | AMLR Readiness Programme | [`use-cases/amlr-readiness.md`](use-cases/amlr-readiness.md) | ✅ seeded (Phase 2) |
+| Content Factory | [`use-cases/content-factory.md`](use-cases/content-factory.md) | ✅ seeded (Phase 3) |
+| Outbound Sales Machine | [`use-cases/outbound-sales-machine.md`](use-cases/outbound-sales-machine.md) | ✅ seeded (Phase 3) |
+| E-Commerce Autopilot | [`use-cases/ecommerce-autopilot.md`](use-cases/ecommerce-autopilot.md) | ✅ seeded (Phase 3) |
+| Financial Analyst | [`use-cases/financial-analyst.md`](use-cases/financial-analyst.md) | ✅ seeded (Phase 3) |
+| AI Agency | [`use-cases/ai-agency.md`](use-cases/ai-agency.md) | ✅ seeded (Phase 3) |
+| Property Manager | [`use-cases/property-manager.md`](use-cases/property-manager.md) | ✅ seeded (Phase 3) |
+| Trend Scout | [`use-cases/trend-scout.md`](use-cases/trend-scout.md) | ✅ seeded (Phase 3) |
 
-### Marketing-named (positioning; not seeded yet)
-
-| Mission | File | Status |
-|---|---|---|
-| Content Factory | [`use-cases/content-factory.md`](use-cases/content-factory.md) | 📋 coming soon |
-| Outbound Sales Machine | [`use-cases/outbound-sales-machine.md`](use-cases/outbound-sales-machine.md) | 📋 coming soon |
-| E-Commerce Autopilot | [`use-cases/ecommerce-autopilot.md`](use-cases/ecommerce-autopilot.md) | 📋 coming soon |
-| Financial Analyst | [`use-cases/financial-analyst.md`](use-cases/financial-analyst.md) | 📋 coming soon |
-| AI Agency | [`use-cases/ai-agency.md`](use-cases/ai-agency.md) | 📋 coming soon |
-| Property Manager | [`use-cases/property-manager.md`](use-cases/property-manager.md) | 📋 coming soon |
-| Trend Scout | [`use-cases/trend-scout.md`](use-cases/trend-scout.md) | 📋 coming soon |
+All seven Phase-3 missions are **LLM-only v1** — they deliver structured playbook bundles to the Mission Inbox. Service Pack integrations (CRM, CMS, e-commerce platforms, payment rails) land in v2 of each template.
 
 ---
 

@@ -1,32 +1,97 @@
 # Financial Analyst
 
-> **Status:** 📋 Coming soon — marketing-named mission, not yet seeded in `seed-templates.ts`.
-> **Pillar:** Work · **Category:** finance
+> **Template id:** `tmpl_financial_analyst_v1`
+> **Status:** ✅ seeded (Phase 3)
+> **Pillar:** Work · **Category:** finance · **Author:** ANTON
 
 ---
 
-## Concept
+## What it does
 
-Pull financial data from configured sources, run periodic analysis (cash flow, P&L, scenario modelling), produce a board-ready briefing on cadence.
+Produces a structured markets digest with thesis tracking, position monitoring, and risk flags. v1 is LLM-only — runs against your stated portfolio focus and tracked theses. v2 (planned) will pipe in real-time market data from the Markets pillar.
 
-## Why it's not seeded yet
+## Who it's for
 
-Per the addendum reconciliation (`ANTON_Improvement_Brief_Addendum_1_Portals_Missions.md` §D.6 decision point): only the 2 missions actually present in `server/services/missions/seed-templates.ts` (Knowledge Synthesis, AMLR Readiness) ship with full use-case pages today. The remaining marketing-named missions are positioning — they'll get full treatment as they're seeded.
+- A self-directed investor who wants a disciplined weekly / daily digest instead of doom-scrolling Twitter.
+- A family-office analyst running tracking on a defined thesis set.
+- A founder watching specific sectors as part of strategic positioning.
 
-## What it would take to ship
+Not for: high-frequency trading (this is positioning-level, not tick-level); or replacement of a Bloomberg terminal (the Markets pillar's data pipes are needed for real-time integration — coming in v2).
 
-To move this mission from 📋 to ✅:
+## The workflow
 
-1. **Define the template** in `server/services/missions/seed-templates.ts` — `id`, `parameters_schema`, `task_graph_template`, `default_budget`, `default_autonomy_level`.
-2. **Identify the Service Pack** that provisions credentials + capability bundle (e.g. CMS auth for Content Factory, CRM auth for Outbound Sales).
-3. **Confirm the trust-phase ladder** — which orchestrator phases enable which level of autonomy for this mission's actions.
-4. **Write the use-case page** to replace this stub — see [`knowledge-synthesis.md`](knowledge-synthesis.md) for the structure.
-5. **Update [`/docs/missions/README.md`](../README.md)** — flip from 📋 to ✅ in the Use Case Library table.
+| # | Task | Type | Tokens (est.) | Notes |
+|---|---|---|---|---|
+| 1 | **Frame portfolio focus** | LLM | 3,000 | Extract instruments, sectors, themes, correlation map |
+| 2 | **Macro context** | analysis | 5,000 | Regime call + key indicators + tail risks |
+| 3 | **Thesis review** | LLM | 7,000 | Per thesis: confirm / mutate / retire |
+| 4 | **Position monitoring** | analysis | 5,000 | Concentration + correlation + drawdown sensitivity |
+| 5 | **Risk flags** | LLM | 4,000 | Ordered by probability × impact |
+| 6 | **Compose the digest** | LLM | 6,000 | Structured Markdown deliverable |
+| 7 | **Checkpoint — review** | checkpoint | 0 | Human reviews before delivery |
+| 8 | **Deliver digest** | notification | 0 | Mission Inbox |
 
-## Where to track
+Total estimated active time: ~45 minutes. Total elapsed (with checkpoint): up to 7 days.
 
-If you want this mission, open an issue referencing this file. We'd expect implementation to take 1–2 weeks per mission depending on Service Pack complexity.
+## Inputs the user provides
+
+| Input | Required | Notes |
+|---|---|---|
+| **Portfolio focus** | yes | Instruments, sectors, themes — be specific. Include tickers. |
+| **Risk appetite** | yes | `conservative`, `balanced`, or `aggressive` |
+| **Cadence** | yes | `daily` or `weekly` |
+| **Theses to track** | no | Pre-existing theses to monitor; if blank ANTON proposes from focus |
+
+No credentials needed for v1.
+
+## Outputs delivered
+
+A markets digest (Markdown) structured as:
+1. **Headline view** (3 sentences — the single most important thing this period)
+2. **Macro context** (one paragraph — regime call + indicators)
+3. **Thesis updates** (one short paragraph per thesis with confirm / mutate / retire call)
+4. **Position monitoring** (the risk matrix)
+5. **Risk flags** (ordered list with trigger + impact + what to watch)
+6. **Action recommendations** (3 things worth doing this period)
+
+Delivered to Mission Inbox; recurring runs include a "delta from last digest" opener.
+
+## Trust-phase compatibility
+
+Designed for **trust phase 2+**. Single hard checkpoint before delivery means the human always sees the digest before it's marked complete — this is critical because the LLM has knowledge-cutoff limitations that matter here.
+
+## Budget
+
+| Setting | Value |
+|---|---|
+| Token budget | 350,000 max |
+| Time budget (elapsed) | 7 days |
+| Time budget (active) | 45 min |
+| Default autonomy | `check_in` |
+
+## Success criteria
+
+1. Reads as a real analyst's output — opinions backed by reasoning
+2. Honest about what we don't know (knowledge-cutoff limits explicit)
+3. Tracks supplied theses with explicit confirm / mutate / retire calls
+4. Produces 3 specific action recommendations toned to the supplied risk_appetite
+
+## A real example
+
+Run this mission with:
+- **Portfolio focus:** "US large-cap tech (NVDA, MSFT, GOOGL, META), EU defence (RHM, BAESY, SAAB-B), gold (GLD), BTC"
+- **Risk appetite:** `balanced`
+- **Cadence:** `weekly`
+- **Theses to track:**
+  - "EU defence rotation continues through 2026 elections"
+  - "AI capex peaks in 2026 H2 — model differentiation flattens"
+
+Expected output: structured weekly digest with regime call, sector breakdowns, explicit thesis updates with confirm/mutate/retire calls, position-concentration warning (likely flags single-stock concentration in NVDA), and 3 action recommendations.
 
 ---
 
-*Marketing positioning lives in [`/docs/marketing/missions.md`](../../marketing/missions.md). Underlying primitives (Workflow Engine, Credential Vault, Trust Phases) are all built — these missions are configurations of them.*
+## Where to look
+
+- **Code:** `server/services/missions/seed-templates.ts` (search `FINANCIAL_ANALYST_TEMPLATE`)
+- **Catalogue UI:** `/missions/catalogue` → "Financial Analyst"
+- **Roadmap:** v2 = Markets pillar integration for real-time data + ANTON 100 indices

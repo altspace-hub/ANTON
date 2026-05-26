@@ -62,7 +62,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Generate, schedule, and publish content across channels with brand-voice consistency.',
     complexity: 'standard',
     trustPhase: 3,
-    templateId: null,
+    templateId: 'tmpl_content_factory_v1',
     emoji: '✍️',
   },
   {
@@ -73,7 +73,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Identify accounts, research, draft outreach, follow up, route warm replies — autonomous SDR.',
     complexity: 'programme',
     trustPhase: 4,
-    templateId: null,
+    templateId: 'tmpl_outbound_sales_machine_v1',
     emoji: '📈',
   },
   {
@@ -84,7 +84,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Listing optimization, ad management, inventory + order ops across stores and marketplaces.',
     complexity: 'programme',
     trustPhase: 4,
-    templateId: null,
+    templateId: 'tmpl_ecommerce_autopilot_v1',
     emoji: '🛒',
   },
   {
@@ -95,7 +95,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Daily / weekly markets digest with thesis tracking, position monitoring, and risk flags.',
     complexity: 'standard',
     trustPhase: 2,
-    templateId: null,
+    templateId: 'tmpl_financial_analyst_v1',
     emoji: '📊',
   },
   {
@@ -106,7 +106,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Run a productized AI service offering: client intake → delivery → invoicing — multi-client, multi-deliverable.',
     complexity: 'programme',
     trustPhase: 3,
-    templateId: null,
+    templateId: 'tmpl_ai_agency_v1',
     emoji: '🏢',
   },
   {
@@ -117,7 +117,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Listings, tenant comms, maintenance triage, rent collection across a portfolio of units.',
     complexity: 'programme',
     trustPhase: 4,
-    templateId: null,
+    templateId: 'tmpl_property_manager_v1',
     emoji: '🏠',
   },
   {
@@ -128,7 +128,7 @@ const CATALOGUE: CatalogueEntry[] = [
     premise: 'Watch sources, surface emerging signals, score significance, brief you when patterns cross thresholds.',
     complexity: 'standard',
     trustPhase: 2,
-    templateId: null,
+    templateId: 'tmpl_trend_scout_v1',
     emoji: '🔭',
   },
 ];

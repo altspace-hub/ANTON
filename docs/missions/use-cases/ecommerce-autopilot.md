@@ -1,32 +1,97 @@
 # E-Commerce Autopilot
 
-> **Status:** 📋 Coming soon — marketing-named mission, not yet seeded in `seed-templates.ts`.
-> **Pillar:** Work · **Category:** commerce
+> **Template id:** `tmpl_ecommerce_autopilot_v1`
+> **Status:** ✅ seeded (Phase 3)
+> **Pillar:** Work · **Category:** commerce · **Author:** ANTON
 
 ---
 
-## Concept
+## What it does
 
-Manage a small-shop catalogue end-to-end: listings, pricing, customer messages, inventory alerts, basic supplier comms.
+Audit your current e-commerce setup → produce a listing-optimisation plan → ad-spend recommendation → inventory-health review → order-ops runbook → reporting cadence. v1 delivers the operating model for manual execution. v2 (planned) integrates Shopify / Amazon / Etsy Service Packs for direct listing + ad-spend management.
 
-## Why it's not seeded yet
+## Who it's for
 
-Per the addendum reconciliation (`ANTON_Improvement_Brief_Addendum_1_Portals_Missions.md` §D.6 decision point): only the 2 missions actually present in `server/services/missions/seed-templates.ts` (Knowledge Synthesis, AMLR Readiness) ship with full use-case pages today. The remaining marketing-named missions are positioning — they'll get full treatment as they're seeded.
+- A solo founder running a Shopify or Etsy store who needs a structured operating model instead of ad-hoc tactics.
+- A small e-commerce team rationalising their playbook across SKUs and channels.
+- A consultant doing a 1-week e-commerce diagnostic for a client.
 
-## What it would take to ship
+Not for: large enterprise e-commerce (the playbook is generalist; large operations need specialist tooling); or single-product launches (use a launch playbook instead).
 
-To move this mission from 📋 to ✅:
+## The workflow
 
-1. **Define the template** in `server/services/missions/seed-templates.ts` — `id`, `parameters_schema`, `task_graph_template`, `default_budget`, `default_autonomy_level`.
-2. **Identify the Service Pack** that provisions credentials + capability bundle (e.g. CMS auth for Content Factory, CRM auth for Outbound Sales).
-3. **Confirm the trust-phase ladder** — which orchestrator phases enable which level of autonomy for this mission's actions.
-4. **Write the use-case page** to replace this stub — see [`knowledge-synthesis.md`](knowledge-synthesis.md) for the structure.
-5. **Update [`/docs/missions/README.md`](../README.md)** — flip from 📋 to ✅ in the Use Case Library table.
+| # | Task | Type | Tokens (est.) | Notes |
+|---|---|---|---|---|
+| 1 | **Current-state audit** | LLM | 6,000 | Per focus area: quick-wins + structural improvements |
+| 2 | **Listing optimisation plan** | analysis | 8,000 | Titles, descriptions, imagery, SEO, pricing |
+| 3 | **Ad-spend recommendation** | LLM | 5,000 | Channel mix + budget bands + KPIs |
+| 4 | **Inventory + order-ops** | analysis | 7,000 | Stocking patterns + returns / complaints / disputes |
+| 5 | **Checkpoint — review plan** | checkpoint | 0 | Human gate before reporting cadence |
+| 6 | **Reporting cadence spec** | LLM | 4,000 | Daily / weekly / monthly dashboards |
+| 7 | **Final checkpoint — sign off** | checkpoint | 0 | Human approves full bundle |
+| 8 | **Deliver operating model** | notification | 0 | Mission Inbox + first-30-days checklist |
 
-## Where to track
+Total estimated active time: ~3 hours. Total elapsed (with checkpoints): up to 30 days.
 
-If you want this mission, open an issue referencing this file. We'd expect implementation to take 1–2 weeks per mission depending on Service Pack complexity.
+## Inputs the user provides
+
+| Input | Required | Notes |
+|---|---|---|
+| **Store platform** | yes | `shopify`, `amazon`, `etsy`, `woocommerce`, `tiktok_shop`, `multi` |
+| **Catalog description** | yes | Categories, top SKUs, price range, differentiators |
+| **Markets served** | yes | Geographies — drives tax / shipping / compliance |
+| **Focus areas** | yes | Comma-separated: listing-optimisation, ad-spend, inventory, order-ops, returns, customer-service |
+| **Monthly revenue** | no | For ad-spend prioritisation only |
+
+No credentials needed for v1. v2 will integrate platform APIs (Shopify Admin, Amazon SP-API, Etsy API) for direct listing updates and ad-spend management.
+
+## Outputs delivered
+
+A complete operating model (Markdown) containing:
+1. Current-state audit per focus area
+2. Listing-optimisation plan (titles / descriptions / imagery / SEO / pricing per SKU pattern)
+3. Ad-spend recommendation (channel mix + budget bands + 4 KPIs to watch)
+4. Inventory health framework
+5. Order-ops playbook (returns / refunds / complaints / disputes)
+6. Reporting cadence (daily / weekly / monthly dashboards with thresholds)
+7. First-30-days implementation checklist
+
+Delivered to Mission Inbox.
+
+## Trust-phase compatibility
+
+Designed for **trust phase 4**. Two checkpoints are hard-coded — both the mid-plan review and the final sign-off must clear human review.
+
+## Budget
+
+| Setting | Value |
+|---|---|
+| Token budget | 700,000 max |
+| Time budget (elapsed) | 30 days |
+| Time budget (active) | 3 hours |
+| Default autonomy | `check_in` |
+
+## Success criteria
+
+1. Grounded in the platform + market constraints supplied (no platform-agnostic advice)
+2. Addresses every requested focus area with both quick-wins and structural moves
+3. Specific enough that the operator can execute without re-thinking
+
+## A real example
+
+Run this mission with:
+- **Store platform:** `multi` (Shopify + Etsy)
+- **Catalog description:** "Handmade ceramics — 40 SKUs, €25–180 price range, 5 collections / year, mostly retail"
+- **Markets:** "EU + UK + US"
+- **Focus areas:** `listing-optimisation,ad-spend,inventory,order-ops`
+- **Monthly revenue:** 18000
+
+Expected output: cross-channel listing playbook (titles + photo briefs per collection), €600/mo ad-spend starter allocation across Meta + Etsy Ads + Pinterest, inventory reorder framework keyed to collection cadence, order-ops runbook in matching brand voice, and a weekly + monthly reporting spec.
 
 ---
 
-*Marketing positioning lives in [`/docs/marketing/missions.md`](../../marketing/missions.md). Underlying primitives (Workflow Engine, Credential Vault, Trust Phases) are all built — these missions are configurations of them.*
+## Where to look
+
+- **Code:** `server/services/missions/seed-templates.ts` (search `ECOMMERCE_AUTOPILOT_TEMPLATE`)
+- **Catalogue UI:** `/missions/catalogue` → "E-Commerce Autopilot"
+- **Roadmap:** v2 = Shopify / Amazon / Etsy Service Pack for direct listing + ad management
