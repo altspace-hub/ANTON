@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ANTON Companion App — Launcher Icon (Cream-Chevron skin)
+  1024×1024 · the design actually installed on phones
+
+  Background: cream linen #F5F1EA
+  Chevrons:   #0D7D6C teal, opacity 0.22 → 0.55 → 1.0
+  Geometry:   identical chevron polyline path to icon-launcher-master.svg
+  Corner:     230px radius (~22.5%) — OS will mask further as needed
+
+  Mirrors android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+  + drawable/ic_launcher_background.xml, scaled to the 1024 marketing canvas.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+  <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+    <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+    <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+    <polyline points="213,811 512,580 811,811"/>
+  </g>
+</svg>

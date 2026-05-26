@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ANTON — the narrative</title>
+<meta name="description" content="The story-led marketing narrative for ANTON. Four USPs as the backbone." />
+<style>
+  :root {
+    --teal: #0D7D6C; --teal-hover: #06655A; --teal-bright: #2DD4A8;
+    --blue: #3070C7; --sunrise: #C97220; --navy: #0B1426;
+    --ink: #0F172A; --ink-2: #1E293B; --muted: #475569; --soft: #64748B;
+    --cream: #FAF8F4; --paper: #FFFFFF; --line: #E2E8F0; --line-soft: #EEF2F6;
+    --maxw: 820px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.65; font-size: 17px; -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); text-decoration: none; border-bottom: 1px solid rgba(13,125,108,0.3); }
+  a:hover { color: var(--teal-hover); border-bottom-color: var(--teal-hover); }
+
+  h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.015em; color: var(--ink); line-height: 1.15; }
+  h1 { font-size: 64px; letter-spacing: -0.035em; margin: 0 0 24px; }
+  h2 { font-size: 38px; margin: 0 0 18px; }
+  h3 { font-size: 24px; margin: 32px 0 12px; }
+  h4 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal); margin: 32px 0 8px; }
+
+  p { margin: 0 0 20px; }
+  ul, ol { margin: 0 0 20px; padding-left: 24px; }
+  li { margin-bottom: 8px; }
+
+  /* Nav */
+  .nav { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .nav-inner { max-width: var(--maxw); margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 24px; }
+  .nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px; color: var(--ink); border: none; }
+  .nav-links { margin-left: auto; display: flex; gap: 18px; font-size: 13px; }
+  .nav-links a { color: var(--muted); border: none; }
+  .nav-links a:hover { color: var(--teal); }
+
+  /* Hero */
+  .hero {
+    padding: 96px 32px 64px;
+    background:
+      radial-gradient(circle at 8% 10%, rgba(13,125,108,0.08), transparent 50%),
+      radial-gradient(circle at 92% 90%, rgba(45,212,168,0.06), transparent 50%),
+      var(--cream);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-inner { max-width: var(--maxw); margin: 0 auto; }
+  .eyebrow { display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--teal); padding: 6px 12px; border: 1px solid var(--teal); border-radius: 999px; background: rgba(13,125,108,0.04); margin-bottom: 28px; }
+  .hero h1 em { font-style: normal; color: var(--teal); }
+  .hero p.lede { font-size: 22px; line-height: 1.5; color: var(--ink-2); max-width: 720px; margin-top: 8px; }
+
+  /* Section */
+  section { padding: 72px 32px; border-bottom: 1px solid var(--line); }
+  section.alt { background: var(--cream); }
+  .section-inner { max-width: var(--maxw); margin: 0 auto; }
+
+  /* USP block */
+  .usp { padding: 80px 32px; border-bottom: 1px solid var(--line); position: relative; }
+  .usp.alt { background: var(--cream); }
+  .usp-inner { max-width: var(--maxw); margin: 0 auto; }
+  .usp-num {
+    display: inline-block;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--teal); margin-bottom: 16px;
+  }
+  .usp-num span { display: inline-block; width: 28px; height: 28px; border-radius: 50%; background: var(--teal); color: white; text-align: center; line-height: 28px; margin-right: 10px; font-weight: 800; }
+  .usp h2 { font-size: 42px; line-height: 1.1; max-width: 700px; }
+  .founder-quote {
+    margin: 28px 0 32px;
+    padding: 22px 28px;
+    background: var(--paper);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    font-style: italic;
+    box-shadow: 0 2px 14px rgba(15,23,42,0.04);
+  }
+  .founder-quote::before { content: '\201C'; font-size: 48px; line-height: 0; color: var(--teal); opacity: 0.4; vertical-align: -18px; margin-right: 4px; }
+  .founder-quote .who { display: block; margin-top: 14px; font-style: normal; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+  .hero-line {
+    margin: 36px 0 0;
+    padding: 22px 28px;
+    background: var(--navy);
+    color: white;
+    border-radius: 10px;
+    font-size: 22px;
+    line-height: 1.3;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+  .hero-line span { color: var(--teal-bright); }
+
+  /* Stages table */
+  table.stages { width: 100%; border-collapse: collapse; margin: 18px 0 24px; font-size: 15px; }
+  table.stages th, table.stages td { padding: 14px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  table.stages th { background: rgba(13,125,108,0.06); font-weight: 700; color: var(--ink); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
+  table.stages td:first-child { font-weight: 700; color: var(--teal); white-space: nowrap; }
+  table.stages tbody tr:hover { background: rgba(13,125,108,0.03); }
+
+  /* Personas */
+  table.personas { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 15px; }
+  table.personas th, table.personas td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+  table.personas th { background: var(--line-soft); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  table.personas td:first-child { font-weight: 700; color: var(--ink); width: 35%; }
+
+  /* Apps */
+  .apps-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
+  .app-card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 22px 18px 18px; text-align: center; }
+  .app-card .icon { width: 64px; height: 64px; margin: 0 auto 14px; }
+  .app-card .name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .app-card .one { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+  /* Vision */
+  .layers { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 20px 0 0; }
+  .layer-row { display: grid; grid-template-columns: 56px 1fr 110px; gap: 16px; padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; align-items: center; }
+  .layer-row .n { font-weight: 800; font-size: 22px; color: var(--teal); }
+  .layer-row .desc strong { display: block; font-size: 15px; }
+  .layer-row .desc span  { font-size: 13px; color: var(--muted); }
+  .layer-row .st { font-size: 11px; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; text-align: center; }
+  .st-done { background: #E6F4EA; color: #1E7C3D; }
+  .st-prog { background: #FFF4E0; color: #B36B00; }
+  .st-next { background: #EEF2F6; color: var(--soft); }
+
+  /* Priority list */
+  .priority { counter-reset: pri; list-style: none; padding: 0; margin: 18px 0; }
+  .priority li {
+    counter-increment: pri;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px 20px 16px 64px; margin-bottom: 10px; position: relative;
+    font-size: 16px;
+  }
+  .priority li::before {
+    content: counter(pri);
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    width: 32px; height: 32px; border-radius: 50%; background: var(--teal); color: white;
+    text-align: center; line-height: 32px; font-weight: 800; font-size: 14px;
+  }
+  .priority li strong { color: var(--teal); }
+
+  /* Closing quote */
+  .closer { padding: 96px 32px; background: var(--navy); color: white; text-align: center; }
+  .closer h2 { color: white; font-size: 38px; max-width: 720px; margin: 0 auto 24px; line-height: 1.2; }
+  .closer p { color: rgba(255,255,255,0.7); font-size: 17px; max-width: 600px; margin: 0 auto; }
+  .closer p a { color: var(--teal-bright); border-color: rgba(45,212,168,0.4); }
+
+  /* Footer */
+  footer { padding: 32px; background: #0A0F1A; color: #B0B0B0; font-size: 13px; }
+  .footer-inner { max-width: var(--maxw); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+
+  /* Pull quote */
+  blockquote {
+    margin: 24px 0; padding: 20px 24px;
+    background: rgba(13,125,108,0.05); border-left: 4px solid var(--teal); border-radius: 0 6px 6px 0;
+    font-size: 17px; line-height: 1.55; color: var(--ink-2);
+  }
+
+  @media (max-width: 720px) {
+    h1 { font-size: 42px; }
+    h2 { font-size: 28px; }
+    .usp h2 { font-size: 30px; }
+    .hero p.lede { font-size: 18px; }
+    .apps-row { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28">
+        <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+        <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+      </svg>
+      <span>ANTON</span>
+    </a>
+    <div class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#usp1">Model freedom</a>
+      <a href="#usp2">Self-learning</a>
+      <a href="#usp3">Yours</a>
+      <a href="#usp4">Real work</a>
+      <a href="#suite">Suite</a>
+      <a href="#vision">Vision</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="hero-inner">
+    <span class="eyebrow">The narrative · for Claude Design</span>
+    <h1>One workspace.<br/><em>Every model.</em> Yours.</h1>
+    <p class="lede">
+      We built ANTON as an AI platform with flexibility and real-life usability at its core. Model-agnostic. Self-learning.
+      Open and portable. Built for real work — not chat. The AI workspace where the <strong>professional</strong> sits in the centre,
+      not the model vendor.
+    </p>
+  </div>
+</header>
+
+<!-- WHY -->
+<section id="why" class="alt">
+  <div class="section-inner">
+    <h4>Why we built ANTON</h4>
+    <h2>Frontier AI is extraordinary at fluent text. It's dangerous at <em>defensible, repeatable</em> work.</h2>
+    <p>
+      The people who need AI most — the compliance officer drafting an SAR, the lawyer building a memo, the analyst
+      sizing a market, the NGO writing a grant application, the small-business owner trying to make sense of a regulator's
+      letter — these people don't need a chat window. They need a workspace that:
+    </p>
+    <ul>
+      <li>doesn't lock them to one model vendor,</li>
+      <li>doesn't leak their documents to a cloud they don't control,</li>
+      <li>gets <em>better</em> the more they use it, instead of forgetting them between sessions,</li>
+      <li>gives them structure shaped like the real deliverable — not a wall of text.</li>
+    </ul>
+    <p>
+      That workspace didn't exist. So we built it. ANTON is what happens when you ask:
+      <em>what would AI look like if the professional, not the model vendor, sat in the centre?</em>
+    </p>
+  </div>
+</section>
+
+<!-- USP 1 — MODEL FREEDOM -->
+<section class="usp" id="usp1">
+  <div class="usp-inner">
+    <div class="usp-num"><span>1</span> Model Freedom</div>
+    <h2>One workspace. Every model. Switch when the world switches.</h2>
+
+    <div class="founder-quote">
+      ANTON is model-agnostic, so it can run any model — from the latest Claude and Mistral to local and open-source models —
+      and it's made to suit your needs whether you're a large business, a startup, an NGO or a private person. One week
+      it can be ChatGPT that's best, another week it's Claude. With ANTON you switch, and run the tasks you need with the
+      model you prefer.
+      <span class="who">— Founder note</span>
+    </div>
+
+    <h4>Why this matters</h4>
+    <p>
+      The AI landscape changes faster than any procurement cycle. The "best model for this task" today won't be the
+      best in three months. Buyers who lock themselves into one vendor get one vendor's roadmap; buyers who lock
+      themselves into ANTON get <em>every</em> vendor's roadmap, automatically.
+    </p>
+
+    <h4>What ANTON does</h4>
+    <p>
+      Claude, OpenAI (including GPT-4o + reasoning models o3 / o4-mini), Azure OpenAI, Google Gemini, Mistral, and
+      Ollama — all behind one consistent interface. Switch model per session, per module, per question. The bank with
+      an Azure tenancy and the NGO that wants free Ollama get the same UX. The startup that prefers Mistral for cost
+      gets the same outputs as the consultancy that prefers Claude for depth.
+    </p>
+
+    <h4>The deeper play</h4>
+    <p>
+      Model freedom is also a <strong>risk-management</strong> story for the buyer. When OpenAI changes its pricing or
+      its safety posture or its uptime, ANTON customers are insulated — they can pivot to a different model in a single
+      click. That isn't a feature; it's a <em>protection</em>.
+    </p>
+
+    <div class="hero-line"><span>"</span>One workspace. Every model. Switch when the world switches.<span>"</span></div>
+  </div>
+</section>
+
+<!-- USP 2 — SELF-LEARNING -->
+<section class="usp alt" id="usp2">
+  <div class="usp-inner">
+    <div class="usp-num"><span>2</span> Self-learning</div>
+    <h2>AI tools forget you. ANTON learns you.</h2>
+
+    <div class="founder-quote">
+      ANTON is smart in itself, and has self-learning and teaching. The more you use ANTON, it builds and learns
+      your way of working — what is the right way, how things fit together. ANTON moves up a four-grade learning curve
+      and supports you more and more, until in the end it takes its own initiative.
+      <span class="who">— Founder note</span>
+    </div>
+
+    <h4>Why this matters</h4>
+    <p>
+      Every chat tool starts over from zero every time you open it. ANTON doesn't. It remembers what you do, learns the
+      patterns inside your domain, and gets more useful with use. AI tools that don't learn are toys; ANTON learns, so
+      it becomes a <em>colleague</em>.
+    </p>
+
+    <h4>The four stages</h4>
+    <table class="stages">
+      <thead><tr><th>Stage</th><th>What ANTON does</th><th>How it feels</th></tr></thead>
+      <tbody>
+        <tr><td>1. Reactive</td><td>Answers what you ask, well, against rich structured prompts.</td><td>"An AI that knows my industry."</td></tr>
+        <tr><td>2. Contextual</td><td>Remembers your documents, your prior work, your terminology, your preferred output shape.</td><td>"An AI that knows me."</td></tr>
+        <tr><td>3. Pattern-aware</td><td>Detects patterns in your work — a recurring control gap, a customer profile that always returns, a trade thesis that keeps validating. Surfaces them before you ask.</td><td>"An AI that notices what I'd notice."</td></tr>
+        <tr><td>4. Initiative-taking</td><td>Acts proactively. Watches your inbox / your queues / your data feeds; proposes the next action, drafts the next response, flags the next risk. Asks permission, then executes.</td><td>"An AI that runs alongside me."</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Proof point</h4>
+    <p>
+      The Markets Pillar is the live showcase of stage 3 → 4 in production. Predictions get scored against actual
+      market movements; calibration is tracked over time; the model that's failing gets retired and replaced. That same
+      self-learning loop is what every pillar inherits as it matures.
+    </p>
+
+    <div class="hero-line"><span>"</span>AI tools forget you. ANTON learns you.<span>"</span></div>
+  </div>
+</section>
+
+<!-- USP 3 — YOUR KNOWLEDGE -->
+<section class="usp" id="usp3">
+  <div class="usp-inner">
+    <div class="usp-num"><span>3</span> Your knowledge. Yours.</div>
+    <h2>Open architecture. Portable. Never gated.</h2>
+
+    <div class="founder-quote">
+      ANTON is open and your things are truly yours. You can set up your information how you want to work — the documents,
+      routines, information are easily interchangeable between AI models, because you have the knowledge on your side.
+      It's not guarded by an AI company, so you are free to change.
+      <span class="who">— Founder note</span>
+    </div>
+
+    <h4>Why this matters</h4>
+    <p>
+      The most valuable thing inside an AI tool is <em>your knowledge graph</em> — your client files, your standard
+      operating procedures, your domain shortcuts, your past work. Today, that graph lives inside whichever vendor's tool
+      you happened to pick. If you want to leave, your graph stays behind. ANTON inverts this: the graph is
+      <strong>yours</strong>, sits in your control, and moves with you to any model you choose.
+    </p>
+
+    <h4>What ANTON does</h4>
+    <p>
+      Knowledge in ANTON lives in open formats — markdown, structured JSON, signed <code>.anton</code> knowledge packs.
+      Your documents stay on your machine (local-first; only the LLM call leaves the network). Your custom prompts, your
+      fine-tuned module behaviour, your team's accumulated context — all of it sits in files you own. Switch from Claude
+      to GPT to Mistral; the knowledge comes with you. Decide to host ANTON yourself instead of using the cloud version;
+      same story. Decide to leave ANTON entirely; we'll help you export, because we built the formats to be portable.
+    </p>
+
+    <h4>The deeper play</h4>
+    <p>
+      This is the <strong>anti-lock-in promise</strong>. The AI industry's default business model is "your data, our
+      moat." Ours is the opposite: your data, your moat. We make our money because the product is <em>better</em>, not
+      because you can't leave.
+    </p>
+
+    <div class="hero-line"><span>"</span>Your knowledge. Your data. Your file. Your choice.<span>"</span></div>
+  </div>
+</section>
+
+<!-- USP 4 — REAL WORK -->
+<section class="usp alt" id="usp4">
+  <div class="usp-inner">
+    <div class="usp-num"><span>4</span> Built for real work</div>
+    <h2>Stop prompting. Start delivering.</h2>
+
+    <div class="founder-quote">
+      ANTON is built for real work and real tasks. It has a huge library of modules from 50+ different sectors and work
+      areas. These modules make work reliable, repeatable and to a high standard. No more wrestling prompt libraries.
+      No more sessions giving totally different results. Here you are supported with what the outcome should be, which
+      approach, what the output should look like, what to consider, and how you and ANTON collaborate.
+      <span class="who">— Founder note</span>
+    </div>
+
+    <h4>Why this matters</h4>
+    <p>
+      A chat tool gives you a blank text box and asks you to imagine the right prompt. Every user runs the same task
+      differently. Every session produces a different result. There is no standard of work, and no learning curve —
+      every prompt is artisanal, every output is bespoke. That's fine for play; it's catastrophic for professional work.
+    </p>
+
+    <h4>What ANTON does</h4>
+    <p>Every module starts with the <strong>problem statement, not the model</strong>. A module knows:</p>
+    <ul>
+      <li><strong>What the outcome should be</strong> — a board pack, a gap assessment, a SAR narrative, a contract review, a market analysis. The module is shaped like the deliverable, not like a chat log.</li>
+      <li><strong>Which approach fits</strong> — the right reasoning depth, the right knowledge sources, the right framework anchor (regulation, methodology, professional standard).</li>
+      <li><strong>What the output should be</strong> — Markdown plus a structured JSON payload, optionally exported as DOCX, XLSX, PDF, PPTX, Mermaid, board deck, plain-language summary, devil's-advocate review, regulator's-eye review. Same input, many export formats. No re-running.</li>
+      <li><strong>What to consider</strong> — built-in checklists, integrity rules, sanity checks. The module surfaces what an experienced practitioner would surface.</li>
+      <li><strong>How you and ANTON collaborate</strong> — review gates, approval steps, reviewer feedback loops. ANTON proposes; you decide. The audit trail captures everything.</li>
+    </ul>
+
+    <h4>The library</h4>
+    <p>150+ modules across 50+ professional domains:</p>
+    <ul>
+      <li><strong>Compliance &amp; financial crime</strong> — AMLR, GDPR, DORA, NYDFS Part 500, BSA / AML federal, Swiss AMLA, UK ECCTA, MAS 626, OFAC / OFSI, and more</li>
+      <li><strong>Legal</strong> — Counsel's Desk with 22 expert personas, 8 modes (research / drafting / negotiation / litigation / opinion / memo / argument / strategy), citation tracking</li>
+      <li><strong>Risk</strong> — Risk Atlas with seven-stage deterministic threat-path methodology, 25 industry packs</li>
+      <li><strong>Markets &amp; finance</strong> — self-learning trading research, ANTON 100 indices, predictions with calibration</li>
+      <li><strong>Healthcare, education, NGO, creative, procurement, civic engagement, CRM</strong> — and 40+ more sectors</li>
+    </ul>
+
+    <div class="hero-line"><span>"</span>Stop prompting. Start delivering.<span>"</span></div>
+  </div>
+</section>
+
+<!-- WHAT IT ADDS UP TO -->
+<section>
+  <div class="section-inner">
+    <h4>What all four add up to</h4>
+    <h2>A workspace where the AI is <em>powerful but in service</em>, the knowledge is <em>yours and portable</em>, the work is <em>shaped like a deliverable</em>, and the system <em>gets better</em> as you use it.</h2>
+    <p>That is what ANTON is, and that is why people who have to be right about their work choose it.</p>
+
+    <table class="personas">
+      <thead><tr><th>If you're a…</th><th>ANTON gives you…</th></tr></thead>
+      <tbody>
+        <tr><td>Compliance officer</td><td>Audit-defensible outputs, deterministic risk scoring, a regulator-ready evidence trail, and a workspace that learns your firm's risk appetite over time.</td></tr>
+        <tr><td>Lawyer</td><td>Counsel's Desk with live citation tracking, 22 expert personas, 8 modes, and outputs that survive the partner's red pen.</td></tr>
+        <tr><td>Analyst</td><td>Markets Pillar with predictions you can score, calibration over time, and a workspace that flags patterns before you ask.</td></tr>
+        <tr><td>Consultant</td><td>One toolkit you can take to every client, every domain. Your accumulated knowledge becomes a saleable asset, not a sunk cost.</td></tr>
+        <tr><td>Startup founder</td><td>An AI workspace at mid-market price, with freedom to switch to a free Ollama model the day your runway gets short.</td></tr>
+        <tr><td>NGO leader</td><td>A fully local, fully free option (Ollama) that still gives you Counsel's Desk and Risk Atlas. Sophistication shouldn't require enterprise budgets.</td></tr>
+        <tr><td>Private person</td><td>A real AI workspace on your own machine — financial decisions, family planning, household compliance — without sending it all to a chatbot.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- THE SUITE -->
+<section class="alt" id="suite">
+  <div class="section-inner">
+    <h4>The companion picture</h4>
+    <h2>The Suite + FutureChain.</h2>
+    <p>ANTON the workspace is the centre. Around it sits the four-app suite — ANTON in the field — and FutureChain, our own payment + identity rail.</p>
+
+    <div class="apps-row">
+      <div class="app-card">
+        <div class="icon">
+          <svg viewBox="0 0 1024 1024" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+            <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+              <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+              <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+              <polyline points="213,811 512,580 811,811"/>
+            </g>
+          </svg>
+        </div>
+        <div class="name">Companion</div>
+        <div class="one">Desktop ANTON, on a phone. Approvals, voice, capture.</div>
+      </div>
+      <div class="app-card">
+        <div class="icon">
+          <svg viewBox="0 0 1024 1024" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+            <g fill="none" stroke="#3070C7" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+              <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+              <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+              <polyline points="213,811 512,580 811,811"/>
+            </g>
+          </svg>
+        </div>
+        <div class="name">Business</div>
+        <div class="one">Take FutureChain payments on any phone. No backend.</div>
+      </div>
+      <div class="app-card">
+        <div class="icon">
+          <svg viewBox="0 0 1024 1024" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+            <g fill="none" stroke="#C97220" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+              <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+              <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+              <polyline points="213,811 512,580 811,811"/>
+            </g>
+          </svg>
+        </div>
+        <div class="name">Pay</div>
+        <div class="one">Scan a QR, pay in FTC, get a receipt.</div>
+      </div>
+      <div class="app-card">
+        <div class="icon">
+          <svg viewBox="0 0 1024 1024" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+            <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+              <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+              <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+              <polyline points="213,811 512,580 811,811"/>
+            </g>
+          </svg>
+        </div>
+        <div class="name">Communications</div>
+        <div class="one">Chat, social events, portals. Personal-identity ANTON.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">FutureChain — the rail underneath</h3>
+    <p>
+      ISO 20022 PACS.008 messaging. A tax engine across 27+ jurisdictions. Ed25519 throughout. A mesh dialer that talks
+      ANTON-to-ANTON without going through anybody's tunnel. <strong>The substrate under USPs 1 and 3.</strong> When the
+      marketplace launches and expertise becomes an income stream, FutureChain is how value moves between ANTONs.
+    </p>
+  </div>
+</section>
+
+<!-- VISION -->
+<section id="vision">
+  <div class="section-inner">
+    <h4>The vision in one frame</h4>
+    <h2>Six layers. Each independently valuable. Each makes the next more powerful.</h2>
+    <div class="layers">
+      <div class="layer-row"><div class="n">1</div><div class="desc"><strong>Individual ANTON</strong><span>The workspace.</span></div><div class="st st-done">Done</div></div>
+      <div class="layer-row"><div class="n">2</div><div class="desc"><strong>Intelligent ANTON</strong><span>Self-learning, prediction tracking.</span></div><div class="st st-done">Mostly done</div></div>
+      <div class="layer-row"><div class="n">3</div><div class="desc"><strong>Network</strong><span>Encrypted ANTON-to-ANTON messaging.</span></div><div class="st st-done">Built</div></div>
+      <div class="layer-row"><div class="n">4</div><div class="desc"><strong>Collaborative Intelligence</strong><span>ANTON-to-ANTON problem solving.</span></div><div class="st st-prog">In progress</div></div>
+      <div class="layer-row"><div class="n">5</div><div class="desc"><strong>Marketplace</strong><span>Knowledge packs trade between ANTONs.</span></div><div class="st st-next">Next</div></div>
+      <div class="layer-row"><div class="n">6</div><div class="desc"><strong>Economy (FutureChain)</strong><span>FutureChain settles the value.</span></div><div class="st st-prog">Building in parallel</div></div>
+    </div>
+    <p style="margin-top: 24px; font-size: 18px; color: var(--ink-2);">
+      We're past layer three. Layers four, five and six are why we built layers one, two and three.
+    </p>
+  </div>
+</section>
+
+<!-- PRIORITY -->
+<section class="alt">
+  <div class="section-inner">
+    <h4>What the marketing must convey</h4>
+    <h2>If a designer can only land four things, land these.</h2>
+    <ol class="priority">
+      <li><strong>You choose the model.</strong> Always.</li>
+      <li><strong>The AI learns you.</strong> It gets better.</li>
+      <li><strong>Your knowledge is yours.</strong> Locally, portably, forever.</li>
+      <li><strong>It's built for real work.</strong> Not chat.</li>
+    </ol>
+    <p>Then, if there's room: the Suite — four phones, one ANTON. FutureChain — the rail under the network. The vision — six layers, each making the next more powerful.</p>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section class="closer">
+  <h2>The AI workspace where the <em style="font-style: normal; color: var(--teal-bright);">professional</em> sits in the centre.</h2>
+  <p>Not the model vendor. Not the chat company. <strong style="color: white;">You.</strong></p>
+  <p style="margin-top: 32px;">Contact Daniel — <a href="mailto:daniel.bardun@gmail.com">daniel.bardun@gmail.com</a></p>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div style="display:flex; align-items:center; gap: 12px;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28">
+        <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+        <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+      </svg>
+      <span><strong style="color: white;">ANTON · openEXPERT</strong></span>
+    </div>
+    <div>Narrative Brief v1.0 · 2026-05-24 · for Claude Design</div>
+  </div>
+</footer>
+
+</body>
+</html>

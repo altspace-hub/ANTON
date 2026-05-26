@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The ANTON Suite — Lockup (Dark)
+  Real cream-chevron geometry per app on a navy background.
+  Cream tile is preserved so the marks read identically — only the
+  surrounding page background and wordmark colour change vs the light variant.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" width="560" height="260" fill="none" role="img" aria-label="The ANTON Suite — Companion, Business, Pay, Communications">
+  <title>The ANTON Suite — Dark</title>
+  <desc>Four cream-chevron app launchers on a navy background. Wordmark white, tagline bright teal.</desc>
+
+  <defs>
+    <filter id="lkup-shadow-d" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <style>
+      .cap   { font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 11px; fill: #B0B0B0; letter-spacing: 0.06em; text-transform: uppercase; }
+      .word  { font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 18px; fill: #FFFFFF; letter-spacing: -0.01em; }
+      .tag   { font-family: 'Inter', system-ui, sans-serif; font-weight: 500; font-size: 13px; fill: #2DD4A8; }
+    </style>
+  </defs>
+
+  <rect width="560" height="260" fill="#0B1426"/>
+
+  <svg x="40" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-d)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="90" y="166" class="cap" text-anchor="middle">Companion</text>
+
+  <svg x="160" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-d)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#3070C7" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="210" y="166" class="cap" text-anchor="middle">Business</text>
+
+  <svg x="280" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-d)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#C97220" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="330" y="166" class="cap" text-anchor="middle">Pay</text>
+
+  <svg x="400" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-d)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="450" y="166" class="cap" text-anchor="middle">Comm</text>
+
+  <text x="280" y="208" class="word" text-anchor="middle">The ANTON Suite</text>
+  <text x="280" y="232" class="tag"  text-anchor="middle">Four apps. One ANTON.</text>
+</svg>
