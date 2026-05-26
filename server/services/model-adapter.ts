@@ -546,12 +546,129 @@ class OllamaAdapter extends BaseAdapter {
   }
 }
 
+// ── OpenAI-Compatible Adapter (DeepSeek / OpenRouter / Together / Groq / vLLM / …) ──
+
+export interface OpenAICompatibleConfig {
+  baseUrl: string;
+  apiKey?: string;
+  extraHeaders?: Record<string, string>;
+}
+
+class OpenAICompatibleAdapter extends BaseAdapter {
+  constructor(private readonly cfg: OpenAICompatibleConfig) { super(); }
+
+  private resolveModelName(modelId: string): string {
+    // Format: compat:<slug>:<model> — strip the leading two segments
+    const parts = modelId.split(':');
+    if (parts.length >= 3) return parts.slice(2).join(':');
+    return modelId.replace(/^compat:[^:]+:?/, '') || modelId;
+  }
+
+  private headers(): Record<string, string> {
+    const h: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.cfg.extraHeaders ?? {}),
+    };
+    if (this.cfg.apiKey) h['Authorization'] = `Bearer ${this.cfg.apiKey}`;
+    return h;
+  }
+
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
+    const body = {
+      model: this.resolveModelName(req.model),
+      stream: false,
+      messages: [
+        { role: 'system', content: req.systemPrompt },
+        ...req.messages,
+      ],
+      ...(req.maxTokens !== undefined ? { max_tokens: req.maxTokens } : {}),
+      ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenAI-compatible endpoint error (${this.cfg.baseUrl}): ${response.status} — ${errText}`);
+    }
+
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+
+    return {
+      content: data.choices?.[0]?.message?.content ?? '',
+      usage: {
+        inputTokens: data.usage?.prompt_tokens ?? 0,
+        outputTokens: data.usage?.completion_tokens ?? 0,
+      },
+    };
+  }
+
+  async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
+    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
+    const body = {
+      model: this.resolveModelName(req.model),
+      stream: true,
+      messages: [
+        { role: 'system', content: req.systemPrompt },
+        ...req.messages,
+      ],
+      ...(req.maxTokens !== undefined ? { max_tokens: req.maxTokens } : {}),
+      ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok || !response.body) {
+      throw new Error(`OpenAI-compatible endpoint error: ${response.statusText}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
+        const payload = trimmed.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(payload) as {
+            choices?: Array<{ delta?: { content?: string } }>;
+          };
+          const delta = parsed.choices?.[0]?.delta?.content;
+          if (delta) yield delta;
+        } catch {
+          // Ignore keep-alive comments / malformed lines
+        }
+      }
+    }
+  }
+}
+
 // ── Factory: Create Adapter by Provider ────────────────────────
 
 export function createModelAdapter(
   provider: ModelProvider,
   apiKey?: string,
-  azureConfig?: AzureOpenAIConfig
+  azureConfig?: AzureOpenAIConfig,
+  openaiCompatibleConfig?: OpenAICompatibleConfig
 ): BaseAdapter {
   switch (provider) {
     case 'anthropic':
@@ -577,6 +694,12 @@ export function createModelAdapter(
     case 'ollama':
       // Ollama runs locally, no API key needed
       return new OllamaAdapter(process.env.OLLAMA_BASE_URL);
+
+    case 'openai_compatible':
+      if (!openaiCompatibleConfig) {
+        throw new Error('OpenAI-compatible endpoint config required (resolve from custom_model_endpoints)');
+      }
+      return new OpenAICompatibleAdapter(openaiCompatibleConfig);
 
     default:
       throw new Error(`Unsupported provider: ${provider}`);
@@ -637,6 +760,7 @@ export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): M
   if (modelId.startsWith('gemini-')) return 'google';
   if (modelId.startsWith('mistral-') || modelId.startsWith('magistral-')) return 'mistral';
   if (modelId.startsWith('ollama:')) return 'ollama';
+  if (modelId.startsWith('compat:')) return 'openai_compatible';
 
   // Fallback: check custom model slots in the database
   if (db) {

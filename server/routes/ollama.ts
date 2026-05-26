@@ -13,6 +13,13 @@ import { safeError } from '../lib/error-response.js';
 const router = Router();
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_AUTH_TOKEN = process.env.OLLAMA_AUTH_TOKEN || '';
+
+function ollamaHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (OLLAMA_AUTH_TOKEN) h['Authorization'] = `Bearer ${OLLAMA_AUTH_TOKEN}`;
+  return h;
+}
 
 // ── Health Check ───────────────────────────────────────────────
 
@@ -22,6 +29,7 @@ router.get('/status', async (req, res) => {
     const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
     const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      headers: ollamaHeaders(),
       signal: controller.signal,
     });
 
@@ -68,6 +76,7 @@ router.get('/status', async (req, res) => {
 router.get('/models', async (req, res) => {
   try {
     const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      headers: ollamaHeaders(),
       signal: AbortSignal.timeout(3000),
     });
 
@@ -115,7 +124,7 @@ router.post('/pull', async (req, res) => {
 
     const response = await fetch(`${OLLAMA_BASE_URL}/api/pull`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ollamaHeaders(),
       body: JSON.stringify({ name: modelName }),
     });
 
@@ -166,7 +175,7 @@ router.delete('/models/:modelName', async (req, res) => {
   try {
     const response = await fetch(`${OLLAMA_BASE_URL}/api/delete`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ollamaHeaders(),
       body: JSON.stringify({ name: modelName }),
       signal: AbortSignal.timeout(5000),
     });

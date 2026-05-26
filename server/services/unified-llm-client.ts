@@ -14,10 +14,11 @@
 
 import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest } from './model-adapter.js';
+import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest, type OpenAICompatibleConfig } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
+import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────
@@ -173,13 +174,34 @@ export async function streamToResponse(
     }
   }
 
-  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
+  // Resolve OpenAI-compatible custom endpoint (DeepSeek / OpenRouter / Together / Groq / vLLM / …)
+  let compatConfig: OpenAICompatibleConfig | undefined;
+  if (provider === 'openai_compatible') {
+    if (!config.db) {
+      throw new Error('Database required to resolve custom OpenAI-compatible endpoint');
+    }
+    const slug = config.model.split(':')[1];
+    if (!slug) throw new Error(`Invalid compat model id: ${config.model} (expected compat:<slug>:<model>)`);
+    const endpoint = await resolveCustomEndpoint(config.db, slug);
+    if (!endpoint) {
+      throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
+    }
+    compatConfig = {
+      baseUrl: endpoint.baseUrl,
+      apiKey: endpoint.apiKey,
+      extraHeaders: endpoint.extraHeaders,
+    };
+  }
 
-  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
+  const apiKey = provider === 'azure_openai' || provider === 'openai_compatible'
+    ? undefined
+    : getApiKeyForModel(config.model, config.db);
+
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai' && provider !== 'openai_compatible') {
     throw new Error(`API key not configured for provider: ${provider}`);
   }
 
-  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined);
+  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined, compatConfig);
 
   // Set SSE headers
   res.writeHead(200, {

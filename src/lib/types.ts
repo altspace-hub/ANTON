@@ -28,9 +28,12 @@ export type ModelId =
   | 'magistral-small-latest'
   // Ollama (local)
   | `ollama:${string}`
+  // OpenAI-compatible custom endpoints (DeepSeek, OpenRouter, Together, Groq,
+  // Fireworks, vLLM, LM Studio, llama.cpp). Format: compat:<endpoint_slug>:<model>
+  | `compat:${string}:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing
 
-export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama';
+export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama' | 'openai_compatible';
 
 export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 

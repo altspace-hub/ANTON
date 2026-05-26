@@ -1,12 +1,22 @@
 // ═══════════════════════════════════════════════════════════
 // Ollama Adapter — Streams Ollama chat completions as SSE
-// Ollama exposes an OpenAI-compatible API at http://localhost:11434
-// No API key required — runs fully locally.
+// Ollama exposes a chat API at http://localhost:11434 by default.
+// Set OLLAMA_BASE_URL to point at a remote instance (LAN, Tailscale, etc.).
+// Optionally set OLLAMA_AUTH_TOKEN if Ollama is behind a reverse proxy
+// that requires a bearer token (Caddy / nginx with basic-auth → bearer
+// rewrite, Cloudflare Access JWT, etc.). Native Ollama has no auth.
 // ═══════════════════════════════════════════════════════════
 
 import type { Response } from 'express';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_AUTH_TOKEN = process.env.OLLAMA_AUTH_TOKEN || '';
+
+function ollamaHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (OLLAMA_AUTH_TOKEN) h['Authorization'] = `Bearer ${OLLAMA_AUTH_TOKEN}`;
+  return h;
+}
 
 export interface OllamaStreamParams {
   model: string;           // e.g. 'llama3.2', 'mistral', 'qwen2.5'
@@ -36,7 +46,7 @@ export async function streamOllama(
 
   const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: ollamaHeaders(),
     body: JSON.stringify(body),
   });
 
@@ -90,6 +100,7 @@ export async function streamOllama(
 export async function listOllamaModels(): Promise<string[]> {
   try {
     const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      headers: ollamaHeaders(),
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return [];

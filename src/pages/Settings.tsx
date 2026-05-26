@@ -14,6 +14,7 @@ import { ChannelBridgeManager } from '@/features/connections/ChannelBridgeManage
 import NavItemConfig from '@/components/layout/NavItemConfig';
 import { KnowledgeLibraryManager } from '@/features/knowledge/KnowledgeLibraryManager';
 import { OrgContextPanel } from '@/components/shared/OrgContextPanel';
+import LocalModelsSettingsPanel from '@/components/settings/LocalModelsSettingsPanel';
 
 interface BrandTemplate {
   id: string;
@@ -79,6 +80,7 @@ const BASE_TABS = [
   { id: 'navigation', labelKey: 'settings.navigation' },
   { id: 'knowledge', labelKey: 'settings.knowledge' },
   { id: 'my-way', labelKey: 'settings.myWay' },
+  { id: 'local-models', labelKey: 'settings.localModels' },
 ] as const;
 
 type BaseTabId = (typeof BASE_TABS)[number]['id'];
@@ -674,6 +676,8 @@ export default function Settings() {
 
       {/* My Way of Working tab */}
       {activeTab === 'my-way' && <MyWaySettingsContent />}
+
+      {activeTab === 'local-models' && <LocalModelsSettingsPanel />}
 
       {/* Team tab — admin only, team mode only */}
       {activeTab === 'team' && isAdmin && (
