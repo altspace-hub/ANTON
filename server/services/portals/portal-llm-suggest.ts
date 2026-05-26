@@ -16,6 +16,7 @@
  */
 
 import type { Response } from 'express';
+import { z } from 'zod';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
 import { callChat, streamChat, mapModelToProvider, type ChatResult } from '../provider-router.js';
@@ -451,6 +452,171 @@ async function bumpCallsUsed(db: DatabaseAdapter, sessionId: string): Promise<vo
     `UPDATE portal_walkthrough_sessions SET llm_calls_used = llm_calls_used + 1 WHERE id = ?`,
     sessionId,
   );
+}
+
+// ── Per-capability schema suggestion ────────────────────────────────────────
+//
+// The Phase-5 capability form is the highest-friction step in the walkthrough
+// because users have to define inputSchema + outputSchema (JSON Schema
+// concepts) by hand. This helper takes a natural-language description of what
+// the portal collects + the chosen verb + accumulated portal context, and
+// returns a sensible JSON-Schema pair the user can review / edit / accept.
+//
+// Costs one cap slot. Validates the LLM output is a real object with both
+// schemas before returning.
+
+const CAPABILITY_SCHEMA_OUTPUT = z.object({
+  inputSchema: z.record(z.string(), z.unknown()),
+  outputSchema: z.record(z.string(), z.unknown()),
+  notes: z.string().optional(),
+});
+
+export type CapabilitySchemaResult =
+  | { kind: 'ok'; inputSchema: Record<string, unknown>; outputSchema: Record<string, unknown>; notes?: string; usage: { inputTokens: number; outputTokens: number; costUsdCents: number; model: string } }
+  | { kind: 'parse_error'; rawText: string; reason: string }
+  | { kind: 'shape_error'; partial: unknown; zodErrors: Array<{ path: string; message: string }> }
+  | { kind: 'cap_exceeded'; limit: number }
+  | { kind: 'no_provider'; reason: string }
+  | { kind: 'session_inactive'; status: string }
+  | { kind: 'provider_error'; message: string };
+
+export async function suggestCapabilitySchema(
+  db: DatabaseAdapter,
+  sessionId: string,
+  args: {
+    verb: string;
+    capabilityTitle: string;
+    capabilityDescription?: string;
+    collectionDescription: string;     // "I need their name, pet's name, preferred date, allergies"
+  },
+): Promise<CapabilitySchemaResult> {
+  const engine = createWalkthroughEngine(db);
+  const session = await engine.getSession(sessionId);
+  if (!session) return { kind: 'session_inactive', status: 'not_found' };
+  if (session.status !== 'active') return { kind: 'session_inactive', status: session.status };
+
+  const callsUsedRow = await db.get<{ llm_calls_used: number }>(
+    `SELECT llm_calls_used FROM portal_walkthrough_sessions WHERE id = ?`, sessionId,
+  );
+  const callsUsed = callsUsedRow?.llm_calls_used ?? 0;
+  if (callsUsed >= PER_WALKTHROUGH_CAP) {
+    return { kind: 'cap_exceeded', limit: PER_WALKTHROUGH_CAP };
+  }
+
+  const provider = detectProvider();
+  if (!provider) {
+    return { kind: 'no_provider', reason: 'No LLM provider API key configured (set ANTHROPIC_API_KEY or similar)' };
+  }
+
+  // Pull intent + identity from accumulated state so the schema reflects the
+  // portal's actual context (a "book" capability for a haircut studio looks
+  // different from a "book" for a tutoring service).
+  const intent = (session.accumulatedState.intent ?? {}) as Record<string, unknown>;
+  const identity = (session.accumulatedState.identity ?? {}) as Record<string, unknown>;
+
+  const systemPrompt = [
+    'You generate JSON Schema (Draft 2020-12) for a single ANTON portal capability.',
+    'You output exactly one JSON object with two keys: `inputSchema` and `outputSchema`. Optionally a `notes` string explaining design choices.',
+    '',
+    '## Rules',
+    '- Use `type`, `properties`, `required`, `title`, `description`, `format`, `enum` as needed.',
+    '- Recognised formats: "email", "tel", "uri", "date", "time", "date-time".',
+    '- For enums use `"enum": [...]` with human-friendly values.',
+    '- Mark a field required by adding it to `"required": [...]`.',
+    '- Field names: lowercase, snake_case or camelCase.',
+    '- `outputSchema` describes what the portal returns to the visitor (typically a confirmation id, status, and friendly message — keep it minimal).',
+    '- No examples, no `$schema` declaration, no `$id` — just `type` + `properties` + `required`.',
+    '- Match the verb\'s natural semantics:',
+    '  - `contact` / `inquire` — message + sender details',
+    '  - `order` / `pay` — line items + total + delivery info',
+    '  - `book` — date + time + service + party size',
+    '  - `subscribe` / `join` — contact + preferences',
+    '  - `query` — structured question fields',
+    '',
+    '## Output contract',
+    'Output ONLY this JSON object:',
+    '{ "inputSchema": { "type": "object", "properties": {...}, "required": [...] }, "outputSchema": { "type": "object", "properties": {...} }, "notes": "optional one-sentence rationale" }',
+    'No prose, no code fences, no preamble.',
+  ].join('\n');
+
+  const userMessage = [
+    `## Portal context`,
+    `Portal: ${(identity.display_title as string) ?? '(unnamed)'}`,
+    `Audience: ${(intent.audience as string) ?? '(unspecified)'}`,
+    `Problem solved: ${(intent.problem_solved as string) ?? '(unspecified)'}`,
+    '',
+    `## Capability`,
+    `Verb: ${args.verb}`,
+    `Title: ${args.capabilityTitle}`,
+    args.capabilityDescription ? `Description: ${args.capabilityDescription}` : '',
+    '',
+    `## What this capability needs to collect`,
+    args.collectionDescription,
+    '',
+    `Generate the inputSchema + outputSchema now.`,
+  ].filter(Boolean).join('\n');
+
+  const model = mapDepthToModel(session.depth);
+
+  let chatResult: ChatResult;
+  try {
+    chatResult = await callChat({
+      model: mapModelToProvider(model),
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens: 1500,
+      thinkingLevel: 'think',
+      db,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error({ sessionId, verb: args.verb, err: message }, 'capability_schema_provider_error');
+    await recordCallRow(db, sessionId, session.currentPhase, model, 'provider_error', 0, 0, 0, message);
+    return { kind: 'provider_error', message };
+  }
+
+  const costUsdCents = estimateCostCents(model, chatResult.inputTokens, chatResult.outputTokens);
+
+  const extracted = extractJsonObject(chatResult.text);
+  if (!extracted) {
+    await recordCallRow(db, sessionId, session.currentPhase, model, 'parse_error',
+      chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
+      'capability schema: no JSON object found');
+    await bumpCallsUsed(db, sessionId);
+    return { kind: 'parse_error', rawText: chatResult.text, reason: 'no JSON object in response' };
+  }
+
+  const parsed = CAPABILITY_SCHEMA_OUTPUT.safeParse(extracted);
+  if (!parsed.success) {
+    const zodErrors = parsed.error.issues.map((i) => ({
+      path: (i.path as ReadonlyArray<unknown>).join('.') || '<root>',
+      message: i.message,
+    }));
+    await recordCallRow(db, sessionId, session.currentPhase, model, 'shape_error',
+      chatResult.inputTokens, chatResult.outputTokens, costUsdCents,
+      JSON.stringify(zodErrors).slice(0, 500));
+    await bumpCallsUsed(db, sessionId);
+    return { kind: 'shape_error', partial: extracted, zodErrors };
+  }
+
+  await recordCallRow(db, sessionId, session.currentPhase, model, 'ok',
+    chatResult.inputTokens, chatResult.outputTokens, costUsdCents, null);
+  await bumpCallsUsed(db, sessionId);
+
+  log.info({ sessionId, verb: args.verb, costUsdCents }, 'capability_schema_ok');
+
+  return {
+    kind: 'ok',
+    inputSchema: parsed.data.inputSchema,
+    outputSchema: parsed.data.outputSchema,
+    notes: parsed.data.notes,
+    usage: {
+      inputTokens: chatResult.inputTokens,
+      outputTokens: chatResult.outputTokens,
+      costUsdCents,
+      model,
+    },
+  };
 }
 
 /**

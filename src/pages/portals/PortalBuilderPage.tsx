@@ -12,6 +12,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X, Sparkles, Smartphone, Monitor } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 import { wrapForSandbox } from '../../comm/lib/portal-sandbox';
+import RegistryStatusBadge from '@/components/portals/RegistryStatusBadge';
 
 const PHASES = [
   { id: 'intent', label: 'Intent' },
@@ -456,38 +457,7 @@ function PhaseForm({
     );
   }
   if (phase === 'capabilities') {
-    const caps = (draft.capabilities as Array<{ id: string; verb: string; title: string; description: string; aap_endpoint: string }>) ?? [];
-    return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-medium">Capabilities</h2>
-        <p className="text-sm text-adv-gray">What can visitors do? Each capability becomes a button in their ANTON.</p>
-        {caps.map((c, i) => (
-          <div key={i} className="rounded-lg border border-border bg-adv-dark p-3 space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              <input className={inputCls + ' col-span-3'} value={c.id} onChange={(e) => {
-                const nc = [...caps]; nc[i] = { ...c, id: e.target.value }; update({ capabilities: nc });
-              }} placeholder="id (slug)" />
-              <select className={inputCls + ' col-span-3'} value={c.verb} onChange={(e) => {
-                const nc = [...caps]; nc[i] = { ...c, verb: e.target.value }; update({ capabilities: nc });
-              }}>
-                {['contact','inquire','request','order','pay','book','subscribe','join','query','publish','delegate','authenticate','custom'].map(v => <option key={v} value={v}>{v}</option>)}
-              </select>
-              <input className={inputCls + ' col-span-3'} value={c.title} onChange={(e) => {
-                const nc = [...caps]; nc[i] = { ...c, title: e.target.value }; update({ capabilities: nc });
-              }} placeholder="title" />
-              <input className={inputCls + ' col-span-3'} value={c.aap_endpoint} onChange={(e) => {
-                const nc = [...caps]; nc[i] = { ...c, aap_endpoint: e.target.value }; update({ capabilities: nc });
-              }} placeholder="endpoint" />
-            </div>
-            <input className={inputCls} value={c.description} onChange={(e) => {
-              const nc = [...caps]; nc[i] = { ...c, description: e.target.value }; update({ capabilities: nc });
-            }} placeholder="description" />
-          </div>
-        ))}
-        <button type="button" onClick={() => update({ capabilities: [...caps, { id: 'cap-' + (caps.length + 1), verb: 'contact', title: 'New capability', description: '', aap_endpoint: 'messages' }] })}
-          className="text-sm text-adv-teal hover:underline">+ Add capability</button>
-      </div>
-    );
+    return <CapabilitiesForm draft={draft} update={update} sessionId={sessionId} />;
   }
   if (phase === 'aesthetics') {
     return (
@@ -550,6 +520,15 @@ function PhaseForm({
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Publish</h2>
+
+        {/* Registry state — decisive banner so the user knows whether this
+            publish will hit the federated registry, stay local-only, or
+            queue for retry during a registry outage. */}
+        <div>
+          <div className="text-xs uppercase tracking-wide text-adv-gray mb-2">Where this portal will be visible</div>
+          <RegistryStatusBadge variant="detailed" />
+        </div>
+
         <Checkbox label="Public index (discoverable via anton-portal search)" value={!!draft.public_index} onChange={(v) => update({ public_index: v })} />
         <Checkbox label="Ready to register" value={draft.ready_to_register === true} onChange={(v) => update({ ready_to_register: v })} />
         <p className="text-sm text-adv-gray">When you click "Publish portal" the local portal is created (status=active) and its descriptor is cached. Registry submission happens separately when the registry server is available.</p>
@@ -557,6 +536,216 @@ function PhaseForm({
     );
   }
   return null;
+}
+
+// ── Capabilities form ────────────────────────────────────────────────────────
+// Phase 5 is the highest-friction step because users have to define inputSchema
+// + outputSchema. This component layers an LLM "describe what you collect" UX
+// per capability so non-technical users skip the JSON Schema rabbit hole.
+
+interface CapDraft {
+  id: string;
+  verb: string;
+  title: string;
+  description: string;
+  aap_endpoint: string;
+  inputSchema?: Record<string, unknown>;
+  outputSchema?: Record<string, unknown>;
+}
+
+const VERB_OPTIONS = ['contact','inquire','request','order','pay','book','subscribe','join','query','publish','delegate','authenticate','custom'] as const;
+
+function CapabilitiesForm({
+  draft, update, sessionId,
+}: {
+  draft: Record<string, unknown>;
+  update: (patch: Record<string, unknown>) => void;
+  sessionId: string;
+}) {
+  const caps: CapDraft[] = (draft.capabilities as CapDraft[]) ?? [];
+  const [schemaEditorIdx, setSchemaEditorIdx] = useState<number | null>(null);
+  const [collectionText, setCollectionText] = useState('');
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+
+  function setCap(i: number, patch: Partial<CapDraft>) {
+    const nc = [...caps];
+    nc[i] = { ...caps[i], ...patch };
+    update({ capabilities: nc });
+  }
+
+  function addCap() {
+    update({
+      capabilities: [
+        ...caps,
+        { id: 'cap-' + (caps.length + 1), verb: 'contact', title: 'New capability', description: '', aap_endpoint: 'messages' },
+      ],
+    });
+  }
+
+  function deleteCap(i: number) {
+    update({ capabilities: caps.filter((_, idx) => idx !== i) });
+    if (schemaEditorIdx === i) {
+      setSchemaEditorIdx(null);
+      setCollectionText('');
+    }
+  }
+
+  async function generateSchema(i: number) {
+    if (!collectionText.trim() || collectionText.trim().length < 5) {
+      setSuggestError('Describe what visitors send (at least a few words)');
+      return;
+    }
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const cap = caps[i];
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${sessionId}/capability-schema`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          verb: cap.verb,
+          capabilityTitle: cap.title,
+          capabilityDescription: cap.description,
+          collectionDescription: collectionText.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSuggestError(json.error?.message ?? json.error?.reason ?? `Request failed (${res.status})`);
+        return;
+      }
+      setCap(i, { inputSchema: json.inputSchema, outputSchema: json.outputSchema });
+      setSchemaEditorIdx(null);
+      setCollectionText('');
+    } catch (e) {
+      setSuggestError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-medium">Capabilities</h2>
+      <p className="text-sm text-adv-gray">
+        What can visitors do? Each capability becomes a button in their ANTON.
+        Click <span className="text-adv-teal">Generate schema from description</span> on any capability and ANTON drafts the inputSchema + outputSchema for you — no JSON Schema knowledge needed.
+      </p>
+      {caps.map((c, i) => {
+        const fieldCount = c.inputSchema?.properties
+          ? Object.keys((c.inputSchema.properties as Record<string, unknown>) ?? {}).length
+          : 0;
+        const isEditing = schemaEditorIdx === i;
+        return (
+          <div key={i} className="rounded-lg border border-border bg-adv-dark p-3 space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <input className={inputCls + ' col-span-3'} value={c.id} onChange={(e) => setCap(i, { id: e.target.value })} placeholder="id (slug)" />
+              <select className={inputCls + ' col-span-3'} value={c.verb} onChange={(e) => setCap(i, { verb: e.target.value })}>
+                {VERB_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <input className={inputCls + ' col-span-3'} value={c.title} onChange={(e) => setCap(i, { title: e.target.value })} placeholder="title" />
+              <input className={inputCls + ' col-span-3'} value={c.aap_endpoint} onChange={(e) => setCap(i, { aap_endpoint: e.target.value })} placeholder="endpoint" />
+            </div>
+            <input className={inputCls} value={c.description} onChange={(e) => setCap(i, { description: e.target.value })} placeholder="description (shown to visitors)" />
+
+            {/* Schema status + actions */}
+            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+              <div className="text-xs text-adv-gray">
+                {fieldCount > 0 ? (
+                  <span className="text-adv-green">✓ Schema set — {fieldCount} input field{fieldCount === 1 ? '' : 's'}</span>
+                ) : (
+                  <span className="text-adv-gold">No schema yet — visitors will see a single message field by default</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {fieldCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCap(i, { inputSchema: undefined, outputSchema: undefined })}
+                    className="text-xs text-adv-gray hover:text-adv-red transition"
+                  >
+                    Clear schema
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setSchemaEditorIdx(i); setCollectionText(''); setSuggestError(null); }}
+                  className="text-xs text-adv-teal hover:underline flex items-center gap-1"
+                >
+                  <Sparkles className="h-3 w-3" /> {fieldCount > 0 ? 'Regenerate' : 'Generate schema from description'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteCap(i)}
+                  className="text-xs text-adv-gray hover:text-adv-red transition"
+                  aria-label="Remove capability"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+
+            {/* Inline schema generator */}
+            {isEditing && (
+              <div className="mt-2 rounded-lg border border-adv-teal/40 bg-adv-teal/5 p-3 space-y-2">
+                <label className="block">
+                  <span className="block text-xs font-medium text-adv-teal mb-1">Describe what visitors send you</span>
+                  <textarea
+                    autoFocus
+                    className={inputCls + ' h-24'}
+                    value={collectionText}
+                    onChange={(e) => setCollectionText(e.target.value)}
+                    placeholder={`e.g. for a ${c.verb} capability — "Their name, dog's name and breed, preferred date and time, any allergies, contact email or phone"`}
+                  />
+                </label>
+                {suggestError && (
+                  <div className="flex items-start gap-1.5 text-xs text-adv-red">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                    {suggestError}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => generateSchema(i)}
+                    disabled={suggesting || collectionText.trim().length < 5}
+                    className="px-3 py-1.5 rounded-lg bg-adv-teal text-adv-dark text-xs font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {suggesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {suggesting ? 'ANTON is drafting…' : 'Generate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setSchemaEditorIdx(null); setCollectionText(''); setSuggestError(null); }}
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs hover:border-adv-gray"
+                  >
+                    Cancel
+                  </button>
+                  <span className="text-[10px] text-adv-gray ml-2">Costs one walkthrough call slot.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Compact schema preview */}
+            {fieldCount > 0 && !isEditing && (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-[11px] text-adv-gray hover:text-adv-teal select-none">View generated schema</summary>
+                <pre className="mt-2 rounded bg-adv-card border border-border p-2 text-[10px] font-mono text-adv-gray overflow-x-auto whitespace-pre-wrap break-words max-h-64">
+{JSON.stringify({ inputSchema: c.inputSchema, outputSchema: c.outputSchema }, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={addCap}
+        className="text-sm text-adv-teal hover:underline"
+      >+ Add capability</button>
+    </div>
+  );
 }
 
 // ── Bits ────────────────────────────────────────────────────────────────────
