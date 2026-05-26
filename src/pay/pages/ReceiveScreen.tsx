@@ -18,12 +18,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrCode from '../components/QrCode';
+import AnimatedQrCode from '../components/AnimatedQrCode';
 import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import FiatAmountInput from '../components/FiatAmountInput';
 import { getActiveWalletMeta } from '../services/wallet';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
 import { notifyIncoming } from '../services/notifications';
 import type { WalletMeta } from '../services/wallets';
+
+/** Static = single QR (default, fits the basic `futurechain:pay?to=…`
+ *  shape). Animated = fountain-coded UR stream for richer payloads
+ *  (e.g. when we start carrying full PACS.008 creditor party / order
+ *  details that exceed single-QR density). Single user toggle. */
+type QrMode = 'static' | 'animated';
 
 interface Props {
   onBack: () => void;
@@ -39,6 +46,7 @@ export default function ReceiveScreen({ onBack }: Props) {
   const [copied, setCopied] = useState(false);
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
+  const [qrMode, setQrMode] = useState<QrMode>('static');
 
   useEffect(() => {
     void (async () => setMeta(await getActiveWalletMeta()))();
@@ -139,11 +147,48 @@ export default function ReceiveScreen({ onBack }: Props) {
               {meta.label}
             </div>
 
-            {/* QR */}
-            <div className="self-center p-4 rounded-2xl mb-3"
+            {/* QR — static (single frame) or animated (fountain-coded UR
+                stream). Static fits the basic `futurechain:pay?to=…`
+                URI in one QR; animated mode is for the same URI today
+                but ready for the bigger payloads (full PACS.008 creditor
+                + order details) we'll layer in once the rich-payment-
+                request flow lands. See PAY_QR_TRANSFER_SPEC.md. */}
+            <div className="self-center p-4 rounded-2xl mb-2"
                  style={{ backgroundColor: '#FFFFFF',
                           border: '1px solid var(--color-border)' }}>
-              <QrCode value={qrValue} size={240} />
+              {qrMode === 'static'
+                ? <QrCode value={qrValue} size={240} />
+                : <AnimatedQrCode value={qrValue} size={240} />}
+            </div>
+
+            {/* QR-mode toggle. Defaults to static (works at all sizes);
+                the user picks animated when they need to ship richer
+                data (Phase 2 follow-up) or just want bigger / less
+                dense per-frame QRs that scan from further away. */}
+            <div className="self-center mb-3 inline-flex rounded-lg overflow-hidden"
+                 style={{ border: '1px solid var(--color-border)' }}>
+              <button type="button"
+                      onClick={() => setQrMode('static')}
+                      className="px-3 py-1.5 text-xs font-semibold"
+                      style={{
+                        backgroundColor: qrMode === 'static'
+                          ? 'var(--color-accent)' : 'transparent',
+                        color: qrMode === 'static'
+                          ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
+                      }}>
+                {t('receive.qrStatic', 'Static')}
+              </button>
+              <button type="button"
+                      onClick={() => setQrMode('animated')}
+                      className="px-3 py-1.5 text-xs font-semibold"
+                      style={{
+                        backgroundColor: qrMode === 'animated'
+                          ? 'var(--color-accent)' : 'transparent',
+                        color: qrMode === 'animated'
+                          ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
+                      }}>
+                {t('receive.qrAnimated', 'Animated')}
+              </button>
             </div>
 
             {/* Active-sync banner — shown while the Receive screen is
