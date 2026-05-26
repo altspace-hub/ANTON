@@ -34,7 +34,7 @@ import { createPortalSearchEngine } from '../services/portals/portal-search-engi
 import { createWalkthroughEngine } from '../services/portals/portal-walkthrough-engine.js';
 import { listTemplates } from '../services/portals/portal-walkthrough-templates.js';
 import { bundlePortal, importPortal } from '../services/portals/portal-bundler.js';
-import { suggestPhase, suggestPhaseStream, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
+import { suggestPhase, suggestPhaseStream, suggestCapabilitySchema, getSessionCostCents } from '../services/portals/portal-llm-suggest.js';
 import { scanLan, listKnownNeighbors } from '../services/portals/portal-lan-discovery.js';
 import { rebuildPortalDescriptor, readCurrentCapabilities } from '../services/portals/portal-capabilities-editor.js';
 import { verifyAndPersist } from '../services/portals/external-url-verifier.js';
@@ -325,6 +325,56 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     });
   });
 
+  // Public: combined registry-readiness check. Aggregates trust-bundle status
+  // with a live reachability probe to PORTAL_REGISTRY_URL so the UI can show
+  // one decisive state (configured / unreachable / placeholder / ready).
+  router.get('/portals/registry-status', async (_req, res) => {
+    const store = getTrustStore();
+    const futurechain = store.forNamespace('futurechain');
+    const registryUrl = process.env.PORTAL_REGISTRY_URL ?? null;
+    const futurechainPlaceholder = futurechain ? store.isPlaceholder(futurechain.operatorId) : true;
+
+    let reachable: boolean | null = null;
+    let reachabilityError: string | null = null;
+
+    if (registryUrl) {
+      try {
+        const probeUrl = `${registryUrl.replace(/\/$/, '')}/health`;
+        const probe = await fetch(probeUrl, { signal: AbortSignal.timeout(3000) });
+        reachable = probe.ok;
+        if (!probe.ok) reachabilityError = `HTTP ${probe.status}`;
+      } catch (err) {
+        reachable = false;
+        reachabilityError = err instanceof Error ? err.message : String(err);
+      }
+    }
+
+    // Decisive state for the UI:
+    //   ready          — registry URL set + reachable + non-placeholder operator key
+    //   placeholder    — registry URL set + reachable + operator key is the bundled placeholder
+    //   unreachable    — registry URL set but server didn't respond
+    //   local_only     — no registry URL configured; portals live on this machine + LAN only
+    let state: 'ready' | 'placeholder' | 'unreachable' | 'local_only';
+    if (!registryUrl) state = 'local_only';
+    else if (reachable === false) state = 'unreachable';
+    else if (futurechainPlaceholder) state = 'placeholder';
+    else state = 'ready';
+
+    res.json({
+      state,
+      registryUrl,
+      reachable,
+      reachabilityError,
+      futurechainPlaceholder,
+      hint: {
+        ready: 'Portals you publish will register with the federated registry.',
+        placeholder: 'Registry is reachable but using the bundled placeholder operator key. STH verification can\'t succeed yet.',
+        unreachable: 'Registry URL is configured but the server isn\'t responding. Portals will be published locally and submission will retry in the background.',
+        local_only: 'No registry configured. Portals will be visible on this machine and the local network only. Set PORTAL_REGISTRY_URL in .env to publish to the federated registry.',
+      }[state],
+    });
+  });
+
   router.post('/portals/walkthroughs', requireAuth, async (req, res) => {
     try {
       // Always stamp ownerId from the authenticated user — never trust the body.
@@ -463,6 +513,61 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
           return res.status(502).json({
             error: { kind: r.kind, phase: r.phase, message: r.message },
           });
+      }
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Per-capability schema suggestion. Phase-5's lowest-friction unlock: the user
+  // names a capability + verb, then describes in natural language what they
+  // collect. LLM returns inputSchema + outputSchema for that single capability.
+  // Costs one walkthrough cap slot.
+  router.post('/portals/walkthroughs/:id/capability-schema', requireAuth, async (req, res) => {
+    try {
+      if (!await assertSessionOwner(req, res)) return;
+      const body = req.body as {
+        verb?: string;
+        capabilityTitle?: string;
+        capabilityDescription?: string;
+        collectionDescription?: string;
+      };
+      if (!body.verb || typeof body.verb !== 'string') {
+        return res.status(400).json({ error: 'verb is required' });
+      }
+      if (!body.capabilityTitle || typeof body.capabilityTitle !== 'string') {
+        return res.status(400).json({ error: 'capabilityTitle is required' });
+      }
+      if (!body.collectionDescription || typeof body.collectionDescription !== 'string' || body.collectionDescription.trim().length < 5) {
+        return res.status(400).json({ error: 'collectionDescription must be at least 5 characters describing what visitors send' });
+      }
+
+      const r = await suggestCapabilitySchema(db, String(req.params.id), {
+        verb: body.verb,
+        capabilityTitle: body.capabilityTitle,
+        capabilityDescription: body.capabilityDescription,
+        collectionDescription: body.collectionDescription,
+      });
+      switch (r.kind) {
+        case 'ok':
+          return res.status(200).json({
+            inputSchema: r.inputSchema,
+            outputSchema: r.outputSchema,
+            notes: r.notes,
+            usage: r.usage,
+          });
+        case 'parse_error':
+          return res.status(422).json({ error: { kind: r.kind, reason: r.reason } });
+        case 'shape_error':
+          return res.status(422).json({ error: { kind: r.kind, zodErrors: r.zodErrors } });
+        case 'cap_exceeded':
+          return res.status(429).json({ error: { kind: r.kind, limit: r.limit } });
+        case 'no_provider':
+          return res.status(503).json({ error: { kind: r.kind, reason: r.reason } });
+        case 'session_inactive':
+          return res.status(r.status === 'not_found' ? 404 : 409).json({ error: { kind: r.kind, status: r.status } });
+        case 'provider_error':
+          return res.status(502).json({ error: { kind: r.kind, message: r.message } });
       }
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

@@ -321,12 +321,22 @@
     "subtitle": "Bläddra och besök ANTON-portaler.",
     "title": "Portaler",
     "useActionsBelow": "Du kan fortfarande använda åtgärderna nedan.",
+    "verbAuthenticate": "Verifiera",
     "verbBook": "Boka",
     "verbContact": "Kontakta",
+    "verbDelegate": "Delegera",
     "verbInquire": "Fråga",
+    "verbJoin": "Gå med",
     "verbOrder": "Beställ",
     "verbPay": "Betala",
-    "verbRequest": "Begär"
+    "verbPublish": "Publicera",
+    "verbQuery": "Sök",
+    "verbRequest": "Begär",
+    "verbSubscribe": "Prenumerera",
+    "verbsAllFilters": "Alla verb",
+    "verbsClearAll": "Rensa",
+    "verbsShowMore": "Fler filter",
+    "verbsShowLess": "Visa färre"
   },
   "restore": {
     "invalidMnemonic": "Det är inte en giltig BIP-39-fras."

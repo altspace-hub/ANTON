@@ -179,28 +179,7 @@ function CapabilityForm({ descriptor, capability, onClose }: {
         {fields.length === 0 ? (
           <p className="text-sm text-[var(--color-text-muted)]">{t('portals.noInputRequired')}</p>
         ) : (
-          fields.map((f) => (
-            <div key={f.name}>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-1.5">
-                {f.label}{f.required && <span className="text-[var(--color-red)] ml-0.5">*</span>}
-              </label>
-              {f.kind === 'long' ? (
-                <textarea
-                  value={values[f.name] ?? ''}
-                  onChange={(e) => setValues((p) => ({ ...p, [f.name]: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)] resize-none"
-                />
-              ) : (
-                <input
-                  type={f.kind === 'email' ? 'email' : f.kind === 'url' ? 'url' : f.kind === 'tel' ? 'tel' : 'text'}
-                  value={values[f.name] ?? ''}
-                  onChange={(e) => setValues((p) => ({ ...p, [f.name]: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)]"
-                />
-              )}
-            </div>
-          ))
+          fields.map((f) => <FieldInput key={f.name} field={f} value={values[f.name] ?? ''} onChange={(v) => setValues((p) => ({ ...p, [f.name]: v }))} />)
         )}
       </div>
 
@@ -252,40 +231,248 @@ function CapabilityForm({ descriptor, capability, onClose }: {
   );
 }
 
+// ── Type-aware field renderer ─────────────────────────────────────────
+// Switches the input control per FormField.kind so the visitor gets a native
+// date picker for `format: date`, a <select> for enums, the right keyboard
+// for emails / tels / numbers, etc. Fallback for unknown kinds is a text input.
+
+function FieldInput({ field, value, onChange }: {
+  field: FormField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const baseInputCls = 'w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)]';
+  const labelCls = 'block text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] mb-1.5';
+  const descCls = 'text-[11px] text-[var(--color-text-muted)] mt-1';
+
+  return (
+    <div>
+      <label className={labelCls}>
+        {field.label}
+        {field.required && <span className="text-[var(--color-red)] ml-0.5">*</span>}
+      </label>
+
+      {field.kind === 'long' ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          placeholder={field.placeholder}
+          className={`${baseInputCls} resize-none`}
+        />
+      ) : field.kind === 'enum' && field.options ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseInputCls}
+        >
+          <option value="">{field.required ? 'Select…' : '— (optional)'}</option>
+          {field.options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      ) : field.kind === 'date' ? (
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseInputCls}
+        />
+      ) : field.kind === 'time' ? (
+        <input
+          type="time"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseInputCls}
+        />
+      ) : field.kind === 'datetime' ? (
+        <input
+          type="datetime-local"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseInputCls}
+        />
+      ) : field.kind === 'number' ? (
+        <input
+          type="number"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          className={baseInputCls}
+        />
+      ) : field.kind === 'boolean' ? (
+        <label className="flex items-center gap-2 cursor-pointer py-2">
+          <input
+            type="checkbox"
+            checked={value === 'true'}
+            onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+            className="h-5 w-5 accent-[var(--color-accent)]"
+          />
+          <span className="text-sm text-[var(--color-text-body)]">
+            {field.description ?? 'Yes'}
+          </span>
+        </label>
+      ) : (
+        <input
+          type={
+            field.kind === 'email' ? 'email'
+            : field.kind === 'url' ? 'url'
+            : field.kind === 'tel' ? 'tel'
+            : 'text'
+          }
+          inputMode={
+            field.kind === 'email' ? 'email'
+            : field.kind === 'tel' ? 'tel'
+            : field.kind === 'url' ? 'url'
+            : undefined
+          }
+          autoComplete={
+            field.kind === 'email' ? 'email'
+            : field.kind === 'tel' ? 'tel'
+            : undefined
+          }
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className={baseInputCls}
+        />
+      )}
+
+      {field.description && field.kind !== 'boolean' && (
+        <p className={descCls}>{field.description}</p>
+      )}
+    </div>
+  );
+}
+
 // ── Schema → form field shim ───────────────────────────────────────────
-// Best-effort: walk a JSON-Schema's `properties` and emit a flat field list.
+// Best-effort: walk a JSON-Schema's `properties` and emit a flat field list
+// keyed to a richer set of input kinds. The renderer (see CapabilityForm)
+// picks a native control per kind — date pickers, selects, etc. — instead of
+// dumping every visitor into a stack of plain text inputs.
+//
 // Falls back to a single 'message' field if the schema is missing or
 // structured in a way we don't yet understand.
 
 interface FormField {
   name: string;
   label: string;
-  kind: 'short' | 'long' | 'email' | 'url' | 'tel';
+  kind:
+    | 'short'      // generic text
+    | 'long'       // textarea
+    | 'email'
+    | 'url'
+    | 'tel'
+    | 'number'
+    | 'date'       // <input type="date">
+    | 'time'       // <input type="time">
+    | 'datetime'   // <input type="datetime-local">
+    | 'enum'       // <select> from enum
+    | 'boolean';   // checkbox
   required: boolean;
+  description?: string;
+  placeholder?: string;
+  options?: string[];                // for enum kind
+  min?: number;                      // for number kind
+  max?: number;                      // for number kind
+  step?: number;                     // for number kind
+}
+
+interface SchemaProperty {
+  type?: string | string[];
+  format?: string;
+  description?: string;
+  title?: string;
+  enum?: unknown[];
+  minimum?: number;
+  maximum?: number;
+  multipleOf?: number;
+  examples?: unknown[];
 }
 
 function extractFields(schema?: Record<string, unknown>): FormField[] {
-  if (!schema || typeof schema !== 'object') return [{ name: 'message', label: 'Message', kind: 'long', required: false }];
+  const fallback: FormField = { name: 'message', label: 'Message', kind: 'long', required: false };
+  if (!schema || typeof schema !== 'object') return [fallback];
   const props = (schema as { properties?: Record<string, unknown> }).properties;
   const requiredList = (schema as { required?: string[] }).required ?? [];
-  if (!props || typeof props !== 'object') return [{ name: 'message', label: 'Message', kind: 'long', required: false }];
+  if (!props || typeof props !== 'object') return [fallback];
 
   const out: FormField[] = [];
   for (const [name, spec] of Object.entries(props)) {
-    const s = spec as { type?: string; format?: string; description?: string; title?: string };
+    const s = spec as SchemaProperty;
+    const lower = name.toLowerCase();
+
+    // Pick the input kind. Schema-explicit signals (format / enum / type)
+    // beat name-based heuristics, which beat the generic 'short' default.
     let kind: FormField['kind'] = 'short';
-    if (s.format === 'email') kind = 'email';
-    else if (s.format === 'uri' || s.format === 'url') kind = 'url';
-    else if (s.format === 'tel') kind = 'tel';
-    else if (name.toLowerCase().includes('message') || name.toLowerCase().includes('description')) kind = 'long';
+    let options: string[] | undefined;
+
+    if (Array.isArray(s.enum) && s.enum.length > 0) {
+      kind = 'enum';
+      options = s.enum.map((v) => String(v));
+    } else if (s.format === 'email') {
+      kind = 'email';
+    } else if (s.format === 'uri' || s.format === 'url') {
+      kind = 'url';
+    } else if (s.format === 'tel' || s.format === 'phone') {
+      kind = 'tel';
+    } else if (s.format === 'date') {
+      kind = 'date';
+    } else if (s.format === 'time') {
+      kind = 'time';
+    } else if (s.format === 'date-time') {
+      kind = 'datetime';
+    } else if (s.type === 'integer' || s.type === 'number') {
+      kind = 'number';
+    } else if (s.type === 'boolean') {
+      kind = 'boolean';
+    } else if (
+      lower.includes('message') ||
+      lower.includes('description') ||
+      lower.includes('notes') ||
+      lower.includes('comment') ||
+      lower.includes('reason')
+    ) {
+      kind = 'long';
+    } else if (
+      lower.includes('email') ||
+      lower.endsWith('_email') ||
+      lower.endsWith('Email')
+    ) {
+      kind = 'email';
+    } else if (
+      lower.includes('phone') ||
+      lower.includes('tel') ||
+      lower.includes('mobile') ||
+      lower.endsWith('_phone')
+    ) {
+      kind = 'tel';
+    } else if (lower.includes('url') || lower.includes('website') || lower.includes('link')) {
+      kind = 'url';
+    } else if (lower.includes('date') && !lower.includes('update')) {
+      kind = 'date';
+    } else if (lower.includes('time') && !lower.includes('timezone')) {
+      kind = 'time';
+    }
+
     out.push({
       name,
       label: s.title ?? humanize(name),
       kind,
       required: requiredList.includes(name),
+      description: s.description,
+      placeholder: Array.isArray(s.examples) && s.examples.length > 0 ? String(s.examples[0]) : undefined,
+      options,
+      min: s.minimum,
+      max: s.maximum,
+      step: s.multipleOf,
     });
   }
-  return out.length > 0 ? out : [{ name: 'message', label: 'Message', kind: 'long', required: false }];
+  return out.length > 0 ? out : [fallback];
 }
 
 function humanize(s: string): string {

@@ -321,12 +321,22 @@
     "subtitle": "Browse and visit ANTON portals.",
     "title": "Portals",
     "useActionsBelow": "You can still use the actions below.",
+    "verbAuthenticate": "Authenticate",
     "verbBook": "Book",
     "verbContact": "Contact",
+    "verbDelegate": "Delegate",
     "verbInquire": "Inquire",
+    "verbJoin": "Join",
     "verbOrder": "Order",
     "verbPay": "Pay",
-    "verbRequest": "Request"
+    "verbPublish": "Publish",
+    "verbQuery": "Query",
+    "verbRequest": "Request",
+    "verbSubscribe": "Subscribe",
+    "verbsAllFilters": "All verbs",
+    "verbsClearAll": "Clear",
+    "verbsShowMore": "More filters",
+    "verbsShowLess": "Show less"
   },
   "restore": {
     "invalidMnemonic": "That isn't a valid BIP-39 phrase."

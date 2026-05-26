@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Globe, Plus, Loader2, AlertCircle, Search, Inbox, ShieldAlert, Upload } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import RegistryStatusBadge from '@/components/portals/RegistryStatusBadge';
 
 interface PortalRow {
   id: string;
@@ -131,7 +132,10 @@ export default function PortalsLandingPage() {
               <Globe className="h-7 w-7 text-adv-teal" aria-hidden />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">Portals</h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-semibold">Portals</h1>
+                <RegistryStatusBadge />
+              </div>
               <p className="text-sm text-adv-gray mt-1 max-w-2xl">
                 Conversationally-built ANTON-only web spaces. Each portal is both a human-facing site
                 and a machine-readable AAP endpoint. Use the left rail to build, discover, or process inbox.

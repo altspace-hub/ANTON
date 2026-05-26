@@ -8,6 +8,11 @@ interface Props {
   onOpenPortal: (address: string) => void;
 }
 
+// The 6 transactional / contact verbs that almost every portal exposes — show
+// these first so the filter row is glanceable. The remaining 6 verbs (social,
+// data, agent) are gated behind a "More filters" toggle so first-time users
+// aren't drowned in a dozen chips. All 12 verbs come from the canonical
+// capability taxonomy (server/services/capability-descriptor/schema.ts).
 const POPULAR_VERBS = [
   { value: 'contact', label: 'portals.verbContact' },
   { value: 'book',    label: 'portals.verbBook' },
@@ -15,7 +20,16 @@ const POPULAR_VERBS = [
   { value: 'inquire', label: 'portals.verbInquire' },
   { value: 'request', label: 'portals.verbRequest' },
   { value: 'pay',     label: 'portals.verbPay' },
-];
+] as const;
+
+const SECONDARY_VERBS = [
+  { value: 'subscribe',    label: 'portals.verbSubscribe' },
+  { value: 'join',         label: 'portals.verbJoin' },
+  { value: 'query',        label: 'portals.verbQuery' },
+  { value: 'publish',      label: 'portals.verbPublish' },
+  { value: 'delegate',     label: 'portals.verbDelegate' },
+  { value: 'authenticate', label: 'portals.verbAuthenticate' },
+] as const;
 
 export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
   const { t } = useTranslation();
@@ -25,8 +39,17 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [showSecondary, setShowSecondary] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reqIdRef = useRef(0);
+
+  // If a secondary verb is selected (e.g. restored from URL or earlier session),
+  // auto-expand the secondary row so the user can see what's active.
+  useEffect(() => {
+    if (selectedVerbs.some(v => SECONDARY_VERBS.find(s => s.value === v))) {
+      setShowSecondary(true);
+    }
+  }, [selectedVerbs]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -96,24 +119,71 @@ export default function PortalsBrowseScreen({ onOpenPortal }: Props) {
         />
       </div>
 
-      <div className="px-5 pb-3 flex gap-2 overflow-x-auto">
-        {POPULAR_VERBS.map((v) => {
-          const active = selectedVerbs.includes(v.value);
-          return (
+      <div className="px-5 pb-3 space-y-2">
+        {/* Primary verb row — always visible */}
+        <div className="flex gap-2 overflow-x-auto">
+          {POPULAR_VERBS.map((v) => {
+            const active = selectedVerbs.includes(v.value);
+            return (
+              <button
+                key={v.value}
+                onClick={() => toggleVerb(v.value)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border"
+                style={{
+                  backgroundColor: active ? 'var(--color-accent)' : 'var(--color-surface)',
+                  color: active ? 'var(--color-accent-fg)' : 'var(--color-text)',
+                  borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
+                }}
+              >
+                {t(v.label)}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Secondary verb row — collapsed by default; auto-expanded when any
+            secondary verb is selected, or when the user taps "More filters". */}
+        {showSecondary && (
+          <div className="flex gap-2 overflow-x-auto">
+            {SECONDARY_VERBS.map((v) => {
+              const active = selectedVerbs.includes(v.value);
+              return (
+                <button
+                  key={v.value}
+                  onClick={() => toggleVerb(v.value)}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border"
+                  style={{
+                    backgroundColor: active ? 'var(--color-accent)' : 'var(--color-surface)',
+                    color: active ? 'var(--color-accent-fg)' : 'var(--color-text)',
+                    borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
+                  }}
+                >
+                  {t(v.label)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Toggle + clear row */}
+        <div className="flex items-center gap-3 text-xs">
+          <button
+            type="button"
+            onClick={() => setShowSecondary((s) => !s)}
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          >
+            {showSecondary ? t('portals.verbsShowLess') : t('portals.verbsShowMore')}
+          </button>
+          {selectedVerbs.length > 0 && (
             <button
-              key={v.value}
-              onClick={() => toggleVerb(v.value)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border"
-              style={{
-                backgroundColor: active ? 'var(--color-accent)' : 'var(--color-surface)',
-                color: active ? 'var(--color-accent-fg)' : 'var(--color-text)',
-                borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
-              }}
+              type="button"
+              onClick={() => setSelectedVerbs([])}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-red)] transition-colors"
             >
-              {t(v.label)}
+              {t('portals.verbsClearAll')} ({selectedVerbs.length})
             </button>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {error && (
