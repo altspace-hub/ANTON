@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ANTON · One-pager</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  :root {
+    --teal: #0D7D6C; --teal-hover: #06655A; --teal-bright: #2DD4A8;
+    --blue: #3070C7; --sunrise: #C97220; --navy: #0B1426;
+    --ink: #0F172A; --ink-2: #1E293B; --muted: #475569;
+    --cream: #FAF8F4; --paper: #FFFFFF; --line: #E2E8F0; --line-soft: #EEF2F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: var(--ink); background: var(--paper);
+    line-height: 1.3; font-size: 10px;
+    -webkit-font-smoothing: antialiased;
+    width: 297mm; height: 210mm;
+  }
+  .page {
+    width: 297mm; height: 210mm;
+    padding: 10mm 12mm;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 6mm;
+    background: var(--paper);
+    page-break-after: always;
+  }
+
+  /* HEADER */
+  .head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--teal);
+  }
+  .head-brand { display: flex; align-items: center; gap: 12px; }
+  .head-brand .name { font-weight: 800; font-size: 16px; letter-spacing: -0.01em; }
+  .head-brand .sub  { font-size: 9px; color: var(--muted); margin-top: 1px; }
+  .head-tagline { font-size: 11px; color: var(--ink-2); text-align: center; font-weight: 500; }
+  .head-meta { font-size: 9px; color: var(--muted); text-align: right; }
+  .head-meta .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; background: rgba(13,125,108,0.10); color: var(--teal); font-weight: 600; margin-bottom: 3px; }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 4mm 0 0;
+  }
+  .hero h1 {
+    font-size: 30px; line-height: 1.05; letter-spacing: -0.025em;
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .hero h1 em { color: var(--teal); font-style: normal; }
+  .hero .lede {
+    font-size: 12px; color: var(--ink-2); max-width: 220mm; margin: 4px auto 0;
+    line-height: 1.4;
+  }
+
+  /* MAIN GRID */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6mm;
+    align-items: stretch;
+  }
+  .col {
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px;
+    background: var(--paper);
+    display: flex; flex-direction: column;
+  }
+  .col h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--teal); margin-bottom: 6px; font-weight: 700;
+  }
+  .col h2 {
+    font-size: 14px; line-height: 1.2; color: var(--ink); margin-bottom: 6px;
+  }
+  .col p { font-size: 10px; color: var(--ink-2); line-height: 1.35; margin-bottom: 4px; }
+  .col p.small { font-size: 9px; color: var(--muted); }
+
+  /* PRODUCT (left col) */
+  .modules { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+  .mod {
+    background: var(--cream); border-radius: 4px; padding: 5px 7px;
+    border-left: 2px solid var(--teal);
+  }
+  .mod .name { font-weight: 700; font-size: 9.5px; color: var(--ink); }
+  .mod .desc { font-size: 8.5px; color: var(--muted); margin-top: 1px; line-height: 1.25; }
+
+  /* APPS (middle col) */
+  .apps {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;
+  }
+  .app {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 6px;
+    background: var(--cream); border-radius: 5px;
+  }
+  .chev { width: 28px; height: 28px; flex-shrink: 0; }
+  .chev svg { display: block; }
+  .app .meta .name { font-weight: 700; font-size: 9.5px; }
+  .app .meta .desc { font-size: 8.5px; color: var(--muted); margin-top: 1px; line-height: 1.25; }
+
+  /* FUTURECHAIN (right col) */
+  .fc-features { display: grid; grid-template-columns: 1fr; gap: 4px; margin-top: 4px; }
+  .fc-feat {
+    padding: 5px 7px; background: var(--cream); border-radius: 4px;
+    border-left: 2px solid var(--blue);
+  }
+  .fc-feat .name { font-weight: 700; font-size: 9.5px; color: var(--ink); }
+  .fc-feat .desc { font-size: 8.5px; color: var(--muted); margin-top: 1px; line-height: 1.25; }
+
+  /* STAT STRIP */
+  .stats {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px;
+    padding: 6px;
+    background: var(--cream); border: 1px solid var(--line); border-radius: 6px;
+    margin-top: 4px;
+  }
+  .stat { text-align: center; padding: 2px 0; }
+  .stat .num { font-size: 16px; font-weight: 800; color: var(--teal); line-height: 1; letter-spacing: -0.02em; }
+  .stat .label { font-size: 7.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; font-weight: 600; }
+
+  /* VISION BAND */
+  .vision {
+    display: grid;
+    grid-template-columns: auto repeat(7, 1fr);
+    gap: 4px;
+    align-items: center;
+    padding: 6px 8px;
+    background: linear-gradient(90deg, rgba(13,125,108,0.04), rgba(13,125,108,0.10) 50%, rgba(13,125,108,0.04));
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  .vision .v-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 700; color: var(--teal); padding-right: 8px; border-right: 1px solid var(--line);
+  }
+  .v-layer { text-align: center; padding: 2px 1px; }
+  .v-layer .num { font-weight: 800; color: var(--teal); font-size: 12px; line-height: 1; }
+  .v-layer .name { font-size: 8px; font-weight: 600; color: var(--ink); margin-top: 2px; }
+  .v-layer .status { font-size: 7px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+  .v-layer.done .status { color: var(--teal); }
+
+  /* FOOTER */
+  .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+    font-size: 8.5px; color: var(--muted);
+  }
+  .foot .l { display: flex; gap: 14px; align-items: center; }
+  .foot .l strong { color: var(--ink); }
+  .foot .r { display: flex; gap: 10px; }
+  .foot .r .swatch {
+    display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEAD -->
+  <header class="head">
+    <div class="head-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="40" height="40">
+        <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+        <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+      </svg>
+      <div>
+        <div class="name">ANTON</div>
+        <div class="sub">by openEXPERT · v0.7.5</div>
+      </div>
+    </div>
+    <div class="head-tagline">Local-first AI workspace for professionals whose work gets read by regulators.</div>
+    <div class="head-meta">
+      <div class="pill">MARKETING ONE-PAGER</div>
+      <div>v1.0 · 2026-05-24</div>
+    </div>
+  </header>
+
+  <!-- HERO + MAIN -->
+  <div>
+    <div class="hero">
+      <h1>The AI workspace that <em>holds up in court.</em></h1>
+      <p class="lede">
+        ANTON runs on your machine, speaks to six LLMs, and produces audit-defensible outputs across 12 pillars and 150+ expert modules.
+        Around it sits the four-app suite and FutureChain — our own payment + identity rail.
+      </p>
+    </div>
+
+    <!-- STAT STRIP -->
+    <div class="stats">
+      <div class="stat"><div class="num">12</div><div class="label">Pillars</div></div>
+      <div class="stat"><div class="num">150+</div><div class="label">Modules</div></div>
+      <div class="stat"><div class="num">55+</div><div class="label">Domains</div></div>
+      <div class="stat"><div class="num">30</div><div class="label">Languages</div></div>
+      <div class="stat"><div class="num">15</div><div class="label">Tab-Review Plays</div></div>
+      <div class="stat"><div class="num">180</div><div class="label">Reg Anchors</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">LLM Providers</div></div>
+      <div class="stat"><div class="num">27+</div><div class="label">FC Tax Jx</div></div>
+    </div>
+
+    <!-- 3-COL -->
+    <div class="main" style="margin-top: 4mm;">
+      <!-- PRODUCT -->
+      <div class="col">
+        <h3>01 · Product</h3>
+        <h2>One workspace. Twelve pillars.</h2>
+        <p>Work · School · Life · Pathfinder · Markets · Community · Procure · Civic · Grow · Payments · Portals · Missions.</p>
+        <p class="small" style="margin-top: 4px;"><strong style="color: var(--ink);">The four showcases:</strong></p>
+        <div class="modules">
+          <div class="mod">
+            <div class="name">Counsel's Desk</div>
+            <div class="desc">22 personas · 8 modes · live citation tracking</div>
+          </div>
+          <div class="mod">
+            <div class="name">Risk Atlas</div>
+            <div class="desc">7-stage deterministic engine · 25 industry packs</div>
+          </div>
+          <div class="mod">
+            <div class="name">Tabular Review</div>
+            <div class="desc">15 playbooks · 10 jurisdictions · share for review</div>
+          </div>
+          <div class="mod">
+            <div class="name">Evidence Pack</div>
+            <div class="desc">Ed25519-signed audit bundles · AMLR/GDPR/DORA</div>
+          </div>
+        </div>
+        <p style="margin-top: 6px; font-style: italic; color: var(--ink-2); font-size: 9.5px;">"The AI is a powerful intern; the workspace is the professional."</p>
+      </div>
+
+      <!-- SUITE -->
+      <div class="col">
+        <h3>02 · The Suite</h3>
+        <h2>Four apps. One ANTON.</h2>
+        <p>Each app is a separate APK, separate identity, separate purpose. Same chevron design language.</p>
+        <div class="apps">
+          <div class="app">
+            <div class="chev">
+              <svg viewBox="0 0 1024 1024" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+                <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+                  <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+                  <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+                  <polyline points="213,811 512,580 811,811"/>
+                </g>
+              </svg>
+            </div>
+            <div class="meta"><div class="name">Companion</div><div class="desc">Desktop ANTON on a phone. Approvals, voice, capture.</div></div>
+          </div>
+          <div class="app">
+            <div class="chev">
+              <svg viewBox="0 0 1024 1024" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+                <g fill="none" stroke="#3070C7" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+                  <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+                  <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+                  <polyline points="213,811 512,580 811,811"/>
+                </g>
+              </svg>
+            </div>
+            <div class="meta"><div class="name">Business</div><div class="desc">FC merchant POS. No backend.</div></div>
+          </div>
+          <div class="app">
+            <div class="chev">
+              <svg viewBox="0 0 1024 1024" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+                <g fill="none" stroke="#C97220" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+                  <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+                  <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+                  <polyline points="213,811 512,580 811,811"/>
+                </g>
+              </svg>
+            </div>
+            <div class="meta"><div class="name">Pay</div><div class="desc">Customer scans, pays in FTC, gets receipt.</div></div>
+          </div>
+          <div class="app">
+            <div class="chev">
+              <svg viewBox="0 0 1024 1024" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+                <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+                  <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+                  <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+                  <polyline points="213,811 512,580 811,811"/>
+                </g>
+              </svg>
+            </div>
+            <div class="meta"><div class="name">Comm</div><div class="desc">Chat, events, social. Separate identity.</div></div>
+          </div>
+        </div>
+        <p style="margin-top: 6px; font-size: 9.5px; color: var(--ink-2);"><strong style="color: var(--ink);">Companion = enterprise wedge.</strong> Biometric-gated, Ed25519-signed approvals from the lift.</p>
+      </div>
+
+      <!-- FUTURECHAIN -->
+      <div class="col">
+        <h3>03 · FutureChain</h3>
+        <h2>The payment + identity rail.</h2>
+        <p>ISO 20022 messaging, tax across 27+ jurisdictions, Ed25519 throughout. Closes Layer 6 of the vision.</p>
+        <div class="fc-features">
+          <div class="fc-feat">
+            <div class="name">PACS.008 builder</div>
+            <div class="desc">Structured, signable payment artifacts (not wire strings)</div>
+          </div>
+          <div class="fc-feat">
+            <div class="name">Wallet · RPC</div>
+            <div class="desc">Phone-resident Ed25519 keypairs · batch submission</div>
+          </div>
+          <div class="fc-feat">
+            <div class="name">Tax engine</div>
+            <div class="desc">FIFO/LIFO/avg/share-pooling · 27+ jurisdictions · K4</div>
+          </div>
+          <div class="fc-feat">
+            <div class="name">Mesh dialer</div>
+            <div class="desc">ANTON-to-ANTON · Noise IK + WireGuard cipher suite</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISION BAND -->
+  <div>
+    <div class="vision">
+      <div class="v-label">6-Layer<br/>Vision →</div>
+      <div class="v-layer done"><div class="num">1</div><div class="name">Individual</div><div class="status">Done</div></div>
+      <div class="v-layer done"><div class="num">2</div><div class="name">Intelligent</div><div class="status">Mostly</div></div>
+      <div class="v-layer done"><div class="num">3</div><div class="name">Network</div><div class="status">Built</div></div>
+      <div class="v-layer"><div class="num">4</div><div class="name">Collaborative</div><div class="status">In progress</div></div>
+      <div class="v-layer"><div class="num">5</div><div class="name">Marketplace</div><div class="status">Next</div></div>
+      <div class="v-layer"><div class="num">6</div><div class="name">Economy (FC)</div><div class="status">Building</div></div>
+      <div class="v-layer"><div class="num" style="color: var(--ink); font-size: 11px;">→</div><div class="name" style="color: var(--ink-2);">Each layer makes</div><div class="status" style="color: var(--ink-2);">the next more powerful</div></div>
+    </div>
+
+    <!-- FOOT -->
+    <footer class="foot">
+      <div class="l">
+        <strong>Built by AdviSense · openEXPERT</strong>
+        <span>Contact: daniel.bardun@gmail.com</span>
+        <span>Audit-defensible · Local-first · Multi-LLM</span>
+      </div>
+      <div class="r">
+        <span><span class="swatch" style="background: var(--teal);"></span>Companion</span>
+        <span><span class="swatch" style="background: var(--blue);"></span>Business</span>
+        <span><span class="swatch" style="background: var(--sunrise);"></span>Pay</span>
+        <span><span class="swatch" style="background: var(--navy); border: 1px solid var(--teal);"></span>Comm</span>
+      </div>
+    </footer>
+  </div>
+
+</div>
+</body>
+</html>

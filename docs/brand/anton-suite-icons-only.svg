@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The ANTON Suite — Icons-only row (compact)
+  Real cream-chevron geometry per app, no labels or wordmark.
+  For tight spaces: headers, footers, app-store strips.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" width="460" height="120" fill="none" role="img" aria-label="ANTON Suite chevrons — icon row">
+  <title>ANTON Suite chevrons</title>
+  <desc>Compact horizontal row of the four cream-chevron app launchers, no labels.</desc>
+
+  <defs>
+    <filter id="lkup-shadow-i" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <!-- Companion -->
+  <svg x="10" y="10" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-i)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+
+  <!-- Business -->
+  <svg x="125" y="10" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-i)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#3070C7" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+
+  <!-- Pay -->
+  <svg x="240" y="10" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-i)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#C97220" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+
+  <!-- Comm -->
+  <svg x="355" y="10" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow-i)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+</svg>

@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ANTON · FutureChain · The Apps — Marketing Brief</title>
+<meta name="description" content="The marketing source-of-truth for ANTON, FutureChain, and the four mobile apps. v1.0 · 2026-05-24." />
+<style>
+  :root {
+    --teal: #0D7D6C;
+    --teal-hover: #06655A;
+    --teal-bright: #2DD4A8;
+    --blue: #3070C7;
+    --sunrise: #C97220;
+    --navy: #0B1426;
+    --ink: #0F172A;
+    --ink-2: #1E293B;
+    --muted: #475569;
+    --cream: #FAF8F4;
+    --paper: #FFFFFF;
+    --line: #E2E8F0;
+    --line-soft: #EEF2F6;
+    --success: #27AE60;
+    --warning: #F5A623;
+    --error: #E74C3C;
+    --info: #3498DB;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.55;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { color: var(--teal-hover); text-decoration: underline; }
+  h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  h1 { font-size: 56px; line-height: 1.05; margin: 0 0 16px; letter-spacing: -0.03em; }
+  h2 { font-size: 32px; line-height: 1.15; margin: 48px 0 16px; }
+  h3 { font-size: 22px; line-height: 1.25; margin: 32px 0 12px; }
+  h4 { font-size: 16px; line-height: 1.3; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  code { font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; font-size: 0.92em; background: var(--line-soft); padding: 2px 6px; border-radius: 4px; }
+  pre {
+    background: var(--navy); color: #E0E0E0; padding: 18px 20px; border-radius: 8px;
+    overflow-x: auto; font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.5;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  blockquote {
+    margin: 0 0 16px; padding: 14px 20px;
+    border-left: 4px solid var(--teal); background: var(--line-soft);
+    color: var(--ink-2); border-radius: 0 6px 6px 0;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0 20px; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--line-soft); font-weight: 600; color: var(--ink-2); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tbody tr:hover { background: #FAFBFC; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 56px 0; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: var(--maxw); margin: 0 auto; padding: 14px 32px;
+    display: flex; align-items: center; gap: 32px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--ink); }
+  .nav-brand:hover { color: var(--ink); text-decoration: none; }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--teal); text-decoration: none; }
+  .nav-spacer { flex: 1; }
+  .nav-version { font-size: 12px; color: var(--muted); }
+
+  /* Logo */
+  .anton-logo { display: inline-flex; align-items: center; justify-content: center; }
+  .anton-logo svg { display: block; }
+
+  /* Layout */
+  .container { max-width: var(--maxw); margin: 0 auto; padding: 0 32px; }
+
+  /* Hero */
+  .hero {
+    padding: 96px 32px 80px;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(13,125,108,0.08), transparent 50%),
+      radial-gradient(circle at 88% 80%, rgba(13,125,108,0.06), transparent 50%),
+      var(--cream);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-inner { max-width: var(--maxw); margin: 0 auto; }
+  .hero-eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--teal); padding: 6px 12px; border: 1px solid var(--teal); border-radius: 999px;
+    margin-bottom: 24px; background: rgba(13,125,108,0.04);
+  }
+  .hero-sub { font-size: 20px; color: var(--ink-2); max-width: 720px; margin-top: 16px; line-height: 1.45; }
+  .hero-meta { margin-top: 32px; font-size: 13px; color: var(--muted); display: flex; gap: 24px; flex-wrap: wrap; }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero-meta span::before { content: '●'; color: var(--teal); font-size: 10px; }
+
+  /* Section */
+  .section { padding: 56px 32px; border-bottom: 1px solid var(--line); }
+  .section:nth-child(even) { background: var(--cream); }
+  .section-inner { max-width: var(--maxw); margin: 0 auto; }
+  .section-eyebrow {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--teal); margin-bottom: 8px;
+  }
+
+  /* Cards */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 22px 24px; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(15,23,42,0.06); border-color: rgba(13,125,108,0.4); }
+  .card h3 { margin-top: 0; font-size: 17px; }
+  .card p { margin-bottom: 0; font-size: 14px; color: var(--muted); }
+  .card-tag {
+    display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--teal); margin-bottom: 8px; font-weight: 600;
+  }
+
+  /* Pillar cards */
+  .pillar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pillar {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .pillar-name { font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 4px; }
+  .pillar-desc { font-size: 13px; color: var(--muted); }
+
+  /* App row */
+  .app-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 28px; }
+  .app {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 24px 20px; text-align: center;
+  }
+  .chevron {
+    width: 64px; height: 64px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 28px; margin: 0 auto 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+  .chevron-teal { background: var(--teal); }
+  .chevron-blue { background: var(--blue); }
+  .chevron-sunrise { background: var(--sunrise); }
+  .chevron-navy { background: var(--navy); border: 2px solid var(--teal); }
+  .app-name { font-weight: 700; color: var(--ink); margin-bottom: 4px; font-size: 16px; }
+  .app-tag { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .app-line { font-size: 13px; color: var(--ink-2); }
+
+  /* Numbers / stats */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 18px; }
+  .stat {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px; text-align: center;
+  }
+  .stat-num { font-size: 36px; font-weight: 800; color: var(--teal); line-height: 1; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Layer table */
+  .layer { display: grid; grid-template-columns: 60px 1fr 110px; gap: 16px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; background: var(--paper); }
+  .layer-num { font-weight: 800; font-size: 24px; color: var(--teal); line-height: 1.2; }
+  .layer-body strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .layer-body span { font-size: 13px; color: var(--muted); }
+  .layer-status { font-size: 11px; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; align-self: start; text-align: center; }
+  .status-done { background: #E6F4EA; color: #1E7C3D; }
+  .status-progress { background: #FFF4E0; color: #B36B00; }
+  .status-next { background: #EEF2F6; color: var(--muted); }
+
+  /* Color swatches */
+  .swatch-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+  .swatch { width: 140px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .swatch-color { height: 60px; }
+  .swatch-name { padding: 8px 12px; font-size: 12px; }
+  .swatch-name strong { display: block; }
+  .swatch-name code { font-size: 11px; background: transparent; padding: 0; }
+
+  /* Quote */
+  .pull-quote {
+    font-size: 22px; line-height: 1.4; color: var(--ink); font-weight: 500;
+    border-left: 4px solid var(--teal); padding: 4px 0 4px 20px;
+    margin: 24px 0;
+  }
+  .pull-quote strong { color: var(--teal); }
+
+  /* Footer */
+  footer { padding: 40px 32px; background: var(--navy); color: #E0E0E0; }
+  .footer-inner { max-width: var(--maxw); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  footer a { color: var(--teal-bright); }
+  footer p { margin: 0; font-size: 13px; color: #B0B0B0; }
+
+  /* Two-col list */
+  .two-col { columns: 2; column-gap: 24px; }
+  .two-col li { break-inside: avoid; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    h1 { font-size: 38px; }
+    h2 { font-size: 26px; }
+    .grid-2, .grid-3, .grid-4, .pillar-grid, .app-row, .stat-grid { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+    .two-col { columns: 1; }
+  }
+  @media (max-width: 600px) {
+    .grid-2, .grid-3, .grid-4, .pillar-grid, .app-row, .stat-grid { grid-template-columns: 1fr; }
+    .hero { padding: 64px 24px 56px; }
+    .section { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sticky nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand">
+      <span class="anton-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="28" height="28">
+          <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+          <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+        </svg>
+      </span>
+      <span>ANTON · openEXPERT</span>
+    </a>
+    <div class="nav-spacer"></div>
+    <div class="nav-links">
+      <a href="#why">Why ANTON</a>
+      <a href="#product">Product</a>
+      <a href="#futurechain">FutureChain</a>
+      <a href="#apps">The Apps</a>
+      <a href="#brand">Brand</a>
+      <a href="#copy">Copy Bank</a>
+    </div>
+    <div class="nav-version">Marketing Brief v1.0 · 2026-05-24</div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header id="top" class="hero">
+  <div class="hero-inner">
+    <div style="display:flex; align-items:center; gap:18px; margin-bottom: 32px;">
+      <span class="anton-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="56" height="56">
+          <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+          <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+        </svg>
+      </span>
+      <div>
+        <div style="font-weight:700; font-size:18px;">ANTON</div>
+        <div style="font-size:13px; color: var(--muted);">by openEXPERT</div>
+      </div>
+    </div>
+
+    <span class="hero-eyebrow">Marketing source-of-truth · for Claude Design</span>
+    <h1>The AI workspace that<br/>holds up in court.</h1>
+    <p class="hero-sub">
+      Local-first. Multi-LLM. Audit-defensible. 150+ expert modules across 12 pillars.
+      Built for the professionals whose work gets read by regulators.
+    </p>
+    <div class="hero-meta">
+      <span>v0.7.5</span>
+      <span>12 pillars, 150+ modules</span>
+      <span>30 languages</span>
+      <span>6 LLM providers</span>
+      <span>Local-first</span>
+    </div>
+  </div>
+</header>
+
+<!-- The 30-second pitch -->
+<section class="section" id="pitch">
+  <div class="section-inner">
+    <span class="section-eyebrow">The 30-second pitch</span>
+    <h2>One company, four product surfaces, six layers of vision.</h2>
+    <p style="font-size: 17px; max-width: 800px; color: var(--ink-2);">
+      ANTON is a local-first AI workspace for professionals — compliance officers, lawyers, analysts, advisors, and 50+ other domains.
+      It runs on the user's own machine, so documents never leave; it speaks to every frontier LLM (Claude, GPT, Gemini, Mistral, Ollama);
+      and every output is audit-defensible because the architecture is deterministic where it has to be and AI-augmented where that's safe.
+    </p>
+    <p style="font-size: 17px; max-width: 800px; color: var(--ink-2);">
+      Around the workspace sits the <strong>ANTON suite</strong>: a Companion app that drives your desktop ANTON from your phone;
+      a Business app that turns any phone into a FutureChain merchant POS; a Pay app for customers; and a Communications app
+      for the social layer. Underneath sits <strong>FutureChain</strong>, our own payment + identity rail with ISO 20022 PACS.008 messaging
+      and a tax engine that covers 27+ jurisdictions.
+    </p>
+    <p style="font-size: 17px; max-width: 800px; color: var(--ink-2);">
+      The point of the whole stack is the <strong>six-layer vision</strong>:
+      individual tool → intelligent tool → network → collaborative intelligence → marketplace → economy.
+      Each layer is independently useful. Each makes the next more powerful.
+    </p>
+  </div>
+</section>
+
+<!-- WHY ANTON -->
+<section class="section" id="why">
+  <div class="section-inner">
+    <span class="section-eyebrow">01 · Why ANTON exists</span>
+    <h2>The problem with frontier AI for regulated work.</h2>
+
+    <p>Frontier AI is extraordinary at producing fluent text. It is dangerous at producing <strong>defensible</strong> work.</p>
+
+    <p>Professionals whose deliverables are read by a regulator, an auditor, a partner, or a court need three things general AI tools refuse to give them:</p>
+
+    <div class="grid-3" style="margin-top: 24px;">
+      <div class="card">
+        <span class="card-tag">Problem 1</span>
+        <h3>A defensible record</h3>
+        <p>What model ran, what prompt, what knowledge sources, what was the deterministic vs AI-rationalised answer, who reviewed it. None of the major chat tools produce a paper trail that survives an examination.</p>
+      </div>
+      <div class="card">
+        <span class="card-tag">Problem 2</span>
+        <h3>Local control of documents</h3>
+        <p>Most compliance teams cannot lawfully paste a client file into a cloud chatbot. ANTON runs on the professional's own machine; only the LLM API call leaves the network, and the LLM provider is the user's choice.</p>
+      </div>
+      <div class="card">
+        <span class="card-tag">Problem 3</span>
+        <h3>Structure that matches the work</h3>
+        <p>A real piece of professional output is not a "chat response." It is a gap assessment, a board pack, a risk register, a tabular review of 47 contracts. ANTON ships 150+ modules and 40+ output formats shaped like the actual deliverable.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">The six-layer vision</h3>
+    <p>Every feature should ask: <em>which layer does this serve, and does it make the next layer more powerful?</em></p>
+
+    <div style="margin-top: 18px;">
+      <div class="layer">
+        <span class="layer-num">1</span>
+        <div class="layer-body"><strong>Individual ANTON</strong><span>Pillars, modules, 7-layer prompts. A frontier-AI workbench for one professional.</span></div>
+        <span class="layer-status status-done">Done</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">2</span>
+        <div class="layer-body"><strong>Intelligent ANTON</strong><span>Knowledge atoms, pattern detection, prediction tracking, calibration. Markets Pillar is the proof of concept.</span></div>
+        <span class="layer-status status-done">Mostly done</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">2.5</span>
+        <div class="layer-body"><strong>Temporal Reasoning</strong><span>Goals, values constraints, strategy alignment, cross-horizon reasoning.</span></div>
+        <span class="layer-status status-done">Done</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">3</span>
+        <div class="layer-body"><strong>The Network</strong><span>E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring.</span></div>
+        <span class="layer-status status-done">Built</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">4</span>
+        <div class="layer-body"><strong>Collaborative Intelligence</strong><span>ANTON-to-ANTON via the AAP (Agent Protocol). Specialized Agents are the foundation.</span></div>
+        <span class="layer-status status-progress">In progress</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">5</span>
+        <div class="layer-body"><strong>The Marketplace</strong><span><code>.anton</code> knowledge-pack trading, rating, discovery.</span></div>
+        <span class="layer-status status-next">Next</span>
+      </div>
+      <div class="layer">
+        <span class="layer-num">6</span>
+        <div class="layer-body"><strong>The Economy</strong><span>FutureChain payments, expertise as income, AI salary.</span></div>
+        <span class="layer-status status-progress">Building (FutureChain shipping in parallel)</span>
+      </div>
+    </div>
+
+    <blockquote>
+      Most "AI for professionals" tools are wrappers that ask the user to trust the AI. ANTON's posture is the opposite:
+      <strong>the AI is a powerful intern; the workspace is the professional.</strong> The deterministic engine
+      (Risk Atlas, Tabular Review, gap scoring) never lets the model decide a residual score or a compliance verdict — the model writes the <em>rationale</em> around the deterministic output. That is what makes ANTON outputs survive review.
+    </blockquote>
+  </div>
+</section>
+
+<!-- THE PRODUCT -->
+<section class="section" id="product">
+  <div class="section-inner">
+    <span class="section-eyebrow">02 · What ANTON is</span>
+    <h2>Twelve pillars. One workspace.</h2>
+    <p>A pillar is a top-level mode of intelligence the user switches into. Each one is a distinct surface.</p>
+
+    <div class="pillar-grid" style="margin-top: 24px;">
+      <div class="pillar"><div class="pillar-name">Work</div><div class="pillar-desc">150+ expert modules across 55+ domains. The original surface.</div></div>
+      <div class="pillar"><div class="pillar-name">School</div><div class="pillar-desc">Educational interface with teacher oversight.</div></div>
+      <div class="pillar"><div class="pillar-name">Life</div><div class="pillar-desc">Personal-life modules — microfinance, BoP finance, consumer protection.</div></div>
+      <div class="pillar"><div class="pillar-name">Pathfinder</div><div class="pillar-desc">Mode-aware research assistant. The smart action bar.</div></div>
+      <div class="pillar"><div class="pillar-name">Markets</div><div class="pillar-desc">Self-learning financial intelligence. ANTON 100 indices, predictions, calibration.</div></div>
+      <div class="pillar"><div class="pillar-name">Community</div><div class="pillar-desc">E2E messaging, contact hashes, trust scoring.</div></div>
+      <div class="pillar"><div class="pillar-name">Procure</div><div class="pillar-desc">Procurement cycles, vendor evaluation, RFP → award workflow.</div></div>
+      <div class="pillar"><div class="pillar-name">Civic</div><div class="pillar-desc">Engagements, eligibility checks, document submissions. NGO &amp; public-interest.</div></div>
+      <div class="pillar"><div class="pillar-name">Grow</div><div class="pillar-desc">CRM-style — contacts, pipeline, opportunities, signals, briefings.</div></div>
+      <div class="pillar"><div class="pillar-name">Payments</div><div class="pillar-desc">FutureChain wallet &amp; marketplace integration.</div></div>
+      <div class="pillar"><div class="pillar-name">Portals</div><div class="pillar-desc">User-created ANTON-only web spaces. Human site + machine endpoint in one.</div></div>
+      <div class="pillar"><div class="pillar-name">Missions</div><div class="pillar-desc">Long-running automation jobs with credential vault.</div></div>
+    </div>
+
+    <h3 style="margin-top: 56px;">The deterministic-where-it-matters showcases</h3>
+    <p>When a buyer wants to see why ANTON is different, you show them these.</p>
+
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card">
+        <span class="card-tag">Showcase</span>
+        <h3>Counsel's Desk</h3>
+        <p>A legal workspace with 22 expert personas, 8 modes (research / drafting / negotiation / litigation / opinion / memo / argument / strategy), live citation tracking, and a writing surface where every paragraph the AI produces is anchored to a source it actually read. Built for lawyers who have to defend every sentence.</p>
+      </div>
+      <div class="card">
+        <span class="card-tag">Showcase</span>
+        <h3>Risk Atlas</h3>
+        <p>A seven-stage threat-path methodology. Stages 1–7: Exposures → Threat paths → Vulnerabilities → Inherent risk (<code>max(E,T,V)</code>) → Controls → Residual → Appetite. <strong>The LLM never decides a residual score</strong>, only the rationale. 25 industry packs. 6 Compliance-as-Code integrity rules surfacing findings live.</p>
+      </div>
+      <div class="card">
+        <span class="card-tag">Showcase</span>
+        <h3>Tabular Review</h3>
+        <p>Folder of documents → AI grid. Per-cell Claude calls via bounded-parallelism executor; SSE live progress; per-cell reviewer feedback; shareable read-only links so external panels can validate. <strong>15 playbooks × 12 cells = 180 distinct regulatory anchor questions</strong> across 10 jurisdictions.</p>
+      </div>
+      <div class="card">
+        <span class="card-tag">Showcase</span>
+        <h3>Evidence Pack</h3>
+        <p>Every ANTON run can be exported as an <strong>Ed25519-signed, hash-chained evidence bundle</strong>: model, prompt, knowledge sources, deterministic outputs, AI rationale, reviewer verdicts, timestamps. JSONL / HTML / CLI export. AMLR / GDPR / DORA / NYDFS pre-wired. <em>Converts "AI assistant" into "evidence that the work was done correctly."</em></p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">Tabular Review coverage — current</h3>
+
+    <table>
+      <thead><tr><th>Family</th><th>Playbooks</th></tr></thead>
+      <tbody>
+        <tr><td>EU</td><td>AMLR · GDPR DPA · DORA Art. 30</td></tr>
+        <tr><td>EU-adjacent</td><td>UK ECCTA · Swiss AMLA/LETA · Ireland SEAR · Luxembourg AIFMD II</td></tr>
+        <tr><td>US</td><td>NYDFS Part 500 · US BSA / AML Federal (FinCEN + PATRIOT + AMLA 2020 + CTA-narrowed)</td></tr>
+        <tr><td>APAC</td><td>Singapore MAS 626 + DTSP · Hong Kong Stablecoins Ordinance + VATP</td></tr>
+        <tr><td>MENA</td><td>UAE FDL 10/2025</td></tr>
+        <tr><td>Cross-jurisdictional</td><td>Sanctions (OFAC + OFSI)</td></tr>
+        <tr><td>Sector-agnostic</td><td>NDA Review · Employment Contract Review</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 48px;">Multi-LLM, by design</h3>
+    <p>Claude is the default and the most deeply integrated, but ANTON is not an Anthropic wrapper.</p>
+    <table>
+      <thead><tr><th>Provider</th><th>Default model</th><th>Anchor</th></tr></thead>
+      <tbody>
+        <tr><td>Anthropic</td><td><code>claude-opus-4-7</code> (Opus 4.7)</td><td>Built-in</td></tr>
+        <tr><td>OpenAI</td><td><code>gpt-4o</code></td><td>Adapter</td></tr>
+        <tr><td>Azure OpenAI</td><td>per-deployment (reasoning models o3 / o4-mini)</td><td>Adapter</td></tr>
+        <tr><td>Google</td><td><code>gemini-2.0-flash</code></td><td>Adapter</td></tr>
+        <tr><td>Mistral</td><td><code>mistral-large-latest</code></td><td>Adapter</td></tr>
+        <tr><td>Ollama</td><td>user-selected (fully local)</td><td>Adapter</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 48px;">By the numbers</h3>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-num">12</div><div class="stat-label">Pillars</div></div>
+      <div class="stat"><div class="stat-num">150+</div><div class="stat-label">Expert modules</div></div>
+      <div class="stat"><div class="stat-num">55+</div><div class="stat-label">Professional domains</div></div>
+      <div class="stat"><div class="stat-num">30</div><div class="stat-label">Languages</div></div>
+      <div class="stat"><div class="stat-num">15</div><div class="stat-label">Tabular Review playbooks</div></div>
+      <div class="stat"><div class="stat-num">180</div><div class="stat-label">Regulatory anchor questions</div></div>
+      <div class="stat"><div class="stat-num">25</div><div class="stat-label">Risk Atlas industry packs</div></div>
+      <div class="stat"><div class="stat-num">22</div><div class="stat-label">Counsel's Desk personas</div></div>
+      <div class="stat"><div class="stat-num">40+</div><div class="stat-label">Output formats</div></div>
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">LLM providers</div></div>
+      <div class="stat"><div class="stat-num">27+</div><div class="stat-label">Tax jurisdictions (FC SDK)</div></div>
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Regulatory jurisdictions covered</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- The moat -->
+<section class="section" id="moat">
+  <div class="section-inner">
+    <span class="section-eyebrow">03 · The moat</span>
+    <h2>How ANTON wins.</h2>
+
+    <table>
+      <thead><tr><th>Axis</th><th>ChatGPT / Claude.ai</th><th>Harvey / Legora</th><th>ANTON</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Local-first</strong></td><td>No (cloud-only)</td><td>No</td><td><strong>Yes</strong> (only LLM call leaves the machine)</td></tr>
+        <tr><td><strong>Audit-defensible record</strong></td><td>No</td><td>Partial</td><td><strong>Yes</strong> (Evidence Pack, Ed25519-signed)</td></tr>
+        <tr><td><strong>Multi-LLM</strong></td><td>No (single vendor)</td><td>Anthropic-anchored</td><td><strong>Yes</strong> (6 providers, swappable per session)</td></tr>
+        <tr><td><strong>Cross-domain</strong></td><td>Yes (but generic)</td><td>No (legal-only)</td><td><strong>Yes</strong> (55+ domains, one workspace)</td></tr>
+        <tr><td><strong>Deterministic where it matters</strong></td><td>No</td><td>No</td><td><strong>Yes</strong> (Risk Atlas, gap scoring)</td></tr>
+        <tr><td><strong>Price</strong></td><td>Cheap consumer</td><td>Enterprise-only</td><td>Mid-market accessible</td></tr>
+      </tbody>
+    </table>
+
+    <h3>The four things only ANTON does</h3>
+    <ol>
+      <li><strong>Run the same workspace on a consultant's laptop and a bank's hardened server</strong>, without the consultant losing features and without the bank losing control.</li>
+      <li><strong>Produce a deliverable, not a chat log.</strong> Open Word / Excel / PowerPoint / PDF / Mermaid / board deck. From one run.</li>
+      <li><strong>Speak six LLMs.</strong> The bank with an Azure OpenAI tenancy and the NGO that wants free Ollama get the same UX.</li>
+      <li><strong>Hand the regulator the trail.</strong> Evidence Pack is the killer feature for the people who buy.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- FUTURECHAIN -->
+<section class="section" id="futurechain">
+  <div class="section-inner">
+    <span class="section-eyebrow">04 · FutureChain</span>
+    <h2>The payment + identity rail under the suite.</h2>
+    <p style="font-size: 17px; max-width: 800px; color: var(--ink-2);">
+      FutureChain is ANTON's own payment + identity rail. It is the technology that closes the six-layer vision: when ANTON instances pay each other for expertise, route real-money payments, and run the merchant POS that funds the network, FutureChain is the substrate underneath.
+    </p>
+
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card">
+        <h3>PACS.008 builder</h3>
+        <p>Native ISO 20022 payment-message construction. Builder + canonicalisation + hash. Lets a payment instruction be a structured, signable artifact rather than a wire-format string.</p>
+      </div>
+      <div class="card">
+        <h3>Wallet</h3>
+        <p>Ed25519 keypair + address derivation + signing. Phone-resident; private keys never leave the device.</p>
+      </div>
+      <div class="card">
+        <h3>RPC</h3>
+        <p><code>submit_pacs008_batch</code> and query endpoints. The chain interface.</p>
+      </div>
+      <div class="card">
+        <h3>Tax engine</h3>
+        <p>FIFO / LIFO / average / specific-ID / share-pooling cost basis · holding-period rules · wealth-tax · loss-offset · K4 reporting · CSV exports. <strong>27+ jurisdictions</strong>: SE · DE · FR · US · ES · NG · JP · SG · AE · CH · PT · CY · MT · BE · PL · CA · KR · IL · BR · KE · AU · ZA · IT · GB · IE · NL.</p>
+      </div>
+      <div class="card">
+        <h3>Reference encoder</h3>
+        <p>ADR-004 versioned remittance envelope (v1+v2). The payload format that travels in a QR or a SEPA reference field.</p>
+      </div>
+      <div class="card">
+        <h3>Mesh dialer</h3>
+        <p>ANTON-native E2E relay protocol — Noise IK handshake + WireGuard cipher suite. Replaces reliance on Cloudflare Tunnel. v0.1 scope = household + NGO + self-hosting SME.</p>
+      </div>
+      <div class="card">
+        <h3>Identity</h3>
+        <p>Contact hashes derived from raw Ed25519 pubkeys; trust scoring; AAP (ANTON Agent Protocol) for inter-instance discovery.</p>
+      </div>
+      <div class="card">
+        <h3>Payment Gateway</h3>
+        <p>Other local AI agents (Claude Desktop, Cursor, MCP clients) can transact through ANTON's wallet — gateway can be opened/closed, per-agent permissions, budget limits, approval thresholds, audit trail.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 48px;">Without FutureChain vs with</h3>
+    <table>
+      <thead><tr><th>Without FutureChain</th><th>With FutureChain</th></tr></thead>
+      <tbody>
+        <tr><td>ANTON is a great workspace</td><td>ANTON is a network with a settlement layer</td></tr>
+        <tr><td>Layer 6 (Economy) is a slide</td><td>Layer 6 is a running rail</td></tr>
+        <tr><td>Merchants need Stripe + a bank</td><td>Merchants take FTC directly on a phone</td></tr>
+        <tr><td>Consultants charge by invoice</td><td>Consultants get paid per-pack download</td></tr>
+        <tr><td>Each ANTON is an island</td><td>Each ANTON is addressable + transactable</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- THE APPS -->
+<section class="section" id="apps">
+  <div class="section-inner">
+    <span class="section-eyebrow">05 · The four mobile apps</span>
+    <h2>One ANTON, four phones.</h2>
+    <p>Each is a separate APK, separate identity, separate purpose. They share the chevron design language but each has its own colour and its own job. Same person can install several; they remain intentionally separate identities — work email vs personal email.</p>
+
+    <div class="app-row">
+      <div class="app">
+        <div class="chevron chevron-teal">A</div>
+        <div class="app-name">Companion</div>
+        <div class="app-tag">Teal</div>
+        <div class="app-line">Your desktop ANTON, on a phone. Approvals, voice, capture.</div>
+      </div>
+      <div class="app">
+        <div class="chevron chevron-blue">B</div>
+        <div class="app-name">Business</div>
+        <div class="app-tag">Blue · #3070C7</div>
+        <div class="app-line">Take FutureChain payments on any phone. No backend.</div>
+      </div>
+      <div class="app">
+        <div class="chevron chevron-sunrise">P</div>
+        <div class="app-name">Pay</div>
+        <div class="app-tag">Sunrise · #C97220</div>
+        <div class="app-line">Scan, pay in FTC, get a receipt.</div>
+      </div>
+      <div class="app">
+        <div class="chevron chevron-navy">C</div>
+        <div class="app-name">Communications</div>
+        <div class="app-tag">Navy + teal</div>
+        <div class="app-line">Chat, events, social. Your personal ANTON identity.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 56px;">ANTON Companion <span style="color: var(--teal); font-size: 14px; font-weight: 500;">· teal</span></h3>
+    <p><strong>The remote control for a desktop ANTON.</strong> Capacitor-wrapped, paired to a desktop ANTON instance via an Ed25519 enrollment ritual (60s-TTL QR + 6-digit out-of-band confirmation code + biometric re-confirm on critical approvals). Multi-instance: a consultant can have their personal ANTON and three client ANTONs paired.</p>
+    <ul>
+      <li><strong>Approvals</strong> — the enterprise wedge. Severity-sorted inbox; biometric re-confirm on critical/high; signed-envelope responses (Ed25519 sig + replay-protected nonce). The MLRO approves a SAR submission from the lift.</li>
+      <li><strong>Voice mode</strong> — Telegram-style hold-to-talk overlay, live captions, immediate barge-in on tap.</li>
+      <li><strong>Capture</strong> — camera / library / share-target → resize to 2048px → POST to ANTON. Photograph a contract, ANTON reviews it.</li>
+      <li><strong>Push</strong> — APNs / FCM / web-push. Payload carries only event id + severity + opaque title + deep link, never confidential content.</li>
+    </ul>
+
+    <h3 style="margin-top: 40px;">ANTON Business <span style="color: var(--blue); font-size: 14px; font-weight: 500;">· blue</span></h3>
+    <p><strong>Phone-only merchant POS for FutureChain payments.</strong> No backend. The phone is the entire merchant. Bilateral KYC + sweep agreement with Safello handles FTC → SEK conversion off-app. A bakery, a barber, a market stall can take crypto in 60 seconds with no servers.</p>
+    <ul>
+      <li><strong>Simple mode</strong>: keypad → QR with ADR-004 v1 remittance reference.</li>
+      <li><strong>Extended mode</strong>: cart with item catalog → QR.</li>
+      <li><strong>Refunds</strong>: build + sign PACS.008 to customer.</li>
+      <li><strong>Kvitto</strong> (receipt) rendering on-device as PDF, emailed via Resend / Postmark.</li>
+      <li><strong>7-year retention export</strong> (PDF + SIE) for Swedish Bokföringslagen.</li>
+      <li>All <strong>38 language catalogues</strong> shipping complete.</li>
+    </ul>
+
+    <h3 style="margin-top: 40px;">ANTON Pay <span style="color: var(--sunrise); font-size: 14px; font-weight: 500;">· sunrise</span></h3>
+    <p><strong>The customer-side counterpart to Business.</strong> Consumer scans a merchant's <code>futurechain:pay</code> QR and pays in FTC. QR scanning via the <code>qr-scanner</code> npm package (pure web). Includes a paste-a-URI fallback. Settlement is bilateral merchant ↔ Safello — Pay only records the customer's local receipt in IndexedDB.</p>
+
+    <h3 style="margin-top: 40px;">ANTON Communications <span style="color: var(--navy); font-size: 14px; font-weight: 500;">· navy + teal</span></h3>
+    <p><strong>Separate consumer app — the social / personal layer.</strong> Chat with friends. Social events. Portals visitor surface. Wallet shell. Paired to hosted ANTON for the consumer surface.</p>
+    <p>The Companion App is the user's professional surface; Comm is the consumer surface. <strong>Two intentionally separate identities</strong> — forcing a single identity creates a "your boss can find you via your party-planner profile" leak.</p>
+    <p><strong>13-item feature roadmap (R1–R13) all shipped</strong>:</p>
+    <ul class="two-col">
+      <li>R1 Reply</li>
+      <li>R2 React</li>
+      <li>R3 Wassup (closed-graph status feed)</li>
+      <li>R4 Voice notes</li>
+      <li>R5 Disappearing messages</li>
+      <li>R6 View-once media</li>
+      <li>R7 Polls</li>
+      <li>R8 Forward / Edit / Delete</li>
+      <li>R9 Read receipts + typing</li>
+      <li>R10 Scheduled messages</li>
+      <li>R11 Event reminders</li>
+      <li>R12 Stickers</li>
+      <li>R13 Location share</li>
+    </ul>
+    <p><strong>5 tabs</strong>: Chat · Wassup · Events · Portals · Wallet.</p>
+    <p><strong>E2E crypto</strong>: X25519 keypair derived from device Ed25519 → AES-256-GCM via WebCrypto with per-message HKDF salt for forward secrecy → AAD binds <code>(fromHash, toHash)</code> into the auth tag.</p>
+  </div>
+</section>
+
+<!-- AUDIENCE -->
+<section class="section" id="audience">
+  <div class="section-inner">
+    <span class="section-eyebrow">06 · Who we sell to</span>
+    <h2>The regulated mid-market professional.</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Primary buyer</h3>
+        <ul>
+          <li><strong>Who</strong>: MLROs, heads of compliance, partners, risk officers, internal audit leads, financial-crime investigators, advisory consultants</li>
+          <li><strong>Age</strong>: 35–65</li>
+          <li><strong>Pain</strong>: They like AI; their security / compliance team won't let them use it on real client data</li>
+          <li><strong>Budget</strong>: Real, but allergic to enterprise lock-in</li>
+          <li><strong>Win condition</strong>: "I can show the regulator how this output was made, and the document never left my laptop."</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Secondary buyer</h3>
+        <ul>
+          <li>Compliance consultancies, AML advisories, mid-market law firms, fund administrators</li>
+          <li>5–50 seats</li>
+          <li>ANTON's pricing and local-first posture beats Harvey/Legora on both axes simultaneously</li>
+          <li>Expansion path: they author knowledge packs → list on Marketplace → get paid via FutureChain</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COPY BANK -->
+<section class="section" id="copy">
+  <div class="section-inner">
+    <span class="section-eyebrow">07 · Headline copy bank</span>
+    <h2>Ready-to-use copy.</h2>
+
+    <h3>Hero headlines</h3>
+    <ul>
+      <li><strong>The AI workspace that holds up in court.</strong></li>
+      <li><strong>Frontier AI for people whose work is regulated.</strong></li>
+      <li><strong>Your documents stay on your laptop. Only the question goes to the AI.</strong></li>
+      <li><strong>One workspace. 150 modules. Six LLMs. Yours.</strong></li>
+      <li><strong>Compliance, legal, markets, life — one workspace.</strong></li>
+    </ul>
+
+    <h3>Sub-headlines</h3>
+    <ul>
+      <li>Local-first. Multi-LLM. Audit-defensible. Built for the work that gets read by regulators.</li>
+      <li>150+ expert modules across 55+ professional domains. Each one starts with the problem, not the model.</li>
+      <li>Where the AI never decides the residual score, only writes the rationale around it.</li>
+      <li>The workspace that produces a deliverable, not a chat log.</li>
+    </ul>
+
+    <h3>Section-level copy</h3>
+
+    <h4>For "Local-first"</h4>
+    <blockquote>Your client files never touch our servers. They don't touch <em>any</em> servers. ANTON runs on your machine; only the question you send to the model leaves your network — and you choose which model. We never see your work.</blockquote>
+
+    <h4>For "Multi-LLM"</h4>
+    <blockquote>Claude, GPT, Gemini, Mistral, Azure, Ollama. Switch per session, per module, per question. Use Claude for the deep work and Ollama for the work that can't leave the building. One workspace, six brains.</blockquote>
+
+    <h4>For "Audit-defensible"</h4>
+    <blockquote>Every run can be exported as an Ed25519-signed evidence bundle: the model, the prompt, the knowledge sources, the deterministic outputs, the AI rationale, the reviewer verdicts, the timestamps. When the regulator asks how you got there, you hand them the trail.</blockquote>
+
+    <h4>For "Risk Atlas"</h4>
+    <blockquote>A deterministic, seven-stage threat-path engine. The AI writes the rationale; the math writes the score. Twenty-five industry packs. Six Compliance-as-Code integrity rules that surface findings live.</blockquote>
+
+    <h4>For "Tabular Review"</h4>
+    <blockquote>Folder of contracts in. Answers grid out. Fifteen pre-built playbooks across ten jurisdictions and 180 regulatory anchor questions — share the result with a panel of reviewers via a read-only link, and every cell is calibrated.</blockquote>
+
+    <h4>For "FutureChain"</h4>
+    <blockquote>Our own payment + identity rail. ISO 20022 PACS.008 messaging, a tax engine across 27 jurisdictions, Ed25519 signing throughout, and a mesh dialer that talks ANTON-to-ANTON without going through anybody's tunnel. The substrate under the entire suite.</blockquote>
+
+    <h4>For "The four apps"</h4>
+    <blockquote>One company. Four phones. Companion is your desktop ANTON on the move. Business is a merchant POS with no backend. Pay is the customer side. Communications is the social layer. The chevrons read as a family on the home screen.</blockquote>
+
+    <h4>For "The vision"</h4>
+    <blockquote>Six layers, each independently valuable, each making the next more powerful. We're past layer three. Layers four, five, and six are why we built layers one, two, and three.</blockquote>
+
+    <h3>Three taglines for the suite icon group</h3>
+    <ul>
+      <li><strong>Four apps. One ANTON.</strong></li>
+      <li><strong>The ANTON suite — pocket-sized.</strong></li>
+      <li><strong>From desktop to handset, ANTON moves with you.</strong></li>
+    </ul>
+  </div>
+</section>
+
+<!-- BRAND -->
+<section class="section" id="brand">
+  <div class="section-inner">
+    <span class="section-eyebrow">08 · Brand assets</span>
+    <h2>Logos, colours, type.</h2>
+
+    <h3>ANTON mark</h3>
+    <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+      <div style="display:flex; align-items:center; gap:18px; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper);">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="120" height="120">
+          <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+          <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="56" height="56">
+          <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+          <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="28" height="28">
+          <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+          <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+        </svg>
+      </div>
+      <div>
+        <p style="margin-bottom: 6px;"><strong>Source:</strong> <code>public/anton-logo.svg</code></p>
+        <p style="margin-bottom: 6px;"><strong>Spec:</strong> 32×32 viewBox, 8px corner radius, <code>#0D7D6C</code> fill, white "A" in Inter Bold 18pt.</p>
+        <p style="margin-bottom: 0;"><strong>Use:</strong> Locked across all themes. Vector — render at any size.</p>
+      </div>
+    </div>
+
+    <h4>Inline SVG (copy-paste)</h4>
+    <pre><code>&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none"&gt;
+  &lt;rect width="32" height="32" rx="8" fill="#0D7D6C"/&gt;
+  &lt;text x="50%" y="55%" dominant-baseline="central" text-anchor="middle"
+        font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF"&gt;A&lt;/text&gt;
+&lt;/svg&gt;</code></pre>
+
+    <h3>FutureChain marks</h3>
+    <table>
+      <thead><tr><th>Asset</th><th>Path</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>FC logo (colour)</td><td><code>design_handoff_companion_app/from_claude_design/uploads/fc logo.png</code></td><td>Light surfaces</td></tr>
+        <tr><td>FC logo (white)</td><td><code>design_handoff_companion_app/from_claude_design/uploads/fc logo white.png</code></td><td>Dark surfaces</td></tr>
+        <tr><td>FTC globe</td><td><code>design_handoff_companion_app/from_claude_design/uploads/ftc logo globe.png</code></td><td>Network / globe contexts</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 14px; color: var(--muted); margin-top: 8px;">PNG only — request a vector version if needed; we can produce one quickly.</p>
+
+    <h3>Colours</h3>
+    <h4>Brand primary</h4>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-color" style="background: #0D7D6C;"></div><div class="swatch-name"><strong>Deep teal</strong><code>#0D7D6C</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #06655A;"></div><div class="swatch-name"><strong>Teal hover</strong><code>#06655A</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #2DD4A8;"></div><div class="swatch-name"><strong>Bright teal (dark)</strong><code>#2DD4A8</code></div></div>
+    </div>
+    <h4>App chevrons</h4>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-color" style="background: #0D7D6C;"></div><div class="swatch-name"><strong>Companion</strong><code>#0D7D6C</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #3070C7;"></div><div class="swatch-name"><strong>Business</strong><code>#3070C7</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #C97220;"></div><div class="swatch-name"><strong>Pay</strong><code>#C97220</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #0B1426;"></div><div class="swatch-name"><strong>Comm</strong><code>#0B1426</code></div></div>
+    </div>
+    <h4>System</h4>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-color" style="background: #27AE60;"></div><div class="swatch-name"><strong>Success</strong><code>#27AE60</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #F5A623;"></div><div class="swatch-name"><strong>Warning</strong><code>#F5A623</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #E74C3C;"></div><div class="swatch-name"><strong>Error</strong><code>#E74C3C</code></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: #3498DB;"></div><div class="swatch-name"><strong>Info</strong><code>#3498DB</code></div></div>
+    </div>
+
+    <h3>Typography</h3>
+    <ul>
+      <li><strong>Primary typeface</strong>: Inter (UI + body)</li>
+      <li><strong>Minimum body size</strong>: 14px — we serve professionals 35–65; readability is non-negotiable</li>
+      <li><strong>Heading scale</strong>: 32 / 24 / 20 / 18 / 16 / 14</li>
+      <li><strong>Numerics</strong>: Tabular figures for any data table, gap matrix, scorecard</li>
+    </ul>
+
+    <h3>Design principles</h3>
+    <ol>
+      <li><strong>Light theme is the default</strong> as of v0.7.5. Three themes: light (default), dark (original ANTON look), corporate (blue-tinted enterprise).</li>
+      <li><strong>Teal = action.</strong> Never use teal for decoration; if it's teal, it's clickable or it's the brand.</li>
+      <li><strong>Progressive disclosure.</strong> Defaults should let someone click "Run" and get an excellent result.</li>
+      <li><strong>Clear labels over icon-only.</strong> Our users are 55-year-old MLROs, not 22-year-old founders. Labels win.</li>
+    </ol>
+
+    <h3>Source whitepapers (already in your uploads)</h3>
+    <p>Use these for full-bleed narrative copy where this brief is only summarising:</p>
+    <ul>
+      <li>ANTON by openEXPERT whitepaper Part 1 — The Starting Point</li>
+      <li>ANTON by openEXPERT whitepaper Part 2 — The Context Layer (How APCI Changes Professional AI)</li>
+      <li>ANTON by openEXPERT whitepaper Part 3 — The Network (When ANTONs Connect)</li>
+      <li>ANTON Capability Deck (Small)</li>
+      <li>Beyond AGI — ANTON</li>
+      <li>FutureChain Technical Whitepaper</li>
+    </ul>
+  </div>
+</section>
+
+<!-- IA RECOMMENDATION -->
+<section class="section" id="ia">
+  <div class="section-inner">
+    <span class="section-eyebrow">09 · Recommended page architecture</span>
+    <h2>Suggested information architecture.</h2>
+    <p>A four-section linear scroll works best. Suggested order:</p>
+    <pre><code>[ HERO ]
+  ANTON mark, large.
+  Hero headline + sub.
+  Two CTAs: "See it run" + "Talk to us"
+
+[ THE PROBLEM ]
+  Three-column: Local control / Audit-defensible / Multi-LLM
+
+[ THE PRODUCT ]
+  12-pillar grid + 4 highlighted modules
+  Counsel's Desk · Risk Atlas · Tabular Review · Evidence Pack
+
+[ THE SUITE ]
+  Four-up: Companion / Business / Pay / Comm
+  The four chevrons in a row at large size — this is the suite identity
+
+[ FUTURECHAIN ]
+  FC globe logo + tagline
+  Three-up: PACS.008 / Tax engine / Mesh
+
+[ THE VISION ]
+  The six-layer diagram, full bleed
+  "Each layer independently valuable. Each makes the next more powerful."
+
+[ CTA FOOTER ]
+  "Run ANTON on your machine in 5 minutes."
+  Download · GitHub · Docs · Talk to us</code></pre>
+
+    <h3>Notes for Claude Design</h3>
+    <ol>
+      <li><strong>Render the ANTON SVG inline</strong> — never rasterise it; it's vector and looks better at every scale.</li>
+      <li><strong>The four-chevron lockup is the suite identity</strong> — please design a clean horizontal lockup of the four chevrons (teal / blue / sunrise / navy). This will become a brand asset across all surfaces.</li>
+      <li><strong>Light mode is the canonical surface</strong> — design for light. Dark and corporate variants exist but light is what we lead with.</li>
+      <li><strong>No stock photography of generic businesspeople in headsets.</strong> Our customer is a 55-year-old MLRO; they laugh at that imagery. Use real product screenshots, abstract geometric, or photography of physical objects.</li>
+      <li><strong>Numbers in this brief are accurate to 2026-05-24.</strong> Before publishing, ask Daniel to verify any specific count you put in the hero — they grow week by week.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- Closing pull-quote -->
+<section class="section">
+  <div class="section-inner" style="text-align: center; padding: 32px 0;">
+    <p class="pull-quote" style="border: none; padding: 0; max-width: 760px; margin: 0 auto; font-size: 26px;">
+      Each layer independently valuable.<br/>
+      <strong>Each makes the next more powerful.</strong>
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="32" height="32">
+        <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
+        <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+      </svg>
+      <div>
+        <p style="color: white; font-weight: 600;">ANTON · openEXPERT</p>
+        <p>Marketing Brief v1.0 · 2026-05-24 · for Claude Design</p>
+      </div>
+    </div>
+    <div>
+      <p>Contact: <a href="mailto:daniel.bardun@gmail.com">daniel.bardun@gmail.com</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

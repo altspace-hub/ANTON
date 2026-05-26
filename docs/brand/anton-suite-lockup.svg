@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The ANTON Suite — Lockup (Light)
+  Real cream-chevron geometry per app · matches what's installed on phones.
+
+  Chevron path data identical to logo_app/icon-launcher-master.svg
+  (1024 canvas, 111 stroke, miter joins, square caps, opacity 0.22/0.55/1.0).
+  Each app's cream-chevron variant is also saved as a standalone master in
+  logo_app/icon-launcher-{companion,business,pay,comm}.svg.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" width="560" height="260" fill="none" role="img" aria-label="The ANTON Suite — Companion, Business, Pay, Communications">
+  <title>The ANTON Suite</title>
+  <desc>Four cream-chevron app launchers (Companion teal, Business blue, Pay sunrise, Comm navy) with wordmark + tagline, on a white background.</desc>
+
+  <defs>
+    <filter id="lkup-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0F172A" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .cap   { font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 11px; fill: #475569; letter-spacing: 0.06em; text-transform: uppercase; }
+      .word  { font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 18px; fill: #0F172A; letter-spacing: -0.01em; }
+      .tag   { font-family: 'Inter', system-ui, sans-serif; font-weight: 500; font-size: 13px; fill: #475569; }
+    </style>
+  </defs>
+
+  <!-- Companion · teal #0D7D6C -->
+  <svg x="40" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0D7D6C" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="90" y="166" class="cap" text-anchor="middle">Companion</text>
+
+  <!-- Business · blue #3070C7 -->
+  <svg x="160" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#3070C7" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="210" y="166" class="cap" text-anchor="middle">Business</text>
+
+  <!-- Pay · sunrise #C97220 -->
+  <svg x="280" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#C97220" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="330" y="166" class="cap" text-anchor="middle">Pay</text>
+
+  <!-- Comm · navy #0B1426 -->
+  <svg x="400" y="40" width="100" height="100" viewBox="0 0 1024 1024" filter="url(#lkup-shadow)" overflow="visible">
+    <rect width="1024" height="1024" rx="230" ry="230" fill="#F5F1EA"/>
+    <g fill="none" stroke="#0B1426" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+      <polyline points="213,469 512,239 811,469" opacity="0.22"/>
+      <polyline points="213,640 512,410 811,640" opacity="0.55"/>
+      <polyline points="213,811 512,580 811,811"/>
+    </g>
+  </svg>
+  <text x="450" y="166" class="cap" text-anchor="middle">Comm</text>
+
+  <!-- Wordmark + tagline -->
+  <text x="280" y="208" class="word" text-anchor="middle">The ANTON Suite</text>
+  <text x="280" y="232" class="tag"  text-anchor="middle">Four apps. One ANTON.</text>
+</svg>
