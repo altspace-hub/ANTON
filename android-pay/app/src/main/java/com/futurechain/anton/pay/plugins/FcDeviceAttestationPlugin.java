@@ -176,9 +176,12 @@ public class FcDeviceAttestationPlugin extends Plugin {
                         e
                     );
                 });
-        } catch (Throwable t) {
+        } catch (Exception t) {
             // Anything not caught by the listeners (e.g. IntegrityManagerFactory
             // throwing on a missing Play Services component) lands here.
+            // Narrowed from Throwable → Exception: Capacitor 8's
+            // PluginCall.reject(String, Exception) overload doesn't accept
+            // Throwable, and Errors (OOM etc.) shouldn't be swallowed anyway.
             call.reject(
                 "Play Integrity initialisation failed: " + t.getMessage(), t
             );
