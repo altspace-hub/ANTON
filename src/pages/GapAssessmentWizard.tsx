@@ -1414,9 +1414,9 @@ function GapAssessmentWizardInner() {
 
             {/* AI reasoning from assessment analysis */}
             {batchReasoning && (
-              <details className="rounded-xl border border-adv-teal/20 bg-[#0F2A2A]">
-                <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-adv-teal">AI Reasoning — Assessment analysis thinking</summary>
-                <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+              <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
+                <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-adv-teal select-none">AI Reasoning — Assessment analysis thinking</summary>
+                <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-off-white leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
                   {batchReasoning}
                 </div>
               </details>
@@ -1820,7 +1820,7 @@ function GapAssessmentWizardInner() {
                 {synthesisReasoning && (
                   <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude synthesised capabilities</summary>
-                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{synthesisReasoning}</div>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-off-white leading-relaxed whitespace-pre-wrap">{synthesisReasoning}</div>
                   </details>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1881,7 +1881,7 @@ function GapAssessmentWizardInner() {
                 {boardReasoning && (
                   <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude arrived at this summary</summary>
-                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{boardReasoning}</div>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-off-white leading-relaxed whitespace-pre-wrap">{boardReasoning}</div>
                   </details>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1991,7 +1991,7 @@ function GapAssessmentWizardInner() {
                 {roadmapReasoning && (
                   <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude built this roadmap</summary>
-                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{roadmapReasoning}</div>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-off-white leading-relaxed whitespace-pre-wrap">{roadmapReasoning}</div>
                   </details>
                 )}
                 <div className="flex items-center gap-2">
