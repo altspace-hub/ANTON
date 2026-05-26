@@ -36,6 +36,8 @@ interface Props {
   onRpcEndpoint: () => void;
   /** Settings → scheduled-payment reminders (Wave 5). */
   onSchedules: () => void;
+  /** Settings → Wallet passphrase (opt-in second factor on signing). */
+  onPassphrase: () => void;
   onReset: () => void;
 }
 
@@ -44,7 +46,7 @@ const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
   onBack, onWallet, onWalletsList, onPaymentDetails, onMoneyProfile, onActivityReview,
-  onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onReset,
+  onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onPassphrase, onReset,
 }: Props) {
   const { t } = useTranslation();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -141,6 +143,27 @@ export default function SettingsScreen({
                 {walletAddress
                   ? `${walletAddress.slice(0, 12)}…${walletAddress.slice(-6)}`
                   : t('settings.walletConnected')}
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 style={{ color: 'var(--color-text-dim)' }}>
+              <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Wallet passphrase — opt-in 2nd factor on signing. */}
+          <button type="button" onClick={onPassphrase}
+                  className="rounded-xl p-4 flex items-center justify-between text-left"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)' }}>
+            <div>
+              <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+                {t('settings.passphrase', 'Wallet passphrase')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('settings.passphraseSub',
+                  'Optional second factor — required on every send')}
               </div>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

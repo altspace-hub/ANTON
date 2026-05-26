@@ -32,6 +32,7 @@ import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
 import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
 import RestoreScreen from './pages/settings/RestoreScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
+import WalletPassphraseScreen from './pages/settings/WalletPassphraseScreen';
 import ScheduledPaymentsScreen from './pages/settings/ScheduledPaymentsScreen';
 import AddScheduleScreen from './pages/settings/AddScheduleScreen';
 import LockScreen from './components/LockScreen';
@@ -71,7 +72,8 @@ type Screen =
   | 'settings-restore'
   | 'settings-rpc'
   | 'settings-schedules'
-  | 'settings-schedules-add';
+  | 'settings-schedules-add'
+  | 'settings-passphrase';
 
 /** Where the Android hardware back button steps to from each screen.
  *  A screen absent from this map (home, the onboarding entry, the
@@ -100,6 +102,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings-rpc': 'settings',
   'settings-schedules': 'settings',
   'settings-schedules-add': 'settings-schedules',
+  'settings-passphrase': 'settings',
 };
 
 export default function App() {
@@ -362,6 +365,7 @@ export default function App() {
         onRestore={() => setScreen('settings-restore')}
         onRpcEndpoint={() => setScreen('settings-rpc')}
         onSchedules={() => setScreen('settings-schedules')}
+        onPassphrase={() => setScreen('settings-passphrase')}
         onReset={() => setScreen('onboarding-welcome')}
       />
     );
@@ -452,6 +456,9 @@ export default function App() {
         }}
       />
     );
+  }
+  if (screen === 'settings-passphrase') {
+    return <WalletPassphraseScreen onBack={() => setScreen('settings')} />;
   }
 
   // Should never reach — all states above covered.

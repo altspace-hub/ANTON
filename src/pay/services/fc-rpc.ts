@@ -19,6 +19,7 @@
 import { rpc } from '@futurechain/sdk';
 import { getInstallToken } from './enrollment';
 import { getSecure, setSecure, removeSecure } from './secure-store';
+import { makeAttestationTokenProvider } from './device-attestation';
 
 /** Production light-hub URL (Bahnhof, behind Caddy + LE). */
 export const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
@@ -63,6 +64,12 @@ export async function getRpc(): Promise<rpc.RpcClient> {
   cached = new rpc.RpcClient({
     endpoint,
     apiKey,
+    // Device-attestation session-token resolver. The provider caches
+    // a 24-h Bahnhof session in secure-store, refreshes via Play
+    // Integrity (Android) or the dev-mode escape (browser), and
+    // attaches `X-Attestation-Token` to every auth-required POST.
+    // See docs/PAY_DEVICE_ATTESTATION_SPEC.md.
+    attestationTokenProvider: makeAttestationTokenProvider(endpoint, apiKey),
     timeoutMs: 15_000,
   });
   return cached;

@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
+import PassphrasePromptModal from '../components/PassphrasePromptModal';
 import {
   estimateSek, executePayment, formatFtc, formatSek, isExpired,
   loadBehaviorProfile, secondsUntilExpiry,
@@ -77,6 +78,13 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   /** Whether the customer's wallet is ready — gates the note textarea
    *  (no note when paying through a non-FTC fallback). */
   const [walletConnected, setWalletConnected] = useState(false);
+  /** Passphrase prompt state. Open when executePayment needs the
+   *  second factor; the modal resolves the in-flight promise via
+   *  `passphraseResolver`. */
+  const [passphraseOpen, setPassphraseOpen] = useState(false);
+  const [passphraseResolver, setPassphraseResolver] =
+    useState<((p: string | null) => void) | null>(null);
+  const [passphraseFailures, setPassphraseFailures] = useState(0);
 
   useEffect(() => {
     void (async () => {
@@ -160,12 +168,34 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
       return;
     }
     setBusy(true);
+    setPassphraseFailures(0);
     try {
-      const record = await executePayment(payment, assessment ?? undefined, customerNote);
+      const record = await executePayment(
+        payment, assessment ?? undefined, customerNote, {
+          promptForPassphrase: openPassphraseModal,
+        },
+      );
       onConfirmed(record);
     } catch {
       setBusy(false);
     }
+  }
+
+  /** Opens the passphrase modal and resolves with the entered string
+   *  (or null on cancel). On wrong-passphrase, executePayment calls
+   *  this again with a bumped `failedAttempts` — we propagate that
+   *  into the modal via setPassphraseFailures, which the modal uses
+   *  to drive its error message + 5-attempt back-off. */
+  async function openPassphraseModal(failedAttempts: number): Promise<string | null> {
+    setPassphraseFailures(failedAttempts);
+    return new Promise<string | null>((resolve) => {
+      setPassphraseResolver(() => (val: string | null) => {
+        setPassphraseOpen(false);
+        setPassphraseResolver(null);
+        resolve(val);
+      });
+      setPassphraseOpen(true);
+    });
   }
 
   const sek = estimateSek(payment.amountMicroFtc, ftcPerSek);
@@ -495,6 +525,15 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           </p>
         )}
       </div>
+      {passphraseOpen && passphraseResolver ? (
+        <PassphrasePromptModal
+          reason={t('passphrase.reasonSend',
+            'Confirm to sign this payment')}
+          attemptFailures={passphraseFailures}
+          onSubmit={(p) => passphraseResolver(p)}
+          onCancel={() => passphraseResolver(null)}
+        />
+      ) : null}
     </div>
   );
 }

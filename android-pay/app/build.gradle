@@ -76,6 +76,14 @@ dependencies {
     // plugin. Picked over BouncyCastle for size (~50 KB vs ~6 MB)
     // and to avoid clashing with Android's stripped BC provider.
     implementation 'net.i2p.crypto:eddsa:0.3.0'
+    // Phase 2 device-attestation — Google Play Integrity API.
+    // Wired into FcDeviceAttestationPlugin.java; cloud project number
+    // declared as a meta-data tag in AndroidManifest.xml.
+    // GoogleApiAvailability comes from play-services-base, which the
+    // integrity SDK depends on transitively but we surface explicitly
+    // because FcDeviceAttestationPlugin imports it for isAvailable().
+    implementation 'com.google.android.play:integrity:1.4.0'
+    implementation 'com.google.android.gms:play-services-base:18.5.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

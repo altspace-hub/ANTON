@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    style-src 'self' 'unsafe-inline';
+    script-src 'self';
+    img-src 'self' data:;
+    base-uri 'none';
+    form-action 'none';
+    frame-ancestors 'none';
+  " />
+  <title>Anton Agent Pay — Settings</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <header class="title-bar">
+    <span class="title">Anton Agent Pay — Settings</span>
+  </header>
+
+  <nav class="tabs">
+    <button id="tab-wallet" class="tab tab-active" type="button" data-tab="wallet">Wallet</button>
+    <button id="tab-agents" class="tab" type="button" data-tab="agents">Agents</button>
+    <button id="tab-network" class="tab" type="button" data-tab="network">Network</button>
+  </nav>
+
+  <main class="content">
+    <!-- WALLET TAB ───────────────────────────────────────────── -->
+    <section id="panel-wallet" class="panel panel-active">
+
+      <!-- No-wallet state -->
+      <div id="wallet-empty" class="card" hidden>
+        <h2>No wallet yet</h2>
+        <p class="muted">
+          Create a fresh wallet or import one you already have. Either way,
+          a FALCON-512 post-quantum keypair is generated alongside your
+          Ed25519 keys so the future PQ hard fork is a no-UX change.
+        </p>
+        <div class="actions">
+          <button id="btn-create" class="btn btn-primary" type="button">Create new wallet</button>
+          <button id="btn-import" class="btn" type="button">Import 24-word recovery phrase</button>
+        </div>
+      </div>
+
+      <!-- Wallet present -->
+      <div id="wallet-present" class="card" hidden>
+        <h2>Wallet</h2>
+        <div class="row">
+          <div class="key">Address</div>
+          <div class="value">
+            <code id="wallet-address" class="address">—</code>
+            <button id="btn-copy-address" class="btn btn-link" type="button">Copy</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="key">Passphrase</div>
+          <div class="value" id="wallet-pass-status">—</div>
+        </div>
+        <div class="actions actions-stacked">
+          <button id="btn-show-mnemonic" class="btn" type="button">Show recovery phrase…</button>
+          <button id="btn-passphrase" class="btn" type="button">Add wallet passphrase</button>
+          <button id="btn-change-passphrase" class="btn" type="button" hidden>Change passphrase</button>
+          <button id="btn-remove-passphrase" class="btn" type="button" hidden>Remove passphrase</button>
+          <button id="btn-delete-wallet" class="btn btn-danger" type="button">Delete wallet…</button>
+        </div>
+      </div>
+
+      <!-- Create / import / show-recovery / passphrase / delete prompts
+           are rendered into this region as transient subviews. -->
+      <div id="wallet-flow"></div>
+
+      <p id="wallet-msg" class="msg" hidden></p>
+    </section>
+
+    <!-- AGENTS TAB ───────────────────────────────────────────── -->
+    <section id="panel-agents" class="panel">
+      <div class="card">
+        <h2>Pair a new agent</h2>
+        <p class="muted">
+          Generate a 6-digit code, then point your AI agent (Claude Desktop,
+          OpenCLAW, …) at <code>POST /pair</code> with <code>{ name, code }</code>.
+          Codes expire in 60 seconds and can only be used once.
+        </p>
+        <div class="pair-code-row">
+          <div class="pair-code" id="pair-code">— — — — — —</div>
+          <button id="btn-new-code" class="btn btn-primary" type="button">Generate code</button>
+        </div>
+        <div id="pair-code-meta" class="muted small"></div>
+      </div>
+      <div class="card">
+        <h2>Currently paired agents</h2>
+        <ul id="paired-list" class="paired-list">
+          <li class="muted">(none yet)</li>
+        </ul>
+      </div>
+      <p id="agents-msg" class="msg" hidden></p>
+    </section>
+
+    <!-- NETWORK TAB ──────────────────────────────────────────── -->
+    <section id="panel-network" class="panel">
+      <div class="card">
+        <h2>Local server</h2>
+        <div class="row">
+          <div class="key">URL</div>
+          <div class="value"><code id="boot-url">—</code></div>
+        </div>
+        <div class="row">
+          <div class="key">Pairing endpoint</div>
+          <div class="value"><code id="boot-pair">—</code></div>
+        </div>
+        <div class="row">
+          <div class="key">Discovery file</div>
+          <div class="value"><code id="boot-discovery">—</code></div>
+        </div>
+        <div class="row">
+          <div class="key">PID</div>
+          <div class="value"><span id="boot-pid">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Chain endpoint</h2>
+        <p class="muted">
+          The chain endpoint is configured via the
+          <code>AGENT_PAY_NODE_URL</code> environment variable.
+          Default: <code>https://rpc.futurechain.eu</code>.
+        </p>
+        <div class="row">
+          <div class="key">Current</div>
+          <div class="value"><code id="chain-endpoint">—</code></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="settings.js"></script>
+</body>
+</html>

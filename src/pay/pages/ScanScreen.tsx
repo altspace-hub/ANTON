@@ -10,12 +10,22 @@
  * A decoded QR is validated by services/payment.ts before we leave the
  * screen — an invalid or expired code shows an inline notice and keeps
  * scanning.
+ *
+ * Two payload shapes are accepted:
+ *   - `futurechain:pay?to=…` — single-QR URI (existing flow, decoded
+ *     synchronously by decodePaymentUri).
+ *   - `ur:fc-pay-uri/…` — animated UR fountain stream (PAY_QR_TRANSFER_SPEC).
+ *     Frames accumulate in a UriDecoder; on completion the decoded URI
+ *     is fed through decodePaymentUri the same as a single-QR scan.
+ *   - Anything else → "invalid URI" notice.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrScanner from 'qr-scanner';
 import PrimaryButton from '../components/PrimaryButton';
 import { decodePaymentUri } from '../services/payment';
+import { looksLikeUrFrame } from '../services/qr-transfer/encoder';
+import { createUriDecoder, type UriDecoder } from '../services/qr-transfer/decoder';
 import type { DecodedPayment } from '../services/types';
 
 interface Props {
@@ -30,11 +40,19 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const handledRef = useRef(false);
+  /** Held across scans for the same animated-UR session. Lazy-init on
+   *  first UR frame so single-QR scans don't pay the allocation. */
+  const urDecoderRef = useRef<UriDecoder | null>(null);
 
   const [mode, setMode] = useState<Mode>('camera');
   const [cameraFailed, setCameraFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [manualText, setManualText] = useState('');
+  /** Animated-UR fountain progress, shown as a small overlay while the
+   *  receiver is collecting frames. Null = no UR session in flight. */
+  const [urProgress, setUrProgress] = useState<{
+    received: number; expected: number; pct: number;
+  } | null>(null);
 
   /** Validate a scanned/typed URI. Returns true if it routed onward. */
   function tryDecode(raw: string): boolean {
@@ -51,6 +69,30 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
     return false;
   }
 
+  /** Feed one scanned frame to the UR fountain decoder. On completion
+   *  hands the reconstructed URI to tryDecode (same path as a single-QR
+   *  scan); on error surfaces the message; otherwise updates progress. */
+  function tryDecodeUr(frame: string): void {
+    if (!urDecoderRef.current) urDecoderRef.current = createUriDecoder();
+    const r = urDecoderRef.current.receive(frame);
+    if (r.error) {
+      setNotice(r.error);
+      return;
+    }
+    if (r.complete && r.uri) {
+      // Reset before routing so a back-then-scan-again starts fresh.
+      urDecoderRef.current.reset();
+      setUrProgress(null);
+      tryDecode(r.uri);
+      return;
+    }
+    setUrProgress({
+      received: r.partsReceived,
+      expected: r.partsExpected,
+      pct: r.progress,
+    });
+  }
+
   useEffect(() => {
     if (mode !== 'camera') return;
     const video = videoRef.current;
@@ -61,13 +103,21 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
       video,
       (result) => {
         if (handledRef.current) return;
-        tryDecode(result.data);
+        const raw = result.data;
+        if (looksLikeUrFrame(raw)) {
+          tryDecodeUr(raw);
+        } else {
+          tryDecode(raw);
+        }
       },
       {
         returnDetailedScanResult: true,
         highlightScanRegion: true,
         highlightCodeOutline: true,
-        maxScansPerSecond: 5,
+        // UR animated streams play at ~5 fps so we need at least that
+        // to keep up. 10 fps gives headroom for duplicates / missed
+        // frames without burning CPU.
+        maxScansPerSecond: 10,
       },
     );
     scannerRef.current = scanner;
@@ -110,6 +160,27 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
           <p className="text-center text-sm px-6 py-4" style={{ color: 'var(--color-text-muted)' }}>
             {t('scan.hint')}
           </p>
+          {urProgress && urProgress.expected > 0 && (
+            <div className="mx-6 mb-3 rounded-lg p-3 text-sm"
+                 style={{ backgroundColor: 'var(--color-surface)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-text-body)' }}>
+              <div className="flex justify-between mb-2">
+                <span>{t('scan.urScanning', 'Receiving animated QR…')}</span>
+                <span className="mono">
+                  {urProgress.received} / {urProgress.expected}
+                </span>
+              </div>
+              <div className="h-1 rounded-full overflow-hidden"
+                   style={{ backgroundColor: 'var(--color-border)' }}>
+                <div className="h-full transition-all"
+                     style={{
+                       width: `${Math.round(urProgress.pct * 100)}%`,
+                       backgroundColor: 'var(--color-accent)',
+                     }} />
+              </div>
+            </div>
+          )}
           {notice && (
             <div className="mx-6 mb-3 rounded-lg p-3 text-sm text-center"
                  style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}>

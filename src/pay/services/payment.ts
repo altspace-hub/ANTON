@@ -16,7 +16,11 @@ import type { DecodedCreditor, DecodedPayment, PaymentRecord } from './types';
 import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
 import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
-import { getActiveSigner } from './wallets';
+import {
+  activeWalletHasPassphrase, getActiveSigner, getActiveWalletMeta,
+  PassphraseRequiredError,
+} from './wallets';
+import { BadPassphraseError } from './wallet-passphrase';
 import { requireBiometric } from './biometric';
 import { assembleDraft, type PartyIdentification } from './pacs008-draft';
 import {
@@ -273,6 +277,23 @@ const DEFAULT_FEE_SATOSHI = 100;
  * the background; the UI is expected to re-read the record via
  * `getPaymentRecord(id)` to observe the status transitions.
  */
+/** Caller-supplied callback for the (optional) wallet-passphrase
+ *  dialog. Receives the number of failed attempts so far (0 = first
+ *  prompt; bumps to 1, 2, … on each wrong entry up to MAX_ATTEMPTS).
+ *  Resolve with the entered passphrase, or null when the user
+ *  cancels — executePayment treats null as a clean abort (no signing,
+ *  status: failed, error: 'passphrase cancelled'). */
+export type PassphrasePrompt = (failedAttempts: number) => Promise<string | null>;
+
+const MAX_PASSPHRASE_ATTEMPTS = 5;
+
+export interface ExecutePaymentOptions {
+  /** Required IF the active wallet has a passphrase set. Without this
+   *  callback, executePayment throws on a passphrased wallet so the
+   *  signing path can't silently fail. */
+  promptForPassphrase?: PassphrasePrompt;
+}
+
 export async function executePayment(
   decoded: DecodedPayment,
   risk?: FraudAssessment,
@@ -280,12 +301,17 @@ export async function executePayment(
    *  PACS.008 RmtInf alongside the merchant's order envelope (if any).
    *  Pass undefined or '' for the default minimal-remittance behaviour. */
   customerNote?: string,
+  options?: ExecutePaymentOptions,
 ): Promise<PaymentRecord> {
-  const [identity, signer] = await Promise.all([
+  // Resolve only the *non-secret* bits eagerly — identity + wallet
+  // address. The actual signer (which may need a passphrase prompt)
+  // is deferred until after the biometric gate so we can sequence the
+  // user-facing prompts in the right order.
+  const [identity, walletMeta] = await Promise.all([
     loadPayerIdentity(),
-    getActiveSigner(),
+    getActiveWalletMeta(),
   ]);
-  if (!signer) {
+  if (!walletMeta) {
     throw new Error('executePayment: no wallet on this device');
   }
   // A payment must carry a real originator name — shipping the bare
@@ -298,11 +324,7 @@ export async function executePayment(
       'Set your payment identity (your name) in Settings before sending a payment.',
     );
   }
-  // Adapter so the existing draft / utxo / submit lines that read
-  // `wallet.address` and `wallet.publicKey` keep working without a
-  // refactor — the signer carries both. `privateKey` is intentionally
-  // absent on this shape; signing goes through signer.sign().
-  const wallet = { address: signer.address, publicKey: signer.publicKey };
+  const wallet = { address: walletMeta.address };
 
   const id = newId();
   // Travel-Rule tier — decides whether the originator postal address
@@ -363,6 +385,61 @@ export async function executePayment(
     };
     await putPayment(failed);
     return failed;
+  }
+
+  // Wallet passphrase gate — second factor on top of biometric, opt-in.
+  // When a passphrase is set, loop until the user enters the right one,
+  // cancels, or exhausts the 5-attempt budget. The modal (via the
+  // PassphrasePrompt callback) shows back-off + remaining-attempts UI
+  // based on the `failedAttempts` it's told about on each prompt.
+  let signer: Awaited<ReturnType<typeof getActiveSigner>>;
+  if (await activeWalletHasPassphrase()) {
+    if (!options?.promptForPassphrase) {
+      throw new Error(
+        'executePayment: active wallet has a passphrase but no ' +
+        'promptForPassphrase callback was provided',
+      );
+    }
+    let resolved: typeof signer = null;
+    let failures = 0;
+    let cancelled = false;
+    while (failures < MAX_PASSPHRASE_ATTEMPTS) {
+      const pp = await options.promptForPassphrase(failures);
+      if (!pp) {
+        cancelled = true;
+        break;
+      }
+      try {
+        resolved = await getActiveSigner(pp);
+        break;
+      } catch (e) {
+        if (e instanceof BadPassphraseError) {
+          failures++;
+          continue;
+        }
+        throw e;
+      }
+    }
+    if (!resolved) {
+      const reason = cancelled
+        ? 'passphrase cancelled'
+        : `passphrase incorrect (${MAX_PASSPHRASE_ATTEMPTS} attempts)`;
+      const failed: PaymentRecord = {
+        id, toAddress: decoded.toAddress, merchantId: decoded.merchantId,
+        orderId: decoded.orderId, purpose: decoded.purpose,
+        amountMicroFtc: decoded.amountMicroFtc, ref: decoded.ref,
+        qrUri: decoded.qrUri, status: 'failed', paidAt: Date.now(),
+        pacs008: draft, risk, error: reason,
+      };
+      await putPayment(failed);
+      return failed;
+    }
+    signer = resolved;
+  } else {
+    signer = await getActiveSigner();
+  }
+  if (!signer) {
+    throw new Error('executePayment: no wallet on this device');
   }
 
   // Persist the "submitting" record so the UI can navigate immediately.
@@ -429,7 +506,7 @@ export async function executePayment(
     // Wave 7: signer-callback path so the priv key never enters the
     // JS heap on a real device. Falls back to in-JS @noble on dev.
     const tx = await pacs008.buildSignedPacs008TransactionWithSigner({
-      publicKey: wallet.publicKey,
+      publicKey: signer.publicKey,
       senderAddress: wallet.address,
       signer: signer.sign,
       utxos,

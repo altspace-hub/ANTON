@@ -36,6 +36,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Phase 2 device-attestation — Google Play Integrity API
+             cloud project binding. FcDeviceAttestationPlugin reads
+             this at isAvailable() / requestIntegrityToken() time and
+             passes it to IntegrityTokenRequest.setCloudProjectNumber().
+             Value comes from @string/google_cloud_project_number
+             (declared in res/values/strings.xml — replace placeholder
+             before prod ship). -->
+        <meta-data
+            android:name="com.google.android.play.integrity.PROJECT_NUMBER"
+            android:value="@string/google_cloud_project_number" />
     </application>
 
     <!-- Permissions -->
