@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    Confirmation modal — the safety boundary of Agent Pay.
+    Spec: docs/ANTON_AGENT_PAY_SPEC.md §7.
+
+    Renders the payload pushed via window.agentPayModal.onPayload(),
+    sends the user's decision back via .send(). NO remote loads, NO
+    third-party scripts, NO inline event handlers — every interactive
+    element is wired up by the renderer's own modal.js.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    style-src 'self' 'unsafe-inline';
+    script-src 'self';
+    img-src 'self' data:;
+    base-uri 'none';
+    form-action 'none';
+    frame-ancestors 'none';
+  " />
+  <title>Confirm payment</title>
+  <link rel="stylesheet" href="modal.css" />
+</head>
+<body>
+  <div class="title-bar">
+    <span class="title">Confirm payment</span>
+  </div>
+
+  <main class="content">
+    <section class="agent-block">
+      <div class="label">AGENT</div>
+      <div class="agent-name" id="agent-name">—</div>
+      <div class="agent-meta">
+        paired <span id="agent-paired-ago">—</span>
+      </div>
+    </section>
+
+    <section class="payment-block">
+      <div class="row send-row">
+        <div class="key">Send</div>
+        <div class="value" id="amount">—</div>
+      </div>
+      <div class="row">
+        <div class="key">To</div>
+        <div class="value">
+          <div class="address" id="to-address">—</div>
+          <div class="address-meta" id="to-meta"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="key">Fee</div>
+        <div class="value" id="fee">—</div>
+      </div>
+    </section>
+
+    <section class="note-block" id="note-block" hidden>
+      <div class="label">Agent note (not chain-validated)</div>
+      <div class="note" id="agent-note">—</div>
+    </section>
+
+    <section class="balance-block">
+      <span>Wallet balance after:</span>
+      <strong id="balance-after">—</strong>
+    </section>
+
+    <section class="passphrase-block" id="passphrase-block" hidden>
+      <label for="passphrase-input">Wallet passphrase</label>
+      <input id="passphrase-input" type="password" autocomplete="off"
+             spellcheck="false" />
+    </section>
+
+    <section class="expiry-block">
+      Expires in <span id="expires-in">—</span>
+    </section>
+  </main>
+
+  <footer class="actions">
+    <button id="reject-btn" class="btn btn-reject" type="button">Reject</button>
+    <button id="approve-btn" class="btn btn-approve" type="button">Approve</button>
+  </footer>
+
+  <script src="modal.js"></script>
+</body>
+</html>

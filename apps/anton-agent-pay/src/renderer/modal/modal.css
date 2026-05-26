@@ -1,0 +1,172 @@
+/*
+ * modal.css — minimal styling for the confirmation modal.
+ * Spec: docs/ANTON_AGENT_PAY_SPEC.md §7.
+ *
+ * Aesthetic: clean, neutral, slightly stern — this is a confirmation,
+ * not a marketing surface. The user's eye must land on the recipient
+ * address + amount immediately. Buttons spaced so a misclick on Reject
+ * doesn't accidentally hit Approve.
+ */
+
+:root {
+  --bg: #fafafa;
+  --panel: #ffffff;
+  --text: #0f1a26;
+  --muted: #64748b;
+  --rule: #e2e8f0;
+  --accent: #1f3b6b;
+  --approve: #1e6f3a;
+  --reject: #b3261e;
+  --code-bg: #f1f5f9;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI",
+               Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+button, input { -webkit-app-region: no-drag; user-select: auto; }
+
+.title-bar {
+  height: 28px;
+  display: flex; align-items: center;
+  padding: 0 12px;
+  background: var(--accent); color: white;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.title { text-transform: uppercase; }
+
+.content {
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.label {
+  text-transform: uppercase;
+  font-size: 10px; font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.agent-block {
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.agent-name { font-weight: 600; font-size: 13px; }
+.agent-meta { color: var(--muted); font-size: 11px; }
+
+.payment-block {
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.row { display: flex; align-items: baseline; gap: 12px; }
+.row .key {
+  flex: 0 0 56px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.row .value { flex: 1; min-width: 0; }
+.send-row .value {
+  font-size: 22px; font-weight: 700;
+  color: var(--text);
+}
+.address {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  padding: 4px 6px;
+  border-radius: 4px;
+  word-break: break-all;
+  user-select: text;
+}
+.address-meta {
+  margin-top: 3px;
+  font-size: 11px; color: var(--muted);
+}
+
+.note-block {
+  padding: 8px 10px;
+  background: #fffbe6;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+}
+.note {
+  margin-top: 2px;
+  font-size: 13px;
+  user-select: text;
+}
+
+.balance-block {
+  font-size: 12px; color: var(--muted);
+  display: flex; gap: 6px; align-items: baseline;
+}
+.balance-block strong { color: var(--text); font-size: 13px; }
+
+.passphrase-block { display: flex; flex-direction: column; gap: 6px; }
+.passphrase-block label {
+  text-transform: uppercase;
+  font-size: 10px; font-weight: 600;
+  color: var(--muted); letter-spacing: 0.06em;
+}
+.passphrase-block input {
+  padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--panel); color: var(--text);
+  font-size: 14px; font-family: inherit;
+}
+.passphrase-block input:focus {
+  outline: 2px solid var(--accent); outline-offset: -2px;
+  border-color: var(--accent);
+}
+
+.expiry-block {
+  text-align: center;
+  font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex; gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--rule);
+  background: var(--panel);
+}
+.btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 14px; font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 60ms, color 60ms;
+}
+.btn-reject {
+  color: var(--reject);
+  border-color: var(--rule);
+  background: var(--panel);
+}
+.btn-reject:hover { background: #fef2f2; }
+.btn-approve {
+  color: white;
+  background: var(--approve);
+  border-color: var(--approve);
+}
+.btn-approve:hover { background: #155e2c; }
+.btn:focus { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -1,0 +1,115 @@
+## electron-builder.yml — Win / macOS / Linux build + signing config.
+##
+## Spec: ANTON_AGENT_PAY_SPEC.md §3 (in-scope: macOS notarised + Windows
+##       code-signed + Linux signed Flatpak) + DESKTOP_ATTESTATION_SPEC.md
+##       §5 (the cert thumbprint that lands in Bahnhof's
+##       AGENT_PAY_SIGNING_THUMBPRINTS allowlist must match the cert
+##       configured below).
+##
+## Build commands (after `pnpm build`):
+##   pnpm exec electron-builder --mac     # .dmg + notarised .pkg
+##   pnpm exec electron-builder --win     # .exe (NSIS) + Authenticode-signed
+##   pnpm exec electron-builder --linux   # .AppImage + .deb + .flatpak
+##
+## Signing is fully env-driven so an un-keyed dev box builds an unsigned
+## binary without any config change; CI adds the env vars and gets a
+## signed artefact. The exact env vars + how to obtain the certs are
+## documented in docs/CODE_SIGNING_SETUP.md.
+
+appId: com.futurechain.anton.agentpay
+productName: Anton Agent Pay
+copyright: Copyright © 2026 FutureChain AB
+
+directories:
+  output: dist-electron
+  buildResources: build
+
+# What goes into the bundle. dist/ contains the compiled TS (per
+# tsconfig.json's outDir); the renderer/ subtree is the modal + settings
+# HTML/CSS/JS that Electron loads at runtime.
+files:
+  - dist/**/*
+  - src/renderer/**/*
+  - package.json
+  - LICENSE
+
+# ── macOS ─────────────────────────────────────────────────────────
+mac:
+  category: public.app-category.finance
+  hardenedRuntime: true
+  gatekeeperAssess: false   # we notarise — Gatekeeper checks the staple
+  # entitlements.mac.plist is required for hardened runtime + the camera
+  # / mic permissions Capacitor wires in (Agent Pay doesn't use them but
+  # the bundle ships those entitlements identically to ANTON Pay's macOS
+  # build to keep the cert chain identical).
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  # Notarisation uses notarytool (post-altool deprecation). The
+  # APPLE_ID / APPLE_APP_PASSWORD / APPLE_TEAM_ID env vars get picked up
+  # automatically by electron-builder when notarize: true.
+  notarize:
+    teamId: ${env.APPLE_TEAM_ID}
+
+# ── Windows ───────────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+  # Authenticode signing. CSC_LINK = path or HTTPS URL of a .pfx;
+  # CSC_KEY_PASSWORD = the .pfx passphrase. Both env vars are read
+  # automatically by electron-builder; left unset → unsigned build.
+  # signingHashAlgorithms is required for SmartScreen reputation
+  # to start accruing — defaults to SHA-1 + SHA-256, we want
+  # SHA-256-only since SHA-1 is deprecated.
+  signingHashAlgorithms:
+    - sha256
+  # Time-stamp server keeps the signature verifying after the cert
+  # expires (DigiCert's RFC-3161 server — free, no auth).
+  rfc3161TimeStampServer: http://timestamp.digicert.com
+  publisherName: FutureChain AB
+
+nsis:
+  oneClick: false
+  perMachine: false           # per-user install — no UAC prompt
+  allowToChangeInstallationDirectory: true
+  shortcutName: Anton Agent Pay
+  uninstallDisplayName: Anton Agent Pay (FutureChain)
+
+# ── Linux ────────────────────────────────────────────────────────
+linux:
+  category: Office;Finance
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+    - target: flatpak
+      arch:
+        - x64
+  # Flatpak signing produces a GPG-signed .flatpakref alongside the
+  # bundle. flatpak-builder reads ~/.gnupg/ — point GNUPGHOME at the
+  # signing-keyring location in CI.
+  desktop:
+    Comment: FutureChain wallet for AI-agent payments
+  maintainer: ops@futurechain.eu
+
+flatpak:
+  # The fingerprint that gets baked into /app/share/anton-agent-pay/
+  # .gpg-fingerprint inside the bundle — read by code-signature.ts at
+  # attestation time. Lowercase hex SHA-256 of the GPG key's
+  # fingerprint.
+  branch: stable
+
+# ── Auto-update ──────────────────────────────────────────────────
+# Phase 2 — defer. The MVP ships manual download.
+publish: null
