@@ -535,14 +535,38 @@ export default function SettingsScreen({
         </div>
       </Card>
 
-      {/* ── Danger zone ─────────────────────────────────────── */}
-      <SectionHeader label={t('settings.dangerZone')} />
-      <button
-        onClick={() => void handleSignOut()}
-        className="mt-2 w-full py-3 rounded-2xl text-sm font-medium border border-[var(--color-red-dim)] text-[var(--color-red)]"
-      >
-        {t('settings.deleteIdentity')}
-      </button>
+      {/* ── Advanced (collapsed; delete-identity hidden behind a deliberate expand) ── */}
+      <details className="mt-8 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)]">
+        <summary
+          className="px-5 py-3 cursor-pointer select-none flex items-center justify-between"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <span className="text-sm font-medium">
+            {t('settings.advanced', 'Advanced')}
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               style={{ color: 'var(--color-text-faint)' }}>
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </summary>
+        <div className="px-5 pb-5 pt-2"
+             style={{ borderTop: '1px solid var(--color-border-soft)' }}>
+          <h3 className="mt-3 mb-1 text-sm font-semibold text-[var(--color-red)]">
+            {t('settings.dangerZone')}
+          </h3>
+          <p className="mb-3 text-xs text-[var(--color-text-muted)]">
+            {t('settings.deleteIdentityHelp',
+              'Wipes your identity, contacts, chats, events and wallet on this device. Cannot be undone.')}
+          </p>
+          <button
+            onClick={() => void handleSignOut()}
+            className="w-full py-2.5 rounded-xl text-sm font-medium border border-[var(--color-red-dim)] text-[var(--color-red)]"
+          >
+            {t('settings.deleteIdentity')}
+          </button>
+        </div>
+      </details>
     </section>
   );
 }

@@ -7,6 +7,9 @@ project(':capacitor-android').projectDir = new File('../node_modules/.pnpm/@capa
 include ':aparajita-capacitor-secure-storage'
 project(':aparajita-capacitor-secure-storage').projectDir = new File('../node_modules/.pnpm/@aparajita+capacitor-secure-storage@8.0.0/node_modules/@aparajita/capacitor-secure-storage/android')
 
+include ':capgo-capacitor-native-biometric'
+project(':capgo-capacitor-native-biometric').projectDir = new File('../node_modules/.pnpm/@capgo+capacitor-native-bio_63447343421a5c768c6219eaa4110e07/node_modules/@capgo/capacitor-native-biometric/android')
+
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/.pnpm/@capacitor+app@8.0.1_@capacitor+core@8.3.1/node_modules/@capacitor/app/android')
 

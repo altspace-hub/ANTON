@@ -177,7 +177,9 @@ export default function SettingsScreen({
         <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>{t('settings.title')}</h2>
       </div>
 
-      <div className="px-6 flex flex-col gap-3">
+      <div className="px-6 flex flex-col gap-6">
+        {/* ── Wallet & Security ──────────────────────────────────────────── */}
+        <Section title={t('settings.sectionWalletSecurity', 'Wallet & Security')}>
         {/* Wallet section */}
         <div className="rounded-xl p-4"
              style={{
@@ -313,6 +315,10 @@ export default function SettingsScreen({
           </div>
         </button>
 
+        </Section>
+
+        {/* ── Business ───────────────────────────────────────────────────── */}
+        <Section title={t('settings.sectionBusiness', 'Business')}>
         {/* Items management — catalogue CRUD + industry-template loader. */}
         <button type="button" onClick={onItems}
                 className="rounded-xl p-4 flex items-center justify-between text-left"
@@ -353,6 +359,10 @@ export default function SettingsScreen({
           </svg>
         </button>
 
+        </Section>
+
+        {/* ── Network ────────────────────────────────────────────────────── */}
+        <Section title={t('settings.sectionNetwork', 'Network')}>
         {/* RPC endpoint switch. */}
         <button type="button" onClick={onRpcEndpoint}
                 className="rounded-xl p-4 flex items-center justify-between text-left"
@@ -373,7 +383,10 @@ export default function SettingsScreen({
           </svg>
         </button>
 
-        {/* Business identity */}
+        </Section>
+
+        {/* Business identity — back in the Business section. */}
+        <Section title={t('settings.sectionIdentity', 'Identity')}>
         {config && (
           <div className="rounded-xl p-4"
                style={{
@@ -403,6 +416,14 @@ export default function SettingsScreen({
           </div>
         )}
 
+        </Section>
+
+        {/* ── Backup ─────────────────────────────────────────────────────── */}
+        {/* (kept as its own visible section because overdue tinting matters
+             — see surroundings; the backup card is below.) */}
+
+        {/* ── Appearance & Language ──────────────────────────────────────── */}
+        <Section title={t('settings.sectionAppearance', 'Appearance & Language')}>
         {/* Appearance */}
         <div className="rounded-xl p-4"
              style={{
@@ -461,6 +482,10 @@ export default function SettingsScreen({
           </div>
         </div>
 
+        </Section>
+
+        {/* ── Backup (moved up; overdue tinting needs prominence) ──────── */}
+        <Section title={t('settings.sectionBackup', 'Backup')}>
         {/* Backup */}
         <div className="rounded-xl p-4"
              style={{
@@ -490,6 +515,10 @@ export default function SettingsScreen({
           )}
         </div>
 
+        </Section>
+
+        {/* ── Language (separate from Appearance — bigger surface) ────── */}
+        <Section title={t('settings.sectionLanguage', 'Language')}>
         {/* Language */}
         <button type="button" onClick={() => setLangPickerOpen(true)}
                 className="rounded-xl p-4 flex justify-between items-center text-left"
@@ -509,6 +538,10 @@ export default function SettingsScreen({
           </svg>
         </button>
 
+        </Section>
+
+        {/* ── About ──────────────────────────────────────────────────────── */}
+        <Section title={t('settings.sectionAbout', 'About')}>
         {/* Storage */}
         <div className="rounded-xl p-4"
              style={{
@@ -548,54 +581,66 @@ export default function SettingsScreen({
           </div>
         </div>
 
-        {/* Danger zone — two-step: the first tap only arms the panel. */}
-        <div className="rounded-xl p-4"
-             style={{
-               backgroundColor: 'var(--color-error-bg)',
-               border: '1px solid var(--color-error)',
-             }}>
-          <h3 className="font-bold mb-1" style={{ color: 'var(--color-error)' }}>{t('settings.dangerZone')}</h3>
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-body)' }}>
-            {t('settings.resetHelp')}
-          </p>
-          {!resetArmed ? (
-            <button type="button" onClick={() => setResetArmed(true)}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold"
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: 'var(--color-error)',
-                      border: '1px solid var(--color-error)',
-                    }}>
-              {t('settings.resetApp')}
-            </button>
-          ) : (
-            <div>
-              <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-error)' }}>
-                {t('settings.resetArmedWarning',
-                  'This permanently erases your profile, items, wallet, kvittos and stock. It cannot be undone.')}
-              </p>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setResetArmed(false)}
-                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
-                        style={{
-                          backgroundColor: 'var(--color-surface)',
-                          color: 'var(--color-text)',
-                          border: '1px solid var(--color-border)',
-                        }}>
-                  {t('common.cancel', 'Cancel')}
-                </button>
-                <button type="button" onClick={() => void attemptReset()}
-                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
-                        style={{
-                          backgroundColor: 'var(--color-error)',
-                          color: '#FFFFFF',
-                        }}>
-                  {t('settings.resetConfirmBtn', 'Erase everything')}
-                </button>
+        </Section>
+
+        {/* ── Advanced (collapsed; reset hidden behind a deliberate expand) ── */}
+        <details className="rounded-xl"
+                 style={{ backgroundColor: 'var(--color-surface)',
+                          border: '1px solid var(--color-border)' }}>
+          <summary className="px-4 py-3 cursor-pointer select-none flex items-center justify-between"
+                   style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-sm font-medium">{t('settings.advanced', 'Advanced')}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 style={{ color: 'var(--color-text-dim)' }}>
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </summary>
+          <div className="px-4 pb-4 pt-1"
+               style={{ borderTop: '1px solid var(--color-border-soft)' }}>
+            <h3 className="font-bold mt-3 mb-1" style={{ color: 'var(--color-error)' }}>{t('settings.dangerZone')}</h3>
+            <p className="text-sm mb-3" style={{ color: 'var(--color-text-body)' }}>
+              {t('settings.resetHelp')}
+            </p>
+            {!resetArmed ? (
+              <button type="button" onClick={() => setResetArmed(true)}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold"
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: 'var(--color-error)',
+                        border: '1px solid var(--color-error)',
+                      }}>
+                {t('settings.resetApp')}
+              </button>
+            ) : (
+              <div>
+                <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-error)' }}>
+                  {t('settings.resetArmedWarning',
+                    'This permanently erases your profile, items, wallet, kvittos and stock. It cannot be undone.')}
+                </p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setResetArmed(false)}
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                          style={{
+                            backgroundColor: 'var(--color-surface)',
+                            color: 'var(--color-text)',
+                            border: '1px solid var(--color-border)',
+                          }}>
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                  <button type="button" onClick={() => void attemptReset()}
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                          style={{
+                            backgroundColor: 'var(--color-error)',
+                            color: '#FFFFFF',
+                          }}>
+                    {t('settings.resetConfirmBtn', 'Erase everything')}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </details>
       </div>
 
       {/* Merchant-PIN gate on reset — the final step when a PIN is set. */}
@@ -612,6 +657,19 @@ export default function SettingsScreen({
           {t('settings.backToHome')}
         </PrimaryButton>
       </div>
+    </div>
+  );
+}
+
+/** Section wrapper — uppercase header above a stack of cards. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-[11px] uppercase tracking-wider font-semibold px-1"
+          style={{ color: 'var(--color-text-faint)' }}>
+        {title}
+      </h2>
+      {children}
     </div>
   );
 }
