@@ -88,7 +88,10 @@ describe('submitTransaction', () => {
     const svc = await createFCTransactionService(mockDb);
     const r = await svc.submitTransaction('fctx_1');
     expect(r.status).toBe('confirmed');
-    expect(r.txId).toMatch(/^STUB_TX_/);
+    // txId echoes the local row id; the generated STUB_TX_ id is the network
+    // reference, returned as `uetr` (PACS.008 unique end-to-end reference).
+    expect(r.txId).toBe('fctx_1');
+    expect(r.uetr).toMatch(/^STUB_TX_/);
     const sql = mockDb.calls[0].sql;
     expect(sql).toContain("status = 'confirmed'");
     expect(sql).toContain("submission_method = 'stub'");

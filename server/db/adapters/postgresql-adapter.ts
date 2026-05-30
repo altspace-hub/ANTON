@@ -40,12 +40,18 @@ function maskAndRestoreStrings<T>(sql: string, fn: (masked: string) => T): T {
  * Stage 1: Translate SQLite-specific SQL syntax to PostgreSQL equivalents.
  * Handles the ~90% of queries that follow predictable patterns.
  *
- * String literals are masked first so no translation can corrupt their
- * contents (caught a real bug where the word "real" inside a curriculum
- * seed string was being rewritten to "DOUBLE PRECISION").
+ * Two passes (see translateSqlImpl):
+ *   1. Function/syntax translations (datetime, strftime, json_extract, …) run on
+ *      the RAW sql — they MUST see string-literal arguments like 'now' / '%Y-%W'.
+ *   2. Bare keyword/type translations (REAL → DOUBLE PRECISION, …) run with string
+ *      literals masked, so the word inside a string's CONTENTS is never rewritten
+ *      (caught a real bug where "real" in a curriculum seed string became
+ *      "DOUBLE PRECISION"). Masking the whole thing — as a previous version did —
+ *      silently broke pass 1, since the translators could no longer see their
+ *      string arguments.
  */
 export function translateSql(sql: string): string {
-  return maskAndRestoreStrings(sql, (masked) => translateSqlImpl(masked));
+  return translateSqlImpl(sql);
 }
 
 function translateSqlImpl(sql: string): string {
@@ -65,8 +71,10 @@ function translateSqlImpl(sql: string): string {
 
   // INSERT OR IGNORE INTO → INSERT INTO ... ON CONFLICT DO NOTHING
   out = out.replace(/INSERT\s+OR\s+IGNORE\s+INTO/gi, 'INSERT INTO');
-  // We'll append ON CONFLICT DO NOTHING at the end of INSERT statements that had OR IGNORE
-  if (/INSERT\s+INTO/i.test(sql) && /OR\s+IGNORE/i.test(sql)) {
+  // We'll append ON CONFLICT DO NOTHING at the end of INSERT statements that had OR IGNORE.
+  // NB: test `out` (already rewritten to INSERT INTO), not `sql` — `sql` still reads
+  // "INSERT OR IGNORE INTO", which /INSERT\s+INTO/ never matches.
+  if (/INSERT\s+INTO/i.test(out) && /OR\s+IGNORE/i.test(sql)) {
     // Only add if not already present
     if (!/ON\s+CONFLICT/i.test(out)) {
       // Insert before any RETURNING clause or at end
@@ -168,21 +176,23 @@ function translateSqlImpl(sql: string): string {
     (_m, col) => `STRING_AGG(${col.trim()}, ',')`,
   );
 
-  // AUTOINCREMENT → (handled in schema, but strip from runtime DDL if present)
-  out = out.replace(/\bAUTOINCREMENT\b/gi, '');
-
-  // INTEGER PRIMARY KEY AUTOINCREMENT → SERIAL PRIMARY KEY (for DDL only)
-  // This is handled in schema.postgresql.sql, not here.
-
-  // DATETIME type → TIMESTAMPTZ (for inline DDL in routes)
-  // Only replace when used as a type (not as a function call like datetime('now'))
-  out = out.replace(/\bDATETIME\b(?!\s*\()/gi, 'TIMESTAMPTZ');
-
-  // REAL type → DOUBLE PRECISION
-  out = out.replace(/\bREAL\b/gi, 'DOUBLE PRECISION');
-
-  // IFNULL → COALESCE (IFNULL is not standard SQL in PG)
-  out = out.replace(/\bIFNULL\s*\(/gi, 'COALESCE(');
+  // ── Bare keyword/type translations ──────────────────────────────────────
+  // These match a whole word, so the same word inside a string literal's
+  // CONTENTS (e.g. "real" in seed text) would be corrupted. Mask string
+  // literals first so only SQL keywords — never string contents — are rewritten.
+  out = maskAndRestoreStrings(out, (masked) => {
+    let k = masked;
+    // AUTOINCREMENT → (handled in schema, but strip from runtime DDL if present)
+    k = k.replace(/\bAUTOINCREMENT\b/gi, '');
+    // DATETIME type → TIMESTAMPTZ (for inline DDL in routes).
+    // Only as a type, not the function call datetime('now').
+    k = k.replace(/\bDATETIME\b(?!\s*\()/gi, 'TIMESTAMPTZ');
+    // REAL type → DOUBLE PRECISION
+    k = k.replace(/\bREAL\b/gi, 'DOUBLE PRECISION');
+    // IFNULL → COALESCE (IFNULL is not standard SQL in PG)
+    k = k.replace(/\bIFNULL\s*\(/gi, 'COALESCE(');
+    return k;
+  });
 
   // julianday(expr) → EXTRACT(EPOCH FROM (expr)::timestamptz) / 86400.0
   // julianday('now') → EXTRACT(EPOCH FROM NOW()) / 86400.0

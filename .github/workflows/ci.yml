@@ -42,6 +42,32 @@ jobs:
       - name: TypeScript check (FutureChain SDK)
         run: pnpm --filter @futurechain/sdk typecheck
 
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # Unit + integration vitest suite (`vitest run`). Runs with no DB and no
+      # API keys — the DB is mocked and LLM calls degrade gracefully.
+      #
+      # Hardening (2026-05-30): this suite was previously NOT run in CI at all,
+      # so 10 failing tests accumulated on main unnoticed (a broken SQL
+      # translator + an ISO-week bug). Green main is now a hard merge gate.
+      #
+      # TODO (roadmap Phase 1): once the ~338 eslint errors are burned down,
+      # add `pnpm lint` as a gate here too; and wire the workspace package
+      # suites (apps/anton-agent-pay, @futurechain/sdk) once verified in CI.
+      - name: Unit tests
+        run: pnpm test
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
