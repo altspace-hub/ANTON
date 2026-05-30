@@ -70,10 +70,13 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 // ── Model Registry ──────────────────────────────────────────────────
 
 // ── Single source of truth ──────────────────────────────────────────────────
-// This table is the SoT for model pricing / context / output. Server cost
-// callers — token-estimator.ts, and audit.ts via it — DELEGATE to estimateCost()
-// below, so editing a price here is the only change needed. The /api/claude
-// dispatch route reads modelAdapter.ts MODEL_REGISTRY, held in sync by
+// This table is the SoT for model pricing / context / output / provider. Server
+// cost callers — token-estimator.ts, and audit.ts via it — DELEGATE to
+// estimateCost() below, so editing a price here is the only change needed. The
+// /api/claude dispatch registry (modelAdapter.ts MODEL_REGISTRY) is now DERIVED
+// from this table (+ a presentation-only supplement for displayName/costTier/json/
+// thinking flags), so pricing/context/output cannot drift; the GET /claude/models
+// picker also reads its prices/labels from the derived registry. Verified by
 // tests/config/model-registry-consistency.test.ts. NOT yet derived: the frontend
 // src/lib/constants.ts MODELS[] + StatusIndicator.tsx tables (deferred — they
 // can't import server config; would need a frontend snapshot/endpoint).
@@ -191,6 +194,27 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // ─── OpenAI ────────────────────────────────────────────────────
+  // GPT-5.4 — user-selectable (frontend MODELS[] / ModelValue union). Added here
+  // 2026-05-31 so cost estimation + context budgeting work for it (previously it
+  // existed only in modelAdapter.ts MODEL_REGISTRY, so estimateCost returned 0).
+  'gpt-5.4': {
+    maxContextWindow: 256_000,
+    maxOutputTokens: 32_768,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 5,
+      outputPerMillion: 15,
+      cachedInputPerMillion: 2.5,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
+
   'gpt-4.1': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 32_768,

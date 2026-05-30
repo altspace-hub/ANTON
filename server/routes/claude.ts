@@ -1274,53 +1274,29 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     }
   });
 
-  // GET /api/claude/models — available models with metadata (legacy, Anthropic-only)
+  // GET /api/claude/models — curated picker list. Label + pricing are derived from
+  // MODEL_REGISTRY (the single source of truth) so this user-visible surface can
+  // never drift from the SoT again (it previously listed stale Haiku $0.80/$4).
   router.get('/claude/models', async (_req, res) => {
-    res.json([
-      {
-        id: 'claude-opus-4-8',
-        label: 'Claude Opus 4.8',
-        description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.',
-        recommended: true,
-        costPerMInputTokens: 5,
-        costPerMOutputTokens: 25,
-      },
-      {
-        id: 'claude-sonnet-4-6',
-        label: 'Claude Sonnet 4.6',
-        description: 'Fast and highly capable. Excellent for drafting, coding, and structured analysis.',
-        costPerMInputTokens: 3,
-        costPerMOutputTokens: 15,
-      },
-      {
-        id: 'claude-sonnet-4-5-20250929',
-        label: 'Claude Sonnet 4.5',
-        description: 'Balanced speed and quality. Good for drafting, summarising, and routine analysis.',
-        costPerMInputTokens: 3,
-        costPerMOutputTokens: 15,
-      },
-      {
-        id: 'claude-haiku-4-5-20251001',
-        label: 'Claude Haiku 4.5',
-        description: 'Fastest and most affordable. Best for simple questions and quick lookups.',
-        costPerMInputTokens: 0.80,
-        costPerMOutputTokens: 4,
-      },
-      {
-        id: 'mistral-large-latest',
-        label: 'Mistral Large',
-        description: 'Mistral flagship. Strong multilingual and reasoning capabilities.',
-        costPerMInputTokens: 0.50,
-        costPerMOutputTokens: 1.50,
-      },
-      {
-        id: 'mistral-small-latest',
-        label: 'Mistral Small',
-        description: 'Lightweight Mistral model. Fast and cost-effective for simple tasks.',
-        costPerMInputTokens: 0.10,
-        costPerMOutputTokens: 0.30,
-      },
-    ]);
+    const curated: Array<{ id: string; description: string; recommended?: boolean }> = [
+      { id: 'claude-opus-4-8', description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.', recommended: true },
+      { id: 'claude-sonnet-4-6', description: 'Fast and highly capable. Excellent for drafting, coding, and structured analysis.' },
+      { id: 'claude-sonnet-4-5-20250929', description: 'Balanced speed and quality. Good for drafting, summarising, and routine analysis.' },
+      { id: 'claude-haiku-4-5-20251001', description: 'Fastest and most affordable. Best for simple questions and quick lookups.' },
+      { id: 'mistral-large-latest', description: 'Mistral flagship. Strong multilingual and reasoning capabilities.' },
+      { id: 'mistral-small-latest', description: 'Lightweight Mistral model. Fast and cost-effective for simple tasks.' },
+    ];
+    res.json(curated.map(({ id, description, recommended }) => {
+      const reg = MODEL_REGISTRY[id];
+      return {
+        id,
+        label: reg?.displayName ?? id,
+        description,
+        ...(recommended ? { recommended: true } : {}),
+        costPerMInputTokens: reg?.costPer1MInput ?? 0,
+        costPerMOutputTokens: reg?.costPer1MOutput ?? 0,
+      };
+    }));
   });
 
   // GET /api/ollama/models — list locally running Ollama models (no auth required for health check)
