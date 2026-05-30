@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -115,7 +116,7 @@ export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropi
       if (category)  { query += ' AND category = ?';     params.push(category); }
       query += ' ORDER BY factuality_score DESC';
       res.json(await db.all(query, ...params));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/news/stories — list clustered stories
@@ -128,7 +129,7 @@ export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropi
       query += ' ORDER BY last_updated DESC LIMIT ?';
       params.push(Number(limit));
       res.json(await db.all(query, ...params));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/news/stories/:id — single story with articles
@@ -144,7 +145,7 @@ export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropi
         ORDER BY a.published_at DESC
       `, req.params.id);
       return res.json({ story, articles });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/news/articles — latest articles
@@ -158,7 +159,7 @@ export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropi
       query += ' ORDER BY a.published_at DESC LIMIT ?';
       params.push(Number(limit));
       res.json(await db.all(query, ...params));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/news/truth-check — AI truth verification
@@ -205,7 +206,7 @@ Respond with:
         JSON.stringify(parsed.red_flags || [])
       );
       return res.json({ id, ...parsed });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/news/preferences — user news preferences
@@ -229,7 +230,7 @@ Respond with:
         reading_history:   JSON.parse((prefs.reading_history   as string) || '[]'),
         bias_profile:      JSON.parse((prefs.bias_profile      as string) || '{}'),
       });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/news/preferences — update user preferences
@@ -249,7 +250,7 @@ Respond with:
         JSON.stringify(body.bias_profile || (existing ? JSON.parse((existing.bias_profile as string) || '{}') : {}))
       );
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/news/generate-explainer — AI story explainer (streaming)
@@ -292,7 +293,7 @@ Write a 3-4 paragraph neutral explainer that:
 
       res.write('data: [DONE]\n\n');
       return res.end();
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/news/analyze-bias — analyze reading bias pattern
@@ -322,7 +323,7 @@ Write a 3-4 paragraph neutral explainer that:
       let parsed: Record<string, unknown> = {};
       try { parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '')); } catch { /* keep empty */ }
       res.json({ bias_distribution: biasCount, ...parsed });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   return router;

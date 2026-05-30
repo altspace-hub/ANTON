@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -31,7 +32,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const lists = await getAvailableLists();
       res.json({ lists });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -59,7 +60,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
 
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -76,7 +77,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const result = await batchScreen(entities);
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -86,7 +87,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const profile = await getEntityProfile(req.params.id);
       res.json({ profile, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -96,7 +97,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const profile = await getPEPProfile(req.params.id);
       res.json({ profile, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -109,7 +110,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const result = await searchAdverseMedia(q, dateRange);
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -119,7 +120,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const detail = await getSanctionsDetail(req.params.id);
       res.json({ detail, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -140,7 +141,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
 
       res.json({ registration });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -150,7 +151,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       const alerts = await getMonitoringAlerts(req.params.sessionId);
       res.json({ alerts, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -165,7 +166,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       if (result.changes === 0) return res.status(404).json({ error: 'Monitoring registration not found' });
       res.json({ id: req.params.id, status });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -176,7 +177,7 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Promise<Router>
       if (result.changes === 0) return res.status(404).json({ error: 'Monitoring registration not found' });
       res.json({ deleted: true, id: req.params.id });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

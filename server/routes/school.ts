@@ -3049,7 +3049,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
       sql += ' ORDER BY created_at DESC';
       res.json(await db.run(sql, ...params));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/school/curricula
@@ -3062,7 +3062,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         body.tier || 'T2', body.language || 'en', JSON.stringify(body.units || []), body.created_by || 'teacher'
       );
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/school/lessons
@@ -3078,7 +3078,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       sql += ' ORDER BY created_at DESC';
       const rows = await db.all(sql, ...params) as Record<string, unknown>[];
       res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/school/lessons/:id
@@ -3087,7 +3087,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       const row = await db.get('SELECT * FROM school_lessons WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!row) return res.status(404).json({ error: 'Lesson not found' });
       return res.json({ ...row, content_blocks: JSON.parse((row.content_blocks as string) || '[]') });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/school/lessons
@@ -3103,7 +3103,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         body.tier || 'T2', body.published ? 1 : 0, body.created_by || 'teacher'
       );
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/school/lessons/:id
@@ -3122,7 +3122,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       values.push(req.params.id);
       await db.run(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`, ...values);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/school/lessons/:id
@@ -3130,7 +3130,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     try {
       await db.run('DELETE FROM school_lessons WHERE id = ?', req.params.id);
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/school/lessons/:id/progress — track student progress through lesson
@@ -3151,7 +3151,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         status === 'completed' ? new Date().toISOString() : (existing?.completed_at || null)
       );
       res.json({ ok: true, completed_blocks: completed, status });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/school/lessons/generate — AI generates a lesson
@@ -3198,7 +3198,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
       res.write('data: [DONE]\n\n');
       res.end();
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // ── Teacher Oversight ─────────────────────────────────────────────────────

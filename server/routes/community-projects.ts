@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createProjectOrchestratorService } from '../services/project-orchestrator-service.js';
@@ -17,7 +18,7 @@ export async function createCommunityProjectRoutes(db: DatabaseAdapter): Promise
       if (!name || !goal) return res.status(400).json({ error: 'name and goal required' });
       const id = await service.createCollaborativeProject({ name, goal, description });
       res.status(201).json({ id });
-    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.get('/community/projects/:id/dashboard', async (req, res) => {
@@ -31,7 +32,7 @@ export async function createCommunityProjectRoutes(db: DatabaseAdapter): Promise
       if (!goal) return res.status(400).json({ error: 'goal required' });
       const result = await service.generateProjectPlan(req.params.id, goal, context);
       res.json(result);
-    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/community/projects/:id/plan/:planId/approve', async (req, res) => {
@@ -49,7 +50,7 @@ export async function createCommunityProjectRoutes(db: DatabaseAdapter): Promise
       const { type, contactHash, contactName } = req.body;
       await service.assignTask(req.params.id, req.params.taskId, { type, contactHash, contactName });
       res.json({ ok: true });
-    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/community/projects/:id/tasks/:taskId/complete', async (req, res) => {

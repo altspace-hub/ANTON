@@ -229,7 +229,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         }
       }
       res.json({ activated: !!identity, identity: identity ? { ...identity, ...(mesh ?? {}) } : null });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/activate — register a new identity
@@ -280,7 +280,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       }
 
       return res.json({ ok: true, id, contact_hash, publicKey: realPubKey, x25519PublicKey: x25519PubKey });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/identity/regenerate-keys — generate or regenerate encryption keys
@@ -320,7 +320,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         signingPublicKey: signingPubKey ?? null,
         encryptionPublicKey: x25519PubKey ?? null,
       });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/community/identity — update identity fields (Q1)
@@ -492,7 +492,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         results,
         summary: allPassed ? 'Connection is fully operational — encrypted P2P messaging ready' : 'Some checks failed — see details',
       });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/community/connections/:id — update contact settings (name, endpoint, keys)
@@ -508,7 +508,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       vals.push(req.params.id);
       await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals);
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/connections
@@ -517,7 +517,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       res.json(
         await db.all("SELECT * FROM community_connections WHERE owner_user_id = 'default' ORDER BY connected_at DESC LIMIT 500")
       );
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/connections — add contact by hash + public key + X25519 key.
@@ -558,7 +558,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         meshReady ? JSON.stringify(mesh_relay_endpoints) : null,
         meshReady ? 'auto' : 'https');
       return res.json({ id, ok: true, mesh_ready: meshReady });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/forum/:forumId/posts — top-level posts only
@@ -568,7 +568,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         'SELECT * FROM community_forum_posts WHERE forum_id = ? AND parent_id IS NULL ORDER BY posted_at DESC LIMIT 50'
       , req.params.forumId);
       res.json(posts);
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/forum/:forumId/posts — create post or reply
@@ -590,7 +590,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         parent_id   || null
       );
       return res.json({ id, ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // ── Q1: GROUP ROUTES (9) ──────────────────────────────────────────────────
@@ -605,7 +605,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         withCounts.push({ ...g, memberCount: countRow.c });
       }
       res.json(withCounts);
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/groups
@@ -633,7 +633,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       , membId, id, identity.contact_hash, identity.display_name, identity.public_key, 'admin');
 
       return res.json({ id, groupHash: group_hash, joinCode: join_code });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/groups/:id
@@ -643,7 +643,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       if (!group) return res.status(404).json({ error: 'Group not found' });
       const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC LIMIT 500', req.params.id);
       return res.json({ ...group, members });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/community/groups/:id
@@ -657,7 +657,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         await db.run('UPDATE community_group_nodes SET description = ? WHERE id = ?', description, req.params.id);
       }
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/community/groups/:id
@@ -666,7 +666,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       await db.run('DELETE FROM community_group_members WHERE group_id = ?', req.params.id);
       await db.run('DELETE FROM community_group_nodes WHERE id = ?', req.params.id);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/groups/:id/invite-token
@@ -678,7 +678,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const token = Buffer.from(JSON.stringify(payload)).toString('base64url');
       const url = `${req.protocol}://${req.get('host')}/community/join?token=${token}`;
       return res.json({ token, url });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/groups/join
@@ -703,7 +703,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       , id, group.id, identity.contact_hash, displayName?.trim() || identity.display_name, identity.public_key, 'member');
 
       return res.json({ id, groupId: group.id });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/groups/:id/members
@@ -711,7 +711,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       const members = await db.all('SELECT * FROM community_group_members WHERE group_id = ? ORDER BY joined_at ASC LIMIT 500', req.params.id);
       res.json(members);
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/community/groups/:id/members/:contactHash
@@ -719,7 +719,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       await db.run('DELETE FROM community_group_members WHERE group_id = ? AND contact_hash = ?', req.params.id, req.params.contactHash);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // ── Q2: MAIL ROUTES (7) ──────────────────────────────────────────────────
@@ -736,7 +736,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const starredRow = await db.get(`SELECT COUNT(*) as c FROM community_mail WHERE starred = 1`) as { c: number };
       const starred = starredRow.c;
       return res.json({ inbox, drafts, starred });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/mail/queue/status  ← must be before /mail/:id
@@ -764,7 +764,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       params.push(parseInt(limit), parseInt(offset));
       const mails = await db.all(query, ...params);
       res.json(mails);
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/mail
@@ -868,7 +868,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       }
 
       return res.json({ id, ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/mail/:id
@@ -880,7 +880,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         ? await db.all('SELECT * FROM community_mail WHERE thread_id = ? ORDER BY COALESCE(sent_at, created_at) ASC LIMIT 500', mail.thread_id as string)
         : [];
       return res.json({ ...mail, thread });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/community/mail/:id
@@ -904,7 +904,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         }
       }
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/community/mail/:id
@@ -912,7 +912,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     try {
       await db.run('DELETE FROM community_mail WHERE id = ?', req.params.id);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/mail/:id/reply
@@ -944,7 +944,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
 
       return res.json({ id, ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // ── Q3: EVENT ROUTES (7) ──────────────────────────────────────────────────
@@ -960,7 +960,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       if (groupId) { query += ' AND group_id = ?'; params.push(groupId); }
       query += ' ORDER BY start_at ASC';
       res.json(await db.all(query, ...params));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/events
@@ -984,7 +984,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         location ?? null, meetingLink ?? null, recurrence ?? 'none', rsvpRequired ? 1 : 0
       );
       return res.json({ id, ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/events/:id
@@ -994,7 +994,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       if (!event) return res.status(404).json({ error: 'Event not found' });
       const rsvps = await db.all('SELECT * FROM community_event_rsvps WHERE event_id = ? ORDER BY responded_at ASC LIMIT 500', req.params.id);
       return res.json({ ...event, rsvps });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/community/events/:id
@@ -1008,7 +1008,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
         if (allowed.includes(col)) await db.run(`UPDATE community_events SET ${col} = ? WHERE id = ?`, v, req.params.id);
       }
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/community/events/:id
@@ -1017,7 +1017,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       await db.run('DELETE FROM community_event_rsvps WHERE event_id = ?', req.params.id);
       await db.run('DELETE FROM community_events WHERE id = ?', req.params.id);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/community/events/:id/rsvp
@@ -1035,7 +1035,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       , id, req.params.id, identity.contact_hash, identity.display_name, status, note ?? null);
 
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/community/events/:id/ics
@@ -1082,7 +1082,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="event-${event.id}.ics"`);
       return res.send(icsBody);
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // ── PHASE B: CAPABILITY CARDS, IMPORT POLICY, MESSAGE QUEUE ─────────────
@@ -1347,7 +1347,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
 
       res.json({ ok: true, query, peersQueried: peers.length, results });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1393,7 +1393,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
       res.json({ topics });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1415,7 +1415,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const topic = await db.get('SELECT * FROM community_group_topics WHERE id = ?', id);
       res.status(201).json({ topic });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1426,7 +1426,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const posts = await db.all('SELECT * FROM community_group_posts WHERE topic_id = ? ORDER BY posted_at ASC LIMIT 500', req.params.topicId);
       res.json({ topic, posts });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1452,7 +1452,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const post = await db.get('SELECT * FROM community_group_posts WHERE id = ?', id);
       res.status(201).json({ post });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1470,7 +1470,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       await db.run(`UPDATE community_group_topics SET ${sets.join(', ')} WHERE id = ? AND group_id = ?`, ...vals);
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1479,7 +1479,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       await db.run('DELETE FROM community_group_topics WHERE id = ? AND group_id = ?', req.params.topicId, req.params.id);
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1497,7 +1497,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
       res.status(201).json({ id });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1506,7 +1506,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       const flags = await db.all('SELECT * FROM community_content_flags WHERE group_id = ? ORDER BY created_at DESC LIMIT 50', req.params.id);
       res.json({ flags });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1520,7 +1520,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1535,7 +1535,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
       res.json({ ok: true, muted_until: new Date(Date.now() + hours * 3600000).toISOString() });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -1547,7 +1547,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       );
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

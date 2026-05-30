@@ -18,6 +18,7 @@
  *   POST /api/orchestrator/resume           — resume (admin)
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -59,7 +60,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       });
     } catch (err) {
       console.error('[orchestrator] status error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -69,7 +70,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default');
       res.json({ stage });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -92,7 +93,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_briefings')) as { c: number } | undefined)?.c ?? 0;
       res.json({ briefings, total, limit, offset });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -113,7 +114,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
       res.json({ briefing: { ...briefing, status: 'read' }, proposals });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -125,7 +126,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       res.json({ result });
     } catch (err) {
       console.error('[orchestrator] generate briefing error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -146,7 +147,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const proposals = await db.all(sql, ...params);
       res.json({ proposals });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -193,7 +194,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const updated = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id);
       res.json({ proposal: updated });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -218,7 +219,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
       res.json({ atoms, total: atoms.length, limit, days });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -231,7 +232,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       , limit);
       res.json({ heartbeats: rows });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -241,7 +242,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const config = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default');
       res.json({ config });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -265,7 +266,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const config = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default');
       res.json({ config });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -280,7 +281,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       `, user);
       res.json({ ok: true, paused: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -294,7 +295,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       `);
       res.json({ ok: true, paused: false });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -328,7 +329,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       console.warn(`[orchestrator] ⛔ FULLY DISABLED by ${by}. Reason: ${reason ?? 'none'}`);
       res.json({ ok: true, fully_disabled: true, disabled_by: by });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -370,7 +371,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
       res.json({ ok: true, stage: 1, reset: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -432,7 +433,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       res.status(201).json({ execution, trailId });
     } catch (err) {
       console.error('[orchestrator] approve error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -478,7 +479,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
       res.json({ ok: true, status: 'rejected', trailId });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -541,7 +542,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       });
     } catch (err) {
       console.error('[orchestrator] modify error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -568,7 +569,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_executions')) as { c: number } | undefined)?.c ?? 0;
       res.json({ executions, total, limit, offset });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -579,7 +580,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       if (!execution) return res.status(404).json({ error: 'Execution not found' });
       res.json({ execution });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -618,7 +619,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const updated = await db.get('SELECT * FROM orchestrator_executions WHERE id = ?', req.params.id);
       res.json({ execution: updated });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -646,7 +647,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_reasoning_trails')) as { c: number } | undefined)?.c ?? 0;
       res.json({ trails, total, limit, offset });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -670,7 +671,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
       res.json({ trail, entries, total_entries: totalEntries, limit, offset });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -683,7 +684,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       res.json({ report, period, generated_at: new Date().toISOString() });
     } catch (err) {
       console.error('[orchestrator] report error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -693,7 +694,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const result = checkStageDemotion(db);
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -707,7 +708,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const demotions = await db.all('SELECT * FROM orchestrator_stage_demotions ORDER BY demoted_at DESC LIMIT 20');
       res.json({ demotions });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -726,7 +727,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       );
       res.json({ patterns, detections });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -755,7 +756,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       if (!updated) return res.status(404).json({ error: 'Pattern not found' });
       res.json({ pattern: updated });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -772,7 +773,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       res.json({ patterns_detected: patterns.length, patterns_recorded: recorded.length, patterns });
     } catch (err) {
       console.error('[orchestrator] pattern detect error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -782,7 +783,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const state = await getDemoState(db);
       res.json({ demo: state, persona_context: state.mode !== 'off' ? getMeridianPersonaContext() : null });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -798,7 +799,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       res.json({ ok: true, ...result, mode: mode ?? 'demo' });
     } catch (err) {
       console.error('[orchestrator] demo activate error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -808,7 +809,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const result = deactivateDemoMode(db);
       res.json({ ok: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -822,7 +823,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       }
       res.json({ ok: true, day, done });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -842,7 +843,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default') as Record<string, unknown> | undefined;
       res.json({ action: 'no_change', stage });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

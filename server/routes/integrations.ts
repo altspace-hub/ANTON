@@ -6,6 +6,7 @@
  *   - Inbound Slack slash commands (HMAC-verified)
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, type Request, type Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { sendSlackMessage, testSlackWebhook } from '../services/integrations/slack-webhook.js';
@@ -49,7 +50,7 @@ export async function createIntegrationsRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: `Unknown platform: ${platform}` });
       }
     } catch (err) {
-      res.status(500).json({ ok: false, error: String(err) });
+      res.status(500).json({ ok: false, error: safeError(err) });
     }
   });
 
@@ -119,7 +120,7 @@ export async function createIntegrationsRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: `Unknown platform: ${platform}` });
       }
     } catch (err) {
-      res.status(500).json({ ok: false, error: String(err) });
+      res.status(500).json({ ok: false, error: safeError(err) });
     }
   });
 
@@ -211,7 +212,7 @@ export async function createIntegrationsRoutes(db: DatabaseAdapter) {
 
       res.json({ connections: safe });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

@@ -51,7 +51,23 @@ function isSqliteOnly(sql: string): boolean {
  *    any whose numeric prefix has a PG-specific override.
  * 5. Execute each pending migration inside a transaction.
  */
+// Fixed advisory-lock key so concurrent runners serialise: a second process
+// blocks at pg_advisory_xact_lock until the first finishes, then finds
+// everything applied. (Arbitrary constant — just has to be stable.)
+const MIGRATION_LOCK_KEY = 4242042042;
+
 export async function runMigrationsPg(db: DatabaseAdapter): Promise<void> {
+  // Single-flight under a transaction-level advisory lock. The lock is held on
+  // this outer transaction's connection and auto-releases when it ends (pool-safe,
+  // no manual unlock). The migrations themselves run on their own pooled
+  // connections inside applyPendingMigrations.
+  await db.transaction(async (lock) => {
+    await lock.exec(`SELECT pg_advisory_xact_lock(${MIGRATION_LOCK_KEY})`);
+    await applyPendingMigrations(db);
+  });
+}
+
+async function applyPendingMigrations(db: DatabaseAdapter): Promise<void> {
   // Ensure schema_migrations table exists
   await db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -142,7 +158,12 @@ export async function runMigrationsPg(db: DatabaseAdapter): Promise<void> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[pg-migrations] FAILED: ${id} — ${msg}`);
-      // Don't abort the whole run — log and continue
+      // Fail fast. Each migration runs in its own transaction, so the schema is
+      // left at the last fully-applied migration (the failed one rolled back and
+      // is NOT recorded). Aborting prevents later migrations running against a
+      // half-applied schema and prevents the old behaviour of silently retrying
+      // the failing migration forever. Fix it and re-run — applied ones are skipped.
+      throw err instanceof Error ? err : new Error(`Migration ${id} failed: ${msg}`);
     }
   }
 

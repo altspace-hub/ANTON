@@ -464,7 +464,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const packs = await hkp.listPacks(filters);
       res.json({ success: true, packs });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -482,7 +482,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const pack = await hkp.createPack(parsed.data);
       res.status(201).json({ success: true, pack });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -496,7 +496,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const lifecycle_events = await hkp.listRecentLifecycleEvents(req.params.id);
       res.json({ success: true, hkp: detail, lifecycle_events });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -514,7 +514,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true, pack });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -527,7 +527,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -539,7 +539,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const claims = await hkp.listClaims(req.params.id, cls);
       res.json({ success: true, claims });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -553,7 +553,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const claim = await hkp.upsertClaim({ hkp_id: req.params.id, ...parsed.data });
       res.status(201).json({ success: true, claim });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -566,7 +566,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -578,7 +578,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const components = await hkp.listComponents(req.params.id, componentType);
       res.json({ success: true, components });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -592,7 +592,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const component = await hkp.createComponent({ hkp_id: req.params.id, ...parsed.data });
       res.status(201).json({ success: true, component });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -605,7 +605,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -617,7 +617,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const alternatives = await hkp.listRegionalAlternatives(req.params.id, region);
       res.json({ success: true, alternatives });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -631,7 +631,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const alternative = await hkp.createRegionalAlternative({ hkp_id: req.params.id, ...parsed.data });
       res.status(201).json({ success: true, alternative });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -644,7 +644,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -677,7 +677,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }));
       res.json({ success: true, cases });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -705,7 +705,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       );
       res.json({ success: true, events: rows });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -722,7 +722,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, ...result });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -738,7 +738,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const list = await projects.listProjects(filters);
       res.json({ success: true, projects: list });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -760,7 +760,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, project: detail });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -773,7 +773,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true, project: detail });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -791,7 +791,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true, project });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -804,7 +804,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -824,7 +824,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true, phase });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -840,7 +840,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       );
       res.json({ success: true, ...result });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -855,7 +855,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const availability = await quality.getAvailability();
       res.json({ success: true, availability });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -882,7 +882,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, run: summary });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -892,7 +892,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const runs = await quality.listRuns(req.params.id, limit);
       res.json({ success: true, runs });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -905,7 +905,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       }
       res.json({ success: true, run: detail });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -931,7 +931,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, candidates });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -948,7 +948,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, outcome_id: result.id });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -957,7 +957,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const summary = await diagnose.summariseOutcomes(req.params.caseId);
       res.json({ success: true, summary });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -978,7 +978,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, case_id: result.case_id });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -989,7 +989,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const plans = await maintain.listPlans(req.params.id);
       res.json({ success: true, plans });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1007,7 +1007,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, plan });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1018,7 +1018,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const stages = await maintain.listStages(plan.id);
       res.json({ success: true, plan, stages });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1033,7 +1033,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!plan) { res.status(404).json({ error: 'Plan not found' }); return; }
       res.json({ success: true, plan });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1047,7 +1047,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const stage = await maintain.addStage(req.params.planId, getOwnerId(req), parsed.data);
       res.status(201).json({ success: true, stage });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1062,7 +1062,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!stage) { res.status(404).json({ error: 'Stage not found' }); return; }
       res.json({ success: true, stage });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1076,7 +1076,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const result = await maintain.recordAcceptance(req.params.stageId, getOwnerId(req), parsed.data.observations);
       res.json({ success: true, ...result });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1087,7 +1087,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const devices = await maintain.listFleet(req.params.id);
       res.json({ success: true, devices });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1105,7 +1105,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, device });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1121,7 +1121,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const rollouts = await maintain.planRollout(req.params.stageId, getOwnerId(req), parsed.data);
       res.status(201).json({ success: true, rollouts });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1130,7 +1130,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const rollouts = await maintain.listRolloutsForStage(req.params.stageId);
       res.json({ success: true, rollouts });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1145,7 +1145,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!rollout) { res.status(404).json({ error: 'Rollout not found' }); return; }
       res.json({ success: true, rollout });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1164,7 +1164,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, assessment: result });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1175,7 +1175,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const list = await regulatory.listForProject(req.params.id);
       res.json({ success: true, artefacts: list });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1193,7 +1193,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1204,7 +1204,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const history = await regulatory.listSignoffs(req.params.artefactId);
       res.json({ success: true, artefact, history });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1223,7 +1223,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1241,7 +1241,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1259,7 +1259,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1268,7 +1268,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const summary = await regulatory.assessCompleteness({ project_id: req.params.id });
       res.json({ success: true, summary });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1279,7 +1279,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const deployment = await humanitarian.getDeployment(req.params.id);
       res.json({ success: true, deployment });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1297,7 +1297,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, deployment });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1307,7 +1307,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const summary = await humanitarian.assessCompleteness(req.params.id);
       res.json({ success: true, artefacts, summary });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1325,7 +1325,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1336,7 +1336,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const history = await humanitarian.listSignoffs(req.params.artefactId);
       res.json({ success: true, artefact, history });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1355,7 +1355,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1373,7 +1373,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1387,7 +1387,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, artefact });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1399,7 +1399,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.setHeader('Content-Disposition', `attachment; filename="humanitarian-deployment-kit-${req.params.id.slice(0, 8)}.zip"`);
       res.send(buf);
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1416,7 +1416,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const list = await templates.listTemplates(filters);
       res.json({ success: true, templates: list });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1426,7 +1426,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!tpl) { res.status(404).json({ error: 'Template not found' }); return; }
       res.json({ success: true, template: tpl });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1444,7 +1444,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, template: tpl });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1462,7 +1462,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, ...result });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1472,7 +1472,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!ok) { res.status(404).json({ error: 'Template not found' }); return; }
       res.json({ success: true });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1483,7 +1483,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       res.setHeader('Content-Disposition', `attachment; filename="hardware-template-${req.params.id}.zip"`);
       res.send(buf);
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1497,7 +1497,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submissions = await reviewQueue.listPending(filters);
       res.json({ success: true, submissions });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1506,7 +1506,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submissions = await reviewQueue.listForSubmitter(getOwnerId(req));
       res.json({ success: true, submissions });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1527,7 +1527,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.status(201).json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1537,7 +1537,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       if (!submission) { res.status(404).json({ error: 'Submission not pending or not found' }); return; }
       res.json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1546,7 +1546,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submission = await reviewQueue.recordSecurityReview(req.params.id, getOwnerId(req));
       res.json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1560,7 +1560,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submission = await reviewQueue.approve(req.params.id, getOwnerId(req), parsed.data.notes);
       res.json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1574,7 +1574,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submission = await reviewQueue.reject(req.params.id, getOwnerId(req), parsed.data.notes);
       res.json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1583,7 +1583,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       const submission = await reviewQueue.withdraw(req.params.id, getOwnerId(req));
       res.json({ success: true, submission });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1602,7 +1602,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
       });
       res.json({ success: true, proposal });
     } catch (err) {
-      { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+      { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
     }
   });
 
@@ -1634,7 +1634,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         });
         res.json({ success: true, identification: result });
       } catch (err) {
-        { const __m = statusFromError(err); res.status(__m.status).json({ error: __m.message }); }
+        { const __m = statusFromError(err); res.status(__m.status).json({ error: safeError(__m) }); }
       }
     },
   );

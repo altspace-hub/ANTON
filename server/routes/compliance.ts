@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import express from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -14,7 +15,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const rules = await service.getAllRules(category as string);
       res.json({ success: true, rules });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -28,7 +29,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       }
       res.json({ success: true, rule });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -37,7 +38,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const ruleId = await service.createRule(req.body);
       res.json({ success: true, ruleId });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -48,7 +49,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       await service.updateRule(id, req.body);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -59,7 +60,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       await service.deleteRule(id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -71,7 +72,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const execution = await service.executeRule(id, req.body.context);
       res.json({ success: true, execution });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -81,7 +82,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const executions = await service.executeAllRules(context, category);
       res.json({ success: true, executions });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -96,7 +97,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const violations = await service.getViolations(filters);
       res.json({ success: true, violations });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -107,7 +108,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       await service.updateViolation(id, req.body);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 
@@ -117,7 +118,7 @@ export async function createComplianceRoutes(db: DatabaseAdapter) {
       const dashboard = await service.getComplianceDashboard();
       res.json({ success: true, ...dashboard });
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: safeError(error) });
     }
   });
 

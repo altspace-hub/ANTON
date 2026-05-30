@@ -4,6 +4,7 @@
  * Discovery, ratings, and reviews for community .anton bundles.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketplaceService } from '../services/marketplace-service.js';
@@ -25,7 +26,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       });
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -36,7 +37,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       if (!result.listing) return res.status(404).json({ error: 'Bundle not found' });
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -53,7 +54,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       });
       res.status(201).json({ id });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -70,7 +71,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       });
       res.json({ id });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -80,7 +81,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       await marketplace.incrementDownloads(req.params.id);
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -90,7 +91,7 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       await marketplace.unpublish(req.params.id);
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
