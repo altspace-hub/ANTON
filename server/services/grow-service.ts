@@ -36,6 +36,7 @@ interface ContactFilters {
   orgId?: string;
   limit?: number;
   offset?: number;
+  ownerId?: string; // scope to one user's contacts (team-mode isolation); omit for admin/solo
 }
 
 interface CreateOrganisationInput {
@@ -131,6 +132,7 @@ interface OpportunityFilters {
   search?: string;
   limit?: number;
   offset?: number;
+  ownerId?: string; // scope to one user's opportunities (team-mode isolation); omit for admin/solo
 }
 
 interface CreateActivityInput {
@@ -237,6 +239,10 @@ export async function createGrowService(db: DatabaseAdapter) {
     if (filters?.orgId) {
       conditions.push(`c.organisation_id = ?`);
       params.push(filters.orgId);
+    }
+    if (filters?.ownerId) {
+      conditions.push(`c.created_by = ?`);
+      params.push(filters.ownerId);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -533,6 +539,10 @@ export async function createGrowService(db: DatabaseAdapter) {
       conditions.push(`(op.title ILIKE ? OR o.name ILIKE ?)`);
       const term = `%${filters.search}%`;
       params.push(term, term);
+    }
+    if (filters?.ownerId) {
+      conditions.push('op.created_by = ?');
+      params.push(filters.ownerId);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

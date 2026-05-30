@@ -115,6 +115,15 @@ schema matches migration; cohort lifts 4→5.
 
 **Effort:** M. **Independent** of other phases.
 
+**Status (2026-05-30): DONE for the schema-supported scope.** Procure (cycle-rooted),
+Civic (engagement-rooted), and Grow (contacts + opportunities) now scope reads by
+`created_by`, set the owner from the authed user, and guard detail/child routes (404 on
+non-owner). Solo mode = single admin → transparent. Service-level isolation tests per pillar.
+**Follow-up:** Grow's `organisations / interactions / activities / signals / briefings` have
+no `created_by` column — full isolation there needs a small migration to add it (or
+parent-gating). Procure's deeper budget-field schema drift is a data-modelling decision, not
+a leak — deferred.
+
 ---
 
 ## Phase 4 — Consolidate duplicated registries & parallel stacks  ·  *structural*

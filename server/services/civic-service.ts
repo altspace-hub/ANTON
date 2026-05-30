@@ -120,6 +120,7 @@ export async function createCivicService(db: DatabaseAdapter) {
     contact_org?: string;
     notes?: string;
     metadata?: Record<string, unknown>;
+    created_by?: string;
   }): Promise<CivicEngagement> {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -127,8 +128,8 @@ export async function createCivicService(db: DatabaseAdapter) {
     await db.run(`
       INSERT INTO civic_engagements
         (id, title, description, domain, jurisdiction, status, phase,
-         contact_name, contact_email, contact_org, notes, metadata, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         contact_name, contact_email, contact_org, notes, metadata, created_by, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       id,
       data.title,
@@ -142,6 +143,7 @@ export async function createCivicService(db: DatabaseAdapter) {
       data.contact_org ?? null,
       data.notes ?? null,
       data.metadata ? JSON.stringify(data.metadata) : null,
+      data.created_by ?? null,
       now,
       now
     );
@@ -179,6 +181,7 @@ export async function createCivicService(db: DatabaseAdapter) {
   async function listEngagements(filters?: {
     status?: string;
     domain?: string;
+    ownerId?: string;
   }): Promise<CivicEngagement[]> {
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -190,6 +193,11 @@ export async function createCivicService(db: DatabaseAdapter) {
     if (filters?.domain) {
       conditions.push('domain = ?');
       params.push(filters.domain);
+    }
+    // ownerId scopes to one user's engagements (team-mode isolation); omit for admin/solo.
+    if (filters?.ownerId) {
+      conditions.push('created_by = ?');
+      params.push(filters.ownerId);
     }
 
     const where = conditions.length > 0
@@ -569,18 +577,23 @@ export async function createCivicService(db: DatabaseAdapter) {
     return await db.get<CivicSubmission>('SELECT * FROM civic_submissions WHERE id = ?', id);
   }
 
-  async function getUpcomingDeadlines(days: number = 30): Promise<CivicSubmission[]> {
+  async function getUpcomingDeadlines(days: number = 30, ownerId?: string): Promise<CivicSubmission[]> {
     const now = new Date().toISOString();
     const future = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    // Scope this cross-engagement view to the caller's own engagements in team mode.
+    const ownerClause = ownerId
+      ? ` AND engagement_id IN (SELECT id FROM civic_engagements WHERE created_by = ?)`
+      : '';
+    const args: unknown[] = ownerId ? [now, future, ownerId] : [now, future];
 
     return await db.all<CivicSubmission>(
       `SELECT * FROM civic_submissions
        WHERE deadline IS NOT NULL
          AND deadline >= ?
          AND deadline <= ?
-         AND status NOT IN ('submitted', 'accepted', 'rejected', 'cancelled')
+         AND status NOT IN ('submitted', 'accepted', 'rejected', 'cancelled')${ownerClause}
        ORDER BY deadline ASC`,
-      now, future
+      ...args
     );
   }
 

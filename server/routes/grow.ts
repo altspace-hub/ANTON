@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createGrowService } from '../services/grow-service.js';
@@ -166,6 +166,35 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const svc = await createGrowService(db);
 
+  // ── Multi-tenant isolation (team mode) ───────────────────────────────────
+  // Contacts and opportunities carry created_by; in team mode these guards stop
+  // one user reading/mutating another's. Solo mode is a single admin user, so
+  // they are transparent. NOTE: organisations / interactions / activities /
+  // signals / briefings have no created_by yet — full isolation there needs a
+  // follow-up migration (see docs/IMPROVEMENT_ROADMAP.md Phase 3).
+  function actorOf(req: Request): { id: string; isAdmin: boolean } {
+    return { id: req.user?.id ?? 'solo', isAdmin: (req.user?.role ?? 'admin') === 'admin' };
+  }
+  function ownerScope(req: Request): string | undefined {
+    const a = actorOf(req);
+    return a.isAdmin ? undefined : a.id;
+  }
+  // 404 (not 403) so a non-owner cannot probe which ids exist.
+  function makeOwnerGuard(table: string, label: string) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      void db.get<{ created_by: string | null }>(`SELECT created_by FROM ${table} WHERE id = ?`, req.params.id)
+        .then((row) => {
+          if (!row) { res.status(404).json({ error: `${label} not found` }); return; }
+          const a = actorOf(req);
+          if (!a.isAdmin && row.created_by !== a.id) { res.status(404).json({ error: `${label} not found` }); return; }
+          next();
+        })
+        .catch(next);
+    };
+  }
+  router.use('/grow/contacts/:id', makeOwnerGuard('grow_contacts', 'Contact'));
+  router.use('/grow/opportunities/:id', makeOwnerGuard('grow_opportunities', 'Opportunity'));
+
   // ── Contacts ──────────────────────────────────────────────────────────
 
   router.get('/grow/contacts', async (req: Request, res: Response) => {
@@ -175,6 +204,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
         orgId: req.query.orgId as string | undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+        ownerId: ownerScope(req),
       });
       res.json(contacts);
     } catch (err) {
@@ -186,7 +216,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/contacts', async (req: Request, res: Response) => {
     try {
       const data = createContactSchema.parse(req.body);
-      const id = await svc.createContact(data);
+      const id = await svc.createContact({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -392,6 +422,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
         search: req.query.search as string | undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+        ownerId: ownerScope(req),
       });
       res.json(opportunities);
     } catch (err) {
@@ -403,7 +434,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/opportunities', async (req: Request, res: Response) => {
     try {
       const data = createOpportunitySchema.parse(req.body);
-      const id = await svc.createOpportunity(data);
+      const id = await svc.createOpportunity({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {

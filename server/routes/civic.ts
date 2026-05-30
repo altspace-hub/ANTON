@@ -5,7 +5,7 @@
  * deadlines, and knowledge packs.
  */
 
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createCivicService } from '../services/civic-service.js';
@@ -123,6 +123,49 @@ export async function createCivicRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const service = await createCivicService(db);
 
+  // ── Multi-tenant isolation (team mode) ───────────────────────────────────
+  // Ownership is rooted at the engagement (civic_engagements.created_by). Solo
+  // mode is a single admin user, so these guards are transparent there; in team
+  // mode they stop one user reading/mutating another's civic data. Knowledge
+  // packs are shared reference data and intentionally stay unguarded.
+  function actorOf(req: Request): { id: string; isAdmin: boolean } {
+    return { id: req.user?.id ?? 'solo', isAdmin: (req.user?.role ?? 'admin') === 'admin' };
+  }
+
+  // 404 (not 403) so a non-owner cannot probe which engagement ids exist.
+  async function ensureEngagementAccess(req: Request, res: Response, engagementId: string): Promise<boolean> {
+    const row = await db.get<{ created_by: string | null }>(
+      'SELECT created_by FROM civic_engagements WHERE id = ?', engagementId,
+    );
+    if (!row) { res.status(404).json({ error: 'Engagement not found' }); return false; }
+    const a = actorOf(req);
+    if (!a.isAdmin && row.created_by !== a.id) { res.status(404).json({ error: 'Engagement not found' }); return false; }
+    return true;
+  }
+
+  // One guard for every /civic/engagements/:engagementId route (detail + children).
+  router.use('/civic/engagements/:engagementId', (req: Request, res: Response, next: NextFunction): void => {
+    void ensureEngagementAccess(req, res, String(req.params.engagementId)).then((ok) => { if (ok) next(); }).catch(next);
+  });
+
+  // Guard child-by-own-id routes by resolving the parent engagement.
+  // /civic/processes/:id also covers the nested /civic/processes/:id/eligibility.
+  const CHILD_TABLES: Record<string, string> = {
+    processes: 'civic_processes',
+    documents: 'civic_documents',
+    submissions: 'civic_submissions',
+  };
+  for (const [seg, table] of Object.entries(CHILD_TABLES)) {
+    router.use(`/civic/${seg}/:id`, (req: Request, res: Response, next: NextFunction): void => {
+      void db.get<{ engagement_id: string }>(`SELECT engagement_id FROM ${table} WHERE id = ?`, req.params.id)
+        .then((row) => {
+          if (!row) { res.status(404).json({ error: 'Not found' }); return; }
+          return ensureEngagementAccess(req, res, row.engagement_id).then((ok) => { if (ok) next(); });
+        })
+        .catch(next);
+    });
+  }
+
   // ── Engagements ─────────────────────────────────────────────────────────
 
   // GET /civic/engagements — list engagements
@@ -130,7 +173,8 @@ export async function createCivicRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const status = req.query.status as string | undefined;
       const domain = req.query.domain as string | undefined;
-      const engagements = await service.listEngagements({ status, domain });
+      const a = actorOf(req);
+      const engagements = await service.listEngagements({ status, domain, ownerId: a.isAdmin ? undefined : a.id });
       res.json({ success: true, engagements });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -151,7 +195,7 @@ export async function createCivicRoutes(db: DatabaseAdapter): Promise<Router> {
         createData.description = createData.goal;
       }
       delete (createData as Record<string, unknown>).goal;
-      const engagement = await service.createEngagement(createData);
+      const engagement = await service.createEngagement({ ...createData, created_by: actorOf(req).id });
       res.status(201).json({ success: true, engagement });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -406,7 +450,8 @@ export async function createCivicRoutes(db: DatabaseAdapter): Promise<Router> {
         res.status(400).json({ error: 'Invalid days parameter' });
         return;
       }
-      const submissions = await service.getUpcomingDeadlines(days);
+      const a = actorOf(req);
+      const submissions = await service.getUpcomingDeadlines(days, a.isAdmin ? undefined : a.id);
       res.json({ success: true, submissions });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
