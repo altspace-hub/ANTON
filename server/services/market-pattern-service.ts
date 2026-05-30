@@ -184,7 +184,7 @@ export async function createMarketPatternService(db: DatabaseAdapter) {
     // Query recent patterns count by severity
     const patternsBySeverity = await db.all<{ severity: string; count: number }>(
       `SELECT severity, COUNT(*) as count FROM market_pattern_detections
-       WHERE status = 'active'
+       WHERE status NOT IN ('resolved', 'false_positive')
        AND detected_at >= ${dateOffsetLiteral(db.dialect, 30, 'days')}
        GROUP BY severity`
     );
