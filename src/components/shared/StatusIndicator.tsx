@@ -23,6 +23,7 @@ function estimateCost(
 ): string {
   const costs: Record<string, { i: number; o: number }> = {
     'claude-opus-4-8': { i: 5, o: 25 },
+    'claude-sonnet-4-6': { i: 3, o: 15 },
     'claude-sonnet-4-5-20250929': { i: 3, o: 15 },
     'claude-haiku-4-5-20251001': { i: 1, o: 5 },
   };
@@ -58,6 +59,7 @@ function modelSavingsComparison(input: number, output: number, currentModel: str
 function estimateCacheSavings(cached: number, model: string): string {
   const costs: Record<string, { i: number }> = {
     'claude-opus-4-8': { i: 5 },
+    'claude-sonnet-4-6': { i: 3 },
     'claude-sonnet-4-5-20250929': { i: 3 },
     'claude-haiku-4-5-20251001': { i: 1 },
   };

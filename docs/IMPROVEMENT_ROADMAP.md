@@ -157,6 +157,16 @@ path; one RAG embedding path; docs match runtime; the next model update is a one
 
 **Effort:** L. **Do AFTER Phase 1** (tests make the refactor safe).
 
+**Status (2026-05-30): SAFE scope DONE.** `token-estimator.ts` + `audit.ts` now delegate to
+`model-capabilities.ts::estimateCost` (the SoT) — a price update is a one-file edit; the consistency
+test was extended to fail on any future server-side pricing drift. Fixed a real display bug
+(StatusIndicator priced Sonnet 4.6 sessions as Opus). Docs corrected to match runtime: vector RAG
+uses **OpenAI** embeddings (not Ollama; keyword fallback without `OPENAI_API_KEY`) in
+`RAG_ARCHITECTURE.md` / `CLAUDE.md` / `.env.example`; `model-router.ts` stale Sonnet-4.5 drift noted.
+**Deferred (risky, documented):** deleting `MODEL_REGISTRY` (async + DB-backed `getModelConfig`, adapter-only
+fields), removing `provider-router.ts` (18 route consumers), deriving `model-router` COST_RELATIVE, deriving
+the frontend `MODELS[]`/StatusIndicator from a shared snapshot, and migrating RAG onto pgvector.
+
 ---
 
 ## Phase 5 — Apps: last-mile production binding  ·  *ship the apps*

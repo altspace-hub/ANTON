@@ -69,6 +69,14 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 
 // ── Model Registry ──────────────────────────────────────────────────
 
+// ── Single source of truth ──────────────────────────────────────────────────
+// This table is the SoT for model pricing / context / output. Server cost
+// callers — token-estimator.ts, and audit.ts via it — DELEGATE to estimateCost()
+// below, so editing a price here is the only change needed. The /api/claude
+// dispatch route reads modelAdapter.ts MODEL_REGISTRY, held in sync by
+// tests/config/model-registry-consistency.test.ts. NOT yet derived: the frontend
+// src/lib/constants.ts MODELS[] + StatusIndicator.tsx tables (deferred — they
+// can't import server config; would need a frontend snapshot/endpoint).
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
   'claude-opus-4-8': {
