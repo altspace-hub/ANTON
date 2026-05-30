@@ -3664,6 +3664,16 @@ export const MODELS: ModelInfo[] = [
   },
 ];
 
+/**
+ * Per-million input/output pricing for a model id, from the MODELS source of
+ * truth — so frontend cost displays never drift from the model catalogue.
+ * Falls back to Opus 4.8 pricing for an unknown id (matches prior behaviour).
+ */
+export function getModelPricing(modelId: string): { input: number; output: number } {
+  const m = MODELS.find((x) => x.id === modelId);
+  return m ? { input: m.inputCostPer1M, output: m.outputCostPer1M } : { input: 5, output: 25 };
+}
+
 export const THINKING_LEVELS = [
   { id: 'quick' as const, label: 'Quick', description: 'Fast response, minimal analysis', icon: 'Zap' },
   { id: 'think' as const, label: 'Think', description: 'Standard analysis depth', icon: 'Brain' },

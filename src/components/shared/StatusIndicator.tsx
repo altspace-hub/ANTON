@@ -1,4 +1,5 @@
 import { Coins, Zap, TrendingDown } from 'lucide-react';
+import { getModelPricing } from '../../lib/constants';
 
 interface StatusIndicatorProps {
   inputTokens: number;
@@ -21,50 +22,31 @@ function estimateCost(
   cached: number = 0,
   cacheCreation: number = 0
 ): string {
-  const costs: Record<string, { i: number; o: number }> = {
-    'claude-opus-4-8': { i: 5, o: 25 },
-    'claude-sonnet-4-6': { i: 3, o: 15 },
-    'claude-sonnet-4-5-20250929': { i: 3, o: 15 },
-    'claude-haiku-4-5-20251001': { i: 1, o: 5 },
-  };
-  const c = costs[model] || costs['claude-opus-4-8'];
-  const inputCost = (input * c.i) / 1_000_000;
-  const outputCost = (output * c.o) / 1_000_000;
-  const cachedCost = (cached * c.i * 0.1) / 1_000_000; // 90% discount
-  const cacheCreationCost = (cacheCreation * c.i) / 1_000_000;
+  const c = getModelPricing(model);
+  const inputCost = (input * c.input) / 1_000_000;
+  const outputCost = (output * c.output) / 1_000_000;
+  const cachedCost = (cached * c.input * 0.1) / 1_000_000; // 90% discount
+  const cacheCreationCost = (cacheCreation * c.input) / 1_000_000;
   const total = inputCost + outputCost + cachedCost + cacheCreationCost;
   return total < 0.01 ? '<$0.01' : `$${total.toFixed(2)}`;
 }
 
 // MODEL-03: compute what the same tokens would cost on a cheaper model
 function modelSavingsComparison(input: number, output: number, currentModel: string): { label: string; saving: string } | null {
-  const modelCosts: Record<string, { i: number; o: number; label: string }> = {
-    'claude-opus-4-8': { i: 5, o: 25, label: 'Opus 4.8' },
-    'claude-sonnet-4-6': { i: 3, o: 15, label: 'Sonnet 4.6' },
-    'claude-sonnet-4-5-20250929': { i: 3, o: 15, label: 'Sonnet 4.5' },
-    'claude-haiku-4-5-20251001': { i: 1, o: 5, label: 'Haiku 4.5' },
-  };
   // Only show if current model is Opus
   if (!currentModel.includes('opus')) return null;
-  const current = modelCosts[currentModel];
-  const sonnet = modelCosts['claude-sonnet-4-6'];
-  if (!current || !sonnet) return null;
-  const currentCost = (input * current.i + output * current.o) / 1_000_000;
-  const sonnetCost  = (input * sonnet.i  + output * sonnet.o)  / 1_000_000;
+  const current = getModelPricing(currentModel);
+  const sonnet = getModelPricing('claude-sonnet-4-6');
+  const currentCost = (input * current.input + output * current.output) / 1_000_000;
+  const sonnetCost  = (input * sonnet.input  + output * sonnet.output)  / 1_000_000;
   const saving = currentCost - sonnetCost;
   if (saving < 0.01) return null;
   return { label: 'Sonnet 4.6', saving: `$${saving.toFixed(2)}` };
 }
 
 function estimateCacheSavings(cached: number, model: string): string {
-  const costs: Record<string, { i: number }> = {
-    'claude-opus-4-8': { i: 5 },
-    'claude-sonnet-4-6': { i: 3 },
-    'claude-sonnet-4-5-20250929': { i: 3 },
-    'claude-haiku-4-5-20251001': { i: 1 },
-  };
-  const c = costs[model] || costs['claude-opus-4-8'];
-  const savings = (cached * c.i * 0.9) / 1_000_000; // 90% of what would have been paid
+  const c = getModelPricing(model);
+  const savings = (cached * c.input * 0.9) / 1_000_000; // 90% of what would have been paid
   return savings < 0.01 ? '<$0.01' : `$${savings.toFixed(2)}`;
 }
 
