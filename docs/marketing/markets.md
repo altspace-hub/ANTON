@@ -1,6 +1,6 @@
 # Markets — One-Pager
 
-> **What it is:** ANTON's self-learning financial-intelligence pillar. The canonical proof-of-Layer-2 in the six-layer vision: a closed feedback loop where atoms become patterns become theses become predictions become daily-NAV-validated learning.
+> **What it is:** ANTON's financial-intelligence pillar, instrumented for learning. The canonical proof-of-Layer-2 in the six-layer vision: a closed feedback loop where atoms become patterns become theses become predictions become daily-NAV-validated learning.
 > **Who it's for:** investment managers, sell-side analysts, financial-crime intelligence teams, anyone who needs a defensible AI-driven view on markets.
 > **What makes it different:** **deterministic engine + LLM-rationale + daily ground truth**. Math is reproducible, prose is generated, accuracy is measured every trading day.
 
@@ -80,7 +80,7 @@ Per memory `project_markets_effectiveness_pause.md`, the April 2026 closed-loop 
 - `MARKETS_FETCH_DISABLED=true` — pauses external data fetches (FMP, news, RSS)
 - `RADAR_AUTOMATION_DISABLED=true` — disables radar auto-scan + scheduled cron
 
-The pillar's **code is ✅ built**; its **production effectiveness is 🟢 under improvement**. This honesty is the point. A self-learning system that hides its accuracy isn't self-learning.
+The pillar's **code is ✅ built**; its **production effectiveness is 🟢 under validation** (live accuracy is not yet better than chance — the loop is *instrumented* to learn, not yet *proven* to). This honesty is the point: a system that claims to learn but hides its accuracy isn't trustworthy.
 
 ---
 

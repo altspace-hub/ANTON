@@ -343,7 +343,7 @@ ANTON is organised into **top-level pillars**, each representing a different mod
 | **School** | Educational interface with teacher oversight | `src/pages/school/`, `school-pages` chunk |
 | **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) | `src/pages/life/` |
 | **Pathfinder** | Mode-aware research assistant ("smart action bar") | `src/pages/pathfinder/`, `server/services/pathfinder-engine.ts` |
-| **Markets** | Self-learning financial intelligence — 14 migrations, 21 services, 39 Python computation templates, ANTON 100 indexes, predictions, calibration | `server/services/market-*.ts`, `server/db/migrations-pg/049–062`, `src/pages/markets/` |
+| **Markets** | Financial intelligence, instrumented for learning — 14 migrations, 21 services, 39 Python computation templates, ANTON 100 indexes, predictions, calibration | `server/services/market-*.ts`, `server/db/migrations-pg/049–062`, `src/pages/markets/` |
 | **Community** | E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring | `server/services/community-*.ts`, `src/pages/community/` |
 | **Procure** | Procurement cycles, vendor evaluation, criteria scoring, contract tracking | `server/services/procure-service.ts`, migration `091_procure_pillar.sql` |
 | **Civic** | Civic engagements, eligibility checks, document submissions, knowledge packs | `server/services/civic-service.ts`, migration `092_civic_pillar.sql` |
@@ -352,7 +352,7 @@ ANTON is organised into **top-level pillars**, each representing a different mod
 | **Portals** | User-created ANTON-only web spaces with capability descriptors. 8-phase walkthrough builder, 7 starter templates, 12-verb capability taxonomy, registry protocol with transparency log, `anton-portal` Pathfinder mode. Full e2e: build → publish → visit → invoke. | `server/services/portals/*`, `server/services/registry-protocol/*`, `server/services/registry-client/*`, `server/services/capability-descriptor/*`, `server/routes/portals.ts`, `src/pages/portals/`, migrations `145–148` |
 | **Missions** | Multi-step automation jobs (research / outreach / monitoring) with credential vault + service packs + inbox | `src/pages/missions/`, `server/routes/mission-*.ts` |
 
-The Markets Pillar is ANTON's **proof of self-learning intelligence** — daily market feedback validates predictions and reasoning quality. Markets is the canonical example for any new "intelligent pillar."
+The Markets Pillar is ANTON's **testbed for self-learning intelligence** — daily market feedback is wired to validate predictions and reasoning quality (effectiveness is under active validation; live accuracy is not yet better than chance — see `docs/PORTFOLIO_AUDIT_2026-05-30.md`). Markets is the canonical example for any new "intelligent pillar."
 
 The Portals Pillar is ANTON's **proof of inter-instance interoperability** — every portal is simultaneously a human-facing site and a machine-readable AAP endpoint. See `ANTON_Portals_Spec.md` v0.2 + the three companion reference docs (Registry Protocol, Capability Descriptor Schema, Registry Server Ops) for the full design.
 
