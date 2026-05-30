@@ -6,7 +6,7 @@
  * documents (RFI/RFP/RFQ), and contracts.
  */
 
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createProcureService } from '../services/procure-service.js';
@@ -23,7 +23,6 @@ const createCycleSchema = z.object({
   budget_max: z.number().nonnegative().optional(),
   currency: z.string().max(10).optional(),
   deadline: z.string().max(50).optional(),
-  owner: z.string().max(200).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -36,7 +35,6 @@ const updateCycleSchema = z.object({
   budget_max: z.number().nonnegative().optional(),
   currency: z.string().max(10).optional(),
   deadline: z.string().max(50).optional(),
-  owner: z.string().max(200).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -157,13 +155,59 @@ export async function createProcureRoutes(db: DatabaseAdapter): Promise<Router> 
   const router = Router();
   const service = await createProcureService(db);
 
+  // ── Multi-tenant isolation (team mode) ───────────────────────────────────
+  // Ownership is rooted at the cycle (procure_cycles.created_by). In solo mode
+  // every request is the single admin user, so these guards are transparent; in
+  // team mode they stop one user reading or mutating another's procurement data.
+  // Mirrors Risk Atlas's ensureAtlasAccess / Evidence Pack's owner check.
+  function actorOf(req: Request): { id: string; isAdmin: boolean } {
+    return { id: req.user?.id ?? 'solo', isAdmin: (req.user?.role ?? 'admin') === 'admin' };
+  }
+
+  // 404 (not 403) so a non-owner cannot probe which cycle ids exist.
+  async function ensureCycleAccess(req: Request, res: Response, cycleId: string): Promise<boolean> {
+    const row = await db.get<{ created_by: string | null }>(
+      'SELECT created_by FROM procure_cycles WHERE id = ?', cycleId,
+    );
+    if (!row) { res.status(404).json({ error: 'Cycle not found' }); return false; }
+    const a = actorOf(req);
+    if (!a.isAdmin && row.created_by !== a.id) { res.status(404).json({ error: 'Cycle not found' }); return false; }
+    return true;
+  }
+
+  // One guard for every /procure/cycles/:cycleId route (detail + nested children).
+  router.use('/procure/cycles/:cycleId', (req: Request, res: Response, next: NextFunction): void => {
+    void ensureCycleAccess(req, res, String(req.params.cycleId)).then((ok) => { if (ok) next(); }).catch(next);
+  });
+
+  // Guard child-by-own-id routes by resolving the child's parent cycle.
+  // Table names are a fixed allowlist (never user input).
+  const CHILD_TABLES: Record<string, string> = {
+    requirements: 'procure_requirements',
+    criteria: 'procure_criteria',
+    vendors: 'procure_vendors',
+    documents: 'procure_documents',
+    contracts: 'procure_contracts',
+  };
+  for (const [seg, table] of Object.entries(CHILD_TABLES)) {
+    router.use(`/procure/${seg}/:id`, (req: Request, res: Response, next: NextFunction): void => {
+      void db.get<{ cycle_id: string }>(`SELECT cycle_id FROM ${table} WHERE id = ?`, req.params.id)
+        .then((row) => {
+          if (!row) { res.status(404).json({ error: 'Not found' }); return; }
+          return ensureCycleAccess(req, res, row.cycle_id).then((ok) => { if (ok) next(); });
+        })
+        .catch(next);
+    });
+  }
+
   // ── Cycles ─────────────────────────────────────────────────────────────────
 
   // GET /procure/cycles — list cycles (optional ?status= filter)
   router.get('/procure/cycles', async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const cycles = await service.listCycles(status ? { status } : undefined);
+      const a = actorOf(req);
+      const cycles = await service.listCycles({ status, ownerId: a.isAdmin ? undefined : a.id });
       res.json(cycles);
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -178,7 +222,8 @@ export async function createProcureRoutes(db: DatabaseAdapter): Promise<Router> 
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
-      const cycle = await service.createCycle(parsed.data);
+      const a = actorOf(req);
+      const cycle = await service.createCycle({ ...parsed.data, created_by: a.id });
       res.status(201).json(cycle);
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -418,6 +463,7 @@ export async function createProcureRoutes(db: DatabaseAdapter): Promise<Router> 
         return;
       }
       const { cycle_id, vendor_id, criterion_id, ...evalData } = parsed.data;
+      if (!await ensureCycleAccess(req, res, cycle_id)) return;
       const evaluation = await service.saveEvaluation(cycle_id, vendor_id, criterion_id, evalData);
       res.json(evaluation);
     } catch (err) {
