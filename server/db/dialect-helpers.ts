@@ -48,8 +48,11 @@ export function strftime(dialect: Dialect, sqliteFmt: string, col: string): stri
 }
 
 function sqliteFmtToPg(fmt: string): string {
+  // ISO week (%W → IW) must pair with the ISO year (IYYY), not the calendar
+  // year (YYYY) — otherwise the year is wrong in the first/last days of a year.
+  const yearToken = /%W/.test(fmt) ? 'IYYY' : 'YYYY';
   return fmt
-    .replace(/%Y/g, 'YYYY')
+    .replace(/%Y/g, yearToken)
     .replace(/%m/g, 'MM')
     .replace(/%d/g, 'DD')
     .replace(/%H/g, 'HH24')
