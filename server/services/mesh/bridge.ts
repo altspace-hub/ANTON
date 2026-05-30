@@ -252,14 +252,6 @@ function sendResponseFrame(
   headers: RpcHeader[],
   body: Uint8Array,
 ): void {
-  // TEMP DIAG — see what we're actually sending back on the wire. Remove
-  // once mesh pairing is verified end-to-end.
-  try {
-    const preview = new TextDecoder('utf-8', { fatal: false })
-      .decode(body.subarray(0, Math.min(body.length, 300)));
-    // eslint-disable-next-line no-console
-    console.log(`[mesh-bridge] resp seq=${seq} status=${status} bodyLen=${body.length} body[0..300]=${JSON.stringify(preview)}`);
-  } catch { /* noop */ }
   try {
     const frame = encodeRpc({ kind: RPC_KIND.RESPONSE, seq, status, headers, body } as RpcResponse);
     state.ctx.send(frame);

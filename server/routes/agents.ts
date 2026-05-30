@@ -9,6 +9,7 @@ import { createAgentService } from '../services/agent-service.js';
 import { createAgentProcessor } from '../services/agent-processor.js';
 import { createAgentBuilder } from '../services/agent-builder.js';
 import { safeError } from '../lib/error-response.js';
+import { p2pLimiter } from '../middleware/rate-limit.js';
 
 const createAgentSchema = z.object({
   name: z.string().min(1).max(200),
@@ -273,7 +274,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
   // ── Public Storefront (no auth required — for external ANTONs) ──
 
   // GET /agents/public/directory — list all active agents that are publicly queryable
-  router.get('/agents/public/directory', async (req, res) => {
+  router.get('/agents/public/directory', p2pLimiter, async (req, res) => {
     try {
       const agents = await service.listAgents({ status: 'active' });
       // Only expose public-safe fields
@@ -293,7 +294,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
 
   // POST /agents/public/query — external ANTON queries an agent (no mutual contact needed)
   // Secured by: agent must be active + auto_response_enabled, optional API key
-  router.post('/agents/public/query', async (req, res) => {
+  router.post('/agents/public/query', p2pLimiter, async (req, res) => {
     try {
       const { agentSlug, message, conversationId, requesterHash, requesterName } = req.body as {
         agentSlug: string; message: string; conversationId?: string;
@@ -327,7 +328,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
   });
 
   // POST /agents/public/route — external ANTON asks "who can help with X?"
-  router.post('/agents/public/route', async (req, res) => {
+  router.post('/agents/public/route', p2pLimiter, async (req, res) => {
     try {
       const { query } = req.body as { query: string };
       if (!query) { res.status(400).json({ error: 'query required' }); return; }
