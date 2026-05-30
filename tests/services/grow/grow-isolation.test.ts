@@ -2,8 +2,9 @@
  * grow-isolation.test.ts — multi-tenant isolation for the Grow pillar.
  *
  * Cross-user leak (roadmap Phase 3): listContacts / listOpportunities returned
- * every user's records. They now scope by created_by for non-admin callers
- * (contacts + opportunities are the entities that carry created_by).
+ * every user's records. They now scope by created_by for non-admin callers.
+ * Migration 217 added created_by to the remaining top-level entities
+ * (organisations, signals, briefings), which are now scoped here too.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createGrowService } from '../../../server/services/grow-service.js';
@@ -54,5 +55,52 @@ describe('grow multi-tenant isolation', () => {
     await svc.createContact({ firstName: 'Ada', lastName: 'Lovelace', createdBy: 'user_a' });
     const insert = mockDb.calls.find((c) => c.sql.includes('INSERT INTO grow_contacts'))!;
     expect(insert.args).toContain('user_a');
+  });
+
+  // ── Migration 217: organisations / signals / briefings ──────────────────
+
+  it('listOrganisations scopes by created_by when ownerId is set', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.listOrganisations({ ownerId: 'user_a' });
+    const q = mockDb.calls.at(-1)!;
+    expect(q.sql).toContain('o.created_by = ?');
+    expect(q.args).toContain('user_a');
+  });
+
+  it('listOrganisations does NOT filter by created_by for admin/solo (no ownerId)', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.listOrganisations({});
+    const q = mockDb.calls.at(-1)!;
+    expect(q.sql).not.toContain('created_by');
+  });
+
+  it('listSignals scopes by created_by when ownerId is set', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.listSignals({ ownerId: 'user_b' });
+    const q = mockDb.calls.at(-1)!;
+    expect(q.sql).toContain('created_by = ?');
+    expect(q.args).toContain('user_b');
+  });
+
+  it('listBriefings scopes by created_by when ownerId is set', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.listBriefings(undefined, 'user_c');
+    const q = mockDb.calls.at(-1)!;
+    expect(q.sql).toContain('created_by = ?');
+    expect(q.args).toContain('user_c');
+  });
+
+  it('createOrganisation persists the owner in created_by', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.createOrganisation({ name: 'Acme Corp', createdBy: 'user_a' });
+    const insert = mockDb.calls.find((c) => c.sql.includes('INSERT INTO grow_organisations'))!;
+    expect(insert.args).toContain('user_a');
+  });
+
+  it('createSignal persists the owner in created_by', async () => {
+    const svc = await createGrowService(mockDb);
+    await svc.createSignal({ signalType: 'news', title: 'Funding round', createdBy: 'user_b' });
+    const insert = mockDb.calls.find((c) => c.sql.includes('INSERT INTO grow_signals'))!;
+    expect(insert.args).toContain('user_b');
   });
 });

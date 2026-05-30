@@ -194,6 +194,9 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   }
   router.use('/grow/contacts/:id', makeOwnerGuard('grow_contacts', 'Contact'));
   router.use('/grow/opportunities/:id', makeOwnerGuard('grow_opportunities', 'Opportunity'));
+  router.use('/grow/organisations/:id', makeOwnerGuard('grow_organisations', 'Organisation'));
+  router.use('/grow/signals/:id', makeOwnerGuard('grow_signals', 'Signal'));
+  router.use('/grow/briefings/:id', makeOwnerGuard('grow_briefings', 'Briefing'));
 
   // ── Contacts ──────────────────────────────────────────────────────────
 
@@ -270,6 +273,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
         search: req.query.search as string | undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+        ownerId: ownerScope(req),
       });
       res.json(orgs);
     } catch (err) {
@@ -281,7 +285,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/organisations', async (req: Request, res: Response) => {
     try {
       const data = createOrgSchema.parse(req.body);
-      const id = await svc.createOrganisation(data);
+      const id = await svc.createOrganisation({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -343,7 +347,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/relationships', async (req: Request, res: Response) => {
     try {
       const data = createRelationshipSchema.parse(req.body);
-      const id = await svc.createRelationship(data);
+      const id = await svc.createRelationship({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -382,7 +386,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/interactions', async (req: Request, res: Response) => {
     try {
       const data = createInteractionSchema.parse(req.body);
-      const id = await svc.createInteraction(data);
+      const id = await svc.createInteraction({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -506,7 +510,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/activities', async (req: Request, res: Response) => {
     try {
       const data = createActivitySchema.parse(req.body);
-      const id = await svc.createActivity(data);
+      const id = await svc.createActivity({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -550,6 +554,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
         status: req.query.status as string | undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+        ownerId: ownerScope(req),
       });
       res.json(signals);
     } catch (err) {
@@ -561,7 +566,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/signals', async (req: Request, res: Response) => {
     try {
       const data = createSignalSchema.parse(req.body);
-      const id = await svc.createSignal(data);
+      const id = await svc.createSignal({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -590,7 +595,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/grow/briefings', async (req: Request, res: Response) => {
     try {
-      const briefings = await svc.listBriefings(req.query.type as string | undefined);
+      const briefings = await svc.listBriefings(req.query.type as string | undefined, ownerScope(req));
       res.json(briefings);
     } catch (err) {
       console.error('[grow] List briefings error:', err);
@@ -601,7 +606,7 @@ export async function createGrowRoutes(db: DatabaseAdapter): Promise<Router> {
   router.post('/grow/briefings', async (req: Request, res: Response) => {
     try {
       const data = createBriefingSchema.parse(req.body);
-      const id = await svc.createBriefing(data);
+      const id = await svc.createBriefing({ ...data, createdBy: actorOf(req).id });
       res.status(201).json({ id });
     } catch (err) {
       if (err instanceof z.ZodError) {

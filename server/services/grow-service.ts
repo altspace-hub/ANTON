@@ -51,6 +51,7 @@ interface CreateOrganisationInput {
   employeeCount?: number;
   tags?: string[];
   notes?: string;
+  createdBy?: string;
 }
 
 interface UpdateOrganisationInput {
@@ -71,6 +72,7 @@ interface OrganisationFilters {
   search?: string;
   limit?: number;
   offset?: number;
+  ownerId?: string; // scope to one user's orgs (team-mode isolation); omit for admin/solo
 }
 
 interface CreateRelationshipInput {
@@ -81,6 +83,7 @@ interface CreateRelationshipInput {
   relationshipType: string;
   strength?: string;
   notes?: string;
+  createdBy?: string;
 }
 
 interface CreateInteractionInput {
@@ -93,6 +96,7 @@ interface CreateInteractionInput {
   followUpDate?: string;
   followUpAction?: string;
   interactionDate?: string;
+  createdBy?: string;
 }
 
 interface CreateOpportunityInput {
@@ -142,6 +146,7 @@ interface CreateActivityInput {
   title: string;
   description?: string;
   dueDate?: string;
+  createdBy?: string;
 }
 
 interface UpdateActivityInput {
@@ -168,6 +173,7 @@ interface CreateSignalInput {
   affectedOrganisations?: string[];
   recommendedAction?: string;
   priority?: string;
+  createdBy?: string;
 }
 
 interface UpdateSignalInput {
@@ -181,6 +187,7 @@ interface SignalFilters {
   status?: string;
   limit?: number;
   offset?: number;
+  ownerId?: string; // scope to one user's signals (team-mode isolation); omit for admin/solo
 }
 
 interface CreateBriefingInput {
@@ -188,6 +195,7 @@ interface CreateBriefingInput {
   title: string;
   content: string;
   signalsIncluded?: string[];
+  createdBy?: string;
 }
 
 // ── Service ─────────────────────────────────────────────────────────────────
@@ -294,8 +302,8 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createOrganisation(data: CreateOrganisationInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_organisations (id, name, industry, size, website, headquarters, regulatory_context, pain_points, annual_revenue, employee_count, tags, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_organisations (id, name, industry, size, website, headquarters, regulatory_context, pain_points, annual_revenue, employee_count, tags, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       data.name,
       data.industry ?? null,
@@ -307,7 +315,8 @@ export async function createGrowService(db: DatabaseAdapter) {
       data.annualRevenue ?? null,
       data.employeeCount ?? null,
       data.tags ?? [],
-      data.notes ?? null
+      data.notes ?? null,
+      data.createdBy ?? null
     );
     return id;
   }
@@ -331,6 +340,10 @@ export async function createGrowService(db: DatabaseAdapter) {
       conditions.push(`(o.name ILIKE ? OR o.industry ILIKE ?)`);
       const term = `%${filters.search}%`;
       params.push(term, term);
+    }
+    if (filters?.ownerId) {
+      conditions.push('o.created_by = ?');
+      params.push(filters.ownerId);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -382,8 +395,8 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createRelationship(data: CreateRelationshipInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_relationships (id, from_type, from_id, to_type, to_id, relationship_type, strength, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_relationships (id, from_type, from_id, to_type, to_id, relationship_type, strength, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       data.fromType,
       data.fromId,
@@ -391,7 +404,8 @@ export async function createGrowService(db: DatabaseAdapter) {
       data.toId,
       data.relationshipType,
       data.strength ?? 'medium',
-      data.notes ?? null
+      data.notes ?? null,
+      data.createdBy ?? null
     );
     return id;
   }
@@ -414,8 +428,8 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createInteraction(data: CreateInteractionInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_interactions (id, contact_id, organisation_id, interaction_type, subject, notes, sentiment, follow_up_date, follow_up_action, interaction_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_interactions (id, contact_id, organisation_id, interaction_type, subject, notes, sentiment, follow_up_date, follow_up_action, interaction_date, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       data.contactId ?? null,
       data.organisationId ?? null,
@@ -425,7 +439,8 @@ export async function createGrowService(db: DatabaseAdapter) {
       data.sentiment ?? null,
       data.followUpDate ?? null,
       data.followUpAction ?? null,
-      data.interactionDate ?? new Date().toISOString()
+      data.interactionDate ?? new Date().toISOString(),
+      data.createdBy ?? null
     );
 
     // Update last_contacted_at on the contact
@@ -617,15 +632,16 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createActivity(data: CreateActivityInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_activities (id, opportunity_id, contact_id, activity_type, title, description, due_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_activities (id, opportunity_id, contact_id, activity_type, title, description, due_date, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       data.opportunityId ?? null,
       data.contactId ?? null,
       data.activityType,
       data.title,
       data.description ?? null,
-      data.dueDate ?? null
+      data.dueDate ?? null,
+      data.createdBy ?? null
     );
     return id;
   }
@@ -691,8 +707,8 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createSignal(data: CreateSignalInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_signals (id, signal_type, title, description, source, source_url, affected_contacts, affected_organisations, recommended_action, priority)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_signals (id, signal_type, title, description, source, source_url, affected_contacts, affected_organisations, recommended_action, priority, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       data.signalType,
       data.title,
@@ -702,7 +718,8 @@ export async function createGrowService(db: DatabaseAdapter) {
       data.affectedContacts ?? [],
       data.affectedOrganisations ?? [],
       data.recommendedAction ?? null,
-      data.priority ?? 'medium'
+      data.priority ?? 'medium',
+      data.createdBy ?? null
     );
     return id;
   }
@@ -718,6 +735,10 @@ export async function createGrowService(db: DatabaseAdapter) {
     if (filters?.status) {
       conditions.push('status = ?');
       params.push(filters.status);
+    }
+    if (filters?.ownerId) {
+      conditions.push('created_by = ?');
+      params.push(filters.ownerId);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -756,24 +777,29 @@ export async function createGrowService(db: DatabaseAdapter) {
   async function createBriefing(data: CreateBriefingInput) {
     const id = randomUUID();
     await db.run(
-      `INSERT INTO grow_briefings (id, briefing_type, title, content, signals_included)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO grow_briefings (id, briefing_type, title, content, signals_included, created_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       id,
       data.briefingType,
       data.title,
       data.content,
-      data.signalsIncluded ?? []
+      data.signalsIncluded ?? [],
+      data.createdBy ?? null
     );
     return id;
   }
 
-  async function listBriefings(type?: string) {
+  async function listBriefings(type?: string, ownerId?: string) {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
     if (type) {
       conditions.push('briefing_type = ?');
       params.push(type);
+    }
+    if (ownerId) {
+      conditions.push('created_by = ?');
+      params.push(ownerId);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
