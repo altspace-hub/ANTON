@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -30,7 +31,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       const company = await lookupCompany(query.trim(), type);
       res.json({ company, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -40,7 +41,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       const chain = await getBeneficialOwners(req.params.orgNumber);
       res.json({ chain, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -59,7 +60,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
 
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -76,7 +77,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       const result = await batchScreen(orgNumbers);
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -118,7 +119,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
 
       res.json({ profile, mode: getConnectorStatus().mode, cached: false });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -136,7 +137,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
 
       res.json({ profile, enriched: !!sessionId });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -146,7 +147,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       const members = await getBoardMembers(req.params.orgNumber);
       res.json({ members, mode: getConnectorStatus().mode });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

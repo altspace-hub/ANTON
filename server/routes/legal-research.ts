@@ -4,6 +4,7 @@
  * Session CRUD + streaming Claude calls with legal-specialist prompt.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -299,7 +300,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       if (!res.headersSent) {
         res.status(500).json({ error: 'Claude API call failed' });
       } else {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
         res.end();
       }
     }

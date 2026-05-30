@@ -5,6 +5,7 @@
  * iterations, client intelligence, and changelog.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -123,7 +124,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       `);
       res.json(engagements);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -140,7 +141,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       logChange(id, 'setup', 'engagement_created', `Engagement "${title}" created`);
       res.json(engagement);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -170,7 +171,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       }));
       res.json(anonymised);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -200,7 +201,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
       res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -237,7 +238,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -251,7 +252,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       await db.run("UPDATE engagements SET status = 'archived', updated_at = NOW() WHERE id = ?", String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -277,7 +278,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -296,7 +297,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const doc = await db.get('SELECT * FROM engagement_documents WHERE id = ?', id);
       res.json(doc);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -501,7 +502,7 @@ Return ONLY valid JSON, no explanation.`;
         res.status(500).json({ error: `Claude extraction failed: ${String(claudeErr)}` });
       }
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -517,7 +518,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_added', `Added scope item: ${title}`);
       res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -540,7 +541,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_modified', `Modified scope item`);
       res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', String(req.params.itemId)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -574,7 +575,7 @@ Return ONLY valid JSON, no explanation.`;
       }
       res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -591,7 +592,7 @@ Return ONLY valid JSON, no explanation.`;
       }
       res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', String(req.params.resId)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -609,7 +610,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'category_status_changed', `Category ${category} status: ${status}`);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -638,7 +639,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_set', `RAG directory: ${normalised}`);
       res.json({ ok: true, folderPath: normalised, ...result });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -649,7 +650,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_removed', 'RAG directory removed');
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -664,7 +665,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_reindexed', `Re-indexed: ${engagement.rag_directory_path}`);
       res.json({ ok: true, ...result });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -708,7 +709,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'client_intelligence', 'intelligence_updated', 'Client intelligence updated');
       res.json(await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -724,7 +725,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'workstream_planning', 'workstream_added', `Added workstream: ${title}`);
       res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -743,7 +744,7 @@ Return ONLY valid JSON, no explanation.`;
       if (updates.length) { values.push(String(req.params.wsId)); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`, ...values); }
       res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', String(req.params.wsId)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -945,7 +946,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId })}\n\n`);
       res.end();
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: String(e) })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
       res.end();
     }
   });
@@ -957,7 +958,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC LIMIT 500', String(req.params.id));
       res.json(iterations);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -973,7 +974,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       if (updates.length) { values.push(String(req.params.itId)); await db.run(`UPDATE engagement_iterations SET ${updates.join(', ')} WHERE id = ?`, ...values); }
       res.json(await db.get('SELECT * FROM engagement_iterations WHERE id = ?', String(req.params.itId)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1077,7 +1078,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       await db.run('UPDATE engagement_iterations SET gap_analysis = ? WHERE id = ?', JSON.stringify(result), String(req.params.itId));
       res.json(result);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1089,7 +1090,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       const members = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC LIMIT 500', String(req.params.id));
       res.json(members);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1107,7 +1108,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       logChange(String(req.params.id), 'team', 'member_added', `Added ${stakeholder_type}: ${name}`);
       res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1127,7 +1128,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       if (updates.length) { values.push(String(req.params.memberId)); await db.run(`UPDATE engagement_stakeholders SET ${updates.join(', ')} WHERE id = ?`, ...values); }
       res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', String(req.params.memberId)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1139,7 +1140,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       if (member) logChange(String(req.params.id), 'team', 'member_removed', `Removed: ${member.name}`);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1211,7 +1212,7 @@ Return ONLY valid JSON.`,
       } catch { /**/ }
       res.json(extracted);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1278,7 +1279,7 @@ Return ONLY valid JSON.`,
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Web search benchmark: ${query}`);
       res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1324,7 +1325,7 @@ Return ONLY valid JSON.`,
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Internal benchmark added: ${label}`);
       res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1333,7 +1334,7 @@ Return ONLY valid JSON.`,
     try {
       res.json(await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id)));
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1343,7 +1344,7 @@ Return ONLY valid JSON.`,
       await db.run('DELETE FROM engagement_peer_benchmarks WHERE id = ? AND engagement_id = ?', String(req.params.benchmarkId), String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1501,7 +1502,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       res.write(`data: ${JSON.stringify({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers })}\n\n`);
       res.end();
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: String(e) })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
       res.end();
     }
   });
@@ -1512,7 +1513,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const qg = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id));
       res.json(qg || null);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1584,7 +1585,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       res.setHeader('Content-Length', buffer.length);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1595,7 +1596,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const changes = await db.all('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       res.json(changes);
     } catch (e) {
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: safeError(e) });
     }
   });
 

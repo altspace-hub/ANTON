@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import express from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import * as collectionManager from '../services/collection-manager.js';
@@ -25,7 +26,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({ collections: enriched });
     } catch (error) {
       console.error('Error listing collections:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -52,7 +53,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       });
     } catch (error) {
       console.error('Error getting collection:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -83,7 +84,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({ success: true, collectionId: id });
     } catch (error) {
       console.error('Error creating collection:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -107,7 +108,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({ success });
     } catch (error) {
       console.error('Error updating collection:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -131,7 +132,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting collection:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -148,7 +149,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.json({ documents: enriched });
     } catch (error) {
       console.error('Error getting collection documents:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -180,7 +181,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       });
     } catch (error) {
       console.error('Error querying collection:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -201,7 +202,7 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
       res.status(500).json({
         available: false,
         openaiConfigured: !!process.env.OPENAI_API_KEY,
-        error: String(error)
+        error: safeError(error)
       });
     }
   });

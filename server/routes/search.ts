@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { semanticSearch, keywordSearch, getChunkContext } from '../services/semantic-search.js';
@@ -35,7 +36,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Hybrid search error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -61,7 +62,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Find similar error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -87,7 +88,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ ok: true });
     } catch (error) {
       console.error('Embed error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -105,7 +106,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ total, byType: rows });
     } catch (error) {
       console.error('Search stats error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -123,7 +124,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Semantic search error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -141,7 +142,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Keyword search error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -160,7 +161,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Hybrid search error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -175,7 +176,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       res.json({ results });
     } catch (error) {
       console.error('Context retrieval error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

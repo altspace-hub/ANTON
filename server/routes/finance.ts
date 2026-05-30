@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -63,7 +64,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
   router.get('/finance/watchlist', async (req, res) => {
     try {
       res.json(await db.all("SELECT * FROM finance_watchlist WHERE user_id = 'default' ORDER BY added_at DESC"));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/finance/watchlist
@@ -81,7 +82,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
         target_price ?? null,
         notes        ?? null);
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/finance/watchlist/:id
@@ -89,7 +90,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
     try {
       await db.run("DELETE FROM finance_watchlist WHERE id = ? AND user_id = 'default'", req.params.id);
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/finance/goals
@@ -97,7 +98,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
     try {
       const goals = await db.all("SELECT * FROM finance_goals WHERE user_id = 'default' ORDER BY created_at DESC") as Record<string, unknown>[];
       res.json(goals.map(g => ({ ...g, parameters: JSON.parse((g.parameters as string) || '{}') })));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/finance/goals
@@ -118,7 +119,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
         JSON.stringify(body.parameters || {})
       );
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/finance/goals/:id
@@ -135,7 +136,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
       values.push(req.params.id);
       await db.run(`UPDATE finance_goals SET ${fields.join(', ')} WHERE id = ?`, ...values);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/finance/goals/:id
@@ -143,7 +144,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
     try {
       await db.run("DELETE FROM finance_goals WHERE id = ? AND user_id = 'default'", req.params.id);
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/finance/learning-progress
@@ -151,7 +152,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
     try {
       const rows = await db.all("SELECT * FROM finance_learning_progress WHERE user_id = 'default'") as Record<string, unknown>[];
       res.json(rows.map(r => ({ ...r, completed_units: JSON.parse((r.completed_units as string) || '[]') })));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/finance/learning-progress
@@ -174,7 +175,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
         score ?? (existing?.score as number ?? 0)
       );
       res.json({ ok: true, completed_units: completedUnits });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/finance/explain — AI explains a financial concept (streaming)
@@ -210,7 +211,7 @@ Use:
 
       res.write('data: [DONE]\n\n');
       return res.end();
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/finance/calculate — pure calculators (no AI)
@@ -315,7 +316,7 @@ Use:
         default:
           res.status(400).json({ error: `Unknown calculator type: ${type}` });
       }
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   return router;

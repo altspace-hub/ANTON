@@ -13,6 +13,7 @@
  * When RELAY_PUBLIC is not set (default), only localhost can access.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createRelayService } from '../services/relay-service.js';
@@ -39,7 +40,7 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
       const id = await relay.storeMessage({ recipientHash, senderHash, encryptedPayload, messageType, ttlDays });
       res.status(201).json({ id });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -49,7 +50,7 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
       const messages = await relay.collectMessages(req.params.contactHash);
       res.json(messages);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -59,7 +60,7 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
       const purged = await relay.purgeExpired();
       res.json({ purged });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -69,7 +70,7 @@ export async function createRelayRoutes(db: DatabaseAdapter) {
       const stats = await relay.getStats();
       res.json(stats);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

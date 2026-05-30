@@ -7,6 +7,7 @@
  * human picks one → ANTON asks clarifying questions → execution begins.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
 import { validate } from '../lib/validate.js';
 import { TaskCreateSchema, TaskMessageSchema, TaskSelectApproachSchema, TaskIngestSchema } from '../lib/schemas.js';
@@ -552,7 +553,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       res.write(`data: ${JSON.stringify({ type: 'done', status: newStatus, proposals, clarifyingQuestions: clarifyingQs, intakeReady, intakeAnswers })}\n\n`);
       res.end();
     } catch (err) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
   });
@@ -908,7 +909,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       res.end();
     } catch (err) {
       console.error('[task-agent] execute-step failed:', err);
-      res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
   });
@@ -1015,7 +1016,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
       res.json({ success: true, tasks_processed: created, tasks_skipped: skipped });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

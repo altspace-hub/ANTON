@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -73,7 +74,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
   router.get('/travel/trips', async (req, res) => {
     try {
       res.json(await db.all("SELECT * FROM travel_trips WHERE user_id = 'default' ORDER BY created_at DESC"));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/travel/trips
@@ -92,7 +93,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
         body.currency     || 'SEK',
         body.cover_emoji  || '✈️');
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/travel/trips/:id
@@ -104,7 +105,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
         'SELECT * FROM travel_itinerary_items WHERE trip_id = ? ORDER BY day_number, time_slot'
       , req.params.id);
       return res.json({ trip, items });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // PATCH /api/travel/trips/:id
@@ -121,7 +122,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
       values.push(req.params.id);
       await db.run(`UPDATE travel_trips SET ${fields.join(', ')} WHERE id = ?`, ...values);
       return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // DELETE /api/travel/trips/:id
@@ -130,7 +131,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
       await db.run('DELETE FROM travel_itinerary_items WHERE trip_id = ?', req.params.id);
       await db.run("DELETE FROM travel_trips WHERE id = ? AND user_id = 'default'", req.params.id);
       res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/travel/trips/:id/itinerary — add item
@@ -151,7 +152,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
         body.category     || 'activity'
       );
       res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   // GET /api/travel/country/:code — country intelligence (cached)
@@ -167,7 +168,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
         best_months:     JSON.parse((intel.best_months    as string) || '[]'),
         budget_estimate: JSON.parse((intel.budget_estimate as string) || '{}'),
       });
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/travel/country/:code/generate — AI country guide (streaming, cached to DB)
@@ -226,7 +227,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
 
       res.write('data: [DONE]\n\n');
       return res.end();
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/travel/generate-itinerary — AI trip planner (streaming)
@@ -265,7 +266,7 @@ Format as a day-by-day plan with morning/afternoon/evening slots. Include practi
 
       res.write('data: [DONE]\n\n');
       return res.end();
-    } catch (e) { return res.status(500).json({ error: String(e) }); }
+    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
   });
 
   // POST /api/travel/generate-packing-list — AI packing list (non-streaming, Haiku)
@@ -294,7 +295,7 @@ Respond in JSON: {"categories": [{"name": "Clothing", "items": [{"name": "T-shir
       let parsed: Record<string, unknown> = {};
       try { parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '')); } catch { /* keep empty */ }
       res.json(parsed);
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
   return router;

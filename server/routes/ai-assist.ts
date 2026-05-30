@@ -6,6 +6,7 @@
  *         compliance, versions, projects, skills, apprentice, analytics, workflows.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
 import { callSync } from '../services/claude-client.js';
 
@@ -68,7 +69,7 @@ Make Claude the ideal specialist for this module's purpose.`
       res.json({ prompt: text });
     } catch (err) {
       console.error('[ai-assist/module-prompt]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -104,7 +105,7 @@ What 3-5 inputs would most improve Claude's output quality?`
       res.json({ fields: data });
     } catch (err) {
       console.error('[ai-assist/module-inputs]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -130,7 +131,7 @@ Write a 3-4 paragraph plain-English briefing: what this data means, what's notab
       res.json({ brief: text });
     } catch (err) {
       console.error('[ai-assist/intelligence-brief]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -153,7 +154,7 @@ What does this mean and what should the user do?`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/pattern-analyse]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -185,7 +186,7 @@ Return prioritised order, flags, and recommendations.`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/deadline-prioritise]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -218,7 +219,7 @@ What specific improvements would most increase quality?`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/quality-coaching]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -253,7 +254,7 @@ Suggest 3-5 new rules that would improve quality governance.`
       res.json({ suggestions: data });
     } catch (err) {
       console.error('[ai-assist/compliance-suggest-rules]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -283,7 +284,7 @@ ${moduleId ? `Module: ${moduleId}` : ''}`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/compliance-explain-violation]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -314,7 +315,7 @@ What are the meaningful differences?`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/version-changelog]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -345,7 +346,7 @@ Suggest project structure, phases, and up to 4 relevant modules.`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/project-scaffold]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -374,7 +375,7 @@ ${category ? `Preferred category: ${category}` : ''}`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/skill-draft]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -403,7 +404,7 @@ What should they focus on to progress to the next stage?`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/apprentice-next-steps]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -424,7 +425,7 @@ Top modules: ${JSON.stringify(topModules)}`
       res.json({ narrative: text });
     } catch (err) {
       console.error('[ai-assist/analytics-narrative]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -453,7 +454,7 @@ Context: ${JSON.stringify(context || {}).slice(0, 200)}`
       res.json(data);
     } catch (err) {
       console.error('[ai-assist/workflow-diagnose]', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

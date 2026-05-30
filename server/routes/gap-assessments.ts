@@ -4,6 +4,7 @@
  * Supports chunked batch assessment, synthesis, board summary, and roadmap generation.
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -178,7 +179,7 @@ Generate the complete framework JSON now.`;
       res.end();
     } catch (err) {
       console.error('[gap-assessments] framework generate error:', err);
-      res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
   });
@@ -439,7 +440,7 @@ Generate the complete framework JSON now.`;
 
     } catch (err) {
       console.error('[gap-assessments] run error:', err);
-      sendEvent({ type: 'error', error: String(err) });
+      sendEvent({ type: 'error', error: safeError(err) });
       res.end();
     }
   });
@@ -474,7 +475,7 @@ Generate the complete framework JSON now.`;
       console.error('[gap-assessments] synthesise error name:', (err as Error)?.name);
       console.error('[gap-assessments] synthesise error message:', (err as Error)?.message);
       if ((err as { status?: number }).status) console.error('[gap-assessments] synthesise error status:', (err as { status?: number }).status);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -499,7 +500,7 @@ Generate the complete framework JSON now.`;
       res.json({ boardSummary: result.summary, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] board-summary error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -525,7 +526,7 @@ Generate the complete framework JSON now.`;
       res.json({ roadmap, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] roadmap error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -583,7 +584,7 @@ Generate the complete framework JSON now.`;
       res.json({ iterationId, iterationNumber: iterNum, scoreSummary });
     } catch (err) {
       console.error('[gap-assessments] snapshot error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -611,7 +612,7 @@ Generate the complete framework JSON now.`;
       res.json({ iterations: mapped });
     } catch (err) {
       console.error('[gap-assessments] list iterations error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -641,7 +642,7 @@ Generate the complete framework JSON now.`;
       });
     } catch (err) {
       console.error('[gap-assessments] get iteration error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -668,7 +669,7 @@ Generate the complete framework JSON now.`;
       res.json(comparison);
     } catch (err) {
       console.error('[gap-assessments] compare error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

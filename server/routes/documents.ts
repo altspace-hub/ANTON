@@ -3,6 +3,7 @@
  * API routes for document upload, indexing, and management
  */
 
+import { safeError } from '../lib/error-response.js';
 import express from 'express';
 import multer from 'multer';
 import * as path from 'path';
@@ -89,7 +90,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       }
     } catch (error) {
       console.error('[documents] Upload error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -150,7 +151,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       });
     } catch (error) {
       console.error('[documents] Multiple upload error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -165,7 +166,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       res.json({ documents });
     } catch (error) {
       console.error('[documents] List error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -180,7 +181,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       res.json(stats);
     } catch (error) {
       console.error('[documents] Stats error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -215,7 +216,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       }
     } catch (error) {
       console.error('[documents] Reindex error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -243,7 +244,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       }
     } catch (error) {
       console.error('[documents] Delete error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -266,7 +267,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
       res.json({ document, chunks });
     } catch (error) {
       console.error('[documents] Get error:', error);
-      res.status(500).json({ error: String(error) });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

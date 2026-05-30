@@ -15,6 +15,7 @@
  * POST /pathfinder/suggestions/refresh — Refresh suggestions
  */
 
+import { safeError } from '../lib/error-response.js';
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
 import multer from 'multer';
@@ -206,7 +207,7 @@ export function createPathfinderRoutes(
       const total = ((await db.get('SELECT COUNT(*) as count FROM pathfinder_searches WHERE user_id = ?', uid)) as { count: number } | undefined)?.count ?? 0;
       res.json({ searches, total });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -224,7 +225,7 @@ export function createPathfinderRoutes(
       const followups = await db.all('SELECT * FROM pathfinder_followups WHERE search_id = ? ORDER BY created_at', req.params.id);
       res.json({ search, followups });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -234,7 +235,7 @@ export function createPathfinderRoutes(
       await db.run('DELETE FROM pathfinder_searches WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -253,7 +254,7 @@ export function createPathfinderRoutes(
       , uid);
       res.json({ threads });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -264,7 +265,7 @@ export function createPathfinderRoutes(
       await db.run('INSERT INTO pathfinder_threads (id, user_id, title) VALUES (?, ?, ?)', id, getUserId(req), title);
       res.json({ id, title });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -275,7 +276,7 @@ export function createPathfinderRoutes(
       if (pinned !== undefined) await db.run('UPDATE pathfinder_threads SET pinned = ? WHERE id = ? AND user_id = ?', pinned ? 1 : 0, req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -284,7 +285,7 @@ export function createPathfinderRoutes(
       await db.run('DELETE FROM pathfinder_threads WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -310,7 +311,7 @@ export function createPathfinderRoutes(
 
       res.json({ id, filename: file.originalname, wordCount, tokenEstimate });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -325,7 +326,7 @@ export function createPathfinderRoutes(
       const docs = await db.all(query, ...params);
       res.json({ documents: docs });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -338,7 +339,7 @@ export function createPathfinderRoutes(
       await db.run('DELETE FROM pathfinder_documents WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -374,7 +375,7 @@ export function createPathfinderRoutes(
         areaId: areaId || null,
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -388,7 +389,7 @@ export function createPathfinderRoutes(
       );
       res.json({ suggestions });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -397,7 +398,7 @@ export function createPathfinderRoutes(
       await db.run('UPDATE pathfinder_suggestions SET dismissed = 1 WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -410,7 +411,7 @@ export function createPathfinderRoutes(
       const suggestions = await generateSuggestions(db, uid, anthropic);
       res.json({ suggestions });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

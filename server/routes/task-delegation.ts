@@ -1,3 +1,4 @@
+import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createTaskDelegationService } from '../services/task-delegation-service.js';
@@ -38,7 +39,7 @@ export async function createTaskDelegationRoutes(db: DatabaseAdapter): Promise<R
       if (!providerHash || !title || !description) return res.status(400).json({ error: 'providerHash, title, description required' });
       const result = await service.createTaskRequest({ providerHash, title, description, requiredModules, context, urgency, deadline });
       res.status(201).json(result);
-    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.post('/community/tasks/:id/accept', async (req, res) => {
