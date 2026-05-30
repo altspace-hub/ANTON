@@ -48,7 +48,7 @@ const CHIP_ACTIVE = 'border-adv-teal bg-adv-teal-dim text-adv-teal';
 const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white';
 
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
-  { value: 'claude-opus-4-7', label: 'Opus 4.7' },
+  { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
   { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
   { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' },
@@ -1483,10 +1483,12 @@ export default function Settings() {
               <div className="flex flex-wrap gap-2">
                 {([
                   { value: 'mistral-large-latest',     label: 'Mistral Large 3' },
-                  { value: 'mistral-medium-latest',    label: 'Mistral Medium 3.1' },
-                  { value: 'mistral-small-latest',     label: 'Mistral Small 3.2' },
+                  { value: 'mistral-medium-latest',    label: 'Mistral Medium 3.5' },
+                  { value: 'mistral-small-latest',     label: 'Mistral Small 4' },
                   { value: 'magistral-medium-latest',  label: 'Magistral Medium' },
                   { value: 'magistral-small-latest',   label: 'Magistral Small' },
+                  { value: 'codestral-latest',         label: 'Codestral' },
+                  { value: 'devstral-medium-latest',   label: 'Devstral 2 Medium' },
                 ] as { value: ModelId; label: string }[]).map(({ value: modelValue, label }) => {
                   const disabled = !providerStatus.MISTRAL_API_KEY;
                   return (
@@ -1600,7 +1602,7 @@ export default function Settings() {
         </div>
         <p className="mt-1 text-xs text-adv-gray">
           Automatically summarise earlier context when approaching the token limit, enabling longer sessions.
-          Only works with Claude Opus 4.7 and Sonnet 4.6.
+          Only works with Claude Opus 4.8 and Sonnet 4.6.
         </p>
 
         <div className="mt-4 space-y-3">
@@ -2659,7 +2661,7 @@ function CompliancePolicyTab() {
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="mb-1 block text-[11px] text-adv-gray">Enforce Model</label>
-                      <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="e.g. claude-opus-4-7" />
+                      <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="e.g. claude-opus-4-8" />
                     </div>
                     <div>
                       <label className="mb-1 block text-[11px] text-adv-gray">Enforce Thinking</label>
@@ -2718,7 +2720,7 @@ function CompliancePolicyTab() {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="mb-1 block text-[11px] text-adv-gray">Enforce Model</label>
-                  <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="claude-opus-4-7" />
+                  <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="claude-opus-4-8" />
                 </div>
                 <div>
                   <label className="mb-1 block text-[11px] text-adv-gray">Enforce Thinking</label>
@@ -2747,7 +2749,7 @@ function CompliancePolicyTab() {
               </div>
             </div>
           ) : (
-            <button onClick={() => { setEditing('__new__'); setForm({ moduleId: '', enforce_model: 'claude-opus-4-7', enforce_thinking: 'investigate', enforce_creativity: 'strict', note: '' }); }} className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors w-full">
+            <button onClick={() => { setEditing('__new__'); setForm({ moduleId: '', enforce_model: 'claude-opus-4-8', enforce_thinking: 'investigate', enforce_creativity: 'strict', note: '' }); }} className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors w-full">
               <Plus className="h-4 w-4" />
               Add module policy
             </button>

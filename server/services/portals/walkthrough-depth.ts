@@ -14,9 +14,9 @@
  *              (Haiku 4.5, Ollama local models, or `quick` thinking level)
  *
  *   standard — mid-tier models with `think` thinking level
- *              (Sonnet 4.6 default; Opus 4.7 with `quick`)
+ *              (Sonnet 4.6 default; Opus 4.8 with `quick`)
  *
- *   deep     — Opus 4.7 + `think_hard` or higher; full multi-persona panel
+ *   deep     — Opus 4.8 + `think_hard` or higher; full multi-persona panel
  *              and thorough phase recap on every transition
  */
 

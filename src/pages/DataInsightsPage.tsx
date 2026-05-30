@@ -429,7 +429,7 @@ export default function DataInsightsPage() {
 
     try {
       // Try Sonnet first (fast, cheap, great for data viz). Fall back to Opus on failure.
-      const modelsToTry = ['claude-sonnet-4-5-20250929', 'claude-opus-4-7'] as const;
+      const modelsToTry = ['claude-sonnet-4-5-20250929', 'claude-opus-4-8'] as const;
       let streamError = '';
       let usedModel = '';
 
@@ -697,7 +697,7 @@ export default function DataInsightsPage() {
 
         {/* Model note */}
         <p className="mt-3 text-xs text-adv-gray">
-          Anton will analyze your data and generate interactive charts using Claude Opus 4.7.
+          Anton will analyze your data and generate interactive charts using Claude Opus 4.8.
         </p>
 
         {/* Error */}

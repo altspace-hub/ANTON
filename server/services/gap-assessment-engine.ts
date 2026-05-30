@@ -21,7 +21,7 @@ export type GapModelTier = 'sonnet' | 'opus' | string;
 function getModelConfig(tier: GapModelTier) {
   if (tier === 'opus') {
     return {
-      model: 'claude-opus-4-7' as string,
+      model: 'claude-opus-4-8' as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,

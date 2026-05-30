@@ -151,7 +151,7 @@ export async function streamToResponse(
   if (provider === 'anthropic') {
     return claudeClient.streamToResponse(
       {
-        model: config.model as 'claude-opus-4-7' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
+        model: config.model as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
         thinking: config.thinking,
         system: config.system,
         staticSystemPrompt: config.staticSystemPrompt,
@@ -411,7 +411,7 @@ export async function streamToHandler(
 
     return claudeClient.streamToResponse(
       {
-        model: config.model as 'claude-opus-4-7' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
+        model: config.model as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
         thinking: config.thinking,
         system: config.system,
         staticSystemPrompt: config.staticSystemPrompt,

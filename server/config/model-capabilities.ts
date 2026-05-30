@@ -4,8 +4,17 @@
  * Single source of truth for context window sizes, output limits,
  * pricing, and feature support per model.
  *
- * Updated 2026-04-16: Opus upgraded 4.6 → 4.7.
- * Opus 4.7 & Sonnet 4.6: 1M context at flat-rate pricing (no beta header, no premium).
+ * Updated 2026-05-30:
+ *   - Opus upgraded 4.7 → 4.8 as the new default (legacy 4.7 + 4.6 kept selectable).
+ *   - Haiku 4.5 pricing corrected $0.80/$4 → $1/$5 per current Anthropic docs.
+ *   - Mistral aliases auto-resolve server-side: mistral-medium-latest now points
+ *     at Medium 3.5 (v26.04); mistral-small-latest at Small 4 (v26.03).
+ *   - Added Codestral + Devstral 2 (code specialists).
+ *
+ * Opus 4.8: 1M context, 128k output, adaptive thinking only (effort defaults to high).
+ * Opus 4.7: 1M context, 128k output, adaptive only.
+ * Opus 4.6: 1M context, 128k output, supports BOTH adaptive + extended thinking.
+ * Sonnet 4.6: 1M context, 64k output, adaptive + extended.
  * Haiku 4.5: 200k context (unchanged).
  */
 
@@ -62,6 +71,24 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
+  'claude-opus-4-8': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,   // Adaptive only (budget_tokens unsupported)
+    pricing: {
+      inputPerMillion: 5,
+      outputPerMillion: 25,
+      cachedInputPerMillion: 0.50,     // 90% discount
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
+
   'claude-opus-4-7': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
@@ -74,6 +101,24 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
       outputPerMillion: 25,
       cachedInputPerMillion: 0.50,     // 90% discount
       premiumThreshold: null,          // No premium — flat rate across 1M
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
+
+  'claude-opus-4-6': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: true,    // 4.6 uniquely supports BOTH thinking modes
+    pricing: {
+      inputPerMillion: 5,
+      outputPerMillion: 25,
+      cachedInputPerMillion: 0.50,
+      premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,
     },
@@ -125,9 +170,11 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsAdaptiveThinking: false,
     supportsExtendedThinking: true,
     pricing: {
-      inputPerMillion: 0.80,
-      outputPerMillion: 4,
-      cachedInputPerMillion: 0.08,
+      // Corrected 2026-05-30 to match current Anthropic docs. Previous
+      // $0.80/$4 was from an early-access tier.
+      inputPerMillion: 1,
+      outputPerMillion: 5,
+      cachedInputPerMillion: 0.10,     // 90% discount tracks the new base price
       premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,
@@ -245,9 +292,12 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     provider: 'google',
   },
 
-  // ─── Mistral (verified from docs.mistral.ai 2026-03-15) ────────
+  // ─── Mistral (verified from docs.mistral.ai 2026-05-30) ────────
+  // The `-latest` aliases auto-resolve to the newest versions server-side,
+  // so callers don't need to update model IDs when Mistral ships a new
+  // minor release.
 
-  // Mistral Large 3 (Dec 2025) — 675B total / 41B active (MoE)
+  // Mistral Large 3 (v25.12, Dec 2025) — 675B total / 41B active (MoE)
   'mistral-large-latest': {
     maxContextWindow: 256_000,
     maxOutputTokens: 128_000,          // Match Opus tier — API accepts user-set maxTokens
@@ -266,7 +316,9 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     provider: 'mistral',
   },
 
-  // Mistral Medium 3.1 (Aug 2025) — Premier frontier multimodal
+  // Mistral Medium 3.5 (v26.04, Apr 2026) — Premier multimodal optimised
+  // for agentic + coding use cases. Replaces 3.1 (Aug 2025) under the same
+  // -latest alias.
   'mistral-medium-latest': {
     maxContextWindow: 128_000,
     maxOutputTokens: 64_000,           // Match Sonnet tier
@@ -285,7 +337,9 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     provider: 'mistral',
   },
 
-  // Mistral Small 3.2 (Jun 2025) — Open lightweight generalist
+  // Mistral Small 4 (v26.03, Mar 2026) — Hybrid model unifying instruct,
+  // reasoning, and coding in a single efficient open-weight model.
+  // Replaces Small 3.2 (Jun 2025) under the same -latest alias.
   'mistral-small-latest': {
     maxContextWindow: 128_000,
     maxOutputTokens: 8_192,
@@ -335,6 +389,48 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
       inputPerMillion: 0.50,
       outputPerMillion: 1.50,
       cachedInputPerMillion: 0.50,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Codestral (v25.08, Aug 2025) — Premier code-completion specialist.
+  // Tuned for FIM (fill-in-the-middle), short-form completions, and
+  // multi-language code generation.
+  'codestral-latest': {
+    maxContextWindow: 256_000,
+    maxOutputTokens: 8_192,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.30,
+      outputPerMillion: 0.90,
+      cachedInputPerMillion: 0.30,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Devstral 2 Medium (v25.12, Dec 2025) — Frontier code agents model for
+  // solving software-engineering tasks. Used as the coding-pillar default
+  // when the user wants Mistral instead of Claude.
+  'devstral-medium-latest': {
+    maxContextWindow: 128_000,
+    maxOutputTokens: 32_768,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.40,
+      outputPerMillion: 2.00,
+      cachedInputPerMillion: 0.40,
       premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,
@@ -463,6 +559,38 @@ export function getThinkingConfig(
   const caps = MODEL_CAPABILITIES[modelId];
   if (!caps || caps.provider !== 'anthropic') {
     return { thinkingType: 'none', maxTokens: 4096, requiresInterleavedThinkingBeta: false };
+  }
+
+  // ─── Opus 4.8: Adaptive thinking (effort parameter) ────────
+  // Same effort mapping as 4.7 for consistency with users' learned
+  // baseline. Per Anthropic docs, 4.8's API default for `effort` is `high`
+  // when unset — we set it explicitly per ANTON thinking level below.
+  if (modelId === 'claude-opus-4-8') {
+    const mapping: Record<string, ThinkingConfig> = {
+      'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
+      'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },
+      'think_hard':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
+      'investigate':      { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+      'plan_first':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
+      'deep_investigate': { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+    };
+    return mapping[antonThinkingLevel] || mapping['think'];
+  }
+
+  // ─── Opus 4.6: Adaptive (preferred) — also supports extended ─
+  // Mirrors 4.8/4.7's effort mapping. Although 4.6 also accepts
+  // budget_tokens, we use adaptive for it too because users expect a
+  // consistent UX across Opus generations.
+  if (modelId === 'claude-opus-4-6') {
+    const mapping: Record<string, ThinkingConfig> = {
+      'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
+      'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },
+      'think_hard':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
+      'investigate':      { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+      'plan_first':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
+      'deep_investigate': { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+    };
+    return mapping[antonThinkingLevel] || mapping['think'];
   }
 
   // ─── Opus 4.7: Adaptive thinking (effort parameter) ────────

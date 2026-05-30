@@ -377,7 +377,7 @@ const rejectDecisionSchema = z.object({
 
 const extendDeviceSchema = z.object({
   desired_change: z.string().min(10).max(4000),
-  model: z.enum(['claude-opus-4-7','claude-sonnet-4-6','claude-haiku-4-5-20251001']).optional(),
+  model: z.enum(['claude-opus-4-8','claude-sonnet-4-6','claude-haiku-4-5-20251001']).optional(),
 });
 
 const cveApplicabilitySchema = z.object({

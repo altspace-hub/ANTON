@@ -81,7 +81,7 @@ const BATCH_MODELS: BatchModel[] = [
     outputCostPer1M: 15,
   },
   {
-    id: 'claude-opus-4-7',
+    id: 'claude-opus-4-8',
     label: 'Thorough',
     subtitle: 'Opus — best quality',
     icon: <Cpu className="h-4 w-4 text-adv-gold" />,

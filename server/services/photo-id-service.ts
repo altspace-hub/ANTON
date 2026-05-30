@@ -33,7 +33,7 @@ export interface PhotoIdInput {
   /** Free-text user context: where they sourced the module, etc. */
   context?: string | null;
   photos: PhotoInput[];
-  model?: 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
+  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
 }
 
 export interface PhotoIdResult {

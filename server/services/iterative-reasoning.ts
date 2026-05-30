@@ -87,7 +87,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 16000,
       effort: 'max',
-      maxTokens: 128_000, // Opus 4.7 ceiling — final user-facing output gets full capacity
+      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
     },
   ],
   // ── plan_first: 4-phase (analyse → plan → deepen → synthesise) ──
@@ -122,7 +122,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 16000,
       effort: 'max',
-      maxTokens: 128_000, // Opus 4.7 ceiling — final user-facing output gets full capacity
+      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
     },
   ],
   // ── deep_investigate: 6-phase (analyse → reflect → deepen → explore → validate → synthesise) ──
@@ -174,7 +174,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 24000,
       effort: 'max',
-      maxTokens: 128_000, // Opus 4.7 ceiling — final user-facing output gets full capacity
+      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
     },
   ],
 };
@@ -269,7 +269,7 @@ async function runInternalPhase(
   const safeMaxTokens = phase.maxTokens;
 
   const requestParams: Record<string, unknown> = {
-    model: 'claude-opus-4-7', // IRE always uses Opus for quality
+    model: 'claude-opus-4-8', // IRE always uses Opus for quality
     max_tokens: safeMaxTokens,
     system: systemBlocks,
     messages,
@@ -477,7 +477,7 @@ export async function runIterativeReasoning(
       const safeMaxTokens = phase.maxTokens;
 
       const requestParams: Record<string, unknown> = {
-        model: 'claude-opus-4-7',
+        model: 'claude-opus-4-8',
         max_tokens: safeMaxTokens,
         system: systemBlocks,
         messages: config.messages,

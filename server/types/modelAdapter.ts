@@ -24,10 +24,45 @@ export interface ModelConfig {
 }
 
 export const MODEL_REGISTRY: Record<string, ModelConfig> = {
+  'claude-opus-4-8': {
+    provider: 'anthropic',
+    modelId: 'claude-opus-4-8',
+    displayName: 'Claude Opus 4.8',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsThinking: true,
+    supportsJsonMode: false,
+    supportsPromptCaching: true,
+    supportsSeed: false,
+    temperatureRange: [0, 1],
+    costPer1MInput: 5,
+    costPer1MOutput: 25,
+    requiresApiKey: 'ANTHROPIC_API_KEY',
+    costTier: 3,
+    supportsNativeReasoning: true,
+  },
+  // Legacy Opus generations — kept selectable. Same context/output/pricing tier.
   'claude-opus-4-7': {
     provider: 'anthropic',
     modelId: 'claude-opus-4-7',
     displayName: 'Claude Opus 4.7',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsThinking: true,
+    supportsJsonMode: false,
+    supportsPromptCaching: true,
+    supportsSeed: false,
+    temperatureRange: [0, 1],
+    costPer1MInput: 5,
+    costPer1MOutput: 25,
+    requiresApiKey: 'ANTHROPIC_API_KEY',
+    costTier: 3,
+    supportsNativeReasoning: true,
+  },
+  'claude-opus-4-6': {
+    provider: 'anthropic',
+    modelId: 'claude-opus-4-6',
+    displayName: 'Claude Opus 4.6',
     contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsThinking: true,
@@ -213,7 +248,9 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
     costTier: 1,
     supportsNativeReasoning: false,
   },
-  // ── Mistral (verified from docs.mistral.ai 2026-03-15) ──────
+  // ── Mistral (verified from docs.mistral.ai 2026-05-30) ──────
+  // `-latest` aliases resolve to the newest version on Mistral's servers;
+  // ANTON forwards the alias verbatim.
   'mistral-large-latest': {
     provider: 'mistral',
     modelId: 'mistral-large-latest',
@@ -234,7 +271,7 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
   'mistral-medium-latest': {
     provider: 'mistral',
     modelId: 'mistral-medium-latest',
-    displayName: 'Mistral Medium 3.1',
+    displayName: 'Mistral Medium 3.5',
     contextWindow: 128000,
     maxOutputTokens: 64000,            // Match Sonnet tier
     supportsThinking: false,
@@ -251,7 +288,7 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
   'mistral-small-latest': {
     provider: 'mistral',
     modelId: 'mistral-small-latest',
-    displayName: 'Mistral Small 3.2',
+    displayName: 'Mistral Small 4',
     contextWindow: 128000,
     maxOutputTokens: 8192,
     supportsThinking: false,
@@ -299,6 +336,41 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
     requiresApiKey: 'MISTRAL_API_KEY',
     costTier: 2,
     supportsNativeReasoning: true,
+  },
+  // ── Mistral code specialists ──────────────────────────────────
+  'codestral-latest': {
+    provider: 'mistral',
+    modelId: 'codestral-latest',
+    displayName: 'Codestral',
+    contextWindow: 256000,
+    maxOutputTokens: 8192,
+    supportsThinking: false,
+    supportsJsonMode: true,
+    supportsPromptCaching: false,
+    supportsSeed: true,
+    temperatureRange: [0, 2],
+    costPer1MInput: 0.30,
+    costPer1MOutput: 0.90,
+    requiresApiKey: 'MISTRAL_API_KEY',
+    costTier: 1,
+    supportsNativeReasoning: false,
+  },
+  'devstral-medium-latest': {
+    provider: 'mistral',
+    modelId: 'devstral-medium-latest',
+    displayName: 'Devstral 2 Medium',
+    contextWindow: 128000,
+    maxOutputTokens: 32768,
+    supportsThinking: false,
+    supportsJsonMode: true,
+    supportsPromptCaching: false,
+    supportsSeed: true,
+    temperatureRange: [0, 2],
+    costPer1MInput: 0.40,
+    costPer1MOutput: 2.00,
+    requiresApiKey: 'MISTRAL_API_KEY',
+    costTier: 2,
+    supportsNativeReasoning: false,
   },
 };
 

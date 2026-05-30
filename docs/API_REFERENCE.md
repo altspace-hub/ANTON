@@ -241,7 +241,7 @@ The primary endpoint for all AI inference. Responses are streamed as [Server-Sen
 
 ```json
 {
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-4-8",
   "thinking": "think_hard",
   "creativity": "balanced",
   "messages": [
@@ -304,7 +304,7 @@ Returns all available models with capability and pricing information.
 {
   "models": [
     {
-      "id": "claude-opus-4-7",
+      "id": "claude-opus-4-8",
       "label": "Claude Opus 4.7",
       "description": "Most capable. Recommended for all compliance work.",
       "inputCostPer1MTokens": 15.00,
@@ -585,7 +585,7 @@ Base path: `/api/sessions`
   "moduleId": "gap-analysis",
   "title": "Nordea AMLR Gap Analysis",
   "config": {
-    "model": "claude-opus-4-7",
+    "model": "claude-opus-4-8",
     "thinking": "investigate",
     "creativity": "strict"
   }
@@ -1219,7 +1219,7 @@ curl -N -X POST http://localhost:3001/api/claude/message \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "model": "claude-opus-4-7",
+    "model": "claude-opus-4-8",
     "thinking": "think_hard",
     "creativity": "balanced",
     "messages": [{"role": "user", "content": "Summarise Article 20 of AMLR 2024/1624."}],
