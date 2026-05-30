@@ -1,6 +1,6 @@
 # Markets
 
-> ANTON's self-learning financial-intelligence pillar. **The canonical proof-of-Layer-2** in the six-layer vision: knowledge atoms → patterns → predictions → calibration → consul performance → signal-weight tuning, all in a closed feedback loop driven by daily market data.
+> ANTON's financial-intelligence pillar, instrumented for learning. **The canonical proof-of-Layer-2** in the six-layer vision: knowledge atoms → patterns → predictions → calibration → consul performance → signal-weight tuning, all in a closed feedback loop driven by daily market data.
 
 ---
 

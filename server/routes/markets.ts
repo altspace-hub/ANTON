@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketDataService } from '../services/market-data-service.js';
 import { createMarketAtomService } from '../services/market-atom-service.js';
+import { checkMarketsLoopHealth } from '../services/market-loop-health.js';
+import { safeError } from '../lib/error-response.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 // ── Zod Schemas ───────────────────────────────────────────────────────────────
@@ -44,6 +46,21 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
   const router = Router();
   const dataService = await createMarketDataService(db);
   const atomService = await createMarketAtomService(db, anthropic);
+
+  // ── Loop Health (silent-failure detector) ──────────────────────────────
+  // Surfaces closed loops that have pending work but zero recent transitions —
+  // the check that was missing when the pattern→weight loop silently froze for a
+  // month. Dashboards/ops can poll this; ?windowDays= overrides the 7d window.
+  router.get('/markets/loop-health', async (req, res) => {
+    try {
+      const windowDays = req.query.windowDays ? parseInt(String(req.query.windowDays), 10) : 7;
+      const loops = await checkMarketsLoopHealth(db, { windowDays });
+      const stale = loops.filter((l) => l.stale);
+      res.json({ healthy: stale.length === 0, staleCount: stale.length, loops });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
 
   // ── Dashboard Stats ────────────────────────────────────────────────────
 

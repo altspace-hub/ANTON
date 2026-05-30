@@ -156,7 +156,7 @@ export default function MarketsPage() {
             Markets Intelligence
           </h1>
           <p className="mt-1 text-sm text-adv-gray">
-            Self-learning financial intelligence system — INGEST, ANALYSE, HYPOTHESISE, PREDICT, VALIDATE, LEARN
+            Financial intelligence, instrumented for learning — INGEST, ANALYSE, HYPOTHESISE, PREDICT, VALIDATE, LEARN
           </p>
         </div>
         <div className="flex items-center gap-2">

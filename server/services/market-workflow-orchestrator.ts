@@ -676,7 +676,11 @@ Return ONLY the JSON array, no other text.`;
               await conditionalAccuracyService.capturePredictionFeatures(predId, {
                 signal_type: 'ai',
                 sector: p.target_symbol ? 'equity' : 'macro',
-                momentum_direction: p.predicted_direction ?? 'unknown',
+                // Do NOT condition on predicted_direction — that is the prediction's OWN
+                // output, which makes "conditional accuracy by momentum" tautological
+                // (it measures "are up-predictions more accurate than down-predictions")
+                // and biases the weight tuner. A genuine momentum feature needs the
+                // market's price-derived momentum at prediction time; omit until that exists.
               }, false);
             } catch { /* non-fatal */ }
           }
