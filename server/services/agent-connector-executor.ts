@@ -14,6 +14,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { decryptConfig } from './credential-vault.js';
+import { assertSafeEgressUrl } from '../lib/ssrf-guard.js';
 
 export interface ConnectorConfig {
   id: string;
@@ -151,6 +152,7 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
           fetchOpts.body = JSON.stringify(toolCall.params.body);
         }
 
+        await assertSafeEgressUrl(fullUrl); // SSRF guard — block private/link-local/metadata targets
         const response = await fetch(fullUrl, fetchOpts);
         const contentType = response.headers.get('content-type') ?? '';
 
@@ -235,6 +237,7 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
           headers['X-Webhook-Signature'] = createHmac('sha256', credentials.secret as string).update(body).digest('hex');
         }
 
+        await assertSafeEgressUrl(webhookUrl); // SSRF guard — block private/link-local/metadata targets
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers,
