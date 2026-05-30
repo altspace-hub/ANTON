@@ -1,4 +1,5 @@
 import { type Tiktoken, encoding_for_model } from 'tiktoken';
+import { estimateCost as capEstimateCost, MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 
 // Use cl100k_base (GPT-4/Claude-compatible tokeniser).
 // Falls back to char-count heuristic if tiktoken fails to load.
@@ -37,32 +38,12 @@ export function estimateCost(
   outputTokens: number,
   model: string
 ): number {
-  // Pricing as of 2026-05-30 (per million tokens). Kept in sync with
-  // server/config/model-capabilities.ts (the single source of truth).
-  const costs: Record<string, { input: number; output: number }> = {
-    'claude-opus-4-8': { input: 5, output: 25 },
-    'claude-opus-4-7': { input: 5, output: 25 },
-    'claude-opus-4-6': { input: 5, output: 25 },
-    'claude-sonnet-4-6': { input: 3, output: 15 },
-    'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
-    'claude-haiku-4-5-20251001': { input: 1, output: 5 },
-    'gpt-4.1': { input: 2, output: 8 },
-    'gpt-4o': { input: 2.5, output: 10 },
-    'gpt-4o-mini': { input: 0.15, output: 0.6 },
-    'gemini-2.5-pro': { input: 1.25, output: 10 },
-    'gemini-2.5-flash': { input: 0.30, output: 2.5 },
-    'gemini-2.0-flash': { input: 0.10, output: 0.40 },
-    // Mistral (verified from docs.mistral.ai 2026-05-30)
-    'mistral-large-latest': { input: 0.50, output: 1.50 },
-    'mistral-medium-latest': { input: 0.40, output: 2.00 },
-    'mistral-small-latest': { input: 0.10, output: 0.30 },
-    'magistral-medium-latest': { input: 2.00, output: 5.00 },
-    'magistral-small-latest': { input: 0.50, output: 1.50 },
-    'codestral-latest': { input: 0.30, output: 0.90 },
-    'devstral-medium-latest': { input: 0.40, output: 2.00 },
-  };
-  const modelCost = costs[model] || costs['claude-sonnet-4-6'];
-  return (inputTokens * modelCost.input + outputTokens * modelCost.output) / 1_000_000;
+  // Pricing source of truth is model-capabilities.ts::estimateCost — this is a
+  // thin, signature-compatible delegate, so a model/price update is a one-file
+  // edit (MODEL_CAPABILITIES). Unknown models fall back to Sonnet 4.6 pricing
+  // (a non-zero estimate, matching prior behaviour rather than $0-for-unknown).
+  const known = model in MODEL_CAPABILITIES ? model : 'claude-sonnet-4-6';
+  return capEstimateCost(known, inputTokens, outputTokens, 0);
 }
 
 export function getContextUtilization(tokenCount: number, maxTokens: number = 900_000): {

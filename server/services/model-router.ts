@@ -23,6 +23,11 @@ export interface ModelRecommendation {
 }
 
 // ── Model definitions ────────────────────────────────────────
+// NOTE: an intentionally small, hardcoded 3-tier recommendation set — NOT derived
+// from model-capabilities.ts. SONNET is still pinned to 4.5 (not the GA Sonnet 4.6)
+// and COST_RELATIVE is a coarse multiplier, not real pricing. Known drift, deferred
+// (roadmap Phase 4) until a capabilities-derived recommender lands. The live cost
+// path uses model-capabilities.estimateCost (via token-estimator), not this table.
 
 const ALL_MODELS = {
   OPUS: 'claude-opus-4-8',

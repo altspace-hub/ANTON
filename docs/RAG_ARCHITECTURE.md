@@ -1,5 +1,12 @@
 # RAG Integration Architecture
 
+> **Embedding provider (reality, 2026-05-30):** Vector RAG embeddings are produced by
+> **OpenAI `text-embedding-3-small`** via ChromaDB (`server/services/chroma-client.ts`) and require
+> `OPENAI_API_KEY`. Without that key, semantic search **silently falls back to SQLite keyword search**
+> (`server/services/semantic-search.ts`). Ollama / `nomic-embed-text` (`embedding-adapter.ts`) powers
+> institutional-memory + atom embeddings only — it is **not** on the vector-RAG query path. The diagrams
+> below show the vector path; read "Query ChromaDB" as "if `OPENAI_API_KEY` set, else keyword fallback".
+
 ## System Overview
 
 ```

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { MODEL_CAPABILITIES, getThinkingConfig } from '../../server/config/model-capabilities';
+import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost as capEstimateCost } from '../../server/config/model-capabilities';
 import { MODEL_REGISTRY } from '../../server/types/modelAdapter';
+import { estimateCost as teEstimateCost } from '../../server/services/token-estimator';
 
 /**
  * Guards the "duplicated registries drift" class flagged in the 2026-05-30 audit
@@ -48,5 +49,15 @@ describe('getThinkingConfig', () => {
   it('returns no native thinking for non-Anthropic or unknown models', () => {
     expect(getThinkingConfig('mistral-large-latest', 'think').thinkingType).toBe('none');
     expect(getThinkingConfig('totally-unknown-model', 'think').thinkingType).toBe('none');
+  });
+});
+
+describe('server cost estimation delegates to the model-capabilities SoT', () => {
+  // token-estimator.estimateCost (and audit.ts via it) now delegate to
+  // model-capabilities.estimateCost. This guards against re-introducing a
+  // hand-maintained server-side pricing table that drifts (the Haiku $0.80 vs
+  // $1 class of bug). Asymmetric in/out tokens also catch an input/output swap.
+  it.each(Object.keys(MODEL_CAPABILITIES))('%s: token-estimator cost == capabilities cost', (id) => {
+    expect(teEstimateCost(1_000_000, 2_000_000, id)).toBeCloseTo(capEstimateCost(id, 1_000_000, 2_000_000, 0), 9);
   });
 });

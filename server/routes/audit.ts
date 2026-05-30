@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { getAuditLog, getAuditStats } from '../services/auditLogger.js';
+import { estimateCost } from '../services/token-estimator.js';
 
 // ============================================================================
 // COMPREHENSIVE AUDIT LOG BACKEND
@@ -44,33 +45,14 @@ interface LoginAttempt {
   failure_reason?: string;
 }
 
-// Model pricing (per 1M tokens) - Updated Mar 2026 (1M context GA pricing)
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-opus-4-8': { input: 5, output: 25 },
-  'claude-sonnet-4-6': { input: 3, output: 15 },
-  'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
-  'claude-haiku-4-5-20251001': { input: 1, output: 5 },
-  'gpt-4.1': { input: 2, output: 8 },
-  'gpt-4o': { input: 2.5, output: 10 },
-  'gpt-4o-mini': { input: 0.15, output: 0.6 },
-  'gemini-2.5-pro': { input: 1.25, output: 10 },
-  'gemini-2.5-flash': { input: 0.30, output: 2.5 },
-  'gemini-2.0-flash': { input: 0.10, output: 0.40 },
-  'mistral-large-latest': { input: 0.50, output: 1.50 },
-  'mistral-medium-latest': { input: 0.40, output: 2.00 },
-  'mistral-small-latest': { input: 0.10, output: 0.30 },
-  'magistral-medium-latest': { input: 2.00, output: 5.00 },
-  'magistral-small-latest': { input: 0.50, output: 1.50 },
-};
-
 /**
- * Calculate cost from token usage
+ * Calculate cost from token usage. Delegates to token-estimator (which delegates
+ * to model-capabilities.ts — the pricing source of truth) so audit costs never
+ * drift from the model registry. Previously a hand-maintained table that was
+ * already stale (missing Opus 4.6).
  */
 function calculateCost(inputTokens: number, outputTokens: number, model: string): number {
-  const pricing = MODEL_PRICING[model] || { input: 3, output: 15 }; // Default to Sonnet pricing
-  const inputCost = (inputTokens / 1_000_000) * pricing.input;
-  const outputCost = (outputTokens / 1_000_000) * pricing.output;
-  return inputCost + outputCost;
+  return estimateCost(inputTokens, outputTokens, model);
 }
 
 export async function createAuditRoutes(db: DatabaseAdapter) {
