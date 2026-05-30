@@ -43,6 +43,7 @@ import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
 import type { FraudAssessment } from './fraud-engine';
+import { getActiveWalletMeta } from './wallets';
 
 /** Taxable-event taxonomy mirroring FUTURECHAIN_TAX_RULES.md §4. */
 export type WalletTxKind =
@@ -91,6 +92,13 @@ export interface WalletTx {
    *  fraud engine omit it. Schemaless-safe — no IndexedDB version
    *  bump needed for an added optional record field. */
   risk?: FraudAssessment;
+  /** The FutureChain wallet address this tx belongs to. Optional +
+   *  schemaless-safe (like pacs008/risk above — no IndexedDB version bump).
+   *  Legacy rows recorded before multi-wallet have no value and stay visible
+   *  under any wallet (backward-compatible); new rows are tagged so per-wallet
+   *  balance + tax positions are correct. Defaults to the active wallet on
+   *  record when not supplied. */
+  walletAddress?: string;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -115,6 +123,9 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     refundOf: input.refundOf,
     pacs008: input.pacs008,
     risk: input.risk,
+    // Tag with the supplied wallet, else the active wallet, so the ledger is
+    // scoped per wallet (the receive poller passes the receiving wallet).
+    walletAddress: input.walletAddress ?? (await getActiveWalletMeta())?.address,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -147,8 +158,10 @@ export async function confirmTx(id: string, txHash: string): Promise<void> {
   });
 }
 
-/** List the most recent transactions, newest first. */
-export async function listTxs(limit = 100): Promise<WalletTx[]> {
+/** List the most recent transactions, newest first. Scoped to `walletAddress`
+ *  (defaults to the active wallet); legacy untagged rows are always included. */
+export async function listTxs(limit = 100, walletAddress?: string): Promise<WalletTx[]> {
+  const addr = walletAddress ?? (await getActiveWalletMeta())?.address;
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_WALLET_TXS, 'readonly');
@@ -157,12 +170,13 @@ export async function listTxs(limit = 100): Promise<WalletTx[]> {
     const out: WalletTx[] = [];
     req.onsuccess = () => {
       const cursor = req.result;
-      if (cursor && out.length < limit) {
-        out.push(cursor.value as WalletTx);
-        cursor.continue();
-      } else {
-        resolve(out);
+      if (!cursor || out.length >= limit) { resolve(out); return; }
+      const row = cursor.value as WalletTx;
+      // Other wallets' rows are skipped; legacy rows (no walletAddress) stay visible.
+      if (!addr || row.walletAddress == null || row.walletAddress === addr) {
+        out.push(row);
       }
+      cursor.continue();
     };
     req.onerror = () => reject(req.error);
   });
@@ -190,7 +204,8 @@ export async function loadBehaviorProfile(now?: number): Promise<BehaviorProfile
 
 /** All txs in a closed [from, to] inclusive ts range. Used by the
  *  annual-report exporter once the tax engine ships. */
-export async function listTxsByRange(fromTs: number, toTs: number): Promise<WalletTx[]> {
+export async function listTxsByRange(fromTs: number, toTs: number, walletAddress?: string): Promise<WalletTx[]> {
+  const addr = walletAddress ?? (await getActiveWalletMeta())?.address;
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_WALLET_TXS, 'readonly');
@@ -200,12 +215,12 @@ export async function listTxsByRange(fromTs: number, toTs: number): Promise<Wall
     const out: WalletTx[] = [];
     req.onsuccess = () => {
       const cursor = req.result;
-      if (cursor) {
-        out.push(cursor.value as WalletTx);
-        cursor.continue();
-      } else {
-        resolve(out);
+      if (!cursor) { resolve(out); return; }
+      const row = cursor.value as WalletTx;
+      if (!addr || row.walletAddress == null || row.walletAddress === addr) {
+        out.push(row);
       }
+      cursor.continue();
     };
     req.onerror = () => reject(req.error);
   });
@@ -214,8 +229,8 @@ export async function listTxsByRange(fromTs: number, toTs: number): Promise<Wall
 /** Running balance in micro-FTC (sum of receives − sum of sends).
  *  Convenience for the wallet header until on-chain balance queries
  *  land. */
-export async function computeBalanceMicroFtc(): Promise<bigint> {
-  const txs = await listTxs(10000);
+export async function computeBalanceMicroFtc(walletAddress?: string): Promise<bigint> {
+  const txs = await listTxs(10000, walletAddress);
   let balance = 0n;
   for (const t of txs) {
     const amt = BigInt(t.amountMicroFtc);

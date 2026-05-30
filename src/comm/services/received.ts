@@ -61,6 +61,7 @@ export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
         txHash: normalised.txHash,
         jurisdictionAtTx: null,
         ts: normalised.receivedAt,
+        walletAddress: meta.address, // the wallet that received it (the polled wallet)
       });
       knownHashes.add(normalised.txHash);
       fresh.push({ tx, fromName: normalised.fromName });

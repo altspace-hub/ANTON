@@ -36,6 +36,7 @@ import {
   fetchRecentTransactions, getChainClient,
 } from './chain.js';
 import { makeSettingsHandlers, registerSettingsIpc } from './settings-ipc.js';
+import { attestationChainConfig } from './attestation-config.js';
 
 // (We resolve only the discovery file path below; no __dirname/__filename
 // needed in this entry — the modal preload path lives in electron-modal.ts.)
@@ -65,6 +66,7 @@ interface SharedState {
   pairings: PairingStore;
   proposals: ProposalStore;
   wallet: Wallet;
+  storage: FileStorageBackend;
 }
 
 function makeSharedState(): SharedState {
@@ -73,13 +75,14 @@ function makeSharedState(): SharedState {
     pairings: new PairingStore(),
     proposals: new ProposalStore(),
     wallet: new Wallet(storage),
+    storage,
   };
 }
 
 async function buildDepsForBoot(
   modal: ModalDriver, shared: SharedState,
 ): Promise<{ deps: ServerDeps }> {
-  const { pairings, proposals, wallet } = shared;
+  const { pairings, proposals, wallet, storage } = shared;
 
   // Wallet info — uses the real wallet module + a single RpcClient
   // hop for live balance + tip. When no wallet has been created yet
@@ -149,11 +152,15 @@ async function buildDepsForBoot(
       // RpcClient), zero the priv on the way out.
       const unlocked = await wallet.unlock(req.passphrase);
       try {
+        // Attach a device-attestation token to the submit when a Bahnhof
+        // bearer is configured; local dev nodes submit unattested.
+        const chainConfig = attestationChainConfig(storage);
         const result = await chainSubmitPayment({
           unlocked,
           to: req.to,
           amountFtc: req.amountFtc,
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
+          ...(chainConfig ? { chainConfig } : {}),
         });
         return { txId: result.txId, feeFtc: result.feeFtc };
       } finally {

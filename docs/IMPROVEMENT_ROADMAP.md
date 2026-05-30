@@ -193,6 +193,22 @@ or a documented manual smoke.
 
 **Effort:** M (parallelisable across apps). **Independent** of backend phases.
 
+**Status (2026-05-31): code-now items DONE; the rest need an operator secret/device.**
+- **DONE (Comm):** per-wallet ledger scoping — `WalletTx` now carries `walletAddress`; `listTxs`/
+  `computeBalanceMicroFtc`/`listTxsByRange` scope by wallet (legacy untagged rows stay visible). Fixes
+  wrong balances + tax positions in multi-wallet. 3 tests (`src/comm/__tests__/wallet-ledger.test.ts`).
+- **DONE (Agent Pay):** device attestation wired into the submit path via a testable
+  `attestationChainConfig(storage, env)` helper — `X-Attestation-Token` is now attached to
+  `/submit_signed_transaction` when `AGENT_PAY_API_KEY` is set (local dev stays unattested). 3 tests.
+- **Operator-only / code-plus-doc (not completable here — need a real secret/device):**
+  - Pay Play Integrity: set the real `GOOGLE_CLOUD_PROJECT_NUMBER` (currently `0` → inert), add the
+    `play.core.integrity` ProGuard `-keep` rules, and run a release-build attestation smoke on a
+    Play-certified device → `docs/phase2-attestation-e2e-log.md`.
+  - Companion push: implement `sendViaFcm` (firebase-admin) + `sendViaApns` (@parse/node-apn) behind
+    `APP_GATEWAY_PUSH` + provider keys; delivery requires real FCM/APNs keys + a physical device.
+  - Business/Pay FX: both `fx.ts` copies' `fetchFromSource()` return null → wire an interim rate behind
+    a flag (`source:'INTERIM_RATE'`); the real Bahnhof FTC oracle is an external dependency.
+
 ---
 
 ## Phase 6 — Security spot-fixes  ·  *localized holes in a strong posture*
