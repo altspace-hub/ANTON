@@ -7,6 +7,24 @@
 > institutional-memory + atom embeddings only — it is **not** on the vector-RAG query path. The diagrams
 > below show the vector path; read "Query ChromaDB" as "if `OPENAI_API_KEY` set, else keyword fallback".
 
+> **Two vector paths (don't conflate them):** (1) the **ChromaDB collection RAG** above
+> (documents/collections, vectors in `data/chroma`), and (2) the **`embeddings` table** for
+> institutional-memory + knowledge atoms + hybrid search, behind `VectorStoreAdapter`
+> (`server/services/vector-store-adapter.ts`). Path 2's engine is selected by `VECTOR_BACKEND`:
+> `sqlite` (default — in-process JS cosine, good for <100k vectors) or `pgvector`.
+>
+> **Enabling `pgvector` (path 2 only):** It is additive and **default-off** — nothing changes
+> until you opt in. Steps: (a) install the pgvector extension on the Postgres host
+> (`apt install postgresql-16-pgvector`, or allowlist it on managed PG); (b) set
+> `VECTOR_BACKEND=pgvector`; (c) call `POST /api/embeddings/backfill-vec` once — it runs
+> `CREATE EXTENSION`, adds the `embedding_vec vector(1536)` column + HNSW cosine index, and
+> copies existing 1536-dim (OpenAI) vectors into it (a cheap copy, no re-embed). Migration 218
+> attempts the same at deploy time but is a **non-fatal skip** if the extension isn't present yet,
+> so it can't brick the migration chain. `PgVectorStore` degrades to JS cosine automatically when
+> the column is absent, when the query is a non-1536 dimension (Ollama 768 / Voyage 512), or when
+> a vector is the all-zeros failure sentinel (which would yield a NaN distance). Rollback = unset
+> `VECTOR_BACKEND` (the canonical TEXT `embedding` column is always written, so no data is lost).
+
 ## System Overview
 
 ```

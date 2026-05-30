@@ -14,7 +14,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { hybridSearch, findSimilar } from '../services/hybrid-search.js';
-import { getEmbeddingAdapter } from '../services/embedding-adapter.js';
+import { getEmbeddingAdapter, isZeroVector } from '../services/embedding-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
 import { applyAntonBoosts, applyTokenBudget } from '../services/atom-boost.js';
 import { safeError } from '../lib/error-response.js';
@@ -191,6 +191,69 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         atomsRemaining: atomsAfter,
         checkpointsQueued: checkpointsBefore,
       });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /backfill-vec — Enable + populate the pgvector column ────────────
+  // Idempotent operator action for VECTOR_BACKEND=pgvector. Ensures the extension
+  // + embedding_vec column + HNSW index exist, then copies existing 1536-dim TEXT
+  // embeddings into the vector column (a cheap copy — no OpenAI re-spend). Safe to
+  // re-run; this is the path to enable pgvector if it was installed AFTER migration
+  // 218 ran (when the extension was still absent).
+  router.post('/backfill-vec', async (_req, res) => {
+    try {
+      if (db.dialect !== 'postgresql') {
+        return res.status(400).json({ error: 'pgvector backfill requires a PostgreSQL connection' });
+      }
+
+      // 1. Ensure extension + column + index (idempotent).
+      try {
+        await db.run('CREATE EXTENSION IF NOT EXISTS vector');
+      } catch {
+        return res.status(400).json({
+          error: 'pgvector extension not available. Install it on the Postgres host ' +
+            '(e.g. postgresql-16-pgvector) and ensure the DB role may CREATE EXTENSION.',
+        });
+      }
+      await db.run('ALTER TABLE embeddings ADD COLUMN IF NOT EXISTS embedding_vec vector(1536)');
+      await db.run(
+        `CREATE INDEX IF NOT EXISTS idx_embeddings_vec_hnsw
+         ON embeddings USING hnsw (embedding_vec vector_cosine_ops)
+         WHERE embedding_dimension = 1536`,
+      );
+
+      // 2. Copy existing 1536-dim TEXT vectors into embedding_vec, batched via
+      //    keyset pagination on id so skipped (degenerate) rows aren't re-scanned.
+      const BATCH = 500;
+      let lastId = '';
+      let migrated = 0;
+      let scanned = 0;
+      for (;;) {
+        const rows = (await db.all(
+          `SELECT id, embedding FROM embeddings
+           WHERE embedding_dimension = 1536 AND embedding_vec IS NULL AND id > ?
+           ORDER BY id LIMIT ?`,
+          lastId, BATCH,
+        )) as Array<{ id: string; embedding: string }>;
+        if (rows.length === 0) break;
+        for (const r of rows) {
+          lastId = r.id;
+          scanned++;
+          try {
+            const vec = JSON.parse(r.embedding) as number[];
+            if (!Array.isArray(vec) || vec.length !== 1536 || isZeroVector(vec)) continue;
+            await db.run('UPDATE embeddings SET embedding_vec = ?::vector WHERE id = ?', `[${vec.join(',')}]`, r.id);
+            migrated++;
+          } catch {
+            // Unparseable TEXT embedding — skip; the cursor still advances.
+          }
+        }
+        if (rows.length < BATCH) break;
+      }
+
+      res.json({ success: true, scanned, migrated });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
