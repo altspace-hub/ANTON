@@ -239,6 +239,20 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return mag === 0 ? 0 : dot / mag;
 }
 
+/**
+ * True if the vector is all-zeros (or empty) — the sentinel every embedder
+ * returns on failure / empty input. In the JS cosine store such a row scores 0
+ * and is harmlessly dropped; under pgvector the cosine distance of a zero vector
+ * is NaN and would corrupt ORDER BY ranking, so callers must guard on this.
+ */
+export function isZeroVector(vec: number[]): boolean {
+  if (vec.length === 0) return true;
+  for (let i = 0; i < vec.length; i++) {
+    if (vec[i] !== 0) return false;
+  }
+  return true;
+}
+
 export function serializeVector(vec: number[]): string {
   return JSON.stringify(vec);
 }

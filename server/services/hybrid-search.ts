@@ -14,7 +14,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { getEmbeddingAdapter } from './embedding-adapter.js';
+import { getEmbeddingAdapter, isZeroVector } from './embedding-adapter.js';
 import { getVectorStore } from './vector-store-adapter.js';
 import { retrieveChunks } from './rag/retriever.js';
 
@@ -256,6 +256,14 @@ export async function embedAndStore(
   const store = getVectorStore(db);
 
   const vector = await adapter.embed(params.contentText);
+  if (isZeroVector(vector)) {
+    // The embed failed (missing key / rate-limit / empty) and returned the
+    // all-zeros sentinel. Don't persist a dead row — it's invisible to cosine
+    // search and would poison a pgvector index (NaN distance). A later successful
+    // embed (re-index) will store it via the same ON CONFLICT upsert.
+    console.warn(`[hybrid-search] Skipping store of zero embedding for ${params.contentType}:${params.contentId}`);
+    return;
+  }
   await store.store({
     contentType: params.contentType,
     contentId: params.contentId,

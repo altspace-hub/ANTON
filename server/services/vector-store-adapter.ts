@@ -12,11 +12,12 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { SQLiteVectorStore } from './vector-stores/sqlite-vector-store.js';
+import { PgVectorStore } from './vector-stores/pgvector-store.js';
 import type { VectorSearchResult } from './vector-stores/sqlite-vector-store.js';
 
 export type { VectorSearchResult };
 
-export type VectorBackend = 'sqlite' | 'chroma';
+export type VectorBackend = 'sqlite' | 'pgvector' | 'chroma';
 
 export interface VectorStoreAdapter {
   store(params: {
@@ -48,8 +49,18 @@ export function getVectorStore(db: DatabaseAdapter): VectorStoreAdapter {
   if (_instance && _db === db) return _instance;
   _db = db;
 
-  // Future: check VECTOR_BACKEND env to support chroma
-  _instance = new SQLiteVectorStore(db);
+  // VECTOR_BACKEND selects the storage/search engine. Default 'sqlite' = the
+  // in-process JS cosine store (works on any dialect). 'pgvector' uses the
+  // Postgres pgvector extension — only on a PostgreSQL connection; on any other
+  // dialect it transparently falls back to the JS store. PgVectorStore itself
+  // also degrades to JS cosine if the extension/column isn't present yet, so an
+  // un-provisioned pgvector setting never breaks search.
+  const backend = (process.env.VECTOR_BACKEND || 'sqlite').toLowerCase();
+  if (backend === 'pgvector' && db.dialect === 'postgresql') {
+    _instance = new PgVectorStore(db);
+  } else {
+    _instance = new SQLiteVectorStore(db);
+  }
   return _instance;
 }
 
