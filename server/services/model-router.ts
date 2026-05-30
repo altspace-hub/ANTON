@@ -24,14 +24,13 @@ export interface ModelRecommendation {
 
 // ── Model definitions ────────────────────────────────────────
 // NOTE: an intentionally small, hardcoded 3-tier recommendation set — NOT derived
-// from model-capabilities.ts. SONNET is still pinned to 4.5 (not the GA Sonnet 4.6)
-// and COST_RELATIVE is a coarse multiplier, not real pricing. Known drift, deferred
-// (roadmap Phase 4) until a capabilities-derived recommender lands. The live cost
-// path uses model-capabilities.estimateCost (via token-estimator), not this table.
+// from model-capabilities.ts. COST_RELATIVE is a coarse multiplier, not real pricing
+// (the live cost path uses model-capabilities.estimateCost via token-estimator). A
+// full capabilities-derived recommender is deferred (roadmap Phase 4).
 
 const ALL_MODELS = {
   OPUS: 'claude-opus-4-8',
-  SONNET: 'claude-sonnet-4-5-20250929',
+  SONNET: 'claude-sonnet-4-6',
   HAIKU: 'claude-haiku-4-5-20251001',
 } as const;
 
@@ -40,7 +39,7 @@ type ModelValue = (typeof ALL_MODELS)[keyof typeof ALL_MODELS];
 // Relative cost multipliers (Sonnet = 1.0 baseline)
 const COST_RELATIVE: Record<ModelValue, number> = {
   'claude-opus-4-8': 5.0,
-  'claude-sonnet-4-5-20250929': 1.0,
+  'claude-sonnet-4-6': 1.0,
   'claude-haiku-4-5-20251001': 0.15,
 };
 
@@ -89,14 +88,14 @@ function buildAlternatives(
 
   const qualityMap: Record<ModelValue, 'excellent' | 'good' | 'adequate'> = {
     'claude-opus-4-8': 'excellent',
-    'claude-sonnet-4-5-20250929': 'good',
+    'claude-sonnet-4-6': 'good',
     'claude-haiku-4-5-20251001': 'adequate',
   };
 
   const reasonMap: Record<ModelValue, string> = {
     'claude-opus-4-8':
       'Maximum reasoning depth — best for board-level and regulatory deliverables',
-    'claude-sonnet-4-5-20250929':
+    'claude-sonnet-4-6':
       'Strong quality at lower cost — suitable for most professional drafting',
     'claude-haiku-4-5-20251001':
       'Fastest and cheapest — good for summaries and simple tasks',
