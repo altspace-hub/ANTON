@@ -143,7 +143,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       sql += ' ORDER BY urgency_score DESC, created_at DESC LIMIT ?';
       params.push(limit);
 
-      const proposals = await db.run(sql, ...params);
+      const proposals = await db.all(sql, ...params);
       res.json({ proposals });
     } catch (err) {
       res.status(500).json({ error: String(err) });

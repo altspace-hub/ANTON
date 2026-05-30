@@ -1,6 +1,6 @@
 // Patch for Phase 4 BOP (Base-of-Pyramid) areas
-// Areas: government-services, smallholder-farming, micro-business, workers-rights,
-//        personal-finance-bop, credit-navigator, land-rights, consumer-protection,
+// Areas: trades, government-services, smallholder-farming, micro-business, workers-rights,
+//        personal-finance-bop, credit-navigator, land-rights, consumer-rights,
 //        community-health, education-literacy, food-business, artisan-craft, livestock-poultry
 // Generated: 2026-02-23
 
@@ -1735,7 +1735,92 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
   },
 ];
 
+// Trades & Service Workers — micro-business tooling for independent tradespeople
+export const TRADES_MODULES: ModuleDefinition[] = [
+  {
+    id: "invoice-generator",
+    label: "Invoice Generator",
+    shortLabel: "Invoice",
+    icon: "Receipt",
+    description: "Turn a finished job into a clear, professional invoice — line items, labour, materials, VAT, and payment terms.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "think",
+      creativity: "strict",
+      outputFormats: ["quick-briefing"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Small-trade invoicing essentials: required fields (business name, customer, invoice number/date, due date), itemised labour + materials, VAT/sales-tax handling and registration thresholds by country, payment terms and late-payment wording, bank/mobile-money payment details, and record-keeping for tax. Plain reusable templates for a sole trader." },
+      },
+    },
+  },
+  {
+    id: "job-quote-builder",
+    label: "Job Quote Builder",
+    shortLabel: "Quote",
+    icon: "Calculator",
+    description: "Build an accurate, itemised quote or estimate for a job so you win the work without underpricing it.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "think",
+      creativity: "balanced",
+      outputFormats: ["quick-briefing"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Pricing a trade job: estimating labour hours, marking up materials, allowing for waste/contingency, overhead and target margin, fixed-price vs time-and-materials, deposit and milestone staging, quote validity period, and clear scope/exclusions wording to avoid disputes. Helps avoid the common mistake of underpricing." },
+      },
+    },
+  },
+  {
+    id: "customer-comms",
+    label: "Customer Communications",
+    shortLabel: "Customer Msg",
+    icon: "MessageSquare",
+    description: "Draft clear, friendly messages to customers — booking confirmations, running-late notices, follow-ups, and payment reminders.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "quick",
+      creativity: "balanced",
+      outputFormats: ["quick-briefing"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Customer-facing message templates for tradespeople: appointment confirmation and reminders, arrival-window and running-late notes, job-complete and feedback requests, polite payment reminders and overdue follow-ups, and handling complaints professionally. Short, courteous, SMS/WhatsApp-ready tone." },
+      },
+    },
+  },
+  {
+    id: "tax-rot-rut-guide",
+    label: "ROT/RUT Tax Deduction Guide",
+    shortLabel: "ROT/RUT",
+    icon: "Percent",
+    description: "Understand Sweden's ROT and RUT tax deductions — what work qualifies, how to apply them on an invoice, and how to claim from Skatteverket.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "think",
+      creativity: "strict",
+      outputFormats: ["quick-briefing"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Swedish ROT (renovation/repair/extension) and RUT (household services) tax deductions: which services qualify, the labour-cost-only rule, current deduction rates and annual caps, the customer's remaining allowance, how the tradesperson applies the deduction on the invoice and requests the remainder from Skatteverket (begäran om utbetalning), required customer details (personnummer, property), and common rejection reasons. Rates change — verify current figures at skatteverket.se." },
+      },
+    },
+  },
+  {
+    id: "material-order-list",
+    label: "Material Order List",
+    shortLabel: "Materials",
+    icon: "ClipboardList",
+    description: "Turn a job description into a complete materials and tools shopping list with quantities, so you buy everything in one trip.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "think",
+      creativity: "balanced",
+      outputFormats: ["quick-briefing"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Building a job material list: breaking a task into materials + consumables + tools, estimating quantities with a sensible waste allowance, grouping by supplier/aisle, flagging long-lead or special-order items, and a quick budget total. Trade-aware (electrical, plumbing, carpentry, painting, tiling) so nothing critical is forgotten." },
+      },
+    },
+  },
+];
+
 export const PHASE4_BOP_MODULES: ModuleDefinition[] = [
+  ...TRADES_MODULES,
   ...GOVERNMENT_SERVICES_MODULES,
   ...SMALLHOLDER_FARMING_MODULES,
   ...MICRO_BUSINESS_MODULES,

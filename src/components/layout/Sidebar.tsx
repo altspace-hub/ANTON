@@ -153,7 +153,7 @@ const AREA_COLORS: Record<string, { dot: string; text: string; active: string }>
   'personal-finance-bop': { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   'credit-navigator':     { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
   'land-rights':          { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
-  'consumer-protection':  { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
+  'consumer-rights':      { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   'community-health':     { dot: 'bg-adv-red',     text: 'text-adv-red',     active: 'bg-adv-red/10 text-adv-red' },
   'education-literacy':   { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
   'food-business':        { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },

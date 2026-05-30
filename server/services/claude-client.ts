@@ -118,12 +118,13 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 // ── Thinking Config Resolution ─────────────────────────────
 
 // Per-model max output token ceilings (Anthropic API limits).
-// Opus 4.8: 128 000  |  Sonnet 4.6: 64 000  |  all others: 32 000
+// Keep in sync with server/config/model-capabilities.ts (maxOutputTokens).
+// Opus 4.8: 128 000 | Sonnet 4.6/4.5: 64 000 | Haiku 4.5: 8 192 | fallback: 32 000
 const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
   'claude-opus-4-8':             128_000,
   'claude-sonnet-4-6':            64_000,
   'claude-sonnet-4-5-20250929':   64_000,
-  'claude-haiku-4-5-20251001':    32_000,
+  'claude-haiku-4-5-20251001':     8_192,   // Haiku's real API ceiling — 32k is rejected with a 400
 };
 function getOutputCeiling(model: string): number {
   return MODEL_MAX_OUTPUT[model] ?? 32_000;

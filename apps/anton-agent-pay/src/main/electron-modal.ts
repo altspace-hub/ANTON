@@ -25,6 +25,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ModalDriver } from './modal.js';
 import type { ModalDecision, ModalPayload } from '../shared/ipc-types.js';
+import { coerceDecision } from './coerce-decision.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -146,18 +147,4 @@ export class ElectronModalDriver implements ModalDriver {
       }
     });
   }
-}
-
-function coerceDecision(raw: unknown): ModalDecision {
-  if (raw && typeof raw === 'object' && 'kind' in raw) {
-    const k = (raw as { kind?: string }).kind;
-    if (k === 'approve') return { kind: 'approve' };
-    if (k === 'reject') {
-      const reason = String((raw as { reason?: unknown }).reason ?? 'rejected');
-      return { kind: 'reject', reason };
-    }
-  }
-  // Malformed payload from renderer (shouldn't happen — preload is
-  // trusted code) — treat as Reject so we never silently approve.
-  return { kind: 'reject', reason: 'malformed renderer response' };
 }

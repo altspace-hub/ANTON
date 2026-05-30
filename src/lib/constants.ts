@@ -3222,7 +3222,7 @@ export const AREAS = [
     ],
   },
   {
-    id: 'consumer-protection',
+    id: 'consumer-rights',
     label: 'Consumer Protection Expert',
     shortLabel: 'Consumer Rights',
     icon: 'ShieldCheck',

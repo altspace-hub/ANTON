@@ -90,7 +90,7 @@ export async function createMarketPatternWeightFeedbackService(db: DatabaseAdapt
     const patterns = await db.all<PatternRow>(
       `SELECT id, pattern_type, title, description, severity, confidence, metadata, status, detected_at
        FROM market_pattern_detections
-       WHERE status = 'active' AND applied_to_weights_at IS NULL
+       WHERE status NOT IN ('resolved', 'false_positive') AND applied_to_weights_at IS NULL
        ORDER BY detected_at ASC
        LIMIT ?`,
       limit,
