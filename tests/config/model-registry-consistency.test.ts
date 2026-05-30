@@ -5,31 +5,64 @@ import { estimateCost as teEstimateCost } from '../../server/services/token-esti
 
 /**
  * Guards the "duplicated registries drift" class flagged in the 2026-05-30 audit
- * (roadmap focus ⑤). ANTON keeps model metadata in TWO places —
- * model-capabilities.ts (MODEL_CAPABILITIES, the source of truth) and
- * modelAdapter.ts (MODEL_REGISTRY, drives the main /api/claude route). They
- * silently disagreeing caused real bugs: the Haiku max_tokens=32k ceiling and
- * Haiku/Opus pricing drift. This test fails the moment they diverge again.
+ * (roadmap focus ⑤). As of 2026-05-31 MODEL_REGISTRY is DERIVED from
+ * MODEL_CAPABILITIES (the source of truth) — pricing/context/output live in
+ * exactly one place, so they can no longer drift. This suite verifies (a) every
+ * capabilities model is reflected in the registry (key parity), (b) the
+ * pricing/output/context projection, and (c) the non-trivial derivation RULES
+ * (GA-context override for beta-gated models, provider→apiKey/temperature/caching
+ * mapping, and the hand-set thinking/reasoning flags) against explicit expected
+ * values so a wrong builder change is caught — not tautological.
  */
-describe('model registry consistency (MODEL_CAPABILITIES ↔ MODEL_REGISTRY)', () => {
-  const sharedIds = Object.keys(MODEL_CAPABILITIES).filter((id) => MODEL_REGISTRY[id]);
-
-  it('cross-checks a meaningful set of shared models', () => {
-    expect(sharedIds.length).toBeGreaterThanOrEqual(6);
+describe('model registry derivation (MODEL_CAPABILITIES → MODEL_REGISTRY)', () => {
+  it('registry key set exactly matches the capabilities key set', () => {
+    expect(Object.keys(MODEL_REGISTRY).sort()).toEqual(Object.keys(MODEL_CAPABILITIES).sort());
   });
 
-  it.each(sharedIds)('%s: max output and pricing agree across registries', (id) => {
+  it.each(Object.keys(MODEL_CAPABILITIES))('%s: pricing + max output project from capabilities', (id) => {
     const cap = MODEL_CAPABILITIES[id];
     const reg = MODEL_REGISTRY[id];
     expect(reg.maxOutputTokens).toBe(cap.maxOutputTokens);
     expect(reg.costPer1MInput).toBe(cap.pricing.inputPerMillion);
     expect(reg.costPer1MOutput).toBe(cap.pricing.outputPerMillion);
-    // Context window: capabilities tracks the MAX achievable (which may require
-    // a beta header, e.g. Sonnet 4.5's 1M), while the registry tracks the GA
-    // default (200k). Only require agreement when the full context is GA.
-    if (!cap.requires1MBetaHeader) {
-      expect(reg.contextWindow).toBe(cap.maxContextWindow);
-    }
+    // Beta-gated models (Sonnet 4.5's 1M) report the 200k GA default in the
+    // registry; everything else mirrors the capabilities max context.
+    expect(reg.contextWindow).toBe(cap.requires1MBetaHeader ? 200_000 : cap.maxContextWindow);
+  });
+
+  it('derivation anchors: provider→apiKey/temperature/caching + GA context + corrected prices', () => {
+    // Opus 4.8 — anthropic mappings + flat 1M context
+    const opus = MODEL_REGISTRY['claude-opus-4-8'];
+    expect(opus.provider).toBe('anthropic');
+    expect(opus.requiresApiKey).toBe('ANTHROPIC_API_KEY');
+    expect(opus.temperatureRange).toEqual([0, 1]);
+    expect(opus.supportsPromptCaching).toBe(true);
+    expect(opus.contextWindow).toBe(1_000_000);
+    expect(opus.costTier).toBe(3);
+
+    // Sonnet 4.5 — beta-gated, so registry reports 200k GA, not the 1M max
+    expect(MODEL_REGISTRY['claude-sonnet-4-5-20250929'].contextWindow).toBe(200_000);
+
+    // Haiku 4.5 — the corrected $1/$5 (was the stale $0.80/$4 drift bug)
+    const haiku = MODEL_REGISTRY['claude-haiku-4-5-20251001'];
+    expect(haiku.costPer1MInput).toBe(1);
+    expect(haiku.costPer1MOutput).toBe(5);
+
+    // GPT-5.4 — non-anthropic mappings (was previously registry-only with no caps twin)
+    const gpt = MODEL_REGISTRY['gpt-5.4'];
+    expect(gpt.provider).toBe('openai');
+    expect(gpt.requiresApiKey).toBe('OPENAI_API_KEY');
+    expect(gpt.temperatureRange).toEqual([0, 2]);
+    expect(gpt.supportsPromptCaching).toBe(false);
+
+    // Gemini 2.5 Pro — thinking=true is hand-set (caps adaptive/extended are both false)
+    expect(MODEL_REGISTRY['gemini-2.5-pro'].supportsThinking).toBe(true);
+
+    // Magistral — native reasoning is hand-set, NOT derived from thinking flags
+    const magistral = MODEL_REGISTRY['magistral-medium-latest'];
+    expect(magistral.supportsThinking).toBe(false);
+    expect(magistral.supportsNativeReasoning).toBe(true);
+    expect(magistral.provider).toBe('mistral');
   });
 });
 

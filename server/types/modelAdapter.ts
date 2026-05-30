@@ -1,6 +1,17 @@
 // ═══════════════════════════════════════════════════════════
 // Multi-LLM Model Adapter — Type definitions & registry
 // ═══════════════════════════════════════════════════════════
+//
+// MODEL_REGISTRY is DERIVED from MODEL_CAPABILITIES (server/config/model-capabilities.ts),
+// which is the single source of truth for pricing / context / output / provider.
+// The presentation/capability fields that have no home in MODEL_CAPABILITIES
+// (displayName, costTier, json/seed/thinking/native-reasoning flags) live ONCE in
+// REGISTRY_SUPPLEMENT below. No pricing/context value is duplicated, so the
+// "two registries drift" class (2026-05-30 audit, roadmap ⑤) is structurally gone:
+// adding or repricing a model is a single edit in model-capabilities.ts.
+// Guarded by tests/config/model-registry-consistency.test.ts.
+
+import { MODEL_CAPABILITIES, type ModelCapabilities } from '../config/model-capabilities.js';
 
 export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral';
 export type PrecisionLevel = 'strict' | 'precise' | 'balanced' | 'creative' | 'exploratory';
@@ -23,356 +34,101 @@ export interface ModelConfig {
   supportsNativeReasoning: boolean;
 }
 
-export const MODEL_REGISTRY: Record<string, ModelConfig> = {
-  'claude-opus-4-8': {
-    provider: 'anthropic',
-    modelId: 'claude-opus-4-8',
-    displayName: 'Claude Opus 4.8',
-    contextWindow: 1000000,
-    maxOutputTokens: 128000,
-    supportsThinking: true,
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 5,
-    costPer1MOutput: 25,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: true,
-  },
-  // Legacy Opus generations — kept selectable. Same context/output/pricing tier.
-  'claude-opus-4-7': {
-    provider: 'anthropic',
-    modelId: 'claude-opus-4-7',
-    displayName: 'Claude Opus 4.7',
-    contextWindow: 1000000,
-    maxOutputTokens: 128000,
-    supportsThinking: true,
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 5,
-    costPer1MOutput: 25,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: true,
-  },
-  'claude-opus-4-6': {
-    provider: 'anthropic',
-    modelId: 'claude-opus-4-6',
-    displayName: 'Claude Opus 4.6',
-    contextWindow: 1000000,
-    maxOutputTokens: 128000,
-    supportsThinking: true,
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 5,
-    costPer1MOutput: 25,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: true,
-  },
-  'claude-sonnet-4-6': {
-    provider: 'anthropic',
-    modelId: 'claude-sonnet-4-6',
-    displayName: 'Claude Sonnet 4.6',
-    contextWindow: 1000000,             // 1M context GA (no beta header needed)
-    maxOutputTokens: 64000,
-    supportsThinking: true,
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 3,
-    costPer1MOutput: 15,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: true,
-  },
-  'claude-sonnet-4-5-20250929': {
-    provider: 'anthropic',
-    modelId: 'claude-sonnet-4-5-20250929',
-    displayName: 'Claude Sonnet 4.5',
-    contextWindow: 200000,
-    maxOutputTokens: 64000,
-    supportsThinking: true,
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 3,
-    costPer1MOutput: 15,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: true,
-  },
-  'claude-haiku-4-5-20251001': {
-    provider: 'anthropic',
-    modelId: 'claude-haiku-4-5-20251001',
-    displayName: 'Claude Haiku 4.5',
-    contextWindow: 200000,
-    maxOutputTokens: 8192,
-    supportsThinking: true,             // Haiku supports extended thinking
-    supportsJsonMode: false,
-    supportsPromptCaching: true,
-    supportsSeed: false,
-    temperatureRange: [0, 1],
-    costPer1MInput: 1,
-    costPer1MOutput: 5,
-    requiresApiKey: 'ANTHROPIC_API_KEY',
-    costTier: 1,
-    supportsNativeReasoning: false,
-  },
-  // ── OpenAI ─────────────────────────────────────────────────
-  'gpt-5.4': {
-    provider: 'openai',
-    modelId: 'gpt-5.4',
-    displayName: 'GPT-5.4',
-    contextWindow: 256000,
-    maxOutputTokens: 32768,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 5,
-    costPer1MOutput: 15,
-    requiresApiKey: 'OPENAI_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: false,
-  },
-  'gpt-4.1': {
-    provider: 'openai',
-    modelId: 'gpt-4.1',
-    displayName: 'GPT-4.1',
-    contextWindow: 1000000,
-    maxOutputTokens: 32768,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 2,
-    costPer1MOutput: 8,
-    requiresApiKey: 'OPENAI_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: false,
-  },
-  'gpt-4o': {
-    provider: 'openai',
-    modelId: 'gpt-4o',
-    displayName: 'GPT-4o',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 2.5,
-    costPer1MOutput: 10,
-    requiresApiKey: 'OPENAI_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: false,
-  },
-  'gpt-4o-mini': {
-    provider: 'openai',
-    modelId: 'gpt-4o-mini',
-    displayName: 'GPT-4o Mini',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.15,
-    costPer1MOutput: 0.6,
-    requiresApiKey: 'OPENAI_API_KEY',
-    costTier: 1,
-    supportsNativeReasoning: false,
-  },
-  // ── Google Gemini ───────────────────────────────────────────
-  'gemini-2.5-pro': {
-    provider: 'google',
-    modelId: 'gemini-2.5-pro',
-    displayName: 'Gemini 2.5 Pro',
-    contextWindow: 1000000,
-    maxOutputTokens: 65536,
-    supportsThinking: true,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: false,
-    temperatureRange: [0, 2],
-    costPer1MInput: 1.25,
-    costPer1MOutput: 10,
-    requiresApiKey: 'GOOGLE_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: true,
-  },
-  'gemini-2.5-flash': {
-    provider: 'google',
-    modelId: 'gemini-2.5-flash',
-    displayName: 'Gemini 2.5 Flash',
-    contextWindow: 1000000,
-    maxOutputTokens: 65536,
-    supportsThinking: true,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: false,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.3,
-    costPer1MOutput: 2.5,
-    requiresApiKey: 'GOOGLE_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: true,
-  },
-  'gemini-2.0-flash': {
-    provider: 'google',
-    modelId: 'gemini-2.0-flash',
-    displayName: 'Gemini 2.0 Flash',
-    contextWindow: 1000000,
-    maxOutputTokens: 8192,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: false,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.1,
-    costPer1MOutput: 0.4,
-    requiresApiKey: 'GOOGLE_API_KEY',
-    costTier: 1,
-    supportsNativeReasoning: false,
-  },
-  // ── Mistral (verified from docs.mistral.ai 2026-05-30) ──────
-  // `-latest` aliases resolve to the newest version on Mistral's servers;
-  // ANTON forwards the alias verbatim.
-  'mistral-large-latest': {
-    provider: 'mistral',
-    modelId: 'mistral-large-latest',
-    displayName: 'Mistral Large 3',
-    contextWindow: 256000,             // 256K (Large 3, Dec 2025)
-    maxOutputTokens: 128000,           // Match Opus tier
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.50,
-    costPer1MOutput: 1.50,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: false,
-  },
-  'mistral-medium-latest': {
-    provider: 'mistral',
-    modelId: 'mistral-medium-latest',
-    displayName: 'Mistral Medium 3.5',
-    contextWindow: 128000,
-    maxOutputTokens: 64000,            // Match Sonnet tier
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.40,
-    costPer1MOutput: 2.00,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: false,
-  },
-  'mistral-small-latest': {
-    provider: 'mistral',
-    modelId: 'mistral-small-latest',
-    displayName: 'Mistral Small 4',
-    contextWindow: 128000,
-    maxOutputTokens: 8192,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.10,
-    costPer1MOutput: 0.30,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 1,
-    supportsNativeReasoning: false,
-  },
-  // ── Magistral (reasoning models) ──────────────────────────────
-  'magistral-medium-latest': {
-    provider: 'mistral',
-    modelId: 'magistral-medium-latest',
-    displayName: 'Magistral Medium 1.2',
-    contextWindow: 128000,
-    maxOutputTokens: 64000,
-    supportsThinking: false,           // Uses prompt_mode: "reasoning" instead
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 2.00,
-    costPer1MOutput: 5.00,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 3,
-    supportsNativeReasoning: true,     // Magistral supports native reasoning
-  },
-  'magistral-small-latest': {
-    provider: 'mistral',
-    modelId: 'magistral-small-latest',
-    displayName: 'Magistral Small 1.2',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.50,
-    costPer1MOutput: 1.50,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: true,
-  },
-  // ── Mistral code specialists ──────────────────────────────────
-  'codestral-latest': {
-    provider: 'mistral',
-    modelId: 'codestral-latest',
-    displayName: 'Codestral',
-    contextWindow: 256000,
-    maxOutputTokens: 8192,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.30,
-    costPer1MOutput: 0.90,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 1,
-    supportsNativeReasoning: false,
-  },
-  'devstral-medium-latest': {
-    provider: 'mistral',
-    modelId: 'devstral-medium-latest',
-    displayName: 'Devstral 2 Medium',
-    contextWindow: 128000,
-    maxOutputTokens: 32768,
-    supportsThinking: false,
-    supportsJsonMode: true,
-    supportsPromptCaching: false,
-    supportsSeed: true,
-    temperatureRange: [0, 2],
-    costPer1MInput: 0.40,
-    costPer1MOutput: 2.00,
-    requiresApiKey: 'MISTRAL_API_KEY',
-    costTier: 2,
-    supportsNativeReasoning: false,
-  },
+// ── Registry supplement ─────────────────────────────────────────────
+// Per-model fields that the registry exposes but that are NOT pricing/context/
+// output (those are the SoT in MODEL_CAPABILITIES). Hand-set, one entry per
+// capabilities model. supportsThinking is hand-set (NOT derived from the caps
+// adaptive/extended flags) because Gemini reports thinking=true while using
+// neither Anthropic thinking API; supportsNativeReasoning likewise (Magistral
+// uses prompt_mode:'reasoning' with both caps thinking flags false).
+interface RegistrySupplement {
+  displayName: string;
+  costTier: 1 | 2 | 3;
+  supportsThinking: boolean;
+  supportsJsonMode: boolean;
+  supportsSeed: boolean;
+  supportsNativeReasoning: boolean;
+}
+
+const REGISTRY_SUPPLEMENT: Record<string, RegistrySupplement> = {
+  'claude-opus-4-8':            { displayName: 'Claude Opus 4.8',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-opus-4-7':            { displayName: 'Claude Opus 4.7',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-opus-4-6':            { displayName: 'Claude Opus 4.6',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-sonnet-4-6':          { displayName: 'Claude Sonnet 4.6', costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-sonnet-4-5-20250929': { displayName: 'Claude Sonnet 4.5', costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-haiku-4-5-20251001':  { displayName: 'Claude Haiku 4.5',  costTier: 1, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: false },
+  'gpt-5.4':                    { displayName: 'GPT-5.4',           costTier: 3, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'gpt-4.1':                    { displayName: 'GPT-4.1',           costTier: 3, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'gpt-4o':                     { displayName: 'GPT-4o',            costTier: 2, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'gpt-4o-mini':                { displayName: 'GPT-4o Mini',       costTier: 1, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'gemini-2.5-pro':             { displayName: 'Gemini 2.5 Pro',    costTier: 3, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: true  },
+  'gemini-2.5-flash':           { displayName: 'Gemini 2.5 Flash',  costTier: 2, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: true  },
+  'gemini-2.0-flash':           { displayName: 'Gemini 2.0 Flash',  costTier: 1, supportsThinking: false, supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: false },
+  'mistral-large-latest':       { displayName: 'Mistral Large 3',   costTier: 3, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'mistral-medium-latest':      { displayName: 'Mistral Medium 3.5',costTier: 2, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'mistral-small-latest':       { displayName: 'Mistral Small 4',   costTier: 1, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'magistral-medium-latest':    { displayName: 'Magistral Medium 1.2', costTier: 3, supportsThinking: false, supportsJsonMode: true, supportsSeed: true, supportsNativeReasoning: true },
+  'magistral-small-latest':     { displayName: 'Magistral Small 1.2',  costTier: 2, supportsThinking: false, supportsJsonMode: true, supportsSeed: true, supportsNativeReasoning: true },
+  'codestral-latest':           { displayName: 'Codestral',         costTier: 1, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
+  'devstral-medium-latest':     { displayName: 'Devstral 2 Medium', costTier: 2, supportsThinking: false, supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: false },
 };
+
+const API_KEY_ENV: Record<ModelProvider, string> = {
+  anthropic: 'ANTHROPIC_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  google: 'GOOGLE_API_KEY',
+  mistral: 'MISTRAL_API_KEY',
+  azure_openai: 'AZURE_OPENAI',
+};
+
+function capProviderToModelProvider(provider: ModelCapabilities['provider'], modelId: string): ModelProvider {
+  // The static capabilities table never uses 'ollama' (ollama models resolve via
+  // the DB custom-slot / hyphenated model-adapter path, not this registry).
+  if (provider === 'ollama') {
+    throw new Error(`MODEL_REGISTRY: capabilities provider 'ollama' for '${modelId}' has no static registry mapping`);
+  }
+  return provider;
+}
+
+function buildModelConfig(modelId: string, caps: ModelCapabilities, sup: RegistrySupplement): ModelConfig {
+  const provider = capProviderToModelProvider(caps.provider, modelId);
+  return {
+    provider,
+    modelId,
+    displayName: sup.displayName,
+    // Registry tracks the GA-default context; capabilities tracks the MAX
+    // achievable (1M behind a beta header for some Claude models). Claude's GA
+    // context is 200k before the 1M beta, so beta-gated models report 200k here.
+    contextWindow: caps.requires1MBetaHeader ? 200_000 : caps.maxContextWindow,
+    maxOutputTokens: caps.maxOutputTokens,
+    supportsThinking: sup.supportsThinking,
+    supportsJsonMode: sup.supportsJsonMode,
+    supportsPromptCaching: provider === 'anthropic',
+    supportsSeed: sup.supportsSeed,
+    temperatureRange: provider === 'anthropic' ? [0, 1] : [0, 2],
+    costPer1MInput: caps.pricing.inputPerMillion,
+    costPer1MOutput: caps.pricing.outputPerMillion,
+    requiresApiKey: API_KEY_ENV[provider],
+    costTier: sup.costTier,
+    supportsNativeReasoning: sup.supportsNativeReasoning,
+  };
+}
+
+/**
+ * MODEL_REGISTRY — derived projection of MODEL_CAPABILITIES. Drives the main
+ * /api/claude dispatch. Each entry combines caps (pricing/context/output/provider)
+ * with REGISTRY_SUPPLEMENT (presentation/capability flags). Fails loudly at module
+ * load if a capabilities model lacks a supplement entry.
+ */
+export const MODEL_REGISTRY: Record<string, ModelConfig> = Object.fromEntries(
+  Object.entries(MODEL_CAPABILITIES).map(([modelId, caps]) => {
+    const sup = REGISTRY_SUPPLEMENT[modelId];
+    if (!sup) {
+      throw new Error(`MODEL_REGISTRY: missing REGISTRY_SUPPLEMENT entry for '${modelId}' (add it in modelAdapter.ts)`);
+    }
+    return [modelId, buildModelConfig(modelId, caps, sup)];
+  }),
+);
 
 export const TEMPERATURE_MAP: Record<ModelProvider, Record<PrecisionLevel, number>> = {
   anthropic:     { strict: 0.0, precise: 0.2, balanced: 0.5, creative: 0.7, exploratory: 0.9 },
