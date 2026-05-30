@@ -152,26 +152,23 @@ export async function createProcureService(db: DatabaseAdapter) {
     return cycle;
   }
 
-  async function listCycles(filters?: { status?: string }): Promise<ProcureCycle[]> {
-    if (filters?.status) {
-      return await db.all<ProcureCycle>(
-        `SELECT c.*,
-          (SELECT COUNT(*) FROM procure_requirements r WHERE r.cycle_id = c.id) AS requirement_count,
-          (SELECT COUNT(*) FROM procure_vendors v WHERE v.cycle_id = c.id) AS vendor_count,
-          (SELECT COUNT(*) FROM procure_documents d WHERE d.cycle_id = c.id) AS document_count
-         FROM procure_cycles c
-         WHERE c.status = ?
-         ORDER BY c.updated_at DESC`,
-        filters.status
-      );
-    }
+  // ownerId scopes the result to a single user's cycles (team-mode isolation).
+  // Omit it for an admin/solo caller that may see every cycle.
+  async function listCycles(filters?: { status?: string; ownerId?: string }): Promise<ProcureCycle[]> {
+    const where: string[] = [];
+    const args: unknown[] = [];
+    if (filters?.status) { where.push('c.status = ?'); args.push(filters.status); }
+    if (filters?.ownerId) { where.push('c.created_by = ?'); args.push(filters.ownerId); }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     return await db.all<ProcureCycle>(
       `SELECT c.*,
         (SELECT COUNT(*) FROM procure_requirements r WHERE r.cycle_id = c.id) AS requirement_count,
         (SELECT COUNT(*) FROM procure_vendors v WHERE v.cycle_id = c.id) AS vendor_count,
         (SELECT COUNT(*) FROM procure_documents d WHERE d.cycle_id = c.id) AS document_count
        FROM procure_cycles c
-       ORDER BY c.updated_at DESC`
+       ${whereSql}
+       ORDER BY c.updated_at DESC`,
+      ...args
     );
   }
 
