@@ -1321,7 +1321,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       out.push(
         { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', provider: 'anthropic', tier: 'fast',     description: 'Fastest. Quick questions, drafts, summaries.' },
         { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', provider: 'anthropic', tier: 'balanced', description: 'Balanced. Day-to-day work, most modules.' },
-        { id: 'claude-opus-4-7',           label: 'Claude Opus 4.7',   provider: 'anthropic', tier: 'top',      description: 'Most capable. Long, hard reasoning.' },
+        { id: 'claude-opus-4-8',           label: 'Claude Opus 4.8',   provider: 'anthropic', tier: 'top',      description: 'Most capable. Long, hard reasoning.' },
       );
     }
     if (process.env.OPENAI_API_KEY) {

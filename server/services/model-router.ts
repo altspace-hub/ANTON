@@ -25,7 +25,7 @@ export interface ModelRecommendation {
 // ── Model definitions ────────────────────────────────────────
 
 const ALL_MODELS = {
-  OPUS: 'claude-opus-4-7',
+  OPUS: 'claude-opus-4-8',
   SONNET: 'claude-sonnet-4-5-20250929',
   HAIKU: 'claude-haiku-4-5-20251001',
 } as const;
@@ -34,7 +34,7 @@ type ModelValue = (typeof ALL_MODELS)[keyof typeof ALL_MODELS];
 
 // Relative cost multipliers (Sonnet = 1.0 baseline)
 const COST_RELATIVE: Record<ModelValue, number> = {
-  'claude-opus-4-7': 5.0,
+  'claude-opus-4-8': 5.0,
   'claude-sonnet-4-5-20250929': 1.0,
   'claude-haiku-4-5-20251001': 0.15,
 };
@@ -83,13 +83,13 @@ function buildAlternatives(
   );
 
   const qualityMap: Record<ModelValue, 'excellent' | 'good' | 'adequate'> = {
-    'claude-opus-4-7': 'excellent',
+    'claude-opus-4-8': 'excellent',
     'claude-sonnet-4-5-20250929': 'good',
     'claude-haiku-4-5-20251001': 'adequate',
   };
 
   const reasonMap: Record<ModelValue, string> = {
-    'claude-opus-4-7':
+    'claude-opus-4-8':
       'Maximum reasoning depth — best for board-level and regulatory deliverables',
     'claude-sonnet-4-5-20250929':
       'Strong quality at lower cost — suitable for most professional drafting',

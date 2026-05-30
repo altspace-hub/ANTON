@@ -78,7 +78,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       res.json({ endpoints: rows.map(toSafe) });
     } catch (err) {
       const e = safeError(err);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e });
     }
   });
 
@@ -142,7 +142,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       res.json({ endpoint: toSafe(row) });
     } catch (err) {
       const e = safeError(err);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e });
     }
   });
 
@@ -212,7 +212,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       res.json({ endpoint: toSafe(row) });
     } catch (err) {
       const e = safeError(err);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e });
     }
   });
 
@@ -227,7 +227,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       res.json({ ok: true, deleted: (result as { changes?: number })?.changes ?? 0 });
     } catch (err) {
       const e = safeError(err);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e });
     }
   });
 
@@ -264,7 +264,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       }
     } catch (err) {
       const e = safeError(err);
-      res.status(500).json({ available: false, error: e.message });
+      res.status(500).json({ available: false, error: e });
     }
   });
 

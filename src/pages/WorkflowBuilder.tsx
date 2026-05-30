@@ -232,7 +232,7 @@ export default function WorkflowBuilder() {
       try {
         const stream = streamMessage(
           {
-            model: 'claude-opus-4-7',
+            model: 'claude-opus-4-8',
             thinking: (step.config.thinking || 'think_hard') as ThinkingLevel,
             creativity: (step.config.creativity || 'balanced') as CreativityLevel,
             systemPrompt,

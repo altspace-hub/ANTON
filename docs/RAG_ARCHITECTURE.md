@@ -291,7 +291,7 @@
 │    session_id, module_id, model, input_tokens, output_tokens,│
 │    rag_chunks                                                 │
 │  ) VALUES (                                                   │
-│    'session-123', 'gap-analysis', 'claude-opus-4-7',         │
+│    'session-123', 'gap-analysis', 'claude-opus-4-8',         │
 │    42000, 8500,                                               │
 │    '[                                                         │
 │      {"citation":"AMLR-2024.pdf, page 12","relevance":0.92}, │

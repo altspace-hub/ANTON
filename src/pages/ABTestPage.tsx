@@ -202,7 +202,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
             {[
               { id: 'claude-haiku-4-5-20251001', label: 'Haiku' },
               { id: 'claude-sonnet-4-5-20250929', label: 'Sonnet' },
-              { id: 'claude-opus-4-7', label: 'Opus' },
+              { id: 'claude-opus-4-8', label: 'Opus' },
             ].map(m => (
               <button
                 key={m.id}
@@ -289,7 +289,7 @@ export default function ABTestPage() {
     moduleId: 'gap-analysis',
     thinking: 'think_hard',
     creativity: 'strict',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     systemPromptOverride: DEFAULT_PROMPT_A,
     showAdvanced: false,
   });
@@ -297,7 +297,7 @@ export default function ABTestPage() {
     moduleId: 'gap-analysis',
     thinking: 'investigate',
     creativity: 'balanced',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     systemPromptOverride: DEFAULT_PROMPT_B,
     showAdvanced: false,
   });
@@ -345,7 +345,7 @@ ${config.systemPromptOverride}`;
     try {
       const stream = streamMessage(
         {
-          model: config.model as 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+          model: config.model as 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
           thinking: config.thinking,
           creativity: config.creativity,
           systemPrompt: buildSystemPrompt(config),
@@ -577,8 +577,8 @@ ${config.systemPromptOverride}`;
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Model</td>
-                  <td className="py-2 text-center text-adv-off-white text-xs">{variantA.model?.includes('opus') ? 'Opus 4.7' : variantA.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
-                  <td className="py-2 text-center text-adv-off-white text-xs">{variantB.model?.includes('opus') ? 'Opus 4.7' : variantB.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
+                  <td className="py-2 text-center text-adv-off-white text-xs">{variantA.model?.includes('opus') ? 'Opus 4.8' : variantA.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
+                  <td className="py-2 text-center text-adv-off-white text-xs">{variantB.model?.includes('opus') ? 'Opus 4.8' : variantB.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
                   <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>

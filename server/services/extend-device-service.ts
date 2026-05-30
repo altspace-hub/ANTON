@@ -24,7 +24,7 @@ export interface ExtendDeviceInput {
   /** Free-text user description of what they want to add. */
   desired_change: string;
   /** Default 'claude-sonnet-4-6'; opus 4.7 selectable for harder cases. */
-  model?: 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
+  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
 }
 
 export interface PinDelta {

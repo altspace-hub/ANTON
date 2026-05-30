@@ -39,8 +39,8 @@ export interface DeliberationInput {
   subject: string;
   /** Free-text context the consuls should consider (atoms, why-chain, market data summary). */
   context: string;
-  /** Which model to use. Defaults to claude-opus-4-7. */
-  model?: 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+  /** Which model to use. Defaults to claude-opus-4-8. */
+  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
   /** Optional subset of consul ids; defaults to all four. */
   consulIds?: string[];
 }
@@ -76,7 +76,7 @@ export async function runDeliberation(
   input: DeliberationInput
 ): Promise<DeliberationResult> {
   const t0 = Date.now();
-  const model = input.model ?? 'claude-opus-4-7';
+  const model = input.model ?? 'claude-opus-4-8';
   const members = input.consulIds
     ? COUNCIL_MEMBERS.filter(m => input.consulIds!.includes(m.id))
     : [...COUNCIL_MEMBERS];

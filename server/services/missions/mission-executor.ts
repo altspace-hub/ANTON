@@ -424,7 +424,7 @@ export function extractGrowBlocks(text: string): GrowBlock[] {
 
 /**
  * Phase 1: simple model resolver.
- *   - planning tier → claude-opus-4-7
+ *   - planning tier → claude-opus-4-8
  *   - execution tier → claude-sonnet-4-6
  *   - utility tier → claude-haiku-4-5-20251001
  *
@@ -432,7 +432,7 @@ export function extractGrowBlocks(text: string): GrowBlock[] {
  * and concrete model overrides.
  */
 function resolveModel(tier: 'planning' | 'execution' | 'utility', _strategy: { planning_model?: string; execution_model?: string; utility_model?: string }): string {
-  if (tier === 'planning') return 'claude-opus-4-7';
+  if (tier === 'planning') return 'claude-opus-4-8';
   if (tier === 'utility')  return 'claude-haiku-4-5-20251001';
   return 'claude-sonnet-4-6';
 }

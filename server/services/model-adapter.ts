@@ -758,7 +758,12 @@ export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): M
   if (modelId.startsWith('azure:')) return 'azure_openai';
   if (modelId.startsWith('gpt-')) return 'openai';
   if (modelId.startsWith('gemini-')) return 'google';
-  if (modelId.startsWith('mistral-') || modelId.startsWith('magistral-')) return 'mistral';
+  if (
+    modelId.startsWith('mistral-') ||
+    modelId.startsWith('magistral-') ||
+    modelId.startsWith('codestral') ||
+    modelId.startsWith('devstral')
+  ) return 'mistral';
   if (modelId.startsWith('ollama:')) return 'ollama';
   if (modelId.startsWith('compat:')) return 'openai_compatible';
 

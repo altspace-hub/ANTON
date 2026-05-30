@@ -115,7 +115,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
-      let policyModel = (model as string) || 'claude-opus-4-7';
+      let policyModel = (model as string) || 'claude-opus-4-8';
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
@@ -316,10 +316,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           return ok;
         });
 
-      // 1M context: Opus 4.7 and Sonnet 4.6 have 1M at GA pricing (no beta header needed).
+      // 1M context: Opus 4.8 and Sonnet 4.6 have 1M at GA pricing (no beta header needed).
       // For these models, always use the full 800k knowledge budget.
       // For Sonnet 4.5 with beta, or when ANTHROPIC_LONG_CONTEXT_BETA is set, also enable.
-      const is1MModel = model === 'claude-opus-4-7' || model === 'claude-sonnet-4-6';
+      const is1MModel = model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6';
       const longContextBetaEnabled = is1MModel || process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
       const knowledgeBudget = longContextBetaEnabled ? 800_000 : undefined;
 
@@ -546,7 +546,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Compose the full system prompt through the layered PromptComposer (async).
-      // For Anthropic models that support prompt caching (Opus 4.7, Sonnet 4.6, Sonnet 4.5) we use
+      // For Anthropic models that support prompt caching (Opus 4.8, Sonnet 4.6, Sonnet 4.5) we use
       // the split variant so the stable static layers (Foundation + Area Context + Module
       // Prompt) can be marked with cache_control and cached by Anthropic between API calls,
       // reducing costs ~90% on those tokens. Dynamic layers (output format instructions,
@@ -595,7 +595,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Use the split composer for Anthropic models (supports caching); plain for others.
       const isCachingModel =
         provider === 'anthropic' &&
-        (selectedModel === 'claude-opus-4-7' || selectedModel === 'claude-sonnet-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
+        (selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
 
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
@@ -916,7 +916,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // Use existing Anthropic streaming.
         // staticSystemPrompt is populated only for caching-capable models (Opus/Sonnet);
         // for Haiku it is undefined and claude-client will send a plain single block.
-        // 1M context: Opus 4.7 / Sonnet 4.6 = GA (no beta header needed at all).
+        // 1M context: Opus 4.8 / Sonnet 4.6 = GA (no beta header needed at all).
       // Sonnet 4.5 needs beta header only when context > 200k.
       // The useLongContext flag tells claude-client to add the beta header for Sonnet 4.5.
       const needsBetaForLongContext = !is1MModel && process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
@@ -990,7 +990,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         return;
       }
 
-      // Build compaction config for supported models (Opus 4.7 / Sonnet 4.6)
+      // Build compaction config for supported models (Opus 4.8 / Sonnet 4.6)
       // Respect the user's preference from Settings — compactionEnabled defaults to true
       const compactionConfig = compactionEnabled !== false
         ? buildCompactionConfig(selectedModel, 'interactive')
@@ -1001,7 +1001,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       await streamToResponse(
           {
-            model: selectedModel as 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+            model: selectedModel as 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
             thinking: thinking || 'think_hard',
             system: composedPrompt,
             staticSystemPrompt,
@@ -1267,7 +1267,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         estimatedTokens,
         knowledgeTokenEstimate: resolved.tokenEstimate,
         sourceManifest: resolved.sourceManifest,
-        model: model || 'claude-opus-4-7',
+        model: model || 'claude-opus-4-8',
       });
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
@@ -1278,8 +1278,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   router.get('/claude/models', async (_req, res) => {
     res.json([
       {
-        id: 'claude-opus-4-7',
-        label: 'Claude Opus 4.7',
+        id: 'claude-opus-4-8',
+        label: 'Claude Opus 4.8',
         description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.',
         recommended: true,
         costPerMInputTokens: 5,
@@ -1390,7 +1390,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Only Anthropic models are supported in sync mode
       const selectedModel = (model as string) || 'claude-sonnet-4-5-20250929';
-      const validModels = ['claude-opus-4-7', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'] as const;
+      const validModels = ['claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'] as const;
       type SyncModel = typeof validModels[number];
       const syncModel: SyncModel = (validModels as readonly string[]).includes(selectedModel)
         ? (selectedModel as SyncModel)
@@ -1497,10 +1497,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Use Sonnet by default — fast and cost-effective for rewriting tasks
       const selectedModel = (
-        ['claude-opus-4-7', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
+        ['claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
           ? model
           : 'claude-sonnet-4-5-20250929'
-      ) as 'claude-opus-4-7' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+      ) as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 
       await streamToResponse(
         {

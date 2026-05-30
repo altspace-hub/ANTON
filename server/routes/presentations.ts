@@ -41,7 +41,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
     try {
       await streamToResponse(
         {
-          model: 'claude-opus-4-7',
+          model: 'claude-opus-4-8',
           thinking: 'think',
           system: loadExpertPrompt(),
           messages,
@@ -334,7 +334,7 @@ FORMATTING RULES:
 
 
       const result = await callSync({
-        model: 'claude-opus-4-7',
+        model: 'claude-opus-4-8',
         thinking: 'think',
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],

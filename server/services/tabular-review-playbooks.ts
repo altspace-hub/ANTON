@@ -34,7 +34,7 @@ export interface Playbook {
   description: string;
   /** The default model for cells in this playbook. Per-column override
    *  arrives in Wave 3. */
-  defaultModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-7';
+  defaultModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-8';
   /** Knowledge pack(s) to ground every cell prompt in (Wave 3+; today
    *  recorded but not yet auto-injected). */
   knowledgePackIds: string[];

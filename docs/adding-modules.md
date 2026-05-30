@@ -65,7 +65,7 @@ Create `server/areas/legal/modules/contract-summary/module.json`:
   "version": "1.0.0",
   "author": "Daniel Bardun & Futurechain",
 
-  "defaultModel": "claude-opus-4-7",
+  "defaultModel": "claude-opus-4-8",
   "defaultThinking": "think_hard",
   "defaultCreativity": "strict",
 
@@ -177,7 +177,7 @@ Create `server/areas/legal/modules/contract-summary/module.json`:
 | `description` | string | Yes | One-line description shown in the module card and sidebar tooltip. |
 | `version` | string | Yes | Semver version of this module definition. |
 | `author` | string | No | Who wrote this module. |
-| `defaultModel` | string | Yes | Default LLM. Use `claude-opus-4-7` for all serious work. |
+| `defaultModel` | string | Yes | Default LLM. Use `claude-opus-4-8` for all serious work. |
 | `defaultThinking` | string | Yes | `quick`, `think`, `think_hard`, `investigate`, or `plan_first`. |
 | `defaultCreativity` | string | Yes | `strict`, `balanced`, or `creative`. |
 | `defaultOutputFormats` | string[] | Yes | IDs from `src/lib/output-format-definitions.ts`. At least one. |

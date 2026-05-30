@@ -418,7 +418,7 @@ export default function PromptPage() {
   const estimatedInputTokens = Math.round(
     (DEFAULT_SYSTEM_PROMPT.length + messages.reduce((sum, m) => sum + m.content.length, 0) + userInput.length) / 4
   );
-  const estimatedOutputTokens = model === 'claude-opus-4-7' ? 8000 : 4000;
+  const estimatedOutputTokens = model === 'claude-opus-4-8' ? 8000 : 4000;
   const estimatedCost = modelInfo
     ? (estimatedInputTokens / 1_000_000) * modelInfo.inputCostPer1M +
       (estimatedOutputTokens / 1_000_000) * modelInfo.outputCostPer1M

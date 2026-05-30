@@ -283,7 +283,7 @@ Claude is the default and the most deeply integrated, but ANTON is not an Anthro
 
 | Provider | Default model | Anchor |
 |---|---|---|
-| Anthropic | `claude-opus-4-7` (Opus 4.7) | Built-in |
+| Anthropic | `claude-opus-4-8` (Opus 4.7) | Built-in |
 | OpenAI | `gpt-4o` | Adapter |
 | Azure OpenAI | per-deployment | Adapter (reasoning models o3 / o4-mini supported) |
 | Google | `gemini-2.0-flash` | Adapter |

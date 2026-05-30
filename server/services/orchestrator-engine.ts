@@ -121,7 +121,7 @@ export async function getOrchestratorConfig(db: DatabaseAdapter): Promise<Orches
     quality_decline_threshold: 1.5,
     deadline_alert_days: 14,
     heartbeat_model: process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001',
-    briefing_model: process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-7',
+    briefing_model: process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-8',
     orchestrator_paused: 0,
     fully_disabled: 0,
   };
@@ -696,7 +696,7 @@ ${atomSection}
 Current date: ${new Date().toISOString().substring(0, 10)}`;
 
   // Always use deep thinking for orchestrator briefings — higher quality, better reasoning
-  const isOpus = model === 'claude-opus-4-7';
+  const isOpus = model === 'claude-opus-4-8';
   const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
@@ -1101,7 +1101,7 @@ Keep plans specific and executable. Reference real ANTON modules and step patter
 export async function generateWorkflowPlan(
   proposal: OrchestratorProposal,
   anthropic: AnthropicSDK,
-  model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-7',
+  model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-8',
   thinkingEnabled = false
 ): Promise<string | null> {
   const userMsg = `Generate a complete workflow execution plan for this proposal:
@@ -1115,7 +1115,7 @@ Estimated effort: ${proposal.estimated_effort ?? 'unknown'}
 Produce a concrete, executable workflow plan using ANTON's existing step types.`;
 
   // Always use deep thinking for workflow plans — critical for execution quality
-  const isOpusPlan = model === 'claude-opus-4-7';
+  const isOpusPlan = model === 'claude-opus-4-8';
   const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {

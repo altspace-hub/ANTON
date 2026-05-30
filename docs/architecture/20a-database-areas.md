@@ -42,7 +42,7 @@ erDiagram
     text persona_id "nullable"
     text thinking_level "quick·think·think_hard·…·deep_investigate"
     text creativity_level "strict·balanced·creative"
-    text model_id "claude-opus-4-7 default"
+    text model_id "claude-opus-4-8 default"
     json knowledge_source_config
     timestamptz created_at
     timestamptz updated_at

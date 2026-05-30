@@ -30,7 +30,7 @@ export function getStoredDefaultModel(): ModelId {
       return saved as ModelId;
     }
   }
-  return 'claude-opus-4-7';
+  return 'claude-opus-4-8';
 }
 
 export function getStoredDefaultThinking(): ThinkingLevel {

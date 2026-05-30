@@ -910,7 +910,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       // Map thinking level to model + thinking config
       const thinkingLevel = String(engagement.thinking_level || 'think_hard');
       const isQuick = thinkingLevel === 'quick';
-      const execModel = mapModelToProvider(isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-7');
+      const execModel = mapModelToProvider(isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-8');
 
       // Plan First mode: prepend planning instructions
       const planFirstInstr = thinkingLevel === 'plan_first'

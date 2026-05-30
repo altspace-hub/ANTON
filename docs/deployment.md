@@ -265,7 +265,7 @@ These apply when a user has not overridden the setting for their session.
 
 | Variable | Default | Description |
 |---|---|---|
-| `DEFAULT_MODEL` | `claude-opus-4-7` | Default Claude model. Options: `claude-opus-4-7`, `claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`. |
+| `DEFAULT_MODEL` | `claude-opus-4-8` | Default Claude model. Options: `claude-opus-4-8`, `claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`. |
 | `DEFAULT_THINKING` | `think_hard` | Default thinking level. Options: `quick`, `think`, `think_hard`, `investigate`, `plan_first`. |
 | `DEFAULT_CREATIVITY` | `balanced` | Default creativity level. Options: `strict`, `balanced`, `creative`. |
 | `MAX_CONTEXT_TOKENS` | `180000` | Maximum tokens to include in a single request. Warn at 80% (144,000 tokens). |

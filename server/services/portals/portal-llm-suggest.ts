@@ -354,7 +354,7 @@ export function mapDepthToModel(depth: WalkthroughDepth): string {
   switch (depth) {
     case 'simple': return 'claude-haiku-4-5-20251001';
     case 'standard': return 'claude-sonnet-4-6';
-    case 'deep': return 'claude-opus-4-7';
+    case 'deep': return 'claude-opus-4-8';
   }
 }
 

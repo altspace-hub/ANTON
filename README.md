@@ -178,7 +178,7 @@ Copy `.env.example` to `.env` and configure:
 | `OUTPUT_DIR` | No | `./outputs` | Generated export storage |
 | `MAX_FILE_SIZE_MB` | No | `50` | Maximum upload size |
 | `MAX_CONTEXT_TOKENS` | No | `180000` | Context window budget |
-| `DEFAULT_MODEL` | No | `claude-opus-4-7` | Default Claude model |
+| `DEFAULT_MODEL` | No | `claude-opus-4-8` | Default Claude model |
 | `CORS_ORIGINS` | No | `http://localhost:3001,http://localhost:5173` | Allowed CORS origins (comma-separated) |
 
 ---

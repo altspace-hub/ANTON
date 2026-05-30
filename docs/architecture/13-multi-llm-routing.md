@@ -121,7 +121,7 @@ default:             throw new Error(`Unsupported provider: ${provider}`)
 
 | Model | Prompt caching | 1M context | Compaction |
 |---|---|---|---|
-| `claude-opus-4-7` | ✅ ephemeral | ✅ GA (no header) | ✅ |
+| `claude-opus-4-8` | ✅ ephemeral | ✅ GA (no header) | ✅ |
 | `claude-sonnet-4-6` | ✅ ephemeral | ✅ GA (no header) | ✅ |
 | `claude-sonnet-4-5-20250929` | (not auto) | 🟢 beta header when > 200k | — |
 | `claude-haiku-4-5-20251001` | — | — | — |

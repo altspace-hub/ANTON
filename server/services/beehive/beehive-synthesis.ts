@@ -57,7 +57,7 @@ export async function createBeehiveSynthesis(db: DatabaseAdapter) {
   const deliberation = await createBeehiveDeliberation(db);
 
   /**
-   * Generate the convergence synthesis using Opus 4.7 with deep reasoning.
+   * Generate the convergence synthesis using Opus 4.8 with deep reasoning.
    * Returns the draft text WITHOUT persisting it yet — concludeHive does that.
    */
   async function generateSynthesisDraft(hiveId: string): Promise<{ synthesis: string; reasoning: string; dissents: DissentRecord[] }> {
@@ -72,7 +72,7 @@ export async function createBeehiveSynthesis(db: DatabaseAdapter) {
     const consensusProgression = rounds.map(r => `Round ${r.round_number}: ${r.consensus_temperature != null ? `${(r.consensus_temperature * 100).toFixed(0)}%` : '—'}`).join(' → ');
 
     const result = await callChatWithTimeout({
-      model: 'claude-opus-4-7',
+      model: 'claude-opus-4-8',
       system: buildSynthesisSystemPrompt(hive.governance.consensus_mode, hive.governance.output_format, dissents.length > 0),
       messages: [{
         role: 'user',
@@ -172,7 +172,7 @@ Produce the final synthesis now.`,
     const earlyExisting = await state.getOutput(hiveId);
     if (earlyExisting) return earlyExisting;
 
-    // Generate or reuse the synthesis text (this can take 30-90s on Opus 4.7)
+    // Generate or reuse the synthesis text (this can take 30-90s on Opus 4.8)
     let synthesisText: string;
     let dissents: DissentRecord[];
     if (synthesisOverride && synthesisOverride.trim()) {

@@ -34,7 +34,7 @@ flowchart LR
   %% ── External LLM providers ────────────────────────────────────────────────
   subgraph LLMs["External LLM providers (server-side keys only)"]
     direction TB
-    Anthropic["Anthropic<br/>claude-opus-4-7 default<br/>+ prompt caching ✅"]:::llm
+    Anthropic["Anthropic<br/>claude-opus-4-8 default<br/>+ prompt caching ✅"]:::llm
     OpenAI["OpenAI<br/>gpt-4o ✅"]:::llm
     Azure["Azure OpenAI<br/>(reasoning models o3/o4-mini) ✅"]:::llm
     Gemini["Google Gemini<br/>gemini-2.0-flash ✅"]:::llm

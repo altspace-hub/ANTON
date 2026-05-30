@@ -773,7 +773,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
     let lastThinkingContent = '';
     async function runExecution(effort?: string): Promise<{ output: string; thinking: string }> {
       const result = await streamChat({
-        model: mapModelToProvider('claude-opus-4-7'),
+        model: mapModelToProvider('claude-opus-4-8'),
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.` }],
         maxTokens: 16000,

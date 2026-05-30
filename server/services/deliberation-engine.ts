@@ -22,7 +22,7 @@ import { callChat, mapModelToProvider } from './provider-router.js';
 // ── Types ───────────────────────────────────────────────────────
 
 export interface PanelistConfig {
-  model: 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
+  model: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
   role: string;         // Display name shown in UI
   thinking: 'quick' | 'think' | 'think_hard';
   description: string;  // Shown in the deliberation panel tooltip
@@ -50,10 +50,10 @@ export interface DeliberationMeta {
 // Default panelist configuration: three model tiers, same question, independent analysis
 export const DEFAULT_PANELISTS: PanelistConfig[] = [
   {
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     role: 'Deep Analyst',
     thinking: 'think_hard',
-    description: 'Opus 4.7 — thorough reasoning, edge cases, complexity',
+    description: 'Opus 4.8 — thorough reasoning, edge cases, complexity',
   },
   {
     model: 'claude-sonnet-4-6',
@@ -178,7 +178,7 @@ Field definitions:
 - confidence: "high" (unanimous/strong), "medium" (majority), "low" (significant disagreement or red flags)`;
 
   // Synthesis via provider-router (uses 'large' tier model with max reasoning)
-  const synthesisModel = mapModelToProvider('claude-opus-4-7');
+  const synthesisModel = mapModelToProvider('claude-opus-4-8');
 
   let fullSynthesis = '';
 

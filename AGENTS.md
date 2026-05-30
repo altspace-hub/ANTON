@@ -37,7 +37,7 @@ knowledge required.
 | Backend | Express + Node.js | 4 / 22 |
 | Database | **PostgreSQL** | **16+** |
 | PG driver | `pg` | ^8.18 |
-| Primary AI | Anthropic Claude | claude-opus-4-7 |
+| Primary AI | Anthropic Claude | claude-opus-4-8 |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
@@ -253,7 +253,7 @@ The Companion App's defaults match the main app (light theme is the default).
 
 | Provider | Env Variable | Default Model | Adapter File |
 |---|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-7` | Built-in (`server/services/claude-client.ts`) |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`server/services/claude-client.ts`) |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
 | Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
@@ -266,7 +266,7 @@ All providers must go through the adapter — **never call provider SDKs directl
 
 | Provider | Model ID | Notes |
 |---|---|---|
-| Anthropic | `claude-opus-4-7` | Default. Most capable. |
+| Anthropic | `claude-opus-4-8` | Default. Most capable. |
 | Anthropic | `claude-sonnet-4-6` | Fast, efficient. |
 | Anthropic | `claude-haiku-4-5-20251001` | Lightweight classification. |
 | OpenAI | `gpt-4o` | Via OpenAI adapter |
@@ -277,7 +277,7 @@ All providers must go through the adapter — **never call provider SDKs directl
 
 ### Thinking Levels (Claude-specific)
 
-| Level | Description | Opus 4.7 | Sonnet/Haiku |
+| Level | Description | Opus 4.8 | Sonnet/Haiku |
 |---|---|---|---|
 | `quick` | Fast, no deep reasoning | `effort: 'low'` | thinking disabled |
 | `think` | Standard reasoning | `effort: 'medium'` | `budget_tokens: 4096` |
@@ -285,7 +285,7 @@ All providers must go through the adapter — **never call provider SDKs directl
 | `investigate` | Maximum depth | `effort: 'max'` | `budget_tokens: 32768` |
 | `plan_first` | Plan then execute | `effort: 'max'` | `budget_tokens: 32768` |
 
-For Opus 4.7: use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
+For Opus 4.8: use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
 
 ---
 

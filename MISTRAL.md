@@ -81,7 +81,7 @@ Get a Mistral API key at https://console.mistral.ai
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | **PostgreSQL** (`pg` ^8.18) | **16+** |
-| Primary AI | Anthropic Claude | claude-opus-4-7 |
+| Primary AI | Anthropic Claude | claude-opus-4-8 |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, **Mistral**, Ollama | — |
 | Companion App wrapper | Capacitor (Android) | — |
 | Package manager | pnpm | 10 |
@@ -134,6 +134,25 @@ interacts with Mistral models:
 Users select Mistral in the model picker UI when `MISTRAL_API_KEY` is set in `.env`. Mistral
 also works as a backend for **Specialized Agents** — when an agent's `default_model` is set
 to a Mistral ID, the agent processor will route through the Mistral adapter.
+
+### Mistral models (verified 2026-05-30)
+
+The `-latest` aliases resolve to the newest version on Mistral's servers; ANTON forwards the
+alias verbatim, so model IDs don't need updating when Mistral ships a new minor release.
+
+| Model ID | Name | Best for |
+|---|---|---|
+| `mistral-large-latest` | Mistral Large 3 | Premier general-purpose, multimodal, 256k context |
+| `mistral-medium-latest` | Mistral Medium 3.5 | Agentic + coding balance of quality and cost |
+| `mistral-small-latest` | Mistral Small 4 | Fast, cheap, open-weight generalist |
+| `magistral-medium-latest` | Magistral Medium | Reasoning model with structured thinking |
+| `magistral-small-latest` | Magistral Small | Lightweight reasoning |
+| `codestral-latest` | Codestral | Code completion / FIM, multi-language, 256k context |
+| `devstral-medium-latest` | Devstral 2 Medium | Code agents for software-engineering tasks |
+
+Pricing and capabilities live in `server/config/model-capabilities.ts` (source of truth) and
+are mirrored in `server/types/modelAdapter.ts` (`MODEL_REGISTRY`) and `src/lib/constants.ts`
+(the UI picker).
 
 ---
 

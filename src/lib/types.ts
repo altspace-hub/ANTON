@@ -5,8 +5,10 @@
 // ── Models & AI Configuration ──────────────────────────────
 
 export type ModelId =
-  // Anthropic Claude
-  | 'claude-opus-4-7'
+  // Anthropic Claude — latest first
+  | 'claude-opus-4-8'              // 2026-05-30 — current default
+  | 'claude-opus-4-7'              // 2026-04-16 — legacy
+  | 'claude-opus-4-6'              // legacy — adaptive + extended thinking
   | 'claude-sonnet-4-6'
   | 'claude-sonnet-4-5-20250929'
   | 'claude-haiku-4-5-20251001'
@@ -19,13 +21,16 @@ export type ModelId =
   | 'gemini-2.5-pro'
   | 'gemini-2.5-flash'
   | 'gemini-2.0-flash'
-  // Mistral
+  // Mistral (premier + reasoning)
   | 'mistral-large-latest'
   | 'mistral-medium-latest'
   | 'mistral-small-latest'
   // Magistral (Mistral reasoning)
   | 'magistral-medium-latest'
   | 'magistral-small-latest'
+  // Mistral code specialists
+  | 'codestral-latest'
+  | 'devstral-medium-latest'
   // Ollama (local)
   | `ollama:${string}`
   // OpenAI-compatible custom endpoints (DeepSeek, OpenRouter, Together, Groq,

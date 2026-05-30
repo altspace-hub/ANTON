@@ -1953,7 +1953,7 @@ CREATE TABLE IF NOT EXISTS orchestrator_config (
   deadline_alert_days INTEGER NOT NULL DEFAULT 14,
   heartbeat_model TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
   briefing_model TEXT NOT NULL DEFAULT 'claude-sonnet-4-6',
-  planning_model TEXT NOT NULL DEFAULT 'claude-opus-4-7',
+  planning_model TEXT NOT NULL DEFAULT 'claude-opus-4-8',
   orchestrator_paused INTEGER NOT NULL DEFAULT 0,
   paused_at TEXT,
   paused_by TEXT,

@@ -11,7 +11,7 @@ interface AgentProfile {
   id: string;
   name: string;                   // 'Compliance Officer', 'Travel Planner', etc.
   system_prompt: string;          // The defining prompt — voice, role, behaviour
-  default_model: string;          // 'claude-opus-4-7' / 'gpt-4o' / etc.
+  default_model: string;          // 'claude-opus-4-8' / 'gpt-4o' / etc.
   capabilities: string[];         // 12-verb capability ids exposed
   connectors: string[];           // External systems this agent may call
   visibility: 'private' | 'team' | 'public-aap';
@@ -50,7 +50,7 @@ const builder = await createAgentBuilder(db);
 const agent = await builder.create({
   name: 'FCP Researcher',
   system_prompt: `You are an FCP-domain research analyst...`,
-  default_model: 'claude-opus-4-7',
+  default_model: 'claude-opus-4-8',
   capabilities: ['search', 'render', 'submit'],
   connectors: ['roaring-entity', 'dowjones-screening'],
   visibility: 'team',

@@ -168,7 +168,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       const discoveryNotes = safeJsonParse(project.discovery_notes, {});
 
       const result = await callSync({
-        model: 'claude-opus-4-7',
+        model: 'claude-opus-4-8',
         thinking: 'think_hard',
         system: `You are a senior software architect and CTO creating an architecture proposal.
 
@@ -321,7 +321,7 @@ Format your response as:
 
       // Generate primary instruction file
       const primaryResult = await callSync({
-        model: 'claude-opus-4-7',
+        model: 'claude-opus-4-8',
         thinking: 'think_hard',
         system: buildGenerationSystemPrompt(profile, structureTemplate),
         messages: [{

@@ -125,7 +125,7 @@ SELECT
   SUM(cache_creation_tokens) as total_created,
   SUM(estimated_cost_usd) as total_cost
 FROM audit_log
-WHERE model IN ('claude-opus-4-7', 'claude-sonnet-4-5-20250929')
+WHERE model IN ('claude-opus-4-8', 'claude-sonnet-4-5-20250929')
   AND timestamp >= date('now', '-30 days')
 GROUP BY model;
 ```
@@ -167,7 +167,7 @@ const stats = db.prepare(`
     SUM(CASE WHEN cache_creation_tokens > 0 THEN 1 ELSE 0 END) as cache_creates,
     AVG(cached_tokens) as avg_cached_per_call
   FROM audit_log
-  WHERE model = 'claude-opus-4-7'
+  WHERE model = 'claude-opus-4-8'
     AND timestamp >= date('now', '-7 days')
 `).get();
 

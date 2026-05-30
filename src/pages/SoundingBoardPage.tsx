@@ -160,7 +160,7 @@ You are speaking directly with the person described above. Address their situati
     try {
       const stream = streamMessage(
         {
-          model: 'claude-opus-4-7',
+          model: 'claude-opus-4-8',
           thinking: 'think',
           creativity: 'balanced',
           systemPrompt: buildSystemPrompt(),

@@ -65,7 +65,7 @@ const OUTPUT_FORMAT_PROMPTS: Record<OutputFormat, string> = {
 };
 
 const MODEL_LABELS: Record<string, string> = {
-  'claude-opus-4-7':           'Claude Opus 4.7',
+  'claude-opus-4-8':           'Claude Opus 4.8',
   'claude-sonnet-4-6':         'Claude Sonnet 4.6',
   'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
   'gpt-4o':                    'GPT-4o',
@@ -79,7 +79,7 @@ const MODEL_GROUPS: { groupLabel: string; models: { id: string; label: string }[
   {
     groupLabel: 'Anthropic — Claude',
     models: [
-      { id: 'claude-opus-4-7',           label: 'Claude Opus 4.7 (best quality)' },
+      { id: 'claude-opus-4-8',           label: 'Claude Opus 4.8 (best quality)' },
       { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (balanced)' },
       { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fast)' },
     ],
@@ -135,10 +135,10 @@ const WEB_SEARCH_KS = {
 function applyRedTeamPreset(): Partial<CouncilSetup> {
   return {
     members: [
-      { id: crypto.randomUUID(), role: 'attacker', model: 'claude-opus-4-7' },
+      { id: crypto.randomUUID(), role: 'attacker', model: 'claude-opus-4-8' },
       { id: crypto.randomUUID(), role: 'defender', model: 'claude-sonnet-4-6' },
     ],
-    chairModel: 'claude-opus-4-7',
+    chairModel: 'claude-opus-4-8',
     rounds: 2,
     outputFormat: 'summary',
     consensus: 'chair',
@@ -153,7 +153,7 @@ function applyPeerReviewPreset(): Partial<CouncilSetup> {
       { id: crypto.randomUUID(), role: 'reviewer-2', model: 'claude-sonnet-4-6' },
       { id: crypto.randomUUID(), role: 'reviewer-3', model: 'claude-sonnet-4-6' },
     ],
-    chairModel: 'claude-opus-4-7',
+    chairModel: 'claude-opus-4-8',
     rounds: 1,
     outputFormat: 'consolidated-review',
     consensus: 'chair',
@@ -164,12 +164,12 @@ function applyPeerReviewPreset(): Partial<CouncilSetup> {
 function applyDevilsCouncilPreset(): Partial<CouncilSetup> {
   return {
     members: [
-      { id: crypto.randomUUID(), role: 'devils-advocate', model: 'claude-opus-4-7' },
+      { id: crypto.randomUUID(), role: 'devils-advocate', model: 'claude-opus-4-8' },
       { id: crypto.randomUUID(), role: 'defender', model: 'claude-sonnet-4-6' },
       { id: crypto.randomUUID(), role: 'risk-expert', model: 'claude-sonnet-4-6' },
       { id: crypto.randomUUID(), role: 'pragmatist', model: 'claude-haiku-4-5-20251001' },
     ],
-    chairModel: 'claude-opus-4-7',
+    chairModel: 'claude-opus-4-8',
     rounds: 3,
     outputFormat: 'decision-memo',
     consensus: 'chair',
@@ -183,10 +183,10 @@ function defaultSetup(): CouncilSetup {
   return {
     topic: '',
     members: [
-      { id: crypto.randomUUID(), role: 'devils-advocate', model: 'claude-opus-4-7' },
+      { id: crypto.randomUUID(), role: 'devils-advocate', model: 'claude-opus-4-8' },
       { id: crypto.randomUUID(), role: 'defender', model: 'claude-sonnet-4-6' },
     ],
-    chairModel: 'claude-opus-4-7',
+    chairModel: 'claude-opus-4-8',
     rounds: 2,
     webSearch: false,
     consensus: 'chair',

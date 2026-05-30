@@ -10,7 +10,9 @@ export default function PrivacyIndicator() {
 
   const isOllama = defaultModel?.startsWith('ollama') || defaultModel?.startsWith('local');
   const isOpenAI = defaultModel?.startsWith('gpt') || defaultModel?.startsWith('o1') || defaultModel?.startsWith('o3');
-  const isMistral = defaultModel?.startsWith('mistral') || defaultModel?.startsWith('open-mistral');
+  const isMistral = ['mistral', 'open-mistral', 'magistral', 'codestral', 'devstral'].some(
+    (p) => defaultModel?.startsWith(p)
+  );
   const isGemini = defaultModel?.startsWith('gemini');
 
   let providerLabel: string;

@@ -208,7 +208,7 @@ export default function SynthesisPanel({ hiveId, hiveStatus, isQueen, isParticip
               className="w-full rounded-lg border border-adv-teal/40 px-3 py-2 text-xs text-adv-teal hover:bg-adv-teal/10 inline-flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Sparkles className={`h-3.5 w-3.5 ${generating ? 'animate-pulse' : ''}`} />
-              {generating ? 'Drafting synthesis with Opus 4.7…' : 'Generate synthesis draft'}
+              {generating ? 'Drafting synthesis with Opus 4.8…' : 'Generate synthesis draft'}
             </button>
           )}
 
