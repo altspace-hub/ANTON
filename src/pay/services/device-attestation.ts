@@ -29,6 +29,7 @@ import { registerPlugin } from '@capacitor/core';
 import { Capacitor } from '@capacitor/core';
 import { getSecure, removeSecure, setSecure } from './secure-store';
 import { getOrCreateInstallId } from './enrollment';
+import { httpFetch } from './native-http';
 
 // ── Native plugin interface (mirrors FcSecureSigner pattern) ──────
 
@@ -150,7 +151,12 @@ async function postAttest(
   endpoint: string, apiKey: string, integrityToken: string, nonce: string,
 ): Promise<AttestResponse> {
   const url = endpoint.replace(/\/+$/, '') + '/attest';
-  const res = await fetch(url, {
+  // Native HTTP on-device → bypasses the WebView CORS layer (origin
+  // https://localhost) that 403s every hub call, exactly like /enroll and
+  // the SDK RpcClient. Without this, /attest fails with "Failed to fetch"
+  // on a phone, no attestation token is obtained, and every signed-tx
+  // submit is rejected 401 even on a fully-enrolled device.
+  const res = await httpFetch(url, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',

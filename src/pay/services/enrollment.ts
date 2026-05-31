@@ -45,6 +45,7 @@
  */
 import { Capacitor } from '@capacitor/core';
 import { getSecure, setSecure } from './secure-store';
+import { httpFetch } from './native-http';
 
 const INSTALL_ID_KEY = 'fc.install.id';
 const INSTALL_TOKEN_KEY = 'fc.install.token';
@@ -134,7 +135,7 @@ export async function registerAddress(
   payload: RegisterAddressPayload,
 ): Promise<void> {
   const token = await getInstallToken(endpoint);
-  const res = await fetch(`${endpoint.replace(/\/$/, '')}/register_address`, {
+  const res = await httpFetch(`${endpoint.replace(/\/$/, '')}/register_address`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -159,7 +160,7 @@ async function enroll(endpoint: string, installId: string): Promise<string> {
     app_version: appVersion(),
     platform: detectPlatform(),
   };
-  const res = await fetch(`${endpoint.replace(/\/$/, '')}/enroll`, {
+  const res = await httpFetch(`${endpoint.replace(/\/$/, '')}/enroll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

@@ -37,6 +37,10 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
   const [address, setAddress] = useState<string>('');
   const [activity, setActivity] = useState<Activity[]>([]);
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
+  // fetchBalanceFtc returns null ONLY on a read error (a real zero balance
+  // comes back as 0), so a null after a fetch means "couldn't reach the
+  // hub" — surfaced distinctly from an honest empty wallet.
+  const [balanceError, setBalanceError] = useState<boolean>(false);
   const [lastSyncTs, setLastSyncTs] = useState<number>(0);
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const activeSyncCancelRef = useRef<(() => void) | null>(null);
@@ -52,6 +56,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       const wallet = await loadWallet();
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
+      // Instant paint from the local cache.
       const [sent, received, ts] = await Promise.all([
         listPayments(), listReceived(), getLastSyncTs(),
       ]);
@@ -59,10 +64,23 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       // Filter dust (< 0.1 FTC) — address-poisoning delivery vector.
       setActivity(buildActivity(sent, received.filter(r => !isDust(r.amountMicroFtc))));
       setLastSyncTs(ts);
-      if (wallet?.address) {
-        const b = await fetchBalanceFtc(wallet.address);
-        if (!cancelled) setBalanceFtc(b?.ftc ?? null);
-      }
+      if (!wallet?.address) return;
+      // Refresh the balance from chain.
+      const b = await fetchBalanceFtc(wallet.address);
+      if (cancelled) return;
+      setBalanceFtc(b?.ftc ?? null);
+      setBalanceError(b == null);
+      // Pull fresh inbound so a just-received payment shows on open, then
+      // repaint activity + the "Synced X ago" stamp. One-shot (not the
+      // 30 s timer anti-pattern); the Sync button owns "expecting one now".
+      await runOneShotPoll();
+      if (cancelled) return;
+      const [sent2, received2, ts2] = await Promise.all([
+        listPayments(), listReceived(), getLastSyncTs(),
+      ]);
+      if (cancelled) return;
+      setActivity(buildActivity(sent2, received2.filter(r => !isDust(r.amountMicroFtc))));
+      setLastSyncTs(ts2);
     };
     void load();
     const onVisibility = () => { if (document.visibilityState === 'visible') void load(); };
@@ -108,6 +126,14 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
         activeSyncCancelRef.current = null;
         setActiveSync(null);
         void runOneShotPoll().then(() => getLastSyncTs().then(setLastSyncTs));
+        // Refresh the headline balance too, so "Sync now" updates the
+        // number (not just the activity list) and clears any error state.
+        if (address) {
+          void fetchBalanceFtc(address).then((b) => {
+            setBalanceFtc(b?.ftc ?? null);
+            setBalanceError(b == null);
+          });
+        }
       },
     });
     activeSyncCancelRef.current = cancel;
@@ -176,10 +202,13 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
                 defaultValue_other: '{{count}} payments',
               })}
             </div>
-            <div className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
-              {lastSyncTs > 0
-                ? t('home.lastSync', { ago: formatAgo(Date.now() - lastSyncTs), defaultValue: 'Synced {{ago}} ago' })
-                : t('home.notYetSynced', 'Not synced yet')}
+            <div className="text-[11px]"
+                 style={{ color: balanceError ? 'var(--color-red, #E74C3C)' : 'var(--color-text-faint)' }}>
+              {balanceError
+                ? t('home.syncError', "Couldn't reach FutureChain — tap Sync")
+                : lastSyncTs > 0
+                  ? t('home.lastSync', { ago: formatAgo(Date.now() - lastSyncTs), defaultValue: 'Synced {{ago}} ago' })
+                  : t('home.notYetSynced', 'Not synced yet')}
             </div>
           </div>
         </div>

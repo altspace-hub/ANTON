@@ -206,6 +206,23 @@ describe('RpcClient — submitSignedTransaction', () => {
       expect(call.headers['X-API-Key']).toBeUndefined();
     }
   });
+
+  it('sends X-API-Key on the credentialed ISO receive-history read', async () => {
+    // /iso_received returns full PACS.008 payee PII — it is a CREDENTIALED
+    // read (unlike /balance, /get_utxos), so the per-install key is sent.
+    const { fetch: f, calls } = mockFetch([{ body: [] }]);
+    const c = new RpcClient({ endpoint: 'http://x', apiKey: 'SECRET_KEY', fetch: f });
+    await c.getIsoReceived('fc_x');
+    expect(calls[0]!.headers['X-API-Key']).toBe('SECRET_KEY');
+  });
+
+  it('omits X-API-Key on /iso_received when no apiKey is configured', async () => {
+    // The Business app constructs the client without a key — no header.
+    const { fetch: f, calls } = mockFetch([{ body: [] }]);
+    const c = new RpcClient({ endpoint: 'http://x', fetch: f });
+    await c.getIsoReceived('fc_x');
+    expect(calls[0]!.headers['X-API-Key']).toBeUndefined();
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────

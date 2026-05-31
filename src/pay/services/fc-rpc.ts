@@ -20,6 +20,7 @@ import { rpc } from '@futurechain/sdk';
 import { getInstallToken } from './enrollment';
 import { getSecure, setSecure, removeSecure } from './secure-store';
 import { makeAttestationTokenProvider } from './device-attestation';
+import { httpFetch } from './native-http';
 
 /** Production light-hub URL (Bahnhof, behind Caddy + LE). */
 export const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
@@ -60,19 +61,40 @@ export async function setEndpoint(url: string | null): Promise<void> {
 export async function getRpc(): Promise<rpc.RpcClient> {
   if (cached) return cached;
   const endpoint = await getEndpoint();
-  const apiKey = await getInstallToken(endpoint);
-  cached = new rpc.RpcClient({
+  // Public reads (/balance, /get_utxos, /transaction) need no token, so a
+  // /enroll failure must NOT block them. It used to: getInstallToken()
+  // threw, fetchBalanceFtc() swallowed it to null, and the UI rendered
+  // "—" even though the wallet had real on-chain funds. Enrol best-effort;
+  // on failure the client is built read-only and credentialed calls
+  // (submit, ISO receive history) degrade until the next launch enrols.
+  let apiKey: string | undefined;
+  try {
+    apiKey = await getInstallToken(endpoint);
+  } catch {
+    apiKey = undefined;
+  }
+  const client = new rpc.RpcClient({
     endpoint,
     apiKey,
     // Device-attestation session-token resolver. The provider caches
     // a 24-h Bahnhof session in secure-store, refreshes via Play
     // Integrity (Android) or the dev-mode escape (browser), and
-    // attaches `X-Attestation-Token` to every auth-required POST.
+    // attaches `X-Attestation-Token` to every auth-required request.
     // See docs/PAY_DEVICE_ATTESTATION_SPEC.md.
-    attestationTokenProvider: makeAttestationTokenProvider(endpoint, apiKey),
+    attestationTokenProvider: makeAttestationTokenProvider(endpoint, apiKey ?? ''),
+    // Native HTTP on-device → bypasses the WebView CORS layer that
+    // otherwise 403s every hub call from the https://localhost origin.
+    // On web this resolves to the platform fetch (unchanged behaviour).
+    fetch: httpFetch,
     timeoutMs: 15_000,
   });
-  return cached;
+  // Only CACHE a fully-credentialed client. If enrolment failed, the
+  // client is keyless — fine for public reads (balance/UTXOs), but caching
+  // it would strand the submit path keyless (no X-API-Key / attestation →
+  // 401) until an app restart. Returning it un-cached lets the NEXT call
+  // retry enrolment and cache a credentialed client once the hub is back.
+  if (apiKey) cached = client;
+  return client;
 }
 
 /** Reset the cached client + force re-resolve on next getRpc. Useful
