@@ -1173,6 +1173,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             const endpoint = await resolveCustomEndpoint(db, slug);
             if (!endpoint) throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
             const bareModel = selectedModel.split(':').slice(2).join(':');
+            if (!bareModel) throw new Error(`Invalid compat model id: ${selectedModel} (expected compat:<slug>:<model>)`);
             result = await streamOpenAICompatible({
               baseUrl: endpoint.baseUrl,
               apiKey: endpoint.apiKey,
