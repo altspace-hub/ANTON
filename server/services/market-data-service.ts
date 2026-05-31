@@ -1082,7 +1082,10 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         SELECT symbol, price_date::date, open, high, low, close, volume
         FROM market_price_normalized
         WHERE price_date::date > (
-          SELECT COALESCE(MAX(price_date), '2020-01-01'::date) FROM market_historical_prices
+          -- price_date is a TEXT column (ISO date strings); cast to date so the
+          -- COALESCE matches the date literal (was: "COALESCE types text and date
+          -- cannot be matched") and the outer date comparison stays date-vs-date.
+          SELECT COALESCE(MAX(price_date::date), '2020-01-01'::date) FROM market_historical_prices
         )
         ON CONFLICT (symbol, price_date) DO UPDATE SET
           close = EXCLUDED.close, high = EXCLUDED.high, low = EXCLUDED.low,
