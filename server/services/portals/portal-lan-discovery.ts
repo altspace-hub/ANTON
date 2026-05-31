@@ -20,6 +20,7 @@
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
+import { assertSafeLanEgressUrl } from '../../lib/ssrf-guard.js';
 import { createMdnsAdvertiser, type DiscoveredInstance } from '../mdns-advertiser.js';
 
 const log = childLogger('portal-lan-discovery');
@@ -148,6 +149,13 @@ function chooseEndpoint(peer: DiscoveredInstance): string | null {
 }
 
 async function fetchPublicDirectory(endpoint: string): Promise<PublicDirectoryResponse | null> {
+  // SSRF guard: a malicious mDNS responder could advertise a host resolving to
+  // loopback/metadata. Block those (LAN peers on private ranges stay allowed).
+  try {
+    await assertSafeLanEgressUrl(endpoint);
+  } catch {
+    return null; // blocked target — treat the peer as unreachable
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
