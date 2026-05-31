@@ -63,10 +63,36 @@ jobs:
       # translator + an ISO-week bug). Green main is now a hard merge gate.
       #
       # TODO (roadmap Phase 1): once the ~338 eslint errors are burned down,
-      # add `pnpm lint` as a gate here too; and wire the workspace package
-      # suites (apps/anton-agent-pay, @futurechain/sdk) once verified in CI.
+      # add `pnpm lint` as a gate here too. (The 4 companion-app suites —
+      # comm/business/pay/agent-pay — are now gated in the `app-tests` job below.)
       - name: Unit tests
         run: pnpm test
+
+  app-tests:
+    name: App Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # The 4 companion apps run their own vitest suites (jsdom + fake-indexeddb /
+      # node). Previously these ran only locally, so the headline "CI-gated" number
+      # did NOT protect the apps (re-audit gap, PORTFOLIO_AUDIT_2026-05-31). Each is
+      # now a hard merge gate.
+      - name: Comm app tests
+        run: pnpm test:comm
+      - name: Business app tests
+        run: pnpm test:business
+      - name: Pay app tests
+        run: pnpm test:pay
+      - name: Agent Pay (desktop) tests
+        run: pnpm --filter @anton/agent-pay test
 
   security-audit:
     name: Security Audit
