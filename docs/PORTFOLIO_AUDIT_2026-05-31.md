@@ -100,24 +100,24 @@ Dimensions: **Fn** · **Code** · **UX** (– = no UI) · **Sec** · **Test** ·
 
 ## Newly surfaced / residual gaps (candidate next roadmap)
 
-The re-audit found issues **not** in the 2026-05-30 baseline — the real payoff of re-running:
+The re-audit found issues **not** in the 2026-05-30 baseline — the real payoff of re-running. Items 1–4
+were fixed 2026-05-31 (commits `1cce312`, `52fec2c`, `328b87a`):
 
-1. **SSRF guard not applied to every egress.** The new `ssrf-guard.ts` covers the agent connector
-   executor, but **Missions `api-call-executor.ts`** (makes outbound HTTP, explicitly allows
-   localhost/metadata) and **Portals `portals.ts` LAN-proxy fetch + `portal-handler.ts` origin_endpoint
-   forward** still fetch DB-stored URLs with no SSRF check. *Wire the guard into these two paths.*
-2. **Raw-error leaks the sweep missed.** The `safeError` sweep + CI guard only cover the `error:` field;
-   `task-agent.ts` (`detail: String(err)` at 335/360/1082) and `pathfinder.ts` (`message: String(err)` at
-   163/189, SSE) still leak. *Extend the guard regex to `detail:`/`message:` fields.*
-3. **App suites are outside the root CI gate.** Pay (107), Comm (120), Business (78), Agent Pay (147) pass
-   locally but **no `.github/workflows` job runs them** — the headline "832 CI-gated" does not protect the
-   apps. *Add `test:pay`/`test:comm`/`test:business`/agent-pay jobs to CI.*
-4. **Comm stale comment** in `wallets.ts:19-23` still says the ledger is "NOT yet scoped per-wallet",
-   directly contradicting the shipped per-wallet fix. *Delete the comment.*
-5. **SSRF guard TOCTOU/DNS-rebinding window** — `assertSafeEgressUrl` resolves, then `fetch` re-resolves
-   independently. *Pin the resolved IP or use a guarded agent.*
-6. **Markets detector is poll-only** — `staleMarketLoops` has no cron/alert consumer, so the silent
-   failure it targets still needs someone to poll `/markets/loop-health`. *Wire it to the radar/alert cron.*
+1. **✅ DONE — SSRF guard not applied to every egress.** Missions `api-call-executor` now uses the strict
+   `assertSafeEgressUrl`; Portals LAN-proxy (`portals.ts` + `portal-handler.lookupRemoteOrigin`) use a new
+   LAN-aware `assertSafeLanEgressUrl` that blocks loopback/link-local/metadata but allows private LAN peers
+   (so the LAN-portal feature still works). +4 tests.
+2. **✅ DONE — Raw-error leaks the sweep missed.** `data.ts` ×5, `task-agent.ts` ×3, `pathfinder.ts` ×2,
+   `portals.ts` ×1 now route through `safeError()`; the CI guard (`no-raw-error-leak.test.ts`) was extended
+   to scan `detail:`/`message:` + the `sendEvent()` SSE helper (with `.message` restricted to error-named
+   vars so controlled handler messages aren't false-positives).
+3. **✅ DONE — App suites are outside the root CI gate.** Added an `app-tests` CI job gating Pay/Comm/
+   Business/Agent-Pay (verified all pass locally with the exact CI commands).
+4. **✅ DONE — Comm stale comment** corrected (the ledger IS per-wallet-scoped since `345778a`).
+5. **(open) SSRF guard TOCTOU/DNS-rebinding window** — `assertSafe*EgressUrl` resolves, then `fetch`
+   re-resolves independently. *Pin the resolved IP or use a guarded agent.* (Harder; left as a follow-up.)
+6. **(open) Markets detector is poll-only** — `staleMarketLoops` has no cron/alert consumer. *Wire it to
+   the radar/alert cron.*
 
 ---
 
