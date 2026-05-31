@@ -1048,8 +1048,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
           .replace(/\n{3,}/g, '\n\n');
 
-        // For Azure models: if web search was requested and Bing is configured, pre-search and inject results
-        if (webSearchWasRequested && provider === 'azure_openai') {
+        // For ALL non-Anthropic providers: if web search was requested and Bing is
+        // configured, pre-search and inject results (Claude uses its native
+        // web_search tool on its own branch; everyone else gets Bing grounding).
+        if (webSearchWasRequested) {
           try {
             const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('../services/bing-search.js');
             const bingKey = await getBingSearchApiKey(db);

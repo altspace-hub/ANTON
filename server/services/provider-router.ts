@@ -110,6 +110,20 @@ const TIER_MAP: Record<string, Record<ModelTier, string>> = {
  * Priority: Anthropic > Mistral > OpenAI > Google > Ollama
  */
 function getConfiguredProvider(): string {
+  // Honor an explicit non-Claude DEFAULT_MODEL first, so an operator who sets
+  // DEFAULT_MODEL=mistral-large-latest / ollama:qwen / compat:<slug>:<model> gets
+  // the specialty routes (which hardcode mapModelToProvider('claude-…')) on THAT
+  // provider, instead of whichever cloud key happens to be highest priority.
+  const def = process.env.DEFAULT_MODEL;
+  if (def && !def.startsWith('claude-')) {
+    let p: string | null = null;
+    try { p = getProviderFromModelId(def); } catch { p = null; }
+    if (p === 'ollama' || p === 'openai_compatible') return p;          // keyless / per-endpoint creds
+    if (p === 'mistral' && process.env.MISTRAL_API_KEY) return 'mistral';
+    if (p === 'openai' && process.env.OPENAI_API_KEY) return 'openai';
+    if (p === 'google' && process.env.GOOGLE_API_KEY) return 'google';
+    // azure / key-missing → fall through to env-priority below
+  }
   if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
   if (process.env.MISTRAL_API_KEY) return 'mistral';
   if (process.env.OPENAI_API_KEY) return 'openai';
@@ -128,6 +142,11 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
 
   const t = (tier || tierOrModel || 'medium') as ModelTier;
   const provider = getConfiguredProvider();
+  // Local Ollama / compat endpoints have no large/medium/small tiers — use the
+  // configured DEFAULT_MODEL id for every tier.
+  if ((provider === 'ollama' || provider === 'openai_compatible') && process.env.DEFAULT_MODEL) {
+    return process.env.DEFAULT_MODEL;
+  }
   return TIER_MAP[provider]?.[t] || TIER_MAP.anthropic[t];
 }
 
@@ -138,6 +157,12 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
 export function mapModelToProvider(claudeModelId: string): string {
   const provider = getConfiguredProvider();
   if (provider === 'anthropic') return claudeModelId;
+
+  // Local Ollama / compat endpoints have no tier mapping — use the configured
+  // DEFAULT_MODEL id directly.
+  if ((provider === 'ollama' || provider === 'openai_compatible') && process.env.DEFAULT_MODEL) {
+    return process.env.DEFAULT_MODEL;
+  }
 
   // Map Claude model to tier, then resolve for active provider
   const claudeToTier: Record<string, ModelTier> = {
