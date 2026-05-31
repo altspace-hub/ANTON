@@ -16,7 +16,7 @@
 
 import PptxGenJS from 'pptxgenjs';
 import type { RenderFn, RenderResult } from '../../renderer-registry.types.js';
-import { callChat } from '../../provider-router.js';
+import { callChat, mapModelToProvider } from '../../provider-router.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
 import { wrapUntrustedContent, INJECTION_GUARD_SUFFIX } from '../lib/prompt-injection-guard.js';
 
@@ -66,7 +66,7 @@ export const render: RenderFn = async (payload, context): Promise<RenderResult> 
   // Ask LLM for the distilled deck spec
   const userPrompt = `Report title: ${context.session.title}\nContent type: ${payload.content_type}\n\n${wrapUntrustedContent(markdown)}${INJECTION_GUARD_SUFFIX}`;
   const chat = await Promise.race([
-    callChat({ model: MODEL, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
+    callChat({ model: mapModelToProvider(MODEL), system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`board-deck timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)),
   ]);
 
