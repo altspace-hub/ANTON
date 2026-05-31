@@ -19,6 +19,7 @@ import type { Response } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
+import { safeError } from '../../lib/error-response.js';
 import { callChat, streamChat, mapModelToProvider, type ChatResult } from '../provider-router.js';
 import { MODEL_CAPABILITIES } from '../../config/model-capabilities.js';
 import {
@@ -160,7 +161,9 @@ async function runOneAttempt(
     const message = err instanceof Error ? err.message : String(err);
     log.error({ sessionId, phase, model, isRetry, err: message }, 'provider_error');
     await recordCallRow(db, sessionId, phase, model, `provider_error${statusSuffix}`, 0, 0, 0, message);
-    return { kind: 'provider_error', phase, message };
+    // Sanitize the client-facing message (the raw provider error stays in the log
+    // + DB record above); generic in prod, real in dev.
+    return { kind: 'provider_error', phase, message: safeError(err) };
   }
 
   const costUsdCents = estimateCostCents(model, chatResult.inputTokens, chatResult.outputTokens);
@@ -282,7 +285,8 @@ export async function suggestPhaseStream(
     const message = err instanceof Error ? err.message : String(err);
     log.error({ sessionId, phase, model, err: message }, 'provider_error_stream');
     await recordCallRow(db, sessionId, phase, model, 'provider_error', 0, 0, 0, message);
-    return writeSseEvent(res, 'error', { kind: 'provider_error', phase, message });
+    // Sanitize the client-facing SSE message (raw error stays in the log + DB above).
+    return writeSseEvent(res, 'error', { kind: 'provider_error', phase, message: safeError(err) });
   }
 
   const costUsdCents = estimateCostCents(model, chatResult.inputTokens, chatResult.outputTokens);

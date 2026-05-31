@@ -23,9 +23,14 @@ describe('isBlockedIp', () => {
     }
   });
 
-  it('allows public IPv6 and unwraps IPv4-mapped IPv6', () => {
+  it('allows public IPv6 and unwraps IPv4-mapped IPv6 (dotted + hex)', () => {
     expect(isBlockedIp('2001:4860:4860::8888')).toBe(false);
     expect(isBlockedIp('::ffff:127.0.0.1')).toBe(true);
+    // Hex IPv4-mapped form must be unwrapped too (the bypass the review caught):
+    expect(isBlockedIp('::ffff:7f00:1')).toBe(true);     // 127.0.0.1
+    expect(isBlockedIp('::ffff:a9fe:a9fe')).toBe(true);  // 169.254.169.254 metadata
+    expect(isBlockedIp('::FFFF:7F00:1')).toBe(true);     // uppercase
+    expect(isBlockedIp('::ffff:0808:0808')).toBe(false); // 8.8.8.8 public — still allowed
   });
 });
 
@@ -48,6 +53,11 @@ describe('assertSafeEgressUrl', () => {
 
   it('allows a public IP literal', async () => {
     await expect(assertSafeEgressUrl('https://8.8.8.8/x')).resolves.toBeUndefined();
+  });
+
+  it('rejects hex IPv4-mapped IPv6 metadata/loopback literals', async () => {
+    await expect(assertSafeEgressUrl('http://[::ffff:a9fe:a9fe]/latest')).rejects.toThrow();
+    await expect(assertSafeEgressUrl('http://[::ffff:7f00:1]/x')).rejects.toThrow();
   });
 
   it('rejects a malformed URL', async () => {
@@ -79,6 +89,9 @@ describe('assertSafeLanEgressUrl', () => {
     await expect(assertSafeLanEgressUrl('http://localhost/x')).rejects.toThrow();
     await expect(assertSafeLanEgressUrl('http://169.254.169.254/latest')).rejects.toThrow();
     await expect(assertSafeLanEgressUrl('http://[::1]/x')).rejects.toThrow();
+    // hex IPv4-mapped form must also be blocked on the LAN path:
+    await expect(assertSafeLanEgressUrl('http://[::ffff:7f00:1]/x')).rejects.toThrow();
+    await expect(assertSafeLanEgressUrl('http://[::ffff:a9fe:a9fe]/latest')).rejects.toThrow();
   });
 
   it('rejects non-http(s) schemes', async () => {

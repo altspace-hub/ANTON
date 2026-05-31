@@ -467,7 +467,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           max_completion_tokens: 10,
         } as unknown as import('openai/resources/chat/completions').ChatCompletionCreateParamsNonStreaming);
         results.push({ test: 'basic (max_completion_tokens)', ok: true, response: r.choices?.[0]?.message?.content || '' });
-      } catch (e) { results.push({ test: 'basic (max_completion_tokens)', ok: false, error: (e as Error).message }); }
+      } catch (e) { results.push({ test: 'basic (max_completion_tokens)', ok: false, error: safeError(e) }); }
 
       // Test 2: Streaming
       try {
@@ -481,7 +481,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming', ok: true, response: text });
-      } catch (e) { results.push({ test: 'streaming', ok: false, error: (e as Error).message }); }
+      } catch (e) { results.push({ test: 'streaming', ok: false, error: safeError(e) }); }
 
       // Test 3: With reasoning_effort
       try {
@@ -496,7 +496,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming + reasoning_effort=low', ok: true, response: text });
-      } catch (e) { results.push({ test: 'streaming + reasoning_effort=low', ok: false, error: (e as Error).message }); }
+      } catch (e) { results.push({ test: 'streaming + reasoning_effort=low', ok: false, error: safeError(e) }); }
 
       // Test 4: Larger context
       try {
@@ -511,7 +511,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         let text = '';
         for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: 'streaming + 14K system prompt', ok: true, response: text });
-      } catch (e) { results.push({ test: 'streaming + 14K system prompt', ok: false, error: (e as Error).message }); }
+      } catch (e) { results.push({ test: 'streaming + 14K system prompt', ok: false, error: safeError(e) }); }
 
       // Test 5: 80K system prompt + reasoning_effort=high (matches real gap assessor)
       try {
@@ -527,7 +527,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         let text5 = '';
         for await (const chunk of stream5) { text5 += chunk.choices?.[0]?.delta?.content || ''; }
         results.push({ test: '80K system + reasoning_effort=high', ok: true, response: text5 });
-      } catch (e) { results.push({ test: '80K system + reasoning_effort=high', ok: false, error: (e as Error).message }); }
+      } catch (e) { results.push({ test: '80K system + reasoning_effort=high', ok: false, error: safeError(e) }); }
 
       res.json({ results, apiVersion: config.api_version, deployment: deploymentName });
     } catch (err) {

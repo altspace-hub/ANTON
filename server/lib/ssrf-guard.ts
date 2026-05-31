@@ -22,9 +22,29 @@ const ALLOWED_HOSTS = (process.env.ALLOWED_AGENT_HOSTS ?? '')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
+/**
+ * Normalize an IP literal: fully unwrap IPv4-mapped IPv6 — both the dotted form
+ * (`::ffff:127.0.0.1`) AND the hex form (`::ffff:7f00:1`) — to dotted IPv4 so the
+ * IPv4 rules apply. Without the hex unwrap, `::ffff:a9fe:a9fe` (=169.254.169.254)
+ * and `::ffff:7f00:1` (=127.0.0.1) slip past the IPv4/IPv6 checks (they parse as
+ * neither once the `::ffff:` prefix is naively stripped) and reach metadata/loopback.
+ */
+function normalizeIp(ip: string): string {
+  const v = ip.toLowerCase();
+  const dotted = v.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (dotted) return dotted[1];
+  const hex = v.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hex) {
+    const hi = parseInt(hex[1], 16);
+    const lo = parseInt(hex[2], 16);
+    return [hi >> 8, hi & 0xff, lo >> 8, lo & 0xff].join('.');
+  }
+  return v;
+}
+
 /** True if `ip` is a loopback/private/link-local/unique-local/CGNAT address. */
 export function isBlockedIp(ip: string): boolean {
-  const v = ip.replace(/^::ffff:/i, '').toLowerCase(); // unwrap IPv4-mapped IPv6
+  const v = normalizeIp(ip); // unwrap IPv4-mapped IPv6 (dotted + hex)
 
   if (net.isIPv4(v)) {
     const [a, b] = v.split('.').map(Number);
@@ -99,7 +119,7 @@ export async function assertSafeEgressUrl(rawUrl: string): Promise<void> {
  * still reach private LAN peers while never reaching loopback or cloud metadata.
  */
 export function isLoopbackOrLinkLocal(ip: string): boolean {
-  const v = ip.replace(/^::ffff:/i, '').toLowerCase();
+  const v = normalizeIp(ip); // unwrap IPv4-mapped IPv6 (dotted + hex)
   if (net.isIPv4(v)) {
     const [a, b] = v.split('.').map(Number);
     if (a === 0 || a === 127) return true; // unspecified / loopback

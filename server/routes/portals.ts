@@ -512,7 +512,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
           });
         case 'provider_error':
           return res.status(502).json({
-            error: { kind: r.kind, phase: r.phase, message: r.message },
+            error: { kind: r.kind, phase: r.phase, message: safeError(r.message) },
           });
       }
     } catch (err) {
@@ -568,7 +568,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
         case 'session_inactive':
           return res.status(r.status === 'not_found' ? 404 : 409).json({ error: { kind: r.kind, status: r.status } });
         case 'provider_error':
-          return res.status(502).json({ error: { kind: r.kind, message: r.message } });
+          return res.status(502).json({ error: { kind: r.kind, message: safeError(r.message) } });
       }
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
