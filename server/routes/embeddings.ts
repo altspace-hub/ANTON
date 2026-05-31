@@ -15,6 +15,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { hybridSearch, findSimilar } from '../services/hybrid-search.js';
 import { getEmbeddingAdapter, isZeroVector } from '../services/embedding-adapter.js';
+import { resetVectorStore } from '../services/vector-store-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
 import { applyAntonBoosts, applyTokenBudget } from '../services/atom-boost.js';
 import { safeError } from '../lib/error-response.js';
@@ -218,6 +219,9 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         });
       }
       await db.run('ALTER TABLE embeddings ADD COLUMN IF NOT EXISTS embedding_vec vector(1536)');
+      // Build the index BEFORE the backfill: the column was just added (all NULL),
+      // so the HNSW build is on an empty set — no long lock — and the subsequent
+      // backfill UPDATEs populate it incrementally.
       await db.run(
         `CREATE INDEX IF NOT EXISTS idx_embeddings_vec_hnsw
          ON embeddings USING hnsw (embedding_vec vector_cosine_ops)
@@ -252,6 +256,10 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         }
         if (rows.length < BATCH) break;
       }
+
+      // Drop the cached VectorStoreAdapter singleton so the next request re-probes
+      // and picks up the now-present column/index without a server restart.
+      resetVectorStore();
 
       res.json({ success: true, scanned, migrated });
     } catch (err) {
