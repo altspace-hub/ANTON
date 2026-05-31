@@ -32,11 +32,12 @@ export interface RpcConfig {
   /** Base URL of a FutureChain node, e.g. `http://127.0.0.1:8545` or
    *  `https://bahnhof.futurechain.eu`. Trailing slash optional. */
   endpoint: string;
-  /** Optional API key — set as `X-API-Key` header on **auth-required**
-   *  requests only (today: `POST /submit_signed_transaction`). Read
-   *  endpoints are public and never carry the key, so it can't leak
-   *  into a reverse-proxy access log on every `getBalance` /
-   *  `getHealth` poll. See {@link AUTH_REQUIRED_PATHS}. */
+  /** Optional API key — set as `X-API-Key` header on the requests that
+   *  {@link isAuthRequired} flags: `POST /submit_signed_transaction` AND
+   *  the credentialed read `GET /iso_received/{addr}` (which returns full
+   *  PACS.008 payee PII). The PUBLIC reads — `/balance`, `/get_utxos`,
+   *  `/transaction`, `/info`, `/health` — never carry the key, so it
+   *  can't leak into a reverse-proxy access log on every poll. */
   apiKey?: string;
   /** Optional device-attestation session-token provider — called
    *  before every auth-required request and the returned value (if
@@ -155,9 +156,20 @@ export const AUTH_REQUIRED_PATHS: ReadonlySet<string> = new Set([
   '/submit_signed_transaction',
 ]);
 
-/** `true` iff a request to (method, path) should carry `X-API-Key`. */
+/** `true` iff a request to (method, path) should carry `X-API-Key`
+ *  (and the attestation token). Covers the POST submit path plus the
+ *  ISO 20022 receive-history read.
+ *
+ *  `/iso_received/{addr}` is a CREDENTIALED read: unlike `/balance` and
+ *  `/get_utxos` (public chain data — amounts + outpoints), it returns
+ *  the full PACS.008 payload (debtor names, remittance text, structured
+ *  references — real payee PII), so the hub gates + attributes access
+ *  with the per-install key. It's polled at most daily, so access-log
+ *  key exposure is negligible. */
 export function isAuthRequired(method: string, path: string): boolean {
-  return method === 'POST' && AUTH_REQUIRED_PATHS.has(path);
+  if (method === 'POST' && AUTH_REQUIRED_PATHS.has(path)) return true;
+  if (method === 'GET' && path.startsWith('/iso_received/')) return true;
+  return false;
 }
 
 // ───────────────────────────────────────────────────────────────────────
