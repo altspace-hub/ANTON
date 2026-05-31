@@ -20,6 +20,7 @@ import type { DatabaseAdapter } from '../../../db/database.js';
 import type { Mission, MissionTask } from '../types.js';
 import { childLogger } from '../../../lib/logger.js';
 import { createCredentialVault } from '../mission-credential-vault.js';
+import { assertSafeEgressUrl } from '../../../lib/ssrf-guard.js';
 
 const log = childLogger('mission-api-call');
 
@@ -75,6 +76,16 @@ export async function executeApiCall(
   let url: URL;
   try { url = new URL(config.url); }
   catch { return failure(startedAt, `Invalid URL: ${config.url}`); }
+
+  // SSRF guard: block loopback/private/link-local/CGNAT + 169.254.169.254 cloud
+  // metadata so a mission api_call can't be pointed at the internal network or
+  // a metadata endpoint. Operators who need a localhost/private target set
+  // ALLOWED_AGENT_HOSTS (shared allowlist with the agent connector executor).
+  try {
+    await assertSafeEgressUrl(config.url);
+  } catch (err) {
+    return failure(startedAt, `Blocked by SSRF guard: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   const allowInsecure = config.allow_insecure === true;
   if (url.protocol !== 'https:' && !allowInsecure) {

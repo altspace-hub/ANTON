@@ -23,6 +23,7 @@ import { randomUUID } from 'crypto';
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
+import { assertSafeLanEgressUrl } from '../../lib/ssrf-guard.js';
 import { validateAgainstSchema } from '../capability-descriptor/validator.js';
 import { createAppCheckpointService } from '../app-checkpoint-service.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
@@ -119,7 +120,17 @@ async function lookupRemoteOrigin(db: DatabaseAdapter, portalAddress: string): P
     `SELECT origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
     portalAddress,
   );
-  return row?.origin_endpoint ?? null;
+  const origin = row?.origin_endpoint ?? null;
+  if (!origin) return null;
+  // SSRF guard: never proxy to a loopback/link-local/cloud-metadata target. LAN
+  // peers (private 192.168/10/172.16) ARE allowed — that's the point of LAN portals.
+  try {
+    await assertSafeLanEgressUrl(origin);
+  } catch {
+    childLogger('portals').warn({ portalAddress }, 'refusing to proxy: origin_endpoint blocked by SSRF guard');
+    return null;
+  }
+  return origin;
 }
 
 const PROXY_TIMEOUT_MS = 10_000;
