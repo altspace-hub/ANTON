@@ -40,7 +40,8 @@ async function resolveCompatConfig(
     throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
   }
   const parts = modelId.split(':');
-  const model = parts.length >= 3 ? parts.slice(2).join(':') : modelId;
+  const model = parts.slice(2).join(':');
+  if (!model) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
   return { baseUrl: endpoint.baseUrl, apiKey: endpoint.apiKey, extraHeaders: endpoint.extraHeaders, model };
 }
 
