@@ -388,6 +388,16 @@ export async function streamToHandler(
     // Create a mock response to capture SSE events from claude-client
     // and redirect them to the onEvent callback
     let mockEventCount = 0;
+    // claude-client's streamToResponse SWALLOWS API errors: on failure it
+    // emits an SSE `error` event then res.end()s, rather than throwing or
+    // calling onComplete. For real HTTP SSE the browser sees that event — but
+    // on this sync/onComplete path (e.g. companion /query-sync) onComplete is
+    // the ONLY completion signal, so an error means the awaiting caller hangs
+    // forever (observed: no-credit Anthropic key → app stuck on "Thinking…").
+    // Capture the error + completion so we can rethrow below and let the
+    // caller reject (→ 500) instead of hanging.
+    let streamErrorMessage: string | null = null;
+    let completed = false;
     const mockRes = {
       writeHead: () => mockRes,
       write: (chunk: string) => {
@@ -398,6 +408,10 @@ export async function streamToHandler(
             try {
               const parsed = JSON.parse(line.slice(6));
               mockEventCount++;
+              if (parsed && parsed.type === 'error') {
+                streamErrorMessage =
+                  (parsed.error && parsed.error.message) || parsed.message || 'LLM streaming error';
+              }
               onEvent(parsed);
             } catch {}
           }
@@ -411,7 +425,11 @@ export async function streamToHandler(
       headersSent: false,
     } as unknown as import('express').Response;
 
-    return claudeClient.streamToResponse(
+    const wrappedComplete = onComplete
+      ? (data: StreamCompletionData) => { completed = true; onComplete(data); }
+      : undefined;
+
+    await claudeClient.streamToResponse(
       {
         model: config.model as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
         thinking: config.thinking,
@@ -423,8 +441,15 @@ export async function streamToHandler(
         nativeReasoningEnabled: config.nativeReasoningEnabled,
       },
       mockRes,
-      onComplete
+      wrappedComplete
     );
+
+    // If the underlying stream errored (provider 4xx, insufficient credit, …)
+    // and never completed, surface it so the caller rejects instead of hanging.
+    if (!completed && streamErrorMessage) {
+      throw new Error(streamErrorMessage);
+    }
+    return;
   }
 
   // Non-Anthropic providers
