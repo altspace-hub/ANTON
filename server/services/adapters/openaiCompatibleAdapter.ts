@@ -123,6 +123,47 @@ export async function streamOpenAICompatible(
 }
 
 /**
+ * Non-streaming completion through any OpenAI-compatible endpoint (for callChat /
+ * scoring / agent paths). Mirrors streamOpenAICompatible but returns full text.
+ */
+export async function callOpenAICompatible(
+  params: OpenAICompatibleStreamParams,
+): Promise<OpenAICompatibleStreamResult> {
+  const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(params.extraHeaders ?? {}),
+  };
+  if (params.apiKey) headers['Authorization'] = `Bearer ${params.apiKey}`;
+
+  const body = {
+    model: params.model,
+    stream: false,
+    messages: [
+      { role: 'system', content: params.system },
+      ...params.messages,
+    ],
+    ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+    ...(params.maxTokens !== undefined ? { max_tokens: params.maxTokens } : {}),
+  };
+
+  const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenAI-compatible endpoint error (${params.baseUrl}): ${response.status} — ${errText}`);
+  }
+  const data = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  return {
+    text: data.choices?.[0]?.message?.content ?? '',
+    inputTokens: data.usage?.prompt_tokens ?? 0,
+    outputTokens: data.usage?.completion_tokens ?? 0,
+  };
+}
+
+/**
  * List the models exposed by an OpenAI-compatible endpoint via GET /models.
  * Most providers honour this; returns an empty array if the endpoint doesn't.
  */

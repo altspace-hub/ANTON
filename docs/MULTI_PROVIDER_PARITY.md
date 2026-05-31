@@ -113,14 +113,20 @@ mis-routes to Claude) · — n/a (provider genuinely can't).
 
 ### Tier M — moderate (the real parity unlocks)
 
-- **M1. `compat:` end-to-end (fixes the #1 silent-Claude bug).** Add a `compat:` branch to `getModelConfig`
-  (provider `openai_compatible`) + a dispatch branch in `claude.ts` (or route the module path through
-  `unified-llm-client`). Also fix the type-rot: `server/types/modelAdapter.ts` `ModelProvider` union is
-  missing `ollama`/`openai_compatible`.
+- **M1. ✅ DONE — `compat:` end-to-end on the module run (fixes the #1 silent-Claude bug).** `claude.ts`
+  now prefix-detects `compat:` (like `ollama:`/`azure:`) → `provider='openai_compatible'` *before* the
+  `getModelConfig`→undefined→`'anthropic'` fallback, so a `compat:` model can no longer silently run on
+  Claude. Added the dispatch branch (resolveCustomEndpoint → `streamOpenAICompatible`) + skipped env-key
+  validation (creds live in `custom_model_endpoints`). *(Deferred: unifying the two `ModelProvider` type
+  unions / a `getModelConfig` compat branch — not needed for the bug fix since claude.ts prefix-detects.)*
 - **M2. Surface `compat:` endpoints in `ModelSelector`** — fetch `/api/settings/model-endpoints` and render
   `compat:<slug>:<model>` (Settings already promises this; the picker never reads it).
-- **M3. `provider-router.callChat`: add `ollama` + `openai_compatible` non-streaming branches** (+ thread
-  `db`). Today every specialty route + agent on local-Qwen/compat throws "Non-streaming not implemented".
+- **M3. ✅ DONE — `provider-router` ollama + openai_compatible branches.** `callChat` gained
+  non-streaming `ollama` + `openai_compatible` branches (new `callOllama` / `callOpenAICompatible`
+  adapter helpers) — agents + specialty routes no longer throw "Non-streaming not implemented" on
+  local-Qwen / OpenRouter-Together. `streamChat` gained the `openai_compatible` branch and the
+  `ollama:`-prefix-strip bug fix (it was sending `model:'ollama:qwen'` → 404). `db` is now threaded into
+  `getProviderFromModelId` on both paths so custom-slot ids resolve. 4 new tests.
 - **M4. Extend `getConfiguredProvider` priority + `TIER_MAP`** with `ollama`/`openai_compatible` rows, and
   let tier resolution read a configured default model. Unlocks Qwen everywhere `mapModelToProvider` is used.
 - **M5. Honor the session-selected model** (not env-priority) across the ~42 `provider-router` specialty

@@ -97,6 +97,46 @@ export async function streamOllama(
   return { inputTokens: promptTokens, outputTokens: evalTokens, text: fullText };
 }
 
+/**
+ * Non-streaming Ollama chat completion (for callChat / scoring / agent paths).
+ * Mirrors streamOllama but returns the full text instead of an SSE stream.
+ */
+export async function callOllama(
+  params: OllamaStreamParams,
+): Promise<{ inputTokens: number; outputTokens: number; text: string }> {
+  const body = {
+    model: params.model,
+    stream: false,
+    messages: [
+      { role: 'system', content: params.system },
+      ...params.messages,
+    ],
+    options: {
+      temperature: params.temperature ?? 0.7,
+      num_ctx: 32768,
+      ...(params.maxTokens ? { num_predict: params.maxTokens } : {}),
+    },
+  };
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+    method: 'POST',
+    headers: ollamaHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`Ollama error: ${response.status} ${await response.text()}`);
+  }
+  const data = (await response.json()) as {
+    message?: { content?: string };
+    prompt_eval_count?: number;
+    eval_count?: number;
+  };
+  return {
+    text: data.message?.content ?? '',
+    inputTokens: data.prompt_eval_count ?? 0,
+    outputTokens: data.eval_count ?? 0,
+  };
+}
+
 export async function listOllamaModels(): Promise<string[]> {
   try {
     const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
