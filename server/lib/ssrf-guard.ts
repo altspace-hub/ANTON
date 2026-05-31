@@ -91,3 +91,73 @@ export async function assertSafeEgressUrl(rawUrl: string): Promise<void> {
     }
   }
 }
+
+/**
+ * True if `ip` is loopback or link-local (incl. 169.254.169.254 cloud metadata).
+ * Narrower than `isBlockedIp`: it does NOT flag private LAN ranges
+ * (10/172.16/192.168/CGNAT), so LAN-trusted paths (portal peer proxying) can
+ * still reach private LAN peers while never reaching loopback or cloud metadata.
+ */
+export function isLoopbackOrLinkLocal(ip: string): boolean {
+  const v = ip.replace(/^::ffff:/i, '').toLowerCase();
+  if (net.isIPv4(v)) {
+    const [a, b] = v.split('.').map(Number);
+    if (a === 0 || a === 127) return true; // unspecified / loopback
+    if (a === 169 && b === 254) return true; // link-local incl. cloud metadata
+    return false;
+  }
+  if (net.isIPv6(v)) {
+    if (v === '::1' || v === '::') return true; // loopback / unspecified
+    if (v.startsWith('fe80')) return true; // link-local
+    return false;
+  }
+  return false;
+}
+
+/**
+ * Like `assertSafeEgressUrl` but ALLOWS private LAN ranges + `.local` mDNS names
+ * (for LAN peer proxying, e.g. Portals reaching a peer ANTON on 192.168.x). Still
+ * blocks loopback and link-local/metadata. Honors ALLOWED_AGENT_HOSTS allowlist.
+ */
+export async function assertSafeLanEgressUrl(rawUrl: string): Promise<void> {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    throw new Error('URL is not valid');
+  }
+
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    throw new Error(`URL scheme not allowed: ${u.protocol}`);
+  }
+
+  const host = u.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+
+  if (ALLOWED_HOSTS.length > 0) {
+    if (!ALLOWED_HOSTS.includes(host)) {
+      throw new Error(`Host is not in ALLOWED_AGENT_HOSTS: ${host}`);
+    }
+    return;
+  }
+
+  if (host === 'localhost' || host.endsWith('.localhost')) {
+    throw new Error(`Host not allowed (loopback): ${host}`);
+  }
+
+  if (net.isIP(host)) {
+    if (isLoopbackOrLinkLocal(host)) throw new Error(`Target is a loopback/link-local address: ${host}`);
+    return;
+  }
+
+  let addresses: { address: string }[];
+  try {
+    addresses = await lookup(host, { all: true });
+  } catch {
+    throw new Error(`Cannot resolve host: ${host}`);
+  }
+  for (const a of addresses) {
+    if (isLoopbackOrLinkLocal(a.address)) {
+      throw new Error(`Host ${host} resolves to a loopback/link-local address`);
+    }
+  }
+}

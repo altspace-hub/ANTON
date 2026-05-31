@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBlockedIp, assertSafeEgressUrl } from '../../server/lib/ssrf-guard';
+import { isBlockedIp, assertSafeEgressUrl, isLoopbackOrLinkLocal, assertSafeLanEgressUrl } from '../../server/lib/ssrf-guard';
 
 describe('isBlockedIp', () => {
   it('blocks loopback / private / link-local / CGNAT IPv4', () => {
@@ -52,5 +52,36 @@ describe('assertSafeEgressUrl', () => {
 
   it('rejects a malformed URL', async () => {
     await expect(assertSafeEgressUrl('not a url')).rejects.toThrow();
+  });
+});
+
+// LAN-aware variant (Portals peer proxying): blocks loopback/link-local/metadata
+// but ALLOWS private LAN ranges, since LAN portals legitimately reach 192.168.x peers.
+describe('isLoopbackOrLinkLocal', () => {
+  it('blocks loopback + link-local/metadata only', () => {
+    for (const ip of ['127.0.0.1', '0.0.0.0', '169.254.169.254', '::1', 'fe80::1']) {
+      expect(isLoopbackOrLinkLocal(ip)).toBe(true);
+    }
+  });
+
+  it('ALLOWS private LAN ranges (the portal LAN feature)', () => {
+    for (const ip of ['192.168.1.10', '10.0.0.5', '172.16.0.1', '100.64.0.1', 'fc00::1']) {
+      expect(isLoopbackOrLinkLocal(ip)).toBe(false);
+    }
+  });
+});
+
+describe('assertSafeLanEgressUrl', () => {
+  it('allows a private LAN peer (192.168.x) but blocks loopback + metadata', async () => {
+    await expect(assertSafeLanEgressUrl('http://192.168.1.50:3001')).resolves.toBeUndefined();
+    await expect(assertSafeLanEgressUrl('http://10.0.0.9/api')).resolves.toBeUndefined();
+    await expect(assertSafeLanEgressUrl('http://127.0.0.1/x')).rejects.toThrow();
+    await expect(assertSafeLanEgressUrl('http://localhost/x')).rejects.toThrow();
+    await expect(assertSafeLanEgressUrl('http://169.254.169.254/latest')).rejects.toThrow();
+    await expect(assertSafeLanEgressUrl('http://[::1]/x')).rejects.toThrow();
+  });
+
+  it('rejects non-http(s) schemes', async () => {
+    await expect(assertSafeLanEgressUrl('file:///etc/passwd')).rejects.toThrow();
   });
 });

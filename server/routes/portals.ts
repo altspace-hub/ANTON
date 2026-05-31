@@ -26,6 +26,7 @@ import { z } from 'zod';
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { assertSafeLanEgressUrl } from '../lib/ssrf-guard.js';
 import { requireAuth } from '../middleware/auth.js';
 
 import { createPortalDatabaseService } from '../services/portals/portal-database-service.js';
@@ -1191,6 +1192,8 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       );
       if (remote?.origin_endpoint) {
         try {
+          // SSRF guard: block loopback/link-local/metadata; allow private LAN peers.
+          await assertSafeLanEgressUrl(remote.origin_endpoint);
           const r = await fetch(`${remote.origin_endpoint}/api/portals/visit/${encodeURIComponent(portalAddress)}/pages`);
           if (!r.ok) return res.status(r.status).json({ error: 'Remote returned non-OK' });
           return res.json(await r.json());
