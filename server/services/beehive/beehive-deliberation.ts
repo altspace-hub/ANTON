@@ -13,7 +13,7 @@ import type { DatabaseAdapter } from '../../db/database.js';
 import { createBeehiveState } from './beehive-state.js';
 import { createBeehiveKnowledge } from './beehive-knowledge.js';
 import { createSigningService } from '../community-signing-service.js';
-import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
+import { callChat, mapModelToProvider, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 
 /**
  * Wrap callChat in a hard timeout so a hung LLM provider can't block the
@@ -371,7 +371,7 @@ export async function createBeehiveDeliberation(db: DatabaseAdapter) {
     });
 
     const result = await callChatWithTimeout({
-      model: 'claude-sonnet-4-6',
+      model: mapModelToProvider('claude-sonnet-4-6'),
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -417,7 +417,7 @@ export async function createBeehiveDeliberation(db: DatabaseAdapter) {
     ).join('\n\n');
 
     const result = await callChatWithTimeout({
-      model: 'claude-sonnet-4-6',
+      model: mapModelToProvider('claude-sonnet-4-6'),
       system: `You are summarising one round of a multi-party reasoning deliberation in the BEEHIVE protocol.
 Produce a tight Markdown summary (≤200 words) covering:
 - the dominant positions in this round
@@ -460,7 +460,7 @@ Be neutral. Attribute claims to contributors when material. Do not evaluate qual
     ).join('\n\n');
 
     const result = await callChatWithTimeout({
-      model: 'claude-sonnet-4-6',
+      model: mapModelToProvider('claude-sonnet-4-6'),
       system: `You are measuring consensus across reasoning contributions in a multi-party deliberation.
 Output ONLY a single JSON object on one line, no preamble, no markdown fences:
 {"temperature": <0.0..1.0>, "rationale": "<one sentence>", "agreement_clusters": ["<short bullet>", ...], "disagreements": ["<short bullet>", ...]}

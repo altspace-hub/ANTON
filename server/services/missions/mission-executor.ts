@@ -10,7 +10,7 @@
 //
 // 'research' / 'analysis' / 'export' still fall back to an llm-style call.
 
-import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
+import { callChat, mapModelToProvider, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
 import { executeApiCall } from './executors/api-call-executor.js';
@@ -432,9 +432,11 @@ export function extractGrowBlocks(text: string): GrowBlock[] {
  * and concrete model overrides.
  */
 function resolveModel(tier: 'planning' | 'execution' | 'utility', _strategy: { planning_model?: string; execution_model?: string; utility_model?: string }): string {
-  if (tier === 'planning') return 'claude-opus-4-8';
-  if (tier === 'utility')  return 'claude-haiku-4-5-20251001';
-  return 'claude-sonnet-4-6';
+  // Map the Claude tier to the configured provider's equivalent (no-op when
+  // Anthropic is configured). Phase 2 will honour `_strategy.provider_preference`.
+  if (tier === 'planning') return mapModelToProvider('claude-opus-4-8');
+  if (tier === 'utility')  return mapModelToProvider('claude-haiku-4-5-20251001');
+  return mapModelToProvider('claude-sonnet-4-6');
 }
 
 // ── Conditional predicates ─────────────────────────────────────────────────

@@ -14,7 +14,7 @@ import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createBeehiveState } from './beehive-state.js';
 import { createBeehiveDeliberation } from './beehive-deliberation.js';
-import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
+import { callChat, mapModelToProvider, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 
 /** Hard timeout wrapper around callChat — 180s for the deep synthesis call. */
 async function callChatWithTimeout(config: StreamChatConfig, timeoutMs = 180_000): Promise<ChatResult> {
@@ -72,7 +72,7 @@ export async function createBeehiveSynthesis(db: DatabaseAdapter) {
     const consensusProgression = rounds.map(r => `Round ${r.round_number}: ${r.consensus_temperature != null ? `${(r.consensus_temperature * 100).toFixed(0)}%` : '—'}`).join(' → ');
 
     const result = await callChatWithTimeout({
-      model: 'claude-opus-4-8',
+      model: mapModelToProvider('claude-opus-4-8'),
       system: buildSynthesisSystemPrompt(hive.governance.consensus_mode, hive.governance.output_format, dissents.length > 0),
       messages: [{
         role: 'user',

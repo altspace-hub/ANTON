@@ -118,10 +118,10 @@ export async function createMarketWorkflowOrchestrator(
       }
       return text;
     }
-    // Fall back to existing callChat (provider-agnostic)
-    const { callChat } = await import('./provider-router.js');
+    // Fall back to existing callChat (provider-agnostic; honor the configured provider)
+    const { callChat, mapModelToProvider } = await import('./provider-router.js');
     const result = await callChat({
-      model: 'claude-haiku-4-5-20251001',
+      model: mapModelToProvider('claude-haiku-4-5-20251001'),
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,

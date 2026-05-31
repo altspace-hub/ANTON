@@ -5,7 +5,7 @@
 // user can pipe it through any subsequent export if they want a PDF.
 
 import type { RenderFn, RenderResult } from '../../renderer-registry.types.js';
-import { callChat } from '../../provider-router.js';
+import { callChat, mapModelToProvider } from '../../provider-router.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
 import { wrapUntrustedContent, INJECTION_GUARD_SUFFIX } from '../lib/prompt-injection-guard.js';
 
@@ -34,7 +34,7 @@ export const render: RenderFn = async (payload, context): Promise<RenderResult> 
 
   const userPrompt = `Rewrite the content below for a CEFR B1 reader. Preserve all structure and facts.\n\n${wrapUntrustedContent(markdown, 80_000)}${INJECTION_GUARD_SUFFIX}`;
   const chat = await Promise.race([
-    callChat({ model: MODEL, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.15 }),
+    callChat({ model: mapModelToProvider(MODEL), system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.15 }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`plain-language timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)),
   ]);
 

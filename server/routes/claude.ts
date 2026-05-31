@@ -1305,6 +1305,28 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     res.json({ models });
   });
 
+  // GET /api/ollama/status — health + installed-model count for the Local Models settings panel.
+  // (The panel renders available / baseUrl / modelCount / error from this.) Probes /api/tags
+  // directly so "unreachable" is distinguishable from "running with 0 models" — listOllamaModels
+  // swallows connection errors to [].
+  router.get('/ollama/status', async (_req, res) => {
+    const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    try {
+      const headers: Record<string, string> = {};
+      if (process.env.OLLAMA_AUTH_TOKEN) headers['Authorization'] = `Bearer ${process.env.OLLAMA_AUTH_TOKEN}`;
+      const r = await fetch(`${baseUrl}/api/tags`, { headers, signal: AbortSignal.timeout(3000) });
+      if (!r.ok) {
+        res.json({ available: false, baseUrl, modelCount: 0, models: [], error: `Ollama returned HTTP ${r.status}` });
+        return;
+      }
+      const data = (await r.json()) as { models?: Array<{ name: string }> };
+      const models = data.models?.map((m) => m.name) ?? [];
+      res.json({ available: true, baseUrl, modelCount: models.length, models });
+    } catch (err) {
+      res.json({ available: false, baseUrl, modelCount: 0, models: [], error: safeError(err) });
+    }
+  });
+
   // GET /api/claude/models-all — all models from MODEL_REGISTRY with key availability
   router.get('/claude/models-all', async (_req, res) => {
     const models = Object.entries(MODEL_REGISTRY).map(([id, config]) => ({
