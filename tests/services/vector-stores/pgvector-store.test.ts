@@ -87,7 +87,9 @@ describe('PgVectorStore.search', () => {
     await new PgVectorStore(db).search({ queryVector: vec1536(0.2), contentTypes: ['atom'], topK: 5 });
     const select = lastSelect(db);
     expect(select.sql).toContain('embedding_vec <=>');
-    expect(select.sql).toContain('embedding_dimension = ?');
+    // dimension is a LITERAL (not a bound param) so the partial HNSW index is usable
+    expect(select.sql).toContain('embedding_dimension = 1536');
+    expect(select.sql).not.toContain('embedding_dimension = ?');
     expect(select.sql).toContain('content_type IN (?)');
   });
 

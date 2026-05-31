@@ -130,12 +130,17 @@ export class PgVectorStore {
     }
 
     const literal = toVectorLiteral(queryVector);
+    // embedding_dimension is inlined as a LITERAL (it is an internal constant, not
+    // user input — no injection risk) so the planner can match the PARTIAL HNSW
+    // index predicate `WHERE embedding_dimension = 1536`. A bound parameter
+    // ($N = ?) is not provably equal to the literal under a generic plan, which
+    // makes the partial index ineligible and degrades the query to a seq scan.
     let sql =
       `SELECT id, content_type, content_id, content_text, metadata,
               1 - (embedding_vec <=> ?::vector) AS similarity
          FROM embeddings
-        WHERE embedding_vec IS NOT NULL AND embedding_dimension = ?`;
-    const args: unknown[] = [literal, PGVECTOR_DIM];
+        WHERE embedding_vec IS NOT NULL AND embedding_dimension = ${PGVECTOR_DIM}`;
+    const args: unknown[] = [literal];
 
     if (contentTypes && contentTypes.length > 0) {
       sql += ` AND content_type IN (${contentTypes.map(() => '?').join(',')})`;
