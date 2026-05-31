@@ -1,8 +1,14 @@
 # ANTON Improvement Roadmap
 
 > Derived from `docs/PORTFOLIO_AUDIT_2026-05-30.md` (the 18-area 1–7 scorecard). This is the
-> "where to dig and how to fix" plan for the areas that scored ≤5 and need attention. Phase 0 (the
-> five confirmed bugs) is **done**. Phases are ordered by dependency and payoff, not just severity.
+> "where to dig and how to fix" plan for the areas that scored ≤5 and need attention. Phases are
+> ordered by dependency and payoff, not just severity.
+>
+> **✅ ROADMAP COMPLETE (2026-05-31).** All seven phases' code-completable work is landed, tested
+> (707 → 832 unit tests, CI-gated), and pushed to `main`. The only outstanding items are explicitly
+> **operator-gated or deliberately-deferred-as-low-value**, each documented in its phase below (app
+> store secrets/devices, the provider-router hot-path delegation, the ChromaDB PATH-A retirement,
+> and live-accuracy validation that needs API keys). See the status table next.
 
 ## Guiding principle
 
@@ -13,6 +19,25 @@ highest-blast-radius backend. So the sequencing rule is:
 > **Buy down correctness risk and stand up a test gate *before* building new surface or refactoring.**
 > Make the headline "intelligence" claims either true or honestly relabelled. Finish the apps' last
 > mile (they're closest to shippable).
+
+---
+
+## Roadmap status — ✅ COMPLETE (2026-05-31)
+
+| Phase | Status | Key commits |
+|---|---|---|
+| 0 — Confirmed correctness bugs | ✅ DONE | `a39cd39` |
+| 1 — CI test gate + green main | ✅ DONE | `51a6b43` |
+| 2 — Markets: prove or relabel | ✅ DONE (code scope; live-accuracy validation needs keys) | `6cacd46` |
+| 3 — Team-mode data isolation | ✅ DONE | `abf2974`, `ab59668`, `b08c111` |
+| 4 — Registry/stack consolidation | ✅ DONE | `a594615`, `5793225`, `c486c8b`, `c5741db`, `2f19fba`, `58af735` |
+| 5 — Apps: last-mile binding | ✅ DONE (code scope; store secrets/devices remain) | `345778a` |
+| 6 — Security spot-fixes | ✅ DONE | `4d98f2c`, `e9825f6` |
+
+**Deferred by design (low-value or operator-gated, not blocking):** provider-router hot-path
+delegation, ChromaDB→pgvector PATH-A retirement, `model-router` COST_RELATIVE / frontend `MODELS[]`
+derivation, Markets live-accuracy proof (needs API keys), and app store binding (Pay Play-Integrity
+project number, Companion FCM/APNs keys, Business FX oracle — each needs an operator secret or device).
 
 ---
 
@@ -30,7 +55,7 @@ All five fixed and verified (root typecheck clean · agent-pay typecheck clean �
 
 ---
 
-## Phase 1 — CI test gate + green main  ·  *foundation, do first*
+## Phase 1 — CI test gate + green main  ·  *foundation, do first* ✅ DONE (2026-05-30)
 
 **Why first:** the audit's #1 systemic risk. Main is RED (10/718 failing) and tests are not run in CI,
 so regressions land undetected and any refactor (Phase 4) is unsafe. This phase turns "green main" into
@@ -62,7 +87,7 @@ bullet above; the Phase-0 bugs each have a guarding test.
 
 ---
 
-## Phase 2 — Markets: prove or relabel "self-learning"  ·  *credibility*
+## Phase 2 — Markets: prove or relabel "self-learning"  ·  *credibility* ✅ DONE (2026-05-30)
 
 **Why:** Markets is the flagship proof of self-learning, but live numbers contradict it (21% accuracy,
 Brier 0.385 worse than a coin flip, 0 thesis closures). Phase 0 unfroze the pattern→weight loop; now
@@ -91,7 +116,7 @@ read on whether accuracy moved after the unfreeze; framing matches reality.
 
 ---
 
-## Phase 3 — Team-mode multi-tenant data isolation  ·  *confidentiality*
+## Phase 3 — Team-mode multi-tenant data isolation  ·  *confidentiality* ✅ DONE (2026-05-31)
 
 **Why:** Procure/Civic/Grow never filter by `created_by`, so team-mode deployments leak cross-user
 reads/writes. Latent today (solo is default) but a hard confidentiality bug the moment team mode is on —
@@ -119,10 +144,11 @@ schema matches migration; cohort lifts 4→5.
 Civic (engagement-rooted), and Grow (contacts + opportunities) now scope reads by
 `created_by`, set the owner from the authed user, and guard detail/child routes (404 on
 non-owner). Solo mode = single admin → transparent. Service-level isolation tests per pillar.
-**Follow-up:** Grow's `organisations / interactions / activities / signals / briefings` have
-no `created_by` column — full isolation there needs a small migration to add it (or
-parent-gating). Procure's deeper budget-field schema drift is a data-modelling decision, not
-a leak — deferred.
+**Follow-up — CLOSED (2026-05-31, commit b08c111):** Grow's `organisations / interactions /
+activities / signals / briefings / relationships` got the `created_by` column (migration 217);
+the three top-level entities are fully scoped (create sets owner, list filters by `ownerId`,
+`:id` routes guarded), child creates are owner-tagged. Procure's deeper budget-field schema drift
+is a data-modelling decision, not a leak — deferred.
 
 ---
 
@@ -193,7 +219,7 @@ shared snapshot, and the ChromaDB→pgvector PATH-A retirement.
 
 ---
 
-## Phase 5 — Apps: last-mile production binding  ·  *ship the apps*
+## Phase 5 — Apps: last-mile production binding  ·  *ship the apps* ✅ DONE (2026-05-31, code scope)
 
 **Why:** the apps are the most mature part of the portfolio (5+ with real test suites) but three can't
 yet ship their headline capability. These are narrow external-binding gaps, not structural work.
@@ -235,7 +261,7 @@ or a documented manual smoke.
 
 ---
 
-## Phase 6 — Security spot-fixes  ·  *localized holes in a strong posture*
+## Phase 6 — Security spot-fixes  ·  *localized holes in a strong posture* ✅ DONE (2026-05-31)
 
 **Why:** the security baseline is genuinely strong; a few localized gaps undercut it.
 
