@@ -20,10 +20,29 @@ import { getProviderFromModelId } from './model-adapter.js';
 import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapter.js';
 import { streamOpenAI } from './adapters/openaiAdapter.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
-import { streamOllama } from './adapters/ollamaAdapter.js';
+import { streamOllama, callOllama } from './adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
+import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
+import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
 import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
+
+// ── OpenAI-compatible (compat:<slug>:<model>) endpoint resolution ──
+async function resolveCompatConfig(
+  modelId: string,
+  db?: import('../db/database.js').DatabaseAdapter,
+): Promise<{ baseUrl: string; apiKey?: string; extraHeaders?: Record<string, string>; model: string }> {
+  if (!db) throw new Error('Database adapter required to resolve a compat: model endpoint');
+  const slug = modelId.split(':')[1];
+  if (!slug) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
+  const endpoint = await resolveCustomEndpoint(db, slug);
+  if (!endpoint) {
+    throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
+  }
+  const parts = modelId.split(':');
+  const model = parts.length >= 3 ? parts.slice(2).join(':') : modelId;
+  return { baseUrl: endpoint.baseUrl, apiKey: endpoint.apiKey, extraHeaders: endpoint.extraHeaders, model };
+}
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -210,7 +229,7 @@ export async function streamChat(
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {
-    provider = getProviderFromModelId(modelId);
+    provider = getProviderFromModelId(modelId, config.db);
   } catch {
     provider = 'anthropic';
   }
@@ -299,7 +318,23 @@ export async function streamChat(
   // ── Ollama ──
   if (provider === 'ollama') {
     const result = await streamOllama({
-      model: modelId,
+      model: modelId.replace(/^ollama:/, ''),
+      system: config.system,
+      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      temperature,
+      maxTokens,
+    }, res);
+    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+  }
+
+  // ── OpenAI-compatible (compat:<slug>:<model>) ──
+  if (provider === 'openai_compatible') {
+    const compat = await resolveCompatConfig(modelId, config.db);
+    const result = await streamOpenAICompatible({
+      baseUrl: compat.baseUrl,
+      apiKey: compat.apiKey,
+      extraHeaders: compat.extraHeaders,
+      model: compat.model,
       system: config.system,
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature,
@@ -515,7 +550,7 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {
-    provider = getProviderFromModelId(modelId);
+    provider = getProviderFromModelId(modelId, config.db);
   } catch {
     provider = 'anthropic';
   }
@@ -699,6 +734,34 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       inputTokens: result.usage.inputTokens,
       outputTokens: result.usage.outputTokens,
     };
+  }
+
+  // ── Ollama (non-streaming) ──
+  if (provider === 'ollama') {
+    const result = await callOllama({
+      model: modelId.replace(/^ollama:/, ''),
+      system: config.system,
+      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      temperature: config.temperature,
+      maxTokens,
+    });
+    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+  }
+
+  // ── OpenAI-compatible (non-streaming) ──
+  if (provider === 'openai_compatible') {
+    const compat = await resolveCompatConfig(modelId, config.db);
+    const result = await callOpenAICompatible({
+      baseUrl: compat.baseUrl,
+      apiKey: compat.apiKey,
+      extraHeaders: compat.extraHeaders,
+      model: compat.model,
+      system: config.system,
+      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      temperature: config.temperature,
+      maxTokens,
+    });
+    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
 
   throw new Error(`Non-streaming not implemented for provider: ${provider}`);

@@ -21,6 +21,8 @@ import { streamMistral } from '../services/adapters/mistralAdapter.js';
 import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from '../services/adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from '../services/adapters/azureOpenaiAdapter.js';
+import { streamOpenAICompatible } from '../services/adapters/openaiCompatibleAdapter.js';
+import { resolveCustomEndpoint } from './custom-model-endpoints.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
@@ -144,8 +146,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // They are not in the MODEL_REGISTRY so we detect them by prefix first.
       const isOllamaModel = selectedModel.startsWith('ollama:');
       const isAzureModel = selectedModel.startsWith('azure:');
-      const modelConfig = (isOllamaModel || isAzureModel) ? undefined : await getModelConfig(selectedModel, db);
-      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : (modelConfig?.provider || 'anthropic');
+      // compat:<slug>:<model> — a user-configured OpenAI-compatible endpoint
+      // (OpenRouter/Together/Groq/DeepSeek/Qwen/vLLM/…). Detected by prefix here so
+      // it never falls through to getModelConfig=undefined → provider='anthropic'
+      // (which silently ran the request on Claude instead of the chosen model).
+      const isCompatModel = selectedModel.startsWith('compat:');
+      const modelConfig = (isOllamaModel || isAzureModel || isCompatModel) ? undefined : await getModelConfig(selectedModel, db);
+      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : (modelConfig?.provider || 'anthropic');
 
       if (provider === 'anthropic') {
         if (!isApiKeyConfigured()) {
@@ -154,6 +161,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       } else if (provider === 'azure_openai') {
         // Azure credentials are stored in DB, not env vars — validated at stream time
+      } else if (provider === 'openai_compatible') {
+        // Credentials live in the custom_model_endpoints table — validated at stream time
       } else if (provider !== 'ollama' && !isApiKeyAvailable(selectedModel)) {
         const keyName = modelConfig?.requiresApiKey || 'API_KEY';
         res.status(500).json({ error: `${keyName} not configured. Add it in Settings or your .env file.` });
@@ -1157,6 +1166,23 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // Strip the 'ollama:' prefix to get the bare Ollama model name
             const ollamaModel = selectedModel.replace(/^ollama:/, '');
             result = await streamOllama({ model: ollamaModel, system: composedPrompt, messages: plainMessages, temperature, maxTokens }, res);
+          } else if (provider === 'openai_compatible') {
+            // compat:<slug>:<model> — resolve the user's configured OpenAI-compatible endpoint
+            const slug = selectedModel.split(':')[1];
+            if (!slug) throw new Error(`Invalid compat model id: ${selectedModel} (expected compat:<slug>:<model>)`);
+            const endpoint = await resolveCustomEndpoint(db, slug);
+            if (!endpoint) throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
+            const bareModel = selectedModel.split(':').slice(2).join(':');
+            result = await streamOpenAICompatible({
+              baseUrl: endpoint.baseUrl,
+              apiKey: endpoint.apiKey,
+              extraHeaders: endpoint.extraHeaders,
+              model: bareModel,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+            }, res);
           } else {
             throw new Error(`Unsupported provider: ${provider}`);
           }
