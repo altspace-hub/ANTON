@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MODELS } from '@/lib/constants';
 import type { ModelId, ModelInfo } from '@/lib/types';
-import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle, Cloud } from 'lucide-react';
+import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle, Cloud, Zap } from 'lucide-react';
 
 // MGOV-03: Compute days until a model's EOL date (negative = already past)
 function daysUntilEol(eolDate: string): number {
@@ -52,11 +52,21 @@ interface AzureDeployment {
   isActive: boolean;
 }
 
+/** A user-configured OpenAI-compatible endpoint (OpenRouter / Together / Groq / DeepSeek / vLLM / …). */
+interface CompatEndpoint {
+  slug: string;
+  displayName: string;
+  defaultModel: string | null;
+  availableModels: string[];
+  enabled: boolean;
+}
+
 export default function ModelSelector({ value, onChange, variant = 'dropdown' }: ModelSelectorProps) {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [ollamaChecked, setOllamaChecked] = useState(false);
   const [customModels, setCustomModels] = useState<ModelInfo[]>([]);
   const [azureDeployments, setAzureDeployments] = useState<AzureDeployment[]>([]);
+  const [compatEndpoints, setCompatEndpoints] = useState<CompatEndpoint[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +111,18 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
       });
   }, []);
 
+  // Fetch OpenAI-compatible custom endpoints (compat:<slug>:<model>)
+  useEffect(() => {
+    fetch('/api/settings/model-endpoints')
+      .then((r) => r.ok ? r.json() : { endpoints: [] })
+      .then((data: { endpoints?: CompatEndpoint[] }) => {
+        setCompatEndpoints((data.endpoints ?? []).filter((e) => e.enabled));
+      })
+      .catch(() => {
+        setCompatEndpoints([]);
+      });
+  }, []);
+
   // Close dropdown on outside click
   useEffect(() => {
     if (!open) return;
@@ -118,8 +140,22 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   const azureMatch = typeof value === 'string' && value.startsWith('azure:')
     ? azureDeployments.find(d => d.deploymentName === value.replace('azure:', ''))
     : null;
+  // Flatten enabled OpenAI-compatible endpoints into compat:<slug>:<model> options.
+  const compatOptions = compatEndpoints.flatMap((ep) => {
+    const models = ep.availableModels.length > 0
+      ? ep.availableModels
+      : ep.defaultModel ? [ep.defaultModel] : [];
+    return models.map((m) => ({
+      id: `compat:${ep.slug}:${m}` as ModelId,
+      model: m,
+      endpointName: ep.displayName,
+    }));
+  });
+  const isCompatModel = typeof value === 'string' && value.startsWith('compat:');
+  const compatBareModel = isCompatModel ? (value as string).split(':').slice(2).join(':') : '';
   const currentLabel = currentModel?.label
     || (azureMatch ? `Azure: ${azureMatch.displayName || azureMatch.deploymentName}` : null)
+    || (isCompatModel ? compatBareModel : null)
     || (typeof value === 'string' && value.startsWith('ollama:') ? value.replace('ollama:', '') : value);
   const isCustomModel = customModels.some((m) => m.id === value);
   const isAzureModel = !!azureMatch;
@@ -150,6 +186,12 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
               <span className="flex shrink-0 items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400">
                 <Sparkles className="h-2.5 w-2.5" />
                 Custom
+              </span>
+            )}
+            {isCompatModel && (
+              <span className="flex shrink-0 items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400">
+                <Zap className="h-2.5 w-2.5" />
+                API
               </span>
             )}
           </div>
@@ -300,6 +342,44 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
               </>
             )}
 
+            {/* Cost-effective (OpenAI-compatible) endpoints */}
+            {compatOptions.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
+                  <Zap className="h-3 w-3 text-amber-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">
+                    Cost-effective (API)
+                  </span>
+                </div>
+                {compatOptions.map((opt) => {
+                  const isActive = value === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => { onChange(opt.id); setOpen(false); }}
+                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                        isActive
+                          ? 'bg-adv-teal-dim text-adv-teal'
+                          : 'hover:bg-adv-dark text-adv-off-white'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium truncate ${isActive ? 'text-adv-teal' : ''}`}>
+                            {opt.model}
+                          </span>
+                          <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400">
+                            {opt.endpointName}
+                          </span>
+                        </div>
+                      </div>
+                      {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
             {/* Ollama divider + models */}
             {ollamaChecked && (
               <>
@@ -436,6 +516,47 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                     <p className="mt-1 text-xs text-adv-gray">
                       ${model.inputCostPer1M}/M input · ${model.outputCostPer1M}/M output
                     </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Cost-effective (OpenAI-compatible) endpoints */}
+        {compatOptions.length > 0 && (
+          <div className="pt-1">
+            <div className="mb-1.5 flex items-center gap-2">
+              <Zap className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray">
+                Cost-effective (API)
+              </span>
+            </div>
+            {compatOptions.map((opt) => {
+              const isActive = value === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => onChange(opt.id)}
+                  className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                    isActive
+                      ? 'border-adv-teal bg-adv-teal-dim'
+                      : 'border-border bg-adv-card hover:border-adv-gray-med'
+                  }`}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center ${isActive ? 'border-adv-teal' : 'border-adv-gray-med'}`}>
+                    {isActive && <div className="h-2 w-2 rounded-full bg-adv-teal" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                        {opt.model}
+                      </span>
+                      <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400">
+                        {opt.endpointName}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-adv-gray">OpenAI-compatible endpoint · no extra setup needed.</p>
                   </div>
                 </button>
               );

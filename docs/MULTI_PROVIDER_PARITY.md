@@ -119,8 +119,12 @@ mis-routes to Claude) · — n/a (provider genuinely can't).
   Claude. Added the dispatch branch (resolveCustomEndpoint → `streamOpenAICompatible`) + skipped env-key
   validation (creds live in `custom_model_endpoints`). *(Deferred: unifying the two `ModelProvider` type
   unions / a `getModelConfig` compat branch — not needed for the bug fix since claude.ts prefix-detects.)*
-- **M2. Surface `compat:` endpoints in `ModelSelector`** — fetch `/api/settings/model-endpoints` and render
-  `compat:<slug>:<model>` (Settings already promises this; the picker never reads it).
+- **M2. ✅ DONE — Surface `compat:` endpoints in `ModelSelector`.** The picker now fetches
+  `/api/settings/model-endpoints`, flattens each enabled endpoint's `availableModels` (or `defaultModel`)
+  into `compat:<slug>:<model>` options, and renders a "Cost-effective (API)" section in both the dropdown
+  and cards variants (with an `API` badge + correct selected-label handling). Together with M1+M3, hosted
+  Qwen/DeepSeek/OpenRouter/Together models are now **selectable and runnable end-to-end** (the Settings
+  panel's "selectable in every ModelSelector" promise is finally true).
 - **M3. ✅ DONE — `provider-router` ollama + openai_compatible branches.** `callChat` gained
   non-streaming `ollama` + `openai_compatible` branches (new `callOllama` / `callOpenAICompatible`
   adapter helpers) — agents + specialty routes no longer throw "Non-streaming not implemented" on
