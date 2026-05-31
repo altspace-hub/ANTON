@@ -160,7 +160,7 @@ export function createPathfinderRoutes(
         await dispatchDeepSearch(db, query.trim(), uid, threadId, documentContext, anthropic, callbacks, abortController.signal, searchContext, searchMode);
       }
     } catch (err) {
-      sendEvent(res, { type: 'error', message: String(err) });
+      sendEvent(res, { type: 'error', message: safeError(err) });
     }
 
     res.write('data: [DONE]\n\n');
@@ -186,7 +186,7 @@ export function createPathfinderRoutes(
       }, abortController.signal);
       sendEvent(res, { type: 'followup_complete', followUpId: result.id });
     } catch (err) {
-      sendEvent(res, { type: 'error', message: String(err) });
+      sendEvent(res, { type: 'error', message: safeError(err) });
     }
 
     res.write('data: [DONE]\n\n');

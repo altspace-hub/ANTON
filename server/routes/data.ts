@@ -5,6 +5,7 @@
  */
 
 import express, { Request, Response } from 'express';
+import { safeError } from '../lib/error-response.js';
 import {
   importData,
   exportData,
@@ -67,7 +68,7 @@ router.post('/import', async (req: Request, res: Response) => {
     console.error('[data/import] Error:', error);
     res.status(500).json({
       error: 'Import failed',
-      message: (error as Error).message,
+      message: safeError(error),
     });
   }
 });
@@ -119,7 +120,7 @@ router.post('/transform', async (req: Request, res: Response) => {
     console.error('[data/transform] Error:', error);
     res.status(500).json({
       error: 'Transform failed',
-      message: (error as Error).message,
+      message: safeError(error),
     });
   }
 });
@@ -180,7 +181,7 @@ router.post('/merge', async (req: Request, res: Response) => {
     console.error('[data/merge] Error:', error);
     res.status(500).json({
       error: 'Merge failed',
-      message: (error as Error).message,
+      message: safeError(error),
     });
   }
 });
@@ -219,7 +220,7 @@ router.post('/export', async (req: Request, res: Response) => {
     console.error('[data/export] Error:', error);
     res.status(500).json({
       error: 'Export failed',
-      message: (error as Error).message,
+      message: safeError(error),
     });
   }
 });
@@ -283,7 +284,7 @@ router.post('/preview', async (req: Request, res: Response) => {
     console.error('[data/preview] Error:', error);
     res.status(500).json({
       error: 'Preview failed',
-      message: (error as Error).message,
+      message: safeError(error),
     });
   }
 });

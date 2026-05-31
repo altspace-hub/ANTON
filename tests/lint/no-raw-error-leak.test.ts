@@ -16,9 +16,15 @@ import { join } from 'path';
 
 const ROUTES_DIR = join(process.cwd(), 'server', 'routes');
 
-const RAW = String.raw`(String\([A-Za-z_$][\w$]*\)|\(?[A-Za-z_$][\w$]*( as Error)?\)?\.message)`;
-const LEAK_RES_JSON = new RegExp(String.raw`\.json\(\{[^}]*error:\s*${RAW}`);
-const LEAK_SSE = new RegExp(String.raw`JSON\.stringify\(\{[^}]*error:\s*${RAW}`);
+// A raw error is String(<var>) or an error-named var's .message (err/error/e/ex/
+// exception) — the latter is restricted to error-like receivers so a controlled
+// handler-result message (e.g. `r.message`) is NOT flagged.
+const RAW = String.raw`(String\([A-Za-z_$][\w$]*\)|\(?(err|error|e|ex|exception)( as Error)?\)?\.message)`;
+// Client-facing fields that must be stripped in prod: error / detail / message.
+const FIELD = String.raw`(error|detail|message)`;
+const LEAK_RES_JSON = new RegExp(String.raw`\.json\(\{[^}]*${FIELD}:\s*${RAW}`);
+// SSE frames go out via JSON.stringify({...}) or a sendEvent(res, {...}) helper.
+const LEAK_SSE = new RegExp(String.raw`(JSON\.stringify|sendEvent)\([^{]*\{[^}]*${FIELD}:\s*${RAW}`);
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
