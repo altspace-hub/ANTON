@@ -126,7 +126,7 @@ a leak — deferred.
 
 ---
 
-## Phase 4 — Consolidate duplicated registries & parallel stacks  ·  *structural*
+## Phase 4 — Consolidate duplicated registries & parallel stacks  ·  *structural* ✅ DONE (2026-05-31)
 
 **Why:** 5 model registries, 2 routing stacks, and 2 RAG embedding paths each already produced a
 divergence bug (Haiku pricing/ceiling, phantom `gpt-5.4`, stale `model-router` Sonnet 4.5, OpenAI-vs-
@@ -157,7 +157,7 @@ path; one RAG embedding path; docs match runtime; the next model update is a one
 
 **Effort:** L. **Do AFTER Phase 1** (tests make the refactor safe).
 
-**Status (2026-05-30): SAFE scope DONE.** `token-estimator.ts` + `audit.ts` now delegate to
+**Status (2026-05-30): SAFE scope DONE; full scope completed 2026-05-31 (see below).** `token-estimator.ts` + `audit.ts` now delegate to
 `model-capabilities.ts::estimateCost` (the SoT) — a price update is a one-file edit; the consistency
 test was extended to fail on any future server-side pricing drift. Fixed a real display bug
 (StatusIndicator priced Sonnet 4.6 sessions as Opus). Docs corrected to match runtime: vector RAG
@@ -171,7 +171,7 @@ per merge) and resolved by evidence:**
   presentation supplement. `gpt-5.4` (a selectable model with no caps entry → estimateCost returned 0)
   added to caps. `GET /claude/models` (a third, user-visible table still showing stale Haiku $0.80/$4)
   now derives its prices from the SoT — bug fixed.
-- **`provider-router.ts` → DO-NOT-DO-AS-FRAMED; safe slice DONE** (commit pending). "Removing" it is
+- **`provider-router.ts` → DO-NOT-DO-AS-FRAMED; safe slice DONE** (commit 2f19fba). "Removing" it is
   reckless: **42** static importers (the "18" above was a real undercount), and it exposes a tier API
   (`large/medium/small` + `streamChat`/`callChat`) that `unified-llm-client` does not. The delegation
   refactor's headline benefit (fix Anthropic caching-bypass) is overstated — `StreamChatConfig` has no
