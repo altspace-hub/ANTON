@@ -12,7 +12,8 @@
 > The scorecard and findings below are the **pre-remediation snapshot** taken 2026-05-30. In the days
 > after, the full `docs/IMPROVEMENT_ROADMAP.md` was executed and every focus area was worked. The 1-7
 > scores are **not** re-scored here (that needs a fresh audit run) — this section records what changed so
-> the snapshot is not mistaken for the current state.
+> the snapshot is not mistaken for the current state. **A full re-score against current `main` is in
+> `docs/PORTFOLIO_AUDIT_2026-05-31.md`** (7 areas +1, 11 flat, 0 regressions; median now 5).
 
 **The 5 confirmed bugs (focus ①): all fixed** — commit `a39cd39`, with guard tests
 (`coerce-decision.test.ts`, `module-area-integrity.test.ts`). See §6.
