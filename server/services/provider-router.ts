@@ -138,7 +138,7 @@ export function mapModelToProvider(claudeModelId: string): string {
  * Claude: { type, name, description, input_schema }
  * Mistral/OpenAI: { type: "function", function: { name, description, parameters } }
  */
-function convertToolsForProvider(
+export function convertToolsForProvider(
   tools: Array<{ type: string; name?: string; [key: string]: unknown }>,
   provider: string
 ): unknown[] | undefined {
@@ -167,7 +167,7 @@ function convertToolsForProvider(
  * switch to the Magistral reasoning model equivalent.
  * think_hard stays on the standard model (Large/Medium/Small are already capable).
  */
-function resolveMistralThinking(
+export function resolveMistralThinking(
   modelId: string,
   thinkingLevel?: string
 ): { model: string; promptMode?: string } {

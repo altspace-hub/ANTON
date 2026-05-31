@@ -163,9 +163,33 @@ test was extended to fail on any future server-side pricing drift. Fixed a real 
 (StatusIndicator priced Sonnet 4.6 sessions as Opus). Docs corrected to match runtime: vector RAG
 uses **OpenAI** embeddings (not Ollama; keyword fallback without `OPENAI_API_KEY`) in
 `RAG_ARCHITECTURE.md` / `CLAUDE.md` / `.env.example`; `model-router.ts` stale Sonnet-4.5 drift noted.
-**Deferred (risky, documented):** deleting `MODEL_REGISTRY` (async + DB-backed `getModelConfig`, adapter-only
-fields), removing `provider-router.ts` (18 route consumers), deriving `model-router` COST_RELATIVE, deriving
-the frontend `MODELS[]`/StatusIndicator from a shared snapshot, and migrating RAG onto pgvector.
+**Status (2026-05-31): the three deferred "risky merges" investigated (plan + adversarial critique
+per merge) and resolved by evidence:**
+- **`MODEL_REGISTRY` → DONE** (commit c486c8b). NOT deleted — the async DB-backed `getModelConfig`
+  resolver (custom slots + Azure deployments) stays. Instead `MODEL_REGISTRY` is now DERIVED from
+  `MODEL_CAPABILITIES` (pricing/context/output/provider live in one place) + a co-located
+  presentation supplement. `gpt-5.4` (a selectable model with no caps entry → estimateCost returned 0)
+  added to caps. `GET /claude/models` (a third, user-visible table still showing stale Haiku $0.80/$4)
+  now derives its prices from the SoT — bug fixed.
+- **`provider-router.ts` → DO-NOT-DO-AS-FRAMED; safe slice DONE** (commit pending). "Removing" it is
+  reckless: **42** static importers (the "18" above was a real undercount), and it exposes a tier API
+  (`large/medium/small` + `streamChat`/`callChat`) that `unified-llm-client` does not. The delegation
+  refactor's headline benefit (fix Anthropic caching-bypass) is overstated — `StreamChatConfig` has no
+  `staticSystemPrompt` split and the specialty calls are mostly one-shot monolithic prompts (~0 cache
+  hits), while delegation risks real divergence (tools-dropped-under-thinking, seed/temperature loss,
+  maxTokens, SSE frame shape across 40+ frontend parsers). Shipped the genuinely-valuable slice:
+  14 characterization tests locking the provider-router-unique contract (tier resolution, Claude→provider
+  mapping, tool-format conversion, Magistral reasoning switch). The hot-path delegation stays DEFERRED
+  until a concrete cost signal justifies it; do it then ONE branch at a time, easiest-first, env-gated.
+- **RAG → pgvector → DONE (PATH B only)** (commit c5741db). The ChromaDB collection rip-out (PATH A) is
+  high-blast/low-value and stays deferred. Added an opt-in `PgVectorStore` behind the existing
+  `VectorStoreAdapter` seam (`VECTOR_BACKEND=pgvector`), default-off + additive (migration 218 non-fatal,
+  `POST /embeddings/backfill-vec` to enable, auto-fallback to JS cosine). Closed the zero-vector NaN,
+  non-1536-dimension, and stale-vec failure modes the review flagged.
+
+**Still deferred (genuinely low-value or operator-gated):** the `provider-router` hot-path delegation
+(above), deriving `model-router` COST_RELATIVE, deriving the frontend `MODELS[]`/StatusIndicator from a
+shared snapshot, and the ChromaDB→pgvector PATH-A retirement.
 
 ---
 
