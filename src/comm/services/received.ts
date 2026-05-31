@@ -36,15 +36,60 @@ export interface FreshIncoming {
 export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
   const meta = await getActiveWalletMeta();
   if (!meta) return [];
+  const fresh: FreshIncoming[] = [];
+  const existing = await listTxs(2000).catch(() => [] as WalletTx[]);
+  const knownHashes = new Set<string>(
+    existing.map(t => t.txHash).filter((h): h is string => !!h),
+  );
+
+  // ── 1) LIGHT path — UTXOs (+ /transaction for the sender) ───────────
+  // Unspent outputs to our address ARE the "money is here now" receipts
+  // that back the balance. Public reads — they work even when the hub has
+  // ISO storage disabled. The shared knownHashes set already contains our
+  // OWN sends (the unified ledger records them), so their change outputs
+  // are naturally skipped here.
+  try {
+    const rpc = await getRpc();
+    const utxos = await rpc.getUtxos(meta.address);
+    const byTx = new Map<string, number>();
+    for (const u of utxos) byTx.set(u.tx_id, (byTx.get(u.tx_id) ?? 0) + u.amount);
+    for (const [txId, amountSat] of byTx) {
+      if (knownHashes.has(txId)) continue;
+      let fromAddress = '';
+      let receivedAt = Date.now();
+      try {
+        const t = await rpc.getTransaction(txId);
+        const s = extractSender(t); if (s) fromAddress = s;
+        const ts = extractTime(t); if (ts) receivedAt = ts;
+      } catch { /* sender/time best-effort — amount + receipt are still solid */ }
+      if (fromAddress && fromAddress === meta.address) continue; // defence-in-depth self-send
+      // 1 FTC = 100_000_000 satoshi = 1_000_000 µFTC → µFTC = sat / 100.
+      const tx = await recordTx({
+        kind: 'receive',
+        counterparty: fromAddress || '—',
+        amountMicroFtc: BigInt(Math.round(amountSat / 100)).toString(),
+        fiatValueAtTx: 0,
+        fiatCurrency: 'FTC',
+        ref: null,
+        txHash: txId,
+        jurisdictionAtTx: null,
+        ts: receivedAt,
+        walletAddress: meta.address,
+      });
+      knownHashes.add(txId);
+      fresh.push({ tx });
+    }
+  } catch { /* light path unreachable (offline / hub error) — fall through to ISO */ }
+
+  // ── 2) FULL ISO path — credentialed /iso_received ──────────────────
+  // The whole PACS.008 envelope (remittance, debtor name, structured refs)
+  // and spent receipts no longer in the UTXO set. Best-effort — the hub
+  // may have ISO storage disabled (405), in which case the light path
+  // above already captured the live receipts.
   try {
     const rpc = await getRpc();
     const raw = await rpc.getIsoReceived(meta.address);
     const items = extractItems(raw);
-    const existing = await listTxs(2000);
-    const knownHashes = new Set<string>(
-      existing.map(t => t.txHash).filter((h): h is string => !!h),
-    );
-    const fresh: FreshIncoming[] = [];
     for (const item of items) {
       const normalised = normaliseItem(item, meta.address);
       if (!normalised) continue;
@@ -66,10 +111,33 @@ export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
       knownHashes.add(normalised.txHash);
       fresh.push({ tx, fromName: normalised.fromName });
     }
-    return fresh;
-  } catch {
-    return [];
-  }
+  } catch { /* ISO endpoint down / disabled → light path covers live funds */ }
+
+  return fresh;
+}
+
+/** Best-effort sender extraction from a `/transaction` response. */
+function extractSender(tx: unknown): string | undefined {
+  const v = pick(tx, [
+    ['inputs', '0', 'address'],
+    ['vin', '0', 'address'],
+    ['from_address'], ['fromAddress'], ['sender'], ['originator_address'],
+    ['document', 'FIToFICstmrCdtTrf', 'CdtTrfTxInf', '0', 'DbtrAcct', 'Id', 'Othr', 'Id'],
+    ['CdtTrfTxInf', '0', 'DbtrAcct', 'Id', 'Othr', 'Id'],
+  ]);
+  return typeof v === 'string' && v ? v : undefined;
+}
+
+/** Best-effort timestamp (ms) from a `/transaction` response. */
+function extractTime(tx: unknown): number | undefined {
+  const v = pick(tx, [
+    ['timestamp'], ['block_timestamp'], ['block_timestamp_unix'], ['received_at'],
+    ['CreDtTm'],
+    ['document', 'FIToFICstmrCdtTrf', 'GrpHdr', 'CreDtTm'],
+  ]);
+  if (typeof v === 'number' && v > 0) return v < 1e12 ? v * 1000 : v;
+  if (typeof v === 'string') { const t = Date.parse(v); return Number.isFinite(t) ? t : undefined; }
+  return undefined;
 }
 
 // ── Response parsing ────────────────────────────────────────────────

@@ -17,6 +17,7 @@
 import { rpc } from '@futurechain/sdk';
 import { getInstallToken } from './enrollment';
 import { getSecure, setSecure, removeSecure } from './secure-store';
+import { httpFetch } from './native-http';
 
 export const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
 const ENDPOINT_KEY = 'fc.rpc.endpoint';
@@ -43,13 +44,27 @@ export async function setEndpoint(url: string | null): Promise<void> {
 export async function getRpc(): Promise<rpc.RpcClient> {
   if (cached) return cached;
   const endpoint = await getEndpoint();
-  const apiKey = await getInstallToken(endpoint);
-  cached = new rpc.RpcClient({
+  // Public reads (/balance, /get_utxos, /transaction) need no token, so a
+  // /enroll failure must NOT block them. Enrol best-effort; on failure the
+  // client is read-only and is NOT cached, so the next call retries
+  // enrolment rather than being stranded keyless on the submit path.
+  let apiKey: string | undefined;
+  try {
+    apiKey = await getInstallToken(endpoint);
+  } catch {
+    apiKey = undefined;
+  }
+  const client = new rpc.RpcClient({
     endpoint,
     apiKey,
+    // Native HTTP on-device → bypasses the WebView CORS layer that
+    // otherwise 403s every hub call from the https://localhost origin.
+    // On web this resolves to the platform fetch (unchanged behaviour).
+    fetch: httpFetch,
     timeoutMs: 15_000,
   });
-  return cached;
+  if (apiKey) cached = client;
+  return client;
 }
 
 export function resetRpc(): void {

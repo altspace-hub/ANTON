@@ -14,6 +14,7 @@
  */
 import { rpc } from '@futurechain/sdk';
 import { getSecure, setSecure, removeSecure } from './secure-store';
+import { httpFetch } from './native-http';
 
 export const DEFAULT_ENDPOINT = 'https://rpc.futurechain.eu';
 const ENDPOINT_KEY = 'fc.rpc.endpoint';
@@ -40,7 +41,14 @@ export async function setEndpoint(url: string | null): Promise<void> {
 export async function getRpc(): Promise<rpc.RpcClient> {
   if (cached) return cached;
   const endpoint = await getEndpoint();
-  cached = new rpc.RpcClient({ endpoint, timeoutMs: 15_000 });
+  cached = new rpc.RpcClient({
+    endpoint,
+    // Native HTTP on-device → bypasses the WebView CORS 403 from the
+    // https://localhost origin so balance reads + the /iso_received poll
+    // work on a phone. On web this resolves to the platform fetch.
+    fetch: httpFetch,
+    timeoutMs: 15_000,
+  });
   return cached;
 }
 
