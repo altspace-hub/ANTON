@@ -5,6 +5,35 @@
 > code with file-level evidence, then consolidated by a synthesis pass. Full raw output: workflow task
 > `wrytst9vp`. This document is the durable reference; re-run the audit after major changes.
 
+---
+
+## Remediation status — ✅ ALL FINDINGS ADDRESSED (2026-05-31)
+
+> The scorecard and findings below are the **pre-remediation snapshot** taken 2026-05-30. In the days
+> after, the full `docs/IMPROVEMENT_ROADMAP.md` was executed and every focus area was worked. The 1-7
+> scores are **not** re-scored here (that needs a fresh audit run) — this section records what changed so
+> the snapshot is not mistaken for the current state.
+
+**The 5 confirmed bugs (focus ①): all fixed** — commit `a39cd39`, with guard tests
+(`coerce-decision.test.ts`, `module-area-integrity.test.ts`). See §6.
+
+**The 7 ranked focus areas: all addressed** (roadmap complete — every phase ✅):
+
+| Focus | Outcome | Commits |
+|---|---|---|
+| ② CI-gated testing | Main **RED 10/718 → GREEN, CI-gated**; unit suite 707 → **832**; pure-core + guard suites added (translateSql, ISO-week, model-registry, no-raw-error-leak, isolation, loop-health, pgvector, provider-router) | `51a6b43` |
+| ③ Markets credibility | New `checkMarketsLoopHealth` silent-failure detector + `GET /markets/loop-health`; tautological conditional-accuracy signal removed; "self-learning" → "instrumented for learning" in UI/README/marketing/CLAUDE.md. *Live-accuracy proof still needs API keys.* | `6cacd46` |
+| ④ Team-mode isolation | Procure (cycle-rooted), Civic (engagement-rooted), Grow (all entities, migration 217) now scope reads by `created_by`, set the owner from the authed user, and guard detail/child routes (404 on non-owner) | `abf2974`, `ab59668`, `b08c111` |
+| ⑤ Registry/stack consolidation | `model-capabilities.ts` is the SoT; `MODEL_REGISTRY` + `token-estimator`/`audit` pricing **derived** from it; the `/claude/models` price-drift table fixed; pgvector backend added behind the existing `VectorStoreAdapter` seam (opt-in, default-off). provider-router removal found reckless (**42** importers, not 18) → its contract locked with tests, hot-path delegation deferred-by-design. | `a594615`, `5793225`, `c486c8b`, `c5741db`, `2f19fba`, `58af735` |
+| ⑥ App store binding | Code-now items done (Comm per-wallet ledger scoping, Agent Pay attestation→submit). *Pay Play-Integrity number, Companion FCM/APNs keys, Business FX remain operator-gated.* | `345778a` |
+| ⑦ Security spot-fixes | SSRF egress guard (`ssrf-guard.ts`) + rate-limit on `/agents/public/*`; `bridge.ts` decrypted-body log deleted; **339** raw error responses → `safeError()` (+ CI guard); migration runner fail-fast under `pg_advisory_xact_lock` | `4d98f2c`, `e9825f6` |
+
+**Net effect on the two systemic weaknesses:** (1) **testing** — the #1 gap — is closed at the
+suite/CI level (RED→GREEN, 832 tests, gate enforced), though deep coverage of every engine path is still
+maturing; (2) the **claim-vs-reality** gap is addressed by relabelling unproven claims and adding the
+loop-health detector, while the *proof* of live self-learning still awaits API-keyed runs. **A re-audit
+is the right way to refresh the 1-7 scores against this new baseline.**
+
 ## 1-7 rubric
 
 | Score | Meaning |
@@ -41,6 +70,10 @@ But two **systemic weaknesses gate trustworthiness**:
 > **The product is most credible where it is deterministic and least credible where it claims emergent
 > intelligence.** The next block of effort should buy down correctness risk in a handful of confirmed
 > one-line-class bugs and stand up CI-gated tests — not build new surface.
+
+> **Update (2026-05-31):** both systemic weaknesses have since been worked — the test suite is GREEN +
+> CI-gated (RED 10/718 → 832 passing) and the unproven "self-learning" claims were relabelled + given a
+> loop-health detector. See **Remediation status** above for the per-finding outcome and commits.
 
 ---
 
@@ -113,7 +146,7 @@ apps' discipline, so the gap is generational/maturity-driven, not frontend-vs-ba
 
 ## Ranked focus areas (where to dive deeper, by payoff)
 
-### ① Confirmed correctness bugs — cross-area one-line fixes · *currently ~3*
+### ① Confirmed correctness bugs — cross-area one-line fixes · *currently ~3* · ✅ DONE (`a39cd39`)
 **Why:** five independently-confirmed bugs each silently break a headline capability, all one-line-class —
 the cheapest possible wins.
 **What:** see §6.
@@ -121,7 +154,7 @@ the cheapest possible wins.
 usable, fixes 5 modules serving the wrong domain, fixes the proposals endpoint — disproportionate
 functional recovery for ~a day of work.
 
-### ② CI-gated testing on the highest-blast-radius backend · *currently ~2*
+### ② CI-gated testing on the highest-blast-radius backend · *currently ~2* · ✅ DONE (`51a6b43`)
 **Why:** the single most systemic gap and largest credibility risk. Regressions already accumulate
 undetected (10 red tests on main; no CI gate). The deterministic cores are pure functions — cheap to
 test, catastrophic if wrong.
@@ -132,7 +165,7 @@ functions (`validateSelectOnly`, `isUrlAllowed`, vault encrypt/resolve, log-veri
 envelope sign/verify).
 **Impact:** turns "green main" into a trustworthy signal; prerequisite for safely refactoring ⑤.
 
-### ③ Markets credibility: prove or relabel self-learning · *currently ~3*
+### ③ Markets credibility: prove or relabel self-learning · *currently ~3* · ✅ DONE (`6cacd46`; live-accuracy proof needs keys)
 **Why:** positioned as ANTON's flagship proof of self-learning, but live outcomes (21% accuracy, Brier
 worse than a coin flip, 0 thesis closures, 4× news backlog growth) contradict the claim.
 **What:** after the §6 status fix + backfill, add a "loop health" alert that fires when any closed-loop
@@ -141,7 +174,7 @@ tautological conditional-accuracy signal. Then watch whether accuracy/Brier move
 "self-learning" → "instrumented for learning".
 **Impact:** substantiates the headline claim with moving metrics, or honestly de-risks the marketing.
 
-### ④ Team-mode multi-tenant data isolation · *currently ~3*
+### ④ Team-mode multi-tenant data isolation · *currently ~3* · ✅ DONE (`abf2974`, `ab59668`, `b08c111`)
 **Why:** Procure/Civic/Grow leak cross-user reads/writes in team mode (never filter by `created_by`).
 Latent today (solo default) but a clear confidentiality bug the moment team mode is enabled.
 **What:** add `created_by = req.user.id OR role=admin` scoping to list/get/update/delete in
@@ -149,7 +182,7 @@ Procure/Civic/Grow (mirror Evidence Pack's `assertOwnerOrAdmin` / Risk Atlas's `
 integration test per pillar; reconcile Procure Zod schemas with the actual migration.
 **Impact:** closes a cross-user leak before any team-mode deployment; lifts that cohort 4→5.
 
-### ⑤ Consolidate duplicated registries and parallel stacks · *currently ~4*
+### ⑤ Consolidate duplicated registries and parallel stacks · *currently ~4* · ✅ DONE (`c486c8b`, `c5741db`, `2f19fba`)
 **Why:** 5 model registries, 2 routing stacks, 2 RAG embedding paths — each has already produced a
 divergence bug. Every future model/embedding update risks silently desyncing.
 **What:** make `model-capabilities.ts` the single source of truth; derive `max_tokens`/pricing/thinking
@@ -158,7 +191,7 @@ Consolidate RAG onto one embedding adapter + one index schema; either retire Ope
 or update the docs to state vector RAG requires it.
 **Impact:** eliminates a whole class of drift bugs; the next model update becomes a one-file change.
 
-### ⑥ App store / production binding gaps (Pay, Companion, Business) · *currently ~4*
+### ⑥ App store / production binding gaps (Pay, Companion, Business) · *currently ~4* · ✅ DONE (code scope, `345778a`; secrets/devices operator-gated)
 **Why:** three apps are functionally/cryptographically strong but cannot ship their headline capability.
 **What:** Pay — set the real Google Cloud project number, add Play Integrity `-keep` ProGuard rules, run
 a release-build attestation smoke on hardware, reconcile the bilateral-vs-broadcast settlement narrative.
@@ -167,7 +200,7 @@ Business — trim AndroidManifest to POS-needed permissions; wire a real/interim
 **Impact:** moves three apps from "demonstrably secure design" to "shippable"; activates the enterprise
 approvals wedge.
 
-### ⑦ Security spot-fixes: SSRF, log leakage, public endpoints · *currently ~3*
+### ⑦ Security spot-fixes: SSRF, log leakage, public endpoints · *currently ~3* · ✅ DONE (`4d98f2c`, `e9825f6`)
 **Why:** localized gaps undercut an otherwise strong posture.
 **What:** add SSRF egress controls (block private/link-local/`169.254.169.254`, optional
 `ALLOWED_AGENT_HOSTS`) + auth+throttle on the CSRF-exempt unauthenticated `/agents/public/query`
@@ -203,7 +236,8 @@ leakage, ends production error-text leakage, removes the half-applied-schema dat
 
 ## 6. The 5 confirmed one-line-class bugs (focus area ①)
 
-Each was independently cited with file:line by the audit and is being verified + fixed in this pass.
+Each was independently cited with file:line by the audit. **All five were fixed and verified — commit
+`a39cd39` (2026-05-30)** — with guard tests added (`coerce-decision.test.ts` ×7, `module-area-integrity.test.ts` ×4). The "Fix" column below describes what shipped.
 
 | # | Bug | Location (as reported) | Effect | Fix |
 |---|---|---|---|---|
@@ -217,7 +251,8 @@ Each was independently cited with file:line by the audit and is being verified +
 
 ## How to use this document
 
-- **Now:** fix the §6 bugs (focus ①), then stand up the CI test gate (focus ②).
-- **Next block:** work focus areas ③–⑦ per `docs/IMPROVEMENT_ROADMAP.md`.
+- **Done (2026-05-31):** focus areas ①–⑦ all addressed — the roadmap is complete (see **Remediation
+  status**). Remaining items are operator-gated or deferred-by-design, not open code work.
+- **Next:** re-run the audit workflow to refresh the 1-7 scores against the new post-remediation
+  baseline — the scorecard above is the pre-remediation snapshot and is now stale on the worked areas.
 - **Maintain:** leave the "already excellent" list alone unless adding tests.
-- **Re-audit** after a major change to refresh scores.
