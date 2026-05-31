@@ -16,11 +16,9 @@
  * Legacy v1 layout (pre-2026-05-21) used unprefixed keys; migrateLegacyIfNeeded
  * runs on every read and lifts that singleton into the registry. Idempotent.
  *
- * Known limitation: the WalletTx ledger in transactions.ts is NOT yet
- * scoped per-wallet — switching active wallet currently shows every
- * tx the device has ever recorded. The fix is a `walletAddress`
- * column on WalletTx + a filter in listTxs; deferred to a follow-up
- * so this milestone can ship.
+ * The WalletTx ledger in transactions.ts IS scoped per-wallet (as of 2026-05-31):
+ * WalletTx carries an optional `walletAddress` and listTxs/computeBalanceMicroFtc
+ * filter by the active wallet (legacy untagged rows stay visible).
  */
 import { wallet as sdkWallet } from '@futurechain/sdk';
 import { ed25519 } from '@noble/curves/ed25519';

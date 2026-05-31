@@ -332,7 +332,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       ) as ApproachRow[];
       res.json({ capabilities: caps, approaches });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to load capabilities', detail: String(err) });
+      res.status(500).json({ error: 'Failed to load capabilities', detail: safeError(err) });
     }
   });
 
@@ -357,7 +357,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         total: count,
       });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to list tasks', detail: String(err) });
+      res.status(500).json({ error: 'Failed to list tasks', detail: safeError(err) });
     }
   });
 
@@ -1079,7 +1079,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
       res.json({ total, open, byStatus, recent });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to load stats', detail: String(err) });
+      res.status(500).json({ error: 'Failed to load stats', detail: safeError(err) });
     }
   });
 

@@ -599,7 +599,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
         return;
       }
       try {
-        res.write(`event: error\ndata: ${JSON.stringify({ kind: 'internal_error', message: String(err) })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ kind: 'internal_error', message: safeError(err) })}\n\n`);
         res.write('data: [DONE]\n\n');
       } finally {
         res.end();
