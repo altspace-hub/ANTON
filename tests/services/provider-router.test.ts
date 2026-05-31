@@ -19,17 +19,24 @@ import {
   resolveMistralThinking,
 } from '../../server/services/provider-router.js';
 
-const PROVIDER_KEYS = ['ANTHROPIC_API_KEY', 'MISTRAL_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY'] as const;
+const ENV_KEYS = ['ANTHROPIC_API_KEY', 'MISTRAL_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY', 'DEFAULT_MODEL'] as const;
 let saved: Record<string, string | undefined>;
 
 /** Configure exactly one provider as "available" (getConfiguredProvider reads these). */
 function onlyProvider(provider: 'anthropic' | 'mistral' | 'openai' | 'google'): void {
-  for (const k of PROVIDER_KEYS) delete process.env[k];
+  for (const k of ENV_KEYS) delete process.env[k];
   process.env[`${provider.toUpperCase()}_API_KEY`] = 'test-key';
 }
 
-beforeEach(() => { saved = {}; for (const k of PROVIDER_KEYS) saved[k] = process.env[k]; });
-afterEach(() => { for (const k of PROVIDER_KEYS) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; } });
+/** Set an exact env combination (clears all ENV_KEYS first) — for DEFAULT_MODEL tests. */
+function setEnv(keys: Partial<Record<(typeof ENV_KEYS)[number], string>>): void {
+  for (const k of ENV_KEYS) delete process.env[k];
+  for (const [k, v] of Object.entries(keys)) process.env[k] = v;
+}
+
+// DEFAULT_MODEL is cleared by default so the env-priority tests are deterministic.
+beforeEach(() => { saved = {}; for (const k of ENV_KEYS) saved[k] = process.env[k]; delete process.env.DEFAULT_MODEL; });
+afterEach(() => { for (const k of ENV_KEYS) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; } });
 
 describe('resolveModel (tier → concrete model for active provider)', () => {
   it('passes a concrete model id through unchanged', () => {
@@ -110,5 +117,36 @@ describe('resolveMistralThinking (Magistral reasoning-model switch)', () => {
 
   it('keeps an already-Magistral model but adds reasoning prompt_mode', () => {
     expect(resolveMistralThinking('magistral-medium-latest', 'investigate')).toEqual({ model: 'magistral-medium-latest', promptMode: 'reasoning' });
+  });
+});
+
+describe('M5 — configured DEFAULT_MODEL overrides env-priority for specialty routes', () => {
+  it('routes specialty calls to Mistral when DEFAULT_MODEL=mistral-*, even with an Anthropic key present', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', MISTRAL_API_KEY: 'k', DEFAULT_MODEL: 'mistral-large-latest' });
+    expect(mapModelToProvider('claude-sonnet-4-6')).toBe('mistral-medium-latest'); // medium tier
+    expect(resolveModel('large')).toBe('mistral-large-latest');
+  });
+
+  it('uses the local model id for every tier when DEFAULT_MODEL=ollama:*', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'ollama:qwen2.5' });
+    expect(mapModelToProvider('claude-opus-4-8')).toBe('ollama:qwen2.5');
+    expect(resolveModel('small')).toBe('ollama:qwen2.5');
+  });
+
+  it('uses the compat model id when DEFAULT_MODEL=compat:<slug>:<model>', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'compat:openrouter:qwen/qwen-2.5-72b' });
+    expect(mapModelToProvider('claude-haiku-4-5-20251001')).toBe('compat:openrouter:qwen/qwen-2.5-72b');
+  });
+
+  it('leaves Claude behavior unchanged for a claude- DEFAULT_MODEL', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', MISTRAL_API_KEY: 'k', DEFAULT_MODEL: 'claude-opus-4-8' });
+    expect(mapModelToProvider('claude-sonnet-4-6')).toBe('claude-sonnet-4-6');
+    expect(resolveModel('large')).toBe('claude-opus-4-8');
+  });
+
+  it('falls back to env-priority when DEFAULT_MODELs provider key is missing', () => {
+    // DEFAULT_MODEL=mistral but no MISTRAL key → should not pick mistral
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'mistral-large-latest' });
+    expect(mapModelToProvider('claude-sonnet-4-6')).toBe('claude-sonnet-4-6'); // anthropic passthrough
   });
 });

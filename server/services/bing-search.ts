@@ -1,8 +1,9 @@
 /**
  * bing-search.ts — Bing Web Search API v7 client
  *
- * Used to provide web search grounding for Azure OpenAI models,
- * giving them the same live-search capability as Claude's web_search tool.
+ * Used to provide web search grounding for non-Anthropic providers
+ * (Mistral/OpenAI/Gemini/Azure/Ollama/compat), giving them the same
+ * live-search capability as Claude's native web_search tool.
  *
  * Results are fetched and injected into the system prompt before the
  * LLM call, so the model can synthesize answers from current web sources.
@@ -30,6 +31,10 @@ export interface BingSearchResponse {
 // ── Resolve Bing API key from DB ────────────────────────────────
 
 export async function getBingSearchApiKey(db: DatabaseAdapter): Promise<string | null> {
+  // Prefer an explicit env key (decoupled from Azure) so web grounding works for
+  // any provider; fall back to the azure_openai_config row for back-compat with
+  // existing Azure-coupled setups.
+  if (process.env.BING_SEARCH_API_KEY) return process.env.BING_SEARCH_API_KEY;
   try {
     const row = await db.get<{ bing_search_api_key_encrypted: string | null }>(
       "SELECT bing_search_api_key_encrypted FROM azure_openai_config WHERE id = 'default' AND is_active = TRUE"

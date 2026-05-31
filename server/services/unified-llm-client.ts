@@ -226,8 +226,10 @@ export async function streamToResponse(
       ? cleanSystem(`${config.staticSystemPrompt}\n\n${config.system}`)
       : cleanSystem(config.system);
 
-    // For Azure models: if web search was requested and Bing is configured, pre-search
-    if (webSearchWasRequested && provider === 'azure_openai' && config.db) {
+    // For ALL non-Anthropic providers: if web search was requested and Bing is
+    // configured, pre-search and inject results (Claude uses its native web_search
+    // tool; this path is only reached by non-Anthropic providers).
+    if (webSearchWasRequested && config.db) {
       try {
         const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('./bing-search.js');
         const bingKey = await getBingSearchApiKey(config.db);

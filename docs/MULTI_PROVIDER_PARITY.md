@@ -131,12 +131,18 @@ mis-routes to Claude) · — n/a (provider genuinely can't).
   local-Qwen / OpenRouter-Together. `streamChat` gained the `openai_compatible` branch and the
   `ollama:`-prefix-strip bug fix (it was sending `model:'ollama:qwen'` → 404). `db` is now threaded into
   `getProviderFromModelId` on both paths so custom-slot ids resolve. 4 new tests.
-- **M4. Extend `getConfiguredProvider` priority + `TIER_MAP`** with `ollama`/`openai_compatible` rows, and
-  let tier resolution read a configured default model. Unlocks Qwen everywhere `mapModelToProvider` is used.
-- **M5. Honor the session-selected model** (not env-priority) across the ~42 `provider-router` specialty
-  routes — most hardcode `mapModelToProvider('claude-…')`.
-- **M6. Bing pre-search for all non-Anthropic providers** (currently Azure-only); decouple the Bing key from
-  `azure_openai_config` (store in `app_settings`). Gives Mistral/Ollama/compat real web grounding.
+- **M4 + M5. ✅ DONE — tier resolution honors a configured `DEFAULT_MODEL`.** `getConfiguredProvider` now
+  prefers a non-Claude `DEFAULT_MODEL`'s provider over env-key priority, and `resolveModel`/`mapModelToProvider`
+  return the concrete `DEFAULT_MODEL` id for `ollama:`/`compat:` (no tier concept for those). So an operator
+  who sets `DEFAULT_MODEL=mistral-large-latest` / `ollama:qwen` / `compat:<slug>:<model>` gets the ~42
+  specialty routes (which hardcode `mapModelToProvider('claude-…')`) on that provider instead of Claude.
+  Back-compat: a `claude-*` default leaves Claude behavior unchanged. 5 new tests. *(M4's `TIER_MAP` rows
+  were unnecessary — local/compat use the concrete id rather than a large/medium/small tier. Deferred: true
+  per-request/per-session model threaded into each of the 42 routes.)*
+- **M6. ✅ DONE — Bing pre-search for all non-Anthropic providers.** Lifted the `provider === 'azure_openai'`
+  gate to all non-Anthropic providers in both `claude.ts` and `unified-llm-client.ts`, and decoupled the key:
+  `getBingSearchApiKey` now reads `BING_SEARCH_API_KEY` from env first (falls back to `azure_openai_config`
+  for back-compat). Mistral/OpenAI/Gemini/Ollama/compat now get real web grounding when web search is requested.
 - **M7. JSON/structured-output + tools wiring** in the Mistral/Ollama/compat adapters (the capability flags
   already claim support; the bodies never send `response_format`/`format`/`tools`).
 - **M8. Mission executor: honor `model_strategy`/`provider_preference`** (currently the param is `_strategy`).
