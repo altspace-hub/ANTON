@@ -20,6 +20,7 @@ import ScanScreen from './pages/ScanScreen';
 import ReviewScreen from './pages/ReviewScreen';
 import PaymentDoneScreen from './pages/PaymentDoneScreen';
 import HistoryScreen from './pages/HistoryScreen';
+import PaymentDetailScreen from './pages/PaymentDetailScreen';
 import ReceiveScreen from './pages/ReceiveScreen';
 import SettingsScreen from './pages/settings/SettingsScreen';
 import WalletScreen from './pages/settings/WalletScreen';
@@ -44,7 +45,8 @@ import { reconcileScheduleNotifications, getSchedule, recordFire } from './servi
 import { scheduleToDecodedPayment } from './services/schedule-to-payment';
 import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
-import type { DecodedPayment, PaymentRecord } from './services/types';
+import { listContacts, buildContactNameMap } from './services/address-book';
+import type { Activity, DecodedPayment, PaymentRecord } from './services/types';
 
 type Screen =
   | 'loading'
@@ -58,6 +60,7 @@ type Screen =
   | 'review'
   | 'payment-done'
   | 'history'
+  | 'payment-detail'
   | 'settings'
   | 'settings-wallet'
   | 'settings-wallets-list'
@@ -87,6 +90,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'receive': 'home',
   'payment-done': 'home',
   'history': 'home',
+  'payment-detail': 'history',
   'settings': 'home',
   'settings-wallet': 'settings',
   'settings-wallets-list': 'settings',
@@ -113,6 +117,11 @@ export default function App() {
   const [newAddress, setNewAddress] = useState<string>('');
   /** Wallet id whose detail screen is being viewed (Settings → Wallets → row). */
   const [detailWalletId, setDetailWalletId] = useState<string>('');
+  /** Activity row whose full-screen detail is being viewed (History → row). */
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  /** address → friend-label map, rebuilt each time a detail row opens so
+   *  the detail screen resolves the latest contact names. */
+  const [detailContactNames, setDetailContactNames] = useState<Record<string, string>>({});
   /** When a scheduled-payment notification tap routes the user to
    *  Review, this carries the originating schedule id so onConfirmed
    *  can call recordFire() to roll the schedule forward. null
@@ -350,7 +359,33 @@ export default function App() {
     );
   }
   if (screen === 'history') {
-    return <HistoryScreen onBack={() => setScreen('home')} />;
+    return (
+      <HistoryScreen
+        onBack={() => setScreen('home')}
+        onOpen={(activity) => {
+          setSelectedActivity(activity);
+          // Rebuild the friend-label map so the detail screen shows the
+          // latest saved contact names without re-querying per row.
+          void (async () => {
+            setDetailContactNames(buildContactNameMap(await listContacts()));
+          })();
+          setScreen('payment-detail');
+        }}
+      />
+    );
+  }
+  if (screen === 'payment-detail') {
+    if (!selectedActivity) {
+      setScreen('history');
+      return null;
+    }
+    return (
+      <PaymentDetailScreen
+        activity={selectedActivity}
+        contactNames={detailContactNames}
+        onBack={() => setScreen('history')}
+      />
+    );
   }
   if (screen === 'settings') {
     return (

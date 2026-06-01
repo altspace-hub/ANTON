@@ -41,6 +41,8 @@ interface Props {
   onPin: () => void;
   /** Settings → items management (CRUD + template loader). */
   onItems: () => void;
+  /** Settings → saved customer contacts (FC address book). */
+  onCustomers: () => void;
   onReset: () => void;
 }
 
@@ -48,7 +50,7 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onConnectWallet, onShowRecovery, onBackupPhrase, onWalletsList, onRpcEndpoint, onDayClose, onPin, onItems, onReset,
+  onBack, onConnectWallet, onShowRecovery, onBackupPhrase, onWalletsList, onRpcEndpoint, onDayClose, onPin, onItems, onCustomers, onReset,
 }: Props) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<MerchantConfig | null>(null);
@@ -330,6 +332,26 @@ export default function SettingsScreen({
             </div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
               {t('settings.itemsSub', 'What you sell · prices · templates for 40 industries')}
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               style={{ color: 'var(--color-text-dim)' }}>
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Customers — saved FC payment contacts (address book). */}
+        <button type="button" onClick={onCustomers}
+                className="rounded-xl p-4 flex items-center justify-between text-left"
+                style={{ backgroundColor: 'var(--color-surface)',
+                         border: '1px solid var(--color-border)' }}>
+          <div>
+            <div className="font-bold" style={{ color: 'var(--color-text)' }}>
+              {t('settings.customers', 'Customers')}
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {t('settings.customersSub', 'Saved customer addresses · look-alike scam protection')}
             </div>
           </div>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

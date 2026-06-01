@@ -2,20 +2,27 @@
  * HistoryScreen — full activity timeline, both directions.
  *
  * Merges outgoing PaymentRecord rows with inbound ReceivedRecord
- * rows via buildActivity(). Each row is tappable to expand the per-
- * tx detail inline. Outgoing rows surface merchant / order / ref;
- * inbound rows surface sender / remittance / block height.
+ * rows via buildActivity(). Each row is tappable — it opens the
+ * full-screen PaymentDetailScreen (the old inline accordion is gone).
+ * Outgoing rows show the merchant / friend label + a status pill;
+ * inbound rows show the sender's friend label / name. Amounts are
+ * signed: received '+' in accent, sent '-' in default text.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import StatusPill from '../components/StatusPill';
 import { formatFtc, listPayments } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
-import { isDust } from '../services/address-book';
-import type { Activity, PaymentRecord, ReceivedRecord } from '../services/types';
+import {
+  isDust, listContacts, buildContactNameMap, resolveName,
+} from '../services/address-book';
+import type { Activity } from '../services/types';
 
 interface Props {
   onBack: () => void;
+  /** Open the full-screen detail view for a tapped row. */
+  onOpen: (activity: Activity) => void;
 }
 
 function formatDate(ms: number): string {
@@ -34,19 +41,34 @@ function abbreviate(addr: string): string {
   return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
-export default function HistoryScreen({ onBack }: Props) {
+/** Counterparty display name for a row — friend label first, then the
+ *  record's own name field, then the abbreviated address. Never the
+ *  raw merchant hash on its own when a friendlier label exists. */
+function counterpartyOf(a: Activity, byAddr: Record<string, string>): string {
+  if (a.direction === 'sent') {
+    return resolveName(a.record.toAddress, byAddr) ?? a.record.merchantId;
+  }
+  return resolveName(a.record.fromAddress, byAddr)
+    ?? a.record.fromName
+    ?? (a.record.fromAddress ? abbreviate(a.record.fromAddress) : '—');
+}
+
+export default function HistoryScreen({ onBack, onOpen }: Props) {
   const { t } = useTranslation();
   const [items, setItems] = useState<Activity[]>([]);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void (async () => {
-      const [sent, received] = await Promise.all([listPayments(), listReceived()]);
+      const [sent, received, contacts] = await Promise.all([
+        listPayments(), listReceived(), listContacts(),
+      ]);
       // Hide dust by default — common delivery vector for address-
       // poisoning attacks. The user can switch to "show all" once a
       // setting is added; for now hide-by-default is the safer choice.
       const nonDust = received.filter(r => !isDust(r.amountMicroFtc));
       setItems(buildActivity(sent, nonDust));
+      setContactNames(buildContactNameMap(contacts));
     })();
   }, []);
 
@@ -82,45 +104,32 @@ export default function HistoryScreen({ onBack }: Props) {
         ) : (
           <div className="flex flex-col gap-2">
             {items.map((a) => {
-              const key = rowKey(a);
-              const open = expanded === key;
+              const isIn = a.direction === 'received';
               return (
-                <div key={key} className="rounded-xl overflow-hidden"
-                     style={{ backgroundColor: 'var(--color-surface)',
-                              border: '1px solid var(--color-border)' }}>
-                  <button type="button"
-                          onClick={() => setExpanded(open ? null : key)}
-                          className="w-full flex items-center gap-3 p-3.5 text-left">
-                    <DirectionGlyph direction={a.direction} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm"
-                           style={{ color: 'var(--color-text)' }}>
-                        {a.direction === 'sent'
-                          ? t(`review.purpose${a.record.purpose}`)
-                          : t('history.receivedFrom', { defaultValue: 'Received' })}
-                      </div>
-                      <div className="text-xs mt-0.5"
-                           style={{ color: 'var(--color-text-muted)' }}>
-                        {formatDate(a.at)}
-                      </div>
+                <button key={rowKey(a)} type="button"
+                        onClick={() => onOpen(a)}
+                        className="w-full flex items-center gap-3 p-3.5 text-left rounded-xl active:opacity-90 transition-opacity"
+                        style={{ backgroundColor: 'var(--color-surface)',
+                                 border: '1px solid var(--color-border)' }}>
+                  <DirectionGlyph direction={a.direction} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm truncate"
+                            style={{ color: 'var(--color-text)' }}>
+                        {counterpartyOf(a, contactNames)}
+                      </span>
+                      {a.direction === 'sent' && <StatusPill status={a.record.status} />}
                     </div>
-                    <div className="mono text-sm font-semibold"
-                         style={{ color: a.direction === 'received'
-                                    ? 'var(--color-accent)'
-                                    : 'var(--color-text)' }}>
-                      {a.direction === 'received' ? '+' : ''}
-                      {formatFtc(a.record.amountMicroFtc)} FTC
+                    <div className="text-xs mt-0.5 truncate"
+                         style={{ color: 'var(--color-text-muted)' }}>
+                      {formatDate(a.at)}
                     </div>
-                  </button>
-                  {open && (
-                    <div className="px-3.5 pb-3.5 pt-1"
-                         style={{ borderTop: '1px solid var(--color-border-soft)' }}>
-                      {a.direction === 'sent'
-                        ? <SentDetail r={a.record} />
-                        : <ReceivedDetail r={a.record} />}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                  <div className="mono text-sm font-semibold shrink-0"
+                       style={{ color: isIn ? 'var(--color-accent)' : 'var(--color-text)' }}>
+                    {isIn ? '+' : '-'}{formatFtc(a.record.amountMicroFtc)} FTC
+                  </div>
+                </button>
               );
             })}
           </div>
@@ -152,46 +161,5 @@ function DirectionGlyph({ direction }: { direction: 'sent' | 'received' }) {
         </svg>
       )}
     </span>
-  );
-}
-
-function SentDetail({ r }: { r: PaymentRecord }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <DetailRow label={t('history.merchant')} value={r.merchantId} />
-      <DetailRow label={t('history.orderId')} value={r.orderId} />
-      <DetailRow label={t('history.amount')}
-                 value={`${formatFtc(r.amountMicroFtc)} FTC`} />
-      <DetailRow label={t('history.reference')} value={r.ref} wrap />
-      {r.txId && <DetailRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />}
-    </>
-  );
-}
-
-function ReceivedDetail({ r }: { r: ReceivedRecord }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <DetailRow label={t('history.from', 'From')}
-                 value={r.fromName ? `${r.fromName} · ${abbreviate(r.fromAddress)}` : abbreviate(r.fromAddress) || '—'} />
-      <DetailRow label={t('history.amount')}
-                 value={`+${formatFtc(r.amountMicroFtc)} FTC`} />
-      {r.remittance && <DetailRow label={t('history.note', 'Note')} value={r.remittance} wrap />}
-      <DetailRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />
-      {r.blockHeight && <DetailRow label={t('history.block', 'Block')} value={String(r.blockHeight)} />}
-    </>
-  );
-}
-
-function DetailRow({ label, value, wrap }: { label: string; value: string; wrap?: boolean }) {
-  return (
-    <div className="flex justify-between gap-4 py-1.5">
-      <span className="text-xs shrink-0" style={{ color: 'var(--color-text-faint)' }}>{label}</span>
-      <span className={`mono text-xs text-right ${wrap ? 'break-all' : ''}`}
-            style={{ color: 'var(--color-text-body)' }}>
-        {value}
-      </span>
-    </div>
   );
 }

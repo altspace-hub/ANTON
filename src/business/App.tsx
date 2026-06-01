@@ -36,6 +36,7 @@ import ItemsManageScreen from './pages/settings/ItemsManageScreen';
 import TemplatesPickerScreen from './pages/settings/TemplatesPickerScreen';
 import ReceiptsHistoryScreen from './pages/ReceiptsHistoryScreen';
 import KvittoDetailScreen from './pages/KvittoDetailScreen';
+import CustomersScreen from './pages/CustomersScreen';
 import StatisticsScreen from './pages/StatisticsScreen';
 import InventoryScreen from './pages/InventoryScreen';
 import { hasConfig, loadConfig } from './services/merchant';
@@ -72,6 +73,7 @@ type Screen =
   | 'settings-day-close'
   | 'settings-pin'
   | 'settings-items'
+  | 'settings-customers'
   | 'settings-templates'
   | 'settings-recovery'
   | 'backup-show'
@@ -100,6 +102,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings-day-close': 'settings',
   'settings-pin': 'settings',
   'settings-items': 'settings',
+  'settings-customers': 'settings',
   'settings-templates': 'settings-items',
   'settings-recovery': 'settings',
   'backup-show': 'settings',
@@ -292,6 +295,7 @@ export default function App() {
         onDayClose={() => setScreen('settings-day-close')}
         onPin={() => setScreen('settings-pin')}
         onItems={() => setScreen('settings-items')}
+        onCustomers={() => setScreen('settings-customers')}
         onReset={() => {
           setPendingMode('simple');
           setScreen('onboarding-welcome');
@@ -348,6 +352,9 @@ export default function App() {
         onOpenTemplates={() => setScreen('settings-templates')}
       />
     );
+  }
+  if (screen === 'settings-customers') {
+    return <CustomersScreen onBack={() => setScreen('settings')} />;
   }
   if (screen === 'settings-templates') {
     return (

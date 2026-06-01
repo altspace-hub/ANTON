@@ -81,6 +81,16 @@
     "activityTitle": "Activity",
     "amount": "Amount",
     "block": "Block",
+    "detail": {
+      "address": "Address",
+      "chain": "Chain",
+      "counterparty": "Counterparty",
+      "error": "Reason",
+      "paid": "You paid",
+      "received": "You received",
+      "requestId": "Request id",
+      "status": "Status"
+    },
     "detailTitle": "Payment detail",
     "empty": "No payments yet",
     "emptyBody": "Once you pay a merchant, every payment is kept here as a receipt.",
@@ -338,6 +348,13 @@
     "walletConnected": "Wallet ready",
     "wallets": "Wallets",
     "walletsSub": "Switch active wallet · add · delete"
+  },
+  "status": {
+    "confirmed": "Confirmed",
+    "failed": "Failed",
+    "pending": "Pending",
+    "recorded": "Recorded",
+    "submitting": "Submitting"
   },
   "sync": {
     "listening": "Listening for payment"

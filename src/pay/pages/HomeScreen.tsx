@@ -12,7 +12,10 @@ import { loadWallet } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
-import { isDust } from '../services/address-book';
+import {
+  isDust, listContacts, buildContactNameMap, resolveName,
+} from '../services/address-book';
+import StatusPill from '../components/StatusPill';
 import { fetchBalanceFtc } from '../services/fc-rpc';
 import { runOneShotPoll, getLastSyncTs } from '../services/idle-poller';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
@@ -36,6 +39,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
   // fetchBalanceFtc returns null ONLY on a read error (a real zero balance
   // comes back as 0), so a null after a fetch means "couldn't reach the
@@ -57,13 +61,14 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
       // Instant paint from the local cache.
-      const [sent, received, ts] = await Promise.all([
-        listPayments(), listReceived(), getLastSyncTs(),
+      const [sent, received, ts, contacts] = await Promise.all([
+        listPayments(), listReceived(), getLastSyncTs(), listContacts(),
       ]);
       if (cancelled) return;
       // Filter dust (< 0.1 FTC) — address-poisoning delivery vector.
       setActivity(buildActivity(sent, received.filter(r => !isDust(r.amountMicroFtc))));
       setLastSyncTs(ts);
+      setContactNames(buildContactNameMap(contacts));
       if (!wallet?.address) return;
       // Refresh the balance from chain.
       const b = await fetchBalanceFtc(wallet.address);
@@ -313,11 +318,16 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
               const title = a.direction === 'sent'
                 ? t(`review.purpose${a.record.purpose}`)
                 : t('history.receivedFrom', 'Received');
+              // Prefer the saved friend label over the raw merchant
+              // hash / abbreviated address. sent → toAddress, received
+              // → fromAddress.
               const sub = a.direction === 'sent'
-                ? a.record.merchantId
-                : (a.record.fromName ?? (a.record.fromAddress
-                    ? `${a.record.fromAddress.slice(0, 10)}…${a.record.fromAddress.slice(-4)}`
-                    : '—'));
+                ? (resolveName(a.record.toAddress, contactNames) ?? a.record.merchantId)
+                : (resolveName(a.record.fromAddress, contactNames)
+                    ?? a.record.fromName
+                    ?? (a.record.fromAddress
+                        ? `${a.record.fromAddress.slice(0, 10)}…${a.record.fromAddress.slice(-4)}`
+                        : '—'));
               return (
                 <button key={key} type="button" onClick={onHistory}
                         className="flex items-center justify-between rounded-xl p-3.5 text-left"
@@ -333,9 +343,12 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
                       {isIn ? '↙' : '↗'}
                     </span>
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate"
-                           style={{ color: 'var(--color-text)' }}>
-                        {title}
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm truncate"
+                              style={{ color: 'var(--color-text)' }}>
+                          {title}
+                        </span>
+                        {a.direction === 'sent' && <StatusPill status={a.record.status} />}
                       </div>
                       <div className="mono text-xs mt-0.5 truncate"
                            style={{ color: 'var(--color-text-muted)' }}>
