@@ -29,6 +29,7 @@ import {
   handleAdminApprove,
   handleAdminReject,
 } from './handlers/admin-submissions.js';
+import { handlePublishTerminal, handleListTerminals } from './handlers/terminals.js';
 
 export interface RegistryRouterDeps {
   db: RegistryDb | null;
@@ -147,6 +148,21 @@ export async function dispatch(
   if (resolveMatch && resolveMatch[1]) {
     if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
     await handleResolve(req, res, deps.db, deps.logger, resolveMatch[1]);
+    return true;
+  }
+
+  // ── /v1/terminals/publish — store a signed terminal authorization ────
+  if (path === '/v1/terminals/publish' || path === '/v1/terminals/publish/') {
+    if (method !== 'POST') { methodNotAllowed(res, 'POST'); return true; }
+    await handlePublishTerminal(req, res, deps.db, deps.logger);
+    return true;
+  }
+
+  // ── /v1/terminals/:companyAddr — list a company's authorized tills ───
+  const terminalsMatch = path.match(/^\/v1\/terminals\/([^/]+)\/?$/);
+  if (terminalsMatch && terminalsMatch[1]) {
+    if (method !== 'GET') { methodNotAllowed(res, 'GET'); return true; }
+    await handleListTerminals(req, res, deps.db, deps.logger, decodeURIComponent(terminalsMatch[1]));
     return true;
   }
 
