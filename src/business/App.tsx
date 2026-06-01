@@ -27,6 +27,7 @@ import BackupShowScreen from './pages/onboarding/BackupShowScreen';
 import BackupVerifyScreen from './pages/onboarding/BackupVerifyScreen';
 import WalletsListScreen from './pages/settings/WalletsListScreen';
 import WalletDetailScreen from './pages/settings/WalletDetailScreen';
+import TerminalsScreen from './pages/settings/TerminalsScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import RpcEndpointScreen from './pages/settings/RpcEndpointScreen';
 import DayCloseScreen from './pages/settings/DayCloseScreen';
@@ -66,6 +67,7 @@ type Screen =
   | 'settings-wallets-list'
   | 'settings-wallet-detail'
   | 'settings-wallet-add'
+  | 'settings-terminals'
   | 'settings-rpc'
   | 'settings-day-close'
   | 'settings-pin'
@@ -91,6 +93,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings': 'home',
   'settings-wallet': 'settings',
   'settings-wallets-list': 'settings',
+  'settings-terminals': 'settings-wallets-list',
   'settings-wallet-detail': 'settings-wallets-list',
   'settings-wallet-add': 'settings-wallets-list',
   'settings-rpc': 'settings',
@@ -305,8 +308,12 @@ export default function App() {
         onBack={() => setScreen('settings')}
         onAddWallet={() => setScreen('settings-wallet-add')}
         onOpenWallet={(id) => { setDetailWalletId(id); setScreen('settings-wallet-detail'); }}
+        onTerminals={() => setScreen('settings-terminals')}
       />
     );
+  }
+  if (screen === 'settings-terminals') {
+    return <TerminalsScreen onBack={() => setScreen('settings-wallets-list')} />;
   }
   if (screen === 'settings-wallet-detail') {
     return (

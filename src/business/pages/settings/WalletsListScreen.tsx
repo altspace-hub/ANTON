@@ -30,9 +30,10 @@ interface Props {
   onBack: () => void;
   onAddWallet: () => void;
   onOpenWallet: (id: string) => void;
+  onTerminals: () => void;
 }
 
-export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }: Props) {
+export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet, onTerminals }: Props) {
   const { t } = useTranslation();
   const [list, setList] = useState<WalletMeta[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -192,7 +193,21 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
                            color: 'var(--color-text)' }}>
             + {t('walletsList.addWatch', 'Add receiving address (watch-only)')}
           </button>
-        ) : (
+        ) : null}
+
+        {/* Terminal registration (per-business CA) — show this terminal's
+            code, or authorize a terminal from the company wallet. */}
+        {!addingWatch && (
+          <button type="button" onClick={onTerminals}
+                  className="mt-2 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)',
+                           color: 'var(--color-text)' }}>
+            {t('walletsList.terminals', 'Terminals — authorize tills')}
+          </button>
+        )}
+
+        {addingWatch && (
           <div className="mt-2 rounded-xl p-3.5 flex flex-col gap-2.5"
                style={{ backgroundColor: 'var(--color-surface)',
                         border: '1px solid var(--color-border)' }}>

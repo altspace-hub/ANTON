@@ -12,6 +12,8 @@ import { describe, it, expect } from 'vitest';
 import { ed25519 } from '@noble/curves/ed25519';
 import { sha256 } from '@noble/hashes/sha2';
 import { verifyZReport, canonicalize } from '../z-reports';
+import { certDigest, encodeTerminalCert, type TerminalCert } from '../terminal-cert';
+import { wallet as sdkWallet } from '@futurechain/sdk';
 import type { ZReport } from '../types';
 
 function hex(b: Uint8Array): string {
@@ -20,11 +22,22 @@ function hex(b: Uint8Array): string {
   return s;
 }
 
+/** A company-key-signed cert authorizing `terminalPub`. */
+function mkCert(companyPriv: Uint8Array, terminalPub: string): TerminalCert {
+  const pub = ed25519.getPublicKey(companyPriv);
+  const unsigned: Omit<TerminalCert, 'sig'> = {
+    v: 1, companyPub: hex(pub), companyAddr: sdkWallet.addressFromPublicKey(pub),
+    terminalPub, label: 'Till 1', issuedAt: 1_700_000_000_000,
+  };
+  return { ...unsigned, sig: hex(ed25519.sign(certDigest(unsigned), companyPriv)) };
+}
+
 /** Build a genuinely-signed Z. When `embed` is true the signer pubkey is
  *  baked into the report (new self-describing form); when false it's a
- *  legacy report that must be verified with an external key. */
-function signedZ(embed: boolean, over: Partial<ZReport> = {}): { z: ZReport; pubHex: string } {
-  const priv = ed25519.utils.randomPrivateKey();
+ *  legacy report that must be verified with an external key. Pass `priv`
+ *  to control the signing key (so an embedded cert can authorize it). */
+function signedZ(embed: boolean, over: Partial<ZReport> = {},
+                priv: Uint8Array = ed25519.utils.randomPrivateKey()): { z: ZReport; pubHex: string } {
   const pubHex = hex(ed25519.getPublicKey(priv));
   const base: Omit<ZReport, 'selfHash' | 'signature'> = {
     zNumber: 1, openedAt: 0, closedAt: 1000,
@@ -68,5 +81,36 @@ describe('verifyZReport — self-describing (watch-only / per-terminal key)', ()
     expect(z.signerPublicKeyHex).toBeUndefined();
     expect(verifyZReport(z, pubHex)).toBe(true);
     expect(verifyZReport(z)).toBe(false);            // no key anywhere → cannot verify
+  });
+
+  it('accepts a terminal-signed Z carrying a binding authorization cert', () => {
+    const companyPriv = ed25519.utils.randomPrivateKey();
+    const terminalPriv = ed25519.utils.randomPrivateKey();
+    const terminalPub = hex(ed25519.getPublicKey(terminalPriv));
+    const cert = encodeTerminalCert(mkCert(companyPriv, terminalPub));
+    const { z } = signedZ(true, { signerCert: cert }, terminalPriv);
+    expect(verifyZReport(z)).toBe(true);
+  });
+
+  it('rejects a Z whose cert authorizes a DIFFERENT terminal', () => {
+    const companyPriv = ed25519.utils.randomPrivateKey();
+    const terminalPriv = ed25519.utils.randomPrivateKey();
+    const terminalPub = hex(ed25519.getPublicKey(terminalPriv));
+    // cert authorizes someone else → binding check fails
+    const wrongCert = encodeTerminalCert(mkCert(companyPriv, 'ee'.repeat(32)));
+    const { z } = signedZ(true, { signerCert: wrongCert }, terminalPriv);
+    void terminalPub;
+    expect(verifyZReport(z)).toBe(false);
+  });
+
+  it('enforces the auditor company anchor when supplied', () => {
+    const companyPriv = ed25519.utils.randomPrivateKey();
+    const terminalPriv = ed25519.utils.randomPrivateKey();
+    const terminalPub = hex(ed25519.getPublicKey(terminalPriv));
+    const cert = encodeTerminalCert(mkCert(companyPriv, terminalPub));
+    const { z } = signedZ(true, { signerCert: cert }, terminalPriv);
+    const realAddr = sdkWallet.addressFromPublicKey(ed25519.getPublicKey(companyPriv));
+    expect(verifyZReport(z, undefined, realAddr)).toBe(true);           // right company → ok
+    expect(verifyZReport(z, undefined, 'fc_SomeOtherCompany')).toBe(false); // wrong company → rejected
   });
 });

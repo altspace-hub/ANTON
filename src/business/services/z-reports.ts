@@ -31,6 +31,9 @@ import { consumeZNumber, loadConfig } from './merchant';
 import { listReceipts } from './receipts';
 import { listRefunds } from './refunds';
 import { getActiveSigner, getTerminalSigner } from './wallets';
+import {
+  getStoredTerminalCert, encodeTerminalCert, decodeTerminalCert, verifyTerminalCert,
+} from './terminal-cert';
 import type { Receipt, RefundReceipt, ZReport } from './types';
 
 // IDB serialisation — bigint → string at the boundary.
@@ -111,7 +114,22 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
   // money signer, so we fall back to this device's per-terminal key. The
   // signer's pubkey is embedded in the report below so it self-verifies
   // regardless of which key signed.
-  const signer = (await getActiveSigner()) ?? (await getTerminalSigner());
+  const moneySigner = await getActiveSigner();
+  const signer = moneySigner ?? (await getTerminalSigner());
+  const signerPubHex = bytesToHex(signer.publicKey);
+  // If the per-terminal key signed, attach this terminal's authorization
+  // cert — but ONLY if it still binds to the CURRENT terminal key. A
+  // regenerated key (reinstall / Keystore reset) would otherwise embed a
+  // stale cert for the OLD key and trip verifyZReport's binding check as a
+  // false tamper alarm; in that case fall back to an uncerted (still
+  // self-verifiable) close.
+  let signerCert: string | undefined;
+  if (!moneySigner) {
+    const cert = await getStoredTerminalCert();
+    if (cert && cert.terminalPub.toLowerCase() === signerPubHex.toLowerCase()) {
+      signerCert = encodeTerminalCert(cert);
+    }
+  }
 
   const prev = await lastZReport();
   const openedAt = prev ? prev.closedAt : 0;
@@ -186,6 +204,8 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
     // Embed the signing key so the report is SELF-VERIFYING (keyed money
     // wallet pubkey, or the per-terminal key for a watch-only wallet).
     signerPublicKeyHex: bytesToHex(signer.publicKey),
+    // Authorization cert (when terminal-signed + registered) — see above.
+    ...(signerCert ? { signerCert } : {}),
   };
 
   // Hash + sign.
@@ -214,7 +234,7 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
  *  watch-only / per-terminal-signed reports); falls back to a
  *  caller-supplied key for legacy reports without one. Used by the
  *  auditor + by re-import on a new device. */
-export function verifyZReport(z: ZReport, publicKeyHex?: string): boolean {
+export function verifyZReport(z: ZReport, publicKeyHex?: string, expectedCompanyAddr?: string): boolean {
   try {
     const { selfHash, signature, ...rest } = z;
     const canon = canonicalize(rest);
@@ -225,7 +245,21 @@ export function verifyZReport(z: ZReport, publicKeyHex?: string): boolean {
     const sigBytes = new Uint8Array(signature.match(/../g)!.map(b => Number.parseInt(b, 16)));
     const pubBytes = new Uint8Array(pubHex.match(/../g)!.map(b => Number.parseInt(b, 16)));
     const hashBytes = new Uint8Array(selfHash.match(/../g)!.map(b => Number.parseInt(b, 16)));
-    return ed25519.verify(sigBytes, hashBytes, pubBytes);
+    if (!ed25519.verify(sigBytes, hashBytes, pubBytes)) return false;
+    // If the report carries a terminal authorization cert, it must bind to
+    // the signing key and be validly signed by the issuing company key.
+    if (z.signerCert) {
+      const cert = decodeTerminalCert(z.signerCert);
+      if (!cert) return false;
+      if (!z.signerPublicKeyHex
+          || cert.terminalPub.toLowerCase() !== z.signerPublicKeyHex.toLowerCase()) return false;
+      if (!verifyTerminalCert(cert)) return false;
+      // Auditor anchor: when the expected company is supplied, the cert must
+      // be from THAT company — otherwise a self-signed attacker cert would
+      // pass. (verifyTerminalCert already binds companyAddr to companyPub.)
+      if (expectedCompanyAddr && cert.companyAddr !== expectedCompanyAddr) return false;
+    }
+    return true;
   } catch {
     return false;
   }

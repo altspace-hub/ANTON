@@ -227,6 +227,12 @@ export interface ZReport {
    *  pre-2026-06 reports, which verify against an externally-supplied
    *  key. */
   signerPublicKeyHex?: string;
+  /** Optional encoded TerminalCert (`anton-terminal:cert:…`) authorizing
+   *  the signing terminal key for this company. Present when a watch-only
+   *  till signed with its per-terminal key AND it has been authorized;
+   *  lets an auditor prove the close came from a company-authorized
+   *  terminal. Bound into selfHash so it can't be swapped. */
+  signerCert?: string;
   /** Optional external timestamp (RFC 3161 or relay-side timestamp)
    *  to anchor selfHash at a third party. */
   externalTimestamp?: string;

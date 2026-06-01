@@ -141,6 +141,7 @@ export function checkReceiptChain(receipts: readonly Receipt[]): ChainVerifyResu
 export function checkZReportChain(
   zReports: readonly ZReport[],
   publicKeyHex?: string,
+  expectedCompanyAddr?: string,
 ): ChainVerifyResult {
   const all = zReports.slice().sort((a, b) => a.zNumber - b.zNumber);
   const findings: ChainFinding[] = [];
@@ -153,7 +154,7 @@ export function checkZReportChain(
     // Verify the signature when the report self-describes its signer
     // (embedded pubkey — watch-only / per-terminal reports) OR a key was
     // supplied (legacy reports). verifyZReport prefers the embedded key.
-    if ((cur.signerPublicKeyHex || publicKeyHex) && !verifyZReport(cur, publicKeyHex)) {
+    if ((cur.signerPublicKeyHex || publicKeyHex) && !verifyZReport(cur, publicKeyHex, expectedCompanyAddr)) {
       findings.push({
         kind: 'signature', at: cur.zNumber, hard: true,
         detail: `Z-${cur.zNumber} fails self-hash or Ed25519 signature verification`,
@@ -243,8 +244,10 @@ export async function verifyReceiptChain(): Promise<ChainVerifyResult> {
   return checkReceiptChain(await listReceipts(1_000_000));
 }
 
-export async function verifyZReportChain(publicKeyHex?: string): Promise<ChainVerifyResult> {
-  return checkZReportChain(await listZReports(1_000_000), publicKeyHex);
+export async function verifyZReportChain(
+  publicKeyHex?: string, expectedCompanyAddr?: string,
+): Promise<ChainVerifyResult> {
+  return checkZReportChain(await listZReports(1_000_000), publicKeyHex, expectedCompanyAddr);
 }
 
 export interface BooksVerifyReport {
@@ -262,13 +265,15 @@ export interface BooksVerifyReport {
  * is the merchant wallet's public key — pass it to also verify the
  * Z-report Ed25519 signatures; omit it to check chain linkage only.
  */
-export async function verifyBooks(publicKeyHex?: string): Promise<BooksVerifyReport> {
+export async function verifyBooks(
+  publicKeyHex?: string, expectedCompanyAddr?: string,
+): Promise<BooksVerifyReport> {
   const [receipts, zReports] = await Promise.all([
     listReceipts(1_000_000),
     listZReports(1_000_000),
   ]);
   const receiptResult = checkReceiptChain(receipts);
-  const zResult = checkZReportChain(zReports, publicKeyHex);
+  const zResult = checkZReportChain(zReports, publicKeyHex, expectedCompanyAddr);
   const reconResult = checkReconciliation(receipts, zReports);
   const allFindings = [...receiptResult.findings, ...zResult.findings, ...reconResult.findings]
     .sort((a, b) => Number(b.hard) - Number(a.hard));

@@ -32,6 +32,9 @@ export default function QrDisplay({
       errorCorrectionLevel: 'M',
     }).then((s) => {
       if (!cancelled) setSvg(s);
+    }).catch(() => {
+      // Payload too large / encode error — surface rather than render blank.
+      if (!cancelled) setSvg(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font:12px sans-serif;color:#E74C3C;text-align:center;padding:8px">QR too large — use the code below</div>`);
     });
     return () => { cancelled = true; };
   }, [value, size, color, background]);
