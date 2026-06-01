@@ -445,6 +445,94 @@ gunzip -c /var/backups/relay-registry/relay-registry-*.sql.gz \
 
 ---
 
+## 12 · Deploy the terminal-certs update (migration 002)
+
+Brings the **`/v1/terminals/*`** endpoints online — the per-business terminal
+authorization registry that backs ANTON Business's "company tills" dashboard.
+A relay already running the v0.2 registry (§11) only needs the new code plus
+migration `002_terminal_certs.sql`; no new secrets, no schema reset.
+
+**What it adds**
+- `POST /v1/terminals/publish` — store a company-signed terminal cert. The
+  relay verifies ONLY the Ed25519 signature over the cert digest before
+  storing (self-authorizing — no KYC, no review). Malformed or wrongly-signed
+  certs get `400`.
+- `GET /v1/terminals/:companyAddr` — list a company's authorized tills. The
+  fetching client re-verifies every cert, so the relay's grouping is never
+  trusted.
+- Table `terminal_certs` (PK `company_addr` + `terminal_pub`), migration 002.
+
+**Before:** `GET /v1/terminals/<addr>` → `501 not_implemented` (the route is
+absent from the running build). **After:** `200` with `{ terminals: [...] }`.
+
+### 12.1 · Deploy (on the Bahnhof relay host)
+
+```bash
+cd /opt/anton-mesh-relay          # wherever docker-compose.yml lives
+
+# 1. Fetch the new code (includes migration 002 + the terminals handlers).
+git pull
+
+# 2. Rebuild the relay image (the Dockerfile copies migrations/ into it).
+docker compose build relay
+
+# 3. Apply pending migrations. 001 is already applied, so expect 002 only.
+docker compose run --rm relay node dist/registry/migrate.js
+#    Expect: "migrations: applied=1 skipped=1"
+#            applied: 002_terminal_certs.sql
+
+# 4. Restart the relay (graceful drain fires on the old container; with
+#    active_sessions:0 today this is invisible to phones).
+docker compose up -d relay
+
+# 5. Confirm the version came up.
+curl -s https://relay.futurechain.eu/healthz | jq '.version, .registry_enabled'
+```
+
+> External-Postgres operators (§11.2 Option B) run the migrate step against
+> their DB the same way; migration 002 needs no extension beyond what 001
+> already required.
+
+### 12.2 · Verify (from your laptop, NOT the relay host)
+
+The endpoints are self-authorizing, so the route can be smoke-tested without
+operator credentials.
+
+```bash
+# 1. The route now exists (was 501) and an empty company lists cleanly.
+curl -s -o /dev/null -w 'GET terminals -> HTTP %{http_code}\n' \
+  https://relay.futurechain.eu/v1/terminals/fc_SmokeTest11111111111111111111
+#    Expect: HTTP 200   (was 501 before the deploy)
+
+curl -s https://relay.futurechain.eu/v1/terminals/fc_SmokeTest11111111111111111111
+#    Expect: {"companyAddr":"fc_SmokeTest...","terminals":[]}
+
+# 2. A junk cert is rejected (proves the publish path is wired) — never a 5xx.
+curl -s -X POST https://relay.futurechain.eu/v1/terminals/publish \
+  -H 'content-type: application/json' \
+  -d '{"cert":{"v":1,"companyPub":"00","terminalPub":"00","sig":"00","companyAddr":"fc_x","label":"x","issuedAt":1}}'
+#    Expect: {"error":"invalid_cert",...}
+```
+
+For an end-to-end **signed** round-trip (real cert published, listed back,
+upsert + tamper-rejection), the repo ships an integration test that runs
+against a real Postgres. Run it against a throwaway DB:
+
+```bash
+createdb relay_reg_test   # any DEDICATED db — the test drops + re-migrates it
+cd relay
+RELAY_REGISTRY_TEST_DATABASE_URL=postgres://USER:PASS@localhost:5432/relay_reg_test \
+  npx vitest run tests/terminals-endpoints.test.ts
+#    Expect: 4 passed  (publish 201, list round-trip, upsert relabel, tamper 400)
+```
+
+The ANTON Business app needs no change — `src/business/services/relay-terminals.ts`
+already points at `https://relay.futurechain.eu/v1`; the "Company tills"
+dashboard degrades gracefully (shows "no tills yet") until this deploy lands,
+then lights up.
+
+---
+
 ## Reference
 
 - Spec: `docs/ANTON_MESH_SPEC.md`
