@@ -211,12 +211,13 @@ export async function findSimilarContacts(
 // ── Dust hiding ─────────────────────────────────────────────────────
 
 /**
- * Default dust threshold (0.1 FTC in micro-FTC). Incoming transfers
- * below this are hidden by default — they're the most common
- * delivery vehicle for address-poisoning dust. User can show all in
- * Settings → Activity if they want.
+ * Default dust threshold (micro-FTC). Set to 0 so EVERY incoming
+ * transfer shows in the activity list — small real payments (e.g.
+ * 0.01 FTC) were previously hidden. Raise this (or wire a
+ * Settings → Activity control) to re-enable address-poisoning dust
+ * hiding for tiny lookalike-address spam.
  */
-export const DEFAULT_DUST_THRESHOLD_MICRO_FTC = 100_000n;
+export const DEFAULT_DUST_THRESHOLD_MICRO_FTC = 0n;
 
 /** Predicate used by the activity view to filter dust. The threshold
  *  is configurable from Settings (future work); for now it's a
