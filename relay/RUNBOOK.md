@@ -467,11 +467,32 @@ absent from the running build). **After:** `200` with `{ terminals: [...] }`.
 
 ### 12.1 · Deploy (on the Bahnhof relay host)
 
+> **Deployed live 2026-06-01.** The Bahnhof box (`ubuntu@relay.futurechain.eu`,
+> deploy dir `/home/ubuntu/anton-relay`) is a **flat file copy of `relay/`, NOT
+> a git checkout** — so `git pull` there fails with "not a git repository".
+> What was actually run: from the repo on the dev box, tar-sync the changed
+> source up, then build/migrate/restart. The terminals feature added **no new
+> npm deps** (uses `@noble/ed25519` + `@noble/hashes`, already present), so only
+> source + the migration need to land:
+>
+> ```bash
+> # From the repo's relay/ dir on the dev box (back up the remote src first):
+> ssh ubuntu@relay.futurechain.eu 'cd anton-relay && cp -r src migrations \
+>   "../anton-relay-backup-$(date -u +%Y%m%dT%H%M%SZ)"/'
+> tar czf - src/registry/handlers/terminals.ts src/registry/verify.ts \
+>   src/registry/routes.ts migrations/002_terminal_certs.sql \
+>   | ssh ubuntu@relay.futurechain.eu 'tar xzf - -C anton-relay'
+> ```
+>
+> Then run steps 2–5 below on the box. (If you later convert the deploy dir to
+> a real git checkout, the `git pull` form works as written.)
+
 ```bash
-cd /opt/anton-mesh-relay          # wherever docker-compose.yml lives
+cd /home/ubuntu/anton-relay       # the deploy dir (holds docker-compose.yml)
 
 # 1. Fetch the new code (includes migration 002 + the terminals handlers).
-git pull
+#    git checkout: `git pull`. Flat-copy box: tar-sync per the note above.
+git pull   # OR: tar-sync the changed source from the repo (see note)
 
 # 2. Rebuild the relay image (the Dockerfile copies migrations/ into it).
 docker compose build relay
