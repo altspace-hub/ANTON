@@ -21,7 +21,7 @@
  */
 import { getActiveWalletMeta } from './wallets';
 import { getRpc } from './fc-rpc';
-import { listTxs, recordTx, type WalletTx } from './transactions';
+import { listTxs, recordTx, deleteTx, type WalletTx } from './transactions';
 
 export interface FreshIncoming {
   /** The WalletTx row that was persisted. */
@@ -42,12 +42,60 @@ export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
     existing.map(t => t.txHash).filter((h): h is string => !!h),
   );
 
-  // ── 1) LIGHT path — UTXOs (+ /transaction for the sender) ───────────
-  // Unspent outputs to our address ARE the "money is here now" receipts
-  // that back the balance. Public reads — they work even when the hub has
-  // ISO storage disabled. The shared knownHashes set already contains our
-  // OWN sends (the unified ledger records them), so their change outputs
-  // are naturally skipped here.
+  // ── PRIMARY: full ISO receive history (rich PACS.008, keyed by UETR) ─
+  // The whole envelope (remittance, debtor name, structured refs) + the
+  // COMPLETE receive history (spent + unspent). When it works it is the
+  // source of truth, so we skip the UTXO fallback below.
+  let isoOk = false;
+  try {
+    const rpc = await getRpc();
+    const raw = await rpc.getIsoReceived(meta.address);
+    const items = extractItems(raw);
+    isoOk = true; // the call succeeded → ISO is authoritative this poll
+    for (const item of items) {
+      const normalised = normaliseItem(item, meta.address);
+      if (!normalised) continue;
+      if (knownHashes.has(normalised.txHash)) continue;
+      const tx = await recordTx({
+        kind: 'receive',
+        counterparty: normalised.fromAddress || (normalised.fromName ?? '—'),
+        amountMicroFtc: normalised.amountMicroFtc.toString(),
+        // Receiver-side fiat rate is unknown at chain ingest. The user
+        // can edit it from the tx detail view if needed for tax.
+        fiatValueAtTx: 0,
+        fiatCurrency: 'FTC',
+        ref: normalised.remittance ?? null,
+        txHash: normalised.txHash,
+        jurisdictionAtTx: null,
+        ts: normalised.receivedAt,
+        walletAddress: meta.address, // the wallet that received it (the polled wallet)
+      });
+      knownHashes.add(normalised.txHash);
+      fresh.push({ tx, fromName: normalised.fromName });
+    }
+  } catch { isoOk = false; /* hub down / endpoint disabled → fall back to UTXOs */ }
+
+  if (isoOk) {
+    // Purge stale provisional UTXO-fallback rows: the SAME payments keyed by
+    // chain-tx-id (a different id than the UETR the ISO rows use), i.e.
+    // duplicates that would double-count in the balance + tax ledger. Once
+    // ISO is the source of truth they must go — and the fallback below won't
+    // run to re-create them.
+    try {
+      for (const t of existing) {
+        if (t.kind === 'receive' && t.provisional) await deleteTx(t.id);
+      }
+    } catch { /* best-effort cleanup */ }
+    return fresh;
+  }
+
+  // ── FALLBACK: UTXO light path (ONLY when ISO is unavailable) ────────
+  // Unspent outputs back the balance; a cheap /transaction lookup yields the
+  // sender. Public reads — they work even if the hub's ISO endpoint is down,
+  // so a just-received payment stays visible while ISO recovers. The shared
+  // knownHashes set already contains our OWN sends (the unified ledger
+  // records them), so their change outputs are naturally skipped here. Rows
+  // are marked `provisional` so they're purged once ISO supersedes them.
   try {
     const rpc = await getRpc();
     const utxos = await rpc.getUtxos(meta.address);
@@ -75,43 +123,12 @@ export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
         jurisdictionAtTx: null,
         ts: receivedAt,
         walletAddress: meta.address,
+        provisional: true,
       });
       knownHashes.add(txId);
       fresh.push({ tx });
     }
-  } catch { /* light path unreachable (offline / hub error) — fall through to ISO */ }
-
-  // ── 2) FULL ISO path — credentialed /iso_received ──────────────────
-  // The whole PACS.008 envelope (remittance, debtor name, structured refs)
-  // and spent receipts no longer in the UTXO set. Best-effort — the hub
-  // may have ISO storage disabled (405), in which case the light path
-  // above already captured the live receipts.
-  try {
-    const rpc = await getRpc();
-    const raw = await rpc.getIsoReceived(meta.address);
-    const items = extractItems(raw);
-    for (const item of items) {
-      const normalised = normaliseItem(item, meta.address);
-      if (!normalised) continue;
-      if (knownHashes.has(normalised.txHash)) continue;
-      const tx = await recordTx({
-        kind: 'receive',
-        counterparty: normalised.fromAddress || (normalised.fromName ?? '—'),
-        amountMicroFtc: normalised.amountMicroFtc.toString(),
-        // Receiver-side fiat rate is unknown at chain ingest. The user
-        // can edit it from the tx detail view if needed for tax.
-        fiatValueAtTx: 0,
-        fiatCurrency: 'FTC',
-        ref: normalised.remittance ?? null,
-        txHash: normalised.txHash,
-        jurisdictionAtTx: null,
-        ts: normalised.receivedAt,
-        walletAddress: meta.address, // the wallet that received it (the polled wallet)
-      });
-      knownHashes.add(normalised.txHash);
-      fresh.push({ tx, fromName: normalised.fromName });
-    }
-  } catch { /* ISO endpoint down / disabled → light path covers live funds */ }
+  } catch { /* light path unreachable (offline / hub error) — nothing to add */ }
 
   return fresh;
 }

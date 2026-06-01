@@ -145,6 +145,21 @@ export async function getAllReceived(): Promise<ReceivedRecord[]> {
   return rows.sort((a, b) => b.receivedAt - a.receivedAt);
 }
 
+/** Delete a single received record by txId. Used to purge stale
+ *  UTXO-light-path rows once the ISO receive-history (keyed by UETR)
+ *  becomes the authoritative source — they are the same payments under a
+ *  different id, i.e. duplicates. */
+export async function deleteReceived(txId: string): Promise<void> {
+  const db = await open();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(RECEIVED_STORE, 'readwrite');
+    tx.objectStore(RECEIVED_STORE).delete(txId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
 /** Erase every received record. Pairs with wipePayments() on a full
  *  app reset. */
 export async function wipeReceived(): Promise<void> {

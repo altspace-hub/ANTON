@@ -99,6 +99,13 @@ export interface WalletTx {
    *  balance + tax positions are correct. Defaults to the active wallet on
    *  record when not supplied. */
   walletAddress?: string;
+  /** True for a row created by the UTXO light-path FALLBACK (received.ts)
+   *  while the ISO endpoint was unavailable. Such rows are keyed by the
+   *  chain tx-id; once the ISO receive-history (keyed by UETR) becomes
+   *  available it is authoritative and these provisional rows are purged so
+   *  the same payment isn't double-counted. Optional + schemaless-safe (no
+   *  IndexedDB version bump). */
+  provisional?: boolean;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -126,6 +133,7 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     // Tag with the supplied wallet, else the active wallet, so the ledger is
     // scoped per wallet (the receive poller passes the receiving wallet).
     walletAddress: input.walletAddress ?? (await getActiveWalletMeta())?.address,
+    provisional: input.provisional,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -153,6 +161,19 @@ export async function confirmTx(id: string, txHash: string): Promise<void> {
       }
       store.put({ ...row, txHash });
     };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Delete a single tx by id. Used by the receive poller to purge
+ *  provisional UTXO-light-path rows once the authoritative ISO
+ *  receive-history (keyed by UETR) supersedes them. */
+export async function deleteTx(id: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_WALLET_TXS, 'readwrite');
+    tx.objectStore(STORE_WALLET_TXS).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
