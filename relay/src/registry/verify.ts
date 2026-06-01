@@ -73,6 +73,35 @@ export function deriveContactHash(pubkeyHex: string): string | null {
 }
 
 /**
+ * Verify a per-business terminal authorization cert's Ed25519 signature
+ * against its embedded companyPub. The signed digest MUST match the app's
+ * `certDigest` (src/business/services/terminal-cert.ts): sha256 over
+ * 'anton-terminal-cert|v1|' + JSON.stringify(sorted-keys cert WITHOUT sig).
+ *
+ * The relay only checks the signature (so unsigned junk can't be stored).
+ * The FETCHING CLIENT re-verifies fully — including that companyAddr
+ * derives from companyPub — so it never has to trust the relay's grouping.
+ */
+export async function verifyTerminalCertSig(cert: Record<string, unknown>): Promise<boolean> {
+  try {
+    const sig = typeof cert.sig === 'string' ? cert.sig : null;
+    const companyPub = typeof cert.companyPub === 'string' ? cert.companyPub : null;
+    if (!sig || !companyPub) return false;
+    const sigBytes = hexToBytes(sig);
+    const pubBytes = hexToBytes(companyPub);
+    if (!sigBytes || sigBytes.length !== 64 || !pubBytes || pubBytes.length !== 32) return false;
+    const unsigned: Record<string, unknown> = { ...cert };
+    delete unsigned.sig;
+    const sorted: Record<string, unknown> = {};
+    for (const k of Object.keys(unsigned).sort()) sorted[k] = unsigned[k];
+    const digest = sha256(new TextEncoder().encode('anton-terminal-cert|v1|' + JSON.stringify(sorted)));
+    return await ed25519.verifyAsync(sigBytes, digest, pubBytes);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Verify the descriptor signature. Returns true iff:
  *   - pubkeyHex decodes to 32 bytes
  *   - signatureB64Url decodes to 64 bytes

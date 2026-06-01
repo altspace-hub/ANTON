@@ -23,6 +23,7 @@ import {
   encodeTerminalRequest, encodeTerminalCert, decodeTerminalCert, decodeTerminalRequest,
   type TerminalCert,
 } from '../../services/terminal-cert';
+import { publishTerminalCert, fetchCompanyTerminals } from '../../services/relay-terminals';
 
 interface Props { onBack: () => void; }
 
@@ -44,13 +45,18 @@ export default function TerminalsScreen({ onBack }: Props) {
   const [issued, setIssued] = useState<TerminalCert | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
+  const [companyTills, setCompanyTills] = useState<TerminalCert[] | null>(null); // owner dashboard
 
   const refresh = useCallback(async () => {
     setTerminalPub(await getTerminalPubHex());
     setStoredCert(await getStoredTerminalCert());
     const meta = await loadWallet();
-    setIsOwner(!!meta && !meta.watchOnly);
+    const owner = !!meta && !meta.watchOnly;
+    setIsOwner(owner);
     setCompanyAddr(meta?.address ?? '');
+    // Owner dashboard: the company's published tills (from the relay).
+    if (owner && meta?.address) setCompanyTills(await fetchCompanyTerminals(meta.address));
+    else setCompanyTills(null);
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -74,6 +80,7 @@ export default function TerminalsScreen({ onBack }: Props) {
     void (async () => {
       try {
         await storeTerminalCert(cert, companyAddr || undefined);
+        void publishTerminalCert(cert);   // best-effort: make this till discoverable
         setOverlay(null);
         await refresh();
         setOkMsg(t('terminals.saved', 'Authorization saved.'));
@@ -99,6 +106,8 @@ export default function TerminalsScreen({ onBack }: Props) {
     try {
       const cert = await issueTerminalCert(authPub, authLabel);
       setIssued(cert);
+      // Publish to the relay so the till shows in the company dashboard.
+      void publishTerminalCert(cert).then((ok) => { if (ok) void refresh(); });
     } catch (e) {
       setNotice(e instanceof Error ? e.message : 'Could not sign');
     }
@@ -229,6 +238,34 @@ export default function TerminalsScreen({ onBack }: Props) {
                         style={{ backgroundColor: 'var(--color-surface-alt, #ECECEC)', color: 'var(--color-text)' }}>
                   {t('terminals.authorizeAnother', 'Authorize another')}
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Company tills (owner dashboard, from the relay) ──────── */}
+        {isOwner && companyTills && (
+          <div className="rounded-xl p-4 mt-4"
+               style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <div className="text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-faint)' }}>
+              {t('terminals.companyTills', { count: companyTills.length, defaultValue: `Company tills (${companyTills.length})` })}
+            </div>
+            {companyTills.length === 0 ? (
+              <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                {t('terminals.noTills', 'No tills published yet. Authorize a till — it appears here once it syncs to the relay.')}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {companyTills.map((c) => (
+                  <div key={c.terminalPub}
+                       className="flex items-center justify-between rounded-lg px-3 py-2"
+                       style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+                    <span className="text-sm truncate" style={{ color: 'var(--color-text)' }}>{c.label}</span>
+                    <span className="mono text-[11px] ml-2 shrink-0" style={{ color: 'var(--color-text-faint)' }}>
+                      {shortKey(c.terminalPub)}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
