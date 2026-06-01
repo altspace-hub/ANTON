@@ -30,7 +30,7 @@ import { openDb, STORE_Z_REPORTS, INDEX_ZREPORTS_BY_CLOSED } from './db';
 import { consumeZNumber, loadConfig } from './merchant';
 import { listReceipts } from './receipts';
 import { listRefunds } from './refunds';
-import { getActiveSigner } from './wallets';
+import { getActiveSigner, getTerminalSigner } from './wallets';
 import type { Receipt, RefundReceipt, ZReport } from './types';
 
 // IDB serialisation — bigint → string at the boundary.
@@ -52,8 +52,8 @@ function bytesToHex(b: Uint8Array): string {
 
 /** Deterministic JSON over the Z report's fields (excluding the
  *  selfHash + signature themselves). Sorts keys so the hash is
- *  reproducible across JS engines. */
-function canonicalize(z: Omit<ZReport, 'selfHash' | 'signature'>): string {
+ *  reproducible across JS engines. Exported for the signing test. */
+export function canonicalize(z: Omit<ZReport, 'selfHash' | 'signature'>): string {
   const obj: Record<string, unknown> = { ...z };
   // bigint not JSON-serialisable; project to string.
   obj.ftcReceivedMicro = z.ftcReceivedMicro.toString();
@@ -106,8 +106,12 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
   // Wave 7 — sign via the native plugin path so the priv never
   // enters JS heap. getActiveSigner handles transparent migration
   // from the legacy priv-in-secure-store layout.
-  const signer = await getActiveSigner();
-  if (!signer) throw new Error('closeDay: no active wallet — cannot sign the Z report');
+  // A keyed money wallet signs with its own key (unchanged). A WATCH-ONLY
+  // money wallet (central company address, no priv on this device) has no
+  // money signer, so we fall back to this device's per-terminal key. The
+  // signer's pubkey is embedded in the report below so it self-verifies
+  // regardless of which key signed.
+  const signer = (await getActiveSigner()) ?? (await getTerminalSigner());
 
   const prev = await lastZReport();
   const openedAt = prev ? prev.closedAt : 0;
@@ -179,6 +183,9 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
     tipsSek: 0, // hooked to the tip-pool table when that lands
     ftcReceivedMicro,
     prevHash,
+    // Embed the signing key so the report is SELF-VERIFYING (keyed money
+    // wallet pubkey, or the per-terminal key for a watch-only wallet).
+    signerPublicKeyHex: bytesToHex(signer.publicKey),
   };
 
   // Hash + sign.
@@ -202,16 +209,21 @@ export async function closeDay(now = Date.now()): Promise<ZReport> {
   return signed;
 }
 
-/** Verify a Z's signature against the merchant's expected public key.
- *  Used by the auditor + by re-import on a new device. */
-export function verifyZReport(z: ZReport, publicKeyHex: string): boolean {
+/** Verify a Z's self-hash + Ed25519 signature. Prefers the report's
+ *  embedded `signerPublicKeyHex` (self-describing — required for
+ *  watch-only / per-terminal-signed reports); falls back to a
+ *  caller-supplied key for legacy reports without one. Used by the
+ *  auditor + by re-import on a new device. */
+export function verifyZReport(z: ZReport, publicKeyHex?: string): boolean {
   try {
     const { selfHash, signature, ...rest } = z;
     const canon = canonicalize(rest);
     const expectedHash = bytesToHex(sha256(new TextEncoder().encode(canon)));
     if (expectedHash !== selfHash) return false;
+    const pubHex = z.signerPublicKeyHex ?? publicKeyHex;
+    if (!pubHex) return false;   // no key to verify against
     const sigBytes = new Uint8Array(signature.match(/../g)!.map(b => Number.parseInt(b, 16)));
-    const pubBytes = new Uint8Array(publicKeyHex.match(/../g)!.map(b => Number.parseInt(b, 16)));
+    const pubBytes = new Uint8Array(pubHex.match(/../g)!.map(b => Number.parseInt(b, 16)));
     const hashBytes = new Uint8Array(selfHash.match(/../g)!.map(b => Number.parseInt(b, 16)));
     return ed25519.verify(sigBytes, hashBytes, pubBytes);
   } catch {

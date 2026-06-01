@@ -216,8 +216,17 @@ export interface ZReport {
   /** SHA-256 hex of this Z report's canonical JSON (computed at sign
    *  time over every other field except `signature`). */
   selfHash: string;
-  /** Ed25519 signature over selfHash by the merchant's active wallet. */
+  /** Ed25519 signature over selfHash by the signing key (see
+   *  `signerPublicKeyHex`). */
   signature: string;
+  /** Ed25519 public key (hex) of the key that produced `signature` —
+   *  embedded so the report is SELF-VERIFYING. For a keyed money wallet
+   *  this is the wallet's pubkey; for a WATCH-ONLY money wallet (a
+   *  central company receiving address with no private key on this
+   *  device) it is the device's per-terminal signing key. Absent on
+   *  pre-2026-06 reports, which verify against an externally-supplied
+   *  key. */
+  signerPublicKeyHex?: string;
   /** Optional external timestamp (RFC 3161 or relay-side timestamp)
    *  to anchor selfHash at a third party. */
   externalTimestamp?: string;

@@ -150,7 +150,10 @@ export function checkZReportChain(
     const cur = all[i]!;
     const prev = i > 0 ? all[i - 1]! : null;
 
-    if (publicKeyHex && !verifyZReport(cur, publicKeyHex)) {
+    // Verify the signature when the report self-describes its signer
+    // (embedded pubkey — watch-only / per-terminal reports) OR a key was
+    // supplied (legacy reports). verifyZReport prefers the embedded key.
+    if ((cur.signerPublicKeyHex || publicKeyHex) && !verifyZReport(cur, publicKeyHex)) {
       findings.push({
         kind: 'signature', at: cur.zNumber, hard: true,
         detail: `Z-${cur.zNumber} fails self-hash or Ed25519 signature verification`,

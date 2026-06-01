@@ -56,6 +56,14 @@ export interface WalletMeta {
    *  signed tx without having the priv. See Pay's wallets.ts for
    *  the migration story. */
   publicKeyHex?: string;
+  /** WATCH-ONLY wallet: a central company receiving address with NO
+   *  private key / mnemonic / password on this device. A merchant only
+   *  ever RECEIVES, so a terminal needs only the public address to show
+   *  a pay QR, read the balance, and match receipts. The company holds
+   *  the actual keypair centrally; lose a terminal and there is nothing
+   *  to steal. Z-reports on a watch-only wallet are signed by a separate
+   *  per-terminal key (see getTerminalSigner). */
+  watchOnly?: boolean;
 }
 
 export interface Wallet {
@@ -270,6 +278,45 @@ export async function importWalletFromMnemonic(
   return meta;
 }
 
+/**
+ * Add a WATCH-ONLY wallet — a central company receiving address with NO
+ * private key / mnemonic / password on this device. Validates the fc_
+ * address, dedupes, stores only the address, and makes it active so the
+ * till receives to it immediately. Receiving (pay QR + balance + receipt
+ * matching) is entirely address-driven, so this supports the full
+ * merchant receive flow; it simply cannot SPEND or sign with the money
+ * key (Z-reports use the per-terminal key — see getTerminalSigner).
+ */
+export async function addWatchOnlyWallet(
+  address: string,
+  label = 'Company wallet',
+): Promise<WalletMeta> {
+  const addr = address.trim();
+  if (!/^fc_[1-9A-HJ-NP-Za-km-z]{20,64}$/.test(addr)) {
+    throw new Error('Enter a valid FutureChain address (starts with fc_).');
+  }
+  await migrateLegacyIfNeeded();
+  const list = await readRegistry();
+  if (list.some(w => w.address === addr)) {
+    throw new Error('That address is already added.');
+  }
+  const id = newId();
+  const meta: WalletMeta = {
+    id,
+    label: label.trim() || 'Company wallet',
+    address: addr,
+    createdAt: Date.now(),
+    backedUp: true,   // nothing to back up — there is no key/phrase here
+    watchOnly: true,
+  };
+  await setSecure(addrKey(id), addr);   // address only; no priv / mnemonic
+  list.push(meta);
+  await writeRegistry(list);
+  await setSecure(ACTIVE_KEY, id);
+  await syncMerchantAddress(meta.address);
+  return meta;
+}
+
 export async function renameWallet(id: string, label: string): Promise<void> {
   const list = await listWallets();
   const found = list.find(w => w.id === id);
@@ -355,6 +402,10 @@ export async function getActiveSigner(): Promise<ActiveSigner | null> {
   const list = await listWallets();
   let meta = list.find(w => w.id === id);
   if (!meta) return null;
+  // Watch-only wallets hold no private key on this device — there is no
+  // money signer. Callers that need a signature (Z-reports) fall back to
+  // the per-terminal key (getTerminalSigner).
+  if (meta.watchOnly) return null;
 
   if (isSecureSignerAvailable()) {
     const wrapped = await nativeHasAlias(id);
@@ -405,6 +456,54 @@ export async function getActiveSigner(): Promise<ActiveSigner | null> {
     alias: id,
     publicKey: w.publicKey,
     address: w.address,
+    sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
+  };
+}
+
+// ── Per-terminal signing key (option A) ──────────────────────────────
+// A device-local Ed25519 identity, SEPARATE from any money wallet, used
+// to sign Z-reports. This lets a WATCH-ONLY money wallet (a central
+// company receiving address with no priv on this device) still produce a
+// signed daily close, and keeps the till-integrity key decoupled from the
+// money key — the fiscally correct per-register model. Generated once per
+// install; the public key is embedded in each Z-report so it stays
+// self-verifying. (Registering terminal keys for cross-device authenticity
+// is future work; today the embedded key gives tamper-evidence.)
+
+const TERMINAL_ALIAS    = 'fc-terminal-key';
+const TERMINAL_PRIV_KEY = 'fc.terminal.priv';   // dev/web fallback only
+const TERMINAL_PUB_KEY  = 'fc.terminal.pub';
+
+export async function getTerminalSigner(): Promise<ActiveSigner> {
+  let pubHex = await getSecure(TERMINAL_PUB_KEY);
+  if (isSecureSignerAvailable()) {
+    if (!(await nativeHasAlias(TERMINAL_ALIAS)) || !pubHex) {
+      const { wallet } = sdkWallet.createWallet();
+      await wrapPriv(TERMINAL_ALIAS, bytesToHex(wallet.privateKey));
+      pubHex = bytesToHex(wallet.publicKey);
+      await setSecure(TERMINAL_PUB_KEY, pubHex);
+    }
+    return {
+      alias: TERMINAL_ALIAS,
+      publicKey: hexToBytes(pubHex),
+      address: '',   // a signing identity, not a money address
+      sign: (digest: Uint8Array) => signWithAlias(TERMINAL_ALIAS, digest),
+    };
+  }
+  // Dev / web fallback — priv kept in secure-store (no native Keystore).
+  let privHex = await getSecure(TERMINAL_PRIV_KEY);
+  if (!privHex || !pubHex) {
+    const { wallet } = sdkWallet.createWallet();
+    privHex = bytesToHex(wallet.privateKey);
+    pubHex = bytesToHex(wallet.publicKey);
+    await setSecure(TERMINAL_PRIV_KEY, privHex);
+    await setSecure(TERMINAL_PUB_KEY, pubHex);
+  }
+  const w = sdkWallet.walletFromPrivateKey(hexToBytes(privHex));
+  return {
+    alias: TERMINAL_ALIAS,
+    publicKey: w.publicKey,
+    address: '',
     sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
   };
 }

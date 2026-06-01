@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchBalanceFtc } from '../../services/fc-rpc';
 import {
+  addWatchOnlyWallet,
   getActiveWalletId,
   listWallets,
   setActiveWallet,
@@ -36,12 +37,31 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
   const [list, setList] = useState<WalletMeta[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [balances, setBalances] = useState<Record<string, number | null>>({});
+  const [addingWatch, setAddingWatch] = useState(false);
+  const [watchAddr, setWatchAddr] = useState('');
+  const [watchLabel, setWatchLabel] = useState('');
+  const [watchErr, setWatchErr] = useState<string | null>(null);
+  const [savingWatch, setSavingWatch] = useState(false);
 
   const refresh = useCallback(async () => {
     const wallets = await listWallets();
     setList(wallets);
     setActiveId(await getActiveWalletId());
   }, []);
+
+  async function saveWatchOnly() {
+    setWatchErr(null);
+    setSavingWatch(true);
+    try {
+      await addWatchOnlyWallet(watchAddr, watchLabel);
+      setWatchAddr(''); setWatchLabel(''); setAddingWatch(false);
+      await refresh();
+    } catch (e) {
+      setWatchErr(e instanceof Error ? e.message : 'Could not add address');
+    } finally {
+      setSavingWatch(false);
+    }
+  }
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -85,6 +105,8 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
 
         <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
           {t('walletsList.help', 'Each wallet is its own Ed25519 keypair with its own balance. Tap to switch which one signs.')}
+          {' '}
+          {t('walletsList.helpWatch', 'Or add a central company receiving address (watch-only) — no key or password on this device; it can only take in payments.')}
         </p>
 
         <div className="flex flex-col gap-2 mb-4">
@@ -110,13 +132,19 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
                     <div className="font-semibold text-sm flex items-center gap-2"
                          style={{ color: 'var(--color-text)' }}>
                       <span className="truncate">{w.label}</span>
-                      {!w.backedUp && (
+                      {w.watchOnly ? (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                              style={{ backgroundColor: 'var(--color-surface-alt, #ECECEC)',
+                                       color: 'var(--color-text-muted)' }}>
+                          {t('walletsList.watchOnly', 'Watch-only')}
+                        </span>
+                      ) : !w.backedUp ? (
                         <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded"
                               style={{ backgroundColor: 'var(--color-warning-soft, #FFF3CD)',
                                        color: 'var(--color-warning, #C8881E)' }}>
                           {t('walletsList.notBackedUp', 'Back up')}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     <div className="mono text-xs mt-0.5"
                          style={{ color: 'var(--color-text-muted)' }}>
@@ -153,6 +181,59 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
                          color: 'var(--color-accent-fg)' }}>
           + {t('walletsList.add', 'New wallet')}
         </button>
+
+        {/* Watch-only: add a central company receiving address (no keys
+            on this device). The till receives to it; it cannot spend. */}
+        {!addingWatch ? (
+          <button type="button" onClick={() => { setAddingWatch(true); setWatchErr(null); }}
+                  className="mt-2 py-3 rounded-xl text-sm font-semibold"
+                  style={{ backgroundColor: 'var(--color-surface)',
+                           border: '1px solid var(--color-border)',
+                           color: 'var(--color-text)' }}>
+            + {t('walletsList.addWatch', 'Add receiving address (watch-only)')}
+          </button>
+        ) : (
+          <div className="mt-2 rounded-xl p-3.5 flex flex-col gap-2.5"
+               style={{ backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)' }}>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {t('walletsList.addWatchHelp', 'Paste your company FutureChain address. This terminal will receive to it with no private key stored here.')}
+            </div>
+            <input
+              type="text" inputMode="text" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+              value={watchAddr} onChange={(e) => setWatchAddr(e.target.value)}
+              placeholder="fc_…"
+              className="mono text-sm rounded-lg px-3 py-2.5"
+              style={{ backgroundColor: 'var(--color-bg)',
+                       border: '1px solid var(--color-border)',
+                       color: 'var(--color-text)' }}
+            />
+            <input
+              type="text" value={watchLabel} onChange={(e) => setWatchLabel(e.target.value)}
+              placeholder={t('walletsList.addWatchLabel', 'Label (e.g. Company wallet)')}
+              className="text-sm rounded-lg px-3 py-2.5"
+              style={{ backgroundColor: 'var(--color-bg)',
+                       border: '1px solid var(--color-border)',
+                       color: 'var(--color-text)' }}
+            />
+            {watchErr && (
+              <div className="text-xs" style={{ color: 'var(--color-red, #E74C3C)' }}>{watchErr}</div>
+            )}
+            <div className="flex gap-2">
+              <button type="button" disabled={savingWatch || !watchAddr.trim()} onClick={() => void saveWatchOnly()}
+                      className="flex-1 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+                      style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}>
+                {savingWatch ? t('common.saving', 'Saving…') : t('common.add', 'Add')}
+              </button>
+              <button type="button" disabled={savingWatch}
+                      onClick={() => { setAddingWatch(false); setWatchErr(null); setWatchAddr(''); setWatchLabel(''); }}
+                      className="px-4 py-2.5 rounded-lg text-sm font-semibold"
+                      style={{ backgroundColor: 'var(--color-surface-alt, #ECECEC)', color: 'var(--color-text)' }}>
+                {t('common.cancel', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
