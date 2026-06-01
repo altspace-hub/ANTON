@@ -194,3 +194,55 @@ Anything ANTON-app-side that needs to change to match your final contract
 (field names, auth model on `/iso_received`, error codes) — tell the ANTON side
 and we'll adapt the parser in `src/{pay,comm,business}/services/received.ts` and
 the SDK `RpcClient`.
+
+---
+
+## 6. 🔴 BLOCKER (2026-06-01): `submit_signed_transaction` soft-rejects every payment with `"API key required"`
+
+**Symptom:** every signed-tx submit from a fully-enrolled, attested phone fails.
+The client receives **HTTP 200** (so Caddy's edge auth PASSED) with this body:
+
+```json
+{ "error": "API key required", "status": "rejected" }
+```
+
+**This is a hub-side regression, not a client bug.** Proven on-device with the
+funded wallet `fc_VQjZM7gjtQF1cUtahiPCLmns31c18yTvyY`:
+
+| Request (all via the phone, native HTTP) | Result |
+|---|---|
+| `POST /enroll` (valid UUID) | `200` + `install_token` ✓ |
+| `POST /attest` (X-API-Key + `DEV_NO_ATTESTATION:<id>`) | `200` + `session_token` ✓ (dev attestation IS allowed) |
+| `POST /submit_signed_transaction` — **no** X-API-Key | `401 {"detail":"missing X-API-Key"}` (Caddy) |
+| `POST /submit` — X-API-Key + **no/garbage** attestation | `401 {"detail":"attestation required"}` (Caddy) |
+| `POST /submit` — X-API-Key + valid attestation + **garbage body** | `400 "Request body deserialize error: missing field \`id\`"` (node parsed it) |
+| `POST /submit` — X-API-Key + valid attestation + **real signed tx** | **`200 {"error":"API key required","status":"rejected"}`** ← the bug |
+
+So: Caddy validates the per-install `X-API-Key` + `X-Attestation-Token` and
+returns 200. The request reaches the **futurechain node**, which deserializes the
+tx fine (the garbage-body case proves the body parser runs) and then **rejects in
+its own handler with `"API key required"`** — i.e. the node is still checking for
+its OWN internal bearer (`LIGHT_HUB_API_KEYS` / the legacy `DEFAULT_API_KEY`,
+e.g. `4fc4de10…`) and is NOT receiving it.
+
+**Almost certainly:** after the recent hub update, **Caddy no longer injects the
+node's internal API key** when it `reverse_proxy`s `/submit_signed_transaction`
+to the node. Before, the sidecar validated the per-install token and then added
+the node's bearer on the upstream hop; now the node sees no key it recognizes.
+
+**Fix (hub side), pick one:**
+1. In the Caddy `/submit_signed_transaction` route, after the forward_auth
+   succeeds, set the upstream header to the node's key, e.g.
+   `header_up X-API-Key {env.LIGHT_HUB_API_KEY}` (or whatever header the node
+   reads), so the node receives its expected bearer. **Recommended** — keeps the
+   per-install model at the edge and the node's defense-in-depth intact.
+2. Configure the node to ACCEPT the per-install tokens (share the enrollment
+   token store with the node), so it no longer needs its own bearer.
+3. Disable the node's internal api-key check on the Caddy-only public path.
+
+**Verify after the fix** (from any machine, no app needed — substitute a valid
+enrolled token + attestation session, or just re-run the table above): the real
+signed-tx submit should return a `200` with `status` ∈ {`queued`,`accepted`} and
+a `tx_id`, NOT `{"error":"API key required"}`. The ANTON apps need **zero
+changes** — they already send `X-API-Key` + `X-Attestation-Token` correctly
+(confirmed via SDK request logging: `hasXApiKey=true hasAtt=true`).
