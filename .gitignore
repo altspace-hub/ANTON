@@ -105,3 +105,6 @@ android-comm/app/src/main/assets/public/
 # and stops binary-PDF noise in diffs.
 data/test-corpus/*/docs/*
 !data/test-corpus/*/docs/.gitkeep
+
+# Scratch on-device driving scripts (superseded by tests/device/)
+.live-walk/
