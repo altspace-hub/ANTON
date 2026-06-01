@@ -1,5 +1,6 @@
 [
   { "pkg": "@aparajita/capacitor-secure-storage", "classpath": "com.aparajita.capacitor.securestorage.SecureStorage" },
+  { "pkg": "@capgo/capacitor-native-biometric", "classpath": "ee.forgr.biometric.NativeBiometric" },
   { "pkg": "@capacitor/app", "classpath": "com.capacitorjs.plugins.app.AppPlugin" },
   { "pkg": "@capacitor/share", "classpath": "com.capacitorjs.plugins.share.SharePlugin" },
   { "pkg": "@capacitor/splash-screen", "classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin" },

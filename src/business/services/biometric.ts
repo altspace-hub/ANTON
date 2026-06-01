@@ -41,6 +41,11 @@ export async function requireBiometric(prompt: BiometricPrompt): Promise<Biometr
 
   let status: Awaited<ReturnType<typeof NativeBiometric.isAvailable>>;
   try {
+    // Reflects REAL (strong) biometric availability only. We do NOT pass
+    // useFallback: the @capgo plugin ignores it on Android and cannot drive a
+    // device-credential (PIN) prompt, so passing it would only flash-fail in
+    // verifyIdentity on a no-fingerprint phone. A no-biometric device returns
+    // `unavailable` here and the caller falls back to its own gate.
     status = await NativeBiometric.isAvailable();
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);

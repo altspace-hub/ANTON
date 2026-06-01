@@ -22,6 +22,7 @@ import {
 } from './wallets';
 import { BadPassphraseError } from './wallet-passphrase';
 import { requireBiometric } from './biometric';
+import { hasPaymentPin, setPaymentPin, verifyPaymentPin } from './payment-pin';
 import { assembleDraft, type PartyIdentification } from './pacs008-draft';
 import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
@@ -285,13 +286,51 @@ const DEFAULT_FEE_SATOSHI = 100;
  *  status: failed, error: 'passphrase cancelled'). */
 export type PassphrasePrompt = (failedAttempts: number) => Promise<string | null>;
 
+/** Caller-supplied callback for the in-app payment-PIN dialog — the
+ *  user-presence fallback used when the device has no usable biometric.
+ *  `mode` is 'create' the first time (no PIN set yet) or 'enter' afterwards;
+ *  `failedAttempts` drives the back-off in 'enter' mode. Resolve with the
+ *  entered PIN, or null when the user cancels. */
+export type PinPrompt = (mode: 'create' | 'enter', failedAttempts: number) => Promise<string | null>;
+
 const MAX_PASSPHRASE_ATTEMPTS = 5;
+const MAX_PIN_ATTEMPTS = 5;
 
 export interface ExecutePaymentOptions {
   /** Required IF the active wallet has a passphrase set. Without this
    *  callback, executePayment throws on a passphrased wallet so the
    *  signing path can't silently fail. */
   promptForPassphrase?: PassphrasePrompt;
+  /** The biometric→PIN fallback dialog. Used ONLY when the device has no
+   *  usable biometric (requireBiometric returns unavailable/failed). Without
+   *  it, a no-biometric device fails the gate exactly as before. */
+  promptForPin?: PinPrompt;
+}
+
+/** Run the in-app payment-PIN gate. Returns true when the user authorizes
+ *  (a correct existing PIN, or a freshly-created one), false on cancel,
+ *  exhaustion, or no callback. Mirrors the passphrase retry loop. */
+async function runPinGate(prompt: PinPrompt | undefined): Promise<boolean> {
+  if (!prompt) return false;
+  if (await hasPaymentPin()) {
+    let failures = 0;
+    while (failures < MAX_PIN_ATTEMPTS) {
+      const entered = await prompt('enter', failures);
+      if (entered == null) return false;             // cancelled
+      if (await verifyPaymentPin(entered)) return true;
+      failures++;
+    }
+    return false;                                     // exhausted
+  }
+  // No PIN yet → create one now (the modal handles enter + confirm).
+  const created = await prompt('create', 0);
+  if (created == null) return false;                  // cancelled
+  try {
+    await setPaymentPin(created);
+  } catch {
+    return false;                                     // malformed — UI validates, so rare
+  }
+  return true;
 }
 
 export async function executePayment(
@@ -368,23 +407,37 @@ export async function executePayment(
     reason: shortGateReason(amountFtc, decoded.toAddress),
   });
   if (!gate.ok) {
-    const failed: PaymentRecord = {
-      id,
-      toAddress: decoded.toAddress,
-      merchantId: decoded.merchantId,
-      orderId: decoded.orderId,
-      purpose: decoded.purpose,
-      amountMicroFtc: decoded.amountMicroFtc,
-      ref: decoded.ref,
-      qrUri: decoded.qrUri,
-      status: 'failed',
-      paidAt: Date.now(),
-      pacs008: draft,
-      risk,
-      error: `biometric ${gate.reason}`,
-    };
-    await putPayment(failed);
-    return failed;
+    // Biometric not usable on this device → fall back to the in-app payment
+    // PIN (a user-presence check that works without a fingerprint). A user
+    // who actively CANCELLED a real biometric prompt is a clean abort and
+    // does NOT fall through; 'unavailable' (no sensor / none enrolled) and
+    // 'failed' (e.g. no-hardware error) both fall through to the PIN gate.
+    const canUsePin = gate.reason === 'unavailable' || gate.reason === 'failed';
+    const pinOk = canUsePin && (await runPinGate(options?.promptForPin));
+    if (!pinOk) {
+      // Distinguish the failure: a wired-up PIN that the user cancelled vs a
+      // biometric cancel vs no PIN callback at all.
+      const reason = canUsePin && options?.promptForPin
+        ? 'pin cancelled'
+        : `biometric ${gate.reason}`;
+      const failed: PaymentRecord = {
+        id,
+        toAddress: decoded.toAddress,
+        merchantId: decoded.merchantId,
+        orderId: decoded.orderId,
+        purpose: decoded.purpose,
+        amountMicroFtc: decoded.amountMicroFtc,
+        ref: decoded.ref,
+        qrUri: decoded.qrUri,
+        status: 'failed',
+        paidAt: Date.now(),
+        pacs008: draft,
+        risk,
+        error: reason,
+      };
+      await putPayment(failed);
+      return failed;
+    }
   }
 
   // Wallet passphrase gate — second factor on top of biometric, opt-in.

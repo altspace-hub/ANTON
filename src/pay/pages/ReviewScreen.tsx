@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
 import PassphrasePromptModal from '../components/PassphrasePromptModal';
+import PinPromptModal from '../components/PinPromptModal';
 import {
   estimateSek, executePayment, formatFtc, formatSek, isExpired,
   loadBehaviorProfile, secondsUntilExpiry,
@@ -85,6 +86,13 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   const [passphraseResolver, setPassphraseResolver] =
     useState<((p: string | null) => void) | null>(null);
   const [passphraseFailures, setPassphraseFailures] = useState(0);
+
+  /** In-app payment-PIN prompt state. Opened by executePayment's biometric→
+   *  PIN fallback when the device has no usable biometric. */
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinMode, setPinMode] = useState<'create' | 'enter'>('enter');
+  const [pinResolver, setPinResolver] = useState<((p: string | null) => void) | null>(null);
+  const [pinFailures, setPinFailures] = useState(0);
 
   useEffect(() => {
     void (async () => {
@@ -173,6 +181,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
       const record = await executePayment(
         payment, assessment ?? undefined, customerNote, {
           promptForPassphrase: openPassphraseModal,
+          promptForPin: openPinModal,
         },
       );
       onConfirmed(record);
@@ -195,6 +204,23 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
         resolve(val);
       });
       setPassphraseOpen(true);
+    });
+  }
+
+  /** Opens the in-app payment-PIN modal (create on first use, else enter) and
+   *  resolves with the entered PIN, or null on cancel. On a wrong PIN,
+   *  executePayment calls this again with a bumped failedAttempts, which the
+   *  modal uses to drive its error message + back-off. */
+  async function openPinModal(mode: 'create' | 'enter', failedAttempts: number): Promise<string | null> {
+    setPinMode(mode);
+    setPinFailures(failedAttempts);
+    return new Promise<string | null>((resolve) => {
+      setPinResolver(() => (val: string | null) => {
+        setPinOpen(false);
+        setPinResolver(null);
+        resolve(val);
+      });
+      setPinOpen(true);
     });
   }
 
@@ -532,6 +558,14 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           attemptFailures={passphraseFailures}
           onSubmit={(p) => passphraseResolver(p)}
           onCancel={() => passphraseResolver(null)}
+        />
+      ) : null}
+      {pinOpen && pinResolver ? (
+        <PinPromptModal
+          mode={pinMode}
+          attemptFailures={pinFailures}
+          onSubmit={(p) => pinResolver(p)}
+          onCancel={() => pinResolver(null)}
         />
       ) : null}
     </div>
