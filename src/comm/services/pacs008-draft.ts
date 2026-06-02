@@ -25,6 +25,7 @@
  */
 import { reference } from '@futurechain/sdk';
 import type { PayerIdentity } from './payment-identity';
+import type { TravelRuleTier } from './travel-rule';
 
 /** ADR-004 v1 purpose codes (`reference.V1Purpose`). */
 type V1Purpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
@@ -95,11 +96,19 @@ export interface PayUriForDraft {
 export function payerToParty(
   identity: PayerIdentity | null,
   walletAddress: string,
+  tier: TravelRuleTier = 'minimal',
 ): PartyIdentification {
-  return {
+  const base: PartyIdentification = {
     address: walletAddress,
     name: identity?.name.trim() || walletAddress,
     country: identity?.country.trim().toUpperCase() || 'SE',
+  };
+  if (tier === 'minimal') {
+    // Sub-threshold: strip address fields per GDPR data minimisation.
+    return base;
+  }
+  return {
+    ...base,
     city: identity?.city.trim() || undefined,
     street: identity?.street.trim() || undefined,
     postcode: identity?.postcode.trim() || undefined,
@@ -132,6 +141,7 @@ export function assembleDraft(
   identity: PayerIdentity | null,
   walletAddress: string,
   uri: PayUriForDraft,
+  tier: TravelRuleTier = 'minimal',
 ): Pacs008Draft | null {
   if (!uri.ref) return null;
 
@@ -141,7 +151,7 @@ export function assembleDraft(
   const f = decoded.fields;
 
   return {
-    debtor: payerToParty(identity, walletAddress),
+    debtor: payerToParty(identity, walletAddress, tier),
     creditor: creditorToParty(uri, f.merchantId),
     amountMicroFtc: uri.amountMicroFtc,
     currency: 'FTC',

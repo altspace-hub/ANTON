@@ -22,6 +22,13 @@ import { assessPayment, type FraudAssessment } from '../../services/fraud-engine
 import { sendOnChain, formatFtc, feeMicroFtcFor } from '../../services/payment';
 import { getDisplayQuote, microFtcToFiatLabel, type Quote } from '../../services/fx';
 import {
+  travelRuleTierFor, fullDisclosureReady, minimalDisclosureReady, missingFields,
+  type TravelRuleTier,
+} from '../../services/travel-rule';
+import {
+  getContactByAddress, findSimilarContacts, type Contact, type SimilarityWarning,
+} from '../../services/address-book';
+import {
   PAYMENT_TYPES, DEFAULT_PAYMENT_TYPE, paymentTypeMeta, type PaymentType,
 } from '../../services/payment-type';
 import type { ParsedPayUri } from './WalletSendScreen';
@@ -45,21 +52,55 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
   const [secsLeft, setSecsLeft] = useState<number | null>(
     parsed.expUnix ? parsed.expUnix - Math.floor(Date.now() / 1000) : null,
   );
+  // Travel-Rule tier (EU 2023/1113) + identity completeness gate.
+  const [travelTier, setTravelTier] = useState<TravelRuleTier>('minimal');
+  const [identityComplete, setIdentityComplete] = useState(true);
+  const [identityMissing, setIdentityMissing] = useState<string[]>([]);
+  // Address-poisoning gate.
+  const [knownContact, setKnownContact] = useState<Contact | null>(null);
+  const [similar, setSimilar] = useState<SimilarityWarning[]>([]);
+  const [similarAck, setSimilarAck] = useState(false);
 
   const expired = secsLeft !== null && secsLeft <= 0;
   const feeMF = feeMicroFtcFor(parsed.amountMicroFtc);
 
-  // ISO 20022 draft from the saved payer identity (debtor) + wallet address.
+  // Gates + ISO draft: resolve the Travel-Rule tier from the amount + EUR rate,
+  // check identity completeness for that tier, run the address-poisoning check,
+  // and assemble the (tier-aware) PACS.008 draft.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const [identity, wallet] = await Promise.all([loadPayerIdentity(), loadWallet()]);
+        const [identity, wallet, eurQuote] = await Promise.all([
+          loadPayerIdentity(), loadWallet(), getDisplayQuote('EUR'),
+        ]);
         if (cancelled) return;
-        if (!wallet) { setDraft(null); return; }
-        setDraft(assembleDraft(identity, wallet.address, {
-          to: parsed.to, amountMicroFtc: parsed.amountMicroFtc, ref: parsed.ref, creditor: parsed.creditor,
-        }));
+        const tier = travelRuleTierFor(parsed.amountMicroFtc, eurQuote);
+        setTravelTier(tier);
+        const idStatus = {
+          hasName: !!identity?.name.trim(),
+          hasCountry: !!identity?.country.trim(),
+          hasStreet: !!identity?.street.trim(),
+          hasCity: !!identity?.city.trim(),
+          hasPostcode: !!identity?.postcode.trim(),
+        };
+        setIdentityComplete(
+          tier === 'minimal' ? minimalDisclosureReady(idStatus) : fullDisclosureReady(idStatus),
+        );
+        setIdentityMissing(missingFields(idStatus));
+        if (wallet) {
+          setDraft(assembleDraft(identity, wallet.address, {
+            to: parsed.to, amountMicroFtc: parsed.amountMicroFtc, ref: parsed.ref, creditor: parsed.creditor,
+          }, tier));
+        } else {
+          setDraft(null);
+        }
+        const [known, sim] = await Promise.all([
+          getContactByAddress(parsed.to), findSimilarContacts(parsed.to),
+        ]);
+        if (cancelled) return;
+        setKnownContact(known);
+        setSimilar(sim);
       } catch { if (!cancelled) setDraft(null); }
     })();
     return () => { cancelled = true; };
@@ -100,6 +141,10 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
 
   async function confirm() {
     if (expired || submitting) return;
+    // Address-poisoning hard gate — a look-alike must be acknowledged first.
+    if (similar.length > 0 && !similarAck) return;
+    // Travel-Rule gate — above €1000 (or no live rate) the full address is required.
+    if (!identityComplete) return;
     // A 'warning'-level assessment takes a deliberate second tap (advisory).
     if (assessment?.level === 'warning' && !armed) { setArmed(true); return; }
     setSubmitting(true);
@@ -247,6 +292,54 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
           );
         })()}
 
+        {/* Recognized contact (green) */}
+        {knownContact && (
+          <div className="mt-3 rounded-xl p-3 bg-[var(--color-accent-soft)] border border-[var(--color-accent-dim)]">
+            <div className="text-xs font-semibold mb-0.5 text-[var(--color-accent)]">
+              {t('review.knownContact', 'Recognized contact')}
+            </div>
+            <div className="text-sm text-[var(--color-text)]">
+              {t('review.payingTo', { name: knownContact.label, defaultValue: 'Paying to {{name}}' })}
+            </div>
+          </div>
+        )}
+
+        {/* Address-poisoning look-alike (red, hard gate) */}
+        {similar.length > 0 && (
+          <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: 'var(--color-red-dim)', border: '1px solid var(--color-red)' }}>
+            <div className="text-xs font-semibold mb-1 text-[var(--color-red)]">
+              {t('review.lookAlike', 'Look-alike address detected')}
+            </div>
+            <div className="text-sm mb-2 text-[var(--color-text)]">
+              {t('review.lookAlikeBody', { name: similar[0].contact.label,
+                defaultValue: 'This address looks similar to your contact "{{name}}" but is NOT the same. Attackers grind addresses with matching head/tail to trick recipients. Verify the full address before paying.' })}
+            </div>
+            <label className="flex items-start gap-2 text-xs cursor-pointer text-[var(--color-text)]">
+              <input type="checkbox" checked={similarAck} onChange={(e) => setSimilarAck(e.target.checked)} className="mt-0.5" />
+              <span>{t('review.lookAlikeAck', { name: similar[0].contact.label,
+                defaultValue: 'I confirm this address is NOT "{{name}}" and I want to pay this new address.' })}</span>
+            </label>
+          </div>
+        )}
+
+        {/* Travel-Rule profile-required (gold) */}
+        {!identityComplete && (
+          <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: 'var(--color-gold-dim)', border: '1px solid var(--color-gold)' }}>
+            <div className="text-xs font-semibold mb-1 text-[var(--color-gold)]">
+              {t('travelRule.title', 'Profile required for this amount')}
+            </div>
+            <div className="text-sm text-[var(--color-text)]">
+              {travelTier === 'no-rate-conservative'
+                ? t('travelRule.noRateBody', 'No live FTC/EUR rate available. Conservative posture: payments are treated as above the EU Travel Rule €1000 threshold until the rate source is back online.')
+                : t('travelRule.fullBody', 'This payment exceeds the EU Travel Rule threshold (€1000). EU 2023/1113 requires the originator address fields to be included.')}
+            </div>
+            <div className="text-xs mt-2 text-[var(--color-text-muted)]">
+              {t('travelRule.missing', { fields: identityMissing.join(', '),
+                defaultValue: 'Missing: {{fields}}. Open Settings → Payment details to complete.' })}
+            </div>
+          </div>
+        )}
+
         {expired && (
           <p className="mt-3 text-sm text-[var(--color-red)]">{t('review.expired', 'Payment code expired')}</p>
         )}
@@ -254,7 +347,8 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
       </div>
 
       <div className="px-5 pb-5">
-        <PrimaryButton onClick={() => void confirm()} disabled={expired || submitting}
+        <PrimaryButton onClick={() => void confirm()}
+                       disabled={expired || submitting || (similar.length > 0 && !similarAck) || !identityComplete}
                        style={armed ? { backgroundColor: 'var(--color-error)' } : undefined}>
           {submitting ? t('wallet.recording')
             : armed ? t('fraud.payAnyway')

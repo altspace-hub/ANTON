@@ -509,9 +509,20 @@
   "review": {
     "confirm": "Confirm & pay",
     "expired": "Payment code expired",
+    "knownContact": "Recognized contact",
+    "lookAlike": "Look-alike address detected",
+    "lookAlikeAck": "I confirm this address is NOT \"{{name}}\" and I want to pay this new address.",
+    "lookAlikeBody": "This address looks similar to your contact \"{{name}}\" but is NOT the same. Attackers grind addresses with matching head/tail to trick recipients. Verify the full address before paying.",
     "networkFee": "Network fee",
+    "payingTo": "Paying to {{name}}",
     "total": "Total",
     "youPay": "You pay"
+  },
+  "travelRule": {
+    "fullBody": "This payment exceeds the EU Travel Rule threshold (€1000). EU 2023/1113 requires the originator address fields to be included.",
+    "missing": "Missing: {{fields}}. Open Settings → Payment details to complete.",
+    "noRateBody": "No live FTC/EUR rate available. Conservative posture: payments are treated as above the EU Travel Rule €1000 threshold until the rate source is back online.",
+    "title": "Profile required for this amount"
   },
   "wallet": {
     "address": "Address",

@@ -509,9 +509,20 @@
   "review": {
     "confirm": "Bekräfta och betala",
     "expired": "Betalningskoden har gått ut",
+    "knownContact": "Igenkänd kontakt",
+    "lookAlike": "Liknande adress upptäckt",
+    "lookAlikeAck": "Jag bekräftar att den här adressen INTE är \"{{name}}\" och att jag vill betala den nya adressen.",
+    "lookAlikeBody": "Den här adressen liknar din kontakt \"{{name}}\" men är INTE samma. Angripare skapar adresser med matchande början/slut för att lura mottagare. Verifiera hela adressen innan du betalar.",
     "networkFee": "Nätverksavgift",
+    "payingTo": "Betalar till {{name}}",
     "total": "Totalt",
     "youPay": "Du betalar"
+  },
+  "travelRule": {
+    "fullBody": "Den här betalningen överstiger EU:s reseregel-tröskel (€1000). EU 2023/1113 kräver att avsändarens adressuppgifter inkluderas.",
+    "missing": "Saknas: {{fields}}. Öppna Inställningar → Betalningsuppgifter för att komplettera.",
+    "noRateBody": "Ingen aktuell FTC/EUR-kurs tillgänglig. Försiktig hållning: betalningar behandlas som över EU:s reseregel-tröskel på €1000 tills kurskällan är tillbaka online.",
+    "title": "Profil krävs för det här beloppet"
   },
   "wallet": {
     "address": "Adress",
