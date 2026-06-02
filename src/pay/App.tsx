@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import WelcomeScreen from './pages/onboarding/WelcomeScreen';
 import BackupShowScreen from './pages/onboarding/BackupShowScreen';
 import BackupVerifyScreen from './pages/onboarding/BackupVerifyScreen';
+import OnboardingContextScreen from './pages/onboarding/OnboardingContextScreen';
 import DoneScreen from './pages/onboarding/DoneScreen';
 import HomeScreen from './pages/HomeScreen';
 import ScanScreen from './pages/ScanScreen';
@@ -28,6 +29,7 @@ import WalletsListScreen from './pages/settings/WalletsListScreen';
 import WalletDetailScreen from './pages/settings/WalletDetailScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
+import TaxResidencyScreen from './pages/settings/TaxResidencyScreen';
 import FriendsScreen from './pages/settings/FriendsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
@@ -54,6 +56,7 @@ type Screen =
   | 'onboarding-welcome'
   | 'onboarding-backup-show'
   | 'onboarding-backup-verify'
+  | 'onboarding-context'
   | 'onboarding-done'
   | 'home'
   | 'scan'
@@ -70,6 +73,7 @@ type Screen =
   | 'settings-wallet-add-backup-show'
   | 'settings-wallet-add-backup-verify'
   | 'settings-payment'
+  | 'settings-tax'
   | 'settings-friends'
   | 'settings-money'
   | 'settings-activity'
@@ -88,6 +92,7 @@ type Screen =
 const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'onboarding-backup-show': 'onboarding-welcome',
   'onboarding-backup-verify': 'onboarding-backup-show',
+  'onboarding-context': 'onboarding-backup-verify',
   'scan': 'home',
   'receive': 'home',
   'payment-done': 'home',
@@ -101,6 +106,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings-wallet-add-backup-show': 'settings-wallet-add',
   'settings-wallet-add-backup-verify': 'settings-wallet-add-backup-show',
   'settings-payment': 'settings',
+  'settings-tax': 'settings',
   'settings-friends': 'settings',
   'settings-money': 'settings',
   'settings-activity': 'settings',
@@ -291,7 +297,15 @@ export default function App() {
     return (
       <BackupVerifyScreen
         onBack={() => setScreen('onboarding-backup-show')}
-        onVerified={() => setScreen('onboarding-done')}
+        onVerified={() => setScreen('onboarding-context')}
+      />
+    );
+  }
+  if (screen === 'onboarding-context') {
+    return (
+      <OnboardingContextScreen
+        onContinue={() => setScreen('onboarding-done')}
+        onSkip={() => setScreen('onboarding-done')}
       />
     );
   }
@@ -397,6 +411,7 @@ export default function App() {
         onWallet={() => setScreen('settings-wallet')}
         onWalletsList={() => setScreen('settings-wallets-list')}
         onPaymentDetails={() => setScreen('settings-payment')}
+        onTaxResidency={() => setScreen('settings-tax')}
         onFriends={() => setScreen('settings-friends')}
         onMoneyProfile={() => setScreen('settings-money')}
         onActivityReview={() => setScreen('settings-activity')}
@@ -456,6 +471,16 @@ export default function App() {
   }
   if (screen === 'settings-payment') {
     return <PaymentDetailsScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-tax') {
+    // Settings path is pure residency — no identity/language mutation
+    // (seeding the ISO debtor country happens only at sign-up).
+    return (
+      <TaxResidencyScreen
+        onBack={() => setScreen('settings')}
+        onDeclared={() => setScreen('settings')}
+      />
+    );
   }
   if (screen === 'settings-friends') {
     return <FriendsScreen onBack={() => setScreen('settings')} />;

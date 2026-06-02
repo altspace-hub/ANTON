@@ -19,6 +19,7 @@ import { wipeAllPayments } from '../../services/payment';
 import { wipeReceived } from '../../services/db';
 import { wipePayerIdentity } from '../../services/payment-identity';
 import { wipeMoneyProfile } from '../../services/money-profile';
+import { loadResidency, needsResidencyPrompt } from '../../services/tax-residency';
 import { isAppLockEnabled, setAppLockEnabled } from '../../services/app-lock';
 import { requireBiometric } from '../../services/biometric';
 
@@ -28,6 +29,8 @@ interface Props {
   /** Multi-wallet management (list / switch / add / delete). */
   onWalletsList: () => void;
   onPaymentDetails: () => void;
+  /** Settings → Tax residency (declared jurisdiction for tax estimates). */
+  onTaxResidency: () => void;
   /** Settings → Friends (saved payment contacts). */
   onFriends: () => void;
   onMoneyProfile: () => void;
@@ -47,11 +50,13 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onWallet, onWalletsList, onPaymentDetails, onFriends, onMoneyProfile, onActivityReview,
-  onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onPassphrase, onReset,
+  onBack, onWallet, onWalletsList, onPaymentDetails, onTaxResidency, onFriends, onMoneyProfile,
+  onActivityReview, onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onPassphrase, onReset,
 }: Props) {
   const { t } = useTranslation();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  /** Declared tax residency — shown in the subtitle; `· re-confirm` when stale. */
+  const [taxResidency, setTaxResidency] = useState<{ name: string; stale: boolean } | null>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [accent, setAccentState] = useState<AccentKey>(getAccent());
   const [mode, setModeState] = useState<AppMode>(getMode());
@@ -85,6 +90,8 @@ export default function SettingsScreen({
         const w = await loadWallet();
         setWalletAddress(w?.address ?? null);
       }
+      const r = await loadResidency();
+      if (r) setTaxResidency({ name: r.jurisdictionName, stale: await needsResidencyPrompt() });
       try {
         if (navigator.storage?.estimate) {
           const est = await navigator.storage.estimate();
@@ -187,6 +194,11 @@ export default function SettingsScreen({
             <NavCard onClick={onPaymentDetails}
                      title={t('settings.paymentDetails')}
                      subtitle={t('settings.paymentDetailsSub')} />
+            <NavCard onClick={onTaxResidency}
+                     title={t('settings.taxResidency', 'Tax residency')}
+                     subtitle={taxResidency
+                       ? `${taxResidency.name}${taxResidency.stale ? ` · ${t('settings.taxReconfirm', 're-confirm')}` : ''}`
+                       : t('settings.taxResidencySub', 'Country we use to estimate potential taxes')} />
             <NavCard onClick={onFriends}
                      title={t('settings.friends', 'Friends')}
                      subtitle={t('settings.friendsSub', 'Saved contacts you pay — names instead of addresses')} />

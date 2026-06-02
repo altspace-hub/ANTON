@@ -38,6 +38,8 @@
   },
   "common": {
     "back": "Back",
+    "search": "Search",
+    "skip": "Skip",
     "cancel": "Cancel",
     "close": "Close",
     "continue": "Continue",
@@ -179,6 +181,14 @@
     "typicalPayment": "Typical payment size (FTC)"
   },
   "onboarding": {
+    "contextBody": "Set your language and where you're tax resident so payment records and tax estimates are right from the start. You can change these any time in Settings.",
+    "contextContinue": "Continue",
+    "contextLanguage": "Language",
+    "contextNamePlaceholder": "Your name",
+    "contextResidencyNone": "Not set yet",
+    "contextSetResidency": "Tax residency",
+    "contextSkip": "Skip for now",
+    "contextTitle": "Make ANTON yours",
     "createWallet": "Create my wallet",
     "creating": "Creating wallet…",
     "doneBody": "Your wallet is set up and secured on this device. Scan a merchant's QR code to make your first payment.",
@@ -348,6 +358,9 @@
     "moneyProfileSub": "Your usual money pattern — helps spot unusual payments",
     "paymentDetails": "Payment details",
     "paymentDetailsSub": "Your name and address for payment records",
+    "taxReconfirm": "re-confirm",
+    "taxResidency": "Tax residency",
+    "taxResidencySub": "Country we use to estimate potential taxes",
     "recoveryPhrase": "Recovery phrase",
     "recoveryPhraseSub": "Show your 24-word backup phrase",
     "resetApp": "Reset app",
@@ -381,6 +394,14 @@
   },
   "sync": {
     "listening": "Listening for payment"
+  },
+  "tax": {
+    "noMatches": "No matches.",
+    "referToAdviser": "Refer to adviser",
+    "residencyDeclared": "Residency is declared, not inferred from your location. Re-confirm yearly or whenever it changes. If you live in multiple countries during the year, talk to a tax adviser — ANTON doesn't split jurisdictions.",
+    "residencyHelp": "Pick the country you're tax resident in. We use this to apply the right rules — it stays on this device.",
+    "residencyTitle": "Tax residency",
+    "supported": "Supported"
   },
   "travelRule": {
     "fullBody": "This payment exceeds the EU Travel Rule threshold (€1000). EU 2023/1113 requires the originator address fields to be included.",
