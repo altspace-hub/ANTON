@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import StatusPill from '../components/StatusPill';
 import { formatFtc, listPayments } from '../services/payment';
 import { listReceived } from '../services/received';
-import { buildActivity } from '../services/activity';
+import { buildActivity, groupActivityByDay } from '../services/activity';
 import {
   isDust, listContacts, buildContactNameMap, resolveName,
 } from '../services/address-book';
@@ -25,9 +25,18 @@ interface Props {
   onOpen: (activity: Activity) => void;
 }
 
+/** Explicit calendar date for a day header — no time component (the
+ *  time moved onto each row). */
 function formatDate(ms: number): string {
-  return new Date(ms).toLocaleString(undefined, {
+  return new Date(ms).toLocaleDateString(undefined, {
     year: 'numeric', month: 'short', day: 'numeric',
+  });
+}
+
+/** Just the time-of-day for a row — the full date now lives in the
+ *  sticky day header above it. */
+function formatTime(ms: number): string {
+  return new Date(ms).toLocaleTimeString(undefined, {
     hour: '2-digit', minute: '2-digit',
   });
 }
@@ -72,6 +81,15 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
     })();
   }, []);
 
+  // Bucket the flat stream into per-day groups for sticky headers.
+  // `now` is read once per render — the Today / Yesterday boundary only
+  // needs to be correct at paint time.
+  const groups = groupActivityByDay(items, {
+    today: t('history.today', 'Today'),
+    yesterday: t('history.yesterday', 'Yesterday'),
+    formatDate,
+  }, Date.now());
+
   return (
     <div className="flex flex-col h-full overflow-y-auto safe-top safe-bottom"
          style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -102,36 +120,46 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {items.map((a) => {
-              const isIn = a.direction === 'received';
-              return (
-                <button key={rowKey(a)} type="button"
-                        onClick={() => onOpen(a)}
-                        className="w-full flex items-center gap-3 p-3.5 text-left rounded-xl active:opacity-90 transition-opacity"
-                        style={{ backgroundColor: 'var(--color-surface)',
-                                 border: '1px solid var(--color-border)' }}>
-                  <DirectionGlyph direction={a.direction} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm truncate"
-                            style={{ color: 'var(--color-text)' }}>
-                        {counterpartyOf(a, contactNames)}
-                      </span>
-                      {a.direction === 'sent' && <StatusPill status={a.record.status} />}
-                    </div>
-                    <div className="text-xs mt-0.5 truncate"
-                         style={{ color: 'var(--color-text-muted)' }}>
-                      {formatDate(a.at)}
-                    </div>
-                  </div>
-                  <div className="mono text-sm font-semibold shrink-0"
-                       style={{ color: isIn ? 'var(--color-accent)' : 'var(--color-text)' }}>
-                    {isIn ? '+' : '-'}{formatFtc(a.record.amountMicroFtc)} FTC
-                  </div>
-                </button>
-              );
-            })}
+          <div className="flex flex-col gap-4">
+            {groups.map((g) => (
+              <div key={g.dayKey} className="flex flex-col gap-2">
+                {/* Sticky day header — Today / Yesterday / explicit date. */}
+                <div className="sticky top-0 z-10 py-1.5 text-[11px] uppercase tracking-wider font-semibold"
+                     style={{ color: 'var(--color-text-faint)',
+                              backgroundColor: 'var(--color-bg)' }}>
+                  {g.label}
+                </div>
+                {g.items.map((a) => {
+                  const isIn = a.direction === 'received';
+                  return (
+                    <button key={rowKey(a)} type="button"
+                            onClick={() => onOpen(a)}
+                            className="w-full flex items-center gap-3 p-3.5 text-left rounded-xl active:opacity-90 transition-opacity"
+                            style={{ backgroundColor: 'var(--color-surface)',
+                                     border: '1px solid var(--color-border)' }}>
+                      <DirectionGlyph direction={a.direction} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm truncate"
+                                style={{ color: 'var(--color-text)' }}>
+                            {counterpartyOf(a, contactNames)}
+                          </span>
+                          {a.direction === 'sent' && <StatusPill status={a.record.status} />}
+                        </div>
+                        <div className="text-xs mt-0.5 truncate"
+                             style={{ color: 'var(--color-text-muted)' }}>
+                          {formatTime(a.at)}
+                        </div>
+                      </div>
+                      <div className="mono text-sm font-semibold shrink-0"
+                           style={{ color: isIn ? 'var(--color-accent)' : 'var(--color-text)' }}>
+                        {isIn ? '+' : '-'}{formatFtc(a.record.amountMicroFtc)} FTC
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
       </div>

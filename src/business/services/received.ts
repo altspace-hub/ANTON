@@ -46,6 +46,7 @@ export async function pollIncomingOnce(): Promise<Receipt[]> {
         txHash: n.txHash,
         receivingAddress: meta.address,
         customerRemittance: n.customerRemittance,
+        customerAddress: n.customerAddress,
       });
       if (receipt) confirmed.push(receipt);
     }
@@ -98,6 +99,13 @@ interface Normalised {
   /** Wave 10 — structured AntonRemittance decoded from the PACS.008
    *  `RmtInf.Strd` block, when the customer attached one. */
   customerRemittance?: AntonRemittance;
+  /** The customer's (debtor's) fc_ wallet address, lifted from the
+   *  inbound PACS.008's `DbtrAcct.Id.Othr.Id` — the same key src/pay
+   *  populates from `buildPacs008`. Threaded onto the confirmed receipt
+   *  so the merchant can save a repeat customer to their address book.
+   *  undefined when the response carries no recognisable debtor account
+   *  (the receipt still confirms on amount + ref). */
+  customerAddress?: string;
 }
 
 function normaliseItem(raw: unknown): Normalised | null {
@@ -148,5 +156,26 @@ function normaliseItem(raw: unknown): Normalised | null {
   ]);
   const customerRemittance = rmtInf ? decodeRemittance(rmtInf) ?? undefined : undefined;
 
-  return { txHash, amountMicroFtc, remittance, customerRemittance };
+  const customerAddress = extractDebtorAddress(raw);
+
+  return { txHash, amountMicroFtc, remittance, customerRemittance, customerAddress };
+}
+
+/**
+ * Pull the debtor (customer) account fc_ address out of an inbound
+ * PACS.008 envelope. Mirrors the exact key src/pay's `buildPacs008`
+ * emits — `DbtrAcct: { Id: { Othr: { Id: ... } } }` nested under
+ * `CdtTrfTxInf[0]` — with the bare-CdtTrfTxInf fallback for responses
+ * that hoist the credit-transfer block to the top level (parity with
+ * src/pay/services/received.ts). Returns undefined when no recognisable
+ * debtor account is present; the receipt still confirms on amount + ref.
+ *
+ * Exported for unit testing the envelope-shape contract.
+ */
+export function extractDebtorAddress(raw: unknown): string | undefined {
+  const debtorAddr = pick(raw, [
+    ['document', 'FIToFICstmrCdtTrf', 'CdtTrfTxInf', '0', 'DbtrAcct', 'Id', 'Othr', 'Id'],
+    ['CdtTrfTxInf', '0', 'DbtrAcct', 'Id', 'Othr', 'Id'],
+  ]);
+  return typeof debtorAddr === 'string' && debtorAddr ? debtorAddr : undefined;
 }

@@ -28,6 +28,7 @@ import WalletsListScreen from './pages/settings/WalletsListScreen';
 import WalletDetailScreen from './pages/settings/WalletDetailScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
+import FriendsScreen from './pages/settings/FriendsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
 import RecoveryPhraseScreen from './pages/settings/RecoveryPhraseScreen';
@@ -69,6 +70,7 @@ type Screen =
   | 'settings-wallet-add-backup-show'
   | 'settings-wallet-add-backup-verify'
   | 'settings-payment'
+  | 'settings-friends'
   | 'settings-money'
   | 'settings-activity'
   | 'settings-recovery'
@@ -99,6 +101,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings-wallet-add-backup-show': 'settings-wallet-add',
   'settings-wallet-add-backup-verify': 'settings-wallet-add-backup-show',
   'settings-payment': 'settings',
+  'settings-friends': 'settings',
   'settings-money': 'settings',
   'settings-activity': 'settings',
   'settings-recovery': 'settings',
@@ -394,6 +397,7 @@ export default function App() {
         onWallet={() => setScreen('settings-wallet')}
         onWalletsList={() => setScreen('settings-wallets-list')}
         onPaymentDetails={() => setScreen('settings-payment')}
+        onFriends={() => setScreen('settings-friends')}
         onMoneyProfile={() => setScreen('settings-money')}
         onActivityReview={() => setScreen('settings-activity')}
         onRecoveryPhrase={() => setScreen('settings-recovery')}
@@ -452,6 +456,9 @@ export default function App() {
   }
   if (screen === 'settings-payment') {
     return <PaymentDetailsScreen onBack={() => setScreen('settings')} />;
+  }
+  if (screen === 'settings-friends') {
+    return <FriendsScreen onBack={() => setScreen('settings')} />;
   }
   if (screen === 'settings-money') {
     return <MoneyProfileScreen onBack={() => setScreen('settings')} />;

@@ -115,6 +115,21 @@ describe('checkReceiptChain', () => {
     expect(r.findings).toHaveLength(0);
   });
 
+  it('does NOT break when the customer (debtor) address is stamped on confirm', () => {
+    // customerAddress is post-confirmation settlement metadata captured
+    // from the inbound PACS.008. Like txHash/uetr it must be excluded
+    // from the chain hash — stamping it on K-2 after K-3 already chained
+    // K-2's hash must not read as tampering.
+    const rs = chainedReceipts(5);
+    rs[1]!.status = 'confirmed';
+    rs[1]!.confirmedAt = 1_700_000_999_999;
+    rs[1]!.txHash = '0xdeadbeef';
+    rs[1]!.customerAddress = 'fc_CustomerWalletAddress1234567890';
+    const r = checkReceiptChain(rs);
+    expect(r.ok).toBe(true);
+    expect(r.findings).toHaveLength(0);
+  });
+
   it('catches a sequence gap', () => {
     const rs = chainedReceipts(3);
     rs.splice(1, 1); // drop K-2 → K-1 then K-3

@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StatusPill from '../components/StatusPill';
+import CopyRow from '../components/CopyRow';
 import { estimateSek, formatFtc, formatSek } from '../services/payment';
 import { loadProfile } from '../services/profile';
 import { resolveName } from '../services/address-book';
@@ -111,7 +112,7 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
       <Section title={t('history.detail.counterparty', 'Counterparty')}>
         <IsoRow label={t('history.merchant')} value={friend ?? r.merchantId} />
         {r.toAddress && (
-          <IsoRow label={t('history.detail.address', 'Address')} value={abbreviate(r.toAddress)} wrap />
+          <CopyRow label={t('history.detail.address', 'Address')} value={r.toAddress} />
         )}
         <IsoRow label={t('history.orderId')} value={r.orderId} />
         <IsoRow label={t('review.purpose')} value={t(`review.purpose${r.purpose}`)} />
@@ -136,7 +137,7 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
       {/* Chain */}
       {(r.txId || r.requestId) && (
         <Section title={t('history.detail.chain', 'Chain')}>
-          {r.txId && <IsoRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />}
+          {r.txId && <CopyRow label={t('history.txId', 'Tx id')} value={r.txId} />}
           {r.requestId && (
             <IsoRow label={t('history.detail.requestId', 'Request id')} value={r.requestId} wrap />
           )}
@@ -156,14 +157,14 @@ function ReceivedSections({ r, contactNames }: { r: ReceivedRecord; contactNames
       <Section title={t('history.detail.counterparty', 'Counterparty')}>
         <IsoRow label={t('history.from', 'From')} value={name || abbreviate(r.fromAddress) || '—'} />
         {r.fromAddress && (
-          <IsoRow label={t('history.detail.address', 'Address')} value={abbreviate(r.fromAddress)} wrap />
+          <CopyRow label={t('history.detail.address', 'Address')} value={r.fromAddress} />
         )}
         {r.remittance && <IsoRow label={t('history.note', 'Note')} value={r.remittance} wrap />}
       </Section>
 
       {/* Chain — inbound rows are confirmed by the time we observe them. */}
       <Section title={t('history.detail.chain', 'Chain')}>
-        <IsoRow label={t('history.txId', 'Tx id')} value={r.txId} wrap />
+        <CopyRow label={t('history.txId', 'Tx id')} value={r.txId} />
         {r.blockHeight !== undefined && (
           <IsoRow label={t('history.block', 'Block')} value={String(r.blockHeight)} />
         )}
@@ -185,7 +186,7 @@ function IsoSection({ draft }: { draft: NonNullable<PaymentRecord['pacs008']> })
       <IsoRow label={t('review.iso.debtor')} value={partyLine(draft.debtor)} wrap />
       <IsoRow label={t('review.iso.creditor')} value={partyLine(draft.creditor)} wrap />
       <IsoRow label={t('review.iso.purpose')} value={draft.purpose} />
-      <IsoRow label={t('review.iso.reference')} value={draft.reference} wrap />
+      <CopyRow label={t('review.iso.reference')} value={draft.reference} />
     </Section>
   );
 }

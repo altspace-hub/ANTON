@@ -61,6 +61,16 @@ export interface Receipt {
    *  when the receipt confirms. Absent on receipts paid without a
    *  rich remittance, or confirmed before Wave 10. */
   customerRemittance?: import('@futurechain/sdk/pacs008').AntonRemittance;
+  /** The customer's (debtor's) fc_ wallet address, captured from the
+   *  inbound PACS.008's `DbtrAcct.Id.Othr.Id` when the inbound poller
+   *  confirms this receipt. Lets the merchant save a repeat customer to
+   *  their address book straight from the kvitto. Post-confirmation
+   *  SETTLEMENT metadata — like `txHash` / `uetr` / `customerRemittance`
+   *  it is deliberately EXCLUDED from `RECEIPT_CHAIN_FIELDS`, so stamping
+   *  it on confirm never alters the receipt's chain hash. Absent on
+   *  receipts that were never matched against an inbound tx, or confirmed
+   *  before this field existed. */
+  customerAddress?: string;
 }
 
 export interface NewReceiptInput {

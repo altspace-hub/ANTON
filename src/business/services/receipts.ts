@@ -27,7 +27,8 @@ function bytesToHex(b: Uint8Array): string {
  *
  * Excluded on purpose — the settlement lifecycle, which legitimately
  * mutates AFTER a later kvitto has already chained this one's hash:
- *   status, confirmedAt, txHash, uetr, customerRemittance, prevHash.
+ *   status, confirmedAt, txHash, uetr, customerRemittance,
+ *   customerAddress, prevHash.
  * Including any of those would mean a normal `confirm` or `void`
  * breaks the chain of every subsequent kvitto with no tampering at
  * all. The chain protects what was sold, not how it settled.
@@ -185,6 +186,11 @@ export async function confirmReceiptByMatch(opts: {
    *  from the on-chain PACS.008 RmtInf. Persisted onto the confirmed
    *  receipt so the merchant can read the customer's note / terms. */
   customerRemittance?: Receipt['customerRemittance'];
+  /** The customer's (debtor's) fc_ address from the inbound PACS.008.
+   *  Persisted as settlement metadata so the merchant can save a repeat
+   *  customer from the kvitto. Excluded from the chain hash (see
+   *  RECEIPT_CHAIN_FIELDS) — stamping it never alters the receipt link. */
+  customerAddress?: string;
 }): Promise<Receipt | null> {
   const pending = (await listReceipts(500)).filter(r => r.status === 'pending');
   const matches = pending.filter(r =>
@@ -201,6 +207,7 @@ export async function confirmReceiptByMatch(opts: {
     confirmedAt: Date.now(),
     txHash: opts.txHash,
     ...(opts.customerRemittance ? { customerRemittance: opts.customerRemittance } : {}),
+    ...(opts.customerAddress ? { customerAddress: opts.customerAddress } : {}),
   };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_RECEIPTS, 'readwrite');

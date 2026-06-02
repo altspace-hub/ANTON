@@ -28,6 +28,8 @@ interface Props {
   /** Multi-wallet management (list / switch / add / delete). */
   onWalletsList: () => void;
   onPaymentDetails: () => void;
+  /** Settings → Friends (saved payment contacts). */
+  onFriends: () => void;
   onMoneyProfile: () => void;
   onActivityReview: () => void;
   onRecoveryPhrase: () => void;
@@ -45,7 +47,7 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onWallet, onWalletsList, onPaymentDetails, onMoneyProfile, onActivityReview,
+  onBack, onWallet, onWalletsList, onPaymentDetails, onFriends, onMoneyProfile, onActivityReview,
   onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onPassphrase, onReset,
 }: Props) {
   const { t } = useTranslation();
@@ -185,6 +187,9 @@ export default function SettingsScreen({
             <NavCard onClick={onPaymentDetails}
                      title={t('settings.paymentDetails')}
                      subtitle={t('settings.paymentDetailsSub')} />
+            <NavCard onClick={onFriends}
+                     title={t('settings.friends', 'Friends')}
+                     subtitle={t('settings.friendsSub', 'Saved contacts you pay — names instead of addresses')} />
             <NavCard onClick={onMoneyProfile}
                      title={t('settings.moneyProfile')}
                      subtitle={t('settings.moneyProfileSub')} />

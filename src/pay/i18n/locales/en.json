@@ -41,6 +41,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "continue": "Continue",
+    "copy": "Copy",
     "delete": "Delete",
     "done": "Done",
     "hide": "Hide",
@@ -71,6 +72,24 @@
       "info": "Worth knowing",
       "warning": "This looks unusual"
     }
+  },
+  "friends": {
+    "add": "Add friend",
+    "address": "FutureChain address",
+    "addTitle": "Add a friend",
+    "deleteConfirm": "Remove {{name}} from your friends?",
+    "empty": "No friends yet",
+    "emptyBody": "Add someone above and their name will appear on your payments.",
+    "errorBadAddress": "That is not a valid fc_ address.",
+    "errorGeneric": "Could not add this friend.",
+    "errorNoName": "Give this friend a name.",
+    "name": "Name",
+    "rename": "Rename",
+    "renamePrompt": "New name for this friend",
+    "savedTitle": "Saved friends",
+    "subtitle": "Save the people and merchants you pay so their name shows up instead of a long address. Only addresses you add here are ever shown as a friend.",
+    "title": "Friends",
+    "unnamed": "Unnamed"
   },
   "fx": {
     "rateLabel": "Rate {{rate}} {{currency}}/FTC · {{at}} · {{source}}",
@@ -104,7 +123,9 @@
     "receivedFrom": "Received",
     "reference": "Reference",
     "title": "Payment history",
-    "txId": "Tx id"
+    "today": "Today",
+    "txId": "Tx id",
+    "yesterday": "Yesterday"
   },
   "home": {
     "activityCount": "{{count}} payment",
@@ -315,6 +336,8 @@
     "backToHome": "Back to home",
     "buildDate": "Build date",
     "dangerZone": "Danger zone",
+    "friends": "Friends",
+    "friendsSub": "Saved contacts you pay — names instead of addresses",
     "language": "Language",
     "languagePick": "Choose language",
     "micaDisclosure": "FTC settlement is routed through Bahnhof's public light-hub at rpc.futurechain.eu. Bahnhof operates this hub under Sweden Finansinspektionen (FI) authorisation pending publication; once issued, the CASP authorisation number will appear here.",

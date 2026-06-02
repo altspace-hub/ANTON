@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrCode from '../components/QrCode';
+import CopyRow from '../components/CopyRow';
 import AnimatedQrCode from '../components/AnimatedQrCode';
 import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import FiatAmountInput from '../components/FiatAmountInput';
@@ -43,7 +44,6 @@ export default function ReceiveScreen({ onBack }: Props) {
    *  FiatAmountInput drives this whether the user typed in fiat or
    *  FTC; zero means "no amount, sender chooses." */
   const [microFtc, setMicroFtc] = useState<bigint>(0n);
-  const [copied, setCopied] = useState(false);
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const [qrMode, setQrMode] = useState<QrMode>('static');
@@ -81,15 +81,6 @@ export default function ReceiveScreen({ onBack }: Props) {
       ? `futurechain:pay?to=${meta.address}&amount=${microFtc.toString()}`
       : `futurechain:pay?to=${meta.address}`
     : '';
-
-  async function copyAddress() {
-    if (!meta) return;
-    try {
-      await navigator.clipboard.writeText(meta.address);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch { /* clipboard unavailable — long-press the address text */ }
-  }
 
   async function share() {
     if (!meta) return;
@@ -203,18 +194,13 @@ export default function ReceiveScreen({ onBack }: Props) {
               </div>
             )}
 
-            {/* Address */}
+            {/* Address — CopyRow carries the label + monospaced value +
+                a one-tap copy with the same "Copied" flash this screen
+                used to render inline. */}
             <div className="rounded-xl p-4 mb-3"
                  style={{ backgroundColor: 'var(--color-surface)',
                           border: '1px solid var(--color-border)' }}>
-              <div className="text-xs uppercase tracking-wider mb-1.5"
-                   style={{ color: 'var(--color-text-faint)' }}>
-                {t('wallet.addressLabel', 'Address')}
-              </div>
-              <div className="mono text-sm break-all select-all"
-                   style={{ color: 'var(--color-text)' }}>
-                {meta.address}
-              </div>
+              <CopyRow label={t('wallet.addressLabel', 'Address')} value={meta.address} />
             </div>
 
             {/* Optional amount — fiat-first when a rate is available
@@ -232,15 +218,9 @@ export default function ReceiveScreen({ onBack }: Props) {
               />
             </div>
 
-            {/* Actions */}
+            {/* Actions — copy now lives on the address card above, so the
+                primary action here is Share. */}
             <div className="flex gap-2">
-              <button type="button" onClick={copyAddress}
-                      className="flex-1 py-3.5 rounded-xl text-sm font-semibold"
-                      style={{ backgroundColor: 'var(--color-surface)',
-                               border: '1px solid var(--color-border)',
-                               color: 'var(--color-text)' }}>
-                {copied ? t('wallet.copied') : t('wallet.copy', 'Copy address')}
-              </button>
               <button type="button" onClick={share}
                       className="flex-1 py-3.5 rounded-xl text-sm font-semibold"
                       style={{ backgroundColor: 'var(--color-accent)',

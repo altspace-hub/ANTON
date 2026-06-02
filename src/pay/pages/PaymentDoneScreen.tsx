@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../components/PrimaryButton';
+import CopyRow from '../components/CopyRow';
 import { formatFtc, getPaymentRecord, pollConfirmation } from '../services/payment';
 import type { PaymentRecord, PaymentStatus } from '../services/types';
 
@@ -90,12 +91,10 @@ export default function PaymentDoneScreen({ record: initial, onHome, onHistory }
             </span>
           </Row>
           {record.txId && (
-            <Row label={t('paymentDone.txId', 'Tx id')} top>
-              <span className="mono text-[11px] break-all max-w-[60%] text-right"
-                    style={{ color: 'var(--color-text-body)' }}>
-                {record.txId}
-              </span>
-            </Row>
+            <div className="px-4 py-3"
+                 style={{ borderTop: '1px solid var(--color-border-soft)' }}>
+              <CopyRow label={t('paymentDone.txId', 'Tx id')} value={record.txId} />
+            </div>
           )}
         </div>
 
