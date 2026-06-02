@@ -544,6 +544,12 @@
   "topbar": {
     "openProfile": "Öppna profil"
   },
+  "receive": {
+    "qrAnimated": "Animerad",
+    "qrAnimatedHint": "Håll avsändarens kamera stilla — koden växlar mellan rutor.",
+    "qrStatic": "Statisk",
+    "requestAmount": "Begär belopp (valfritt)"
+  },
   "review": {
     "confirm": "Bekräfta och betala",
     "expired": "Betalningskoden har gått ut",

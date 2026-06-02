@@ -544,6 +544,12 @@
   "topbar": {
     "openProfile": "Open profile"
   },
+  "receive": {
+    "qrAnimated": "Animated",
+    "qrAnimatedHint": "Hold the sender’s camera steady — the code cycles through frames.",
+    "qrStatic": "Static",
+    "requestAmount": "Request amount (optional)"
+  },
   "review": {
     "confirm": "Confirm & pay",
     "expired": "Payment code expired",
