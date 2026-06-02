@@ -29,6 +29,9 @@ import { loadMoneyProfile } from '../../services/money-profile';
 import { assembleDraft, type CreditorParty, type Pacs008Draft } from '../../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../../services/fraud-engine';
 import { sendOnChain } from '../../services/payment';
+import {
+  PAYMENT_TYPES, DEFAULT_PAYMENT_TYPE, paymentTypeMeta, type PaymentType,
+} from '../../services/payment-type';
 
 interface ParsedPayUri {
   ok: true;
@@ -65,6 +68,9 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
   const [isoOpen, setIsoOpen] = useState(false);
   const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
   const [armed, setArmed] = useState(false);
+  /** #76 — sender's payment classification. Default 'payment' (the only
+   *  taxable type). Sender-local metadata parallel to the tax-engine kind. */
+  const [paymentType, setPaymentType] = useState<PaymentType>(DEFAULT_PAYMENT_TYPE);
 
   const parsed = useMemo<Parsed | null>(() => {
     const trimmed = input.trim();
@@ -186,6 +192,8 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
         note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
         pacs008: draft ?? undefined,
         risk: assessment ?? undefined,
+        paymentType,
+        taxable: paymentTypeMeta(paymentType).taxable,
       });
       onSent();
     } catch (err) {
@@ -300,6 +308,31 @@ export default function WalletSendScreen({ onBack, onSent }: Props) {
             </div>
           );
         })()}
+
+        {/* #76 — payment type. Sender-local; only "Payment" counts toward tax. */}
+        {parsed?.ok && (
+          <div className="mt-4">
+            <div className="text-xs uppercase tracking-wider mb-2 text-[var(--color-text-faint)]">
+              {t('wallet.paymentTypeLabel', 'Type')}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_TYPES.map((pt) => (
+                <button key={pt} type="button" onClick={() => setPaymentType(pt)}
+                        className="py-2.5 rounded-lg text-sm font-semibold"
+                        style={paymentType === pt
+                          ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }
+                          : { backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)',
+                              border: '1px solid var(--color-border)' }}>
+                  {t(`paymentType.${pt}`, paymentTypeMeta(pt).labelFallback)}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs mt-2 text-[var(--color-text-faint)]">
+              {t('wallet.paymentTypeHelp',
+                'Only "Payment" counts toward tax. Gift, Information and Contract are exempt.')}
+            </div>
+          </div>
+        )}
 
         {parsed && !parsed.ok && (
           <p className="mt-3 text-sm text-[var(--color-red)]">

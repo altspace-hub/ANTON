@@ -102,6 +102,8 @@
     "activityTitle": "Activity",
     "amount": "Amount",
     "block": "Block",
+    "filterAll": "All",
+    "filterEmpty": "No payments of this type yet",
     "detail": {
       "address": "Address",
       "chain": "Chain",
@@ -222,6 +224,12 @@
     "txId": "Tx id",
     "viewHistory": "View payment history"
   },
+  "paymentType": {
+    "contract": "Contract",
+    "gift": "Gift",
+    "information": "Information",
+    "payment": "Payment"
+  },
   "receive": {
     "payTo": "Pay to",
     "qrAddressOnly": "QR carries only your address — sender chooses the amount",
@@ -263,6 +271,8 @@
       "title": "ISO 20022 payment details"
     },
     "items": "Items",
+    "paymentTypeHelp": "Only \"Payment\" counts toward tax. Gift, Information and Contract are exempt.",
+    "paymentTypeLabel": "Type",
     "knownContact": "Recognized contact",
     "lookAlike": "Look-alike address detected",
     "lookAlikeAck": "I confirm this address is NOT \"{{name}}\" and I want to pay this new address.",

@@ -34,6 +34,7 @@
  * only egress path.
  */
 import type { Pacs008Draft } from './pacs008-draft';
+import type { PaymentType } from './payment-type';
 import {
   openDb,
   STORE_WALLET_TXS,
@@ -106,6 +107,13 @@ export interface WalletTx {
    *  the same payment isn't double-counted. Optional + schemaless-safe (no
    *  IndexedDB version bump). */
   provisional?: boolean;
+  /** #76 — the sender's classification (Payment / Gift / Information /
+   *  Contract). Sender-local; never on the wire. Parallel to `kind` (the
+   *  tax-engine taxonomy), not a replacement. Legacy rows omit it.
+   *  Optional + schemaless-safe — no IndexedDB version bump. */
+  paymentType?: PaymentType;
+  /** Derived from paymentType — only 'payment' is taxable. Legacy rows omit it. */
+  taxable?: boolean;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -134,6 +142,8 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     // scoped per wallet (the receive poller passes the receiving wallet).
     walletAddress: input.walletAddress ?? (await getActiveWalletMeta())?.address,
     provisional: input.provisional,
+    paymentType: input.paymentType,
+    taxable: input.taxable,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

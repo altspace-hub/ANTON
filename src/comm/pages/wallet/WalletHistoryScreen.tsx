@@ -9,6 +9,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listTxs, type WalletTx } from '../../services/transactions';
+import PaymentTypeBadge from '../../components/PaymentTypeBadge';
+import { PAYMENT_TYPES, paymentTypeMeta, type PaymentType } from '../../services/payment-type';
 
 interface Props {
   onBack: () => void;
@@ -18,10 +20,16 @@ export default function WalletHistoryScreen({ onBack }: Props) {
   const { t } = useTranslation();
   const [txs, setTxs] = useState<WalletTx[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+  /** #76 — filter by sender payment-type. Only outbound sends carry a type. */
+  const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
 
   useEffect(() => {
     listTxs(500).then(setTxs);
   }, []);
+
+  const filtered = typeFilter === 'all'
+    ? txs
+    : txs.filter((tx) => tx.paymentType === typeFilter);
 
   return (
     <section className="flex flex-col h-full safe-bottom">
@@ -33,15 +41,42 @@ export default function WalletHistoryScreen({ onBack }: Props) {
             {t('wallet.noTransactions')}
           </p>
         ) : (
-          <ul className="flex flex-col gap-1.5">
-            {txs.map((tx) => (
-              <li key={tx.id}>
-                <Row tx={tx}
-                     expanded={expanded === tx.id}
-                     onToggle={() => setExpanded(expanded === tx.id ? null : tx.id)} />
-              </li>
-            ))}
-          </ul>
+          <>
+            {/* #76 — filter chips: All + the four payment types. */}
+            <div className="flex gap-2 overflow-x-auto pb-3">
+              {(['all', ...PAYMENT_TYPES] as const).map((f) => {
+                const active = typeFilter === f;
+                const label = f === 'all'
+                  ? t('wallet.filterAll', 'All')
+                  : t(`paymentType.${f}`, paymentTypeMeta(f).labelFallback);
+                return (
+                  <button key={f} type="button" onClick={() => setTypeFilter(f)}
+                          className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+                          style={active
+                            ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }
+                            : { backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)' }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {filtered.length === 0 ? (
+              <p className="text-sm text-[var(--color-text-faint)] text-center mt-8">
+                {t('wallet.filterEmpty', 'No payments of this type yet')}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {filtered.map((tx) => (
+                  <li key={tx.id}>
+                    <Row tx={tx}
+                         expanded={expanded === tx.id}
+                         onToggle={() => setExpanded(expanded === tx.id ? null : tx.id)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </section>
@@ -63,8 +98,11 @@ function Row({
          style={{ cursor: 'pointer' }}>
       <div className="flex items-center justify-between p-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-[var(--color-text)]">
-            {t(`wallet.txKind.${tx.kind}`)}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-[var(--color-text)]">
+              {t(`wallet.txKind.${tx.kind}`)}
+            </span>
+            {tx.paymentType && <PaymentTypeBadge type={tx.paymentType} />}
           </div>
           <div className="text-[11px] text-[var(--color-text-faint)] truncate font-mono">
             {tx.counterparty}

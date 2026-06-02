@@ -6,6 +6,7 @@
  */
 import type { Pacs008Draft } from './pacs008-draft';
 import type { FraudAssessment } from './fraud-engine';
+import type { PaymentType } from './payment-type';
 
 export type PaymentPurpose = 'RETAIL' | 'RESTAURANT' | 'EVENT' | 'SERVICE' | 'REFUND';
 
@@ -109,6 +110,12 @@ export interface PaymentRecord {
   merchantId: string;
   orderId: string;
   purpose: PaymentPurpose;
+  /** #76 — the sender's classification (Payment / Gift / Information / Contract).
+   *  Sender-local; never on the wire. Legacy records (pre-#76) omit it. */
+  paymentType?: PaymentType;
+  /** Derived from paymentType — only 'payment' is taxable. Consumed by the
+   *  tax readout (#78). Legacy records omit it. */
+  taxable?: boolean;
   amountMicroFtc: bigint;
   ref: string;
   qrUri: string;

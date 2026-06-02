@@ -30,6 +30,9 @@ import {
   missingFields, type TravelRuleTier,
 } from '../services/travel-rule';
 import { getDisplayQuote } from '../services/fx';
+import {
+  PAYMENT_TYPES, DEFAULT_PAYMENT_TYPE, paymentTypeMeta, type PaymentType,
+} from '../services/payment-type';
 import type { DecodedPayment, PaymentRecord } from '../services/types';
 
 interface Props {
@@ -76,6 +79,9 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
    *  order envelope. Soft-capped at 500 chars for the textarea but the
    *  underlying RmtInf can carry much more. */
   const [customerNote, setCustomerNote] = useState('');
+  /** #76 — the sender's classification of this payment. Default 'payment'
+   *  (goods & services, the only taxable type). Sender-local metadata. */
+  const [paymentType, setPaymentType] = useState<PaymentType>(DEFAULT_PAYMENT_TYPE);
   /** Whether the customer's wallet is ready — gates the note textarea
    *  (no note when paying through a non-FTC fallback). */
   const [walletConnected, setWalletConnected] = useState(false);
@@ -182,7 +188,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
         payment, assessment ?? undefined, customerNote, {
           promptForPassphrase: openPassphraseModal,
           promptForPin: openPinModal,
-        },
+        }, paymentType,
       );
       onConfirmed(record);
     } catch {
@@ -297,6 +303,30 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
               </span>
             </div>
           ))}
+        </div>
+
+        {/* #76 — payment type. Sender-local; only "Payment" counts toward tax. */}
+        <div className="mb-4">
+          <div className="text-xs uppercase tracking-wider mb-2"
+               style={{ color: 'var(--color-text-faint)' }}>
+            {t('review.paymentTypeLabel', 'Type')}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {PAYMENT_TYPES.map((pt) => (
+              <button key={pt} type="button" onClick={() => setPaymentType(pt)}
+                      className="py-2.5 rounded-lg text-sm font-semibold"
+                      style={paymentType === pt
+                        ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }
+                        : { backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)',
+                            border: '1px solid var(--color-border)' }}>
+                {t(`paymentType.${pt}`, paymentTypeMeta(pt).labelFallback)}
+              </button>
+            ))}
+          </div>
+          <div className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
+            {t('review.paymentTypeHelp',
+              'Only "Payment" counts toward tax. Gift, Information and Contract are exempt.')}
+          </div>
         </div>
 
         {/* Wave 10 — itemized order details from the merchant's QR.

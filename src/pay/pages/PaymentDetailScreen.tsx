@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StatusPill from '../components/StatusPill';
+import PaymentTypeBadge from '../components/PaymentTypeBadge';
 import CopyRow from '../components/CopyRow';
 import { estimateSek, formatFtc, formatSek } from '../services/payment';
 import { loadProfile } from '../services/profile';
@@ -116,6 +117,14 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
         )}
         <IsoRow label={t('history.orderId')} value={r.orderId} />
         <IsoRow label={t('review.purpose')} value={t(`review.purpose${r.purpose}`)} />
+        {r.paymentType && (
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-xs shrink-0" style={{ color: 'var(--color-text-faint)' }}>
+              {t('review.paymentTypeLabel', 'Type')}
+            </span>
+            <PaymentTypeBadge type={r.paymentType} />
+          </div>
+        )}
       </Section>
 
       {/* Status */}

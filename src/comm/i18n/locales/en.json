@@ -301,6 +301,12 @@
     "subtitle": "Your name and address are added to the ISO 20022 record of every payment you make. All fields are optional.",
     "title": "Payment details"
   },
+  "paymentType": {
+    "contract": "Contract",
+    "gift": "Gift",
+    "information": "Information",
+    "payment": "Payment"
+  },
   "portals": {
     "actions": "Actions",
     "actionsNav": "Portal actions",
@@ -530,6 +536,10 @@
     },
     "manage": "Wallets",
     "noTransactions": "No transactions yet.",
+    "filterAll": "All",
+    "filterEmpty": "No payments of this type yet",
+    "paymentTypeHelp": "Only \"Payment\" counts toward tax. Gift, Information and Contract are exempt.",
+    "paymentTypeLabel": "Type",
     "order": "Order {{id}}",
     "receive": "Receive",
     "receiveHelp": "Show this code to whoever's paying you. They scan it with their wallet to pick the amount.",

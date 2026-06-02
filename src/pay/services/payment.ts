@@ -25,6 +25,9 @@ import { requireBiometric } from './biometric';
 import { hasPaymentPin, setPaymentPin, verifyPaymentPin } from './payment-pin';
 import { assembleDraft, type PartyIdentification } from './pacs008-draft';
 import {
+  paymentTypeMeta, resolveIsoPurpose, DEFAULT_PAYMENT_TYPE, type PaymentType,
+} from './payment-type';
+import {
   deriveBehaviorProfile, type BehaviorEvent, type BehaviorProfile,
 } from './behavior-profile';
 import type { FraudAssessment } from './fraud-engine';
@@ -245,6 +248,7 @@ function shortGateReason(amountFtc: number, to: string): string {
 export async function recordPayment(
   decoded: DecodedPayment,
   risk?: FraudAssessment,
+  paymentType: PaymentType = DEFAULT_PAYMENT_TYPE,
 ): Promise<PaymentRecord> {
   const [identity, wallet] = await Promise.all([loadPayerIdentity(), loadWallet()]);
   const record: PaymentRecord = {
@@ -253,6 +257,8 @@ export async function recordPayment(
     merchantId: decoded.merchantId,
     orderId: decoded.orderId,
     purpose: decoded.purpose,
+    paymentType,
+    taxable: paymentTypeMeta(paymentType).taxable,
     amountMicroFtc: decoded.amountMicroFtc,
     ref: decoded.ref,
     qrUri: decoded.qrUri,
@@ -357,6 +363,9 @@ export async function executePayment(
    *  Pass undefined or '' for the default minimal-remittance behaviour. */
   customerNote?: string,
   options?: ExecutePaymentOptions,
+  /** #76 — the sender's payment classification. Sets the `taxable` flag and
+   *  overrides the ISO purpose for non-payment types. Defaults to 'payment'. */
+  paymentType: PaymentType = DEFAULT_PAYMENT_TYPE,
 ): Promise<PaymentRecord> {
   // Resolve only the *non-secret* bits eagerly — identity + wallet
   // address. The actual signer (which may need a passphrase prompt)
@@ -382,6 +391,8 @@ export async function executePayment(
   const wallet = { address: walletMeta.address };
 
   const id = newId();
+  // #76 — only goods-&-services 'payment' is a taxable disposal.
+  const taxable = paymentTypeMeta(paymentType).taxable;
   // Travel-Rule tier — decides whether the originator postal address
   // is disclosed on-chain: >= EUR 1000 (or no live FX rate — the
   // conservative default) includes it; sub-threshold omits it per
@@ -446,6 +457,8 @@ export async function executePayment(
         merchantId: decoded.merchantId,
         orderId: decoded.orderId,
         purpose: decoded.purpose,
+        paymentType,
+        taxable,
         amountMicroFtc: decoded.amountMicroFtc,
         ref: decoded.ref,
         qrUri: decoded.qrUri,
@@ -499,7 +512,7 @@ export async function executePayment(
         : `passphrase incorrect (${MAX_PASSPHRASE_ATTEMPTS} attempts)`;
       const failed: PaymentRecord = {
         id, toAddress: decoded.toAddress, merchantId: decoded.merchantId,
-        orderId: decoded.orderId, purpose: decoded.purpose,
+        orderId: decoded.orderId, purpose: decoded.purpose, paymentType, taxable,
         amountMicroFtc: decoded.amountMicroFtc, ref: decoded.ref,
         qrUri: decoded.qrUri, status: 'failed', paidAt: Date.now(),
         pacs008: draft, risk, error: reason,
@@ -522,6 +535,8 @@ export async function executePayment(
     merchantId: decoded.merchantId,
     orderId: decoded.orderId,
     purpose: decoded.purpose,
+    paymentType,
+    taxable,
     amountMicroFtc: decoded.amountMicroFtc,
     ref: decoded.ref,
     qrUri: decoded.qrUri,
@@ -569,7 +584,8 @@ export async function executePayment(
       debtor: pacsPartyFromDraft(draft.debtor),
       creditor: pacsPartyFromDraft(draft.creditor),
       amountFtc,
-      purpose: isoPurpose(draft.purpose),
+      // #76 — 'payment' keeps the merchant-derived code; gift/info/contract override.
+      purpose: resolveIsoPurpose(paymentType, isoPurpose(draft.purpose)),
       ...(remittanceInfo
         ? { remittanceInfo }
         : { remittanceText: decoded.ref }),

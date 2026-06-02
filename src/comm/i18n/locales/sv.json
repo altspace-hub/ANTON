@@ -301,6 +301,12 @@
     "subtitle": "Ditt namn och din adress läggs till i ISO 20022-registret för varje betalning du gör. Alla fält är valfria.",
     "title": "Betalningsuppgifter"
   },
+  "paymentType": {
+    "contract": "Avtal",
+    "gift": "Gåva",
+    "information": "Information",
+    "payment": "Betalning"
+  },
   "portals": {
     "actions": "Åtgärder",
     "actionsNav": "Portalåtgärder",
@@ -530,6 +536,10 @@
     },
     "manage": "Plånböcker",
     "noTransactions": "Inga transaktioner än.",
+    "filterAll": "Alla",
+    "filterEmpty": "Inga betalningar av den här typen än",
+    "paymentTypeHelp": "Endast \"Betalning\" räknas för skatt. Gåva, Information och Avtal är undantagna.",
+    "paymentTypeLabel": "Typ",
     "order": "Order {{id}}",
     "receive": "Ta emot",
     "receiveHelp": "Visa den här koden för den som betalar dig. De skannar den med sin plånbok för att välja belopp.",

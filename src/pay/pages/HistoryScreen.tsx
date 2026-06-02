@@ -11,12 +11,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StatusPill from '../components/StatusPill';
+import PaymentTypeBadge from '../components/PaymentTypeBadge';
 import { formatFtc, listPayments } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity, groupActivityByDay } from '../services/activity';
 import {
   isDust, listContacts, buildContactNameMap, resolveName,
 } from '../services/address-book';
+import { PAYMENT_TYPES, paymentTypeMeta, type PaymentType } from '../services/payment-type';
 import type { Activity } from '../services/types';
 
 interface Props {
@@ -66,6 +68,9 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
   const { t } = useTranslation();
   const [items, setItems] = useState<Activity[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
+  /** #76 — filter the timeline by sender payment-type. 'all' = no filter.
+   *  Received rows have no type, so any type filter narrows to sent rows. */
+  const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
 
   useEffect(() => {
     void (async () => {
@@ -81,10 +86,16 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
     })();
   }, []);
 
+  // #76 — apply the type filter before grouping. Legacy/undefined and
+  // received rows match only 'all' (never silently bucketed as a type).
+  const filtered = typeFilter === 'all'
+    ? items
+    : items.filter((a) => a.direction === 'sent' && a.record.paymentType === typeFilter);
+
   // Bucket the flat stream into per-day groups for sticky headers.
   // `now` is read once per render — the Today / Yesterday boundary only
   // needs to be correct at paint time.
-  const groups = groupActivityByDay(items, {
+  const groups = groupActivityByDay(filtered, {
     today: t('history.today', 'Today'),
     yesterday: t('history.yesterday', 'Yesterday'),
     formatDate,
@@ -120,8 +131,37 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {groups.map((g) => (
+          <>
+            {/* #76 — filter chips: All + the four payment types. */}
+            <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1">
+              {(['all', ...PAYMENT_TYPES] as const).map((f) => {
+                const active = typeFilter === f;
+                const label = f === 'all'
+                  ? t('history.filterAll', 'All')
+                  : t(`paymentType.${f}`, paymentTypeMeta(f).labelFallback);
+                return (
+                  <button key={f} type="button" onClick={() => setTypeFilter(f)}
+                          className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+                          style={active
+                            ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }
+                            : { backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)' }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {groups.length === 0 ? (
+              <div className="rounded-xl p-6 text-center mt-2"
+                   style={{ backgroundColor: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)' }}>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                  {t('history.filterEmpty', 'No payments of this type yet')}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {groups.map((g) => (
               <div key={g.dayKey} className="flex flex-col gap-2">
                 {/* Sticky day header — Today / Yesterday / explicit date. */}
                 <div className="sticky top-0 z-10 py-1.5 text-[11px] uppercase tracking-wider font-semibold"
@@ -145,6 +185,9 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
                             {counterpartyOf(a, contactNames)}
                           </span>
                           {a.direction === 'sent' && <StatusPill status={a.record.status} />}
+                          {a.direction === 'sent' && a.record.paymentType && (
+                            <PaymentTypeBadge type={a.record.paymentType} />
+                          )}
                         </div>
                         <div className="text-xs mt-0.5 truncate"
                              style={{ color: 'var(--color-text-muted)' }}>
@@ -159,8 +202,10 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
                   );
                 })}
               </div>
-            ))}
-          </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
