@@ -223,6 +223,11 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
       });
       // fire-and-forget confirmation polling → flips the row to 'confirmed'.
       void pollConfirmation(row.id, sent.txId, parsed.to);
+      // If this send originated from a scheduled-payment reminder, roll
+      // the schedule forward to its next window (fire-and-forget).
+      if (parsed.sched) {
+        void import('../../services/schedules').then((m) => m.recordFire(parsed.sched!));
+      }
       onConfirmed(row.id);
     } catch (err) {
       setError((err as Error).message);

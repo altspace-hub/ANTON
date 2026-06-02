@@ -17,9 +17,12 @@ import { needsResidencyPrompt } from '../services/tax-residency';
 import WalletConnectScreen from './wallet/WalletConnectScreen';
 import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
-import WalletSendScreen, { type ParsedPayUri } from './wallet/WalletSendScreen';
+import WalletSendScreen, { parsePayUri, type ParsedPayUri } from './wallet/WalletSendScreen';
 import WalletReviewScreen from './wallet/WalletReviewScreen';
 import WalletSendDoneScreen from './wallet/WalletSendDoneScreen';
+import WalletScanScreen from './wallet/WalletScanScreen';
+import ScheduledPaymentsScreen from './wallet/ScheduledPaymentsScreen';
+import AddScheduleScreen from './wallet/AddScheduleScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
 import WalletsListScreen from './wallet/WalletsListScreen';
 import WalletDetailScreen from './wallet/WalletDetailScreen';
@@ -36,9 +39,12 @@ type View =
   | 'balance'
   | 'receive'
   | 'send'
+  | 'send-scan'
   | 'send-review'
   | 'send-done'
   | 'history'
+  | 'schedules'
+  | 'schedule-add'
   | 'wallets-list'
   | 'wallet-detail'
   | 'wallet-add'
@@ -48,7 +54,15 @@ type View =
   | 'tax-position'
   | 'tax-report';
 
-export default function WalletScreen() {
+interface WalletScreenProps {
+  /** A `futurechain:pay` URI to open straight into the review step —
+   *  set when a scheduled-payment notification was tapped. Consumed
+   *  once on mount, then cleared via onDeepLinkConsumed. */
+  deepLinkUri?: string | null;
+  onDeepLinkConsumed?: () => void;
+}
+
+export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: WalletScreenProps = {}) {
   const [view, setView] = useState<View>('loading');
   const [address, setAddress] = useState<string | null>(null);
   /** Wallet id whose detail screen is being viewed. */
@@ -61,6 +75,16 @@ export default function WalletScreen() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  // Notification-tap deep link — a scheduled-payment reminder hands us a
+  // `futurechain:pay` URI; parse it and jump straight to review (only
+  // once the wallet has loaded so `address` is available).
+  useEffect(() => {
+    if (!deepLinkUri || view === 'loading' || view === 'connect') return;
+    const parsed = parsePayUri(deepLinkUri);
+    if (parsed.ok) { setPendingSend(parsed); setView('send-review'); }
+    onDeepLinkConsumed?.();
+  }, [deepLinkUri, view]);
 
   async function refresh() {
     if (await hasWallet()) {
@@ -105,6 +129,15 @@ export default function WalletScreen() {
       <WalletSendScreen
         onBack={() => setView('balance')}
         onReview={(parsed) => { setPendingSend(parsed); setView('send-review'); }}
+        onScan={() => setView('send-scan')}
+      />
+    );
+  }
+  if (view === 'send-scan') {
+    return (
+      <WalletScanScreen
+        onBack={() => setView('send')}
+        onScanned={(parsed) => { setPendingSend(parsed); setView('send-review'); }}
       />
     );
   }
@@ -128,6 +161,26 @@ export default function WalletScreen() {
   }
   if (view === 'history') {
     return <WalletHistoryScreen onBack={() => setView('balance')} />;
+  }
+  if (view === 'schedules') {
+    return (
+      <ScheduledPaymentsScreen
+        onBack={() => setView('balance')}
+        onAdd={() => setView('schedule-add')}
+        onPayNow={(uri) => {
+          const parsed = parsePayUri(uri);
+          if (parsed.ok) { setPendingSend(parsed); setView('send-review'); }
+        }}
+      />
+    );
+  }
+  if (view === 'schedule-add') {
+    return (
+      <AddScheduleScreen
+        onBack={() => setView('schedules')}
+        onCreated={() => setView('schedules')}
+      />
+    );
   }
   if (view === 'wallets-list') {
     return (
@@ -189,6 +242,7 @@ export default function WalletScreen() {
       onReceive={() => setView('receive')}
       onSend={() => setView('send')}
       onHistory={() => setView('history')}
+      onSchedules={() => setView('schedules')}
       onManage={() => setView('wallets-list')}
       onRpcEndpoint={() => setView('rpc-endpoint')}
       onSecurity={() => setView('wallet-security')}

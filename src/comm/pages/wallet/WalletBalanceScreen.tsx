@@ -25,10 +25,12 @@ interface Props {
   onRpcEndpoint: () => void;
   /** Open wallet Security (payment PIN + passphrase). */
   onSecurity: () => void;
+  /** Open the scheduled / recurring payments list. */
+  onSchedules: () => void;
 }
 
 export default function WalletBalanceScreen({
-  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint, onSecurity,
+  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint, onSecurity, onSchedules,
 }: Props) {
   const { t } = useTranslation();
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
@@ -111,6 +113,7 @@ export default function WalletBalanceScreen({
           <ActionButton label={t('wallet.manage', 'Wallets')} onClick={onManage} />
           <ActionButton label={t('wallet.rpc', 'RPC endpoint')} onClick={onRpcEndpoint} />
           <ActionButton label={t('wallet.security', 'Security')} onClick={onSecurity} />
+          <ActionButton label={t('schedules.short', 'Scheduled')} onClick={onSchedules} />
         </div>
 
         {/* Active-sync banner (only while polling) + Sync button. The

@@ -7,6 +7,7 @@ import LoadingShell from './components/LoadingShell';
 import { hasIdentity } from './services/identity';
 import { startRelayClient, stopRelayClient } from './services/relay-client';
 import { reconcileAllReminders } from './services/event-reminders';
+import { reconcileScheduleNotifications } from './services/schedules';
 import { reconcileLiveShares } from './services/geo';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
@@ -68,6 +69,9 @@ export default function App() {
   const [openPortalAddress, setOpenPortalAddress] = useState<string | null>(null);
   const [openPostId, setOpenPostId] = useState<string | null>(null);
   const [wassupVersion, setWassupVersion] = useState(0);
+  /** A `futurechain:pay` URI handed to the Wallet tab when a scheduled-
+   *  payment notification is tapped — opens straight into review. */
+  const [walletDeepLinkUri, setWalletDeepLinkUri] = useState<string | null>(null);
   /** App-open biometric lock — starts locked when the user enabled it. */
   const [locked, setLocked] = useState<boolean>(() => isAppLockEnabled());
   const hiddenAtRef = useRef<number>(0);
@@ -114,8 +118,41 @@ export default function App() {
     // R13 — resume live-share tickers for any of our outgoing location
     // bubbles whose liveUntil is still in the future.
     void reconcileLiveShares();
+    // #79 Phase 6 — re-arm scheduled-payment reminders (a fresh install /
+    // OS-cleared notifications get back to a healthy state).
+    void reconcileScheduleNotifications();
     return () => stopRelayClient();
   }, [identityVersion]);
+
+  // #79 Phase 6 — scheduled-payment notification tap → open the prefilled
+  // send flow on the Wallet tab. The plugin is absent on web (dynamic
+  // import is a no-op there), so this only fires inside the Capacitor app.
+  useEffect(() => {
+    let remove: (() => void) | undefined;
+    void (async () => {
+      try {
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        const handle = await LocalNotifications.addListener(
+          'localNotificationActionPerformed',
+          async (action) => {
+            const scheduleId = (action?.notification?.extra as { scheduleId?: string } | undefined)?.scheduleId;
+            if (!scheduleId) return;
+            const [{ getSchedule }, { scheduleToPayUri }] = await Promise.all([
+              import('./services/schedules'),
+              import('./services/schedule-to-payment'),
+            ]);
+            const s = await getSchedule(scheduleId);
+            if (!s) return;
+            setWalletDeepLinkUri(scheduleToPayUri(s));
+            setActiveTab('wallet');
+            setView('tabs');
+          },
+        );
+        remove = () => { void handle.remove(); };
+      } catch { /* plugin unavailable (web) — no-op */ }
+    })();
+    return () => { remove?.(); };
+  }, []);
 
   /**
    * Polling strategy (redesigned 2026-05-21):
@@ -355,7 +392,10 @@ export default function App() {
         )}
         {activeTab === 'wallet' && (
           <Suspense fallback={<LoadingShell />}>
-            <WalletScreen />
+            <WalletScreen
+              deepLinkUri={walletDeepLinkUri}
+              onDeepLinkConsumed={() => setWalletDeepLinkUri(null)}
+            />
           </Suspense>
         )}
       </main>

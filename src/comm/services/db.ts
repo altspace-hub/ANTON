@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 8;
+export const DB_VERSION = 9;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -39,6 +39,12 @@ export const STORE_WALLET_TXS = 'wallet_txs';
  *  addresses the user has explicitly added — used by the address-
  *  poisoning defense to recognise known payees on send. */
 export const STORE_FC_CONTACTS = 'fc_contacts';
+/** v9 — scheduled / recurring payment reminders (#79 Phase 6 wallet
+ *  parity). Self-custody-safe "reminder + same-tap signing": a local
+ *  notification fires at the chosen time; tapping it opens the prefilled
+ *  send flow and the user biometric-confirms. We never auto-sign /
+ *  pre-sign. by_next powers reconcile + the chronological list. */
+export const STORE_SCHEDULES = 'schedules';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -50,11 +56,33 @@ export const INDEX_INLINE_BY_PEER = 'by_peer';
 export const INDEX_PORTAL_BY_CACHED_AT = 'by_cached_at';
 export const INDEX_WALLET_BY_TS = 'by_ts';
 export const INDEX_WALLET_BY_REF = 'by_ref';
+export const INDEX_SCHED_BY_NEXT = 'by_next';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 export function openDb(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
+  // Return the cached connection only if it's still live. A connection
+  // that has begun closing — a versionchange during a schema bump, or an
+  // abnormal WebView close — throws InvalidStateError on `.transaction()`
+  // ("the database connection is closing"). Probe with a throwaway
+  // readonly transaction and transparently reopen on failure so callers
+  // never receive a dead handle (which would surface to the user as a
+  // failed write). STORE_CONTACTS exists since v1, so the probe is always
+  // valid; .abort() cancels it immediately with no real work.
+  if (dbPromise) {
+    return dbPromise.then(
+      (db) => {
+        try {
+          db.transaction(STORE_CONTACTS, 'readonly').abort();
+          return db;
+        } catch {
+          dbPromise = null;
+          return openDb();
+        }
+      },
+      () => { dbPromise = null; return openDb(); },
+    );
+  }
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
@@ -113,10 +141,29 @@ export function openDb(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_FC_CONTACTS, { keyPath: 'id' });
         store.createIndex('byAddress', 'address', { unique: false });
       }
+      // v9 — scheduled-payment reminders. Primary key is the generated
+      // schedule id; by_next sorts the list + drives notification
+      // reconcile on app start.
+      if (!db.objectStoreNames.contains(STORE_SCHEDULES)) {
+        const store = db.createObjectStore(STORE_SCHEDULES, { keyPath: 'id' });
+        store.createIndex(INDEX_SCHED_BY_NEXT, 'nextFireAt', { unique: false });
+      }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-    req.onblocked = () => reject(new Error('IndexedDB open blocked — another tab holds an older connection'));
+    req.onsuccess = () => {
+      const db = req.result;
+      // Self-healing singleton: if this connection is ever force-closed
+      // (a versionchange from a newer page during a schema bump, or an
+      // abnormal close), drop the cached promise so the next openDb()
+      // re-opens a fresh connection instead of handing back a dead one
+      // (which throws "the database connection is closing" on .transaction()).
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
+    };
+    // On a failed/blocked open, clear the cached promise so a later call
+    // can retry rather than re-await a permanently-rejected promise.
+    req.onerror = () => { dbPromise = null; reject(req.error); };
+    req.onblocked = () => { dbPromise = null; reject(new Error('IndexedDB open blocked — another tab holds an older connection')); };
   });
   return dbPromise;
 }
