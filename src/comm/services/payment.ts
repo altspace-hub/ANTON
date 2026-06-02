@@ -32,6 +32,7 @@ import { loadPayerIdentity } from './payment-identity';
 import { getRpc } from './fc-rpc';
 import { hasPaymentPin, verifyPaymentPin, setPaymentPin } from './payment-pin';
 import { BadPassphraseError } from './wallet-passphrase';
+import { updateTxStatus, type PaymentStatus } from './transactions';
 
 /** The review screen passes these so sendOnChain can fall back from biometric to
  *  the in-app PIN, and prompt for the wallet passphrase (opt-in second factor). */
@@ -107,11 +108,21 @@ export interface SendResult {
   uetr: string;
   /** The chain-side tx id returned by `/submit_signed_transaction`. */
   txId: string;
-  /** P2P / mempool status the hub reported. */
+  /** P2P / mempool status the hub reported (raw string). */
   status: string;
   /** Network fee signed into the tx (satoshi). Persisted on the WalletTx so the
    *  caller doesn't recompute. 0.1% capped at 0.1 FTC. */
   feeSatoshi: number;
+  /** #79 — the hub status mapped onto the WalletTx lifecycle, so the caller can
+   *  stamp the row + fire confirmation polling. */
+  submitStatus: PaymentStatus;
+}
+
+/** Map the hub's submit-status string onto the WalletTx lifecycle. */
+function mapSubmitStatus(s: string): PaymentStatus {
+  if (s === 'accepted') return 'accepted';
+  if (s === 'confirmed') return 'confirmed';
+  return 'queued'; // queued / pending / submitted → in-flight
 }
 
 /** Send a transaction on-chain. Throws on any failure; the caller
@@ -215,12 +226,35 @@ export async function sendOnChain(input: SendInput, options?: SendOptions): Prom
   if (submit.status === 'rejected' || submit.error) {
     throw new Error(submit.reason ?? submit.error ?? 'rejected');
   }
+  const rawStatus = String(submit.status ?? 'submitted');
   return {
     uetr,
     txId: submit.tx_id ?? uetr,
-    status: String(submit.status ?? 'submitted'),
+    status: rawStatus,
     feeSatoshi,
+    submitStatus: mapSubmitStatus(rawStatus),
   };
+}
+
+/** Poll the recipient's UTXOs for the sent tx and flip the WalletTx row to
+ *  'confirmed' once it lands (5-min deadline, 5s interval). Fire-and-forget from
+ *  the send flow; idempotent + re-armable. Mirrors Pay's pollConfirmation. */
+export async function pollConfirmation(
+  txRowId: string, txId: string, recipientAddress: string,
+): Promise<void> {
+  const rpc = await getRpc();
+  const deadline = Date.now() + 5 * 60_000;
+  const intervalMs = 5_000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, intervalMs));
+    try {
+      const utxos = await rpc.getUtxos(recipientAddress);
+      if (utxos.some((u) => u.tx_id === txId)) {
+        await updateTxStatus(txRowId, 'confirmed');
+        return;
+      }
+    } catch { /* transient — keep polling until the deadline */ }
+  }
 }
 
 function shortGateReason(amountFtc: number, to: string): string {

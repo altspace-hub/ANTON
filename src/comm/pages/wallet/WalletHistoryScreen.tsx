@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listTxs, type WalletTx } from '../../services/transactions';
 import PaymentTypeBadge from '../../components/PaymentTypeBadge';
+import StatusPill from '../../components/StatusPill';
 import { PAYMENT_TYPES, paymentTypeMeta, type PaymentType } from '../../services/payment-type';
 
 interface Props {
@@ -103,6 +104,7 @@ function Row({
               {t(`wallet.txKind.${tx.kind}`)}
             </span>
             {tx.paymentType && <PaymentTypeBadge type={tx.paymentType} />}
+            {tx.status && <StatusPill status={tx.status} />}
           </div>
           <div className="text-[11px] text-[var(--color-text-faint)] truncate font-mono">
             {tx.counterparty}

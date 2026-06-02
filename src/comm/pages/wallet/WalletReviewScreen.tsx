@@ -21,7 +21,8 @@ import { loadPayerIdentity } from '../../services/payment-identity';
 import { loadMoneyProfile } from '../../services/money-profile';
 import { assembleDraft, type Pacs008Draft } from '../../services/pacs008-draft';
 import { assessPayment, type FraudAssessment } from '../../services/fraud-engine';
-import { sendOnChain, formatFtc, feeMicroFtcFor } from '../../services/payment';
+import { sendOnChain, pollConfirmation, formatFtc, feeMicroFtcFor } from '../../services/payment';
+import { loadResidency } from '../../services/tax-residency';
 import { getDisplayQuote, microFtcToFiatLabel, type Quote } from '../../services/fx';
 import {
   travelRuleTierFor, fullDisclosureReady, minimalDisclosureReady, missingFields,
@@ -38,7 +39,8 @@ import type { ParsedPayUri } from './WalletSendScreen';
 interface Props {
   parsed: ParsedPayUri;
   onBack: () => void;
-  onConfirmed: () => void;
+  /** Routes to the send-done screen with the new WalletTx id. */
+  onConfirmed: (txId: string) => void;
 }
 
 export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Props) {
@@ -200,7 +202,8 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
           ? { name: parsed.creditor.name, countryOfResidence: parsed.creditor.country }
           : null,
       }, { promptForPin: openPinModal, promptForPassphrase: openPassphraseModal });
-      await recordTx({
+      const residency = await loadResidency();
+      const row = await recordTx({
         kind: 'send',
         counterparty: parsed.to,
         amountMicroFtc: parsed.amountMicroFtc.toString(),
@@ -208,15 +211,19 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         fiatCurrency: 'SEK',
         ref: parsed.ref,
         txHash: sent.txId,
-        jurisdictionAtTx: null,
+        // #79 — stamp the declared tax residency (#75) at disposal time.
+        jurisdictionAtTx: residency?.jurisdictionCode ?? null,
         note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
         pacs008: draft ?? undefined,
         risk: assessment ?? undefined,
         paymentType,
         taxable: paymentTypeMeta(paymentType).taxable,
         feeSatoshi: sent.feeSatoshi,
+        status: sent.submitStatus,
       });
-      onConfirmed();
+      // fire-and-forget confirmation polling → flips the row to 'confirmed'.
+      void pollConfirmation(row.id, sent.txId, parsed.to);
+      onConfirmed(row.id);
     } catch (err) {
       setError((err as Error).message);
       setSubmitting(false);

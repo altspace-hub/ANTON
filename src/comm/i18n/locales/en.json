@@ -301,6 +301,20 @@
     "subtitle": "Your name and address are added to the ISO 20022 record of every payment you make. All fields are optional.",
     "title": "Payment details"
   },
+  "paymentDone": {
+    "amountPaid": "Amount paid",
+    "backHome": "Back to wallet",
+    "body": "Mined into a block on FutureChain.",
+    "failedBody": "The transaction was rejected.",
+    "failedTitle": "Payment failed",
+    "queuedBody": "Sent to the chain. Waiting for a miner to include it in a block.",
+    "queuedTitle": "Awaiting confirmation",
+    "submittingBody": "Signing and forwarding to the network.",
+    "submittingTitle": "Submitting…",
+    "title": "Payment confirmed",
+    "txId": "Tx id",
+    "viewHistory": "View history"
+  },
   "paymentPin": {
     "confirm": "Confirm & pay",
     "confirmLabel": "Confirm PIN",
@@ -519,6 +533,13 @@
     "title": "Tax",
     "unsupportedHistoryNote": "Your transaction history is still available on the wallet History tab. A CSV export landing soon will let you hand the raw ledger to your adviser.",
     "utilityToken": "Utility token"
+  },
+  "status": {
+    "confirmed": "Confirmed",
+    "failed": "Failed",
+    "pending": "Pending",
+    "recorded": "Recorded",
+    "submitting": "Submitting"
   },
   "topbar": {
     "openProfile": "Open profile"

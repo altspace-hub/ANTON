@@ -19,6 +19,7 @@ import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
 import WalletSendScreen, { type ParsedPayUri } from './wallet/WalletSendScreen';
 import WalletReviewScreen from './wallet/WalletReviewScreen';
+import WalletSendDoneScreen from './wallet/WalletSendDoneScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
 import WalletsListScreen from './wallet/WalletsListScreen';
 import WalletDetailScreen from './wallet/WalletDetailScreen';
@@ -36,6 +37,7 @@ type View =
   | 'receive'
   | 'send'
   | 'send-review'
+  | 'send-done'
   | 'history'
   | 'wallets-list'
   | 'wallet-detail'
@@ -53,6 +55,8 @@ export default function WalletScreen() {
   const [detailWalletId, setDetailWalletId] = useState<string>('');
   /** Parsed pay URI carried from the send (compose) step into the review step. */
   const [pendingSend, setPendingSend] = useState<ParsedPayUri | null>(null);
+  /** WalletTx id of the just-sent payment, shown on the done screen. */
+  const [doneTxId, setDoneTxId] = useState<string>('');
 
   useEffect(() => {
     void refresh();
@@ -109,7 +113,16 @@ export default function WalletScreen() {
       <WalletReviewScreen
         parsed={pendingSend}
         onBack={() => setView('send')}
-        onConfirmed={() => { setPendingSend(null); setView('history'); }}
+        onConfirmed={(id) => { setPendingSend(null); setDoneTxId(id); setView('send-done'); }}
+      />
+    );
+  }
+  if (view === 'send-done' && doneTxId) {
+    return (
+      <WalletSendDoneScreen
+        txId={doneTxId}
+        onHome={() => { setDoneTxId(''); setView('balance'); }}
+        onHistory={() => { setDoneTxId(''); setView('history'); }}
       />
     );
   }

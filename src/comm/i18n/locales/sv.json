@@ -301,6 +301,20 @@
     "subtitle": "Ditt namn och din adress läggs till i ISO 20022-registret för varje betalning du gör. Alla fält är valfria.",
     "title": "Betalningsuppgifter"
   },
+  "paymentDone": {
+    "amountPaid": "Betalt belopp",
+    "backHome": "Tillbaka till plånbok",
+    "body": "Inkluderad i ett block på FutureChain.",
+    "failedBody": "Transaktionen avvisades.",
+    "failedTitle": "Betalningen misslyckades",
+    "queuedBody": "Skickad till kedjan. Väntar på att en miner inkluderar den i ett block.",
+    "queuedTitle": "Väntar på bekräftelse",
+    "submittingBody": "Signerar och vidarebefordrar till nätverket.",
+    "submittingTitle": "Skickar…",
+    "title": "Betalning bekräftad",
+    "txId": "Tx-id",
+    "viewHistory": "Visa historik"
+  },
   "paymentPin": {
     "confirm": "Bekräfta och betala",
     "confirmLabel": "Bekräfta PIN",
@@ -519,6 +533,13 @@
     "title": "Skatt",
     "unsupportedHistoryNote": "Din transaktionshistorik finns fortfarande på plånbokens Historik-flik. En CSV-export kommer snart så att du kan lämna den råa liggaren till din rådgivare.",
     "utilityToken": "Nyttotoken"
+  },
+  "status": {
+    "confirmed": "Bekräftad",
+    "failed": "Misslyckad",
+    "pending": "Väntar",
+    "recorded": "Registrerad",
+    "submitting": "Skickar"
   },
   "topbar": {
     "openProfile": "Öppna profil"

@@ -46,6 +46,11 @@ import {
 import type { FraudAssessment } from './fraud-engine';
 import { getActiveWalletMeta } from './wallets';
 
+/** Outbound-send lifecycle, mirroring Pay's PaymentStatus (#79). Only `send`
+ *  rows carry it; inbound/legacy rows leave it undefined. */
+export type PaymentStatus =
+  | 'recorded' | 'submitting' | 'queued' | 'accepted' | 'confirmed' | 'failed';
+
 /** Taxable-event taxonomy mirroring FUTURECHAIN_TAX_RULES.md §4. */
 export type WalletTxKind =
   | 'send'              // outbound — spend on goods/services or P2P transfer
@@ -117,6 +122,9 @@ export interface WalletTx {
   /** #79 — network fee signed into the tx (satoshi); shown on the review/detail.
    *  Optional + schemaless-safe (no IDB bump). Legacy rows omit it. */
   feeSatoshi?: number;
+  /** #79 — outbound-send lifecycle. Set on `send` rows; drives the StatusPill +
+   *  the done screen. Inbound/legacy rows omit it. Ignored by tax-bridge. */
+  status?: PaymentStatus;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -148,6 +156,7 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     paymentType: input.paymentType,
     taxable: input.taxable,
     feeSatoshi: input.feeSatoshi,
+    status: input.status,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -174,6 +183,37 @@ export async function confirmTx(id: string, txHash: string): Promise<void> {
         return;
       }
       store.put({ ...row, txHash });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Read a single tx by id (or null). Used by the send-done screen + poller. */
+export async function getTxById(id: string): Promise<WalletTx | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_WALLET_TXS, 'readonly');
+    const req = tx.objectStore(STORE_WALLET_TXS).get(id);
+    req.onsuccess = () => resolve((req.result as WalletTx | undefined) ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Merge a new status (+ optional fields) onto a tx by id. No-op if missing.
+ *  #79 — the send flow + confirmation poller drive the lifecycle through this. */
+export async function updateTxStatus(
+  id: string, status: PaymentStatus, extra?: Partial<WalletTx>,
+): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_WALLET_TXS, 'readwrite');
+    const store = tx.objectStore(STORE_WALLET_TXS);
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const row = req.result as WalletTx | undefined;
+      if (!row) { resolve(); return; }
+      store.put({ ...row, ...extra, status });
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
