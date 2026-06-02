@@ -506,6 +506,13 @@
   "topbar": {
     "openProfile": "Öppna profil"
   },
+  "review": {
+    "confirm": "Bekräfta och betala",
+    "expired": "Betalningskoden har gått ut",
+    "networkFee": "Nätverksavgift",
+    "total": "Totalt",
+    "youPay": "Du betalar"
+  },
   "wallet": {
     "address": "Adress",
     "addressLabel": "Adress",
@@ -546,6 +553,8 @@
     "receiveTitle": "Ta emot",
     "recentActivity": "Senaste aktivitet",
     "recording": "Registrerar…",
+    "reviewContinue": "Fortsätt till granskning",
+    "reviewTitle": "Granska betalning",
     "rpc": "RPC-endpoint",
     "seeAll": "Visa alla",
     "send": "Skicka",

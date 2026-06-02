@@ -17,7 +17,8 @@ import { needsResidencyPrompt } from '../services/tax-residency';
 import WalletConnectScreen from './wallet/WalletConnectScreen';
 import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
-import WalletSendScreen from './wallet/WalletSendScreen';
+import WalletSendScreen, { type ParsedPayUri } from './wallet/WalletSendScreen';
+import WalletReviewScreen from './wallet/WalletReviewScreen';
 import WalletHistoryScreen from './wallet/WalletHistoryScreen';
 import WalletsListScreen from './wallet/WalletsListScreen';
 import WalletDetailScreen from './wallet/WalletDetailScreen';
@@ -33,6 +34,7 @@ type View =
   | 'balance'
   | 'receive'
   | 'send'
+  | 'send-review'
   | 'history'
   | 'wallets-list'
   | 'wallet-detail'
@@ -47,6 +49,8 @@ export default function WalletScreen() {
   const [address, setAddress] = useState<string | null>(null);
   /** Wallet id whose detail screen is being viewed. */
   const [detailWalletId, setDetailWalletId] = useState<string>('');
+  /** Parsed pay URI carried from the send (compose) step into the review step. */
+  const [pendingSend, setPendingSend] = useState<ParsedPayUri | null>(null);
 
   useEffect(() => {
     void refresh();
@@ -94,7 +98,16 @@ export default function WalletScreen() {
     return (
       <WalletSendScreen
         onBack={() => setView('balance')}
-        onSent={() => setView('history')}
+        onReview={(parsed) => { setPendingSend(parsed); setView('send-review'); }}
+      />
+    );
+  }
+  if (view === 'send-review' && pendingSend) {
+    return (
+      <WalletReviewScreen
+        parsed={pendingSend}
+        onBack={() => setView('send')}
+        onConfirmed={() => { setPendingSend(null); setView('history'); }}
       />
     );
   }

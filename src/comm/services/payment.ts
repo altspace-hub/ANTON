@@ -33,6 +33,28 @@ import { getRpc } from './fc-rpc';
 
 /** 1 µFTC = 100 satoshi (1 FTC = 1e6 µFTC = 1e8 satoshi). */
 const SATOSHI_PER_MICRO_FTC = 100;
+const MICRO_FTC_PER_FTC = 1_000_000;
+
+/** micro-FTC → FTC as a number (for display only). */
+export function microFtcToFtc(micro: bigint): number {
+  return Number(micro) / MICRO_FTC_PER_FTC;
+}
+
+/** Format micro-FTC as a human FTC string, trimming trailing zeros. */
+export function formatFtc(micro: bigint): string {
+  return microFtcToFtc(micro).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  });
+}
+
+/** The network fee (0.1% capped at 0.1 FTC) for an amount, in micro-FTC —
+ *  for pre-confirm display. Single source of truth = the SDK; matches what
+ *  sendOnChain signs + the node enforces. See docs/FEE_POLICY.md. */
+export function feeMicroFtcFor(amountMicroFtc: bigint): bigint {
+  const feeSat = pacs008.computeNetworkFee(Number(amountMicroFtc) * SATOSHI_PER_MICRO_FTC);
+  return BigInt(Math.round(feeSat / SATOSHI_PER_MICRO_FTC));
+}
 
 export interface SendInput {
   /** Recipient `fc_…` Base58 address. */
@@ -54,6 +76,9 @@ export interface SendResult {
   txId: string;
   /** P2P / mempool status the hub reported. */
   status: string;
+  /** Network fee signed into the tx (satoshi). Persisted on the WalletTx so the
+   *  caller doesn't recompute. 0.1% capped at 0.1 FTC. */
+  feeSatoshi: number;
 }
 
 /** Send a transaction on-chain. Throws on any failure; the caller
@@ -128,6 +153,7 @@ export async function sendOnChain(input: SendInput): Promise<SendResult> {
     uetr,
     txId: submit.tx_id ?? uetr,
     status: String(submit.status ?? 'submitted'),
+    feeSatoshi,
   };
 }
 

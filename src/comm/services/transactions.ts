@@ -114,6 +114,9 @@ export interface WalletTx {
   paymentType?: PaymentType;
   /** Derived from paymentType — only 'payment' is taxable. Legacy rows omit it. */
   taxable?: boolean;
+  /** #79 — network fee signed into the tx (satoshi); shown on the review/detail.
+   *  Optional + schemaless-safe (no IDB bump). Legacy rows omit it. */
+  feeSatoshi?: number;
 }
 
 export type NewWalletTx = Omit<WalletTx, 'id' | 'ts'> & {
@@ -144,6 +147,7 @@ export async function recordTx(input: NewWalletTx): Promise<WalletTx> {
     provisional: input.provisional,
     paymentType: input.paymentType,
     taxable: input.taxable,
+    feeSatoshi: input.feeSatoshi,
   };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

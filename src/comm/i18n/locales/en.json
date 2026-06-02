@@ -506,6 +506,13 @@
   "topbar": {
     "openProfile": "Open profile"
   },
+  "review": {
+    "confirm": "Confirm & pay",
+    "expired": "Payment code expired",
+    "networkFee": "Network fee",
+    "total": "Total",
+    "youPay": "You pay"
+  },
   "wallet": {
     "address": "Address",
     "addressLabel": "Address",
@@ -546,6 +553,8 @@
     "receiveTitle": "Receive",
     "recentActivity": "Recent activity",
     "recording": "Recording…",
+    "reviewContinue": "Continue to review",
+    "reviewTitle": "Review payment",
     "rpc": "RPC endpoint",
     "seeAll": "See all",
     "send": "Send",
