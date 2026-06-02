@@ -65,12 +65,13 @@ on a failure, and exits non-zero if anything failed.
 |---|---|---|
 | `pay-review.e2e.cjs` | Pay ×1 | a ref-less pay URI decodes → Review shows amount + **0.1% network fee** + total (no spend) |
 | `pay-friends.e2e.cjs` | Pay ×1 | Settings → Friends → add a fixture friend → persisted `fc_contacts` row (idempotent) |
+| `comm-events.e2e.cjs` | Comm ×1 | Events tab → create a fixture event (only the title; type+date default) → persisted `events` row (idempotent) |
 | `comm-message.e2e.cjs` | Comm ×2 | Alice sends a unique-marker E2E message → polls Bob's `messages` store until the inbound row arrives |
 
 Each scenario is idempotent (no real on-chain spend; re-runs are no-ops or use a
 fresh marker), so the suite is safe to re-run. **Roadmap (#73):** Comm wallet
-(create/receive/send/history/tax), events (create each type / RSVP), portals,
-Wassup; Pay→Business full receipt-match; photo-viewer tap.
+(read balance/address/history), portals browse, Wassup feed; Pay→Business full
+receipt-match; photo-viewer tap; events RSVP + each type.
 
 This suite needs two physical phones, so it is **operator-run only** — it must
 not run in GitHub-hosted CI (gate it behind `ANTON_DEVICE_E2E=1`). The fast,
