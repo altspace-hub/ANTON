@@ -27,18 +27,22 @@
 import { pacs008 } from '@futurechain/sdk';
 import { requireBiometric } from './biometric';
 import { loadWallet } from './wallet';
-import { getActiveSigner } from './wallets';
+import { getActiveSigner, activeWalletHasPassphrase } from './wallets';
 import { loadPayerIdentity } from './payment-identity';
 import { getRpc } from './fc-rpc';
 import { hasPaymentPin, verifyPaymentPin, setPaymentPin } from './payment-pin';
+import { BadPassphraseError } from './wallet-passphrase';
 
 /** The review screen passes these so sendOnChain can fall back from biometric to
- *  the in-app PIN (and, in Phase 3b, prompt for the wallet passphrase). */
+ *  the in-app PIN, and prompt for the wallet passphrase (opt-in second factor). */
 export type PinPrompt = (mode: 'create' | 'enter', failedAttempts: number) => Promise<string | null>;
+export type PassphrasePrompt = (failedAttempts: number) => Promise<string | null>;
 export interface SendOptions {
   promptForPin?: PinPrompt;
+  promptForPassphrase?: PassphrasePrompt;
 }
 const MAX_PIN_ATTEMPTS = 5;
+const MAX_PASSPHRASE_ATTEMPTS = 5;
 
 /** Biometric-less fallback: verify an existing PIN (looped) or create one now.
  *  Returns true when the user authorized, false on cancel/exhaustion. */
@@ -132,10 +136,36 @@ export async function sendOnChain(input: SendInput, options?: SendOptions): Prom
     }
   }
 
-  const [identity, signer] = await Promise.all([
-    loadPayerIdentity(),
-    getActiveSigner(),
-  ]);
+  const identity = await loadPayerIdentity();
+
+  // Wallet-passphrase gate (opt-in second factor). When set, loop until the
+  // user enters the right one, cancels, or exhausts the attempt budget.
+  let signer: Awaited<ReturnType<typeof getActiveSigner>>;
+  if (await activeWalletHasPassphrase()) {
+    if (!options?.promptForPassphrase) {
+      throw new Error('wallet has a passphrase but no passphrase prompt was provided');
+    }
+    let resolved: typeof signer = null;
+    let failures = 0;
+    let cancelled = false;
+    while (failures < MAX_PASSPHRASE_ATTEMPTS) {
+      const pp = await options.promptForPassphrase(failures);
+      if (pp == null) { cancelled = true; break; }
+      try { resolved = await getActiveSigner(pp); break; }
+      catch (e) {
+        if (e instanceof BadPassphraseError) { failures++; continue; }
+        throw e;
+      }
+    }
+    if (!resolved) {
+      throw new Error(cancelled
+        ? 'passphrase cancelled'
+        : `passphrase incorrect (${MAX_PASSPHRASE_ATTEMPTS} attempts)`);
+    }
+    signer = resolved;
+  } else {
+    signer = await getActiveSigner();
+  }
   if (!signer) {
     throw new Error('no wallet on this device');
   }

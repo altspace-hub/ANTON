@@ -24,6 +24,7 @@ import WalletsListScreen from './wallet/WalletsListScreen';
 import WalletDetailScreen from './wallet/WalletDetailScreen';
 import AddWalletScreen from './wallet/AddWalletScreen';
 import RpcEndpointScreen from './wallet/RpcEndpointScreen';
+import WalletSecurityScreen from './wallet/WalletSecurityScreen';
 import TaxResidencyScreen from './wallet/TaxResidencyScreen';
 import TaxPositionScreen from './wallet/TaxPositionScreen';
 import TaxReportScreen from './wallet/TaxReportScreen';
@@ -39,6 +40,7 @@ type View =
   | 'wallets-list'
   | 'wallet-detail'
   | 'wallet-add'
+  | 'wallet-security'
   | 'rpc-endpoint'
   | 'tax-residency'
   | 'tax-position'
@@ -143,6 +145,9 @@ export default function WalletScreen() {
   if (view === 'rpc-endpoint') {
     return <RpcEndpointScreen onBack={() => setView('balance')} />;
   }
+  if (view === 'wallet-security') {
+    return <WalletSecurityScreen onBack={() => setView('balance')} />;
+  }
   if (view === 'tax-residency') {
     return (
       <TaxResidencyScreen
@@ -173,6 +178,7 @@ export default function WalletScreen() {
       onHistory={() => setView('history')}
       onManage={() => setView('wallets-list')}
       onRpcEndpoint={() => setView('rpc-endpoint')}
+      onSecurity={() => setView('wallet-security')}
       onTax={async () => {
         // First tap routes to residency capture; subsequent taps land
         // straight on the computed position screen.

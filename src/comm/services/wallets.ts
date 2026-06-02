@@ -26,8 +26,12 @@ import { assertBiometric } from './biometric';
 import { getSecure, removeSecure, setSecure } from './secure-store';
 import {
   hasAlias as nativeHasAlias, isSecureSignerAvailable,
-  signWithAlias, wrapPriv,
+  signWithAlias, wrapPriv, unwrapPriv,
 } from './secure-signer';
+import {
+  hasPassphrase as hasWalletPassphrase,
+  unlockPriv as unlockPrivWithPassphrase,
+} from './wallet-passphrase';
 
 const IDS_KEY     = 'fc.wallet.ids';
 const ACTIVE_KEY  = 'fc.wallet.active';
@@ -303,12 +307,37 @@ export interface ActiveSigner {
   sign: (digest: Uint8Array) => Promise<Uint8Array>;
 }
 
-export async function getActiveSigner(): Promise<ActiveSigner | null> {
+/** Thrown by getActiveSigner when the active wallet has a passphrase set but no
+ *  passphrase was provided. Callers catch this, prompt the user, and retry with
+ *  the passphrase argument. */
+export class PassphraseRequiredError extends Error {
+  constructor(public readonly walletId: string) {
+    super(`wallet ${walletId} has a passphrase — re-call getActiveSigner(passphrase)`);
+    this.name = 'PassphraseRequiredError';
+  }
+}
+
+export async function getActiveSigner(passphrase?: string): Promise<ActiveSigner | null> {
   const id = await getActiveWalletId();
   if (!id) return null;
   const list = await listWallets();
   let meta = list.find(w => w.id === id);
   if (!meta) return null;
+
+  // Passphrase-protected wallets ALWAYS go through the in-JS path — the priv
+  // lives in the wallet-passphrase envelope (not privKey(id), not the native
+  // signer). Signing reconstructs the priv into JS for one op, then drops it.
+  if (await hasWalletPassphrase(id)) {
+    if (!passphrase) throw new PassphraseRequiredError(id);
+    const hex = await unlockPrivWithPassphrase(id, passphrase);
+    const w = sdkWallet.walletFromPrivateKey(hexToBytes(hex));
+    return {
+      alias: id,
+      publicKey: w.publicKey,
+      address: w.address,
+      sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
+    };
+  }
 
   if (isSecureSignerAvailable()) {
     const wrapped = await nativeHasAlias(id);
@@ -352,6 +381,51 @@ export async function getActiveSigner(): Promise<ActiveSigner | null> {
     address: w.address,
     sign: async (digest: Uint8Array) => ed25519.sign(digest, w.privateKey),
   };
+}
+
+/** True if the active wallet has a passphrase. Cheap to call from UI. */
+export async function activeWalletHasPassphrase(): Promise<boolean> {
+  const id = await getActiveWalletId();
+  if (!id) return false;
+  return hasWalletPassphrase(id);
+}
+
+/** Enable a passphrase on the active wallet (demigrating the priv out of the
+ *  native signer first so the envelope can read the plaintext priv). */
+export async function enablePassphraseForActiveWallet(passphrase: string): Promise<void> {
+  const id = await getActiveWalletId();
+  if (!id) throw new Error('no active wallet');
+  await demigrateActiveToSecureStore(id);
+  const { enableWalletPassphrase } = await import('./wallet-passphrase');
+  await enableWalletPassphrase(id, passphrase);
+}
+
+/** Change the active wallet's passphrase. */
+export async function changePassphraseForActiveWallet(oldP: string, newP: string): Promise<void> {
+  const id = await getActiveWalletId();
+  if (!id) throw new Error('no active wallet');
+  const { changeWalletPassphrase } = await import('./wallet-passphrase');
+  await changeWalletPassphrase(id, oldP, newP);
+}
+
+/** Remove the active wallet's passphrase (priv returns to the plain rows; the
+ *  native signer re-wraps it on the next getActiveSigner if available). */
+export async function removePassphraseFromActiveWallet(currentP: string): Promise<void> {
+  const id = await getActiveWalletId();
+  if (!id) throw new Error('no active wallet');
+  const { removeWalletPassphrase } = await import('./wallet-passphrase');
+  await removeWalletPassphrase(id, currentP);
+}
+
+/** Pull a wallet's priv hex out of the native signer back into the plaintext
+ *  secure-store row, so enableWalletPassphrase can read + encrypt it. No-op when
+ *  the priv is already in secure-store (dev/web path). */
+async function demigrateActiveToSecureStore(id: string): Promise<void> {
+  if (!isSecureSignerAvailable()) return;          // dev/web: priv already in store
+  if (await getSecure(privKey(id))) return;        // already present
+  if (!(await nativeHasAlias(id))) return;         // nothing wrapped yet
+  const hex = await unwrapPriv(id);
+  if (hex) await setSecure(privKey(id), hex);
 }
 
 function newId(): string {

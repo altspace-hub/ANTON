@@ -23,10 +23,12 @@ interface Props {
   onManage: () => void;
   /** Switch which FutureChain hub the app talks to. */
   onRpcEndpoint: () => void;
+  /** Open wallet Security (payment PIN + passphrase). */
+  onSecurity: () => void;
 }
 
 export default function WalletBalanceScreen({
-  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint,
+  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint, onSecurity,
 }: Props) {
   const { t } = useTranslation();
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
@@ -108,6 +110,7 @@ export default function WalletBalanceScreen({
         <div className="mt-2 grid grid-cols-2 gap-2">
           <ActionButton label={t('wallet.manage', 'Wallets')} onClick={onManage} />
           <ActionButton label={t('wallet.rpc', 'RPC endpoint')} onClick={onRpcEndpoint} />
+          <ActionButton label={t('wallet.security', 'Security')} onClick={onSecurity} />
         </div>
 
         {/* Active-sync banner (only while polling) + Sync button. The

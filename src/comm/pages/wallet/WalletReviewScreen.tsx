@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
 import PinPromptModal from '../../components/PinPromptModal';
+import PassphrasePromptModal from '../../components/PassphrasePromptModal';
 import { recordTx, loadBehaviorProfile } from '../../services/transactions';
 import { loadWallet } from '../../services/wallet';
 import { loadPayerIdentity } from '../../services/payment-identity';
@@ -66,6 +67,10 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
   const [pinMode, setPinMode] = useState<'create' | 'enter'>('enter');
   const [pinResolver, setPinResolver] = useState<((p: string | null) => void) | null>(null);
   const [pinFailures, setPinFailures] = useState(0);
+  // Wallet-passphrase prompt (opt-in second factor inside sendOnChain).
+  const [passphraseOpen, setPassphraseOpen] = useState(false);
+  const [passphraseResolver, setPassphraseResolver] = useState<((p: string | null) => void) | null>(null);
+  const [passphraseFailures, setPassphraseFailures] = useState(0);
 
   const expired = secsLeft !== null && secsLeft <= 0;
   const feeMF = feeMicroFtcFor(parsed.amountMicroFtc);
@@ -161,6 +166,20 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
     });
   }
 
+  /** Opens the passphrase modal; resolves the entered passphrase or null on
+   *  cancel. sendOnChain re-invokes with a bumped failedAttempts on a wrong one. */
+  function openPassphraseModal(failedAttempts: number): Promise<string | null> {
+    setPassphraseFailures(failedAttempts);
+    return new Promise<string | null>((resolve) => {
+      setPassphraseResolver(() => (val: string | null) => {
+        setPassphraseOpen(false);
+        setPassphraseResolver(null);
+        resolve(val);
+      });
+      setPassphraseOpen(true);
+    });
+  }
+
   async function confirm() {
     if (expired || submitting) return;
     // Address-poisoning hard gate — a look-alike must be acknowledged first.
@@ -180,7 +199,7 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         creditor: parsed.creditor
           ? { name: parsed.creditor.name, countryOfResidence: parsed.creditor.country }
           : null,
-      }, { promptForPin: openPinModal });
+      }, { promptForPin: openPinModal, promptForPassphrase: openPassphraseModal });
       await recordTx({
         kind: 'send',
         counterparty: parsed.to,
@@ -389,6 +408,14 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         reason={t('paymentPin.sendReason', 'Confirm this payment with your PIN.')}
         onSubmit={(p) => pinResolver(p)}
         onCancel={() => pinResolver(null)}
+      />
+    ) : null}
+    {passphraseOpen && passphraseResolver ? (
+      <PassphrasePromptModal
+        attemptFailures={passphraseFailures}
+        reason={t('passphrase.reasonSend', 'Confirm to sign this payment')}
+        onSubmit={(p) => passphraseResolver(p)}
+        onCancel={() => passphraseResolver(null)}
       />
     ) : null}
     </>
