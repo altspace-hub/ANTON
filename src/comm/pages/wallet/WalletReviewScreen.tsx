@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
+import PinPromptModal from '../../components/PinPromptModal';
 import { recordTx, loadBehaviorProfile } from '../../services/transactions';
 import { loadWallet } from '../../services/wallet';
 import { loadPayerIdentity } from '../../services/payment-identity';
@@ -60,6 +61,11 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
   const [knownContact, setKnownContact] = useState<Contact | null>(null);
   const [similar, setSimilar] = useState<SimilarityWarning[]>([]);
   const [similarAck, setSimilarAck] = useState(false);
+  // In-app payment-PIN prompt (biometric-less fallback inside sendOnChain).
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinMode, setPinMode] = useState<'create' | 'enter'>('enter');
+  const [pinResolver, setPinResolver] = useState<((p: string | null) => void) | null>(null);
+  const [pinFailures, setPinFailures] = useState(0);
 
   const expired = secsLeft !== null && secsLeft <= 0;
   const feeMF = feeMicroFtcFor(parsed.amountMicroFtc);
@@ -139,6 +145,22 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
     return () => window.clearInterval(id);
   }, [parsed]);
 
+  /** Opens the in-app PIN modal (create on first use, else enter); resolves the
+   *  entered PIN or null on cancel. sendOnChain re-invokes with a bumped
+   *  failedAttempts on a wrong PIN, driving the modal's back-off. */
+  function openPinModal(mode: 'create' | 'enter', failedAttempts: number): Promise<string | null> {
+    setPinMode(mode);
+    setPinFailures(failedAttempts);
+    return new Promise<string | null>((resolve) => {
+      setPinResolver(() => (val: string | null) => {
+        setPinOpen(false);
+        setPinResolver(null);
+        resolve(val);
+      });
+      setPinOpen(true);
+    });
+  }
+
   async function confirm() {
     if (expired || submitting) return;
     // Address-poisoning hard gate — a look-alike must be acknowledged first.
@@ -158,7 +180,7 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         creditor: parsed.creditor
           ? { name: parsed.creditor.name, countryOfResidence: parsed.creditor.country }
           : null,
-      });
+      }, { promptForPin: openPinModal });
       await recordTx({
         kind: 'send',
         counterparty: parsed.to,
@@ -183,6 +205,7 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
   }
 
   return (
+    <>
     <section className="flex flex-col h-full safe-bottom">
       <Header title={t('wallet.reviewTitle', 'Review payment')} onBack={onBack} />
 
@@ -359,6 +382,16 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         )}
       </div>
     </section>
+    {pinOpen && pinResolver ? (
+      <PinPromptModal
+        mode={pinMode}
+        attemptFailures={pinFailures}
+        reason={t('paymentPin.sendReason', 'Confirm this payment with your PIN.')}
+        onSubmit={(p) => pinResolver(p)}
+        onCancel={() => pinResolver(null)}
+      />
+    ) : null}
+    </>
   );
 }
 

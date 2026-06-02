@@ -25,11 +25,40 @@
  * `src/pay/services/payment.ts::pollConfirmation`.
  */
 import { pacs008 } from '@futurechain/sdk';
-import { assertBiometric } from './biometric';
+import { requireBiometric } from './biometric';
 import { loadWallet } from './wallet';
 import { getActiveSigner } from './wallets';
 import { loadPayerIdentity } from './payment-identity';
 import { getRpc } from './fc-rpc';
+import { hasPaymentPin, verifyPaymentPin, setPaymentPin } from './payment-pin';
+
+/** The review screen passes these so sendOnChain can fall back from biometric to
+ *  the in-app PIN (and, in Phase 3b, prompt for the wallet passphrase). */
+export type PinPrompt = (mode: 'create' | 'enter', failedAttempts: number) => Promise<string | null>;
+export interface SendOptions {
+  promptForPin?: PinPrompt;
+}
+const MAX_PIN_ATTEMPTS = 5;
+
+/** Biometric-less fallback: verify an existing PIN (looped) or create one now.
+ *  Returns true when the user authorized, false on cancel/exhaustion. */
+async function runPinGate(prompt: PinPrompt | undefined): Promise<boolean> {
+  if (!prompt) return false;
+  if (await hasPaymentPin()) {
+    let failures = 0;
+    while (failures < MAX_PIN_ATTEMPTS) {
+      const entered = await prompt('enter', failures);
+      if (entered == null) return false;            // cancelled
+      if (await verifyPaymentPin(entered)) return true;
+      failures++;
+    }
+    return false;                                    // exhausted
+  }
+  const created = await prompt('create', 0);
+  if (created == null) return false;                 // cancelled
+  try { await setPaymentPin(created); } catch { return false; }
+  return true;
+}
 
 /** 1 µFTC = 100 satoshi (1 FTC = 1e6 µFTC = 1e8 satoshi). */
 const SATOSHI_PER_MICRO_FTC = 100;
@@ -84,17 +113,24 @@ export interface SendResult {
 /** Send a transaction on-chain. Throws on any failure; the caller
  *  surfaces the error string to the user. Gated by a fresh biometric
  *  prompt — cancel/unavailable rejects before we touch the wallet. */
-export async function sendOnChain(input: SendInput): Promise<SendResult> {
+export async function sendOnChain(input: SendInput, options?: SendOptions): Promise<SendResult> {
   const amountSatoshi = Number(input.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   // Network fee = 0.1% capped at 0.1 FTC (SDK single source of truth; matches
   // the node's enforced rule). See docs/FEE_POLICY.md.
   const feeSatoshi = pacs008.computeNetworkFee(amountSatoshi);
   const amountFtc = Number(input.amountMicroFtc) / 1_000_000;
 
-  // Biometric — Comm's pattern matches pay + business.
-  await assertBiometric({
-    reason: shortGateReason(amountFtc, input.to),
-  });
+  // Auth gate — biometric first, falling back to the in-app PIN when the device
+  // has no usable biometric (mirrors Pay's executePayment). A deliberate cancel
+  // aborts; 'unavailable'/'failed' fall through to the PIN.
+  const gate = await requireBiometric({ reason: shortGateReason(amountFtc, input.to) });
+  if (!gate.ok) {
+    const canUsePin = gate.reason === 'unavailable' || gate.reason === 'failed';
+    const pinOk = canUsePin && (await runPinGate(options?.promptForPin));
+    if (!pinOk) {
+      throw new Error(canUsePin && options?.promptForPin ? 'pin cancelled' : `biometric ${gate.reason}`);
+    }
+  }
 
   const [identity, signer] = await Promise.all([
     loadPayerIdentity(),

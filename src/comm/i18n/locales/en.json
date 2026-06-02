@@ -301,6 +301,23 @@
     "subtitle": "Your name and address are added to the ISO 20022 record of every payment you make. All fields are optional.",
     "title": "Payment details"
   },
+  "paymentPin": {
+    "confirm": "Confirm & pay",
+    "confirmLabel": "Confirm PIN",
+    "createReason": "Choose a PIN to approve payments on this device — no fingerprint is available here.",
+    "createTitle": "Set a payment PIN",
+    "enterReason": "Confirm this payment with your PIN.",
+    "enterTitle": "Enter payment PIN",
+    "exhausted": "Too many wrong attempts. Cancel and try again later.",
+    "invalid": "PIN must be {{min}}–{{max}} digits.",
+    "label": "PIN",
+    "mismatch": "The two PINs do not match.",
+    "newLabel": "New PIN",
+    "save": "Set PIN & pay",
+    "sendReason": "Confirm this payment with your PIN.",
+    "wrong": "Wrong PIN. {{remaining}} attempts left.",
+    "wrongWait": "Wrong PIN. Try again in {{seconds}}s. ({{remaining}} left)"
+  },
   "paymentType": {
     "contract": "Contract",
     "gift": "Gift",

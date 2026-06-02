@@ -301,6 +301,23 @@
     "subtitle": "Ditt namn och din adress läggs till i ISO 20022-registret för varje betalning du gör. Alla fält är valfria.",
     "title": "Betalningsuppgifter"
   },
+  "paymentPin": {
+    "confirm": "Bekräfta och betala",
+    "confirmLabel": "Bekräfta PIN",
+    "createReason": "Välj en PIN-kod för att godkänna betalningar på den här enheten — inget fingeravtryck är tillgängligt här.",
+    "createTitle": "Ange en betalnings-PIN",
+    "enterReason": "Bekräfta den här betalningen med din PIN-kod.",
+    "enterTitle": "Ange betalnings-PIN",
+    "exhausted": "För många felaktiga försök. Avbryt och försök igen senare.",
+    "invalid": "PIN-koden måste vara {{min}}–{{max}} siffror.",
+    "label": "PIN",
+    "mismatch": "De två PIN-koderna matchar inte.",
+    "newLabel": "Ny PIN",
+    "save": "Ange PIN och betala",
+    "sendReason": "Bekräfta den här betalningen med din PIN-kod.",
+    "wrong": "Fel PIN. {{remaining}} försök kvar.",
+    "wrongWait": "Fel PIN. Försök igen om {{seconds}}s. ({{remaining}} kvar)"
+  },
   "paymentType": {
     "contract": "Avtal",
     "gift": "Gåva",
