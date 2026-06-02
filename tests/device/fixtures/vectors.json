@@ -1,0 +1,34 @@
+{
+  "_comment": "Canonical fixtures so every E2E run expects the same row counts/values. Amounts are micro-FTC strings (the IndexedDB-stored form). exp is set relative to run time in the scenario (now + ttlSec).",
+  "merchant": {
+    "name": "Test Merchant AB",
+    "orgNr": "SE556000-0001",
+    "street": "Testgatan 1",
+    "postcode": "11122",
+    "city": "Stockholm",
+    "country": "SE",
+    "vatRatePct": 25
+  },
+  "amounts": {
+    "smallSaleSek": 2,
+    "smallSaleMicroFtc": "200000",
+    "mediumSaleSek": 50,
+    "mediumSaleMicroFtc": "5000000",
+    "ftcPerSek": 0.1
+  },
+  "payer": {
+    "name": "Anna Testsson",
+    "street": "Storgatan 5",
+    "postcode": "11151",
+    "city": "Stockholm",
+    "country": "SE",
+    "pin": "8606"
+  },
+  "qr": { "ttlSec": 900 },
+  "comm": {
+    "alice": "Alice",
+    "bob": "Bob",
+    "sampleMessage": "hello from alice",
+    "sampleEmoji": "🎉🔥👍"
+  }
+}
