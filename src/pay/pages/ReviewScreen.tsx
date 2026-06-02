@@ -12,7 +12,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import PassphrasePromptModal from '../components/PassphrasePromptModal';
 import PinPromptModal from '../components/PinPromptModal';
 import {
-  estimateSek, executePayment, formatFtc, formatSek, isExpired,
+  estimateSek, executePayment, feeMicroFtcFor, formatFtc, formatSek, isExpired,
   loadBehaviorProfile, secondsUntilExpiry,
 } from '../services/payment';
 import { loadProfile } from '../services/profile';
@@ -225,6 +225,7 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
   }
 
   const sek = estimateSek(payment.amountMicroFtc, ftcPerSek);
+  const feeMF = feeMicroFtcFor(payment.amountMicroFtc);
 
   const rows: Array<{ label: string; value: string }> = [
     { label: t('review.merchant'), value: payment.merchantId },
@@ -273,6 +274,14 @@ export default function ReviewScreen({ payment, onCancel, onConfirmed }: Props) 
           <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
             {t('review.estimatedNote', { rate: (1 / ftcPerSek).toLocaleString('sv-SE') })}
           </div>
+          {feeMF > 0n && (
+            <div className="text-xs mt-2 pt-2 flex items-center justify-center gap-2"
+                 style={{ color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-accent-dim)' }}>
+              <span>{t('review.networkFee', 'Network fee')} {formatFtc(feeMF)} FTC</span>
+              <span style={{ color: 'var(--color-text-faint)' }}>·</span>
+              <span>{t('review.total', 'Total')} {formatFtc(payment.amountMicroFtc + feeMF)} FTC</span>
+            </div>
+          )}
         </div>
 
         {/* Detail rows */}

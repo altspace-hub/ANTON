@@ -270,11 +270,13 @@ export async function recordPayment(
  *  → 1 micro-FTC = 100 satoshi. */
 const SATOSHI_PER_MICRO_FTC = 100;
 
-/** Default tx fee in satoshi when the SDK's default would underpay.
- *  Mirrors the FutureChain min-fee (100 sat = 1e-6 FTC) used by the
- *  regression vectors; chosen to be invisible at retail amounts but
- *  not zero so mempool fee-priority ordering still has a signal. */
-const DEFAULT_FEE_SATOSHI = 100;
+/** Network fee for `amountMicroFtc`, in µFTC (for pre-confirm display). Same
+ *  policy executePayment applies: 0.1% capped at 0.1 FTC. */
+export function feeMicroFtcFor(amountMicroFtc: bigint): bigint {
+  const feeSat = pacs008.computeNetworkFee(Number(amountMicroFtc) * SATOSHI_PER_MICRO_FTC);
+  return BigInt(Math.round(feeSat / SATOSHI_PER_MICRO_FTC));
+}
+
 
 /**
  * Settle a payment on the FutureChain via the SDK + the public
@@ -408,6 +410,10 @@ export async function executePayment(
   }
   const draft = assembleDraft(identity, wallet.address, decoded, tier);
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
+  // Network fee = 0.1% capped at 0.1 FTC (floored at the app's 250-sat min).
+  // Single source of truth in the SDK so it matches the node's enforced rule
+  // exactly (the fee is signed into the tx). See docs/FEE_POLICY.md.
+  const feeSatoshi = pacs008.computeNetworkFee(amountSatoshi);
   const amountFtc = microFtcToFtc(decoded.amountMicroFtc);
   const rpc = await getRpc();
 
@@ -523,6 +529,7 @@ export async function executePayment(
     paidAt: Date.now(),
     pacs008: draft,
     risk,
+    feeSatoshi,
   };
   await putPayment(baseRecord);
 
@@ -579,7 +586,7 @@ export async function executePayment(
       utxos,
       recipient: decoded.toAddress,
       amountSatoshi,
-      feeSatoshi: DEFAULT_FEE_SATOSHI,
+      feeSatoshi,
       pacs008: message,
       uetr,
     });

@@ -496,6 +496,38 @@ export function selectUtxosGreedy(
   );
 }
 
+// ── Network fee policy ────────────────────────────────────────────────
+//
+// fee = 0.1% of the amount, capped at 0.1 FTC, with a floor. The CLIENT and
+// the node MUST agree on this EXACTLY: the fee is signed into the tx
+// (change = totalIn − amount − fee), so the node can only accept/reject, never
+// silently recompute. A mismatch ⇒ the tx is rejected. See docs/FEE_POLICY.md.
+
+/** 0.1% = amount / 1000. */
+export const FEE_RATE_DIVISOR = 1000;
+/** Hard cap = exactly 0.1 FTC. */
+export const FEE_CAP_SATOSHI = 10_000_000;
+/** App floor. The network minimum is 200 sat (≈200-byte tx); the app uses 250
+ *  (+50 buffer) so it is never rejected for underpaying. */
+export const FEE_MIN_SATOSHI = 250;
+
+/** The network fee in satoshi for sending `amountSatoshi`: 0.1% rounded half-up
+ *  (exact integer math, no float drift), capped at 0.1 FTC, floored at
+ *  `minSatoshi` (default 250 = the app floor; pass 200 for the bare network
+ *  minimum). This is the single source of truth shared by Pay + Comm. */
+export function computeNetworkFee(
+  amountSatoshi: number,
+  minSatoshi: number = FEE_MIN_SATOSHI,
+): number {
+  if (!Number.isFinite(amountSatoshi) || amountSatoshi <= 0) return minSatoshi;
+  const amt = Math.trunc(amountSatoshi);
+  // round half up at 500/1000, pure integer ops (no floating-point division).
+  const q = Math.floor(amt / FEE_RATE_DIVISOR);
+  const r = amt % FEE_RATE_DIVISOR;
+  const pct = q + (r >= FEE_RATE_DIVISOR / 2 ? 1 : 0);
+  return Math.min(Math.max(pct, minSatoshi), FEE_CAP_SATOSHI);
+}
+
 /** Build a fully-signed PACS.008-bearing Transaction ready to POST to
  *  `/submit_signed_transaction`. Mirrors the Rust core's
  *  `TransactionBuilder::create_transaction` shape: greedy UTXO selection,
@@ -506,7 +538,7 @@ export function selectUtxosGreedy(
 export function buildSignedPacs008Transaction(
   input: BuildPacs008TxInput,
 ): Transaction {
-  const fee = input.feeSatoshi ?? 100;
+  const fee = input.feeSatoshi ?? computeNetworkFee(input.amountSatoshi);
   if (fee < 0) throw new Error('buildSignedPacs008Transaction: fee must be >= 0');
   if (input.amountSatoshi <= 0) {
     throw new Error('buildSignedPacs008Transaction: amountSatoshi must be > 0');

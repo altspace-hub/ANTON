@@ -33,9 +33,6 @@ import { getRpc } from './fc-rpc';
 
 /** 1 µFTC = 100 satoshi (1 FTC = 1e6 µFTC = 1e8 satoshi). */
 const SATOSHI_PER_MICRO_FTC = 100;
-/** FutureChain minimum fee — invisible at retail amounts but non-zero
- *  so the mempool's fee-priority ordering has a signal. */
-const DEFAULT_FEE_SATOSHI = 100;
 
 export interface SendInput {
   /** Recipient `fc_…` Base58 address. */
@@ -64,6 +61,9 @@ export interface SendResult {
  *  prompt — cancel/unavailable rejects before we touch the wallet. */
 export async function sendOnChain(input: SendInput): Promise<SendResult> {
   const amountSatoshi = Number(input.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
+  // Network fee = 0.1% capped at 0.1 FTC (SDK single source of truth; matches
+  // the node's enforced rule). See docs/FEE_POLICY.md.
+  const feeSatoshi = pacs008.computeNetworkFee(amountSatoshi);
   const amountFtc = Number(input.amountMicroFtc) / 1_000_000;
 
   // Biometric — Comm's pattern matches pay + business.
@@ -115,7 +115,7 @@ export async function sendOnChain(input: SendInput): Promise<SendResult> {
     utxos,
     recipient: input.to,
     amountSatoshi,
-    feeSatoshi: DEFAULT_FEE_SATOSHI,
+    feeSatoshi,
     pacs008: message,
     uetr,
   });

@@ -133,6 +133,10 @@ export interface PaymentRecord {
   confirmedAt?: number;
   /** Human-readable failure reason when `status === 'failed'`. */
   error?: string;
+  /** Network fee paid in satoshi (0.1% capped at 0.1 FTC — see the SDK's
+   *  computeNetworkFee + docs/FEE_POLICY.md). Optional — payments recorded
+   *  before the fee policy omit it. */
+  feeSatoshi?: number;
 }
 
 /**

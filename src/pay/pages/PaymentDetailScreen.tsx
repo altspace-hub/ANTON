@@ -131,6 +131,17 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
         )}
       </Section>
 
+      {/* Amount breakdown — network fee (0.1%, capped 0.1 FTC) + total */}
+      {r.feeSatoshi != null && (
+        <Section title={t('history.detail.amountSection', 'Amount')}>
+          <IsoRow label={t('history.detail.sent', 'Sent')} value={`${formatFtc(r.amountMicroFtc)} FTC`} />
+          <IsoRow label={t('history.detail.networkFee', 'Network fee')}
+                  value={`${formatFtc(BigInt(Math.round(r.feeSatoshi / 100)))} FTC`} />
+          <IsoRow label={t('history.detail.total', 'Total')}
+                  value={`${formatFtc(r.amountMicroFtc + BigInt(Math.round(r.feeSatoshi / 100)))} FTC`} />
+        </Section>
+      )}
+
       {/* ISO 20022 / PACS.008 — from the persisted snapshot. */}
       {r.pacs008 && <IsoSection draft={r.pacs008} />}
 
