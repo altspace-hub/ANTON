@@ -17,7 +17,12 @@ interface Props {
   onCreated: (eventId: string) => void;
 }
 
-const TYPES: EventType[] = ['dinner', 'drinks', 'concert', 'travel', 'party', 'birthday', 'other'];
+const TYPES: EventType[] = [
+  'dinner', 'drinks', 'concert', 'travel', 'party', 'birthday',
+  'meeting', 'coffee', 'sport', 'game-night', 'movie', 'study', 'wedding',
+  'deadline', 'payment-reminder', 'gift', 'appointment',
+  'other',
+];
 
 export default function EventCreateScreen({ onCancel, onCreated }: Props) {
   const { t } = useTranslation();

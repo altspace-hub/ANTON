@@ -25,6 +25,10 @@ import FiatAmountInput from '../components/FiatAmountInput';
 import { getActiveWalletMeta } from '../services/wallet';
 import { startActiveSync, type ActiveSyncSnapshot } from '../services/active-sync';
 import { notifyIncoming } from '../services/notifications';
+import { loadPayerIdentity, type PayerIdentity } from '../services/payment-identity';
+import {
+  buildCompactReceiveUri, buildRichReceiveUri,
+} from '../services/qr-transfer/receive-uri';
 import type { WalletMeta } from '../services/wallets';
 
 /** Static = single QR (default, fits the basic `futurechain:pay?to=…`
@@ -47,9 +51,17 @@ export default function ReceiveScreen({ onBack }: Props) {
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const [qrMode, setQrMode] = useState<QrMode>('static');
+  /** The receiver's saved ISO 20022 party — becomes the *creditor* on
+   *  the rich animated URI. Null until loaded / when the user hasn't
+   *  filled in a payment identity yet. */
+  const [identity, setIdentity] = useState<PayerIdentity | null>(null);
 
   useEffect(() => {
-    void (async () => setMeta(await getActiveWalletMeta()))();
+    void (async () => {
+      const [m, id] = await Promise.all([getActiveWalletMeta(), loadPayerIdentity()]);
+      setMeta(m);
+      setIdentity(id);
+    })();
   }, []);
 
   /**
@@ -76,11 +88,30 @@ export default function ReceiveScreen({ onBack }: Props) {
     return () => { cancel(); };
   }, [meta]);
 
-  const qrValue = meta
-    ? microFtc > 0n
-      ? `futurechain:pay?to=${meta.address}&amount=${microFtc.toString()}`
-      : `futurechain:pay?to=${meta.address}`
-    : '';
+  // Static QR carries the compact address-(maybe-amount) URI — small,
+  // dense-free, one frame. The animated QR carries the *rich* URI:
+  // the receiver's creditor party + a small order envelope, which is
+  // the whole reason to switch to the fountain-coded mode. The rich URI
+  // is null when there's nothing extra to carry (no amount, or no saved
+  // payment identity) — in that case the Animated toggle is disabled so
+  // the user is never offered a heavier mode with zero benefit (A4).
+  const compactUri = meta ? buildCompactReceiveUri(meta.address, microFtc) : '';
+  const richUri = meta
+    ? buildRichReceiveUri({
+        address: meta.address,
+        amountMicroFtc: microFtc,
+        identity,
+        label: meta.label,
+      })
+    : null;
+  const animatedAvailable = richUri !== null;
+
+  // If the rich payload disappears (e.g. the user clears the amount)
+  // while Animated is selected, fall back to static so we never render
+  // the animated component with a null/compact payload.
+  useEffect(() => {
+    if (qrMode === 'animated' && !animatedAvailable) setQrMode('static');
+  }, [qrMode, animatedAvailable]);
 
   async function share() {
     if (!meta) return;
@@ -94,7 +125,7 @@ export default function ReceiveScreen({ onBack }: Props) {
       // navigator.share is the cleanest cross-platform path; Capacitor's
       // Share plugin shadows it on native.
       await (navigator as Navigator & { share?: (data: ShareData) => Promise<void> })
-        .share?.({ title: 'FutureChain payment request', text, url: qrValue });
+        .share?.({ title: 'FutureChain payment request', text, url: compactUri });
     } catch { /* user cancelled or share unavailable — no-op */ }
   }
 
@@ -147,9 +178,9 @@ export default function ReceiveScreen({ onBack }: Props) {
             <div className="self-center p-4 rounded-2xl mb-2"
                  style={{ backgroundColor: '#FFFFFF',
                           border: '1px solid var(--color-border)' }}>
-              {qrMode === 'static'
-                ? <QrCode value={qrValue} size={240} />
-                : <AnimatedQrCode value={qrValue} size={240} />}
+              {qrMode === 'static' || !richUri
+                ? <QrCode value={compactUri} size={240} />
+                : <AnimatedQrCode value={richUri} size={240} />}
             </div>
 
             {/* QR-mode toggle. Defaults to static (works at all sizes);
@@ -170,13 +201,21 @@ export default function ReceiveScreen({ onBack }: Props) {
                 {t('receive.qrStatic', 'Static')}
               </button>
               <button type="button"
-                      onClick={() => setQrMode('animated')}
+                      onClick={() => animatedAvailable && setQrMode('animated')}
+                      disabled={!animatedAvailable}
+                      title={animatedAvailable
+                        ? undefined
+                        : t('receive.qrAnimatedHint',
+                            'Set an amount and your payment identity to enable')}
                       className="px-3 py-1.5 text-xs font-semibold"
                       style={{
-                        backgroundColor: qrMode === 'animated'
+                        backgroundColor: qrMode === 'animated' && animatedAvailable
                           ? 'var(--color-accent)' : 'transparent',
-                        color: qrMode === 'animated'
-                          ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
+                        color: !animatedAvailable
+                          ? 'var(--color-text-faint)'
+                          : qrMode === 'animated'
+                            ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
+                        cursor: animatedAvailable ? 'pointer' : 'not-allowed',
                       }}>
                 {t('receive.qrAnimated', 'Animated')}
               </button>

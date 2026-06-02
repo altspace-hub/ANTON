@@ -36,6 +36,21 @@ export type EventType =
   | 'travel'
   | 'party'
   | 'birthday'
+  // B4 — additional types that reuse existing glyphs
+  | 'meeting'
+  | 'coffee'
+  | 'sport'
+  | 'game-night'
+  | 'movie'
+  | 'study'
+  | 'wedding'
+  // B5 — additional types with purpose-built glyphs.
+  // NB: payment-reminder is calendar-only — it does NOT link a real
+  // FutureChain transfer; it's just a reminder chip.
+  | 'deadline'
+  | 'payment-reminder'
+  | 'gift'
+  | 'appointment'
   | 'other';
 
 // i18n keys — resolve with t() at the call site.
@@ -46,6 +61,17 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   travel: 'events.typeTravel',
   party: 'events.typeParty',
   birthday: 'events.typeBirthday',
+  meeting: 'events.typeMeeting',
+  coffee: 'events.typeCoffee',
+  sport: 'events.typeSport',
+  'game-night': 'events.typeGameNight',
+  movie: 'events.typeMovie',
+  study: 'events.typeStudy',
+  wedding: 'events.typeWedding',
+  deadline: 'events.typeDeadline',
+  'payment-reminder': 'events.typePaymentReminder',
+  gift: 'events.typeGift',
+  appointment: 'events.typeAppointment',
   other: 'events.typeOther',
 };
 
@@ -58,6 +84,19 @@ export const EVENT_TYPE_ICONS: Record<EventType, string> = {
   travel: 'travel',
   party: 'party',
   birthday: 'birthday',
+  // B4 — reuse existing glyphs
+  meeting: 'users',
+  coffee: 'drinks',
+  sport: 'sparkles',
+  'game-night': 'grid',
+  movie: 'video',
+  study: 'message',
+  wedding: 'sparkles',
+  // B5 — new purpose-built glyphs
+  deadline: 'flag',
+  'payment-reminder': 'banknote',
+  gift: 'gift',
+  appointment: 'appointment',
   other: 'calendar',
 };
 

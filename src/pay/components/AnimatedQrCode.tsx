@@ -15,9 +15,10 @@
  *
  * Drop-in identical surface to <QrCode> (same `value` / `size` props).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { createUriEncoder } from '../services/qr-transfer/encoder';
+import QrCode from './QrCode';
 
 interface Props {
   value: string;
@@ -49,6 +50,13 @@ export default function AnimatedQrCode({
   // strict-mode double-mount doesn't fire two timers.
   const encoderRef = useRef<ReturnType<typeof createUriEncoder> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Set when `createUriEncoder` throws — typically because the bc-ur
+   *  fountain encoder couldn't construct (e.g. a missing `Buffer` /
+   *  `assert` polyfill in the WebView; see vite.config.pay.ts). When
+   *  this is non-null we fall back to a plain static QR of the same
+   *  payload so the screen never shows a blank canvas, AND surface a
+   *  visible chip so a future polyfill regression can't fail silently. */
+  const [encoderError, setEncoderError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!value || !canvasRef.current) return;
@@ -60,7 +68,22 @@ export default function AnimatedQrCode({
     // Build a fresh encoder per (value, chunkBytes) change. Closing
     // over `encoder` keeps the fountain state stable across timer
     // ticks; only a prop change throws it away.
-    const encoder = createUriEncoder(value, { chunkBytes });
+    //
+    // Wrapped in try/catch: the bc-ur encoder reaches for Node globals
+    // (`Buffer`) and builtins (`assert`, `cbor-sync`). If the bundle
+    // ever ships without those polyfills the construction throws
+    // synchronously here — historically that left the canvas blank with
+    // no signal. Catch it, flip to the static-QR fallback below, and
+    // record the message so it's visible instead of silent.
+    let encoder: ReturnType<typeof createUriEncoder>;
+    try {
+      encoder = createUriEncoder(value, { chunkBytes });
+      setEncoderError(null);
+    } catch (e) {
+      setEncoderError(e instanceof Error ? e.message : String(e));
+      encoderRef.current = null;
+      return;
+    }
     encoderRef.current = encoder;
 
     let cancelled = false;
@@ -88,6 +111,29 @@ export default function AnimatedQrCode({
       encoderRef.current = null;
     };
   }, [value, size, fps, chunkBytes, background, color]);
+
+  // Fallback path — the fountain encoder couldn't construct. Render a
+  // plain static QR of the same payload (still scannable, just not
+  // animated) plus a small chip so the degraded mode is obvious.
+  if (encoderError) {
+    return (
+      <div style={{ width: size }}>
+        <QrCode value={value} size={size} background={background} color={color} />
+        <div
+          role="status"
+          style={{
+            marginTop: 8,
+            fontSize: 11,
+            lineHeight: 1.3,
+            textAlign: 'center',
+            color: 'var(--color-warning, #B45309)',
+          }}
+        >
+          Animated QR unavailable — showing static code
+        </div>
+      </div>
+    );
+  }
 
   return (
     <canvas

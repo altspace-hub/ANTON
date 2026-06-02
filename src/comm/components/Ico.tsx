@@ -164,6 +164,40 @@ const icons: Record<string, IconRenderer> = {
       <path d="M3 16v4M21 16v4"/>
     </svg>
   ),
+  // ── B5: purpose-built event-type glyphs ────────────────────────────
+  flag: (c, s) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {/* Deadline — flag on a pole */}
+      <path d="M4 22V3"/>
+      <path d="M4 4h12l-2 3 2 3H4"/>
+    </svg>
+  ),
+  banknote: (c, s) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {/* Payment reminder — banknote (calendar-only, not a real transfer) */}
+      <rect x="2" y="6" width="20" height="12" rx="2"/>
+      <circle cx="12" cy="12" r="2.5"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </svg>
+  ),
+  gift: (c, s) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {/* Gift — box with ribbon */}
+      <rect x="3" y="8" width="18" height="4" rx="1"/>
+      <path d="M5 12v9a1 1 0 001 1h12a1 1 0 001-1v-9"/>
+      <path d="M12 8v14"/>
+      <path d="M12 8C12 8 10.5 3 8 3a2 2 0 000 5z"/>
+      <path d="M12 8C12 8 13.5 3 16 3a2 2 0 010 5z"/>
+    </svg>
+  ),
+  appointment: (c, s) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {/* Appointment — clock with a check */}
+      <circle cx="11" cy="12" r="8"/>
+      <path d="M11 8v4l2.5 1.5"/>
+      <path d="M16 19l2 2 4-4"/>
+    </svg>
+  ),
 };
 
 export type IcoName = keyof typeof icons;

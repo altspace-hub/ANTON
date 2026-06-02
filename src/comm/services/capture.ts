@@ -76,6 +76,12 @@ async function capacitorCameraImage(source: 'CAMERA' | 'PHOTOS'): Promise<Captur
     if (!data) return null;
     const fmt = photo.format ?? 'jpeg';
     const mimeType = `image/${fmt === 'jpg' ? 'jpeg' : fmt}`;
+    // B3 — read natural dimensions so the chat bubble can reserve the
+    // correct aspect-ratio box (avoids reflow + stretch on decode). The
+    // Capacitor path previously omitted these; the web path already had
+    // them via resizeImageToBase64. Best-effort: a decode failure just
+    // leaves width/height undefined and the bubble falls back to 4:3.
+    const dims = await readImageDimsFromBase64(data, mimeType);
     return {
       kind: source === 'CAMERA' ? 'camera' : 'library',
       mediaType: 'image',
@@ -83,10 +89,31 @@ async function capacitorCameraImage(source: 'CAMERA' | 'PHOTOS'): Promise<Captur
       mimeType,
       filename: `image-${Date.now()}.${fmt === 'jpeg' ? 'jpg' : fmt}`,
       size: Math.floor((data.length * 3) / 4),
+      width: dims?.width,
+      height: dims?.height,
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * Decode a base64 image into an off-DOM Image element just long enough to
+ * read its natural width/height. Returns null on any failure (no document,
+ * decode error). Used by the Capacitor capture path which returns base64
+ * without dimensions.
+ */
+async function readImageDimsFromBase64(
+  base64: string,
+  mimeType: string,
+): Promise<{ width: number; height: number } | null> {
+  if (typeof document === 'undefined') return null;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = `data:${mimeType};base64,${base64}`;
+  });
 }
 
 // ── Web fallbacks ──────────────────────────────────────────────────────

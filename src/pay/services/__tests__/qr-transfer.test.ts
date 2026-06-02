@@ -13,11 +13,16 @@
  *   - non-UR garbage is silently ignored
  *   - reset() returns the decoder to a clean state
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   createUriEncoder, looksLikeUrFrame, UR_TYPE_PAY_URI,
 } from '../qr-transfer/encoder';
 import { createUriDecoder } from '../qr-transfer/decoder';
+import {
+  buildCompactReceiveUri, buildRichReceiveUri,
+} from '../qr-transfer/receive-uri';
+import { decodePaymentUri } from '../payment';
+import type { PayerIdentity } from '../payment-identity';
 
 const SMALL_URI = 'futurechain:pay?to=fc_VEH4mJb5P9hKEaWkiuXRG6e6jooCnQZqKs&amount=500000&ref=INV-2026-05-26-0042';
 
@@ -172,5 +177,138 @@ describe('qr-transfer encoder/decoder', () => {
     const enc = createUriEncoder(SMALL_URI, { type: 'fc-pay-uri' });
     expect(enc.type).toBe('fc-pay-uri');
     expect(enc.type).toBe(UR_TYPE_PAY_URI);
+  });
+});
+
+// ── Missing-polyfill regression guard ──────────────────────────────────
+//
+// The original WebView bug: @ngraveio/bc-ur is authored for Node and
+// reaches for the bare global `Buffer` (in cbor.js / bytewords.js /
+// fountainEncoder.js / ur.js). The Pay bundle polyfills it via
+// vite-plugin-node-polyfills (vite.config.pay.ts). Before that fix the
+// browser had no `Buffer` global, so `createUriEncoder(...)` threw
+// `ReferenceError: Buffer is not defined` synchronously and the
+// AnimatedQrCode canvas stayed blank with no signal.
+//
+// This guard simulates the browser-without-polyfill by deleting the
+// global `Buffer` and asserting the encoder still throws under it — i.e.
+// the crash mode is real and observable. AnimatedQrCode now wraps the
+// construction in try/catch and falls back to a static QR (A2), so this
+// failure surfaces visibly instead of as a blank canvas. The guard
+// fails loudly if a refactor ever makes the encoder silently swallow a
+// missing Buffer (which would re-hide the blank-canvas regression).
+describe('missing-polyfill regression guard', () => {
+  const realBuffer = globalThis.Buffer;
+  afterEach(() => {
+    // Always restore so later tests (and the round-trips above) keep Buffer.
+    (globalThis as { Buffer?: typeof Buffer }).Buffer = realBuffer;
+  });
+
+  it('the encoder relies on a Buffer global (deleting it breaks bc-ur)', () => {
+    expect(globalThis.Buffer).toBeTypeOf('function');
+    // With Buffer present, construction succeeds (the polyfilled WebView).
+    expect(() => createUriEncoder(SMALL_URI)).not.toThrow();
+
+    // Delete the global to mimic the un-polyfilled browser bundle.
+    delete (globalThis as { Buffer?: typeof Buffer }).Buffer;
+    // bc-ur (or our Buffer.from wrapper) now has no Buffer to reach for:
+    // construction throws rather than silently producing a blank canvas.
+    // AnimatedQrCode's try/catch (A2) catches exactly this and renders the
+    // static fallback + an error chip.
+    expect(() => createUriEncoder(SMALL_URI)).toThrow();
+  });
+
+  it('round-trips again once Buffer is restored (no global state leaked)', () => {
+    // Sanity: the afterEach restore actually works, so the encoder is
+    // healthy for the rest of the suite.
+    const enc = createUriEncoder(SMALL_URI);
+    const dec = createUriDecoder();
+    let result;
+    for (let i = 0; i < 50 && !result?.complete; i++) result = dec.receive(enc.next());
+    expect(result?.complete).toBe(true);
+    expect(result?.uri).toBe(SMALL_URI);
+  });
+});
+
+// ── Rich receive URI (the value the animated QR carries) ───────────────
+//
+// The Receive screen feeds the *compact* URI to the static QR and the
+// *rich* URI to the animated QR. The rich URI carries the receiver's
+// creditor party + an order envelope — strictly more than the static
+// one — and must round-trip back through decodePaymentUri so the
+// sender's Pay app reconstructs the full party from an animated scan.
+describe('rich receive URI', () => {
+  const fullIdentity: PayerIdentity = {
+    name: 'Karl Café AB',
+    country: 'SE',
+    city: 'Stockholm',
+    street: 'Drottninggatan 1',
+    postcode: '11151',
+  };
+  const ADDR = 'fc_VEH4mJb5P9hKEaWkiuXRG6e6jooCnQZqKs';
+
+  it('compact URI carries only the address when no amount is set', () => {
+    expect(buildCompactReceiveUri(ADDR, 0n)).toBe(`futurechain:pay?to=${ADDR}`);
+  });
+
+  it('compact URI carries the amount when set', () => {
+    expect(buildCompactReceiveUri(ADDR, 500_000n))
+      .toBe(`futurechain:pay?to=${ADDR}&amount=500000`);
+  });
+
+  it('rich URI is null without an amount (nothing extra to carry)', () => {
+    expect(buildRichReceiveUri({
+      address: ADDR, amountMicroFtc: 0n, identity: fullIdentity,
+    })).toBeNull();
+  });
+
+  it('rich URI is null without a payment identity (no creditor party)', () => {
+    expect(buildRichReceiveUri({
+      address: ADDR, amountMicroFtc: 500_000n, identity: null,
+    })).toBeNull();
+  });
+
+  it('rich URI carries the creditor party + order envelope and round-trips', () => {
+    const uri = buildRichReceiveUri({
+      address: ADDR, amountMicroFtc: 500_000n, identity: fullIdentity, label: 'Main wallet',
+    });
+    expect(uri).not.toBeNull();
+    // It must be strictly richer than the compact URI.
+    const compact = buildCompactReceiveUri(ADDR, 500_000n);
+    expect(uri!.length).toBeGreaterThan(compact.length);
+
+    const r = decodePaymentUri(uri!);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.payment.toAddress).toBe(ADDR);
+    expect(r.payment.amountMicroFtc).toBe(500_000n);
+    // No merchant ref on a pay-to-pay receive.
+    expect(r.payment.ref).toBe('');
+    expect(r.payment.merchantId).toBe('');
+    // The creditor party survived the round-trip.
+    expect(r.payment.creditor).toEqual({
+      name: 'Karl Café AB',
+      country: 'SE',
+      city: 'Stockholm',
+      street: 'Drottninggatan 1',
+      postcode: '11151',
+    });
+    // The order envelope decoded too.
+    expect(r.payment.orderEnvelope?.v).toBe(1);
+    expect(r.payment.orderEnvelope?.kind).toBe('invoice');
+  });
+
+  it('rich URI also flows through the animated encoder/decoder', () => {
+    const uri = buildRichReceiveUri({
+      address: ADDR, amountMicroFtc: 500_000n, identity: fullIdentity,
+    })!;
+    const enc = createUriEncoder(uri);
+    const dec = createUriDecoder();
+    let result;
+    for (let i = 0; i < 200 && !result?.complete; i++) result = dec.receive(enc.next());
+    expect(result?.complete).toBe(true);
+    expect(result?.uri).toBe(uri);
+    // And the reconstructed URI decodes to a valid payment.
+    expect(decodePaymentUri(result!.uri!).ok).toBe(true);
   });
 });

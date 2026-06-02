@@ -12,7 +12,7 @@
  * transaction.
  */
 import { pacs008, reference } from '@futurechain/sdk';
-import type { DecodedCreditor, DecodedPayment, PaymentRecord } from './types';
+import type { DecodedCreditor, DecodedPayment, PaymentPurpose, PaymentRecord } from './types';
 import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
 import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
@@ -75,7 +75,6 @@ export function decodePaymentUri(uri: string, now?: number): DecodeResult {
 
   if (!to) return { ok: false, reason: 'invalid' };
   if (!amountStr || !DIGITS_RE.test(amountStr)) return { ok: false, reason: 'invalid' };
-  if (!ref) return { ok: false, reason: 'invalid' };
   if (currency !== 'FTC') return { ok: false, reason: 'invalid' };
   if (v !== null && v !== '1') return { ok: false, reason: 'invalid' };
 
@@ -87,10 +86,25 @@ export function decodePaymentUri(uri: string, now?: number): DecodeResult {
   }
   if (amountMicroFtc <= 0n) return { ok: false, reason: 'invalid' };
 
-  // The ADR-004 reference must be a v1 (merchant-bearing) remittance.
-  const decoded = reference.decode(ref);
-  if (decoded.kind !== 'v1') return { ok: false, reason: 'invalid' };
-  const f = decoded.fields;
+  // The ADR-004 `ref` is optional. Merchant QRs (ANTON Business) always
+  // carry a v1 reference and we still REQUIRE it to be a valid v1 when
+  // present — a malformed/v2 ref is a hard reject (the merchant flow
+  // depends on the merchantId/orderId it carries). But a pay-to-pay
+  // *receive* (ReceiveScreen / the animated rich QR) has no merchant,
+  // so an absent ref is allowed: the merchant-bearing fields are simply
+  // empty and the purpose defaults to a generic person-to-person value.
+  // This keeps the static and animated decode paths consistent.
+  let f: {
+    merchantId: string; orderId: string; purpose: PaymentPurpose;
+    itemCount?: number; vatMicroUnits?: bigint; discountMicroUnits?: bigint;
+  };
+  if (ref) {
+    const decoded = reference.decode(ref);
+    if (decoded.kind !== 'v1') return { ok: false, reason: 'invalid' };
+    f = decoded.fields;
+  } else {
+    f = { merchantId: '', orderId: '', purpose: 'SERVICE' };
+  }
 
   let expUnixSeconds = 0;
   if (expStr !== null) {
@@ -125,7 +139,7 @@ export function decodePaymentUri(uri: string, now?: number): DecodeResult {
     toAddress: to,
     amountMicroFtc,
     currency,
-    ref,
+    ref: ref ?? '',
     merchantId: f.merchantId,
     orderId: f.orderId,
     purpose: f.purpose,

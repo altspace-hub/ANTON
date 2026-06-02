@@ -34,6 +34,7 @@ import LocationBubble from '../components/LocationBubble';
 import LocationPickerSheet from '../components/LocationPickerSheet';
 import StickerBubble from '../components/StickerBubble';
 import StickerPickerSheet from '../components/StickerPickerSheet';
+import MediaViewer from '../components/MediaViewer';
 import { useLongPress } from '../hooks/useLongPress';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -62,6 +63,10 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
   const [viewOnceArmed, setViewOnceArmed] = useState(false);
   /** R6 — message currently being shown fullscreen for one-time view. */
   const [viewingOnce, setViewingOnce] = useState<ChatMessage | null>(null);
+  /** B1/B2 — image message being shown fullscreen in the lightbox viewer.
+   *  Holds the decoded payload directly (data + mime + alt) so the viewer
+   *  doesn't have to re-parse the ChatMessage. */
+  const [viewingMedia, setViewingMedia] = useState<{ data: string; mimeType: string; alt?: string } | null>(null);
   /** R7 — poll-compose overlay visibility */
   const [pollComposing, setPollComposing] = useState(false);
   /** R8 — text message currently being edited; composer pre-fills its text */
@@ -505,6 +510,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
                 onLongPress={() => setActionTarget(m)}
                 onReactionTap={(emoji) => void handleReaction(m, emoji)}
                 onOpenViewOnce={(msg) => setViewingOnce(msg)}
+                onOpenImage={(media) => setViewingMedia(media)}
                 onPollVote={(pollId, optionIdx) => void handlePollVote(pollId, optionIdx)}
                 myHash={me?.contactHash}
               />
@@ -640,6 +646,15 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       />
 
       {viewingOnce && <ViewOnceViewer message={viewingOnce} onDismiss={() => void handleViewOnceDismiss(viewingOnce)} />}
+
+      {viewingMedia && (
+        <MediaViewer
+          data={viewingMedia.data}
+          mimeType={viewingMedia.mimeType}
+          alt={viewingMedia.alt}
+          onClose={() => setViewingMedia(null)}
+        />
+      )}
 
       <MessageActionSheet
         open={actionTarget !== null}
@@ -808,14 +823,29 @@ interface BubbleProps {
   onLongPress: () => void;
   onReactionTap: (emoji: string) => void;
   onOpenViewOnce: (message: ChatMessage) => void;
+  /** B2 — open an image message in the full-screen lightbox. */
+  onOpenImage: (media: { data: string; mimeType: string; alt?: string }) => void;
   onPollVote: (pollId: string, optionIdx: number[]) => void;
   myHash?: string;
 }
 
-function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, onPollVote, myHash }: BubbleProps) {
+function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOpenViewOnce, onOpenImage, onPollVote, myHash }: BubbleProps) {
   const { t } = useTranslation();
   const time = new Date(message.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  const longPress = useLongPress(onLongPress);
+  // B2 — guard so a long-press that opens the action sheet doesn't ALSO
+  // fire the image tap (pointerup → synthetic click on the inner button).
+  // We mark when a long-press fires and swallow the next image tap within
+  // a short window, then reset.
+  const justLongPressedRef = useRef(false);
+  const longPress = useLongPress(() => {
+    justLongPressedRef.current = true;
+    onLongPress();
+    setTimeout(() => { justLongPressedRef.current = false; }, 400);
+  });
+  const handleOpenImage = (media: { data: string; mimeType: string; alt?: string }) => {
+    if (justLongPressedRef.current) return;
+    onOpenImage(media);
+  };
 
   // Bubbles that are non-actionable (rsvp / cancel / timer-change chips) skip long-press
   if (message.kind === 'event_rsvp')          return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
@@ -837,7 +867,7 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
     if (p?.viewOnce) {
       body = <ViewOnceMediaBubble message={message} isMine={isMine} time={time} onOpen={() => onOpenViewOnce(message)} />;
     } else {
-      body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} />;
+      body = <MediaBubble message={message} isMine={isMine} time={time} kind={message.kind} onOpenImage={handleOpenImage} />;
     }
   } else if (message.kind === 'voice') {
     body = <VoiceBubble message={message} isMine={isMine} time={time} />;
@@ -939,7 +969,10 @@ function ReactionChips({ reactions, myHash, onTap }: {
   );
 }
 
-function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; isMine: boolean; time: string; kind: 'image' | 'video' }) {
+function MediaBubble({ message, isMine, time, kind, onOpenImage }: {
+  message: ChatMessage; isMine: boolean; time: string; kind: 'image' | 'video';
+  onOpenImage: (media: { data: string; mimeType: string; alt?: string }) => void;
+}) {
   let payload: MediaPayload | null = null;
   try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
   // P4-3: memoize the blob URL so a thread re-render doesn't re-decode
@@ -948,6 +981,11 @@ function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; is
   // handles that.
   const blobUrl = useBlobUrl(payload?.data, payload?.mimeType);
   if (!payload) return null;
+  // B3 — reserve correct space + cap thumbnail size so portrait/landscape
+  // photos don't stretch. capture.ts now passes width/height through for
+  // both the Capacitor and web paths; fall back to 4:3 only when a legacy
+  // message lacks dimensions. The thumbnail is capped (object-cover) so a
+  // very tall image can't dominate the thread — tap opens the full image.
   const aspect = (payload.width && payload.height) ? payload.width / payload.height : 4 / 3;
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
@@ -959,9 +997,29 @@ function MediaBubble({ message, isMine, time, kind }: { message: ChatMessage; is
         }}
       >
         {kind === 'image' ? (
-          blobUrl && <img src={blobUrl} alt={payload.filename} className="block w-full" style={{ aspectRatio: aspect }} />
+          blobUrl && (
+            <button
+              type="button"
+              // B2 — open the lightbox. The long-press action sheet still
+              // works: useLongPress lives on the Bubble wrapper and only
+              // suppresses the click when an actual long-press fired.
+              onClick={() => payload && onOpenImage({ data: payload.data, mimeType: payload.mimeType, alt: payload.filename })}
+              className="block w-full p-0 m-0 cursor-pointer"
+              aria-label={payload.filename}
+            >
+              <img
+                src={blobUrl}
+                alt={payload.filename}
+                className="block w-full object-cover"
+                // Cap the thumbnail's height so portrait shots don't run
+                // the full thread length; aspectRatio reserves the box so
+                // the bubble doesn't reflow once the image decodes.
+                style={{ aspectRatio: aspect, maxHeight: '60vh' }}
+              />
+            </button>
+          )
         ) : (
-          blobUrl && <video src={blobUrl} controls preload="metadata" className="block w-full" style={{ aspectRatio: aspect }} />
+          blobUrl && <video src={blobUrl} controls preload="metadata" className="block w-full" style={{ aspectRatio: aspect, maxHeight: '60vh' }} />
         )}
         {payload.caption && (
           <div
