@@ -54,11 +54,16 @@ function pidOf(serial, pkg) {
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-/** Launch the app if it isn't running; returns the PID. */
+/** Launch the app (or, if already running, resume it to the FOREGROUND) and
+ *  return its PID. Always sending the LAUNCHER intent matters for the suite:
+ *  a backgrounded WebView (left behind when the previous scenario foregrounded
+ *  a different app) has its JS timers Android-throttled, which makes the next
+ *  scenario's sleeps crawl. Foregrounding un-throttles it. The launcher intent
+ *  resumes an existing task without restarting it (PID unchanged). */
 async function ensureRunning(serial, pkg) {
   let pid = pidOf(serial, pkg);
-  if (pid) return pid;
   adb(['shell', 'monkey', '-p', pkg, '-c', 'android.intent.category.LAUNCHER', '1'], serial);
+  if (pid) { await sleep(500); return pid; }
   for (let i = 0; i < 12 && !pid; i++) { await sleep(800); pid = pidOf(serial, pkg); }
   if (!pid) throw new Error(`could not start ${pkg} on ${serial}`);
   return pid;
