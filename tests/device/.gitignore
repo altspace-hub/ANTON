@@ -1,0 +1,6 @@
+# Transient failure screenshots written by run-e2e.cjs
+.artifacts/
+
+# Scratch WS-endpoint dumps from manual driving (page GUID changes per restart)
+*-ws.txt
+.live-walk/

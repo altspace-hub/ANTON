@@ -48,6 +48,7 @@
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
+    "test:e2e:device": "node tests/device/run-e2e.cjs",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:report": "playwright show-report",
     "preview": "vite preview",

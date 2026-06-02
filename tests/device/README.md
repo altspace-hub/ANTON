@@ -46,12 +46,31 @@ Fixed local forward ports per app: Pay 9400, Comm 9500, Business 9600
 ## Run
 
 ```bash
-# all scenarios (operator machine with two phones attached):
-ANTON_DEVICE_E2E=1 node tests/device/run-e2e.cjs
+# all scenarios (operator machine, two phones attached, serials pinned):
+ANTON_DEVICE_E2E=1 ANTON_PAY_SERIAL=… ANTON_BIZ_SERIAL=… \
+  ANTON_COMM_SERIAL=… ANTON_COMM_SERIAL_B=… pnpm test:e2e:device
 
-# a single scenario:
-node tests/device/scenarios/pay-to-business.e2e.cjs
+# only scenarios whose filename matches a substring:
+ANTON_DEVICE_E2E=1 ANTON_PAY_SERIAL=… node tests/device/run-e2e.cjs pay
 ```
+
+The orchestrator (`run-e2e.cjs`) discovers the phones, runs every
+`scenarios/*.e2e.cjs` (underscore-prefixed files are scratch and skipped),
+prints a pass/fail summary, screenshots the involved phones into `.artifacts/`
+on a failure, and exits non-zero if anything failed.
+
+### Current scenarios
+
+| file | phones | asserts |
+|---|---|---|
+| `pay-review.e2e.cjs` | Pay ×1 | a ref-less pay URI decodes → Review shows amount + **0.1% network fee** + total (no spend) |
+| `pay-friends.e2e.cjs` | Pay ×1 | Settings → Friends → add a fixture friend → persisted `fc_contacts` row (idempotent) |
+| `comm-message.e2e.cjs` | Comm ×2 | Alice sends a unique-marker E2E message → polls Bob's `messages` store until the inbound row arrives |
+
+Each scenario is idempotent (no real on-chain spend; re-runs are no-ops or use a
+fresh marker), so the suite is safe to re-run. **Roadmap (#73):** Comm wallet
+(create/receive/send/history/tax), events (create each type / RSVP), portals,
+Wassup; Pay→Business full receipt-match; photo-viewer tap.
 
 This suite needs two physical phones, so it is **operator-run only** — it must
 not run in GitHub-hosted CI (gate it behind `ANTON_DEVICE_E2E=1`). The fast,
