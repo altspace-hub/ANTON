@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import path from 'path';
 
 // Capacitor builds skip the PWA service worker — same reasoning as the
@@ -12,6 +13,13 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // #79 — the animated-QR fountain encoder (@ngraveio/bc-ur) is authored for
+    // Node (bare `Buffer`, `require('assert')`). Inject the globals + shim the
+    // builtins so it loads in the Capacitor WebView (mirrors vite.config.pay.ts).
+    nodePolyfills({
+      globals: { Buffer: true, process: true, global: true },
+      include: ['assert', 'buffer'],
+    }),
     ...(isCapacitorBuild ? [] : [VitePWA({
       registerType: 'autoUpdate',
       devOptions: { enabled: false },
