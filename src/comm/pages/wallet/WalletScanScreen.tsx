@@ -99,7 +99,7 @@ export default function WalletScanScreen({ onBack, onScanned }: Props) {
           <div className="relative flex-1 mx-5 rounded-2xl overflow-hidden" style={{ backgroundColor: '#000' }}>
             <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
           </div>
-          <p className="text-center text-sm px-5 py-4 text-[var(--color-text-muted)]">{t('scan.hint', 'Point at a merchant or wallet QR.')}</p>
+          <p className="text-center text-sm px-5 py-4 text-[var(--color-text-muted)]">{t('scan.hint', 'Point at a recipient or wallet QR.')}</p>
           {urProgress && urProgress.expected > 0 && (
             <div className="mx-5 mb-3 rounded-lg p-3 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-body)]">
               <div className="flex justify-between mb-2">
@@ -136,7 +136,7 @@ export default function WalletScanScreen({ onBack, onScanned }: Props) {
       {mode === 'manual' && (
         <div className="flex flex-col flex-1 px-5 pb-6 overflow-y-auto">
           <h3 className="text-base font-bold mt-2 mb-1 text-[var(--color-text)]">{t('scan.manualTitle', 'Paste a payment link')}</h3>
-          <p className="text-sm mb-3 text-[var(--color-text-muted)]">{t('scan.manualHint', 'Paste a futurechain:pay link from the merchant or wallet.')}</p>
+          <p className="text-sm mb-3 text-[var(--color-text-muted)]">{t('scan.manualHint', 'Paste a futurechain:pay link from the recipient or wallet.')}</p>
           <textarea
             value={manualText}
             onChange={(e) => { setManualText(e.target.value); setNotice(null); }}
