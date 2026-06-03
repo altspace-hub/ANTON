@@ -22,7 +22,10 @@
     "labelPlaceholder": "t.ex. Sparande",
     "need24": "Återställningsfrasen måste vara 24 ord.",
     "phrase": "24-ords återställningsfras",
-    "title": "Ny plånbok"
+    "title": "Ny plånbok",
+    "agentTab": "Agent",
+    "agentBtn": "Skapa agentplånbok",
+    "agentHint": "En agentplånbok har ett eget nyckelpar så att en ANTON-agent kan göra transaktioner, men den betalar under en \"ANTON …\"-identitet med dig angiven som ägare (UBO). Använd den för att hålla koll på vad agenten gör."
   },
   "backup": {
     "continueToVerify": "Jag har skrivit ner det — fortsätt",
@@ -396,6 +399,7 @@
     "add": "Ny plånbok",
     "help": "Varje plånbok är sitt eget Ed25519-nyckelpar med eget saldo. Tryck för att byta vilken som signerar.",
     "notBackedUp": "Säkerhetskopiera",
-    "title": "Plånböcker"
+    "title": "Plånböcker",
+    "agentBadge": "Agent"
   }
 }

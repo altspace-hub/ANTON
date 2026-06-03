@@ -105,8 +105,15 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
                     <div className="font-semibold text-sm flex items-center gap-2"
                          style={{ color: 'var(--color-text)' }}>
                       <span className="truncate">{w.label}</span>
+                      {w.kind === 'agent' && (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                              style={{ backgroundColor: 'var(--color-accent-soft)',
+                                       color: 'var(--color-accent)' }}>
+                          {t('walletsList.agentBadge', 'Agent')}
+                        </span>
+                      )}
                       {!w.backedUp && (
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
                               style={{ backgroundColor: 'var(--color-warning-soft, #FFF3CD)',
                                        color: 'var(--color-warning, #C8881E)' }}>
                           {t('walletsList.notBackedUp', 'Back up')}

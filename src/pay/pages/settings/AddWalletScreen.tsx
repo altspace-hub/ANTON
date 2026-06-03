@@ -22,7 +22,7 @@ interface Props {
 export default function AddWalletScreen({ onBack, onCreated, onImported }: Props) {
   const { t } = useTranslation();
   const [label, setLabel] = useState('');
-  const [mode, setMode] = useState<'create' | 'import'>('create');
+  const [mode, setMode] = useState<'create' | 'import' | 'agent'>('create');
   const [phrase, setPhrase] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,9 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
   async function doCreate() {
     setError(null); setBusy(true);
     try {
-      await createWallet(label);
+      // #88 — an agent wallet has its own keypair (so it can send) but transacts
+      // under the "ANTON <addr6>" identity with the owner as the UBO.
+      await createWallet(label || (mode === 'agent' ? 'Agent wallet' : ''), mode === 'agent' ? 'agent' : 'own');
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -76,25 +78,21 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2 mb-4 p-1 rounded-xl"
+        <div className="flex gap-1.5 mb-4 p-1 rounded-xl"
              style={{ backgroundColor: 'var(--color-surface)',
                       border: '1px solid var(--color-border)' }}>
-          <button type="button" onClick={() => setMode('create')}
-                  className="flex-1 py-2 rounded-lg text-sm font-semibold"
-                  style={{ backgroundColor: mode === 'create'
-                             ? 'var(--color-accent)' : 'transparent',
-                           color: mode === 'create'
-                             ? 'var(--color-accent-fg)' : 'var(--color-text)' }}>
-            {t('addWallet.createTab', 'Create fresh')}
-          </button>
-          <button type="button" onClick={() => setMode('import')}
-                  className="flex-1 py-2 rounded-lg text-sm font-semibold"
-                  style={{ backgroundColor: mode === 'import'
-                             ? 'var(--color-accent)' : 'transparent',
-                           color: mode === 'import'
-                             ? 'var(--color-accent-fg)' : 'var(--color-text)' }}>
-            {t('addWallet.importTab', 'Import phrase')}
-          </button>
+          {([
+            ['create', t('addWallet.createTab', 'Create')],
+            ['import', t('addWallet.importTab', 'Import')],
+            ['agent', t('addWallet.agentTab', 'Agent')],
+          ] as const).map(([m, lbl]) => (
+            <button key={m} type="button" onClick={() => setMode(m)}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold"
+                    style={{ backgroundColor: mode === m ? 'var(--color-accent)' : 'transparent',
+                             color: mode === m ? 'var(--color-accent-fg)' : 'var(--color-text)' }}>
+              {lbl}
+            </button>
+          ))}
         </div>
 
         {/* Label */}
@@ -143,17 +141,25 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
                 'A 24-word recovery phrase will be shown next. Back it up before sending FTC to the new address.')}
             </p>
           )}
+          {mode === 'agent' && (
+            <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
+              {t('addWallet.agentHint',
+                'An agent wallet has its own keypair so an ANTON agent can transact, but it pays under an "ANTON …" identity with you disclosed as the owner (UBO). Use it to keep tabs on what the agent is doing.')}
+            </p>
+          )}
           <button type="button" disabled={busy}
-                  onClick={mode === 'create' ? doCreate : doImport}
+                  onClick={mode === 'import' ? doImport : doCreate}
                   className="w-full py-3.5 rounded-xl text-sm font-semibold"
                   style={{ backgroundColor: 'var(--color-accent)',
                            color: 'var(--color-accent-fg)',
                            opacity: busy ? 0.7 : 1 }}>
             {busy
               ? t('common.working', 'Working…')
-              : mode === 'create'
-                ? t('addWallet.createBtn', 'Create wallet')
-                : t('addWallet.importBtn', 'Import wallet')}
+              : mode === 'import'
+                ? t('addWallet.importBtn', 'Import wallet')
+                : mode === 'agent'
+                  ? t('addWallet.agentBtn', 'Create agent wallet')
+                  : t('addWallet.createBtn', 'Create wallet')}
           </button>
         </div>
       </div>

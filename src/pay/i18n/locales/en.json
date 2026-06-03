@@ -22,7 +22,10 @@
     "labelPlaceholder": "e.g. Savings",
     "need24": "Recovery phrase must be 24 words.",
     "phrase": "24-word recovery phrase",
-    "title": "New wallet"
+    "title": "New wallet",
+    "agentTab": "Agent",
+    "agentBtn": "Create agent wallet",
+    "agentHint": "An agent wallet has its own keypair so an ANTON agent can transact, but it pays under an \"ANTON …\" identity with you disclosed as the owner (UBO). Use it to keep tabs on what the agent is doing."
   },
   "backup": {
     "continueToVerify": "I have written it down — continue",
@@ -467,6 +470,7 @@
     "add": "New wallet",
     "help": "Each wallet is its own Ed25519 keypair with its own balance. Tap to switch which one signs.",
     "notBackedUp": "Back up",
-    "title": "Wallets"
+    "title": "Wallets",
+    "agentBadge": "Agent"
   }
 }

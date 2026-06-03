@@ -93,6 +93,20 @@ export interface WalletMeta {
    *  call retries it). The private key is never sent; only the
    *  public address. */
   registeredAt?: number;
+  /** #88 — wallet kind. Undefined / 'own' = a normal personal wallet. 'agent'
+   *  = an ANTON agent wallet: it has its own keypair (so the agent can send
+   *  autonomously) but transacts under the pseudonymous "ANTON <addr6>"
+   *  identity, with the human owner disclosed as the Ultimate Debtor (UBO).
+   *  Primarily used to keep tabs on what the agent is doing. */
+  kind?: 'own' | 'agent';
+}
+
+/** #88 — the pseudonymous debtor name an agent wallet presents on the wire:
+ *  "ANTON " + the first 6 Base58 chars after the `fc_` prefix. The real owner
+ *  is disclosed separately as the Ultimate Debtor (UBO). */
+export function agentDebtorName(address: string): string {
+  const body = address.startsWith('fc_') ? address.slice(3) : address;
+  return `ANTON ${body.slice(0, 6)}`;
 }
 
 export interface Wallet {
@@ -253,6 +267,7 @@ async function loadWalletById(id: string): Promise<Wallet | null> {
  *  mnemonic is also stored on-device so the Settings re-display works. */
 export async function createWallet(
   label = 'Wallet',
+  kind: 'own' | 'agent' = 'own',
 ): Promise<{ meta: WalletMeta; mnemonic: string }> {
   await migrateLegacyIfNeeded();
   const { wallet, mnemonic } = sdkWallet.createWallet();
@@ -264,6 +279,8 @@ export async function createWallet(
     createdAt: Date.now(),
     backedUp: false,
     publicKeyHex: bytesToHex(wallet.publicKey),
+    // Only stamp non-default kinds so 'own' wallets stay registry-identical.
+    ...(kind === 'agent' ? { kind } : {}),
   };
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);

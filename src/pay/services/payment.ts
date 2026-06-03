@@ -17,7 +17,7 @@ import { getAllPayments, getPayment, putPayment, wipePayments } from './db';
 import { loadPayerIdentity, type PayerIdentity } from './payment-identity';
 import { loadWallet } from './wallet';
 import {
-  activeWalletHasPassphrase, getActiveSigner, getActiveWalletMeta,
+  activeWalletHasPassphrase, agentDebtorName, getActiveSigner, getActiveWalletMeta,
   PassphraseRequiredError,
 } from './wallets';
 import { BadPassphraseError } from './wallet-passphrase';
@@ -566,8 +566,13 @@ export async function executePayment(
     // the rich-remittance path for a tagged type even without a note, so the
     // type always travels (the recipient reads meta.fcType via decodeRemittance).
     const tagged = paymentType !== DEFAULT_PAYMENT_TYPE;
+    // #88 — agent wallet: the agent acts as the Dbtr ("ANTON <addr6>") while the
+    // human owner is the Ultimate Debtor (UBO). The UBO also rides in the
+    // remittance meta (recipient-readable even if the chain ignores UltmtDbtr).
+    const isAgent = walletMeta.kind === 'agent';
+    const uboName = isAgent ? (draft.debtor.name || identity?.name?.trim() || '') : '';
     let remittanceInfo: ReturnType<typeof pacs008.encodeRemittance>['rmtInf'] | undefined;
-    if (decoded.orderEnvelope || trimmedNote || tagged) {
+    if (decoded.orderEnvelope || trimmedNote || tagged || isAgent) {
       const merged: pacs008.AntonRemittance = decoded.orderEnvelope
         ? { ...decoded.orderEnvelope, ...(trimmedNote ? { message: trimmedNote } : {}) }
         : {
@@ -576,7 +581,12 @@ export async function executePayment(
             ref: decoded.orderId,
             ...(trimmedNote ? { message: trimmedNote } : {}),
           };
-      if (tagged) merged.meta = { ...(merged.meta ?? {}), fcType: paymentType };
+      const meta = {
+        ...(merged.meta ?? {}),
+        ...(tagged ? { fcType: paymentType } : {}),
+        ...(isAgent && uboName ? { ubo: uboName } : {}),
+      };
+      if (Object.keys(meta).length > 0) merged.meta = meta;
       try {
         const encoded = pacs008.encodeRemittance(merged);
         remittanceInfo = encoded.rmtInf;
@@ -587,8 +597,12 @@ export async function executePayment(
         console.warn('executePayment: rich remittance too large, falling back to ref', e);
       }
     }
+    // #88 — for an agent wallet, present the agent identity as the Dbtr and the
+    // real owner as the Ultimate Debtor; otherwise the normal debtor party.
+    const debtorParty = pacsPartyFromDraft(draft.debtor);
     const message = pacs008.buildPacs008({
-      debtor: pacsPartyFromDraft(draft.debtor),
+      debtor: isAgent ? { ...debtorParty, name: agentDebtorName(wallet.address) } : debtorParty,
+      ...(isAgent ? { ultimateDebtor: debtorParty } : {}),
       creditor: pacsPartyFromDraft(draft.creditor),
       amountFtc,
       // #76 — 'payment' keeps the merchant-derived code; gift/info/contract override.

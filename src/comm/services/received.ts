@@ -293,6 +293,11 @@ function normaliseItem(raw: unknown, _myAddress: string): Normalised | null {
         if (isPaymentType(ft) && ft !== 'payment') paymentType = ft;
         const msg = decoded.message ?? decoded.decision ?? decoded.terms;
         if (typeof msg === 'string' && msg.trim()) note = msg.trim();
+        // #88 — an agent payment discloses the human owner (UBO); surface it.
+        const ubo = decoded.meta?.ubo;
+        if (typeof ubo === 'string' && ubo.trim()) {
+          note = (note ? `${note} · ` : '') + `UBO: ${ubo.trim()}`;
+        }
       }
     } catch { /* malformed envelope — keep the plain Ustrd remittance */ }
   }

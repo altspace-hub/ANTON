@@ -281,6 +281,12 @@ function normaliseItem(raw: unknown, myAddress: string): ReceivedRecord | null {
         if (isPaymentType(ft) && ft !== 'payment') paymentType = ft;
         const msg = decoded.message ?? decoded.decision ?? decoded.terms;
         if (typeof msg === 'string' && msg.trim()) note = msg.trim();
+        // #88 — an agent payment discloses the human owner (UBO); surface it
+        // so the recipient sees who is behind the "ANTON …" debtor.
+        const ubo = decoded.meta?.ubo;
+        if (typeof ubo === 'string' && ubo.trim()) {
+          note = (note ? `${note} · ` : '') + `UBO: ${ubo.trim()}`;
+        }
       }
     } catch { /* malformed envelope — keep the plain Ustrd remittance */ }
   }
