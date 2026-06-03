@@ -4,6 +4,7 @@ import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type Ch
 import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, sendSticker, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { startLiveShare, type GeoFix } from '../services/geo';
 import { getContact, type Contact } from '../services/contacts';
+import AvatarCircle from '../components/AvatarCircle';
 import { getIdentity } from '../services/identity';
 import { getTypingIndicatorEnabled } from '../services/settings';
 import { subscribeChatChanged } from '../services/chat-events';
@@ -455,12 +456,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         >
           <Ico name="arrowLeft" size={22} />
         </button>
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
-        >
-          {displayName.slice(0, 1).toUpperCase()}
-        </div>
+        <AvatarCircle name={displayName} avatarImage={contact?.avatarImage} avatarMime={contact?.avatarMime} size={36} />
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold text-[var(--color-text)] truncate">{displayName}</div>
           {peerTyping ? (

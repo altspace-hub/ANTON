@@ -24,6 +24,11 @@ export interface CommIdentity {
   displayName: string;
   preferredLanguage: string;
   createdAt: string;         // ISO timestamp
+  /** Optional profile picture — base64 (no data-URL prefix), downscaled to
+   *  ~256px so it fits localStorage + the relay wire. Broadcast to contacts
+   *  so peers see your face instead of the name letter. */
+  avatarImage?: string;
+  avatarMime?: string;       // 'image/jpeg' | 'image/png'
 }
 
 const STORAGE_KEY_IDENTITY = 'anton-comm-identity';
@@ -151,6 +156,26 @@ export function updateDisplayName(displayName: string): CommIdentity | null {
   const id = getIdentity();
   if (!id) return null;
   const next: CommIdentity = { ...id, displayName: displayName.trim() };
+  saveIdentityPublic(next);
+  return next;
+}
+
+/** Set the profile picture (base64 + mime). Caller broadcasts to contacts. */
+export function updateAvatar(avatarImage: string, avatarMime: string): CommIdentity | null {
+  const id = getIdentity();
+  if (!id) return null;
+  const next: CommIdentity = { ...id, avatarImage, avatarMime };
+  saveIdentityPublic(next);
+  return next;
+}
+
+/** Remove the profile picture. Caller broadcasts the cleared profile. */
+export function clearAvatar(): CommIdentity | null {
+  const id = getIdentity();
+  if (!id) return null;
+  const next: CommIdentity = { ...id };
+  delete next.avatarImage;
+  delete next.avatarMime;
   saveIdentityPublic(next);
   return next;
 }

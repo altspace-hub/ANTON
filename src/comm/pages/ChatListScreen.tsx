@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listContacts, type Contact } from '../services/contacts';
 import { getLatestPerThread, type ChatMessage } from '../services/messages';
+import AvatarCircle from '../components/AvatarCircle';
 
 interface Props {
   onAddContact: () => void;
@@ -74,12 +75,7 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
                 onClick={() => onOpenChat(c.contactHash)}
                 className="w-full flex items-center gap-3 px-5 py-3 text-left active:bg-[var(--color-surface-muted)]"
               >
-                <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold flex-shrink-0"
-                  style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
-                >
-                  {c.displayName.slice(0, 1).toUpperCase()}
-                </div>
+                <AvatarCircle name={c.displayName} avatarImage={c.avatarImage} avatarMime={c.avatarMime} size={44} />
                 <div className="flex-1 min-w-0">
                   <div className="text-base font-medium text-[var(--color-text)] truncate">
                     {c.displayName}

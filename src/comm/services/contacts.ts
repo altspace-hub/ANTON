@@ -27,6 +27,10 @@ export interface Contact {
   note?: string;              // user note (e.g. "Anna from work")
   /** R5 — per-chat disappearing-message timer in seconds. 0 / undefined = Off. */
   disappearingTimerSec?: number;
+  /** Peer's profile picture — base64 (no prefix) + mime, learned via the
+   *  `profile` wire. Rendered in place of the name letter. */
+  avatarImage?: string;
+  avatarMime?: string;
 }
 
 export async function listContacts(): Promise<Contact[]> {
@@ -83,7 +87,7 @@ export async function addContact(input: Omit<Contact, 'addedAt'>): Promise<Conta
 
 export async function updateContact(
   contactHash: string,
-  patch: Partial<Pick<Contact, 'displayName' | 'note' | 'publicKeyHex' | 'disappearingTimerSec'>>
+  patch: Partial<Pick<Contact, 'displayName' | 'note' | 'publicKeyHex' | 'disappearingTimerSec' | 'avatarImage' | 'avatarMime'>>
 ): Promise<Contact | null> {
   const existing = await getContact(contactHash);
   if (!existing) return null;

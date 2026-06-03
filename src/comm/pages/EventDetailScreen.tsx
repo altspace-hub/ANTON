@@ -22,6 +22,7 @@ import {
   EVENT_TYPE_ICONS,
 } from '../services/events';
 import { Ico, type IcoName } from '../components/Ico';
+import AvatarCircle from '../components/AvatarCircle';
 import {
   sendEventRsvp, sendEventInvite, sendEventUpdate, sendEventCancel,
   sendEventProposal, sendEventNote,
@@ -463,10 +464,7 @@ function AttendeeSection({ title, hashes, contacts, color, me }: {
           const label = h === me ? t('events.you') : (c?.displayName ?? h);
           return (
             <li key={h} className="flex items-center gap-2 text-sm text-[var(--color-text-body)]">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold"
-                   style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}>
-                {label.slice(0, 1).toUpperCase()}
-              </div>
+              <AvatarCircle name={label} avatarImage={c?.avatarImage} avatarMime={c?.avatarMime} size={24} />
               <span className="truncate">{label}</span>
             </li>
           );

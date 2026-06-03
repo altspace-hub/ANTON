@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { getIdentity } from '../services/identity';
 import Logo from './Logo';
+import AvatarCircle from './AvatarCircle';
 
 interface Props {
   onProfile: () => void;
@@ -9,7 +10,6 @@ interface Props {
 export default function TopBar({ onProfile }: Props) {
   const { t } = useTranslation();
   const id = getIdentity();
-  const initial = (id?.displayName || '?').slice(0, 1).toUpperCase();
 
   return (
     <header className="safe-top">
@@ -27,12 +27,7 @@ export default function TopBar({ onProfile }: Props) {
           aria-label={t('topbar.openProfile')}
           className="p-1.5 -m-1.5 flex items-center justify-center"
         >
-          <span
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-            style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
-          >
-            {initial}
-          </span>
+          <AvatarCircle name={id?.displayName || '?'} avatarImage={id?.avatarImage} avatarMime={id?.avatarMime} size={32} />
         </button>
       </div>
     </header>

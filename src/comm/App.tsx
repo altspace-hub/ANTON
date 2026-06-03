@@ -121,6 +121,10 @@ export default function App() {
     // #79 Phase 6 — re-arm scheduled-payment reminders (a fresh install /
     // OS-cleared notifications get back to a healthy state).
     void reconcileScheduleNotifications();
+    // #82 — broadcast my profile (name + avatar) to contacts so peers learn
+    // (and re-learn) my face each session. Slight delay so the relay socket
+    // is up; sends queue to the inline outbox if it isn't.
+    void import('./services/chat').then((m) => m.broadcastProfile()).catch(() => {});
     return () => stopRelayClient();
   }, [identityVersion]);
 

@@ -44,6 +44,42 @@ export async function captureImageFromLibrary(): Promise<Capture | null> {
   return (await capacitorCameraImage('PHOTOS')) ?? webImageInput();
 }
 
+/**
+ * Downscale a base64 image to a small square-ish thumbnail (for profile
+ * avatars). Re-encodes as JPEG. Keeps avatars tiny so they fit localStorage
+ * + the relay wire when broadcast to contacts. Falls back to the input on
+ * any decode failure (e.g. no DOM in a worker/test).
+ */
+export async function downscaleImageBase64(
+  base64: string,
+  mimeType: string,
+  maxDim = 256,
+  quality = 0.72,
+): Promise<{ base64: string; mimeType: string }> {
+  if (typeof document === 'undefined') return { base64, mimeType };
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve({ base64, mimeType }); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ base64: dataUrl.split(',')[1] ?? base64, mimeType: 'image/jpeg' });
+      } catch {
+        resolve({ base64, mimeType });
+      }
+    };
+    img.onerror = () => resolve({ base64, mimeType });
+    img.src = `data:${mimeType};base64,${base64}`;
+  });
+}
+
 export async function captureVideoFromCamera(): Promise<Capture | null> {
   return webVideoInput('environment');
 }

@@ -188,6 +188,16 @@ export interface StickerPayload {
   packUrl?: string;
 }
 
+/** Profile broadcast — a peer's display name + optional avatar. Ephemeral,
+ *  state-mutating: applied to the sender's Contact row so their face shows
+ *  in the chat list / headers instead of the name letter. */
+export interface ProfilePayload {
+  displayName: string;
+  avatarImage?: string;   // base64, no data-URL prefix (downscaled ~256px)
+  avatarMime?: string;
+  ts: string;
+}
+
 export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -210,6 +220,7 @@ export type WirePayload =
   | { kind: 'event_update';  data: EventUpdatePayload }
   | { kind: 'event_proposal'; data: EventProposalPayload }
   | { kind: 'event_note';    data: EventNotePayload }
+  | { kind: 'profile';       data: ProfilePayload }
   | { kind: 'system_timer_change'; data: SystemTimerChangePayload }
   | { kind: 'wassup_post';   data: WassupPostWire }
   | { kind: 'wassup_like';   data: WassupLikeWire }
@@ -324,7 +335,8 @@ export async function sendStructuredMessage(
       || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete'
       || wire.kind === 'presence_read' || wire.kind === 'presence_typing'
       || wire.kind === 'location_update'
-      || wire.kind === 'event_update' || wire.kind === 'event_proposal' || wire.kind === 'event_note') {
+      || wire.kind === 'event_update' || wire.kind === 'event_proposal' || wire.kind === 'event_note'
+      || wire.kind === 'profile') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -400,6 +412,38 @@ export async function sendEventProposal(toHash: string, payload: EventProposalPa
 }
 export async function sendEventNote(toHash: string, payload: EventNotePayload): Promise<void> {
   await sendInlineWire(toHash, { kind: 'event_note', data: payload });
+}
+
+/** Build the profile wire from this device's identity (name + avatar). */
+function myProfileWire(): WirePayload | null {
+  const me = getIdentity();
+  if (!me) return null;
+  return {
+    kind: 'profile',
+    data: {
+      displayName: me.displayName,
+      avatarImage: me.avatarImage,
+      avatarMime: me.avatarMime,
+      ts: new Date().toISOString(),
+    },
+  };
+}
+
+/** Send my current profile (name + avatar) to one peer. */
+export async function sendProfile(toHash: string): Promise<void> {
+  const wire = myProfileWire();
+  if (wire) await sendInlineWire(toHash, wire);
+}
+
+/** Broadcast my profile to every contact — call after an avatar change and
+ *  on relay connect so peers learn (and re-learn) my face. */
+export async function broadcastProfile(): Promise<void> {
+  const wire = myProfileWire();
+  if (!wire) return;
+  const contacts = await listContacts();
+  await Promise.allSettled(
+    contacts.filter((c) => c.publicKeyHex).map((c) => sendInlineWire(c.contactHash, wire)),
+  );
 }
 
 /** Seal-check + enqueue an ephemeral wire to one peer (offline-durable). */
@@ -1028,6 +1072,9 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'event_note' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_note', data: obj.data as EventNotePayload };
       }
+      if (obj.kind === 'profile' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'profile', data: obj.data as ProfilePayload };
+      }
       if (obj.kind === 'system_timer_change' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'system_timer_change', data: obj.data as SystemTimerChangePayload };
       }
@@ -1211,6 +1258,21 @@ export async function applyInboundMessage(
       // A discussion note in the event's planning thread.
       await applyInboundEventNote(wire.data, fromHash);
       return { kind: 'text', threadHash: fromHash };
+    case 'profile': {
+      // Peer shared their display name + avatar. Mirror onto their Contact
+      // so their face shows in the chat list / headers. anti-spoof: the
+      // relay-stamped fromHash decides whose contact row is updated.
+      // avatar fields pass through as-is (undefined = peer cleared it);
+      // displayName only overwrites when non-empty so we never blank it.
+      const patch: { displayName?: string; avatarImage?: string; avatarMime?: string } = {
+        avatarImage: wire.data.avatarImage,
+        avatarMime: wire.data.avatarMime,
+      };
+      const dn = wire.data.displayName?.trim();
+      if (dn) patch.displayName = dn;
+      await updateContact(fromHash, patch);
+      return { kind: 'text', threadHash: fromHash };
+    }
     case 'system_timer_change':
       // R5 — mirror the peer's setting on our Contact + persist a chip.
       await updateContact(fromHash, { disappearingTimerSec: wire.data.timerSec });

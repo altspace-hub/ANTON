@@ -10,7 +10,9 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getIdentity, updateDisplayName, clearIdentity, type CommIdentity } from '../services/identity';
+import { getIdentity, updateDisplayName, updateAvatar, clearAvatar, clearIdentity, type CommIdentity } from '../services/identity';
+import AvatarCircle from '../components/AvatarCircle';
+import { Ico } from '../components/Ico';
 import {
   getReadReceiptsEnabled, setReadReceiptsEnabled,
   getTypingIndicatorEnabled, setTypingIndicatorEnabled,
@@ -157,6 +159,30 @@ export default function SettingsScreen({
     setEditing(false);
   }
 
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  /** Pick a photo, downscale to a small avatar, store it, and broadcast it
+   *  to contacts so peers see your face instead of the name letter. */
+  async function handleChangeAvatar() {
+    if (avatarBusy) return;
+    setAvatarBusy(true);
+    try {
+      const { captureImageFromLibrary, downscaleImageBase64 } = await import('../services/capture');
+      const cap = await captureImageFromLibrary();
+      if (!cap) return;
+      const small = await downscaleImageBase64(cap.data, cap.mimeType, 256, 0.72);
+      const next = updateAvatar(small.base64, small.mimeType);
+      if (next) setIdentity({ ...next });
+      void import('../services/chat').then((m) => m.broadcastProfile());
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+  function handleRemoveAvatar() {
+    const next = clearAvatar();
+    if (next) setIdentity({ ...next });
+    void import('../services/chat').then((m) => m.broadcastProfile());
+  }
+
   async function handleSignOut() {
     if (!confirm(t('settings.deleteConfirm'))) return;
     await clearIdentity();
@@ -207,12 +233,31 @@ export default function SettingsScreen({
       {/* ── Profile ─────────────────────────────────────────── */}
       <SectionHeader label={t('settings.sectionProfile')} />
       <div className="mt-2 flex flex-col items-center">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-semibold"
-          style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
+        <button
+          onClick={() => void handleChangeAvatar()}
+          disabled={avatarBusy}
+          className="relative disabled:opacity-60"
+          aria-label={t('settings.changePhoto', 'Change photo')}
         >
-          {identity.displayName.slice(0, 1).toUpperCase()}
-        </div>
+          <AvatarCircle
+            name={identity.displayName}
+            avatarImage={identity.avatarImage}
+            avatarMime={identity.avatarMime}
+            size={80}
+            className="text-2xl"
+          />
+          <span
+            className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)', border: '2px solid var(--color-bg)' }}
+          >
+            <Ico name="camera" size={14} />
+          </span>
+        </button>
+        {identity.avatarImage && (
+          <button onClick={handleRemoveAvatar} className="mt-2 text-xs text-[var(--color-text-muted)]">
+            {t('settings.removePhoto', 'Remove photo')}
+          </button>
+        )}
         {editing ? (
           <div className="mt-3 w-full max-w-xs">
             <input
