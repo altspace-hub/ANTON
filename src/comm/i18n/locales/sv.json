@@ -593,7 +593,11 @@
     "networkFee": "Nätverksavgift",
     "payingTo": "Betalar till {{name}}",
     "total": "Totalt",
-    "youPay": "Du betalar"
+    "youPay": "Du betalar",
+    "noteLabel": "Lägg till en anteckning (valfritt)",
+    "notePlaceholder": "För dina egna anteckningar — vad betalningen avser.",
+    "bodyLabel": "Information / avtalstext",
+    "bodyPlaceholder": "Skriv informationen eller avtalet som ska skickas till mottagaren…"
   },
   "travelRule": {
     "fullBody": "Den här betalningen överstiger EU:s reseregel-tröskel (€1000). EU 2023/1113 kräver att avsändarens adressuppgifter inkluderas.",

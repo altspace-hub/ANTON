@@ -50,6 +50,9 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
   const [assessment, setAssessment] = useState<FraudAssessment | null>(null);
   const [armed, setArmed] = useState(false);
   const [paymentType, setPaymentType] = useState<PaymentType>(DEFAULT_PAYMENT_TYPE);
+  /** #77 — free-text body. Carried in RmtInf so the recipient can read it back.
+   *  The input grows into a large window for Information / Contract. */
+  const [customerNote, setCustomerNote] = useState('');
   const [quote, setQuote] = useState<Quote | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,10 +197,14 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
     setError(null);
     try {
       const ftc = Number(parsed.amountMicroFtc) / 1_000_000;
+      const trimmedNote = customerNote.trim();
       const sent = await sendOnChain({
         to: parsed.to,
         amountMicroFtc: parsed.amountMicroFtc,
         remittanceText: parsed.ref ?? null,
+        // #77 — carry the Information/Contract body + type in RmtInf.
+        note: trimmedNote || null,
+        paymentType,
         creditor: parsed.creditor
           ? { name: parsed.creditor.name, countryOfResidence: parsed.creditor.country }
           : null,
@@ -213,7 +220,9 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
         txHash: sent.txId,
         // #79 — stamp the declared tax residency (#75) at disposal time.
         jurisdictionAtTx: residency?.jurisdictionCode ?? null,
-        note: parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined,
+        // #77 — keep the sender's own text on the local row so the detail
+        // screen shows it; fall back to the order summary.
+        note: trimmedNote || (parsed.inv ? `Order ${parsed.inv} · ${ftc.toFixed(4)} FTC` : undefined),
         pacs008: draft ?? undefined,
         risk: assessment ?? undefined,
         paymentType,
@@ -296,6 +305,38 @@ export default function WalletReviewScreen({ parsed, onBack, onConfirmed }: Prop
               'Only "Payment" counts toward tax. Gift, Information and Contract are exempt.')}
           </div>
         </div>
+
+        {/* #77 — free-text body. A large window for Information / Contract so the
+            user can write the full information / agreement; a compact note
+            otherwise. The text travels in RmtInf (ANTON-V1) and the recipient
+            files it under the same category. */}
+        {(() => {
+          const big = paymentType === 'information' || paymentType === 'contract';
+          return (
+            <div className="mt-4">
+              <div className="text-xs uppercase tracking-wider mb-1 text-[var(--color-text-faint)]">
+                {big ? t('review.bodyLabel', 'Information / agreement text')
+                  : t('review.noteLabel', 'Add a note (optional)')}
+              </div>
+              <textarea
+                value={customerNote}
+                onChange={(e) => setCustomerNote(e.target.value)}
+                placeholder={big
+                  ? t('review.bodyPlaceholder', 'Write the information or agreement to send to the recipient…')
+                  : t('review.notePlaceholder', 'For your own records — what this payment is for.')}
+                rows={big ? 6 : 2}
+                maxLength={2000}
+                className="w-full px-3 py-2 rounded-lg text-sm bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)]"
+                style={{ resize: 'vertical' }}
+              />
+              {customerNote.length > 0 && (
+                <div className="text-xs mt-1 text-right text-[var(--color-text-faint)]">
+                  {customerNote.length}/2000
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ISO 20022 accordion */}
         {draft && (

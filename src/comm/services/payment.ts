@@ -97,10 +97,32 @@ export interface SendInput {
   amountMicroFtc: bigint;
   /** Optional remittance text — placed in PACS.008 `RmtInf.Ustrd`. */
   remittanceText?: string | null;
+  /** #77 — the sender's free-text Information/Contract body. Packed into the
+   *  structured ANTON-V1 remittance (`message`) so the recipient can read it
+   *  back; ISO-safe sanitized before it goes on the wire. */
+  note?: string | null;
+  /** #77 — the sender's payment classification. When not 'payment' it is tagged
+   *  into the remittance `meta.fcType` so the recipient files it under the same
+   *  Information/Contract category. */
+  paymentType?: string | null;
   /** Optional ISO 20022 creditor party — passed to `buildPacs008` as
    *  the creditor side. Falls back to a minimal `{name: to, …}` when
    *  unknown (the QR may not carry full creditor details). */
   creditor?: { name: string; countryOfResidence?: string } | null;
+}
+
+/** Strip control chars + collapse whitespace so the text is a clean single
+ *  ISO-20022-safe string for RmtInf (#77). Hard-capped so the encoded
+ *  remittance stays well under the SDK's chain budget. */
+function sanitizeNote(s: string): string {
+  // Drop C0 control chars + DEL via codepoint filter (no control-char regex
+  // literal), collapse whitespace -> clean single-line ISO-safe string.
+  let out = '';
+  for (const ch of s) {
+    const c = ch.codePointAt(0) ?? 0;
+    out += (c < 32 || c === 127) ? ' ' : ch;
+  }
+  return out.replace(/\s+/g, ' ').trim().slice(0, 2000);
 }
 
 export interface SendResult {
@@ -208,11 +230,31 @@ export async function sendOnChain(input: SendInput, options?: SendOptions): Prom
     countryOfResidence: input.creditor?.countryOfResidence ?? 'SE',
   };
 
+  // #77 — when the sender attached Information/Contract text or chose a non-
+  // 'payment' type, pack a structured ANTON-V1 remittance (message + meta.fcType)
+  // so the recipient can decode it and file it under the same category. Else
+  // fall back to the flat single-line ref.
+  const cleanNote = input.note ? sanitizeNote(input.note) : '';
+  const tagged = !!input.paymentType && input.paymentType !== 'payment';
+  let remittanceInfo: ReturnType<typeof pacs008.encodeRemittance>['rmtInf'] | undefined;
+  if (cleanNote || tagged) {
+    const merged: pacs008.AntonRemittance = {
+      v: 1,
+      kind: 'message',
+      ...(cleanNote ? { message: cleanNote } : {}),
+      ...(tagged ? { meta: { fcType: input.paymentType! } } : {}),
+    };
+    try { remittanceInfo = pacs008.encodeRemittance(merged).rmtInf; }
+    catch { /* over the SDK hard cap — fall back to the flat ref below */ }
+  }
+
   const message = pacs008.buildPacs008({
     debtor,
     creditor,
     amountFtc,
-    remittanceText: input.remittanceText ?? undefined,
+    ...(remittanceInfo
+      ? { remittanceInfo }
+      : { remittanceText: input.remittanceText ?? undefined }),
   });
   const uetr = extractUetr(message);
 

@@ -593,7 +593,11 @@
     "networkFee": "Network fee",
     "payingTo": "Paying to {{name}}",
     "total": "Total",
-    "youPay": "You pay"
+    "youPay": "You pay",
+    "noteLabel": "Add a note (optional)",
+    "notePlaceholder": "For your own records — what this payment is for.",
+    "bodyLabel": "Information / agreement text",
+    "bodyPlaceholder": "Write the information or agreement to send to the recipient…"
   },
   "travelRule": {
     "fullBody": "This payment exceeds the EU Travel Rule threshold (€1000). EU 2023/1113 requires the originator address fields to be included.",
