@@ -12,7 +12,7 @@
  * chunk if Vite splits.
  */
 import { useEffect, useState } from 'react';
-import { hasWallet, loadWallet } from '../services/wallet';
+import { hasWallet, getActiveWalletMeta } from '../services/wallet';
 import { needsResidencyPrompt } from '../services/tax-residency';
 import { listContacts, buildContactNameMap } from '../services/address-book';
 import type { WalletTx } from '../services/transactions';
@@ -99,8 +99,15 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
 
   async function refresh() {
     if (await hasWallet()) {
-      const w = await loadWallet();
-      setAddress(w?.address ?? null);
+      // Display address comes from the wallet META, not loadWallet(): after the
+      // Wave-7 native-signer migration (triggered by the first send) the raw
+      // private key is moved into the Keystore-bound signer and erased from
+      // secure-store, so loadWallet() returns null for a perfectly good wallet
+      // — which used to strand the user on the "configure wallet" screen with no
+      // way back in. The meta always carries the address; signing still works
+      // via the native signer.
+      const meta = await getActiveWalletMeta();
+      setAddress(meta?.address ?? null);
       setView('balance');
     } else {
       setView('connect');

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
 import ActiveSyncBanner from '../components/ActiveSyncBanner';
-import { loadWallet } from '../services/wallet';
+import { getActiveWalletMeta } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
 import { buildActivity } from '../services/activity';
@@ -57,7 +57,11 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const wallet = await loadWallet();
+      // Address from the wallet META, not loadWallet(): after the Wave-7
+      // native-signer migration the raw priv leaves secure-store, so
+      // loadWallet() returns null for a good wallet. The meta always has the
+      // address; signing still works via the native signer.
+      const wallet = await getActiveWalletMeta();
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
       // Instant paint from the local cache.
