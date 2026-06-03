@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listTxs, type WalletTx } from '../../services/transactions';
+import { groupTxsByDay } from '../../services/tx-grouping';
 import { listContacts, buildContactNameMap, resolveName } from '../../services/address-book';
 import PaymentTypeBadge from '../../components/PaymentTypeBadge';
 import StatusPill from '../../components/StatusPill';
@@ -35,6 +36,15 @@ export default function WalletHistoryScreen({ onBack, onOpen }: Props) {
   const filtered = typeFilter === 'all'
     ? txs
     : txs.filter((tx) => tx.paymentType === typeFilter);
+
+  // Bucket into per-day groups with sticky "Today / Yesterday / <date>" headers.
+  const groups = groupTxsByDay(filtered, {
+    today: t('history.today', 'Today'),
+    yesterday: t('history.yesterday', 'Yesterday'),
+    formatDate: (ms) => new Date(ms).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+    }),
+  }, Date.now());
 
   return (
     <section className="flex flex-col h-full safe-bottom">
@@ -71,13 +81,23 @@ export default function WalletHistoryScreen({ onBack, onOpen }: Props) {
                 {t('wallet.filterEmpty', 'No payments of this type yet')}
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
-                {filtered.map((tx) => (
-                  <li key={tx.id}>
-                    <Row tx={tx} contactNames={contactNames} onOpen={() => onOpen(tx)} />
-                  </li>
+              <div className="flex flex-col gap-3">
+                {groups.map((group) => (
+                  <div key={group.dayKey}>
+                    {/* Sticky per-day header. */}
+                    <div className="sticky top-0 z-10 py-1.5 mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-faint)] bg-[var(--color-bg)]">
+                      {group.label}
+                    </div>
+                    <ul className="flex flex-col gap-1.5">
+                      {group.items.map((tx) => (
+                        <li key={tx.id}>
+                          <Row tx={tx} contactNames={contactNames} onOpen={() => onOpen(tx)} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </>
         )}

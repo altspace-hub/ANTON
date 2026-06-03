@@ -845,5 +845,9 @@
   },
   "passphrase": {
     "revealReason": "Enter your wallet passphrase to reveal the recovery phrase."
+  },
+  "history": {
+    "today": "Today",
+    "yesterday": "Yesterday"
   }
 }

@@ -845,5 +845,9 @@
   },
   "passphrase": {
     "revealReason": "Ange din plånbokslösenfras för att visa återställningsfrasen."
+  },
+  "history": {
+    "today": "Idag",
+    "yesterday": "Igår"
   }
 }
