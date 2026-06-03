@@ -50,7 +50,12 @@ export default function ReceiveScreen({ onBack }: Props) {
   const [microFtc, setMicroFtc] = useState<bigint>(0n);
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
-  const [qrMode, setQrMode] = useState<QrMode>('static');
+  // #84 — default to the rich/animated QR (it carries the receiver's
+  // creditor identity so a scan auto-completes the payment). Falls back to
+  // the static address-only QR when there's no rich payload (no amount /
+  // no identity). `userPickedStatic` keeps an explicit Static choice sticky.
+  const [qrMode, setQrMode] = useState<QrMode>('animated');
+  const [userPickedStatic, setUserPickedStatic] = useState(false);
   /** The receiver's saved ISO 20022 party — becomes the *creditor* on
    *  the rich animated URI. Null until loaded / when the user hasn't
    *  filled in a payment identity yet. */
@@ -106,12 +111,14 @@ export default function ReceiveScreen({ onBack }: Props) {
     : null;
   const animatedAvailable = richUri !== null;
 
-  // If the rich payload disappears (e.g. the user clears the amount)
-  // while Animated is selected, fall back to static so we never render
-  // the animated component with a null/compact payload.
+  // Default to animated whenever the rich payload exists (unless the user
+  // explicitly chose Static); fall back to static when it disappears (e.g.
+  // the amount is cleared) so we never render the animated component with a
+  // null/compact payload.
   useEffect(() => {
-    if (qrMode === 'animated' && !animatedAvailable) setQrMode('static');
-  }, [qrMode, animatedAvailable]);
+    if (!animatedAvailable) setQrMode('static');
+    else if (!userPickedStatic) setQrMode('animated');
+  }, [animatedAvailable, userPickedStatic]);
 
   async function share() {
     if (!meta) return;
@@ -190,7 +197,7 @@ export default function ReceiveScreen({ onBack }: Props) {
             <div className="self-center mb-3 inline-flex rounded-lg overflow-hidden"
                  style={{ border: '1px solid var(--color-border)' }}>
               <button type="button"
-                      onClick={() => setQrMode('static')}
+                      onClick={() => { setUserPickedStatic(true); setQrMode('static'); }}
                       className="px-3 py-1.5 text-xs font-semibold"
                       style={{
                         backgroundColor: qrMode === 'static'
@@ -201,7 +208,7 @@ export default function ReceiveScreen({ onBack }: Props) {
                 {t('receive.qrStatic', 'Static')}
               </button>
               <button type="button"
-                      onClick={() => animatedAvailable && setQrMode('animated')}
+                      onClick={() => { if (animatedAvailable) { setUserPickedStatic(false); setQrMode('animated'); } }}
                       disabled={!animatedAvailable}
                       title={animatedAvailable
                         ? undefined

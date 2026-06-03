@@ -28,7 +28,12 @@ export default function WalletReceiveScreen({ address, onBack }: Props) {
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const [amountFtc, setAmountFtc] = useState('');
-  const [animated, setAnimated] = useState(false);
+  // #84 — default to the rich/animated QR (carries the receiver's creditor
+  // identity so a scan auto-completes the payment). `showAnimated =
+  // animated && canAnimate` falls back to the static address QR whenever
+  // there's no rich payload (no amount / no identity); an explicit Static
+  // tap sets animated=false and sticks.
+  const [animated, setAnimated] = useState(true);
   const [identity, setIdentity] = useState<PayerIdentity | null>(null);
   const [label, setLabel] = useState<string | undefined>(undefined);
 
