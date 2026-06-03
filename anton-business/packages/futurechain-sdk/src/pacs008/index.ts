@@ -286,6 +286,12 @@ export interface Pacs008Party {
 export interface Pacs008BuildInput {
   debtor: Pacs008Party;
   creditor: Pacs008Party;
+  /** Optional Ultimate Debtor (`UltmtDbtr`) — the party that ultimately owes,
+   *  distinct from the `Dbtr` that initiates. Used by ANTON agent wallets: the
+   *  agent acts as the `Dbtr` ("ANTON <addr6>") while the human owner is
+   *  disclosed here as the UBO. Emitted only when set, so existing flows are
+   *  byte-identical. */
+  ultimateDebtor?: Pacs008Party;
   /** Amount in FTC (a decimal — e.g. 1.00). The on-wire representation is
    *  a JSON number; the chain stores satoshis (1 FTC = 1e8 satoshi) on
    *  outputs separately. */
@@ -328,6 +334,7 @@ export class Pacs008Builder {
 
   debtor(p: Pacs008Party): this { this.partial.debtor = p; return this; }
   creditor(p: Pacs008Party): this { this.partial.creditor = p; return this; }
+  ultimateDebtor(p: Pacs008Party): this { this.partial.ultimateDebtor = p; return this; }
   amountFtc(v: number): this { this.partial.amountFtc = v; return this; }
   uetr(v: string): this { this.partial.uetr = v; return this; }
   remittance(v: string): this { this.partial.remittanceText = v; return this; }
@@ -393,6 +400,9 @@ export function buildPacs008(input: Pacs008BuildInput): Pacs008Message {
           ChrgBr: 'SLEV',
           Dbtr: isoParty(input.debtor),
           DbtrAcct: { Id: { Othr: { Id: input.debtor.accountId } } },
+          // Ultimate Debtor — the UBO behind an agent/ delegated payment.
+          // Emitted only when supplied so existing messages are unchanged.
+          ...(input.ultimateDebtor ? { UltmtDbtr: isoParty(input.ultimateDebtor) } : {}),
           DbtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
           CdtrAgt: { FinInstnId: { BICFI: bic, Nm: DEFAULT_BANK_NAME } },
           Cdtr: isoParty(input.creditor),

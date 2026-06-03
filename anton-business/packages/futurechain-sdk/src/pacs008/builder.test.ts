@@ -222,3 +222,30 @@ describe('buildSignedPacs008Transaction', () => {
     ).toThrow(/insufficient/);
   });
 });
+
+// #88 — Ultimate Debtor (UBO) for ANTON agent payments.
+describe('buildPacs008 ultimateDebtor (UltmtDbtr / UBO)', () => {
+  const base = {
+    debtor: { name: 'ANTON VQjZM7', accountId: 'fc_VQjZM7gjtQF1cUtahiPCLmns31c18yTvyY', countryOfResidence: 'SE' },
+    creditor: { name: 'Bob', accountId: 'fc_creditoraddr00000000000000000000', countryOfResidence: 'SE' },
+    amountFtc: 1,
+  };
+
+  it('omits UltmtDbtr when no ultimateDebtor is supplied', () => {
+    const tx = buildPacs008(base) as any;
+    const inf = tx.document.FIToFICstmrCdtTrf.CdtTrfTxInf[0];
+    expect(inf.UltmtDbtr).toBeUndefined();
+    expect(inf.Dbtr.Nm).toBe('ANTON VQjZM7');
+  });
+
+  it('emits UltmtDbtr.Nm = the UBO while Dbtr stays the agent identity', () => {
+    const tx = buildPacs008({
+      ...base,
+      ultimateDebtor: { name: 'Daniel Bardun', accountId: base.debtor.accountId, countryOfResidence: 'SE' },
+    }) as any;
+    const inf = tx.document.FIToFICstmrCdtTrf.CdtTrfTxInf[0];
+    expect(inf.Dbtr.Nm).toBe('ANTON VQjZM7');       // agent acts as the debtor
+    expect(inf.UltmtDbtr.Nm).toBe('Daniel Bardun');  // human disclosed as the UBO
+    expect(inf.UltmtDbtr.CtryOfRes).toBe('SE');
+  });
+});
