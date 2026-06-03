@@ -560,8 +560,14 @@ export async function executePayment(
     // (or the customer added a note), build the rich RmtInf and pass
     // it through instead of the legacy single-line `remittanceText`.
     const trimmedNote = (customerNote ?? '').trim();
+    // #77 — tag the sender's payment classification (Information / Contract /
+    // Gift) into the remittance `meta` so the recipient can file it under the
+    // same category. 'payment' is the default and needs no tag. We also force
+    // the rich-remittance path for a tagged type even without a note, so the
+    // type always travels (the recipient reads meta.fcType via decodeRemittance).
+    const tagged = paymentType !== DEFAULT_PAYMENT_TYPE;
     let remittanceInfo: ReturnType<typeof pacs008.encodeRemittance>['rmtInf'] | undefined;
-    if (decoded.orderEnvelope || trimmedNote) {
+    if (decoded.orderEnvelope || trimmedNote || tagged) {
       const merged: pacs008.AntonRemittance = decoded.orderEnvelope
         ? { ...decoded.orderEnvelope, ...(trimmedNote ? { message: trimmedNote } : {}) }
         : {
@@ -570,6 +576,7 @@ export async function executePayment(
             ref: decoded.orderId,
             ...(trimmedNote ? { message: trimmedNote } : {}),
           };
+      if (tagged) merged.meta = { ...(merged.meta ?? {}), fcType: paymentType };
       try {
         const encoded = pacs008.encodeRemittance(merged);
         remittanceInfo = encoded.rmtInf;

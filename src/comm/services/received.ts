@@ -19,9 +19,11 @@
  * Parser parity with src/pay/services/received.ts so the chain shape
  * tuning stays in one mental model.
  */
+import { pacs008 } from '@futurechain/sdk';
 import { getActiveWalletMeta } from './wallets';
 import { getRpc } from './fc-rpc';
 import { listTxs, recordTx, deleteTx, type WalletTx } from './transactions';
+import { PAYMENT_TYPES, paymentTypeMeta, type PaymentType } from './payment-type';
 
 export interface FreshIncoming {
   /** The WalletTx row that was persisted. */
@@ -64,11 +66,19 @@ export async function pollIncomingOnce(): Promise<FreshIncoming[]> {
         // can edit it from the tx detail view if needed for tax.
         fiatValueAtTx: 0,
         fiatCurrency: 'FTC',
-        ref: normalised.remittance ?? null,
+        // Keep the raw Ustrd summary as the ref only when there's no decoded
+        // note — otherwise it just duplicates the note under "Reference".
+        ref: normalised.note ? null : (normalised.remittance ?? null),
         txHash: normalised.txHash,
         jurisdictionAtTx: null,
         ts: normalised.receivedAt,
         walletAddress: meta.address, // the wallet that received it (the polled wallet)
+        // #77 — file the inbound payment under the sender's classification so it
+        // shows under the same Information/Contract filter on the recipient side.
+        ...(normalised.paymentType
+          ? { paymentType: normalised.paymentType, taxable: paymentTypeMeta(normalised.paymentType).taxable }
+          : {}),
+        ...(normalised.note ? { note: normalised.note } : {}),
       });
       knownHashes.add(normalised.txHash);
       fresh.push({ tx, fromName: normalised.fromName });
@@ -200,6 +210,17 @@ interface Normalised {
   amountMicroFtc: bigint;
   remittance?: string;
   receivedAt: number;
+  /** #77 — the sender's classification (Information / Contract / Gift),
+   *  decoded from the ANTON-V1 remittance `meta.fcType`. Lets the recipient
+   *  file the inbound payment under the same category as the sender. */
+  paymentType?: PaymentType;
+  /** #77 — the sender's free-text Information/Contract body, decoded from the
+   *  remittance `message`. Cleaner than the raw Ustrd summary. */
+  note?: string;
+}
+
+function isPaymentType(v: unknown): v is PaymentType {
+  return typeof v === 'string' && (PAYMENT_TYPES as readonly string[]).includes(v);
 }
 
 function normaliseItem(raw: unknown, _myAddress: string): Normalised | null {
@@ -253,6 +274,29 @@ function normaliseItem(raw: unknown, _myAddress: string): Normalised | null {
     ? remRaw.filter(s => typeof s === 'string').join(' ')
     : typeof remRaw === 'string' ? remRaw : undefined;
 
+  // #77 — decode the structured ANTON-V1 remittance (if the hub returned the
+  // full RmtInf incl. Strd.AddtlRmtInf). meta.fcType carries the sender's
+  // payment classification; message carries the Information/Contract text.
+  // Degrades silently to the plain Ustrd `remittance` above when absent.
+  const rmtInf = pick(raw, [
+    ['document', 'FIToFICstmrCdtTrf', 'CdtTrfTxInf', '0', 'RmtInf'],
+    ['CdtTrfTxInf', '0', 'RmtInf'],
+    ['RmtInf'],
+  ]);
+  let paymentType: PaymentType | undefined;
+  let note: string | undefined;
+  if (rmtInf) {
+    try {
+      const decoded = pacs008.decodeRemittance(rmtInf);
+      if (decoded) {
+        const ft = decoded.meta?.fcType;
+        if (isPaymentType(ft) && ft !== 'payment') paymentType = ft;
+        const msg = decoded.message ?? decoded.decision ?? decoded.terms;
+        if (typeof msg === 'string' && msg.trim()) note = msg.trim();
+      }
+    } catch { /* malformed envelope — keep the plain Ustrd remittance */ }
+  }
+
   let receivedAt = Date.now();
   const cre = pick(raw, [
     ['document', 'FIToFICstmrCdtTrf', 'GrpHdr', 'CreDtTm'],
@@ -275,5 +319,7 @@ function normaliseItem(raw: unknown, _myAddress: string): Normalised | null {
     amountMicroFtc,
     remittance,
     receivedAt,
+    paymentType,
+    note,
   };
 }
