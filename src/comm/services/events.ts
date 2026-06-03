@@ -27,7 +27,7 @@
  *   }
  */
 
-import { openDb, STORE_EVENTS } from './db';
+import { openDb, STORE_EVENTS, STORE_EVENT_NOTES, INDEX_EVENT_NOTE_BY_EVENT } from './db';
 
 export type EventType =
   | 'dinner'
@@ -102,6 +102,24 @@ export const EVENT_TYPE_ICONS: Record<EventType, string> = {
 
 export type RsvpStatus = 'pending' | 'going' | 'maybe' | 'declined';
 
+/** A time/place counter-proposal from an invitee (collaborative planning).
+ *  Stored on the event so every device that syncs the event sees the same
+ *  suggestions. Only the creator can resolve (accept/decline) a proposal. */
+export interface EventProposal {
+  id: string;
+  /** Contact hash of the proposer (relay-stamped on inbound — anti-spoof). */
+  fromHash: string;
+  /** Display name of the proposer at proposal time (so peers needn't be in
+   *  the contact book to render it). */
+  fromName: string;
+  proposedStartAt?: string;
+  proposedEndAt?: string;
+  proposedLocation?: string;
+  note?: string;
+  ts: string;
+  status: 'open' | 'accepted' | 'declined';
+}
+
 export interface CommEvent {
   id: string;
   createdBy: string;
@@ -121,6 +139,21 @@ export interface CommEvent {
   /** R11 — minutes before startAt to fire a local notification.
    *  undefined/null = no reminder. */
   reminderMinutesBefore?: number | null;
+  /** Collaborative time/place counter-proposals (invitees → creator). */
+  proposals?: EventProposal[];
+  /** Contact hash of whoever last amended the event (for "updated by X"). */
+  lastUpdatedBy?: string;
+}
+
+/** In-event discussion note (lightweight chat thread scoped to one event,
+ *  stored in its own IDB store so it never clutters the 1:1 chat thread). */
+export interface EventNote {
+  id: string;
+  eventId: string;
+  fromHash: string;
+  fromName: string;
+  text: string;
+  ts: string;
 }
 
 // ── ID generation (ULID-ish) ─────────────────────────────────────────
@@ -324,4 +357,204 @@ export function eventToInvitePayload(event: CommEvent): EventInvitePayload {
     description: event.description,
     invitees: event.invitees,
   };
+}
+
+// ── Amend / participants (event_update) ──────────────────────────────
+
+/** Broadcast snapshot of an event after an edit, add-participants, or a
+ *  proposal being accepted. Carries the full mutable state so a recipient
+ *  who missed the original invite can still create the event locally. */
+export interface EventUpdatePayload {
+  id: string;
+  title: string;
+  eventType: EventType;
+  startAt: string;
+  endAt?: string;
+  allDay: boolean;
+  location?: string;
+  description?: string;
+  invitees: string[];
+  proposals?: EventProposal[];
+  canceled?: boolean;
+  /** Contact hash of the editor (authoritative is the relay-stamped sender). */
+  updatedBy: string;
+}
+
+export function eventToUpdatePayload(event: CommEvent, updatedBy: string): EventUpdatePayload {
+  return {
+    id: event.id,
+    title: event.title,
+    eventType: event.eventType,
+    startAt: event.startAt,
+    endAt: event.endAt,
+    allDay: event.allDay,
+    location: event.location,
+    description: event.description,
+    invitees: event.invitees,
+    proposals: event.proposals,
+    canceled: event.canceled,
+    updatedBy,
+  };
+}
+
+/**
+ * Apply an inbound event_update from a peer. Create-or-merge (a late-added
+ * participant may never have seen the original invite). Never overwrites
+ * this device's own RSVP (`myStatus`) or the locally-known `rsvps` map
+ * beyond ensuring the creator is recorded.
+ */
+export async function applyInboundUpdate(
+  payload: EventUpdatePayload,
+  fromHash: string,
+): Promise<CommEvent> {
+  const existing = await getEvent(payload.id);
+  const now = new Date().toISOString();
+  const base: CommEvent = existing ?? {
+    id: payload.id,
+    createdBy: fromHash,
+    title: payload.title,
+    eventType: payload.eventType,
+    startAt: payload.startAt,
+    allDay: payload.allDay,
+    invitees: payload.invitees,
+    rsvps: { [fromHash]: 'going' },
+    myStatus: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    canceled: false,
+  };
+  const merged: CommEvent = {
+    ...base,
+    title: payload.title,
+    eventType: payload.eventType,
+    startAt: payload.startAt,
+    endAt: payload.endAt,
+    allDay: payload.allDay,
+    location: payload.location,
+    description: payload.description,
+    invitees: payload.invitees,
+    proposals: mergeProposals(base.proposals, payload.proposals),
+    canceled: payload.canceled ?? base.canceled,
+    lastUpdatedBy: fromHash,
+    updatedAt: now,
+  };
+  await putEvent(merged);
+  return merged;
+}
+
+// ── Time/place proposals (event_proposal) ────────────────────────────
+
+export interface EventProposalPayload {
+  eventId: string;
+  proposal: EventProposal;
+}
+
+function mergeProposals(a?: EventProposal[], b?: EventProposal[]): EventProposal[] | undefined {
+  if (!a && !b) return undefined;
+  const byId = new Map<string, EventProposal>();
+  for (const p of a ?? []) byId.set(p.id, p);
+  // Later wins, but a resolved (accepted/declined) status is sticky so a
+  // late-arriving 'open' copy can't un-resolve a decision.
+  for (const p of b ?? []) {
+    const prev = byId.get(p.id);
+    if (prev && prev.status !== 'open' && p.status === 'open') continue;
+    byId.set(p.id, p);
+  }
+  return [...byId.values()].sort((x, y) => x.ts.localeCompare(y.ts));
+}
+
+export function newProposalId(): string {
+  return 'p_' + generateEventId();
+}
+
+/** Add/merge a proposal onto the local event copy. */
+export async function addProposalToEvent(eventId: string, proposal: EventProposal): Promise<CommEvent | null> {
+  const existing = await getEvent(eventId);
+  if (!existing) return null;
+  const next: CommEvent = {
+    ...existing,
+    proposals: mergeProposals(existing.proposals, [proposal]),
+    updatedAt: new Date().toISOString(),
+  };
+  await putEvent(next);
+  return next;
+}
+
+/** Apply an inbound proposal — anti-spoof: stamp the relay `fromHash`. */
+export async function applyInboundProposal(
+  payload: EventProposalPayload,
+  fromHash: string,
+): Promise<CommEvent | null> {
+  return addProposalToEvent(payload.eventId, { ...payload.proposal, fromHash });
+}
+
+/** Creator resolves a proposal (accept/decline) locally. */
+export async function resolveProposal(
+  eventId: string,
+  proposalId: string,
+  status: 'accepted' | 'declined',
+): Promise<CommEvent | null> {
+  const existing = await getEvent(eventId);
+  if (!existing?.proposals) return existing;
+  const next: CommEvent = {
+    ...existing,
+    proposals: existing.proposals.map((p) => (p.id === proposalId ? { ...p, status } : p)),
+    updatedAt: new Date().toISOString(),
+  };
+  await putEvent(next);
+  return next;
+}
+
+// ── In-event notes (event_note) ──────────────────────────────────────
+
+export interface EventNotePayload {
+  eventId: string;
+  noteId: string;
+  fromHash: string;
+  fromName: string;
+  text: string;
+  ts: string;
+}
+
+export function newNoteId(): string {
+  return 'n_' + generateEventId();
+}
+
+export async function listEventNotes(eventId: string): Promise<EventNote[]> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_EVENT_NOTES, 'readonly');
+    const req = tx.objectStore(STORE_EVENT_NOTES).index(INDEX_EVENT_NOTE_BY_EVENT).getAll(eventId);
+    req.onsuccess = () => {
+      const rows = (req.result as EventNote[]) ?? [];
+      rows.sort((a, b) => a.ts.localeCompare(b.ts));
+      resolve(rows);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function addEventNote(note: EventNote): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_EVENT_NOTES, 'readwrite');
+    tx.objectStore(STORE_EVENT_NOTES).put(note);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Apply an inbound note — anti-spoof: stamp the relay `fromHash`. */
+export async function applyInboundEventNote(
+  payload: EventNotePayload,
+  fromHash: string,
+): Promise<void> {
+  await addEventNote({
+    id: payload.noteId,
+    eventId: payload.eventId,
+    fromHash,
+    fromName: payload.fromName,
+    text: payload.text,
+    ts: payload.ts,
+  });
 }

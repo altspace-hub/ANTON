@@ -21,9 +21,15 @@ import { getRelayClient } from './relay-client';
 import {
   applyInboundInvite,
   applyInboundRsvp,
+  applyInboundUpdate,
+  applyInboundProposal,
+  applyInboundEventNote,
   type EventInvitePayload,
   type EventRsvpPayload,
   type EventCancelPayload,
+  type EventUpdatePayload,
+  type EventProposalPayload,
+  type EventNotePayload,
 } from './events';
 import {
   applyInboundPost,
@@ -201,6 +207,9 @@ export type WirePayload =
   | { kind: 'event_invite';  data: EventInvitePayload }
   | { kind: 'event_rsvp';    data: EventRsvpPayload }
   | { kind: 'event_cancel';  data: EventCancelPayload }
+  | { kind: 'event_update';  data: EventUpdatePayload }
+  | { kind: 'event_proposal'; data: EventProposalPayload }
+  | { kind: 'event_note';    data: EventNotePayload }
   | { kind: 'system_timer_change'; data: SystemTimerChangePayload }
   | { kind: 'wassup_post';   data: WassupPostWire }
   | { kind: 'wassup_like';   data: WassupLikeWire }
@@ -314,7 +323,8 @@ export async function sendStructuredMessage(
       || wire.kind === 'react' || wire.kind === 'view_once_viewed'
       || wire.kind === 'poll_vote' || wire.kind === 'edit' || wire.kind === 'delete'
       || wire.kind === 'presence_read' || wire.kind === 'presence_typing'
-      || wire.kind === 'location_update') {
+      || wire.kind === 'location_update'
+      || wire.kind === 'event_update' || wire.kind === 'event_proposal' || wire.kind === 'event_note') {
     throw new ChatError(`Wire kind ${wire.kind} should not be persisted as a ChatMessage`, 'INVALID_KIND');
   }
 
@@ -373,6 +383,33 @@ export async function sendEventRsvp(creatorHash: string, payload: EventRsvpPaylo
 /** Send an event_cancel to all original invitees. */
 export async function sendEventCancel(toHash: string, payload: EventCancelPayload): Promise<ChatMessage> {
   return sendStructuredMessage(toHash, { kind: 'event_cancel', data: payload });
+}
+
+/**
+ * Event-collaboration wires (amend / proposal / note). These are
+ * ephemeral inline payloads — they sync event state silently and never
+ * appear as chat bubbles. Each targets ONE peer; callers loop over the
+ * participant set. persistent=true so they survive an offline peer and
+ * retry from the inline outbox.
+ */
+export async function sendEventUpdate(toHash: string, payload: EventUpdatePayload): Promise<void> {
+  await sendInlineWire(toHash, { kind: 'event_update', data: payload });
+}
+export async function sendEventProposal(toHash: string, payload: EventProposalPayload): Promise<void> {
+  await sendInlineWire(toHash, { kind: 'event_proposal', data: payload });
+}
+export async function sendEventNote(toHash: string, payload: EventNotePayload): Promise<void> {
+  await sendInlineWire(toHash, { kind: 'event_note', data: payload });
+}
+
+/** Seal-check + enqueue an ephemeral wire to one peer (offline-durable). */
+async function sendInlineWire(peerContactHash: string, wire: WirePayload): Promise<void> {
+  const me = getIdentity();
+  if (!me) throw new ChatError('No identity', 'NO_IDENTITY');
+  const contact = await getContact(peerContactHash);
+  if (!contact?.publicKeyHex) return; // no key yet — nothing to send to
+  const client = getRelayClient();
+  if (client) await client.sendInlinePayload(peerContactHash, JSON.stringify(wire), { persistent: true });
 }
 
 /** Send an image attachment (base64 already in the payload). */
@@ -982,6 +1019,15 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'event_cancel' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'event_cancel', data: obj.data as EventCancelPayload };
       }
+      if (obj.kind === 'event_update' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_update', data: obj.data as EventUpdatePayload };
+      }
+      if (obj.kind === 'event_proposal' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_proposal', data: obj.data as EventProposalPayload };
+      }
+      if (obj.kind === 'event_note' && typeof obj.data === 'object' && obj.data) {
+        return { kind: 'event_note', data: obj.data as EventNotePayload };
+      }
       if (obj.kind === 'system_timer_change' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'system_timer_change', data: obj.data as SystemTimerChangePayload };
       }
@@ -1151,6 +1197,20 @@ export async function applyInboundMessage(
       plaintext = JSON.stringify(wire.data);
       kind = 'event_cancel';
       break;
+    // ── Event-collaboration mutators (no visible bubble) ──────────────
+    case 'event_update':
+      // Peer (creator) amended the event / added participants / accepted a
+      // proposal. Create-or-merge; never clobbers our own RSVP.
+      await applyInboundUpdate(wire.data, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'event_proposal':
+      // An invitee proposed a new time/place. anti-spoof: stamp fromHash.
+      await applyInboundProposal(wire.data, fromHash);
+      return { kind: 'text', threadHash: fromHash };
+    case 'event_note':
+      // A discussion note in the event's planning thread.
+      await applyInboundEventNote(wire.data, fromHash);
+      return { kind: 'text', threadHash: fromHash };
     case 'system_timer_change':
       // R5 — mirror the peer's setting on our Contact + persist a chip.
       await updateContact(fromHash, { disappearingTimerSec: wire.data.timerSec });

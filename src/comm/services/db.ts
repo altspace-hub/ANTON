@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 9;
+export const DB_VERSION = 10;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -45,6 +45,10 @@ export const STORE_FC_CONTACTS = 'fc_contacts';
  *  send flow and the user biometric-confirms. We never auto-sign /
  *  pre-sign. by_next powers reconcile + the chronological list. */
 export const STORE_SCHEDULES = 'schedules';
+/** v10 — in-event discussion notes (event collaboration). Kept in a
+ *  dedicated store (not the 1:1 messages store) so event planning chatter
+ *  never clutters the direct-chat thread. Indexed by eventId. */
+export const STORE_EVENT_NOTES = 'event_notes';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -57,6 +61,7 @@ export const INDEX_PORTAL_BY_CACHED_AT = 'by_cached_at';
 export const INDEX_WALLET_BY_TS = 'by_ts';
 export const INDEX_WALLET_BY_REF = 'by_ref';
 export const INDEX_SCHED_BY_NEXT = 'by_next';
+export const INDEX_EVENT_NOTE_BY_EVENT = 'by_event';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -147,6 +152,12 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_SCHEDULES)) {
         const store = db.createObjectStore(STORE_SCHEDULES, { keyPath: 'id' });
         store.createIndex(INDEX_SCHED_BY_NEXT, 'nextFireAt', { unique: false });
+      }
+      // v10 — in-event discussion notes. Primary key is the note id;
+      // by_event groups a thread of notes under one event.
+      if (!db.objectStoreNames.contains(STORE_EVENT_NOTES)) {
+        const store = db.createObjectStore(STORE_EVENT_NOTES, { keyPath: 'id' });
+        store.createIndex(INDEX_EVENT_NOTE_BY_EVENT, 'eventId', { unique: false });
       }
     };
     req.onsuccess = () => {

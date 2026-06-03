@@ -61,34 +61,37 @@ module.exports = {
         const cont = byText(/Fortsätt till granskning|Continue to review/i); if (!cont) return { err: 'no continue' };
         cont.click(); await __td.sleep(1400);
 
-        const confirmBtn = () => [...document.querySelectorAll('button')].find((b) => /Bekräfta och betala|Confirm & pay/i.test(b.innerText || ''));
-        const bodyAll = __td.bodyText(1500);
+        const confirmBtn = () => [...document.querySelectorAll('button')].find((b) => /Bekräfta och betala|Confirm & pay/i.test((b.innerText || b.textContent) || ''));
+        // textContent (not innerText) — this WebView omits below-the-fold
+        // scroll content from innerText, and the banners sit mid-screen.
+        const bodyAll = document.body.textContent || '';
         const lookAlikeShown = /Liknande adress|Look-alike address/i.test(bodyAll);
-        // the Travel-Rule gate (incomplete identity + no live rate) would also
-        // disable confirm — detect it so we don't over-assert re-enable.
+        // Travel-Rule "profile required" should be ABSENT now that the device's
+        // payment identity is complete (name + full address set).
         const travelRuleShown = /Profil krävs|Profile required/i.test(bodyAll);
-        const disabledBefore = !!confirmBtn() && confirmBtn().disabled === true;
+        const confirmDisabledInitial = !!confirmBtn() && confirmBtn().disabled === true;
         const cb = document.querySelector('input[type=checkbox]'); if (cb) { cb.click(); }
         await __td.sleep(500);
         const ackChecked = !!document.querySelector('input[type=checkbox]') && document.querySelector('input[type=checkbox]').checked === true;
-        const enabledAfter = !!confirmBtn() && confirmBtn().disabled === false;
-        return { lookAlikeShown, travelRuleShown, disabledBefore, ackChecked, enabledAfter, body: __td.bodyText(260) };
+        const confirmEnabledFinal = !!confirmBtn() && confirmBtn().disabled === false;
+        return { lookAlikeShown, travelRuleShown, confirmDisabledInitial, ackChecked, confirmEnabledFinal, body: bodyAll.slice(0, 280) };
       })()`);
       if (r.err) throw new Error(r.err);
-      // Hard check: a gate must be blocking the send (the Travel-Rule "profile
-      // required" banner fires deterministically — incomplete identity + dark
-      // EUR oracle → no-rate-conservative tier). This proves the gate-blocking
-      // mechanism on-device without depending on external-IDB contact visibility.
-      assert.ok(r.travelRuleShown, 'Travel-Rule profile-required banner shown — got: ' + r.body);
-      assert.ok(r.disabledBefore, 'Confirm is blocked while a gate is unsatisfied');
-      // Look-alike is best-effort: injecting a contact into fc_contacts isn't
-      // always visible to the app's live read on this WebView (it passed in
-      // earlier runs). Log it; the ack mechanism + banner are a faithful port.
+      // The payment identity is complete on this device, so the Travel-Rule
+      // "profile required" gate must NOT fire — proving the gate is satisfied.
+      assert.ok(!r.travelRuleShown, 'Travel-Rule gate satisfied (complete identity) — no profile-required banner: ' + r.body);
+      // Look-alike (address-poisoning) gate: deterministic when the injected
+      // fc_contacts row is visible to the app's live read (best-effort on this
+      // WebView). When it fires it must block confirm until acknowledged, then
+      // re-enable; otherwise (no look-alike), confirm is enabled (identity OK).
       if (r.lookAlikeShown) {
+        assert.ok(r.confirmDisabledInitial, 'look-alike blocks confirm until acknowledged');
         assert.ok(r.ackChecked, 'acknowledge checkbox toggles on');
-        log('both gates fired (Travel-Rule + look-alike)');
+        assert.ok(r.confirmEnabledFinal, 'confirm re-enables after acknowledging the look-alike');
+        log('Look-alike gate fired + ack re-enables (Travel-Rule satisfied)');
       } else {
-        log('Travel-Rule gate fired + blocked confirm (look-alike contact not visible this run)');
+        assert.ok(r.confirmEnabledFinal, 'confirm enabled (identity complete, no look-alike)');
+        log('Identity complete → confirm enabled (look-alike contact not visible this run)');
       }
       await s.eval('(async () => { for (let i = 0; i < 4; i++) { await __td.clickText(/Tillbaka|Avbryt|Back/i, 250); } return 1; })()');
     } finally {
