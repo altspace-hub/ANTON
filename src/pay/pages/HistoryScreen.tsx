@@ -86,11 +86,13 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
     })();
   }, []);
 
-  // #76 — apply the type filter before grouping. Legacy/undefined and
-  // received rows match only 'all' (never silently bucketed as a type).
+  // #76/#77 — apply the type filter before grouping. Sent rows carry the
+  // sender's own type; received rows now carry the type decoded from the
+  // ANTON-V1 remittance (#77), so both file under the Information/Contract
+  // filter. Legacy/undefined rows still match only 'all'.
   const filtered = typeFilter === 'all'
     ? items
-    : items.filter((a) => a.direction === 'sent' && a.record.paymentType === typeFilter);
+    : items.filter((a) => a.record.paymentType === typeFilter);
 
   // Bucket the flat stream into per-day groups for sticky headers.
   // `now` is read once per render — the Today / Yesterday boundary only
@@ -185,7 +187,7 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
                             {counterpartyOf(a, contactNames)}
                           </span>
                           {a.direction === 'sent' && <StatusPill status={a.record.status} />}
-                          {a.direction === 'sent' && a.record.paymentType && (
+                          {a.record.paymentType && (
                             <PaymentTypeBadge type={a.record.paymentType} />
                           )}
                         </div>

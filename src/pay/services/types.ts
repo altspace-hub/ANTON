@@ -175,6 +175,13 @@ export interface ReceivedRecord {
    *  observed the row. */
   receivedAt: number;
   blockHeight?: number;
+  /** #77 — the sender's classification (Information / Contract / Gift),
+   *  decoded from the ANTON-V1 remittance `meta.fcType`. Lets the recipient
+   *  file the inbound payment under the same Information/Contract filter. */
+  paymentType?: PaymentType;
+  /** #77 — the sender's free-text Information/Contract body, decoded from the
+   *  remittance `message`. Cleaner than the raw Ustrd summary. */
+  note?: string;
   /** Verbatim JSON of the raw item the chain returned — kept until
    *  the response shape is stable so the user (and debugger) can see
    *  exactly what was parsed. */

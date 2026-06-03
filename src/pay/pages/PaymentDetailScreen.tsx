@@ -179,7 +179,19 @@ function ReceivedSections({ r, contactNames }: { r: ReceivedRecord; contactNames
         {r.fromAddress && (
           <CopyRow label={t('history.detail.address', 'Address')} value={r.fromAddress} />
         )}
-        {r.remittance && <IsoRow label={t('history.note', 'Note')} value={r.remittance} wrap />}
+        {/* #77 — the sender's classification (decoded from RmtInf), so a received
+            Information/Contract reads the same as on the sender. */}
+        {r.paymentType && (
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-xs shrink-0" style={{ color: 'var(--color-text-faint)' }}>
+              {t('review.paymentTypeLabel', 'Type')}
+            </span>
+            <PaymentTypeBadge type={r.paymentType} />
+          </div>
+        )}
+        {(r.note ?? r.remittance) && (
+          <IsoRow label={t('history.note', 'Note')} value={(r.note ?? r.remittance)!} wrap />
+        )}
       </Section>
 
       {/* Chain — inbound rows are confirmed by the time we observe them. */}

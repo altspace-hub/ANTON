@@ -16,11 +16,17 @@
  * raw payload in `rawJson` so the user still sees the receipt
  * (balance went up, after all) and we have a debug trail.
  */
+import { pacs008 } from '@futurechain/sdk';
 import { getActiveWalletMeta } from './wallets';
 import { getRpc } from './fc-rpc';
 import { listPayments } from './payment';
 import { putReceived, getAllReceived, hasReceivedTxId, deleteReceived } from './db';
+import { PAYMENT_TYPES, type PaymentType } from './payment-type';
 import type { ReceivedRecord } from './types';
+
+function isPaymentType(v: unknown): v is PaymentType {
+  return typeof v === 'string' && (PAYMENT_TYPES as readonly string[]).includes(v);
+}
 
 /** Poll the chain once. Returns the records that are new since last
  *  poll, in arrival order (oldest → newest). Empty array = nothing
@@ -256,6 +262,29 @@ function normaliseItem(raw: unknown, myAddress: string): ReceivedRecord | null {
     ? remittanceRaw.filter(s => typeof s === 'string').join(' ')
     : typeof remittanceRaw === 'string' ? remittanceRaw : undefined;
 
+  // #77 — decode the structured ANTON-V1 remittance (when the hub returned the
+  // full RmtInf incl. Strd.AddtlRmtInf). meta.fcType = the sender's payment
+  // classification; message = the Information/Contract text. Degrades silently
+  // to the plain Ustrd `remittance` above when absent.
+  const rmtInf = pick(raw, [
+    ['document', 'FIToFICstmrCdtTrf', 'CdtTrfTxInf', '0', 'RmtInf'],
+    ['CdtTrfTxInf', '0', 'RmtInf'],
+    ['RmtInf'],
+  ]);
+  let paymentType: PaymentType | undefined;
+  let note: string | undefined;
+  if (rmtInf) {
+    try {
+      const decoded = pacs008.decodeRemittance(rmtInf);
+      if (decoded) {
+        const ft = decoded.meta?.fcType;
+        if (isPaymentType(ft) && ft !== 'payment') paymentType = ft;
+        const msg = decoded.message ?? decoded.decision ?? decoded.terms;
+        if (typeof msg === 'string' && msg.trim()) note = msg.trim();
+      }
+    } catch { /* malformed envelope — keep the plain Ustrd remittance */ }
+  }
+
   // Timestamp — `CreDtTm` ISO string, or `block_timestamp_unix`, or
   // `received_at`. Fall back to "now" so the row at least sorts.
   let receivedAt = Date.now();
@@ -281,8 +310,12 @@ function normaliseItem(raw: unknown, myAddress: string): ReceivedRecord | null {
     fromAddress: typeof fromAddress === 'string' ? fromAddress : '',
     fromName: typeof fromName === 'string' ? fromName : undefined,
     amountMicroFtc,
-    remittance,
+    // #77 — when a note decoded, drop the raw Ustrd `remittance` (it just
+    // duplicates the note); keep it otherwise.
+    remittance: note ? undefined : remittance,
     receivedAt,
+    paymentType,
+    note,
     blockHeight: typeof blockHeight === 'number' ? blockHeight : undefined,
     // Keep the raw JSON for debugging until the chain's response is
     // stable. The detail view can show it on a long-press.
