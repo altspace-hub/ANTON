@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { computeBalanceMicroFtc, listTxs, type WalletTx } from '../../services/transactions';
+import { listContacts, buildContactNameMap, resolveName } from '../../services/address-book';
 import ActiveSyncBanner from '../../components/ActiveSyncBanner';
 import { startActiveSync, type ActiveSyncSnapshot } from '../../services/active-sync';
 import { notifyIncoming } from '../../services/notifications';
@@ -27,14 +28,17 @@ interface Props {
   onSecurity: () => void;
   /** Open the scheduled / recurring payments list. */
   onSchedules: () => void;
+  /** Open the saved payment contacts ("friends") manager. */
+  onFriends: () => void;
 }
 
 export default function WalletBalanceScreen({
-  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint, onSecurity, onSchedules,
+  address, onReceive, onSend, onHistory, onTax, onManage, onRpcEndpoint, onSecurity, onSchedules, onFriends,
 }: Props) {
   const { t } = useTranslation();
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
   const [recent, setRecent] = useState<WalletTx[]>([]);
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
@@ -44,12 +48,14 @@ export default function WalletBalanceScreen({
   }, []);
 
   async function refresh() {
-    const [bal, txs] = await Promise.all([
+    const [bal, txs, contacts] = await Promise.all([
       computeBalanceMicroFtc(),
       listTxs(5),
+      listContacts(),
     ]);
     setBalanceMicroFtc(bal);
     setRecent(txs);
+    setContactNames(buildContactNameMap(contacts));
   }
 
   /** "Sync now" button — 5 min bounded active-sync (Stripe Terminal
@@ -114,6 +120,7 @@ export default function WalletBalanceScreen({
           <ActionButton label={t('wallet.rpc', 'RPC endpoint')} onClick={onRpcEndpoint} />
           <ActionButton label={t('wallet.security', 'Security')} onClick={onSecurity} />
           <ActionButton label={t('schedules.short', 'Scheduled')} onClick={onSchedules} />
+          <ActionButton label={t('friends.title', 'Friends')} onClick={onFriends} />
         </div>
 
         {/* Active-sync banner (only while polling) + Sync button. The
@@ -152,7 +159,7 @@ export default function WalletBalanceScreen({
             <p className="text-xs text-[var(--color-text-faint)]">{t('wallet.noTransactions')}</p>
           ) : (
             <ul className="flex flex-col gap-1.5">
-              {recent.map((tx) => <RecentRow key={tx.id} tx={tx} />)}
+              {recent.map((tx) => <RecentRow key={tx.id} tx={tx} contactNames={contactNames} />)}
             </ul>
           )}
         </div>
@@ -177,12 +184,13 @@ function ActionButton({ label, onClick }: { label: string; onClick: () => void }
   );
 }
 
-function RecentRow({ tx }: { tx: WalletTx }) {
+function RecentRow({ tx, contactNames }: { tx: WalletTx; contactNames: Record<string, string> }) {
   const { t } = useTranslation();
   const ftc = Number(BigInt(tx.amountMicroFtc)) / 1_000_000;
   const sign = isInbound(tx.kind) ? '+' : '−';
   const date = new Date(tx.ts);
   const dateStr = date.toISOString().slice(0, 10);
+  const name = resolveName(tx.counterparty, contactNames) ?? abbreviate(tx.counterparty);
   return (
     <li className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-soft)]">
       <div className="min-w-0">
@@ -190,7 +198,7 @@ function RecentRow({ tx }: { tx: WalletTx }) {
           {t(`wallet.txKind.${tx.kind}`)}
         </div>
         <div className="text-[11px] text-[var(--color-text-faint)] truncate">
-          {tx.counterparty}
+          {name}
         </div>
       </div>
       <div className="text-right ml-3">
@@ -201,6 +209,12 @@ function RecentRow({ tx }: { tx: WalletTx }) {
       </div>
     </li>
   );
+}
+
+function abbreviate(addr: string): string {
+  if (!addr) return '—';
+  if (addr.length <= 18) return addr;
+  return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
 function isInbound(kind: WalletTx['kind']): boolean {

@@ -133,6 +133,41 @@ export async function renameContact(id: string, label: string): Promise<void> {
   db.close();
 }
 
+// ── Friend-name resolution ──────────────────────────────────────────
+
+/**
+ * Build an `address → contact label` lookup from the full contact
+ * list. Index ONCE per screen render and reuse for every row —
+ * cheaper than an async getContactByAddress() per activity row.
+ * Empty-label contacts are skipped so we never resolve a name to the
+ * empty string (the row template then falls back to the abbreviated
+ * address). Returns a plain object keyed by canonical fc_… address.
+ *
+ * Ported from src/pay/services/address-book.ts (#86 wallet parity).
+ */
+export function buildContactNameMap(contacts: Contact[]): Record<string, string> {
+  const byAddr: Record<string, string> = {};
+  for (const c of contacts) {
+    const label = c.label.trim();
+    if (label) byAddr[c.address] = label;
+  }
+  return byAddr;
+}
+
+/**
+ * Resolve a counterparty address to its saved friend label, or null
+ * when the address is empty / not a known contact. The caller decides
+ * the fallback (usually the abbreviated address). Prefer the saved
+ * label over the raw fc_… address everywhere a counterparty is shown.
+ */
+export function resolveName(
+  address: string | undefined,
+  byAddr: Record<string, string>,
+): string | null {
+  if (!address) return null;
+  return byAddr[address] ?? null;
+}
+
 // ── Address-poisoning detection ─────────────────────────────────────
 
 /**

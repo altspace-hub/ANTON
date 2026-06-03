@@ -14,12 +14,16 @@
 import { useEffect, useState } from 'react';
 import { hasWallet, loadWallet } from '../services/wallet';
 import { needsResidencyPrompt } from '../services/tax-residency';
+import { listContacts, buildContactNameMap } from '../services/address-book';
+import type { WalletTx } from '../services/transactions';
 import WalletConnectScreen from './wallet/WalletConnectScreen';
 import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
 import WalletSendScreen, { parsePayUri, type ParsedPayUri } from './wallet/WalletSendScreen';
 import WalletReviewScreen from './wallet/WalletReviewScreen';
 import WalletSendDoneScreen from './wallet/WalletSendDoneScreen';
+import WalletTxDetailScreen from './wallet/WalletTxDetailScreen';
+import WalletFriendsScreen from './wallet/WalletFriendsScreen';
 import WalletScanScreen from './wallet/WalletScanScreen';
 import ScheduledPaymentsScreen from './wallet/ScheduledPaymentsScreen';
 import AddScheduleScreen from './wallet/AddScheduleScreen';
@@ -42,6 +46,8 @@ type View =
   | 'send-scan'
   | 'send-review'
   | 'send-done'
+  | 'tx-detail'
+  | 'wallet-friends'
   | 'history'
   | 'schedules'
   | 'schedule-add'
@@ -71,9 +77,14 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
   const [pendingSend, setPendingSend] = useState<ParsedPayUri | null>(null);
   /** WalletTx id of the just-sent payment, shown on the done screen. */
   const [doneTxId, setDoneTxId] = useState<string>('');
+  /** The tx whose full-screen detail is open (#86). */
+  const [detailTx, setDetailTx] = useState<WalletTx | null>(null);
+  /** address → friend-label map, for the detail screen counterparty. */
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void refresh();
+    void listContacts().then((cs) => setContactNames(buildContactNameMap(cs)));
   }, []);
 
   // Notification-tap deep link — a scheduled-payment reminder hands us a
@@ -160,7 +171,24 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
     );
   }
   if (view === 'history') {
-    return <WalletHistoryScreen onBack={() => setView('balance')} />;
+    return (
+      <WalletHistoryScreen
+        onBack={() => setView('balance')}
+        onOpen={(tx) => { setDetailTx(tx); setView('tx-detail'); }}
+      />
+    );
+  }
+  if (view === 'tx-detail' && detailTx) {
+    return (
+      <WalletTxDetailScreen
+        tx={detailTx}
+        contactNames={contactNames}
+        onBack={() => { setDetailTx(null); setView('history'); }}
+      />
+    );
+  }
+  if (view === 'wallet-friends') {
+    return <WalletFriendsScreen onBack={() => setView('balance')} />;
   }
   if (view === 'schedules') {
     return (
@@ -246,6 +274,7 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
       onManage={() => setView('wallets-list')}
       onRpcEndpoint={() => setView('rpc-endpoint')}
       onSecurity={() => setView('wallet-security')}
+      onFriends={() => setView('wallet-friends')}
       onTax={async () => {
         // First tap routes to residency capture; subsequent taps land
         // straight on the computed position screen.

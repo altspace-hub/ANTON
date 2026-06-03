@@ -1,31 +1,35 @@
 /**
  * WalletHistoryScreen — full transaction ledger.
  *
- * Most-recent first. Tapping a row opens a detail expansion inline
- * with: counterparty, amount, fiat at tx (if known), ref, on-chain
- * hash, and the user's declared jurisdiction at the time of the
- * disposal — the inputs the Phase-1 tax engine needs.
+ * Most-recent first. Tapping a row opens the full-screen
+ * WalletTxDetailScreen (#86 Pay parity — replaced the old inline
+ * accordion). Counterparty addresses resolve to a saved friend label
+ * when one exists (address-book), else show the abbreviated address.
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listTxs, type WalletTx } from '../../services/transactions';
+import { listContacts, buildContactNameMap, resolveName } from '../../services/address-book';
 import PaymentTypeBadge from '../../components/PaymentTypeBadge';
 import StatusPill from '../../components/StatusPill';
 import { PAYMENT_TYPES, paymentTypeMeta, type PaymentType } from '../../services/payment-type';
 
 interface Props {
   onBack: () => void;
+  /** Open the full-screen detail view for a tapped row. */
+  onOpen: (tx: WalletTx) => void;
 }
 
-export default function WalletHistoryScreen({ onBack }: Props) {
+export default function WalletHistoryScreen({ onBack, onOpen }: Props) {
   const { t } = useTranslation();
   const [txs, setTxs] = useState<WalletTx[]>([]);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
   /** #76 — filter by sender payment-type. Only outbound sends carry a type. */
   const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
 
   useEffect(() => {
     listTxs(500).then(setTxs);
+    listContacts().then((cs) => setContactNames(buildContactNameMap(cs)));
   }, []);
 
   const filtered = typeFilter === 'all'
@@ -70,9 +74,7 @@ export default function WalletHistoryScreen({ onBack }: Props) {
               <ul className="flex flex-col gap-1.5">
                 {filtered.map((tx) => (
                   <li key={tx.id}>
-                    <Row tx={tx}
-                         expanded={expanded === tx.id}
-                         onToggle={() => setExpanded(expanded === tx.id ? null : tx.id)} />
+                    <Row tx={tx} contactNames={contactNames} onOpen={() => onOpen(tx)} />
                   </li>
                 ))}
               </ul>
@@ -85,18 +87,17 @@ export default function WalletHistoryScreen({ onBack }: Props) {
 }
 
 function Row({
-  tx, expanded, onToggle,
-}: { tx: WalletTx; expanded: boolean; onToggle: () => void }) {
+  tx, contactNames, onOpen,
+}: { tx: WalletTx; contactNames: Record<string, string>; onOpen: () => void }) {
   const { t } = useTranslation();
   const ftc = Number(BigInt(tx.amountMicroFtc)) / 1_000_000;
   const inbound = isInbound(tx.kind);
   const sign = inbound ? '+' : '−';
-  const sek = tx.fiatValueAtTx;
   const date = new Date(tx.ts);
+  const name = resolveName(tx.counterparty, contactNames) ?? abbreviate(tx.counterparty);
   return (
     <div className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-soft)]"
-         onClick={onToggle}
-         style={{ cursor: 'pointer' }}>
+         onClick={onOpen} style={{ cursor: 'pointer' }}>
       <div className="flex items-center justify-between p-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -107,7 +108,7 @@ function Row({
             {tx.status && <StatusPill status={tx.status} />}
           </div>
           <div className="text-[11px] text-[var(--color-text-faint)] truncate font-mono">
-            {tx.counterparty}
+            {name}
           </div>
         </div>
         <div className="text-right ml-3">
@@ -119,33 +120,14 @@ function Row({
           </div>
         </div>
       </div>
-      {expanded && (
-        <div className="px-3 pb-3 pt-1 text-[11px] text-[var(--color-text-muted)] font-mono leading-relaxed border-t border-[var(--color-border-soft)]">
-          <KV label={t('wallet.histId')} value={tx.id} />
-          {sek > 0 && <KV label={t('wallet.histFiatAtTx')} value={`${sek.toFixed(2)} ${tx.fiatCurrency}`} />}
-          {!sek && <KV label={t('wallet.histFiatAtTx')} value={t('wallet.histNotRecorded')} muted />}
-          {tx.ref && <KV label={t('wallet.histRef')} value={tx.ref} />}
-          {tx.txHash && <KV label={t('wallet.histOnChain')} value={tx.txHash} />}
-          {!tx.txHash && <KV label={t('wallet.histOnChain')} value={t('wallet.histPending')} muted />}
-          {tx.jurisdictionAtTx && <KV label={t('wallet.histJurisdiction')} value={tx.jurisdictionAtTx} />}
-          {tx.refundOf && <KV label={t('wallet.histRefundOf')} value={tx.refundOf} />}
-          {tx.note && <KV label={t('wallet.histNote')} value={tx.note} />}
-        </div>
-      )}
     </div>
   );
 }
 
-function KV({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
-  return (
-    <div className="flex">
-      <span className="w-24 shrink-0 text-[var(--color-text-faint)]">{label}</span>
-      <span className="flex-1 break-all"
-            style={{ color: muted ? 'var(--color-text-faint)' : 'inherit' }}>
-        {value}
-      </span>
-    </div>
-  );
+function abbreviate(addr: string): string {
+  if (!addr) return '—';
+  if (addr.length <= 18) return addr;
+  return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
 function isInbound(kind: WalletTx['kind']): boolean {
