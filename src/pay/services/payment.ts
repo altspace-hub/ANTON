@@ -420,6 +420,15 @@ export async function executePayment(
     }
   }
   const draft = assembleDraft(identity, wallet.address, decoded, tier);
+  // #88 — for an agent wallet, the agent acts as the debtor ("ANTON <addr6>")
+  // and the real owner is the Ultimate Debtor (UBO). Computed once here so the
+  // on-wire message AND the locally-recorded PaymentRecord agree: the record's
+  // draft shows the agent as the debtor (the real owner is the UBO).
+  const isAgent = walletMeta.kind === 'agent';
+  const uboName = isAgent ? (draft.debtor.name || identity?.name?.trim() || '') : '';
+  const recordDraft = isAgent
+    ? { ...draft, debtor: { ...draft.debtor, name: agentDebtorName(wallet.address) } }
+    : draft;
   const amountSatoshi = Number(decoded.amountMicroFtc) * SATOSHI_PER_MICRO_FTC;
   // Network fee = 0.1% capped at 0.1 FTC (floored at the app's 250-sat min).
   // Single source of truth in the SDK so it matches the node's enforced rule
@@ -464,7 +473,7 @@ export async function executePayment(
         qrUri: decoded.qrUri,
         status: 'failed',
         paidAt: Date.now(),
-        pacs008: draft,
+        pacs008: recordDraft,
         risk,
         error: reason,
       };
@@ -515,7 +524,7 @@ export async function executePayment(
         orderId: decoded.orderId, purpose: decoded.purpose, paymentType, taxable,
         amountMicroFtc: decoded.amountMicroFtc, ref: decoded.ref,
         qrUri: decoded.qrUri, status: 'failed', paidAt: Date.now(),
-        pacs008: draft, risk, error: reason,
+        pacs008: recordDraft, risk, error: reason,
       };
       await putPayment(failed);
       return failed;
@@ -542,7 +551,7 @@ export async function executePayment(
     qrUri: decoded.qrUri,
     status: 'submitting',
     paidAt: Date.now(),
-    pacs008: draft,
+    pacs008: recordDraft,
     risk,
     feeSatoshi,
   };
@@ -566,11 +575,10 @@ export async function executePayment(
     // the rich-remittance path for a tagged type even without a note, so the
     // type always travels (the recipient reads meta.fcType via decodeRemittance).
     const tagged = paymentType !== DEFAULT_PAYMENT_TYPE;
-    // #88 — agent wallet: the agent acts as the Dbtr ("ANTON <addr6>") while the
-    // human owner is the Ultimate Debtor (UBO). The UBO also rides in the
-    // remittance meta (recipient-readable even if the chain ignores UltmtDbtr).
-    const isAgent = walletMeta.kind === 'agent';
-    const uboName = isAgent ? (draft.debtor.name || identity?.name?.trim() || '') : '';
+    // #88 — isAgent + uboName computed once near the draft above. The agent acts
+    // as the Dbtr ("ANTON <addr6>"); the human owner is the Ultimate Debtor and
+    // also rides in the remittance meta (recipient-readable even if the chain
+    // ignores UltmtDbtr).
     let remittanceInfo: ReturnType<typeof pacs008.encodeRemittance>['rmtInf'] | undefined;
     if (decoded.orderEnvelope || trimmedNote || tagged || isAgent) {
       const merged: pacs008.AntonRemittance = decoded.orderEnvelope
