@@ -603,6 +603,25 @@
     "noRateBody": "No live FTC/EUR rate available. Conservative posture: payments are treated as above the EU Travel Rule €1000 threshold until the rate source is back online.",
     "title": "Profile required for this amount"
   },
+  "manualPay": {
+    "address": "Recipient wallet address",
+    "amount": "Amount (FTC)",
+    "city": "City",
+    "continue": "Continue to review",
+    "country": "Recipient country (ISO code)",
+    "errAddress": "Enter a valid fc_… wallet address.",
+    "errAmount": "Enter a valid amount in FTC.",
+    "errCountry": "Enter the recipient's country.",
+    "errName": "Enter the recipient's name — it's required for the payment to settle.",
+    "hideAddress": "− Hide address fields",
+    "hint": "Name + country are required so the payment can settle. For amounts ≥ €1000, also add the recipient's street, city and postcode.",
+    "name": "Recipient name",
+    "postcode": "Postcode",
+    "showAddress": "+ Add recipient address (for ≥ €1000)",
+    "street": "Street",
+    "tabForm": "Enter details",
+    "tabPaste": "Paste link"
+  },
   "scan": {
     "cameraError": "Camera unavailable",
     "cameraErrorBody": "Paste the payment link instead.",

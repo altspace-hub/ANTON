@@ -16,6 +16,7 @@
  */
 import { rpc } from '@futurechain/sdk';
 import { getInstallToken } from './enrollment';
+import { makeAttestationTokenProvider } from './device-attestation';
 import { getSecure, setSecure, removeSecure } from './secure-store';
 import { httpFetch } from './native-http';
 
@@ -57,6 +58,12 @@ export async function getRpc(): Promise<rpc.RpcClient> {
   const client = new rpc.RpcClient({
     endpoint,
     apiKey,
+    // Device-attestation session token — the hub requires X-Attestation-Token
+    // on /submit_signed_transaction (Pay parity). Without it Comm sends 401
+    // "attestation required" and no FTC moves. On a build without the native
+    // Play-Integrity plugin the provider falls back to the dev-escape token
+    // the hub accepts in dev mode. See device-attestation.ts.
+    attestationTokenProvider: makeAttestationTokenProvider(endpoint, apiKey ?? ''),
     // Native HTTP on-device → bypasses the WebView CORS layer that
     // otherwise 403s every hub call from the https://localhost origin.
     // On web this resolves to the platform fetch (unchanged behaviour).

@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
+import ManualPayForm from './ManualPayForm';
 import type { CreditorParty } from '../../services/pacs008-draft';
 
 export interface ParsedPayUri {
@@ -52,6 +53,8 @@ interface Props {
 export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
+  /** Structured form (default — type a complete payment) vs paste a link. */
+  const [manualSub, setManualSub] = useState<'form' | 'paste'>('form');
 
   const parsed = useMemo<Parsed | null>(() => {
     const trimmed = input.trim();
@@ -59,13 +62,17 @@ export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
     return parsePayUri(trimmed);
   }, [input]);
 
+  /** A complete URI assembled by the manual form → parse + go to review. */
+  function handleManualUri(uri: string) {
+    const p = parsePayUri(uri);
+    if (p.ok) onReview(p);
+  }
+
   return (
     <section className="flex flex-col h-full safe-bottom">
       <Header title={t('wallet.sendTitle')} onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pt-2 pb-5">
-        <p className="text-sm text-[var(--color-text-muted)] mb-4">{t('wallet.sendHelp')}</p>
-
         <button type="button" onClick={onScan}
                 className="w-full mb-3 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -75,50 +82,60 @@ export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
           {t('scan.title', 'Scan to pay')}
         </button>
 
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={5}
-          placeholder="futurechain:pay?to=fc_...&amount=...&ref=..."
-          className="w-full p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] font-mono text-[12px] text-[var(--color-text)] resize-none"
-          spellCheck={false}
-          autoCapitalize="off"
-        />
+        {/* Structured form (default — type a complete payment) vs paste a link. */}
+        <div className="flex gap-2 mb-4 p-1 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          {(['form', 'paste'] as const).map((sub) => (
+            <button key={sub} type="button" onClick={() => setManualSub(sub)}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold"
+                    style={{ backgroundColor: manualSub === sub ? 'var(--color-accent)' : 'transparent',
+                             color: manualSub === sub ? 'var(--color-accent-fg)' : 'var(--color-text-body)' }}>
+              {sub === 'form' ? t('manualPay.tabForm', 'Enter details') : t('manualPay.tabPaste', 'Paste link')}
+            </button>
+          ))}
+        </div>
 
-        {parsed && parsed.ok && (
-          <div className="mt-4 p-4 rounded-xl bg-[var(--color-accent-soft)] border border-[var(--color-accent-dim)]">
-            <div className="flex justify-between items-baseline">
-              <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-                {t('wallet.amount')}
-              </div>
-              <div className="text-2xl font-semibold tabular-nums text-[var(--color-accent)]">
-                {(Number(parsed.amountMicroFtc) / 1_000_000).toFixed(4)} FTC
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-[var(--color-accent-dim)]">
-              <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
-                {t('wallet.to')}
-              </div>
-              <div className="mt-1 font-mono text-[12px] text-[var(--color-text)] break-all">{parsed.to}</div>
-            </div>
-            {parsed.inv && (
-              <div className="mt-2 text-[11px] text-[var(--color-text-muted)] font-mono">
-                {t('wallet.order', { id: parsed.inv })}
+        {manualSub === 'form' ? (
+          <ManualPayForm onSubmit={handleManualUri} />
+        ) : (
+          <>
+            <p className="text-sm text-[var(--color-text-muted)] mb-3">{t('wallet.sendHelp')}</p>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={5}
+              placeholder="futurechain:pay?to=fc_...&amount=...&ref=..."
+              className="w-full p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] font-mono text-[12px] text-[var(--color-text)] resize-none"
+              spellCheck={false}
+              autoCapitalize="off"
+            />
+            {parsed && parsed.ok && (
+              <div className="mt-4 p-4 rounded-xl bg-[var(--color-accent-soft)] border border-[var(--color-accent-dim)]">
+                <div className="flex justify-between items-baseline">
+                  <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">{t('wallet.amount')}</div>
+                  <div className="text-2xl font-semibold tabular-nums text-[var(--color-accent)]">
+                    {(Number(parsed.amountMicroFtc) / 1_000_000).toFixed(4)} FTC
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-[var(--color-accent-dim)]">
+                  <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">{t('wallet.to')}</div>
+                  <div className="mt-1 font-mono text-[12px] text-[var(--color-text)] break-all">{parsed.to}</div>
+                </div>
+                {parsed.inv && (
+                  <div className="mt-2 text-[11px] text-[var(--color-text-muted)] font-mono">{t('wallet.order', { id: parsed.inv })}</div>
+                )}
               </div>
             )}
-          </div>
+            {parsed && !parsed.ok && (
+              <p className="mt-3 text-sm text-[var(--color-red)]">{t(`wallet.sendErr.${parsed.errorKey}`)}</p>
+            )}
+            <div className="mt-4">
+              <PrimaryButton onClick={() => { if (parsed && parsed.ok) onReview(parsed); }}
+                             disabled={!parsed || !parsed.ok}>
+                {t('wallet.reviewContinue', 'Continue to review')}
+              </PrimaryButton>
+            </div>
+          </>
         )}
-
-        {parsed && !parsed.ok && (
-          <p className="mt-3 text-sm text-[var(--color-red)]">{t(`wallet.sendErr.${parsed.errorKey}`)}</p>
-        )}
-      </div>
-
-      <div className="px-5 pb-5">
-        <PrimaryButton onClick={() => { if (parsed && parsed.ok) onReview(parsed); }}
-                       disabled={!parsed || !parsed.ok}>
-          {t('wallet.reviewContinue', 'Continue to review')}
-        </PrimaryButton>
       </div>
     </section>
   );

@@ -603,6 +603,25 @@
     "noRateBody": "Ingen aktuell FTC/EUR-kurs tillgänglig. Försiktig hållning: betalningar behandlas som över EU:s reseregel-tröskel på €1000 tills kurskällan är tillbaka online.",
     "title": "Profil krävs för det här beloppet"
   },
+  "manualPay": {
+    "address": "Mottagarens plånboksadress",
+    "amount": "Belopp (FTC)",
+    "city": "Stad",
+    "continue": "Fortsätt till granskning",
+    "country": "Mottagarens land (ISO-kod)",
+    "errAddress": "Ange en giltig fc_…-plånboksadress.",
+    "errAmount": "Ange ett giltigt belopp i FTC.",
+    "errCountry": "Ange mottagarens land.",
+    "errName": "Ange mottagarens namn — det krävs för att betalningen ska gå igenom.",
+    "hideAddress": "− Dölj adressfält",
+    "hint": "Namn + land krävs för att betalningen ska gå igenom. För belopp ≥ €1000, lägg även till mottagarens gatuadress, ort och postnummer.",
+    "name": "Mottagarens namn",
+    "postcode": "Postnummer",
+    "showAddress": "+ Lägg till mottagarens adress (för ≥ €1000)",
+    "street": "Gatuadress",
+    "tabForm": "Fyll i uppgifter",
+    "tabPaste": "Klistra in länk"
+  },
   "scan": {
     "cameraError": "Kameran är inte tillgänglig",
     "cameraErrorBody": "Klistra in betalningslänken istället.",
