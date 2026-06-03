@@ -842,5 +842,8 @@
     "debtor": "Debtor",
     "creditor": "Creditor",
     "purpose": "Purpose"
+  },
+  "passphrase": {
+    "revealReason": "Enter your wallet passphrase to reveal the recovery phrase."
   }
 }

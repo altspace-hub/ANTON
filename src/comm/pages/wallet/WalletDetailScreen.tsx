@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSecure } from '../../services/secure-store';
 import { assertBiometric } from '../../services/biometric';
+import { hasPassphrase, unlockMnemonic } from '../../services/wallet-passphrase';
+import PassphrasePromptModal from '../../components/PassphrasePromptModal';
 import {
   deleteWallet,
   listWallets,
@@ -30,6 +32,10 @@ export default function WalletDetailScreen({ walletId, onBack, onDeleted }: Prop
   const [savedFlash, setSavedFlash] = useState(false);
   const [phrase, setPhrase] = useState<string | null>(null);
   const [phraseError, setPhraseError] = useState<string | null>(null);
+  /** When the wallet is passphrase-protected the mnemonic lives only in the
+   *  encrypted envelope — prompt for the passphrase to reveal it. */
+  const [passPrompt, setPassPrompt] = useState(false);
+  const [passAttempts, setPassAttempts] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,6 +62,14 @@ export default function WalletDetailScreen({ walletId, onBack, onDeleted }: Prop
     setPhraseError(null);
     try {
       await assertBiometric({ reason: 'Show recovery phrase' });
+      // Passphrase-protected wallets keep the mnemonic only in the encrypted
+      // envelope (the plain row is wiped on enable) — gate the reveal on the
+      // passphrase instead of falsely reporting "imported elsewhere".
+      if (await hasPassphrase(walletId)) {
+        setPassAttempts(0);
+        setPassPrompt(true);
+        return;
+      }
       const stored = await getSecure(`fc.wallet.${walletId}.mnemonic`);
       if (!stored) {
         setPhraseError(t('walletDetail.noPhrase',
@@ -65,6 +79,25 @@ export default function WalletDetailScreen({ walletId, onBack, onDeleted }: Prop
       setPhrase(stored);
     } catch (e) {
       setPhraseError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /** Reveal the mnemonic for a passphrase-protected wallet. A wrong passphrase
+   *  bumps attemptFailures (the modal clears + backs off); a missing mnemonic
+   *  (imported priv-only) reports the same "not on this device" notice. */
+  async function revealWithPassphrase(passphrase: string) {
+    try {
+      const mnemonic = await unlockMnemonic(walletId, passphrase);
+      if (!mnemonic) {
+        setPassPrompt(false);
+        setPhraseError(t('walletDetail.noPhrase',
+          'Recovery phrase is not on this device — this wallet was imported elsewhere.'));
+        return;
+      }
+      setPhrase(mnemonic);
+      setPassPrompt(false);
+    } catch {
+      setPassAttempts((n) => n + 1);
     }
   }
 
@@ -199,6 +232,16 @@ export default function WalletDetailScreen({ walletId, onBack, onDeleted }: Prop
           )}
         </div>
       </div>
+
+      {passPrompt && (
+        <PassphrasePromptModal
+          title={t('walletDetail.phraseTitle', 'Recovery phrase')}
+          reason={t('passphrase.revealReason', 'Enter your wallet passphrase to reveal the recovery phrase.')}
+          onSubmit={(p) => void revealWithPassphrase(p)}
+          onCancel={() => { setPassPrompt(false); setPassAttempts(0); }}
+          attemptFailures={passAttempts}
+        />
+      )}
     </section>
   );
 }

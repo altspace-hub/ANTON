@@ -842,5 +842,8 @@
     "debtor": "Betalare",
     "creditor": "Mottagare",
     "purpose": "Ändamål"
+  },
+  "passphrase": {
+    "revealReason": "Ange din plånbokslösenfras för att visa återställningsfrasen."
   }
 }

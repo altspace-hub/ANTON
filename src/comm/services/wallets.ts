@@ -31,14 +31,25 @@ import {
 import {
   hasPassphrase as hasWalletPassphrase,
   unlockPriv as unlockPrivWithPassphrase,
+  wipePassphraseEnvelope,
+  generateFalconKeyPair,
 } from './wallet-passphrase';
 
 const IDS_KEY     = 'fc.wallet.ids';
 const ACTIVE_KEY  = 'fc.wallet.active';
-const privKey     = (id: string) => `fc.wallet.${id}.priv`;
-const addrKey     = (id: string) => `fc.wallet.${id}.addr`;
-const mnemonicKey = (id: string) => `fc.wallet.${id}.mnemonic`;
-const backedUpKey = (id: string) => `fc.wallet.${id}.backedUp`;
+const privKey       = (id: string) => `fc.wallet.${id}.priv`;
+const addrKey       = (id: string) => `fc.wallet.${id}.addr`;
+const mnemonicKey   = (id: string) => `fc.wallet.${id}.mnemonic`;
+const backedUpKey   = (id: string) => `fc.wallet.${id}.backedUp`;
+// Post-quantum FALCON-512 keypair (envelope v3 prep) — Pay parity (#86).
+const falconPrivKey = (id: string) => `fc.wallet.${id}.falcon_priv`;
+const falconPubKey  = (id: string) => `fc.wallet.${id}.falcon_pub`;
+
+function falconBytesToHex(b: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < b.length; i++) s += b[i]!.toString(16).padStart(2, '0');
+  return s;
+}
 
 const LEGACY_PRIV       = 'fc.wallet.priv';
 const LEGACY_ADDR       = 'fc.wallet.addr';
@@ -191,6 +202,12 @@ export async function createWallet(
   await setSecure(privKey(id), bytesToHex(wallet.privateKey));
   await setSecure(addrKey(id), wallet.address);
   await setSecure(mnemonicKey(id), mnemonic);
+  // FALCON-512 keypair (post-quantum prep, envelope v3) — Pay parity.
+  // Keygen is non-deterministic so the priv must be stored, not derived
+  // from the BIP-39 mnemonic; a restore-from-seed gets a fresh keypair.
+  const falcon = generateFalconKeyPair();
+  await setSecure(falconPrivKey(id), falconBytesToHex(falcon.falconPriv));
+  await setSecure(falconPubKey(id),  falconBytesToHex(falcon.falconPub));
   const list = await readRegistry();
   list.push(meta);
   await writeRegistry(list);
@@ -224,6 +241,12 @@ export async function importWalletFromMnemonic(
   await setSecure(addrKey(id), wallet.address);
   await setSecure(mnemonicKey(id), trimmed);
   await setSecure(backedUpKey(id), '1');
+  // FALCON-512 keypair (envelope v3) — non-deterministic, so a wallet
+  // restored from the same mnemonic on another device gets a different
+  // FALCON keypair (Pay parity).
+  const falcon = generateFalconKeyPair();
+  await setSecure(falconPrivKey(id), falconBytesToHex(falcon.falconPriv));
+  await setSecure(falconPubKey(id),  falconBytesToHex(falcon.falconPub));
   list.push(meta);
   await writeRegistry(list);
   await setSecure(ACTIVE_KEY, id);
@@ -249,6 +272,11 @@ export async function deleteWallet(id: string): Promise<void> {
   await removeSecure(addrKey(id));
   await removeSecure(mnemonicKey(id));
   await removeSecure(backedUpKey(id));
+  await removeSecure(falconPrivKey(id));
+  await removeSecure(falconPubKey(id));
+  // Wipe the passphrase envelope too (even if none was set) so a deleted
+  // wallet leaves no encrypted-priv residue in secure-store — Pay parity.
+  await wipePassphraseEnvelope(id);
   const next = list.filter(w => w.id !== id);
   await writeRegistry(next);
   const active = await getSecure(ACTIVE_KEY);
@@ -265,6 +293,19 @@ export async function getMnemonicForActive(): Promise<string | null> {
   const id = await getActiveWalletId();
   if (!id) return null;
   return getSecure(mnemonicKey(id));
+}
+
+/** Like getMnemonicForActive but the caller supplies the wallet passphrase
+ *  (required when the active wallet has one set — the mnemonic then lives only
+ *  in the encrypted passphrase envelope, not the plain mnemonicKey row).
+ *  Pay parity (#86). Throws from unlockMnemonic on a bad/absent passphrase. */
+export async function getMnemonicForActiveWithPassphrase(
+  passphrase: string,
+): Promise<string | null> {
+  const id = await getActiveWalletId();
+  if (!id) return null;
+  const { unlockMnemonic } = await import('./wallet-passphrase');
+  return unlockMnemonic(id, passphrase);
 }
 
 export async function markBackedUp(id: string): Promise<void> {
@@ -288,6 +329,9 @@ export async function wipeAllWallets(): Promise<void> {
     await removeSecure(addrKey(w.id));
     await removeSecure(mnemonicKey(w.id));
     await removeSecure(backedUpKey(w.id));
+    await removeSecure(falconPrivKey(w.id));
+    await removeSecure(falconPubKey(w.id));
+    await wipePassphraseEnvelope(w.id);
   }
   await removeSecure(IDS_KEY);
   await removeSecure(ACTIVE_KEY);
