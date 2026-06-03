@@ -253,6 +253,25 @@
     "usingCustom": "Använder anpassad endpoint",
     "usingDefault": "Använder standard"
   },
+  "manualPay": {
+    "address": "Mottagarens plånboksadress",
+    "amount": "Belopp (FTC)",
+    "city": "Stad",
+    "continue": "Fortsätt till granskning",
+    "country": "Mottagarens land (ISO-kod)",
+    "errAddress": "Ange en giltig fc_…-plånboksadress.",
+    "errAmount": "Ange ett giltigt belopp i FTC.",
+    "errCountry": "Ange mottagarens land.",
+    "errName": "Ange mottagarens namn — det krävs för att betalningen ska gå igenom.",
+    "hideAddress": "− Dölj adressfält",
+    "hint": "Namn + land krävs för att betalningen ska gå igenom. För belopp ≥ €1000, lägg även till mottagarens gatuadress, ort och postnummer.",
+    "name": "Mottagarens namn",
+    "postcode": "Postnummer",
+    "showAddress": "+ Lägg till mottagarens adress (för ≥ €1000)",
+    "street": "Gatuadress",
+    "tabForm": "Fyll i uppgifter",
+    "tabPaste": "Klistra in länk"
+  },
   "scan": {
     "cameraError": "Kameran är inte tillgänglig",
     "cameraErrorBody": "ANTON Pay kunde inte öppna kameran. Kontrollera appens kamerabehörighet eller ange betalkoden manuellt.",

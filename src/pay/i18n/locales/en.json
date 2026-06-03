@@ -304,6 +304,25 @@
     "usingCustom": "Using custom endpoint",
     "usingDefault": "Using default"
   },
+  "manualPay": {
+    "address": "Recipient wallet address",
+    "amount": "Amount (FTC)",
+    "city": "City",
+    "continue": "Continue to review",
+    "country": "Recipient country (ISO code)",
+    "errAddress": "Enter a valid fc_… wallet address.",
+    "errAmount": "Enter a valid amount in FTC.",
+    "errCountry": "Enter the recipient's country.",
+    "errName": "Enter the recipient's name — it's required for the payment to settle.",
+    "hideAddress": "− Hide address fields",
+    "hint": "Name + country are required so the payment can settle. For amounts ≥ €1000, also add the recipient's street, city and postcode.",
+    "name": "Recipient name",
+    "postcode": "Postcode",
+    "showAddress": "+ Add recipient address (for ≥ €1000)",
+    "street": "Street",
+    "tabForm": "Enter details",
+    "tabPaste": "Paste link"
+  },
   "scan": {
     "cameraError": "Camera unavailable",
     "cameraErrorBody": "ANTON Pay couldn't open the camera. Check the app's camera permission, or enter the payment code manually.",

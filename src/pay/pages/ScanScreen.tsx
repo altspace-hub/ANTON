@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QrScanner from 'qr-scanner';
 import PrimaryButton from '../components/PrimaryButton';
+import ManualPayForm from '../components/ManualPayForm';
 import { decodePaymentUri } from '../services/payment';
 import { looksLikeUrFrame } from '../services/qr-transfer/encoder';
 import { createUriDecoder, type UriDecoder } from '../services/qr-transfer/decoder';
@@ -48,6 +49,9 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
   const [cameraFailed, setCameraFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [manualText, setManualText] = useState('');
+  /** Manual entry: a structured form (default — type a complete payment from
+   *  just an address) or pasting a raw `futurechain:pay` link. */
+  const [manualSub, setManualSub] = useState<'form' | 'paste'>('form');
   /** Animated-UR fountain progress, shown as a small overlay while the
    *  receiver is collecting frames. Null = no UR session in flight. */
   const [urProgress, setUrProgress] = useState<{
@@ -218,32 +222,53 @@ export default function ScanScreen({ onBack, onDecoded }: Props) {
 
       {mode === 'manual' && (
         <div className="flex flex-col flex-1 px-6 pb-6 overflow-y-auto">
-          <h3 className="text-base font-bold mt-2 mb-1" style={{ color: 'var(--color-text)' }}>
+          <h3 className="text-base font-bold mt-2 mb-3" style={{ color: 'var(--color-text)' }}>
             {t('scan.manualTitle')}
           </h3>
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            {t('scan.manualHint')}
-          </p>
-          <textarea
-            value={manualText}
-            onChange={(e) => { setManualText(e.target.value); setNotice(null); }}
-            placeholder={t('scan.manualPlaceholder')}
-            rows={4}
-            className="mono text-sm"
-            style={{ resize: 'none' }}
-          />
+
+          {/* Sub-toggle: structured form (default) vs paste a raw link. */}
+          <div className="flex gap-2 mb-4 p-1 rounded-xl"
+               style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            {(['form', 'paste'] as const).map((sub) => (
+              <button key={sub} type="button" onClick={() => { setManualSub(sub); setNotice(null); }}
+                      className="flex-1 py-2 rounded-lg text-sm font-semibold"
+                      style={{ backgroundColor: manualSub === sub ? 'var(--color-accent)' : 'transparent',
+                               color: manualSub === sub ? 'var(--color-accent-fg)' : 'var(--color-text-body)' }}>
+                {sub === 'form' ? t('manualPay.tabForm', 'Enter details') : t('manualPay.tabPaste', 'Paste link')}
+              </button>
+            ))}
+          </div>
+
+          {manualSub === 'form' ? (
+            <ManualPayForm onSubmit={(uri) => tryDecode(uri)} />
+          ) : (
+            <>
+              <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+                {t('scan.manualHint')}
+              </p>
+              <textarea
+                value={manualText}
+                onChange={(e) => { setManualText(e.target.value); setNotice(null); }}
+                placeholder={t('scan.manualPlaceholder')}
+                rows={4}
+                className="mono text-sm"
+                style={{ resize: 'none' }}
+              />
+              <PrimaryButton
+                onClick={() => tryDecode(manualText)}
+                disabled={manualText.trim().length === 0}
+              >
+                {t('scan.decode')}
+              </PrimaryButton>
+            </>
+          )}
+
           {notice && (
             <div className="mt-3 rounded-lg p-3 text-sm"
                  style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}>
               {notice}
             </div>
           )}
-          <PrimaryButton
-            onClick={() => tryDecode(manualText)}
-            disabled={manualText.trim().length === 0}
-          >
-            {t('scan.decode')}
-          </PrimaryButton>
         </div>
       )}
     </div>
