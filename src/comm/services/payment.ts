@@ -32,7 +32,7 @@ import { loadPayerIdentity } from './payment-identity';
 import { getRpc } from './fc-rpc';
 import { hasPaymentPin, verifyPaymentPin, setPaymentPin } from './payment-pin';
 import { BadPassphraseError } from './wallet-passphrase';
-import { updateTxStatus, type PaymentStatus } from './transactions';
+import { updateTxStatus, getTxById, type PaymentStatus } from './transactions';
 
 /** The review screen passes these so sendOnChain can fall back from biometric to
  *  the in-app PIN, and prompt for the wallet passphrase (opt-in second factor). */
@@ -118,11 +118,17 @@ export interface SendResult {
   submitStatus: PaymentStatus;
 }
 
-/** Map the hub's submit-status string onto the WalletTx lifecycle. */
-function mapSubmitStatus(s: string): PaymentStatus {
+/** Hub submit statuses that mean "accepted into the pipeline". Anything
+ *  else (incl. a missing status) is a rejection — fail closed so a hub
+ *  reject is never recorded as a pending "queued" row that never resolves. */
+export const ACCEPTED_SUBMIT_STATUSES = new Set(['queued', 'pending', 'submitted', 'broadcast', 'accepted', 'confirmed']);
+
+/** Map the hub's submit-status string onto the WalletTx lifecycle.
+ *  Only reached for an already-validated (accepted) status. */
+export function mapSubmitStatus(s: string): PaymentStatus {
   if (s === 'accepted') return 'accepted';
   if (s === 'confirmed') return 'confirmed';
-  return 'queued'; // queued / pending / submitted → in-flight
+  return 'queued'; // queued / pending / submitted / broadcast → in-flight
 }
 
 /** Send a transaction on-chain. Throws on any failure; the caller
@@ -223,10 +229,17 @@ export async function sendOnChain(input: SendInput, options?: SendOptions): Prom
   });
 
   const submit = await client.submitSignedTransaction(tx);
-  if (submit.status === 'rejected' || submit.error) {
-    throw new Error(submit.reason ?? submit.error ?? 'rejected');
+  // Fail closed: throw on any error/reason/detail, OR an unrecognized/missing
+  // status. Only an explicit accepted status is trusted — otherwise the
+  // caller would record a hub-rejected send as a pending row that never lands.
+  const submitErr =
+    (submit as { reason?: string }).reason ??
+    (submit as { error?: string }).error ??
+    (submit as { detail?: string }).detail;
+  const rawStatus = String(submit.status ?? '');
+  if (submitErr || !ACCEPTED_SUBMIT_STATUSES.has(rawStatus)) {
+    throw new Error(submitErr ?? `submit returned "${rawStatus || 'no status'}"`);
   }
-  const rawStatus = String(submit.status ?? 'submitted');
   return {
     uetr,
     txId: submit.tx_id ?? uetr,
@@ -254,6 +267,12 @@ export async function pollConfirmation(
         return;
       }
     } catch { /* transient — keep polling until the deadline */ }
+  }
+  // Timed out without the tx landing — flip a still-pending row to 'failed'
+  // so the send doesn't sit "queued" forever (mirrors Pay's pollConfirmation).
+  const row = await getTxById(txRowId);
+  if (row && (row.status === 'queued' || row.status === 'accepted' || row.status === 'submitting')) {
+    await updateTxStatus(txRowId, 'failed');
   }
 }
 

@@ -609,14 +609,27 @@ export async function executePayment(
 
     // 4. Submit. Caddy enforces X-API-Key; futurechain enforces it again.
     const submit = await rpc.submitSignedTransaction(tx);
-    const status = mapSubmitStatus(submit.status);
+    // Fail closed. Only an explicit known-good status is a real acceptance.
+    // Any error/reason/detail in the body — or an unrecognized/missing
+    // status — is a rejection and is recorded as 'failed', NEVER as
+    // "awaiting confirmation". (This is the bug that showed a hub-rejected
+    // payment as a pending green "awaiting" screen: a 200 body with no
+    // tx_id and an unmapped status defaulted to 'queued'.)
+    const submitErr =
+      (submit as { reason?: string }).reason ??
+      (submit as { error?: string }).error ??
+      (submit as { detail?: string }).detail ?? undefined;
+    let status = mapSubmitStatus(submit.status);
+    if (submitErr) status = 'failed';
     const updated: PaymentRecord = {
       ...baseRecord,
       status,
       txId: submit.tx_id ?? uetr,
       requestId: submit.request_id,
       submittedAt: Date.now(),
-      error: status === 'failed' ? (submit.reason ?? submit.error ?? 'rejected') : undefined,
+      error: status === 'failed'
+        ? (submitErr ?? `submit returned "${submit.status ?? 'no status'}"`)
+        : undefined,
     };
     await putPayment(updated);
 
@@ -626,7 +639,9 @@ export async function executePayment(
     }
     return updated;
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    // Surface the hub's reason (e.g. "attestation required") instead of a
+    // bare "HTTP 401" so the user — and we — know WHY it was rejected.
+    const message = readSubmitError(err);
     const failed: PaymentRecord = {
       ...baseRecord,
       status: 'failed',
@@ -686,14 +701,42 @@ export async function pollConfirmation(
       // Transient — keep polling until the deadline.
     }
   }
+  // Deadline passed without the tx appearing on-chain. Don't leave the row
+  // stuck "awaiting confirmation" forever — flip a still-pending record to
+  // 'failed' so the user knows the payment didn't land (it can be re-sent).
+  const current = await getPayment(recordId);
+  if (current && (current.status === 'queued' || current.status === 'accepted' || current.status === 'submitting')) {
+    await putPayment({ ...current, status: 'failed', error: 'not confirmed on-chain within 5 minutes' });
+  }
 }
 
-function mapSubmitStatus(s: string): PaymentRecord['status'] {
-  if (s === 'queued') return 'queued';
+/** Extract a human-readable reason from a thrown RpcError. The SDK throws
+ *  `RpcError(message='HTTP 401', detail='{"detail":"attestation required"}')`
+ *  on a non-2xx; surface the server's `detail`/`error`/`reason` so the user
+ *  sees "attestation required" rather than a bare status code. */
+function readSubmitError(err: unknown): string {
+  const e = err as { message?: string; detail?: string };
+  let serverMsg = '';
+  if (typeof e.detail === 'string' && e.detail) {
+    try {
+      const j = JSON.parse(e.detail) as { detail?: string; error?: string; reason?: string };
+      serverMsg = j.detail ?? j.error ?? j.reason ?? '';
+    } catch {
+      serverMsg = e.detail.slice(0, 140);
+    }
+  }
+  const base = e.message ?? String(err);
+  return serverMsg ? `${base} — ${serverMsg}` : base;
+}
+
+export function mapSubmitStatus(s: string): PaymentRecord['status'] {
+  if (s === 'queued' || s === 'pending' || s === 'submitted' || s === 'broadcast') return 'queued';
   if (s === 'accepted') return 'accepted';
-  if (s === 'rejected' || s === 'error') return 'failed';
-  if (s === 'pending') return 'queued';
-  return 'queued';
+  if (s === 'confirmed') return 'confirmed';
+  // Anything else — 'rejected'/'error' AND any unrecognized or missing
+  // status — is a failure. Previously the default was 'queued', which
+  // silently showed hub-rejected payments as a pending "awaiting" screen.
+  return 'failed';
 }
 
 /** Convert a draft PartyIdentification — which has already had the
