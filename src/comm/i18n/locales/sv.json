@@ -740,7 +740,8 @@
       "stake_reward": "Stakingbelöning",
       "swap": "Byte"
     },
-    "yourAddress": "Din adress"
+    "yourAddress": "Din adress",
+    "balanceError": "Kunde inte nå FutureChain — tryck Synka. Visar lokal uppskattning."
   },
   "walletDetail": {
     "confirmBody": "Tillgångar på den här adressen blir oåterkalleliga på den här enheten om du inte har säkerhetskopierat återställningsfrasen.",

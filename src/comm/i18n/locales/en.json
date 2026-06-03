@@ -740,7 +740,8 @@
       "stake_reward": "Stake reward",
       "swap": "Swap"
     },
-    "yourAddress": "Your address"
+    "yourAddress": "Your address",
+    "balanceError": "Couldn't reach FutureChain — tap Sync. Showing local estimate."
   },
   "walletDetail": {
     "confirmBody": "Funds at this address become unrecoverable on this device unless you backed up the recovery phrase.",

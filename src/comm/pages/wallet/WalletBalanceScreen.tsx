@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { computeBalanceMicroFtc, listTxs, type WalletTx } from '../../services/transactions';
 import { listContacts, buildContactNameMap, resolveName } from '../../services/address-book';
+import { fetchBalanceFtc } from '../../services/fc-rpc';
+import StatusPill from '../../components/StatusPill';
 import ActiveSyncBanner from '../../components/ActiveSyncBanner';
 import { startActiveSync, type ActiveSyncSnapshot } from '../../services/active-sync';
 import { notifyIncoming } from '../../services/notifications';
@@ -37,6 +39,10 @@ export default function WalletBalanceScreen({
 }: Props) {
   const { t } = useTranslation();
   const [balanceMicroFtc, setBalanceMicroFtc] = useState<bigint>(0n);
+  /** Authoritative on-chain balance (FTC) from the hub, or null when the
+   *  fetch failed — then we fall back to the locally-computed ledger sum. */
+  const [chainFtc, setChainFtc] = useState<number | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
   const [recent, setRecent] = useState<WalletTx[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [activeSync, setActiveSync] = useState<ActiveSyncSnapshot | null>(null);
@@ -56,6 +62,11 @@ export default function WalletBalanceScreen({
     setBalanceMicroFtc(bal);
     setRecent(txs);
     setContactNames(buildContactNameMap(contacts));
+    // Pull the authoritative on-chain balance; surface an error (not a
+    // silently-stale local sum) when the hub is unreachable.
+    const chain = await fetchBalanceFtc(address);
+    if (chain) { setChainFtc(chain.ftc); setBalanceError(false); }
+    else { setChainFtc(null); setBalanceError(true); }
   }
 
   /** "Sync now" button — 5 min bounded active-sync (Stripe Terminal
@@ -79,7 +90,9 @@ export default function WalletBalanceScreen({
     setActiveSync({ elapsedMs: 0, budgetMs: 5 * 60 * 1000, nextPollInMs: 5_000, pollCount: 0 });
   }
 
-  const ftc = Number(balanceMicroFtc) / 1_000_000;
+  // Prefer the on-chain balance; fall back to the local ledger sum when the
+  // hub is unreachable (with a visible error so the figure isn't trusted blindly).
+  const ftc = chainFtc != null ? chainFtc : Number(balanceMicroFtc) / 1_000_000;
 
   return (
     <section className="flex flex-col h-full overflow-y-auto safe-bottom">
@@ -96,6 +109,11 @@ export default function WalletBalanceScreen({
           <div className="mt-1 text-4xl font-semibold text-[var(--color-text)] tabular-nums">
             {ftc.toFixed(4)}
           </div>
+          {balanceError && (
+            <div className="mt-1 text-[11px] text-[var(--color-red)]">
+              {t('wallet.balanceError', "Couldn't reach FutureChain — tap Sync. Showing local estimate.")}
+            </div>
+          )}
           <div className="mt-3 pt-3 border-t border-[var(--color-border-soft)]">
             <div className="text-xs uppercase tracking-wider text-[var(--color-text-faint)]">
               {t('wallet.address')}
@@ -191,14 +209,26 @@ function RecentRow({ tx, contactNames }: { tx: WalletTx; contactNames: Record<st
   const date = new Date(tx.ts);
   const dateStr = date.toISOString().slice(0, 10);
   const name = resolveName(tx.counterparty, contactNames) ?? abbreviate(tx.counterparty);
+  const inbound = isInbound(tx.kind);
   return (
     <li className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-soft)]">
-      <div className="min-w-0">
-        <div className="text-sm font-medium text-[var(--color-text)]">
-          {t(`wallet.txKind.${tx.kind}`)}
-        </div>
-        <div className="text-[11px] text-[var(--color-text-faint)] truncate">
-          {name}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Direction indicator — inbound (↙, accent) vs outbound (↗). */}
+        <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+              style={{ backgroundColor: inbound ? 'var(--color-accent-soft)' : 'var(--color-surface-muted)',
+                       color: inbound ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+          {inbound ? '↙' : '↗'}
+        </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-[var(--color-text)]">
+              {t(`wallet.txKind.${tx.kind}`)}
+            </span>
+            {tx.kind === 'send' && tx.status && <StatusPill status={tx.status} />}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-faint)] truncate">
+            {name}
+          </div>
         </div>
       </div>
       <div className="text-right ml-3">
