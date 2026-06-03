@@ -27,6 +27,8 @@ interface Props {
   onReceive: () => void;
   onHistory: () => void;
   onSettings: () => void;
+  /** #88 — open the agent monitoring feed (shown only for an agent wallet). */
+  onAgentActivity: () => void;
 }
 
 /** Abbreviate a wallet address for chips: head…tail. */
@@ -35,9 +37,11 @@ export function shortAddress(addr: string): string {
   return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
-export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }: Props) {
+export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, onAgentActivity }: Props) {
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
+  /** #88 — true when the active wallet is an ANTON agent wallet. */
+  const [isAgent, setIsAgent] = useState(false);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
@@ -64,6 +68,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
       const wallet = await getActiveWalletMeta();
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
+      setIsAgent(wallet?.kind === 'agent');
       // Instant paint from the local cache.
       const [sent, received, ts, contacts] = await Promise.all([
         listPayments(), listReceived(), getLastSyncTs(), listContacts(),
@@ -221,6 +226,28 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings }:
             </div>
           </div>
         </div>
+
+        {/* #88 — agent wallet: a prominent entry into the monitoring feed. */}
+        {isAgent && (
+          <button type="button" onClick={onAgentActivity}
+                  className="rounded-2xl p-3.5 mb-4 w-full flex items-center justify-between active:opacity-90 transition-opacity"
+                  style={{ backgroundColor: 'var(--color-accent-soft)',
+                           border: '1px solid var(--color-accent-dim)' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}>
+                {t('walletsList.agentBadge', 'Agent')}
+              </span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                {t('agentActivity.open', 'Agent activity')}
+              </span>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--color-accent)' }}>
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
 
         {/* Active-sync banner — only visible while Sync is running. */}
         {activeSync && (

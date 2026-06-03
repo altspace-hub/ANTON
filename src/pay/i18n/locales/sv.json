@@ -401,5 +401,13 @@
     "notBackedUp": "Säkerhetskopiera",
     "title": "Plånböcker",
     "agentBadge": "Agent"
+  },
+  "agentActivity": {
+    "title": "Agentaktivitet",
+    "open": "Agentaktivitet",
+    "payments": "Betalningar",
+    "totalSent": "Totalt skickat",
+    "lastActive": "Senast aktiv",
+    "empty": "Ingen agentaktivitet än. Betalningar som agenten gör visas här."
   }
 }

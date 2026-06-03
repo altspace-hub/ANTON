@@ -472,5 +472,13 @@
     "notBackedUp": "Back up",
     "title": "Wallets",
     "agentBadge": "Agent"
+  },
+  "agentActivity": {
+    "title": "Agent activity",
+    "open": "Agent activity",
+    "payments": "Payments",
+    "totalSent": "Total sent",
+    "lastActive": "Last active",
+    "empty": "No agent activity yet. Payments the agent makes will appear here."
   }
 }

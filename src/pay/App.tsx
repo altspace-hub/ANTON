@@ -22,6 +22,7 @@ import ReviewScreen from './pages/ReviewScreen';
 import PaymentDoneScreen from './pages/PaymentDoneScreen';
 import HistoryScreen from './pages/HistoryScreen';
 import PaymentDetailScreen from './pages/PaymentDetailScreen';
+import AgentActivityScreen from './pages/AgentActivityScreen';
 import ReceiveScreen from './pages/ReceiveScreen';
 import SettingsScreen from './pages/settings/SettingsScreen';
 import WalletScreen from './pages/settings/WalletScreen';
@@ -64,6 +65,7 @@ type Screen =
   | 'review'
   | 'payment-done'
   | 'history'
+  | 'agent-activity'
   | 'payment-detail'
   | 'settings'
   | 'settings-wallet'
@@ -97,6 +99,7 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'receive': 'home',
   'payment-done': 'home',
   'history': 'home',
+  'agent-activity': 'home',
   'payment-detail': 'history',
   'settings': 'home',
   'settings-wallet': 'settings',
@@ -319,8 +322,12 @@ export default function App() {
         onReceive={() => setScreen('receive')}
         onHistory={() => setScreen('history')}
         onSettings={() => setScreen('settings')}
+        onAgentActivity={() => setScreen('agent-activity')}
       />
     );
+  }
+  if (screen === 'agent-activity') {
+    return <AgentActivityScreen onBack={() => setScreen('home')} />;
   }
   if (screen === 'receive') {
     return <ReceiveScreen onBack={() => setScreen('home')} />;
