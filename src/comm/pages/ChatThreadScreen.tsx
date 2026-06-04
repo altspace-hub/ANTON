@@ -1356,7 +1356,7 @@ function ViewOnceViewer({ message, onDismiss }: { message: ChatMessage; onDismis
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="View once"
+      aria-label={t('chat.viewOnce', 'View once')}
       className="fixed inset-0 z-50 flex flex-col bg-black"
     >
       <header className="flex items-center justify-between px-4 h-12 safe-top">

@@ -12,6 +12,7 @@
  *             cancel + send buttons. User taps send to stop & deliver.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import {
   startRecording,
@@ -33,6 +34,7 @@ const LOCK_THRESHOLD_PX = 80;
 type State = 'idle' | 'recording' | 'locked';
 
 export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
+  const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [dx, setDx] = useState(0);
@@ -73,7 +75,7 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
         }
       }, 100);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start recording';
+      const msg = err instanceof Error ? err.message : t('chat.errVoiceStart', 'Failed to start recording');
       onError(msg);
       setState('idle');
     }
@@ -127,12 +129,12 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
       setDx(0); setDy(0);
       setElapsed(0);
       if (!isVoiceWithinRelayCap(rec)) {
-        onError('Recording too long for inline send. Try under 60 seconds.');
+        onError(t('chat.errVoiceTooLong', 'Recording too long for inline send. Try under {{seconds}} seconds.', { seconds: MAX_RECORDING_SEC }));
         return;
       }
       await onSend(rec);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Recording failed';
+      const msg = err instanceof Error ? err.message : t('chat.errVoiceFailed', 'Recording failed');
       onError(msg);
       setState('idle');
     }
@@ -142,7 +144,7 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
   if (state === 'idle') {
     return (
       <button
-        aria-label="Hold to record voice"
+        aria-label={t('chat.voiceRecordAria', 'Hold to record voice')}
         disabled={disabled}
         onPointerDown={(e) => void onPointerDown(e)}
         onPointerMove={onPointerMove}
@@ -183,7 +185,7 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
                 style={{ opacity: 1 - cancelProgress, transform: `translateX(${dx * 0.4}px)` }}
               >
                 <span className="mr-1">‹</span>
-                {willCancel ? 'Release to cancel' : 'Slide to cancel'}
+                {willCancel ? t('chat.voiceReleaseToCancel', 'Release to cancel') : t('chat.voiceSlideToCancel', 'Slide to cancel')}
               </span>
               {/* Lock affordance, hidden when finger has moved noticeably down */}
               <span
@@ -191,11 +193,11 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
                 style={{ opacity: dy < -10 ? 1 : 0.5 }}
               >
                 <Ico name="lock" size={16} />
-                <span>lock</span>
+                <span>{t('chat.voiceLock', 'lock')}</span>
               </span>
               {/* The mic button stays focused — follows finger up to lock threshold */}
               <button
-                aria-label="Recording — release to send, slide left to cancel"
+                aria-label={t('chat.voiceRecordingAria', 'Recording — release to send, slide left to cancel')}
                 onPointerMove={onPointerMove}
                 onPointerUp={() => void onPointerUp()}
                 onPointerCancel={() => cancelRecording()}
@@ -215,7 +217,7 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
             <>
               <button
                 onClick={cancelRecording}
-                aria-label="Cancel recording"
+                aria-label={t('chat.voiceCancelAria', 'Cancel recording')}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-red)]"
                 style={{ backgroundColor: 'var(--color-surface-muted)' }}
               >
@@ -224,11 +226,11 @@ export default function VoiceRecorder({ onSend, onError, disabled }: Props) {
               <span className="flex items-center gap-2 text-[var(--color-text)] text-base font-medium tabular-nums flex-1">
                 <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-red)' }} />
                 {formatDuration(elapsed)}
-                <span className="text-xs text-[var(--color-text-faint)] ml-1">recording</span>
+                <span className="text-xs text-[var(--color-text-faint)] ml-1">{t('chat.voiceRecordingLabel', 'recording')}</span>
               </span>
               <button
                 onClick={() => void finishAndSend()}
-                aria-label="Send voice note"
+                aria-label={t('chat.voiceSendAria', 'Send voice note')}
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
               >

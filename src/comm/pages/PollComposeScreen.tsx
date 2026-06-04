@@ -6,6 +6,7 @@
  * returns to the chat thread.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sendPoll, ChatError } from '../services/chat';
 import { Ico } from '../components/Ico';
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function PollComposeScreen({ peerContactHash, peerName, onCancel, onCreated }: Props) {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState<string[]>(['', '']);
   const [multiSelect, setMultiSelect] = useState(false);
@@ -53,7 +55,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
       const finalOptions = trimmedOptions.filter((o) => o.length > 0);
       const seen = new Set<string>();
       for (const o of finalOptions) {
-        if (seen.has(o)) throw new Error('Options must be unique.');
+        if (seen.has(o)) throw new Error(t('poll.errUnique', 'Options must be unique.'));
         seen.add(o);
       }
       await sendPoll(peerContactHash, {
@@ -63,7 +65,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
       });
       onCreated();
     } catch (e) {
-      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : 'Failed to create poll'));
+      setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('poll.errCreate', 'Failed to create poll')));
       setBusy(false);
     }
   }
@@ -71,29 +73,29 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
   return (
     <section className="flex flex-col min-h-dvh max-h-dvh safe-top safe-bottom bg-[var(--color-bg)]">
       <header className="flex items-center justify-between h-12 px-4 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)]">
-        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>Cancel</button>
-        <h1 className="text-base font-semibold text-[var(--color-text)]">New poll</h1>
+        <button onClick={onCancel} className="text-sm text-[var(--color-text-muted)]" disabled={busy}>{t('common.cancel', 'Cancel')}</button>
+        <h1 className="text-base font-semibold text-[var(--color-text)]">{t('poll.newPoll', 'New poll')}</h1>
         <button
           onClick={() => void handleCreate()}
           disabled={!canCreate}
           className="text-sm font-semibold disabled:opacity-40"
           style={{ color: 'var(--color-accent)' }}
         >
-          {busy ? 'Sending…' : 'Create'}
+          {busy ? t('poll.sending', 'Sending…') : t('poll.create', 'Create')}
         </button>
       </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-        <p className="text-xs text-[var(--color-text-faint)]">To {peerName}</p>
+        <p className="text-xs text-[var(--color-text-faint)]">{t('poll.toPeer', 'To {{name}}', { name: peerName })}</p>
 
         <section>
           <label className="block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
-            Question
+            {t('poll.question', 'Question')}
           </label>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
-            placeholder="Ask something…"
+            placeholder={t('poll.questionPlaceholder', 'Ask something…')}
             rows={2}
             disabled={busy}
             className="w-full px-3 py-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-text-faint)] resize-none focus:outline-none focus:ring-2"
@@ -104,7 +106,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
 
         <section>
           <label className="block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
-            Options
+            {t('poll.options', 'Options')}
           </label>
           <ul className="space-y-2">
             {options.map((opt, i) => (
@@ -118,7 +120,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
                 <input
                   value={opt}
                   onChange={(e) => setOption(i, e.target.value)}
-                  placeholder={`Option ${i + 1}`}
+                  placeholder={t('poll.optionN', 'Option {{n}}', { n: i + 1 })}
                   disabled={busy}
                   maxLength={MAX_OPTION}
                   className="flex-1 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[15px] text-[var(--color-text)] placeholder-[var(--color-text-faint)] focus:outline-none focus:ring-2"
@@ -128,7 +130,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
                   <button
                     onClick={() => removeOption(i)}
                     disabled={busy}
-                    aria-label={`Remove option ${i + 1}`}
+                    aria-label={t('poll.removeOption', 'Remove option {{n}}', { n: i + 1 })}
                     className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-muted)] active:bg-[var(--color-surface-muted)]"
                   >
                     <Ico name="x" size={16} />
@@ -144,7 +146,7 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
               className="mt-2 ml-9 text-sm font-medium disabled:opacity-40"
               style={{ color: 'var(--color-accent)' }}
             >
-              + Add option
+              + {t('poll.addOption', 'Add option')}
             </button>
           )}
         </section>
@@ -161,9 +163,9 @@ export default function PollComposeScreen({ peerContactHash, peerName, onCancel,
             }}
           >
             <div className="flex-1 text-left">
-              <div className="text-[14px] font-medium text-[var(--color-text)]">Allow multiple answers</div>
+              <div className="text-[14px] font-medium text-[var(--color-text)]">{t('poll.allowMultiple', 'Allow multiple answers')}</div>
               <div className="text-[11px] text-[var(--color-text-muted)]">
-                {multiSelect ? 'Each person can pick more than one option.' : 'Each person picks exactly one option.'}
+                {multiSelect ? t('poll.multiOn', 'Each person can pick more than one option.') : t('poll.multiOff', 'Each person picks exactly one option.')}
               </div>
             </div>
             <span

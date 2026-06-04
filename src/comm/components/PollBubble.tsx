@@ -6,6 +6,7 @@
  * fills proportionally. Tapping an option votes (or toggles for
  * multi-select); the bubble re-renders off the local store immediately.
  */
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import type { PollPayload } from '../services/chat';
 import type { ChatMessage } from '../services/messages';
@@ -23,6 +24,7 @@ interface StoredPoll extends PollPayload {
 }
 
 export default function PollBubble({ message, isMine, myHash, time, onVote }: Props) {
+  const { t } = useTranslation();
   let poll: StoredPoll | null = null;
   try { poll = JSON.parse(message.plaintext) as StoredPoll; } catch { /* ignore */ }
   if (!poll) return null;
@@ -59,7 +61,7 @@ export default function PollBubble({ message, isMine, myHash, time, onVote }: Pr
       <div className="px-4 pt-3 pb-1">
         <div className="text-[11px] uppercase tracking-wide opacity-70 flex items-center gap-1.5">
           <Ico name="grid" size={12} color={isMine ? 'rgba(255,255,255,0.8)' : 'var(--color-text-muted)'} />
-          Poll · {poll.multiSelect ? 'multiple answers' : 'single answer'}
+          {t('poll.label', 'Poll')} · {poll.multiSelect ? t('poll.multipleAnswers', 'multiple answers') : t('poll.singleAnswer', 'single answer')}
         </div>
         <div className="mt-0.5 text-[15px] font-semibold leading-snug">{poll.question}</div>
       </div>
@@ -127,8 +129,8 @@ export default function PollBubble({ message, isMine, myHash, time, onVote }: Pr
         style={{ color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)' }}
       >
         <span>
-          {sum(counts)} {sum(counts) === 1 ? 'vote' : 'votes'}
-          {expired && <> · closed</>}
+          {t('poll.voteCount', '{{count}} votes', { count: sum(counts) })}
+          {expired && <> · {t('poll.closed', 'closed')}</>}
         </span>
         <time>{time}</time>
       </div>

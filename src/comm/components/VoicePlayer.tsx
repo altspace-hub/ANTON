@@ -6,6 +6,7 @@
  * Scrubbing: tap on a bar jumps audio.currentTime to that proportion.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import type { VoicePayload } from '../services/chat';
 
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function VoicePlayer({ payload, mine }: Props) {
+  const { t } = useTranslation();
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -69,7 +71,7 @@ export default function VoicePlayer({ payload, mine }: Props) {
       <button
         type="button"
         onClick={toggle}
-        aria-label={playing ? 'Pause voice note' : 'Play voice note'}
+        aria-label={playing ? t('chat.voicePauseAria', 'Pause voice note') : t('chat.voicePlayAria', 'Play voice note')}
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
         style={{
           backgroundColor: mine ? 'rgba(255,255,255,0.2)' : 'var(--color-accent-dim)',
@@ -82,7 +84,7 @@ export default function VoicePlayer({ payload, mine }: Props) {
         onPointerDown={scrub}
         className="flex-1 flex items-center gap-[2px] h-7 cursor-pointer"
         style={{ touchAction: 'none' }}
-        aria-label="Voice note progress"
+        aria-label={t('chat.voiceProgressAria', 'Voice note progress')}
         role="slider"
         aria-valuenow={Math.round(progress * 100)}
         aria-valuemin={0}
