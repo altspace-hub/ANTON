@@ -37,6 +37,7 @@ import LocationBubble from '../components/LocationBubble';
 import LocationPickerSheet from '../components/LocationPickerSheet';
 import StickerBubble from '../components/StickerBubble';
 import StickerPickerSheet from '../components/StickerPickerSheet';
+import { recordStickerUse } from '../services/sticker-recents';
 import MediaViewer from '../components/MediaViewer';
 import { useLongPress } from '../hooks/useLongPress';
 import { registerBackHandler } from '../services/back-stack';
@@ -170,6 +171,8 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
     try {
       const msg = await sendSticker(peerContactHash, packId, stickerId);
       setMessages((prev) => [...prev, msg]);
+      recordStickerUse(packId, stickerId); // surface it in the picker's "Recently used" row
+
     } catch (e) {
       setError(e instanceof ChatError ? e.message : (e instanceof Error ? e.message : t('chat.errSendSticker')));
     } finally {

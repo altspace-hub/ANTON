@@ -1,13 +1,15 @@
 /**
  * StickerPickerSheet — R12 grid picker for sending a sticker.
  *
- * Renders the bundled starter pack; tap a sticker to dispatch. Future
- * enhancement: tabs for additional user-imported `.anton-sticker`
- * packs (resolver shape already accepts a packId, so no wire change
- * needed when that lands).
+ * R12.1: a "Recently used" row (MRU, from sticker-recents) renders first when
+ * present, then one section per bundled pack. The resolver is keyed on
+ * packId/stickerId so adding a pack here needs no wire change — only the ids
+ * travel; the recipient resolves the SVG from its own bundle.
  */
+import { useMemo } from 'react';
 import BottomSheet from './BottomSheet';
-import { listStarterStickers, stickerToDataUrl } from '../assets/stickers';
+import { listPacks, stickerToDataUrl, type Sticker } from '../assets/stickers';
+import { listRecentStickers } from '../services/sticker-recents';
 
 interface Props {
   open: boolean;
@@ -16,28 +18,45 @@ interface Props {
 }
 
 export default function StickerPickerSheet({ open, onClose, onPick }: Props) {
-  const stickers = listStarterStickers();
+  const packs = listPacks();
+  // Re-read recents each time the sheet opens (so a sticker sent last session
+  // — or moments ago, then reopened — shows at the front).
+  const recents = useMemo(() => (open ? listRecentStickers() : []), [open]);
+
+  const Cell = ({ packId, sticker }: { packId: string; sticker: Sticker }) => (
+    <button
+      onClick={() => { onClose(); onPick(packId, sticker.id); }}
+      aria-label={sticker.label}
+      // P8-4 tap feedback: scale to 90% on press, snap back on release.
+      className="aspect-square rounded-2xl flex items-center justify-center bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-muted)] transition-transform duration-120 active:scale-90 active:transition-none"
+    >
+      <img src={stickerToDataUrl(sticker)} alt={sticker.label} className="w-16 h-16" draggable={false} />
+    </button>
+  );
 
   return (
     <BottomSheet open={open} onClose={onClose} title="Stickers" icon="smile" maxHeight="60vh" ariaLabel="Pick a sticker">
-      <div className="px-5 -mt-1 mb-2 text-[11px] text-[var(--color-text-muted)] flex-shrink-0">Starter pack</div>
-      <div
-        className="px-3 pb-2 overflow-y-auto grid gap-2"
-        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
-      >
-        {stickers.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => { onClose(); onPick('starter', s.id); }}
-            aria-label={s.label}
-            // P8-4 tap feedback: scale to 90% on press, snap back on
-            // release. transition-none on active to avoid the easing
-            // making the press feel mushy; the spring back uses a
-            // soft 120 ms transition so it doesn't twang.
-            className="aspect-square rounded-2xl flex items-center justify-center bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-muted)] transition-transform duration-120 active:scale-90 active:transition-none"
-          >
-            <img src={stickerToDataUrl(s)} alt={s.label} className="w-16 h-16" draggable={false} />
-          </button>
+      <div className="overflow-y-auto pb-2">
+        {recents.length > 0 && (
+          <section>
+            <div className="px-5 mb-2 text-[11px] text-[var(--color-text-muted)]">Recently used</div>
+            <div className="px-3 mb-3 grid gap-2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+              {recents.map(({ ref, sticker }) => (
+                <Cell key={`recent-${ref.packId}-${ref.stickerId}`} packId={ref.packId} sticker={sticker} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {packs.map((pack) => (
+          <section key={pack.id}>
+            <div className="px-5 mb-2 text-[11px] text-[var(--color-text-muted)]">{pack.name}</div>
+            <div className="px-3 mb-3 grid gap-2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+              {pack.stickers.map((s) => (
+                <Cell key={`${pack.id}-${s.id}`} packId={pack.id} sticker={s} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </BottomSheet>

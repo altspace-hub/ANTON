@@ -687,6 +687,12 @@ export async function sendForward(
       expiresAt: stored.expiresAt,
     });
   }
+  if (kind === 'sticker') {
+    // Only the pack/sticker ids travel — the target resolves the SVG from
+    // its own bundle, same as a fresh send.
+    const { packId, stickerId } = JSON.parse(source.plaintext) as StickerPayload;
+    return sendSticker(targetContactHash, packId, stickerId);
+  }
   // Event / system kinds aren't forwardable per spec — silently skip.
   return null;
 }

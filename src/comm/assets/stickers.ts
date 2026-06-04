@@ -32,6 +32,8 @@ const GOLD = '#F5A623';
 const RED = '#E74C3C';
 const NAVY = '#0B1426';
 const CREAM = '#F5F1EA';
+const GREEN = '#27AE60';
+const WHITE = '#FFFFFF';
 
 function wrap(inner: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${W}" width="${W}" height="${W}">${inner}</svg>`;
@@ -152,9 +154,108 @@ const STARTER_PACK: StickerPack = {
   ],
 };
 
-const PACKS = new Map<string, StickerPack>([['starter', STARTER_PACK]]);
+// ── Second pack — "Mood" (R12.1) ──────────────────────────────────────
+// Exercises the multi-pack resolver: packId travels on the wire, so a
+// sticker from this pack round-trips with no protocol change. Same flat
+// geometric style + brand palette as the starter pack.
+const MOOD_PACK: StickerPack = {
+  id: 'mood',
+  name: 'Mood',
+  stickers: [
+    {
+      id: 'cool',
+      label: 'Cool',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${GOLD}"/>
+        <rect x="40" y="112" width="24" height="10" rx="5" fill="${NAVY}"/>
+        <rect x="192" y="112" width="24" height="10" rx="5" fill="${NAVY}"/>
+        <rect x="60" y="104" width="136" height="30" rx="14" fill="${NAVY}"/>
+        <path d="M92 170 Q128 198 164 170" fill="none" stroke="${NAVY}" stroke-width="10" stroke-linecap="round"/>
+      `),
+    },
+    {
+      id: 'love-eyes',
+      label: 'Love',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${GOLD}"/>
+        <path d="M96 130 C80 114 80 100 90 100 C96 100 96 106 96 108 C96 106 96 100 102 100 C112 100 112 114 96 130 Z" fill="${RED}"/>
+        <path d="M160 130 C144 114 144 100 154 100 C160 100 160 106 160 108 C160 106 160 100 166 100 C176 100 176 114 160 130 Z" fill="${RED}"/>
+        <path d="M92 168 Q128 200 164 168" fill="none" stroke="${NAVY}" stroke-width="10" stroke-linecap="round"/>
+      `),
+    },
+    {
+      id: 'meh',
+      label: 'Meh',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${GOLD}"/>
+        <circle cx="96" cy="116" r="10" fill="${NAVY}"/>
+        <circle cx="160" cy="116" r="10" fill="${NAVY}"/>
+        <path d="M92 168 L164 168" fill="none" stroke="${NAVY}" stroke-width="10" stroke-linecap="round"/>
+      `),
+    },
+    {
+      id: 'sleep',
+      label: 'Sleep',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${GOLD}"/>
+        <path d="M80 116 Q96 130 112 116" fill="none" stroke="${NAVY}" stroke-width="9" stroke-linecap="round"/>
+        <path d="M144 116 Q160 130 176 116" fill="none" stroke="${NAVY}" stroke-width="9" stroke-linecap="round"/>
+        <path d="M104 178 Q128 190 152 178" fill="none" stroke="${NAVY}" stroke-width="9" stroke-linecap="round"/>
+        <path d="M170 72 L196 72 L170 98 L196 98" fill="none" stroke="${TEAL}" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M200 44 L216 44 L200 62 L216 62" fill="none" stroke="${TEAL}" stroke-width="6" stroke-linejoin="round"/>
+      `),
+    },
+    {
+      id: 'check',
+      label: 'Yes',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${GREEN}"/>
+        <path d="M76 132 L112 168 L184 92" fill="none" stroke="${WHITE}" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+      `),
+    },
+    {
+      id: 'cross',
+      label: 'No',
+      svg: wrap(`
+        <circle cx="${C}" cy="${C}" r="100" fill="${RED}"/>
+        <path d="M92 92 L164 164 M164 92 L92 164" fill="none" stroke="${WHITE}" stroke-width="18" stroke-linecap="round"/>
+      `),
+    },
+    {
+      id: 'rocket',
+      label: 'Rocket',
+      svg: wrap(`
+        <path d="M128 28 C160 60 168 110 168 150 L88 150 C88 110 96 60 128 28 Z" fill="${CREAM}" stroke="${NAVY}" stroke-width="4"/>
+        <circle cx="${C}" cy="96" r="20" fill="${TEAL}"/>
+        <path d="M88 150 L60 196 L88 176 Z" fill="${RED}"/>
+        <path d="M168 150 L196 196 L168 176 Z" fill="${RED}"/>
+        <path d="M104 150 L128 222 L152 150 Z" fill="${GOLD}"/>
+        <path d="M116 150 L128 194 L140 150 Z" fill="${RED}"/>
+      `),
+    },
+    {
+      id: 'gift',
+      label: 'Gift',
+      svg: wrap(`
+        <rect x="56" y="112" width="144" height="108" rx="8" fill="${TEAL}"/>
+        <rect x="48" y="92" width="160" height="28" rx="8" fill="${TEAL_LIGHT}"/>
+        <rect x="116" y="92" width="24" height="128" fill="${GOLD}"/>
+        <path d="M128 92 C100 64 72 76 88 96 C100 110 128 92 128 92 Z" fill="${GOLD}"/>
+        <path d="M128 92 C156 64 184 76 168 96 C156 110 128 92 128 92 Z" fill="${GOLD}"/>
+      `),
+    },
+  ],
+};
+
+const PACKS = new Map<string, StickerPack>([
+  ['starter', STARTER_PACK],
+  ['mood', MOOD_PACK],
+]);
 
 export function listStarterStickers(): Sticker[] { return STARTER_PACK.stickers; }
+
+/** All packs in display order — used by the picker to render a section per pack. */
+export function listPacks(): StickerPack[] { return [...PACKS.values()]; }
 
 export function getSticker(packId: string, stickerId: string): Sticker | null {
   return PACKS.get(packId)?.stickers.find((s) => s.id === stickerId) ?? null;
@@ -170,13 +271,15 @@ export function getSticker(packId: string, stickerId: string): Sticker | null {
 const dataUrlCache = new Map<string, string>();
 
 export function stickerToDataUrl(sticker: Sticker): string {
-  const cached = dataUrlCache.get(sticker.id);
+  // Key on the SVG bytes, not the id — ids are only unique within a pack,
+  // so two packs could legitimately share an id (e.g. both a 'heart').
+  const cached = dataUrlCache.get(sticker.svg);
   if (cached) return cached;
   const b64 = typeof btoa !== 'undefined'
     ? btoa(unescape(encodeURIComponent(sticker.svg)))
     : Buffer.from(sticker.svg, 'utf-8').toString('base64');
   const url = `data:image/svg+xml;base64,${b64}`;
-  dataUrlCache.set(sticker.id, url);
+  dataUrlCache.set(sticker.svg, url);
   return url;
 }
 
