@@ -55,26 +55,30 @@ export async function shareText(opts: ShareTextOptions): Promise<void> {
  *  the file URI. Web: triggers a browser download. */
 export async function shareFile(file: SharedFile, opts: { title?: string } = {}): Promise<void> {
   if (await isCapacitorNative()) {
-    // Write to Capacitor Filesystem cache, then share the resulting URI.
-    // @capacitor/filesystem isn't in the slimmed plugin list (yet) so use
-    // a base64 data URL via the Share plugin's `files` field which accepts
-    // file:// URIs OR base64 data URIs (Android only). For the v1 launch
-    // we share the URL + text — the merchant emails the kvitto link, and
-    // the file body shows up in the OS share dialog as inline text.
-    const dataUrl = await stringToDataUrl(file.body, file.mimeType);
-    const { Share } = await import('@capacitor/share');
+    // Write the file to the app cache, then share its file:// URI so it
+    // attaches as a REAL file in the native chooser (email / Drive / Files).
+    // The Android Share plugin only honours file:// URIs — a data: URL is
+    // silently ignored, which is why the export used to degrade to an inline
+    // text paste. (#90)
     try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+      await Filesystem.writeFile({
+        path: file.filename, data: file.body, directory: Directory.Cache, encoding: Encoding.UTF8,
+      });
+      const { uri } = await Filesystem.getUri({ path: file.filename, directory: Directory.Cache });
+      const { Share } = await import('@capacitor/share');
       await Share.share({
-        title: opts.title ?? file.filename,
-        text: file.body.length < 4096 ? file.body : `${file.filename} — open with a text editor.`,
-        url: dataUrl,
-        dialogTitle: opts.title ?? file.filename,
+        title: opts.title ?? file.filename, files: [uri], dialogTitle: opts.title ?? file.filename,
       });
       return;
     } catch {
-      // Some Android share targets reject data: URLs. Fall back to text.
-      await Share.share({ title: opts.title ?? file.filename, text: file.body });
-      return;
+      // Filesystem/Share unavailable or failed — fall back to a text share so
+      // the content still reaches the chooser.
+      try {
+        const { Share } = await import('@capacitor/share');
+        await Share.share({ title: opts.title ?? file.filename, text: file.body });
+        return;
+      } catch { /* fall through to the web path */ }
     }
   }
   // Web fallback — Blob + anchor click.
@@ -107,13 +111,4 @@ async function copyToClipboard(text: string): Promise<void> {
   ta.select();
   try { document.execCommand('copy'); } catch { /* ignore */ }
   ta.remove();
-}
-
-async function stringToDataUrl(body: string, mimeType: string): Promise<string> {
-  // btoa requires Latin-1 — encode UTF-8 first.
-  const enc = new TextEncoder();
-  const bytes = enc.encode(body);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
-  return `data:${mimeType};base64,${btoa(bin)}`;
 }

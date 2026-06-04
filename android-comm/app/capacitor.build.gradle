@@ -20,6 +20,7 @@ dependencies {
     implementation project(':capacitor-local-notifications')
     implementation project(':capacitor-network')
     implementation project(':capacitor-push-notifications')
+    implementation project(':capacitor-filesystem')
     implementation project(':capacitor-share')
     implementation project(':capacitor-splash-screen')
     implementation project(':capacitor-status-bar')
