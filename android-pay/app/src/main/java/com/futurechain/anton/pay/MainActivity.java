@@ -8,6 +8,7 @@ import com.getcapacitor.BridgeActivity;
 
 import com.futurechain.anton.pay.plugins.FcSecureSignerPlugin;
 import com.futurechain.anton.pay.plugins.FcDeviceAttestationPlugin;
+import com.futurechain.anton.pay.bgpoll.BackgroundPollingPlugin;
 
 /**
  * MainActivity for ANTON Pay.
@@ -34,6 +35,11 @@ public class MainActivity extends BridgeActivity {
         // Phase 2 real Play Integrity SDK wiring pending Windows
         // machine + test phone). See PAY_DEVICE_ATTESTATION_SPEC.md.
         registerPlugin(FcDeviceAttestationPlugin.class);
+
+        // BackgroundPolling — on-device WorkManager payment poll (push-
+        // notifications plan, Phase 2). Notifies on incoming payments while
+        // the app is backgrounded/killed, using only the public get_utxos read.
+        registerPlugin(BackgroundPollingPlugin.class);
 
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!isDebuggable) {

@@ -84,6 +84,9 @@ dependencies {
     // because FcDeviceAttestationPlugin imports it for isAvailable().
     implementation 'com.google.android.play:integrity:1.4.0'
     implementation 'com.google.android.gms:play-services-base:18.5.0'
+    // Push-notifications plan, Phase 2 — WorkManager runs the on-device
+    // background payment poll (BackgroundPollingPlugin / PayBackgroundWorker).
+    implementation 'androidx.work:work-runtime:2.9.1'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

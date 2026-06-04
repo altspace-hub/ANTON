@@ -53,6 +53,8 @@ import { reconcileScheduleNotifications, getSchedule, recordFire } from './servi
 import { scheduleToDecodedPayment } from './services/schedule-to-payment';
 import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
+import { ensureBackgroundPollingEnabled, bgSyncSeen } from './services/background-setup';
+import { listPayments } from './services/payment';
 import { listContacts, buildContactNameMap } from './services/address-book';
 import type { Recipient } from './services/recipients';
 import type { Activity, DecodedPayment, PaymentRecord } from './services/types';
@@ -200,11 +202,28 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     void ensureNotificationPermission();
+    // Phase 2 — schedule the on-device WorkManager background payment poll for
+    // this wallet (notifies on incoming payments while backgrounded/killed).
+    // No-op on web. Idempotent.
+    void ensureBackgroundPollingEnabled();
 
     // One-shot poll on app open. Idle floor: if >20h since last run,
     // ALSO bump last-run timestamp so the daily counter resets.
     const onForeground = async () => {
       const fresh = await maybeRunIdlePoll() ?? 0;
+      // Keep the background worker's "seen" set current with everything the
+      // foreground knows (sends + receives) so it never notifies for our own
+      // change outputs nor double-notifies a payment we already surfaced.
+      void (async () => {
+        try {
+          const [recv, sent] = await Promise.all([listReceived(), listPayments().catch(() => [])]);
+          const ids = [
+            ...recv.map((r) => r.txId),
+            ...sent.map((p) => p.txId),
+          ].filter((x): x is string => typeof x === 'string' && x.length > 0);
+          await bgSyncSeen(ids);
+        } catch { /* best-effort */ }
+      })();
       if (cancelled || fresh === 0) return;
       // Notify the user for each fresh inbound row we just observed.
       // The records themselves live in IDB; pull them out.
