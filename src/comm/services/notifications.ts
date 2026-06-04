@@ -112,7 +112,7 @@ export async function notifyIncoming(tx: WalletTx, fromName?: string): Promise<v
           id: idFor(tx.txHash),
           title, body,
           schedule: { at: new Date(Date.now() + 250) },
-          smallIcon: 'ic_stat_icon_config_sample',
+          smallIcon: 'ic_stat_notify',
           channelId: 'fc-comm-incoming',
         }],
       });
@@ -155,7 +155,7 @@ export async function notifyIncomingMessage(n: IncomingMessageNotice): Promise<v
           id: idFor(`msg:${n.messageId}`),
           title, body,
           schedule: { at: new Date(Date.now() + 250) },
-          smallIcon: 'ic_stat_icon_config_sample',
+          smallIcon: 'ic_stat_notify',
           channelId: 'fc-comm-messages',
           extra: { commThread: n.fromHash },
         }],

@@ -115,7 +115,7 @@ export async function notifyIncoming(record: ReceivedRecord): Promise<void> {
           title,
           body,
           schedule: { at: new Date(Date.now() + 250) }, // ~immediate, dedupes bursts
-          smallIcon: 'ic_stat_icon_config_sample',
+          smallIcon: 'ic_stat_notify',
           channelId: 'fc-pay-incoming',
         }],
       });

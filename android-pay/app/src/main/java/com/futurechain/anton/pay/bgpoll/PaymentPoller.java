@@ -155,7 +155,7 @@ public final class PaymentPoller {
         }
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
-            .setSmallIcon(ctx.getApplicationInfo().icon)
+            .setSmallIcon(smallIconRes(ctx))
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
@@ -167,6 +167,12 @@ public final class PaymentPoller {
         } catch (SecurityException ignored) {
             // POST_NOTIFICATIONS not granted — silently skip.
         }
+    }
+
+    /** The monochrome status-bar icon (ic_stat_notify); falls back to the app icon. */
+    private static int smallIconRes(Context ctx) {
+        int id = ctx.getResources().getIdentifier("ic_stat_notify", "drawable", ctx.getPackageName());
+        return id != 0 ? id : ctx.getApplicationInfo().icon;
     }
 
     private static void ensureChannel(Context ctx) {

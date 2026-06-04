@@ -368,7 +368,7 @@ async function scheduleNotificationFor(s: Schedule): Promise<void> {
         title: `Payment due — ${ftc} FTC to ${payee}`,
         body: 'Tap to sign and send.',
         schedule: { at: new Date(s.nextFireAt) },
-        smallIcon: 'ic_stat_icon_config_sample',
+        smallIcon: 'ic_stat_notify',
         channelId: 'fc-pay-scheduled',
         // Extras the tap handler reads to navigate the user straight
         // to the prefilled sign screen.

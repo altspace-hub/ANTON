@@ -83,7 +83,7 @@ export async function notifyReceiptConfirmed(receipt: Receipt): Promise<void> {
           id: idFor(receipt.orderId),
           title, body,
           schedule: { at: new Date(Date.now() + 250) },
-          smallIcon: 'ic_stat_icon_config_sample',
+          smallIcon: 'ic_stat_notify',
           channelId: 'fc-business-incoming',
         }],
       });
