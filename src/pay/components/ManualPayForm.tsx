@@ -19,6 +19,20 @@ import PrimaryButton from './PrimaryButton';
 interface Props {
   /** Receives the assembled `futurechain:pay` URI. */
   onSubmit: (uri: string) => void;
+  /** #89 — pre-seed the form when re-sending to a known recipient. */
+  initial?: {
+    address?: string;
+    amount?: string;
+    name?: string;
+    country?: string;
+    city?: string;
+    street?: string;
+    postcode?: string;
+  };
+  /** #89 — the recipient address is fixed (chosen from the Send picker):
+   *  hide the address input (the parent shows it as a header) so a vetted
+   *  address can't be fat-fingered. Name/country stay editable. */
+  lockRecipient?: boolean;
 }
 
 /** Parse an FTC decimal string to µFTC (1 FTC = 1,000,000 µFTC). */
@@ -31,16 +45,16 @@ function ftcToMicro(str: string): bigint | null {
   return v > 0n ? v : null;
 }
 
-export default function ManualPayForm({ onSubmit }: Props) {
+export default function ManualPayForm({ onSubmit, initial, lockRecipient }: Props) {
   const { t } = useTranslation();
-  const [address, setAddress] = useState('');
-  const [amount, setAmount] = useState('');
-  const [name, setName] = useState('');
-  const [country, setCountry] = useState('SE');
+  const [address, setAddress] = useState(initial?.address ?? '');
+  const [amount, setAmount] = useState(initial?.amount ?? '');
+  const [name, setName] = useState(initial?.name ?? '');
+  const [country, setCountry] = useState(initial?.country?.trim() || 'SE');
   const [showAddress, setShowAddress] = useState(false);
-  const [city, setCity] = useState('');
-  const [street, setStreet] = useState('');
-  const [postcode, setPostcode] = useState('');
+  const [city, setCity] = useState(initial?.city ?? '');
+  const [street, setStreet] = useState(initial?.street ?? '');
+  const [postcode, setPostcode] = useState(initial?.postcode ?? '');
   const [error, setError] = useState<string | null>(null);
 
   function submit() {
@@ -80,8 +94,10 @@ export default function ManualPayForm({ onSubmit }: Props) {
         {t('manualPay.hint', "Name + country are required so the payment can settle. For amounts ≥ €1000, also add the recipient's street, city and postcode.")}
       </p>
 
-      <Field label={t('manualPay.address', 'Recipient wallet address')} value={address}
-             onChange={(v) => { setAddress(v); setError(null); }} placeholder="fc_…" autoCapitalize="none" />
+      {!lockRecipient && (
+        <Field label={t('manualPay.address', 'Recipient wallet address')} value={address}
+               onChange={(v) => { setAddress(v); setError(null); }} placeholder="fc_…" autoCapitalize="none" />
+      )}
       <Field label={t('manualPay.amount', 'Amount (FTC)')} value={amount}
              onChange={(v) => { setAmount(v); setError(null); }} placeholder="0.20" inputMode="decimal" />
       <Field label={t('manualPay.name', 'Recipient name')} value={name}

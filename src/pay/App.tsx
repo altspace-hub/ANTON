@@ -18,6 +18,8 @@ import OnboardingContextScreen from './pages/onboarding/OnboardingContextScreen'
 import DoneScreen from './pages/onboarding/DoneScreen';
 import HomeScreen from './pages/HomeScreen';
 import ScanScreen from './pages/ScanScreen';
+import RecipientPickerScreen from './pages/RecipientPickerScreen';
+import SendComposeScreen from './pages/SendComposeScreen';
 import ReviewScreen from './pages/ReviewScreen';
 import PaymentDoneScreen from './pages/PaymentDoneScreen';
 import HistoryScreen from './pages/HistoryScreen';
@@ -50,6 +52,7 @@ import { scheduleToDecodedPayment } from './services/schedule-to-payment';
 import { listReceived } from './services/received';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import { listContacts, buildContactNameMap } from './services/address-book';
+import type { Recipient } from './services/recipients';
 import type { Activity, DecodedPayment, PaymentRecord } from './services/types';
 
 type Screen =
@@ -61,6 +64,8 @@ type Screen =
   | 'onboarding-done'
   | 'home'
   | 'scan'
+  | 'send'
+  | 'send-compose'
   | 'receive'
   | 'review'
   | 'payment-done'
@@ -96,6 +101,8 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'onboarding-backup-verify': 'onboarding-backup-show',
   'onboarding-context': 'onboarding-backup-verify',
   'scan': 'home',
+  'send': 'home',
+  'send-compose': 'send',
   'receive': 'home',
   'payment-done': 'home',
   'history': 'home',
@@ -131,6 +138,8 @@ export default function App() {
   const [detailWalletId, setDetailWalletId] = useState<string>('');
   /** Activity row whose full-screen detail is being viewed (History → row). */
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  /** #89 — recipient chosen in the Send picker (null = pay a new address). */
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   /** address → friend-label map, rebuilt each time a detail row opens so
    *  the detail screen resolves the latest contact names. */
   const [detailContactNames, setDetailContactNames] = useState<Record<string, string>>({});
@@ -319,6 +328,7 @@ export default function App() {
     return (
       <HomeScreen
         onScan={() => setScreen('scan')}
+        onSend={() => setScreen('send')}
         onReceive={() => setScreen('receive')}
         onHistory={() => setScreen('history')}
         onSettings={() => setScreen('settings')}
@@ -336,6 +346,27 @@ export default function App() {
     return (
       <ScanScreen
         onBack={() => setScreen('home')}
+        onDecoded={(payment) => {
+          setPendingPayment(payment);
+          setScreen('review');
+        }}
+      />
+    );
+  }
+  if (screen === 'send') {
+    return (
+      <RecipientPickerScreen
+        onBack={() => setScreen('home')}
+        onPick={(recipient) => { setSelectedRecipient(recipient); setScreen('send-compose'); }}
+        onPayNewAddress={() => { setSelectedRecipient(null); setScreen('send-compose'); }}
+      />
+    );
+  }
+  if (screen === 'send-compose') {
+    return (
+      <SendComposeScreen
+        recipient={selectedRecipient}
+        onBack={() => setScreen('send')}
         onDecoded={(payment) => {
           setPendingPayment(payment);
           setScreen('review');

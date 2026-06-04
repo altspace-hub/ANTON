@@ -45,6 +45,10 @@ export interface Contact {
   addedAt: number;
   /** Optional free-text note from the user. */
   note?: string;
+  /** #89 — user marked this contact a favourite (⭐). Sorts to the top of
+   *  the recipient picker. Additive field on the existing store — legacy
+   *  rows omit it and read as not-starred. */
+  starred?: boolean;
 }
 
 // IDB opener is owned by db.ts so version bumps stay monotonic.
@@ -74,6 +78,19 @@ export async function addContact(label: string, address: string, note?: string):
   const existing = await getContactByAddress(address);
   if (existing) {
     throw new Error('That address is already in your contacts.');
+  }
+  // Address-poisoning guard: refuse a near-miss (edit-distance 1..5) of an
+  // address already in the book — a vanity-ground look-alike. Exact matches
+  // are caught above; this catches the grind. A saved contact is TRUSTED
+  // forever (its name replaces the address everywhere), so a poisoned
+  // look-alike must never earn a friendly label here. This is the guard the
+  // module header promises — it runs for every add path: the manual "Add
+  // friend" form AND the Send picker's ⭐/save-as-friend promotion.
+  const similar = await findSimilarContacts(address);
+  if (similar.length > 0) {
+    throw new Error(
+      `This address looks similar to "${similar[0]!.contact.label}" — double-check it's the right person before saving.`,
+    );
   }
   const c: Contact = {
     id: newId(),
@@ -126,6 +143,28 @@ export async function renameContact(id: string, label: string): Promise<void> {
       const row = req.result as Contact | undefined;
       if (!row) { resolve(); return; }
       store.put({ ...row, label: label.trim() || row.label });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+/**
+ * #89 — toggle / set the ⭐ favourite flag on a saved contact. No-op when
+ * the id is unknown. Additive write on the existing row, so it never
+ * touches the IDB schema version.
+ */
+export async function setContactStarred(id: string, starred: boolean): Promise<void> {
+  const db = await open();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const row = req.result as Contact | undefined;
+      if (!row) { resolve(); return; }
+      store.put({ ...row, starred });
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);

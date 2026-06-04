@@ -24,6 +24,8 @@ import type { Activity } from '../services/types';
 
 interface Props {
   onScan: () => void;
+  /** #89 — open the Send recipient picker (Starred/Frequent/Recent/Friends). */
+  onSend: () => void;
   onReceive: () => void;
   onHistory: () => void;
   onSettings: () => void;
@@ -37,7 +39,7 @@ export function shortAddress(addr: string): string {
   return `${addr.slice(0, 10)}…${addr.slice(-6)}`;
 }
 
-export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, onAgentActivity }: Props) {
+export default function HomeScreen({ onScan, onSend, onReceive, onHistory, onSettings, onAgentActivity }: Props) {
   const { t } = useTranslation();
   const [address, setAddress] = useState<string>('');
   /** #88 — true when the active wallet is an ANTON agent wallet. */
@@ -307,23 +309,40 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
             </div>
           </div>
         ) : (
-          /* Scan CTA */
-          <button
-            type="button"
-            onClick={onScan}
-            className="rounded-2xl p-6 flex flex-col items-center text-center active:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-          >
-            <span className="flex items-center justify-center w-16 h-16 rounded-full mb-3"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span className="text-xl font-bold">{t('home.scanToPay')}</span>
-            <span className="text-sm mt-1" style={{ opacity: 0.85 }}>{t('home.scanHint')}</span>
-          </button>
+          /* Primary actions — Scan (accent) + Send (surface), side by side. */
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={onScan}
+              className="rounded-2xl p-5 flex flex-col items-center text-center active:opacity-90 transition-opacity"
+              style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
+            >
+              <span className="flex items-center justify-center w-12 h-12 rounded-full mb-2.5"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="text-base font-bold">{t('home.scanToPay')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onSend}
+              className="rounded-2xl p-5 flex flex-col items-center text-center active:opacity-90 transition-opacity"
+              style={{ backgroundColor: 'var(--color-surface)',
+                       border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+            >
+              <span className="flex items-center justify-center w-12 h-12 rounded-full mb-2.5"
+                    style={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="text-base font-bold">{t('home.sendToSomeone', 'Send')}</span>
+            </button>
+          </div>
         )}
 
         {/* Receive CTA — secondary action, same width, lighter weight so
