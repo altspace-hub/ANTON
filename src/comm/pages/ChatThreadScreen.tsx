@@ -900,7 +900,12 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
   } else {
     body = (
       <div
-        className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[15px] leading-snug ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+        // No own max-width: the parent column already caps the group at 85% of
+        // the (definite) row. A percentage max-width HERE resolves against the
+        // shrink-to-fit column — which is sized by THIS bubble — so short
+        // messages collapsed to the footer width and wrapped per-character
+        // ("Hej" → H/e/j). Letting the bubble fill the column fixes it.
+        className={`rounded-2xl px-3.5 py-2 text-[15px] leading-snug ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
         style={{
           backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
           color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)',
@@ -1010,7 +1015,7 @@ function MediaBubble({ message, isMine, time, kind, onOpenImage }: {
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[78%] rounded-2xl overflow-hidden ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+        className={`rounded-2xl overflow-hidden ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
         style={{
           backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
           border: isMine ? 'none' : '1px solid var(--color-border-soft)',
@@ -1077,7 +1082,7 @@ function FileBubble({ message, isMine, time, onOpen }: {
     <button
       type="button"
       onClick={() => onOpen(p)}
-      className={`max-w-[78%] rounded-2xl px-3 py-2.5 flex items-center gap-3 text-left active:opacity-90 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+      className={`rounded-2xl px-3 py-2.5 flex items-center gap-3 text-left active:opacity-90 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
       style={{
         backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
         color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)',
@@ -1114,7 +1119,7 @@ function VoiceBubble({ message, isMine, time }: { message: ChatMessage; isMine: 
   if (!payload) return null;
   return (
     <div
-      className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+      className={`rounded-2xl px-3.5 py-2.5 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
       style={{
         backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
         color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)',
@@ -1210,7 +1215,7 @@ function DeletedBubble({ isMine, time }: { isMine: boolean; time: string }) {
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[14px] italic ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} flex items-center gap-2`}
+        className={`rounded-2xl px-3.5 py-2 text-[14px] italic ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} flex items-center gap-2`}
         style={{
           backgroundColor: 'var(--color-surface-muted)',
           color: 'var(--color-text-faint)',
@@ -1285,7 +1290,7 @@ function ViewOnceMediaBubble({ message, isMine, time, onOpen }: {
       type="button"
       onClick={() => { if (recipientUnviewed) onOpen(); }}
       disabled={!recipientUnviewed}
-      className={`max-w-[78%] rounded-2xl overflow-hidden text-left ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${recipientUnviewed ? 'active:opacity-80' : ''}`}
+      className={`rounded-2xl overflow-hidden text-left ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${recipientUnviewed ? 'active:opacity-80' : ''}`}
       style={{
         backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
         border: isMine ? 'none' : '1px solid var(--color-border-soft)',
