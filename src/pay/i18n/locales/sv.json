@@ -230,7 +230,11 @@
       "note": "Den här betalningen motsvarar en ISO 20022 PACS.008-överföring. Lägg till dina uppgifter i Inställningar → Betalningsuppgifter.",
       "purpose": "Ändamålskod",
       "reference": "Referens",
-      "title": "ISO 20022-betalningsuppgifter"
+      "title": "ISO 20022-betalningsuppgifter",
+      "showRaw": "+ Visa rått ISO 20022-kuvert",
+      "hideRaw": "− Dölj rått kuvert",
+      "copyEnvelope": "Kopiera kuvert",
+      "copied": "Kopierat"
     },
     "items": "Artiklar",
     "knownContact": "Känd kontakt",

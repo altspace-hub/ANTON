@@ -279,7 +279,11 @@
       "note": "This payment maps to an ISO 20022 PACS.008 credit transfer. Add your details in Settings → Payment details.",
       "purpose": "Purpose code",
       "reference": "Reference",
-      "title": "ISO 20022 payment details"
+      "title": "ISO 20022 payment details",
+      "showRaw": "+ View raw ISO 20022 envelope",
+      "hideRaw": "− Hide raw envelope",
+      "copyEnvelope": "Copy envelope",
+      "copied": "Copied"
     },
     "items": "Items",
     "paymentTypeHelp": "Only \"Payment\" counts toward tax. Gift, Information and Contract are exempt.",

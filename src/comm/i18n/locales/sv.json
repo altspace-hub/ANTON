@@ -880,7 +880,11 @@
     "iso": "ISO 20022-betalningsuppgifter",
     "debtor": "Betalare",
     "creditor": "Mottagare",
-    "purpose": "Ändamål"
+    "purpose": "Ändamål",
+    "showRaw": "+ Visa rått ISO 20022-kuvert",
+    "hideRaw": "− Dölj rått kuvert",
+    "copyEnvelope": "Kopiera kuvert",
+    "copied": "Kopierat"
   },
   "passphrase": {
     "revealReason": "Ange din plånbokslösenfras för att visa återställningsfrasen."

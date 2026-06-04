@@ -184,18 +184,66 @@ export default function WalletTxDetailScreen({ tx, contactNames, onBack }: Props
 
 /** ISO 20022 / PACS.008 section, rendered from the persisted draft
  *  snapshot. Mirrors Pay's IsoSection. */
+/** Full ISO 20022 envelope as a copyable, labelled text block — surfaces every
+ *  stored party field (the summary rows collapse street/postcode/city). bigint-
+ *  safe (formats amountMicroFtc via formatFtc; never JSON.stringify's it). */
+function formatIsoEnvelope(draft: NonNullable<WalletTx['pacs008']>): string {
+  const party = (label: string, p?: { name: string; country: string; address?: string; street?: string; postcode?: string; city?: string }): string => {
+    if (!p) return `${label}: —`;
+    const lines = [`${label}:`, `  Name: ${p.name}`, `  Country: ${p.country}`];
+    if (p.street) lines.push(`  Street: ${p.street}`);
+    if (p.postcode) lines.push(`  Postcode: ${p.postcode}`);
+    if (p.city) lines.push(`  City: ${p.city}`);
+    if (p.address) lines.push(`  Account: ${p.address}`);
+    return lines.join('\n');
+  };
+  let amt = '0';
+  try { amt = formatFtc(BigInt(draft.amountMicroFtc)); } catch { /* keep 0 */ }
+  return [
+    'ISO 20022 pacs.008.001 · FIToFICstmrCdtTrf',
+    `Amount: ${amt} ${draft.currency || 'FTC'}`,
+    `Purpose: ${draft.purpose}`,
+    `Reference (EndToEndId): ${draft.reference || '—'}`,
+    party('Debtor (Dbtr)', draft.debtor),
+    party('Creditor (Cdtr)', draft.creditor),
+  ].join('\n');
+}
+
 function IsoSection({ draft }: { draft: NonNullable<WalletTx['pacs008']> }) {
   const { t } = useTranslation();
-  const partyLine = (p: { name: string; country: string; city?: string; street?: string; postcode?: string }) => {
+  const [showRaw, setShowRaw] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Guard each party — a partial pacs008 (one side missing) must not blank the
+  // whole screen by dereferencing an undefined party's .name.
+  const partyLine = (p?: { name: string; country: string; city?: string; street?: string; postcode?: string }) => {
+    if (!p) return '—';
     const loc = [p.street, p.postcode, p.city, p.country].filter(Boolean).join(', ');
     return loc ? `${p.name} · ${loc}` : `${p.name} · ${p.country}`;
   };
+  const raw = formatIsoEnvelope(draft);
+  async function copyRaw() {
+    try { await navigator.clipboard.writeText(raw); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } catch { /* clipboard unavailable */ }
+  }
   return (
     <Section title={t('txDetail.iso', 'ISO 20022 payment details')}>
-      <IsoRow label={t('txDetail.debtor', 'Debtor')} value={partyLine(draft.debtor)} wrap />
-      <IsoRow label={t('txDetail.creditor', 'Creditor')} value={partyLine(draft.creditor)} wrap />
+      {draft.debtor && <IsoRow label={t('txDetail.debtor', 'Debtor')} value={partyLine(draft.debtor)} wrap />}
+      {draft.creditor && <IsoRow label={t('txDetail.creditor', 'Creditor')} value={partyLine(draft.creditor)} wrap />}
       <IsoRow label={t('txDetail.purpose', 'Purpose')} value={draft.purpose} />
       {draft.reference && <CopyRow label={t('txDetail.reference', 'Reference')} value={draft.reference} />}
+      <button type="button" onClick={() => setShowRaw((v) => !v)}
+              className="mt-1.5 text-xs font-semibold" style={{ color: 'var(--color-accent)' }}>
+        {showRaw ? t('txDetail.hideRaw', '− Hide raw envelope') : t('txDetail.showRaw', '+ View raw ISO 20022 envelope')}
+      </button>
+      {showRaw && (
+        <div className="mt-2">
+          <pre className="p-3 rounded-xl whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed"
+               style={{ backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-border-soft)', color: 'var(--color-text-body)' }}>{raw}</pre>
+          <button type="button" onClick={() => void copyRaw()}
+                  className="mt-2 text-xs font-semibold" style={{ color: 'var(--color-accent)' }}>
+            {copied ? t('txDetail.copied', 'Copied') : t('txDetail.copyEnvelope', 'Copy envelope')}
+          </button>
+        </div>
+      )}
     </Section>
   );
 }

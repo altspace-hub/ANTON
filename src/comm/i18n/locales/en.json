@@ -880,7 +880,11 @@
     "iso": "ISO 20022 payment details",
     "debtor": "Debtor",
     "creditor": "Creditor",
-    "purpose": "Purpose"
+    "purpose": "Purpose",
+    "showRaw": "+ View raw ISO 20022 envelope",
+    "hideRaw": "− Hide raw envelope",
+    "copyEnvelope": "Copy envelope",
+    "copied": "Copied"
   },
   "passphrase": {
     "revealReason": "Enter your wallet passphrase to reveal the recovery phrase."
