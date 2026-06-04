@@ -47,6 +47,11 @@
         <meta-data
             android:name="com.google.android.play.integrity.PROJECT_NUMBER"
             android:value="@string/google_cloud_project_number" />
+
+        <!-- FCM-pushed notifications use the ANTON chevron, not the app icon. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
     </application>
 
     <!-- Permissions -->
