@@ -71,8 +71,13 @@ messages), 100% verifiable today.
 - Tests: `message-preview.test.ts`, `active-chat.test.ts`.
 - Verify A↔B on the two phones (B sends → A backgrounded → banner; tap → opens thread).
 
-### Phase 2 — WorkManager background payment poll  ·  NO creds, native Kotlin  ·  TODO
-Pure-Kotlin periodic worker (start with Pay on funded phone QV7202N48K, then port to Comm/Business).
+### Phase 2 — WorkManager background payment poll  ·  NO creds, native  ·  **PAY DONE; Comm/Business TODO**
+Pure-Java WorkManager worker (Pay shipped + device-verified on QV7202N48K; port to Comm/Business next).
+**Pay implementation:** `android-pay/.../bgpoll/{PaymentPoller,PayBackgroundWorker,BackgroundPollingPlugin}.java`
++ `MainActivity` registration + `androidx.work:work-runtime:2.9.1` + `src/pay/services/background-setup.ts`
++ `pay/App.tsx` wiring. Verified: `runNow()` fetched the funded wallet's public UTXOs and posted
+"+0.05 FTC received" / "+0.01 FTC received" on the `fc-pay-incoming` channel. Needed
+`pm grant … POST_NOTIFICATIONS` (the native `notify()` throws SecurityException without it).
 - NEW `PayBackgroundWorker.kt` (extends `Worker`): read RPC for the wallet address, compare against a
   `last_seen_tx` cursor in `SharedPreferences`, post a native notification on a new incoming tx.
   Wrap everything in try/catch → `Result.success()` (never crash-loop).
@@ -81,10 +86,17 @@ Pure-Kotlin periodic worker (start with Pay on funded phone QV7202N48K, then por
   `MainActivity` enqueue of `enqueueUniquePeriodicWork("fc-payment-bg-poll", 15min, flex 1h)`.
 - NEW `src/<app>/services/background-setup.ts` — `ensureBackgroundPollingEnabled()` (no-op on web /
   non-native), called from `App.tsx` after `ensureNotificationPermission()`.
-- **OPEN QUESTION to resolve when building:** does the FC RPC incoming-tx read require an install/
-  bearer token? If yes, foreground must pre-store it where the worker can read it (SharedPreferences,
-  not the Keystore-backed secure-store the headless worker can't reach). Resolve by reading
-  `src/pay/services/received.ts` + `fc-rpc.ts` before coding. See `project_fc_wallet_read_path`.
+- **RESOLVED (curl'd the live hub 2026-06-04):** `/get_utxos/<addr>` → **200, PUBLIC** (no token).
+  `/iso_received/<addr>` → **401 "missing X-API-Key"** (needs the install token — the headless worker
+  CANNOT get it). So the worker uses **`/get_utxos/<addr>`** only: it needs just the public wallet
+  address + the RPC URL (`https://rpc.futurechain.eu`), NO secret. Aggregate UTXO amounts by tx_id;
+  notify on a new tx_id. (`/info` shows `iso_storage_enabled:false` on this hub anyway.)
+- **First run seeds silently** (record all current UTXO tx_ids as "seen", no notify storm); later runs
+  notify only on genuinely-new tx_ids. **Own-change false-positive:** UTXOs include change from the
+  user's own sends; the worker can't read the app's IndexedDB to exclude them, so the foreground pushes
+  its known tx_ids (sends + receives) into the worker's `seen` set via a `syncSeen` plugin method.
+- **Notification dedup fg↔bg:** the Kotlin worker uses the SAME `idFor(txId)` hash + the SAME channel
+  (`fc-pay-incoming`) as the JS path, so Android replaces rather than duplicates if both fire.
 - **Dedup fg/bg:** a shared `last_seen_tx` cursor (worker writes after notifying; foreground
   `idle-poller`/`received.ts` updates it after its batch) so the two paths never double-notify.
 - Verify: `adb shell cmd jobscheduler run -f com.futurechain.anton.pay <id>` + fund a tx → notification.
