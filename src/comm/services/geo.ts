@@ -18,7 +18,10 @@ interface LivePlugin {
   requestPermissions: (opts?: { permissions: Array<'location' | 'coarseLocation'> }) => Promise<{ location: string; coarseLocation?: string }>;
 }
 
-let permissionPromise: Promise<boolean> | null = null;
+/** Cache ONLY a granted result — a denied/dismissed permission must be
+ *  re-promptable on the next open (caching `false` would wedge location
+ *  sharing off until a full app reload). */
+let permissionGranted = false;
 const activeShares = new Map<string, { stop: () => void; liveUntil: string; peerContactHash: string }>();
 let appStateListener: { remove: () => Promise<void> } | null = null;
 type LiveShareListener = (parentMsgId: string, state: 'started' | 'paused' | 'resumed' | 'stopped') => void;
@@ -28,6 +31,14 @@ async function loadPlugin(): Promise<LivePlugin | null> {
   // Web has navigator.geolocation; only pull in the Capacitor plugin
   // when running on a native shell (it does extra runtime perm work).
   if (Capacitor.getPlatform() === 'web') return null;
+  // Prefer the already-registered native plugin. The dynamic
+  // import('@capacitor/geolocation') was observed to NEVER resolve on device
+  // (its lazy chunk load hung), which wedged ensureGeoPermission() and left
+  // the location picker stuck on "Locating…" forever. The plugin is already
+  // on window.Capacitor.Plugins (registered at boot), so use it directly.
+  const reg = (window as unknown as { Capacitor?: { Plugins?: { Geolocation?: LivePlugin } } })
+    .Capacitor?.Plugins?.Geolocation;
+  if (reg) return reg;
   try {
     const mod = await import('@capacitor/geolocation');
     return mod.Geolocation as unknown as LivePlugin;
@@ -37,29 +48,56 @@ async function loadPlugin(): Promise<LivePlugin | null> {
 }
 
 export async function ensureGeoPermission(): Promise<boolean> {
-  if (permissionPromise) return permissionPromise;
-  permissionPromise = (async () => {
-    const plugin = await loadPlugin();
-    if (!plugin) {
-      // Web — permission is requested implicitly on first getCurrentPosition.
-      return true;
-    }
-    try {
-      const cur = await plugin.checkPermissions();
-      if (cur.location === 'granted' || cur.coarseLocation === 'granted') return true;
-      const req = await plugin.requestPermissions({ permissions: ['location', 'coarseLocation'] });
-      return req.location === 'granted' || req.coarseLocation === 'granted';
-    } catch {
-      return false;
-    }
-  })();
-  return permissionPromise;
+  if (permissionGranted) return true;
+  const plugin = await loadPlugin();
+  if (!plugin) {
+    // Web — permission is requested implicitly on first getCurrentPosition.
+    return true;
+  }
+  try {
+    const cur = await plugin.checkPermissions();
+    if (cur.location === 'granted' || cur.coarseLocation === 'granted') { permissionGranted = true; return true; }
+    const req = await plugin.requestPermissions({ permissions: ['location', 'coarseLocation'] });
+    const ok = req.location === 'granted' || req.coarseLocation === 'granted';
+    if (ok) permissionGranted = true; // only cache success — a denial stays re-promptable
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Settle `p` within `ms`, else reject — the native Android getCurrentPosition
+ *  can hang indefinitely waiting for a high-accuracy GPS fix indoors (its own
+ *  `timeout` option is unreliable), which left the picker stuck on "Locating…"
+ *  with no error and no way out. This JS-level guard makes the call ALWAYS
+ *  settle. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    p.then((v) => { clearTimeout(timer); resolve(v); },
+           (e) => { clearTimeout(timer); reject(e); });
+  });
 }
 
 export async function getCurrentPosition(): Promise<GeoFix> {
   const plugin = await loadPlugin();
   if (plugin) {
-    const p = await plugin.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    // Try a high-accuracy GPS fix first, but cap it with a JS timeout; if that
+    // doesn't land (indoors / cold GPS), fall back to a fast coarse/network fix
+    // (which resolves in seconds and accepts a cached position). Either way the
+    // promise settles — the picker never hangs on "Locating…".
+    let p: { coords: { latitude: number; longitude: number; accuracy: number } };
+    try {
+      p = await withTimeout(
+        plugin.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }),
+        8000,
+      );
+    } catch {
+      p = await withTimeout(
+        plugin.getCurrentPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }),
+        9000,
+      );
+    }
     return {
       lat: p.coords.latitude,
       lng: p.coords.longitude,
