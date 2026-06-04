@@ -56,6 +56,8 @@ module.exports = {
         const wt = document.querySelector('[aria-controls=tabpanel-wallet]'); if (wt) wt.click(); await __td.sleep(900);
         const send = byText(/^\\s*Skicka\\s*$|^\\s*Send\\s*$/i); if (!send) return { err: 'no Send' };
         send.click(); await __td.sleep(800);
+        // #83 made the structured form the default; switch to the Paste-link sub-tab for the URI textarea
+        const paste = byText(/Klistra in länk|Paste link/i); if (paste) { paste.click(); await __td.sleep(500); }
         const ta = document.querySelector('textarea'); if (!ta) return { err: 'no textarea' };
         __td.setVal(ta, ${JSON.stringify(URI)}); await __td.sleep(600);
         const cont = byText(/Fortsätt till granskning|Continue to review/i); if (!cont) return { err: 'no continue' };

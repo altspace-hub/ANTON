@@ -32,6 +32,8 @@ module.exports = {
         // open Send (compose)
         const send = byText(/^\\s*Skicka\\s*$|^\\s*Send\\s*$/i); if (!send) return { err: 'no Send button', sample: __td.bodyText(200) };
         send.click(); await __td.sleep(900);
+        // #83 made the structured form the default; switch to the Paste-link sub-tab for the URI textarea
+        const paste = byText(/Klistra in länk|Paste link/i); if (paste) { paste.click(); await __td.sleep(500); }
         const ta = document.querySelector('textarea'); if (!ta) return { err: 'no send textarea' };
         __td.setVal(ta, ${JSON.stringify(URI)}); await __td.sleep(700);
         // continue to review

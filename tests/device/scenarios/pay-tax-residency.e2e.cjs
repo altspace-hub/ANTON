@@ -12,9 +12,10 @@
  * older installed APK this fails at "opened Settings → Tax residency" — expected
  * until the new Pay build is installed.
  *
- * Strings: the new tax.* / settings.taxResidency keys are English-only so far,
- * so they render in English even on the Swedish phone (i18next fallback); the
- * picker's country names are hardcoded English. Hence the English matchers.
+ * Strings: the tax.* / settings.taxResidency keys are now translated, so the
+ * picker renders Swedish on this phone ("Skattehemvist", "STÖDS", "…härleds
+ * inte…") — matchers cover EN + SV. Country names are still hardcoded English,
+ * so the country pick + the Settings-subtitle readback use "Sweden" directly.
  */
 const assert = require('node:assert/strict');
 const { forwardApp } = require('../lib/devices.cjs');
@@ -47,8 +48,9 @@ module.exports = {
         for (let attempt = 0; attempt < 4 && !onPicker; attempt++) {
           (findGear() || gear).click(); await __td.sleep(900);
           const row = byText(/Tax residency|Skatteh/i); if (row) { row.click(); await __td.sleep(1000); }
-          // the picker carries its declared-residency disclaimer + a search box
-          onPicker = /declared, not inferred|Refer to adviser|Supported/i.test(__td.bodyText(800));
+          // the picker carries its declared-residency disclaimer + a search box.
+          // tax.* strings are now translated, so match EN + SV markers.
+          onPicker = /declared, not inferred|Refer to adviser|Supported|härleds inte|STÖDS|skatterådgivare/i.test(__td.bodyText(800));
           if (!onPicker) { for (let j = 0; j < 3; j++) { await __td.clickText(/Tillbaka|Avbryt|Back/i, 150); } }
         }
         if (!onPicker) return { err: 'could not open the Tax residency picker' };
