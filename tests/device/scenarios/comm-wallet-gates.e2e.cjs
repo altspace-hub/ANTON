@@ -56,6 +56,8 @@ module.exports = {
         const wt = document.querySelector('[aria-controls=tabpanel-wallet]'); if (wt) wt.click(); await __td.sleep(900);
         const send = byText(/^\\s*Skicka\\s*$|^\\s*Send\\s*$/i); if (!send) return { err: 'no Send' };
         send.click(); await __td.sleep(800);
+        // #93 — Send now opens the recipient picker first; take the "Pay a new address" escape hatch to the compose
+        const newAddr = byText(/Betala en ny adress|Pay a new address/i); if (newAddr) { newAddr.click(); await __td.sleep(800); }
         // #83 made the structured form the default; switch to the Paste-link sub-tab for the URI textarea
         const paste = byText(/Klistra in länk|Paste link/i); if (paste) { paste.click(); await __td.sleep(500); }
         const ta = document.querySelector('textarea'); if (!ta) return { err: 'no textarea' };

@@ -75,6 +75,8 @@ module.exports = {
         const find = (re) => [...document.querySelectorAll('button,a,[role=button]')].find((x) => re.test(x.innerText || ''));
         const send = find(/^\\s*Skicka\\s*$|^\\s*Send\\s*$/i); if (!send) return { err: 'no Send button', sample: __td.bodyText(300) };
         send.click(); await __td.sleep(700);
+        // #93 — Send now opens the recipient picker first; take "Pay a new address" to reach the compose (with the Scan button)
+        const newAddr = find(/Betala en ny adress|Pay a new address/i); if (newAddr) { newAddr.click(); await __td.sleep(800); }
         const scan = find(/Skanna för att betala|Scan to pay/i); if (!scan) return { err: 'no Scan button', sample: __td.bodyText(300) };
         scan.click(); await __td.sleep(900);
         const manual = find(/Ange kod manuellt|Enter code manually/i); if (!manual) return { err: 'no manual-entry button', sample: __td.bodyText(300) };
