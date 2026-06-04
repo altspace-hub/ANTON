@@ -863,6 +863,8 @@
     "to": "Till",
     "from": "Från",
     "address": "Adress",
+    "saveFriend": "Spara som vän",
+    "saveError": "Kunde inte spara vän.",
     "type": "Typ",
     "note": "Anteckning",
     "status": "Status",

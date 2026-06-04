@@ -19,7 +19,7 @@ import PaymentTypeBadge from '../components/PaymentTypeBadge';
 import CopyRow from '../components/CopyRow';
 import { estimateSek, formatFtc, formatSek } from '../services/payment';
 import { loadProfile } from '../services/profile';
-import { resolveName } from '../services/address-book';
+import { resolveName, addContact } from '../services/address-book';
 import type { Activity, PaymentRecord, ReceivedRecord } from '../services/types';
 
 interface Props {
@@ -106,7 +106,8 @@ export default function PaymentDetailScreen({ activity, contactNames, onBack }: 
 
 function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Record<string, string> }) {
   const { t } = useTranslation();
-  const friend = resolveName(r.toAddress, contactNames);
+  const [savedLabel, setSavedLabel] = useState<string | null>(null);
+  const friend = savedLabel ?? resolveName(r.toAddress, contactNames);
   return (
     <>
       {/* Counterparty */}
@@ -114,6 +115,9 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
         <IsoRow label={t('history.merchant')} value={friend ?? r.merchantId} />
         {r.toAddress && (
           <CopyRow label={t('history.detail.address', 'Address')} value={r.toAddress} />
+        )}
+        {r.toAddress?.startsWith('fc_') && !friend && (
+          <SaveFriendButton address={r.toAddress} defaultName={r.pacs008?.creditor?.name ?? r.merchantId} onSaved={setSavedLabel} />
         )}
         <IsoRow label={t('history.orderId')} value={r.orderId} />
         <IsoRow label={t('review.purpose')} value={t(`review.purpose${r.purpose}`)} />
@@ -169,7 +173,8 @@ function SentSections({ r, contactNames }: { r: PaymentRecord; contactNames: Rec
 
 function ReceivedSections({ r, contactNames }: { r: ReceivedRecord; contactNames: Record<string, string> }) {
   const { t } = useTranslation();
-  const friend = resolveName(r.fromAddress, contactNames);
+  const [savedLabel, setSavedLabel] = useState<string | null>(null);
+  const friend = savedLabel ?? resolveName(r.fromAddress, contactNames);
   const name = friend ?? r.fromName;
   return (
     <>
@@ -178,6 +183,9 @@ function ReceivedSections({ r, contactNames }: { r: ReceivedRecord; contactNames
         <IsoRow label={t('history.from', 'From')} value={name || abbreviate(r.fromAddress) || '—'} />
         {r.fromAddress && (
           <CopyRow label={t('history.detail.address', 'Address')} value={r.fromAddress} />
+        )}
+        {r.fromAddress?.startsWith('fc_') && !friend && (
+          <SaveFriendButton address={r.fromAddress} defaultName={r.fromName} onSaved={setSavedLabel} />
         )}
         {/* #77 — the sender's classification (decoded from RmtInf), so a received
             Information/Contract reads the same as on the sender. */}
@@ -220,6 +228,39 @@ function IsoSection({ draft }: { draft: NonNullable<PaymentRecord['pacs008']> })
       <IsoRow label={t('review.iso.purpose')} value={draft.purpose} />
       <CopyRow label={t('review.iso.reference')} value={draft.reference} />
     </Section>
+  );
+}
+
+/** "Save as friend" — promotes a counterparty address into the address book.
+ *  addContact runs the look-alike (Levenshtein) guard, so a poisoned near-miss
+ *  throws and the message surfaces here rather than being silently trusted. */
+function SaveFriendButton({ address, defaultName, onSaved }: {
+  address: string; defaultName?: string; onSaved: (label: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function save() {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const c = await addContact(defaultName?.trim() || '', address);
+      onSaved(c.label);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t('send.saveError', 'Could not save friend.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="pt-1.5">
+      <button type="button" onClick={() => void save()} disabled={busy}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+              style={{ color: 'var(--color-accent)', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        {busy ? t('common.working', 'Working…') : `+ ${t('send.saveFriend', 'Save as friend')}`}
+      </button>
+      {err && <p className="mt-2 text-xs" style={{ color: 'var(--color-error)' }}>{err}</p>}
+    </div>
   );
 }
 

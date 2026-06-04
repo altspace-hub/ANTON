@@ -13,12 +13,13 @@
  * the WalletTx. Nothing here mutates state or talks to the chain.
  * Mirrors src/pay/pages/PaymentDetailScreen.tsx.
  */
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StatusPill from '../../components/StatusPill';
 import PaymentTypeBadge from '../../components/PaymentTypeBadge';
 import CopyRow from '../../components/CopyRow';
 import { formatFtc } from '../../services/payment';
-import { resolveName } from '../../services/address-book';
+import { resolveName, addContact } from '../../services/address-book';
 import type { WalletTx } from '../../services/transactions';
 
 interface Props {
@@ -55,8 +56,32 @@ export default function WalletTxDetailScreen({ tx, contactNames, onBack }: Props
   const { t } = useTranslation();
   const inbound = isInbound(tx.kind);
   const amountMicro = BigInt(tx.amountMicroFtc);
-  const friend = resolveName(tx.counterparty, contactNames);
   const counterpartyIsAddress = tx.counterparty.startsWith('fc_');
+
+  // "Save as friend" — the counterparty's saved label, optimistically tracked
+  // here so the row re-resolves without re-reading the parent's contactNames map.
+  const [savedLabel, setSavedLabel] = useState<string | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+  const friend = savedLabel ?? resolveName(tx.counterparty, contactNames);
+
+  async function saveAsFriend() {
+    if (saveBusy) return;
+    setSaveBusy(true);
+    setSaveErr(null);
+    try {
+      // Prefer the real PACS.008 party name (creditor for a send, debtor for a
+      // receive); '' lands as "Unnamed" rather than the address.
+      const partyName = (inbound ? tx.pacs008?.debtor?.name : tx.pacs008?.creditor?.name)?.trim() || '';
+      const created = await addContact(partyName, tx.counterparty);
+      setSavedLabel(created.label);
+    } catch (e) {
+      // addContact's look-alike / duplicate guard surfaces here.
+      setSaveErr(e instanceof Error ? e.message : t('txDetail.saveError', 'Could not save friend.'));
+    } finally {
+      setSaveBusy(false);
+    }
+  }
 
   return (
     <section className="flex flex-col h-full overflow-y-auto safe-bottom">
@@ -92,6 +117,16 @@ export default function WalletTxDetailScreen({ tx, contactNames, onBack }: Props
                   value={friend ?? abbreviate(tx.counterparty)} />
           {counterpartyIsAddress && (
             <CopyRow label={t('txDetail.address', 'Address')} value={tx.counterparty} />
+          )}
+          {counterpartyIsAddress && !friend && (
+            <div className="pt-1.5">
+              <button type="button" onClick={() => void saveAsFriend()} disabled={saveBusy}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ color: 'var(--color-accent)', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                {saveBusy ? t('common.working', 'Working…') : `+ ${t('txDetail.saveFriend', 'Save as friend')}`}
+              </button>
+              {saveErr && <p className="mt-2 text-xs text-[var(--color-red)]">{saveErr}</p>}
+            </div>
           )}
           {tx.paymentType && (
             <div className="flex items-center justify-between py-1.5">

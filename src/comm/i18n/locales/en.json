@@ -863,6 +863,8 @@
     "to": "To",
     "from": "From",
     "address": "Address",
+    "saveFriend": "Save as friend",
+    "saveError": "Could not save friend.",
     "type": "Type",
     "note": "Note",
     "status": "Status",
