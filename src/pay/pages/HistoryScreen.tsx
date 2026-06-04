@@ -14,7 +14,8 @@ import StatusPill from '../components/StatusPill';
 import PaymentTypeBadge from '../components/PaymentTypeBadge';
 import { formatFtc, listPayments } from '../services/payment';
 import { listReceived } from '../services/received';
-import { buildActivity, groupActivityByDay } from '../services/activity';
+import { buildActivity, groupActivityByDay, activityForWallet } from '../services/activity';
+import { getActiveWalletMeta } from '../services/wallet';
 import {
   isDust, listContacts, buildContactNameMap, resolveName,
 } from '../services/address-book';
@@ -74,14 +75,15 @@ export default function HistoryScreen({ onBack, onOpen }: Props) {
 
   useEffect(() => {
     void (async () => {
-      const [sent, received, contacts] = await Promise.all([
-        listPayments(), listReceived(), listContacts(),
+      const [meta, sent, received, contacts] = await Promise.all([
+        getActiveWalletMeta(), listPayments(), listReceived(), listContacts(),
       ]);
       // Hide dust by default — common delivery vector for address-
       // poisoning attacks. The user can switch to "show all" once a
       // setting is added; for now hide-by-default is the safer choice.
       const nonDust = received.filter(r => !isDust(r.amountMicroFtc));
-      setItems(buildActivity(sent, nonDust));
+      // #88 — scope to the active wallet (multi-wallet installs).
+      setItems(activityForWallet(buildActivity(sent, nonDust), meta?.address ?? ''));
       setContactNames(buildContactNameMap(contacts));
     })();
   }, []);

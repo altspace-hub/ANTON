@@ -474,6 +474,7 @@ export async function executePayment(
         status: 'failed',
         paidAt: Date.now(),
         pacs008: recordDraft,
+        walletAddress: wallet.address,
         risk,
         error: reason,
       };
@@ -524,7 +525,8 @@ export async function executePayment(
         orderId: decoded.orderId, purpose: decoded.purpose, paymentType, taxable,
         amountMicroFtc: decoded.amountMicroFtc, ref: decoded.ref,
         qrUri: decoded.qrUri, status: 'failed', paidAt: Date.now(),
-        pacs008: recordDraft, risk, error: reason,
+        pacs008: recordDraft,
+        walletAddress: wallet.address, risk, error: reason,
       };
       await putPayment(failed);
       return failed;

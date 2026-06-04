@@ -18,6 +18,24 @@ export function buildActivity(
   return a;
 }
 
+/**
+ * Scope activity to a single wallet (multi-wallet installs). The Pay payment
+ * store isn't physically partitioned per wallet, so we attribute each row:
+ *   • received → the recipient address (`toAddress`, always present),
+ *   • sent → the recorded sender wallet (`walletAddress`, else the PACS.008
+ *     debtor address, which assembleDraft sets to the sending wallet).
+ * Sent rows with neither (pre-pacs008 legacy) can't be attributed, so they
+ * stay visible under every wallet rather than silently vanishing.
+ */
+export function activityForWallet(activity: Activity[], address: string): Activity[] {
+  if (!address) return activity;
+  return activity.filter((a) => {
+    if (a.direction === 'received') return a.record.toAddress === address;
+    const sender = a.record.walletAddress ?? a.record.pacs008?.debtor?.address;
+    return sender == null || sender === address;
+  });
+}
+
 /** One calendar-day bucket of activity, newest item first. */
 export interface ActivityDayGroup {
   /** Stable `YYYY-MM-DD` key for the local calendar day (React key). */

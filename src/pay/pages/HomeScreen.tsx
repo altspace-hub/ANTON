@@ -11,7 +11,7 @@ import ActiveSyncBanner from '../components/ActiveSyncBanner';
 import { getActiveWalletMeta } from '../services/wallet';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
-import { buildActivity } from '../services/activity';
+import { buildActivity, activityForWallet } from '../services/activity';
 import {
   isDust, listContacts, buildContactNameMap, resolveName,
 } from '../services/address-book';
@@ -163,7 +163,11 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
     activeSyncCancelRef.current?.();
   }
 
-  const recent = activity.slice(0, 3);
+  // #88 — scope activity to the active wallet (multi-wallet installs) for the
+  // recent peek + the count, so a watch / agent wallet's home shows only its
+  // own activity rather than every wallet's.
+  const scopedActivity = activityForWallet(activity, address);
+  const recent = scopedActivity.slice(0, 3);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto safe-top safe-bottom"
@@ -214,7 +218,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
           <div className="flex items-center justify-between mt-1">
             <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
               {t('home.activityCount', {
-                count: activity.length,
+                count: scopedActivity.length,
                 defaultValue: '{{count}} payment',
                 defaultValue_other: '{{count}} payments',
               })}
@@ -350,7 +354,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
               style={{ color: 'var(--color-text-faint)' }}>
             {t('home.recentActivity', 'Recent activity')}
           </h2>
-          {activity.length > 3 && (
+          {scopedActivity.length > 3 && (
             <button type="button" onClick={onHistory}
                     className="text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>
               {t('home.seeAll')}

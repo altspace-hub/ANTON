@@ -16,8 +16,7 @@ import { getActiveWalletMeta } from '../services/wallet';
 import { agentDebtorName } from '../services/wallets';
 import { listPayments, formatFtc } from '../services/payment';
 import { listReceived } from '../services/received';
-import { buildActivity } from '../services/activity';
-import { groupActivityByDay } from '../services/activity';
+import { buildActivity, groupActivityByDay, activityForWallet } from '../services/activity';
 import { listContacts, buildContactNameMap, resolveName } from '../services/address-book';
 import StatusPill from '../components/StatusPill';
 import PaymentTypeBadge from '../components/PaymentTypeBadge';
@@ -44,16 +43,10 @@ export default function AgentActivityScreen({ onBack }: Props) {
       const [sent, received, contacts] = await Promise.all([
         listPayments(), listReceived(), listContacts(),
       ]);
-      // Pay's payment store isn't scoped per-wallet, so filter to THIS agent
-      // wallet: sends by the recorded debtor address, receives by the recipient
-      // address. (Both equal the agent wallet's fc_ address.)
-      const addr = meta?.address;
-      const all = buildActivity(sent, received);
-      setActivity(addr
-        ? all.filter((a) => a.direction === 'sent'
-            ? a.record.pacs008?.debtor?.address === addr
-            : a.record.toAddress === addr)
-        : all);
+      // Pay's payment store isn't scoped per-wallet — scope to THIS agent
+      // wallet (shared helper: sends by recorded sender address, receives by
+      // recipient address).
+      setActivity(activityForWallet(buildActivity(sent, received), meta?.address ?? ''));
       setContactNames(buildContactNameMap(contacts));
       if (meta) {
         const b = await fetchBalanceFtc(meta.address);

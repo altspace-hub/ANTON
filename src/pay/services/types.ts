@@ -144,6 +144,11 @@ export interface PaymentRecord {
    *  computeNetworkFee + docs/FEE_POLICY.md). Optional — payments recorded
    *  before the fee policy omit it. */
   feeSatoshi?: number;
+  /** The fc_ address of the wallet that sent this payment. Lets the home /
+   *  history scope activity per wallet in a multi-wallet install. Optional +
+   *  back-compat: legacy rows omit it and stay visible under any wallet (we
+   *  fall back to the pacs008 debtor address when present). */
+  walletAddress?: string;
 }
 
 /**
