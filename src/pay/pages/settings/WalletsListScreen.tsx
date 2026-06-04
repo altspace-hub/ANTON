@@ -112,6 +112,13 @@ export default function WalletsListScreen({ onBack, onAddWallet, onOpenWallet }:
                           {t('walletsList.agentBadge', 'Agent')}
                         </span>
                       )}
+                      {w.kind === 'watch' && (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                              style={{ backgroundColor: 'var(--color-surface-muted, rgba(0,0,0,0.06))',
+                                       color: 'var(--color-text-muted)' }}>
+                          {t('walletsList.watchBadge', 'Watch')}
+                        </span>
+                      )}
                       {!w.backedUp && (
                         <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
                               style={{ backgroundColor: 'var(--color-warning-soft, #FFF3CD)',

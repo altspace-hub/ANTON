@@ -42,6 +42,8 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
   const [address, setAddress] = useState<string>('');
   /** #88 — true when the active wallet is an ANTON agent wallet. */
   const [isAgent, setIsAgent] = useState(false);
+  /** #88 — true when the active wallet is watch-only (no keys → cannot pay). */
+  const [isWatch, setIsWatch] = useState(false);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [balanceFtc, setBalanceFtc] = useState<number | null>(null);
@@ -69,6 +71,7 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
       if (cancelled) return;
       setAddress(wallet?.address ?? '');
       setIsAgent(wallet?.kind === 'agent');
+      setIsWatch(wallet?.kind === 'watch');
       // Instant paint from the local cache.
       const [sent, received, ts, contacts] = await Promise.all([
         listPayments(), listReceived(), getLastSyncTs(), listContacts(),
@@ -277,23 +280,47 @@ export default function HomeScreen({ onScan, onReceive, onHistory, onSettings, o
           </button>
         )}
 
-        {/* Scan CTA */}
-        <button
-          type="button"
-          onClick={onScan}
-          className="rounded-2xl p-6 flex flex-col items-center text-center active:opacity-90 transition-opacity"
-          style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
-        >
-          <span className="flex items-center justify-center w-16 h-16 rounded-full mb-3"
-                style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-              <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="text-xl font-bold">{t('home.scanToPay')}</span>
-          <span className="text-sm mt-1" style={{ opacity: 0.85 }}>{t('home.scanHint')}</span>
-        </button>
+        {/* #88 — a watch-only wallet has no keys, so it cannot pay: replace the
+            Scan CTA with a clear watch-only notice. Balance + activity below
+            still update so the user can keep tabs on the address. */}
+        {isWatch ? (
+          <div className="rounded-2xl p-5 flex items-center gap-3"
+               style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <span className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+                  style={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+            </span>
+            <div>
+              <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                {t('home.watchOnlyTitle', 'Watch-only wallet')}
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {t('home.watchOnlyBody', 'No keys on this device — you can monitor its balance and incoming activity, but not send.')}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Scan CTA */
+          <button
+            type="button"
+            onClick={onScan}
+            className="rounded-2xl p-6 flex flex-col items-center text-center active:opacity-90 transition-opacity"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
+          >
+            <span className="flex items-center justify-center w-16 h-16 rounded-full mb-3"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="text-xl font-bold">{t('home.scanToPay')}</span>
+            <span className="text-sm mt-1" style={{ opacity: 0.85 }}>{t('home.scanHint')}</span>
+          </button>
+        )}
 
         {/* Receive CTA — secondary action, same width, lighter weight so
             Scan stays the primary call-to-action. */}

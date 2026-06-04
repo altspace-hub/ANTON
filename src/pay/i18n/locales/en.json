@@ -25,7 +25,11 @@
     "title": "New wallet",
     "agentTab": "Agent",
     "agentBtn": "Create agent wallet",
-    "agentHint": "An agent wallet has its own keypair so an ANTON agent can transact, but it pays under an \"ANTON …\" identity with you disclosed as the owner (UBO). Use it to keep tabs on what the agent is doing."
+    "agentHint": "An agent wallet has its own keypair so an ANTON agent can transact, but it pays under an \"ANTON …\" identity with you disclosed as the owner (UBO). Use it to keep tabs on what the agent is doing.",
+    "watchTab": "Watch",
+    "watchAddress": "fc_ address to watch",
+    "watchBtn": "Add watch wallet",
+    "watchHint": "A watch-only wallet has no keys on this device — it shows the address’s live balance and incoming activity so you can keep tabs on it, but it can never send. Good for watching an agent or another wallet."
   },
   "backup": {
     "continueToVerify": "I have written it down — continue",
@@ -151,7 +155,9 @@
     "seeAll": "See all",
     "settings": "Settings",
     "syncNow": "Sync now — listen for incoming payment",
-    "walletLabel": "Your wallet"
+    "walletLabel": "Your wallet",
+    "watchOnlyTitle": "Watch-only wallet",
+    "watchOnlyBody": "No keys on this device — you can monitor its balance and incoming activity, but not send."
   },
   "lock": {
     "checking": "Waiting for unlock…",
@@ -471,7 +477,8 @@
     "help": "Each wallet is its own Ed25519 keypair with its own balance. Tap to switch which one signs.",
     "notBackedUp": "Back up",
     "title": "Wallets",
-    "agentBadge": "Agent"
+    "agentBadge": "Agent",
+    "watchBadge": "Watch"
   },
   "agentActivity": {
     "title": "Agent activity",

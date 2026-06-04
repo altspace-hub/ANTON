@@ -25,7 +25,11 @@
     "title": "Ny plånbok",
     "agentTab": "Agent",
     "agentBtn": "Skapa agentplånbok",
-    "agentHint": "En agentplånbok har ett eget nyckelpar så att en ANTON-agent kan göra transaktioner, men den betalar under en \"ANTON …\"-identitet med dig angiven som ägare (UBO). Använd den för att hålla koll på vad agenten gör."
+    "agentHint": "En agentplånbok har ett eget nyckelpar så att en ANTON-agent kan göra transaktioner, men den betalar under en \"ANTON …\"-identitet med dig angiven som ägare (UBO). Använd den för att hålla koll på vad agenten gör.",
+    "watchTab": "Bevaka",
+    "watchAddress": "fc_-adress att bevaka",
+    "watchBtn": "Lägg till bevakningsplånbok",
+    "watchHint": "En bevakningsplånbok har inga nycklar på den här enheten — den visar adressens aktuella saldo och inkommande aktivitet så att du kan hålla koll, men den kan aldrig skicka. Bra för att bevaka en agent eller en annan plånbok."
   },
   "backup": {
     "continueToVerify": "Jag har skrivit ner det — fortsätt",
@@ -116,7 +120,9 @@
     "seeAll": "Visa alla",
     "settings": "Inställningar",
     "syncNow": "Synka nu — lyssna efter inkommande betalning",
-    "walletLabel": "Din plånbok"
+    "walletLabel": "Din plånbok",
+    "watchOnlyTitle": "Bevakningsplånbok",
+    "watchOnlyBody": "Inga nycklar på den här enheten — du kan följa dess saldo och inkommande aktivitet, men inte skicka."
   },
   "lock": {
     "checking": "Väntar på upplåsning…",
@@ -400,7 +406,8 @@
     "help": "Varje plånbok är sitt eget Ed25519-nyckelpar med eget saldo. Tryck för att byta vilken som signerar.",
     "notBackedUp": "Säkerhetskopiera",
     "title": "Plånböcker",
-    "agentBadge": "Agent"
+    "agentBadge": "Agent",
+    "watchBadge": "Bevaka"
   },
   "agentActivity": {
     "title": "Agentaktivitet",

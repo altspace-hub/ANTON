@@ -11,21 +11,35 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createWallet, importWalletFromMnemonic } from '../../services/wallets';
+import { createWallet, importWalletFromMnemonic, addWatchWallet } from '../../services/wallets';
 
 interface Props {
   onBack: () => void;
   onCreated: () => void;
   onImported: () => void;
+  /** #88 — a watch-only wallet has no phrase, so it skips the backup flow. */
+  onWatchAdded: () => void;
 }
 
-export default function AddWalletScreen({ onBack, onCreated, onImported }: Props) {
+export default function AddWalletScreen({ onBack, onCreated, onImported, onWatchAdded }: Props) {
   const { t } = useTranslation();
   const [label, setLabel] = useState('');
-  const [mode, setMode] = useState<'create' | 'import' | 'agent'>('create');
+  const [mode, setMode] = useState<'create' | 'import' | 'agent' | 'watch'>('create');
   const [phrase, setPhrase] = useState('');
+  const [watchAddress, setWatchAddress] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function doWatch() {
+    setError(null); setBusy(true);
+    try {
+      await addWatchWallet(label, watchAddress);
+      onWatchAdded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
 
   async function doCreate() {
     setError(null); setBusy(true);
@@ -85,9 +99,10 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
             ['create', t('addWallet.createTab', 'Create')],
             ['import', t('addWallet.importTab', 'Import')],
             ['agent', t('addWallet.agentTab', 'Agent')],
+            ['watch', t('addWallet.watchTab', 'Watch')],
           ] as const).map(([m, lbl]) => (
             <button key={m} type="button" onClick={() => setMode(m)}
-                    className="flex-1 py-2 rounded-lg text-sm font-semibold"
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold"
                     style={{ backgroundColor: mode === m ? 'var(--color-accent)' : 'transparent',
                              color: mode === m ? 'var(--color-accent-fg)' : 'var(--color-text)' }}>
               {lbl}
@@ -128,6 +143,22 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
           </div>
         )}
 
+        {mode === 'watch' && (
+          <div className="rounded-xl p-4 mb-3"
+               style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <label htmlFor="add-watch-addr"
+                   className="text-xs uppercase tracking-wider mb-1.5 block"
+                   style={{ color: 'var(--color-text-faint)' }}>
+              {t('addWallet.watchAddress', 'fc_ address to watch')}
+            </label>
+            <input id="add-watch-addr" type="text" value={watchAddress} autoCapitalize="none"
+                   onChange={(e) => setWatchAddress(e.target.value)}
+                   placeholder="fc_…"
+                   className="w-full bg-transparent text-sm outline-none font-mono"
+                   style={{ color: 'var(--color-text)' }} />
+          </div>
+        )}
+
         {error && (
           <p className="text-xs mb-3" style={{ color: 'var(--color-danger, #C0392B)' }}>
             {error}
@@ -147,8 +178,14 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
                 'An agent wallet has its own keypair so an ANTON agent can transact, but it pays under an "ANTON …" identity with you disclosed as the owner (UBO). Use it to keep tabs on what the agent is doing.')}
             </p>
           )}
+          {mode === 'watch' && (
+            <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
+              {t('addWallet.watchHint',
+                'A watch-only wallet has no keys on this device — it shows the address’s live balance and incoming activity so you can keep tabs on it, but it can never send. Good for watching an agent or another wallet.')}
+            </p>
+          )}
           <button type="button" disabled={busy}
-                  onClick={mode === 'import' ? doImport : doCreate}
+                  onClick={mode === 'import' ? doImport : mode === 'watch' ? doWatch : doCreate}
                   className="w-full py-3.5 rounded-xl text-sm font-semibold"
                   style={{ backgroundColor: 'var(--color-accent)',
                            color: 'var(--color-accent-fg)',
@@ -159,7 +196,9 @@ export default function AddWalletScreen({ onBack, onCreated, onImported }: Props
                 ? t('addWallet.importBtn', 'Import wallet')
                 : mode === 'agent'
                   ? t('addWallet.agentBtn', 'Create agent wallet')
-                  : t('addWallet.createBtn', 'Create wallet')}
+                  : mode === 'watch'
+                    ? t('addWallet.watchBtn', 'Add watch wallet')
+                    : t('addWallet.createBtn', 'Create wallet')}
           </button>
         </div>
       </div>

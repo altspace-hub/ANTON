@@ -458,6 +458,7 @@ export default function App() {
         onBack={() => setScreen('settings-wallets-list')}
         onCreated={() => setScreen('settings-wallet-add-backup-show')}
         onImported={() => setScreen('settings-wallets-list')}
+        onWatchAdded={() => setScreen('settings-wallets-list')}
       />
     );
   }

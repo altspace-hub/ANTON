@@ -97,8 +97,10 @@ export interface WalletMeta {
    *  = an ANTON agent wallet: it has its own keypair (so the agent can send
    *  autonomously) but transacts under the pseudonymous "ANTON <addr6>"
    *  identity, with the human owner disclosed as the Ultimate Debtor (UBO).
-   *  Primarily used to keep tabs on what the agent is doing. */
-  kind?: 'own' | 'agent';
+   *  'watch' = a watch-only wallet added by address with NO keys on this device:
+   *  it shows the address's live balance + incoming activity but cannot send.
+   *  Used to keep tabs on another wallet (e.g. an agent's). */
+  kind?: 'own' | 'agent' | 'watch';
 }
 
 /** #88 — the pseudonymous debtor name an agent wallet presents on the wire:
@@ -305,6 +307,46 @@ export async function createWallet(
   // syncRegisteredAddresses call (any subsequent create / import).
   await syncRegisteredAddresses();
   return { meta, mnemonic };
+}
+
+/** #88 — add a WATCH-ONLY wallet by address. No keys are stored on this device,
+ *  so it can show the address's live balance + incoming activity but can never
+ *  sign / send. Activates it so the user can monitor it immediately; switch back
+ *  to an own/agent wallet to pay. */
+export async function addWatchWallet(label: string, address: string): Promise<WalletMeta> {
+  await migrateLegacyIfNeeded();
+  const addr = address.trim();
+  if (!/^fc_[1-9A-HJ-NP-Za-km-z]{20,64}$/.test(addr)) {
+    throw new Error('Enter a valid fc_ address to watch.');
+  }
+  const list = await readRegistry();
+  if (list.some((w) => w.address === addr)) {
+    throw new Error('That address is already one of your wallets.');
+  }
+  const id = newId();
+  const meta: WalletMeta = {
+    id,
+    label: label.trim() || 'Watch wallet',
+    address: addr,
+    createdAt: Date.now(),
+    backedUp: true,    // nothing to back up — no keys held
+    kind: 'watch',
+  };
+  // Only the address is persisted (addrKey). No priv / mnemonic / falcon /
+  // publicKeyHex — healAddressesIfNeeded skips it (no priv to re-derive from),
+  // and syncRegisteredAddresses skips it (no priv to sign the registration).
+  await setSecure(addrKey(id), addr);
+  list.push(meta);
+  await writeRegistry(list);
+  await setSecure(ACTIVE_KEY, id);
+  return meta;
+}
+
+/** True when the active wallet is watch-only (no signing key) — the UI uses this
+ *  to hide the pay/scan affordances. */
+export async function activeWalletIsWatchOnly(): Promise<boolean> {
+  const meta = await getActiveWalletMeta();
+  return meta?.kind === 'watch';
 }
 
 /** Add a wallet from a user-supplied 24-word BIP-39 mnemonic.
