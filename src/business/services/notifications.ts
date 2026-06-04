@@ -6,24 +6,37 @@
 import { Capacitor } from '@capacitor/core';
 import type { Receipt } from './types';
 
+type LocalNotificationsPlugin = typeof import('@capacitor/local-notifications').LocalNotifications;
+
 let permissionPromise: Promise<boolean> | null = null;
 
-async function loadPlugin(): Promise<
-  typeof import('@capacitor/local-notifications').LocalNotifications | null
-> {
+/**
+ * Read the registered plugin off the global bridge — NEVER `await` the proxy
+ * (it's thenable → `await proxy` hangs forever; the dynamic import() can also
+ * stall on device). See reference_capacitor_plugin_registration.
+ */
+function loadPlugin(): LocalNotificationsPlugin | null {
   if (Capacitor.getPlatform() === 'web') return null;
+  const w = window as unknown as {
+    Capacitor?: { Plugins?: { LocalNotifications?: LocalNotificationsPlugin } };
+  };
+  return w.Capacitor?.Plugins?.LocalNotifications ?? null;
+}
+
+// Android 8+ drops a notification whose channel was never created (no auto-create).
+const ensuredChannels = new Set<string>();
+async function ensureChannel(plugin: LocalNotificationsPlugin, id: string, name: string): Promise<void> {
+  if (ensuredChannels.has(id)) return;
+  ensuredChannels.add(id);
   try {
-    const mod = await import('@capacitor/local-notifications');
-    return mod.LocalNotifications;
-  } catch {
-    return null;
-  }
+    await plugin.createChannel({ id, name, importance: 5, visibility: 1, vibration: true });
+  } catch { /* older Android / web — schedule() will still try */ }
 }
 
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (permissionPromise) return permissionPromise;
   permissionPromise = (async () => {
-    const plugin = await loadPlugin();
+    const plugin = loadPlugin();
     if (!plugin) {
       if (typeof Notification === 'undefined') return false;
       if (Notification.permission === 'granted') return true;
@@ -61,9 +74,10 @@ export async function notifyReceiptConfirmed(receipt: Receipt): Promise<void> {
   if (!ok) return;
   const title = `Payment received · ${formatSek(receipt.amountSek)} SEK`;
   const body = `Kvitto K-${String(receipt.kvittoNumber).padStart(6, '0')} confirmed on-chain`;
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (plugin) {
     try {
+      await ensureChannel(plugin, 'fc-business-incoming', 'Payments received');
       await plugin.schedule({
         notifications: [{
           id: idFor(receipt.orderId),

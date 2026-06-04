@@ -314,15 +314,26 @@ function idHash(id: string): number {
   return Math.abs(h) || 1;
 }
 
-async function loadPlugin(): Promise<
-  typeof import('@capacitor/local-notifications').LocalNotifications | null
-> {
+type LocalNotificationsPlugin = typeof import('@capacitor/local-notifications').LocalNotifications;
+
+// Read the registered plugin off the global bridge — NEVER `await` the proxy
+// (it's thenable → `await proxy` hangs forever). See
+// reference_capacitor_plugin_registration.
+function loadPlugin(): LocalNotificationsPlugin | null {
+  const w = window as unknown as {
+    Capacitor?: { Plugins?: { LocalNotifications?: LocalNotificationsPlugin } };
+  };
+  return w.Capacitor?.Plugins?.LocalNotifications ?? null;
+}
+
+// Android 8+ drops a notification whose channel was never created (no auto-create).
+const ensuredChannels = new Set<string>();
+async function ensureChannel(plugin: LocalNotificationsPlugin, id: string, name: string): Promise<void> {
+  if (ensuredChannels.has(id)) return;
+  ensuredChannels.add(id);
   try {
-    const mod = await import('@capacitor/local-notifications');
-    return mod.LocalNotifications;
-  } catch {
-    return null;
-  }
+    await plugin.createChannel({ id, name, importance: 5, visibility: 1, vibration: true });
+  } catch { /* older Android / web — schedule() will still try */ }
 }
 
 function shortAddr(a: string): string {
@@ -330,11 +341,12 @@ function shortAddr(a: string): string {
 }
 
 async function scheduleNotificationFor(s: Schedule): Promise<void> {
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (!plugin || !s.active) return;
   const ftc = Number(s.amountMicroFtc) / 1_000_000;
   const payee = s.payeeLabel ?? shortAddr(s.payeeAddress);
   try {
+    await ensureChannel(plugin, 'fc-comm-scheduled', 'Scheduled payments');
     await plugin.schedule({
       notifications: [{
         id: idHash(s.id),
@@ -352,7 +364,7 @@ async function scheduleNotificationFor(s: Schedule): Promise<void> {
 }
 
 async function cancelNotificationFor(id: string): Promise<void> {
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (!plugin) return;
   try {
     await plugin.cancel({ notifications: [{ id: idHash(id) }] });

@@ -27,15 +27,29 @@ export function clearReminderCaches(): void {
   webTimers.clear();
 }
 
-/** Lazy-load the plugin so the web build doesn't pull a useless dep. */
-async function loadPlugin(): Promise<typeof import('@capacitor/local-notifications').LocalNotifications | null> {
+type LocalNotificationsPlugin = typeof import('@capacitor/local-notifications').LocalNotifications;
+
+/**
+ * Read the registered plugin off the global bridge — NEVER `await` the proxy
+ * (it's thenable → `await proxy` hangs forever; a dynamic import() of the chunk
+ * can also stall on device). See reference_capacitor_plugin_registration.
+ */
+function loadPlugin(): LocalNotificationsPlugin | null {
   if (Capacitor.getPlatform() === 'web') return null;
+  const w = window as unknown as {
+    Capacitor?: { Plugins?: { LocalNotifications?: LocalNotificationsPlugin } };
+  };
+  return w.Capacitor?.Plugins?.LocalNotifications ?? null;
+}
+
+// Android 8+ drops a notification whose channel was never created (no auto-create).
+let channelEnsured = false;
+async function ensureChannel(plugin: LocalNotificationsPlugin): Promise<void> {
+  if (channelEnsured) return;
+  channelEnsured = true;
   try {
-    const mod = await import('@capacitor/local-notifications');
-    return mod.LocalNotifications;
-  } catch {
-    return null;
-  }
+    await plugin.createChannel({ id: CHANNEL_ID, name: 'Event reminders', importance: 5, visibility: 1, vibration: true });
+  } catch { /* older Android / web — schedule() will still try */ }
 }
 
 /** Stable positive 31-bit int derived from an event id. */
@@ -51,7 +65,7 @@ function notificationIdFor(eventId: string): number {
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (permissionPromise) return permissionPromise;
   permissionPromise = (async () => {
-    const plugin = await loadPlugin();
+    const plugin = loadPlugin();
     if (!plugin) return true; // web fallback — no perm needed
     try {
       const cur = await plugin.checkPermissions();
@@ -85,11 +99,12 @@ export async function scheduleEventReminder(event: CommEvent): Promise<void> {
   const minutesBefore = event.reminderMinutesBefore!;
   const body = formatReminderBody(event, minutesBefore);
 
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (plugin) {
     const ok = await ensureNotificationPermission();
     if (!ok) return;
     try {
+      await ensureChannel(plugin);
       await plugin.schedule({
         notifications: [{
           id: notificationIdFor(id),
@@ -122,7 +137,7 @@ export async function scheduleEventReminder(event: CommEvent): Promise<void> {
 }
 
 export async function cancelEventReminder(eventId: string): Promise<void> {
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (plugin) {
     try { await plugin.cancel({ notifications: [{ id: notificationIdFor(eventId) }] }); }
     catch { /* ignore */ }

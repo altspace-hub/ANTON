@@ -13,25 +13,46 @@
 import { Capacitor } from '@capacitor/core';
 import type { ReceivedRecord } from './types';
 
+type LocalNotificationsPlugin = typeof import('@capacitor/local-notifications').LocalNotifications;
+
 let permissionPromise: Promise<boolean> | null = null;
 
-async function loadPlugin(): Promise<
-  typeof import('@capacitor/local-notifications').LocalNotifications | null
-> {
+/**
+ * Read the already-registered LocalNotifications plugin off the global bridge.
+ * NEVER `await` the return value: it's the Capacitor plugin proxy, which is
+ * thenable (any property, incl. `.then`, resolves to a proxied native method),
+ * so `await proxy` fires a native `then` call that never resolves → permanent
+ * hang. A dynamic import() of the plugin chunk can also stall on device. The
+ * plugin is registered at boot from capacitor.plugins.json, so the global is
+ * always present. See reference_capacitor_plugin_registration.
+ */
+function loadPlugin(): LocalNotificationsPlugin | null {
   if (Capacitor.getPlatform() === 'web') return null;
+  const w = window as unknown as {
+    Capacitor?: { Plugins?: { LocalNotifications?: LocalNotificationsPlugin } };
+  };
+  return w.Capacitor?.Plugins?.LocalNotifications ?? null;
+}
+
+/**
+ * Android 8+ silently DROPS a notification whose channelId was never created;
+ * the plugin does NOT auto-create channels. Create each channel (idempotent)
+ * before first use, else nothing appears in the tray.
+ */
+const ensuredChannels = new Set<string>();
+async function ensureChannel(plugin: LocalNotificationsPlugin, id: string, name: string): Promise<void> {
+  if (ensuredChannels.has(id)) return;
+  ensuredChannels.add(id);
   try {
-    const mod = await import('@capacitor/local-notifications');
-    return mod.LocalNotifications;
-  } catch {
-    return null;
-  }
+    await plugin.createChannel({ id, name, importance: 5, visibility: 1, vibration: true });
+  } catch { /* older Android / web — schedule() will still try */ }
 }
 
 /** Ask once. Cached. Safe to call on every app start. */
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (permissionPromise) return permissionPromise;
   permissionPromise = (async () => {
-    const plugin = await loadPlugin();
+    const plugin = loadPlugin();
     if (!plugin) {
       // Web fallback — Notification API.
       if (typeof Notification === 'undefined') return false;
@@ -84,9 +105,10 @@ export async function notifyIncoming(record: ReceivedRecord): Promise<void> {
       ? `from ${abbreviate(record.fromAddress)}`
       : 'A payment landed on your wallet';
 
-  const plugin = await loadPlugin();
+  const plugin = loadPlugin();
   if (plugin) {
     try {
+      await ensureChannel(plugin, 'fc-pay-incoming', 'Payments received');
       await plugin.schedule({
         notifications: [{
           id: idFor(record.txId),
