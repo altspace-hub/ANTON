@@ -192,7 +192,26 @@
     "search": "Search…",
     "show": "Show",
     "working": "Working…",
-    "delete": "Delete"
+    "delete": "Delete",
+    "sheet": "Sheet"
+  },
+  "emoji": {
+    "dialogAria": "Pick an emoji",
+    "searchPlaceholder": "Search",
+    "tabRecent": "Recent",
+    "cat_smileys": "Smileys",
+    "cat_hearts": "Hearts",
+    "cat_hands": "Hands",
+    "cat_animals": "Animals",
+    "cat_food": "Food",
+    "cat_activity": "Activity",
+    "noMatch": "No emojis match \"{{query}}\".",
+    "reactWithAria": "React with {{emoji}}"
+  },
+  "stickers": {
+    "title": "Stickers",
+    "dialogAria": "Pick a sticker",
+    "recentlyUsed": "Recently used"
   },
   "msgAction": {
     "reply": "Reply",
@@ -887,6 +906,20 @@
     "audienceNoOne": "No-one yet",
     "audiencePeople": "{{count}} people",
     "audiencePerson": "{{count}} person",
+    "audienceTitle": "Who can see this?",
+    "audienceAll": "All contacts",
+    "audiencePick": "Pick people",
+    "audienceSearch": "Search contacts",
+    "audienceNoContacts": "No reachable contacts yet — add one from the Chat tab.",
+    "audienceNoMatch": "No matches.",
+    "audienceChoose_one": "Choose {{count}} contact",
+    "audienceChoose_other": "Choose {{count}} contacts",
+    "expiryTitle": "Disappears after",
+    "exp1h": "1 hour",
+    "exp6h": "6 hours",
+    "exp24h": "24 hours",
+    "exp7d": "7 days",
+    "expForever": "Forever",
     "choosePhoto": "Choose photo",
     "commentPlaceholder": "Add a comment",
     "compose": "New post",

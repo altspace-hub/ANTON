@@ -16,6 +16,7 @@
  */
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico, type IcoName } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -38,6 +39,7 @@ interface Props {
 export default function BottomSheet({
   open, onClose, title, icon, ariaLabel, maxHeight = '78dvh', children,
 }: Props) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     // Android hardware back + browser/desktop Esc both close the sheet.
@@ -65,7 +67,7 @@ export default function BottomSheet({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={ariaLabel ?? title ?? 'Sheet'}
+      aria-label={ariaLabel ?? title ?? t('common.sheet', 'Sheet')}
       className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ background: 'rgba(28, 26, 20, 0.55)' }}
       onClick={onClose}

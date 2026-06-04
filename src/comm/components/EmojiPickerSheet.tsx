@@ -10,6 +10,7 @@
  * can persist a recents list, fire the reaction, etc.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -159,6 +160,7 @@ interface Props {
 }
 
 export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<string>('recents');
   const [query, setQuery] = useState('');
   const [recents, setRecents] = useState<string[]>([]);
@@ -195,7 +197,7 @@ export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Pick an emoji"
+      aria-label={t('emoji.dialogAria', 'Pick an emoji')}
       className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ background: 'rgba(28, 26, 20, 0.55)' }}
       onClick={onClose}
@@ -211,7 +213,7 @@ export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
+            placeholder={t('emoji.searchPlaceholder', 'Search')}
             className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2"
             style={{ outlineColor: 'var(--color-accent)' }}
           />
@@ -220,10 +222,10 @@ export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
         {filtered === null && (
           <div className="px-2 pb-2 flex gap-1 overflow-x-auto">
             {recents.length > 0 && (
-              <TabButton id="recents" label="Recent" active={tab === 'recents'} onSelect={setTab} />
+              <TabButton id="recents" label={t('emoji.tabRecent', 'Recent')} active={tab === 'recents'} onSelect={setTab} />
             )}
             {CATEGORIES.map((c) => (
-              <TabButton key={c.id} id={c.id} label={c.label} active={tab === c.id} onSelect={setTab} />
+              <TabButton key={c.id} id={c.id} label={t('emoji.cat_' + c.id, c.label)} active={tab === c.id} onSelect={setTab} />
             ))}
           </div>
         )}
@@ -242,7 +244,7 @@ export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
           </div>
           {filtered !== null && filtered.length === 0 && (
             <div className="py-6 text-center text-xs text-[var(--color-text-faint)]">
-              No emojis match "{query}".
+              {t('emoji.noMatch', 'No emojis match "{{query}}".', { query })}
             </div>
           )}
         </div>
@@ -253,7 +255,7 @@ export default function EmojiPickerSheet({ open, onClose, onPick }: Props) {
             className="w-full py-2.5 rounded-2xl text-sm font-medium text-[var(--color-text-muted)]"
             style={{ backgroundColor: 'var(--color-surface-alt)' }}
           >
-            Cancel
+            {t('common.cancel', 'Cancel')}
           </button>
         </div>
       </div>
@@ -277,11 +279,12 @@ function TabButton({ id, label, active, onSelect }: { id: string; label: string;
 }
 
 function EmojiButton({ emoji, onPick }: { emoji: string; onPick: (e: string) => void }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={() => onPick(emoji)}
       className="aspect-square rounded-xl flex items-center justify-center text-2xl active:bg-[var(--color-surface-muted)]"
-      aria-label={`React with ${emoji}`}
+      aria-label={t('emoji.reactWithAria', 'React with {{emoji}}', { emoji })}
     >
       {emoji}
     </button>

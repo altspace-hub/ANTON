@@ -192,7 +192,26 @@
     "search": "Sök…",
     "show": "Visa",
     "working": "Arbetar…",
-    "delete": "Ta bort"
+    "delete": "Ta bort",
+    "sheet": "Panel"
+  },
+  "emoji": {
+    "dialogAria": "Välj en emoji",
+    "searchPlaceholder": "Sök",
+    "tabRecent": "Senaste",
+    "cat_smileys": "Smileys",
+    "cat_hearts": "Hjärtan",
+    "cat_hands": "Händer",
+    "cat_animals": "Djur",
+    "cat_food": "Mat",
+    "cat_activity": "Aktivitet",
+    "noMatch": "Inga emojis matchar \"{{query}}\".",
+    "reactWithAria": "Reagera med {{emoji}}"
+  },
+  "stickers": {
+    "title": "Dekaler",
+    "dialogAria": "Välj en dekal",
+    "recentlyUsed": "Senast använda"
   },
   "msgAction": {
     "reply": "Svara",
@@ -887,6 +906,20 @@
     "audienceNoOne": "Ingen än",
     "audiencePeople": "{{count}} personer",
     "audiencePerson": "{{count}} person",
+    "audienceTitle": "Vem kan se detta?",
+    "audienceAll": "Alla kontakter",
+    "audiencePick": "Välj personer",
+    "audienceSearch": "Sök kontakter",
+    "audienceNoContacts": "Inga nåbara kontakter ännu — lägg till en från Chatt-fliken.",
+    "audienceNoMatch": "Inga träffar.",
+    "audienceChoose_one": "Välj {{count}} kontakt",
+    "audienceChoose_other": "Välj {{count}} kontakter",
+    "expiryTitle": "Försvinner efter",
+    "exp1h": "1 timme",
+    "exp6h": "6 timmar",
+    "exp24h": "24 timmar",
+    "exp7d": "7 dagar",
+    "expForever": "För alltid",
     "choosePhoto": "Välj foto",
     "commentPlaceholder": "Lägg till en kommentar",
     "compose": "Nytt inlägg",

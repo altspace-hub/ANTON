@@ -7,6 +7,7 @@
  * travel; the recipient resolves the SVG from its own bundle.
  */
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import BottomSheet from './BottomSheet';
 import { listPacks, stickerToDataUrl, type Sticker } from '../assets/stickers';
 import { listRecentStickers } from '../services/sticker-recents';
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function StickerPickerSheet({ open, onClose, onPick }: Props) {
+  const { t } = useTranslation();
   const packs = listPacks();
   // Re-read recents each time the sheet opens (so a sticker sent last session
   // — or moments ago, then reopened — shows at the front).
@@ -35,11 +37,11 @@ export default function StickerPickerSheet({ open, onClose, onPick }: Props) {
   );
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Stickers" icon="smile" maxHeight="60vh" ariaLabel="Pick a sticker">
+    <BottomSheet open={open} onClose={onClose} title={t('stickers.title', 'Stickers')} icon="smile" maxHeight="60vh" ariaLabel={t('stickers.dialogAria', 'Pick a sticker')}>
       <div className="overflow-y-auto pb-2">
         {recents.length > 0 && (
           <section>
-            <div className="px-5 mb-2 text-[11px] text-[var(--color-text-muted)]">Recently used</div>
+            <div className="px-5 mb-2 text-[11px] text-[var(--color-text-muted)]">{t('stickers.recentlyUsed', 'Recently used')}</div>
             <div className="px-3 mb-3 grid gap-2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
               {recents.map(({ ref, sticker }) => (
                 <Cell key={`recent-${ref.packId}-${ref.stickerId}`} packId={ref.packId} sticker={sticker} />

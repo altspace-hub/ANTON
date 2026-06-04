@@ -10,6 +10,7 @@
  * authoritative state; this sheet is stateless across opens.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import BottomSheet from './BottomSheet';
 import { listContacts, type Contact } from '../services/contacts';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function WassupAudienceSheet({ open, onClose, initial, onChoose }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<WassupAudience['mode']>(initial.mode);
   const [selected, setSelected] = useState<Set<string>>(
     new Set(initial.mode === 'specific' ? initial.contactHashes : [])
@@ -71,7 +73,7 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
   const specificValid = mode === 'everyone' || selected.size > 0;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Who can see this?" icon="users" maxHeight="85dvh">
+    <BottomSheet open={open} onClose={onClose} title={t('wassup.audienceTitle', 'Who can see this?')} icon="users" maxHeight="85dvh">
       <div className="px-3 pt-2 flex gap-2 flex-shrink-0">
         <button
           onClick={() => setMode('everyone')}
@@ -82,7 +84,7 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
             color: mode === 'everyone' ? 'var(--color-accent-dark)' : 'var(--color-text)',
           }}
         >
-          All contacts
+          {t('wassup.audienceAll', 'All contacts')}
         </button>
         <button
           onClick={() => setMode('specific')}
@@ -93,7 +95,7 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
             color: mode === 'specific' ? 'var(--color-accent-dark)' : 'var(--color-text)',
           }}
         >
-          Pick people
+          {t('wassup.audiencePick', 'Pick people')}
         </button>
       </div>
 
@@ -104,7 +106,7 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search contacts"
+              placeholder={t('wassup.audienceSearch', 'Search contacts')}
               className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2"
               style={{ outlineColor: 'var(--color-accent)' }}
             />
@@ -113,8 +115,8 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
             {filtered.length === 0 && (
               <li className="px-2 py-3 text-xs text-[var(--color-text-faint)] text-center">
                 {contacts.length === 0
-                  ? 'No reachable contacts yet — add one from the Chat tab.'
-                  : 'No matches.'}
+                  ? t('wassup.audienceNoContacts', 'No reachable contacts yet — add one from the Chat tab.')
+                  : t('wassup.audienceNoMatch', 'No matches.')}
               </li>
             )}
             {filtered.map((c) => {
@@ -162,7 +164,7 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
           className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-[var(--color-text-muted)]"
           style={{ backgroundColor: 'var(--color-surface-alt)' }}
         >
-          Cancel
+          {t('common.cancel', 'Cancel')}
         </button>
         <button
           onClick={confirm}
@@ -171,8 +173,8 @@ export default function WassupAudienceSheet({ open, onClose, initial, onChoose }
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
           {mode === 'specific'
-            ? `Choose ${selected.size}${selected.size === 1 ? ' contact' : ' contacts'}`
-            : 'Done'}
+            ? t('wassup.audienceChoose', 'Choose {{count}} contacts', { count: selected.size })
+            : t('common.done', 'Done')}
         </button>
       </div>
     </BottomSheet>
