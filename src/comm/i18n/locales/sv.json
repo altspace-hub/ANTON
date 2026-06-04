@@ -26,6 +26,18 @@
     "phraseTitle": "Skriv ner detta",
     "title": "Ny plånbok"
   },
+  "attach": {
+    "viewOnce": "Visa en gång",
+    "viewOnceOn": "Försvinner efter att de sett det.",
+    "viewOnceOff": "Mottagaren kan spara din media. Tryck för att begränsa.",
+    "camera": "Kamera",
+    "photos": "Foton",
+    "recordVideo": "Spela in video",
+    "videoLibrary": "Videobibliotek",
+    "poll": "Omröstning",
+    "location": "Plats",
+    "file": "Fil"
+  },
   "chat": {
     "addByCodeNote": "Att lägga till enbart med kod inkluderar inte vännens publika nyckel. Deras nyckel hämtas automatiskt första gången du skickar ett meddelande.",
     "addContact": "Lägg till kontakt",
@@ -290,6 +302,16 @@
     "reason": "Lås upp ANTON",
     "title": "ANTON",
     "unlock": "Lås upp"
+  },
+  "location": {
+    "title": "Dela plats",
+    "locating": "Hämtar plats…",
+    "denied": "Platsbehörighet nekad.",
+    "error": "Kunde inte hämta plats",
+    "shareOnce": "Dela en gång",
+    "live15": "Live · 15 minuter",
+    "live60": "Live · 1 timme",
+    "live480": "Live · 8 timmar"
   },
   "moneyProfile": {
     "dateOfBirth": "Födelsedatum",

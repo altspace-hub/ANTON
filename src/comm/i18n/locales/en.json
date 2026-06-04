@@ -26,6 +26,18 @@
     "phraseTitle": "Write this down",
     "title": "New wallet"
   },
+  "attach": {
+    "viewOnce": "View once",
+    "viewOnceOn": "Will disappear after they view it.",
+    "viewOnceOff": "Recipient can save your media. Tap to limit it.",
+    "camera": "Camera",
+    "photos": "Photos",
+    "recordVideo": "Record video",
+    "videoLibrary": "Video library",
+    "poll": "Poll",
+    "location": "Location",
+    "file": "File"
+  },
   "chat": {
     "addByCodeNote": "Adding by code alone doesn't include the friend's public key. Their key will be fetched automatically the first time you message them.",
     "addContact": "Add contact",
@@ -290,6 +302,16 @@
     "reason": "Unlock ANTON",
     "title": "ANTON",
     "unlock": "Unlock"
+  },
+  "location": {
+    "title": "Share location",
+    "locating": "Locating…",
+    "denied": "Location permission denied.",
+    "error": "Couldn't get location",
+    "shareOnce": "Share once",
+    "live15": "Live · 15 minutes",
+    "live60": "Live · 1 hour",
+    "live480": "Live · 8 hours"
   },
   "moneyProfile": {
     "dateOfBirth": "Date of birth",

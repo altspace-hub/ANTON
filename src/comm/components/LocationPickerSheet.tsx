@@ -6,6 +6,7 @@
  * the live-share durations. Cancel button always available.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 import { getCurrentPosition, ensureGeoPermission, type GeoFix } from '../services/geo';
@@ -17,14 +18,15 @@ interface Props {
   onShare: (fix: GeoFix, liveDurationMin: number) => void;
 }
 
-const LIVE_OPTIONS: Array<{ label: string; minutes: number }> = [
-  { label: 'Share once',          minutes: 0 },
-  { label: 'Live · 15 minutes',   minutes: 15 },
-  { label: 'Live · 1 hour',       minutes: 60 },
-  { label: 'Live · 8 hours',      minutes: 480 },
+const LIVE_OPTIONS: Array<{ key: string; fallback: string; minutes: number }> = [
+  { key: 'shareOnce', fallback: 'Share once',          minutes: 0 },
+  { key: 'live15',    fallback: 'Live · 15 minutes',   minutes: 15 },
+  { key: 'live60',    fallback: 'Live · 1 hour',       minutes: 60 },
+  { key: 'live480',   fallback: 'Live · 8 hours',      minutes: 480 },
 ];
 
 export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
+  const { t } = useTranslation();
   const [fix, setFix] = useState<GeoFix | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +39,11 @@ export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
     void (async () => {
       try {
         const granted = await ensureGeoPermission();
-        if (!granted) { setError('Location permission denied.'); setBusy(false); return; }
+        if (!granted) { setError(t('location.denied', 'Location permission denied.')); setBusy(false); return; }
         const f = await getCurrentPosition();
         setFix(f);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Couldn\'t get location');
+        setError(e instanceof Error ? e.message : t('location.error', "Couldn't get location"));
       } finally {
         setBusy(false);
       }
@@ -68,12 +70,12 @@ export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
         <div className="px-5 pb-2">
           <h2 className="text-base font-semibold text-[var(--color-text)] flex items-center gap-2">
             <Ico name="mapPin" size={18} color="var(--color-accent)" />
-            Share location
+            {t('location.title', 'Share location')}
           </h2>
         </div>
 
         {busy && (
-          <p className="px-5 py-4 text-sm text-[var(--color-text-faint)]">Locating…</p>
+          <p className="px-5 py-4 text-sm text-[var(--color-text-faint)]">{t('location.locating', 'Locating…')}</p>
         )}
 
         {error && (
@@ -114,7 +116,7 @@ export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[15px] text-[var(--color-text)] active:bg-[var(--color-surface-muted)]"
                   >
                     <Ico name={opt.minutes === 0 ? 'mapPin' : 'clock'} size={20} color="var(--color-text-muted)" />
-                    <span>{opt.label}</span>
+                    <span>{t('location.' + opt.key, opt.fallback)}</span>
                   </button>
                 </li>
               ))}
@@ -128,7 +130,7 @@ export default function LocationPickerSheet({ open, onClose, onShare }: Props) {
             className="w-full py-2.5 rounded-2xl text-sm font-medium text-[var(--color-text-muted)]"
             style={{ backgroundColor: 'var(--color-surface-alt)' }}
           >
-            Cancel
+            {t('common.cancel', 'Cancel')}
           </button>
         </div>
       </div>

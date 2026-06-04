@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 
@@ -28,6 +29,7 @@ export default function AttachmentSheet({
   open, onClose, onPickImageCamera, onPickImageLibrary, onPickVideoCamera, onPickVideoLibrary,
   onPickPoll, onPickLocation, onPickFile, viewOnce, onToggleViewOnce,
 }: Props) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     return registerBackHandler(onClose);
@@ -70,9 +72,11 @@ export default function AttachmentSheet({
               <Ico name="clock" size={18} />
             </span>
             <span className="flex-1">
-              <span className="block text-[14px] font-medium text-[var(--color-text)]">View once</span>
+              <span className="block text-[14px] font-medium text-[var(--color-text)]">{t('attach.viewOnce', 'View once')}</span>
               <span className="block text-[11px] text-[var(--color-text-muted)]">
-                {viewOnce ? 'Will disappear after they view it.' : 'Recipient can save your media. Tap to limit it.'}
+                {viewOnce
+                  ? t('attach.viewOnceOn', 'Will disappear after they view it.')
+                  : t('attach.viewOnceOff', 'Recipient can save your media. Tap to limit it.')}
               </span>
             </span>
             <span
@@ -88,17 +92,17 @@ export default function AttachmentSheet({
         </div>
 
         <div className="px-5 grid grid-cols-2 gap-3">
-          <Tile icon="camera" label="Camera"  onClick={() => { onClose(); onPickImageCamera(); }} />
-          <Tile icon="image"  label="Photos"  onClick={() => { onClose(); onPickImageLibrary(); }} />
-          <Tile icon="video"  label="Record video" onClick={() => { onClose(); onPickVideoCamera(); }} />
-          <Tile icon="video"  label="Video library" onClick={() => { onClose(); onPickVideoLibrary(); }} />
-          <Tile icon="grid"   label="Poll"    onClick={() => { onClose(); onPickPoll(); }} />
-          <Tile icon="mapPin" label="Location" onClick={() => { onClose(); onPickLocation(); }} />
+          <Tile icon="camera" label={t('attach.camera', 'Camera')}  onClick={() => { onClose(); onPickImageCamera(); }} />
+          <Tile icon="image"  label={t('attach.photos', 'Photos')}  onClick={() => { onClose(); onPickImageLibrary(); }} />
+          <Tile icon="video"  label={t('attach.recordVideo', 'Record video')} onClick={() => { onClose(); onPickVideoCamera(); }} />
+          <Tile icon="video"  label={t('attach.videoLibrary', 'Video library')} onClick={() => { onClose(); onPickVideoLibrary(); }} />
+          <Tile icon="grid"   label={t('attach.poll', 'Poll')}    onClick={() => { onClose(); onPickPoll(); }} />
+          <Tile icon="mapPin" label={t('attach.location', 'Location')} onClick={() => { onClose(); onPickLocation(); }} />
           {/* Stickers tile temporarily hidden pending an art rework — the picker,
               wire kind, forwarding + recents all remain wired; re-enable by
               restoring this Tile and onPickSticker in the destructure above.
               <Tile icon="smile" label="Stickers" onClick={() => { onClose(); onPickSticker(); }} /> */}
-          <Tile icon="paperclip" label="File" onClick={() => { onClose(); onPickFile(); }} />
+          <Tile icon="paperclip" label={t('attach.file', 'File')} onClick={() => { onClose(); onPickFile(); }} />
         </div>
       </div>
     </div>
