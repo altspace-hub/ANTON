@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Ico, type IcoName } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 import EmojiPickerSheet from './EmojiPickerSheet';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function MessageActionSheet({ open, onClose, onReact, onReply, onCopy, onForward, onEdit, onDelete, isMine }: Props) {
+  const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
           <button
             onClick={() => setPickerOpen(true)}
             className="w-12 h-12 rounded-full flex items-center justify-center bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-muted)]"
-            aria-label="More emojis"
+            aria-label={t('msgAction.moreEmojis', 'More emojis')}
           >
             <Ico name="plus" size={20} color="var(--color-text-muted)" />
           </button>
@@ -68,11 +70,11 @@ export default function MessageActionSheet({ open, onClose, onReact, onReply, on
 
         {/* Action rows */}
         <div className="px-4 space-y-1">
-          <Row icon="reply" label="Reply" onClick={() => { onClose(); onReply(); }} />
-          {onForward && <Row icon="share" label="Forward" onClick={() => { onClose(); onForward(); }} />}
-          {onCopy && <Row icon="share" label="Copy" onClick={() => { onClose(); onCopy(); }} />}
-          {isMine && onEdit && <Row icon="reply" label="Edit" onClick={() => { onClose(); onEdit(); }} />}
-          {isMine && onDelete && <Row icon="trash" label="Delete for everyone" onClick={() => { onClose(); onDelete(); }} destructive />}
+          <Row icon="reply" label={t('msgAction.reply', 'Reply')} onClick={() => { onClose(); onReply(); }} />
+          {onForward && <Row icon="share" label={t('msgAction.forward', 'Forward')} onClick={() => { onClose(); onForward(); }} />}
+          {onCopy && <Row icon="share" label={t('msgAction.copy', 'Copy')} onClick={() => { onClose(); onCopy(); }} />}
+          {isMine && onEdit && <Row icon="reply" label={t('msgAction.edit', 'Edit')} onClick={() => { onClose(); onEdit(); }} />}
+          {isMine && onDelete && <Row icon="trash" label={t('msgAction.deleteForEveryone', 'Delete for everyone')} onClick={() => { onClose(); onDelete(); }} destructive />}
         </div>
       </div>
 

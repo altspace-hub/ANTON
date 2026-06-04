@@ -7,21 +7,26 @@
  * to the peer.
  */
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 
 interface Option {
-  label: string;
+  /** i18n key suffix under `timer.*`. */
+  key: string;
+  /** English fallback. */
+  fallback: string;
   /** Seconds. 0 = Off. */
   value: number;
 }
 
 export const TIMER_OPTIONS: Option[] = [
-  { label: 'Off',     value: 0 },
-  { label: '5 sec',   value: 5 },
-  { label: '1 hour',  value: 60 * 60 },
-  { label: '1 day',   value: 60 * 60 * 24 },
-  { label: '1 week',  value: 60 * 60 * 24 * 7 },
+  { key: 'off',   fallback: 'Off',    value: 0 },
+  { key: 'sec5',  fallback: '5 sec',  value: 5 },
+  { key: 'hour1', fallback: '1 hour', value: 60 * 60 },
+  { key: 'day1',  fallback: '1 day',  value: 60 * 60 * 24 },
+  { key: 'week1', fallback: '1 week', value: 60 * 60 * 24 * 7 },
 ];
 
 interface Props {
@@ -34,6 +39,7 @@ interface Props {
 }
 
 export default function DisappearingTimerSheet({ open, onClose, currentSec, onSelect }: Props) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     return registerBackHandler(onClose);
@@ -45,7 +51,7 @@ export default function DisappearingTimerSheet({ open, onClose, currentSec, onSe
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Disappearing messages"
+      aria-label={t('timer.title', 'Disappearing messages')}
       className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ background: 'rgba(28, 26, 20, 0.55)' }}
       onClick={onClose}
@@ -56,9 +62,9 @@ export default function DisappearingTimerSheet({ open, onClose, currentSec, onSe
       >
         <div className="w-10 h-1 rounded-full bg-[var(--color-border)] mx-auto mb-3" />
         <div className="px-5 pb-2">
-          <h2 className="text-base font-semibold text-[var(--color-text)]">Disappearing messages</h2>
+          <h2 className="text-base font-semibold text-[var(--color-text)]">{t('timer.title', 'Disappearing messages')}</h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            New messages will disappear from this chat for both of you after the selected timer.
+            {t('timer.subtitle', 'New messages will disappear from this chat for both of you after the selected timer.')}
           </p>
         </div>
 
@@ -84,7 +90,7 @@ export default function DisappearingTimerSheet({ open, onClose, currentSec, onSe
                       />
                     )}
                   </span>
-                  <span className="flex-1">{opt.label}</span>
+                  <span className="flex-1">{t('timer.' + opt.key, opt.fallback)}</span>
                   {opt.value === 0 ? null : <Ico name="clock" size={16} color="var(--color-text-muted)" />}
                 </button>
               </li>
@@ -96,14 +102,15 @@ export default function DisappearingTimerSheet({ open, onClose, currentSec, onSe
   );
 }
 
-/** Human-readable timer label. Used by the system-chip rendering. */
-export function formatTimerLabel(sec: number): string {
-  if (!sec) return 'Off';
+/** Human-readable timer label. Used by the system-chip rendering. Takes `t`
+ *  so it can be called from a component (ChatThreadScreen) without a hook. */
+export function formatTimerLabel(sec: number, t: TFunction): string {
+  if (!sec) return t('timer.off', 'Off');
   const match = TIMER_OPTIONS.find((o) => o.value === sec);
-  if (match) return match.label;
+  if (match) return t('timer.' + match.key, match.fallback);
   // Fallback for non-preset values
-  if (sec < 60) return `${sec} sec`;
-  if (sec < 3600) return `${Math.round(sec / 60)} min`;
-  if (sec < 86400) return `${Math.round(sec / 3600)} hr`;
-  return `${Math.round(sec / 86400)} day`;
+  if (sec < 60) return t('timer.fmtSec', { n: sec, defaultValue: '{{n}} sec' });
+  if (sec < 3600) return t('timer.fmtMin', { n: Math.round(sec / 60), defaultValue: '{{n}} min' });
+  if (sec < 86400) return t('timer.fmtHr', { n: Math.round(sec / 3600), defaultValue: '{{n}} hr' });
+  return t('timer.fmtDay', { n: Math.round(sec / 86400), defaultValue: '{{n}} day' });
 }

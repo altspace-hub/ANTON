@@ -157,6 +157,31 @@
     "working": "Arbetar…",
     "delete": "Ta bort"
   },
+  "msgAction": {
+    "reply": "Svara",
+    "forward": "Vidarebefordra",
+    "copy": "Kopiera",
+    "edit": "Redigera",
+    "deleteForEveryone": "Ta bort för alla",
+    "moreEmojis": "Fler emojis"
+  },
+  "forward": {
+    "title": "Vidarebefordra till",
+    "noContacts": "Inga andra kontakter med känd nyckel. Lägg till en kontakt och byt QR-koder först."
+  },
+  "timer": {
+    "title": "Försvinnande meddelanden",
+    "subtitle": "Nya meddelanden försvinner från den här chatten för er båda efter den valda tiden.",
+    "off": "Av",
+    "sec5": "5 sek",
+    "hour1": "1 timme",
+    "day1": "1 dag",
+    "week1": "1 vecka",
+    "fmtSec": "{{n}} sek",
+    "fmtMin": "{{n}} min",
+    "fmtHr": "{{n}} tim",
+    "fmtDay": "{{n}} dagar"
+  },
   "events": {
     "addPeople": "Lägg till personer",
     "cancelConfirm": "Avboka evenemanget för alla? Inbjudna meddelas.",

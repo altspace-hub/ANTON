@@ -157,6 +157,31 @@
     "working": "Working…",
     "delete": "Delete"
   },
+  "msgAction": {
+    "reply": "Reply",
+    "forward": "Forward",
+    "copy": "Copy",
+    "edit": "Edit",
+    "deleteForEveryone": "Delete for everyone",
+    "moreEmojis": "More emojis"
+  },
+  "forward": {
+    "title": "Forward to",
+    "noContacts": "No other contacts with a known key. Add a contact and exchange QR codes first."
+  },
+  "timer": {
+    "title": "Disappearing messages",
+    "subtitle": "New messages will disappear from this chat for both of you after the selected timer.",
+    "off": "Off",
+    "sec5": "5 sec",
+    "hour1": "1 hour",
+    "day1": "1 day",
+    "week1": "1 week",
+    "fmtSec": "{{n}} sec",
+    "fmtMin": "{{n}} min",
+    "fmtHr": "{{n}} hr",
+    "fmtDay": "{{n}} day"
+  },
   "events": {
     "addPeople": "Add people",
     "cancelConfirm": "Cancel this event for everyone? Invitees will be notified.",

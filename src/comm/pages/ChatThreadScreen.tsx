@@ -1231,8 +1231,8 @@ function TimerChangeChip({ message, isMine, time }: { message: ChatMessage; isMi
   const label = data.timerSec === 0
     ? (isMine ? t('chat.timerOffYou') : t('chat.timerOffThey'))
     : (isMine
-        ? t('chat.timerSetYou', { label: formatTimerLabel(data.timerSec) })
-        : t('chat.timerSetThey', { label: formatTimerLabel(data.timerSec) }));
+        ? t('chat.timerSetYou', { label: formatTimerLabel(data.timerSec, t) })
+        : t('chat.timerSetThey', { label: formatTimerLabel(data.timerSec, t) }));
   return (
     <div className="flex justify-center">
       <span className="px-3 py-1 rounded-full text-[11px] text-[var(--color-text-muted)] bg-[var(--color-surface-muted)] inline-flex items-center gap-1.5">
