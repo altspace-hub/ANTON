@@ -15,8 +15,9 @@ import * as ed25519 from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha512';
 import { sha256 } from '@noble/hashes/sha2';
 import { getSecure } from './secure-store';
-import { getIdentity, deriveRoutingId } from './identity';
-import { listContacts } from './contacts';
+import { getIdentity, deriveRoutingId, deriveContactHash, pubkeyBindsTo } from './identity';
+import { listContacts, markContactConfirmed } from './contacts';
+import { upsertContactRequest, deleteContactRequest } from './contact-requests';
 import { listQueued, updateStatus } from './messages';
 import { listReadyInline, markInlineAttempt, enqueueInline } from './inline-outbox';
 import { redactHash, devLog } from './log-redact';
@@ -52,6 +53,9 @@ export interface RelayClientConfig {
    * the persisted ChatMessage record (already in IDB) so the UI can refresh.
    */
   onMessage?: (fromHash: string) => void;
+  /** #68 — called when a contact_request from an un-added sender lands in the
+   *  requests tray, so the UI can refresh the Requests badge. */
+  onContactRequest?: () => void;
   /** Called on session lifecycle events. */
   onStatus?: (status: RelayStatus) => void;
 }
@@ -388,21 +392,26 @@ export class RelayClient {
     const ciphertextBytes = payload.slice(36);
     try {
       const envelope = decodeEnvelopeFromBytes(ciphertextBytes);
+      const me = getIdentity();
+      if (!me) return;
       // Match fromRoutingId to one of our contacts by deriving each contact's
       // routing_id and comparing.
       const contacts = await listContacts();
       const sender = contacts.find(c => c.publicKeyHex && byteEq(deriveRoutingId(c.publicKeyHex), fromRoutingId));
       if (!sender || !sender.publicKeyHex) {
-        // Unknown sender — could be someone whose QR you haven't scanned.
-        // v0.1 drops; v0.2 should write to a "requests" tray instead.
-        devLog('[relay-client] DELIVER_COMM from unknown contact, dropping');
+        // #68 — unknown sender (QR not yet scanned). v0.1 dropped here; now we
+        // admit a verified contact_request into the requests tray instead.
+        await this.handleUnknownSender(envelope, fromRoutingId, me.contactHash);
         return;
       }
-      const me = getIdentity();
-      if (!me) return;
       const wireJson = await openFromPeer(envelope, sender.publicKeyHex, sender.contactHash, me.contactHash);
       const wire = parseWirePayload(wireJson);
       await applyInboundMessage(sender.contactHash, wire);
+      // #68 — receiving from this peer proves they have us as a contact, so
+      // stop sending them contact_request wires, and clear any stale tray entry
+      // left by a QR-add ↔ in-flight-request race (no-op when none exists).
+      if (sender.confirmed !== true) void markContactConfirmed(sender.contactHash);
+      void deleteContactRequest(sender.contactHash);
       this.cfg.onMessage?.(sender.contactHash);
     } catch (err) {
       if ((err as Error)?.name === 'ReplayError') {
@@ -412,6 +421,72 @@ export class RelayClient {
       }
       devLog('[relay-client] decrypt failed', err);
     }
+  }
+
+  /**
+   * #68 — admit a contact_request from a sender we haven't added. The sender's
+   * pubkey rides in cleartext on the envelope and must derive to the relay's
+   * fromRoutingId — THE load-bearing binding: the relay stamps fromRoutingId
+   * from the HELLO_COMM-authenticated session (sha256(pubkey)[0:16]), so a
+   * forged pubkey can't match without a sha256-prefix collision, and the AEAD
+   * open then proves the sender holds the matching private key. Only a
+   * contact_request wire is accepted from an un-added sender.
+   */
+  private async handleUnknownSender(
+    envelope: EncryptedEnvelope,
+    fromRoutingId: Uint8Array,
+    myHash: string,
+  ): Promise<void> {
+    const senderPub = envelope.senderPub;
+    if (!senderPub) {
+      devLog('[relay-client] DELIVER_COMM from unknown contact, no senderPub — dropping');
+      return;
+    }
+    let senderHash: string;
+    try {
+      senderHash = deriveContactHash(senderPub);
+    } catch {
+      devLog('[relay-client] unknown sender pubkey malformed — dropping');
+      return;
+    }
+    if (!pubkeyBindsTo(senderPub, fromRoutingId, senderHash)) {
+      devLog('[relay-client] unknown sender pubkey failed routing binding — dropping');
+      return;
+    }
+    let wire;
+    try {
+      const wireJson = await openFromPeer(envelope, senderPub, senderHash, myHash);
+      wire = parseWirePayload(wireJson);
+    } catch (err) {
+      if ((err as Error)?.name === 'ReplayError') return; // re-delivered; ignore
+      devLog('[relay-client] unknown-sender decrypt failed', err);
+      return;
+    }
+    if (wire.kind !== 'contact_request') {
+      // A stray chat wire from someone who hasn't introduced themselves.
+      devLog('[relay-client] unknown sender sent a non-request wire — dropping');
+      return;
+    }
+    const cr = wire.data;
+    try {
+      await upsertContactRequest({
+        contactHash: senderHash,
+        publicKeyHex: senderPub,
+        displayName: cr.name?.trim() || senderHash,
+        // Avatar deliberately NOT trusted/stored from an un-added sender.
+        message: {
+          messageId: cr.message.messageId,
+          text: cr.message.text,
+          receivedAt: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      // Decrypt succeeded; only persistence failed. Relay mailbox re-delivery
+      // will retry — don't masquerade this as a decrypt failure upstream.
+      devLog('[relay-client] contact-request store failed', err);
+      return;
+    }
+    this.cfg.onContactRequest?.();
   }
 
   private handleRelayError(payload: Uint8Array): void {

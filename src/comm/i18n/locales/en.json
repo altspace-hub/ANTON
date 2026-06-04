@@ -853,5 +853,17 @@
   "history": {
     "today": "Today",
     "yesterday": "Yesterday"
+  },
+  "requests": {
+    "title": "Requests",
+    "subtitle": "People who messaged you before you added them. Approve to start chatting.",
+    "empty": "No requests",
+    "emptyHelp": "When someone messages you without being in your contacts, it shows up here.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "banner": "{{count}} message request",
+    "banner_other": "{{count}} message requests",
+    "moreMessages": "+{{count}} more",
+    "actionFailed": "Could not complete that — please try again."
   }
 }

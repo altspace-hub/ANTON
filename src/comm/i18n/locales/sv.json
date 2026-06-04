@@ -853,5 +853,17 @@
   "history": {
     "today": "Idag",
     "yesterday": "Igår"
+  },
+  "requests": {
+    "title": "Förfrågningar",
+    "subtitle": "Personer som skrev till dig innan du lade till dem. Godkänn för att börja chatta.",
+    "empty": "Inga förfrågningar",
+    "emptyHelp": "När någon skriver till dig utan att finnas i dina kontakter visas det här.",
+    "approve": "Godkänn",
+    "reject": "Avvisa",
+    "banner": "{{count}} meddelandeförfrågan",
+    "banner_other": "{{count}} meddelandeförfrågningar",
+    "moreMessages": "+{{count}} till",
+    "actionFailed": "Det gick inte — försök igen."
   }
 }

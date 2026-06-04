@@ -23,6 +23,7 @@ import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
 // Capacitor bundle so the WebView reads it from disk in <50 ms.
 const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const AddContactScreen = lazy(() => import('./pages/AddContactScreen'));
+const RequestsScreen = lazy(() => import('./pages/RequestsScreen'));
 const ChatThreadScreen = lazy(() => import('./pages/ChatThreadScreen'));
 const EventsScreen = lazy(() => import('./pages/EventsScreen'));
 const EventCreateScreen = lazy(() => import('./pages/EventCreateScreen'));
@@ -51,6 +52,7 @@ type View =
   | 'money-profile'
   | 'activity-review'
   | 'add-contact'
+  | 'requests'
   | 'chat-thread'
   | 'event-create'
   | 'event-detail'
@@ -91,6 +93,7 @@ export default function App() {
       if (view === 'wassup-compose') { setView('tabs'); return 'handled'; }
       if (view === 'wassup-post') { setOpenPostId(null); setView('tabs'); return 'handled'; }
       if (view === 'add-contact') { setView('tabs'); return 'handled'; }
+      if (view === 'requests') { setView('tabs'); return 'handled'; }
       if (view === 'payment-details') { setView('profile'); return 'handled'; }
       if (view === 'money-profile') { setView('profile'); return 'handled'; }
       if (view === 'activity-review') { setView('profile'); return 'handled'; }
@@ -110,6 +113,11 @@ export default function App() {
         setContactsVersion((v) => v + 1);
         setEventsVersion((v) => v + 1);
         setWassupVersion((v) => v + 1);
+      },
+      // #68 — a contact_request landed in the tray; refresh the chat list so
+      // its Requests banner + count update.
+      onContactRequest: () => {
+        setContactsVersion((v) => v + 1);
       },
     });
     // R11 — sync local notifications for any events with reminders set.
@@ -275,6 +283,17 @@ export default function App() {
     );
   }
 
+  if (view === 'requests') {
+    return (
+      <Suspense fallback={<LoadingShell />}>
+        <RequestsScreen
+          onBack={() => setView('tabs')}
+          onChanged={() => setContactsVersion((v) => v + 1)}
+        />
+      </Suspense>
+    );
+  }
+
   if (view === 'chat-thread' && openChatHash) {
     return (
       <Suspense fallback={<LoadingShell />}>
@@ -366,6 +385,7 @@ export default function App() {
           <ChatListScreen
             refreshKey={contactsVersion}
             onAddContact={() => setView('add-contact')}
+            onOpenRequests={() => setView('requests')}
             onOpenChat={(hash) => { setOpenChatHash(hash); setView('chat-thread'); }}
           />
         )}

@@ -13,7 +13,7 @@
  */
 
 export const DB_NAME = 'anton-comm';
-export const DB_VERSION = 10;
+export const DB_VERSION = 11;
 
 export const STORE_CONTACTS = 'contacts';
 export const STORE_MESSAGES = 'messages';
@@ -49,6 +49,12 @@ export const STORE_SCHEDULES = 'schedules';
  *  dedicated store (not the 1:1 messages store) so event planning chatter
  *  never clutters the direct-chat thread. Indexed by eventId. */
 export const STORE_EVENT_NOTES = 'event_notes';
+
+/** v11 — incoming contact requests (#68). When a DELIVER_COMM arrives from a
+ *  sender we haven't added (their pubkey rode in cleartext on the envelope),
+ *  the decrypted contact_request lands here as a pending "message request"
+ *  rather than being dropped. Keyed by the sender's contactHash. */
+export const STORE_CONTACT_REQUESTS = 'contact_requests';
 
 export const INDEX_MSG_BY_THREAD = 'by_thread';
 export const INDEX_MSG_BY_STATUS = 'by_status';
@@ -158,6 +164,11 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_EVENT_NOTES)) {
         const store = db.createObjectStore(STORE_EVENT_NOTES, { keyPath: 'id' });
         store.createIndex(INDEX_EVENT_NOTE_BY_EVENT, 'eventId', { unique: false });
+      }
+      // v11 — incoming contact requests (#68). Keyed by sender contactHash;
+      // additive store, no migration of existing data.
+      if (!db.objectStoreNames.contains(STORE_CONTACT_REQUESTS)) {
+        db.createObjectStore(STORE_CONTACT_REQUESTS, { keyPath: 'contactHash' });
       }
     };
     req.onsuccess = () => {

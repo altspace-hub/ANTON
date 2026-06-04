@@ -120,6 +120,29 @@ export function deriveRoutingId(publicKeyHex: string): Uint8Array {
   return sha256(pubKeyBytes).slice(0, 16);
 }
 
+/**
+ * #68 — verify a claimed sender pubkey is cryptographically bound to BOTH the
+ * relay routing_id (the DELIVER_COMM frame header) AND a claimed contactHash.
+ * Both derive from sha256(pubkey), so a forged pubkey cannot match either —
+ * this is what lets us trust a contact_request from an un-added sender.
+ */
+export function pubkeyBindsTo(
+  publicKeyHex: string,
+  routingId: Uint8Array,
+  claimedHash: string,
+): boolean {
+  try {
+    const derived = deriveRoutingId(publicKeyHex);
+    if (derived.length !== routingId.length) return false;
+    for (let i = 0; i < derived.length; i++) {
+      if (derived[i] !== routingId[i]) return false;
+    }
+    return deriveContactHash(publicKeyHex) === claimedHash;
+  } catch {
+    return false;
+  }
+}
+
 // ── Identity creation ───────────────────────────────────────────────────
 
 /**

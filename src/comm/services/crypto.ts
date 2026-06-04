@@ -43,6 +43,13 @@ export interface EncryptedEnvelope {
   authTag: string;    // base64 (16 bytes — last 16 of GCM ciphertext)
   salt: string;       // base64 (32 bytes)
   aadHash?: string;   // hex SHA-256 of the AAD
+  /** #68 — sender's Ed25519 pubkey (64 hex), attached IN CLEARTEXT only while
+   *  a contact is unconfirmed, so a recipient who hasn't added the sender can
+   *  still derive the shared secret and decrypt a contact_request. The relay
+   *  forwards the envelope JSON opaquely and already knows routing_id =
+   *  sha256(pub)[0:16], so this leaks nothing new to the relay; the message
+   *  body stays encrypted. Verified against routing_id + hash before use. */
+  senderPub?: string;
 }
 
 // ── Local long-term X25519 keypair ──────────────────────────────────────

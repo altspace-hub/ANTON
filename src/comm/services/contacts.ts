@@ -31,6 +31,12 @@ export interface Contact {
    *  `profile` wire. Rendered in place of the name letter. */
   avatarImage?: string;
   avatarMime?: string;
+  /** #68 — true once we've received a message FROM this peer (proof they have
+   *  us as a contact too). While EXPLICITLY false (a fresh QR add who may not
+   *  have us yet), our first text is sent as a `contact_request` wire carrying
+   *  our pubkey so they can decrypt + approve it. `undefined` (legacy contacts
+   *  predating #68) counts as confirmed — they already have us. */
+  confirmed?: boolean;
 }
 
 export async function listContacts(): Promise<Contact[]> {
@@ -100,6 +106,23 @@ export async function updateContact(
     tx.onerror = () => reject(tx.error);
   });
   return next;
+}
+
+/**
+ * #68 — mark a contact confirmed (we've received a message from them, so they
+ * have us too). No-op if the contact is gone or already confirmed. Stops our
+ * outbound `contact_request` re-sends to this peer.
+ */
+export async function markContactConfirmed(contactHash: string): Promise<void> {
+  const existing = await getContact(contactHash);
+  if (!existing || existing.confirmed === true) return;
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_CONTACTS, 'readwrite');
+    tx.objectStore(STORE_CONTACTS).put({ ...existing, confirmed: true });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 export async function removeContact(contactHash: string): Promise<void> {

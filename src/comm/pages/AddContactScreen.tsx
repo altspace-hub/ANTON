@@ -92,6 +92,9 @@ function ScanTab({ onAdded }: { onAdded: (contactHash: string) => void }) {
               displayName: payload.name || payload.hash,
               publicKeyHex: payload.pub,
               source: 'qr',
+              // #68 — they may not have scanned us back yet, so our first text
+              // goes as a contact_request until they reply (confirming mutual).
+              confirmed: false,
             });
             scanner?.stop();
             onAdded(payload.hash);

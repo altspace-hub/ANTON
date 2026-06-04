@@ -198,7 +198,21 @@ export interface ProfilePayload {
   ts: string;
 }
 
+/** #68 — sent as the first contact to a peer who may not have added us. The
+ *  sender's pubkey rides in cleartext on the envelope (EncryptedEnvelope.
+ *  senderPub) so an un-added recipient can decrypt this; the name + first
+ *  message stay inside the ciphertext (private from the relay). */
+export interface ContactRequestPayload {
+  name: string;
+  avatarImage?: string;
+  avatarMime?: string;
+  /** The sender's first message — held in the recipient's Requests tray and
+   *  replayed into the chat thread on approve. */
+  message: { messageId: string; text: string };
+}
+
 export type WirePayload =
+  | { kind: 'contact_request'; data: ContactRequestPayload }
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
@@ -308,6 +322,15 @@ export async function sendStructuredMessage(
     throw new ChatError(
       'No public key for this contact yet. Ask them to share their QR — manual codes need a key exchange before messaging.',
       'NO_PEER_KEY',
+    );
+  }
+  // #68 — a non-text first message to a not-yet-confirmed contact can't be
+  // introduced (only text rides a contact_request) and would be dropped at the
+  // recipient while wrongly showing 'sent' here. Block it with a clear error.
+  if (contact.confirmed === false && wire.kind !== 'text') {
+    throw new ChatError(
+      'Send a text message first to introduce yourself — photos, voice and other attachments unlock once they accept your request.',
+      'NEEDS_INTRO',
     );
   }
 
@@ -993,6 +1016,31 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
   } else {
     wire = { kind: 'text', messageId: msg.id, text: msg.plaintext, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   }
+
+  // #68 — first-contact handshake. If the peer hasn't confirmed they have us
+  // (a fresh QR add — `confirmed === false`), send our first TEXT as a
+  // contact_request that carries our identity + first message, and attach our
+  // pubkey in cleartext on the envelope so an un-added recipient can decrypt
+  // and approve it. `undefined` confirmed = a legacy contact who already has
+  // us → normal send. Non-text first messages send as normal wires (held by
+  // the recipient only once a request exists).
+  if (peer.confirmed === false && wire.kind === 'text') {
+    const reqWire: WirePayload = {
+      kind: 'contact_request',
+      data: {
+        name: me.displayName,
+        // Avatar is deliberately NOT sent in the request: it would re-upload on
+        // every pre-reply send, and an un-added stranger's image bytes
+        // shouldn't be trusted/stored. Peers learn the avatar via the `profile`
+        // wire once mutual; the request shows a letter until approved.
+        message: { messageId: msg.id, text: msg.plaintext },
+      },
+    };
+    const envelope = await sealForPeer(JSON.stringify(reqWire), peer.publicKeyHex, me.contactHash, msg.toHash);
+    envelope.senderPub = me.publicKeyHex;
+    return envelope;
+  }
+
   const wireJson = JSON.stringify(wire);
   return sealForPeer(wireJson, peer.publicKeyHex, me.contactHash, msg.toHash);
 }
@@ -1009,6 +1057,17 @@ export function parseWirePayload(raw: string): WirePayload {
     const obj = JSON.parse(raw) as { kind?: string; text?: string; data?: unknown; messageId?: string; replyTo?: ReplyContext; disappearsAt?: string };
     if (obj && typeof obj === 'object' && obj.kind) {
       const id = obj.messageId ?? '';
+      if (obj.kind === 'contact_request' && obj.data && typeof obj.data === 'object') {
+        // Validate the nested message both call sites dereference (an un-added
+        // sender authors this plaintext freely). Malformed → fall through to
+        // the text/raw fallback rather than throwing downstream.
+        const d = obj.data as Partial<ContactRequestPayload>;
+        if (d.message && typeof d.message === 'object'
+            && typeof d.message.messageId === 'string'
+            && typeof d.message.text === 'string') {
+          return { kind: 'contact_request', data: obj.data as ContactRequestPayload };
+        }
+      }
       if (obj.kind === 'text' && typeof obj.text === 'string') {
         return { kind: 'text', messageId: id, text: obj.text, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
       }
@@ -1133,6 +1192,16 @@ export async function applyInboundMessage(
   let disappearsAt: string | undefined;
 
   switch (wire.kind) {
+    // ── #68 contact request from a KNOWN sender ───────────────────────
+    // The relay client handles requests from UNKNOWN senders (writes them to
+    // the requests tray) BEFORE this point. So if a contact_request reaches
+    // here, the sender is already a contact (mutual scan, or they re-sent
+    // before learning we'd added them): just land their first message as a
+    // normal text bubble. (Recurses once into the 'text' base case.)
+    case 'contact_request':
+      return applyInboundMessage(fromHash, {
+        kind: 'text', messageId: wire.data.message.messageId, text: wire.data.message.text,
+      });
     // ── Mutator wires (no visible bubble) ─────────────────────────────
     case 'react':
       // R2 — reactions don't create a visible message; just mutate the target.

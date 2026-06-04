@@ -2,25 +2,30 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listContacts, type Contact } from '../services/contacts';
 import { getLatestPerThread, type ChatMessage } from '../services/messages';
+import { countContactRequests } from '../services/contact-requests';
 import AvatarCircle from '../components/AvatarCircle';
 
 interface Props {
   onAddContact: () => void;
   onOpenChat: (contactHash: string) => void;
+  /** #68 — open the message-request tray. */
+  onOpenRequests: () => void;
   refreshKey?: number;
 }
 
-export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }: Props) {
+export default function ChatListScreen({ onAddContact, onOpenChat, onOpenRequests, refreshKey }: Props) {
   const { t } = useTranslation();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lastByThread, setLastByThread] = useState<Map<string, ChatMessage>>(new Map());
+  const [requestCount, setRequestCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([listContacts(), getLatestPerThread()])
-      .then(([rows, latest]) => {
+    Promise.all([listContacts(), getLatestPerThread(), countContactRequests()])
+      .then(([rows, latest, reqCount]) => {
         if (cancelled) return;
+        setRequestCount(reqCount);
         // Sort by most-recent thread activity, then by name as fallback
         rows.sort((a, b) => {
           const la = latest.get(a.contactHash)?.ts ?? '';
@@ -51,6 +56,30 @@ export default function ChatListScreen({ onAddContact, onOpenChat, refreshKey }:
           +
         </button>
       </div>
+
+      {/* #68 — message-request banner (Signal-style), shown when pending. */}
+      {requestCount > 0 && (
+        <button type="button" onClick={onOpenRequests}
+                className="mx-5 mb-3 flex items-center justify-between rounded-xl px-4 py-3 active:opacity-90"
+                style={{ backgroundColor: 'var(--color-accent-soft)', border: '1px solid var(--color-accent-dim)' }}>
+          <span className="text-sm font-medium text-[var(--color-text)]">
+            {t('requests.banner', {
+              count: requestCount,
+              defaultValue: '{{count}} message request',
+              defaultValue_other: '{{count}} message requests',
+            })}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}>
+              {requestCount}
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--color-accent)' }}>
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
+      )}
 
       {!loaded ? (
         <div className="px-5 py-10 text-center text-sm text-[var(--color-text-faint)]">
