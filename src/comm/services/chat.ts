@@ -1177,12 +1177,23 @@ export function parseWirePayload(raw: string): WirePayload {
       if (obj.kind === 'wassup_delete' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'wassup_delete', data: obj.data as WassupDeleteWire };
       }
+      // obj.kind was set but matched no known kind: a tagged wire this build
+      // doesn't understand (the peer is on a newer ANTON, or a malformed
+      // payload). Show a graceful placeholder — NEVER dump the raw wire JSON as
+      // a text message (which is what an old build did with a `file` wire it
+      // couldn't parse). Forward-compatible: new kinds degrade to this line.
+      return { kind: 'text', messageId: obj.messageId ?? '', text: UNSUPPORTED_WIRE_PLACEHOLDER };
     }
   } catch {
     /* fall through */
   }
   return { kind: 'text', messageId: '', text: raw };
 }
+
+/** Shown when a peer sends a message kind this build can't render (version
+ *  skew). Plain string — parseWirePayload is pure + module-level so it can't
+ *  call t(); the emoji + plain wording read acceptably in any locale. */
+export const UNSUPPORTED_WIRE_PLACEHOLDER = '📦 Unsupported message — update ANTON to view it.';
 
 /**
  * Apply an inbound wire payload: side-effects on events store + persist

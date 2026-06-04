@@ -4,7 +4,7 @@
  * same way it gates video.
  */
 import { describe, it, expect } from 'vitest';
-import { parseWirePayload, type MediaPayload } from '../services/chat';
+import { parseWirePayload, UNSUPPORTED_WIRE_PLACEHOLDER, type MediaPayload } from '../services/chat';
 import { isWithinRelayCap, type Capture } from '../services/capture';
 import { sanitizeFilename, base64ToBytes } from '../services/file-open';
 
@@ -22,6 +22,25 @@ describe('file wire payload', () => {
   it('a malformed file wire (no data) falls back to text, not a throw', () => {
     const wire = parseWirePayload(JSON.stringify({ kind: 'file', messageId: 'm2' }));
     expect(wire.kind).toBe('text');
+  });
+
+  it('a TAGGED but unknown wire kind degrades to a placeholder, NOT the raw JSON', () => {
+    // The bug: an old build receiving a newer wire kind dumped the whole wire
+    // JSON as a text bubble. Now any tagged-but-unrenderable wire shows the
+    // placeholder instead.
+    const raw = JSON.stringify({ kind: 'some_future_kind', messageId: 'm3', data: { x: 1 } });
+    const wire = parseWirePayload(raw);
+    expect(wire.kind).toBe('text');
+    if (wire.kind !== 'text') throw new Error('not text');
+    expect(wire.text).toBe(UNSUPPORTED_WIRE_PLACEHOLDER);
+    expect(wire.text).not.toContain('some_future_kind'); // never the raw JSON
+  });
+
+  it('untagged legacy plain text still passes through verbatim', () => {
+    const wire = parseWirePayload('just a plain message');
+    expect(wire.kind).toBe('text');
+    if (wire.kind !== 'text') throw new Error('not text');
+    expect(wire.text).toBe('just a plain message');
   });
 });
 
