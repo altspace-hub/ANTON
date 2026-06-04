@@ -20,6 +20,8 @@ import WalletConnectScreen from './wallet/WalletConnectScreen';
 import WalletBalanceScreen from './wallet/WalletBalanceScreen';
 import WalletReceiveScreen from './wallet/WalletReceiveScreen';
 import WalletSendScreen, { parsePayUri, type ParsedPayUri } from './wallet/WalletSendScreen';
+import RecipientPickerScreen from './wallet/RecipientPickerScreen';
+import type { Recipient } from '../services/recipients';
 import WalletReviewScreen from './wallet/WalletReviewScreen';
 import WalletSendDoneScreen from './wallet/WalletSendDoneScreen';
 import WalletTxDetailScreen from './wallet/WalletTxDetailScreen';
@@ -42,6 +44,7 @@ type View =
   | 'connect'
   | 'balance'
   | 'receive'
+  | 'send-recipient'
   | 'send'
   | 'send-scan'
   | 'send-review'
@@ -75,6 +78,9 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
   const [detailWalletId, setDetailWalletId] = useState<string>('');
   /** Parsed pay URI carried from the send (compose) step into the review step. */
   const [pendingSend, setPendingSend] = useState<ParsedPayUri | null>(null);
+  /** #93 — recipient chosen from the Send picker, carried into the compose step
+   *  to pre-fill it. Null when paying a brand-new address. */
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   /** WalletTx id of the just-sent payment, shown on the done screen. */
   const [doneTxId, setDoneTxId] = useState<string>('');
   /** The tx whose full-screen detail is open (#86). */
@@ -93,7 +99,9 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
   useEffect(() => {
     if (!deepLinkUri || view === 'loading' || view === 'connect') return;
     const parsed = parsePayUri(deepLinkUri);
-    if (parsed.ok) { setPendingSend(parsed); setView('send-review'); }
+    // Clear any stale picker recipient so backing out of this bypass-entered
+    // review lands on a blank compose, never a form locked to the wrong person.
+    if (parsed.ok) { setSelectedRecipient(null); setPendingSend(parsed); setView('send-review'); }
     onDeepLinkConsumed?.();
   }, [deepLinkUri, view]);
 
@@ -142,10 +150,20 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
   if (view === 'receive') {
     return <WalletReceiveScreen address={address} onBack={() => setView('balance')} />;
   }
+  if (view === 'send-recipient') {
+    return (
+      <RecipientPickerScreen
+        onBack={() => { setSelectedRecipient(null); setView('balance'); }}
+        onPick={(r) => { setSelectedRecipient(r); setView('send'); }}
+        onPayNewAddress={() => { setSelectedRecipient(null); setView('send'); }}
+      />
+    );
+  }
   if (view === 'send') {
     return (
       <WalletSendScreen
-        onBack={() => setView('balance')}
+        recipient={selectedRecipient}
+        onBack={() => setView('send-recipient')}
         onReview={(parsed) => { setPendingSend(parsed); setView('send-review'); }}
         onScan={() => setView('send-scan')}
       />
@@ -164,7 +182,7 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
       <WalletReviewScreen
         parsed={pendingSend}
         onBack={() => setView('send')}
-        onConfirmed={(id) => { setPendingSend(null); setDoneTxId(id); setView('send-done'); }}
+        onConfirmed={(id) => { setPendingSend(null); setSelectedRecipient(null); setDoneTxId(id); setView('send-done'); }}
       />
     );
   }
@@ -204,7 +222,9 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
         onAdd={() => setView('schedule-add')}
         onPayNow={(uri) => {
           const parsed = parsePayUri(uri);
-          if (parsed.ok) { setPendingSend(parsed); setView('send-review'); }
+          // Clear any stale picker recipient (see deep-link note above) so the
+          // review's Back can't surface a compose locked to the wrong person.
+          if (parsed.ok) { setSelectedRecipient(null); setPendingSend(parsed); setView('send-review'); }
         }}
       />
     );
@@ -275,7 +295,7 @@ export default function WalletScreen({ deepLinkUri, onDeepLinkConsumed }: Wallet
     <WalletBalanceScreen
       address={address}
       onReceive={() => setView('receive')}
-      onSend={() => setView('send')}
+      onSend={() => { setSelectedRecipient(null); setView('send-recipient'); }}
       onHistory={() => setView('history')}
       onSchedules={() => setView('schedules')}
       onManage={() => setView('wallets-list')}

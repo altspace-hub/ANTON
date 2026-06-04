@@ -257,6 +257,33 @@ export async function listTxs(limit = 100, walletAddress?: string): Promise<Wall
   });
 }
 
+/** Most-recent SENT txs (kind==='send'), newest-first, scoped to the wallet.
+ *  Used by the recipient picker (#93). A sends-ONLY cursor: unlike
+ *  `listTxs(n)` (which caps the mixed send+receive ledger then filters), heavy
+ *  receive volume can never starve genuine send history out of the window — a
+ *  frequently-paid contact stays findable regardless of inbound volume. */
+export async function listSentTxs(limit = 500, walletAddress?: string): Promise<WalletTx[]> {
+  const addr = walletAddress ?? (await getActiveWalletMeta())?.address;
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_WALLET_TXS, 'readonly');
+    const idx = tx.objectStore(STORE_WALLET_TXS).index(INDEX_WALLET_BY_TS);
+    const req = idx.openCursor(null, 'prev');
+    const out: WalletTx[] = [];
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor || out.length >= limit) { resolve(out); return; }
+      const row = cursor.value as WalletTx;
+      // Sends only; legacy untagged rows stay visible (same scoping as listTxs).
+      if (row.kind === 'send' && (!addr || row.walletAddress == null || row.walletAddress === addr)) {
+        out.push(row);
+      }
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
 /** Normalise an outbound wallet tx into a behaviour event. */
 function txToEvent(tx: WalletTx): BehaviorEvent {
   let amountMicroFtc = 0n;

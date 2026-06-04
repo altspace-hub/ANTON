@@ -14,6 +14,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PrimaryButton from '../../components/PrimaryButton';
 import ManualPayForm from './ManualPayForm';
+import { renderAddressSegments } from '../../services/address-book';
+import type { Recipient } from '../../services/recipients';
 import type { CreditorParty } from '../../services/pacs008-draft';
 
 export interface ParsedPayUri {
@@ -48,9 +50,13 @@ interface Props {
   onReview: (parsed: ParsedPayUri) => void;
   /** Open the camera scanner. */
   onScan: () => void;
+  /** #93 — a recipient chosen from the Send picker. When set, the screen shows
+   *  a locked recipient card + a pre-filled form (address hidden); the scan
+   *  button + paste tab are suppressed. Null/undefined = the open compose. */
+  recipient?: Recipient | null;
 }
 
-export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
+export default function WalletSendScreen({ onBack, onReview, onScan, recipient }: Props) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
   /** Structured form (default — type a complete payment) vs paste a link. */
@@ -73,6 +79,26 @@ export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
       <Header title={t('wallet.sendTitle')} onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pt-2 pb-5">
+        {/* #93 — chosen recipient: locked card + pre-filled form, no scan/paste. */}
+        {recipient ? (
+          <>
+            <LockedRecipientCard recipient={recipient} />
+            <ManualPayForm
+              onSubmit={handleManualUri}
+              lockRecipient
+              initial={{
+                address: recipient.address,
+                // Only seed a REAL name — never the abbreviated-address
+                // fallback, which would otherwise ship as the PACS.008 cn.
+                name: recipient.nameIsReal ? recipient.name : undefined,
+                country: recipient.country,
+                city: recipient.city,
+                street: recipient.street,
+                postcode: recipient.postcode,
+              }}
+            />
+          </>
+        ) : (<>
         <button type="button" onClick={onScan}
                 className="w-full mb-3 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -136,8 +162,41 @@ export default function WalletSendScreen({ onBack, onReview, onScan }: Props) {
             </div>
           </>
         )}
+        </>)}
       </div>
     </section>
+  );
+}
+
+/** #93 — "Paying" card shown when a recipient was chosen from the picker. The
+ *  address is rendered read-only + segmented (the editable field is hidden). */
+function LockedRecipientCard({ recipient }: { recipient: Recipient }) {
+  const { t } = useTranslation();
+  const segments = renderAddressSegments(recipient.address);
+  return (
+    <div className="rounded-2xl p-4 mb-5"
+         style={{ backgroundColor: 'var(--color-accent-soft)', border: '1px solid var(--color-accent-dim)' }}>
+      <div className="text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-faint)' }}>
+        {t('send.payingLabel', 'Paying')}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="flex items-center justify-center w-9 h-9 rounded-full shrink-0 text-sm font-bold"
+              style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}>
+          {(recipient.name.trim()[0] || '?').toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <div className="font-bold truncate" style={{ color: 'var(--color-text)' }}>{recipient.name}</div>
+          {recipient.starred && <span className="text-xs" style={{ color: 'var(--color-accent)' }}>★</span>}
+        </div>
+      </div>
+      <div className="font-mono text-xs mt-2 break-all">
+        {segments.map((seg, i) => (
+          <span key={i} style={{ color: seg.secure ? 'var(--color-text-body)' : 'var(--color-text-faint)' }}>
+            {seg.text}{i < segments.length - 1 ? ' ' : ''}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
