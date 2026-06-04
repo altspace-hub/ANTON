@@ -16,7 +16,10 @@ import { bytesToHex } from './primitives.js';
 
 export type Action =
   | { kind: 'send'; connId: string; frame: Uint8Array }
-  | { kind: 'close'; connId: string; code: number; reason: string };
+  | { kind: 'close'; connId: string; code: number; reason: string }
+  // Phase 3 — a message was mailboxed for an OFFLINE recipient; the server
+  // fires a content-free FCM wake push to this routing_id (comm-push.ts).
+  | { kind: 'push'; routingIdHex: string };
 
 // ── Error codes ─────────────────────────────────────────────────────────
 // Reuses match.ts's RELAY_ERROR_CODE values; declared again so this module
@@ -218,7 +221,9 @@ export class ContactRegistry {
       arrivedAtSec: this.now(),
     });
     this.mailbox.set(targetIdHex, box);
-    return [];
+    // Recipient is offline → wake them with a content-free push so they
+    // reconnect and drain the mailbox. The server turns this into FCM.
+    return [{ kind: 'push', routingIdHex: targetIdHex }];
   }
 
   /**

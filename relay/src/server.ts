@@ -83,6 +83,7 @@ import { bytesToHex } from './primitives.js';
 import { MetricsRegistry } from './metrics.js';
 import { createRegistryDb, type RegistryDb } from './registry/db.js';
 import { dispatch as dispatchRegistry } from './registry/routes.js';
+import { CommPush, loadCommPushConfig } from './comm-push.js';
 import { ADMIN_UI_HTML } from './admin-ui.js';
 import { pino, type Logger } from 'pino';
 
@@ -215,6 +216,8 @@ export class RelayServer {
   /** Portal registry DB handle. Null when RELAY_REGISTRY_DATABASE_URL is unset
    *  (or registryDb wasn't injected via config) — /v1/* routes return 503. */
   private registryDb: RegistryDb | null = null;
+  // Phase 3 — content-free FCM wake pushes for offline Comm recipients.
+  private commPush: CommPush | null = null;
 
   /** Shared logger for registry routes. */
   private registryLogger: Logger = pino({ name: 'relay-registry' });
@@ -236,6 +239,13 @@ export class RelayServer {
       // Spawn the registry DB lazily on first request so the relay can
       // start without Postgres in dev / no-registry deployments.
       this.registryDb = createRegistryDb({ logger: this.registryLogger });
+      // Phase 3 — push dispatcher. Gated: no FCM creds → dispatch is a no-op;
+      // no registry DB → token registration 503s. The relay runs either way.
+      this.commPush = new CommPush(
+        this.registryDb,
+        loadCommPushConfig(process.env, this.registryLogger),
+        this.registryLogger,
+      );
       httpServer.on('request', (req, res) => {
         const url = req.url ?? '/';
         if (req.method === 'GET' && (url === '/healthz' || url === '/healthz/')) {
@@ -279,6 +289,24 @@ export class RelayServer {
             'referrer-policy': 'no-referrer',
           });
           res.end(ADMIN_UI_HTML);
+          return;
+        }
+        // /comm/push/* → Comm FCM token register/unregister (Phase 3). The
+        // handler verifies an Ed25519 signature binding the token to a
+        // routing_id, so a caller can only register for an id they own.
+        if (url.startsWith('/comm/push/')) {
+          void this.commPush?.handleHttp(req, res, url).then((handled) => {
+            if (!handled && !res.writableEnded) {
+              res.writeHead(404, { 'content-type': 'text/plain' });
+              res.end('not found\n');
+            }
+          }).catch((err: unknown) => {
+            this.registryLogger.error({ err: (err as Error)?.message }, 'comm-push http failed');
+            if (!res.writableEnded) {
+              res.writeHead(500, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ error: 'internal_error' }));
+            }
+          });
           return;
         }
         // /v1/* → portal registry dispatcher. Returns false when path
@@ -822,8 +850,14 @@ export class RelayServer {
 
   // ── Internal helpers ──────────────────────────────────────────────
 
-  private executeActions(actions: Action[]): void {
+  private executeActions(actions: ReadonlyArray<Action | CommAction>): void {
     for (const action of actions) {
+      // Phase 3 — a message was mailboxed for an offline recipient; fire a
+      // content-free FCM wake push. No connId; handle before the lookup.
+      if (action.kind === 'push') {
+        void this.commPush?.dispatch(action.routingIdHex).catch(() => { /* best-effort */ });
+        continue;
+      }
       const target = this.connections.get(action.connId);
       if (!target) continue;  // peer already gone
       if (action.kind === 'send') {
