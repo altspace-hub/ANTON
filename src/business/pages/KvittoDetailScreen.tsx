@@ -32,6 +32,7 @@ import {
   type SimilarityWarning,
 } from '../services/address-book';
 import { formatKvittoNumber, type MerchantConfig, type Receipt } from '../services/types';
+import { formatIsoEnvelope } from '../services/iso-envelope';
 
 interface Props {
   kvittoNumber: number;
@@ -49,6 +50,8 @@ export default function KvittoDetailScreen({ kvittoNumber, onBack }: Props) {
   /** Which payment-detail field was just copied — drives a transient
    *  "Copied" badge on that row. */
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  /** Raw ISO 20022 envelope expander (the canonical pacs.008 for this sale). */
+  const [showRaw, setShowRaw] = useState(false);
 
   // ── Customer (debtor) address → address-book ──────────────────────
   /** The existing contact, if the customer's fc_ address is already
@@ -446,6 +449,35 @@ export default function KvittoDetailScreen({ kvittoNumber, onBack }: Props) {
                   )}
                 </div>
               )}
+
+              {/* Raw ISO 20022 envelope — the canonical pacs.008 message for
+                  this received payment, assembled from the settlement facts.
+                  Copyable for the merchant's accounting / audit trail. */}
+              <div className="py-2 mt-1" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <button type="button" onClick={() => setShowRaw((v) => !v)}
+                        className="text-xs font-semibold" style={{ color: 'var(--color-accent)' }}>
+                  {showRaw
+                    ? t('kvittoDetail.hideRaw', '− Hide raw envelope')
+                    : t('kvittoDetail.showRaw', '+ View raw ISO 20022 envelope')}
+                </button>
+                {showRaw && (
+                  <div className="mt-2">
+                    <pre className="p-3 rounded-lg whitespace-pre-wrap break-all mono text-[11px] leading-relaxed"
+                         style={{ backgroundColor: 'var(--color-bg)',
+                                  border: '1px solid var(--color-border)',
+                                  color: 'var(--color-text-muted)' }}>
+                      {formatIsoEnvelope(receipt, merchant, matchedContact?.label)}
+                    </pre>
+                    <button type="button"
+                            onClick={() => void copyValue('rawEnvelope', formatIsoEnvelope(receipt, merchant, matchedContact?.label))}
+                            className="mt-2 text-xs font-semibold" style={{ color: 'var(--color-accent)' }}>
+                      {copiedKey === 'rawEnvelope'
+                        ? t('kvittoDetail.copied', 'Copied')
+                        : t('kvittoDetail.copyEnvelope', 'Copy envelope')}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {flash && (

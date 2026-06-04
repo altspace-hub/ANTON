@@ -172,6 +172,9 @@
   },
   "kvittoDetail": {
     "confirmVoid": "Makulera detta kvitto? Det finns kvar i systemet (Bokföringslagen) men markeras som makulerat och exkluderas från Z-rapporten.",
+    "copyEnvelope": "Kopiera kuvert",
+    "showRaw": "+ Visa rått ISO 20022-kuvert",
+    "hideRaw": "− Dölj rått kuvert",
     "notFound": "Kvittot hittades inte.",
     "pinTitle": "Bekräfta med handlar-PIN",
     "print": "Skriv ut / PDF",
