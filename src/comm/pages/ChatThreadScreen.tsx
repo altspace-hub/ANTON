@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type ChatMessage, type ReplyContext } from '../services/messages';
-import { sendMessage, sendImage, sendVideo, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, sendSticker, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
+import { sendMessage, sendImage, sendVideo, sendFile, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, sendSticker, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { startLiveShare, type GeoFix } from '../services/geo';
 import { getContact, type Contact } from '../services/contacts';
 import AvatarCircle from '../components/AvatarCircle';
@@ -16,9 +16,11 @@ import {
   captureImageFromLibrary,
   captureVideoFromCamera,
   captureVideoFromLibrary,
+  pickAnyFile,
   isWithinRelayCap,
   type Capture,
 } from '../services/capture';
+import { saveAndOpenFile } from '../services/file-open';
 import type { VoiceRecording } from '../services/voice';
 import { Ico, type IcoName } from '../components/Ico';
 import AttachmentSheet from '../components/AttachmentSheet';
@@ -401,11 +403,12 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
       const capture = await grabber();
       if (!capture) return;
       if (!isWithinRelayCap(capture)) {
-        setError(
-          capture.mediaType === 'video'
-            ? t('chat.videoTooBig', { size: formatBytes(capture.size) })
-            : t('chat.imageTooBig', { size: formatBytes(capture.size) }),
-        );
+        setError(t(
+          capture.mediaType === 'video' ? 'chat.videoTooBig'
+            : capture.mediaType === 'file' ? 'chat.fileTooBig'
+            : 'chat.imageTooBig',
+          { size: formatBytes(capture.size) },
+        ));
         return;
       }
       const payload: MediaPayload = {
@@ -416,11 +419,14 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         width: capture.width,
         height: capture.height,
         durationSec: capture.durationSec,
-        viewOnce: viewOnceArmed || undefined,
+        // view-once is a media concept; files send as normal attachments.
+        viewOnce: capture.mediaType !== 'file' && viewOnceArmed ? true : undefined,
       };
       const msg = capture.mediaType === 'image'
         ? await sendImage(peerContactHash, payload)
-        : await sendVideo(peerContactHash, payload);
+        : capture.mediaType === 'file'
+          ? await sendFile(peerContactHash, payload)
+          : await sendVideo(peerContactHash, payload);
       setMessages((prev) => [...prev, msg]);
       // R6 — one-shot, reset after send
       if (viewOnceArmed) setViewOnceArmed(false);
@@ -625,6 +631,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         onPickPoll={() => setPollComposing(true)}
         onPickLocation={() => setLocationPickerOpen(true)}
         onPickSticker={() => setStickerPickerOpen(true)}
+        onPickFile={() => void handleAttachment(pickAnyFile)}
         viewOnce={viewOnceArmed}
         onToggleViewOnce={() => setViewOnceArmed((v) => !v)}
       />
@@ -793,6 +800,10 @@ function replySnippetOf(msg: ChatMessage): string {
   }
   if (msg.kind === 'location') return '📍 Location';
   if (msg.kind === 'sticker')  return '🎨 Sticker';
+  if (msg.kind === 'file') {
+    try { const f = JSON.parse(msg.plaintext) as { filename?: string }; return `📎 ${f.filename ?? 'File'}`; }
+    catch { return '📎 File'; }
+  }
   if (msg.kind === 'voice') {
     try {
       const v = JSON.parse(msg.plaintext) as { durationSec?: number };
@@ -842,6 +853,12 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
     if (justLongPressedRef.current) return;
     onOpenImage(media);
   };
+  // #91 — tap a file bubble to save + open it. Guarded the same way as the
+  // image tap so a long-press (action sheet) doesn't also fire the open.
+  const handleOpenFile = (payload: MediaPayload) => {
+    if (justLongPressedRef.current) return;
+    void saveAndOpenFile({ filename: payload.filename, mimeType: payload.mimeType, base64: payload.data });
+  };
 
   // Bubbles that are non-actionable (rsvp / cancel / timer-change chips) skip long-press
   if (message.kind === 'event_rsvp')          return <EventRsvpBubble   message={message} isMine={isMine} time={time} />;
@@ -873,6 +890,8 @@ function Bubble({ message, isMine, onOpenEvent, onLongPress, onReactionTap, onOp
     body = <LocationBubble message={message} isMine={isMine} time={time} />;
   } else if (message.kind === 'sticker') {
     body = <StickerBubble message={message} isMine={isMine} time={time} />;
+  } else if (message.kind === 'file') {
+    body = <FileBubble message={message} isMine={isMine} time={time} onOpen={handleOpenFile} />;
   } else {
     body = (
       <div
@@ -1035,6 +1054,52 @@ function MediaBubble({ message, isMine, time, kind, onOpenImage }: {
         </div>
       </div>
     </div>
+  );
+}
+
+/** #91 — a received/sent file/document. No preview — a paperclip + filename +
+ *  size; tap to save to the device cache and open via the system chooser. */
+function FileBubble({ message, isMine, time, onOpen }: {
+  message: ChatMessage; isMine: boolean; time: string;
+  onOpen: (payload: MediaPayload) => void;
+}) {
+  const { t } = useTranslation();
+  let payload: MediaPayload | null = null;
+  try { payload = JSON.parse(message.plaintext) as MediaPayload; } catch { /* ignore */ }
+  if (!payload) return null;
+  const p = payload;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(p)}
+      className={`max-w-[78%] rounded-2xl px-3 py-2.5 flex items-center gap-3 text-left active:opacity-90 ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}
+      style={{
+        backgroundColor: isMine ? 'var(--color-accent)' : 'var(--color-surface)',
+        color: isMine ? 'var(--color-accent-fg)' : 'var(--color-text)',
+        border: isMine ? 'none' : '1px solid var(--color-border-soft)',
+      }}
+    >
+      <span
+        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+        style={{
+          backgroundColor: isMine ? 'rgba(255,255,255,0.18)' : 'var(--color-accent-dim)',
+          color: isMine ? 'var(--color-accent-fg)' : 'var(--color-accent-dark)',
+        }}
+      >
+        <Ico name="paperclip" size={20} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-medium truncate">{p.filename}</span>
+        <span className="block text-[11px] opacity-75">
+          {typeof p.size === 'number' && p.size >= 0 ? `${formatBytes(p.size)} · ` : ''}{t('chat.tapToOpen', 'Tap to open')}
+        </span>
+      </span>
+      <span className="flex items-center gap-1 self-end text-[10px] font-medium opacity-80 flex-shrink-0">
+        {message.disappearsAt && <Ico name="clock" size={11} color={isMine ? 'var(--color-accent-fg)' : 'var(--color-text-muted)'} />}
+        <time>{time}</time>
+        {isMine && <StatusTick status={message.status} />}
+      </span>
+    </button>
   );
 }
 

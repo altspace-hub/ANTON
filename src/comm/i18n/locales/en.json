@@ -120,7 +120,9 @@
     "youViewedThis": "You viewed this",
     "youreGoing": "You're going",
     "youreMaybe": "You might come",
-    "youreNo": "You can't make it"
+    "youreNo": "You can't make it",
+    "fileTooBig": "File is too big ({{size}}). Max ~700 KB per attachment for now.",
+    "tapToOpen": "Tap to open"
   },
   "common": {
     "back": "Back",

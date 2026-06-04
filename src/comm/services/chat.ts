@@ -216,6 +216,7 @@ export type WirePayload =
   | { kind: 'text';          messageId: string; text: string;         replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'image';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'video';         messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
+  | { kind: 'file';          messageId: string; data: MediaPayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'voice';         messageId: string; data: VoicePayload;   replyTo?: ReplyContext; disappearsAt?: string }
   | { kind: 'react';         data: ReactPayload }
   | { kind: 'view_once_viewed'; data: ViewOnceViewedPayload }
@@ -338,7 +339,7 @@ export async function sendStructuredMessage(
   // timer set. Caller-supplied value wins. Stamping happens before sealing
   // so the recipient gets the same timestamp.
   const stampable = wire.kind === 'text' || wire.kind === 'image'
-    || wire.kind === 'video' || wire.kind === 'voice';
+    || wire.kind === 'video' || wire.kind === 'voice' || wire.kind === 'file';
   if (stampable && !wire.disappearsAt && contact.disappearingTimerSec && contact.disappearingTimerSec > 0) {
     wire.disappearsAt = new Date(Date.now() + contact.disappearingTimerSec * 1000).toISOString();
   }
@@ -377,6 +378,7 @@ export async function sendStructuredMessage(
     : (wire.kind === 'poll' || wire.kind === 'location' || wire.kind === 'sticker' ? wire.messageId : undefined);
   const disappearsAt = stampable ? wire.disappearsAt : undefined;
   const kind: ContentKind = wire.kind === 'text' || wire.kind === 'image' || wire.kind === 'video' || wire.kind === 'voice'
+    || wire.kind === 'file'
     || wire.kind === 'event_invite' || wire.kind === 'event_rsvp' || wire.kind === 'event_cancel'
     || wire.kind === 'system_timer_change' || wire.kind === 'poll' || wire.kind === 'location'
     || wire.kind === 'sticker'
@@ -492,6 +494,13 @@ export async function sendVideo(peerContactHash: string, payload: MediaPayload, 
 /** R4 — Send a voice note (base64 audio + waveform in the payload). */
 export async function sendVoice(peerContactHash: string, payload: VoicePayload, replyTo?: ReplyContext): Promise<ChatMessage> {
   return sendStructuredMessage(peerContactHash, { kind: 'voice', messageId: generateMsgId(), data: payload, replyTo });
+}
+
+/** #91 — Send a generic file / document attachment (base64 already in the
+ *  payload). Reuses MediaPayload for filename/mimeType/size/caption; the
+ *  image-specific width/height/durationSec just stay undefined. */
+export async function sendFile(peerContactHash: string, payload: MediaPayload, replyTo?: ReplyContext): Promise<ChatMessage> {
+  return sendStructuredMessage(peerContactHash, { kind: 'file', messageId: generateMsgId(), data: payload, replyTo });
 }
 
 /**
@@ -659,6 +668,9 @@ export async function sendForward(
     const payload = JSON.parse(source.plaintext) as MediaPayload;
     payload.viewOnce = undefined;
     return sendVideo(targetContactHash, payload);
+  }
+  if (kind === 'file') {
+    return sendFile(targetContactHash, JSON.parse(source.plaintext) as MediaPayload);
   }
   if (kind === 'voice') {
     const payload = JSON.parse(source.plaintext) as VoicePayload;
@@ -988,6 +1000,8 @@ export async function sealForPeerFromQueued(msg: ChatMessage): Promise<Encrypted
     wire = { kind: 'image', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'video') {
     wire = { kind: 'video', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
+  } else if (msg.kind === 'file') {
+    wire = { kind: 'file', messageId: msg.id, data: JSON.parse(msg.plaintext) as MediaPayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'voice') {
     wire = { kind: 'voice', messageId: msg.id, data: JSON.parse(msg.plaintext) as VoicePayload, replyTo: msg.replyTo, disappearsAt: msg.disappearsAt };
   } else if (msg.kind === 'poll') {
@@ -1076,6 +1090,14 @@ export function parseWirePayload(raw: string): WirePayload {
       }
       if (obj.kind === 'video' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'video', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
+      }
+      if (obj.kind === 'file' && typeof obj.data === 'object' && obj.data) {
+        // A file rides peer-authored bytes — require the base64 + filename the
+        // FileBubble + save path dereference. Malformed → fall through to text.
+        const d = obj.data as Partial<MediaPayload>;
+        if (typeof d.data === 'string' && typeof d.filename === 'string') {
+          return { kind: 'file', messageId: id, data: obj.data as MediaPayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
+        }
       }
       if (obj.kind === 'voice' && typeof obj.data === 'object' && obj.data) {
         return { kind: 'voice', messageId: id, data: obj.data as VoicePayload, replyTo: obj.replyTo, disappearsAt: obj.disappearsAt };
@@ -1288,6 +1310,13 @@ export async function applyInboundMessage(
     case 'video':
       plaintext = JSON.stringify(wire.data);
       kind = 'video';
+      messageId = wire.messageId || undefined;
+      replyTo = wire.replyTo;
+      disappearsAt = wire.disappearsAt;
+      break;
+    case 'file':
+      plaintext = JSON.stringify(wire.data);
+      kind = 'file';
       messageId = wire.messageId || undefined;
       replyTo = wire.replyTo;
       disappearsAt = wire.disappearsAt;

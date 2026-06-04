@@ -15,8 +15,8 @@
 
 import { Capacitor } from '@capacitor/core';
 
-export type CaptureKind = 'camera' | 'library' | 'video-camera' | 'video-library';
-export type MediaType = 'image' | 'video';
+export type CaptureKind = 'camera' | 'library' | 'video-camera' | 'video-library' | 'file';
+export type MediaType = 'image' | 'video' | 'file';
 
 export interface Capture {
   kind: CaptureKind;
@@ -86,6 +86,36 @@ export async function captureVideoFromCamera(): Promise<Capture | null> {
 
 export async function captureVideoFromLibrary(): Promise<Capture | null> {
   return webVideoInput();
+}
+
+/**
+ * #91 — pick ANY file / document (PDF, .docx, .csv, …). No resize, no native
+ * camera: Android's WebView renders the system file chooser for a generic
+ * `<input type="file">`, same as video picking does today. Returns base64
+ * (sans data-URL prefix). The ~700 KB usable ceiling (1 MiB relay frame ÷ 1.4
+ * envelope expansion) applies — gate with isWithinRelayCap before sending.
+ */
+export async function pickAnyFile(): Promise<Capture | null> {
+  if (typeof document === 'undefined') return null;
+  return new Promise<Capture | null>((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    // No `accept` restriction — any document type is allowed.
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) { resolve(null); return; }
+      const base64 = await fileToBase64(file);
+      resolve({
+        kind: 'file',
+        mediaType: 'file',
+        data: base64,
+        mimeType: file.type || 'application/octet-stream',
+        filename: file.name || `file-${Date.now()}`,
+        size: file.size,
+      });
+    };
+    input.click();
+  });
 }
 
 // ── Capacitor image capture ────────────────────────────────────────────

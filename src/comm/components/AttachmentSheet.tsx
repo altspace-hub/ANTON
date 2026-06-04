@@ -15,6 +15,8 @@ interface Props {
   onPickLocation: () => void;
   /** R12 — opens the StickerPickerSheet flow. */
   onPickSticker: () => void;
+  /** #91 — pick a generic file / document to attach. */
+  onPickFile: () => void;
   /** R6 — current view-once state, owned by the parent. */
   viewOnce: boolean;
   onToggleViewOnce: () => void;
@@ -22,7 +24,7 @@ interface Props {
 
 export default function AttachmentSheet({
   open, onClose, onPickImageCamera, onPickImageLibrary, onPickVideoCamera, onPickVideoLibrary,
-  onPickPoll, onPickLocation, onPickSticker, viewOnce, onToggleViewOnce,
+  onPickPoll, onPickLocation, onPickSticker, onPickFile, viewOnce, onToggleViewOnce,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -91,13 +93,14 @@ export default function AttachmentSheet({
           <Tile icon="grid"   label="Poll"    onClick={() => { onClose(); onPickPoll(); }} />
           <Tile icon="mapPin" label="Location" onClick={() => { onClose(); onPickLocation(); }} />
           <Tile icon="smile"  label="Stickers" onClick={() => { onClose(); onPickSticker(); }} />
+          <Tile icon="paperclip" label="File" onClick={() => { onClose(); onPickFile(); }} />
         </div>
       </div>
     </div>
   );
 }
 
-function Tile({ icon, label, onClick }: { icon: 'camera' | 'image' | 'video' | 'grid' | 'mapPin' | 'smile'; label: string; onClick: () => void }) {
+function Tile({ icon, label, onClick }: { icon: 'camera' | 'image' | 'video' | 'grid' | 'mapPin' | 'smile' | 'paperclip'; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}

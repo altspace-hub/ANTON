@@ -120,7 +120,9 @@
     "youViewedThis": "Du visade detta",
     "youreGoing": "Du kommer",
     "youreMaybe": "Du kanske kommer",
-    "youreNo": "Du kan inte komma"
+    "youreNo": "Du kan inte komma",
+    "fileTooBig": "Filen är för stor ({{size}}). Max ca 700 KB per bilaga tills vidare.",
+    "tapToOpen": "Tryck för att öppna"
   },
   "common": {
     "back": "Tillbaka",
