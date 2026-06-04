@@ -129,6 +129,10 @@ export interface CommEvent {
   endAt?: string;
   allDay: boolean;
   location?: string;
+  /** Map pin for the venue (set via "use current location"). Travels on the
+   *  invite/update wires; additive + schemaless-safe (no IDB bump). The detail
+   *  screen renders it as a tappable geo: link. */
+  geo?: { lat: number; lng: number };
   description?: string;
   invitees: string[];
   rsvps: Record<string, RsvpStatus>;
@@ -264,6 +268,7 @@ export async function applyInboundInvite(
         endAt: payload.endAt,
         allDay: payload.allDay,
         location: payload.location,
+        geo: payload.geo,
         description: payload.description,
         invitees: payload.invitees,
         updatedAt: now,
@@ -277,6 +282,7 @@ export async function applyInboundInvite(
         endAt: payload.endAt,
         allDay: payload.allDay,
         location: payload.location,
+        geo: payload.geo,
         description: payload.description,
         invitees: payload.invitees,
         rsvps: { [fromHash]: 'going' },
@@ -332,6 +338,7 @@ export interface EventInvitePayload {
   endAt?: string;
   allDay: boolean;
   location?: string;
+  geo?: { lat: number; lng: number };
   description?: string;
   invitees: string[];
 }
@@ -354,6 +361,7 @@ export function eventToInvitePayload(event: CommEvent): EventInvitePayload {
     endAt: event.endAt,
     allDay: event.allDay,
     location: event.location,
+    geo: event.geo,
     description: event.description,
     invitees: event.invitees,
   };
@@ -372,6 +380,7 @@ export interface EventUpdatePayload {
   endAt?: string;
   allDay: boolean;
   location?: string;
+  geo?: { lat: number; lng: number };
   description?: string;
   invitees: string[];
   proposals?: EventProposal[];
@@ -389,6 +398,7 @@ export function eventToUpdatePayload(event: CommEvent, updatedBy: string): Event
     endAt: event.endAt,
     allDay: event.allDay,
     location: event.location,
+    geo: event.geo,
     description: event.description,
     invitees: event.invitees,
     proposals: event.proposals,
@@ -431,6 +441,7 @@ export async function applyInboundUpdate(
     endAt: payload.endAt,
     allDay: payload.allDay,
     location: payload.location,
+    geo: payload.geo,
     description: payload.description,
     invitees: payload.invitees,
     proposals: mergeProposals(base.proposals, payload.proposals),

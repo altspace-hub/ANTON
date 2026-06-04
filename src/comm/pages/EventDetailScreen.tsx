@@ -307,6 +307,19 @@ export default function EventDetailScreen({ eventId, onBack }: Props) {
           )}
           <p className="mt-3 text-sm text-[var(--color-text-body)]">{dateLabel} · {timeLabel}</p>
           {event.location && <p className="mt-1 text-sm text-[var(--color-text-muted)]">{event.location}</p>}
+          {event.geo && (
+            <a
+              href={`geo:${event.geo.lat},${event.geo.lng}?q=${event.geo.lat},${event.geo.lng}${event.location ? `(${encodeURIComponent(event.location)})` : ''}`}
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              <Ico name="mapPin" size={14} color="var(--color-accent)" />
+              {t('events.openInMaps', 'Open in maps')}
+              <span className="font-mono text-xs text-[var(--color-text-faint)]">
+                {event.geo.lat.toFixed(4)}, {event.geo.lng.toFixed(4)}
+              </span>
+            </a>
+          )}
           {event.lastUpdatedBy && event.lastUpdatedBy !== event.createdBy && (
             <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
               {t('events.updatedBy', { name: contacts.get(event.lastUpdatedBy)?.displayName ?? t('events.someone', 'someone') })}

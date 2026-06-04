@@ -11,6 +11,7 @@ import { Ico, type IcoName } from '../components/Ico';
 import { listContacts, type Contact } from '../services/contacts';
 import { sendEventInvite } from '../services/chat';
 import { getIdentity } from '../services/identity';
+import { ensureGeoPermission, getCurrentPosition } from '../services/geo';
 
 interface Props {
   onCancel: () => void;
@@ -32,6 +33,9 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
   const [timeStr, setTimeStr] = useState('19:00');
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState('');
+  /** Optional map pin captured from the device's current location (#location-events). */
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoBusy, setGeoBusy] = useState(false);
   const [description, setDescription] = useState('');
   const [invitees, setInvitees] = useState<string[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -44,6 +48,23 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
 
   function toggleInvitee(hash: string) {
     setInvitees((prev) => prev.includes(hash) ? prev.filter(h => h !== hash) : [...prev, hash]);
+  }
+
+  /** Pin the device's current location to the event (one-shot — same geo path
+   *  the chat location-share uses; no live tracking for events). */
+  async function pinCurrentLocation() {
+    setGeoBusy(true);
+    setError(null);
+    try {
+      const granted = await ensureGeoPermission();
+      if (!granted) { setError(t('events.locationDenied', 'Location permission denied.')); return; }
+      const fix = await getCurrentPosition();
+      setGeo({ lat: fix.lat, lng: fix.lng });
+    } catch {
+      setError(t('events.locationError', "Couldn't get your location."));
+    } finally {
+      setGeoBusy(false);
+    }
   }
 
   async function handleCreate() {
@@ -64,6 +85,7 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
         endAt: undefined,
         allDay,
         location: location.trim() || undefined,
+        geo: geo ?? undefined,
         description: description.trim() || undefined,
         invitees,
       });
@@ -165,6 +187,26 @@ export default function EventCreateScreen({ onCancel, onCreated }: Props) {
             maxLength={200}
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-base text-[var(--color-text)]"
           />
+          {/* Map pin — one-shot current location (reuses the chat geo path). */}
+          {geo ? (
+            <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--color-accent-dim)] bg-[var(--color-accent-soft)]">
+              <Ico name="mapPin" size={16} color="var(--color-accent)" />
+              <span className="flex-1 text-sm font-mono text-[var(--color-text-body)]">
+                {geo.lat.toFixed(5)}, {geo.lng.toFixed(5)}
+              </span>
+              <button type="button" onClick={() => setGeo(null)}
+                      className="text-xs font-semibold text-[var(--color-text-muted)]">
+                {t('events.removePin', 'Remove')}
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => void pinCurrentLocation()} disabled={geoBusy}
+                    className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium disabled:opacity-50"
+                    style={{ color: 'var(--color-accent)', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+              <Ico name="mapPin" size={16} color="var(--color-accent)" />
+              {geoBusy ? t('events.locating', 'Locating…') : t('events.pinLocation', 'Use current location')}
+            </button>
+          )}
         </Field>
 
         <Field label={t('events.fieldDescription')}>
