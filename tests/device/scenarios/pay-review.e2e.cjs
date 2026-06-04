@@ -29,6 +29,8 @@ module.exports = {
           const sc = byText(/Skanna f/i); if (sc) sc.click(); await __td.sleep(900);
           const mn = byText(/Ange kod manuellt/i); if (mn) mn.click(); await __td.sleep(900);
         }
+        // #83 made the structured form the default sub-tab; switch to Paste-link for the URI textarea
+        const paste = byText(/Klistra in länk|Paste link/i); if (paste) { paste.click(); await __td.sleep(500); }
         const ta = document.querySelector('textarea');
         if (!ta) return { err: 'no manual-entry textarea' };
         __td.setVal(ta, ${JSON.stringify(URI)}); await __td.sleep(700);
