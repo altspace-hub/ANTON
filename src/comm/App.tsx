@@ -14,6 +14,7 @@ import { notifyIncoming, ensureNotificationPermission } from './services/notific
 import { setActiveConversation } from './services/active-chat';
 import { ensureBackgroundPollingEnabled, bgSyncSeen } from './services/background-setup';
 import { listTxs } from './services/transactions';
+import { registerCommPush, initCommPushReceive } from './services/push-register';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 import LockScreen from './components/LockScreen';
 import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
@@ -128,6 +129,16 @@ export default function App() {
       onContactRequest: () => {
         setContactsVersion((v) => v + 1);
       },
+    });
+    // Phase 3 — register this device's FCM token with the relay (signed) so it
+    // can wake us when a message is mailboxed while we're offline, and handle
+    // the wake (the auto-reconnecting relay drains the mailbox → Phase 1 banner).
+    // Gated: a quiet no-op until the operator ships google-services.json + the
+    // relay's FCM_SERVICE_ACCOUNT_JSON.
+    void registerCommPush(RELAY_URL);
+    void initCommPushReceive(() => {
+      setContactsVersion((v) => v + 1);
+      setEventsVersion((v) => v + 1);
     });
     // R11 — sync local notifications for any events with reminders set.
     // Survives process restart because the events store has the source of truth.

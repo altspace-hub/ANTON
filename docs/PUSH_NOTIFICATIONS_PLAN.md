@@ -106,8 +106,23 @@ worker never re-notifies — cleaner than Pay where receives were UETR-keyed).
   `idle-poller`/`received.ts` updates it after its batch) so the two paths never double-notify.
 - Verify: `adb shell cmd jobscheduler run -f com.futurechain.anton.pay <id>` + fund a tx → notification.
 
-### Phase 3 — FCM message push  ·  built now, GATED on creds  ·  TODO
-Wake a killed Comm app on a new message.
+### Phase 3 — FCM message push  ·  built + gated, awaiting operator Firebase  ·  **DONE (code)**
+Wake a killed Comm app on a new message. **The FCM path lives entirely in the RELAY**
+(`@anton/mesh-relay`, separate deployment with its own pg + HTTP), NOT `server/` — the design
+pass's `server/` assumption was wrong. Verified empirically (curl) + relay 212 tests pass.
+- **Relay:** `relay/migrations/003_comm_push_tokens.sql` (token store, keyed by routing_id_hex) +
+  `relay/src/comm-push.ts` (signed register/unregister HTTP + FCM HTTP-v1 dispatch via Node crypto —
+  NO firebase-admin dep) + `comm-registry.ts` (offline `routeSend` now returns a `{kind:'push'}`
+  action) + `server.ts` (executeActions dispatches it; `/comm/push/*` route; gated instantiation).
+- **Client:** `src/comm/services/push-register.ts` — `registerCommPush()` (PushNotifications.register
+  → sign `anton-comm-push/v1|fcm|<token>` with the identity key → POST to the relay) +
+  `initCommPushReceive()` (wake → the auto-reconnecting relay drains the mailbox → Phase 1 banner).
+  Wired in comm/App.tsx. `@capacitor/push-notifications` already registered in android-comm.
+- **Security:** registration is Ed25519-signed; relay derives routing_id from the pubkey so tokens
+  can't be hijacked (4 unit tests in `relay/tests/comm-push.test.ts`). Payload is content-free.
+- **Gated:** no FCM_SERVICE_ACCOUNT_JSON → relay no-ops; no google-services.json → app yields no
+  token. Both build + run regardless (confirmed via relay boot logs + app build).
+- **Operator steps:** `docs/FCM_OPERATOR_RUNBOOK.md`.
 - **Relay** (`relay/`): NEW `comm-push-interface.ts` (`CommPushCallbacks.onCommMessageQueued`);
   EDIT `comm-registry.ts` `routeSend()` to emit a `{ kind: 'queue_push' }` action when it queues to
   an offline recipient; EDIT `server.ts` to invoke the callback. Keep the relay decoupled from FCM.
@@ -126,12 +141,14 @@ Wake a killed Comm app on a new message.
   tsc, relay typecheck, "build compiles without google-services.json". **NOT** verifiable without
   creds: real delivery to a killed app.
 
-### Phase 4 — Operator runbook + wiring docs  ·  TODO
-- NEW `docs/FCM_OPERATOR_RUNBOOK.md` — exact, ordered Firebase setup (project → 3 Android apps by
-  applicationId → google-services.json placement → service-account key → server env → enable Cloud
-  Messaging API → `VITE_FIREBASE_ENABLED=true`).
-- EDIT `.env.example` FCM section (real var names, no longer TODO stubs); comment the gated no-op
-  contract in `app-push-service.ts` / `capacitor.config.ts`.
+### Phase 4 — Operator runbook + wiring docs  ·  **DONE**
+- `docs/FCM_OPERATOR_RUNBOOK.md` — ordered Firebase setup (project → Comm Android app by
+  applicationId → google-services.json → service-account key → relay env → enable FCM v1 API),
+  verification, graceful-degradation + security notes. Note: Comm push is RELAY-side (one Android
+  app), not the design's 3-app/server model.
+- `relay/docker-compose.yml` — `FCM_SERVICE_ACCOUNT_JSON` + `FCM_PROJECT_ID` env documented.
+- `.env.example` — clarifies the Comm FCM path is on the relay (the server FCM stub is the separate
+  companion gateway).
 
 ## Graceful-degradation contract (must hold at every phase)
 - No `google-services.json` → apps build + run; FCM registration no-ops with a logged warning.

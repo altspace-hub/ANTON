@@ -141,11 +141,13 @@ describe('ContactRegistry — mailbox', () => {
     return ackFrame.payload.slice(0, 16);
   }
 
-  it('queues a SEND_COMM when target is offline; emits no actions', () => {
+  it('queues a SEND_COMM when target is offline; emits a wake push', () => {
     const aliceActs = reg.registerComm('alice-conn', bytes(0xAA));
     const aliceSession = getSessionId(aliceActs);
     const out = reg.routeSend('alice-conn', aliceSession, bytes(0xBB), bytes(0x11), new TextEncoder().encode('hi'));
-    expect(out).toEqual([]);
+    // Phase 3 — the offline path mailboxes the ciphertext AND asks the server to
+    // fire a content-free FCM wake to the recipient's routing_id.
+    expect(out).toEqual([{ kind: 'push', routingIdHex: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }]);
     expect(reg.mailboxSize('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')).toBe(1);
   });
 
