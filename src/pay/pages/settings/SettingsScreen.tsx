@@ -29,6 +29,8 @@ interface Props {
   /** Multi-wallet management (list / switch / add / delete). */
   onWalletsList: () => void;
   onPaymentDetails: () => void;
+  /** Settings → Tax position (estimated tax this year + adviser CSV export). */
+  onTaxPosition: () => void;
   /** Settings → Tax residency (declared jurisdiction for tax estimates). */
   onTaxResidency: () => void;
   /** Settings → Friends (saved payment contacts). */
@@ -50,7 +52,7 @@ const APP_VERSION = '0.0.1';
 const BUILD_DATE = '2026-05-16';
 
 export default function SettingsScreen({
-  onBack, onWallet, onWalletsList, onPaymentDetails, onTaxResidency, onFriends, onMoneyProfile,
+  onBack, onWallet, onWalletsList, onPaymentDetails, onTaxPosition, onTaxResidency, onFriends, onMoneyProfile,
   onActivityReview, onRecoveryPhrase, onRestore, onRpcEndpoint, onSchedules, onPassphrase, onReset,
 }: Props) {
   const { t } = useTranslation();
@@ -194,6 +196,9 @@ export default function SettingsScreen({
             <NavCard onClick={onPaymentDetails}
                      title={t('settings.paymentDetails')}
                      subtitle={t('settings.paymentDetailsSub')} />
+            <NavCard onClick={onTaxPosition}
+                     title={t('settings.taxPosition', 'Tax position')}
+                     subtitle={t('settings.taxPositionSub', 'Estimated tax this year + adviser CSV export')} />
             <NavCard onClick={onTaxResidency}
                      title={t('settings.taxResidency', 'Tax residency')}
                      subtitle={taxResidency

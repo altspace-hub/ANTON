@@ -33,6 +33,8 @@ import WalletDetailScreen from './pages/settings/WalletDetailScreen';
 import AddWalletScreen from './pages/settings/AddWalletScreen';
 import PaymentDetailsScreen from './pages/settings/PaymentDetailsScreen';
 import TaxResidencyScreen from './pages/settings/TaxResidencyScreen';
+import TaxPositionScreen from './pages/settings/TaxPositionScreen';
+import TaxReportScreen from './pages/settings/TaxReportScreen';
 import FriendsScreen from './pages/settings/FriendsScreen';
 import MoneyProfileScreen from './pages/settings/MoneyProfileScreen';
 import ActivityReviewScreen from './pages/settings/ActivityReviewScreen';
@@ -81,6 +83,8 @@ type Screen =
   | 'settings-wallet-add-backup-verify'
   | 'settings-payment'
   | 'settings-tax'
+  | 'settings-tax-position'
+  | 'settings-tax-report'
   | 'settings-friends'
   | 'settings-money'
   | 'settings-activity'
@@ -117,6 +121,8 @@ const BACK_PARENT: Partial<Record<Screen, Screen>> = {
   'settings-wallet-add-backup-verify': 'settings-wallet-add-backup-show',
   'settings-payment': 'settings',
   'settings-tax': 'settings',
+  'settings-tax-position': 'settings',
+  'settings-tax-report': 'settings-tax-position',
   'settings-friends': 'settings',
   'settings-money': 'settings',
   'settings-activity': 'settings',
@@ -449,6 +455,7 @@ export default function App() {
         onWallet={() => setScreen('settings-wallet')}
         onWalletsList={() => setScreen('settings-wallets-list')}
         onPaymentDetails={() => setScreen('settings-payment')}
+        onTaxPosition={() => setScreen('settings-tax-position')}
         onTaxResidency={() => setScreen('settings-tax')}
         onFriends={() => setScreen('settings-friends')}
         onMoneyProfile={() => setScreen('settings-money')}
@@ -520,6 +527,18 @@ export default function App() {
         onDeclared={() => setScreen('settings')}
       />
     );
+  }
+  if (screen === 'settings-tax-position') {
+    return (
+      <TaxPositionScreen
+        onBack={() => setScreen('settings')}
+        onChangeResidency={() => setScreen('settings-tax')}
+        onExportReport={() => setScreen('settings-tax-report')}
+      />
+    );
+  }
+  if (screen === 'settings-tax-report') {
+    return <TaxReportScreen onBack={() => setScreen('settings-tax-position')} />;
   }
   if (screen === 'settings-friends') {
     return <FriendsScreen onBack={() => setScreen('settings')} />;

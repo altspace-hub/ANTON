@@ -51,6 +51,15 @@
   --color-success:      #1F8A5C;
   --color-success-bg:   #DCEEE4;
 
+  /* ── Tax/finance semantic aliases ───────────────────────── */
+  /* Same palette as Status, named per the SDK tax UI so the tax-readout
+   * screens ported from Comm (#78) render verbatim. gold = warning,
+   * red = error, green = success. */
+  --color-gold:         #C8842B;
+  --color-gold-dim:     #F7ECD9;
+  --color-red:          #C7361F;
+  --color-green:        #1F8A5C;
+
   /* ── Typography ─────────────────────────────────────────── */
   --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
