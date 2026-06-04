@@ -106,6 +106,10 @@
     "snippetSticker": "🎨 Dekal",
     "snippetVideo": "🎬 Video",
     "snippetVoice": "🎙 Röst",
+    "snippetFile": "📎 Fil",
+    "snippetFileWith": "📎 {{filename}}",
+    "snippetPollWith": "🗳 Omröstning · {{question}}",
+    "snippetVoiceWith": "🎙 Röst · {{duration}}",
     "startConversation": "Starta konversationen — meddelanden här är totalsträckskrypterade.",
     "statusDelivered": "Levererat",
     "statusFailed": "Misslyckades",
@@ -172,6 +176,21 @@
     "multiOff": "Varje person väljer exakt ett alternativ.",
     "errUnique": "Alternativen måste vara unika.",
     "errCreate": "Kunde inte skapa omröstning"
+  },
+  "schedule": {
+    "sheetTitle": "Schemalägg meddelande",
+    "deviceHint": "Vi skickar det från den här enheten när tiden är inne. Behåll appen installerad.",
+    "presetIn1Min": "Om 1 minut",
+    "presetIn1Hour": "Om 1 timme",
+    "presetTonight": "Ikväll 20:00",
+    "presetTomorrow": "Imorgon 09:00",
+    "presetMon": "Mån 09:00",
+    "pickDateTime": "Välj datum & tid",
+    "confirm": "Schemalägg",
+    "listTitle": "Schemalagda meddelanden",
+    "listSubtitle": "Väntande sändningar i den här chatten. Avbryt eller schemalägg om någon av dem.",
+    "listEmpty": "Inga schemalagda meddelanden.",
+    "reschedule": "Schemalägg om"
   },
   "common": {
     "back": "Tillbaka",

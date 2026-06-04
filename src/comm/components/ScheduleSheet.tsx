@@ -6,6 +6,7 @@
  * handles the rest.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import BottomSheet from './BottomSheet';
 
 interface Props {
@@ -17,7 +18,9 @@ interface Props {
 }
 
 interface Preset {
-  label: string;
+  /** i18n key suffix under `schedule.*`. */
+  labelKey: string;
+  fallback: string;
   /** Compute the ISO at preset apply time so it stays fresh while the sheet is open. */
   iso: () => string | null;
 }
@@ -51,6 +54,7 @@ function nextMonday(hour: number): Date {
 }
 
 export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }: Props) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<string>('');
 
   useEffect(() => {
@@ -59,20 +63,20 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
   }, [open, initialIso]);
 
   const presets: Preset[] = useMemo(() => [
-    { label: 'In 1 minute',  iso: () => new Date(Date.now() + 60 * 1000).toISOString() },
-    { label: 'In 1 hour',    iso: () => nextHour().toISOString() },
-    { label: 'Tonight 8pm',  iso: () => { const d = tonightAt(20); return d ? d.toISOString() : null; } },
-    { label: 'Tomorrow 9am', iso: () => tomorrowAt(9).toISOString() },
-    { label: 'Mon 9am',      iso: () => nextMonday(9).toISOString() },
+    { labelKey: 'presetIn1Min',   fallback: 'In 1 minute',  iso: () => new Date(Date.now() + 60 * 1000).toISOString() },
+    { labelKey: 'presetIn1Hour',  fallback: 'In 1 hour',    iso: () => nextHour().toISOString() },
+    { labelKey: 'presetTonight',  fallback: 'Tonight 8pm',  iso: () => { const d = tonightAt(20); return d ? d.toISOString() : null; } },
+    { labelKey: 'presetTomorrow', fallback: 'Tomorrow 9am', iso: () => tomorrowAt(9).toISOString() },
+    { labelKey: 'presetMon',      fallback: 'Mon 9am',      iso: () => nextMonday(9).toISOString() },
   ], []);
 
   const draftIso = fromLocalInputValue(draft);
   const draftInFuture = !!draftIso && draftIso > new Date().toISOString();
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Schedule message" icon="clock" ariaLabel="Schedule message">
+    <BottomSheet open={open} onClose={onClose} title={t('schedule.sheetTitle', 'Schedule message')} icon="clock" ariaLabel={t('schedule.sheetTitle', 'Schedule message')}>
       <p className="px-5 -mt-1 mb-1 text-xs text-[var(--color-text-muted)] flex-shrink-0">
-        We'll send it from this device once the time arrives. Keep the app installed.
+        {t('schedule.deviceHint', "We'll send it from this device once the time arrives. Keep the app installed.")}
       </p>
 
       <ul className="px-3 pt-2 flex flex-wrap gap-2 flex-shrink-0">
@@ -80,7 +84,7 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
           const iso = p.iso();
           if (!iso) return null;
           return (
-            <li key={p.label}>
+            <li key={p.labelKey}>
               <button
                 onClick={() => { onClose(); onSchedule(iso); }}
                 className="px-3 py-1.5 rounded-full text-[13px] font-medium border"
@@ -90,7 +94,7 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
                   color: 'var(--color-text)',
                 }}
               >
-                {p.label}
+                {t('schedule.' + p.labelKey, p.fallback)}
               </button>
             </li>
           );
@@ -99,7 +103,7 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
 
       <section className="px-5 pt-4 flex-shrink-0">
         <label className="block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
-          Pick a date &amp; time
+          {t('schedule.pickDateTime', 'Pick a date & time')}
         </label>
         <input
           type="datetime-local"
@@ -117,7 +121,7 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
           className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-[var(--color-text-muted)]"
           style={{ backgroundColor: 'var(--color-surface-alt)' }}
         >
-          Cancel
+          {t('common.cancel', 'Cancel')}
         </button>
         <button
           onClick={() => { if (draftIso) { onClose(); onSchedule(draftIso); } }}
@@ -125,7 +129,7 @@ export default function ScheduleSheet({ open, onClose, initialIso, onSchedule }:
           className="flex-1 py-2.5 rounded-2xl text-sm font-medium disabled:opacity-40"
           style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
         >
-          Schedule
+          {t('schedule.confirm', 'Schedule')}
         </button>
       </div>
     </BottomSheet>

@@ -106,6 +106,10 @@
     "snippetSticker": "🎨 Sticker",
     "snippetVideo": "🎬 Video",
     "snippetVoice": "🎙 Voice",
+    "snippetFile": "📎 File",
+    "snippetFileWith": "📎 {{filename}}",
+    "snippetPollWith": "🗳 Poll · {{question}}",
+    "snippetVoiceWith": "🎙 Voice · {{duration}}",
     "startConversation": "Start the conversation — messages here are end-to-end encrypted.",
     "statusDelivered": "Delivered",
     "statusFailed": "Failed",
@@ -172,6 +176,21 @@
     "multiOff": "Each person picks exactly one option.",
     "errUnique": "Options must be unique.",
     "errCreate": "Failed to create poll"
+  },
+  "schedule": {
+    "sheetTitle": "Schedule message",
+    "deviceHint": "We'll send it from this device once the time arrives. Keep the app installed.",
+    "presetIn1Min": "In 1 minute",
+    "presetIn1Hour": "In 1 hour",
+    "presetTonight": "Tonight 8pm",
+    "presetTomorrow": "Tomorrow 9am",
+    "presetMon": "Mon 9am",
+    "pickDateTime": "Pick a date & time",
+    "confirm": "Schedule",
+    "listTitle": "Scheduled messages",
+    "listSubtitle": "Pending sends in this chat. Cancel or reschedule any of them.",
+    "listEmpty": "No scheduled messages.",
+    "reschedule": "Reschedule"
   },
   "common": {
     "back": "Back",

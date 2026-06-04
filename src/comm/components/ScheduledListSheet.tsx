@@ -6,6 +6,8 @@
  * Cancel actions.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Ico } from './Ico';
 import { registerBackHandler } from '../services/back-stack';
 import { listScheduled, cancelScheduled, rescheduleMessage, type ChatMessage } from '../services/messages';
@@ -21,6 +23,7 @@ interface Props {
 }
 
 export default function ScheduledListSheet({ open, onClose, peerContactHash, onChange, onReschedule }: Props) {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<ChatMessage[]>([]);
   const [tick, setTick] = useState(0);
 
@@ -56,7 +59,7 @@ export default function ScheduledListSheet({ open, onClose, peerContactHash, onC
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Scheduled messages"
+      aria-label={t('schedule.listTitle', 'Scheduled messages')}
       className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ background: 'rgba(28, 26, 20, 0.55)' }}
       onClick={onClose}
@@ -69,21 +72,21 @@ export default function ScheduledListSheet({ open, onClose, peerContactHash, onC
         <div className="px-5 pb-2">
           <h2 className="text-base font-semibold text-[var(--color-text)] flex items-center gap-2">
             <Ico name="clock" size={18} color="var(--color-accent)" />
-            Scheduled messages
+            {t('schedule.listTitle', 'Scheduled messages')}
           </h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Pending sends in this chat. Cancel or reschedule any of them.
+            {t('schedule.listSubtitle', 'Pending sends in this chat. Cancel or reschedule any of them.')}
           </p>
         </div>
 
         {rows.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-[var(--color-text-faint)]">No scheduled messages.</p>
+          <p className="px-5 py-4 text-sm text-[var(--color-text-faint)]">{t('schedule.listEmpty', 'No scheduled messages.')}</p>
         ) : (
           <ul className="overflow-y-auto px-3 divide-y divide-[var(--color-border-soft)]">
             {rows.map((m) => (
               <li key={m.id} className="py-3 px-2">
                 <div className="text-[13px] font-medium text-[var(--color-text)]">
-                  {preview(m)}
+                  {preview(m, t)}
                 </div>
                 <div className="mt-1 text-[11px] text-[var(--color-text-muted)] flex items-center gap-1.5">
                   <Ico name="clock" size={12} color="var(--color-text-muted)" />
@@ -95,21 +98,21 @@ export default function ScheduledListSheet({ open, onClose, peerContactHash, onC
                     className="px-3 py-1 rounded-full text-[12px] font-medium"
                     style={{ backgroundColor: 'var(--color-accent-dim)', color: 'var(--color-accent-dark)' }}
                   >
-                    Send now
+                    {t('chat.sendNow', 'Send now')}
                   </button>
                   <button
                     onClick={() => { onClose(); onReschedule(m); }}
                     className="px-3 py-1 rounded-full text-[12px] font-medium border"
                     style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
                   >
-                    Reschedule
+                    {t('schedule.reschedule', 'Reschedule')}
                   </button>
                   <button
                     onClick={() => void handleCancel(m.id)}
                     className="px-3 py-1 rounded-full text-[12px] font-medium"
                     style={{ color: 'var(--color-red)' }}
                   >
-                    Cancel
+                    {t('common.cancel', 'Cancel')}
                   </button>
                 </div>
               </li>
@@ -121,11 +124,11 @@ export default function ScheduledListSheet({ open, onClose, peerContactHash, onC
   );
 }
 
-function preview(m: ChatMessage): string {
-  if (m.kind === 'image') return '📷 Photo';
-  if (m.kind === 'video') return '🎬 Video';
-  if (m.kind === 'voice') return '🎙 Voice note';
-  if (m.kind === 'poll') return '🗳 Poll';
+function preview(m: ChatMessage, t: TFunction): string {
+  if (m.kind === 'image') return t('chat.snippetPhoto', '📷 Photo');
+  if (m.kind === 'video') return t('chat.snippetVideo', '🎬 Video');
+  if (m.kind === 'voice') return t('chat.snippetVoice', '🎙 Voice');
+  if (m.kind === 'poll') return t('chat.snippetPoll', '🗳 Poll');
   const text = m.plaintext.replace(/\s+/g, ' ').trim();
   return text.length > 80 ? text.slice(0, 77) + '…' : (text || '—');
 }

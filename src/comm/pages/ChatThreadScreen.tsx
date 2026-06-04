@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { listThread, sweepExpiredInThread, deleteMessage, listScheduled, type ChatMessage, type ReplyContext } from '../services/messages';
 import { sendMessage, sendImage, sendVideo, sendFile, sendVoice, sendReaction, sendTimerChange, sendViewOnceViewed, sendPollVote, sendEdit, sendDeleteForEveryone, sendForward, sendReadReceipt, sendTypingState, subscribeTyping, sendLocation, sendSticker, ChatError, type MediaPayload, type VoicePayload, type SystemTimerChangePayload } from '../services/chat';
 import { startLiveShare, type GeoFix } from '../services/geo';
@@ -245,7 +246,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         setDraft('');
         setRefreshTick((v) => v + 1);
       } else {
-        const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
+        const replyCtx = replyingTo ? buildReplyContext(replyingTo, t) : undefined;
         const msg = await sendMessage(peerContactHash, text, replyCtx, scheduledFor);
         if (!scheduledFor) {
           // Immediate send: append to live bubble flow
@@ -388,7 +389,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
         waveform: rec.waveform,
         size: rec.size,
       };
-      const replyCtx = replyingTo ? buildReplyContext(replyingTo) : undefined;
+      const replyCtx = replyingTo ? buildReplyContext(replyingTo, t) : undefined;
       const msg = await sendVoice(peerContactHash, payload, replyCtx);
       setMessages((prev) => [...prev, msg]);
       setReplyingTo(null);
@@ -543,7 +544,7 @@ export default function ChatThreadScreen({ peerContactHash, onBack, onOpenEvent 
                 : t('chat.replyingTo', { name: contact?.displayName ?? t('chat.them') })}
             </div>
             <div className="text-xs text-[var(--color-text-muted)] truncate">
-              {replySnippetOf(replyingTo)}
+              {replySnippetOf(replyingTo, t)}
             </div>
           </div>
           <button
@@ -783,39 +784,40 @@ function SendMenu({ open, onClose, onSendNow, onSchedule }: {
   );
 }
 
-function buildReplyContext(msg: ChatMessage): ReplyContext {
+function buildReplyContext(msg: ChatMessage, t: TFunction): ReplyContext {
   return {
     msgId: msg.id,
-    snippet: replySnippetOf(msg),
+    snippet: replySnippetOf(msg, t),
     kind: msg.kind ?? 'text',
     fromHash: msg.fromHash,
   };
 }
 
-function replySnippetOf(msg: ChatMessage): string {
-  if (msg.kind === 'image') return '📷 Photo';
-  if (msg.kind === 'video') return '🎬 Video';
+function replySnippetOf(msg: ChatMessage, t: TFunction): string {
+  if (msg.kind === 'image') return t('chat.snippetPhoto', '📷 Photo');
+  if (msg.kind === 'video') return t('chat.snippetVideo', '🎬 Video');
   if (msg.kind === 'poll') {
     try {
       const p = JSON.parse(msg.plaintext) as { question?: string };
-      return `🗳 Poll · ${(p.question ?? '').slice(0, 60)}`;
-    } catch { return '🗳 Poll'; }
+      const q = (p.question ?? '').slice(0, 60);
+      return q ? t('chat.snippetPollWith', '🗳 Poll · {{question}}', { question: q }) : t('chat.snippetPoll', '🗳 Poll');
+    } catch { return t('chat.snippetPoll', '🗳 Poll'); }
   }
-  if (msg.kind === 'location') return '📍 Location';
-  if (msg.kind === 'sticker')  return '🎨 Sticker';
+  if (msg.kind === 'location') return t('chat.snippetLocation', '📍 Location');
+  if (msg.kind === 'sticker')  return t('chat.snippetSticker', '🎨 Sticker');
   if (msg.kind === 'file') {
-    try { const f = JSON.parse(msg.plaintext) as { filename?: string }; return `📎 ${f.filename ?? 'File'}`; }
-    catch { return '📎 File'; }
+    try { const f = JSON.parse(msg.plaintext) as { filename?: string }; return f.filename ? t('chat.snippetFileWith', '📎 {{filename}}', { filename: f.filename }) : t('chat.snippetFile', '📎 File'); }
+    catch { return t('chat.snippetFile', '📎 File'); }
   }
   if (msg.kind === 'voice') {
     try {
       const v = JSON.parse(msg.plaintext) as { durationSec?: number };
       const d = Math.max(1, Math.floor(v.durationSec ?? 0));
-      return `🎙 Voice · ${formatVoiceSnippetDur(d)}`;
-    } catch { return '🎙 Voice'; }
+      return t('chat.snippetVoiceWith', '🎙 Voice · {{duration}}', { duration: formatVoiceSnippetDur(d) });
+    } catch { return t('chat.snippetVoice', '🎙 Voice'); }
   }
-  if (msg.kind === 'event_invite') return '📅 Event';
-  if (msg.kind === 'event_rsvp') return 'RSVP';
+  if (msg.kind === 'event_invite') return t('chat.snippetEvent', '📅 Event');
+  if (msg.kind === 'event_rsvp') return t('chat.snippetRsvp', 'RSVP');
   const text = msg.plaintext.replace(/\s+/g, ' ').trim();
   return text.length > 80 ? text.slice(0, 77) + '…' : text;
 }
