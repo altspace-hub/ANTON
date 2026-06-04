@@ -13,7 +13,9 @@ interface Props {
   onPickPoll: () => void;
   /** R13 — opens the LocationPickerSheet flow. */
   onPickLocation: () => void;
-  /** R12 — opens the StickerPickerSheet flow. */
+  /** R12 — opens the StickerPickerSheet flow. Temporarily not surfaced (the
+   *  Stickers tile is hidden pending an art rework); kept so re-enabling is a
+   *  one-line change. Still passed by the parent, just not rendered. */
   onPickSticker: () => void;
   /** #91 — pick a generic file / document to attach. */
   onPickFile: () => void;
@@ -24,7 +26,7 @@ interface Props {
 
 export default function AttachmentSheet({
   open, onClose, onPickImageCamera, onPickImageLibrary, onPickVideoCamera, onPickVideoLibrary,
-  onPickPoll, onPickLocation, onPickSticker, onPickFile, viewOnce, onToggleViewOnce,
+  onPickPoll, onPickLocation, onPickFile, viewOnce, onToggleViewOnce,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -92,7 +94,10 @@ export default function AttachmentSheet({
           <Tile icon="video"  label="Video library" onClick={() => { onClose(); onPickVideoLibrary(); }} />
           <Tile icon="grid"   label="Poll"    onClick={() => { onClose(); onPickPoll(); }} />
           <Tile icon="mapPin" label="Location" onClick={() => { onClose(); onPickLocation(); }} />
-          <Tile icon="smile"  label="Stickers" onClick={() => { onClose(); onPickSticker(); }} />
+          {/* Stickers tile temporarily hidden pending an art rework — the picker,
+              wire kind, forwarding + recents all remain wired; re-enable by
+              restoring this Tile and onPickSticker in the destructure above.
+              <Tile icon="smile" label="Stickers" onClick={() => { onClose(); onPickSticker(); }} /> */}
           <Tile icon="paperclip" label="File" onClick={() => { onClose(); onPickFile(); }} />
         </div>
       </div>
