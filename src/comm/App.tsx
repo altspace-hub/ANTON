@@ -12,6 +12,8 @@ import { reconcileLiveShares } from './services/geo';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
 import { setActiveConversation } from './services/active-chat';
+import { ensureBackgroundPollingEnabled, bgSyncSeen } from './services/background-setup';
+import { listTxs } from './services/transactions';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 import LockScreen from './components/LockScreen';
 import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
@@ -198,9 +200,22 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     void ensureNotificationPermission();
+    // Phase 2 — on-device WorkManager background payment poll for this wallet
+    // (notifies on incoming payments while backgrounded/killed). No-op on web.
+    void ensureBackgroundPollingEnabled();
 
     const onForeground = async () => {
       const fresh = await maybeRunIdlePoll();
+      // Keep the background worker's "seen" set current with every tx the
+      // foreground knows (sends + receives) so it never notifies for our own
+      // change nor double-notifies a payment we already surfaced.
+      void (async () => {
+        try {
+          const txs = await listTxs(1000);
+          const ids = txs.map((t) => t.txHash).filter((x): x is string => typeof x === 'string' && x.length > 0);
+          await bgSyncSeen(ids);
+        } catch { /* best-effort */ }
+      })();
       if (cancelled || !fresh) return;
       for (const incoming of fresh) {
         void notifyIncoming(incoming.tx, incoming.fromName);

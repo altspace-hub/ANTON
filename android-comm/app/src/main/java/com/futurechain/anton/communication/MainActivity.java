@@ -7,6 +7,7 @@ import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
 import com.futurechain.anton.communication.plugins.FcSecureSignerPlugin;
+import com.futurechain.anton.communication.bgpoll.BackgroundPollingPlugin;
 
 /**
  * MainActivity for ANTON Communication.
@@ -26,6 +27,10 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Register FcSecureSigner before super.onCreate (Wave 7).
         registerPlugin(FcSecureSignerPlugin.class);
+
+        // BackgroundPolling — on-device WorkManager payment poll (push-
+        // notifications plan, Phase 2). Same public get_utxos read as Pay.
+        registerPlugin(BackgroundPollingPlugin.class);
 
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!isDebuggable) {

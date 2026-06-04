@@ -71,8 +71,13 @@ messages), 100% verifiable today.
 - Tests: `message-preview.test.ts`, `active-chat.test.ts`.
 - Verify A↔B on the two phones (B sends → A backgrounded → banner; tap → opens thread).
 
-### Phase 2 — WorkManager background payment poll  ·  NO creds, native  ·  **PAY DONE; Comm/Business TODO**
-Pure-Java WorkManager worker (Pay shipped + device-verified on QV7202N48K; port to Comm/Business next).
+### Phase 2 — WorkManager background payment poll  ·  NO creds, native  ·  **PAY + COMM DONE; Business TODO**
+Pure-Java WorkManager worker (Pay + Comm shipped + device-verified on QV7202N48K; Business next).
+**Comm:** `android-comm/.../bgpoll/{PaymentPoller,CommBackgroundWorker,BackgroundPollingPlugin}.java`
++ MainActivity reg + work-runtime + `src/comm/services/background-setup.ts` + comm/App.tsx (channel
+`fc-comm-incoming`; `bgSyncSeen` uses `listTxs().txHash`). Device-verified: runNow fetched the Comm
+wallet's real UTXOs, seeded silently (notified=0), dedup correct (fg txHashes ARE chain tx_ids so the
+worker never re-notifies — cleaner than Pay where receives were UETR-keyed).
 **Pay implementation:** `android-pay/.../bgpoll/{PaymentPoller,PayBackgroundWorker,BackgroundPollingPlugin}.java`
 + `MainActivity` registration + `androidx.work:work-runtime:2.9.1` + `src/pay/services/background-setup.ts`
 + `pay/App.tsx` wiring. Verified: `runNow()` fetched the funded wallet's public UTXOs and posted
