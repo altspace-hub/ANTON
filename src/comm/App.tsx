@@ -11,6 +11,7 @@ import { reconcileScheduleNotifications } from './services/schedules';
 import { reconcileLiveShares } from './services/geo';
 import { maybeRunIdlePoll } from './services/idle-poller';
 import { notifyIncoming, ensureNotificationPermission } from './services/notifications';
+import { setActiveConversation } from './services/active-chat';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
 import LockScreen from './components/LockScreen';
 import { isAppLockEnabled, APP_LOCK_GRACE_MS } from './services/app-lock';
@@ -82,6 +83,12 @@ export default function App() {
     if (view === 'tabs' && !hasIdentity()) setView('onboarding');
   }, [view]);
 
+  // Keep the notification layer in sync with which thread is on-screen, so an
+  // inbound message for the *currently open* chat doesn't also raise a banner.
+  useEffect(() => {
+    setActiveConversation(view === 'chat-thread' ? openChatHash : null);
+  }, [view, openChatHash]);
+
   // Android hardware back button — first close overlays (back-stack), then
   // step out of nested views, then ask "exit?" at the root.
   useAndroidBackButton({
@@ -147,7 +154,16 @@ export default function App() {
         const handle = await LocalNotifications.addListener(
           'localNotificationActionPerformed',
           async (action) => {
-            const scheduleId = (action?.notification?.extra as { scheduleId?: string } | undefined)?.scheduleId;
+            const extra = action?.notification?.extra as
+              { scheduleId?: string; commThread?: string } | undefined;
+            // Tapping an inbound-message notification opens that conversation.
+            if (extra?.commThread) {
+              setActiveTab('chat');
+              setOpenChatHash(extra.commThread);
+              setView('chat-thread');
+              return;
+            }
+            const scheduleId = extra?.scheduleId;
             if (!scheduleId) return;
             const [{ getSchedule }, { scheduleToPayUri }] = await Promise.all([
               import('./services/schedules'),

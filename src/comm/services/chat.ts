@@ -16,6 +16,9 @@ import { getIdentity } from './identity';
 import { getContact, listContacts, updateContact } from './contacts';
 import { sealForPeer, openFromPeer, type EncryptedEnvelope } from './crypto';
 import { appendMessage, applyReaction, applyPollVote, applyEdit, applyDeleteForEveryone, applyLocationUpdate, getMessage, markReadUpTo, markViewed, type ChatMessage, type ContentKind, type ReplyContext } from './messages';
+import { notifyIncomingMessage } from './notifications';
+import { isViewingConversation } from './active-chat';
+import { notificationPreviewFor } from './message-preview';
 import { getReadReceiptsEnabled, getTypingIndicatorEnabled } from './settings';
 import { getRelayClient } from './relay-client';
 import {
@@ -1432,7 +1435,34 @@ export async function applyInboundMessage(
     replyTo,
     disappearsAt,
   });
+  // Heads-up notification for genuinely new inbound content — best-effort,
+  // never blocks persistence, and suppressed when the user is already on this
+  // thread. Fires for both live and offline-replay deliveries (this is the
+  // single chokepoint for every bubble-producing inbound message).
+  void maybeNotifyInbound(fromHash, kind, plaintext, messageId);
   return { kind, threadHash: fromHash };
+}
+
+async function maybeNotifyInbound(
+  fromHash: string,
+  kind: ContentKind,
+  plaintext: string,
+  messageId?: string,
+): Promise<void> {
+  try {
+    if (isViewingConversation(fromHash)) return;
+    const preview = notificationPreviewFor(kind, plaintext);
+    if (!preview) return; // low-signal meta kind
+    const contact = await getContact(fromHash);
+    await notifyIncomingMessage({
+      fromHash,
+      fromName: contact?.displayName,
+      preview,
+      messageId: messageId || `${fromHash}:${Date.now()}`,
+    });
+  } catch {
+    /* notifications are best-effort */
+  }
 }
 
 /**
