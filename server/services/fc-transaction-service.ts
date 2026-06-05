@@ -1,6 +1,6 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import type { FCWalletService } from './fc-wallet-service.js';
-import { Pacs008Builder, buildSignedPacs008Transaction, type UtxoLike } from '@futurechain/sdk/pacs008';
+import { Pacs008Builder, buildSignedPacs008Transaction, computeNetworkFee, type UtxoLike } from '@futurechain/sdk/pacs008';
 import { RpcClient, type SubmitResult } from '@futurechain/sdk/rpc';
 
 /**
@@ -237,7 +237,9 @@ export async function createFCTransactionService(
         utxos,
         recipient: row.to_address,
         amountSatoshi: Number(row.amount_raw),
-        feeSatoshi: 100,
+        // Network fee = 0.1% capped at 0.1 FTC (SDK single source of truth;
+        // matches Pay + Comm). Was a flat 100-sat floor, which under-charged.
+        feeSatoshi: computeNetworkFee(Number(row.amount_raw)),
         pacs008: pacs,
         uetr,
       });
