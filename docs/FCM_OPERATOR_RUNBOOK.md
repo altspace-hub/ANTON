@@ -39,9 +39,13 @@ FCM, and (b) its **registry Postgres** enabled to store device tokens.
 1. Place the downloaded **`google-services.json` at `android-comm/app/google-services.json`**.
    (`android-comm/app/build.gradle` already has the conditional google-services block —
    it activates only when this file is present; without it the app still builds.)
-2. Rebuild + install the Comm app:
+2. **Build with `VITE_COMM_FCM_ENABLED=true`** (load-bearing). Without this flag the app NEVER
+   calls `PushNotifications.register()` — because that throws a FATAL native exception
+   ("Default FirebaseApp is not initialized") on any build lacking `google-services.json`, which a
+   JS try/catch cannot catch. So: default builds skip FCM entirely (no crash, no token); the
+   operator sets this flag ONLY together with shipping `google-services.json`. Rebuild + install:
    ```
-   pnpm build:comm:cap
+   VITE_COMM_FCM_ENABLED=true pnpm build:comm:cap
    rm -rf android-comm/app/src/main/assets/public && mkdir -p android-comm/app/src/main/assets/public
    cp -r dist/comm/* android-comm/app/src/main/assets/public/
    (cd android-comm && ./gradlew.bat assembleDebug)
