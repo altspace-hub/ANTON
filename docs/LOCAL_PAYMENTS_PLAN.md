@@ -76,6 +76,42 @@ portable as-is:
    Phase-4 hardening add, not now.)
 3. Real-mode default vs opt-in: TBD during Phase 0 (lean toward: auto-real when a node is reachable,
    else keep the Settings node config as the switch).
+4. **Node connectivity: support BOTH a bundled local node AND remote RPC** (see next section).
+
+## Node connectivity — TWO approaches (both already infra-ready)
+
+The user wants ANTON Local to support two ways to reach the chain, and the plumbing for both
+**already exists** — the work is making them first-class + selectable in the payments UX.
+
+**A) Bundled local node (the standard, "run your own node" path).**
+- The Windows node binary is committed: **`runtimes-source/futurechain/futurechain.exe`** (~33 MB),
+  copied into `futurechain/` in the portable bundle. (`scripts/portable/fetch-runtimes.ps1` /
+  `build-portable.ps1` assemble it; see [[project_portable_bundle]].)
+- **`Start FutureChain (portable).bat`** → `scripts/portable/start-futurechain.ps1` launches it and,
+  on first run, asks the node type:
+  - **light-hub** (default) — `--node-type light-hub --light-hub-window-days 7`
+  - **standard** — `--node-type standard` (full chain, no mining)
+  - **mining** — standard + `--mine --miner-address <wallet>` (rewards to a chosen address)
+  RPC on `127.0.0.1:8546`, P2P `30304`, bootstraps from the Bahnhof seed `79.136.1.113:30303`.
+- ANTON's `fc-*` services already pick up whatever node is on `127.0.0.1:<rpc-port>` via
+  `fc_connection_config.node_url`. So "use my local node" = point `node_url` at `http://127.0.0.1:8546`
+  + flip `stub_mode` off. **This gives the user a real node that can MINE and has full node
+  capabilities** — the privacy/sovereignty maximum (no third-party hub sees your reads).
+
+**B) Remote RPC to the hub (the zero-setup path).**
+- Point `node_url` at `https://rpc.futurechain.eu` (Bahnhof). Public reads (`/get_utxos`, `/balance`,
+  `/transaction`) are unauthenticated; `/submit_signed_transaction` needs the per-install enrollment
+  bearer (Phase 0 server enroll). No local node, no 33 MB binary, no sync — easiest onboarding.
+
+**What the plan adds (Phase 0 + a node-settings step):**
+- A payments **Settings choice**: "Run a local node (mine + full sovereignty)" vs "Connect to the
+  FutureChain hub (instant)". Auto-detect a local node by probing `127.0.0.1:8546/health` on startup;
+  if present, prefer it. Persist to `fc_connection_config` (`node_url`, `stub_mode=false`).
+- For the local-node path: a one-click "Start my node" that invokes the portable launcher (or document
+  the `.bat`), surface node **sync/health + mining status + rewards address/earnings** in the FC
+  Dashboard, and let the user set their wallet as the miner address.
+- Either way, real-mode turns on once a node (local or remote) answers — stub mode is only the
+  no-node fallback.
 
 ## Reuse map (don't rebuild)
 `@futurechain/sdk` (wallet/rpc/pacs008/tax) · `server/services/fc-wallet-service.ts` ·
