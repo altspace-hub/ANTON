@@ -1,9 +1,9 @@
 /**
- * comm-wassup.e2e.cjs — Wassup feed: compose a post + self-like (single Comm
+ * comm-pulse.e2e.cjs — Pulse feed: compose a post + self-like (single Comm
  * phone, idempotent, no network).
  *
- * publishWassupPost writes the wassup_posts row BEFORE any relay fanout, and
- * toggleWassupLike writes the wassup_interactions row + bumps likeCount BEFORE
+ * publishPulsePost writes the pulse_posts row BEFORE any relay fanout, and
+ * togglePulseLike writes the pulse_interactions row + bumps likeCount BEFORE
  * its own-post early-return — so both are fully assertable on one funded phone.
  * Uses a stable marker + check-then-create (mirrors comm-events); re-runs are
  * no-ops (post already present, already self-liked). Cross-device fanout +
@@ -16,10 +16,10 @@ const { forwardApp } = require('../lib/devices.cjs');
 const { CdpSession } = require('../lib/cdp.cjs');
 const { install } = require('../lib/dom-driver.cjs');
 
-const MARKER = 'E2E Fixture Wassup';
+const MARKER = 'E2E Fixture Pulse';
 
 module.exports = {
-  name: 'comm-wassup',
+  name: 'comm-pulse',
   apps: ['comm'],
   async run({ log }) {
     const comm = await forwardApp('comm', 0);
@@ -29,18 +29,18 @@ module.exports = {
         const me = (() => { try { return JSON.parse(localStorage.getItem('anton-comm-identity')); } catch { return null; } })();
         const myHash = me && me.contactHash;
 
-        // resume-robust nav to the Wassup tab
+        // resume-robust nav to the Pulse tab
         let tab = null;
         for (let i = 0; i < 12 && !tab; i++) {
           for (let j = 0; j < 3; j++) await __td.clickText(/Tillbaka|Avbryt|Back|Cancel/i, 150);
-          tab = document.querySelector('[aria-controls="tabpanel-wassup"]');
+          tab = document.querySelector('[aria-controls="tabpanel-pulse"]');
           if (!tab) await __td.sleep(400);
         }
-        if (!tab) return { err: 'wassup tab never appeared (app not resumed?)' };
+        if (!tab) return { err: 'pulse tab never appeared (app not resumed?)' };
         tab.click(); await __td.sleep(900);
 
         // idempotent create (check store first)
-        let posts = await __td.readStore('anton-comm', 'wassup_posts');
+        let posts = await __td.readStore('anton-comm', 'pulse_posts');
         let created = posts.find((p) => (p.text || '').includes(${JSON.stringify(MARKER)}));
         const had = !!created;
         if (!created) {
@@ -54,13 +54,13 @@ module.exports = {
           const post = [...document.querySelectorAll('button')].find((b) => /^(Post|Publicera)$/.test((b.innerText || '').trim()) && !b.disabled);
           if (!post) return { err: 'post submit button not found/enabled' };
           post.click(); await __td.sleep(1700);
-          posts = await __td.readStore('anton-comm', 'wassup_posts');
+          posts = await __td.readStore('anton-comm', 'pulse_posts');
           created = posts.find((p) => (p.text || '').includes(${JSON.stringify(MARKER)}));
         }
-        if (!created) return { err: 'post row not persisted to wassup_posts' };
+        if (!created) return { err: 'post row not persisted to pulse_posts' };
 
         // idempotent self-like — find the feed card for MARKER, tap its nested heart
-        let ints = await __td.readStore('anton-comm', 'wassup_interactions');
+        let ints = await __td.readStore('anton-comm', 'pulse_interactions');
         const likedAlready = ints.some((i) => i.postId === created.id && i.kind === 'like' && i.fromHash === myHash);
         if (!likedAlready) {
           let card = null;
@@ -72,10 +72,10 @@ module.exports = {
           const likeBtn = card.querySelector('button'); // first nested button = the heart
           if (!likeBtn) return { err: 'like button not found inside the card' };
           likeBtn.click(); await __td.sleep(1100);
-          ints = await __td.readStore('anton-comm', 'wassup_interactions');
+          ints = await __td.readStore('anton-comm', 'pulse_interactions');
         }
         const likeRow = ints.find((i) => i.postId === created.id && i.kind === 'like' && i.fromHash === myHash);
-        posts = await __td.readStore('anton-comm', 'wassup_posts');
+        posts = await __td.readStore('anton-comm', 'pulse_posts');
         const fresh = posts.find((p) => p.id === created.id);
         return {
           had, postId: created.id, authorHash: created.authorHash, myHash,
@@ -83,9 +83,9 @@ module.exports = {
         };
       })()`);
       if (r.err) throw new Error(r.err);
-      assert.ok(r.postId, 'wassup post persisted to the wassup_posts store');
+      assert.ok(r.postId, 'pulse post persisted to the pulse_posts store');
       assert.equal(r.authorHash, r.myHash, 'post authorHash is my own identity (locally composed)');
-      assert.ok(r.likeRow, 'self-like persisted a wassup_interactions row (kind=like, fromHash=me)');
+      assert.ok(r.likeRow, 'self-like persisted a pulse_interactions row (kind=like, fromHash=me)');
       assert.ok(typeof r.likeCount === 'number' && r.likeCount >= 1, 'likeCount denormalized onto the post (>=1) after self-like');
       log(`post ${r.had ? 'present' : 'created'} (${String(r.postId).slice(0, 8)}…), self-like ok, likeCount=${r.likeCount}, expiresAt=${r.expiresAt ? 'set' : 'null'}`);
     } finally {

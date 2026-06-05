@@ -70,7 +70,7 @@ on a failure, and exits non-zero if anything failed.
 
 Each scenario is idempotent (no real on-chain spend; re-runs are no-ops or use a
 fresh marker), so the suite is safe to re-run. **Roadmap (#73):** Comm wallet
-(read balance/address/history), portals browse, Wassup feed; Pay→Business full
+(read balance/address/history), portals browse, Pulse feed; Pay→Business full
 receipt-match; photo-viewer tap; events RSVP + each type.
 
 This suite needs two physical phones, so it is **operator-run only** — it must
