@@ -131,6 +131,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.40.0
         version: 1.40.0
+      '@scure/bip39':
+        specifier: 2.2.0
+        version: 2.2.0
       '@tanstack/react-virtual':
         specifier: ^3.13.21
         version: 3.13.21(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

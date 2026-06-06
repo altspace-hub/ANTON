@@ -123,6 +123,7 @@
     "@opentelemetry/sdk-node": "^0.213.0",
     "@opentelemetry/sdk-trace-node": "^2.6.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@scure/bip39": "2.2.0",
     "@tanstack/react-virtual": "^3.13.21",
     "@truestamp/canonify": "^2.1.0",
     "@types/dompurify": "^3.2.0",
