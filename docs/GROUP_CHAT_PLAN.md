@@ -137,3 +137,62 @@ Each phase is independently shippable: a later phase being absent never corrupts
 **The single sharpest gotcha — a group member who is not your contact.** `sendStructuredMessage` hard-requires `getContact(peerContactHash)` with a `publicKeyHex` and throws `NO_CONTACT`/`NO_PEER_KEY` (`chat.ts:348-355`); inbound `handleDeliverComm` matches the sender by deriving `routingId = sha256(pubkey)` over **contacts only** (`relay-client.ts:387-424`), so a member you haven't added is *invisible to both send and receive*. The roster carries `memberHashes` but **not their pubkeys**, and you can't seal to a hash. **Resolution:** the `group_invite` wire must carry each member's `publicKeyHex` (not just hash), and on accepting an invite the device must auto-provision a *lightweight, group-scoped contact-like key entry* (or extend `getGroup` lookups to a `memberKeys: Record<hash,pubkeyHex>` map on the `GroupRecord`) so `sealForPeer` and the inbound routing-id match work for co-members who were never added as 1:1 contacts. This is the load-bearing design choice — get the member-pubkey distribution into `group_invite`/`group_roster_update` in Phase 5's wire shape *before* building send (Phase 2), or non-mutual members silently cannot participate.
 
 **Relevant files:** `src/comm/services/db.ts`, `src/comm/services/groups.ts` (new), `src/comm/services/chat.ts`, `src/comm/services/messages.ts`, `src/comm/services/relay-client.ts`, `src/comm/services/crypto.ts`, `src/comm/services/inline-outbox.ts`, `src/comm/components/PulseAudienceSheet.tsx`, `src/comm/pages/ChatListScreen.tsx`, `src/comm/pages/ChatThreadScreen.tsx`, `src/comm/components/GroupThreadScreen.tsx` (new), `src/comm/components/GroupInfoScreen.tsx` (new), `src/comm/App.tsx`.
+
+---
+
+## 5. Roles + Scalability (v1) — SHIPPED 2026-06-06
+
+**Authority model — OWNER is the single roster writer.** The creator (= owner) is the only one who
+edits membership, roles, and settings, so there is NO concurrent-writer divergence and the roster
+needs NO per-mutation signature: roles + the announce flag are DATA carried IN the existing
+owner-authenticated `group_invite` (gated `creatorHash === relay fromHash`, applied only at a
+strictly-greater `rosterVersion`). `roleOf` forces the creator to `owner` regardless of any stored
+role, so authority can't be stripped by a malformed roster. An inbound roster that OMITS its own
+creator is rejected (no un-removable ghost authority).
+
+**Roles.** `GroupMember.role?: 'owner' | 'admin' | 'member'` (absent = member, back-compat).
+- ADMIN (owner-granted): (a) may POST in announcement-mode groups, (b) may MODERATE = delete ANY
+  message in the group. Recipients re-derive moderation authorization locally (target author +
+  roster role) — no trust in a wire flag.
+- Predicates in `groups.ts`: `roleOf`, `isGroupOwner`, `isGroupAdmin`, `canPostToGroup`,
+  `canModerateGroup`, `canManageGroup`.
+
+**Announcement mode** (`GroupRecord.announce`). Owner-set, carried in the roster. Only owner+admins
+post (text + media + reactions all gated — reactions are a per-member fan-out too). Enforced on BOTH
+the outbound send and the inbound apply, so a forged wire from a read-only member is dropped on
+receipt. The scalability lever: a large read-only channel's fan-out is bounded by the few who post.
+
+**Scalability.** `GROUP_MAX_MEMBERS` raised 32 → 256. The abuse bound `MAX_ROSTER_HARD = 1024` is now
+SEPARATE from the product cap (the 32-cap used to live in `sanitizeMembers`, silently truncating a
+larger inbound roster). Fan-out is throttled (pause every 16 live sends). Group read receipts are
+suppressed (both send + inbound apply) for >32-member or announce groups. Durability: a live group
+send that fails on a connected-but-broken socket now falls back to the durable outbox (no silent
+roster/role/announce loss).
+
+**Re-add convergence.** A member REMOVED by the owner (`removedByOwner`) rejoins when the owner
+re-adds them (a newer owner roster re-including their hash clears `leftGroup`). A VOLUNTARY leaver is
+never dragged back by a routine re-broadcast.
+
+**No DB bump.** `role`, `announce`, `removedByOwner` are additive optional fields on the existing
+`GroupRecord` JSON in `STORE_GROUPS` — no migration, no index change.
+
+### 5a. Known v1 limitations (documented, not bugs)
+1. **Old-client truncation.** A client predating this version still slices an inbound roster to 32 in
+   its `sanitizeMembers` and stores the truncated roster as authoritative. So a >32-member group
+   requires every member to be on ≥ this version. (New clients store the full roster intact.)
+2. **Old-client announce enforcement.** An old client ignores the `announce` flag, so an old-client
+   RECIPIENT would render a non-admin's post and an old-client SENDER could try to post — but every
+   up-to-date recipient drops a non-admin post via the inbound gate, so announce is enforced as long
+   as recipients are current. Not a hard guarantee for mixed-version groups.
+3. **Media broadcast volume.** Per-member fan-out is unchanged: a 700 KB image at N=256 is ~178 MiB
+   of relay egress for one send. Only a per-copy cap exists (no total-volume guard). Announcement
+   mode is the mitigation (only admins post media); a normal 256-member group sending media is the
+   user's explicit choice. A total-volume confirm is a follow-up.
+
+### 5b. DEFERRED — signed multi-writer admin membership (the hard part)
+Letting ADMINS (not just the owner) independently add/remove members is intentionally NOT in v1. It
+reintroduces concurrent writers, which the single monotonic `rosterVersion` + strictly-greater apply
+silently diverges on, and the unsigned roster gives recipients no per-edit proof to reject a forged
+or removed-admin edit. Doing it safely needs (1) per-mutation Ed25519 signatures verified against the
+actor's pubkey (signing exists in `identity.ts` but is unused for the roster), and (2) replacing the
+single counter with a per-actor sequence / LWW tiebreak. That is its own build.
