@@ -206,6 +206,20 @@ html[data-mode="standard"] body { font-size: calc(16px * var(--app-scale)); }
   #app { box-shadow: 0 0 0 1px var(--color-border-soft); }
 }
 
+/* Constrain full-screen fixed overlays (modal backdrops, sheets, voice mode) to
+   the centred #app column on wide screens, so they don't overhang the column on a
+   tablet. Phones unaffected (viewport < the cap → #app is full-width). A
+   `fixed inset-0` element with max-width + margin-inline:auto centres (left:0 +
+   right:0 + capped width). Genuinely full-bleed overlays (the QR scanner camera)
+   opt OUT via .app-fullscreen. */
+@media (min-width: 600px) {
+  .fixed.inset-0:not(.app-fullscreen),
+  .fixed.inset-x-0:not(.app-fullscreen) {
+    max-width: var(--app-max-width);
+    margin-inline: auto;
+  }
+}
+
 .safe-top    { padding-top: env(safe-area-inset-top, 0); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
 

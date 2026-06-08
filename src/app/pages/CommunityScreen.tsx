@@ -472,7 +472,7 @@ function ScannerSheet({ orgId, onClose, onScanned }: {
       role="dialog"
       aria-modal="true"
       aria-label="Scan QR"
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col app-fullscreen"
       style={{ background: '#0A0A0A' }}
     >
       <div
