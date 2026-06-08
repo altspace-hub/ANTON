@@ -177,11 +177,11 @@ function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instan
               </span>
             )}
           </div>
-          <div className="mt-1 text-[11.5px] break-all" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-1 text-[0.71875rem] break-all" style={{ color: 'var(--color-text-muted)' }}>
             {instance.server_base}
           </div>
           {instance.org && (
-            <div className="mt-1 text-[11.5px]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="mt-1 text-[0.71875rem]" style={{ color: 'var(--color-text-muted)' }}>
               {instance.org.name} · {instance.org.role}
             </div>
           )}

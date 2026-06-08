@@ -61,7 +61,7 @@ function ChatBubbleImpl({ role, content, isError }: Props) {
             color: 'var(--color-accent-fg)',
           }}
         >
-          <p className="break-words whitespace-pre-wrap text-[14.5px] leading-[1.5]">
+          <p className="break-words whitespace-pre-wrap text-[0.90625rem] leading-[1.5]">
             {content}
           </p>
         </div>

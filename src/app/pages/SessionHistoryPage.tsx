@@ -97,13 +97,13 @@ export default function SessionHistoryPage({ orgId, orgName, onSelectSession, on
                 >
                   <div className="min-w-0 flex-1">
                     <div
-                      className="truncate text-[14.5px] font-semibold"
+                      className="truncate text-[0.90625rem] font-semibold"
                       style={{ color: 'var(--color-text)', lineHeight: 1.3 }}
                     >
                       {s.title || 'Untitled conversation'}
                     </div>
                     <div
-                      className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px]"
+                      className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.71875rem]"
                       style={{ color: 'var(--color-text-muted)' }}
                     >
                       <span>{s.message_count} {s.message_count === 1 ? 'message' : 'messages'}</span>

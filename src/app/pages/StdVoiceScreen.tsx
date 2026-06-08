@@ -79,7 +79,7 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
         <div
           className="text-center"
           style={{
-            fontSize: reply ? 18 : 30,
+            fontSize: reply ? '1.125rem' : '1.875rem',
             fontWeight: 600,
             letterSpacing: '-0.5px',
             lineHeight: 1.3,

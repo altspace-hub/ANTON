@@ -145,7 +145,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                             )}
                           </div>
                           <div
-                            className="mt-0.5 text-[11.5px]"
+                            className="mt-0.5 text-[0.71875rem]"
                             style={{ color: 'var(--color-text-muted)' }}
                           >
                             {PROVIDER_BADGE[m.provider] ?? m.provider} · {m.description}

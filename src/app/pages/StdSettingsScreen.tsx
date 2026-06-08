@@ -27,7 +27,7 @@ interface Props {
 
 const SETTINGS_ROWS = [
   { id: 'accent',  title: 'Your accent colour',  expandable: true },
-  { id: 'text',    title: 'Text size',           sub: 'Large' },
+  // 'text size' is now the functional Display size picker above — no static row.
   { id: 'mail',    title: 'Connected accounts',  sub: 'Connect mail and calendar from the Mail tab' },
   { id: 'biometric', title: 'Face ID / fingerprint', sub: 'On · required for money' },
   { id: 'privacy', title: 'Privacy',             sub: 'Your data stays on your ANTON' },

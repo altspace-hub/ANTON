@@ -109,7 +109,7 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
             <span
               style={{
                 color: colour,
-                fontSize: isStandard ? 11 : 10,
+                fontSize: isStandard ? '0.6875rem' : '0.625rem',
                 fontWeight: active ? 600 : 500,
                 letterSpacing: '-0.05px',
               }}

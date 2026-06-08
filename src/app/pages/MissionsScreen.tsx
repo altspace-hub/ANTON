@@ -158,14 +158,14 @@ function MissionRow({ m, orgId, onChanged }: {
       <div className="flex items-start gap-2.5">
         <div className="min-w-0 flex-1">
           <div
-            className="text-[14.5px] font-semibold"
+            className="text-[0.90625rem] font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {m.title}
           </div>
           {m.description && (
             <p
-              className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed"
+              className="mt-1 line-clamp-2 text-[0.78125rem] leading-relaxed"
               style={{ color: 'var(--color-text-muted)' }}
             >
               {m.description}

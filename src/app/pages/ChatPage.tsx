@@ -388,7 +388,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   {moduleDetail.label}
                 </h2>
                 <p
-                  className="mt-2 text-[13.5px] leading-relaxed"
+                  className="mt-2 text-[0.84375rem] leading-relaxed"
                   style={{ color: 'var(--color-text-body)' }}
                 >
                   {moduleDetail.description}
@@ -418,7 +418,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   )}
                   {moduleDetail.roleObjective && (
                     <p
-                      className="mt-2 text-[12.5px] leading-relaxed"
+                      className="mt-2 text-[0.78125rem] leading-relaxed"
                       style={{ color: 'var(--color-text-muted)' }}
                     >
                       {moduleDetail.roleObjective}
@@ -547,7 +547,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <button
                 onClick={() => applyModel(null, 'Default')}
                 aria-label="Reset to default model"
-                className="text-[10.5px] underline"
+                className="text-[0.65625rem] underline"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Reset

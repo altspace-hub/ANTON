@@ -213,7 +213,7 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
           }}
           rows={1}
           placeholder="Message…"
-          className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-[14.5px] leading-relaxed focus:outline-none"
+          className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-[0.90625rem] leading-relaxed focus:outline-none"
           style={{
             background: 'var(--color-bg)',
             color: 'var(--color-text)',
@@ -246,7 +246,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             className="rounded-[16px] px-3.5 py-2.5"
             style={{ background: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
           >
-            <p className="break-words whitespace-pre-wrap text-[14.5px] leading-[1.5]">
+            <p className="break-words whitespace-pre-wrap text-[0.90625rem] leading-[1.5]">
               {m.body || ''}
             </p>
           </div>
@@ -272,7 +272,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             border: '1px solid var(--color-border)',
           }}
         >
-          <p className="break-words whitespace-pre-wrap text-[14.5px] leading-[1.5]">
+          <p className="break-words whitespace-pre-wrap text-[0.90625rem] leading-[1.5]">
             {m.body || ''}
           </p>
         </div>

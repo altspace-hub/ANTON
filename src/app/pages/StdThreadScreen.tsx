@@ -195,7 +195,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
               }}
               rows={1}
               placeholder="Write a reply…"
-              className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-[14.5px] leading-relaxed focus:outline-none"
+              className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-[0.90625rem] leading-relaxed focus:outline-none"
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',

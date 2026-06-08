@@ -354,7 +354,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
             <section>
               <SectionLabel>Detail</SectionLabel>
               <pre
-                className="mt-2 max-h-64 overflow-auto rounded-[var(--radius-r1)] p-2.5 font-mono text-[10.5px] leading-snug"
+                className="mt-2 max-h-64 overflow-auto rounded-[var(--radius-r1)] p-2.5 font-mono text-[0.65625rem] leading-snug"
                 style={{
                   background: 'var(--color-surface-alt)',
                   border: '1px solid var(--color-border)',

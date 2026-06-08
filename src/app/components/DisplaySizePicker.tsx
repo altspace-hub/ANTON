@@ -20,6 +20,7 @@ export default function DisplaySizePicker(): JSX.Element {
           <button
             key={d.id}
             onClick={() => setDisplay(d.id)}
+            aria-pressed={active}
             className="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-left"
             style={{
               background: active ? 'var(--color-accent-dim)' : 'var(--color-surface)',

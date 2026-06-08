@@ -236,7 +236,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                 )}
                 {briefExpanded && (
                   <div
-                    className="mt-2 text-[13.5px] leading-relaxed"
+                    className="mt-2 text-[0.84375rem] leading-relaxed"
                     style={{ color: 'var(--color-text-body)', whiteSpace: 'pre-wrap' }}
                   >
                     {brief.content}

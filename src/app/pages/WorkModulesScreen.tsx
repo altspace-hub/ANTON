@@ -266,7 +266,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                   value={browseQuery}
                   onChange={(e) => setBrowseQuery(e.target.value)}
                   placeholder="Search modules…"
-                  className="flex-1 bg-transparent text-[13.5px] focus:outline-none"
+                  className="flex-1 bg-transparent text-[0.84375rem] focus:outline-none"
                   style={{ color: 'var(--color-text)' }}
                   aria-label="Search modules"
                 />

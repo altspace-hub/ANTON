@@ -95,7 +95,7 @@ function showExitToast(): void {
       color: #FFFFFF;
       padding: 10px 18px;
       border-radius: 999px;
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: -0.1px;
       box-shadow: 0 8px 24px -8px rgba(0,0,0,0.35);

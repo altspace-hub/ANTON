@@ -217,7 +217,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                       </div>
                       {d.due_date && (
                         <p
-                          className="mt-1 text-[11.5px]"
+                          className="mt-1 text-[0.71875rem]"
                           style={{ color: overdue ? 'var(--color-red)' : 'var(--color-text-muted)' }}
                         >
                           {overdue ? 'Overdue · ' : ''}{new Date(d.due_date).toLocaleDateString()}

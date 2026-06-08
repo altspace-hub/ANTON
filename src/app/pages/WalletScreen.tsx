@@ -216,7 +216,7 @@ export default function WalletScreen({ orgId }: Props) {
                         >
                           <div className="min-w-0 flex-1">
                             <p
-                              className="truncate text-[13.5px] font-semibold"
+                              className="truncate text-[0.84375rem] font-semibold"
                               style={{ color: 'var(--color-text)' }}
                             >
                               {tx.description || 'Transaction'}
@@ -231,7 +231,7 @@ export default function WalletScreen({ orgId }: Props) {
                             </div>
                           </div>
                           <span
-                            className="text-[13.5px] font-bold"
+                            className="text-[0.84375rem] font-bold"
                             style={{
                               color: negative ? 'var(--color-red)' : 'var(--color-green)',
                             }}
@@ -259,7 +259,7 @@ export default function WalletScreen({ orgId }: Props) {
                 >
                   About FutureChain
                 </h3>
-                <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-[0.71875rem] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                   FutureChain (FTC) is ANTON's payment network for AI services. Premium queries,
                   marketplace purchases, and delegated tasks are settled in FTC. Your organisation may
                   provide a monthly FTC allowance.

@@ -109,7 +109,7 @@ export default function CommunityScreen({ orgId, onBack, onOpenChat }: Props): J
                   </Btn>
                 </div>
                 <p
-                  className="mt-2 px-1 text-[11.5px]"
+                  className="mt-2 px-1 text-[0.71875rem]"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   Tap "Show my QR" so a friend can add you. Tap "Scan QR" to
@@ -225,7 +225,7 @@ function ContactRow({ c, onTap }: { c: CommunityConnection; onTap: () => void })
           {c.display_name || 'Unnamed contact'}
         </div>
         <div
-          className="truncate font-mono text-[10.5px]"
+          className="truncate font-mono text-[0.65625rem]"
           style={{ color: 'var(--color-text-muted)', letterSpacing: '0.3px' }}
         >
           {c.contact_hash}
@@ -281,7 +281,7 @@ function PendingRow({ c, orgId, onResolved }: {
             {c.display_name || 'Unnamed contact'}
           </div>
           <div
-            className="truncate font-mono text-[10.5px]"
+            className="truncate font-mono text-[0.65625rem]"
             style={{ color: 'var(--color-text-muted)', letterSpacing: '0.3px' }}
           >
             {c.contact_hash}
