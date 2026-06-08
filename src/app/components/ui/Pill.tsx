@@ -31,7 +31,7 @@ export function Pill({ tone = 'neutral', mono, children, className = '', style, 
       className={`
         inline-flex items-center gap-1
         px-2 py-[3px] rounded-full border
-        text-[11px] font-semibold whitespace-nowrap
+        text-[0.6875rem] font-semibold whitespace-nowrap
         ${mono ? 'font-mono tracking-normal' : 'tracking-[0.2px]'}
         ${TONE[tone]} ${className}
       `}

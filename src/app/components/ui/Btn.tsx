@@ -20,7 +20,7 @@ export interface BtnProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 }
 
 const SIZE: Record<BtnSize, string> = {
-  sm: 'px-3.5 py-2 text-[13px] min-h-[36px]',
+  sm: 'px-3.5 py-2 text-[0.8125rem] min-h-[36px]',
   md: 'px-[18px] py-3 text-sm min-h-[44px]',
   lg: 'px-5 py-3.5 text-base min-h-[48px]',
 };

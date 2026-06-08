@@ -99,12 +99,12 @@ export function PriorityCard({
         >
           <span
             className="font-mono font-bold uppercase"
-            style={{ fontSize: 11, letterSpacing: '0.6px' }}
+            style={{ fontSize: '0.6875rem', letterSpacing: '0.6px' }}
           >
             {headerLeft}
           </span>
           {headerRight && (
-            <span style={{ fontSize: 12, fontWeight: 600 }}>{headerRight}</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{headerRight}</span>
           )}
         </div>
       )}

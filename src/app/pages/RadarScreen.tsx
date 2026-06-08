@@ -147,7 +147,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
           <div className="flex items-center gap-1.5">
             <span
               className="text-[var(--color-text)]"
-              style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.3px' }}
+              style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '-0.3px' }}
             >
               Horizon Radar
             </span>
@@ -161,7 +161,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
           style={{
             background: scanning ? 'var(--color-accent-soft)' : 'transparent',
             border: '1px solid var(--color-border)',
-            fontSize: 11,
+            fontSize: '0.6875rem',
             color: 'var(--color-text-body)',
           }}
         >
@@ -172,7 +172,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
 
       {/* Sub-line — sources count + "scanned today" */}
       <div
-        className="px-4 py-2 font-mono text-[10px] text-[var(--color-text-muted)]"
+        className="px-4 py-2 font-mono text-[0.625rem] text-[var(--color-text-muted)]"
         style={{ background: 'var(--color-surface-alt)', borderBottom: '1px solid var(--color-border)' }}
       >
         <span style={{ color: 'var(--color-green)' }}>● LIVE</span>
@@ -206,13 +206,13 @@ export default function RadarScreen(_props: Props): JSX.Element {
               >
                 <div
                   className="font-mono"
-                  style={{ fontSize: 22, fontWeight: 700, color: s.c, letterSpacing: '-0.5px', lineHeight: 1 }}
+                  style={{ fontSize: '1.375rem', fontWeight: 700, color: s.c, letterSpacing: '-0.5px', lineHeight: 1 }}
                 >
                   {s.n}
                 </div>
                 <div
                   className="mt-1 font-mono uppercase text-[var(--color-text-muted)]"
-                  style={{ fontSize: 10, letterSpacing: '0.3px' }}
+                  style={{ fontSize: '0.625rem', letterSpacing: '0.3px' }}
                 >
                   {s.l}
                 </div>
@@ -245,7 +245,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                   paddingRight: 12,
                   paddingTop: 5,
                   paddingBottom: 5,
-                  fontSize: 12,
+                  fontSize: '0.75rem',
                   background: isActive ? 'var(--color-text)'    : 'var(--color-surface-alt)',
                   color:      isActive ? 'var(--color-surface)' : 'var(--color-text-body)',
                   border: `1px solid ${isActive ? 'var(--color-text)' : 'var(--color-border)'}`,
@@ -255,7 +255,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
               >
                 {c}
                 {n > 0 && (
-                  <span className="font-mono opacity-70" style={{ fontSize: 10 }}>{n}</span>
+                  <span className="font-mono opacity-70" style={{ fontSize: '0.625rem' }}>{n}</span>
                 )}
               </button>
             );
@@ -276,7 +276,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
               <span
                 className="font-mono font-bold uppercase"
                 style={{
-                  fontSize: 10, letterSpacing: '0.5px',
+                  fontSize: '0.625rem', letterSpacing: '0.5px',
                   color: 'var(--color-accent)',
                 }}
               >
@@ -285,11 +285,11 @@ export default function RadarScreen(_props: Props): JSX.Element {
             </div>
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.2px' }}
+              style={{ fontSize: '0.9375rem', fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.2px' }}
             >
               {briefHeadlines[0]}
             </div>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-text-body)]">
+            <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
               {briefHeadlines.slice(1).join(' · ')}
             </p>
             {ttsAvailable() && (
@@ -321,7 +321,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
               paddingRight: 14,
               paddingTop: 10,
               paddingBottom: 10,
-              fontSize: 12.5,
+              fontSize: '0.78125rem',
               lineHeight: 1.4,
             }}
           >
@@ -354,12 +354,12 @@ export default function RadarScreen(_props: Props): JSX.Element {
               >
                 {/* source row */}
                 <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                  <Pill tone={pillTone(it.tone)} mono style={{ fontSize: 9 }}>
+                  <Pill tone={pillTone(it.tone)} mono style={{ fontSize: '0.5625rem' }}>
                     {it.tag}
                   </Pill>
                   <span
                     className="font-mono uppercase text-[var(--color-text-muted)]"
-                    style={{ fontSize: 10, letterSpacing: '0.3px' }}
+                    style={{ fontSize: '0.625rem', letterSpacing: '0.3px' }}
                   >
                     {it.cat} · {it.src}
                   </span>
@@ -368,7 +368,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 {/* title */}
                 <div
                   className="text-[var(--color-text)]"
-                  style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, letterSpacing: '-0.2px' }}
+                  style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3, letterSpacing: '-0.2px' }}
                 >
                   {it.title}
                 </div>
@@ -376,7 +376,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 {/* blurb */}
                 {it.blurb && (
                   <div
-                    className="mt-1 text-[12px] leading-relaxed text-[var(--color-text-body)]"
+                    className="mt-1 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]"
                   >
                     {it.blurb}
                   </div>
@@ -386,7 +386,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 <div className="mt-2.5 flex items-center gap-2">
                   <span
                     className="font-mono uppercase text-[var(--color-text-muted)]"
-                    style={{ fontSize: 9, letterSpacing: '0.3px', width: 54 }}
+                    style={{ fontSize: '0.5625rem', letterSpacing: '0.3px', width: 54 }}
                   >
                     Relevance
                   </span>
@@ -408,7 +408,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                   </div>
                   <span
                     className="text-right font-mono font-bold text-[var(--color-text)]"
-                    style={{ fontSize: 11, letterSpacing: '-0.2px', width: 26 }}
+                    style={{ fontSize: '0.6875rem', letterSpacing: '-0.2px', width: 26 }}
                   >
                     {it.rel}
                   </span>
@@ -417,7 +417,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 {/* meta line */}
                 <div
                   className="mt-1.5 font-mono text-[var(--color-text-faint)]"
-                  style={{ fontSize: 10, letterSpacing: '0.2px' }}
+                  style={{ fontSize: '0.625rem', letterSpacing: '0.2px' }}
                 >
                   {it.areas.length > 0 && <>Matches: {it.areas.join(' · ')} · </>}
                   {timeAgo(it.published_at) || timeAgo(it.fetched_at)}
@@ -438,7 +438,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
           >
             <div
               className="mb-1.5 font-mono uppercase text-[var(--color-text-muted)]"
-              style={{ fontSize: 10, letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.625rem', letterSpacing: '0.5px' }}
             >
               {sources.length} source{sources.length === 1 ? '' : 's'} active · you own the list
             </div>
@@ -447,7 +447,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 <span
                   key={s.id}
                   className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 font-mono text-[var(--color-text-body)]"
-                  style={{ fontSize: 10 }}
+                  style={{ fontSize: '0.625rem' }}
                 >
                   {s.label}
                 </span>
@@ -455,7 +455,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
               {sources.length > 12 && (
                 <span
                   className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 font-mono text-[var(--color-text-body)]"
-                  style={{ fontSize: 10 }}
+                  style={{ fontSize: '0.625rem' }}
                 >
                   + {sources.length - 12}
                 </span>
@@ -463,7 +463,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
             </div>
             <div
               className="mt-2 text-[var(--color-text-faint)]"
-              style={{ fontSize: 10, lineHeight: 1.4 }}
+              style={{ fontSize: '0.625rem', lineHeight: 1.4 }}
             >
               Nothing is scraped without your say-so. No source sells your queries back to you.
             </div>

@@ -55,7 +55,7 @@ export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Eleme
         <div className="flex-1">
           <div
             className="text-[var(--color-text)]"
-            style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
           >
             Messages
           </div>
@@ -109,7 +109,7 @@ export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Eleme
               >
                 <div
                   className="flex flex-shrink-0 items-center justify-center rounded-full font-bold"
-                  style={{ width: 44, height: 44, background: avatarBg, color: avatarFg, fontSize: 17 }}
+                  style={{ width: 44, height: 44, background: avatarBg, color: avatarFg, fontSize: '1.0625rem' }}
                 >
                   {avatarChar}
                 </div>
@@ -117,26 +117,26 @@ export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Eleme
                   <div className="flex items-baseline gap-2">
                     <span
                       className="text-[var(--color-text)]"
-                      style={{ fontSize: 16, fontWeight: m.is_read ? 500 : 700 }}
+                      style={{ fontSize: '1rem', fontWeight: m.is_read ? 500 : 700 }}
                     >
                       {m.from_name}
                     </span>
                     <span className="flex-1" />
-                    <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
                       {inboxTime(m.received_at)}
                     </span>
                   </div>
                   <div
                     className="mt-0.5 text-[var(--color-text)]"
                     style={{
-                      fontSize: 16, fontWeight: m.is_read ? 400 : 600, letterSpacing: '-0.1px',
+                      fontSize: '1rem', fontWeight: m.is_read ? 400 : 600, letterSpacing: '-0.1px',
                     }}
                   >
                     {m.subject}
                   </div>
                   <div
                     className="mt-1 truncate text-[var(--color-text-muted)]"
-                    style={{ fontSize: 14, lineHeight: 1.4 }}
+                    style={{ fontSize: '0.875rem', lineHeight: 1.4 }}
                   >
                     {m.preview}
                   </div>

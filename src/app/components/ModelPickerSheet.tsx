@@ -73,14 +73,14 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
       {errMsg && (
         <div
           role="alert"
-          className="rounded-[var(--radius-r2)] px-3 py-2 text-[12px]"
+          className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
           style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}
         >
           {errMsg}
         </div>
       )}
       {!loading && !errMsg && models.length === 0 && (
-        <p className="px-1 py-6 text-center text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="px-1 py-6 text-center text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
           No model providers configured on this instance. Add an API key
           (Anthropic, OpenAI, Mistral, or Google) in the desktop ANTON's
           Settings → Models.
@@ -95,7 +95,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
               <div key={tier}>
                 <div
                   className="mb-1.5 font-mono uppercase"
-                  style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                 >
                   {TIER_LABELS[tier]}
                 </div>
@@ -122,7 +122,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                           <div className="flex items-center gap-2">
                             <span
                               style={{
-                                fontSize: 14,
+                                fontSize: '0.875rem',
                                 fontWeight: 600,
                                 color: 'var(--color-text)',
                                 letterSpacing: '-0.1px',
@@ -134,7 +134,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                               <span
                                 className="rounded-full px-1.5 py-0.5 font-mono uppercase"
                                 style={{
-                                  fontSize: 9,
+                                  fontSize: '0.5625rem',
                                   letterSpacing: '0.4px',
                                   background: 'var(--color-text-faint)',
                                   color: 'var(--color-surface)',
@@ -172,7 +172,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
           {selectedModelId && (
             <button
               onClick={() => onSelect(null, 'Default')}
-              className="mt-1 self-start text-[12px] underline"
+              className="mt-1 self-start text-[0.75rem] underline"
               style={{ color: 'var(--color-text-muted)' }}
             >
               Use org default ({defaultModel || '—'})

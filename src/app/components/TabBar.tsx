@@ -98,7 +98,7 @@ export default function TabBar({ tabs, activeTab, onTabChange }: Props) {
                     minWidth: 16,
                     height: 16,
                     padding: '0 4px',
-                    fontSize: 9,
+                    fontSize: '0.5625rem',
                     lineHeight: 1,
                   }}
                 >

@@ -288,7 +288,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
           <h1
             className="truncate"
             style={{
-              fontSize: 16,
+              fontSize: '1rem',
               fontWeight: 700,
               color: 'var(--color-text)',
               letterSpacing: '-0.2px',
@@ -302,12 +302,12 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 className="block animate-pulse rounded-full"
                 style={{ width: 6, height: 6, background: 'var(--color-accent)' }}
               />
-              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                 Thinking…
               </span>
             </div>
           ) : headerSub ? (
-            <div className="mt-0.5 truncate text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>
+            <div className="mt-0.5 truncate text-[0.6875rem] font-medium" style={{ color: 'var(--color-accent)' }}>
               {headerSub}
             </div>
           ) : null}
@@ -348,10 +348,10 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 Ask anything
               </p>
-              <p className="mt-1 max-w-[300px] text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="mt-1 max-w-[300px] text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
                 {orgName ? `${orgName}'s ANTON is ready.` : 'Your ANTON is ready.'}
               </p>
             </div>
@@ -376,14 +376,14 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   <Ico name="sparkles" color="var(--color-accent)" size={14} />
                   <span
                     className="font-mono uppercase"
-                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-accent)' }}
+                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-accent)' }}
                   >
                     {moduleDetail.areaLabel ? `${moduleDetail.areaLabel} module` : 'Module loaded'}
                   </span>
                 </div>
                 <h2
                   className="text-[var(--color-text)]"
-                  style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}
+                  style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}
                 >
                   {moduleDetail.label}
                 </h2>
@@ -407,12 +407,12 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 >
                   <div
                     className="mb-2 font-mono uppercase"
-                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                   >
                     What ANTON does here
                   </div>
                   {moduleDetail.persona && (
-                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+                    <p className="text-[0.8125rem] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
                       {moduleDetail.persona}
                     </p>
                   )}
@@ -433,7 +433,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 <div className="px-1">
                   <div
                     className="mb-1.5 font-mono uppercase"
-                    style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                   >
                     Produces
                   </div>
@@ -441,7 +441,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                     {moduleDetail.defaults.outputFormatLabels.map(label => (
                       <span
                         key={label}
-                        className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                        className="rounded-full px-2.5 py-1 text-[0.6875rem] font-medium"
                         style={{
                           background: 'var(--color-accent-soft)',
                           color: 'var(--color-accent)',
@@ -460,7 +460,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <div className="px-1 pt-1">
                 <div
                   className="mb-1.5 font-mono uppercase"
-                  style={{ fontSize: 10, letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                 >
                   Try asking
                 </div>
@@ -535,7 +535,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 background: 'var(--color-surface-alt)',
                 border: '1px solid var(--color-border)',
                 color: 'var(--color-text-body)',
-                fontSize: 11,
+                fontSize: '0.6875rem',
                 fontWeight: 600,
               }}
             >
@@ -568,7 +568,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               onKeyDown={handleKeyDown}
               placeholder="Message ANTON…"
               rows={1}
-              className="flex-1 resize-none bg-transparent text-[15px] focus:outline-none"
+              className="flex-1 resize-none bg-transparent text-[0.9375rem] focus:outline-none"
               style={{
                 color: 'var(--color-text)',
                 lineHeight: 1.4,

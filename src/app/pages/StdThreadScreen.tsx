@@ -74,7 +74,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
         <div className="flex-1">
           <div
             className="text-[var(--color-text)]"
-            style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
           >
             {message.from_name}
           </div>
@@ -94,7 +94,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-r3) var(--radius-r3) var(--radius-r3) 4px',
-              fontSize: 16,
+              fontSize: '1rem',
               lineHeight: 1.45,
             }}
           >
@@ -116,13 +116,13 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
             >
               <div
                 className="font-bold uppercase"
-                style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 6 }}
+                style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', marginBottom: 6 }}
               >
                 Approval needed
               </div>
               <div
                 className="text-[var(--color-text)]"
-                style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px' }}
+                style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.3px' }}
               >
                 {message.subject}
               </div>
@@ -150,7 +150,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
               style={{
                 background: 'var(--color-accent)',
                 borderRadius: 'var(--radius-r3) var(--radius-r3) 4px var(--radius-r3)',
-                fontSize: 16,
+                fontSize: '1rem',
                 lineHeight: 1.45,
               }}
             >
@@ -162,7 +162,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
         {/* Hand-off note for non-anton mail (provider send pipeline TBD) */}
         {!canReplyHere && (
           <div
-            className="mx-auto mt-3 max-w-[86%] text-center text-[13px] leading-relaxed text-[var(--color-text-muted)]"
+            className="mx-auto mt-3 max-w-[86%] text-center text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]"
           >
             External mail — open in the desktop ANTON to reply.
           </div>
@@ -178,7 +178,7 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
           {sendError && (
             <div
               role="alert"
-              className="rounded-[var(--radius-r2)] px-3 py-2 text-[12px]"
+              className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
               style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}
             >
               {sendError}

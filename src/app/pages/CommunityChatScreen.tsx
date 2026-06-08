@@ -140,7 +140,7 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
             width: 36, height: 36,
             background: 'var(--color-accent-soft)',
             color: 'var(--color-accent)',
-            fontSize: 13,
+            fontSize: '0.8125rem',
           }}
           aria-hidden="true"
         >
@@ -148,13 +148,13 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
         </span>
         <div className="min-w-0 flex-1">
           <h1
-            className="truncate text-[15px] font-semibold"
+            className="truncate text-[0.9375rem] font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {contactName}
           </h1>
           <div
-            className="truncate font-mono text-[10px]"
+            className="truncate font-mono text-[0.625rem]"
             style={{ color: 'var(--color-text-muted)', letterSpacing: '0.3px' }}
           >
             {contactHash}
@@ -178,11 +178,11 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 No messages yet
               </p>
               <p
-                className="mx-auto mt-1 max-w-[260px] text-[12px] leading-relaxed"
+                className="mx-auto mt-1 max-w-[260px] text-[0.75rem] leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Send the first message below. Everything here is end-to-end
@@ -251,7 +251,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             </p>
           </div>
           <div
-            className="mt-0.5 px-1 text-right font-mono text-[10px]"
+            className="mt-0.5 px-1 text-right font-mono text-[0.625rem]"
             style={{ color: 'var(--color-text-faint)', letterSpacing: '0.3px' }}
           >
             {formatTime(m.timestamp)}
@@ -277,7 +277,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
           </p>
         </div>
         <div
-          className="mt-0.5 px-1 font-mono text-[10px]"
+          className="mt-0.5 px-1 font-mono text-[0.625rem]"
           style={{ color: 'var(--color-text-faint)', letterSpacing: '0.3px' }}
         >
           {formatTime(m.timestamp)}

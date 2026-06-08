@@ -86,7 +86,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
         <div className="flex-1">
           <div
             className="text-[var(--color-text)]"
-            style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
           >
             Today
           </div>
@@ -113,8 +113,8 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
               color: d.isToday ? '#fff' : 'var(--color-text-body)',
             }}
           >
-            <div className="text-[11px] opacity-80">{d.d}</div>
-            <div className="mt-0.5 text-[17px] font-bold">{d.n}</div>
+            <div className="text-[0.6875rem] opacity-80">{d.d}</div>
+            <div className="mt-0.5 text-[1.0625rem] font-bold">{d.n}</div>
           </button>
         ))}
       </div>
@@ -137,13 +137,13 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
             >
               <div
                 className="font-bold"
-                style={{ fontSize: 13, color: COLOR_VAR[e.color], marginBottom: 4 }}
+                style={{ fontSize: '0.8125rem', color: COLOR_VAR[e.color], marginBottom: 4 }}
               >
                 {e.time}
               </div>
               <div
                 className="text-[var(--color-text)]"
-                style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}
+                style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}
               >
                 {e.title}
               </div>
@@ -154,7 +154,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
                   style={{ background: 'var(--color-accent-soft)' }}
                 >
                   <Ico name="sparkles" color="var(--color-accent)" size={14} />
-                  <span className="text-[13px] text-[var(--color-text)]">{e.anton_prep}</span>
+                  <span className="text-[0.8125rem] text-[var(--color-text)]">{e.anton_prep}</span>
                 </div>
               )}
             </div>

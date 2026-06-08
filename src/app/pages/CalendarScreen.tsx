@@ -96,11 +96,11 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
         <div>
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
+            style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Calendar
           </h1>
-          <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
+          <div className="font-mono text-[0.625rem] text-[var(--color-text-muted)]">
             {headerDate}{today && ` · ${today.sources.length} sources`}
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
           {today.sources.map(s => (
             <div
               key={s.id}
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text-body)',
@@ -145,7 +145,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
               {s.label}
               <span
                 className="font-mono text-[var(--color-text-faint)]"
-                style={{ fontSize: 10 }}
+                style={{ fontSize: '0.625rem' }}
               >
                 {s.count}
               </span>
@@ -169,8 +169,8 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
               color: d.isToday ? 'var(--color-surface)' : 'var(--color-text-body)',
             }}
           >
-            <div className="text-[9px] font-medium opacity-70">{d.d}</div>
-            <div className="text-[14px] font-bold">{d.n}</div>
+            <div className="text-[0.5625rem] font-medium opacity-70">{d.d}</div>
+            <div className="text-[0.875rem] font-bold">{d.n}</div>
           </button>
         ))}
       </div>
@@ -183,10 +183,10 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
             style={{ background: 'var(--color-accent-soft)' }}
           >
             <Ico name="sparkles" color="var(--color-accent)" size={14} />
-            <div className="flex-1 text-[12px] leading-snug text-[var(--color-text)]">
+            <div className="flex-1 text-[0.75rem] leading-snug text-[var(--color-text)]">
               <b>ANTON prepped</b> {today.prep.title}{today.prep.note && <> — {today.prep.note}</>}
             </div>
-            <Pill tone="teal" style={{ fontSize: 10 }}>READY</Pill>
+            <Pill tone="teal" style={{ fontSize: '0.625rem' }}>READY</Pill>
           </div>
         )}
 
@@ -204,13 +204,13 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
                 >
                   <div
                     className="font-mono font-bold text-[var(--color-text)]"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: '0.75rem' }}
                   >
                     {e.time}
                   </div>
                   <div
                     className="font-mono text-[var(--color-text-muted)]"
-                    style={{ fontSize: 10 }}
+                    style={{ fontSize: '0.625rem' }}
                   >
                     {e.duration_minutes}m
                   </div>
@@ -229,20 +229,20 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
                   <div className="mb-1 flex flex-wrap items-center gap-1.5">
                     <span
                       className="text-[var(--color-text)]"
-                      style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25 }}
+                      style={{ fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.25 }}
                     >
                       {e.title}
                     </span>
-                    {e.anton && <Pill tone="teal" style={{ fontSize: 9 }}>ANTON</Pill>}
-                    {e.ext && <Pill tone="gold" style={{ fontSize: 9 }}>EXT</Pill>}
+                    {e.anton && <Pill tone="teal" style={{ fontSize: '0.5625rem' }}>ANTON</Pill>}
+                    {e.ext && <Pill tone="gold" style={{ fontSize: '0.5625rem' }}>EXT</Pill>}
                   </div>
-                  <div className="text-[11px] text-[var(--color-text-muted)]">
+                  <div className="text-[0.6875rem] text-[var(--color-text-muted)]">
                     {e.location}
                   </div>
                   {e.anton_prep && (
                     <div
                       className="mt-1 flex items-center gap-1"
-                      style={{ color: 'var(--color-accent)', fontSize: 11, fontWeight: 600 }}
+                      style={{ color: 'var(--color-accent)', fontSize: '0.6875rem', fontWeight: 600 }}
                     >
                       <Ico name="sparkles" color="var(--color-accent)" size={11} />
                       {e.anton_prep}
@@ -256,7 +256,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
           <div className="px-6 py-12 text-center">
             <Ico name="check" color="var(--color-green)" size={32} />
             <p className="mt-3 text-sm text-[var(--color-text-muted)]">No events today.</p>
-            <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-text-faint)]">
               Connect a work calendar from <b>Mail → Setup</b> to merge external events here.
             </p>
           </div>

@@ -103,7 +103,7 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
                 width: 32, height: 32,
                 background: 'var(--color-accent)',
                 color: 'var(--color-accent-fg)',
-                fontSize: 17, fontWeight: 800, letterSpacing: '-0.4px',
+                fontSize: '1.0625rem', fontWeight: 800, letterSpacing: '-0.4px',
               }}
             >
               A
@@ -111,11 +111,11 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
             <div>
               <h1
                 className="text-[var(--color-text)]"
-                style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.1 }}
+                style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.1 }}
               >
                 ANTON
               </h1>
-              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                 Hello, {identity?.displayName || 'there'}
               </p>
             </div>
@@ -129,7 +129,7 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
               background: 'var(--color-accent-soft)',
               color: 'var(--color-accent)',
               border: '1px solid var(--color-accent-dim)',
-              fontSize: 14, fontWeight: 700,
+              fontSize: '0.875rem', fontWeight: 700,
             }}
           >
             {userInitial}
@@ -143,7 +143,7 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
           <SectionLabel>Your organisations</SectionLabel>
           <button
             onClick={onJoinNew}
-            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:scale-95"
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[0.6875rem] font-semibold transition active:scale-95"
             style={{
               background: 'var(--color-accent-soft)',
               color: 'var(--color-accent)',
@@ -183,10 +183,10 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
             >
               <Ico name="qr" size={26} />
             </div>
-            <div className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+            <div className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
               No organisations yet
             </div>
-            <div className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="mt-1 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
               Scan a QR code or enter an invitation token to get started.
             </div>
             <div className="mt-4">
@@ -218,21 +218,21 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
                       width: 44, height: 44,
                       background: c,
                       color: '#FFFFFF',
-                      fontSize: 16, letterSpacing: '-0.3px',
+                      fontSize: '1rem', letterSpacing: '-0.3px',
                     }}
                   >
                     {monogram(conn.name)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div
-                      className="truncate text-[14px] font-semibold"
+                      className="truncate text-[0.875rem] font-semibold"
                       style={{ color: 'var(--color-text)' }}
                     >
                       {conn.name}
                     </div>
                     {conn.description && (
                       <div
-                        className="truncate text-[11px]"
+                        className="truncate text-[0.6875rem]"
                         style={{ color: 'var(--color-text-muted)' }}
                       >
                         {conn.description}

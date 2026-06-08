@@ -91,7 +91,7 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitSearch(); } }}
             placeholder="Search by title or note…"
-            className="flex-1 bg-transparent text-[14px] focus:outline-none"
+            className="flex-1 bg-transparent text-[0.875rem] focus:outline-none"
             style={{ color: 'var(--color-text)', minWidth: 0 }}
           />
           {draft && (
@@ -113,7 +113,7 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
               <button
                 key={o.id}
                 onClick={() => setSince(o.id)}
-                className="flex-shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition active:scale-[0.97]"
+                className="flex-shrink-0 rounded-full px-3 py-1.5 text-[0.75rem] font-semibold transition active:scale-[0.97]"
                 style={{
                   background: active ? 'var(--color-accent)' : 'var(--color-surface)',
                   color: active ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
@@ -127,7 +127,7 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
           {moduleFilter && (
             <button
               onClick={() => setModuleFilter('')}
-              className="flex-shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+              className="flex-shrink-0 rounded-full px-3 py-1.5 text-[0.75rem] font-semibold"
               style={{
                 background: 'var(--color-accent-soft)',
                 color: 'var(--color-accent)',
@@ -161,11 +161,11 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="briefcase" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 {query ? `Nothing matched "${query}"` : 'Nothing here yet'}
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[13px] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-[0.8125rem] leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Sessions you complete on your desktop ANTON show up here — pull
@@ -186,7 +186,7 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
                     <button
                       key={id}
                       onClick={() => setModuleFilter(id)}
-                      className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                      className="rounded-full px-2.5 py-1 text-[0.6875rem] font-medium"
                       style={{
                         background: 'var(--color-surface)',
                         color: 'var(--color-text-muted)',
@@ -270,7 +270,7 @@ function SessionRow({ s, orgId, onTap, onUpdated }: {
               onKeyDown={e => { if (e.key === 'Enter') void save('title'); if (e.key === 'Escape') setEditing('none'); }}
               autoFocus
               placeholder="Title"
-              className="w-full rounded-[var(--radius-r2)] px-3 text-[14px] font-semibold focus:outline-none"
+              className="w-full rounded-[var(--radius-r2)] px-3 text-[0.875rem] font-semibold focus:outline-none"
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',
@@ -290,7 +290,7 @@ function SessionRow({ s, orgId, onTap, onUpdated }: {
               autoFocus
               placeholder="Add a note for context"
               rows={3}
-              className="w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[13px] focus:outline-none"
+              className="w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[0.8125rem] focus:outline-none"
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',
@@ -324,21 +324,21 @@ function SessionRow({ s, orgId, onTap, onUpdated }: {
         className="flex min-w-0 flex-1 flex-col items-start text-left active:scale-[0.99]"
       >
         <div
-          className="truncate text-[14px] font-semibold"
+          className="truncate text-[0.875rem] font-semibold"
           style={{ color: 'var(--color-text)' }}
         >
           {s.title || 'Untitled session'}
         </div>
         {s.note && (
           <p
-            className="mt-0.5 line-clamp-1 text-[12px]"
+            className="mt-0.5 line-clamp-1 text-[0.75rem]"
             style={{ color: 'var(--color-text-body)' }}
           >
             {s.note}
           </p>
         )}
         <div
-          className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px]"
+          className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[0.6875rem]"
           style={{ color: 'var(--color-text-muted)' }}
         >
           <span>{relativeTime(s.updated_at || s.created_at)}</span>

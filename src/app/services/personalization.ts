@@ -25,10 +25,26 @@ export const ACCENTS = [
 export type AccentKey = typeof ACCENTS[number]['id'];
 export type AppMode   = 'pro' | 'standard';
 
+/** Display size — fit the app to any device (it was laid out for a tall phone).
+ *  'auto' is responsive (full-width on phones, a centred column on tablets); the
+ *  rest override the UI scale + column width via --app-scale / --app-max-width in
+ *  app.css (driven by <html data-display="…">). Orthogonal to the pro/standard
+ *  data-mode (which sets the base font 14px/16px). */
+export const DISPLAY_SIZES = [
+  { id: 'auto',     label: 'Automatic', sub: 'Adapts to your screen width' },
+  { id: 'compact',  label: 'Compact',   sub: 'Smaller · fits more' },
+  { id: 'standard', label: 'Standard',  sub: 'Default size' },
+  { id: 'large',    label: 'Large',     sub: 'Bigger text' },
+  { id: 'tablet',   label: 'Tablet',    sub: 'Wider column' },
+] as const;
+export type DisplaySize = typeof DISPLAY_SIZES[number]['id'];
+
 const ACCENT_KEY = 'anton-companion-accent';
 const MODE_KEY   = 'anton-companion-mode';
+const DISPLAY_KEY = 'anton-companion-display';
 
 const ACCENT_IDS = new Set<string>(ACCENTS.map(a => a.id));
+const DISPLAY_IDS = new Set<string>(DISPLAY_SIZES.map(d => d.id));
 
 function readAccent(): AccentKey {
   try {
@@ -57,10 +73,25 @@ function applyMode(mode: AppMode): void {
   if (meta) meta.setAttribute('content', '#F5F3EF');
 }
 
+function readDisplay(): DisplaySize {
+  try {
+    const v = localStorage.getItem(DISPLAY_KEY);
+    if (v && DISPLAY_IDS.has(v)) return v as DisplaySize;
+  } catch { /* localStorage may be unavailable */ }
+  return 'auto';
+}
+
+function applyDisplay(size: DisplaySize): void {
+  // 'auto' = the responsive CSS default → no attribute (keeps the :root values).
+  if (size === 'auto') document.documentElement.removeAttribute('data-display');
+  else document.documentElement.setAttribute('data-display', size);
+}
+
 // ── Imperative getters/setters ──────────────────────────────────
 
 export function getAccent(): AccentKey { return readAccent(); }
 export function getMode(): AppMode     { return readMode(); }
+export function getDisplaySize(): DisplaySize { return readDisplay(); }
 
 export function setAccent(accent: AccentKey): void {
   try { localStorage.setItem(ACCENT_KEY, accent); } catch { /* ignore */ }
@@ -71,6 +102,12 @@ export function setAccent(accent: AccentKey): void {
 export function setMode(mode: AppMode): void {
   try { localStorage.setItem(MODE_KEY, mode); } catch { /* ignore */ }
   applyMode(mode);
+  notify();
+}
+
+export function setDisplaySize(size: DisplaySize): void {
+  try { localStorage.setItem(DISPLAY_KEY, size); } catch { /* ignore */ }
+  applyDisplay(size);
   notify();
 }
 
@@ -94,3 +131,4 @@ function notify(): void {
 
 applyAccent(readAccent());
 applyMode(readMode());
+applyDisplay(readDisplay());

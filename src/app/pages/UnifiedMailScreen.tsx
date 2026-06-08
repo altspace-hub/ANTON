@@ -128,12 +128,12 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
         <div>
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
+            style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Mail
           </h1>
           <div
-            className="font-mono text-[10px] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             {antonAddress}{externalConnected > 0 && ` · +${externalConnected} connected`}
@@ -174,7 +174,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
               onClick={() => setFilter(chip.id)}
               className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold transition-colors"
               style={{
-                fontSize: 12,
+                fontSize: '0.75rem',
                 background: active ? 'var(--color-text)'    : 'var(--color-surface)',
                 color:      active ? 'var(--color-surface)' : 'var(--color-text-body)',
                 border: `1px solid ${active ? 'var(--color-text)' : 'var(--color-border)'}`,
@@ -205,12 +205,12 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
             <Ico name="sparkles" color="var(--color-accent)" size={13} />
             <span
               className="font-mono font-bold uppercase"
-              style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
             >
               ANTON digest
             </span>
           </div>
-          <div className="text-[12px] leading-relaxed text-[var(--color-text)]">
+          <div className="text-[0.75rem] leading-relaxed text-[var(--color-text)]">
             <b>{unread}</b> unread
             {externalUnread > 0 && <> · <b>{externalUnread}</b> external</>}
             {draftCount > 0 && <> · <b>{draftCount}</b> draft{draftCount === 1 ? '' : 's'} ready</>}
@@ -228,7 +228,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
           <div className="px-6 py-12 text-center">
             <Ico name="inbox" color="var(--color-text-faint)" size={32} />
             <p className="mt-3 text-sm text-[var(--color-text-muted)]">Inbox is empty.</p>
-            <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-text-faint)]">
               Connect M365, Gmail or IMAP from <b>Setup</b> to pull external mail. ANTON-native messages will appear automatically.
             </p>
             <Btn size="sm" variant="secondary" onClick={onOpenSettings} className="mt-4">
@@ -261,35 +261,35 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
                   <div className="mb-0.5 flex items-center gap-1.5">
                     <span
                       className="font-mono font-bold uppercase"
-                      style={{ fontSize: 9, color, letterSpacing: '0.4px' }}
+                      style={{ fontSize: '0.5625rem', color, letterSpacing: '0.4px' }}
                     >
                       {tagLabel}
                     </span>
                     <span
                       className="text-[var(--color-text)]"
-                      style={{ fontSize: 13, fontWeight: m.is_read ? 500 : 700 }}
+                      style={{ fontSize: '0.8125rem', fontWeight: m.is_read ? 500 : 700 }}
                     >
                       · {m.from_name}
                     </span>
                     {m.is_external && (
-                      <Pill tone="gold" style={{ padding: '1px 5px', fontSize: 9 }}>EXT</Pill>
+                      <Pill tone="gold" style={{ padding: '1px 5px', fontSize: '0.5625rem' }}>EXT</Pill>
                     )}
                     <span className="flex-1" />
                     <span
                       className="font-mono text-[var(--color-text-faint)]"
-                      style={{ fontSize: 10 }}
+                      style={{ fontSize: '0.625rem' }}
                     >
                       {inboxTime(m.received_at)}
                     </span>
                   </div>
                   <div
                     className="text-[var(--color-text)]"
-                    style={{ fontSize: 13, fontWeight: m.is_read ? 400 : 600, lineHeight: 1.3 }}
+                    style={{ fontSize: '0.8125rem', fontWeight: m.is_read ? 400 : 600, lineHeight: 1.3 }}
                   >
                     {m.subject}
                   </div>
                   <div
-                    className="mt-1 truncate text-[11px] leading-relaxed text-[var(--color-text-muted)]"
+                    className="mt-1 truncate text-[0.6875rem] leading-relaxed text-[var(--color-text-muted)]"
                   >
                     {m.ai_action && (
                       <span className="font-bold" style={{ color: 'var(--color-accent)' }}>

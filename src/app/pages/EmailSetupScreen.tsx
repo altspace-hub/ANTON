@@ -90,11 +90,11 @@ export default function EmailSetupScreen({ orgId, onBack }: Props): JSX.Element 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         <div
           className="text-[var(--color-text)]"
-          style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.2 }}
+          style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.2 }}
         >
           Let ANTON read your inbox
         </div>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
           Connect read-only. ANTON summarises, drafts replies, and flags regulated content — it never sends unless you approve.
         </p>
 
@@ -116,13 +116,13 @@ export default function EmailSetupScreen({ orgId, onBack }: Props): JSX.Element 
               >
                 <div
                   className="flex items-center justify-center rounded-[var(--radius-r1)] font-mono font-bold text-[var(--color-text)]"
-                  style={{ width: 34, height: 34, background: 'var(--color-surface-alt)', fontSize: 12 }}
+                  style={{ width: 34, height: 34, background: 'var(--color-surface-alt)', fontSize: '0.75rem' }}
                 >
                   {p.initials}
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="text-[13px] font-semibold text-[var(--color-text)]">{p.label}</div>
-                  <div className="text-[11px] text-[var(--color-text-muted)]">{p.hint}</div>
+                  <div className="text-[0.8125rem] font-semibold text-[var(--color-text)]">{p.label}</div>
+                  <div className="text-[0.6875rem] text-[var(--color-text-muted)]">{p.hint}</div>
                 </div>
                 {p.recommended && <Pill tone="teal">SUGGESTED</Pill>}
                 <Ico name="chevronRight" color="var(--color-text-faint)" size={16} />
@@ -138,7 +138,7 @@ export default function EmailSetupScreen({ orgId, onBack }: Props): JSX.Element 
         >
           <SectionLabel className="mb-2">ANTON will be able to</SectionLabel>
           {PERMISSIONS.map((r, i) => (
-            <div key={i} className="flex items-center gap-2 py-1 text-[12px]">
+            <div key={i} className="flex items-center gap-2 py-1 text-[0.75rem]">
               <span
                 className="flex items-center justify-center rounded-full text-white"
                 style={{
@@ -160,7 +160,7 @@ export default function EmailSetupScreen({ orgId, onBack }: Props): JSX.Element 
         {/* Result message */}
         {message && (
           <div
-            className="mt-4 rounded-[var(--radius-r2)] p-3 text-[12px]"
+            className="mt-4 rounded-[var(--radius-r2)] p-3 text-[0.75rem]"
             style={{
               background:
                 message.kind === 'error'   ? 'var(--color-red-dim)' :

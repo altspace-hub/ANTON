@@ -32,25 +32,25 @@ function SourceCard({ s }: { s: PathfinderSource }) {
     >
       <div
         className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full font-mono font-bold text-white"
-        style={{ background: 'var(--color-text)', fontSize: 11 }}
+        style={{ background: 'var(--color-text)', fontSize: '0.6875rem' }}
       >
         {s.n}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-semibold leading-tight text-[var(--color-text)]">
+        <div className="text-[0.75rem] font-semibold leading-tight text-[var(--color-text)]">
           {s.title}
         </div>
-        <div className="mt-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+        <div className="mt-0.5 font-mono text-[0.625rem] text-[var(--color-text-muted)]">
           {s.domain}
         </div>
         {s.snippet && (
-          <div className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--color-text-body)]">
+          <div className="mt-1 line-clamp-2 text-[0.6875rem] leading-relaxed text-[var(--color-text-body)]">
             {s.snippet}
           </div>
         )}
       </div>
       {isPrivate && (
-        <Pill tone="teal" style={{ fontSize: 9, alignSelf: 'flex-start' }}>YOURS</Pill>
+        <Pill tone="teal" style={{ fontSize: '0.5625rem', alignSelf: 'flex-start' }}>YOURS</Pill>
       )}
     </div>
   );
@@ -99,12 +99,12 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
         <div>
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.05 }}
+            style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.05 }}
           >
             Pathfinder
           </h1>
           <div
-            className="font-mono text-[10px] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             Search that thinks
@@ -132,7 +132,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             }}
             rows={2}
             placeholder="Ask anything about your instance, the regulations you track, your portfolio…"
-            className="min-h-[44px] flex-1 resize-none bg-transparent text-[14px] leading-relaxed text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+            className="min-h-[44px] flex-1 resize-none bg-transparent text-[0.875rem] leading-relaxed text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
             disabled={running}
           />
           <Btn
@@ -161,12 +161,12 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
               <Spinner size="xs" />
               <span
                 className="font-mono font-bold uppercase"
-                style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
               >
                 ANTON is thinking…
               </span>
             </div>
-            <p className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+            <p className="text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
               Searching your instance, then synthesising a cited answer.
             </p>
           </div>
@@ -182,13 +182,13 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             >
               <div
                 className="mb-1 font-mono text-[var(--color-text-muted)]"
-                style={{ fontSize: 10, letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.625rem', letterSpacing: '0.5px' }}
               >
                 YOUR QUESTION
               </div>
               <div
                 className="text-[var(--color-text)]"
-                style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.35, letterSpacing: '-0.1px' }}
+                style={{ fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.35, letterSpacing: '-0.1px' }}
               >
                 {result.question}
               </div>
@@ -201,7 +201,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                   <Ico name="sparkles" color="var(--color-accent)" size={13} />
                   <span
                     className="font-mono font-bold uppercase"
-                    style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                    style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
                   >
                     {traceHeader}
                   </span>
@@ -222,7 +222,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                         />
                       )}
                     </div>
-                    <div className="flex-1 pb-1 text-[12px] leading-relaxed text-[var(--color-text-body)]">
+                    <div className="flex-1 pb-1 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
                       {t}
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
             >
               <div
-                className="text-[14px] leading-relaxed text-[var(--color-text)]"
+                className="text-[0.875rem] leading-relaxed text-[var(--color-text)]"
                 style={{ wordBreak: 'break-word' }}
               >
                 {segments.length > 0 ? segments.map((seg, i) => (
@@ -245,7 +245,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                     : <sup
                         key={i}
                         className="font-bold"
-                        style={{ color: 'var(--color-accent)', fontSize: 10, padding: '0 1px' }}
+                        style={{ color: 'var(--color-accent)', fontSize: '0.625rem', padding: '0 1px' }}
                       >[{seg.n}]</sup>
                 )) : result.answer}
               </div>
@@ -261,7 +261,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
 
             {/* Privacy footer */}
             <div
-              className="mt-4 text-center text-[11px] leading-relaxed text-[var(--color-text-faint)]"
+              className="mt-4 text-center text-[0.6875rem] leading-relaxed text-[var(--color-text-faint)]"
             >
               You're never the product. No tracking. Your question stays on your instance.
             </div>
@@ -275,7 +275,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             <p className="mt-3 text-sm text-[var(--color-text-muted)]">
               Ask Pathfinder anything.
             </p>
-            <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-text-faint)]">
               It searches your instance and shows its reasoning before answering.
             </p>
           </div>

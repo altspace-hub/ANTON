@@ -157,7 +157,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
         {/* ── Greeting ─────────────────────────────────────────── */}
         <h1
           style={{
-            fontSize: 26,
+            fontSize: '1.625rem',
             fontWeight: 700,
             letterSpacing: '-0.7px',
             lineHeight: 1.1,
@@ -169,7 +169,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
         <p
           className="mt-1.5"
           style={{
-            fontSize: 13.5,
+            fontSize: '0.84375rem',
             color: 'var(--color-text-muted)',
             letterSpacing: '-0.1px',
           }}
@@ -217,7 +217,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
               >
                 <div
                   style={{
-                    fontSize: 15,
+                    fontSize: '0.9375rem',
                     fontWeight: 700,
                     color: 'var(--color-text)',
                     letterSpacing: '-0.2px',
@@ -229,7 +229,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                 {!briefExpanded && summary && (
                   <p
                     className="mt-1.5 line-clamp-3"
-                    style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--color-text-muted)' }}
+                    style={{ fontSize: '0.78125rem', lineHeight: 1.5, color: 'var(--color-text-muted)' }}
                   >
                     {summary}
                   </p>
@@ -276,7 +276,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
             >
               <div
                 style={{
-                  fontSize: 15,
+                  fontSize: '0.9375rem',
                   fontWeight: 700,
                   color: 'var(--color-text)',
                   letterSpacing: '-0.2px',
@@ -289,7 +289,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                 <div
                   className="mt-1.5"
                   style={{
-                    fontSize: 12.5,
+                    fontSize: '0.78125rem',
                     lineHeight: 1.5,
                     color: 'var(--color-text-muted)',
                   }}
@@ -333,7 +333,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
               <button
                 onClick={() => onNavigate('history')}
                 className="transition"
-                style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-accent)' }}
+                style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-accent)' }}
               >
                 See all →
               </button>
@@ -369,7 +369,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                         <span
                           className="font-mono"
                           style={{
-                            fontSize: 11,
+                            fontSize: '0.6875rem',
                             fontWeight: 600,
                             color: 'var(--color-text-muted)',
                             letterSpacing: '-0.2px',
@@ -380,7 +380,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                         <span
                           className="truncate"
                           style={{
-                            fontSize: 14,
+                            fontSize: '0.875rem',
                             fontWeight: 600,
                             color: 'var(--color-text)',
                             letterSpacing: '-0.1px',
@@ -392,7 +392,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                       </div>
                       <div
                         className="mt-1 truncate"
-                        style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}
+                        style={{ fontSize: '0.71875rem', color: 'var(--color-text-muted)' }}
                       >
                         {tokenSummary(s)}
                       </div>
@@ -422,7 +422,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                       <Pill tone={tone} mono>{a.priority.toUpperCase()}</Pill>
                     </div>
                     <div
-                      style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}
+                      style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text)' }}
                     >
                       {/* Defensive U+FFFD strip — some legacy seed rows have
                           the replacement character where an em dash was lost
@@ -432,7 +432,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                     <p
                       className="mt-1 line-clamp-3"
                       style={{
-                        fontSize: 12, lineHeight: 1.5,
+                        fontSize: '0.75rem', lineHeight: 1.5,
                         color: 'var(--color-text-muted)',
                       }}
                     >
@@ -440,7 +440,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                     </p>
                     <p
                       className="mt-2"
-                      style={{ fontSize: 10, color: 'var(--color-text-faint)' }}
+                      style={{ fontSize: '0.625rem', color: 'var(--color-text-faint)' }}
                     >
                       {new Date(a.created_at).toLocaleDateString()}
                     </p>
@@ -459,7 +459,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
             </span>
             <div
               style={{
-                fontSize: 15,
+                fontSize: '0.9375rem',
                 fontWeight: 600,
                 color: 'var(--color-text)',
                 letterSpacing: '-0.1px',
@@ -469,7 +469,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
             </div>
             <div
               className="mt-1 max-w-[280px]"
-              style={{ fontSize: 12, color: 'var(--color-text-muted)' }}
+              style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}
             >
               Nothing waiting for you. Ask ANTON something below.
             </div>

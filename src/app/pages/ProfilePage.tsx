@@ -74,7 +74,7 @@ export default function ProfilePage({ onBack }: Props) {
                 width: 56, height: 56,
                 background: 'var(--color-accent-soft)',
                 color: 'var(--color-accent)',
-                fontSize: 22, fontWeight: 700,
+                fontSize: '1.375rem', fontWeight: 700,
                 border: '1px solid var(--color-accent-dim)',
               }}
             >
@@ -82,7 +82,7 @@ export default function ProfilePage({ onBack }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <p
-                className="truncate text-[16px] font-semibold"
+                className="truncate text-[1rem] font-semibold"
                 style={{ color: 'var(--color-text)' }}
               >
                 {identity?.displayName || 'Unnamed'}
@@ -93,7 +93,7 @@ export default function ProfilePage({ onBack }: Props) {
                   style={{ width: 6, height: 6, background: 'var(--color-green)' }}
                 />
                 <span
-                  className="truncate font-mono text-[10px]"
+                  className="truncate font-mono text-[0.625rem]"
                   style={{ color: 'var(--color-text-muted)', letterSpacing: '0.4px' }}
                 >
                   {identity?.contactHash || '—'}
@@ -109,7 +109,7 @@ export default function ProfilePage({ onBack }: Props) {
               id="profile-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-[var(--radius-r2)] px-4 text-[14px] focus:outline-none"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -125,7 +125,7 @@ export default function ProfilePage({ onBack }: Props) {
               id="profile-language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-[var(--radius-r2)] px-4 text-[14px] focus:outline-none"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -158,7 +158,7 @@ export default function ProfilePage({ onBack }: Props) {
           <div style={{ borderTop: '1px solid var(--color-border-soft)' }} className="pt-4">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center rounded-[var(--radius-r2)] text-[13px] font-semibold transition active:scale-[0.99]"
+              className="flex w-full items-center justify-center rounded-[var(--radius-r2)] text-[0.8125rem] font-semibold transition active:scale-[0.99]"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -168,7 +168,7 @@ export default function ProfilePage({ onBack }: Props) {
               Sign out
             </button>
             <p
-              className="mt-3 text-center font-mono text-[10px]"
+              className="mt-3 text-center font-mono text-[0.625rem]"
               style={{ color: 'var(--color-text-faint)', letterSpacing: '0.4px' }}
             >
               ANTON COMPANION · v1.0

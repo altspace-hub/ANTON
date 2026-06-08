@@ -103,7 +103,7 @@ export default function ScheduleScreen({ orgId }: Props) {
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)', minHeight: 0 }}>
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl space-y-4 px-4 pb-10 pt-5">
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
             Schedule
           </h1>
 
@@ -120,7 +120,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                 onChange={e => setDraft(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void add(); } }}
                 placeholder="What needs to happen?"
-                className="flex-1 rounded-[var(--radius-r2)] px-3 text-[14px] focus:outline-none"
+                className="flex-1 rounded-[var(--radius-r2)] px-3 text-[0.875rem] focus:outline-none"
                 style={{
                   background: 'var(--color-bg)',
                   color: 'var(--color-text)',
@@ -140,7 +140,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                   <button
                     key={chip}
                     onClick={() => setDraftDue(chip)}
-                    className="rounded-full px-3 py-1 text-[11px] font-semibold transition active:scale-[0.97]"
+                    className="rounded-full px-3 py-1 text-[0.6875rem] font-semibold transition active:scale-[0.97]"
                     style={{
                       background: active ? 'var(--color-accent)' : 'var(--color-bg)',
                       color: active ? 'var(--color-accent-fg)' : 'var(--color-text-muted)',
@@ -165,10 +165,10 @@ export default function ScheduleScreen({ orgId }: Props) {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="calendar" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 Nothing on the schedule
               </p>
-              <p className="mt-1 max-w-[280px] text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="mt-1 max-w-[280px] text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
                 Add a deadline above or wait for one to sync from your desktop ANTON.
               </p>
             </div>
@@ -208,7 +208,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <span
-                          className="text-[14px] font-semibold leading-tight"
+                          className="text-[0.875rem] font-semibold leading-tight"
                           style={{ color: overdue ? 'var(--color-red)' : 'var(--color-text)' }}
                         >
                           {d.title}

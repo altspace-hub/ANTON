@@ -74,11 +74,11 @@ export default function CommunityScreen({ orgId, onBack, onOpenChat }: Props): J
               className="rounded-[var(--radius-r2)] p-4 text-center"
               style={{ background: 'var(--color-surface)', border: '1px dashed var(--color-border)' }}
             >
-              <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 Community not activated
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[12px] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-[0.75rem] leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Activate your ANTON-network identity from the Pro UI on your
@@ -149,11 +149,11 @@ export default function CommunityScreen({ orgId, onBack, onOpenChat }: Props): J
                     <span className="mb-2 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                       <Ico name="user" size={24} />
                     </span>
-                    <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                    <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                       No contacts yet
                     </p>
                     <p
-                      className="mx-auto mt-1 max-w-[280px] text-[12px] leading-relaxed"
+                      className="mx-auto mt-1 max-w-[280px] text-[0.75rem] leading-relaxed"
                       style={{ color: 'var(--color-text-muted)' }}
                     >
                       Use the buttons above to add your first contact, then tap
@@ -211,7 +211,7 @@ function ContactRow({ c, onTap }: { c: CommunityConnection; onTap: () => void })
           width: 40, height: 40,
           background: 'var(--color-accent-soft)',
           color: 'var(--color-accent)',
-          fontSize: 14,
+          fontSize: '0.875rem',
         }}
         aria-hidden="true"
       >
@@ -219,7 +219,7 @@ function ContactRow({ c, onTap }: { c: CommunityConnection; onTap: () => void })
       </span>
       <div className="min-w-0 flex-1">
         <div
-          className="truncate text-[14px] font-semibold"
+          className="truncate text-[0.875rem] font-semibold"
           style={{ color: 'var(--color-text)' }}
         >
           {c.display_name || 'Unnamed contact'}
@@ -270,14 +270,14 @@ function PendingRow({ c, orgId, onResolved }: {
             width: 40, height: 40,
             background: 'var(--color-surface)',
             color: 'var(--color-gold)',
-            fontSize: 14,
+            fontSize: '0.875rem',
           }}
           aria-hidden="true"
         >
           {initials}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+          <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
             {c.display_name || 'Unnamed contact'}
           </div>
           <div
@@ -366,10 +366,10 @@ function ShowQrSheet({ orgId, onClose }: { orgId: string; onClose: () => void })
           <Ico name="x" size={20} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[15px] font-bold" style={{ color: 'var(--color-text)' }}>
+          <h1 className="truncate text-[0.9375rem] font-bold" style={{ color: 'var(--color-text)' }}>
             Your QR code
           </h1>
-          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
             Show this to a friend to add you
           </p>
         </div>
@@ -391,11 +391,11 @@ function ShowQrSheet({ orgId, onClose }: { orgId: string; onClose: () => void })
                 border: '1px solid var(--color-border)',
               }}
             />
-            <div className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+            <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
               {data.displayName || 'Your ANTON'}
             </div>
             <div
-              className="mt-2 break-all px-4 text-center font-mono text-[12px]"
+              className="mt-2 break-all px-4 text-center font-mono text-[0.75rem]"
               style={{ color: 'var(--color-text-muted)', letterSpacing: '0.3px' }}
             >
               {data.contactHash}
@@ -488,10 +488,10 @@ function ScannerSheet({ orgId, onClose, onScanned }: {
           <Ico name="x" size={20} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[15px] font-bold" style={{ color: '#FFFFFF' }}>
+          <h1 className="truncate text-[0.9375rem] font-bold" style={{ color: '#FFFFFF' }}>
             Scan a contact QR
           </h1>
-          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <p className="text-[0.6875rem]" style={{ color: 'rgba(255,255,255,0.7)' }}>
             Point at your friend's ANTON QR
           </p>
         </div>
@@ -506,7 +506,7 @@ function ScannerSheet({ orgId, onClose, onScanned }: {
         />
         {error && (
           <div
-            className="absolute inset-x-4 bottom-6 rounded-[var(--radius-r2)] p-3 text-center text-[13px]"
+            className="absolute inset-x-4 bottom-6 rounded-[var(--radius-r2)] p-3 text-center text-[0.8125rem]"
             style={{ background: 'rgba(0,0,0,0.85)', color: '#FFFFFF' }}
           >
             {error}

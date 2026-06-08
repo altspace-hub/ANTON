@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { getIdentity, clearIdentity } from '../services/identity';
 import { clearSession } from '../services/api';
 import { Ico, PageHeader, SectionLabel } from '../components/ui';
+import DisplaySizePicker from '../components/DisplaySizePicker';
 import Logo from '../components/Logo';
 import {
   getLogoSkin, setLogoSkin, onLogoSkinChange,
@@ -77,7 +78,7 @@ export default function SettingsPage({ onBack }: Props) {
                 border: '1px solid var(--color-border)',
               }}
             >
-              <div className="mb-2 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="mb-2 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
                 App logo
               </div>
               <div className="flex items-center gap-3">
@@ -100,7 +101,7 @@ export default function SettingsPage({ onBack }: Props) {
                     >
                       <Logo size={48} skin={skin} />
                       <span
-                        className="text-[10px]"
+                        className="text-[0.625rem]"
                         style={{
                           color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
                           fontWeight: active ? 700 : 500,
@@ -112,10 +113,16 @@ export default function SettingsPage({ onBack }: Props) {
                   );
                 })}
               </div>
-              <p className="mt-3 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="mt-3 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                 Changes apply immediately across the app. Affects in-app branding only — the home-screen launcher icon is fixed at install time.
               </p>
             </div>
+          </section>
+
+          {/* Display size — fit the app to any phone/tablet (auto-fit + override) */}
+          <section>
+            <SectionLabel className="mb-2.5">Display size</SectionLabel>
+            <DisplaySizePicker />
           </section>
 
           {/* Identity */}
@@ -129,26 +136,26 @@ export default function SettingsPage({ onBack }: Props) {
               }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
                   Contact Hash
                 </span>
                 <button
                   onClick={handleCopyId}
-                  className="text-[12px] font-semibold transition"
+                  className="text-[0.75rem] font-semibold transition"
                   style={{ color: 'var(--color-accent)' }}
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
               <p
-                className="mt-2 break-all font-mono text-[12px]"
+                className="mt-2 break-all font-mono text-[0.75rem]"
                 style={{ color: 'var(--color-text)' }}
               >
                 {identity?.contactHash || 'Not registered'}
               </p>
               {identity?.displayName && (
                 <p
-                  className="mt-2 text-[12px]"
+                  className="mt-2 text-[0.75rem]"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   Signed in as <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{identity.displayName}</span>
@@ -180,10 +187,10 @@ export default function SettingsPage({ onBack }: Props) {
                   <Ico name="key" size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                  <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                     Export Identity
                   </div>
-                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                     Download your identity as a backup file
                   </div>
                 </div>
@@ -212,10 +219,10 @@ export default function SettingsPage({ onBack }: Props) {
                   <Ico name="alert" size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold" style={{ color: 'var(--color-red)' }}>
+                  <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-red)' }}>
                     Delete All Data
                   </div>
-                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--color-red)', opacity: 0.7 }}>
+                  <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-red)', opacity: 0.7 }}>
                     Remove identity and all local data from this device
                   </div>
                 </div>
@@ -234,14 +241,14 @@ export default function SettingsPage({ onBack }: Props) {
               }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                <span className="text-[0.8125rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                   ANTON Companion
                 </span>
-                <span className="font-mono text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="font-mono text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                   v1.0
                 </span>
               </div>
-              <div className="mt-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="mt-1 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                 by openEXPERT
               </div>
             </div>

@@ -59,7 +59,7 @@ export function StatTriplet({ stats, className = '', style }: StatTripletProps):
           <span
             className="font-mono"
             style={{
-              fontSize: 22,
+              fontSize: '1.375rem',
               fontWeight: 700,
               letterSpacing: '-0.6px',
               lineHeight: 1,
@@ -71,7 +71,7 @@ export function StatTriplet({ stats, className = '', style }: StatTripletProps):
           <span
             className="mt-1.5 font-mono uppercase"
             style={{
-              fontSize: 9.5,
+              fontSize: '0.59375rem',
               fontWeight: 600,
               letterSpacing: '0.6px',
               color: 'var(--color-text-muted)',

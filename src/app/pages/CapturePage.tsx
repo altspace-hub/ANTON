@@ -239,11 +239,11 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
         <div className="flex-1">
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.1 }}
           >
             Capture
           </h1>
-          <div className="mt-0.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
             {destinationLine}
           </div>
         </div>
@@ -278,10 +278,10 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                 <div className="rounded-[var(--radius-r3)] border border-white/20 bg-black/60 p-4 text-white">
                   <div className="mb-1 text-sm font-semibold">Camera unavailable</div>
-                  <div className="text-[12px] opacity-80">{streamErr}</div>
+                  <div className="text-[0.75rem] opacity-80">{streamErr}</div>
                   <button
                     onClick={() => void pickFromLibrary()}
-                    className="mt-3 rounded-[var(--radius-r1)] bg-white/15 px-4 py-2 text-[13px] font-semibold"
+                    className="mt-3 rounded-[var(--radius-r1)] bg-white/15 px-4 py-2 text-[0.8125rem] font-semibold"
                   >
                     Pick from library instead
                   </button>
@@ -291,7 +291,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
           </>
         ) : capture.isText ? (
           <div className="absolute inset-0 overflow-y-auto bg-[var(--color-surface)] p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="text-[0.625rem] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Shared text
             </div>
             <div className="mt-2 whitespace-pre-wrap text-sm" style={{ color: 'var(--color-text)' }}>
@@ -302,7 +302,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
                 href={capture.shareUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-block break-all text-[12px]"
+                className="mt-3 inline-block break-all text-[0.75rem]"
                 style={{ color: 'var(--color-accent)' }}
               >
                 {capture.shareUrl}
@@ -331,7 +331,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               <button
                 key={m.id}
                 onClick={() => changeMode(m.id)}
-                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition active:scale-95"
+                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition active:scale-95"
                 style={{
                   background: active ? 'var(--color-accent)' : 'var(--color-surface)',
                   color: active ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
@@ -357,7 +357,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
             maxLength={2000}
             rows={2}
             placeholder="Add a note (optional)…"
-            className="w-full resize-none rounded-[var(--radius-r2)] border px-3 py-2.5 text-[13px] focus:outline-none"
+            className="w-full resize-none rounded-[var(--radius-r2)] border px-3 py-2.5 text-[0.8125rem] focus:outline-none"
             style={{
               background: 'var(--color-surface)',
               color: 'var(--color-text)',
@@ -366,7 +366,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
           />
           {err && (
             <div
-              className="mt-2 rounded-[var(--radius-r1)] px-3 py-2 text-[11px]"
+              className="mt-2 rounded-[var(--radius-r1)] px-3 py-2 text-[0.6875rem]"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -427,7 +427,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               onClick={discardCapture}
               disabled={busy}
               aria-label="Discard and retake"
-              className="flex-shrink-0 rounded-[var(--radius-r2)] px-4 py-3 text-[13px] font-semibold transition active:scale-95 disabled:opacity-40"
+              className="flex-shrink-0 rounded-[var(--radius-r2)] px-4 py-3 text-[0.8125rem] font-semibold transition active:scale-95 disabled:opacity-40"
               style={{
                 background: 'transparent',
                 color: 'var(--color-text-body)',
@@ -441,7 +441,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
             <button
               onClick={() => void send()}
               disabled={busy}
-              className="flex-1 rounded-[var(--radius-r2)] py-3 text-[14px] font-semibold transition active:scale-95 disabled:opacity-40"
+              className="flex-1 rounded-[var(--radius-r2)] py-3 text-[0.875rem] font-semibold transition active:scale-95 disabled:opacity-40"
               style={{
                 background: 'var(--color-accent)',
                 color: 'var(--color-accent-fg)',

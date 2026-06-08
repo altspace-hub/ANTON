@@ -117,11 +117,11 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
           <div>
             <h1
               className="text-[var(--color-text)]"
-              style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.1 }}
+              style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.1 }}
             >
               Approvals
             </h1>
-            <p className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="mt-1 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
               {items.length === 0 ? 'No pending approvals.'
                 : items.length === 1 ? '1 thing waiting for you.'
                 : `${items.length} things waiting for you.`}
@@ -140,7 +140,7 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
 
       {err && (
         <div
-          className="mx-4 mt-2 rounded-[var(--radius-r1)] px-3 py-2 text-[12px]"
+          className="mx-4 mt-2 rounded-[var(--radius-r1)] px-3 py-2 text-[0.75rem]"
           style={{
             background: 'var(--color-red-dim)',
             color: 'var(--color-red)',
@@ -174,10 +174,10 @@ export default function ApprovalsScreen({ initialCheckpointId }: Props) {
             >
               <Ico name="shieldCheck" size={26} />
             </div>
-            <div className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+            <div className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
               All clear.
             </div>
-            <div className="mt-1 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="mt-1 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
               No pending approvals on this instance.
             </div>
           </div>
@@ -217,7 +217,7 @@ function CheckpointCard({ c, onOpen }: { c: Checkpoint; onOpen: () => void }) {
     >
       {/* Mono uppercase severity tag */}
       <div
-        className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase"
+        className="mb-2 inline-flex items-center gap-1.5 font-mono text-[0.625rem] font-bold uppercase"
         style={{ color: sevColour, letterSpacing: '0.7px' }}
       >
         <span
@@ -228,17 +228,17 @@ function CheckpointCard({ c, onOpen }: { c: Checkpoint; onOpen: () => void }) {
         {tag}
       </div>
       {/* Title + summary */}
-      <div className="text-[14px] font-semibold leading-tight" style={{ color: 'var(--color-text)' }}>
+      <div className="text-[0.875rem] font-semibold leading-tight" style={{ color: 'var(--color-text)' }}>
         {c.title}
       </div>
       {c.summary && (
-        <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+        <p className="mt-1 line-clamp-2 text-[0.75rem] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
           {c.summary}
         </p>
       )}
       {/* Meta row */}
       <div
-        className="mt-2.5 flex items-center gap-2 font-mono text-[10px]"
+        className="mt-2.5 flex items-center gap-2 font-mono text-[0.625rem]"
         style={{ color: 'var(--color-text-muted)' }}
       >
         <span>{relativeTime(c.created_at)}</span>
@@ -316,7 +316,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
         {/* Severity tag */}
         <div className="px-5 pt-2">
           <div
-            className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase"
+            className="inline-flex items-center gap-1.5 font-mono text-[0.625rem] font-bold uppercase"
             style={{ color: sevColour, letterSpacing: '0.7px' }}
           >
             <span
@@ -326,11 +326,11 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
             />
             {sevTag}
           </div>
-          <h2 className="mt-1.5 text-[18px] font-bold leading-tight" style={{ color: 'var(--color-text)' }}>
+          <h2 className="mt-1.5 text-[1.125rem] font-bold leading-tight" style={{ color: 'var(--color-text)' }}>
             {c.title}
           </h2>
           {c.summary && (
-            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+            <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
               {c.summary}
             </p>
           )}
@@ -342,7 +342,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
             <section>
               <SectionLabel>ANTON's reasoning</SectionLabel>
               <p
-                className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed"
+                className="mt-2 whitespace-pre-wrap text-[0.8125rem] leading-relaxed"
                 style={{ color: 'var(--color-text)' }}
               >
                 {c.rationale}
@@ -367,14 +367,14 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
           )}
 
           {c.expires_at && (
-            <div className="font-mono text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="font-mono text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
               Expires {new Date(c.expires_at).toLocaleString()}
             </div>
           )}
 
           {c.requires_biometric && (
             <div
-              className="flex items-start gap-2 rounded-[var(--radius-r2)] px-3 py-2.5 text-[12px]"
+              className="flex items-start gap-2 rounded-[var(--radius-r2)] px-3 py-2.5 text-[0.75rem]"
               style={{
                 background: 'var(--color-accent-soft)',
                 color: 'var(--color-accent)',
@@ -394,7 +394,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
               maxLength={4000}
               rows={3}
               placeholder="Add context for the audit log…"
-              className="mt-1.5 w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[13px] focus:outline-none"
+              className="mt-1.5 w-full resize-none rounded-[var(--radius-r2)] px-3 py-2 text-[0.8125rem] focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -408,7 +408,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
               href={c.deep_link}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[12px] font-semibold"
+              className="inline-flex items-center gap-1 text-[0.75rem] font-semibold"
               style={{ color: 'var(--color-accent)' }}
             >
               Open on desktop →

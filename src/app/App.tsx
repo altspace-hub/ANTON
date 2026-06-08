@@ -549,7 +549,7 @@ export default function App() {
               >
                 <Ico name={item.icon} size={20} />
               </span>
-              <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-body)' }}>
+              <span className="text-[0.6875rem] font-semibold" style={{ color: 'var(--color-text-body)' }}>
                 {item.label}
               </span>
             </button>

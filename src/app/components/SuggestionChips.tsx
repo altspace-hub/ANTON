@@ -17,7 +17,7 @@ export default function SuggestionChips({ suggestions, onSelect }: Props) {
         <button
           key={i}
           onClick={() => onSelect(s)}
-          className="rounded-full px-3 py-1.5 text-[12px] font-medium transition active:scale-95"
+          className="rounded-full px-3 py-1.5 text-[0.75rem] font-medium transition active:scale-95"
           style={{
             background: 'var(--color-accent-soft)',
             color: 'var(--color-accent)',

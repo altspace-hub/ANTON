@@ -130,12 +130,12 @@ export default function MarketsScreen(_props: Props): JSX.Element {
         <div>
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
+            style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             Markets
           </h1>
           <div
-            className="font-mono text-[10px] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             <span style={{ color: live.color }}>{live.label}</span>
@@ -178,19 +178,19 @@ export default function MarketsScreen(_props: Props): JSX.Element {
               <Ico name="sparkles" color="var(--color-accent)" size={14} />
               <span
                 className="font-mono font-bold uppercase"
-                style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
               >
                 Morning briefing · by your ANTON
               </span>
             </div>
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.4px' }}
+              style={{ fontSize: '1.125rem', fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.4px' }}
             >
               {briefing.headline ?? 'Quiet morning. No active narratives.'}
             </div>
             {briefing.blurb && (
-              <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-text-body)]">
+              <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
                 {briefing.blurb}
               </p>
             )}
@@ -248,14 +248,14 @@ export default function MarketsScreen(_props: Props): JSX.Element {
                       <div className="flex items-center gap-1.5">
                         <span
                           className="font-mono font-bold text-[var(--color-text)]"
-                          style={{ fontSize: 12, letterSpacing: '-0.1px' }}
+                          style={{ fontSize: '0.75rem', letterSpacing: '-0.1px' }}
                         >
                           {r.symbol}
                         </span>
                       </div>
                       {r.name && (
                         <div
-                          className="mt-0.5 truncate text-[10px] text-[var(--color-text-muted)]"
+                          className="mt-0.5 truncate text-[0.625rem] text-[var(--color-text-muted)]"
                           style={{ maxWidth: 130 }}
                         >
                           {r.name}
@@ -270,14 +270,14 @@ export default function MarketsScreen(_props: Props): JSX.Element {
                     <div className="text-right" style={{ minWidth: 80 }}>
                       <div
                         className="font-mono font-bold text-[var(--color-text)]"
-                        style={{ fontSize: 13, letterSpacing: '-0.1px' }}
+                        style={{ fontSize: '0.8125rem', letterSpacing: '-0.1px' }}
                       >
                         {formatPrice(r.price)}
                       </div>
                       <div
                         className="font-mono font-semibold"
                         style={{
-                          fontSize: 11,
+                          fontSize: '0.6875rem',
                           color: up ? 'var(--color-green)' : 'var(--color-red)',
                         }}
                       >
@@ -295,7 +295,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
           <div className="mx-4 mt-3 rounded-[var(--radius-r2)] border border-dashed border-[var(--color-border)] p-4 text-center">
             <Ico name="arrowUp" color="var(--color-text-faint)" size={20} />
             <p className="mt-2 text-sm text-[var(--color-text-muted)]">No tape yet.</p>
-            <p className="mt-1 text-[11px] text-[var(--color-text-faint)]">
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-text-faint)]">
               Activate an ANTON 100 index on the main instance to populate this watchlist.
             </p>
           </div>
@@ -312,19 +312,19 @@ export default function MarketsScreen(_props: Props): JSX.Element {
           >
             <div
               className="mb-1 font-mono font-bold uppercase"
-              style={{ fontSize: 10, color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
             >
               Local prediction · Monte Carlo
             </div>
             <div
               className="mb-2 text-[var(--color-text)]"
-              style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}
+              style={{ fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.3 }}
             >
               {prediction.title}
               {prediction.target_symbol && (
                 <span
                   className="ml-2 font-mono text-[var(--color-accent)]"
-                  style={{ fontSize: 11 }}
+                  style={{ fontSize: '0.6875rem' }}
                 >
                   · {prediction.target_symbol}
                 </span>
@@ -350,7 +350,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
             </div>
             <div
               className="flex justify-between font-mono text-[var(--color-text-muted)]"
-              style={{ fontSize: 10 }}
+              style={{ fontSize: '0.625rem' }}
             >
               {prediction.buckets.map((b, i) => (
                 <span key={i}>

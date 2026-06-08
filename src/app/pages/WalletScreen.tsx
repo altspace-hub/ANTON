@@ -58,14 +58,14 @@ export default function WalletScreen({ orgId }: Props) {
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)', minHeight: 0 }}>
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl space-y-5 px-4 pb-10 pt-5">
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
             Wallet
           </h1>
 
           {error && (
             <div
               role="alert"
-              className="rounded-[var(--radius-r2)] px-3 py-2 text-[12px]"
+              className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -91,25 +91,25 @@ export default function WalletScreen({ orgId }: Props) {
                 }}
               >
                 <p
-                  className="mb-2 font-mono text-[10px] font-semibold uppercase"
+                  className="mb-2 font-mono text-[0.625rem] font-semibold uppercase"
                   style={{ color: 'var(--color-accent-dark)', letterSpacing: '0.6px' }}
                 >
                   Total Balance
                 </p>
                 <p
                   style={{
-                    fontSize: 32, fontWeight: 700,
+                    fontSize: '2rem', fontWeight: 700,
                     color: 'var(--color-accent)',
                     letterSpacing: '-0.6px',
                     lineHeight: 1.05,
                   }}
                 >
                   {formatFtc(totalBalance)}
-                  <span style={{ fontSize: 16, marginLeft: 6, fontWeight: 600 }}>FTC</span>
+                  <span style={{ fontSize: '1rem', marginLeft: 6, fontWeight: 600 }}>FTC</span>
                 </p>
                 {wallets.length > 0 && wallets[0].address && (
                   <p
-                    className="mt-2 truncate font-mono text-[10px]"
+                    className="mt-2 truncate font-mono text-[0.625rem]"
                     style={{ color: 'var(--color-accent-dark)', opacity: 0.75 }}
                   >
                     {wallets[0].address.slice(0, 24)}…
@@ -138,7 +138,7 @@ export default function WalletScreen({ orgId }: Props) {
                       >
                         <div className="min-w-0 flex items-center gap-2">
                           <span
-                            className="text-[14px] font-semibold"
+                            className="text-[0.875rem] font-semibold"
                             style={{ color: 'var(--color-text)' }}
                           >
                             {w.name}
@@ -146,7 +146,7 @@ export default function WalletScreen({ orgId }: Props) {
                           <Pill tone="neutral" mono>{w.wallet_type.toUpperCase()}</Pill>
                         </div>
                         <span
-                          className="text-[14px] font-bold"
+                          className="text-[0.875rem] font-bold"
                           style={{ color: 'var(--color-accent)' }}
                         >
                           {formatFtc(w.balance_ftc)} FTC
@@ -171,10 +171,10 @@ export default function WalletScreen({ orgId }: Props) {
                   >
                     <Ico name="wallet" size={28} />
                   </span>
-                  <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                  <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                     No wallet yet
                   </p>
-                  <p className="mt-1 max-w-[260px] text-center text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="mt-1 max-w-[260px] text-center text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
                     Set up a wallet in your ANTON instance under FutureChain settings.
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export default function WalletScreen({ orgId }: Props) {
                       border: '1px solid var(--color-border)',
                     }}
                   >
-                    <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
                       No transactions yet
                     </p>
                   </div>
@@ -222,7 +222,7 @@ export default function WalletScreen({ orgId }: Props) {
                               {tx.description || 'Transaction'}
                             </p>
                             <div className="mt-1 flex items-center gap-1.5">
-                              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                              <span className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                                 {new Date(tx.created_at).toLocaleDateString()}
                               </span>
                               <Pill tone={statusTone(tx.status)} mono>
@@ -254,7 +254,7 @@ export default function WalletScreen({ orgId }: Props) {
                 }}
               >
                 <h3
-                  className="mb-1.5 text-[12px] font-semibold"
+                  className="mb-1.5 text-[0.75rem] font-semibold"
                   style={{ color: 'var(--color-text)' }}
                 >
                   About FutureChain

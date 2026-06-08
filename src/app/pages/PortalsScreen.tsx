@@ -89,7 +89,7 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitSearch(); } }}
             placeholder="Search by name, topic, or description…"
-            className="flex-1 bg-transparent text-[14px] focus:outline-none"
+            className="flex-1 bg-transparent text-[0.875rem] focus:outline-none"
             style={{ color: 'var(--color-text)', minWidth: 0 }}
           />
           {draft && (
@@ -126,11 +126,11 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="grid" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 {query ? `Nothing matched "${query}"` : 'No portals to discover yet'}
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[13px] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-[0.8125rem] leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 {query
@@ -147,7 +147,7 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
               {grouped.map(([cat, items]) => (
                 <div key={cat} className="space-y-2">
                   <div
-                    className="px-1 font-mono text-[10px] font-semibold uppercase"
+                    className="px-1 font-mono text-[0.625rem] font-semibold uppercase"
                     style={{ color: 'var(--color-text-muted)', letterSpacing: '0.6px' }}
                   >
                     {cat}
@@ -192,7 +192,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
             width: 40, height: 40,
             background: 'var(--color-accent-soft)',
             color: 'var(--color-accent)',
-            fontSize: 14,
+            fontSize: '0.875rem',
           }}
           aria-hidden="true"
         >
@@ -200,14 +200,14 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
         </span>
         <div className="min-w-0 flex-1">
           <h2
-            className="truncate text-[15px] font-semibold"
+            className="truncate text-[0.9375rem] font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {portal.display_title || portal.name}
           </h2>
           {cat && (
             <div
-              className="mt-0.5 font-mono text-[10px]"
+              className="mt-0.5 font-mono text-[0.625rem]"
               style={{ color: 'var(--color-text-muted)', letterSpacing: '0.4px' }}
             >
               {cat}
@@ -218,7 +218,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
 
       {portal.description && (
         <p
-          className="mt-2.5 text-[13px] leading-relaxed"
+          className="mt-2.5 text-[0.8125rem] leading-relaxed"
           style={{ color: 'var(--color-text-body)' }}
         >
           {portal.description}
@@ -239,7 +239,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
           <Pill tone="neutral">Capabilities only</Pill>
         )}
         {portal.surface_mode === 'external' && (
-          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
             External site
           </span>
         )}

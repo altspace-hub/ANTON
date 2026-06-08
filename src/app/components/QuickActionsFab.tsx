@@ -102,7 +102,7 @@ function ActionTile({ icon, tint, label, badge, onClick }: {
       >
         <Ico name={icon} size={20} />
       </span>
-      <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text)' }}>
+      <span className="text-[0.75rem] font-semibold" style={{ color: 'var(--color-text)' }}>
         {label}
       </span>
       {badge != null && badge > 0 && (
@@ -113,7 +113,7 @@ function ActionTile({ icon, tint, label, badge, onClick }: {
             background: 'var(--color-red)',
             border: '1.5px solid var(--color-surface)',
             minWidth: 20, height: 20, padding: '0 6px',
-            fontSize: 10,
+            fontSize: '0.625rem',
           }}
         >
           {badge > 99 ? '99+' : badge}

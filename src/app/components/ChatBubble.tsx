@@ -37,12 +37,12 @@ function ChatBubbleImpl({ role, content, isError }: Props) {
           }}
         >
           <div
-            className="mb-1 font-mono text-[10px] font-bold uppercase"
+            className="mb-1 font-mono text-[0.625rem] font-bold uppercase"
             style={{ letterSpacing: '0.6px' }}
           >
             Error
           </div>
-          <p className="text-[14px] leading-relaxed">
+          <p className="text-[0.875rem] leading-relaxed">
             {content.replace(/^Error:\s*/i, '')}
           </p>
         </div>
@@ -72,7 +72,7 @@ function ChatBubbleImpl({ role, content, isError }: Props) {
   // Assistant: NO bubble. Full-width prose, breathes naturally.
   return (
     <div
-      className="prose-app w-full break-words text-[15px] leading-[1.55]"
+      className="prose-app w-full break-words text-[0.9375rem] leading-[1.55]"
       style={{ color: 'var(--color-text)' }}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>

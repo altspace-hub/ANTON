@@ -65,11 +65,11 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
         <div>
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
+            style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.05 }}
           >
             School
           </h1>
-          <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
+          <div className="font-mono text-[0.625rem] text-[var(--color-text-muted)]">
             {feed ? `${feed.day_label} · ${feed.course_label}` : 'Loading…'}
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
             </span>
             <span
               className="font-bold"
-              style={{ color: 'var(--color-gold)', fontSize: 12 }}
+              style={{ color: 'var(--color-gold)', fontSize: '0.75rem' }}
             >
               {feed.streak}
             </span>
@@ -106,12 +106,12 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
               >
                 <div
                   className="mb-1 font-mono font-bold uppercase opacity-85"
-                  style={{ fontSize: 11, letterSpacing: '0.5px' }}
+                  style={{ fontSize: '0.6875rem', letterSpacing: '0.5px' }}
                 >
                   TODAY · {feed.today_lesson.duration_minutes} MIN
                 </div>
                 <div
-                  style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.3px', lineHeight: 1.25, marginBottom: 10 }}
+                  style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.3px', lineHeight: 1.25, marginBottom: 10 }}
                 >
                   {feed.today_lesson.title}
                 </div>
@@ -167,7 +167,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
                   style={{
                     background: '#fff',
                     color: 'var(--color-accent)',
-                    fontSize: 14,
+                    fontSize: '0.875rem',
                     letterSpacing: '-0.1px',
                   }}
                 >
@@ -185,17 +185,17 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
               >
                 <div
                   className="mb-1.5 font-mono font-bold uppercase"
-                  style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}
+                  style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}
                 >
                   Get started
                 </div>
                 <div
                   className="text-[var(--color-text)]"
-                  style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.25, letterSpacing: '-0.2px' }}
+                  style={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.25, letterSpacing: '-0.2px' }}
                 >
                   Set up your School profile on the main ANTON to start a learning streak.
                 </div>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
                   Once your course is configured, the day's lesson will appear here with a one-tap "continue" button.
                 </p>
               </div>
@@ -229,13 +229,13 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
                       <div className="flex-1">
                         <div
                           className="text-[var(--color-text)]"
-                          style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.1px' }}
+                          style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '-0.1px' }}
                         >
                           {item.title}
                         </div>
                         <div
                           style={{
-                            fontSize: 11,
+                            fontSize: '0.6875rem',
                             color: item.due ? 'var(--color-gold)' : 'var(--color-text-muted)',
                             fontWeight: item.due ? 600 : 400,
                           }}
@@ -262,7 +262,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
               <Ico name="camera" color="var(--color-accent)" size={20} />
               <button
                 onClick={() => onNavigate('capture')}
-                className="flex-1 text-left text-[12px] leading-relaxed text-[var(--color-text-body)]"
+                className="flex-1 text-left text-[0.75rem] leading-relaxed text-[var(--color-text-body)]"
               >
                 <b>Stuck on homework?</b> Snap a photo — ANTON shows you the steps, doesn't just give the answer.
               </button>

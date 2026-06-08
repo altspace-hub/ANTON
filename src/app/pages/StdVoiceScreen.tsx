@@ -65,7 +65,7 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
         <button
           onClick={onClose}
           className="rounded-full px-3 py-1 transition active:opacity-50"
-          style={{ fontSize: 15, opacity: 0.85, color: '#fff' }}
+          style={{ fontSize: '0.9375rem', opacity: 0.85, color: '#fff' }}
         >
           Cancel
         </button>
@@ -73,7 +73,7 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-start px-6 pt-10">
-        <div className="opacity-70" style={{ fontSize: 16, letterSpacing: '0.3px', marginBottom: 8 }}>
+        <div className="opacity-70" style={{ fontSize: '1rem', letterSpacing: '0.3px', marginBottom: 8 }}>
           {listening ? 'ANTON is listening' : reply ? 'ANTON' : 'Tap the orb to start'}
         </div>
         <div
@@ -136,14 +136,14 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
             background: 'color-mix(in srgb, #fff 12%, transparent)',
             color: '#fff',
             border: '1px solid color-mix(in srgb, #fff 20%, transparent)',
-            fontSize: 15,
+            fontSize: '0.9375rem',
           }}
         />
 
         {error && (
           <div
             className="mt-4 text-center"
-            style={{ color: 'var(--color-red-dim)', fontSize: 13 }}
+            style={{ color: 'var(--color-red-dim)', fontSize: '0.8125rem' }}
           >
             {error}
           </div>
@@ -151,7 +151,7 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
 
         <div
           className="mt-auto pb-8 text-center opacity-55"
-          style={{ fontSize: 14, lineHeight: 1.5 }}
+          style={{ fontSize: '0.875rem', lineHeight: 1.5 }}
         >
           Speak naturally.<br />Tap the orb when you're done.
         </div>

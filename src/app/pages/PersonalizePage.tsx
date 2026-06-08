@@ -63,11 +63,11 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
       <div className="flex-1 overflow-y-auto px-5 pb-6 pt-5">
         <div
           className="text-[var(--color-text)]"
-          style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.15 }}
+          style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.15 }}
         >
           Pick your ANTON colour
         </div>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
           Your companion shows this colour on approvals, live states, and accents.
           Change it any time in Settings — it only affects your device.
         </p>
@@ -83,15 +83,15 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
               style={{
                 width: 44, height: 44,
                 background: 'var(--color-accent)',
-                fontSize: 15,
+                fontSize: '0.9375rem',
                 boxShadow: `0 4px 14px color-mix(in srgb, var(--color-accent) 35%, transparent)`,
               }}
             >
               {initials}
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[var(--color-text)]">{name}</div>
-              <div className="text-[11px] text-[var(--color-text-muted)]">
+              <div className="text-[0.875rem] font-semibold text-[var(--color-text)]">{name}</div>
+              <div className="text-[0.6875rem] text-[var(--color-text-muted)]">
                 {orgName} · {current.label}
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
                 />
                 <span
                   className="absolute bottom-1.5 left-2 right-2 text-left font-semibold text-white"
-                  style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
+                  style={{ fontSize: '0.6875rem', textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
                 >
                   {a.label}
                 </span>
@@ -152,7 +152,7 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
         </div>
 
         {/* Sub-line under selection */}
-        <p className="mt-3.5 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-3.5 text-[0.6875rem] leading-relaxed text-[var(--color-text-muted)]">
           <b className="text-[var(--color-text)]">{current.label}</b> — {current.sub}
         </p>
 

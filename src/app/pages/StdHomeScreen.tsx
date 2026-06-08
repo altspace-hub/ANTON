@@ -99,7 +99,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
         <div className="flex-1">
           <div
             className="text-[var(--color-text)]"
-            style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
           >
             {plainGreeting()}{firstName && `, ${firstName}`}
           </div>
@@ -114,7 +114,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
           style={{
             width: 44, height: 44,
             background: 'var(--color-accent)',
-            fontSize: 15,
+            fontSize: '0.9375rem',
           }}
         >
           {initials}
@@ -143,7 +143,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                 style={{ width: 10, height: 10, background: 'var(--color-accent)' }}
               />
               <span
-                className="text-[13px] font-bold"
+                className="text-[0.8125rem] font-bold"
                 style={{ color: 'var(--color-accent)' }}
               >
                 Waiting for you
@@ -151,12 +151,12 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
             </div>
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.2 }}
+              style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.2 }}
             >
               {top.title}
             </div>
             {top.summary && (
-              <p className="mt-1 text-[15px] leading-relaxed text-[var(--color-text-body)]">
+              <p className="mt-1 text-[0.9375rem] leading-relaxed text-[var(--color-text-body)]">
                 {top.summary}
               </p>
             )}
@@ -188,7 +188,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                 style={{ width: 10, height: 10, background: 'var(--color-green)' }}
               />
               <span
-                className="text-[13px] font-bold"
+                className="text-[0.8125rem] font-bold"
                 style={{ color: 'var(--color-green)' }}
               >
                 You're all caught up
@@ -196,11 +196,11 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
             </div>
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.25 }}
+              style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.25 }}
             >
               Nothing needs your attention right now.
             </div>
-            <p className="mt-1 text-[15px] text-[var(--color-text-muted)]">
+            <p className="mt-1 text-[0.9375rem] text-[var(--color-text-muted)]">
               ANTON is keeping an eye on things at {orgName}.
             </p>
           </div>
@@ -213,14 +213,14 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
             style={{ border: '1px solid var(--color-border)' }}
           >
             <div
-              className="mb-1 text-[13px] font-bold"
+              className="mb-1 text-[0.8125rem] font-bold"
               style={{ color: 'var(--color-gold)' }}
             >
               Also waiting
             </div>
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.2px', lineHeight: 1.25 }}
+              style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.2px', lineHeight: 1.25 }}
             >
               {second.title}
             </div>
@@ -237,7 +237,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
           <>
             <div
               className="mt-6 mb-2.5 font-bold uppercase text-[var(--color-text-muted)]"
-              style={{ fontSize: 13, letterSpacing: '0.4px' }}
+              style={{ fontSize: '0.8125rem', letterSpacing: '0.4px' }}
             >
               Today
             </div>
@@ -254,12 +254,12 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
               >
                 <div
                   className="font-bold text-[var(--color-text)]"
-                  style={{ fontSize: 16, minWidth: 56 }}
+                  style={{ fontSize: '1rem', minWidth: 56 }}
                 >
                   {plainTime(s.updated_at)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[16px] font-semibold text-[var(--color-text)]">
+                  <div className="text-[1rem] font-semibold text-[var(--color-text)]">
                     {s.title || 'Conversation with ANTON'}
                   </div>
                   <div className="mt-0.5 text-sm text-[var(--color-text-muted)]">
@@ -279,10 +279,10 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
         >
           <Ico name="mic" color="var(--color-accent)" size={26} />
           <div className="flex-1 text-left">
-            <div className="text-[15px] font-semibold text-[var(--color-text)]">
+            <div className="text-[0.9375rem] font-semibold text-[var(--color-text)]">
               Ask ANTON anything
             </div>
-            <div className="text-[13px] text-[var(--color-text-muted)]">
+            <div className="text-[0.8125rem] text-[var(--color-text-muted)]">
               Tap and talk, or type
             </div>
           </div>

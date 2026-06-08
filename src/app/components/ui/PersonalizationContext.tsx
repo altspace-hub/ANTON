@@ -9,16 +9,19 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  type AccentKey, type AppMode,
+  type AccentKey, type AppMode, type DisplaySize,
   getAccent, getMode, setAccent, setMode,
+  getDisplaySize, setDisplaySize,
   onPersonalizationChange,
 } from '../../services/personalization';
 
 interface PersonalizationValue {
   accent: AccentKey;
   mode: AppMode;
+  display: DisplaySize;
   setAccent: (a: AccentKey) => void;
   setMode: (m: AppMode) => void;
+  setDisplay: (d: DisplaySize) => void;
 }
 
 const Ctx = createContext<PersonalizationValue | null>(null);
@@ -26,17 +29,20 @@ const Ctx = createContext<PersonalizationValue | null>(null);
 export function PersonalizationProvider({ children }: { children: ReactNode }) {
   const [accent, setAccentState] = useState<AccentKey>(() => getAccent());
   const [mode, setModeState]     = useState<AppMode>(() => getMode());
+  const [display, setDisplayState] = useState<DisplaySize>(() => getDisplaySize());
 
   useEffect(() => onPersonalizationChange(() => {
     setAccentState(getAccent());
     setModeState(getMode());
+    setDisplayState(getDisplaySize());
   }), []);
 
   const value = useMemo<PersonalizationValue>(() => ({
-    accent, mode,
+    accent, mode, display,
     setAccent: (a) => setAccent(a),
     setMode:   (m) => setMode(m),
-  }), [accent, mode]);
+    setDisplay: (d) => setDisplaySize(d),
+  }), [accent, mode, display]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

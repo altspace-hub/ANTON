@@ -77,11 +77,11 @@ export default function MissionsScreen({ orgId, onBack }: Props): JSX.Element {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="sparkles" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 No missions yet
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[13px] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-[0.8125rem] leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Create a mission in the Pro UI on your desktop ANTON. They'll
@@ -178,7 +178,7 @@ function MissionRow({ m, orgId, onChanged }: {
       {/* Progress */}
       {m.task_total > 0 && (
         <div className="mt-3">
-          <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="flex items-center justify-between text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
             <span>{m.task_done} of {m.task_total} task{m.task_total === 1 ? '' : 's'}</span>
             <span className="font-mono">{pct}%</span>
           </div>

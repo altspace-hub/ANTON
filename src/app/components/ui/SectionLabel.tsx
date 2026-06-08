@@ -16,7 +16,7 @@ export type SectionLabelProps = (DivProps | LabelProps) & { children?: ReactNode
 
 export function SectionLabel(props: SectionLabelProps): JSX.Element {
   const { children, className = '', style, ...rest } = props;
-  const cls = `font-mono text-[11px] font-semibold uppercase text-[var(--color-text-muted)] ${className}`;
+  const cls = `font-mono text-[0.6875rem] font-semibold uppercase text-[var(--color-text-muted)] ${className}`;
   const sty = { letterSpacing: '0.8px' as const, ...style };
   if ('htmlFor' in rest && rest.htmlFor) {
     const labelRest = rest as LabelHTMLAttributes<HTMLLabelElement>;

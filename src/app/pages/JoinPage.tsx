@@ -369,11 +369,11 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       <div className="flex-1 overflow-y-auto px-5 pb-6 pt-5">
         <div
           className="text-[var(--color-text)]"
-          style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.15 }}
+          style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.6px', lineHeight: 1.15 }}
         >
           Pair with your ANTON
         </div>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
           Scan the QR your admin showed you. We'll mint a fresh Ed25519 key on this device and
           confirm with a 6-digit code if needed.
         </p>
@@ -434,7 +434,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                   <Ico name="qr" color="var(--color-accent)" size={36} />
                 </div>
                 <span className="text-sm font-semibold text-[var(--color-text)]">Tap to scan QR</span>
-                <span className="px-6 text-center text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                <span className="px-6 text-center text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
                   The QR contains the server URL + a one-time token (≤60s TTL)
                 </span>
               </button>
@@ -500,7 +500,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                         background: 'var(--color-surface)',
                         border: '1px solid var(--color-border)',
                         color: 'var(--color-text)',
-                        fontSize: 22,
+                        fontSize: '1.375rem',
                         letterSpacing: '0.1em',
                       }}
                     >
@@ -517,7 +517,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                   className="mt-2 w-full rounded-[var(--radius-r2)] px-4 py-2.5 text-center text-sm focus:outline-none"
                   style={{ background: 'var(--color-surface)', border: '1px solid var(--color-accent-dim)', color: 'var(--color-text-body)' }}
                 />
-                <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+                <p className="mt-2 text-[0.6875rem] leading-relaxed text-[var(--color-text-muted)]">
                   Admin reads this aloud. Required so the QR can't be hijacked between scan and pair.
                 </p>
               </div>
@@ -553,7 +553,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         )}
 
         {/* Status row — Internet / LAN / TTL */}
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
+        <div className="mt-3 flex items-center gap-2 text-[0.6875rem] text-[var(--color-text-muted)]">
           <StatusDot tone={loading ? 'gold' : 'green'} pulse size={8} />
           <span>{loading ? 'Pairing…' : 'Awaiting scan'}</span>
           <span className="flex-1" />
@@ -580,7 +580,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         >
           <SectionLabel className="mb-2">How pairing works</SectionLabel>
           <ol
-            className="list-inside list-decimal space-y-1.5 text-[11px] leading-relaxed text-[var(--color-text-body)]"
+            className="list-inside list-decimal space-y-1.5 text-[0.6875rem] leading-relaxed text-[var(--color-text-body)]"
           >
             <li>The instance issues a one-time token (≤60s TTL) embedded in the QR.</li>
             <li>Your phone generates a fresh Ed25519 keypair — the private key never leaves the device.</li>

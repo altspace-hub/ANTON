@@ -84,7 +84,7 @@ export default function TaskScreen({ orgId }: Props) {
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)', minHeight: 0 }}>
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl space-y-5 px-4 pb-10 pt-5">
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
             Tasks
           </h1>
 
@@ -97,7 +97,7 @@ export default function TaskScreen({ orgId }: Props) {
               onChange={e => setNewTask(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="Quick add task…"
-              className="flex-1 rounded-[var(--radius-r2)] px-4 text-[14px] focus:outline-none"
+              className="flex-1 rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -118,7 +118,7 @@ export default function TaskScreen({ orgId }: Props) {
           {error && (
             <div
               role="alert"
-              className="rounded-[var(--radius-r2)] px-3 py-2 text-[12px]"
+              className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -141,11 +141,11 @@ export default function TaskScreen({ orgId }: Props) {
               >
                 <Ico name="checkSquare" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 No tasks yet
               </p>
               <p
-                className="mt-1 max-w-[280px] text-[13px]"
+                className="mt-1 max-w-[280px] text-[0.8125rem]"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Add tasks above or ask ANTON in chat.
@@ -188,7 +188,7 @@ export default function TaskScreen({ orgId }: Props) {
                     </button>
                     <div className="min-w-0 flex-1">
                       <p
-                        className="text-[14px] leading-tight"
+                        className="text-[0.875rem] leading-tight"
                         style={{
                           color: 'var(--color-text)',
                           fontWeight: 500,
@@ -202,7 +202,7 @@ export default function TaskScreen({ orgId }: Props) {
                           {t.priority.toUpperCase()}
                         </Pill>
                         {t.due_date && (
-                          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                          <span className="text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                             Due {new Date(t.due_date).toLocaleDateString()}
                           </span>
                         )}

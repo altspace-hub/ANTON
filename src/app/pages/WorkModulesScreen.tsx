@@ -103,7 +103,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
       >
         <h1
           className="text-[var(--color-text)]"
-          style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.4px' }}
+          style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.4px' }}
         >
           Work
         </h1>
@@ -138,13 +138,13 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
             <Ico name="sparkles" color="#fff" size={13} />
             <span
               className="font-mono font-bold uppercase"
-              style={{ fontSize: 10, letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.625rem', letterSpacing: '0.5px' }}
             >
               Find the right module
             </span>
           </div>
           <div
-            style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px', lineHeight: 1.3, marginBottom: 10 }}
+            style={{ fontSize: '0.9375rem', fontWeight: 600, letterSpacing: '-0.2px', lineHeight: 1.3, marginBottom: 10 }}
           >
             What are you trying to do?
           </div>
@@ -167,7 +167,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                 }
               }}
               placeholder="Review a vendor I've never seen before"
-              className="flex-1 bg-transparent text-[12px] text-white placeholder:text-white/70 focus:outline-none"
+              className="flex-1 bg-transparent text-[0.75rem] text-white placeholder:text-white/70 focus:outline-none"
               style={{ minWidth: 0 }}
             />
             <button
@@ -183,7 +183,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
               <button
                 key={chip}
                 onClick={() => handleAsk(chip)}
-                className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                className="rounded-full px-2.5 py-1 text-[0.6875rem] font-medium"
                 style={{
                   background: 'color-mix(in srgb, #fff 15%, transparent)',
                   border: '1px solid color-mix(in srgb, #fff 25%, transparent)',
@@ -225,20 +225,20 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                   </div>
                   <div
                     className="text-[var(--color-text)]"
-                    style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}
+                    style={{ fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.2 }}
                   >
                     {m.name}
                   </div>
                   <div
                     className="mt-0.5 font-mono uppercase text-[var(--color-text-muted)]"
-                    style={{ fontSize: 10, letterSpacing: '0.3px' }}
+                    style={{ fontSize: '0.625rem', letterSpacing: '0.3px' }}
                   >
                     {m.description}
                   </div>
                   {m.busy && m.message && (
                     <div
                       className="mt-2 font-mono font-bold"
-                      style={{ fontSize: 10, color: COLOR_VAR[m.color] }}
+                      style={{ fontSize: '0.625rem', color: COLOR_VAR[m.color] }}
                     >
                       {m.message}
                     </div>
@@ -293,10 +293,10 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                 return (
                   <div className="mx-4 mb-4 rounded-[var(--radius-r2)] border border-dashed px-4 py-8 text-center"
                        style={{ borderColor: 'var(--color-border)' }}>
-                    <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                    <p className="text-[0.8125rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                       No modules match "{browseQuery}"
                     </p>
-                    <p className="mt-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="mt-1 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                       Try a shorter query, or describe what you're trying to do in the search above.
                     </p>
                   </div>
@@ -333,7 +333,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                           <div
                             className="truncate"
                             style={{
-                              fontSize: 13.5,
+                              fontSize: '0.84375rem',
                               fontWeight: 600,
                               color: 'var(--color-text)',
                               letterSpacing: '-0.1px',
@@ -344,7 +344,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                           </div>
                           <div
                             className="mt-0.5 truncate"
-                            style={{ fontSize: 11, color: 'var(--color-text-muted)' }}
+                            style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}
                           >
                             {m.description}
                           </div>
@@ -362,7 +362,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
               <p
                 className="font-mono uppercase"
                 style={{
-                  fontSize: 10,
+                  fontSize: '0.625rem',
                   letterSpacing: '0.5px',
                   color: 'var(--color-text-faint)',
                 }}

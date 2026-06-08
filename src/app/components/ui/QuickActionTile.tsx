@@ -49,7 +49,7 @@ export function QuickActionTile({
       <div
         style={{
           marginTop: 12,
-          fontSize: 14,
+          fontSize: '0.875rem',
           fontWeight: 600,
           color: 'var(--color-text)',
           letterSpacing: '-0.1px',
@@ -62,7 +62,7 @@ export function QuickActionTile({
         <div
           style={{
             marginTop: 4,
-            fontSize: 11.5,
+            fontSize: '0.71875rem',
             color: 'var(--color-text-muted)',
             lineHeight: 1.3,
           }}

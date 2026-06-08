@@ -115,7 +115,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
         <div className="flex-1">
           <div
             className="text-[var(--color-text)]"
-            style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
           >
             Money
           </div>
@@ -140,11 +140,11 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
           <div className="text-sm opacity-90">Available balance</div>
           <div
             className="leading-none"
-            style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-1.5px', marginTop: 6 }}
+            style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-1.5px', marginTop: 6 }}
           >
             {balance ?? '€—'}
           </div>
-          <div className="mt-1 text-[13px] opacity-85">FutureChain · euro</div>
+          <div className="mt-1 text-[0.8125rem] opacity-85">FutureChain · euro</div>
         </div>
 
         {/* Send / Receive */}
@@ -155,7 +155,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
             style={{
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
-              fontSize: 16, fontWeight: 700, color: 'var(--color-text)',
+              fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)',
             }}
           >
             <Ico name="arrowUp" color="var(--color-text)" size={22} />
@@ -167,7 +167,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
             style={{
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
-              fontSize: 16, fontWeight: 700, color: 'var(--color-text)',
+              fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)',
             }}
           >
             <Ico name="qr" color="var(--color-text)" size={22} />
@@ -178,7 +178,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
         {/* Recent */}
         <div
           className="mb-2.5 font-bold uppercase text-[var(--color-text-muted)]"
-          style={{ fontSize: 13, letterSpacing: '0.4px' }}
+          style={{ fontSize: '0.8125rem', letterSpacing: '0.4px' }}
         >
           Recent
         </div>
@@ -193,7 +193,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
           >
             <div
               className="text-[var(--color-text)]"
-              style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.2px' }}
+              style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.2px' }}
             >
               No money activity yet.
             </div>
@@ -221,13 +221,13 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
                 <Ico name={r.isIn ? 'arrowUp' : 'arrowUp'} size={20} color="currentColor" />
               </div>
               <div className="flex-1">
-                <div className="text-[16px] font-semibold text-[var(--color-text)]">{r.who}</div>
-                <div className="text-[13px] text-[var(--color-text-muted)]">{r.sub} · {r.t}</div>
+                <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.who}</div>
+                <div className="text-[0.8125rem] text-[var(--color-text-muted)]">{r.sub} · {r.t}</div>
               </div>
               <div
                 className="font-bold"
                 style={{
-                  fontSize: 17,
+                  fontSize: '1.0625rem',
                   letterSpacing: '-0.2px',
                   color: r.isIn ? 'var(--color-green)' : 'var(--color-text)',
                 }}

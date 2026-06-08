@@ -45,7 +45,7 @@ export function PageHeader({ title, subtitle, onBack, right }: PageHeaderProps) 
         <h1
           className="truncate"
           style={{
-            fontSize: 16,
+            fontSize: '1rem',
             fontWeight: 700,
             color: 'var(--color-text)',
             letterSpacing: '-0.2px',
@@ -56,7 +56,7 @@ export function PageHeader({ title, subtitle, onBack, right }: PageHeaderProps) 
         </h1>
         {subtitle && (
           <p
-            className="mt-0.5 truncate text-[11px]"
+            className="mt-0.5 truncate text-[0.6875rem]"
             style={{ color: 'var(--color-text-muted)' }}
           >
             {subtitle}

@@ -98,7 +98,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
               borderRadius: 8,
               background: 'var(--color-accent)',
               color: 'var(--color-accent-fg)',
-              fontSize: 12,
+              fontSize: '0.75rem',
               letterSpacing: '-0.2px',
               lineHeight: 1,
             }}
@@ -110,7 +110,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
               <span
                 className="truncate"
                 style={{
-                  fontSize: 13.5,
+                  fontSize: '0.84375rem',
                   fontWeight: 700,
                   color: 'var(--color-text)',
                   letterSpacing: '-0.15px',
@@ -131,7 +131,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
               <span
                 className="truncate"
                 style={{
-                  fontSize: 11,
+                  fontSize: '0.6875rem',
                   color: 'var(--color-text-muted)',
                   letterSpacing: '-0.05px',
                 }}
@@ -165,7 +165,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
                   minWidth: 16,
                   height: 16,
                   padding: '0 4px',
-                  fontSize: 9,
+                  fontSize: '0.5625rem',
                   lineHeight: 1,
                 }}
               >

@@ -74,11 +74,11 @@ export default function SessionHistoryPage({ orgId, orgName, onSelectSession, on
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 No conversations yet
               </p>
               <p
-                className="mt-1 max-w-[260px] text-[13px]"
+                className="mt-1 max-w-[260px] text-[0.8125rem]"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Start a chat from the Chat tab and it'll appear here.
@@ -116,7 +116,7 @@ export default function SessionHistoryPage({ orgId, orgName, onSelectSession, on
                     </div>
                   </div>
                   <span
-                    className="flex-shrink-0 font-mono text-[11px]"
+                    className="flex-shrink-0 font-mono text-[0.6875rem]"
                     style={{ color: 'var(--color-text-faint)', paddingTop: 2 }}
                   >
                     {relativeDate(s.updated_at)}

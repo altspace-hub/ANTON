@@ -93,17 +93,17 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
           <Logo size={72} className="mb-4" />
           <h1
             className="text-[var(--color-text)]"
-            style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.6px' }}
+            style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.6px' }}
           >
             ANTON
           </h1>
           <div
             className="mt-1 font-mono uppercase"
-            style={{ color: 'var(--color-accent)', fontSize: 11, fontWeight: 700, letterSpacing: '1px' }}
+            style={{ color: 'var(--color-accent)', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '1px' }}
           >
             Companion
           </div>
-          <p className="mt-3 max-w-[260px] text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+          <p className="mt-3 max-w-[260px] text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
             Connect to your organisation's ANTON instance. Identity stays on this device.
           </p>
         </div>
@@ -170,9 +170,9 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
         {/* Trust footer */}
         <div className="flex items-center justify-center gap-2">
           <Ico name="shieldCheck" color="var(--color-text-muted)" size={14} />
-          <Pill tone="neutral" mono style={{ fontSize: 10 }}>LOCAL ONLY · NO ACCOUNT</Pill>
+          <Pill tone="neutral" mono style={{ fontSize: '0.625rem' }}>LOCAL ONLY · NO ACCOUNT</Pill>
         </div>
-        <p className="text-center text-[11px] leading-relaxed text-[var(--color-text-faint)]">
+        <p className="text-center text-[0.6875rem] leading-relaxed text-[var(--color-text-faint)]">
           Your keypair is generated on this device. No email or password.
         </p>
       </div>

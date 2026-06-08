@@ -15,6 +15,7 @@
 
 import { useState } from 'react';
 import { Ico } from '../components/ui';
+import DisplaySizePicker from '../components/DisplaySizePicker';
 import { usePersonalization } from '../components/ui/PersonalizationContext';
 import { ACCENTS, type AccentKey } from '../services/personalization';
 import { getIdentity } from '../services/identity';
@@ -58,19 +59,19 @@ function ModeCard({
     >
       <div
         style={{
-          fontSize: 18, fontWeight: 700, letterSpacing: '-0.2px',
+          fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.2px',
           color: active ? 'var(--color-accent)' : 'var(--color-text)',
         }}
       >
         {label}
       </div>
-      <div className="mt-1 text-[13px] leading-snug text-[var(--color-text-muted)]">
+      <div className="mt-1 text-[0.8125rem] leading-snug text-[var(--color-text-muted)]">
         {description}
       </div>
       <div
         className="mt-2.5 flex items-center gap-1 font-bold"
         style={{
-          fontSize: 13,
+          fontSize: '0.8125rem',
           color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
         }}
       >
@@ -96,7 +97,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
       <div className="px-[18px] py-3" style={{ background: 'var(--color-bg)' }}>
         <div
           className="text-[var(--color-text)]"
-          style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+          style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
         >
           You
         </div>
@@ -113,7 +114,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
         >
           <div
             className="mb-2.5 font-bold uppercase text-[var(--color-text-muted)]"
-            style={{ fontSize: 15, letterSpacing: '0.3px' }}
+            style={{ fontSize: '0.9375rem', letterSpacing: '0.3px' }}
           >
             App mode
           </div>
@@ -132,9 +133,23 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
               onClick={() => setMode('pro')}
             />
           </div>
-          <div className="mt-3 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+          <div className="mt-3 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
             You can switch any time. Your data and connections stay the same.
           </div>
+        </div>
+
+        {/* Display size — fit the app to any phone/tablet (auto-fit + override) */}
+        <div
+          className="mb-5 rounded-[var(--radius-r3)] p-4"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <div
+            className="mb-2.5 font-bold uppercase text-[var(--color-text-muted)]"
+            style={{ fontSize: '0.9375rem', letterSpacing: '0.3px' }}
+          >
+            Display size
+          </div>
+          <DisplaySizePicker />
         </div>
 
         {/* Settings list */}
@@ -152,8 +167,8 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                     style={{ width: 24, height: 24, background: currentAccent?.hex || 'var(--color-accent)' }}
                   />
                   <div className="flex-1">
-                    <div className="text-[16px] font-semibold text-[var(--color-text)]">{r.title}</div>
-                    <div className="mt-0.5 text-[14px] text-[var(--color-text-muted)]">
+                    <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.title}</div>
+                    <div className="mt-0.5 text-[0.875rem] text-[var(--color-text-muted)]">
                       {currentAccent?.label}
                     </div>
                   </div>
@@ -203,7 +218,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                             />
                             <span
                               className="absolute bottom-1.5 left-2 right-2 text-left font-semibold text-white"
-                              style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
+                              style={{ fontSize: '0.6875rem', textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
                             >
                               {a.label}
                             </span>
@@ -212,7 +227,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                       })}
                     </div>
                     {currentAccent?.sub && (
-                      <div className="mt-3 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                      <div className="mt-3 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
                         <b className="text-[var(--color-text)]">{currentAccent.label}</b> — {currentAccent.sub}
                       </div>
                     )}
@@ -234,9 +249,9 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
               }}
             >
               <div className="flex-1">
-                <div className="text-[16px] font-semibold text-[var(--color-text)]">{r.title}</div>
+                <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.title}</div>
                 {'sub' in r && r.sub && (
-                  <div className="mt-0.5 text-[14px] text-[var(--color-text-muted)]">{r.sub}</div>
+                  <div className="mt-0.5 text-[0.875rem] text-[var(--color-text-muted)]">{r.sub}</div>
                 )}
               </div>
             </div>
