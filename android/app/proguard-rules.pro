@@ -56,6 +56,12 @@
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
 
+# EdDSA (net.i2p.crypto.eddsa, used by the native Ed25519 signer) references a
+# JDK-internal X509 class absent on Android; the path is never taken at runtime
+# (raw Ed25519 is used). Without this, minifyReleaseWithR8 fails. (go-live)
+-dontwarn sun.security.x509.**
+-dontwarn net.i2p.crypto.eddsa.**
+
 # ── Reflection-used model classes that get serialized to/from JSObject ──
 # Add app-specific model packages here if Java/Kotlin POJOs are introduced.
 

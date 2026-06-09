@@ -785,13 +785,29 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const b = req.body ?? {};
       // The desktop UI's `req.user.id` is attached upstream by main auth middleware
       const issuedBy = (req as { user?: { id: string } }).user?.id ?? 'admin';
-      // Build the endpoint set from env / request
-      const port = parseInt(process.env.PORT || '3011', 10);
+      // Build the endpoint set from env / request. Default port MUST match the
+      // server's actual listen port (server/index.ts: 3001) — otherwise the
+      // enrollment QR points phones at the wrong port and pairing fails.
+      const port = parseInt(process.env.PORT || '3001', 10);
       const advertiser = await import('../services/mdns-advertiser.js')
         .then(m => m.createMdnsAdvertiser(port))
         .catch(() => null);
       const info = advertiser?.getInfo();
-      const lan = info?.ip ? `http://${info.ip}:${port}` : undefined;
+      // LAN endpoint: prefer the mDNS-resolved host IP, but fall back to the
+      // primary non-internal IPv4 so a fresh download still produces a usable
+      // pairing QR when mDNS can't resolve the host (common on first run).
+      let lanIp = info?.ip;
+      if (!lanIp) {
+        try {
+          const os = await import('node:os');
+          outer: for (const ifaces of Object.values(os.networkInterfaces())) {
+            for (const i of ifaces ?? []) {
+              if (i.family === 'IPv4' && !i.internal) { lanIp = i.address; break outer; }
+            }
+          }
+        } catch { /* no LAN IP resolvable */ }
+      }
+      const lan = lanIp ? `http://${lanIp}:${port}` : undefined;
       const wan = process.env.APP_GATEWAY_PUBLIC_URL || undefined;
       // Honour the caller's transport choice — without this the route
       // silently downgrades every request to public_https because
