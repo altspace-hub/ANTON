@@ -1,8 +1,8 @@
 # Markets — One-Pager
 
-> **What it is:** ANTON's financial-intelligence pillar, instrumented for learning. The canonical proof-of-Layer-2 in the six-layer vision: a closed feedback loop where atoms become patterns become theses become predictions become daily-NAV-validated learning.
+> **What it is:** ANTON's financial-intelligence research pillar, instrumented for learning. The canonical Layer-2 testbed in the six-layer vision: a closed feedback loop where atoms become patterns become theses become predictions, scored against daily NAV ground truth.
 > **Who it's for:** investment managers, sell-side analysts, financial-crime intelligence teams, anyone who needs a defensible AI-driven view on markets.
-> **What makes it different:** **deterministic engine + LLM-rationale + daily ground truth**. Math is reproducible, prose is generated, accuracy is measured every trading day.
+> **What makes it different:** **deterministic engine + LLM-rationale + a public scorecard**. Math is reproducible, prose is generated, and every prediction is recorded and scored against real outcomes — the scorecard is public, including when it is wrong.
 
 ---
 
@@ -15,7 +15,7 @@ The first wave of "AI for finance" tools is mostly chatbots reading SEC filings.
 - Hide the reasoning chain behind opaque vector retrievals
 - Don't surface inputs ("show me the atoms") or outcomes ("show me the realized accuracy bucket")
 
-ANTON's Markets pillar is shaped around a different commitment: **every prediction is recorded, every outcome is measured, every signal weight is updated based on calibrated accuracy**. Daily.
+ANTON's Markets pillar is shaped around a different commitment: **every prediction is recorded with a deadline and scored against what actually happened — and the scorecard is public, including when it is wrong**. The loop is wired so that verdicts can recalibrate signal weights; whether that recalibration actually improves accuracy is itself measured, not assumed (see "Honest about effectiveness" below).
 
 The closed loop:
 
@@ -33,7 +33,7 @@ ingest → atoms → patterns → theses → predictions → daily NAV
                                        (loops back)
 ```
 
-This is what makes Markets the canonical Layer-2 ("Intelligent ANTON") proof case in the [Six-Layer Vision](../architecture/04-six-layer-vision.md). Not "AI for markets" — **measurably-learning AI for markets**.
+This is what makes Markets the canonical Layer-2 ("Intelligent ANTON") testbed in the [Six-Layer Vision](../architecture/04-six-layer-vision.md). Not "AI for markets" — **a research tool that keeps an honest, inspectable scorecard of its own predictions**.
 
 ---
 

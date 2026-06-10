@@ -47,6 +47,7 @@ import type { Session } from '@/lib/types';
 const FAVORITES_KEY = 'openexpert-favorite-modules';
 const STARTER_PACKS_HIDDEN_KEY = 'openexpert-starter-packs-hidden';
 const DEADLINES_KEY = 'openexpert-regulatory-deadlines';
+const FIRST_RUN_DISMISSED_KEY = 'openexpert-first-run-dismissed';
 
 interface RegulatoryDeadline {
   id: string;
@@ -198,6 +199,13 @@ export default function Dashboard() {
   const [starterPacksHidden, setStarterPacksHidden] = useState<boolean>(() => {
     try {
       return localStorage.getItem(STARTER_PACKS_HIDDEN_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [firstRunDismissed, setFirstRunDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(FIRST_RUN_DISMISSED_KEY) === 'true';
     } catch {
       return false;
     }
@@ -671,8 +679,52 @@ export default function Dashboard() {
         </>
       )}
 
+      {/* First-run "Start here" card — shown only before the very first session */}
+      {stats !== null && stats.totalSessions === 0 && !firstRunDismissed && (
+        <div className="relative mb-6 rounded-xl border border-adv-teal/30 bg-adv-teal-soft p-5">
+          <button
+            onClick={() => {
+              setFirstRunDismissed(true);
+              try { localStorage.setItem(FIRST_RUN_DISMISSED_KEY, 'true'); } catch { /* ignore */ }
+            }}
+            title={t('dashboard.dismiss', 'Dismiss')}
+            className="absolute right-3 top-3 rounded p-1 text-adv-gray transition-colors hover:text-adv-off-white"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <div className="mb-3 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-white">{t('dashboard.startHere', 'Start here')}</h2>
+          </div>
+          <p className="mb-4 text-xs text-adv-gray">
+            {t('dashboard.startHereSubtitle', 'New to ANTON? These three modules each open with a one-click worked example — pick one and press Run.')}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { to: '/module/gap-analysis', label: 'AMLR Gap Analysis', desc: 'Score an AML framework against the EU regulation, gap by gap', color: 'text-adv-teal', bg: 'bg-adv-teal/10' },
+              { to: '/module/contract-review', label: 'Contract Review', desc: 'Clause-by-clause risk findings with negotiation positions', color: 'text-adv-blue', bg: 'bg-adv-blue/10' },
+              { to: '/module/deal-screening', label: 'Deal Screening', desc: 'A structured first-look memo on any investment opportunity', color: 'text-adv-gold', bg: 'bg-adv-gold/10' },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex items-start gap-3 rounded-lg border border-border bg-adv-dark-2 p-3 transition-colors hover:border-adv-teal/40 hover:bg-adv-teal-soft"
+              >
+                <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ${item.color}`}>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold ${item.color}`}>{item.label}</p>
+                  <p className="mt-0.5 text-xs text-adv-gray">{item.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* UX-02: Quick Start card — most recent session + 3 recommended modules */}
-      {continueWorkSessions.length === 0 && (
+      {continueWorkSessions.length === 0 && !(stats !== null && stats.totalSessions === 0 && !firstRunDismissed) && (
         <div className="mb-6 rounded-xl border border-adv-teal/20 bg-adv-card p-5">
           <div className="mb-3 flex items-center gap-2">
             <Rocket className="h-4 w-4 text-adv-teal" />

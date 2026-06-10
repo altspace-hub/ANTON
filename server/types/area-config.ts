@@ -71,6 +71,19 @@ export interface ModuleConfig {
    */
   contentType?: 'gap_analysis' | 'risk_register' | 'process_map' | 'policy_document'
              | 'analytic_report' | 'plan_document' | 'entity_register' | 'scorecard';
+  /**
+   * Showcase example convention (Wave 3 — first-run discoverability):
+   * - `exampleInput` is a complete, realistic free-text task a professional
+   *   would actually paste into the module's main input box. It is REQUIRED
+   *   for the "Try an example" chip to appear in ModulePage.
+   * - `exampleValues` (optional) is keyed by guided-input `id` and pre-fills
+   *   the module's guided form in the same click. Values must match each
+   *   field's type (select → option value, multi-select/chips → value[],
+   *   text/textarea → string, number → number, boolean → boolean).
+   * One chip click applies both; flagship modules carry both fields.
+   */
+  exampleInput?: string;
+  exampleValues?: Record<string, unknown>;
   /** Populated at load time — not stored in JSON */
   systemPrompt?: string;
   areaId?: string;

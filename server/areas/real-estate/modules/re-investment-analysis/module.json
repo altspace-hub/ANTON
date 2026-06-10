@@ -86,6 +86,15 @@
       "required": false
     }
   ],
+  "exampleInput": "Underwrite this acquisition for our value-add fund: a 1990s logistics property, 18,400 sqm, on the southern edge of Stockholm (Botkyrka), asking SEK 310M. Current NOI SEK 17.4M (5.6% yield at ask), 91% occupied, WAULT 3.2 years; the anchor tenant (42% of rent) expires in 2028. Passing rents are roughly 15% below recent market lettings, and about SEK 25M of capex (roof, LED, solar) is needed to reach EPC B. Financing assumption: 55% LTV at 4.3% all-in, 5-year term, ICR covenant 1.9x. Our targets are 14% net IRR and 1.6x equity multiple over a 5-year hold. Assess the deal against these targets, stress the anchor-tenant and exit-yield assumptions, and give a bid/no-bid recommendation with a defensible price range.",
+  "exampleValues": {
+    "asset-type": "industrial-logistics",
+    "deal-stage": "underwriting",
+    "market": "Stockholm — Botkyrka, southern logistics belt",
+    "financial-summary": "Asking SEK 310M; NOI SEK 17.4M (5.6% at ask); 18,400 sqm, built 1992; 91% occupancy; WAULT 3.2 years; anchor tenant 42% of rent expiring 2028; passing rents ~15% under market; ~SEK 25M capex (roof, LED, solar) to reach EPC B.",
+    "financing": "55% LTV at 4.3% all-in, 5-year term, ICR covenant 1.9x",
+    "investment-criteria": "Value-add fund: 14% net IRR target, 1.6x equity multiple, 5-year hold, moderate-high risk appetite. LP requirement: EPC B minimum by exit."
+  },
   "recommendedPersonas": [
     "finance-expert"
   ],

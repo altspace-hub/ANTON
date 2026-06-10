@@ -129,6 +129,14 @@
       "placeholder": "e.g. Incident reporting process is undefined. Supply chain security not assessed. Management liability exposure unclear."
     }
   ],
+  "exampleInput": "We are a regional energy-distribution company (DSO) with about 900 employees operating in Germany — an essential entity under NIS2. We hold ISO 27001 certification for the corporate IT scope, but our OT/SCADA systems sit outside the certified scope. Incident response exists on paper but has never been exercised against the 24-hour early-warning deadline, and the management board has had no cybersecurity training. Our key suppliers (smart-meter vendor, grid-maintenance contractor, cloud ERP provider) have never been security-assessed. Assess our gaps against NIS2, prioritise remediation, and set out the management-liability and incident-reporting obligations we must cover first.",
+  "exampleValues": {
+    "entity_category": "essential",
+    "sector": "energy",
+    "current_security_maturity": "developing",
+    "eu_member_state": "Germany",
+    "known_concerns": "OT/SCADA outside the ISO 27001 scope; incident reporting never tested against the 24h/72h NIS2 deadlines; no management-body cyber training; supply chain (smart-meter vendor, grid contractor, cloud ERP) never security-assessed."
+  },
   "recommendedPersonas": [
     "cyber-expert"
   ],

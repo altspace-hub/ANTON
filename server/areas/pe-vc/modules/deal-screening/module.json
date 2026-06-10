@@ -150,6 +150,15 @@
       "required": false
     }
   ],
+  "exampleInput": "First look at Nordpilot (Helsinki) — B2B SaaS for fleet-electrification planning, targeting mid-size logistics operators. Inbound deck via a portfolio-CEO intro. Raising EUR 4M Series A at EUR 16M pre-money. Metrics from the deck: EUR 1.1M ARR growing ~3x year over year, 28 customers, net revenue retention 124%, gross margin 81%, CAC payback 14 months, 18-person team, founders ex-Wolt (commercial) and ex-ABB (engineering). Competition is spreadsheet-based incumbents plus two US-funded entrants. Should we take a first meeting? What would have to be true for this to be a fund-returner, and what are the top three diligence questions?",
+  "exampleValues": {
+    "investment_style": "vc-early",
+    "deal_source": "intro",
+    "company_info": "Nordpilot Oy, Helsinki. B2B SaaS for fleet-electrification planning (route, charger and TCO modelling) sold to mid-size logistics operators. Raising EUR 4M Series A at EUR 16M pre-money. EUR 1.1M ARR, ~3x YoY growth, 28 customers, NRR 124%, gross margin 81%, CAC payback 14 months. 18 FTE; founders ex-Wolt (commercial) and ex-ABB (engineering). Competitors: consultants + spreadsheets, plus two US-funded entrants.",
+    "sector_focus": "B2B SaaS, Climate",
+    "stage_focus": "2m-10m",
+    "geography_focus": "Nordics, Europe"
+  },
   "tags": [
     "pe-vc",
     "deal-flow",

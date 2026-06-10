@@ -67,6 +67,14 @@
       "placeholder": "e.g. Pilot in 2 districts showed 18% attendance improvement; systematic reviews support school feeding for enrolment but evidence on completion is mixed."
     }
   ],
+  "exampleInput": "Build a Theory of Change for a 3-year programme in northern Ghana that aims to raise secondary-school completion for adolescent girls in two districts. Components: bursaries covering fees and materials for 2,400 girls, training for 180 teachers on gender-responsive pedagogy, community dialogue sessions with parents and traditional leaders, and a mentorship scheme pairing girls with local female professionals. Funded by FCDO; the proposal needs both a ToC narrative and a log-frame-compatible results chain. A 2023 pilot in one district lifted attendance by 14%, but completion data is not yet available. Be explicit about causal assumptions and where the evidence is weak.",
+  "exampleValues": {
+    "programme_description": "3-year girls' secondary-education programme in two districts of northern Ghana: bursaries (fees + materials) for 2,400 girls, gender-responsive pedagogy training for 180 teachers, community dialogues with parents and traditional leaders, and a mentorship scheme pairing girls with local female professionals.",
+    "intended_impact": "Adolescent girls in the target districts complete secondary education and progress to further study or decent work, improving lifetime earnings and reducing early marriage.",
+    "programme_stage": "design",
+    "donor_audience": "fcdo",
+    "known_evidence": "2023 single-district pilot: +14% attendance; completion impact not yet measured. Systematic reviews support cost-reduction interventions (bursaries) for enrolment; evidence that teacher training alone shifts completion is mixed; mentorship evidence is promising but thin in West African contexts."
+  },
   "tags": [
     "theory-of-change",
     "programme-design",

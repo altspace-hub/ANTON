@@ -189,6 +189,14 @@
       "placeholder": "e.g., We are concerned about the liability cap and exit provisions. Are the SCA requirements correctly addressed?"
     }
   ],
+  "exampleInput": "Review this draft master services agreement between our bank and CloudCore AB, who will host our core customer-data platform. We are the client. The vendor's draft caps total liability at three monthly fees, permits subcontracting without consent, has a 36-month initial term with automatic renewal, and gives the vendor 90 days to remedy any breach before we may terminate. As an EU-regulated credit institution we need DORA ICT third-party requirements and GDPR processor terms addressed. Flag missing clauses, assess the liability and exit provisions clause by clause, and give us a negotiation position for each red flag.",
+  "exampleValues": {
+    "contract_type": "ict_contract",
+    "your_role": "client",
+    "review_focus": ["risk", "regulatory", "liability", "termination", "data_protection"],
+    "jurisdiction": "swedish",
+    "concerns": "Liability cap of three monthly fees looks far too low for a platform hosting customer data. No audit or supervisory access rights, no exit-assistance obligation, and the data-processing annex is missing sub-processor notification terms."
+  },
   "recommendedPersonas": [
     "legal-expert"
   ],

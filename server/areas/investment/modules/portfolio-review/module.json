@@ -90,6 +90,12 @@
       "placeholder": "Describe the portfolio, mandate, benchmark, and recent events."
     }
   ],
+  "exampleInput": "Quarterly review of our UCITS European equity fund (AUM €480M, benchmark MSCI Europe NR). Q2 return was -1.8% vs -0.6% for the benchmark; underperformance was driven by an industrials overweight and two idiosyncratic detractors (a German auto supplier on a profit warning, a UK retailer). Top-10 concentration is 38%; the largest holding is 7.2%, close to our 8% internal cap and the UCITS 10% issuer limit. Cash is 6.5% after €22M of redemptions, and one small-cap position would now take about nine trading days to exit at 25% of ADV. ESG: portfolio carbon intensity is above the benchmark for the first time, driven by the industrials overweight. Review performance attribution, concentration, liquidity, and regulatory headroom, and recommend actions for the next investment-committee meeting.",
+  "exampleValues": {
+    "review_focus": ["performance", "risk", "concentration", "liquidity", "esg", "regulatory"],
+    "portfolio_type": "ucits",
+    "context": "UCITS European equity fund, AUM €480M, benchmark MSCI Europe NR. Q2: -1.8% vs -0.6% benchmark; detractors: industrials overweight plus two stock-specific hits (German auto supplier profit warning, UK retailer). Top-10 = 38%; largest position 7.2% (8% internal cap, 10% UCITS issuer limit). Cash 6.5% after €22M redemptions; one small-cap ≈ 9 trading days to exit at 25% ADV. Carbon intensity now above benchmark."
+  },
   "recommendedPersonas": [
     "pe-vc-expert",
     "finance-expert"

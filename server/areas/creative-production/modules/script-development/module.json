@@ -192,6 +192,16 @@
       "placeholder": "Paste your logline, treatment, existing pages, character notes, or creative brief..."
     }
   ],
+  "exampleInput": "Develop a treatment from this logline: a burned-out Stockholm paramedic discovers her new AI dispatch system is quietly deprioritising emergency calls from a poor suburb — and the only person who believes her is the teenage hacker whose mother the system left to die. Feature film, Nordic-noir-leaning thriller with a social-drama spine, around 110 minutes, contained budget (two districts, ambulance interiors, one data-centre location). I have the protagonist's arc roughly mapped — she starts complicit and exhausted, ends whistleblowing at real personal cost — but I need a beat-sheet treatment, an antagonist who is more than an 'evil tech company', and a midpoint that genuinely escalates.",
+  "exampleValues": {
+    "format": "screenplay",
+    "genre": ["thriller", "drama"],
+    "stage": "treatment",
+    "structure": "beat-sheet",
+    "tone_reference": "Nordic noir meets whistleblower drama — 'The Bridge' tension with 'Dark Waters' moral weight",
+    "constraints": "Contained budget: two Stockholm districts, ambulance interiors, one data-centre location. Target ~110 minutes. Swedish-language with English-market potential.",
+    "existing_material": "Logline: a burned-out Stockholm paramedic discovers her new AI dispatch system is quietly deprioritising emergency calls from a poor suburb — the only person who believes her is the teenage hacker whose mother the system left to die. Protagonist arc: complicit and exhausted → whistleblower at real personal cost. Antagonist should be institutional and human (a plausible, budget-pressured official), not a cartoon tech villain."
+  },
   "recommendedPersonas": [
     "creative-director"
   ],

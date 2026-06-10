@@ -49,7 +49,7 @@ import EngagementProposal from '@/components/modules/EngagementProposal';
 import EngagementExecution from '@/components/modules/EngagementExecution';
 import ManagementPresentation from '@/components/modules/ManagementPresentation';
 import ModelValidation from '@/components/modules/ModelValidation';
-import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff, Layers, Wrench } from 'lucide-react';
+import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff, Layers, Wrench, Sparkles } from 'lucide-react';
 import SmartModelBanner from '@/components/shared/SmartModelBanner';
 import { MODELS } from '@/lib/constants';
 import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule } from '@/lib/api';
@@ -141,6 +141,10 @@ export default function ModulePage() {
   const [suggestedLibraryEntries, setSuggestedLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
   const [activePacks, setActivePacks] = useState<Array<{ display_name: string; entity_count: number; relationship_count: number }>>([]);
   const [myWayActive, setMyWayActive] = useState(false);
+  // Showcase example ("Try an example" chip) — exampleInput fills the task box,
+  // exampleValues (keyed by guided-input id) pre-fills the guided form.
+  const [moduleExample, setModuleExample] = useState<{ input: string; values?: Record<string, unknown> } | null>(null);
+  const [exampleUsed, setExampleUsed] = useState(false);
   const [learnOffered, setLearnOffered] = useState(false);
   const [learnSaving, setLearnSaving] = useState(false);
   const [learnDone, setLearnDone] = useState(false);
@@ -342,6 +346,8 @@ export default function ModulePage() {
     setModule(moduleId);
     setSystemPrompt('');
     setSelectedPersonas(['general-assistant']);
+    setModuleExample(null);
+    setExampleUsed(false);
 
     // Always fetch module prompt + config (needed for guided inputs, areaId, transparency)
     fetchModulePrompt(moduleId).then((prompt) => {
@@ -442,6 +448,13 @@ export default function ModulePage() {
           if (typeof cfg.defaults?.transparencyLevel === 'number') {
             setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
           }
+          // Showcase example — powers the "Try an example" chip
+          if (typeof cfg.exampleInput === 'string' && cfg.exampleInput.trim()) {
+            setModuleExample({
+              input: cfg.exampleInput,
+              values: (cfg as Record<string, unknown>).exampleValues as Record<string, unknown> | undefined,
+            });
+          }
           // Apply first recommended persona if available
           const personas = (cfg as Record<string, unknown>).recommendedPersonas as string[] | undefined;
           if (Array.isArray(personas) && personas.length > 0) {
@@ -461,6 +474,13 @@ export default function ModulePage() {
         }
         if (defs.knowledgeSources?.claudeKnowledge) {
           Object.assign(defaultKS.modes.claudeKnowledge, defs.knowledgeSources.claudeKnowledge);
+        }
+        // Showcase example — powers the "Try an example" chip
+        if (typeof dynamicCfg.exampleInput === 'string' && dynamicCfg.exampleInput.trim()) {
+          setModuleExample({
+            input: dynamicCfg.exampleInput,
+            values: dynamicCfg.exampleValues as Record<string, unknown> | undefined,
+          });
         }
         // Apply first recommended persona if available
         const dynPersonas = (dynamicCfg as Record<string, unknown>).recommendedPersonas as string[] | undefined;
@@ -913,9 +933,27 @@ export default function ModulePage() {
           {/* User Input + Run */}
           <div className="space-y-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
-                {messages.length === 0 ? t('module.describeTask') : t('module.followUp')}
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className="block text-sm font-medium text-adv-off-white">
+                  {messages.length === 0 ? t('module.describeTask') : t('module.followUp')}
+                </label>
+                {/* "Try an example" chip — fills the task box (+ guided inputs) with the module's worked example */}
+                {moduleExample && !exampleUsed && messages.length === 0 && !userInput.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserInput(moduleExample.input);
+                      if (moduleExample.values) setModuleInputs(moduleExample.values);
+                      setExampleUsed(true);
+                    }}
+                    className="flex shrink-0 items-center gap-1 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-[11px] font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
+                    title={t('module.tryExampleHint', 'Fill the inputs with a realistic worked example')}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {t('module.tryExample', 'Try an example')}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <textarea
                   value={userInput}

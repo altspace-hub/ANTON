@@ -185,6 +185,15 @@
       "required": false
     }
   ],
+  "exampleInput": "Draft a discharge summary for the GP from these notes: 67-year-old female admitted with community-acquired pneumonia (CURB-65 score 2). Treated with IV co-amoxiclav for 48 hours then stepped down to oral. Chest X-ray showed right lower lobe consolidation, no effusion. Background of type 2 diabetes (metformin) and hypertension (ramipril). Day 3: afebrile, oxygen weaned, mobilising independently. Discharged day 5 with three further days of oral antibiotics. Plan: repeat chest X-ray in 6 weeks to confirm resolution; GP to review blood pressure — systolic readings ran in the 150s throughout admission.",
+  "exampleValues": {
+    "document_type": "discharge-summary",
+    "specialty": "general-medicine",
+    "recipient": "gp",
+    "clinical_context": "67F admitted with CAP (CURB-65 = 2). IV co-amoxiclav 48h then stepped down to oral. CXR: right lower lobe consolidation, no effusion. PMH: T2DM (metformin 500 mg BD), hypertension (ramipril 5 mg OD). Day 3: afebrile, SpO2 95% on room air, mobilising. Discharged day 5 with 3 further days oral co-amoxiclav. Plan: repeat CXR in 6 weeks; GP to review BP (systolic 150s during admission).",
+    "patient_demographics": "67-year-old female, type 2 diabetic, hypertensive",
+    "tone_notes": "Concise — max 1 page. Include medications table."
+  },
   "recommendedPersonas": [
     "clinical-professional"
   ],

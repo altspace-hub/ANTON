@@ -83,6 +83,13 @@
       ]
     }
   ],
+  "exampleInput": "Benchmark our compliance team's pay against the Nordic financial-services market and tell us where we are exposed. We are a Stockholm-based mid-size bank; two recent resignations cited pay. Current data — Senior Compliance Manager (M4): €95,000 + 15% bonus; Compliance Manager (M3): €75,000 + 10%; AML Team Lead (M3): €71,000 + 10%; two Compliance Analysts (A2): €52,000 and €48,500 + 5%. Mercer 2025 Nordic FS medians: Senior Compliance Manager €105,000, Compliance Manager €82,000, Compliance Analyst €56,000. Our adjustment budget is €60,000 per year. Identify below-market roles, compression and internal-equity issues (note the two A2 analysts doing the same job at different pay), and propose a prioritised adjustment plan within budget.",
+  "exampleValues": {
+    "compensation_data": "Role | Level | Base Salary (annual) | Bonus %\nSenior Compliance Manager | M4 | €95,000 | 15%\nCompliance Manager | M3 | €75,000 | 10%\nAML Team Lead | M3 | €71,000 | 10%\nCompliance Analyst | A2 | €52,000 | 5%\nCompliance Analyst | A2 | €48,500 | 5%",
+    "benchmark_data": "Mercer 2025 Nordic Financial Services survey:\nSenior Compliance Manager — P25 €92,000 / P50 €105,000 / P75 €118,000\nCompliance Manager — P25 €72,000 / P50 €82,000 / P75 €93,000\nCompliance Analyst — P25 €49,000 / P50 €56,000 / P75 €63,000",
+    "market_context": "Stockholm-based mid-size bank, not competing at top-of-market. Two compliance resignations in the last six months cited pay. Adjustment budget approximately €60,000 per year.",
+    "analysis_focus": ["market_position", "pay_equity", "retention_risk", "adjustment_priority", "budget_modelling"]
+  },
   "recommendedPersonas": [
     "hr-expert"
   ],

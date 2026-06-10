@@ -139,6 +139,13 @@
       "placeholder": "e.g. Previous audit finding on CDD for high-risk customers; Supervisory letter on PEP controls received Q3 2024..."
     }
   ],
+  "exampleInput": "We are a Swedish payment institution (~120 employees, e-money licence) preparing for AMLR application in July 2027. Our AML policy was last updated in 2023 against AMLD5 and the Swedish Money Laundering Act. We onboard merchants remotely across the Nordics, including some higher-risk verticals (gaming, crypto on-ramps). Run a gap analysis of our current framework against AMLR, focusing on customer due diligence, the risk-based approach, and outsourcing — our KYC operations are partly outsourced to a vendor in Estonia. Known weak spots: UBO verification relies on registry extracts alone, and our business-wide risk assessment has not been refreshed since 2024.",
+  "exampleValues": {
+    "entity_type": "fintech",
+    "jurisdiction": ["eu", "sweden"],
+    "focus_areas": ["cdd", "rba", "outsourcing"],
+    "known_concerns": "UBO verification relies on registry extracts only — no independent verification step. Business-wide risk assessment last refreshed 2024. KYC operations partly outsourced to an Estonian vendor without a documented oversight programme."
+  },
   "recommendedPersonas": [
     "fcp-expert",
     "legal-expert"
