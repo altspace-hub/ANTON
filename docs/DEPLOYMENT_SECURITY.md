@@ -1,3 +1,5 @@
+> ⚠️ Stale as of 2026-06-10 — server-only, predates the mobile apps; see `docs/APPS_SECURITY_AUDIT.md` for app coverage.
+
 # Production Deployment Security Guide
 
 **Project:** ANTON by openEXPERT (FCP Workbench)

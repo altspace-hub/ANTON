@@ -1,3 +1,5 @@
+> ⚠️ Stale as of 2026-06-10 — server-only, predates the mobile apps; see `docs/APPS_SECURITY_AUDIT.md` for app coverage.
+
 # OWASP Top 10 2021 Security Compliance
 
 **Project:** ANTON by openEXPERT (FCP Workbench)
