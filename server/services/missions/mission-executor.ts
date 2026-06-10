@@ -23,6 +23,7 @@ import { resolveMissionModel, providerForModel } from './mission-model-resolver.
 import { executeApiCall } from './executors/api-call-executor.js';
 import { executeDatabaseQuery } from './executors/database-query-executor.js';
 import { executeBrowser } from './executors/browser-executor.js';
+import { hasTaskOutputRefs, substituteTaskOutputRefs } from './mission-task-piping.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
 
@@ -211,6 +212,30 @@ export function createMissionExecutor(db: DatabaseAdapter) {
         taskId: task.id,
       });
       return { success: true, pausedMission: true, reason: approvalReason };
+    }
+
+    // ── Task-output piping: ${task:<id>.output[:<cap>]} ────────────────────
+    // Resolve references to prior tasks' outputs inside module_config BEFORE
+    // any executor consumes it. Runs after the autonomy gate so the human
+    // approves the task with its pipes intact and the freshest outputs are
+    // injected at actual run time. Unknown or not-yet-completed references
+    // hard-fail the task here with no retry (the graph is wrong, not the
+    // network) — an api_call/browser action must never fire with a raw
+    // placeholder in its params.
+    if (hasTaskOutputRefs(task.module_config)) {
+      const allTasks = await state.listTasks(mission.id);
+      const piped = substituteTaskOutputRefs(task.module_config, allTasks);
+      if (piped.errors.length > 0) {
+        const message = `Task-output piping failed: ${piped.errors.join('; ')}`;
+        await state.updateTaskStatus(task.id, 'failed', { lastError: message });
+        await state.logActivity(mission.id, {
+          activityType: 'task_failed',
+          description: `Failed: ${task.title} — ${message}`,
+          taskId: task.id,
+        });
+        return { success: false, reason: message };
+      }
+      task = { ...task, module_config: piped.config };
     }
 
     // ── Non-LLM action executors (api_call, database_query, browser) ──────

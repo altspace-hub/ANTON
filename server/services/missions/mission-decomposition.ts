@@ -164,6 +164,7 @@ ${credLines || '    (none)'}
 
 ACTION RULES:
 - Only reference service_id / workflow_id / credential ids listed above. Never invent integrations.
+- To pipe a prior task's output into an action parameter, use \${task:<local_id>.output} inside any module_config string — it is replaced with that task's completed output at execution time (optional length cap: \${task:t1.output:5000}; default cap 30000 chars), e.g. { "params": { "body_text": "\${task:t1.output}" } }. The referencing task MUST list the referenced task in depends_on; preserve these references verbatim — they are runtime pipes, not template parameters.
 - Any state-changing action (sending, posting, writing) MUST be preceded by a "checkpoint" task so the human approves the content first. The autonomy gate will additionally pause credentialed/state-changing actions.
 - Prefer llm/analysis tasks when no installed capability matches the need.`;
 }

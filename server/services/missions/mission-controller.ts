@@ -14,6 +14,7 @@ import {
   mergeTemplateParameterDefaults,
   appendTemplateParametersToContext,
 } from './mission-template-parameters.js';
+import { rewriteTaskOutputRefIds } from './mission-task-piping.js';
 import { createMissionExecutor } from './mission-executor.js';
 import { createMissionDelivery } from './mission-delivery.js';
 import {
@@ -542,11 +543,15 @@ export function createMissionController(db: DatabaseAdapter) {
 
   async function persistTaskGraph(missionId: string, graph: TaskGraphTemplate): Promise<void> {
     const ts = nowIso();
-    // First pass: create tasks (without dependencies). Map local_id → real id.
+    // Allocate ids up-front so forward references (parent_local_id and
+    // ${task:<local_id>.output} pipes) resolve regardless of graph order.
     const idMap = new Map<string, string>();
     for (const node of graph.tasks) {
-      const taskId = newTaskId();
-      idMap.set(node.local_id, taskId);
+      idMap.set(node.local_id, newTaskId());
+    }
+    // First pass: create tasks (without dependencies).
+    for (const node of graph.tasks) {
+      const taskId = idMap.get(node.local_id) as string;
       await state.insertTask({
         id: taskId,
         mission_id: missionId,
@@ -558,7 +563,13 @@ export function createMissionController(db: DatabaseAdapter) {
         priority: 0,
         module_id: node.module_id ?? null,
         area_id: node.area_id ?? null,
-        module_config: { ...(node.module_config ?? {}), prompt: node.prompt, checkpoint_message: node.checkpoint_message },
+        // Rewrite ${task:<local_id>.output} pipes to the real task ids so
+        // the executor can resolve them against persisted rows (typos stay
+        // verbatim and hard-fail at execution with a clear error).
+        module_config: rewriteTaskOutputRefIds(
+          { ...(node.module_config ?? {}), prompt: node.prompt, checkpoint_message: node.checkpoint_message },
+          idMap,
+        ),
         provider: null,
         model: null,
         model_tier: null,

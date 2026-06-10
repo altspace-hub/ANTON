@@ -607,9 +607,12 @@ const OUTBOUND_SALES_TEMPLATE: MissionTemplate = {
 
 // ── Outbound Sales v2 (real action: Gmail send) ─────────────────────────────
 // First template that exercises the Action Layer end-to-end: draft a
-// personalised email (llm) → human approval checkpoint → REAL send through
-// the Gmail Service Pack's send_message workflow (api-type pack, executed
-// via the browser task type + the gmail.rfc5322_send composer).
+// personalised email body + subject (llm) → human approval checkpoint →
+// REAL send through the Gmail Service Pack's send_message workflow
+// (api-type pack, executed via the browser task type + the
+// gmail.rfc5322_send composer). The send task pipes the approved drafts in
+// via ${task:<id>.output} task-output piping — the checkpoint is
+// review-only, no hand-arming of params.
 //
 // Safety: default autonomy is 'briefing' and the send task carries an OAuth
 // credential, so the autonomy gate pauses it for explicit approval even
@@ -620,7 +623,7 @@ const OUTBOUND_SALES_V2_TEMPLATE: MissionTemplate = {
   id: 'tmpl_outbound_sales_v2',
   name: 'Outbound Sales v2 — Draft & Send (Gmail)',
   description:
-    'Draft one personalised outreach email and actually send it through Gmail. Flow: research + draft (LLM) → checkpoint (you review the draft and paste the final subject/body into the send task) → real send via the Gmail Service Pack under the briefing autonomy gate. Requires a Gmail oauth2 credential (gmail.send scope) in the Credential Vault. v1 (Outbound Sales Machine) remains the LLM-only campaign builder.',
+    'Draft one personalised outreach email and actually send it through Gmail. Flow: draft body + subject (LLM) → checkpoint (you review the drafts — the send task pipes them in automatically, nothing to paste) → real send via the Gmail Service Pack under the briefing autonomy gate. Requires a Gmail oauth2 credential (gmail.send scope) in the Credential Vault. v1 (Outbound Sales Machine) remains the LLM-only campaign builder.',
   pillar: 'work',
   category: 'sales',
   version: '2.0.0',
@@ -666,51 +669,61 @@ const OUTBOUND_SALES_V2_TEMPLATE: MissionTemplate = {
     tasks: [
       {
         local_id: 't1',
-        title: 'Draft the outreach email',
-        description: 'Personalised first-touch email for the recipient: subject line + plain-text body, grounded in the recipient context and value proposition.',
+        title: 'Draft the outreach email body',
+        description: 'Personalised first-touch email body for the recipient, grounded in the recipient context and value proposition. The send task pipes this output in as body_text.',
         task_type: 'llm',
         estimated_tokens: 5000,
         sort_order: 1,
         depends_on: [],
-        prompt: 'Draft a personalised first-touch outreach email to ${recipient_email}. Use the recipient context, offering, and value proposition from the mission brief. Requirements: subject line ≤ 60 chars; body 90-130 words plain text; one specific angle keyed to the recipient context; one clear ask; no generic claims, no flattery filler. Output EXACTLY this format:\n\nSUBJECT: <subject line>\n\nBODY:\n<plain-text body>',
+        prompt: 'Draft the plain-text BODY of a personalised first-touch outreach email to ${recipient_email}. Use the recipient context, offering, and value proposition from the mission brief. Requirements: 90-130 words plain text; one specific angle keyed to the recipient context; one clear ask; no generic claims, no flattery filler. Output ONLY the email body — no subject line, no labels, no preamble, no commentary. Your output is sent verbatim as the email body.',
       },
       {
         local_id: 't2',
-        title: 'Checkpoint — approve the draft & arm the send task',
-        description: 'Human reviews the draft, then pastes the final subject and body into the send task before approving.',
-        task_type: 'checkpoint',
-        estimated_tokens: 0,
+        title: 'Draft the subject line',
+        description: 'Subject line matched to the drafted body. The send task pipes this output in as the subject.',
+        task_type: 'llm',
+        estimated_tokens: 1000,
         sort_order: 2,
         depends_on: ['t1'],
-        checkpoint_message: 'The draft is ready. Before approving: open the "Send via Gmail" task → Edit task → set module_config.params.subject and module_config.params.body_text to the final text (and auth_credential_id to your Gmail credential if not already set). Approving this checkpoint releases the send to the briefing autonomy gate for final confirmation.',
+        prompt: 'Write the subject line for the outreach email body drafted in the prior task (see prior task outputs). Requirements: ≤ 60 characters; specific to the angle used in the body; no clickbait, no quotes, no "Subject:" prefix. Output ONLY the subject line text on a single line — it is sent verbatim as the email subject.',
       },
       {
         local_id: 't3',
-        title: 'Send via Gmail',
-        description: 'Real send through the Gmail Service Pack send_message workflow (RFC 5322 composer; header-injection safe). Pauses at the briefing autonomy gate because it runs with an authenticated session.',
-        task_type: 'browser',
+        title: 'Checkpoint — approve the draft',
+        description: 'Human reviews the drafted subject + body; the send task receives both automatically via task-output piping.',
+        task_type: 'checkpoint',
         estimated_tokens: 0,
         sort_order: 3,
-        depends_on: ['t2'],
+        depends_on: ['t1', 't2'],
+        checkpoint_message: 'The draft is ready — review the email body and subject-line task outputs. The send task pipes both in automatically at execution time; nothing needs to be pasted. If you want different wording, use "Edit task" on the "Send via Gmail" task to replace the piped params with literal text (and set auth_credential_id to your Gmail credential if not already set) before approving. Approving this checkpoint releases the send to the briefing autonomy gate for final confirmation.',
+      },
+      {
+        local_id: 't4',
+        title: 'Send via Gmail',
+        description: 'Real send through the Gmail Service Pack send_message workflow (RFC 5322 composer; header-injection safe). Subject and body are piped in from the approved drafts at execution time. Pauses at the briefing autonomy gate because it runs with an authenticated session.',
+        task_type: 'browser',
+        estimated_tokens: 0,
+        sort_order: 4,
+        depends_on: ['t3'],
         module_config: {
           service_id: 'gmail',
           workflow_id: 'send_message',
           params: {
             to: '${recipient_email}',
-            subject: 'SET AT CHECKPOINT — paste the approved subject here',
-            body_text: 'SET AT CHECKPOINT — paste the approved body here',
+            subject: '${task:t2.output:200}',
+            body_text: '${task:t1.output}',
           },
           auth_credential_id: '${gmail_credential_id}',
         },
       },
       {
-        local_id: 't4',
+        local_id: 't5',
         title: 'Deliver send receipt',
         description: 'Record the send outcome to the Mission Inbox.',
         task_type: 'notification',
         estimated_tokens: 0,
-        sort_order: 4,
-        depends_on: ['t3'],
+        sort_order: 5,
+        depends_on: ['t4'],
         prompt: 'Deliver the send receipt (draft + Gmail API response) to the Mission Inbox.',
       },
     ],
