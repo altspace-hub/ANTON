@@ -5,10 +5,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
 import { safeError } from '../lib/error-response.js';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 /** Narrow `unknown` thrown values to a user-safe error message. */
 function errMsg(err: unknown): string {
   // Delegates to the shared safeError — redacts in production.
@@ -17,6 +13,12 @@ function errMsg(err: unknown): string {
 
 export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   const router = Router();
+  // Constructed inside the factory (NOT at module scope) so the boot-time
+  // persisted-key loader (env-keys-store.ts) has already populated
+  // process.env.ANTHROPIC_API_KEY by the time this runs.
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+  });
   const insights = await createInsightsGenerator(db, anthropic);
 
   // GET /api/intelligence/summary — aggregate stats for dashboard

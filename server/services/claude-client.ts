@@ -3,11 +3,12 @@ import type { Response } from 'express';
 
 // ── Types ──────────────────────────────────────────────────
 
-type ModelId = 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+type ModelId = 'claude-fable-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 // Models that support prompt caching via cache_control: { type: "ephemeral" }
 const CACHE_SUPPORTED_MODELS: ReadonlySet<ModelId> = new Set([
+  'claude-fable-5',
   'claude-opus-4-8',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5-20250929',
@@ -121,6 +122,7 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 // Keep in sync with server/config/model-capabilities.ts (maxOutputTokens).
 // Opus 4.8: 128 000 | Sonnet 4.6/4.5: 64 000 | Haiku 4.5: 8 192 | fallback: 32 000
 const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
+  'claude-fable-5':              128_000,
   'claude-opus-4-8':             128_000,
   'claude-sonnet-4-6':            64_000,
   'claude-sonnet-4-5-20250929':   64_000,
@@ -131,9 +133,11 @@ function getOutputCeiling(model: string): number {
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
-  // Opus 4.8 + Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens).
+  // Fable 5 + Opus 4.8 + Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens).
   // budget_tokens is DEPRECATED on Opus 4.8 and unnecessary on Sonnet 4.6 when using adaptive.
-  if (model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6') {
+  // Fable 5 additionally 400s on an explicit thinking {type:'disabled'} — we never send it
+  // (the non-adaptive fallback below returns {} which omits the param entirely).
+  if (model === 'claude-fable-5' || model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6') {
     const effortMap: Record<ThinkingLevel, string> = {
       quick: 'low',
       think: 'medium',
@@ -187,6 +191,16 @@ export function getClient(): Anthropic {
   return client;
 }
 
+/**
+ * Drop the cached client so the next getClient() constructs a fresh one
+ * from the current process.env.ANTHROPIC_API_KEY. Called by the Settings
+ * set-env route when the key changes — without this, an in-app key change
+ * would not take effect until restart (the client is a boot-time singleton).
+ */
+export function resetClient(): void {
+  client = null;
+}
+
 export function isApiKeyConfigured(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
 }
@@ -200,7 +214,7 @@ export async function streamToResponse(
 ): Promise<void> {
   const anthropic = getClient();
   const thinkingConfig = config.nativeReasoningEnabled
-    ? ((config.model === 'claude-opus-4-8' || config.model === 'claude-sonnet-4-6')
+    ? ((config.model === 'claude-fable-5' || config.model === 'claude-opus-4-8' || config.model === 'claude-sonnet-4-6')
         ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
         : { thinking: { type: 'enabled' as const, budget_tokens: 32768 } })
     : getThinkingConfig(config.thinking, config.model);

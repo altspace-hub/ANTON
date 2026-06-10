@@ -319,6 +319,20 @@ if (!projectsTable) {
 // RATE-04: initialise async audit queue now that DB is ready
 initAuditQueue(db);
 
+// Restore Settings-persisted provider API keys (app_settings → process.env)
+// BEFORE any LLM client is constructed below (quality-scoring Anthropic
+// instance, claude-client singleton, route factories). Keys set in the
+// Settings UI survive restarts via this loader; names only are logged.
+try {
+  const { loadPersistedEnvKeys } = await import('./services/env-keys-store.js');
+  const restoredKeys = await loadPersistedEnvKeys(db);
+  if (restoredKeys.length > 0) {
+    console.log(`[settings] restored persisted provider key(s): ${restoredKeys.join(', ')}`);
+  }
+} catch (err) {
+  console.warn('[settings] failed to restore persisted provider keys:', err instanceof Error ? err.message : err);
+}
+
 // FC-CONN-SEED: pick up FUTURECHAIN_RPC_URL from the portable bundle's
 // run-anton.ps1 probe (Step 5.5) on first boot. Only applies when the
 // fc_connection_config row is still at its migration-081 defaults —
@@ -407,11 +421,16 @@ setInterval(async () => {
 // Portals transparency-log freshness check (audit #3c). Warn when the
 // registry's Signed Tree Head stops advancing — registry down, withheld
 // log, or network broken. Edge-triggered so we don't spam logs.
-if (process.env.PORTAL_STH_MONITOR_DISABLED !== 'true') {
+// Only runs when PORTAL_REGISTRY_URL is explicitly configured — the legacy
+// transparency-log registry is not deployed, so a dead-host default would
+// log a failed fetch every 20 minutes on every install forever. The relay
+// HTTP registry (RELAY_PORTAL_SUBMIT_URL) is the active publishing path
+// and does not use STHs.
+if (process.env.PORTAL_REGISTRY_URL && process.env.PORTAL_STH_MONITOR_DISABLED !== 'true') {
   try {
     const { createRegistryClient } = await import('./services/registry-client/index.js');
     const { startSthGapMonitor } = await import('./services/registry-client/sth-gap-check.js');
-    const sthClient = createRegistryClient(db, { baseUrl: process.env.PORTAL_REGISTRY_URL ?? 'https://registry.anton.space/v1' });
+    const sthClient = createRegistryClient(db, { baseUrl: process.env.PORTAL_REGISTRY_URL });
     startSthGapMonitor(sthClient);
   } catch (e) {
     console.warn('[portals] STH monitor failed to start:', e instanceof Error ? e.message : e);
@@ -680,6 +699,29 @@ app.use('/api', createAtlasRoutes(db, anthropic));
       console.error('[mission-checkpoints] tick error:', err);
     }
   }, 60_000); // every minute
+}
+// Mission runner tick (Wave-2 2A.1) — advances 'active' missions in the
+// background so missions are genuinely autonomous instead of manual-click.
+// Only status='active' missions advance ('briefed' awaits human plan
+// approval); per-mission in-flight lock + global concurrency cap live in
+// mission-runner.ts. Autonomy gates / checkpoints / budgets pause exactly as
+// they do on the manual endpoint. Opt out: MISSIONS_RUNNER_DISABLED=true.
+if (process.env.MISSIONS_RUNNER_DISABLED === 'true') {
+  console.log('[mission-runner] disabled via MISSIONS_RUNNER_DISABLED — missions advance only via the manual API/UI');
+} else {
+  const { createMissionRunner, RUNNER_TICK_MS, RUNNER_MAX_CONCURRENT_MISSIONS } = await import('./services/missions/mission-runner.js');
+  const missionRunner = createMissionRunner(db);
+  setInterval(async () => {
+    try {
+      const result = await missionRunner.tick();
+      if (result.picked > 0) {
+        console.log(`[mission-runner] tick: missions=${result.picked} tasks_ok=${result.advanced} completed=${result.completed} paused=${result.paused} failed=${result.failed}`);
+      }
+    } catch (err) {
+      console.error('[mission-runner] tick error:', err);
+    }
+  }, RUNNER_TICK_MS);
+  console.log(`[mission-runner] background runner active (every ${RUNNER_TICK_MS / 1000}s, ≤${RUNNER_MAX_CONCURRENT_MISSIONS} missions in flight). Set MISSIONS_RUNNER_DISABLED=true to disable.`);
 }
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
@@ -1092,6 +1134,29 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
     if (marketsFetchDisabled) console.log('[markets-schedule] MARKETS_FETCH_DISABLED=true — data fetches will skip');
     if (marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_AUTOREBALANCE_DISABLED=true — scheduled rebalances will skip');
 
+    // ── Markets automation opt-in (plan 1.11) ──────────────────────────────
+    // MARKETS_AUTOMATION=true is the explicit opt-in master switch for every
+    // token-spending (LLM) and external-data-fetching markets cron. Default is
+    // OFF: a fresh install schedules ONLY the free deterministic loops — NAV,
+    // price→historical sync, MV refreshes, prediction checkpoints, the (price-
+    // graded) verifier + calibration, pattern→weight feedback, lifecycle
+    // sweeps, backlog triage, event triggers, and the loop-health watchdog.
+    // When automation is ON, the existing MARKETS_THINKING_DISABLED /
+    // MARKETS_FETCH_DISABLED flags keep working as finer-grained overrides.
+    const marketsAutomation =
+      String(process.env.MARKETS_AUTOMATION || '').toLowerCase() === 'true';
+    // Effective tiers (opt-in AND not paused by the existing flags):
+    const marketsLlmOn = marketsAutomation && !marketsThinkingDisabled;
+    const marketsFetchOn = marketsAutomation && !marketsFetchDisabled;
+    console.log(
+      `[markets-schedule] Automation tiers — free deterministic loops: ON | LLM phases: ${marketsLlmOn ? 'ON' : 'OFF'} | external data fetch: ${marketsFetchOn ? 'ON' : 'OFF'}` +
+      (marketsAutomation ? '' : ' (set MARKETS_AUTOMATION=true to enable the token/data-spending crons)'),
+    );
+    /** Register a cron only when the token/data-spending tier is opted in. */
+    const scheduleSpending = (expr: string, fn: () => Promise<void>): void => {
+      if (marketsAutomation) cron.schedule(expr, fn, MARKET_TZ);
+    };
+
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
     // Backlog gate: skip new fetches if too many unprocessed articles
     async function getBacklogSize(): Promise<number> {
@@ -1115,8 +1180,8 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
       return processed;
     }
 
-    // Phase 1: Morning Intelligence (07:00 CET)
-    cron.schedule('0 7 * * 1-5', async () => {
+    // Phase 1: Morning Intelligence (07:00 CET) — fetch + LLM (opt-in)
+    scheduleSpending('0 7 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 1: Morning Intelligence');
       try {
         await marketAtomService.applyAtomDecay();
@@ -1136,10 +1201,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 2: Pre-Open (14:30 CET) — light fetch + process
-    cron.schedule('30 14 * * 1-5', async () => {
+    // Phase 2: Pre-Open (14:30 CET) — light fetch + process (opt-in)
+    scheduleSpending('30 14 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 2: Pre-Open');
       try {
         const backlog = await getBacklogSize();
@@ -1151,10 +1216,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 3: Market Open (15:45 CET) — prices only (no news to avoid backlog)
-    cron.schedule('45 15 * * 1-5', async () => {
+    // Phase 3: Market Open (15:45 CET) — prices only, external fetch (opt-in)
+    scheduleSpending('45 15 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 3: Market Open');
       if (marketsFetchDisabled) {
         console.log('[markets-schedule] Phase 3 skipped (MARKETS_FETCH_DISABLED)');
@@ -1169,10 +1234,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
         }
         console.log('[markets-schedule] Phase 3 complete — prices captured');
       } catch (err) { console.error('[markets-schedule] Phase 3 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle
-    cron.schedule('0 18 * * 1-5', async () => {
+    // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle, fetch + LLM (opt-in)
+    scheduleSpending('0 18 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
       try {
         const backlog = await getBacklogSize();
@@ -1186,13 +1251,15 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           console.log('[markets-schedule] Phase 4 complete');
         }
       } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 5: Market Close (22:15 CET) — EOD prices + NAV
+    // Phase 5: Market Close (22:15 CET) — EOD prices + NAV. Stays registered
+    // always: the NAV/leaderboard/checkpoint legs are free deterministic
+    // in-DB work. Only the external fetch leg requires the automation opt-in.
     cron.schedule('15 22 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
-        if (!marketsFetchDisabled) await marketDataService.fetchAllSources();
+        if (marketsFetchOn) await marketDataService.fetchAllSources();
         await marketDataService.syncPricesToHistorical();
         await navEngine.updateAllActiveIndexes();
         await navEngine.updateLeaderboard();
@@ -1205,8 +1272,8 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis
-    cron.schedule('0 23 * * 1-5', async () => {
+    // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis, LLM (opt-in)
+    scheduleSpending('0 23 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 6: Post-Market Processing + Fundamental Analysis');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 6 skipped (MARKETS_THINKING_DISABLED)');
@@ -1261,10 +1328,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles (analysis skipped)`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch
-    cron.schedule('0 10 * * 6', async () => {
+    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
+    scheduleSpending('0 10 * * 6', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 7 skipped (MARKETS_THINKING_DISABLED)');
@@ -1284,10 +1351,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET)
-    cron.schedule('0 9 * * 1,4', async () => {
+    // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET), LLM (opt-in)
+    scheduleSpending('0 9 * * 1,4', async () => {
       console.log('[markets-schedule] Phase 8: Weekly Pulse Predictions');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 8 skipped (MARKETS_THINKING_DISABLED)');
@@ -1297,22 +1364,39 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
         await workflowOrchestrator.runWeeklyPulse();
         console.log('[markets-schedule] Phase 8 complete');
       } catch (err) { console.error('[markets-schedule] Phase 8 error:', err); }
-    }, MARKET_TZ);
+    });
 
-    // Daily auto-verification of expired predictions (12:00 CET weekdays)
+    // Daily auto-verification of expired predictions (12:00 CET weekdays).
+    // Stays registered always: directional/price-target grading is free
+    // (pure price comparison). LLM (binary/event) verification only runs
+    // when the automation opt-in + thinking flag both allow it — deferred
+    // predictions stay retriable.
     cron.schedule('0 12 * * 1-5', async () => {
       try {
         const { createPredictionVerifier } = await import('./services/market-prediction-verifier.js');
         const verifier = await createPredictionVerifier(db);
-        const result = await verifier.runAutoVerification();
+        const result = await verifier.runAutoVerification({ allowLLM: marketsLlmOn });
         if (result.verified > 0 || result.unverifiable > 0 || result.deferred_llm > 0) {
           console.log(`[markets-verify] Daily: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
+        }
+        // Plan 1.10d: compute confidence calibration after a successful
+        // verification pass — pure SQL arithmetic over validated predictions,
+        // no LLM cost, so it runs regardless of the automation opt-in.
+        if (result.verified > 0) {
+          try {
+            const { createMarketIntelligenceService } = await import('./services/market-intelligence-service.js');
+            const intelligence = await createMarketIntelligenceService(db);
+            await intelligence.runCalibrationCheck();
+            console.log('[markets-verify] Confidence calibration recomputed');
+          } catch (calErr) {
+            console.error('[markets-verify] Calibration check failed:', calErr instanceof Error ? calErr.message : calErr);
+          }
         }
       } catch (err) { console.error('[markets-verify] Daily verification error:', err); }
     }, MARKET_TZ);
 
-    // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00)
-    cron.schedule('0 14,16,18,20,22 * * 1-5', async () => {
+    // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00) — external fetch (opt-in)
+    scheduleSpending('0 14,16,18,20,22 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
       try {
         const priceSources = await db.all<{ id: string }>(
@@ -1322,7 +1406,7 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    }, MARKET_TZ);
+    });
 
     // Daily pattern → signal-weight feedback (03:00 CET). Reads unapplied
     // entries from market_pattern_detections and adjusts market_signal_weights
@@ -1445,8 +1529,8 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
       }
     }, MARKET_TZ);
 
-    // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
-    cron.schedule('0 8,15,21 * * 1-5', async () => {
+    // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00 — external fetch (opt-in)
+    scheduleSpending('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
       const backlog = await getBacklogSize();
       if (backlog > 1000) {
@@ -1461,7 +1545,7 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    }, MARKET_TZ);
+    });
 
     // Event trigger check 3x per day (not hourly)
     cron.schedule('0 9,16,22 * * 1-5', async () => {
@@ -1478,6 +1562,36 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
       } catch { /* silent */ }
     }, MARKET_TZ);
 
+    // Daily Markets loop-health watchdog (07:30 CET — plan 1.10c). Read-only
+    // stale-loop detection: a closed loop with pending work but zero
+    // transitions in the window has silently frozen (the April-2026 failure
+    // mode). Logs a warning AND writes a system notification so the failure
+    // is visible in the UI without reading server logs. Pure SQL, no LLM and
+    // no fetch — runs under every pause flag and without MARKETS_AUTOMATION.
+    cron.schedule('30 7 * * *', async () => {
+      try {
+        const { staleMarketLoops } = await import('./services/market-loop-health.js');
+        const stale = await staleMarketLoops(db);
+        if (stale.length === 0) return;
+        for (const loop of stale) {
+          console.warn(`[markets-loop-health] STALE: ${loop.loop} — ${loop.detail}`);
+        }
+        try {
+          const { createNotification } = await import('./services/notification-service.js');
+          await createNotification(db, {
+            type: 'system',
+            title: `Markets loop health: ${stale.length} stale loop${stale.length === 1 ? '' : 's'} detected`,
+            message: stale.map((l) => `${l.loop}: ${l.detail}`).join(' | '),
+            link: '/markets',
+          });
+        } catch (notifyErr) {
+          console.error('[markets-loop-health] notification write failed:', notifyErr instanceof Error ? notifyErr.message : notifyErr);
+        }
+      } catch (err) {
+        console.error('[markets-loop-health] watchdog error:', err instanceof Error ? err.message : err);
+      }
+    }, MARKET_TZ);
+
     console.log('[markets-schedule] Sustainable CET schedule active — quality over speed');
 
     // ── Startup Catch-Up: recover missed workflows after downtime ──────────
@@ -1491,12 +1605,12 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
 
         // 1. Process backlog immediately (always useful after restart) — LLM-spending
         const backlog = await getBacklogSize();
-        if (backlog > 0 && !marketsThinkingDisabled) {
+        if (backlog > 0 && marketsLlmOn) {
           const processed = await processBacklog(Math.min(backlog, 100));
           console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
           catchUpActions++;
         } else if (backlog > 0) {
-          console.log(`[markets-catchup] Backlog of ${backlog} items deferred (MARKETS_THINKING_DISABLED)`);
+          console.log(`[markets-catchup] Backlog of ${backlog} items deferred (LLM automation off)`);
         }
 
         // 1b. Sync prices to historical table (free)
@@ -1505,7 +1619,7 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
         } catch { /* non-fatal */ }
 
         // 1c. Ensure sector ETF data exists for rotation analysis (fetch)
-        if (!marketsFetchDisabled) {
+        if (marketsFetchOn) {
           try {
             const { backfilled } = await marketDataService.ensureSectorETFData();
             if (backfilled.length > 0) {
@@ -1515,10 +1629,15 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           } catch { /* non-fatal */ }
         }
 
-        // 2. Check if daily intelligence ran today (weekdays only) — LLM-spending
-        if (isWeekday && !marketsThinkingDisabled) {
+        // 2. Check if daily intelligence ran today (weekdays only) — LLM-spending.
+        // NOTE: these heartbeat queries previously filtered status='success',
+        // a value the workflow_runs CHECK constraint makes impossible — so
+        // catch-up believed the workflows had NEVER run and re-ran the paid
+        // jobs on every boot. Aligned to 'completed' ('success' kept
+        // defensively for pre-CHECK rows).
+        if (isWeekday && marketsLlmOn) {
           const lastIntel = await db.get<{ started_at: string }>(
-            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status IN ('completed','success') ORDER BY started_at DESC LIMIT 1"
           );
           const hoursSinceIntel = lastIntel
             ? (now.getTime() - new Date(lastIntel.started_at).getTime()) / 3600000
@@ -1527,7 +1646,7 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
           if (hoursSinceIntel > 24) {
             console.log(`[markets-catchup] Daily intelligence last ran ${hoursSinceIntel === Infinity ? 'never' : Math.round(hoursSinceIntel) + 'h ago'} — running now`);
             try {
-              if (!marketsFetchDisabled) await marketDataService.fetchAllSources();
+              if (marketsFetchOn) await marketDataService.fetchAllSources();
               await workflowOrchestrator.runDailyIntelligence();
               catchUpActions++;
               console.log('[markets-catchup] Daily intelligence catch-up complete');
@@ -1554,9 +1673,9 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
         }
 
         // 4. Check if prediction validation ran this week (should run Saturday) — LLM-spending
-        if ((dayOfWeek === 6 || dayOfWeek === 0) && !marketsThinkingDisabled) {
+        if ((dayOfWeek === 6 || dayOfWeek === 0) && marketsLlmOn) {
           const lastValidation = await db.get<{ started_at: string }>(
-            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_prediction_validation' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_prediction_validation' AND status IN ('completed','success') ORDER BY started_at DESC LIMIT 1"
           );
           const daysSinceValidation = lastValidation
             ? (now.getTime() - new Date(lastValidation.started_at).getTime()) / 86400000
@@ -1573,9 +1692,9 @@ httpServer.listen(Number(PORT), '0.0.0.0', async () => {
         }
 
         // 5. Check if weekly pulse ran recently — LLM-spending
-        if (!marketsThinkingDisabled) {
+        if (marketsLlmOn) {
           const lastPulse = await db.get<{ started_at: string }>(
-            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_weekly_pulse' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_weekly_pulse' AND status IN ('completed','success') ORDER BY started_at DESC LIMIT 1"
           );
           const daysSincePulse = lastPulse
             ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000

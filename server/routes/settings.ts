@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { PERSISTABLE_ENV_KEYS, persistEnvKey } from '../services/env-keys-store.js';
+import { resetClient as resetAnthropicClient } from '../services/claude-client.js';
 
 export interface CustomModelConfig {
   enabled: boolean;
@@ -17,18 +19,18 @@ export interface CustomModelConfig {
   supportsJsonMode: boolean;
 }
 
-const ALLOWED_KEYS = new Set([
-  'OPENAI_API_KEY',
-  'GOOGLE_API_KEY',
-  'MISTRAL_API_KEY',
-  'CUSTOM_MODEL_1_API_KEY',
-  'CUSTOM_MODEL_2_API_KEY',
-]);
+// Single allowlist shared with the boot-time loader (env-keys-store.ts).
+// Includes ANTHROPIC_API_KEY so a fresh GitHub-clone install can paste its
+// key in Settings without ever touching .env.
+const ALLOWED_KEYS = PERSISTABLE_ENV_KEYS;
 
 export async function createSettingsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
-  // POST /api/settings/set-env — runtime-only environment variable setter (dev convenience)
+  // POST /api/settings/set-env — set a provider API key. Applies immediately
+  // (process.env + cached-client invalidation) AND persists to app_settings
+  // so the key survives restarts (restored at boot by env-keys-store.ts).
+  // SECURITY: never log or echo key values — names + booleans only.
   router.post('/settings/set-env', async (req, res) => {
     const { key, value } = req.body as { key?: string; value?: string };
 
@@ -42,15 +44,32 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
       return;
     }
 
-    if (value && typeof value === 'string' && value.trim().length > 0) {
-      process.env[key] = value.trim();
-      console.log(`[settings] Set ${key} (runtime only)`);
-      res.json({ ok: true, key, configured: true });
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    const configured = trimmed.length > 0;
+
+    if (configured) {
+      process.env[key] = trimmed;
     } else {
       delete process.env[key];
-      console.log(`[settings] Cleared ${key}`);
-      res.json({ ok: true, key, configured: false });
     }
+
+    // The Anthropic client is a module-level singleton constructed once —
+    // drop it so the next request picks up the new (or cleared) key.
+    if (key === 'ANTHROPIC_API_KEY') resetAnthropicClient();
+
+    // Write-through persistence (encrypted at rest when
+    // INSTANCE_KEY_ENCRYPTION_KEY is set). A persistence failure must not
+    // undo the runtime set — report it so the UI can warn.
+    let persisted = true;
+    try {
+      await persistEnvKey(db, key, configured ? trimmed : null);
+    } catch (err) {
+      persisted = false;
+      console.error(`[settings] failed to persist ${key}:`, err instanceof Error ? err.message : err);
+    }
+
+    console.log(`[settings] ${configured ? 'Set' : 'Cleared'} ${key}${persisted ? ' (persisted)' : ' (runtime only — persistence failed)'}`);
+    res.json({ ok: true, key, configured, persisted });
   });
 
   // GET /api/settings/provider-status — check which provider keys are configured
