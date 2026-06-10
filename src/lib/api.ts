@@ -1025,6 +1025,216 @@ export function importMarketInvestigationAnton(file: File) { return importMarket
 export function importMarketDataSourceConfigAnton(file: File) { return importMarketBundle('market-data-source-config', file); }
 export function importMarketIntelligenceModelAnton(file: File) { return importMarketBundle('market-intelligence-model', file); }
 
+// ── Specialized Agents API ────────────────────────────────────
+
+export interface AgentProfileData {
+  id: string;
+  name: string;
+  slug: string;
+  role_description: string;
+  avatar: string;
+  greeting_message: string | null;
+  status: string;
+  system_prompt: string;
+  default_model: string | null;
+  default_thinking: string;
+  max_tokens: number;
+  routing_keywords: string | string[];
+  routing_priority: number;
+  escalation_policy: string;
+  max_conversation_turns: number;
+  auto_response_enabled: boolean;
+  total_conversations: number;
+  total_messages_handled: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentStats {
+  totalConversations: number;
+  recentConversations: number;
+  totalEscalations: number;
+  avgSatisfaction: number | null;
+}
+
+export interface AgentConversationSummary {
+  id: string;
+  agent_id: string;
+  source: string;
+  source_ref: string | null;
+  requester_hash: string | null;
+  requester_name: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentMessage {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  thinking: string | null;
+  created_at: string;
+}
+
+export interface AgentConnector {
+  id: string;
+  name: string;
+  connector_type: string;
+  description: string | null;
+  is_active: boolean;
+  last_used_at: string | null;
+  last_error: string | null;
+  created_at: string;
+}
+
+export async function fetchAgent(id: string): Promise<{ agent: AgentProfileData; stats: AgentStats } | null> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function updateAgentProfile(id: string, updates: Record<string, unknown>): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update agent');
+}
+
+export async function setAgentStatus(id: string, action: 'activate' | 'pause'): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(id)}/${action}`, { method: 'POST' });
+  if (!res.ok) throw new Error(`Failed to ${action} agent`);
+}
+
+export async function fetchAgentConversations(agentId: string, limit = 20): Promise<AgentConversationSummary[]> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/conversations?limit=${limit}`);
+  if (!res.ok) return [];
+  const data = await res.json() as { conversations?: AgentConversationSummary[] };
+  return data.conversations ?? [];
+}
+
+export async function fetchAgentConversation(conversationId: string): Promise<{
+  conversation: AgentConversationSummary;
+  messages: AgentMessage[];
+} | null> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/conversations/${encodeURIComponent(conversationId)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function queryAgent(agentId: string, message: string, conversationId?: string): Promise<{
+  response: string;
+  thinking?: string;
+  conversationId: string;
+  escalated: boolean;
+}> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, conversationId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Query failed' })) as { error?: unknown };
+    throw new Error(typeof err.error === 'string' ? err.error : 'Query failed');
+  }
+  return res.json();
+}
+
+export async function fetchAgentConnectors(agentId: string): Promise<AgentConnector[]> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/connectors`);
+  if (!res.ok) return [];
+  const data = await res.json() as { connectors?: AgentConnector[] };
+  return data.connectors ?? [];
+}
+
+export async function createAgentConnector(agentId: string, connector: {
+  name: string;
+  connectorType: string;
+  description?: string;
+  config: Record<string, unknown>;
+  authConfig?: Record<string, unknown>;
+}): Promise<{ id: string }> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/connectors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(connector),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to add connector' })) as { error?: unknown };
+    throw new Error(typeof err.error === 'string' ? err.error : 'Failed to add connector');
+  }
+  return res.json();
+}
+
+export async function deleteAgentConnector(agentId: string, connectorId: string): Promise<void> {
+  await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/connectors/${encodeURIComponent(connectorId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function testAgentConnector(agentId: string, connectorId: string, options?: {
+  action?: string;
+  params?: Record<string, unknown>;
+}): Promise<{ success: boolean; result?: unknown; error?: string }> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/${encodeURIComponent(agentId)}/connectors/${encodeURIComponent(connectorId)}/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options ?? {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Test failed' })) as { error?: unknown };
+    return { success: false, error: typeof err.error === 'string' ? err.error : 'Test failed' };
+  }
+  return res.json();
+}
+
+// ── Remote (network) agents — peers' public agent directories ──
+
+export interface RemoteAgentInfo {
+  slug: string;
+  name: string;
+  role: string;
+  keywords: string[];
+  endpoint: string;
+  peerHash: string;
+  peerName: string;
+}
+
+export async function discoverRemoteAgents(): Promise<RemoteAgentInfo[]> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/remote/discover`);
+  if (!res.ok) return [];
+  const data = await res.json() as { agents?: RemoteAgentInfo[] };
+  return data.agents ?? [];
+}
+
+export async function queryRemoteAgent(params: {
+  query: string;
+  endpoint?: string;
+  agentSlug?: string;
+  conversationId?: string;
+}): Promise<{
+  response: string;
+  agentName: string;
+  agentRole: string;
+  peerName?: string;
+  conversationId: string;
+} | null> {
+  const res = await fetchWithAuth(`${API_BASE}/agents/remote/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Remote query failed' })) as { error?: unknown };
+    throw new Error(typeof err.error === 'string' ? err.error : 'Remote query failed');
+  }
+  const data = await res.json() as { result?: { response: string; agentName: string; agentRole: string; peerName?: string; conversationId: string } | null };
+  return data.result ?? null;
+}
+
 // ── Markets Pillar RCI API ────────────────────────────────────
 
 /** Run the full Reason → Compute → Interpret pipeline */

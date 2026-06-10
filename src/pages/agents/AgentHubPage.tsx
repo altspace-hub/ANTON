@@ -4,8 +4,9 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Search, Loader2, Play, Pause, Settings, MessageCircle, Sparkles } from 'lucide-react';
+import { Bot, Plus, Search, Loader2, Play, Pause, Globe, MessageCircle, Sparkles } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import NetworkAgentsTab from './NetworkAgentsTab';
 
 interface Agent {
   id: string; name: string; slug: string; role_description: string;
@@ -40,6 +41,7 @@ export default function AgentHubPage() {
   const [showBuilder, setShowBuilder] = useState(false);
   const [buildDescription, setBuildDescription] = useState('');
   const [building, setBuilding] = useState(false);
+  const [tab, setTab] = useState<'mine' | 'network'>('mine');
 
   useEffect(() => {
     async function load() {
@@ -137,8 +139,29 @@ export default function AgentHubPage() {
             <Plus className="h-4 w-4" /> Create Agent
           </button>
         </div>
+
+        {/* Tabs: my agents vs agents on connected peer instances */}
+        <div className="mt-4 flex items-center gap-1">
+          <button onClick={() => setTab('mine')}
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              tab === 'mine' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+            }`}>
+            <Bot className="h-4 w-4" /> My agents
+          </button>
+          <button onClick={() => setTab('network')}
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              tab === 'network' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'
+            }`}>
+            <Globe className="h-4 w-4" /> Network agents
+          </button>
+        </div>
       </div>
 
+      {tab === 'network' ? (
+        <div className="flex-1 px-6 py-6">
+          <NetworkAgentsTab />
+        </div>
+      ) : (
       <div className="flex-1 px-6 py-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
@@ -218,6 +241,7 @@ export default function AgentHubPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* AI Builder Modal */}
       {showBuilder && (

@@ -82,6 +82,17 @@ export interface SessionContext {
    *  sessions this is the responder's static (known up-front from the
    *  community contact card / pairing — we used it to construct msg 1). */
   phoneStaticPubkey: Uint8Array;
+  /**
+   * Route inbound decrypted payloads for THIS session to `listener` instead
+   * of the dialer-global onSessionData hook (which is wired to the Express
+   * bridge and treats inbound RESPONSE frames as protocol violations).
+   * Pass null to restore the global hook. Used by peer-transport-service
+   * to await the RPC RESPONSE for an initiator-dialed request.
+   *
+   * Optional so test doubles that only exercise the responder path don't
+   * have to implement it.
+   */
+  setDataListener?(listener: ((plaintext: Uint8Array) => void) | null): void;
 }
 
 interface ActiveSession {
@@ -210,6 +221,10 @@ export class MeshDialer {
   /** §3.11 — dial-outs that have received ACK_PHONE (so session_id is
    *  known) but are still awaiting ENVELOPE with Noise msg 2. */
   private pendingDialsBySession = new Map<string, PendingDial>();
+  /** Per-session data listeners (SessionContext.setDataListener). When set
+   *  for a session, inbound plaintext for that session goes to the listener
+   *  instead of the global onSessionData hook. */
+  private sessionDataListeners = new Map<string, (plaintext: Uint8Array) => void>();
   private stopping = false;
   private prevReachable = false;
 
@@ -243,6 +258,7 @@ export class MeshDialer {
     }
     this.sessions.clear();
     this.sessionRelay.clear();
+    this.sessionDataListeners.clear();
   }
 
   /** Number of relays currently connected (HELLO sent). For tests + telemetry. */
@@ -356,6 +372,7 @@ export class MeshDialer {
           this.sessions.delete(sidHex);
         }
         this.sessionRelay.delete(sidHex);
+        this.sessionDataListeners.delete(sidHex);
       }
     }
     // §3.11 — fail any in-flight dial-outs on this leg.
@@ -467,6 +484,7 @@ export class MeshDialer {
       send: (plaintext: Uint8Array) => this.sendApplicationMessage(sessionId, plaintext),
       close: (reason = 'closed_by_app') => this.closeSession(sessionId, reason),
       phoneStaticPubkey,
+      setDataListener: (listener) => this.setSessionDataListener(sessionIdHex, listener),
     };
     this.cfg.onSessionOpen?.(sessionId, ctx);
   }
@@ -546,6 +564,13 @@ export class MeshDialer {
       return;
     }
 
+    // Per-session listener (initiator awaiting an RPC RESPONSE) takes
+    // precedence over the global hook (the Express bridge).
+    const local = this.sessionDataListeners.get(sessionIdHex);
+    if (local) {
+      local(plaintext);
+      return;
+    }
     this.cfg.onSessionData?.(sessionId, plaintext);
   }
 
@@ -595,9 +620,19 @@ export class MeshDialer {
       send: (plaintext: Uint8Array) => this.sendApplicationMessage(sessionId, plaintext),
       close: (reason = 'closed_by_app') => this.closeSession(sessionId, reason),
       phoneStaticPubkey: dial.peerStaticPubkey,
+      setDataListener: (listener) => this.setSessionDataListener(sessionIdHex, listener),
     };
     this.cfg.onSessionOpen?.(sessionId, ctx);
     dial.resolve(ctx);
+  }
+
+  /** SessionContext.setDataListener implementation (per-session override). */
+  private setSessionDataListener(
+    sessionIdHex: string,
+    listener: ((plaintext: Uint8Array) => void) | null,
+  ): void {
+    if (listener) this.sessionDataListeners.set(sessionIdHex, listener);
+    else this.sessionDataListeners.delete(sessionIdHex);
   }
 
   private failPendingDial(dial: PendingDial, err: Error): void {
@@ -640,6 +675,7 @@ export class MeshDialer {
     if (!this.sessions.has(sidHex)) return;
     this.sessions.delete(sidHex);
     this.sessionRelay.delete(sidHex);
+    this.sessionDataListeners.delete(sidHex);
     this.cfg.onSessionClose?.(sessionId, reason);
   }
 

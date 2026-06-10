@@ -120,16 +120,13 @@ export async function sendToPeer(db: DatabaseAdapter, input: PeerSendInput): Pro
 // ── Transport implementations ────────────────────────────────────────
 
 async function tryMesh(conn: ConnectionRow, input: PeerSendInput, timeoutMs: number): Promise<PeerSendOutcome> {
-  // Track A4b — dial the peer via MeshDialer, then frame the application
-  // request as a single tiny HTTP-shaped payload (`POST <path>\n\n<body>`)
-  // and ship it as one Noise-encrypted ENVELOPE. Wait for one reply
-  // ENVELOPE, parse the status line + body, return.
-  //
-  // Why this minimalist HTTP-on-Noise framing? The bridge layer the responder
-  // already uses (server/services/mesh/bridge.ts) translates inbound Noise
-  // payloads into Express requests. Mirroring that on the initiator side
-  // means peer instances accept dial-out requests on the same routes
-  // (e.g. /api/p2p/receive) with no separate handler.
+  // Track A4b (framing fixed per plan 2.8) — dial the peer via MeshDialer,
+  // encode the application request as a binary RPC REQUEST frame (the only
+  // thing the receiving bridge decodes — see server/services/mesh/bridge.ts
+  // + rpc.ts), then wait for the matching RESPONSE/ERROR frame and propagate
+  // the real status. The previous cut shipped raw `POST <path>\r\n…` text,
+  // which the bridge rejected with RpcParseError on every send while this
+  // side reported {ok:true,httpStatus:200} — 100% silent loss.
   if (!conn.peer_instance_pubkey) {
     return { ok: false, transport: 'mesh', httpStatus: 0, error: 'connection has no peer_instance_pubkey' };
   }
@@ -143,11 +140,48 @@ async function tryMesh(conn: ConnectionRow, input: PeerSendInput, timeoutMs: num
   if (!dialer) {
     return { ok: false, transport: 'mesh', httpStatus: 0, error: 'no active mesh dialer (ANTON_MESH_RELAYS unset?)' };
   }
+  return sendMeshRpcRequest(dialer, conn.peer_instance_pubkey, input.path, input.body, timeoutMs);
+}
+
+/**
+ * Dial `peerEd25519PubkeyHex` over the mesh, POST `body` to `path` as a
+ * single RPC REQUEST frame, and await the RESPONSE (or ERROR) frame.
+ *
+ * Exported so the loopback integration test can exercise the exact
+ * production framing path with its own dialer pair (tryMesh resolves the
+ * dialer from mesh bootstrap state, which tests don't start).
+ */
+export async function sendMeshRpcRequest(
+  dialer: import('./mesh/dialer.js').MeshDialer,
+  peerEd25519PubkeyHex: string,
+  path: string,
+  body: string,
+  timeoutMs: number,
+): Promise<PeerSendOutcome> {
+  const startedAt = Date.now();
 
   let peerEdPub: Buffer;
   try {
-    peerEdPub = Buffer.from(conn.peer_instance_pubkey, 'hex');
+    peerEdPub = Buffer.from(peerEd25519PubkeyHex, 'hex');
     if (peerEdPub.length !== 32) throw new Error(`peer Ed25519 pubkey length ${peerEdPub.length}`);
+  } catch (err) {
+    return { ok: false, transport: 'mesh', httpStatus: 0, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  // Encode the REQUEST frame up front — an oversized body (rpc.ts MAX_BODY)
+  // fails here without spending a dial, and falls through to HTTPS.
+  const { encodeRpc, decodeRpc, RPC_KIND } = await import('./mesh/rpc.js');
+  const seq = 1; // one request per dialed session, so seq is trivially unique
+  let requestFrame: Uint8Array;
+  try {
+    requestFrame = encodeRpc({
+      kind: RPC_KIND.REQUEST,
+      seq,
+      method: 'POST',
+      path,
+      headers: [{ name: 'content-type', value: 'application/json' }],
+      body: new TextEncoder().encode(body),
+    });
   } catch (err) {
     return { ok: false, transport: 'mesh', httpStatus: 0, error: err instanceof Error ? err.message : String(err) };
   }
@@ -172,29 +206,79 @@ async function tryMesh(conn: ConnectionRow, input: PeerSendInput, timeoutMs: num
     return { ok: false, transport: 'mesh', httpStatus: 0, error: err instanceof Error ? err.message : String(err) };
   }
 
-  // Build the HTTP-on-Noise payload, encrypted by ctx.send.
-  const requestText = `POST ${input.path}\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(input.body, 'utf8')}\r\n\r\n${input.body}`;
-  const requestBytes = new TextEncoder().encode(requestText);
-
-  // Wait for the reply via the dialer's onSessionData hook. The dialer is
-  // long-lived; we grab the reply by registering a one-shot listener for
-  // this session_id.
-  // For v0.1, simplest: enable a per-session ad-hoc data sink via global
-  // state on the dialer (could be passed as an option in a later cut).
-  // Instead, model it as: send the request, then close the session, and
-  // record the request as fire-and-forget. This matches today's HTTPS
-  // /api/p2p/receive contract (ack-only, no rich response).
-  try {
-    ctx.send(requestBytes);
-  } catch (err) {
-    return { ok: false, transport: 'mesh', httpStatus: 0, error: err instanceof Error ? err.message : String(err) };
+  if (!ctx.setDataListener) {
+    // Defensive — production SessionContexts always provide it.
+    ctx.close('mesh-no-data-listener');
+    return { ok: false, transport: 'mesh', httpStatus: 0, error: 'dialer session does not support response listening' };
   }
-  // Give the relay a moment to flush before we close — the responder
-  // processes the ENVELOPE asynchronously and we don't want to PEER_GONE
-  // it before its bridge dispatches.
-  await new Promise(r => setTimeout(r, 200));
-  ctx.close('mesh-send-done');
-  return { ok: true, transport: 'mesh', httpStatus: 200 };
+  const setDataListener = ctx.setDataListener.bind(ctx);
+
+  // Remaining budget after the dial for the round-trip itself.
+  const responseBudgetMs = Math.max(1_000, timeoutMs - (Date.now() - startedAt));
+
+  return new Promise<PeerSendOutcome>((resolve) => {
+    let settled = false;
+    const settle = (outcome: PeerSendOutcome, closeReason: string): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      setDataListener(null);
+      try { ctx.close(closeReason); } catch { /* session may already be gone */ }
+      resolve(outcome);
+    };
+
+    const timer = setTimeout(() => {
+      settle(
+        { ok: false, transport: 'mesh', httpStatus: 0, error: `mesh response timeout after ${responseBudgetMs}ms` },
+        'mesh-response-timeout',
+      );
+    }, responseBudgetMs);
+
+    // One-shot listener: the first decodable RESPONSE/ERROR for our seq wins.
+    setDataListener((plaintext: Uint8Array) => {
+      let frame;
+      try {
+        frame = decodeRpc(plaintext);
+      } catch (err) {
+        settle(
+          { ok: false, transport: 'mesh', httpStatus: 0, error: `bad RPC frame from peer: ${err instanceof Error ? err.message : String(err)}` },
+          'mesh-bad-response-frame',
+        );
+        return;
+      }
+      if (frame.kind === RPC_KIND.RESPONSE && frame.seq === seq) {
+        const text = new TextDecoder().decode(frame.body);
+        settle(
+          {
+            ok: frame.status >= 200 && frame.status < 300,
+            transport: 'mesh',
+            httpStatus: frame.status,
+            responseText: text,
+            error: frame.status >= 200 && frame.status < 300 ? undefined : `HTTP ${frame.status}`,
+          },
+          'mesh-request-complete',
+        );
+        return;
+      }
+      if (frame.kind === RPC_KIND.ERROR && frame.seq === seq) {
+        settle(
+          { ok: false, transport: 'mesh', httpStatus: 0, error: `peer RPC error 0x${frame.code.toString(16)}: ${frame.message}` },
+          'mesh-peer-rpc-error',
+        );
+        return;
+      }
+      // Frames for another seq (impossible with seq=1) — ignore, keep waiting.
+    });
+
+    try {
+      ctx.send(requestFrame);
+    } catch (err) {
+      settle(
+        { ok: false, transport: 'mesh', httpStatus: 0, error: err instanceof Error ? err.message : String(err) },
+        'mesh-send-failed',
+      );
+    }
+  });
 }
 
 async function tryHttps(conn: ConnectionRow, input: PeerSendInput, timeoutMs: number): Promise<PeerSendOutcome> {
