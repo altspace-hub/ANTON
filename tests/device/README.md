@@ -67,9 +67,11 @@ on a failure, and exits non-zero if anything failed.
 | `pay-friends.e2e.cjs` | Pay ×1 | Settings → Friends → add a fixture friend → persisted `fc_contacts` row (idempotent) |
 | `comm-events.e2e.cjs` | Comm ×1 | Events tab → create a fixture event (only the title; type+date default) → persisted `events` row (idempotent) |
 | `comm-message.e2e.cjs` | Comm ×2 | Alice sends a unique-marker E2E message → polls Bob's `messages` store until the inbound row arrives |
+| `remittance-template.e2e.cjs` | Pay + Comm ×1 | **Spends 0.01 FTC on-chain** — extra gate `ANTON_DEVICE_E2E_SPEND=1`, else it self-skips. Pay sends with the Faktura template (unique ref + line items) → Comm syncs → asserts the full structured remittance on the received `wallet_txs` row (meta.tpl/tplv, ref, items, amountSek/vatSek) + the FAKTURA RemittanceView render |
 
-Each scenario is idempotent (no real on-chain spend; re-runs are no-ops or use a
-fresh marker), so the suite is safe to re-run. **Roadmap (#73):** Comm wallet
+Each scenario is idempotent (no real on-chain spend unless you opt in to the
+`SPEND` gate above; re-runs are no-ops or use a fresh marker), so the default
+suite is safe to re-run. **Roadmap (#73):** Comm wallet
 (read balance/address/history), portals browse, Pulse feed; Pay→Business full
 receipt-match; photo-viewer tap; events RSVP + each type.
 
