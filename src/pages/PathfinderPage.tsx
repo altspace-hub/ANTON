@@ -71,6 +71,7 @@ export default function PathfinderPage() {
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [preSearchReasoning, setPreSearchReasoning] = useState('');
   const [showImprove, setShowImprove] = useState(false);
+  const [notices, setNotices] = useState<string[]>([]);
   const [error, setError] = useState<string | undefined>();
 
   // Threads
@@ -130,6 +131,7 @@ export default function PathfinderPage() {
     setWebSources([]);
     setLocalSources([]);
     setEnrichedQuery('');
+    setNotices([]);
     setError(undefined);
     setFollowUpSuggestions([]);
     setFollowUpText('');
@@ -166,6 +168,20 @@ export default function PathfinderPage() {
       }
     }
   }, [query, depth, searchMode, activeThreadId, documents, areaId, userLocation]);
+
+  // Auto-run a query passed via ?q= (Home search bar, module finder,
+  // portal category pages). Runs once; ?searchId= takes precedence.
+  const autoRanRef = useRef(false);
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    if (searchParams.get('searchId')) return;
+    const q = searchParams.get('q');
+    if (q && q.trim()) {
+      autoRanRef.current = true;
+      setQuery(q.trim());
+      runSearch(q.trim());
+    }
+  }, [searchParams, runSearch]);
 
   function handleEvent(event: PathfinderEvent) {
     switch (event.type) {
@@ -206,11 +222,21 @@ export default function PathfinderPage() {
         setDurationMs(event.durationMs);
         setFollowUpSuggestions(event.followUpSuggestions || []);
         break;
+      case 'notice':
+        setNotices(prev => prev.includes(event.message) ? prev : [...prev, event.message]);
+        break;
       case 'error':
         setPhase('error');
         setError(event.message);
         break;
     }
+  }
+
+  // Stop a running search — the aborted fetch closes the request, which
+  // propagates the AbortSignal server-side into the in-flight LLM calls.
+  function stopSearch() {
+    abortRef.current?.abort();
+    setPhase(synthesis ? 'complete' : 'idle');
   }
 
   const handleFollowUp = useCallback(async (question: string) => {
@@ -304,13 +330,23 @@ export default function PathfinderPage() {
           >
             <Sparkles className="h-4 w-4" />
           </button>
-          <button
-            type="submit"
-            disabled={!query.trim() || phase === 'searching' || phase === 'synthesizing'}
-            className="rounded-xl bg-adv-teal px-5 py-3 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-40"
-          >
-            Search
-          </button>
+          {phase === 'searching' || phase === 'synthesizing' ? (
+            <button
+              type="button"
+              onClick={stopSearch}
+              className="rounded-xl border border-adv-red/50 px-5 py-3 text-sm font-medium text-adv-red transition-colors hover:bg-adv-red/10"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!query.trim()}
+              className="rounded-xl bg-adv-teal px-5 py-3 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-40"
+            >
+              Search
+            </button>
+          )}
         </form>
 
         {/* Search mode toggles */}
@@ -365,6 +401,17 @@ export default function PathfinderPage() {
       {/* Proactive suggestions (when idle) */}
       {phase === 'idle' && !showImprove && (
         <ProactiveSuggestions onSearch={handleSuggestionSearch} />
+      )}
+
+      {/* Degradation notices (e.g. web search skipped on non-Claude installs) */}
+      {notices.length > 0 && (
+        <div className="space-y-1.5">
+          {notices.map((n, i) => (
+            <div key={i} className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-4 py-2 text-xs text-adv-gold">
+              {n}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Results panel */}

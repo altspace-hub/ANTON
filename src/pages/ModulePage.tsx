@@ -235,6 +235,16 @@ export default function ModulePage() {
     }
   }, [searchParams]);
 
+  // Prefill from Pathfinder ("Use in..." / open_module smart action) —
+  // reads the sessionStorage handoff once and clears it.
+  useEffect(() => {
+    if (searchParams.get('from') !== 'pathfinder') return;
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setUserInput(piped);
+  }, [searchParams]);
+
   // Load custom module config from API when moduleId starts with "custom-"
   useEffect(() => {
     if (!isCustomModule || !moduleId) return;

@@ -1,20 +1,31 @@
 /**
- * Pathfinder Engine — Claude-only search with progressive reasoning
+ * Pathfinder Engine — Claude-first search with progressive reasoning
  *
  * Quick mode:  Haiku web_search → Haiku synthesis (think_hard)
  * Thorough:    Haiku web_search → Haiku investigation analysis → Sonnet chairman synthesis
  * Deep:        Haiku web_search → Sonnet IRE multi-phase (analyse → reflect → deepen → synthesise)
  *              with confidence gating (> 0.8) — deeper phases only if needed
+ *
+ * Non-Claude installs degrade honestly: the web-search step runs through Bing
+ * (BING_SEARCH_API_KEY) when configured, otherwise it is skipped with a visible
+ * notice; Deep mode's tool-use reflection phase is Claude-only and falls back
+ * to thorough-style analysis with a notice. The final synthesis streams real
+ * deltas for every provider, and the client AbortSignal is propagated into the
+ * underlying SDK calls so Stop actually stops paid work.
  */
 
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
-import { callChat, mapModelToProvider, type ChatResult } from './provider-router.js';
+import { callChat, streamChat, mapModelToProvider, type ChatResult } from './provider-router.js';
+import { getProviderFromModelId } from './model-adapter.js';
+import { getThinkingConfig } from '../config/model-capabilities.js';
+import { getBingSearchApiKey, searchBing } from './bing-search.js';
 import { estimateTokens, estimateCost } from './token-estimator.js';
 import { hybridSearch, type HybridSearchResult } from './hybrid-search.js';
 import { createPortalSearchEngine } from './portals/portal-search-engine.js';
@@ -120,6 +131,7 @@ export interface SearchResult {
   query: string;
   enrichedQuery: string;
   depth: SearchDepth;
+  searchMode: SearchMode;
   synthesis: string;
   thinking: string;
   preSearchReasoning: string;
@@ -144,6 +156,8 @@ export interface SearchCallbacks {
   onThinkingDelta: (text: string) => void;
   onSearchComplete: (result: SearchResult) => void;
   onError: (error: string) => void;
+  /** Honest degradation notices (e.g. "web search skipped — no Claude or Bing key"). */
+  onNotice?: (message: string) => void;
 }
 
 // ── Model Configurations ───────────────────────────────────────────────────
@@ -190,12 +204,43 @@ interface InternalPhaseResult {
   gaps?: string;
 }
 
+/**
+ * Resolve which provider Pathfinder's reasoning steps will actually run on.
+ * Mirrors the provider-router's resolution (DEFAULT_MODEL + configured keys).
+ */
+export function getActiveSearchProvider(): string {
+  try {
+    return getProviderFromModelId(mapModelToProvider('claude-sonnet-4-6'));
+  } catch {
+    return 'anthropic';
+  }
+}
+
+/** Throw an AbortError when the client has disconnected / pressed Stop. */
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    const err = new Error('Search aborted by client');
+    err.name = 'AbortError';
+    throw err;
+  }
+}
+
 export function getAvailableSearchModels(): Array<{ modelId: string; provider: string; role: string; available: boolean }> {
-  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  const provider = getActiveSearchProvider();
+  if (provider === 'anthropic') {
+    const hasKey = !!process.env.ANTHROPIC_API_KEY;
+    return [
+      { modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', role: 'Web Search', available: hasKey },
+      { modelId: mapModelToProvider('claude-haiku-4-5-20251001'), provider: 'anthropic', role: 'Analysis (Quick/Thorough)', available: hasKey },
+      { modelId: mapModelToProvider('claude-sonnet-4-6'), provider: 'anthropic', role: 'Chairman Synthesis', available: hasKey },
+    ];
+  }
+  // Non-Claude install: web search runs through Bing when a key is present,
+  // analysis + synthesis on the configured provider's models.
   return [
-    { modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', role: 'Web Search', available: hasKey },
-    { modelId: mapModelToProvider('claude-haiku-4-5-20251001'), provider: 'anthropic', role: 'Analysis (Quick/Thorough)', available: hasKey },
-    { modelId: mapModelToProvider('claude-sonnet-4-6'), provider: 'anthropic', role: 'Chairman Synthesis', available: hasKey },
+    { modelId: 'bing-web-search', provider: 'bing', role: 'Web Search', available: !!process.env.BING_SEARCH_API_KEY },
+    { modelId: mapModelToProvider('claude-haiku-4-5-20251001'), provider, role: 'Analysis (Quick/Thorough)', available: true },
+    { modelId: mapModelToProvider('claude-sonnet-4-6'), provider, role: 'Chairman Synthesis', available: true },
   ];
 }
 
@@ -393,6 +438,7 @@ async function dispatchSingleModel(
   anthropic: Anthropic | null,
   searchMode: SearchMode = 'knowledge',
   userLocation?: string,
+  signal?: AbortSignal,
 ): Promise<ModelResult> {
   const start = Date.now();
   try {
@@ -414,7 +460,7 @@ async function dispatchSingleModel(
         system: systemPrompt,
         messages: [{ role: 'user', content: query }],
         tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
-      });
+      }, { signal });
 
       // Extract text + web sources from response
       let text = '';
@@ -477,14 +523,248 @@ async function dispatchSingleModel(
   }
 }
 
+// ── Non-Claude web search fallback (Bing) ──────────────────────────────────
+
+/**
+ * Web-search step for non-Anthropic installs. Uses Bing (the same grounding
+ * service the module-run path uses for non-Claude providers) when a key is
+ * configured; otherwise skips web search with a visible notice.
+ */
+async function dispatchBingSearch(
+  db: DatabaseAdapter,
+  query: string,
+  callbacks: SearchCallbacks,
+  signal?: AbortSignal,
+): Promise<ModelResult> {
+  const start = Date.now();
+  const skipped = (reason: string): ModelResult => {
+    callbacks.onNotice?.(reason);
+    return {
+      modelId: 'web-search-skipped',
+      provider: getActiveSearchProvider(),
+      role: 'Web Search (skipped)',
+      response: 'Web search was skipped (no Claude or Bing Search API key configured). Answer from built-in model knowledge and any local knowledge provided — state clearly when information may be outdated.',
+      webSources: [],
+      inputTokens: 0,
+      outputTokens: 0,
+      durationMs: Date.now() - start,
+      status: 'complete',
+    };
+  };
+
+  const bingKey = await getBingSearchApiKey(db);
+  if (!bingKey) {
+    return skipped('Live web search requires Claude or a Bing Search API key — answering from local knowledge and the model\'s built-in knowledge.');
+  }
+
+  callbacks.onModelStart('bing-web-search', 'Web Search (Bing)');
+  try {
+    throwIfAborted(signal);
+    const bing = await searchBing(query, bingKey, 8);
+    throwIfAborted(signal);
+    const webSources: WebSource[] = bing.results.map(r => ({
+      url: r.url,
+      title: r.name,
+      snippet: r.snippet,
+      modelId: 'bing-web-search',
+      sourceType: 'web',
+      qualityScore: assessSourceQuality(r.url),
+      relevanceScore: 0.5,
+      consensusScore: 0,
+    }));
+    const result: ModelResult = {
+      modelId: 'bing-web-search',
+      provider: 'bing',
+      role: 'Web Search (Bing)',
+      response: bing.results.length > 0
+        ? bing.results.map((r, i) => `[${i + 1}] ${r.name}\nURL: ${r.url}\n${r.snippet}`).join('\n\n')
+        : `No web results found for "${query}".`,
+      webSources,
+      inputTokens: 0,
+      outputTokens: 0,
+      durationMs: Date.now() - start,
+      status: 'complete',
+    };
+    callbacks.onModelComplete(result);
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') throw err;
+    // Bing failure degrades to skip-with-notice instead of failing the search.
+    // Keep modelId/role matching the model_start event so the UI status resolves.
+    const result: ModelResult = {
+      ...skipped('Bing web search failed — answering from local knowledge and the model\'s built-in knowledge.'),
+      modelId: 'bing-web-search',
+      role: 'Web Search (Bing)',
+    };
+    callbacks.onModelComplete(result);
+    return result;
+  }
+}
+
+/**
+ * Provider-aware web-search step shared by all three depth modes:
+ * Claude installs use the native web_search tool; non-Claude installs use
+ * Bing grounding (or skip with a notice). Local knowledge runs in parallel.
+ */
+async function runSearchStep(
+  db: DatabaseAdapter,
+  query: string,
+  enrichedQuery: string,
+  documentContext: string,
+  anthropic: Anthropic | null,
+  callbacks: SearchCallbacks,
+  searchMode: SearchMode,
+  userLocation: string | undefined,
+  localTopK: number,
+  signal?: AbortSignal,
+): Promise<{ searchResult: ModelResult; localResults: WebSource[] }> {
+  if (getActiveSearchProvider() === 'anthropic' && anthropic) {
+    callbacks.onModelStart(SEARCH_MODEL.modelId, 'Web Search');
+    const [searchResult, localResults] = await Promise.all([
+      dispatchSingleModel(enrichedQuery, SEARCH_MODEL, documentContext, anthropic, searchMode, userLocation, signal),
+      searchLocalKnowledge(db, query, localTopK),
+    ]);
+    callbacks.onModelComplete(searchResult);
+    return { searchResult, localResults };
+  }
+  const [searchResult, localResults] = await Promise.all([
+    dispatchBingSearch(db, enrichedQuery, callbacks, signal),
+    searchLocalKnowledge(db, query, localTopK),
+  ]);
+  return { searchResult, localResults };
+}
+
+// ── Streaming LLM helper ───────────────────────────────────────────────────
+
+/**
+ * Adapts the provider-router's SSE-writing streamChat to the engine's
+ * callback interface. The adapters only ever call res.write() with complete
+ * `data: {...}\n\n` frames, so a write-only shim is sufficient.
+ */
+function createCallbackResponseShim(
+  callbacks: Pick<SearchCallbacks, 'onTextDelta' | 'onThinkingDelta'>,
+  signal?: AbortSignal,
+): Response {
+  const shim = {
+    write(chunk: unknown): boolean {
+      // Throwing here propagates out of the adapter's read loop and ends the stream.
+      throwIfAborted(signal);
+      const str = typeof chunk === 'string' ? chunk : String(chunk);
+      for (const line of str.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(data) as { type?: string; content?: string };
+          if (ev.type === 'text_delta' && typeof ev.content === 'string') {
+            callbacks.onTextDelta(ev.content);
+          } else if (ev.type === 'thinking_delta' && typeof ev.content === 'string') {
+            callbacks.onThinkingDelta(ev.content);
+          }
+        } catch { /* non-JSON frame — ignore */ }
+      }
+      return true;
+    },
+  };
+  return shim as unknown as Response;
+}
+
+/**
+ * Stream a single-turn chat completion, forwarding real text/thinking deltas
+ * to the engine callbacks as they arrive. Anthropic goes through the SDK
+ * directly (so the AbortSignal genuinely cancels the request); every other
+ * provider rides the provider-router's streamChat via a callback shim.
+ */
+async function streamLLMText(
+  opts: {
+    model: string;
+    system: string;
+    userMessage: string;
+    maxTokens: number;
+    thinkingLevel?: string;
+    db?: DatabaseAdapter;
+  },
+  callbacks: Pick<SearchCallbacks, 'onTextDelta' | 'onThinkingDelta'>,
+  signal?: AbortSignal,
+): Promise<{ text: string; thinking: string; inputTokens: number; outputTokens: number }> {
+  throwIfAborted(signal);
+  let provider: string;
+  try {
+    provider = getProviderFromModelId(opts.model, opts.db);
+  } catch {
+    provider = 'anthropic';
+  }
+
+  if (provider === 'anthropic') {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
+    const client = new Anthropic({ apiKey });
+    const thinkingConfig = opts.thinkingLevel ? getThinkingConfig(opts.model, opts.thinkingLevel) : null;
+
+    const params: Record<string, unknown> = {
+      model: opts.model,
+      max_tokens: Math.max(thinkingConfig?.maxTokens || 0, opts.maxTokens),
+      system: opts.system,
+      messages: [{ role: 'user', content: opts.userMessage }],
+    };
+    if (thinkingConfig && thinkingConfig.thinkingType === 'adaptive') {
+      params.thinking = { type: 'adaptive' };
+      params.output_config = { effort: thinkingConfig.effort || 'medium' };
+    } else if (thinkingConfig && thinkingConfig.thinkingType === 'enabled' && thinkingConfig.budgetTokens) {
+      params.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
+    }
+
+    const stream = client.messages.stream(params as Anthropic.MessageStreamParams, { signal });
+
+    let text = '';
+    let thinking = '';
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    for await (const event of stream) {
+      const ev = event as unknown as Record<string, unknown>;
+      if (ev.type === 'content_block_delta') {
+        const delta = ev.delta as Record<string, unknown>;
+        if (delta.type === 'text_delta' && typeof delta.text === 'string') {
+          text += delta.text;
+          callbacks.onTextDelta(delta.text);
+        } else if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+          thinking += delta.thinking;
+          callbacks.onThinkingDelta(delta.thinking);
+        }
+      } else if (ev.type === 'message_start') {
+        const usage = (ev.message as Record<string, unknown> | undefined)?.usage as Record<string, number> | undefined;
+        if (usage) inputTokens = usage.input_tokens || 0;
+      } else if (ev.type === 'message_delta') {
+        const usage = ev.usage as Record<string, number> | undefined;
+        if (usage) outputTokens = usage.output_tokens || 0;
+      }
+    }
+
+    return { text, thinking, inputTokens, outputTokens };
+  }
+
+  // Non-Anthropic providers: provider-router streamChat with a callback shim.
+  // The shim throws on abort, which terminates the adapter's read loop.
+  const result: ChatResult = await streamChat({
+    model: opts.model,
+    system: opts.system,
+    messages: [{ role: 'user', content: opts.userMessage }],
+    maxTokens: opts.maxTokens,
+    thinkingLevel: opts.thinkingLevel,
+    db: opts.db,
+  }, createCallbackResponseShim(callbacks, signal));
+  return { text: result.text, thinking: result.thinking, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+}
+
 // ── Synthesis ──────────────────────────────────────────────────────────────
 
 async function streamSynthesis(
+  db: DatabaseAdapter,
   query: string,
   modelResults: ModelResult[],
   depth: SearchDepth,
   documentContext: string,
-  anthropic: Anthropic,
   callbacks: Pick<SearchCallbacks, 'onTextDelta' | 'onThinkingDelta'>,
   signal?: AbortSignal,
   searchMode: SearchMode = 'knowledge',
@@ -525,42 +805,43 @@ async function streamSynthesis(
     thinkingLevel = 'think_hard';
   }
 
-  const result: ChatResult = await callChat({
+  // Stream real deltas as they arrive (2E.1) — the synthesis is the part the
+  // user watches, so it must not buffer until completion.
+  return streamLLMText({
     model: synthModel,
     system: SYNTHESIS_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
+    userMessage,
     maxTokens: 32768,
     thinkingLevel,
-  });
-
-  // Deliver accumulated text via callbacks
-  if (result.text) callbacks.onTextDelta(result.text);
-  if (result.thinking) callbacks.onThinkingDelta(result.thinking);
-
-  return { text: result.text, thinking: result.thinking, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+    db,
+  }, callbacks, signal);
 }
 
 // ── Internal Phase Call (for Thorough analysis + Deep IRE) ──────────────────
 
 async function runInternalPhaseCall(
   prompt: string,
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   options: {
     model?: string;
     budgetTokens?: number;
     maxTokens?: number;
     tools?: Array<Record<string, unknown>>;
     thinkingLevel?: string;
+    signal?: AbortSignal;
   } = {},
 ): Promise<InternalPhaseResult> {
   const start = Date.now();
   const model = mapModelToProvider(options.model || 'claude-sonnet-4-6');
   const maxTokens = options.maxTokens || 16384;
   const thinkingLevel = options.thinkingLevel || 'think_hard';
+  throwIfAborted(options.signal);
 
   // If tools are needed (e.g. confidence assessment), use direct Anthropic SDK
-  // because callChat doesn't support tool_use response parsing
+  // because callChat doesn't support tool_use response parsing.
+  // Callers guard this branch to Anthropic installs (Deep-mode reflection).
   if (options.tools && options.tools.length > 0) {
+    if (!anthropic) throw new Error('Tool-use phases require an Anthropic client');
     const is46Model = model.includes('opus') || model.includes('sonnet-4-6');
     const thinkingConfig = is46Model
       ? { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } }
@@ -576,7 +857,7 @@ async function runInternalPhaseCall(
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await anthropic.messages.create(params as any) as any;
+    const response = await anthropic.messages.create(params as any, { signal: options.signal }) as any;
 
     let text = '';
     let thinking = '';
@@ -679,6 +960,8 @@ function buildDeepenPrompt(query: string, priorContext: string, gaps: string): s
 async function dispatchPortalSearch(
   db: DatabaseAdapter,
   query: string,
+  userId: string,
+  threadId: string | null,
   context: SearchContext | undefined,
   callbacks: SearchCallbacks,
   depth: SearchDepth,
@@ -725,14 +1008,21 @@ async function dispatchPortalSearch(
   callbacks.onSynthesisStart();
   callbacks.onTextDelta(synthesis);
 
-  return {
+  const searchResult: SearchResult = {
     id: searchId, query, enrichedQuery, depth,
+    searchMode: 'anton-portal',
     synthesis, thinking: '', preSearchReasoning,
     modelResults: [], webSources: [], localSources,
     inputTokens: 0, outputTokens: 0, costUsd: 0,
     durationMs: Date.now() - startTime,
     followUpSuggestions: [],
+    context,
   };
+
+  // Mirror the normal dispatch path: persist + complete the SSE stream.
+  await persistSearch(db, searchResult, userId, threadId);
+  callbacks.onSearchComplete(searchResult);
+  return searchResult;
 }
 
 // ── Quick search (Haiku web_search → Haiku think_hard synthesis) ────────────
@@ -743,7 +1033,7 @@ export async function dispatchQuickSearch(
   userId: string,
   threadId: string | null,
   documentContext: string,
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   callbacks: SearchCallbacks,
   signal?: AbortSignal,
   context?: SearchContext,
@@ -752,7 +1042,7 @@ export async function dispatchQuickSearch(
   // anton-portal mode bypasses the LLM entirely; serve hits from the
   // local portal-search-engine instead.
   if (searchMode === 'anton-portal') {
-    return dispatchPortalSearch(db, query, context, callbacks, 'quick');
+    return dispatchPortalSearch(db, query, userId, threadId, context, callbacks, 'quick');
   }
 
   const searchId = randomUUID();
@@ -766,21 +1056,19 @@ export async function dispatchQuickSearch(
   const preSearchReasoning = buildPreSearchReasoning(query, enrichedQuery, 'quick', searchMode, context);
   callbacks.onPreSearchReasoning(preSearchReasoning);
 
-  // Step 1: Haiku web search + local knowledge in parallel
-  callbacks.onModelStart(SEARCH_MODEL.modelId, 'Web Search');
-
-  const [searchResult, localResults] = await Promise.all([
-    dispatchSingleModel(enrichedQuery, SEARCH_MODEL, documentContext, anthropic, searchMode, context?.userLocation),
-    searchLocalKnowledge(db, query, 3),
-  ]);
-  callbacks.onModelComplete(searchResult);
+  // Step 1: web search (provider-aware) + local knowledge in parallel
+  const { searchResult, localResults } = await runSearchStep(
+    db, query, enrichedQuery, documentContext, anthropic, callbacks,
+    searchMode, context?.userLocation, 3, signal,
+  );
 
   if (searchResult.status === 'error') {
     callbacks.onError('Search failed. Check your Anthropic API key.');
     throw new Error('Search failed');
   }
 
-  // Step 2: Haiku synthesis with think_hard reasoning
+  // Step 2: synthesis with think_hard reasoning (streams real deltas)
+  throwIfAborted(signal);
   callbacks.onSynthesisStart();
 
   const localContext = localResults.length > 0
@@ -788,9 +1076,9 @@ export async function dispatchQuickSearch(
     : '';
 
   const synth = await streamSynthesis(
-    query, [searchResult], 'quick',
+    db, query, [searchResult], 'quick',
     documentContext + localContext,
-    anthropic, callbacks, signal, searchMode, context?.userLocation,
+    callbacks, signal, searchMode, context?.userLocation,
   );
 
   const allSources = [...searchResult.webSources, ...localResults];
@@ -804,6 +1092,7 @@ export async function dispatchQuickSearch(
     query,
     enrichedQuery,
     depth: 'quick',
+    searchMode,
     synthesis: synth.text,
     thinking: synth.thinking,
     preSearchReasoning,
@@ -818,8 +1107,9 @@ export async function dispatchQuickSearch(
     context,
   };
 
-  // Persist to DB
-  persistSearch(db, result, userId, threadId);
+  // Persist to DB before signalling completion so a client that follows
+  // the searchId immediately (e.g. "Open in Pathfinder") finds the row.
+  await persistSearch(db, result, userId, threadId);
   callbacks.onSearchComplete(result);
   return result;
 }
@@ -832,14 +1122,14 @@ export async function dispatchThoroughSearch(
   userId: string,
   threadId: string | null,
   documentContext: string,
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   callbacks: SearchCallbacks,
   signal?: AbortSignal,
   context?: SearchContext,
   searchMode: SearchMode = 'knowledge',
 ): Promise<SearchResult> {
   if (searchMode === 'anton-portal') {
-    return dispatchPortalSearch(db, query, context, callbacks, 'thorough');
+    return dispatchPortalSearch(db, query, userId, threadId, context, callbacks, 'thorough');
   }
 
   const searchId = randomUUID();
@@ -850,13 +1140,11 @@ export async function dispatchThoroughSearch(
   const preSearchReasoning = buildPreSearchReasoning(query, enrichedQuery, 'thorough', searchMode, context);
   callbacks.onPreSearchReasoning(preSearchReasoning);
 
-  // Step 1: Haiku web search + local knowledge
-  callbacks.onModelStart(SEARCH_MODEL.modelId, 'Web Search');
-  const [searchResult, localResults] = await Promise.all([
-    dispatchSingleModel(enrichedQuery, SEARCH_MODEL, documentContext, anthropic, searchMode, context?.userLocation),
-    searchLocalKnowledge(db, query, 5),
-  ]);
-  callbacks.onModelComplete(searchResult);
+  // Step 1: web search (provider-aware) + local knowledge
+  const { searchResult, localResults } = await runSearchStep(
+    db, query, enrichedQuery, documentContext, anthropic, callbacks,
+    searchMode, context?.userLocation, 5, signal,
+  );
 
   if (searchResult.status === 'error') {
     callbacks.onError('Search failed. Check your Anthropic API key.');
@@ -867,7 +1155,8 @@ export async function dispatchThoroughSearch(
     ? '\n\n## Local Knowledge\n' + localResults.map(l => `### ${l.title}\n${l.snippet}`).join('\n\n')
     : '';
 
-  // Step 2: Haiku investigation analysis (non-streaming)
+  // Step 2: Haiku investigation analysis (non-streaming, abort-checked)
+  throwIfAborted(signal);
   const analysisModelId = mapModelToProvider('claude-haiku-4-5-20251001');
   callbacks.onModelStart(analysisModelId, 'Investigation');
   const analysisPrompt = buildAnalysisPrompt(query, searchResult, searchMode, context?.userLocation, localContext);
@@ -875,6 +1164,7 @@ export async function dispatchThoroughSearch(
     model: 'claude-haiku-4-5-20251001',
     thinkingLevel: 'think_hard',
     maxTokens: 16384,
+    signal,
   });
   const analysisResult: ModelResult = {
     modelId: analysisModelId,
@@ -890,13 +1180,14 @@ export async function dispatchThoroughSearch(
   callbacks.onModelComplete(analysisResult);
 
   // Step 3: Sonnet chairman synthesis (streaming)
+  throwIfAborted(signal);
   callbacks.onSynthesisStart();
   const modelResults: ModelResult[] = [searchResult, analysisResult];
 
   const synth = await streamSynthesis(
-    query, modelResults, 'thorough',
+    db, query, modelResults, 'thorough',
     documentContext + localContext,
-    anthropic, callbacks, signal, searchMode, context?.userLocation,
+    callbacks, signal, searchMode, context?.userLocation,
   );
 
   // Assemble results
@@ -912,6 +1203,7 @@ export async function dispatchThoroughSearch(
     query,
     enrichedQuery,
     depth: 'thorough',
+    searchMode,
     synthesis: synth.text,
     thinking: synth.thinking,
     preSearchReasoning,
@@ -926,7 +1218,7 @@ export async function dispatchThoroughSearch(
     context,
   };
 
-  persistSearch(db, result, userId, threadId);
+  await persistSearch(db, result, userId, threadId);
   callbacks.onSearchComplete(result);
   return result;
 }
@@ -939,14 +1231,14 @@ export async function dispatchDeepSearch(
   userId: string,
   threadId: string | null,
   documentContext: string,
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   callbacks: SearchCallbacks,
   signal?: AbortSignal,
   context?: SearchContext,
   searchMode: SearchMode = 'knowledge',
 ): Promise<SearchResult> {
   if (searchMode === 'anton-portal') {
-    return dispatchPortalSearch(db, query, context, callbacks, 'deep');
+    return dispatchPortalSearch(db, query, userId, threadId, context, callbacks, 'deep');
   }
 
   const searchId = randomUUID();
@@ -957,13 +1249,11 @@ export async function dispatchDeepSearch(
   const preSearchReasoning = buildPreSearchReasoning(query, enrichedQuery, 'deep', searchMode, context);
   callbacks.onPreSearchReasoning(preSearchReasoning);
 
-  // Step 1: Haiku web search + local knowledge
-  callbacks.onModelStart(SEARCH_MODEL.modelId, 'Web Search');
-  const [searchResult, localResults] = await Promise.all([
-    dispatchSingleModel(enrichedQuery, SEARCH_MODEL, documentContext, anthropic, searchMode, context?.userLocation),
-    searchLocalKnowledge(db, query, 5),
-  ]);
-  callbacks.onModelComplete(searchResult);
+  // Step 1: web search (provider-aware) + local knowledge
+  const { searchResult, localResults } = await runSearchStep(
+    db, query, enrichedQuery, documentContext, anthropic, callbacks,
+    searchMode, context?.userLocation, 5, signal,
+  );
 
   if (searchResult.status === 'error') {
     callbacks.onError('Search failed. Check your Anthropic API key.');
@@ -978,13 +1268,23 @@ export async function dispatchDeepSearch(
   const phaseOutputs: string[] = [];
   const deepSonnetId = mapModelToProvider('claude-sonnet-4-6');
 
-  // Phase 1: Analyse (Sonnet, non-streaming)
+  // The reflection phase uses the assess_confidence tool, which needs the
+  // Anthropic SDK's tool_use parsing. Non-Claude installs fall back to
+  // thorough-style behaviour (analysis → synthesis) with a visible notice.
+  const reflectionAvailable = getActiveSearchProvider() === 'anthropic' && !!anthropic;
+  if (!reflectionAvailable) {
+    callbacks.onNotice?.('Deep mode\'s confidence-gated reflection requires Claude — running thorough-depth analysis on the configured provider instead.');
+  }
+
+  // Phase 1: Analyse (Sonnet, non-streaming, abort-checked)
+  throwIfAborted(signal);
   callbacks.onModelStart(deepSonnetId, 'Analysis');
   const analysisPrompt = buildAnalysisPrompt(query, searchResult, searchMode, context?.userLocation, localContext);
   const analysis = await runInternalPhaseCall(analysisPrompt, anthropic, {
     model: 'claude-sonnet-4-6',
     thinkingLevel: 'think_hard',
     maxTokens: 16384,
+    signal,
   });
   phaseOutputs.push(`### ANALYSIS\n${analysis.text}`);
   allModelResults.push({
@@ -1000,56 +1300,63 @@ export async function dispatchDeepSearch(
   });
   callbacks.onModelComplete(allModelResults[allModelResults.length - 1]);
 
-  // Phase 2: Reflect (Sonnet, non-streaming, with confidence tool)
-  callbacks.onModelStart(deepSonnetId, 'Reflection');
-  const reflectPrompt = buildReflectionPrompt(query, phaseOutputs.join('\n\n'));
-  const reflection = await runInternalPhaseCall(reflectPrompt, anthropic, {
-    model: 'claude-sonnet-4-6',
-    thinkingLevel: 'think_hard',
-    maxTokens: 16384,
-    tools: [CONFIDENCE_TOOL],
-  });
-  phaseOutputs.push(`### REFLECTION\n${reflection.text}\nConfidence: ${reflection.confidenceScore ?? 'N/A'}`);
-  allModelResults.push({
-    modelId: deepSonnetId,
-    provider: 'anthropic',
-    role: 'Reflection',
-    response: reflection.text,
-    webSources: [],
-    inputTokens: reflection.inputTokens,
-    outputTokens: reflection.outputTokens,
-    durationMs: reflection.durationMs,
-    status: 'complete',
-    confidenceScore: reflection.confidenceScore,
-  });
-  callbacks.onModelComplete(allModelResults[allModelResults.length - 1]);
-
-  // Phase 3: Deepen (only if confidence < 0.8)
-  const confidence = reflection.confidenceScore ?? 0.5;
-  if (confidence < 0.8) {
-    callbacks.onModelStart(deepSonnetId, 'Deepening');
-    const deepenPrompt = buildDeepenPrompt(query, phaseOutputs.join('\n\n'), reflection.gaps || '');
-    const deepened = await runInternalPhaseCall(deepenPrompt, anthropic, {
+  if (reflectionAvailable) {
+    // Phase 2: Reflect (Sonnet, non-streaming, with confidence tool)
+    throwIfAborted(signal);
+    callbacks.onModelStart(deepSonnetId, 'Reflection');
+    const reflectPrompt = buildReflectionPrompt(query, phaseOutputs.join('\n\n'));
+    const reflection = await runInternalPhaseCall(reflectPrompt, anthropic, {
       model: 'claude-sonnet-4-6',
       thinkingLevel: 'think_hard',
       maxTokens: 16384,
+      tools: [CONFIDENCE_TOOL],
+      signal,
     });
-    phaseOutputs.push(`### DEEPENED ANALYSIS\n${deepened.text}`);
+    phaseOutputs.push(`### REFLECTION\n${reflection.text}\nConfidence: ${reflection.confidenceScore ?? 'N/A'}`);
     allModelResults.push({
       modelId: deepSonnetId,
       provider: 'anthropic',
-      role: 'Deepening',
-      response: deepened.text,
+      role: 'Reflection',
+      response: reflection.text,
       webSources: [],
-      inputTokens: deepened.inputTokens,
-      outputTokens: deepened.outputTokens,
-      durationMs: deepened.durationMs,
+      inputTokens: reflection.inputTokens,
+      outputTokens: reflection.outputTokens,
+      durationMs: reflection.durationMs,
       status: 'complete',
+      confidenceScore: reflection.confidenceScore,
     });
     callbacks.onModelComplete(allModelResults[allModelResults.length - 1]);
+
+    // Phase 3: Deepen (only if confidence < 0.8)
+    const confidence = reflection.confidenceScore ?? 0.5;
+    if (confidence < 0.8) {
+      throwIfAborted(signal);
+      callbacks.onModelStart(deepSonnetId, 'Deepening');
+      const deepenPrompt = buildDeepenPrompt(query, phaseOutputs.join('\n\n'), reflection.gaps || '');
+      const deepened = await runInternalPhaseCall(deepenPrompt, anthropic, {
+        model: 'claude-sonnet-4-6',
+        thinkingLevel: 'think_hard',
+        maxTokens: 16384,
+        signal,
+      });
+      phaseOutputs.push(`### DEEPENED ANALYSIS\n${deepened.text}`);
+      allModelResults.push({
+        modelId: deepSonnetId,
+        provider: 'anthropic',
+        role: 'Deepening',
+        response: deepened.text,
+        webSources: [],
+        inputTokens: deepened.inputTokens,
+        outputTokens: deepened.outputTokens,
+        durationMs: deepened.durationMs,
+        status: 'complete',
+      });
+      callbacks.onModelComplete(allModelResults[allModelResults.length - 1]);
+    }
   }
 
   // Final: Sonnet synthesis (streaming) with all phase context
+  throwIfAborted(signal);
   callbacks.onSynthesisStart();
 
   // Include phase outputs in the synthesis context
@@ -1060,9 +1367,9 @@ export async function dispatchDeepSearch(
   }];
 
   const synth = await streamSynthesis(
-    query, synthModelResults, 'deep',
+    db, query, synthModelResults, 'deep',
     documentContext + localContext,
-    anthropic, callbacks, signal, searchMode, context?.userLocation,
+    callbacks, signal, searchMode, context?.userLocation,
   );
 
   // Assemble results
@@ -1076,6 +1383,7 @@ export async function dispatchDeepSearch(
     query,
     enrichedQuery,
     depth: 'deep',
+    searchMode,
     synthesis: synth.text,
     thinking: synth.thinking,
     preSearchReasoning,
@@ -1090,7 +1398,7 @@ export async function dispatchDeepSearch(
     context,
   };
 
-  persistSearch(db, result, userId, threadId);
+  await persistSearch(db, result, userId, threadId);
   callbacks.onSearchComplete(result);
   return result;
 }
@@ -1101,7 +1409,7 @@ export async function handleFollowUp(
   db: DatabaseAdapter,
   searchId: string,
   question: string,
-  anthropic: Anthropic,
+  _anthropic: Anthropic | null,
   callbacks: Pick<SearchCallbacks, 'onTextDelta' | 'onThinkingDelta'>,
   signal?: AbortSignal,
 ): Promise<{ id: string; answer: string; thinking: string }> {
@@ -1115,17 +1423,15 @@ export async function handleFollowUp(
     `## Follow-up Question\n${question}`,
   ].join('\n\n');
 
-  const result: ChatResult = await callChat({
+  // Streams real deltas + honours the client abort signal (2E.1)
+  const result = await streamLLMText({
     model: mapModelToProvider('claude-sonnet-4-6'),
     system: SYNTHESIS_PROMPT,
-    messages: [{ role: 'user', content: ctx }],
+    userMessage: ctx,
     maxTokens: 16384,
     thinkingLevel: 'think',
-  });
-
-  // Deliver accumulated text via callbacks
-  if (result.text) callbacks.onTextDelta(result.text);
-  if (result.thinking) callbacks.onThinkingDelta(result.thinking);
+    db,
+  }, callbacks, signal);
 
   await db.run(
     'INSERT INTO pathfinder_followups (id, search_id, question, answer, thinking, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -1166,7 +1472,7 @@ export async function buildDocumentContext(db: DatabaseAdapter, documentIds: str
 export async function generateSuggestions(
   db: DatabaseAdapter,
   userId: string,
-  anthropic: Anthropic,
+  _anthropic: Anthropic | null,
 ): Promise<Array<{ id: string; query: string; context: string }>> {
   // Gather recent context
   const recentSearches = await db.all(
@@ -1227,7 +1533,7 @@ async function persistSearch(db: DatabaseAdapter, result: SearchResult, userId: 
       result.context?.activeAreaId || null,
       result.context?.activeModuleId || null,
       result.context ? JSON.stringify(result.context) : null,
-      'knowledge',
+      result.searchMode,
     );
   } catch {
     // Fallback: original schema without migration 047 columns

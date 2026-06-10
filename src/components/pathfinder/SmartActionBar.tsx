@@ -139,8 +139,20 @@ export default function SmartActionBar({ synthesis, searchMode, query, searchId 
           return;
 
         case 'save_knowledge': {
-          // Save as a note via the memory/knowledge system
-          setActionFeedback('Finding saved');
+          // Persist the finding as a knowledge atom — it then surfaces in
+          // knowledge search and future Pathfinder local-knowledge results.
+          const res = await fetchWithAuth('/api/knowledge/atoms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: action.data.title || undefined,
+              content: action.data.content || action.description || action.label,
+              query,
+              searchId: searchId || undefined,
+            }),
+          });
+          if (!res.ok) throw new Error('Failed to save knowledge atom');
+          setActionFeedback('Saved to knowledge');
           break;
         }
 

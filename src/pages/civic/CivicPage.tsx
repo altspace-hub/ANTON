@@ -88,6 +88,21 @@ export default function CivicPage() {
     loadData();
   }, []);
 
+  // Prefill from Pathfinder's "start_civic" smart action — consume the
+  // sessionStorage handoff once and open the new-engagement modal.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('civic-prefill');
+    if (!raw) return;
+    sessionStorage.removeItem('civic-prefill');
+    try {
+      const prefill = JSON.parse(raw) as { title?: string; goal?: string; jurisdiction?: string };
+      if (prefill.title) setNewTitle(prefill.title);
+      if (prefill.goal) setNewGoal(prefill.goal);
+      if (prefill.jurisdiction) setNewJurisdiction(prefill.jurisdiction);
+      setShowNewModal(true);
+    } catch { /* malformed prefill — ignore */ }
+  }, []);
+
   async function loadData() {
     setLoading(true);
     try {

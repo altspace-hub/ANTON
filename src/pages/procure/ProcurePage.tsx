@@ -79,6 +79,21 @@ export default function ProcurePage() {
     loadCycles();
   }, []);
 
+  // Prefill from Pathfinder's "start_procure" smart action — consume the
+  // sessionStorage handoff once and open the new-cycle modal.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('procure-prefill');
+    if (!raw) return;
+    sessionStorage.removeItem('procure-prefill');
+    try {
+      const prefill = JSON.parse(raw) as { title?: string; description?: string; category?: string };
+      if (prefill.title) setNewTitle(prefill.title);
+      if (prefill.description) setNewDescription(prefill.description);
+      if (prefill.category) setNewCategory(prefill.category);
+      setShowNewModal(true);
+    } catch { /* malformed prefill — ignore */ }
+  }, []);
+
   async function loadCycles() {
     try {
       const res = await fetch('/api/procure/cycles', { headers: getAuthHeader() });

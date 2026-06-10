@@ -1336,6 +1336,21 @@ function AntonTaskAgentPageInner() {
     if (taskId) setSelectedTaskId(taskId);
   }, [searchParams]);
 
+  // Prefill from Pathfinder's "task_agent" smart action — consume the
+  // sessionStorage handoff once and open the prefilled New Task modal.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('task-agent-prefill');
+    if (!raw) return;
+    sessionStorage.removeItem('task-agent-prefill');
+    try {
+      const prefill = JSON.parse(raw) as { title?: string; description?: string; steps?: string };
+      const description = [prefill.description, prefill.steps ? `Steps:\n${prefill.steps}` : '']
+        .filter(Boolean).join('\n\n');
+      setNewModalPrefill({ title: prefill.title ?? '', description });
+      setShowNewModal(true);
+    } catch { /* malformed prefill — ignore */ }
+  }, []);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {

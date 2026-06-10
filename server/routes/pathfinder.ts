@@ -31,6 +31,7 @@ import {
   handleFollowUp,
   buildDocumentContext,
   getAvailableSearchModels,
+  getActiveSearchProvider,
   generateSuggestions,
   type SearchDepth,
   type SearchMode,
@@ -98,7 +99,8 @@ export function createPathfinderRoutes(
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return res.status(400).json({ error: 'Query is required' });
     }
-    if (!anthropic) {
+    // Non-Claude installs run the engine's degraded path (Bing/skip web search)
+    if (!anthropic && getActiveSearchProvider() === 'anthropic') {
       return res.status(503).json({ error: 'Anthropic API not configured' });
     }
 
@@ -149,15 +151,17 @@ export function createPathfinderRoutes(
         followUpSuggestions: result.followUpSuggestions,
       }),
       onError: (error) => sendEvent(res, { type: 'error', message: error }),
+      onNotice: (message) => sendEvent(res, { type: 'notice', message }),
     };
 
+    const client = anthropic ?? null;
     try {
       if (depth === 'quick') {
-        await dispatchQuickSearch(db, query.trim(), uid, threadId, documentContext, anthropic, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchQuickSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       } else if (depth === 'thorough') {
-        await dispatchThoroughSearch(db, query.trim(), uid, threadId, documentContext, anthropic, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchThoroughSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       } else {
-        await dispatchDeepSearch(db, query.trim(), uid, threadId, documentContext, anthropic, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchDeepSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       }
     } catch (err) {
       sendEvent(res, { type: 'error', message: safeError(err) });
@@ -171,7 +175,9 @@ export function createPathfinderRoutes(
   router.post('/pathfinder/followup', async (req: Request, res: Response) => {
     const { searchId, question } = req.body as { searchId: string; question: string };
     if (!searchId || !question) return res.status(400).json({ error: 'searchId and question required' });
-    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    if (!anthropic && getActiveSearchProvider() === 'anthropic') {
+      return res.status(503).json({ error: 'Anthropic API not configured' });
+    }
 
     res.writeHead(200, SSE_HEADERS);
     const abortController = new AbortController();
@@ -180,7 +186,7 @@ export function createPathfinderRoutes(
     sendEvent(res, { type: 'followup_start', searchId });
 
     try {
-      const result = await handleFollowUp(db, searchId, question, anthropic, {
+      const result = await handleFollowUp(db, searchId, question, anthropic ?? null, {
         onTextDelta: (text) => sendEvent(res, { type: 'text_delta', content: text }),
         onThinkingDelta: (text) => sendEvent(res, { type: 'thinking_delta', content: text }),
       }, abortController.signal);
@@ -404,11 +410,13 @@ export function createPathfinderRoutes(
 
   router.post('/pathfinder/suggestions/refresh', async (req: Request, res: Response) => {
     try {
-      if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+      if (!anthropic && getActiveSearchProvider() === 'anthropic') {
+        return res.status(503).json({ error: 'Anthropic API not configured' });
+      }
       const uid = getUserId(req);
       // Clear old suggestions
       await db.run('DELETE FROM pathfinder_suggestions WHERE user_id = ?', uid);
-      const suggestions = await generateSuggestions(db, uid, anthropic);
+      const suggestions = await generateSuggestions(db, uid, anthropic ?? null);
       res.json({ suggestions });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

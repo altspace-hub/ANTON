@@ -104,6 +104,15 @@ export default function SoundingBoardPage() {
 
   const selectedPersona = ADVISOR_PERSONAS.find((p) => p.id === selectedPersonaId) ?? ADVISOR_PERSONAS[0];
 
+  // Prefill from Pathfinder ("Use in... → Sounding Board") — consume the
+  // sessionStorage handoff once and clear it.
+  useEffect(() => {
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setUserInput(piped);
+  }, []);
+
   // Persist context and persona to localStorage
   useEffect(() => {
     localStorage.setItem(LS_USER_CONTEXT, userContext);

@@ -30,6 +30,15 @@ export default function BriefMePage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
 
+  // Prefill from Pathfinder ("Use in... → Brief Me") — consume the
+  // sessionStorage handoff once and clear it.
+  useEffect(() => {
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setUserInput(piped);
+  }, []);
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {

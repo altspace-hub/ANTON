@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getClient } from '../services/claude-client.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
@@ -46,6 +47,50 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[knowledge/atoms GET]', err);
       res.status(500).json({ error: 'Failed to search atoms' });
+    }
+  });
+
+  // ── POST /api/knowledge/atoms — save a manual atom ───────────────────────
+  // Used by Pathfinder's Smart Action Bar ("save_knowledge") to persist a
+  // finding into the knowledge memory. Follows the synthetic-source pattern
+  // from atlas-knowledge-bridge (source_workflow_id is NOT NULL but manual
+  // atoms have no workflow, so the origin surface is used as the identifier).
+  router.post('/knowledge/atoms', async (req, res) => {
+    try {
+      const { content, title, sourceUrl, query, searchId } = req.body as {
+        content?: string; title?: string; sourceUrl?: string; query?: string; searchId?: string;
+      };
+      if (!content || typeof content !== 'string' || !content.trim()) {
+        res.status(400).json({ error: 'content is required' });
+        return;
+      }
+
+      const id = `kna_${randomUUID().slice(0, 12)}`;
+      const tags = JSON.stringify([
+        'pathfinder',
+        ...(typeof sourceUrl === 'string' && sourceUrl ? [`source:${sourceUrl.slice(0, 200)}`] : []),
+        ...(typeof query === 'string' && query ? [`query:${query.slice(0, 120)}`] : []),
+      ]);
+      const trimmedTitle = typeof title === 'string' ? title.trim() : '';
+      const text = trimmedTitle && !content.trim().startsWith(trimmedTitle)
+        ? `${trimmedTitle} — ${content.trim()}`
+        : content.trim();
+
+      await db.run(
+        `INSERT INTO knowledge_atoms
+          (id, source_workflow_id, source_execution_id, source_module_id,
+           content, atom_type, confidence, category, tags, created_at)
+         VALUES (?, 'pathfinder', ?, 'pathfinder', ?, 'observation.finding', 0.8, 'observation', ?, NOW())`,
+        id,
+        typeof searchId === 'string' && searchId ? searchId : 'manual',
+        text.slice(0, 2000),
+        tags,
+      );
+
+      res.status(201).json({ id });
+    } catch (err) {
+      console.error('[knowledge/atoms POST]', err);
+      res.status(500).json({ error: 'Failed to save knowledge atom' });
     }
   });
 

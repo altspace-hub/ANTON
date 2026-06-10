@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, Send, Square, Copy, Check, Download, Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -51,6 +51,15 @@ export default function ChallengeThisPage() {
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const { files, upload, remove } = useFileUpload();
+
+  // Prefill from Pathfinder ("Use in... → Challenge This") — consume the
+  // sessionStorage handoff once and clear it.
+  useEffect(() => {
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setDocContent(piped);
+  }, []);
 
   const handleRun = async () => {
     const uploadedFileIds = files.filter(f => f.status === 'done').map(f => f.id);

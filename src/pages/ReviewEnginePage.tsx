@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Shield, Scale, Briefcase, FileSearch, Zap, Send, Square, Copy, Check, Download, Upload, FileText, X as XIcon, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -135,6 +135,16 @@ export default function ReviewEnginePage() {
   const [finalText, setFinalText] = useState('');
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Prefill from Pathfinder ("Use in... → Review Engine") — consume the
+  // sessionStorage handoff once and clear it.
+  useEffect(() => {
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setDocContent(piped);
+    setInputTab('paste');
+  }, []);
 
   const allReviewModes = [...REVIEW_MODES, ...DOMAIN_REVIEW_MODES];
   const selectedMode = allReviewModes.find((m) => m.id === selectedModeId) ?? REVIEW_MODES[0];

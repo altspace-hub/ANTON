@@ -218,6 +218,17 @@ export default function PromptPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefill from Pathfinder ("Use in... → Open Chat" / source Analyse) —
+  // consume the sessionStorage handoff once and clear it.
+  useEffect(() => {
+    if (searchParams.get('from') !== 'pathfinder') return;
+    const piped = sessionStorage.getItem('pathfinder-pipe-text');
+    if (!piped) return;
+    sessionStorage.removeItem('pathfinder-pipe-text');
+    setUserInput(piped);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Start a new chat
   const handleNewChat = useCallback(() => {
     clearSession();

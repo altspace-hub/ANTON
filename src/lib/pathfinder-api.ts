@@ -43,6 +43,7 @@ export type PathfinderEvent =
   | { type: 'search_complete'; searchId: string; webSources: PathfinderWebSource[]; localSources?: PathfinderWebSource[]; enrichedQuery?: string; modelResults: PathfinderModelResult[]; inputTokens: number; outputTokens: number; costUsd: number; durationMs: number; followUpSuggestions: string[] }
   | { type: 'followup_start'; searchId: string }
   | { type: 'followup_complete'; followUpId: string }
+  | { type: 'notice'; message: string }
   | { type: 'error'; message: string };
 
 export interface PathfinderSearchConfig {
