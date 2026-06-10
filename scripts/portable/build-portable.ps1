@@ -204,6 +204,10 @@ $exclude = @(
   'relay/node_modules',
   'anton-business/packages/futurechain-sdk/node_modules',
   'anton-business/packages/shared-types/node_modules',
+  # Anton Agent Pay (Electron desktop app, merged from another machine):
+  # its node_modules carries dangling pnpm links that break tar, and the
+  # portable ANTON Local bundle doesn't run it anyway.
+  'apps/anton-agent-pay/node_modules',
   # Phase 2 (May 20 2026): the bundled FutureChain light hub.
   #   futurechain\futurechain.exe  → bundled (carries the runtime)
   #   futurechain\data\            → per-install blockchain data; built
