@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "theory-of-change",
+  "label": "Theory of Change Builder",
+  "shortLabel": "Theory of Change",
+  "icon": "GitBranch",
+  "description": "Build a rigorous Theory of Change (ToC) narrative mapping inputs → activities → outputs → outcomes → impact, with causal assumptions, evidence base, and pathway validation for NGO programmes.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Theory of Change methodology, impact evaluation, programme design"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_description",
+      "type": "textarea",
+      "label": "Programme description",
+      "required": true,
+      "placeholder": "e.g. A 3-year girls' education programme in rural Kenya combining teacher training, school feeding, and community engagement to improve secondary school completion rates."
+    },
+    {
+      "id": "intended_impact",
+      "type": "textarea",
+      "label": "Intended long-term impact",
+      "placeholder": "e.g. Improved life outcomes and economic participation for adolescent girls in the target counties."
+    },
+    {
+      "id": "programme_stage",
+      "type": "select",
+      "label": "Programme stage",
+      "options": [
+        { "value": "design", "label": "Design — new programme or proposal" },
+        { "value": "inception", "label": "Inception — funded, refining the logic" },
+        { "value": "midterm", "label": "Mid-term — revisiting the ToC against evidence" },
+        { "value": "evaluation", "label": "Evaluation — reconstructing the ToC retrospectively" }
+      ]
+    },
+    {
+      "id": "donor_audience",
+      "type": "select",
+      "label": "Primary donor / audience convention",
+      "options": [
+        { "value": "eu", "label": "EU (intervention logic / log frame)" },
+        { "value": "fcdo", "label": "FCDO (ToC + log frame)" },
+        { "value": "usaid", "label": "USAID (results framework)" },
+        { "value": "un", "label": "UN agency (RBM)" },
+        { "value": "foundation", "label": "Foundation / private philanthropy" },
+        { "value": "internal", "label": "Internal / board use" }
+      ]
+    },
+    {
+      "id": "known_evidence",
+      "type": "textarea",
+      "label": "Known evidence or prior results",
+      "placeholder": "e.g. Pilot in 2 districts showed 18% attendance improvement; systematic reviews support school feeding for enrolment but evidence on completion is mixed."
+    }
+  ],
+  "tags": [
+    "theory-of-change",
+    "programme-design",
+    "ngo",
+    "humanitarian",
+    "results-based-management",
+    "impact"
+  ],
+  "contentType": "analytic_report"
+}

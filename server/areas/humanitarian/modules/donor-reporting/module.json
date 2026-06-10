@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "donor-reporting",
+  "label": "Donor Report Writer",
+  "shortLabel": "Donor Reports",
+  "icon": "FileText",
+  "description": "Draft narrative donor reports and impact updates: progress vs targets, activities delivered, outcomes achieved, lessons learned, and financial narrative.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "Report type",
+      "required": true,
+      "options": [
+        { "value": "quarterly", "label": "Quarterly / interim progress report" },
+        { "value": "annual", "label": "Annual report" },
+        { "value": "final", "label": "Final / end-of-project report" },
+        { "value": "impact_update", "label": "Impact update / donor newsletter" },
+        { "value": "noncompliance", "label": "Variance / no-cost-extension justification" }
+      ]
+    },
+    {
+      "id": "donor",
+      "type": "text",
+      "label": "Donor and grant reference",
+      "placeholder": "e.g. FCDO grant #300123, EU NDICI, private foundation"
+    },
+    {
+      "id": "reporting_period",
+      "type": "text",
+      "label": "Reporting period",
+      "placeholder": "e.g. 1 January – 31 March 2026"
+    },
+    {
+      "id": "progress_notes",
+      "type": "textarea",
+      "label": "Raw progress notes, monitoring data, and achievements",
+      "required": true,
+      "placeholder": "Paste field updates, indicator data vs targets, activity counts, stories of change, and anything else the report should draw on. Attach documents via the knowledge panel."
+    },
+    {
+      "id": "challenges",
+      "type": "textarea",
+      "label": "Challenges, delays, and deviations from plan",
+      "placeholder": "e.g. Procurement delayed 2 months by import restrictions; output 2 target unlikely to be met; security incident suspended field work in district X."
+    },
+    {
+      "id": "financial_summary",
+      "type": "textarea",
+      "label": "Financial summary (optional)",
+      "placeholder": "e.g. 64% burn rate vs 75% time elapsed; underspend on training line due to delayed start."
+    }
+  ],
+  "tags": [
+    "donor-reporting",
+    "grant-management",
+    "ngo",
+    "humanitarian",
+    "narrative-report",
+    "accountability"
+  ],
+  "contentType": "analytic_report"
+}

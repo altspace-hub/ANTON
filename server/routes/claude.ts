@@ -1699,27 +1699,51 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   });
 
   // POST /api/modules/smart-search — AI-powered natural-language module finder
+  // The server is the source of truth for the catalog: candidates come from the
+  // module-loader (full corpus), not from the client. Any client-provided module
+  // list is ignored (kept in the body for backwards compatibility only).
   router.post('/modules/smart-search', async (req, res) => {
     if (!isApiKeyConfigured()) {
       res.status(503).json({ error: 'API key not configured' });
       return;
     }
 
-    const { query, modules } = req.body as {
-      query?: string;
-      modules?: Array<{ id: string; label: string; description: string }>;
-    };
+    const { query } = req.body as { query?: string };
 
-    if (!query?.trim() || !Array.isArray(modules) || modules.length === 0) {
-      res.status(400).json({ error: 'query and modules are required' });
+    if (!query?.trim()) {
+      res.status(400).json({ error: 'query is required' });
       return;
     }
 
     try {
+      const { getAllModules } = await import('../services/module-loader.js');
+      const catalog = await getAllModules();
+
+      // Cheap keyword pre-filter over the full catalog: score each module by
+      // query-token matches in id / label / description, keep the top ~150
+      // candidates for the Haiku ranking pass.
+      const MAX_CANDIDATES = 150;
+      const tokens = query.trim().toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 3);
+      const scored = catalog.map((m, idx) => {
+        const id = m.id.toLowerCase();
+        const label = (m.label ?? '').toLowerCase();
+        const description = (m.description ?? '').toLowerCase();
+        let score = 0;
+        for (const t of tokens) {
+          if (id.includes(t)) score += 3;
+          if (label.includes(t)) score += 3;
+          if (description.includes(t)) score += 1;
+        }
+        return { m, idx, score };
+      });
+      // Matches first (best score wins), then catalog order — so when few or no
+      // keywords hit, the list is still topped up to MAX_CANDIDATES.
+      scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+      const candidates = scored.slice(0, MAX_CANDIDATES).map(s => s.m);
+
       const client = getClient();
-      const moduleList = modules
-        .slice(0, 120)
-        .map(m => `- ${m.id}: ${m.label} — ${m.description}`)
+      const moduleList = candidates
+        .map(m => `- ${m.id}: ${m.label} — ${(m.description ?? '').slice(0, 160)}`)
         .join('\n');
 
       const response = await client.messages.create({

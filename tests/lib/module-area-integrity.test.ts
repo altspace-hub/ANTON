@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { MODULES, AREAS } from '../../src/lib/constants';
 
@@ -38,5 +40,44 @@ describe('module / area id integrity', () => {
       }
     }
     expect(dangling).toEqual([]);
+  });
+
+  it('every module id resolves to a non-empty system prompt on the server', () => {
+    // Mirrors the server's prompt resolution order (module-loader.ts):
+    //   1. server/areas/<area>/modules/<dir>/system-prompt.md, keyed by module.json id
+    //   2. legacy fallback: server/prompts/<id>.md
+    // Catches the June-2026 class of bug where an advertised module silently
+    // runs as a generic assistant because no prompt exists anywhere
+    // (re-investment-analysis, theory-of-change, monitoring-evaluation-framework,
+    // donor-reporting, and the talent-ad-generator filename mismatch).
+    const repoRoot = path.resolve(__dirname, '..', '..');
+    const areasDir = path.join(repoRoot, 'server', 'areas');
+    const legacyPromptsDir = path.join(repoRoot, 'server', 'prompts');
+
+    const promptedIds = new Set<string>();
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        const promptPath = path.join(modulesDir, modEntry.name, 'system-prompt.md');
+        if (!fs.existsSync(configPath) || !fs.existsSync(promptPath)) continue;
+        if (fs.readFileSync(promptPath, 'utf-8').trim().length === 0) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string };
+        if (config.id) promptedIds.add(config.id);
+      }
+    }
+
+    const promptless: string[] = [];
+    for (const id of moduleIds) {
+      if (promptedIds.has(id)) continue;
+      const legacyPath = path.join(legacyPromptsDir, `${id}.md`);
+      const hasLegacy = fs.existsSync(legacyPath)
+        && fs.readFileSync(legacyPath, 'utf-8').trim().length > 0;
+      if (!hasLegacy) promptless.push(id);
+    }
+    expect(promptless).toEqual([]);
   });
 });

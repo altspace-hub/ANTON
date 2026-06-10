@@ -14,6 +14,14 @@ import { PAYMENTS_DORA_MODULES } from './area-patches/payments-dora-patch';
 import { INSURANCE_MODULES } from './area-patches/insurance-patch';
 import { TALENT_MODULES } from './area-patches/talent-patch';
 import { HARDWARE_MODULES } from './area-patches/hardware-patch';
+import {
+  SURFACED_FCP_MODULES,
+  SURFACED_CYBER_MODULES,
+  SURFACED_INVESTMENT_MODULES,
+  SURFACED_CONSULTING_MODULES,
+  SURFACED_INSURANCE_MODULES,
+  SURFACED_ACCOUNTING_MODULES,
+} from './area-patches/surfaced-modules-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2648,6 +2656,10 @@ export const AREAS = [
       'training-needs-assessment',
       // Consultant modules (Batch 1):
       'amla-data-readiness', 'regulatory-exam-prep', 'tech-selection-support',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'cash-intensive-business-risk', 'correspondent-banking-dd', 'de-risking-impact-assessment',
+      'hawala-ivts-risk-assessment', 'informal-remittance-corridor-analysis', 'ivts-detection-investigation',
+      'remittance-compliance-framework', 'tbml-assessment', 'trade-finance-due-diligence',
     ],
   },
   {
@@ -2689,6 +2701,9 @@ export const AREAS = [
     moduleIds: [
       'proposal-generator', 'stakeholder-mapping', 'engagement-delivery',
       'client-presentation', 'change-management',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'benchmarking-best-practice', 'change-management-strategy', 'client-workshop-facilitator',
+      'expert-testimony-prep', 'value-assessment-benefits',
     ],
   },
   {
@@ -2726,6 +2741,9 @@ export const AREAS = [
     moduleIds: [
       'dora-compliance', 'security-assessment', 'incident-response',
       'ict-risk-management', 'third-party-cyber-risk',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'cloud-security-review', 'incident-response-plan', 'nis2-compliance',
+      'pen-test-scope', 'security-awareness-training', 'third-party-security',
     ],
   },
   {
@@ -2759,6 +2777,9 @@ export const AREAS = [
     color: 'adv-teal',
     moduleIds: [
       'investment-analysis', 'portfolio-review', 'fund-compliance', 'mifid-advisory',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'alternative-investment-dd', 'esg-investment-screening', 'fund-due-diligence',
+      'investor-reporting-factsheet', 'portfolio-risk-analytics', 'regulatory-capital-assessment',
     ],
   },
   {
@@ -2863,6 +2884,8 @@ export const AREAS = [
       'receipt-processor', 'vat-return-preparer', 'month-end-checklist',
       'budget-variance-analyzer', 'ifrs-implementation-advisor', 'transfer-pricing-documentation',
       'financial-statement-drafter', 'expense-policy-checker',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'aaoifi-compliance', 'internal-controls-sox', 'treasury-cash-management',
     ],
   },
   {
@@ -2921,6 +2944,8 @@ export const AREAS = [
     moduleIds: [
       'solvency-ii', 'claims-analysis', 'product-governance', 'idd-compliance', 'actuarial-comms',
       'solvency-ii-compliance', 'idd-distribution',
+      // Surfaced server modules (June 2026, plan 1.5):
+      'ifrs17-implementation', 'reinsurance-program-review', 'takaful-product-design', 'takaful-regulatory',
     ],
   },
   {
@@ -3407,6 +3432,17 @@ export const AREAS = [
 export const MODELS: ModelInfo[] = [
   // ── Anthropic ─────────────────────────────────────────────
   {
+    id: 'claude-fable-5',
+    label: 'Claude Fable 5',
+    description: 'Most powerful Claude — a new tier above Opus. 1M context, 128k output. For the hardest reasoning and long-horizon agentic work. Note: ~2× Opus pricing. Adaptive thinking only. Knowledge cutoff Jan 2026.',
+    inputCostPer1M: 10,
+    outputCostPer1M: 50,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
     id: 'claude-opus-4-8',
     label: 'Claude Opus 4.8',
     description: 'Most capable. 1M context, 128k output. Best for complex reasoning, agentic coding, and high-stakes compliance work. Adaptive thinking (effort defaults to high). Knowledge cutoff Jan 2026.',
@@ -3748,6 +3784,12 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...INSURANCE_MODULES,
     ...TALENT_MODULES,
     ...HARDWARE_MODULES,
+    ...SURFACED_FCP_MODULES,
+    ...SURFACED_CYBER_MODULES,
+    ...SURFACED_INVESTMENT_MODULES,
+    ...SURFACED_CONSULTING_MODULES,
+    ...SURFACED_INSURANCE_MODULES,
+    ...SURFACED_ACCOUNTING_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

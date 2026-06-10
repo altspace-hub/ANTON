@@ -24,7 +24,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     stepNumber: 1,
     icon: <LayoutGrid className="h-8 w-8 text-adv-teal" />,
-    title: '485+ expert modules across 56 domains',
+    title: '500+ expert modules across 60+ areas',
     description:
       'Browse the sidebar to discover modules built for Financial Crime Prevention, Legal & Regulatory, Audit & Assurance, Consulting, HR, Strategy, and many more. Every module comes pre-configured with expert defaults so you can get professional results with a single click.',
   },

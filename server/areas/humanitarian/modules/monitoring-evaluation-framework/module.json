@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "monitoring-evaluation-framework",
+  "label": "M&E Framework Designer",
+  "shortLabel": "M&E Framework",
+  "icon": "BarChart2",
+  "description": "Design a Monitoring & Evaluation framework: results framework, indicator selection (process/output/outcome/impact), data collection methods, baseline design, and reporting schedule.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "OECD DAC evaluation criteria, SMART indicators, results-based management"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_description",
+      "type": "textarea",
+      "label": "Programme description and results logic",
+      "required": true,
+      "placeholder": "e.g. WASH programme in 40 villages: borehole rehabilitation, hygiene promotion, and water-committee strengthening, aiming at reduced waterborne disease incidence."
+    },
+    {
+      "id": "framework_scope",
+      "type": "select",
+      "label": "Framework scope",
+      "options": [
+        { "value": "full", "label": "Full M&E framework (results framework + indicators + data plan + reporting)" },
+        { "value": "indicators", "label": "Indicator matrix only" },
+        { "value": "baseline", "label": "Baseline study design" },
+        { "value": "evaluation", "label": "Evaluation design (mid-term / final)" }
+      ]
+    },
+    {
+      "id": "me_capacity",
+      "type": "select",
+      "label": "M&E capacity and budget",
+      "options": [
+        { "value": "minimal", "label": "Minimal — no dedicated M&E staff, paper-based collection" },
+        { "value": "moderate", "label": "Moderate — part-time M&E officer, basic digital tools" },
+        { "value": "strong", "label": "Strong — dedicated M&E team, digital data collection (Kobo/ODK), evaluation budget" }
+      ]
+    },
+    {
+      "id": "donor_requirements",
+      "type": "textarea",
+      "label": "Donor reporting requirements",
+      "placeholder": "e.g. EU quarterly narrative + annual results reporting; indicators must map to EU Global Gateway results chain."
+    },
+    {
+      "id": "existing_indicators",
+      "type": "textarea",
+      "label": "Existing indicators or log frame (if any)",
+      "placeholder": "Paste the current log frame rows or indicator list, if one exists."
+    }
+  ],
+  "tags": [
+    "monitoring-evaluation",
+    "indicators",
+    "results-framework",
+    "ngo",
+    "humanitarian",
+    "oecd-dac",
+    "baseline"
+  ],
+  "contentType": "plan_document"
+}

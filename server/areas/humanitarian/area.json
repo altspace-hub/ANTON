@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "humanitarian",
+  "name": "Humanitarian & NGO Programme Design",
+  "shortName": "Humanitarian",
+  "description": "Programme design and accountability tools for NGOs, humanitarian agencies, and development organisations. Supports Theory of Change development, Monitoring & Evaluation framework design, and narrative donor reporting using results-based management methodology and OECD DAC evaluation standards.",
+  "icon": "Globe",
+  "color": "adv-green",
+  "cluster": "social"
+}

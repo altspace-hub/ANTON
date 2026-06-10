@@ -52,18 +52,12 @@ export default function SmartModuleSearch() {
     setError('');
     setMatches([]);
 
-    // Build compact module list to send to the endpoint
-    const moduleSummaries = MODULES.slice(0, 120).map(m => ({
-      id: m.id,
-      label: m.label,
-      description: (m.description ?? '').slice(0, 130),
-    }));
-
     try {
+      // The server ranks against its own full module catalog — no client list needed.
       const res = await fetch('/api/modules/smart-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ query: q, modules: moduleSummaries }),
+        body: JSON.stringify({ query: q }),
       });
       if (!res.ok) {
         setError('Could not reach the AI. Check that your API key is configured.');
