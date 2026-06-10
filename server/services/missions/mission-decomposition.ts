@@ -10,6 +10,7 @@ import { callChat, type StreamChatConfig, type ChatResult } from '../provider-ro
 import { resolveMissionModel } from './mission-model-resolver.js';
 import { createServicePackManager } from './service-pack-manager.js';
 import { createCredentialVault } from './mission-credential-vault.js';
+import { extractTemplateParameters, substituteTemplateParameters } from './mission-template-parameters.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, TaskGraphTemplate, TaskGraphNode, MissionTemplate, TaskType } from './types.js';
 
@@ -216,6 +217,17 @@ Decompose this mission into a task graph now.`;
 
 function buildTemplateRefinementPrompt(mission: Mission, template: MissionTemplate, capabilities?: ActionCapabilityContext): { system: string; user: string } {
   const allowActions = actionTasksAllowed(capabilities);
+
+  // 3A.1 — deterministic ${param} substitution BEFORE the LLM sees the graph.
+  // Values stored at creation time (mission context block) are substituted
+  // exact-key into the template graph; only placeholders with no stored
+  // value are left for the LLM to resolve from the brief.
+  const params = extractTemplateParameters(mission.context);
+  const substitution = substituteTemplateParameters(template.task_graph_template, params);
+  const placeholderRule = substitution.unresolved.length > 0
+    ? `2. Known template parameters have already been substituted into the graph as literal values — treat them as fixed. The following placeholders had NO stored value and remain in the graph: ${substitution.unresolved.map(k => `\${${k}}`).join(', ')}. Replace each with a concrete value from the mission brief.`
+    : `2. Template parameters have already been substituted into the graph as literal values — treat them as fixed. Do not re-introduce \${...} placeholders.`;
+
   const system = `You are ANTON's Mission Planner. You are refining a mission-template task graph to fit a specific mission objective.
 
 Output ONLY a JSON object on a single line, no preamble, no markdown fences. The schema is:
@@ -239,7 +251,7 @@ ${buildActionSection(capabilities)}
 
 REFINEMENT RULES:
 1. Start from the template task graph. You may add, remove, or modify tasks but preserve the template's overall shape.
-2. Replace template placeholders (e.g. \${client_name}, \${jurisdiction}) with concrete values from the mission brief.
+${placeholderRule}
 3. Add tasks if the specific objective demands them; remove tasks that don't apply.
 4. Keep checkpoint placement consistent with the template.
 5. Estimate tokens realistically based on the specific scope.
@@ -255,8 +267,8 @@ Pillar: ${template.pillar}
 Category: ${template.category ?? ''}
 Required modules: ${template.required_modules.join(', ') || '(none)'}
 
-TEMPLATE TASK GRAPH (starting point):
-${JSON.stringify(template.task_graph_template, null, 2)}
+TEMPLATE TASK GRAPH (starting point — parameters already substituted):
+${JSON.stringify(substitution.graph, null, 2)}
 
 MISSION BRIEF
 ─────────────

@@ -11,6 +11,9 @@
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { encrypt, decrypt } from '../credential-vault.js';
+import { childLogger } from '../../lib/logger.js';
+
+const log = childLogger('mission-credential-vault');
 
 export type CredentialType =
   | 'api_key'
@@ -87,6 +90,158 @@ function newCredId(): string {
   return `cred_${Date.now()}_${randomUUID().slice(0, 8)}`;
 }
 
+// ── OAuth2 token refresh (Wave-3 3A.2) ──────────────────────────────────────
+// refreshOauthToken() existed with zero callers — the Gmail pack died after
+// ~1h when the access token expired. resolveSecret() now refreshes
+// proactively when the stored expiry is within the skew window. The pure
+// decision/parse/response helpers below are exported for unit tests; no
+// token value is ever logged.
+
+/** Refresh when the token expires within this window (covers clock skew + in-flight request time). */
+export const OAUTH_REFRESH_SKEW_MS = 60_000;
+
+export interface OauthRefreshDecisionInput {
+  credential_type: string;
+  oauth_token_url: string | null;
+  oauth_expires_at: string | null;
+  /** Whether an encrypted refresh token is stored. */
+  has_refresh_token: boolean;
+}
+
+/**
+ * True when a proactive refresh should be attempted before returning the
+ * secret: oauth2 credential, refresh machinery present (token URL + refresh
+ * token), and a parseable expiry within now+60s. A missing or unparseable
+ * expiry returns false — we can't know the token is stale, and a failed API
+ * call surfaces visibly downstream anyway.
+ */
+export function needsOauthRefresh(c: OauthRefreshDecisionInput, nowMs: number = Date.now()): boolean {
+  if (c.credential_type !== 'oauth2') return false;
+  if (!c.oauth_token_url || !c.has_refresh_token) return false;
+  if (!c.oauth_expires_at) return false;
+  const expiresMs = Date.parse(c.oauth_expires_at);
+  if (!Number.isFinite(expiresMs)) return false;
+  return expiresMs < nowMs + OAUTH_REFRESH_SKEW_MS;
+}
+
+export interface OauthSecretShape {
+  access_token: string;
+  client_id?: string;
+  client_secret?: string;
+  /** True when the stored secret was a JSON object (shape preserved on re-serialisation). */
+  is_json: boolean;
+  /** Other fields from a JSON-shaped secret, preserved verbatim. */
+  extra: Record<string, unknown>;
+}
+
+/**
+ * An oauth2 secret may be stored either as the raw access token string or
+ * as a JSON object `{ "access_token": "…", "client_id": "…",
+ * "client_secret": "…" }` (client fields are required by most token
+ * endpoints — Google included — when refreshing).
+ */
+export function parseOauthSecret(secret: string): OauthSecretShape {
+  const trimmed = secret.trim();
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const obj = parsed as Record<string, unknown>;
+        if (typeof obj.access_token === 'string' && obj.access_token) {
+          const { access_token, client_id, client_secret, ...extra } = obj;
+          return {
+            access_token,
+            client_id: typeof client_id === 'string' ? client_id : undefined,
+            client_secret: typeof client_secret === 'string' ? client_secret : undefined,
+            is_json: true,
+            extra,
+          };
+        }
+      }
+    } catch { /* fall through — treat as raw token */ }
+  }
+  return { access_token: secret, is_json: false, extra: {} };
+}
+
+/** Re-serialise the secret with a new access token, preserving the original shape (raw string vs JSON with client fields). */
+export function serialiseOauthSecret(shape: OauthSecretShape, newAccessToken: string): string {
+  if (!shape.is_json) return newAccessToken;
+  return JSON.stringify({
+    ...shape.extra,
+    ...(shape.client_id !== undefined ? { client_id: shape.client_id } : {}),
+    ...(shape.client_secret !== undefined ? { client_secret: shape.client_secret } : {}),
+    access_token: newAccessToken,
+  });
+}
+
+export type OauthRefreshOutcome =
+  | { ok: true; access_token: string; expires_at: string; refresh_token?: string }
+  | { ok: false; reason: string };
+
+/**
+ * POST grant_type=refresh_token to the token endpoint (RFC 6749 §6,
+ * form-encoded). client_id/client_secret are included when stored. Returns
+ * the new access token + computed ISO expiry (expires_in defaults to 3600s
+ * when the provider omits it) + the rotated refresh token when the provider
+ * returns one. Never throws — failures come back as { ok: false, reason }
+ * with NO token material in the reason.
+ */
+export async function requestOauthTokenRefresh(args: {
+  tokenUrl: string;
+  refreshToken: string;
+  clientId?: string;
+  clientSecret?: string;
+  fetchImpl?: typeof fetch;
+  nowMs?: number;
+  timeoutMs?: number;
+}): Promise<OauthRefreshOutcome> {
+  const fetchFn = args.fetchImpl ?? fetch;
+  const nowMs = args.nowMs ?? Date.now();
+  const body = new URLSearchParams({ grant_type: 'refresh_token', refresh_token: args.refreshToken });
+  if (args.clientId) body.set('client_id', args.clientId);
+  if (args.clientSecret) body.set('client_secret', args.clientSecret);
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), args.timeoutMs ?? 15_000);
+  let payload: unknown;
+  let status: number;
+  try {
+    const res = await fetchFn(args.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: ctrl.signal,
+    });
+    status = res.status;
+    try { payload = await res.json(); } catch { payload = null; }
+  } catch (err) {
+    return { ok: false, reason: `transport error: ${err instanceof Error ? err.message : String(err)}` };
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const obj = (payload && typeof payload === 'object' && !Array.isArray(payload))
+    ? payload as Record<string, unknown>
+    : {};
+  if (status < 200 || status >= 300) {
+    // OAuth error codes (e.g. invalid_grant) are safe to surface; token values are not.
+    const code = typeof obj.error === 'string' ? ` (${obj.error})` : '';
+    return { ok: false, reason: `HTTP ${status}${code}` };
+  }
+  if (typeof obj.access_token !== 'string' || !obj.access_token) {
+    return { ok: false, reason: 'token endpoint returned no access_token' };
+  }
+  const expiresInSec = typeof obj.expires_in === 'number' && Number.isFinite(obj.expires_in) && obj.expires_in > 0
+    ? obj.expires_in
+    : 3600;
+  return {
+    ok: true,
+    access_token: obj.access_token,
+    expires_at: new Date(nowMs + expiresInSec * 1000).toISOString(),
+    refresh_token: typeof obj.refresh_token === 'string' && obj.refresh_token ? obj.refresh_token : undefined,
+  };
+}
+
 export function createCredentialVault(db: DatabaseAdapter) {
 
   async function createCredential(input: CreateCredentialInput, createdByUserId: string): Promise<StoredCredential> {
@@ -143,6 +298,14 @@ export function createCredentialVault(db: DatabaseAdapter) {
    * INTERNAL: resolve the actual decrypted secret. Logs every access.
    * Callers MUST ensure they're using this only in server-side execution
    * paths that don't surface the result to LLM prompts or to API responses.
+   *
+   * For oauth2 credentials the return value is the ACCESS TOKEN (extracted
+   * from a JSON-shaped secret when one is stored) — that's what every
+   * caller puts in `Authorization: Bearer`. When the stored expiry is
+   * within OAUTH_REFRESH_SKEW_MS, the token is refreshed first (3A.2);
+   * a refresh failure logs the credential id/name only and returns the
+   * stale token so the downstream API call 401s visibly instead of the
+   * mission dying silently inside the vault.
    */
   async function resolveSecret(id: string, missionId?: string, taskId?: string): Promise<string | null> {
     const row = await db.get<CredentialRow>(`SELECT * FROM missions.credential_vault WHERE id = ? AND is_active = TRUE`, id);
@@ -152,15 +315,67 @@ export function createCredentialVault(db: DatabaseAdapter) {
     }
     try {
       const secret = decrypt(row.encrypted_data);
+      const refreshed = await maybeRefreshOauth(row, secret, missionId, taskId);
       await db.run(
         `UPDATE missions.credential_vault SET last_used_at = NOW() WHERE id = ?`,
         id,
       );
       await logAccess(id, 'read', { mission_id: missionId, task_id: taskId, service: row.service_name });
-      return secret;
+      if (refreshed !== null) return refreshed;
+      return row.credential_type === 'oauth2' ? parseOauthSecret(secret).access_token : secret;
     } catch (err) {
       await logAccess(id, 'read', { mission_id: missionId, task_id: taskId, success: false, error: err instanceof Error ? err.message : String(err) });
       throw err;
+    }
+  }
+
+  /**
+   * Proactive oauth2 refresh inside resolveSecret. Returns the fresh access
+   * token when a refresh happened, or null when no refresh was needed OR
+   * the refresh failed (caller falls back to the stale token). Never logs
+   * token values — key name + id only.
+   */
+  async function maybeRefreshOauth(
+    row: CredentialRow,
+    secret: string,
+    missionId?: string,
+    taskId?: string,
+  ): Promise<string | null> {
+    const due = needsOauthRefresh({
+      credential_type: row.credential_type,
+      oauth_token_url: row.oauth_token_url,
+      oauth_expires_at: row.oauth_expires_at,
+      has_refresh_token: Boolean(row.oauth_refresh_token_encrypted),
+    });
+    if (!due) return null;
+    try {
+      const refreshToken = decrypt(row.oauth_refresh_token_encrypted as string);
+      const shape = parseOauthSecret(secret);
+      const outcome = await requestOauthTokenRefresh({
+        tokenUrl: row.oauth_token_url as string,
+        refreshToken,
+        clientId: shape.client_id,
+        clientSecret: shape.client_secret,
+      });
+      if (!outcome.ok) {
+        log.warn({ credentialId: row.id, credentialName: row.name, reason: outcome.reason }, 'oauth_refresh_failed');
+        await logAccess(row.id, 'refresh', { mission_id: missionId, task_id: taskId, service: row.service_name, success: false, error: outcome.reason });
+        return null;
+      }
+      // Some providers rotate the refresh token on use — persist it when returned.
+      await refreshOauthToken(
+        row.id,
+        serialiseOauthSecret(shape, outcome.access_token),
+        outcome.expires_at,
+        outcome.refresh_token,
+      );
+      log.info({ credentialId: row.id, credentialName: row.name }, 'oauth_refresh_ok');
+      return outcome.access_token;
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log.warn({ credentialId: row.id, credentialName: row.name, reason }, 'oauth_refresh_failed');
+      await logAccess(row.id, 'refresh', { mission_id: missionId, task_id: taskId, service: row.service_name, success: false, error: reason }).catch(() => { /* best-effort */ });
+      return null;
     }
   }
 

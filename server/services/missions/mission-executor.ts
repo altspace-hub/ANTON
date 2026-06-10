@@ -161,19 +161,21 @@ export function createMissionExecutor(db: DatabaseAdapter) {
         tokens: 0, durationSeconds: 0,
       });
       if (!verdict.outcome) {
-        // Skip direct dependents. Transitive skipping lets advance() naturally
-        // propagate: a task whose only blocking dep is 'skipped' will itself
-        // be picked up as ready, but getNextReadyTask currently treats skipped
-        // deps as unmet. We explicitly skip the immediate children here; a
-        // future enhancement can walk the chain.
+        // Transitive skip (Wave-3 3A.3): direct dependents are skipped
+        // unconditionally, then the graph is walked so every task whose
+        // ONLY path to readiness runs through skipped tasks is skipped too.
+        // getReadyTasks treats 'skipped' deps as met — without the walk, a
+        // grandchild reachable only via the false branch would still run.
+        // Tasks with an independent satisfied/satisfiable dependency survive.
         const deps = await state.listDependencies(mission.id);
-        const dependentIds = deps.filter(d => d.depends_on_task_id === task.id).map(d => d.task_id);
-        for (const depId of dependentIds) {
-          await state.updateTaskStatus(depId, 'skipped', { completedAt: new Date().toISOString() });
+        const allTasks = await state.listTasks(mission.id);
+        const skipIds = computeConditionalSkips(task.id, allTasks, deps);
+        for (const skipId of skipIds) {
+          await state.updateTaskStatus(skipId, 'skipped', { completedAt: new Date().toISOString() });
         }
         await state.logActivity(mission.id, {
           activityType: 'task_completed',
-          description: `Conditional '${task.title}' → false; skipped ${dependentIds.length} dependent task${dependentIds.length === 1 ? '' : 's'}: ${verdict.reason}`,
+          description: `Conditional '${task.title}' → false; skipped ${skipIds.length} dependent task${skipIds.length === 1 ? '' : 's'} (transitive): ${verdict.reason}`,
           taskId: task.id,
         });
       } else {
@@ -566,6 +568,71 @@ async function callAnthropicWithWebSearch(
   };
 }
 
+// ── Transitive conditional skip (Wave-3 3A.3) ──────────────────────────────
+
+/**
+ * Given a conditional task whose predicate evaluated FALSE, compute every
+ * task that must be marked 'skipped'. Pure — unit-testable without a DB.
+ *
+ * Semantics:
+ *   • Direct dependents of the conditional are always skipped (the false
+ *     branch must not run, regardless of their other dependencies).
+ *   • Then a fixpoint walk: a skippable task is doomed when it has at least
+ *     one blocking dependency and EVERY blocking dependency is doomed
+ *     (newly skipped here, or already status='skipped' from an earlier
+ *     conditional). A single dependency on a non-doomed task — completed,
+ *     active, or still satisfiable — is an independent path to readiness,
+ *     so the task survives.
+ *   • Only 'queued' / 'blocked' tasks are candidates; completed, active,
+ *     failed, and paused tasks are never retro-skipped.
+ *   • Only 'blocking' dependency edges gate readiness; 'informational'
+ *     edges are ignored (matches getReadyTasks).
+ *
+ * Returns the ids to skip in input task order (deterministic).
+ */
+export function computeConditionalSkips(
+  conditionalTaskId: string,
+  tasks: Array<Pick<MissionTask, 'id' | 'status'>>,
+  dependencies: Array<{ task_id: string; depends_on_task_id: string; dependency_type: string }>,
+): string[] {
+  const skippable = new Set(
+    tasks.filter(t => t.status === 'queued' || t.status === 'blocked').map(t => t.id),
+  );
+  const doomed = new Set(tasks.filter(t => t.status === 'skipped').map(t => t.id));
+  const blockingDeps = new Map<string, string[]>();
+  for (const d of dependencies) {
+    if (d.dependency_type !== 'blocking') continue;
+    const list = blockingDeps.get(d.task_id);
+    if (list) list.push(d.depends_on_task_id);
+    else blockingDeps.set(d.task_id, [d.depends_on_task_id]);
+  }
+
+  const toSkip = new Set<string>();
+  // Direct dependents of the false conditional — skipped unconditionally.
+  for (const [taskId, deps] of blockingDeps) {
+    if (skippable.has(taskId) && deps.includes(conditionalTaskId)) {
+      toSkip.add(taskId);
+      doomed.add(taskId);
+    }
+  }
+  // Fixpoint: a task whose every blocking dep is doomed has no independent
+  // path to readiness.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [taskId, deps] of blockingDeps) {
+      if (!skippable.has(taskId) || toSkip.has(taskId)) continue;
+      if (deps.length === 0) continue;
+      if (deps.every(dep => doomed.has(dep))) {
+        toSkip.add(taskId);
+        doomed.add(taskId);
+        changed = true;
+      }
+    }
+  }
+  return tasks.filter(t => toSkip.has(t.id)).map(t => t.id);
+}
+
 // ── Conditional predicates ─────────────────────────────────────────────────
 // Union kept small on purpose — mission authors compose branching logic from
 // concrete task outputs rather than free-form DSL. always_true / always_false
@@ -583,10 +650,15 @@ interface ConditionalVerdict {
   reason: string;
 }
 
-async function evaluateConditional(
+/** Minimal task reader — evaluateConditional only needs getTask, which keeps it unit-testable without a DB-backed state. */
+interface ConditionalTaskReader {
+  getTask(id: string): Promise<MissionTask | null>;
+}
+
+export async function evaluateConditional(
   predicate: ConditionalPredicate | undefined,
   _missionId: string,
-  state: ReturnType<typeof createMissionState>,
+  state: ConditionalTaskReader,
 ): Promise<ConditionalVerdict> {
   if (!predicate) return { outcome: true, reason: 'no predicate — treating as true (vacuous)' };
   switch (predicate.kind) {

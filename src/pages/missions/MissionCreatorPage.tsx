@@ -11,14 +11,37 @@ import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type AutonomyLevel = 'check_in' | 'briefing' | 'full_autonomy';
 
+interface TemplateParameter {
+  key: string;
+  label: string;
+  type: 'string' | 'number' | 'select' | 'boolean' | 'textarea';
+  required?: boolean;
+  default?: string | number | boolean;
+  options?: string[];
+  help?: string;
+}
+
 interface MissionTemplate {
   id: string;
   name: string;
   description: string | null;
   pillar: 'work' | 'life' | 'school';
   category: string | null;
+  parameters_schema?: TemplateParameter[];
   default_autonomy_level: AutonomyLevel;
   default_budget: { token_budget_max?: number; time_budget_max_seconds?: number; time_active_max_seconds?: number };
+}
+
+type ParamValues = Record<string, string | number | boolean>;
+
+/** Seed form values from the schema defaults when a template is selected. */
+function defaultParamValues(schema: TemplateParameter[]): ParamValues {
+  const out: ParamValues = {};
+  for (const p of schema) {
+    if (p.default !== undefined) out[p.key] = p.default;
+    else if (p.type === 'boolean') out[p.key] = false;
+  }
+  return out;
 }
 
 const AUTONOMY_OPTIONS: Array<{ id: AutonomyLevel; label: string; hint: string }> = [
@@ -38,8 +61,12 @@ export default function MissionCreatorPage() {
   const [context, setContext] = useState('');
   const [autonomy, setAutonomy] = useState<AutonomyLevel>('check_in');
   const [tokenBudget, setTokenBudget] = useState(250_000);
+  const [paramValues, setParamValues] = useState<ParamValues>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedTemplate = templates.find(t => t.id === templateId);
+  const paramSchema = (templateId && selectedTemplate?.parameters_schema) || [];
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -53,13 +80,26 @@ export default function MissionCreatorPage() {
 
   // Apply template defaults when selected
   useEffect(() => {
-    if (!templateId) return;
+    if (!templateId) { setParamValues({}); return; }
     const tmpl = templates.find(t => t.id === templateId);
     if (!tmpl) return;
     setAutonomy(tmpl.default_autonomy_level);
     if (tmpl.default_budget?.token_budget_max) setTokenBudget(tmpl.default_budget.token_budget_max);
     if (!title.trim()) setTitle(tmpl.name);
+    setParamValues(defaultParamValues(tmpl.parameters_schema ?? []));
   }, [templateId, templates]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function setParam(key: string, value: string | number | boolean) {
+    setParamValues(prev => ({ ...prev, [key]: value }));
+  }
+
+  /** Required template parameters with no value yet (drives validation). */
+  const missingRequired = paramSchema.filter(p => {
+    if (!p.required) return false;
+    const v = paramValues[p.key];
+    if (v === undefined) return true;
+    return typeof v === 'string' && !v.trim();
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +107,23 @@ export default function MissionCreatorPage() {
     if (!title.trim() || !objective.trim() || !successCriteria.trim()) {
       setError('Title, objective, and success criteria are required.');
       return;
+    }
+    if (missingRequired.length > 0) {
+      setError(`Template parameter${missingRequired.length === 1 ? '' : 's'} required: ${missingRequired.map(p => p.label).join(', ')}.`);
+      return;
+    }
+    // Send only parameters that carry a value (trimmed strings; numbers and
+    // booleans as-is) — the server fills schema defaults for the rest.
+    const templateParameters: ParamValues = {};
+    for (const p of paramSchema) {
+      const v = paramValues[p.key];
+      if (v === undefined) continue;
+      if (typeof v === 'string') {
+        const trimmed = v.trim();
+        if (trimmed) templateParameters[p.key] = trimmed;
+      } else {
+        templateParameters[p.key] = v;
+      }
     }
     setSubmitting(true);
     try {
@@ -81,6 +138,7 @@ export default function MissionCreatorPage() {
           autonomy_level: autonomy,
           budget: { token_budget_max: tokenBudget },
           template_id: templateId || undefined,
+          template_parameters: templateId && Object.keys(templateParameters).length > 0 ? templateParameters : undefined,
         }),
       });
       const data = await res.json();
@@ -136,6 +194,84 @@ export default function MissionCreatorPage() {
             ))}
           </div>
         </section>
+
+        {/* Template parameters (3A.1 — typed form from parameters_schema) */}
+        {paramSchema.length > 0 && (
+          <section className="rounded-lg border border-border bg-adv-card p-4 space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-adv-teal">Template parameters</h2>
+            {paramSchema.map(p => {
+              const value = paramValues[p.key];
+              const baseInputClass = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/60 focus:border-adv-teal focus:outline-none';
+              return (
+                <div key={p.key}>
+                  {p.type !== 'boolean' && (
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
+                      {p.label} {p.required && <span className="text-adv-red">*</span>}
+                    </label>
+                  )}
+                  {p.type === 'select' && (
+                    <select
+                      value={typeof value === 'string' ? value : ''}
+                      onChange={e => setParam(p.key, e.target.value)}
+                      className={baseInputClass}
+                    >
+                      {!p.required && <option value="">(none)</option>}
+                      {p.required && value === undefined && <option value="">Select…</option>}
+                      {(p.options ?? []).map(o => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  )}
+                  {p.type === 'textarea' && (
+                    <textarea
+                      value={typeof value === 'string' ? value : ''}
+                      onChange={e => setParam(p.key, e.target.value)}
+                      rows={3}
+                      maxLength={4000}
+                      className={baseInputClass}
+                    />
+                  )}
+                  {p.type === 'string' && (
+                    <input
+                      type="text"
+                      value={typeof value === 'string' ? value : ''}
+                      onChange={e => setParam(p.key, e.target.value)}
+                      maxLength={2000}
+                      className={baseInputClass}
+                    />
+                  )}
+                  {p.type === 'number' && (
+                    <input
+                      type="number"
+                      value={typeof value === 'number' ? value : ''}
+                      onChange={e => {
+                        const n = e.target.value === '' ? undefined : Number(e.target.value);
+                        if (n === undefined) {
+                          setParamValues(prev => { const next = { ...prev }; delete next[p.key]; return next; });
+                        } else if (Number.isFinite(n)) {
+                          setParam(p.key, n);
+                        }
+                      }}
+                      className={baseInputClass}
+                    />
+                  )}
+                  {p.type === 'boolean' && (
+                    <label className="flex items-center gap-2 text-sm text-adv-off-white cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={value === true}
+                        onChange={e => setParam(p.key, e.target.checked)}
+                        className="h-4 w-4 rounded border-border bg-adv-dark accent-[var(--adv-teal,#2DD4A8)]"
+                      />
+                      {p.label} {p.required && <span className="text-adv-red">*</span>}
+                    </label>
+                  )}
+                  {p.help && <p className="mt-1 text-[11px] text-adv-gray">{p.help}</p>}
+                </div>
+              );
+            })}
+          </section>
+        )}
 
         {/* Brief */}
         <div>

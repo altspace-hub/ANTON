@@ -10,6 +10,10 @@
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createMissionState, newMissionId, newTaskId, newDecisionId } from './mission-state.js';
 import { decomposeMission, buildActionCapabilityContext } from './mission-decomposition.js';
+import {
+  mergeTemplateParameterDefaults,
+  appendTemplateParametersToContext,
+} from './mission-template-parameters.js';
 import { createMissionExecutor } from './mission-executor.js';
 import { createMissionDelivery } from './mission-delivery.js';
 import {
@@ -49,12 +53,23 @@ export function createMissionController(db: DatabaseAdapter) {
     if (!input.objective?.trim()) throw new Error('Mission objective is required');
     if (!input.success_criteria?.trim()) throw new Error('Mission success criteria is required');
 
+    // 3A.1 — persist template_parameters into the mission context as a
+    // machine-recoverable block (defaults filled from the template's
+    // parameters_schema). decomposeMission later extracts the values and
+    // substitutes ${param} placeholders deterministically.
+    let context: string | null = input.context?.trim() || null;
+    if (input.template_id && input.template_parameters && Object.keys(input.template_parameters).length > 0) {
+      const template = await state.getTemplate(input.template_id);
+      const merged = mergeTemplateParameterDefaults(template?.parameters_schema ?? [], input.template_parameters);
+      context = appendTemplateParametersToContext(context, merged);
+    }
+
     // Spec §11.2 — heuristic keyword pre-screen (NOT a legal EU AI Act
     // assessment) + deterministic autonomy ceiling: missions flagged
     // high_risk cannot run at full_autonomy.
     const { classifyMissionRisk, validateAutonomyForRisk, saveRiskClassification } =
       await import('./mission-checkpoint.js');
-    const assessment = classifyMissionRisk(input.objective, input.context ?? null);
+    const assessment = classifyMissionRisk(input.objective, context);
     const requestedAutonomy = input.autonomy_level ?? 'check_in';
     const autonomyCheck = validateAutonomyForRisk(requestedAutonomy, assessment.classification);
     if (!autonomyCheck.ok) {
@@ -67,7 +82,7 @@ export function createMissionController(db: DatabaseAdapter) {
       id,
       title: input.title.trim(),
       objective: input.objective.trim(),
-      context: input.context?.trim() || null,
+      context,
       success_criteria: input.success_criteria.trim(),
       autonomy_level: requestedAutonomy,
       status: 'draft',

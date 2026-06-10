@@ -229,7 +229,8 @@ async function readCapped(res: Response, maxBytes: number): Promise<{ text: stri
   return { text: new TextDecoder().decode(merged), bytes: total, truncated };
 }
 
-function isUrlAllowed(urlStr: string, baseUrls: string[]): boolean {
+// Exported for unit tests (Wave-3 3A.4) — the pack-scoped egress allowlist.
+export function isUrlAllowed(urlStr: string, baseUrls: string[]): boolean {
   let url: URL;
   try { url = new URL(urlStr); } catch { return false; }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
@@ -257,7 +258,9 @@ type ComposerResult =
 
 type Composer = (params: Record<string, string>) => ComposerResult;
 
-const BODY_COMPOSERS: Record<string, Composer> = {
+// Exported for unit tests (Wave-3 3A.4) — the Gmail composer is a
+// header-injection anchor (CR/LF in to/subject must never become headers).
+export const BODY_COMPOSERS: Record<string, Composer> = {
   /**
    * Gmail send_message. Takes `to`, `subject`, `body_text` and produces
    * { raw: base64url(RFC 5322 message) } ready for POST users/me/messages/send.

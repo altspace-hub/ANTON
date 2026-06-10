@@ -359,13 +359,15 @@ export function createServicePackManager(db: DatabaseAdapter, options?: { packsD
 export type ServicePackManager = ReturnType<typeof createServicePackManager>;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+// Exported for unit tests (Wave-3 3A.4) — these are the substitution anchors
+// every resolved workflow step passes through.
 
-function substitute(value: string | undefined, params: Record<string, string>): string | undefined {
+export function substitute(value: string | undefined, params: Record<string, string>): string | undefined {
   if (value == null) return value;
   return value.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => params[key] ?? '');
 }
 
-function substituteUrl(value: string | undefined, params: Record<string, string>): string | undefined {
+export function substituteUrl(value: string | undefined, params: Record<string, string>): string | undefined {
   if (value == null) return value;
   return value.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => encodeURIComponent(params[key] ?? ''));
 }
@@ -377,7 +379,7 @@ function substituteUrl(value: string | undefined, params: Record<string, string>
  * string contents change. Safe for building HTTP request bodies without
  * risking JSON injection via raw string concatenation.
  */
-function substituteDeep(value: unknown, params: Record<string, string>): unknown {
+export function substituteDeep(value: unknown, params: Record<string, string>): unknown {
   if (typeof value === 'string') return substitute(value, params);
   if (Array.isArray(value)) return value.map(v => substituteDeep(v, params));
   if (value && typeof value === 'object') {

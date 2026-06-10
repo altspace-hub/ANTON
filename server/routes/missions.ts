@@ -164,7 +164,10 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
       } catch (err) { sendIdentityError(res, err); return; }
 
       const userId = await resolveUserId(db);
-      const { created_by_contact_hash: _, template_parameters: __, ...input } = parsed.data;
+      // template_parameters flows through to the controller, which persists
+      // the values into the mission context for deterministic ${param}
+      // substitution at decomposition time (Wave-3 3A.1).
+      const { created_by_contact_hash: _, ...input } = parsed.data;
       const mission = await controller.createMission(input, userId);
       res.status(201).json({ success: true, mission });
     } catch (err) {
