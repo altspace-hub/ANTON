@@ -772,7 +772,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         relay_endpoints: relays.endpoints,
         // Optional: enables web-push (PWA) on instances that have configured
         // a VAPID keypair. Native iOS / Android registration doesn't use this.
-        vapid_public_key: process.env.VAPID_PUBLIC_KEY || null,
+        vapid_public_key: process.env.WEBPUSH_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY || null,
       });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
