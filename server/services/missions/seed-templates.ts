@@ -605,6 +605,136 @@ const OUTBOUND_SALES_TEMPLATE: MissionTemplate = {
   updated_at: new Date().toISOString(),
 };
 
+// ── Outbound Sales v2 (real action: Gmail send) ─────────────────────────────
+// First template that exercises the Action Layer end-to-end: draft a
+// personalised email (llm) → human approval checkpoint → REAL send through
+// the Gmail Service Pack's send_message workflow (api-type pack, executed
+// via the browser task type + the gmail.rfc5322_send composer).
+//
+// Safety: default autonomy is 'briefing' and the send task carries an OAuth
+// credential, so the autonomy gate pauses it for explicit approval even
+// after the content checkpoint. Requires the built-in 'gmail' Service Pack
+// plus an oauth2 credential with the gmail.send scope in the vault.
+
+const OUTBOUND_SALES_V2_TEMPLATE: MissionTemplate = {
+  id: 'tmpl_outbound_sales_v2',
+  name: 'Outbound Sales v2 — Draft & Send (Gmail)',
+  description:
+    'Draft one personalised outreach email and actually send it through Gmail. Flow: research + draft (LLM) → checkpoint (you review the draft and paste the final subject/body into the send task) → real send via the Gmail Service Pack under the briefing autonomy gate. Requires a Gmail oauth2 credential (gmail.send scope) in the Credential Vault. v1 (Outbound Sales Machine) remains the LLM-only campaign builder.',
+  pillar: 'work',
+  category: 'sales',
+  version: '2.0.0',
+  author: 'ANTON',
+  parameters_schema: [
+    {
+      key: 'recipient_email',
+      label: 'Recipient email',
+      type: 'string',
+      required: true,
+      help: 'The single recipient for this send. Run the mission once per recipient (or use Outbound Sales Machine v1 to build a campaign pack first).',
+    },
+    {
+      key: 'recipient_context',
+      label: 'What you know about the recipient',
+      type: 'textarea',
+      required: true,
+      help: 'Company, role, recent signals, why now. Specificity drives the draft quality — generic openers are unacceptable.',
+    },
+    {
+      key: 'offering',
+      label: 'What you\'re selling',
+      type: 'textarea',
+      required: true,
+      help: 'Product / service, core problem solved, headline pricing approach, key differentiator.',
+    },
+    {
+      key: 'value_prop',
+      label: 'Why they should care',
+      type: 'textarea',
+      required: true,
+      help: 'The single sharpest reason this recipient would take a meeting. Ground it in measurable outcomes or named pain.',
+    },
+    {
+      key: 'gmail_credential_id',
+      label: 'Gmail credential id',
+      type: 'string',
+      required: false,
+      help: 'Credential Vault id (cred_…) of your Gmail oauth2 credential with the gmail.send scope. If left blank, set auth_credential_id on the send task via "Edit task" before approving the plan.',
+    },
+  ],
+  task_graph_template: {
+    tasks: [
+      {
+        local_id: 't1',
+        title: 'Draft the outreach email',
+        description: 'Personalised first-touch email for the recipient: subject line + plain-text body, grounded in the recipient context and value proposition.',
+        task_type: 'llm',
+        estimated_tokens: 5000,
+        sort_order: 1,
+        depends_on: [],
+        prompt: 'Draft a personalised first-touch outreach email to ${recipient_email}. Use the recipient context, offering, and value proposition from the mission brief. Requirements: subject line ≤ 60 chars; body 90-130 words plain text; one specific angle keyed to the recipient context; one clear ask; no generic claims, no flattery filler. Output EXACTLY this format:\n\nSUBJECT: <subject line>\n\nBODY:\n<plain-text body>',
+      },
+      {
+        local_id: 't2',
+        title: 'Checkpoint — approve the draft & arm the send task',
+        description: 'Human reviews the draft, then pastes the final subject and body into the send task before approving.',
+        task_type: 'checkpoint',
+        estimated_tokens: 0,
+        sort_order: 2,
+        depends_on: ['t1'],
+        checkpoint_message: 'The draft is ready. Before approving: open the "Send via Gmail" task → Edit task → set module_config.params.subject and module_config.params.body_text to the final text (and auth_credential_id to your Gmail credential if not already set). Approving this checkpoint releases the send to the briefing autonomy gate for final confirmation.',
+      },
+      {
+        local_id: 't3',
+        title: 'Send via Gmail',
+        description: 'Real send through the Gmail Service Pack send_message workflow (RFC 5322 composer; header-injection safe). Pauses at the briefing autonomy gate because it runs with an authenticated session.',
+        task_type: 'browser',
+        estimated_tokens: 0,
+        sort_order: 3,
+        depends_on: ['t2'],
+        module_config: {
+          service_id: 'gmail',
+          workflow_id: 'send_message',
+          params: {
+            to: '${recipient_email}',
+            subject: 'SET AT CHECKPOINT — paste the approved subject here',
+            body_text: 'SET AT CHECKPOINT — paste the approved body here',
+          },
+          auth_credential_id: '${gmail_credential_id}',
+        },
+      },
+      {
+        local_id: 't4',
+        title: 'Deliver send receipt',
+        description: 'Record the send outcome to the Mission Inbox.',
+        task_type: 'notification',
+        estimated_tokens: 0,
+        sort_order: 4,
+        depends_on: ['t3'],
+        prompt: 'Deliver the send receipt (draft + Gmail API response) to the Mission Inbox.',
+      },
+    ],
+  },
+  default_data_scope: {},
+  default_budget: {
+    token_budget_max: 100_000,
+    time_budget_max_seconds: 3 * 24 * 60 * 60,    // 3 days elapsed
+    time_active_max_seconds: 30 * 60,              // 30 min active
+  },
+  default_autonomy_level: 'briefing',
+  success_criteria_template:
+    'One personalised outreach email: (a) drafted to the supplied recipient with a specific angle and a single ask, (b) explicitly approved by the human at the checkpoint, (c) actually sent through the Gmail API with the send receipt recorded in the mission.',
+  required_modules: [],
+  times_used: 0,
+  avg_completion_time_seconds: null,
+  avg_quality_score: null,
+  avg_token_consumption: null,
+  is_builtin: true,
+  is_active: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
 // ── E-Commerce Autopilot ────────────────────────────────────────────────────
 // Programme-complexity commerce mission: audit current state → listing
 // optimisation plan → ad-spend recommendation → inventory health → order-ops
@@ -1449,6 +1579,7 @@ export async function seedBuiltinTemplates(db: DatabaseAdapter): Promise<{ seede
     AMLR_READINESS_TEMPLATE,
     CONTENT_FACTORY_TEMPLATE,
     OUTBOUND_SALES_TEMPLATE,
+    OUTBOUND_SALES_V2_TEMPLATE,
     ECOMMERCE_AUTOPILOT_TEMPLATE,
     FINANCIAL_ANALYST_TEMPLATE,
     AI_AGENCY_TEMPLATE,

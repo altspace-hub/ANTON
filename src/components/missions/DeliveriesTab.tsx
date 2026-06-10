@@ -1,16 +1,17 @@
 // Mission Deliveries tab — list deliveries + new-delivery form + retry.
-// Channels: in_app | webhook | filesystem (others Phase 3.5).
+// Channels: in_app | webhook | filesystem. email / slack / google_drive /
+// sharepoint return as options when their server dispatch is implemented.
 
 import { useEffect, useState, useCallback } from 'react';
 import { Send, RefreshCcw, AlertCircle, CheckCircle2, Clock, Plus } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type DeliveryStatus = 'pending' | 'delivering' | 'delivered' | 'failed';
-type Channel = 'in_app' | 'webhook' | 'filesystem' | 'email' | 'slack' | 'google_drive' | 'sharepoint';
+type Channel = 'in_app' | 'webhook' | 'filesystem';
 
 interface Delivery {
   id: number;
-  channel: Channel;
+  channel: string; // historical rows may carry retired channel names
   status: DeliveryStatus;
   delivered_at: string | null;
   error_message: string | null;
@@ -144,10 +145,6 @@ export default function DeliveriesTab({ missionId }: { missionId: string }) {
                 <option value="in_app">In-app (dashboard)</option>
                 <option value="webhook">Webhook</option>
                 <option value="filesystem">Filesystem</option>
-                <option value="email" disabled>Email (Phase 3.5)</option>
-                <option value="slack" disabled>Slack (Phase 3.5)</option>
-                <option value="google_drive" disabled>Google Drive (Phase 3.5)</option>
-                <option value="sharepoint" disabled>SharePoint (Phase 3.5)</option>
               </select>
             </label>
             <label className="text-[11px] text-adv-gray">

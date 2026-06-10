@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { CheckCircle2, Circle, Loader2, AlertCircle, Pause, ChevronDown, ChevronRight, Clock, Hexagon, Users } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, AlertCircle, Pause, ChevronDown, ChevronRight, Clock, Hexagon, Users, Pencil } from 'lucide-react';
 import ParallelReviewModal from './ParallelReviewModal';
 
 export type TaskStatus = 'queued' | 'active' | 'completed' | 'failed' | 'skipped' | 'blocked' | 'paused';
@@ -28,6 +28,7 @@ export interface TaskNode {
   last_error: string | null;
   provider: string | null;
   model: string | null;
+  module_config?: Record<string, unknown>;
 }
 
 export interface DependencyEdge {
@@ -42,6 +43,9 @@ interface TaskGraphViewProps {
   onApprove?: (taskId: string) => Promise<void>;
   onReject?: (taskId: string, feedback: string) => Promise<void>;
   onParallelReviewCreated?: () => void;
+  /** When true (mission is draft/briefed) queued tasks show an Edit button. */
+  editable?: boolean;
+  onEditTask?: (task: TaskNode) => void;
 }
 
 const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
@@ -59,7 +63,7 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   failed: 'Failed', skipped: 'Skipped', blocked: 'Blocked', paused: 'Awaiting human',
 };
 
-function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, onParallelReviewCreated }: {
+function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, onParallelReviewCreated, editable, onEditTask }: {
   task: TaskNode;
   depends: TaskNode[];
   dependents: TaskNode[];
@@ -67,6 +71,8 @@ function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, o
   onApprove?: (id: string) => Promise<void>;
   onReject?: (id: string, feedback: string) => Promise<void>;
   onParallelReviewCreated?: () => void;
+  editable?: boolean;
+  onEditTask?: (task: TaskNode) => void;
 }) {
   const [expanded, setExpanded] = useState(task.status === 'active' || task.status === 'paused');
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -121,6 +127,17 @@ function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, o
 
       {expanded && (
         <div className="px-3 pb-3 pt-1 space-y-2 border-t border-border">
+          {editable && onEditTask && task.status === 'queued' && (
+            <div className="pt-1">
+              <button
+                onClick={() => onEditTask(task)}
+                className="rounded border border-border px-2 py-1 text-[10px] text-adv-gray hover:text-adv-teal hover:border-adv-teal/40 inline-flex items-center gap-1"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit task
+              </button>
+            </div>
+          )}
           {depends.length > 0 && (
             <div className="text-[10px] text-adv-gray">
               <span className="font-semibold">Depends on:</span> {depends.map(d => d.title).join(', ')}
@@ -231,7 +248,7 @@ function TaskCard({ task, depends, dependents, missionId, onApprove, onReject, o
   );
 }
 
-export default function TaskGraphView({ tasks, dependencies, missionId, onApprove, onReject, onParallelReviewCreated }: TaskGraphViewProps) {
+export default function TaskGraphView({ tasks, dependencies, missionId, onApprove, onReject, onParallelReviewCreated, editable, onEditTask }: TaskGraphViewProps) {
   if (tasks.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-adv-card/30 p-8 text-center text-xs text-adv-gray italic">
@@ -265,6 +282,8 @@ export default function TaskGraphView({ tasks, dependencies, missionId, onApprov
             onApprove={onApprove}
             onReject={onReject}
             onParallelReviewCreated={onParallelReviewCreated}
+            editable={editable}
+            onEditTask={onEditTask}
           />
         </li>
       ))}

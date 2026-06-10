@@ -10,11 +10,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMissionController } from '../services/missions/mission-controller.js';
-import { createMissionState } from '../services/missions/mission-state.js';
+import { createMissionState, newTaskId } from '../services/missions/mission-state.js';
+import { hasDependencyCycle, validateActionTaskConfig } from '../services/missions/mission-decomposition.js';
 import { resolveCallerIdentity, getLocalIdentity, resolveUserId } from '../services/missions/mission-identity.js';
 import { seedBuiltinTemplates } from '../services/missions/seed-templates.js';
 import { claudeLimiter } from '../middleware/rate-limit.js';
 import { safeError } from '../lib/error-response.js';
+import type { MissionTask, TaskType } from '../services/missions/types.js';
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
@@ -68,6 +70,45 @@ const queenActionSchema = z.object({
 const checkpointSchema = z.object({
   feedback: z.string().max(8000).optional(),
 }).strict();
+
+// ── Task editing (Wave-2 2A.5) ─────────────────────────────────────────────
+// Tasks may be added/edited only while the plan is still human-owned
+// (status draft/briefed). Action types (api_call / browser / database_query)
+// are allowed here — this endpoint IS the human approving the action's
+// existence; the autonomy gate still governs its execution.
+
+const EDITABLE_TASK_TYPES = [
+  'llm', 'research', 'analysis', 'export', 'review', 'notification',
+  'checkpoint', 'conditional', 'api_call', 'browser', 'database_query',
+] as const;
+
+const taskCreateSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(4000).optional(),
+  task_type: z.enum(EDITABLE_TASK_TYPES),
+  prompt: z.string().max(16_000).optional(),
+  checkpoint_message: z.string().max(4000).optional(),
+  module_config: z.record(z.string(), z.unknown()).optional(),
+  estimated_tokens: z.number().int().min(0).max(200_000).optional(),
+  sort_order: z.number().int().min(0).max(10_000).optional(),
+  depends_on: z.array(z.string().min(1)).max(50).optional(),
+  requester_hash: z.string().optional(),
+}).strict();
+
+const taskPatchSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(4000).optional(),
+  task_type: z.enum(EDITABLE_TASK_TYPES).optional(),
+  prompt: z.string().max(16_000).optional(),
+  checkpoint_message: z.string().max(4000).optional(),
+  module_config: z.record(z.string(), z.unknown()).optional(),
+  estimated_tokens: z.number().int().min(0).max(200_000).optional(),
+  sort_order: z.number().int().min(0).max(10_000).optional(),
+  depends_on: z.array(z.string().min(1)).max(50).optional(),
+  requester_hash: z.string().optional(),
+}).strict();
+
+const EDITABLE_MISSION_STATUSES = new Set(['draft', 'briefed']);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -298,6 +339,166 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
       res.json({ success: true, task });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // POST /api/missions/:id/tasks — insert a task into a draft/briefed mission
+  // (Wave-2 2A.5: lets the human add action tasks the decomposer didn't emit,
+  // or paste final content into a send task before approving a checkpoint).
+  router.post('/missions/:id/tasks', async (req, res) => {
+    try {
+      const parsed = taskCreateSchema.safeParse(req.body ?? {});
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
+      try { await resolveCallerIdentity(db, parsed.data.requester_hash); }
+      catch (err) { sendIdentityError(res, err); return; }
+
+      const missionId = String(req.params.id);
+      const mission = await state.getMission(missionId);
+      if (!mission) { res.status(404).json({ error: 'Mission not found' }); return; }
+      if (!EDITABLE_MISSION_STATUSES.has(mission.status)) {
+        res.status(409).json({ error: `Tasks can only be edited while the mission is draft or briefed (current: '${mission.status}')` });
+        return;
+      }
+
+      const d = parsed.data;
+      const configError = validateActionTaskConfig(d.task_type, d.module_config);
+      if (configError) { res.status(400).json({ error: configError }); return; }
+
+      const existing = await state.listTasks(missionId);
+      const existingIds = new Set(existing.map(t => t.id));
+      const dependsOn = [...new Set(d.depends_on ?? [])];
+      const unknownDep = dependsOn.find(dep => !existingIds.has(dep));
+      if (unknownDep) { res.status(400).json({ error: `depends_on references unknown task '${unknownDep}'` }); return; }
+
+      const ts = new Date().toISOString();
+      const taskId = newTaskId();
+      const task: MissionTask = {
+        id: taskId,
+        mission_id: missionId,
+        parent_task_id: null,
+        title: d.title.trim(),
+        description: d.description?.trim() || null,
+        task_type: d.task_type as TaskType,
+        status: 'queued',
+        priority: 0,
+        module_id: null,
+        area_id: null,
+        // Same convention as persistTaskGraph: prompt + checkpoint_message
+        // ride inside module_config.
+        module_config: { ...(d.module_config ?? {}), prompt: d.prompt, checkpoint_message: d.checkpoint_message },
+        provider: null,
+        model: null,
+        model_tier: null,
+        estimated_tokens: d.estimated_tokens ?? null,
+        actual_tokens_consumed: 0,
+        estimated_duration_seconds: null,
+        actual_duration_seconds: null,
+        output_summary: null,
+        output_full: null,
+        quality_score: null,
+        confidence_score: null,
+        atoms_produced: 0,
+        retry_count: 0,
+        max_retries: 3,
+        last_error: null,
+        sort_order: d.sort_order ?? (existing.length > 0 ? Math.max(...existing.map(t => t.sort_order)) + 1 : 1),
+        created_at: ts,
+        started_at: null,
+        completed_at: null,
+      };
+      await state.insertTask(task);
+      for (const dep of dependsOn) {
+        await state.insertDependency(taskId, dep, 'blocking');
+      }
+      await state.logActivity(missionId, {
+        activityType: 'task_added',
+        description: `Task added by human: ${task.title} (${task.task_type})`,
+        taskId,
+      });
+      const created = await state.getTask(taskId);
+      res.status(201).json({ success: true, task: created });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // PATCH /api/missions/:id/tasks/:taskId — edit a queued task while the
+  // mission is draft/briefed. Replacing depends_on re-validates the graph
+  // (no unknown references, no self-dependency, no cycles).
+  router.patch('/missions/:id/tasks/:taskId', async (req, res) => {
+    try {
+      const parsed = taskPatchSchema.safeParse(req.body ?? {});
+      if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
+      try { await resolveCallerIdentity(db, parsed.data.requester_hash); }
+      catch (err) { sendIdentityError(res, err); return; }
+
+      const missionId = String(req.params.id);
+      const taskId = String(req.params.taskId);
+      const mission = await state.getMission(missionId);
+      if (!mission) { res.status(404).json({ error: 'Mission not found' }); return; }
+      if (!EDITABLE_MISSION_STATUSES.has(mission.status)) {
+        res.status(409).json({ error: `Tasks can only be edited while the mission is draft or briefed (current: '${mission.status}')` });
+        return;
+      }
+      const task = await state.getTask(taskId);
+      if (!task || task.mission_id !== missionId) { res.status(404).json({ error: 'Task not found' }); return; }
+      if (task.status !== 'queued') {
+        res.status(409).json({ error: `Only queued tasks can be edited (task is '${task.status}')` });
+        return;
+      }
+
+      const d = parsed.data;
+      const nextType = (d.task_type ?? task.task_type) as TaskType;
+      const baseConfig = d.module_config ?? task.module_config;
+      const nextConfig: Record<string, unknown> = {
+        ...baseConfig,
+        ...(d.prompt !== undefined ? { prompt: d.prompt } : {}),
+        ...(d.checkpoint_message !== undefined ? { checkpoint_message: d.checkpoint_message } : {}),
+      };
+      const configError = validateActionTaskConfig(nextType, nextConfig);
+      if (configError) { res.status(400).json({ error: configError }); return; }
+
+      if (d.depends_on !== undefined) {
+        const dependsOn = [...new Set(d.depends_on)];
+        if (dependsOn.includes(taskId)) { res.status(400).json({ error: 'A task cannot depend on itself' }); return; }
+        const existing = await state.listTasks(missionId);
+        const existingIds = new Set(existing.map(t => t.id));
+        const unknownDep = dependsOn.find(dep => !existingIds.has(dep));
+        if (unknownDep) { res.status(400).json({ error: `depends_on references unknown task '${unknownDep}'` }); return; }
+        // Re-validate the whole graph with this task's edges replaced.
+        const deps = await state.listDependencies(missionId);
+        const proposedEdges = [
+          ...deps.filter(e => e.task_id !== taskId).map(e => ({ task_id: e.task_id, depends_on_task_id: e.depends_on_task_id })),
+          ...dependsOn.map(dep => ({ task_id: taskId, depends_on_task_id: dep })),
+        ];
+        if (hasDependencyCycle(proposedEdges)) {
+          res.status(400).json({ error: 'depends_on change would create a dependency cycle' });
+          return;
+        }
+        await state.deleteDependenciesFor(taskId);
+        for (const dep of dependsOn) {
+          await state.insertDependency(taskId, dep, 'blocking');
+        }
+      }
+
+      await state.updateTaskFields(taskId, {
+        ...(d.title !== undefined ? { title: d.title.trim() } : {}),
+        ...(d.description !== undefined ? { description: d.description.trim() || null } : {}),
+        ...(d.task_type !== undefined ? { task_type: d.task_type } : {}),
+        ...(d.module_config !== undefined || d.prompt !== undefined || d.checkpoint_message !== undefined
+          ? { module_config: nextConfig } : {}),
+        ...(d.estimated_tokens !== undefined ? { estimated_tokens: d.estimated_tokens } : {}),
+        ...(d.sort_order !== undefined ? { sort_order: d.sort_order } : {}),
+      });
+      await state.logActivity(missionId, {
+        activityType: 'task_edited',
+        description: `Task edited by human: ${d.title?.trim() ?? task.title}`,
+        taskId,
+      });
+      const updated = await state.getTask(taskId);
+      res.json({ success: true, task: updated });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
     }
   });
 

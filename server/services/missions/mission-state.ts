@@ -464,6 +464,32 @@ export function createMissionState(db: DatabaseAdapter) {
     );
   }
 
+  /**
+   * Update editable task fields (Wave-2 2A.5 task editor). Only the supplied
+   * keys are written. Status/output/timing fields are intentionally NOT
+   * editable here — those belong to the executor.
+   */
+  async function updateTaskFields(id: string, fields: {
+    title?: string;
+    description?: string | null;
+    task_type?: string;
+    module_config?: Record<string, unknown>;
+    estimated_tokens?: number | null;
+    sort_order?: number;
+  }): Promise<void> {
+    const sets: string[] = [];
+    const args: unknown[] = [];
+    if (fields.title !== undefined) { sets.push('title = ?'); args.push(fields.title); }
+    if (fields.description !== undefined) { sets.push('description = ?'); args.push(fields.description); }
+    if (fields.task_type !== undefined) { sets.push('task_type = ?'); args.push(fields.task_type); }
+    if (fields.module_config !== undefined) { sets.push('module_config = ?'); args.push(JSON.stringify(fields.module_config)); }
+    if (fields.estimated_tokens !== undefined) { sets.push('estimated_tokens = ?'); args.push(fields.estimated_tokens); }
+    if (fields.sort_order !== undefined) { sets.push('sort_order = ?'); args.push(fields.sort_order); }
+    if (sets.length === 0) return;
+    args.push(id);
+    await db.run(`UPDATE missions.mission_tasks SET ${sets.join(', ')} WHERE id = ?`, ...args);
+  }
+
   async function bumpTaskRetry(id: string, error: string): Promise<void> {
     await db.run(
       `UPDATE missions.mission_tasks SET retry_count = retry_count + 1, last_error = ?, status = 'queued' WHERE id = ?`,
@@ -508,6 +534,11 @@ export function createMissionState(db: DatabaseAdapter) {
        ON CONFLICT (task_id, depends_on_task_id) DO NOTHING`,
       taskId, dependsOnTaskId, type,
     );
+  }
+
+  /** Remove every dependency edge where the given task is the dependent. Used by the task editor to replace depends_on. */
+  async function deleteDependenciesFor(taskId: string): Promise<void> {
+    await db.run(`DELETE FROM missions.mission_task_dependencies WHERE task_id = ?`, taskId);
   }
 
   async function listDependencies(missionId: string): Promise<MissionTaskDependency[]> {
@@ -628,9 +659,9 @@ export function createMissionState(db: DatabaseAdapter) {
     insertMission, getMission, listMissions, updateMissionStatus,
     bumpTokenBudget, setMissionSummary,
     // tasks
-    insertTask, getTask, listTasks, updateTaskStatus, recordTaskOutput, bumpTaskRetry, markTaskApproved,
+    insertTask, getTask, listTasks, updateTaskStatus, updateTaskFields, recordTaskOutput, bumpTaskRetry, markTaskApproved,
     // dependencies
-    insertDependency, listDependencies,
+    insertDependency, deleteDependenciesFor, listDependencies,
     // activity
     logActivity, listActivity, countActivity,
     // decisions

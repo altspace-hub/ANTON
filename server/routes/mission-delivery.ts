@@ -24,7 +24,10 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
   const delivery = createMissionDelivery(db);
 
   const deliverySchema = z.object({
-    channel: z.enum(['in_app', 'email', 'webhook', 'google_drive', 'sharepoint', 'slack', 'filesystem']),
+    // Only implemented channels are accepted. email / slack / google_drive /
+    // sharepoint return here when their dispatch is actually implemented
+    // (they were selectable throw-stubs before).
+    channel: z.enum(['in_app', 'webhook', 'filesystem']),
     destination: z.record(z.string(), z.unknown()).optional(),
     output_files: z.array(z.object({
       filename: z.string(),

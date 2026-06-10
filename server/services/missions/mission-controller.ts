@@ -9,8 +9,14 @@
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createMissionState, newMissionId, newTaskId, newDecisionId } from './mission-state.js';
-import { decomposeMission } from './mission-decomposition.js';
+import { decomposeMission, buildActionCapabilityContext } from './mission-decomposition.js';
 import { createMissionExecutor } from './mission-executor.js';
+import { createMissionDelivery } from './mission-delivery.js';
+import {
+  resolveNotificationChannel,
+  pickFinalSynthesis,
+  hasCompletedNotificationTask,
+} from './mission-notification.js';
 import {
   DEFAULT_DATA_SCOPE,
   DEFAULT_MODEL_STRATEGY,
@@ -34,6 +40,7 @@ export interface AdvanceResult {
 export function createMissionController(db: DatabaseAdapter) {
   const state = createMissionState(db);
   const executor = createMissionExecutor(db);
+  const delivery = createMissionDelivery(db);
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -42,15 +49,16 @@ export function createMissionController(db: DatabaseAdapter) {
     if (!input.objective?.trim()) throw new Error('Mission objective is required');
     if (!input.success_criteria?.trim()) throw new Error('Mission success criteria is required');
 
-    // EU AI Act §11.2 — classify risk + enforce autonomy ceiling. Spec
-    // mandates that high_risk missions cannot run at full_autonomy.
+    // Spec §11.2 — heuristic keyword pre-screen (NOT a legal EU AI Act
+    // assessment) + deterministic autonomy ceiling: missions flagged
+    // high_risk cannot run at full_autonomy.
     const { classifyMissionRisk, validateAutonomyForRisk, saveRiskClassification } =
       await import('./mission-checkpoint.js');
     const assessment = classifyMissionRisk(input.objective, input.context ?? null);
     const requestedAutonomy = input.autonomy_level ?? 'check_in';
     const autonomyCheck = validateAutonomyForRisk(requestedAutonomy, assessment.classification);
     if (!autonomyCheck.ok) {
-      throw new Error(`EU AI Act compliance: ${autonomyCheck.reason}`);
+      throw new Error(`Mission governance: ${autonomyCheck.reason}`);
     }
 
     const id = newMissionId();
@@ -115,7 +123,11 @@ export function createMissionController(db: DatabaseAdapter) {
       ? (await state.getTemplate(mission.template_id)) ?? undefined
       : undefined;
 
-    const result = await decomposeMission(mission, template);
+    // 2A.5 — tell the decomposer which action capabilities (Service Packs +
+    // credentials) are actually installed, so it can plan api_call/browser
+    // tasks against reality (or be forbidden from emitting them entirely).
+    const capabilities = await buildActionCapabilityContext(db);
+    const result = await decomposeMission(mission, template, capabilities);
     await persistTaskGraph(missionId, result.graph);
     await state.bumpTokenBudget(missionId, result.tokensUsed);
     await state.recordDecision({
@@ -342,6 +354,45 @@ export function createMissionController(db: DatabaseAdapter) {
   }
 
   /**
+   * Auto-deliver the final synthesis when a mission completes (Wave-2 2A.2).
+   * Delivers to in_app (always implemented) honouring the mission's
+   * preferred channel via resolveNotificationChannel. Skips when the graph
+   * already delivered through a completed notification task (avoids
+   * duplicate inbox entries). Best-effort — a delivery failure never
+   * un-completes the mission; it logs an activity entry and the delivery
+   * retry tick takes over for transient errors.
+   */
+  async function deliverFinalSynthesis(mission: Mission): Promise<void> {
+    try {
+      const tasks = await state.listTasks(mission.id);
+      if (hasCompletedNotificationTask(tasks)) return;
+      const synthesis = pickFinalSynthesis(tasks);
+      if (!synthesis) return;
+      const target = resolveNotificationChannel(null, mission.notification_preferences);
+      const result = await delivery.deliver({
+        missionId: mission.id,
+        taskId: synthesis.id,
+        channel: target.channel,
+        destination: target.destination,
+        subject: `Mission completed: ${mission.title}`,
+        body: synthesis.output_full ?? '',
+      });
+      await state.logActivity(mission.id, {
+        activityType: 'deliverable_sent',
+        description: `Final synthesis ('${synthesis.title}') delivered → ${target.channel}: ${result.status}${target.note ? ` — ${target.note}` : ''}`,
+        taskId: synthesis.id,
+        details: { delivery_id: result.delivery_id, channel: target.channel, status: result.status },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await state.logActivity(mission.id, {
+        activityType: 'delivery_failed',
+        description: `Auto-delivery of final synthesis failed: ${msg}`,
+      }).catch(() => { /* best-effort */ });
+    }
+  }
+
+  /**
    * Advance the mission by one task. Caller invokes this in a loop (or
    * background scheduler) until status changes from 'active'.
    */
@@ -368,6 +419,7 @@ export function createMissionController(db: DatabaseAdapter) {
       if (allDone) {
         await state.updateMissionStatus(missionId, 'completed', { completedAt: nowIso() });
         await state.logActivity(missionId, { activityType: 'mission_completed', description: 'All tasks completed' });
+        await deliverFinalSynthesis(mission);
         return { status: 'mission_completed' };
       }
       return { status: 'no_ready_task' };
@@ -426,6 +478,7 @@ export function createMissionController(db: DatabaseAdapter) {
       if (allDone) {
         await state.updateMissionStatus(missionId, 'completed', { completedAt: nowIso() });
         await state.logActivity(missionId, { activityType: 'mission_completed', description: 'All tasks completed' });
+        await deliverFinalSynthesis(mission);
         return { status: 'mission_completed', results: [] };
       }
       return { status: 'no_ready_task', results: [] };

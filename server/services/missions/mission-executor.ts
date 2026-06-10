@@ -7,12 +7,19 @@
 //   • browser         — Playwright or api-workflow Service Pack runner (#1C)
 //   • conditional     — evaluates a predicate; skips dependents on false
 //   • parallel_group  — marker task (completes immediately)
+//   • notification    — REAL delivery via mission-delivery (in_app/webhook/filesystem)
 //
-// 'research' / 'analysis' / 'export' still fall back to an llm-style call.
+// 'research' / 'analysis' / 'export' fall back to an llm-style call;
+// 'research' additionally gets Claude's native web_search tool when the
+// resolved provider is Anthropic (2A.3).
 
-import { callChat, mapModelToProvider, type StreamChatConfig, type ChatResult } from '../provider-router.js';
+import Anthropic from '@anthropic-ai/sdk';
+import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
+import { createMissionDelivery } from './mission-delivery.js';
+import { resolveNotificationChannel, composeDeliveryBundle } from './mission-notification.js';
+import { resolveMissionModel, providerForModel } from './mission-model-resolver.js';
 import { executeApiCall } from './executors/api-call-executor.js';
 import { executeDatabaseQuery } from './executors/database-query-executor.js';
 import { executeBrowser } from './executors/browser-executor.js';
@@ -99,6 +106,7 @@ async function callChatWithTimeout(config: StreamChatConfig, timeoutMs = 120_000
 export function createMissionExecutor(db: DatabaseAdapter) {
   const state = createMissionState(db);
   const grow = createMissionGrowBridge(db);
+  const delivery = createMissionDelivery(db);
 
   /**
    * Execute a single ready task. Updates the task row with output, timing,
@@ -249,6 +257,82 @@ export function createMissionExecutor(db: DatabaseAdapter) {
       return executeBrowser(db, m, t);
     }
 
+    // ── notification: REAL delivery via missionDelivery (Wave-2 2A.2) ─────
+    // Previously fell through to a generic LLM call whose prose merely
+    // *claimed* delivery happened. Now: compose the bundle from completed
+    // task outputs and dispatch through mission-delivery, honouring the
+    // mission's notification_preferences (implemented channels:
+    // in_app | webhook | filesystem — unimplemented preferences degrade to
+    // in_app with an explicit note).
+    if (task.task_type === 'notification') {
+      const target = resolveNotificationChannel(task.module_config, mission.notification_preferences);
+      const allTasks = await state.listTasks(mission.id);
+      const bundle = composeDeliveryBundle(allTasks.filter(t => t.id !== task.id));
+      const cfg = (task.module_config ?? {}) as { subject?: unknown };
+      const subject = typeof cfg.subject === 'string' && cfg.subject.trim()
+        ? cfg.subject.trim()
+        : `Mission deliverable: ${mission.title}`;
+
+      const deliveryResult = await delivery.deliver({
+        missionId: mission.id,
+        taskId: task.id,
+        channel: target.channel,
+        destination: target.destination,
+        body: bundle || task.description || `Deliverable for mission: ${mission.title}`,
+        subject,
+      });
+
+      const outputFull = JSON.stringify({
+        kind: 'notification',
+        channel: target.channel,
+        delivery_id: deliveryResult.delivery_id,
+        status: deliveryResult.status,
+        note: target.note,
+        error: deliveryResult.error ?? null,
+        bundle_chars: bundle.length,
+      }, null, 2);
+      const summary = [
+        `delivery → ${target.channel}: ${deliveryResult.status}`,
+        target.note ?? undefined,
+        deliveryResult.error ? `(${deliveryResult.error.slice(0, 200)})` : undefined,
+      ].filter((s): s is string => Boolean(s)).join(' — ');
+
+      // 'failed' = the delivery exhausted its own retries; surface as a task
+      // failure (with task-level retry semantics). 'delivered' and 'pending'
+      // (queued for the delivery retry tick) both complete the task.
+      if (deliveryResult.status === 'failed') {
+        const reason = deliveryResult.error ?? 'delivery failed';
+        const newRetry = task.retry_count + 1;
+        if (newRetry > task.max_retries) {
+          await state.updateTaskStatus(task.id, 'failed', { lastError: reason });
+        } else {
+          await state.bumpTaskRetry(task.id, reason);
+        }
+        await state.logActivity(mission.id, {
+          activityType: 'task_failed',
+          description: `Delivery failed: ${task.title} — ${reason}`,
+          taskId: task.id,
+        });
+        return { success: false, reason, durationMs: Date.now() - start };
+      }
+
+      await state.recordTaskOutput(task.id, {
+        full: outputFull,
+        summary,
+        provider: 'delivery',
+        model: target.channel,
+        tier: 'utility',
+        tokens: 0,
+        durationSeconds: Math.round((Date.now() - start) / 1000),
+      });
+      await state.logActivity(mission.id, {
+        activityType: 'task_completed',
+        description: `Delivered: ${task.title} (${summary})`,
+        taskId: task.id,
+      });
+      return { success: true, outputFull, outputSummary: summary, durationMs: Date.now() - start };
+    }
+
     // ── Build per-task system prompt ───────────────────────────────────────
     // Phase 1: simple — mission objective + success criteria + accumulated
     // outputs from prior tasks. Phase 2 will use mission-context.ts for
@@ -301,18 +385,37 @@ when you have real data — do NOT speculate.
       || `Carry out: ${task.title}`;
 
     // ── LLM call ───────────────────────────────────────────────────────────
+    // 2A.4 — honour the mission's model_strategy (execution tier) instead of
+    // the previous hardcoded Claude mapping.
     const tier: 'planning' | 'execution' | 'utility' = 'execution';
-    const modelId = resolveModel(tier, mission.model_strategy);
+    const modelId = resolveMissionModel(tier, mission.model_strategy);
+    const provider = providerForModel(modelId);
+
+    // 2A.3 — research tasks get Claude's native web_search tool (other task
+    // types can opt in via module_config.web_search === true). Anthropic
+    // only: web_search_20250305 is Claude-specific, so non-Anthropic
+    // providers skip silently and run the plain LLM call.
+    const cfgForSearch = task.module_config as { web_search?: unknown } | null;
+    const wantsWebSearch = task.task_type === 'research' || cfgForSearch?.web_search === true;
+    const useWebSearch = wantsWebSearch && provider === 'anthropic' && Boolean(process.env.ANTHROPIC_API_KEY);
 
     let result: ChatResult;
     try {
-      result = await callChatWithTimeout({
-        model: modelId,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
-        maxTokens: Math.min(task.estimated_tokens ?? 8000, 16_000),
-        thinkingLevel: 'think',
-      });
+      const maxTokens = Math.min(task.estimated_tokens ?? 8000, 16_000);
+      result = useWebSearch
+        ? await callAnthropicWithWebSearch({
+            model: modelId,
+            system: systemPrompt,
+            user: userPrompt,
+            maxTokens,
+          })
+        : await callChatWithTimeout({
+            model: modelId,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userPrompt }],
+            maxTokens,
+            thinkingLevel: 'think',
+          });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const newRetry = task.retry_count + 1;
@@ -341,7 +444,7 @@ when you have real data — do NOT speculate.
     await state.recordTaskOutput(task.id, {
       full: result.text,
       summary,
-      provider: 'anthropic',
+      provider,
       model: modelId,
       tier,
       tokens: totalTokens,
@@ -423,20 +526,44 @@ export function extractGrowBlocks(text: string): GrowBlock[] {
 }
 
 /**
- * Phase 1: simple model resolver.
- *   - planning tier → claude-opus-4-8
- *   - execution tier → claude-sonnet-4-6
- *   - utility tier → claude-haiku-4-5-20251001
- *
- * Phase 2 will honour `provider_preference`, fallback chain, cost optimisation,
- * and concrete model overrides.
+ * Direct Anthropic call with the native web_search tool (Wave-2 2A.3).
+ * Mirrors the established pattern in pathfinder-engine / radar-fetcher:
+ * web_search_20250305 is Claude-specific so it can't go through callChat
+ * (which never forwards tools on the non-streaming Anthropic path), and
+ * web search + extended thinking are mutually exclusive — research tasks
+ * trade thinking for live sources. Streamed internally to dodge the SDK's
+ * long-request restriction; bounded by an overall timeout.
  */
-function resolveModel(tier: 'planning' | 'execution' | 'utility', _strategy: { planning_model?: string; execution_model?: string; utility_model?: string }): string {
-  // Map the Claude tier to the configured provider's equivalent (no-op when
-  // Anthropic is configured). Phase 2 will honour `_strategy.provider_preference`.
-  if (tier === 'planning') return mapModelToProvider('claude-opus-4-8');
-  if (tier === 'utility')  return mapModelToProvider('claude-haiku-4-5-20251001');
-  return mapModelToProvider('claude-sonnet-4-6');
+async function callAnthropicWithWebSearch(
+  params: { model: string; system: string; user: string; maxTokens: number },
+  timeoutMs = 180_000,
+): Promise<ChatResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
+  const client = new Anthropic({ apiKey });
+  const stream = client.messages.stream({
+    model: params.model,
+    max_tokens: params.maxTokens,
+    system: params.system,
+    messages: [{ role: 'user', content: params.user }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
+  });
+  const response = await Promise.race([
+    stream.finalMessage(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Web-search task timed out after ${timeoutMs}ms`)), timeoutMs),
+    ),
+  ]);
+  let text = '';
+  for (const block of response.content) {
+    if (block.type === 'text') text += block.text;
+  }
+  return {
+    text,
+    thinking: '',
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
 }
 
 // ── Conditional predicates ─────────────────────────────────────────────────

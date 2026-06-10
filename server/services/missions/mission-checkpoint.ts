@@ -1,6 +1,8 @@
 // ── Missions — Checkpoint Helpers (Phase 3) ────────────────────────────────
 //
-// • EU AI Act high-risk classification (auto-detect from objective + module)
+// • Heuristic risk pre-screen (keyword-based) that maps obvious matches onto
+//   EU AI Act Annex III categories to gate autonomy ceilings. NOT a legal
+//   classification or compliance assessment — see classifyMissionRisk.
 // • parallel_review checkpoint — creates a BEEHIVE session for multi-reviewer
 //   convergence and stores the session id on the mission task.
 //
@@ -26,9 +28,14 @@ export interface RiskAssessment {
 }
 
 /**
- * Heuristic high-risk classification per EU AI Act Annex III. Triggered by
- * keywords in objective + context. Phase 3.5 will replace with an LLM
- * classifier scored against the AI Act categories.
+ * Heuristic pre-screen (keyword-based) — NOT an EU AI Act compliance
+ * assessment. Scans the objective + context for ~14 hardcoded substrings
+ * that map onto EU AI Act Annex III high-risk categories (employment,
+ * credit, compliance) and uses any match to cap the autonomy ceiling.
+ * It cannot catch paraphrased or non-English descriptions, and a match
+ * does not constitute a legal classification. A proper (LLM-scored)
+ * classifier may replace it later; the `reasoning` strings below are
+ * user-visible, so keep them honest about being a keyword heuristic.
  */
 export function classifyMissionRisk(objective: string, context: string | null): RiskAssessment {
   const haystack = `${objective} ${context ?? ''}`.toLowerCase();
@@ -38,7 +45,7 @@ export function classifyMissionRisk(objective: string, context: string | null): 
       return {
         classification: 'high_risk',
         category,
-        reasoning: `Detected ${category}-related terms: ${matched.join(', ')}. EU AI Act Annex III treats this as high-risk.`,
+        reasoning: `Keyword pre-screen matched ${category}-related terms: ${matched.join(', ')}. These map onto an EU AI Act Annex III high-risk category, so autonomy is capped as a precaution. This is a heuristic pre-screen, not a legal assessment.`,
         matched_terms: matched,
       };
     }
@@ -46,7 +53,7 @@ export function classifyMissionRisk(objective: string, context: string | null): 
   return {
     classification: 'standard',
     category: null,
-    reasoning: 'No high-risk indicators detected. Standard governance applies.',
+    reasoning: 'Keyword pre-screen found no high-risk indicators (heuristic — paraphrased or non-English descriptions may not be caught). Standard governance applies.',
     matched_terms: [],
   };
 }
@@ -65,14 +72,15 @@ export async function saveRiskClassification(db: DatabaseAdapter, missionId: str
 /**
  * Validate that the requested autonomy level is permitted for a mission's
  * risk classification. Per spec §11.2: high_risk missions cannot run at
- * full_autonomy.
+ * full_autonomy. The classification feeding this gate comes from the
+ * keyword pre-screen above — the gate itself is deterministic policy.
  */
 export function validateAutonomyForRisk(autonomy: 'check_in' | 'briefing' | 'full_autonomy', risk: RiskClassification): { ok: boolean; reason?: string } {
   if (risk === 'prohibited') {
-    return { ok: false, reason: 'Mission category is prohibited by EU AI Act Annex II — cannot run.' };
+    return { ok: false, reason: 'Mission category was flagged as prohibited (EU AI Act Annex II mapping) — cannot run.' };
   }
   if (risk === 'high_risk' && autonomy === 'full_autonomy') {
-    return { ok: false, reason: 'High-risk missions (EU AI Act Annex III) cannot run at full_autonomy. Maximum: briefing.' };
+    return { ok: false, reason: 'This mission was flagged high-risk by the keyword pre-screen (EU AI Act Annex III mapping) and cannot run at full_autonomy. Maximum: briefing.' };
   }
   return { ok: true };
 }

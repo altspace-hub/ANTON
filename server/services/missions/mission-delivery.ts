@@ -4,8 +4,10 @@
 //   • in_app    — show in dashboard (default; nothing to do here, just record)
 //   • webhook   — POST to a URL with the deliverable payload
 //   • filesystem — write to a configured local path
-//   • email     — SMTP / API-based send (Phase 3.5 — placeholder for now)
-//   • slack / google_drive / sharepoint — Phase 3.5+
+//
+// email / slack / google_drive / sharepoint return to this enum when their
+// dispatch is actually implemented — they used to be selectable throw-stubs,
+// which advertised delivery that never happened.
 //
 // Failures are logged and retried up to max_retries with exponential backoff.
 
@@ -14,7 +16,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { validateUrl } from '../url-validator.js';
 
-export type DeliveryChannel = 'in_app' | 'email' | 'webhook' | 'google_drive' | 'sharepoint' | 'slack' | 'filesystem';
+export type DeliveryChannel = 'in_app' | 'webhook' | 'filesystem';
 
 export interface DeliveryRequest {
   missionId: string;
@@ -22,8 +24,8 @@ export interface DeliveryRequest {
   channel: DeliveryChannel;
   destination: Record<string, unknown>;     // channel-specific
   outputFiles?: Array<{ filename: string; content?: string; path?: string; mime_type?: string }>;
-  body?: string;                            // text body (e.g. summary for in-app/email)
-  subject?: string;                         // for email/slack
+  body?: string;                            // text body (e.g. summary for in-app display)
+  subject?: string;                         // included in webhook payload / in-app record
 }
 
 export interface DeliveryResult {
@@ -161,16 +163,11 @@ export function createMissionDelivery(db: DatabaseAdapter) {
         return { written: 1, target: path.relative(process.cwd(), resolved) };
       }
 
-      case 'email':
-      case 'slack':
-      case 'google_drive':
-      case 'sharepoint':
-        // Placeholder — Phase 3.5 wires these via existing email service / Slack MCP /
-        // Google Workspace API connector. For now, fail loudly.
-        throw new Error(`Delivery channel '${req.channel}' not yet implemented (Phase 3.5)`);
-
       default:
-        throw new Error(`Unknown channel: ${req.channel}`);
+        // Also catches legacy rows persisted with the removed stub channels
+        // (email / slack / google_drive / sharepoint) — those were never
+        // dispatchable and now fail here with a clear message.
+        throw new Error(`Unknown or unimplemented channel: ${req.channel}`);
     }
   }
 

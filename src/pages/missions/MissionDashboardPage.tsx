@@ -11,7 +11,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   Target, ChevronLeft, RefreshCcw, AlertCircle, Sparkles,
   Play, Pause, Square, FastForward, CheckCircle2,
-  LayoutDashboard, Send, Wallet, Network,
+  LayoutDashboard, Send, Wallet, Network, Plus, X,
 } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 import TaskGraphView, { type TaskNode, type DependencyEdge } from '../../components/missions/TaskGraphView';
@@ -81,6 +81,21 @@ interface BudgetData {
   financial: BudgetSnapshot;
 }
 
+// Task editor (Wave-2 2A.5) — add/edit tasks while the plan is draft/briefed.
+// Action types are first-class here: this is how a human arms an api_call /
+// browser task (e.g. pasting the approved subject/body into a Gmail send).
+const TASK_TYPE_OPTIONS = [
+  'llm', 'research', 'analysis', 'export', 'review', 'notification',
+  'checkpoint', 'conditional', 'api_call', 'browser', 'database_query',
+] as const;
+type EditableTaskType = (typeof TASK_TYPE_OPTIONS)[number];
+const ACTION_TASK_TYPES: ReadonlySet<string> = new Set(['api_call', 'browser', 'database_query']);
+
+interface TaskEditorState {
+  mode: 'add' | 'edit';
+  task?: TaskNode;
+}
+
 const STATUS_META: Record<MissionStatus, { label: string; classes: string }> = {
   draft:     { label: 'Draft',      classes: 'text-adv-gray border-border bg-adv-dark' },
   briefed:   { label: 'Plan Ready', classes: 'text-adv-gold border-adv-gold/40 bg-adv-gold/10' },
@@ -100,6 +115,7 @@ export default function MissionDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [actioning, setActioning] = useState(false);
   const [tab, setTab] = useState<TabKey>('overview');
+  const [taskEditor, setTaskEditor] = useState<TaskEditorState | null>(null);
 
   const loadAll = useCallback(async () => {
     if (!id) return;
@@ -188,6 +204,7 @@ export default function MissionDashboardPage() {
 
   const { mission, tasks, dependencies } = state;
   const status = STATUS_META[mission.status];
+  const planEditable = mission.status === 'draft' || mission.status === 'briefed';
   const completed = tasks.filter(t => t.status === 'completed').length;
   const total = tasks.length;
   const progressPct = total > 0 ? (completed / total) * 100 : 0;
@@ -293,6 +310,16 @@ export default function MissionDashboardPage() {
                 </button>
               </>
             )}
+            {planEditable && (
+              <button
+                onClick={() => setTaskEditor({ mode: 'add' })}
+                disabled={actioning}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add task
+              </button>
+            )}
             {(mission.status === 'paused' || mission.status === 'review') && (
               <button
                 onClick={() => void action('/resume')}
@@ -360,6 +387,8 @@ export default function MissionDashboardPage() {
                 onApprove={handleApproveCheckpoint}
                 onReject={handleRejectCheckpoint}
                 onParallelReviewCreated={() => void loadAll()}
+                editable={planEditable}
+                onEditTask={(task) => setTaskEditor({ mode: 'edit', task })}
               />
             </section>
           </div>
@@ -382,6 +411,243 @@ export default function MissionDashboardPage() {
       {tab === 'deliveries' && id && <DeliveriesTab missionId={id} />}
       {tab === 'payments' && id && <PaymentsTab missionId={id} />}
       {tab === 'delegations' && id && <OutboundDelegationsTab missionId={id} />}
+
+      {taskEditor && id && (
+        <TaskEditorModal
+          missionId={id}
+          editor={taskEditor}
+          tasks={tasks}
+          dependencies={dependencies}
+          onClose={() => setTaskEditor(null)}
+          onSaved={() => { setTaskEditor(null); void loadAll(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Add/edit a task while the mission is draft/briefed. Prompt-style types get
+ * a prompt textarea; action types (api_call / browser / database_query)
+ * expose module_config as JSON so the human can arm real actions (e.g. set
+ * the Gmail send params + credential id) before approving the plan.
+ */
+function TaskEditorModal({ missionId, editor, tasks, dependencies, onClose, onSaved }: {
+  missionId: string;
+  editor: TaskEditorState;
+  tasks: TaskNode[];
+  dependencies: DependencyEdge[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const editing = editor.mode === 'edit' ? editor.task : undefined;
+  const initialConfig: Record<string, unknown> = { ...(editing?.module_config ?? {}) };
+  const initialPrompt = typeof initialConfig.prompt === 'string' ? initialConfig.prompt : '';
+  const initialCheckpointMsg = typeof initialConfig.checkpoint_message === 'string' ? initialConfig.checkpoint_message : '';
+  delete initialConfig.prompt;
+  delete initialConfig.checkpoint_message;
+
+  const [title, setTitle] = useState(editing?.title ?? '');
+  const [taskType, setTaskType] = useState<EditableTaskType>(
+    (editing && (TASK_TYPE_OPTIONS as readonly string[]).includes(editing.task_type) ? editing.task_type : 'llm') as EditableTaskType,
+  );
+  const [description, setDescription] = useState(editing?.description ?? '');
+  const [prompt, setPrompt] = useState(initialPrompt);
+  const [checkpointMessage, setCheckpointMessage] = useState(initialCheckpointMsg);
+  const [configJson, setConfigJson] = useState(
+    Object.keys(initialConfig).length > 0 ? JSON.stringify(initialConfig, null, 2) : '{}',
+  );
+  const [dependsOn, setDependsOn] = useState<Set<string>>(() => new Set(
+    editing ? dependencies.filter(d => d.task_id === editing.id).map(d => d.depends_on_task_id) : [],
+  ));
+  const [saving, setSaving] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
+
+  const isAction = ACTION_TASK_TYPES.has(taskType);
+  const dependsCandidates = tasks.filter(t => t.id !== editing?.id);
+
+  function toggleDep(taskId: string): void {
+    setDependsOn(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId); else next.add(taskId);
+      return next;
+    });
+  }
+
+  async function save(): Promise<void> {
+    setEditorError(null);
+    if (!title.trim()) { setEditorError('Title is required'); return; }
+    let moduleConfig: Record<string, unknown> = {};
+    if (isAction) {
+      try {
+        const parsed: unknown = JSON.parse(configJson || '{}');
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('must be a JSON object');
+        moduleConfig = parsed as Record<string, unknown>;
+      } catch (e) {
+        setEditorError(`module_config is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
+        return;
+      }
+    }
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        title: title.trim(),
+        task_type: taskType,
+        description: description.trim() || undefined,
+        prompt: prompt.trim() || undefined,
+        checkpoint_message: taskType === 'checkpoint' ? (checkpointMessage.trim() || undefined) : undefined,
+        module_config: isAction ? moduleConfig : undefined,
+        depends_on: [...dependsOn],
+      };
+      const url = editor.mode === 'add'
+        ? `/api/missions/${missionId}/tasks`
+        : `/api/missions/${missionId}/tasks/${editing!.id}`;
+      const res = await fetchWithAuth(url, {
+        method: editor.mode === 'add' ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      onSaved();
+    } catch (e) {
+      setEditorError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl border border-border bg-adv-card p-5 space-y-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-adv-off-white">
+            {editor.mode === 'add' ? 'Add task' : `Edit task — ${editing?.title}`}
+          </h3>
+          <button onClick={onClose} className="text-adv-gray hover:text-adv-off-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-adv-gray mb-1">Title</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            placeholder="Short imperative title"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-adv-gray mb-1">Type</label>
+          <select
+            value={taskType}
+            onChange={(e) => setTaskType(e.target.value as EditableTaskType)}
+            className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          >
+            {TASK_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-adv-gray mb-1">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          />
+        </div>
+
+        {!isAction && taskType !== 'checkpoint' && (
+          <div>
+            <label className="block text-[11px] text-adv-gray mb-1">Prompt (what the task should do)</label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={4}
+              className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            />
+          </div>
+        )}
+
+        {taskType === 'checkpoint' && (
+          <div>
+            <label className="block text-[11px] text-adv-gray mb-1">Checkpoint message (shown to the human)</label>
+            <textarea
+              value={checkpointMessage}
+              onChange={(e) => setCheckpointMessage(e.target.value)}
+              rows={3}
+              className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            />
+          </div>
+        )}
+
+        {isAction && (
+          <div>
+            <label className="block text-[11px] text-adv-gray mb-1">
+              module_config (JSON)
+              {taskType === 'api_call' && ' — requires "url"'}
+              {taskType === 'browser' && ' — requires "service_id" + "workflow_id"'}
+              {taskType === 'database_query' && ' — requires "query"'}
+            </label>
+            <textarea
+              value={configJson}
+              onChange={(e) => setConfigJson(e.target.value)}
+              rows={8}
+              spellCheck={false}
+              className="w-full rounded border border-border bg-adv-dark px-2 py-1.5 text-[11px] font-mono text-adv-off-white focus:border-adv-teal focus:outline-none"
+            />
+          </div>
+        )}
+
+        {dependsCandidates.length > 0 && (
+          <div>
+            <label className="block text-[11px] text-adv-gray mb-1">Depends on</label>
+            <div className="max-h-32 overflow-y-auto rounded border border-border bg-adv-dark p-2 space-y-1">
+              {dependsCandidates.map(t => (
+                <label key={t.id} className="flex items-center gap-2 text-[11px] text-adv-off-white cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dependsOn.has(t.id)}
+                    onChange={() => toggleDep(t.id)}
+                    className="accent-[#2DD4A8]"
+                  />
+                  <span className="truncate">{t.title}</span>
+                  <span className="text-adv-gray/60">({t.task_type})</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {editorError && (
+          <div className="rounded border border-adv-red/30 bg-adv-red/10 px-2 py-1.5 text-[11px] text-adv-red flex items-center gap-1.5">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            {editorError}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => void save()}
+            disabled={saving || !title.trim()}
+            className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : editor.mode === 'add' ? 'Add task' : 'Save changes'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
