@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { tick, light, success, error as hapticError } from '../services/haptics';
 import * as TTS from '../services/tts';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useVoiceRecognizer } from '../hooks/useVoiceRecognizer';
 import { registerBackHandler } from '../services/back-stack';
 import { Ico } from './ui';
 
@@ -27,14 +28,9 @@ export interface VoiceModeProps {
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
-let capacitorAvailable: boolean | null = null;
-
-const WebSpeech = typeof window !== 'undefined'
-  ? ((window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition)
-  : null;
-
 export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
   const [phase, setPhase] = useState<Phase>('idle');
+  const rec = useVoiceRecognizer();
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, true);
 
@@ -53,88 +49,49 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
       unregister();
     };
   }, [onClose]);
-  const [partial, setPartial] = useState('');
   const [reply, setReply] = useState('');
-  const [errMsg, setErrMsg] = useState<string | null>(null);
-  const webRecRef = useRef<{ stop: () => void } | null>(null);
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
   const holdTimer = useRef<number | null>(null);
 
+  // The recogniser owns the live partial transcript + any recognition error;
+  // phase drives only the visual state machine (idle → listening → thinking →
+  // speaking). Surfacing rec.error means the UI reflects REAL failures, not a
+  // fake listening boolean.
+  const { listening, partial, error: recError, start: recStart, stopAndGet, reset: recReset } = rec;
+
   useEffect(() => {
-    if (capacitorAvailable !== null) return;
-    void (async () => {
-      try {
-        const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-        const r = await SpeechRecognition.available();
-        capacitorAvailable = r.available;
-      } catch { capacitorAvailable = false; }
-    })();
     // Body scroll lock
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; TTS.stop(); };
   }, []);
 
+  // If the recogniser errors out while we're showing the listening orb,
+  // pull the visual phase back to idle so the orb stops pulsing. Guarded on
+  // recError so a normal stop-and-send (which also clears listening) doesn't
+  // race the transition into 'thinking'.
+  useEffect(() => {
+    if (phase === 'listening' && recError) setPhase('idle');
+  }, [phase, recError]);
+
   async function startListen(): Promise<void> {
     if (phase !== 'idle' && phase !== 'speaking') return;
     if (phase === 'speaking') TTS.stop();        // barge-in
-    setReply(''); setPartial(''); setErrMsg(null); setPhase('listening');
+    setReply('');
+    setSubmitErr(null);
+    recReset();
     void tick();
-
-    if (capacitorAvailable) {
-      try {
-        const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-        const perm = await SpeechRecognition.requestPermissions().catch(() => null);
-        if (perm && (perm as { speechRecognition: string }).speechRecognition !== 'granted') {
-          await hapticError(); setPhase('idle'); return;
-        }
-        await SpeechRecognition.removeAllListeners();
-        await SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
-          if (data.matches?.[0]) setPartial(data.matches[0]);
-        });
-        await SpeechRecognition.start({ language: navigator.language || 'en-US', popup: false, partialResults: true });
-        return;
-      } catch { /* fall through */ }
-    }
-
-    if (WebSpeech) {
-      type RecCtor = new () => {
-        continuous: boolean; interimResults: boolean; lang: string;
-        onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
-        onend: () => void; onerror: () => void;
-        start: () => void; stop: () => void;
-      };
-      try {
-        const r = new (WebSpeech as RecCtor)();
-        r.continuous = true; r.interimResults = true; r.lang = navigator.language || 'en-US';
-        r.onresult = (event) => {
-          let collected = '';
-          for (let i = 0; i < event.results.length; i++) collected += event.results[i][0]?.transcript ?? '';
-          setPartial(collected.trim());
-        };
-        r.onend = () => { /* user-driven stop */ };
-        r.onerror = () => { setErrMsg('Speech recognition error.'); setPhase('idle'); };
-        webRecRef.current = r;
-        r.start();
-      } catch { setErrMsg('Speech recognition not available.'); setPhase('idle'); }
-    } else {
-      setErrMsg('Voice input is not available on this device.'); setPhase('idle');
-    }
+    await recStart();
+    if (rec.unavailable) { await hapticError(); setPhase('idle'); return; }
+    // recStart sets rec.listening; only enter the listening visual if it took.
+    setPhase('listening');
   }
 
   async function stopAndSend(): Promise<void> {
     if (phase !== 'listening') return;
     void light();
 
-    if (capacitorAvailable) {
-      try {
-        const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-        await SpeechRecognition.stop();
-        await SpeechRecognition.removeAllListeners();
-      } catch { /* swallow */ }
-    }
-    if (webRecRef.current) { try { webRecRef.current.stop(); } catch { /* swallow */ } webRecRef.current = null; }
-
-    const text = partial.trim();
+    const text = await stopAndGet();
     if (!text) { setPhase('idle'); return; }
     setPhase('thinking');
     try {
@@ -149,11 +106,13 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
         onEnd: () => setPhase('idle'),
       });
     } catch (e) {
-      setErrMsg(e instanceof Error ? e.message : String(e));
+      setSubmitErr(e instanceof Error ? e.message : String(e));
       void hapticError();
       setPhase('idle');
     }
   }
+
+  const errMsg = recError ?? submitErr;
 
   // Press-and-hold handlers
   function onDown() {

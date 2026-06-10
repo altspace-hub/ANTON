@@ -211,10 +211,17 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
     }
 
     setStreaming(true);
+    // Track whether the in-flight assistant turn has started, so streamed
+    // chunks append to one bubble instead of spawning a new bubble per chunk
+    // (C4 — future-safe for when real streaming lands; today onChunk fires once).
+    let assistantStarted = false;
 
     sendQueryREST(orgId, text, {
       onStart: () => {},
-      onChunk: (chunk) => { addMessage('assistant', chunk); },
+      onChunk: (chunk) => {
+        if (!assistantStarted) { assistantStarted = true; addMessage('assistant', chunk); }
+        else appendToLastAssistant(chunk);
+      },
       onComplete: (data) => {
         setStreaming(false);
         if (data.sessionId) onSessionCreated(data.sessionId);
@@ -249,6 +256,24 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
       timestamp: Date.now(),
       isError,
     }]);
+  }
+
+  // Append streamed text to the last assistant message rather than creating a
+  // new bubble per chunk. If the last message isn't an assistant turn (edge
+  // case), fall back to adding a fresh one.
+  function appendToLastAssistant(chunk: string) {
+    setMessages(prev => {
+      const last = prev[prev.length - 1];
+      if (last && last.role === 'assistant' && !last.isError) {
+        return [...prev.slice(0, -1), { ...last, content: last.content + chunk }];
+      }
+      return [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant' as const,
+        content: chunk,
+        timestamp: Date.now(),
+      }];
+    });
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

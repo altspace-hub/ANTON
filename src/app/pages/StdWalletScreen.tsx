@@ -55,7 +55,8 @@ function formatAmt(raw: number | string | undefined, isIn: boolean): string {
   if (raw == null) return '—';
   const n = typeof raw === 'number' ? raw : Number(raw);
   if (!Number.isFinite(n)) return '—';
-  return `${isIn ? '+' : '−'}€${Math.abs(n).toFixed(2)}`;
+  // FutureChain unit is FTC — never euro. Send & receive happen in ANTON Pay.
+  return `${isIn ? '+' : '−'}${Math.abs(n).toFixed(2)} FTC`;
 }
 
 export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
@@ -79,7 +80,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
           const n = typeof w.balance_ftc === 'number' ? w.balance_ftc : Number(w.balance_ftc ?? 0);
           return Number.isFinite(n) ? sum + n : sum;
         }, 0);
-        setBalance(`€${totalRaw.toFixed(2)}`);
+        setBalance(`${totalRaw.toFixed(2)} FTC`);
         setRecent(
           txs.map(t => {
             const isIn = t.direction !== 'out';
@@ -142,37 +143,25 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
             className="leading-none"
             style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-1.5px', marginTop: 6 }}
           >
-            {balance ?? '€—'}
+            {balance ?? '— FTC'}
           </div>
-          <div className="mt-1 text-[0.8125rem] opacity-85">FutureChain · euro</div>
+          <div className="mt-1 text-[0.8125rem] opacity-85">FutureChain · FTC</div>
         </div>
 
-        {/* Send / Receive */}
-        <div className="mb-6 flex gap-2.5">
-          <button
-            disabled={balance === null}
-            className="flex flex-1 flex-col items-center gap-1.5 rounded-[var(--radius-r2)] py-4 disabled:opacity-50"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)',
-            }}
-          >
-            <Ico name="arrowUp" color="var(--color-text)" size={22} />
-            Send
-          </button>
-          <button
-            disabled={balance === null}
-            className="flex flex-1 flex-col items-center gap-1.5 rounded-[var(--radius-r2)] py-4 disabled:opacity-50"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)',
-            }}
-          >
-            <Ico name="qr" color="var(--color-text)" size={22} />
-            Receive
-          </button>
+        {/* This companion wallet is read-only. Live send & receive happen in
+            ANTON Pay (the dedicated payments app) — the dead Send/Receive
+            buttons were removed for launch (decision locked 2026-06). */}
+        <div
+          className="mb-6 flex items-center gap-2.5 rounded-[var(--radius-r2)] px-4 py-3"
+          style={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <Ico name="wallet" color="var(--color-text-muted)" size={18} />
+          <span className="text-[0.875rem] text-[var(--color-text-body)]">
+            Send &amp; receive happen in ANTON Pay.
+          </span>
         </div>
 
         {/* Recent */}
@@ -218,7 +207,11 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
                 }}
                 aria-hidden="true"
               >
-                <Ico name={r.isIn ? 'arrowUp' : 'arrowUp'} size={20} color="currentColor" />
+                {/* Direction glyph: received points down, sent points up. The
+                    icon set only ships arrowUp, so rotate it 180° for "in". */}
+                <span style={{ display: 'inline-flex', transform: r.isIn ? 'rotate(180deg)' : 'none' }}>
+                  <Ico name="arrowUp" size={20} color="currentColor" />
+                </span>
               </div>
               <div className="flex-1">
                 <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.who}</div>

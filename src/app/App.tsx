@@ -11,6 +11,7 @@ import { onActiveInstanceChange, getActiveInstance, getActiveInstanceId, getInst
 import { registerPush, requestPushPermission, setNotificationRouter, startNativeNotificationListener } from './services/push';
 import { listPendingCheckpoints } from './services/checkpoints';
 import { useAndroidBackButton, type AppBackResult } from './hooks/useAndroidBackButton';
+import { useOfflineQueueFlush } from './hooks/useOfflineQueueFlush';
 
 // Auth screens
 import WelcomePage from './pages/WelcomePage';
@@ -51,15 +52,17 @@ import StdWalletScreen from './pages/StdWalletScreen';
 import StdVoiceScreen from './pages/StdVoiceScreen';
 import StdSettingsScreen from './pages/StdSettingsScreen';
 import type { MailMessage } from './services/mail';
+import VoiceMode from './components/VoiceMode';
 import TabBar from './components/TabBar';
 import BottomSheet from './components/BottomSheet';
+import { fetchWithAuth } from './services/api';
 import { usePersonalization } from './components/ui/PersonalizationContext';
 import { Ico } from './components/ui';
 
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
 const PERSONALIZED_KEY = 'anton-companion-personalized';
-type OrgTab = 'home' | 'chat' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community' | 'community_chat' | 'missions' | 'mywork'
+type OrgTab = 'home' | 'chat' | 'voice' | 'schedule' | 'tasks' | 'approvals' | 'capture' | 'search' | 'markets' | 'radar' | 'wallet' | 'history' | 'profile' | 'settings' | 'ask' | 'you' | 'mail' | 'mail_setup' | 'work' | 'school' | 'calendar' | 'portals' | 'community' | 'community_chat' | 'missions' | 'mywork'
   // Standard-mode screens (selected when mode === 'standard')
   | 'std_mail' | 'std_thread' | 'std_calendar' | 'std_wallet' | 'std_voice' | 'std_settings';
 
@@ -210,6 +213,31 @@ export default function App() {
     return () => { cancelled = true; window.clearInterval(id); };
   }, [instanceVersion, activeTab]);
 
+  // Voice → query hand-off. Shared by the Pro VoiceMode overlay (and the
+  // Standard StdVoiceScreen via its own recognizer). Posts the transcript to
+  // /query-sync and returns the assistant reply for TTS playback. Mirrors the
+  // path the removed QuickActionsFab used.
+  const handleVoiceSubmit = useCallback(async (transcript: string): Promise<{ reply: string } | null> => {
+    if (!selectedOrgId) return null;
+    try {
+      const res = await fetchWithAuth(`/org/${selectedOrgId}/query-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: transcript }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string })?.error || `HTTP ${res.status}`);
+      const d = data as { assistant?: string; reply?: string; text?: string; message?: { content?: string } };
+      const reply = typeof d.assistant === 'string' ? d.assistant
+        : typeof d.reply === 'string' ? d.reply
+        : typeof d.text === 'string' ? d.text
+        : (d.message?.content ?? '');
+      return { reply: String(reply || '(no reply)') };
+    } catch (e) {
+      return { reply: e instanceof Error ? e.message : 'Voice request failed' };
+    }
+  }, [selectedOrgId]);
+
   function selectOrg(orgId: string, orgName?: string, orgType?: string) {
     setSelectedOrgId(orgId);
     setSelectedOrgName(orgName || '');
@@ -258,13 +286,19 @@ export default function App() {
     if (SUB_SCREENS.includes(activeTab)) { setActiveTab('home'); return 'handled'; }
     // Chat with a session loaded → drop session + go home
     if (activeTab === 'chat' && sessionId) { setSessionId(null); setActiveTab('home'); return 'handled'; }
-    // Capture / Approvals → home
-    if (activeTab === 'capture' || activeTab === 'approvals') { setActiveTab('home'); return 'handled'; }
+    // Capture / Approvals / Voice → home (VoiceMode also registers its own
+    // back handler that runs first while open; this is the fallback).
+    if (activeTab === 'capture' || activeTab === 'approvals' || activeTab === 'voice') { setActiveTab('home'); return 'handled'; }
     // On home (or any root state) → ask for exit-prompt
     return 'exit';
   }, [showMore, activeTab, sessionId, selectedMail, chatContact]);
 
   useAndroidBackButton({ onBack: handleAndroidBack });
+
+  // Drain the offline message queue on reconnect (C3). Mounted at the root so
+  // it works regardless of the active tab — ChatPage no longer needs to be
+  // open for queued-while-offline messages to actually send.
+  const { flushing: flushingQueue } = useOfflineQueueFlush();
 
   // ── Auth screens ──────────────────────────────────────────────
   if (authScreen === 'welcome') {
@@ -313,6 +347,22 @@ export default function App() {
 
   return (
     <div className="safe-top flex flex-col overflow-hidden" style={{ height: '100dvh', background: 'var(--color-bg)' }}>
+      {/* Offline-queue drain indicator (C3) — subtle, transient. Shown while
+          queued-while-offline messages are being replayed on reconnect. */}
+      {flushingQueue && (
+        <div
+          className="flex flex-shrink-0 items-center justify-center gap-2 px-4 py-1.5 text-[0.75rem] font-medium"
+          style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}
+          role="status"
+        >
+          <span
+            className="block animate-pulse rounded-full"
+            style={{ width: 6, height: 6, background: 'var(--color-accent)' }}
+          />
+          Sending queued messages…
+        </div>
+      )}
+
       {/* Multi-instance top bar (spec §4.2 + §8.9) — Pro only.
           Rendered only on Home; sub-screens carry their own page header
           and stacking InstanceTopBar above them produces a double-bar
@@ -496,6 +546,16 @@ export default function App() {
       {activeTab === 'std_settings' && (
         <StdSettingsScreen
           onBack={() => setActiveTab('home')}
+        />
+      )}
+
+      {/* Voice mode (Pro) — full-screen overlay (fixed inset-0). Re-wired
+          after the QuickActionsFab removal orphaned it: the Home "Voice"
+          tile + WorkModules now route here and reach the real recogniser. */}
+      {!isStandard && activeTab === 'voice' && (
+        <VoiceMode
+          onSubmit={handleVoiceSubmit}
+          onClose={() => setActiveTab('home')}
         />
       )}
 

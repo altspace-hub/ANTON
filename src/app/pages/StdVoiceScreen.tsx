@@ -8,15 +8,18 @@
  *   • 220px radial-gradient orb (3 stacked layers)
  *   • "Speak naturally · Tap when you're done" footer
  *
- * v1: tap to toggle listening; on-end posts the transcript to the
- * existing query-sync endpoint and shows the response. The full
- * Capacitor speech-recognition wiring lives in the Pro VoiceMode
- * component — we reuse that flow via the onSubmit hand-off.
+ * The orb is driven by the SAME real recogniser as the Pro VoiceMode
+ * (useVoiceRecognizer — Capacitor speech-recognition + Web Speech
+ * fallback). Tapping the orb starts the mic; tapping again stops it and
+ * posts the captured transcript to /query-sync. The pulse animation
+ * reflects ACTUAL listening state, not a fake boolean. A typed fallback
+ * remains for devices with no recogniser.
  */
 
 import { useState } from 'react';
 import { Ico } from '../components/ui';
 import { fetchWithAuth } from '../services/api';
+import { useVoiceRecognizer } from '../hooks/useVoiceRecognizer';
 
 interface Props {
   orgId: string;
@@ -24,19 +27,18 @@ interface Props {
 }
 
 export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
-  const [listening, setListening] = useState(false);
+  const rec = useVoiceRecognizer();
+  const { listening, partial, error: recError, unavailable, start, stopAndGet, reset } = rec;
   const [reply, setReply]         = useState<string | null>(null);
-  const [error, setError]         = useState<string | null>(null);
+  const [sendErr, setSendErr]     = useState<string | null>(null);
   const [transcript, setTranscript] = useState('');
 
-  // v1: simple text fallback while the full speech-recognition wiring
-  // (already implemented in VoiceMode for Pro) gets ported. Standard
-  // users get a tap-to-listen affordance + manual override.
+  const error = recError ?? sendErr;
+
   async function send(text: string) {
     if (!text.trim()) return;
-    setListening(false);
     setReply(null);
-    setError(null);
+    setSendErr(null);
     try {
       const res = await fetchWithAuth(`/org/${orgId}/query-sync`, {
         method: 'POST',
@@ -51,7 +53,19 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
             ?? '(no reply)';
       setReply(String(r));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Voice request failed');
+      setSendErr(e instanceof Error ? e.message : 'Voice request failed');
+    }
+  }
+
+  // Orb tap: start the real recogniser, or stop + send what was captured.
+  async function toggleOrb() {
+    if (listening) {
+      const text = await stopAndGet();
+      if (text) void send(text);
+    } else {
+      setReply(null);
+      reset();
+      await start();
     }
   }
 
@@ -79,7 +93,7 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
         <div
           className="text-center"
           style={{
-            fontSize: reply ? '1.125rem' : '1.875rem',
+            fontSize: reply || (listening && partial) ? '1.125rem' : '1.875rem',
             fontWeight: 600,
             letterSpacing: '-0.5px',
             lineHeight: 1.3,
@@ -87,21 +101,18 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
             marginBottom: reply ? 24 : 50,
           }}
         >
-          {reply ? reply : '"Who do I have meetings with today?"'}
+          {/* While listening, show the live transcript; otherwise the reply
+              or the example prompt. Driven by the real recogniser. */}
+          {listening
+            ? (partial || '…')
+            : reply
+              ? reply
+              : '"Who do I have meetings with today?"'}
         </div>
 
-        {/* Orb — tap to start/stop */}
+        {/* Orb — tap to start/stop. Pulse reflects REAL listening state. */}
         <button
-          onClick={() => {
-            if (listening) {
-              // simulate end — in production this would stop the recogniser
-              setListening(false);
-              if (transcript.trim()) void send(transcript);
-            } else {
-              setListening(true);
-              setReply(null);
-            }
-          }}
+          onClick={() => { void toggleOrb(); }}
           className="relative"
           style={{ width: 220, height: 220, marginBottom: 50 }}
           aria-label={listening ? 'Stop listening' : 'Start listening'}
@@ -129,8 +140,8 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
         <input
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') void send(transcript); }}
-          placeholder="…or type a question"
+          onKeyDown={(e) => { if (e.key === 'Enter') { void send(transcript); setTranscript(''); } }}
+          placeholder={unavailable ? 'Type a question' : '…or type a question'}
           className="w-full max-w-[320px] rounded-full px-4 py-3 text-center"
           style={{
             background: 'color-mix(in srgb, #fff 12%, transparent)',
@@ -139,6 +150,15 @@ export default function StdVoiceScreen({ orgId, onClose }: Props): JSX.Element {
             fontSize: '0.9375rem',
           }}
         />
+
+        {unavailable && (
+          <div
+            className="mt-3 text-center opacity-60"
+            style={{ fontSize: '0.8125rem' }}
+          >
+            Voice input isn't available on this device — type instead.
+          </div>
+        )}
 
         {error && (
           <div
