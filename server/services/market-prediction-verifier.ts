@@ -27,8 +27,12 @@ interface ExpiredPrediction {
   verification_attempts?: number;
 }
 
-/** Max retry attempts before permanently stamping status='expired'. */
-const MAX_VERIFICATION_ATTEMPTS = 3;
+/**
+ * Max retry attempts before permanently stamping status='expired'.
+ * Exported so market-loop-health can exclude retry-exhausted (permanently
+ * unverifiable) predictions from the pending backlog with the SAME constant.
+ */
+export const MAX_VERIFICATION_ATTEMPTS = 3;
 /** Gap between retries once a prediction has been tried at least once. */
 const RETRY_BACKOFF_DAYS = 7;
 

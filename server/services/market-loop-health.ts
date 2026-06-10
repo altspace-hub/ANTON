@@ -10,6 +10,7 @@
 // recent window. Read-only, cheap, no LLM spend — safe under MARKETS_THINKING_DISABLED.
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { MAX_VERIFICATION_ATTEMPTS } from './market-prediction-verifier.js';
 
 export interface LoopHealth {
   loop: string;
@@ -50,10 +51,16 @@ export async function checkMarketsLoopHealth(
   }
 
   // 2. Prediction validation loop.
+  // Retry-exhausted rows (status='expired' with verification_attempts at the
+  // verifier's MAX) are permanently unverifiable — findExpired will never
+  // pick them up again, so counting them as pending would hold this loop
+  // "stale" forever through quiet windows. COALESCE guards pre-migration
+  // NULL attempt counts (NULL >= MAX is NULL, which would wrongly exclude).
   {
     const pending = num(await db.get(
       `SELECT COUNT(*)::int AS n FROM market_predictions
-       WHERE status != 'validated' AND deadline IS NOT NULL AND deadline < NOW()`));
+       WHERE status != 'validated' AND deadline IS NOT NULL AND deadline < NOW()
+         AND NOT (status = 'expired' AND COALESCE(verification_attempts, 0) >= ${MAX_VERIFICATION_ATTEMPTS})`));
     const recent = num(await db.get(
       `SELECT COUNT(*)::int AS n FROM market_predictions
        WHERE validated_at >= ${since}`));

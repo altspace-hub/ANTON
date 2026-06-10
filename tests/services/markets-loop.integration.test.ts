@@ -32,7 +32,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PostgresAdapter } from '../../server/db/adapters/postgresql-adapter';
 import type { DatabaseAdapter } from '../../server/db/database';
-import { createPredictionVerifier } from '../../server/services/market-prediction-verifier';
+import { createPredictionVerifier, MAX_VERIFICATION_ATTEMPTS } from '../../server/services/market-prediction-verifier';
 import { createMarketPatternWeightFeedbackService } from '../../server/services/market-pattern-weight-feedback-service';
 import { checkMarketsLoopHealth } from '../../server/services/market-loop-health';
 import { createMarketIntelligenceService } from '../../server/services/market-intelligence-service';
@@ -478,6 +478,29 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       );
       f = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'pattern_adjustments_written');
       expect(f.stale).toBe(false);
+    });
+
+    it('does not count retry-exhausted expired predictions as pending (permanently unverifiable ≠ stale)', async () => {
+      // Attempts at the verifier's MAX: findExpired will never retry this
+      // row (it requires attempts < MAX), so it must not hold the
+      // prediction_validation loop "stale" through quiet windows.
+      await seedPrediction(db, {
+        id: 'wx1', status: 'expired', deadline: daysAgoIso(40), createdAt: daysAgoIso(90),
+        attempts: MAX_VERIFICATION_ATTEMPTS, lastAttemptAt: daysAgoIso(20), symbol: 'TSTF',
+      });
+
+      let f = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'prediction_validation');
+      expect(f.pending).toBe(0);
+      expect(f.stale).toBe(false);
+
+      // A still-retriable expired prediction (attempts < MAX) IS real backlog.
+      await seedPrediction(db, {
+        id: 'wx2', status: 'expired', deadline: daysAgoIso(40), createdAt: daysAgoIso(90),
+        attempts: MAX_VERIFICATION_ATTEMPTS - 1, lastAttemptAt: daysAgoIso(20), symbol: 'TSTG',
+      });
+      f = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'prediction_validation');
+      expect(f.pending).toBe(1);
+      expect(f.stale).toBe(true);
     });
 
     it('flags stalled prediction validation and clears on a recent validation', async () => {
