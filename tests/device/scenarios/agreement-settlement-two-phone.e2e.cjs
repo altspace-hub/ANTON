@@ -21,6 +21,11 @@
  *     needs to bind the payment to the pending kvitto. The kvitto flips
  *     pending → confirmed WITH the customer agreement attached, and the
  *     merchant's kvitto view renders 'Settled · public, unsigned'.
+ *     (#26, fixed 2026-06-10: typing the ref into the template is no longer
+ *     REQUIRED — executePayment now always preserves the sale QR's `v1:` ref
+ *     as its own Ustrd line alongside any template. This scenario keeps the
+ *     typed ref because the Avtal flow here uses manual address entry, which
+ *     never decodes the QR ref in the first place.)
  *
  * ⚠️ Design note (device-discovered 2026-06-10): the v1 settlement tier has
  * NO reciprocal-echo UI. `stampOutgoingAgreement` always mints a FRESH
@@ -339,14 +344,11 @@ module.exports = {
     } finally { /* keep sb open — the QR screen must stay up for active-sync */ }
 
     // Pay the sale with the Avtal template, kvitto ref in the ref field.
-    // Payer = phone A's Pay. Device finding 2026-06-10: on phone B
-    // (QV7101L31T) ReviewScreen's mount effect (ReviewScreen.tsx:120-168 —
-    // no try/catch, so any hung/failed load silently strips walletConnected)
-    // never completes on the new-address path: the template composer + ISO
-    // draft never render, on every attempt incl. after force-stop, while the
-    // SAME APK works on phone A. Which phone pays does not change what this
-    // leg asserts (merchant-side kvitto binding + badge), so the customer
-    // role runs on the Pay device whose composer works.
+    // Payer = phone A's Pay. (#27, fixed 2026-06-10: phone B's composer used
+    // to never render on the new-address path — ReviewScreen read the wallet
+    // via loadWallet(), whose raw priv hex the Wave-7 native-signer migration
+    // deletes; it now reads getActiveWalletMeta() like executePayment does,
+    // so either phone can play the customer role.)
     const payA2 = await forwardApp('pay', 0);
     const decision2 = `AGRSALE-${tag}: leverans enligt avtal, betalning vid leverans`;
     let leg2;
