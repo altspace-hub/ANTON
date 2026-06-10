@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Globe, ChevronLeft, Loader2, AlertCircle, Trash2, Download, FileText, Eye, Image, Upload, Pencil, X, Share2, Copy, Check } from 'lucide-react';
+import { Globe, ChevronLeft, Loader2, AlertCircle, Trash2, Download, FileText, Eye, Image, Upload, Pencil, X, Share2, Copy, Check, RefreshCw } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 import ConfirmModal from '@/components/hardware/ConfirmModal';
 
@@ -29,6 +29,17 @@ interface PortalDetail {
     registered_at: string | null;
     last_synced_at: string | null;
     created_at: string;
+    /** Relay submission state lives in metadata (stamped by finalize +
+     *  refreshed by GET /portals/:id/relay-status). */
+    metadata: {
+      relayStatus?: 'pending' | 'in_review' | 'approved' | 'rejected' | 'withdrawn';
+      relaySubmissionId?: string;
+      relaySubmittedAt?: string;
+      relayReviewedAt?: string | null;
+      relayRejectionReason?: string | null;
+      relayLastSyncedAt?: string;
+      relayError?: string;
+    } | null;
   };
   pageCount: number;
   inboxPending: number;
@@ -314,6 +325,7 @@ export default function PortalManagePage() {
           <OverviewTab
             portal={portal} pageCount={pageCount} inboxPending={inboxPending}
             stats={stats}
+            onRelayRefreshed={refreshDetail}
             onTogglePublicIndex={async (v) => {
               try { await patchPortal({ public_index: v }); }
               catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -375,7 +387,7 @@ export default function PortalManagePage() {
 }
 
 function OverviewTab({
-  portal, pageCount, inboxPending, stats, onTogglePublicIndex, onSurfaceSave,
+  portal, pageCount, inboxPending, stats, onTogglePublicIndex, onSurfaceSave, onRelayRefreshed,
 }: {
   portal: PortalDetail['portal'];
   pageCount: number;
@@ -383,6 +395,7 @@ function OverviewTab({
   stats: CapabilityStat[];
   onTogglePublicIndex: (v: boolean) => void | Promise<void>;
   onSurfaceSave: (mode: 'managed' | 'external', url: string | null) => void | Promise<void>;
+  onRelayRefreshed: () => void | Promise<void>;
 }) {
   const verbs = portal.capability_summary?.capabilityVerbs ?? [];
   const tags = portal.capability_summary?.tags ?? [];
@@ -428,6 +441,9 @@ function OverviewTab({
       <Card title="Descriptor binding" wide>
         <KV label="Hash" value={<code className="text-xs break-all">{portal.descriptor_hash ?? '—'}</code>} />
       </Card>
+      <Card title="Network publication" wide>
+        <RelayStatusPanel portal={portal} onRefreshed={onRelayRefreshed} />
+      </Card>
       <Card title="Site surface" wide>
         <SurfaceEditor portal={portal} onSave={onSurfaceSave} />
       </Card>
@@ -470,6 +486,113 @@ function OverviewTab({
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+// ── Relay submission status (Network publication card) ──────────────────────
+// Renders metadata.relayStatus + relaySubmissionId honestly. The refresh
+// button hits GET /portals/:id/relay-status which polls the relay and
+// persists the result back into metadata; we then ask the parent to
+// re-fetch the portal so the card reflects the synced state.
+
+type RelayStatusKey = 'pending' | 'in_review' | 'approved' | 'rejected' | 'withdrawn';
+
+const RELAY_STATUS_META: Record<RelayStatusKey, { label: string; cls: string; copy: string }> = {
+  pending: {
+    label: 'pending review',
+    cls: 'bg-adv-gold/15 text-adv-gold',
+    copy: 'Submitted to the relay registry. The registry operator reviews your KYC details before the portal becomes discoverable network-wide — this is a human step, so there is no fixed turnaround.',
+  },
+  in_review: {
+    label: 'in review',
+    cls: 'bg-adv-gold/15 text-adv-gold',
+    copy: 'The registry operator is reviewing your submission right now.',
+  },
+  approved: {
+    label: 'approved',
+    cls: 'bg-adv-green/15 text-adv-green',
+    copy: 'Approved — this portal is discoverable by every ANTON and Comm App via the relay registry.',
+  },
+  rejected: {
+    label: 'rejected',
+    cls: 'bg-adv-red/15 text-adv-red',
+    copy: 'The registry operator rejected this submission. The portal remains fully usable on this machine and your LAN.',
+  },
+  withdrawn: {
+    label: 'withdrawn',
+    cls: 'bg-adv-gray/15 text-adv-gray',
+    copy: 'This submission was withdrawn. The portal remains local + LAN only.',
+  },
+};
+
+function RelayStatusPanel({
+  portal, onRefreshed,
+}: {
+  portal: PortalDetail['portal'];
+  onRefreshed: () => void | Promise<void>;
+}) {
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
+  const meta = portal.metadata ?? {};
+
+  async function refresh() {
+    setRefreshing(true);
+    setSyncNote(null);
+    try {
+      const res = await fetchWithAuth(`/api/portals/${portal.id}/relay-status`);
+      const j = await res.json().catch(() => ({})) as { syncOk?: boolean; syncError?: string };
+      if (!res.ok) {
+        setSyncNote(`Refresh failed (${res.status})`);
+      } else if (j.syncOk === false) {
+        setSyncNote(`Relay unreachable (${j.syncError ?? 'sync_failed'}) — showing the last known state.`);
+      }
+      await onRefreshed();
+    } catch (e) {
+      setSyncNote(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  if (!meta.relaySubmissionId) {
+    return (
+      <div className="space-y-2 text-sm">
+        <span className="px-2 py-0.5 rounded text-xs bg-adv-gray/15 text-adv-gray">local + LAN only</span>
+        <p className="text-xs text-adv-gray">
+          This portal was not submitted to the relay registry, so it's only visible on this
+          machine and your local network.
+          {meta.relayError && meta.relayError !== 'kyc_fields_missing' && (
+            <> The submission attempt at publish time failed: <code className="text-adv-red">{meta.relayError}</code>.</>
+          )}
+        </p>
+      </div>
+    );
+  }
+
+  const statusMeta = RELAY_STATUS_META[meta.relayStatus ?? 'pending'];
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`px-2 py-0.5 rounded text-xs ${statusMeta.cls}`}>{statusMeta.label}</span>
+        <button
+          onClick={() => { void refresh(); }}
+          disabled={refreshing}
+          className="px-2 py-1 rounded border border-border text-xs text-adv-gray hover:text-adv-teal hover:border-adv-teal transition disabled:opacity-50 flex items-center gap-1.5"
+          aria-label="Refresh relay submission status"
+        >
+          {refreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+          Refresh
+        </button>
+      </div>
+      <p className="text-xs text-adv-gray">{statusMeta.copy}</p>
+      {meta.relayStatus === 'rejected' && meta.relayRejectionReason && (
+        <p className="text-xs text-adv-red">Reason: {meta.relayRejectionReason}</p>
+      )}
+      <KV label="Submission id" value={<code className="text-xs break-all">{meta.relaySubmissionId}</code>} />
+      {meta.relaySubmittedAt && <KV label="Submitted" value={new Date(meta.relaySubmittedAt).toLocaleString()} />}
+      {meta.relayLastSyncedAt && <KV label="Last refreshed" value={new Date(meta.relayLastSyncedAt).toLocaleString()} />}
+      {syncNote && <p className="text-xs text-adv-gold">{syncNote}</p>}
     </div>
   );
 }

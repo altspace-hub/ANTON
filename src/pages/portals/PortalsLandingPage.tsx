@@ -169,10 +169,13 @@ export default function PortalsLandingPage() {
           </div>
         </header>
 
-        {/* Trust-bundle warning: when the FutureChain operator key is still a
-            placeholder, registry submissions are best-effort and the
-            transparency log can't be verified. */}
-        {trustStatus?.futurechainPlaceholder && (
+        {/* Trust-bundle warning: only relevant when a LEGACY transparency-log
+            registry (PORTAL_REGISTRY_URL) is actually configured — the bundled
+            key is always a placeholder on fresh installs, and the active relay
+            registry path (RELAY_PORTAL_SUBMIT_URL) doesn't use it at all, so
+            showing this unconditionally would warn every install about a
+            dormant protocol. */}
+        {trustStatus?.futurechainPlaceholder && trustStatus?.registryUrl && (
           <div className="rounded-xl border border-adv-gold/40 bg-adv-gold/5 p-4 flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 text-adv-gold flex-shrink-0 mt-0.5" aria-hidden />
             <div className="text-sm flex-1">
@@ -180,10 +183,9 @@ export default function PortalsLandingPage() {
               <p className="text-adv-gray mt-1">
                 The bundled trust store still ships the FutureChain placeholder. Portals you build are
                 fully usable locally, and other ANTONs that have your portal address can still verify
-                your portal's signed descriptor — but registry transparency-log proofs cannot be
-                verified until the real operator key is installed. Set
-                {' '}<code className="text-adv-off-white">PORTAL_REGISTRY_URL</code> + ship the trust
-                bundle update to enable end-to-end registry checks.
+                your portal's signed descriptor — but transparency-log proofs from the registry at
+                {' '}<code className="text-adv-off-white">PORTAL_REGISTRY_URL</code> cannot be verified
+                until your registry operator's real key is installed via a trust-bundle update.
               </p>
               {trustError && (
                 <div className="mt-2 text-xs text-adv-red flex items-start gap-1">

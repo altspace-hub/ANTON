@@ -1,6 +1,15 @@
 /**
  * index.ts — public API of the registry client.
  *
+ * ⚠ DORMANT — the relay HTTP registry is the active path. No server
+ * implementing this transparency-log registry protocol is deployed
+ * (registry.anton.space does not resolve). Portal publishing goes through
+ * the relay's HTTP registry instead (RELAY_PORTAL_SUBMIT_URL, e.g.
+ * https://relay.futurechain.eu/v1 — see portal-walkthrough-engine.ts and
+ * relay/RUNBOOK.md). This client remains for self-hosters who deploy their
+ * own registry server (set PORTAL_REGISTRY_URL) and for the local cache /
+ * nonce-pruning utilities that piggyback on it.
+ *
  * Ties together: trust-store, cache, nonce-store, rate-limiter, audit-writer,
  * log-verifier, and transport. Exposes a small number of high-level methods
  * each portal-builder, portal-manager, and portal-viewer needs.

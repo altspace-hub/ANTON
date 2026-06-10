@@ -44,6 +44,65 @@ interface CostState {
   callLimit: number;
 }
 
+// ── Network publishing (relay KYC) ──────────────────────────────────────────
+// Mirrors RelayKycFields in server/services/registry-client/relay-submit.ts
+// EXACTLY — the relay validates this shape server-side. Kept OUT of the
+// walkthrough draft on purpose: drafts auto-save into the session row and
+// ID-document details have no business being persisted there. The KYC
+// object only ever travels in the finalize POST body.
+interface KycDraft {
+  legalName: string;
+  idDocumentType: 'passport' | 'national_id' | 'org_registration' | 'other';
+  idDocumentNumber: string;
+  idDocumentCountry: string;
+  orgName: string;
+  orgRegistrationNumber: string;
+  contactEmail: string;
+  contactPhone: string;
+  addressCountry: string;
+  addressCity: string;
+  addressStreet: string;
+}
+
+const EMPTY_KYC: KycDraft = {
+  legalName: '', idDocumentType: 'passport', idDocumentNumber: '',
+  idDocumentCountry: '', orgName: '', orgRegistrationNumber: '',
+  contactEmail: '', contactPhone: '', addressCountry: '', addressCity: '',
+  addressStreet: '',
+};
+
+/** Required fields per RelayKycFields (optionals: orgName,
+ *  orgRegistrationNumber, contactPhone). Returns the missing labels. */
+function missingKycFields(kyc: KycDraft): string[] {
+  const missing: string[] = [];
+  if (!kyc.legalName.trim()) missing.push('legal name');
+  if (!kyc.idDocumentNumber.trim()) missing.push('ID document number');
+  if (!kyc.idDocumentCountry.trim()) missing.push('ID document country');
+  if (!kyc.contactEmail.trim()) missing.push('contact email');
+  if (!kyc.addressCountry.trim()) missing.push('country');
+  if (!kyc.addressCity.trim()) missing.push('city');
+  if (!kyc.addressStreet.trim()) missing.push('street address');
+  return missing;
+}
+
+/** Trim everything, drop empty optionals — the wire shape the relay expects. */
+function toRelayKyc(kyc: KycDraft): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    legalName: kyc.legalName.trim(),
+    idDocumentType: kyc.idDocumentType,
+    idDocumentNumber: kyc.idDocumentNumber.trim(),
+    idDocumentCountry: kyc.idDocumentCountry.trim().toUpperCase(),
+    contactEmail: kyc.contactEmail.trim(),
+    addressCountry: kyc.addressCountry.trim().toUpperCase(),
+    addressCity: kyc.addressCity.trim(),
+    addressStreet: kyc.addressStreet.trim(),
+  };
+  if (kyc.orgName.trim()) out.orgName = kyc.orgName.trim();
+  if (kyc.orgRegistrationNumber.trim()) out.orgRegistrationNumber = kyc.orgRegistrationNumber.trim();
+  if (kyc.contactPhone.trim()) out.contactPhone = kyc.contactPhone.trim();
+  return out;
+}
+
 export default function PortalBuilderPage() {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
@@ -55,6 +114,11 @@ export default function PortalBuilderPage() {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [cost, setCost] = useState<CostState | null>(null);
+  // Network publishing (publish phase). Deliberately separate from `draft`
+  // so the KYC details are never auto-saved into the session row — they
+  // only travel in the finalize POST body.
+  const [publishToNetwork, setPublishToNetwork] = useState(false);
+  const [kyc, setKyc] = useState<KycDraft>(EMPTY_KYC);
 
   // Bootstrap session.
   useEffect(() => {
@@ -148,10 +212,20 @@ export default function PortalBuilderPage() {
 
   async function finalize() {
     if (!session) return;
+    if (publishToNetwork && missingKycFields(kyc).length > 0) {
+      setError(`Network publishing needs: ${missingKycFields(kyc).join(', ')} — or switch the toggle off to publish locally only.`);
+      return;
+    }
     setError(null);
     setAdvancing(true);
     try {
-      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/finalize`, { method: 'POST' });
+      // The KYC body (when present) triggers the relay submission inside
+      // finalizeSession — without it the portal is created local-only.
+      const res = await fetchWithAuth(`/api/portals/walkthroughs/${session.id}/finalize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(publishToNetwork ? { kyc: toRelayKyc(kyc) } : {}),
+      });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? `Finalize failed (${res.status})`);
@@ -292,6 +366,10 @@ export default function PortalBuilderPage() {
               template={session.template}
               sessionId={session.id}
               accumulatedState={session.accumulatedState}
+              publishToNetwork={publishToNetwork}
+              setPublishToNetwork={setPublishToNetwork}
+              kyc={kyc}
+              setKyc={setKyc}
             />
             {/* Validation hint when the form is incomplete. */}
             {!validation.valid && validation.missing.length > 0 && (
@@ -326,8 +404,11 @@ export default function PortalBuilderPage() {
                 {allComplete ? (
                   <button
                     onClick={finalize}
-                    disabled={advancing}
-                    className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+                    disabled={advancing || (publishToNetwork && missingKycFields(kyc).length > 0)}
+                    title={publishToNetwork && missingKycFields(kyc).length > 0
+                      ? `Network publishing needs: ${missingKycFields(kyc).join(', ')}`
+                      : undefined}
+                    className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {advancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                     Publish portal
@@ -356,6 +437,7 @@ export default function PortalBuilderPage() {
 
 function PhaseForm({
   phase, draft, setDraft, template, sessionId, accumulatedState,
+  publishToNetwork, setPublishToNetwork, kyc, setKyc,
 }: {
   phase: PhaseId;
   draft: Record<string, unknown>;
@@ -363,6 +445,10 @@ function PhaseForm({
   template: SessionState['template'];
   sessionId: string;
   accumulatedState: Record<string, unknown>;
+  publishToNetwork: boolean;
+  setPublishToNetwork: (v: boolean) => void;
+  kyc: KycDraft;
+  setKyc: (k: KycDraft) => void;
 }) {
   const update = (patch: Record<string, unknown>) => setDraft({ ...draft, ...patch });
 
@@ -531,11 +617,120 @@ function PhaseForm({
 
         <Checkbox label="Public index (discoverable via anton-portal search)" value={!!draft.public_index} onChange={(v) => update({ public_index: v })} />
         <Checkbox label="Ready to register" value={draft.ready_to_register === true} onChange={(v) => update({ ready_to_register: v })} />
-        <p className="text-sm text-adv-gray">When you click "Publish portal" the local portal is created (status=active) and its descriptor is cached. Registry submission happens separately when the registry server is available.</p>
+        <p className="text-sm text-adv-gray">When you click "Publish portal" the local portal is always created on this machine (status=active) and its descriptor is cached. Whether it ALSO reaches the wider ANTON network is your choice below.</p>
+
+        <NetworkPublishSection
+          enabled={publishToNetwork}
+          setEnabled={setPublishToNetwork}
+          kyc={kyc}
+          setKyc={setKyc}
+        />
       </div>
     );
   }
   return null;
+}
+
+// ── Network publish (relay KYC) section ─────────────────────────────────────
+// The opt-in WAN leg of the publish phase. Local publish always happens;
+// this toggle additionally submits the portal to the relay registry, which
+// requires KYC fields (Tier 3 self-service) reviewed by the registry
+// operator before the portal becomes discoverable network-wide.
+
+function NetworkPublishSection({
+  enabled, setEnabled, kyc, setKyc,
+}: {
+  enabled: boolean;
+  setEnabled: (v: boolean) => void;
+  kyc: KycDraft;
+  setKyc: (k: KycDraft) => void;
+}) {
+  // Whether the relay publishing path is even configured + reachable —
+  // mirrors what RegistryStatusBadge shows, but we need the raw state to
+  // gate the toggle (no point collecting KYC that can't be submitted).
+  const [relayReady, setRelayReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetchWithAuth('/api/portals/registry-status');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const j = await res.json() as { state: string; activePath?: string };
+        if (!cancelled) setRelayReady(j.activePath === 'relay' && j.state === 'ready');
+      } catch {
+        if (!cancelled) setRelayReady(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const set = (patch: Partial<KycDraft>) => setKyc({ ...kyc, ...patch });
+  const missing = missingKycFields(kyc);
+
+  return (
+    <div className="rounded-lg border border-border bg-adv-dark p-4 space-y-3">
+      <label className={`flex items-start gap-2 ${relayReady === false ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={relayReady === false}
+          onChange={(e) => setEnabled(e.target.checked)}
+          className="accent-adv-teal mt-0.5"
+        />
+        <span>
+          <span className="text-sm font-medium block">Publish to the ANTON network (optional)</span>
+          <span className="text-xs text-adv-gray block mt-0.5">
+            Off — local-only: the portal is visible on this machine and your LAN.
+            On — your portal is also submitted to the relay registry, where the registry
+            operator reviews your identity details (KYC) before it becomes discoverable
+            by every ANTON and Comm App. You can leave this off and stay local-only.
+          </span>
+        </span>
+      </label>
+      {relayReady === false && (
+        <p className="text-xs text-adv-gold">
+          The relay registry isn't configured or reachable right now (see the status card above) — network publishing is unavailable. Your portal will still publish locally.
+        </p>
+      )}
+
+      {enabled && (
+        <div className="space-y-3 border-t border-border pt-3">
+          <p className="text-xs text-adv-gray">
+            The registry operator uses these details to verify you're a real person or
+            organisation (Tier 3 self-service). Your ID document number is hashed by the
+            relay on receipt — it is not stored in this walkthrough.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Legal name *" value={kyc.legalName} onChange={(v) => set({ legalName: v })} />
+            <Select
+              label="ID document type *"
+              value={kyc.idDocumentType}
+              options={['passport', 'national_id', 'org_registration', 'other']}
+              onChange={(v) => set({ idDocumentType: v as KycDraft['idDocumentType'] })}
+            />
+            <Field label="ID document number *" value={kyc.idDocumentNumber} onChange={(v) => set({ idDocumentNumber: v })} />
+            <Field label="ID document country (ISO, e.g. SE) *" value={kyc.idDocumentCountry} onChange={(v) => set({ idDocumentCountry: v })} />
+            <Field label="Organisation name" value={kyc.orgName} onChange={(v) => set({ orgName: v })} />
+            <Field label="Org registration number" value={kyc.orgRegistrationNumber} onChange={(v) => set({ orgRegistrationNumber: v })} />
+            <Field label="Contact email *" value={kyc.contactEmail} onChange={(v) => set({ contactEmail: v })} />
+            <Field label="Contact phone" value={kyc.contactPhone} onChange={(v) => set({ contactPhone: v })} />
+            <Field label="Country (ISO, e.g. SE) *" value={kyc.addressCountry} onChange={(v) => set({ addressCountry: v })} />
+            <Field label="City *" value={kyc.addressCity} onChange={(v) => set({ addressCity: v })} />
+          </div>
+          <Field label="Street address *" value={kyc.addressStreet} onChange={(v) => set({ addressStreet: v })} />
+          {missing.length > 0 && (
+            <p className="text-xs text-adv-gray">
+              <span className="text-adv-red">*</span> Still needed: {missing.join(', ')}
+            </p>
+          )}
+          <p className="text-xs text-adv-gray">
+            After publishing, the portal shows as <span className="text-adv-gold">pending review</span> in
+            its Manage page until the registry operator approves or rejects the submission.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Capabilities form ────────────────────────────────────────────────────────

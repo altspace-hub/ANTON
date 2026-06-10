@@ -161,6 +161,18 @@ const visitorInvokeLimiter = rateLimit({
   message: { error: 'Too many capability invocations from this IP. Slow down.' },
 });
 
+// Rate-limit visitor invocation-status polls per IP. Higher ceiling than
+// invokes (the UI polls with backoff while waiting for the owner), but
+// tight enough that brute-forcing the ~50-bit responseId token space is
+// infeasible.
+const visitorStatusLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many status checks from this IP. Slow down.' },
+});
+
 // ── Factory ────────────────────────────────────────────────────────────────
 
 export function createPortalsRoutes(db: DatabaseAdapter): Router {
@@ -326,21 +338,33 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     });
   });
 
-  // Public: combined registry-readiness check. Aggregates trust-bundle status
-  // with a live reachability probe to PORTAL_REGISTRY_URL so the UI can show
-  // one decisive state (configured / unreachable / placeholder / ready).
+  // Public: combined registry-readiness check with a live reachability probe
+  // so the UI can show one decisive state (ready / unreachable / placeholder /
+  // local_only). Two publishing paths exist:
+  //   • RELAY_PORTAL_SUBMIT_URL — the relay HTTP registry (the ACTIVE path,
+  //     e.g. https://relay.futurechain.eu/v1; KYC-reviewed submissions).
+  //   • PORTAL_REGISTRY_URL — the legacy transparency-log registry protocol
+  //     (DORMANT — no deployed server exists; kept for self-hosters).
+  // The relay path takes precedence when both are configured.
   router.get('/portals/registry-status', async (_req, res) => {
     const store = getTrustStore();
     const futurechain = store.forNamespace('futurechain');
     const registryUrl = process.env.PORTAL_REGISTRY_URL ?? null;
+    const relaySubmitUrl = process.env.RELAY_PORTAL_SUBMIT_URL ?? null;
     const futurechainPlaceholder = futurechain ? store.isPlaceholder(futurechain.operatorId) : true;
+    const activePath: 'relay' | 'legacy' | 'none' = relaySubmitUrl ? 'relay' : registryUrl ? 'legacy' : 'none';
 
     let reachable: boolean | null = null;
     let reachabilityError: string | null = null;
 
-    if (registryUrl) {
+    const probeBase = relaySubmitUrl ?? registryUrl;
+    if (probeBase) {
       try {
-        const probeUrl = `${registryUrl.replace(/\/$/, '')}/health`;
+        // The relay serves GET /v1/healthz — the base URL conventionally
+        // includes /v1 (e.g. https://relay.futurechain.eu/v1), so appending
+        // /healthz lands on the right endpoint. (The old probe hit /health,
+        // which exists on neither server.)
+        const probeUrl = `${probeBase.replace(/\/$/, '')}/healthz`;
         const probe = await fetch(probeUrl, { signal: AbortSignal.timeout(3000) });
         reachable = probe.ok;
         if (!probe.ok) reachabilityError = `HTTP ${probe.status}`;
@@ -351,27 +375,34 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
 
     // Decisive state for the UI:
-    //   ready          — registry URL set + reachable + non-placeholder operator key
-    //   placeholder    — registry URL set + reachable + operator key is the bundled placeholder
-    //   unreachable    — registry URL set but server didn't respond
-    //   local_only     — no registry URL configured; portals live on this machine + LAN only
+    //   ready          — a registry is configured + reachable (relay path
+    //                    needs no operator trust key; legacy path also needs
+    //                    a non-placeholder operator key)
+    //   placeholder    — legacy registry reachable but the operator key is
+    //                    the bundled placeholder (STH verification impossible)
+    //   unreachable    — a registry URL is set but the server didn't respond
+    //   local_only     — nothing configured; portals live on this machine + LAN only
     let state: 'ready' | 'placeholder' | 'unreachable' | 'local_only';
-    if (!registryUrl) state = 'local_only';
+    if (activePath === 'none') state = 'local_only';
     else if (reachable === false) state = 'unreachable';
-    else if (futurechainPlaceholder) state = 'placeholder';
+    else if (activePath === 'legacy' && futurechainPlaceholder) state = 'placeholder';
     else state = 'ready';
 
     res.json({
       state,
+      activePath,
       registryUrl,
+      relaySubmitUrl,
       reachable,
       reachabilityError,
       futurechainPlaceholder,
       hint: {
-        ready: 'Portals you publish will register with the federated registry.',
-        placeholder: 'Registry is reachable but using the bundled placeholder operator key. STH verification can\'t succeed yet.',
-        unreachable: 'Registry URL is configured but the server isn\'t responding. Portals will be published locally and submission will retry in the background.',
-        local_only: 'No registry configured. Portals will be visible on this machine and the local network only. Set PORTAL_REGISTRY_URL in .env to publish to the federated registry.',
+        ready: activePath === 'relay'
+          ? 'Portals you publish (with KYC details) will be submitted to the relay registry for review and federated discovery.'
+          : 'Legacy registry is reachable. Note: the relay HTTP registry (RELAY_PORTAL_SUBMIT_URL) is the actively operated publishing path.',
+        placeholder: 'Legacy registry is reachable but uses the bundled placeholder operator key — submissions can\'t be verified. Prefer the relay registry (RELAY_PORTAL_SUBMIT_URL).',
+        unreachable: 'A registry URL is configured but the server isn\'t responding. Portals will be published locally and submission will retry in the background.',
+        local_only: 'No registry configured. Portals are visible on this machine and the local network only. Set RELAY_PORTAL_SUBMIT_URL (e.g. https://relay.futurechain.eu/v1) in .env to publish to the relay registry.',
       }[state],
     });
   });
@@ -1306,6 +1337,28 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
       res.status(status).json(r);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // Public: visitor polls the status/result of a previously accepted
+  // invocation. The responseId IS the capability token — it's a random,
+  // verb-prefixed id (~50 bits of crypto-strength entropy for new
+  // invocations) returned only to the invoking visitor, scoped to the
+  // portal address, and this route is rate-limited per IP — so possession
+  // of a valid responseId is the auth. Returns lifecycle fields + the
+  // owner's response output once responded; never the visitor's input.
+  router.get('/portals/visit/:address/invocations/:responseId', visitorStatusLimiter, async (req, res) => {
+    try {
+      const r = await handler.handleInvocationStatus({
+        portalAddress: decodeURIComponent(String(req.params.address)),
+        responseId: String(req.params.responseId),
+      });
+      const status = r.kind === 'invocation_status' ? 200
+        : r.kind === 'not_found' ? 404
+          : 503;
+      res.status(status).json(r);
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

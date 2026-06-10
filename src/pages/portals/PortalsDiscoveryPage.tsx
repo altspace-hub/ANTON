@@ -27,7 +27,16 @@ interface Hit {
   registeredAt: string | null;
   lastSeenAt: string | null;
   relevanceScore: number;
+  /** Where the hit came from: this instance, an mDNS LAN peer, or the
+   *  relay registry. Server merges + dedupes; we just badge it. */
+  origin?: 'local' | 'lan' | 'relay';
 }
+
+const ORIGIN_META: Record<'local' | 'lan' | 'relay', { label: string; cls: string; hint: string }> = {
+  local: { label: 'this ANTON', cls: 'bg-adv-card text-adv-gray border border-border', hint: 'Hosted on this instance' },
+  lan:   { label: 'LAN',        cls: 'bg-adv-blue/15 text-adv-blue',                    hint: 'Discovered on your local network via mDNS' },
+  relay: { label: 'relay',      cls: 'bg-adv-green/15 text-adv-green',                  hint: 'Published to the relay registry (KYC-reviewed)' },
+};
 
 interface LanNeighbor {
   id: string;
@@ -144,7 +153,7 @@ export default function PortalsDiscoveryPage() {
           <div>
             <h1 className="text-2xl font-semibold">Discover portals</h1>
             <p className="text-sm text-adv-gray mt-1 max-w-2xl">
-              Search the local registry of public-indexed portals. Filter by capability, category, tag, service area, or language.
+              Search public-indexed portals on this ANTON, your LAN, and the relay registry — merged into one list. Filter by capability, category, tag, service area, or language.
             </p>
           </div>
         </header>
@@ -329,7 +338,17 @@ export default function PortalsDiscoveryPage() {
                           <div className="font-medium">{h.displayTitle ?? h.portalAddress}</div>
                           <code className="text-xs text-adv-teal">{h.portalAddress}</code>
                         </div>
-                        <span className="text-xs text-adv-gray">{h.category}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {(() => {
+                            const om = ORIGIN_META[h.origin ?? 'local'];
+                            return (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide ${om.cls}`} title={om.hint}>
+                                {om.label}
+                              </span>
+                            );
+                          })()}
+                          <span className="text-xs text-adv-gray">{h.category}</span>
+                        </div>
                       </div>
                       {h.description && <p className="text-xs text-adv-gray mt-1">{h.description}</p>}
                       {h.capabilityVerbs.length > 0 && (

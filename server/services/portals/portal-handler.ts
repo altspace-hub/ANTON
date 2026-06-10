@@ -19,7 +19,7 @@
  * unit-tested without standing up a Gateway.
  */
 
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
@@ -92,6 +92,32 @@ export type CapabilityInvokeResponse =
   | { kind: 'capability_not_found'; reason: string }
   | { kind: 'portal_offline'; reason: string }
   | { kind: 'trust_required'; reason: string };
+
+export interface InvocationStatusRequest {
+  portalAddress: string;
+  responseId: string;
+}
+
+/** Visitor-facing status of a previously accepted invocation. The
+ *  responseId acts as the capability token — it's random (verb-prefixed,
+ *  ~52 bits of entropy for new ids), scoped to the portal address, and
+ *  the public route is rate-limited per IP. Only lifecycle fields plus
+ *  the owner's response output ever leave; never the visitor's input or
+ *  contact hash. */
+export type InvocationStatusResponse =
+  | {
+      kind: 'invocation_status';
+      responseId: string;
+      status: 'pending' | 'acknowledged' | 'responded' | 'rejected';
+      receivedAt: string;
+      respondedAt: string | null;
+      /** Owner-authored response payload — only present once responded. */
+      output: Record<string, unknown> | null;
+      /** Owner-supplied reason — only present when rejected. */
+      rejectionReason: string | null;
+    }
+  | { kind: 'not_found'; reason: string }
+  | { kind: 'portal_offline'; reason: string };
 
 // ── Internals ──────────────────────────────────────────────────────────────
 
@@ -219,6 +245,25 @@ async function proxyInvoke(originEndpoint: string, req: CapabilityInvokeRequest)
   }
 }
 
+async function proxyInvocationStatus(originEndpoint: string, req: InvocationStatusRequest): Promise<InvocationStatusResponse> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const url = `${originEndpoint}/api/portals/visit/${encodeURIComponent(req.portalAddress)}/invocations/${encodeURIComponent(req.responseId)}`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+    if (json && typeof json === 'object' && 'kind' in json) {
+      return json as unknown as InvocationStatusResponse;
+    }
+    return { kind: 'portal_offline', reason: 'Remote returned malformed response' };
+  } catch (err) {
+    log.warn({ originEndpoint, address: req.portalAddress, err: String(err) }, 'proxy_invocation_status_failed');
+    return { kind: 'portal_offline', reason: 'Remote portal unreachable' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function loadPortalContext(
   db: DatabaseAdapter,
   portalAddress: string,
@@ -269,16 +314,21 @@ function isAssetPath(path: string): boolean {
 /**
  * Build a per-verb structured response on a successful invoke. Mirrors the
  * baseline outputSchemas in capability-descriptor/verbs/*.ts.
+ *
+ * Deliberately NO fabricated SLA fields (e.g. expectedResponseTimeHours):
+ * we have no basis for promising a response window — the honest contract
+ * is "the owner will respond and the visitor can poll the invocation
+ * status endpoint" (GET /portals/visit/:address/invocations/:responseId).
  */
 function buildVerbOutput(verb: string, responseId: string, _input: Record<string, unknown>): Record<string, unknown> {
   const now = new Date().toISOString();
   switch (verb) {
     case 'contact':
-      return { messageId: responseId, acceptedAt: now, expectedResponseTimeHours: 24 };
+      return { messageId: responseId, acceptedAt: now };
     case 'inquire':
       return { inquiryId: responseId, confidence: 'requires_human' };
     case 'request':
-      return { requestId: responseId, status: 'received', expectedResponseTimeHours: 24 };
+      return { requestId: responseId, status: 'received' };
     case 'order':
       return { orderId: responseId, status: 'quoted', currency: 'EUR' };
     case 'pay':
@@ -304,9 +354,17 @@ function buildVerbOutput(verb: string, responseId: string, _input: Record<string
 
 function generateResponseId(verb: string): string {
   // Verb-prefixed human-readable id. Useful for visitors to quote later.
+  // Also doubles as the bearer token for the public invocation-status
+  // endpoint, so the random suffix is 10 base-32 chars (~50 bits) from
+  // crypto-strength randomness — wide enough that enumeration is
+  // infeasible under the per-IP rate limit on that route.
   const prefix = verb.toUpperCase().slice(0, 3);
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  // Crockford-ish base32 (no I/L/O/U) — unambiguous when read aloud.
+  const charset = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const bytes = randomBytes(10);
+  let rand = '';
+  for (let i = 0; i < 10; i++) rand += charset[bytes[i]! % charset.length];
   return `${prefix}-${date}-${rand}`;
 }
 
@@ -316,6 +374,7 @@ export interface PortalHandler {
   handleFetch(req: PortalFetchRequest): Promise<PortalFetchResponse>;
   handleInquire(req: CapabilityInquireRequest): Promise<CapabilityInquireResponse>;
   handleInvoke(req: CapabilityInvokeRequest): Promise<CapabilityInvokeResponse>;
+  handleInvocationStatus(req: InvocationStatusRequest): Promise<InvocationStatusResponse>;
 }
 
 export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
@@ -489,7 +548,59 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
         output,
       };
     },
+
+    // Closes the invoke loop (plan 2.11): the visitor who received an
+    // invoke_accepted receipt polls this with their responseId until the
+    // owner responds (or rejects). Mirrors the other handlers' LAN proxy
+    // short-circuit so visiting a peer's portal through this instance
+    // also polls the peer.
+    async handleInvocationStatus(req) {
+      const remote = await lookupRemoteOrigin(db, req.portalAddress);
+      if (remote) return proxyInvocationStatus(remote, req);
+      const ctx = await loadPortalContext(db, req.portalAddress);
+      if (!ctx) return { kind: 'not_found', reason: `No portal at ${req.portalAddress}` };
+      if (ctx.portalRow.status !== 'active') {
+        return { kind: 'portal_offline', reason: `Portal status is ${ctx.portalRow.status}` };
+      }
+
+      const row = await db.get<{
+        status: 'pending' | 'acknowledged' | 'responded' | 'rejected';
+        received_at: string;
+        responded_at: string | null;
+        output: Record<string, unknown> | string | null;
+        rejection_reason: string | null;
+      }>(
+        `SELECT status, received_at, responded_at, output, rejection_reason
+         FROM portal_capability_invocations
+         WHERE portal_id = ? AND response_id = ?`,
+        ctx.portalId,
+        req.responseId,
+      );
+      if (!row) return { kind: 'not_found', reason: 'No invocation with that response id' };
+
+      // Only the owner's response payload leaves — the auto-generated
+      // acceptance receipt (the pre-respond `output` value) was already
+      // returned to the visitor at invoke time, and the input/visitor
+      // hash are never exposed on this public route.
+      const ownerOutput = row.status === 'responded'
+        ? (typeof row.output === 'string' ? safeParse(row.output) : row.output)
+        : null;
+
+      return {
+        kind: 'invocation_status',
+        responseId: req.responseId,
+        status: row.status,
+        receivedAt: new Date(row.received_at).toISOString(),
+        respondedAt: row.responded_at ? new Date(row.responded_at).toISOString() : null,
+        output: ownerOutput,
+        rejectionReason: row.status === 'rejected' ? row.rejection_reason : null,
+      };
+    },
   };
+}
+
+function safeParse(s: string): Record<string, unknown> | null {
+  try { return JSON.parse(s) as Record<string, unknown>; } catch { return null; }
 }
 
 // ── Owner notification (best-effort push via Companion App checkpoint) ──────

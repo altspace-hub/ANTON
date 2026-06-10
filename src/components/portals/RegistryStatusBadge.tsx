@@ -19,7 +19,11 @@ type RegistryState = 'ready' | 'placeholder' | 'unreachable' | 'local_only';
 
 interface RegistryStatus {
   state: RegistryState;
+  /** Which publishing path is configured: the relay HTTP registry (active),
+   *  the legacy transparency-log registry (dormant), or none. */
+  activePath?: 'relay' | 'legacy' | 'none';
   registryUrl: string | null;
+  relaySubmitUrl?: string | null;
   reachable: boolean | null;
   reachabilityError: string | null;
   futurechainPlaceholder: boolean;
@@ -31,8 +35,8 @@ const META: Record<RegistryState, {
   Icon: typeof Globe;
   tone: 'green' | 'gold' | 'red' | 'gray';
 }> = {
-  ready:       { label: 'Federated',     Icon: CheckCircle2, tone: 'green' },
-  placeholder: { label: 'Placeholder key', Icon: AlertCircle, tone: 'gold' },
+  ready:       { label: 'Relay registry',  Icon: CheckCircle2, tone: 'green' },
+  placeholder: { label: 'Placeholder key (legacy)', Icon: AlertCircle, tone: 'gold' },
   unreachable: { label: 'Registry offline', Icon: WifiOff,    tone: 'red'  },
   local_only:  { label: 'Local + LAN only', Icon: Wifi,       tone: 'gray' },
 };
@@ -82,6 +86,11 @@ export default function RegistryStatusBadge({ variant = 'compact', className = '
   const meta = META[status.state];
   const tone = TONE_CLASSES[meta.tone];
   const Icon = meta.Icon;
+  // 'ready' can mean either path — label the dormant legacy protocol honestly.
+  const label = status.state === 'ready' && status.activePath === 'legacy'
+    ? 'Legacy registry'
+    : meta.label;
+  const shownUrl = status.relaySubmitUrl ?? status.registryUrl;
 
   if (variant === 'compact') {
     return (
@@ -90,7 +99,7 @@ export default function RegistryStatusBadge({ variant = 'compact', className = '
         title={status.hint}
       >
         <Icon className={`h-3.5 w-3.5 ${tone.iconColor}`} />
-        <span className="font-medium">{meta.label}</span>
+        <span className="font-medium">{label}</span>
       </div>
     );
   }
@@ -101,17 +110,17 @@ export default function RegistryStatusBadge({ variant = 'compact', className = '
       <div className="flex items-start gap-2">
         <Icon className={`h-4 w-4 ${tone.iconColor} shrink-0 mt-0.5`} />
         <div className="flex-1 min-w-0">
-          <div className={`text-sm font-medium ${tone.text}`}>{meta.label}</div>
+          <div className={`text-sm font-medium ${tone.text}`}>{label}</div>
           <p className="text-xs text-adv-gray mt-0.5 leading-relaxed">{status.hint}</p>
-          {status.registryUrl && (
-            <p className="text-[10px] font-mono text-adv-gray/70 mt-1 break-all">{status.registryUrl}</p>
+          {shownUrl && (
+            <p className="text-[10px] font-mono text-adv-gray/70 mt-1 break-all">{shownUrl}</p>
           )}
           {status.reachabilityError && (
             <p className="text-[10px] text-adv-red/70 mt-0.5">{status.reachabilityError}</p>
           )}
           {status.state === 'local_only' && (
             <p className="text-[11px] text-adv-gray mt-2">
-              To enable federated publishing, set <code className="bg-adv-dark px-1 py-0.5 rounded text-[10px]">PORTAL_REGISTRY_URL</code> in your <code className="bg-adv-dark px-1 py-0.5 rounded text-[10px]">.env</code> and restart ANTON.
+              To publish portals to the relay registry (federated discovery), set <code className="bg-adv-dark px-1 py-0.5 rounded text-[10px]">RELAY_PORTAL_SUBMIT_URL</code> (e.g. <code className="bg-adv-dark px-1 py-0.5 rounded text-[10px]">https://relay.futurechain.eu/v1</code>) in your <code className="bg-adv-dark px-1 py-0.5 rounded text-[10px]">.env</code> and restart ANTON.
             </p>
           )}
         </div>

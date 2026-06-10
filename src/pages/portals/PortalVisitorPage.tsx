@@ -269,6 +269,19 @@ function wrapForSandbox(html: string, title: string | null): string {
 </html>`;
 }
 
+// ── Invocation status pill ──────────────────────────────────────────────────
+
+function InvocationStatusPill({ status }: { status: InvocationStatus['status'] }) {
+  const meta: Record<InvocationStatus['status'], { label: string; cls: string }> = {
+    pending:      { label: 'awaiting owner', cls: 'bg-adv-gold/15 text-adv-gold' },
+    acknowledged: { label: 'seen by owner',  cls: 'bg-adv-blue/15 text-adv-blue' },
+    responded:    { label: 'responded',      cls: 'bg-adv-green/15 text-adv-green' },
+    rejected:     { label: 'declined',       cls: 'bg-adv-red/15 text-adv-red' },
+  };
+  const m = meta[status];
+  return <span className={`px-1.5 py-0.5 rounded text-xs ${m.cls}`}>{m.label}</span>;
+}
+
 // ── Offline card per Spec C.1 ───────────────────────────────────────────────
 
 function OfflineCard({ address, reason }: { address: string; reason: string }) {
@@ -285,6 +298,22 @@ function OfflineCard({ address, reason }: { address: string; reason: string }) {
 
 // ── Capability invoke dialog ────────────────────────────────────────────────
 
+/** What the visitor sees while waiting on / after the owner's response.
+ *  Mirrors the server's invocation_status wire shape. */
+interface InvocationStatus {
+  status: 'pending' | 'acknowledged' | 'responded' | 'rejected';
+  respondedAt: string | null;
+  output: Record<string, unknown> | null;
+  rejectionReason: string | null;
+}
+
+// Gentle backoff for the status poll: 3s → ×1.5 → capped at 30s, give up
+// after ~5 minutes (the dialog tells the visitor to keep their reference id).
+const POLL_INITIAL_MS = 3_000;
+const POLL_FACTOR = 1.5;
+const POLL_MAX_MS = 30_000;
+const POLL_DEADLINE_MS = 5 * 60_000;
+
 function CapabilityDialog({
   address, capability, onClose,
 }: {
@@ -296,6 +325,10 @@ function CapabilityDialog({
   const [response, setResponse] = useState<{ ok: boolean; body: unknown } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when the invoke was accepted — drives the status poll below.
+  const [acceptedId, setAcceptedId] = useState<string | null>(null);
+  const [invStatus, setInvStatus] = useState<InvocationStatus | null>(null);
+  const [pollNote, setPollNote] = useState<string | null>(null);
 
   const props = capability.inputSchema?.properties ?? {};
   const required = new Set(capability.inputSchema?.required ?? []);
@@ -307,16 +340,61 @@ function CapabilityDialog({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Poll the public invocation-status endpoint after an accepted invoke.
+  // Stops on a terminal status (responded / rejected), on dialog close,
+  // or at the deadline (with an honest "check back later" note).
+  useEffect(() => {
+    if (!acceptedId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const startedAt = Date.now();
+    let delay = POLL_INITIAL_MS;
+
+    async function tick() {
+      if (cancelled) return;
+      try {
+        const res = await fetchWithAuth(
+          `/api/portals/visit/${encodeURIComponent(address)}/invocations/${encodeURIComponent(acceptedId!)}`,
+        );
+        if (cancelled) return;
+        if (res.ok) {
+          const j = await res.json() as InvocationStatus & { kind?: string };
+          if (j.kind === 'invocation_status') {
+            setInvStatus(j);
+            if (j.status === 'responded' || j.status === 'rejected') return; // terminal
+          }
+        } else if (res.status === 404) {
+          setPollNote('The portal no longer recognises this reference id.');
+          return;
+        }
+        // 503 / non-JSON → portal offline or flaky; keep polling.
+      } catch { /* network blip — keep polling */ }
+      if (Date.now() - startedAt > POLL_DEADLINE_MS) {
+        setPollNote('Still waiting for the owner. Keep your reference id — you can close this and check back later.');
+        return;
+      }
+      delay = Math.min(delay * POLL_FACTOR, POLL_MAX_MS);
+      timer = setTimeout(() => { void tick(); }, delay);
+    }
+
+    timer = setTimeout(() => { void tick(); }, delay);
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+  }, [acceptedId, address]);
+
   async function invoke() {
     setBusy(true); setError(null); setResponse(null);
+    setAcceptedId(null); setInvStatus(null); setPollNote(null);
     try {
       const res = await fetchWithAuth(`/api/portals/visit/${encodeURIComponent(address)}/capabilities/${capability.id}/invoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input }),
       });
-      const body = await res.json().catch(() => null);
+      const body = await res.json().catch(() => null) as { kind?: string; responseId?: string } | null;
       setResponse({ ok: res.ok, body });
+      if (res.ok && body?.kind === 'invoke_accepted' && typeof body.responseId === 'string') {
+        setAcceptedId(body.responseId);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -326,6 +404,7 @@ function CapabilityDialog({
 
   const titleId = `capability-dialog-title-${capability.id}`;
   const descId = `capability-dialog-desc-${capability.id}`;
+  const terminal = invStatus?.status === 'responded' || invStatus?.status === 'rejected';
   return (
     <div
       className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
@@ -391,7 +470,40 @@ function CapabilityDialog({
         </div>
 
         {error && <div className="mt-3 text-sm text-adv-red">{error}</div>}
-        {response && (
+        {acceptedId ? (
+          <div className="mt-4 rounded-lg border border-border bg-adv-dark p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-adv-gray">Reference id</div>
+              <InvocationStatusPill status={invStatus?.status ?? 'pending'} />
+            </div>
+            <code className="block text-sm text-adv-teal">{acceptedId}</code>
+            {(!invStatus || invStatus.status === 'pending' || invStatus.status === 'acknowledged') && !pollNote && (
+              <p className="text-xs text-adv-gray flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Delivered to the owner's inbox. The owner will respond — this page updates automatically.
+              </p>
+            )}
+            {pollNote && <p className="text-xs text-adv-gold">{pollNote}</p>}
+            {invStatus?.status === 'responded' && (
+              <div>
+                <div className="text-xs text-adv-green mb-1">
+                  Owner responded{invStatus.respondedAt ? ` · ${new Date(invStatus.respondedAt).toLocaleString()}` : ''}
+                </div>
+                {invStatus.output ? (
+                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-adv-card rounded p-2">{JSON.stringify(invStatus.output, null, 2)}</pre>
+                ) : (
+                  <p className="text-xs text-adv-gray">The owner marked this as handled (no message attached).</p>
+                )}
+              </div>
+            )}
+            {invStatus?.status === 'rejected' && (
+              <div>
+                <div className="text-xs text-adv-red mb-1">Declined by the owner</div>
+                {invStatus.rejectionReason && <p className="text-xs text-adv-gray">{invStatus.rejectionReason}</p>}
+              </div>
+            )}
+          </div>
+        ) : response && (
           <div className="mt-4 rounded-lg border border-border bg-adv-dark p-3">
             <div className="text-xs text-adv-gray mb-1">{response.ok ? 'Response' : 'Error'}</div>
             <pre className="text-xs overflow-x-auto whitespace-pre-wrap">{JSON.stringify(response.body, null, 2)}</pre>
@@ -399,15 +511,19 @@ function CapabilityDialog({
         )}
 
         <footer className="mt-4 flex items-center justify-end gap-2">
-          <button onClick={onClose} className="text-sm text-adv-gray hover:text-adv-off-white px-3 py-2">Cancel</button>
-          <button
-            onClick={invoke}
-            disabled={busy}
-            className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Invoke
+          <button onClick={onClose} className="text-sm text-adv-gray hover:text-adv-off-white px-3 py-2">
+            {terminal ? 'Done' : acceptedId ? 'Close' : 'Cancel'}
           </button>
+          {!acceptedId && (
+            <button
+              onClick={invoke}
+              disabled={busy}
+              className="px-4 py-2 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Invoke
+            </button>
+          )}
         </footer>
       </div>
     </div>
