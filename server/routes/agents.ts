@@ -185,17 +185,6 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
-  // ── Query Agent ────────────────────────────────────────────────────
-
-  router.post('/agents/:id/query', async (req, res) => {
-    try {
-      const { message, conversationId } = req.body as { message: string; conversationId?: string };
-      if (!message) { res.status(400).json({ error: 'message required' }); return; }
-      const result = await processor.processQuery(req.params.id, message, { conversationId, source: 'direct' });
-      res.json({ success: true, ...result });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
-  });
-
   // ── Route Query to Best Agent ──────────────────────────────────────
 
   router.post('/agents/route', async (req, res) => {
@@ -347,6 +336,23 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       } else {
         res.json({ success: true, match: null });
       }
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // ── Query Agent ────────────────────────────────────────────────────
+  // Registered AFTER the /agents/remote/* and /agents/public/* routes:
+  // Express matches in declaration order, and the parameterized ':id'
+  // pattern otherwise swallows 'remote' and 'public' — which made
+  // POST /agents/remote/query and POST /agents/public/query (the endpoint
+  // remote-agent-client calls for cross-instance queries) unreachable.
+  // Found by the A2A two-instance verification ladder (tests/a2a/).
+
+  router.post('/agents/:id/query', async (req, res) => {
+    try {
+      const { message, conversationId } = req.body as { message: string; conversationId?: string };
+      if (!message) { res.status(400).json({ error: 'message required' }); return; }
+      const result = await processor.processQuery(req.params.id, message, { conversationId, source: 'direct' });
+      res.json({ success: true, ...result });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
