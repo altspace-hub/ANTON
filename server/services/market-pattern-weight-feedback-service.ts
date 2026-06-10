@@ -171,8 +171,8 @@ function deriveAdjustments(pattern: PatternRow): PendingAdjustment[] {
  * softer corrections).
  */
 function deriveFromDirectionalBias(pattern: PatternRow, meta: Record<string, unknown>): PendingAdjustment[] {
-  const accuracy = typeof meta.accuracy === 'number' ? meta.accuracy : 0;
-  const total = typeof meta.total === 'number' ? meta.total : 0;
+  const accuracy = toFiniteNumber(meta.accuracy) ?? 0;
+  const total = toFiniteNumber(meta.total) ?? 0;
   const direction = typeof meta.direction === 'string' ? meta.direction : 'unknown';
   if (total < 3) return [];
   const multiplier = clamp(0.5 + accuracy, MIN_MULTIPLIER, MAX_MULTIPLIER);
@@ -189,9 +189,9 @@ function deriveFromDirectionalBias(pattern: PatternRow, meta: Record<string, unk
  * gap 0.25 → 0.875x, gap 0.5 → 0.75x (1 - gap * 0.5, then clamped).
  */
 function deriveFromMiscalibration(pattern: PatternRow, meta: Record<string, unknown>): PendingAdjustment[] {
-  const gap = typeof meta.gap === 'number' ? meta.gap : 0;
+  const gap = toFiniteNumber(meta.gap) ?? 0;
   const bucket = typeof meta.bucket === 'string' ? meta.bucket : 'unknown';
-  const total = typeof meta.total === 'number' ? meta.total : 0;
+  const total = toFiniteNumber(meta.total) ?? 0;
   if (total < 3 || gap < 0.25) return [];
   const multiplier = clamp(1 - gap * 0.5, MIN_MULTIPLIER, MAX_MULTIPLIER);
   const rationale = `confidence_miscalibration on '${bucket}' bucket (gap ${Math.round(gap * 100)}pp over ${total} predictions) → down-weight signal/insight types`;
@@ -210,9 +210,9 @@ function deriveFromMiscalibration(pattern: PatternRow, meta: Record<string, unkn
  * future prediction's contribution on that ticker.
  */
 function deriveFromSymbolFailure(pattern: PatternRow, meta: Record<string, unknown>): PendingAdjustment[] {
-  const symbol = typeof meta.symbol === 'string' ? meta.symbol : null;
-  const accuracy = typeof meta.accuracy === 'number' ? meta.accuracy : 0;
-  const total = typeof meta.total === 'number' ? meta.total : 0;
+  const symbol = typeof meta.symbol === 'string' && meta.symbol.trim() !== '' ? meta.symbol : null;
+  const accuracy = toFiniteNumber(meta.accuracy) ?? 0;
+  const total = toFiniteNumber(meta.total) ?? 0;
   if (!symbol || total < 3) return [];
   const multiplier = clamp(0.5 + accuracy * 0.5, MIN_MULTIPLIER, MAX_MULTIPLIER);
   const rationale = `symbol_failure_cluster on ${symbol} (${Math.round(accuracy * 100)}% accuracy over ${total} predictions) → symbol-grain override`;
@@ -317,8 +317,30 @@ async function applySymbolOverrideAdjustment(
 
 function parseMetadata(raw: string): Record<string, unknown> {
   if (!raw) return {};
+  // Defensive: if the adapter ever hands back an already-parsed object
+  // (jsonb column), don't JSON.parse a "[object Object]" string.
+  if (typeof raw === 'object') return raw as Record<string, unknown>;
   try { return JSON.parse(raw) as Record<string, unknown>; }
   catch { return {}; }
+}
+
+/**
+ * Coerce a metadata value to a finite number, or null.
+ *
+ * Load-bearing (plan 1.10b): the pattern detectors build metadata from pg
+ * aggregate queries — pg returns COUNT()/SUM() bigints as STRINGS, so the
+ * stored JSON is e.g. {"total":"9","accuracy":0}. The old
+ * `typeof meta.total === 'number'` checks therefore always read 0 and every
+ * deriver bailed on its `total < 3` guard — 182 patterns were consumed with
+ * zero market_signal_weight_adjustments ever written.
+ */
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
 
 function clamp(value: number, min: number, max: number): number {

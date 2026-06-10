@@ -36,11 +36,13 @@ export async function createMarketFundamentalAnalysisService(db: DatabaseAdapter
     if (metrics) context += `### Key Metrics\n${metrics.content.slice(0, 3000)}\n\n`;
     if (estimates) context += `### Analyst Estimates\n${estimates.content.slice(0, 2000)}\n\n`;
 
-    // Call Claude Sonnet for deep analysis
+    // Call Claude Sonnet for deep analysis (provider-routed; the previous
+    // literal 'claude-sonnet-4-5-20250514' is not a real Anthropic model id
+    // and errored even for Claude users — registry id is ...-20250929)
     const prompt = readPrompt('market-fundamental-analyst');
-    const { callChat } = await import('./provider-router.js');
+    const { callChat, mapModelToProvider } = await import('./provider-router.js');
     const result = await callChat({
-      model: 'claude-sonnet-4-5-20250514',
+      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       system: prompt,
       messages: [{ role: 'user', content: `Analyze ${symbol}:\n\n${context}` }],
       maxTokens: 4096,

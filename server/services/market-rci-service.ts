@@ -138,7 +138,10 @@ Respond with JSON only: { "template": "template_name", "params": { ... }, "reaso
 Respond with JSON only: { "summary": "plain English interpretation", "confidence": 0.0-1.0, "caveats": ["any limitations or warnings"] }`;
 
     const response = await anthropicClient.messages.create({
-      model: 'claude-sonnet-4-5-20250514',
+      // Direct Anthropic client call — cannot wrap with mapModelToProvider
+      // here. Fixed invalid id (was ...-20250514, which the Anthropic API
+      // rejects; registry id is ...-20250929).
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2048,
       system: systemPrompt,
       messages: [{

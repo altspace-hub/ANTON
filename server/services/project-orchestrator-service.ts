@@ -13,12 +13,12 @@ export async function createProjectOrchestratorService(db: DatabaseAdapter) {
   }
 
   async function generateProjectPlan(projectId: string, goal: string, context?: string) {
-    const { callChat } = await import('./provider-router.js');
+    const { callChat, mapModelToProvider } = await import('./provider-router.js');
     const prompt = readPrompt('project-orchestrator');
 
     const userMessage = `## Project Goal\n${goal}\n\n${context ? `## Context\n${context}` : ''}`;
     const result = await callChat({
-      model: 'claude-sonnet-4-5-20250514',
+      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       system: prompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,
@@ -204,9 +204,9 @@ export async function createProjectOrchestratorService(db: DatabaseAdapter) {
 
     const taskResults = tasks.map(t => `### ${t.title}\n\n${t.result_content}`).join('\n\n---\n\n');
 
-    const { callChat } = await import('./provider-router.js');
+    const { callChat, mapModelToProvider } = await import('./provider-router.js');
     const result = await callChat({
-      model: 'claude-sonnet-4-5-20250514',
+      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       system: 'You are assembling a cohesive project deliverable from individual task results. Create a well-structured document that flows naturally.',
       messages: [{ role: 'user', content: `Project: ${project?.name}\nGoal: ${project?.project_goal}\n\nAssemble these task results into a cohesive deliverable:\n\n${taskResults}` }],
       maxTokens: 8192,

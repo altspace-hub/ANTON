@@ -106,7 +106,10 @@ export async function createMarketWorkflowOrchestrator(
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
       const client = new Anthropic({ apiKey: anthropicApiKey });
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-5-20250514',
+        // Direct Anthropic client (web_search tool requires it) — cannot wrap
+        // with mapModelToProvider here. Fixed invalid id (was ...-20250514,
+        // which the Anthropic API rejects; registry id is ...-20250929).
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 4096,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
@@ -172,8 +175,11 @@ export async function createMarketWorkflowOrchestrator(
 
   async function runDailyIntelligence(): Promise<WorkflowRunResult> {
     // ── Dedup guard: max 1 successful run per calendar day ─────────────
+    // (status='success' is impossible under the workflow_runs CHECK — the
+    // guard never fired and dailies could double-run; aligned to 'completed',
+    // 'success' kept defensively for any pre-CHECK rows.)
     const lastRun = await db.get<{ started_at: string }>(
-      "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success' AND started_at::date = CURRENT_DATE ORDER BY started_at DESC LIMIT 1"
+      "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status IN ('completed','success') AND started_at::date = CURRENT_DATE ORDER BY started_at DESC LIMIT 1"
     );
     if (lastRun) {
       console.log(`[daily-intelligence] Already ran successfully today at ${lastRun.started_at} — skipping`);

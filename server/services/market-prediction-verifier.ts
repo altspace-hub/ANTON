@@ -56,47 +56,53 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
    *     ≥ RETRY_BACKOFF_DAYS ago (price data may have backfilled since).
    */
   async function findExpired(): Promise<ExpiredPrediction[]> {
-    const today = new Date().toISOString().split('T')[0];
+    // NOTE on types: `deadline` is TIMESTAMPTZ (migrations 105/106). The old
+    // query COALESCEd it with a TO_CHAR(...) TEXT branch, which PostgreSQL
+    // rejects ("COALESCE types timestamptz and text cannot be matched") — that
+    // crash killed the entire verify leg since 2026-04-18. Both COALESCE
+    // branches are now timestamptz; the result is rendered to 'YYYY-MM-DD'
+    // TEXT only at the top of the SELECT (downstream price lookups expect a
+    // date string). All comparisons are against NOW() / timestamptz params.
     const backoffCutoff = new Date(Date.now() - RETRY_BACKOFF_DAYS * 86400000).toISOString();
     return db.all<ExpiredPrediction>(`
       SELECT id, title, prediction_type, target_symbol, predicted_direction,
              predicted_outcome, predicted_value, confidence,
-             COALESCE(
-               deadline,
-               TO_CHAR((created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval)::date, 'YYYY-MM-DD')
+             TO_CHAR(
+               COALESCE(deadline, created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval),
+               'YYYY-MM-DD'
              ) AS deadline,
              created_at, thesis_id, verification_attempts
       FROM market_predictions
       WHERE (
           status = 'active'
-          AND (
-            (deadline IS NOT NULL AND deadline < $1)
-            OR (deadline IS NULL AND (created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval) < NOW())
-          )
+          AND COALESCE(deadline, created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval) < NOW()
         )
         OR (
           status = 'expired' AND was_correct IS NULL
           AND verification_attempts < ${MAX_VERIFICATION_ATTEMPTS}
-          AND (last_verification_attempt_at IS NULL OR last_verification_attempt_at < $2)
+          AND (last_verification_attempt_at IS NULL OR last_verification_attempt_at < $1)
         )
       ORDER BY deadline ASC
-    `, today, backoffCutoff);
+    `, backoffCutoff);
   }
 
   /**
    * Find predictions expiring within the next N days (for visibility/logging).
    */
   async function findNearExpiry(daysAhead = 2): Promise<ExpiredPrediction[]> {
-    const today = new Date().toISOString().split('T')[0];
-    const future = new Date(Date.now() + daysAhead * 86400000).toISOString().split('T')[0];
+    // Same timestamptz hygiene as findExpired: compare the TIMESTAMPTZ
+    // deadline against NOW()-derived bounds, render to TEXT only on output.
+    const days = Math.max(0, Math.floor(daysAhead));
     return db.all<ExpiredPrediction>(`
       SELECT id, title, prediction_type, target_symbol, predicted_direction,
-             predicted_outcome, predicted_value, confidence, deadline, created_at, thesis_id
+             predicted_outcome, predicted_value, confidence,
+             TO_CHAR(deadline, 'YYYY-MM-DD') AS deadline,
+             created_at, thesis_id
       FROM market_predictions
       WHERE status = 'active' AND deadline IS NOT NULL
-        AND deadline >= $1 AND deadline <= $2
+        AND deadline >= NOW() AND deadline < NOW() + ($1 || ' days')::interval
       ORDER BY deadline ASC
-    `, today, future);
+    `, days);
   }
 
   /**
@@ -317,12 +323,15 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
-   * Run auto-verification on all expired predictions. Respects the
-   * MARKETS_THINKING_DISABLED env flag: when set, LLM-based (binary/event)
-   * verification is skipped rather than failing — predictions stay retriable
-   * and will be verified when the flag clears.
+   * Run auto-verification on all expired predictions. LLM-based (binary/
+   * event) verification is skipped — not failed — when either:
+   *   • MARKETS_THINKING_DISABLED=true (existing pause flag), or
+   *   • the caller passes { allowLLM: false } (used by the cron when the
+   *     MARKETS_AUTOMATION opt-in is off — price-based grading is free and
+   *     keeps running; haiku verification waits for opt-in).
+   * Deferred predictions stay retriable and are verified on a later run.
    */
-  async function runAutoVerification(): Promise<{
+  async function runAutoVerification(options?: { allowLLM?: boolean }): Promise<{
     verified: number;
     unverifiable: number;
     correct: number;
@@ -331,7 +340,8 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     results: VerificationResult[];
   }> {
     const thinkingDisabled =
-      String(process.env.MARKETS_THINKING_DISABLED || '').toLowerCase() === 'true';
+      String(process.env.MARKETS_THINKING_DISABLED || '').toLowerCase() === 'true'
+      || options?.allowLLM === false;
     const expired = await findExpired();
     console.log(`[verifier] Found ${expired.length} expired predictions to verify${thinkingDisabled ? ' (LLM paths deferred)' : ''}`);
 

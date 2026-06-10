@@ -67,14 +67,19 @@ export async function checkMarketsLoopHealth(
   }
 
   // 3. Daily intelligence workflow heartbeat.
+  // NOTE: the schema CHECK on workflow_runs.status only permits
+  // 'pending'/'running'/'completed'/'failed'/'cancelled' — the original
+  // status='success' filter matched zero rows by construction, so this
+  // watchdog cried stale forever (and nothing consumed it). 'success' is kept
+  // in the IN-list purely defensively for any pre-CHECK historical rows.
   {
     const lastSuccess = await db.get<{ started_at: string }>(
       `SELECT started_at FROM workflow_runs
-       WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success'
+       WHERE workflow_id = 'wf_markets_daily_intelligence' AND status IN ('completed','success')
        ORDER BY started_at DESC LIMIT 1`);
     const recent = num(await db.get(
       `SELECT COUNT(*)::int AS n FROM workflow_runs
-       WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success'
+       WHERE workflow_id = 'wf_markets_daily_intelligence' AND status IN ('completed','success')
          AND started_at >= ${since}`));
     const stale = recent === 0;
     findings.push({
@@ -82,6 +87,29 @@ export async function checkMarketsLoopHealth(
       detail: stale
         ? `no successful daily run in ${windowDays}d${lastSuccess?.started_at ? ` (last: ${lastSuccess.started_at})` : ' (never)'}`
         : `${recent} successful runs in ${windowDays}d`,
+    });
+  }
+
+  // 4. Pattern-consumption → adjustment integrity (the 1.10b failure class).
+  // Actionable pattern types marked applied_to_weights_at should normally
+  // produce market_signal_weight_adjustments rows. Consumed > 0 with zero
+  // adjustments written in the same window means the derivers are silently
+  // no-opping (e.g. metadata type coercion) while still stamping patterns
+  // as applied — exactly the bug that ate 182 patterns with 0 adjustments.
+  {
+    const consumed = num(await db.get(
+      `SELECT COUNT(*)::int AS n FROM market_pattern_detections
+       WHERE applied_to_weights_at >= ${since}
+         AND pattern_type IN ('directional_bias','confidence_miscalibration','symbol_failure_cluster')`));
+    const adjustments = num(await db.get(
+      `SELECT COUNT(*)::int AS n FROM market_signal_weight_adjustments
+       WHERE applied_at >= ${since}`));
+    const stale = consumed > 0 && adjustments === 0;
+    findings.push({
+      loop: 'pattern_adjustments_written', pending: consumed, recentTransitions: adjustments, stale,
+      detail: stale
+        ? `${consumed} actionable patterns consumed but 0 weight adjustments written in ${windowDays}d — derivers appear to be silently no-opping`
+        : `${consumed} patterns consumed, ${adjustments} adjustments written in ${windowDays}d`,
     });
   }
 
