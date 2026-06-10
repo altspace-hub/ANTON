@@ -120,7 +120,14 @@ export type DomainCluster =
   | 'agriculture'  // Farming, livestock, rural
   | 'enterprise'   // Micro-business, artisan, food business
   | 'rights'       // Workers, land, consumer, government services
-  | 'community';   // Community health, education, literacy
+  | 'community'    // Community health, education, literacy
+  // Values already used by area.json files in the wild (2026-06-10 audit found
+  // 23 areas outside the original union; nothing consumes cluster at runtime,
+  // so the type now documents reality instead of silently disagreeing with it):
+  | 'education' | 'professional' | 'technology' | 'marketing'
+  | 'communications' | 'sustainability' | 'healthcare' | 'people'
+  | 'operations' | 'personal' | 'management' | 'government'
+  | 'property' | 'micro-business';
 
 export interface AreaConfig {
   id: string;
