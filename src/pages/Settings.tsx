@@ -411,12 +411,17 @@ export default function Settings() {
 
   // Provider API key state
   const [providerStatus, setProviderStatus] = useState<Record<string, boolean>>({});
+  const [anthropicKey, setAnthropicKey] = useState('');
   const [openaiKey, setOpenaiKey] = useState('');
   const [googleKey, setGoogleKey] = useState('');
   const [mistralKey, setMistralKey] = useState('');
 
   // Azure OpenAI status
   const [azureStatus, setAzureStatus] = useState<{ configured: boolean; deploymentCount: number; deployments: Array<{ deploymentName: string; modelName: string; displayName: string | null; isReasoningModel: boolean }> }>({ configured: false, deploymentCount: 0, deployments: [] });
+
+  // Cost-effective mode (plan 2.17): detected budget providers
+  const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
+  const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
 
   // Custom models state
   interface CustomModelSlot {
@@ -518,8 +523,24 @@ export default function Settings() {
         deployments: deps,
       });
     }).catch(() => {});
+
+    // Cost-effective mode: detect Ollama + custom OpenAI-compatible endpoints
+    fetch('/api/ollama/status')
+      .then((r) => r.ok ? r.json() : { available: false, models: [] })
+      .then((data: { available?: boolean; models?: string[] }) =>
+        setEcoOllama({ available: !!data.available, models: data.models ?? [] }))
+      .catch(() => {});
+    fetchWithAuth('/api/settings/model-endpoints')
+      .then((r) => r.ok ? r.json() : { endpoints: [] })
+      .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; enabled: boolean }> }) =>
+        setEcoEndpoints((data.endpoints ?? []).filter((e) => e.enabled)))
+      .catch(() => {});
   }, []);
 
+  // Saves a provider key: applied immediately server-side (no restart) and
+  // persisted to the database so it survives restarts. The input is cleared
+  // after save and the stored value is never echoed back — status endpoints
+  // return configured/not-configured booleans only.
   async function saveProviderKey(key: string, value: string, clearFn: (v: string) => void) {
     try {
       await fetchWithAuth('/api/settings/set-env', {
@@ -529,6 +550,7 @@ export default function Settings() {
       });
       setProviderStatus((prev) => ({ ...prev, [key]: !!value }));
       clearFn('');
+      if (key === 'ANTHROPIC_API_KEY') checkHealth(); // refresh the API-status row
       flash();
     } catch {
       // non-fatal
@@ -1023,25 +1045,47 @@ export default function Settings() {
 
         {!health?.apiKeyConfigured && (
           <div className="mt-4 rounded-lg bg-adv-gold/10 border border-adv-gold/20 p-3 text-xs text-adv-gold">
-            Add your Anthropic API key to the <code className="rounded bg-adv-dark px-1">.env</code> file:
-            <pre className="mt-2 rounded bg-adv-dark p-2 text-adv-off-white">
-              ANTHROPIC_API_KEY=sk-ant-...
-            </pre>
+            No Anthropic API key configured. Paste your key in the <span className="font-medium">AI Provider Keys</span> section below — it applies immediately (no restart) and is stored securely.
+            You can also set <code className="rounded bg-adv-dark px-1">ANTHROPIC_API_KEY</code> in the <code className="rounded bg-adv-dark px-1">.env</code> file instead.
           </div>
         )}
       </div>
 
-      {/* Additional AI Providers */}
+      {/* AI Provider Keys */}
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <div className="flex items-center gap-2">
           <Key className="h-4 w-4 text-adv-teal" />
-          <h2 className="text-sm font-semibold text-adv-white">{t('settings.additionalProviders')}</h2>
+          <h2 className="text-sm font-semibold text-adv-white">{t('settings.aiProviderKeys', 'AI Provider Keys')}</h2>
         </div>
         <p className="mt-1 text-xs text-adv-gray">
-          {t('settings.additionalProvidersDesc')}
+          {t('settings.aiProviderKeysDesc', "Paste API keys for Anthropic (Claude), OpenAI, Google Gemini, or Mistral. Keys apply immediately (no restart), are stored on this server's database (encrypted at rest when an instance encryption key is configured), and survive restarts. Saved keys are never displayed again.")}
         </p>
 
         <div className="mt-4 space-y-4">
+          {/* Anthropic (Claude) — the primary provider; saving here is the
+              no-.env first-run path for GitHub-clone installs. */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs text-adv-gray">{t('settings.anthropic', 'Anthropic (Claude)')}</label>
+              <input
+                type="password"
+                placeholder="sk-ant-..."
+                value={anthropicKey}
+                onChange={(e) => setAnthropicKey(e.target.value)}
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-5">
+              <Circle className={`h-2 w-2 ${(health?.apiKeyConfigured || providerStatus.ANTHROPIC_API_KEY) ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
+              <button
+                onClick={() => saveProviderKey('ANTHROPIC_API_KEY', anthropicKey, setAnthropicKey)}
+                className="rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
+              >
+                {t('settings.save')}
+              </button>
+            </div>
+          </div>
+
           {/* OpenAI */}
           <div className="flex items-center gap-3">
             <div className="flex-1">
@@ -1591,6 +1635,62 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Cost-effective mode (plan 2.17) */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-adv-green" />
+          <h2 className="text-sm font-semibold text-adv-white">Cost-effective mode</h2>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          Run ANTON on budget models. One click sets the default model for the whole
+          product — module runs, missions, agents and structured exports. Full setup
+          guide: <code className="text-adv-teal">docs/RUN_ON_CHEAP_MODELS.md</code>.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => { if (providerStatus.MISTRAL_API_KEY) handleSetModel('mistral-medium-latest'); }}
+            disabled={!providerStatus.MISTRAL_API_KEY}
+            title={providerStatus.MISTRAL_API_KEY ? 'Set Mistral Medium as the product-wide default' : 'Add a Mistral API key above to enable'}
+            className={`${CHIP_BASE} ${defaultModel === 'mistral-medium-latest' ? CHIP_ACTIVE : !providerStatus.MISTRAL_API_KEY ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+          >
+            Mistral Medium (~$0.40/1M in)
+          </button>
+          <button
+            onClick={() => { if (ecoOllama.available && ecoOllama.models.length > 0) handleSetModel(`ollama:${ecoOllama.models[0]}` as ModelId); }}
+            disabled={!ecoOllama.available || ecoOllama.models.length === 0}
+            title={ecoOllama.available
+              ? (ecoOllama.models.length > 0 ? `Set ollama:${ecoOllama.models[0]} as the product-wide default` : 'Ollama is running but has no models — `ollama pull qwen2.5:14b`')
+              : 'Ollama not detected — install from ollama.com'}
+            className={`${CHIP_BASE} ${ecoOllama.models.length > 0 && defaultModel === `ollama:${ecoOllama.models[0]}` ? CHIP_ACTIVE : (!ecoOllama.available || ecoOllama.models.length === 0) ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+          >
+            {ecoOllama.available && ecoOllama.models.length > 0
+              ? `Local Ollama (${ecoOllama.models[0]})`
+              : 'Local Ollama (free, not detected)'}
+          </button>
+          {ecoEndpoints.filter((e) => e.defaultModel).map((e) => {
+            const modelId = `compat:${e.slug}:${e.defaultModel}`;
+            return (
+              <button
+                key={e.slug}
+                onClick={() => handleSetModel(modelId as ModelId)}
+                title={`Set ${modelId} as the product-wide default`}
+                className={`${CHIP_BASE} ${defaultModel === modelId ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {e.displayName} ({e.defaultModel})
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-adv-gray">
+          <span className="font-medium text-adv-off-white">What works:</span> module runs,
+          missions, specialized agents, Transform Panel exports.{' '}
+          <span className="font-medium text-adv-off-white">What degrades:</span> web search
+          needs <code>BING_SEARCH_API_KEY</code> (Claude-native otherwise); vision input and
+          IRE deep reasoning stay Claude-only; Pathfinder has basic non-Claude support —
+          Claude recommended for deep research.
+        </p>
       </div>
 
       {/* Context Compaction */}

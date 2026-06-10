@@ -105,11 +105,14 @@ mis-routes to Claude) · — n/a (provider genuinely can't).
 - **S2. ✅ DONE — Add `GET /api/ollama/status`** (health + installed-model count, probes `/api/tags`
   directly so "down" ≠ "0 models") — the Settings "Local Models" panel called it and 404'd, so the Ollama
   status card always showed "not detected" even when up.
-- **S3. (pending) Pass `compatConfig` in `unified-llm-client.sendRequest` + `streamToHandler`** (replicate
-  the `resolveCustomEndpoint` block from `streamToResponse`) so the Review Engine / WebSocket delivery
-  don't throw on `compat:` models.
-- **S4. (pending) Clamp the SDK `MistralAdapter` temperature ceiling** to ≤1.0 (currently maps creative→1.8,
-  risking 422s) and default `maxTokens` from `model-capabilities.ts` instead of a flat 8192.
+- **S3. ✅ DONE — Pass `compatConfig` in `unified-llm-client.sendRequest` + `streamToHandler`** — both now
+  resolve the endpoint via a shared `resolveCompatConfig()` helper (extracted from `streamToResponse`), exempt
+  `openai_compatible` from the API-key guard, and pass the config as the 4th `createModelAdapter` arg, so the
+  Review Engine / WebSocket delivery no longer throw on `compat:` models.
+- **S4. ✅ DONE — Clamp the SDK `MistralAdapter` temperature ceiling** to 1.0 at both call sites (was
+  creative→1.8 → 422) + `TEMPERATURE_MAP.mistral` creative/exploratory clamped to 1.0 for the streaming path;
+  `maxTokens` now defaults from `model-capabilities.ts` `maxOutputTokens` (mistral-large-latest = 128k),
+  falling back to 8192 only for unknown models.
 
 ### Tier M — moderate (the real parity unlocks)
 

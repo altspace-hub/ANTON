@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { HealthStatus, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
-import { fetchHealth } from '@/lib/api';
+import { fetchHealth, fetchWithAuth } from '@/lib/api';
 import { safeStorage } from '@/lib/safe-storage';
 
 type Theme = 'dark' | 'light' | 'corporate';
@@ -220,6 +220,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setDefaultModel: (model: ModelId) => {
     safeStorage.setItem('openexpert-default-model', model);
     set({ defaultModel: model });
+    // Server-side write-through (plan 2.12): persist to app_settings so the
+    // same model governs missions / agents / renderers / the extractor —
+    // not just module runs. Best-effort: localStorage remains the frontend
+    // source of truth if the server is unreachable.
+    fetchWithAuth('/api/settings/default-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => {
+      // Non-fatal — server default falls back to env DEFAULT_MODEL
+    });
   },
 
   setDefaultThinking: (thinking: ThinkingLevel) => {

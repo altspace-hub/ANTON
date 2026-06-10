@@ -282,6 +282,9 @@ interface ResolvedEndpoint {
   baseUrl: string;
   apiKey?: string;
   defaultModel: string | null;
+  /** Optional per-endpoint context window (informational column from
+   *  migration 215) — consumed by context-budget.ts for compat: models. */
+  contextWindow: number | null;
   extraHeaders: Record<string, string>;
   enabled: boolean;
 }
@@ -306,6 +309,7 @@ export async function resolveCustomEndpoint(
             baseUrl: r.base_url,
             apiKey: r.api_key_encrypted ? decrypt(r.api_key_encrypted) : undefined,
             defaultModel: r.default_model,
+            contextWindow: r.context_window,
             extraHeaders: r.extra_headers ?? {},
             enabled: r.enabled,
           });

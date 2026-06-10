@@ -10,6 +10,7 @@ import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
+import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
 import { safeError } from '../lib/error-response.js';
@@ -325,12 +326,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           return ok;
         });
 
-      // 1M context: Opus 4.8 and Sonnet 4.6 have 1M at GA pricing (no beta header needed).
-      // For these models, always use the full 800k knowledge budget.
-      // For Sonnet 4.5 with beta, or when ANTHROPIC_LONG_CONTEXT_BETA is set, also enable.
+      // Capability-aware knowledge budget (plan 2.15): derived from the
+      // session model's real context window — 800k for 1M-context Claude
+      // (unchanged), ~104k for Mistral Large, the trained window for
+      // ollama:* (via /api/show), the per-endpoint setting for compat:*.
+      // Previously every non-1M model silently got the ~892k default.
       const is1MModel = model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6';
-      const longContextBetaEnabled = is1MModel || process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
-      const knowledgeBudget = longContextBetaEnabled ? 800_000 : undefined;
+      const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
       // Set SSE headers early so we can stream progress before the Claude API call starts.
@@ -884,16 +886,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
 
-      // TOKEN-02: pre-flight token validation — reject before calling Claude API
-      // Dynamic limit: Opus/Sonnet 4.6 = 900k (1M - 100k output reserve), Haiku = 180k, others = 128k
-      const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 900_000;
-      if (resolved.tokenEstimate > MAX_CONTEXT_TOKENS) {
+      // TOKEN-02: pre-flight token validation — reject before calling the API.
+      // Model-aware limit (plan 2.15): the same capability-derived budget used
+      // for knowledge assembly, so a 32k local model fails fast with a clear
+      // message instead of silently truncating a ~900k prompt.
+      if (resolved.tokenEstimate > knowledgeBudget) {
         res.status(400).json({
-          error: `Context too large: estimated ${resolved.tokenEstimate.toLocaleString()} tokens exceeds the ${MAX_CONTEXT_TOKENS.toLocaleString()} token limit. ` +
-                 `Reduce the number of loaded documents, use Summary mode for online references, or deselect some knowledge sources.`,
+          error: `Context too large for ${model}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
+                 `Trim knowledge sources, use Summary mode for online references, or pick a larger-context model.`,
           code: 'CONTEXT_TOO_LARGE',
           tokenEstimate: resolved.tokenEstimate,
-          limit: MAX_CONTEXT_TOKENS,
+          limit: knowledgeBudget,
         });
         return;
       }
@@ -1167,7 +1170,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           } else if (provider === 'ollama') {
             // Strip the 'ollama:' prefix to get the bare Ollama model name
             const ollamaModel = selectedModel.replace(/^ollama:/, '');
-            result = await streamOllama({ model: ollamaModel, system: composedPrompt, messages: plainMessages, temperature, maxTokens }, res);
+            result = await streamOllama({
+              model: ollamaModel,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+              // Capability-aware num_ctx (plan 2.15) — trained window capped at 32k/env
+              numCtx: await resolveOllamaNumCtx(selectedModel),
+            }, res);
           } else if (provider === 'openai_compatible') {
             // compat:<slug>:<model> — resolve the user's configured OpenAI-compatible endpoint
             const slug = selectedModel.split(':')[1];

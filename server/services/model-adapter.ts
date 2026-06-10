@@ -26,6 +26,15 @@ import type { DatabaseAdapter } from '../db/database.js';
 import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 import type { CustomModelConfig } from '../routes/settings.js';
 import { AzureOpenAIAdapter, type AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
+import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
+import {
+  convertClaudeToolsToOpenAI,
+  isCapabilityRejection,
+  isCapabilityRejectionError,
+  JSON_ONLY_NUDGE,
+  type ClaudeToolLike,
+} from './adapters/provider-extras.js';
+import { resolveOllamaNumCtx } from './context-budget.js';
 
 // ── Unified Request Interface ──────────────────────────────────
 
@@ -405,22 +414,51 @@ class MistralAdapter extends BaseAdapter {
     this.client = new Mistral({ apiKey });
   }
 
-  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+  /** M7 (plan 2.13): JSON mode + tools were silently dropped here despite
+   *  the registry advertising supportsJsonMode. Both are now sent natively;
+   *  `withExtras=false` is the one-retry fallback (+ prompt JSON nudge). */
+  private buildParams(req: UnifiedLLMRequest, withExtras: boolean): Record<string, unknown> {
     const creativity = req.creativity || 'balanced';
+    const wantsJson = !!req.structuredOutput?.enabled;
+    const tools = withExtras ? convertClaudeToolsToOpenAI(req.tools as ClaudeToolLike[] | undefined) : undefined;
+    const systemPrompt = !withExtras && wantsJson
+      ? req.systemPrompt + JSON_ONLY_NUDGE
+      : req.systemPrompt;
 
     // Mistral uses OpenAI-compatible format
     const messages = [
-      { role: 'system' as const, content: req.systemPrompt },
+      { role: 'system' as const, content: systemPrompt },
       ...req.messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     ];
 
-    const response = await this.client.chat.complete({
+    // Default to the model's capability ceiling (mistral-large-latest = 128k); 8192 if unknown
+    const defaultMax = MODEL_CAPABILITIES[req.model]?.maxOutputTokens ?? 8192;
+
+    return {
       model: req.model,
       messages,
-      maxTokens: req.maxTokens || 8192,
-      temperature: this.mapTemperature(creativity, 2.0),
+      maxTokens: req.maxTokens || defaultMax,
+      temperature: this.mapTemperature(creativity, 1.0), // Mistral API max is 1.0 (>1.0 → 422)
       randomSeed: req.seed,
-    });
+      ...(withExtras && wantsJson ? { responseFormat: { type: 'json_object' as const } } : {}),
+      ...(tools ? { tools, toolChoice: 'auto' as const } : {}),
+    };
+  }
+
+  private hasExtras(req: UnifiedLLMRequest): boolean {
+    return !!(req.structuredOutput?.enabled || (req.tools && req.tools.length > 0));
+  }
+
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+    type CompleteParams = Parameters<Mistral['chat']['complete']>[0];
+    let response;
+    try {
+      response = await this.client.chat.complete(this.buildParams(req, true) as unknown as CompleteParams);
+    } catch (err) {
+      if (!this.hasExtras(req) || !isCapabilityRejectionError(err)) throw err;
+      console.warn(`[model-adapter] Mistral rejected tools/response_format — retrying without (model=${req.model})`);
+      response = await this.client.chat.complete(this.buildParams(req, false) as unknown as CompleteParams);
+    }
 
     const content = response.choices?.[0]?.message?.content;
     const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
@@ -435,20 +473,15 @@ class MistralAdapter extends BaseAdapter {
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const creativity = req.creativity || 'balanced';
-
-    const messages = [
-      { role: 'system' as const, content: req.systemPrompt },
-      ...req.messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    ];
-
-    const streamResponse = await this.client.chat.stream({
-      model: req.model,
-      messages,
-      maxTokens: req.maxTokens || 8192,
-      temperature: this.mapTemperature(creativity, 2.0),
-      randomSeed: req.seed,
-    });
+    type StreamParams = Parameters<Mistral['chat']['stream']>[0];
+    let streamResponse;
+    try {
+      streamResponse = await this.client.chat.stream(this.buildParams(req, true) as unknown as StreamParams);
+    } catch (err) {
+      if (!this.hasExtras(req) || !isCapabilityRejectionError(err)) throw err;
+      console.warn(`[model-adapter] Mistral rejected tools/response_format — retrying without (model=${req.model})`);
+      streamResponse = await this.client.chat.stream(this.buildParams(req, false) as unknown as StreamParams);
+    }
 
     for await (const chunk of streamResponse) {
       const delta = chunk.data.choices?.[0]?.delta?.content;
@@ -470,22 +503,60 @@ class OllamaAdapter extends BaseAdapter {
     this.baseUrl = baseUrl;
   }
 
-  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
-    // Extract model name from 'ollama:model:tag' format
+  /** Build the /api/chat body. Previously this adapter sent NO options at
+   *  all (Ollama's default 2k-4k num_ctx silently truncated prompts) and
+   *  dropped JSON mode + tools. `withExtras=false` is the one-retry
+   *  fallback for older Ollama builds that reject format/tools. */
+  private buildBody(req: UnifiedLLMRequest, stream: boolean, numCtx: number, withExtras: boolean): Record<string, unknown> {
     const modelName = req.model.replace('ollama:', '');
+    const creativity = req.creativity || 'balanced';
+    const wantsJson = !!req.structuredOutput?.enabled;
+    const tools = withExtras ? convertClaudeToolsToOpenAI(req.tools as ClaudeToolLike[] | undefined) : undefined;
+    const systemPrompt = !withExtras && wantsJson
+      ? req.systemPrompt + JSON_ONLY_NUDGE
+      : req.systemPrompt;
+    return {
+      model: modelName,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...req.messages,
+      ],
+      stream,
+      ...(withExtras && wantsJson ? { format: 'json' } : {}),
+      ...(tools ? { tools } : {}),
+      options: {
+        temperature: this.mapTemperature(creativity, 1.0),
+        num_ctx: numCtx,
+        ...(req.maxTokens ? { num_predict: req.maxTokens } : {}),
+      },
+    };
+  }
 
-    const response = await fetch(`${this.baseUrl}/api/chat`, {
+  private async postChat(req: UnifiedLLMRequest, stream: boolean): Promise<globalThis.Response> {
+    const numCtx = await resolveOllamaNumCtx(req.model);
+    const hasExtras = !!(req.structuredOutput?.enabled || (req.tools && req.tools.length > 0));
+    let response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'system', content: req.systemPrompt },
-          ...req.messages,
-        ],
-        stream: false,
-      }),
+      body: JSON.stringify(this.buildBody(req, stream, numCtx, true)),
     });
+    if (!response.ok && hasExtras) {
+      const errText = await response.text();
+      if (!isCapabilityRejection(response.status, errText)) {
+        throw new Error(`Ollama API error: ${response.status} — ${errText}`);
+      }
+      console.warn(`[model-adapter] Ollama rejected format/tools — retrying without (model=${req.model})`);
+      response = await fetch(`${this.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.buildBody(req, stream, numCtx, false)),
+      });
+    }
+    return response;
+  }
+
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+    const response = await this.postChat(req, false);
 
     if (!response.ok) {
       throw new Error(`Ollama API error: ${response.statusText}`);
@@ -503,20 +574,7 @@ class OllamaAdapter extends BaseAdapter {
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const modelName = req.model.replace('ollama:', '');
-
-    const response = await fetch(`${this.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'system', content: req.systemPrompt },
-          ...req.messages,
-        ],
-        stream: true,
-      }),
-    });
+    const response = await this.postChat(req, true);
 
     if (!response.ok || !response.body) {
       throw new Error(`Ollama API error: ${response.statusText}`);
@@ -573,24 +631,54 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return h;
   }
 
-  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
-    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
-    const body = {
+  /** M7 (plan 2.13): response_format + tools pass-through (OpenRouter /
+   *  Groq / DeepSeek accept them). `withExtras=false` is the one-retry
+   *  fallback for minimal vLLM/llama.cpp configs that reject the fields. */
+  private buildBody(req: UnifiedLLMRequest, stream: boolean, withExtras: boolean): Record<string, unknown> {
+    const wantsJson = !!req.structuredOutput?.enabled;
+    const tools = withExtras ? convertClaudeToolsToOpenAI(req.tools as ClaudeToolLike[] | undefined) : undefined;
+    const systemPrompt = !withExtras && wantsJson
+      ? req.systemPrompt + JSON_ONLY_NUDGE
+      : req.systemPrompt;
+    return {
       model: this.resolveModelName(req.model),
-      stream: false,
+      stream,
       messages: [
-        { role: 'system', content: req.systemPrompt },
+        { role: 'system', content: systemPrompt },
         ...req.messages,
       ],
       ...(req.maxTokens !== undefined ? { max_tokens: req.maxTokens } : {}),
       ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
+      ...(withExtras && wantsJson ? { response_format: { type: 'json_object' } } : {}),
+      ...(tools ? { tools, tool_choice: 'auto' } : {}),
     };
+  }
 
-    const response = await fetch(url, {
+  private async postChat(req: UnifiedLLMRequest, stream: boolean): Promise<globalThis.Response> {
+    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
+    const hasExtras = !!(req.structuredOutput?.enabled || (req.tools && req.tools.length > 0));
+    let response = await fetch(url, {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify(body),
+      body: JSON.stringify(this.buildBody(req, stream, true)),
     });
+    if (!response.ok && hasExtras) {
+      const errText = await response.text();
+      if (!isCapabilityRejection(response.status, errText)) {
+        throw new Error(`OpenAI-compatible endpoint error (${this.cfg.baseUrl}): ${response.status} — ${errText}`);
+      }
+      console.warn(`[model-adapter] OpenAI-compatible endpoint rejected tools/response_format — retrying without (model=${req.model})`);
+      response = await fetch(url, {
+        method: 'POST',
+        headers: this.headers(),
+        body: JSON.stringify(this.buildBody(req, stream, false)),
+      });
+    }
+    return response;
+  }
+
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+    const response = await this.postChat(req, false);
     if (!response.ok) {
       const errText = await response.text();
       throw new Error(`OpenAI-compatible endpoint error (${this.cfg.baseUrl}): ${response.status} — ${errText}`);
@@ -611,23 +699,7 @@ class OpenAICompatibleAdapter extends BaseAdapter {
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
-    const body = {
-      model: this.resolveModelName(req.model),
-      stream: true,
-      messages: [
-        { role: 'system', content: req.systemPrompt },
-        ...req.messages,
-      ],
-      ...(req.maxTokens !== undefined ? { max_tokens: req.maxTokens } : {}),
-      ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
-    };
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.headers(),
-      body: JSON.stringify(body),
-    });
+    const response = await this.postChat(req, true);
     if (!response.ok || !response.body) {
       throw new Error(`OpenAI-compatible endpoint error: ${response.statusText}`);
     }

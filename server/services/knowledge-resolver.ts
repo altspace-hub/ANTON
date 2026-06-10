@@ -30,7 +30,10 @@ const MAX_FILES_TOTAL = 5_000;
 
 // Token budget: leave room for the system prompt + response.
 // Default 900k for Opus/Sonnet 4.6 (1M context - 100k reserved for output + system prompt).
-// Callers can override via options.contextBudget (e.g. for Haiku at 200k).
+// Callers SHOULD pass a model-aware options.contextBudget — derive it via
+// resolveContextBudget() in context-budget.ts (plan 2.15) so a 32k local
+// model is never handed a ~900k prompt. The env default below is only the
+// last-resort fallback for callers that don't know their model.
 const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 900_000;
 const ESTIMATED_SYSTEM_PROMPT_TOKENS = 8_000;
 const AVAILABLE_CONTEXT_TOKENS = MAX_CONTEXT_TOKENS - ESTIMATED_SYSTEM_PROMPT_TOKENS;
@@ -81,7 +84,8 @@ export async function resolveKnowledgeSources(
     db?: DatabaseAdapter;
     ragMode?: RagModeConfig;
     userQuery?: string;
-    /** Override the default 160k token budget. Set to ~800k when using the 1M context beta. */
+    /** Model-aware token budget (resolveContextBudget in context-budget.ts).
+     *  Falls back to the env/900k default when omitted. */
     contextBudget?: number;
   },
 ): Promise<ResolvedKnowledge> {

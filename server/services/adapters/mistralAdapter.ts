@@ -5,6 +5,12 @@
 // ═══════════════════════════════════════════════════════════
 
 import type { Response } from 'express';
+import {
+  convertClaudeToolsToOpenAI,
+  isCapabilityRejection,
+  JSON_ONLY_NUDGE,
+  type ClaudeToolLike,
+} from './provider-extras.js';
 
 export interface MistralStreamParams {
   model: string;
@@ -18,6 +24,10 @@ export interface MistralStreamParams {
   seed?: number;
   /** Abort signal for request cancellation/timeout */
   signal?: AbortSignal;
+  /** Native JSON mode (response_format json_object) — Mistral supports it. */
+  jsonMode?: boolean;
+  /** Claude-format tools — converted to Mistral function-calling shape. */
+  tools?: ClaudeToolLike[];
 }
 
 /**
@@ -70,36 +80,55 @@ export async function streamMistral(
 
   console.log(`[mistral-adapter] Streaming → model=${modelToUse} (from ${params.model}) thinking=${params.thinkingLevel || 'none'} reasoning=${useReasoning} maxTokens=${params.maxTokens || 8192}`);
 
-  const body: Record<string, unknown> = {
-    model: modelToUse,
-    messages: [
-      { role: 'system', content: params.system },
-      ...params.messages,
-    ],
-    temperature: params.temperature,
-    max_tokens: params.maxTokens || 8192,
-    stream: true,
+  // M7 (plan 2.13): forward JSON mode + tools — Mistral supports both.
+  // `withExtras=false` is the one-retry fallback when the API rejects them.
+  const buildBody = (withExtras: boolean): Record<string, unknown> => {
+    const tools = withExtras ? convertClaudeToolsToOpenAI(params.tools) : undefined;
+    const useJson = withExtras && params.jsonMode;
+    const system = !withExtras && params.jsonMode
+      ? params.system + JSON_ONLY_NUDGE
+      : params.system;
+    const body: Record<string, unknown> = {
+      model: modelToUse,
+      messages: [
+        { role: 'system', content: system },
+        ...params.messages,
+      ],
+      temperature: params.temperature,
+      max_tokens: params.maxTokens || 8192,
+      stream: true,
+    };
+    if (useJson) body.response_format = { type: 'json_object' };
+    if (tools) { body.tools = tools; body.tool_choice = 'auto'; }
+    // Enable structured reasoning for Magistral models
+    if (useReasoning) body.prompt_mode = 'reasoning';
+    // Add seed if provided for reproducible outputs (Mistral uses 'random_seed')
+    if (params.seed !== undefined) body.random_seed = params.seed;
+    return body;
   };
 
-  // Enable structured reasoning for Magistral models
-  if (useReasoning) {
-    body.prompt_mode = 'reasoning';
-  }
-
-  // Add seed if provided for reproducible outputs (Mistral uses 'random_seed')
-  if (params.seed !== undefined) {
-    body.random_seed = params.seed;
-  }
-
-  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+  const post = (withExtras: boolean) => fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(buildBody(withExtras)),
     signal: params.signal,
   });
+
+  const hasExtras = !!(params.jsonMode || (params.tools && params.tools.length > 0));
+  let response = await post(true);
+  if (!response.ok && hasExtras) {
+    const errText = await response.text();
+    if (isCapabilityRejection(response.status, errText)) {
+      console.warn(`[mistral-adapter] ${response.status} rejecting tools/response_format — retrying without (model=${modelToUse})`);
+      response = await post(false);
+    } else {
+      console.error(`[mistral-adapter] API error: ${response.status} ${errText}`);
+      throw new Error(`Mistral API error: ${response.status} ${errText}`);
+    }
+  }
 
   if (!response.ok) {
     const err = await response.text();

@@ -20,6 +20,12 @@
 // ═══════════════════════════════════════════════════════════
 
 import type { Response } from 'express';
+import {
+  convertClaudeToolsToOpenAI,
+  isCapabilityRejection,
+  JSON_ONLY_NUDGE,
+  type ClaudeToolLike,
+} from './provider-extras.js';
 
 export interface OpenAICompatibleStreamParams {
   baseUrl: string;                            // e.g. 'https://api.deepseek.com/v1'
@@ -30,6 +36,70 @@ export interface OpenAICompatibleStreamParams {
   temperature?: number;
   maxTokens?: number;
   extraHeaders?: Record<string, string>;      // e.g. OpenRouter wants HTTP-Referer + X-Title
+  /** Native JSON mode (response_format json_object). OpenRouter/Groq/DeepSeek accept it. */
+  jsonMode?: boolean;
+  /** Claude-format tools — converted to OpenAI function-calling shape. */
+  tools?: ClaudeToolLike[];
+}
+
+function compatHeaders(params: OpenAICompatibleStreamParams): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(params.extraHeaders ?? {}),
+  };
+  if (params.apiKey) headers['Authorization'] = `Bearer ${params.apiKey}`;
+  return headers;
+}
+
+/** Build the chat body. `withExtras=false` drops tools + response_format
+ *  on the capability-rejection retry (minimal vLLM/llama.cpp configs). */
+function buildCompatBody(params: OpenAICompatibleStreamParams, stream: boolean, withExtras: boolean): Record<string, unknown> {
+  const tools = withExtras ? convertClaudeToolsToOpenAI(params.tools) : undefined;
+  const useJson = withExtras && params.jsonMode;
+  const system = !withExtras && params.jsonMode
+    ? params.system + JSON_ONLY_NUDGE
+    : params.system;
+  return {
+    model: params.model,
+    stream,
+    messages: [
+      { role: 'system', content: system },
+      ...params.messages,
+    ],
+    ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+    ...(params.maxTokens !== undefined ? { max_tokens: params.maxTokens } : {}),
+    ...(useJson ? { response_format: { type: 'json_object' } } : {}),
+    ...(tools ? { tools, tool_choice: 'auto' } : {}),
+  };
+}
+
+/** POST with one retry without tools/response_format on a 400/422 that
+ *  mentions them. Throws on other failures so callers see the real error. */
+async function postCompatChat(
+  params: OpenAICompatibleStreamParams,
+  stream: boolean,
+): Promise<globalThis.Response> {
+  const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
+  const hasExtras = !!(params.jsonMode || (params.tools && params.tools.length > 0));
+  let response = await fetch(url, {
+    method: 'POST',
+    headers: compatHeaders(params),
+    body: JSON.stringify(buildCompatBody(params, stream, true)),
+  });
+  if (!response.ok && hasExtras) {
+    const errText = await response.text();
+    if (isCapabilityRejection(response.status, errText)) {
+      console.warn(`[openai-compatible-adapter] ${response.status} rejecting tools/response_format — retrying without (model=${params.model})`);
+      response = await fetch(url, {
+        method: 'POST',
+        headers: compatHeaders(params),
+        body: JSON.stringify(buildCompatBody(params, stream, false)),
+      });
+    } else {
+      throw new Error(`OpenAI-compatible endpoint error (${params.baseUrl}): ${response.status} — ${errText}`);
+    }
+  }
+  return response;
 }
 
 export interface OpenAICompatibleStreamResult {
@@ -46,32 +116,7 @@ export async function streamOpenAICompatible(
   params: OpenAICompatibleStreamParams,
   res: Response,
 ): Promise<OpenAICompatibleStreamResult> {
-  const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(params.extraHeaders ?? {}),
-  };
-  if (params.apiKey) {
-    headers['Authorization'] = `Bearer ${params.apiKey}`;
-  }
-
-  const body = {
-    model: params.model,
-    stream: true,
-    messages: [
-      { role: 'system', content: params.system },
-      ...params.messages,
-    ],
-    ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
-    ...(params.maxTokens !== undefined ? { max_tokens: params.maxTokens } : {}),
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const response = await postCompatChat(params, true);
 
   if (!response.ok) {
     const errText = await response.text();
@@ -129,25 +174,7 @@ export async function streamOpenAICompatible(
 export async function callOpenAICompatible(
   params: OpenAICompatibleStreamParams,
 ): Promise<OpenAICompatibleStreamResult> {
-  const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(params.extraHeaders ?? {}),
-  };
-  if (params.apiKey) headers['Authorization'] = `Bearer ${params.apiKey}`;
-
-  const body = {
-    model: params.model,
-    stream: false,
-    messages: [
-      { role: 'system', content: params.system },
-      ...params.messages,
-    ],
-    ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
-    ...(params.maxTokens !== undefined ? { max_tokens: params.maxTokens } : {}),
-  };
-
-  const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  const response = await postCompatChat(params, false);
   if (!response.ok) {
     const errText = await response.text();
     throw new Error(`OpenAI-compatible endpoint error (${params.baseUrl}): ${response.status} — ${errText}`);

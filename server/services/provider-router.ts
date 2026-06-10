@@ -12,6 +12,15 @@
  *
  * Model tier mapping lets routes specify "large" / "medium" / "small" intent
  * and the router picks the right model for the configured provider.
+ *
+ * Default-model precedence (plan 2.12 — the Settings picker governs the
+ * whole product, not just module runs):
+ *   1. An explicit concrete model id passed by the caller (module runs
+ *      already pass the session model — untouched).
+ *   2. The persisted Settings default (app_settings 'default_model' via
+ *      default-model-store.ts, cached in-memory, updated on save).
+ *   3. env DEFAULT_MODEL.
+ *   4. Provider env-key priority: Anthropic > Mistral > OpenAI > Google.
  */
 
 import type { Response } from 'express';
@@ -26,6 +35,14 @@ import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
 import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
 import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
+import { getEffectiveDefaultModel } from './default-model-store.js';
+import { resolveOllamaNumCtx } from './context-budget.js';
+import {
+  convertClaudeToolsToOpenAI,
+  isCapabilityRejection,
+  JSON_ONLY_NUDGE,
+  type ClaudeToolLike,
+} from './adapters/provider-extras.js';
 
 // ── OpenAI-compatible (compat:<slug>:<model>) endpoint resolution ──
 async function resolveCompatConfig(
@@ -66,6 +83,10 @@ export interface StreamChatConfig {
   thinkingLevel?: string;
   /** Tools (Claude format — auto-converted for other providers) */
   tools?: Array<{ type: string; name?: string; [key: string]: unknown }>;
+  /** Request JSON-only output. Uses native JSON mode where the provider
+   *  supports it (Mistral/compat response_format, Ollama format:'json');
+   *  Claude callers rely on prompt instructions as before. */
+  jsonMode?: boolean;
   /** Seed for reproducible outputs */
   seed?: number;
   /** Database adapter — required for Azure OpenAI config resolution */
@@ -110,11 +131,12 @@ const TIER_MAP: Record<string, Record<ModelTier, string>> = {
  * Priority: Anthropic > Mistral > OpenAI > Google > Ollama
  */
 function getConfiguredProvider(): string {
-  // Honor an explicit non-Claude DEFAULT_MODEL first, so an operator who sets
-  // DEFAULT_MODEL=mistral-large-latest / ollama:qwen / compat:<slug>:<model> gets
-  // the specialty routes (which hardcode mapModelToProvider('claude-…')) on THAT
+  // Honor an explicit non-Claude default model first (persisted Settings
+  // choice, then env DEFAULT_MODEL), so a user who picks
+  // mistral-large-latest / ollama:qwen / compat:<slug>:<model> gets the
+  // specialty routes (which hardcode mapModelToProvider('claude-…')) on THAT
   // provider, instead of whichever cloud key happens to be highest priority.
-  const def = process.env.DEFAULT_MODEL;
+  const def = getEffectiveDefaultModel();
   if (def && !def.startsWith('claude-')) {
     let p: string | null = null;
     try { p = getProviderFromModelId(def); } catch { p = null; }
@@ -143,9 +165,10 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
   const t = (tier || tierOrModel || 'medium') as ModelTier;
   const provider = getConfiguredProvider();
   // Local Ollama / compat endpoints have no large/medium/small tiers — use the
-  // configured DEFAULT_MODEL id for every tier.
-  if ((provider === 'ollama' || provider === 'openai_compatible') && process.env.DEFAULT_MODEL) {
-    return process.env.DEFAULT_MODEL;
+  // configured default model id (Settings > env) for every tier.
+  const def = getEffectiveDefaultModel();
+  if ((provider === 'ollama' || provider === 'openai_compatible') && def) {
+    return def;
   }
   return TIER_MAP[provider]?.[t] || TIER_MAP.anthropic[t];
 }
@@ -159,9 +182,10 @@ export function mapModelToProvider(claudeModelId: string): string {
   if (provider === 'anthropic') return claudeModelId;
 
   // Local Ollama / compat endpoints have no tier mapping — use the configured
-  // DEFAULT_MODEL id directly.
-  if ((provider === 'ollama' || provider === 'openai_compatible') && process.env.DEFAULT_MODEL) {
-    return process.env.DEFAULT_MODEL;
+  // default model id (Settings > env) directly.
+  const def = getEffectiveDefaultModel();
+  if ((provider === 'ollama' || provider === 'openai_compatible') && def) {
+    return def;
   }
 
   // Map Claude model to tier, then resolve for active provider
@@ -190,19 +214,9 @@ export function convertToolsForProvider(
   if (!tools || tools.length === 0) return undefined;
   if (provider === 'anthropic') return tools; // No conversion needed
 
-  // Skip web_search tools — only Claude supports this natively
-  const convertible = tools.filter(t => t.type !== 'web_search_20250305' && t.type !== 'web_search');
-  if (convertible.length === 0) return undefined;
-
-  // Convert to OpenAI/Mistral function-calling format
-  return convertible.map(tool => ({
-    type: 'function',
-    function: {
-      name: tool.name || tool.type,
-      description: (tool as Record<string, unknown>).description || '',
-      parameters: (tool as Record<string, unknown>).input_schema || { type: 'object', properties: {} },
-    },
-  }));
+  // Shared converter (adapters/provider-extras.ts): drops Claude-only
+  // web_search tools, emits OpenAI/Mistral function-calling format.
+  return convertClaudeToolsToOpenAI(tools as ClaudeToolLike[]);
 }
 
 // ── Thinking Configuration for Mistral ─────────────────────────
@@ -349,6 +363,9 @@ export async function streamChat(
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature,
       maxTokens,
+      numCtx: await resolveOllamaNumCtx(modelId),
+      jsonMode: config.jsonMode,
+      tools: config.tools,
     }, res);
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
@@ -365,6 +382,8 @@ export async function streamChat(
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature,
       maxTokens,
+      jsonMode: config.jsonMode,
+      tools: config.tools,
     }, res);
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
@@ -461,43 +480,67 @@ async function streamChatMistral(
   // Resolve thinking → Magistral model switch
   const { model: resolvedModel, promptMode } = resolveMistralThinking(modelId, config.thinkingLevel);
 
-  const body: Record<string, unknown> = {
-    model: resolvedModel,
-    messages: [
-      { role: 'system', content: config.system },
-      ...config.messages.map(m => ({ role: m.role, content: m.content })),
-    ],
-    temperature,
-    max_tokens: maxTokens,
-    stream: true,
+  // M7 (plan 2.13): JSON mode + tools sent natively; one retry without
+  // them (plus a prompt-based JSON nudge) if the API rejects the fields.
+  const buildBody = (withExtras: boolean): Record<string, unknown> => {
+    const system = !withExtras && config.jsonMode
+      ? config.system + JSON_ONLY_NUDGE
+      : config.system;
+    const body: Record<string, unknown> = {
+      model: resolvedModel,
+      messages: [
+        { role: 'system', content: system },
+        ...config.messages.map(m => ({ role: m.role, content: m.content })),
+      ],
+      temperature,
+      max_tokens: maxTokens,
+      stream: true,
+    };
+
+    // Add reasoning mode for Magistral
+    if (promptMode) {
+      body.prompt_mode = promptMode;
+    }
+
+    if (withExtras && config.jsonMode) {
+      body.response_format = { type: 'json_object' };
+    }
+
+    // Add tools (converted to Mistral format)
+    if (withExtras && config.tools && config.tools.length > 0) {
+      const converted = convertToolsForProvider(config.tools, 'mistral');
+      if (converted) {
+        body.tools = converted;
+        body.tool_choice = 'auto';
+      }
+    }
+
+    if (config.seed !== undefined) {
+      body.random_seed = config.seed;
+    }
+    return body;
   };
 
-  // Add reasoning mode for Magistral
-  if (promptMode) {
-    body.prompt_mode = promptMode;
-  }
-
-  // Add tools (converted to Mistral format)
-  if (config.tools && config.tools.length > 0) {
-    const converted = convertToolsForProvider(config.tools, 'mistral');
-    if (converted) {
-      body.tools = converted;
-      body.tool_choice = 'auto';
-    }
-  }
-
-  if (config.seed !== undefined) {
-    body.random_seed = config.seed;
-  }
-
-  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+  const post = (withExtras: boolean) => fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(buildBody(withExtras)),
   });
+
+  const hasExtras = !!(config.jsonMode || (config.tools && config.tools.length > 0));
+  let response = await post(true);
+  if (!response.ok && hasExtras) {
+    const errText = await response.text();
+    if (isCapabilityRejection(response.status, errText)) {
+      console.warn(`[provider-router] Mistral ${response.status} rejecting tools/response_format — retrying without (model=${resolvedModel})`);
+      response = await post(false);
+    } else {
+      throw new Error(`Mistral API error: ${response.status} ${errText}`);
+    }
+  }
 
   if (!response.ok) {
     const err = await response.text();
@@ -607,6 +650,12 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
     }
 
+    // Forward tools (previously silently dropped on this non-streaming
+    // path). Same thinking-exclusivity guard as streamChatAnthropic.
+    if (config.tools && config.tools.length > 0 && !thinkingConfig) {
+      apiParams.tools = config.tools;
+    }
+
     // Use streaming internally to avoid "Streaming is required for operations
     // that may take longer than 10 minutes" SDK error on large requests
     const stream = client.messages.stream(apiParams as unknown as Anthropic.MessageCreateParamsStreaming);
@@ -634,27 +683,55 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
 
     const { model: resolvedModel, promptMode } = resolveMistralThinking(modelId, config.thinkingLevel);
 
-    const body: Record<string, unknown> = {
-      model: resolvedModel,
-      messages: [
-        { role: 'system', content: config.system },
-        ...config.messages.map(m => ({ role: m.role, content: m.content })),
-      ],
-      temperature: config.temperature ?? 0.5,
-      max_tokens: maxTokens,
+    // M7 (plan 2.13): this body previously dropped tools + JSON mode.
+    // Now both are sent natively, with one retry without them on rejection.
+    const buildBody = (withExtras: boolean): Record<string, unknown> => {
+      const system = !withExtras && config.jsonMode
+        ? config.system + JSON_ONLY_NUDGE
+        : config.system;
+      const body: Record<string, unknown> = {
+        model: resolvedModel,
+        messages: [
+          { role: 'system', content: system },
+          ...config.messages.map(m => ({ role: m.role, content: m.content })),
+        ],
+        temperature: config.temperature ?? 0.5,
+        max_tokens: maxTokens,
+      };
+
+      if (promptMode) body.prompt_mode = promptMode;
+      if (config.seed !== undefined) body.random_seed = config.seed;
+      if (withExtras && config.jsonMode) body.response_format = { type: 'json_object' };
+      if (withExtras && config.tools && config.tools.length > 0) {
+        const converted = convertToolsForProvider(config.tools, 'mistral');
+        if (converted) {
+          body.tools = converted;
+          body.tool_choice = 'auto';
+        }
+      }
+      return body;
     };
 
-    if (promptMode) body.prompt_mode = promptMode;
-    if (config.seed !== undefined) body.random_seed = config.seed;
-
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    const post = (withExtras: boolean) => fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(buildBody(withExtras)),
     });
+
+    const hasExtras = !!(config.jsonMode || (config.tools && config.tools.length > 0));
+    let response = await post(true);
+    if (!response.ok && hasExtras) {
+      const errText = await response.text();
+      if (isCapabilityRejection(response.status, errText)) {
+        console.warn(`[provider-router] Mistral ${response.status} rejecting tools/response_format — retrying without (model=${resolvedModel})`);
+        response = await post(false);
+      } else {
+        throw new Error(`Mistral API error: ${response.status} ${errText}`);
+      }
+    }
 
     if (!response.ok) {
       const err = await response.text();
@@ -770,6 +847,9 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature: config.temperature,
       maxTokens,
+      numCtx: await resolveOllamaNumCtx(modelId),
+      jsonMode: config.jsonMode,
+      tools: config.tools,
     });
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
@@ -786,6 +866,8 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature: config.temperature,
       maxTokens,
+      jsonMode: config.jsonMode,
+      tools: config.tools,
     });
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }

@@ -17,7 +17,7 @@
 // falls back to the generic exports (md/docx/xlsx/pdf/pptx).
 
 import crypto from 'crypto';
-import { callChat } from './provider-router.js';
+import { callChat, mapModelToProvider } from './provider-router.js';
 import {
   loadContentTypeSchema,
   type ContentType,
@@ -27,6 +27,10 @@ import {
 } from '../schemas/content-types/index.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
+// Wrapped in mapModelToProvider() at call time (plan 2.14) — installs
+// without an Anthropic key extract on the active provider's small model
+// (Mistral / Ollama / compat) instead of failing every extraction, which
+// previously deadened all payload-dependent Transform Panel renderers.
 const EXTRACTION_MODEL = 'claude-haiku-4-5-20251001';
 const SCHEMA_VERSION = '1.0';
 const EXTRACTION_TIMEOUT_MS = 45_000;
@@ -99,61 +103,89 @@ export function createStructuredExtractor(db: DatabaseAdapter) {
     const systemPrompt = buildSystemPrompt(input.contentType, schema);
     const userPrompt = buildUserPrompt(input.markdown, input.contentType);
 
-    let chat;
-    try {
-      chat = await Promise.race([
-        callChat({
-          model: EXTRACTION_MODEL,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }],
-          maxTokens: 8_000,
-          temperature: 0,
-          db,
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Extraction timed out after ${EXTRACTION_TIMEOUT_MS}ms`)), EXTRACTION_TIMEOUT_MS),
-        ),
-      ]);
-    } catch (err) {
+    // Route to the active provider's small-model equivalent when no
+    // Anthropic key is configured (Haiku otherwise — unchanged).
+    const extractionModel = mapModelToProvider(EXTRACTION_MODEL);
+    const isClaude = extractionModel.startsWith('claude-');
+
+    // Non-Claude small models occasionally wrap the JSON in prose or drop
+    // required keys — one retry with an explicit JSON-only nudge recovers
+    // the common case without re-prompting Claude installs.
+    const maxAttempts = isClaude ? 1 : 2;
+    let totalTokens = 0;
+    let lastError = 'extraction failed';
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Retry is a fresh request with an explicit strictness suffix (the
+      // model has no memory of the failed attempt — callChat is stateless).
+      const prompt = attempt === 0
+        ? userPrompt
+        : `${userPrompt}\n\nSTRICT MODE (a previous attempt failed: ${lastError}): return ONLY the JSON object — a single \`\`\`json fenced block, no prose before or after, every required key present.`;
+      const messages = [{ role: 'user', content: prompt }];
+
+      let chat;
+      try {
+        chat = await Promise.race([
+          callChat({
+            model: extractionModel,
+            system: systemPrompt,
+            messages,
+            maxTokens: 8_000,
+            temperature: 0,
+            jsonMode: true,
+            db,
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Extraction timed out after ${EXTRACTION_TIMEOUT_MS}ms`)), EXTRACTION_TIMEOUT_MS),
+          ),
+        ]);
+      } catch (err) {
+        return {
+          status: 'failed', payload: null, hash, cached: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+      totalTokens += (chat.inputTokens ?? 0) + (chat.outputTokens ?? 0);
+
+      const text = chat.text ?? '';
+      const json = extractJsonBlock(text);
+      if (!json) {
+        lastError = 'No JSON block found in extractor output';
+        continue;
+      }
+      let parsed: unknown;
+      try { parsed = JSON.parse(json); }
+      catch (err) {
+        lastError = `Malformed JSON: ${err instanceof Error ? err.message : String(err)}`;
+        continue;
+      }
+
+      // Light validation — we check the required top-level keys on the body
+      // and leave deeper conformance to the consuming renderer (which also
+      // validates).
+      const validation = validateAgainstSchema(parsed, schema);
+      if (!validation.valid) {
+        lastError = `Schema validation failed: ${validation.errors.join('; ')}`;
+        continue;
+      }
+
+      const payload: StructuredOutput = {
+        schema_version: SCHEMA_VERSION,
+        module_id: input.moduleId,
+        area_id: input.areaId ?? '',
+        content_type: input.contentType,
+        sector: input.sector ?? null,
+        generated_at: new Date().toISOString(),
+        model: input.generationModel ?? 'unknown',
+        body: parsed,
+      };
       return {
-        status: 'failed', payload: null, hash, cached: false,
-        error: err instanceof Error ? err.message : String(err),
+        status: 'extracted', payload, hash, cached: false,
+        tokens_used: totalTokens,
       };
     }
 
-    const text = chat.text ?? '';
-    const json = extractJsonBlock(text);
-    if (!json) {
-      return { status: 'failed', payload: null, hash, cached: false, error: 'No JSON block found in extractor output' };
-    }
-    let parsed: unknown;
-    try { parsed = JSON.parse(json); }
-    catch (err) {
-      return { status: 'failed', payload: null, hash, cached: false, error: `Malformed JSON: ${err instanceof Error ? err.message : String(err)}` };
-    }
-
-    // Light validation — we check the required top-level keys on the body
-    // and leave deeper conformance to the consuming renderer (which also
-    // validates).
-    const validation = validateAgainstSchema(parsed, schema);
-    if (!validation.valid) {
-      return { status: 'failed', payload: null, hash, cached: false, error: `Schema validation failed: ${validation.errors.join('; ')}` };
-    }
-
-    const payload: StructuredOutput = {
-      schema_version: SCHEMA_VERSION,
-      module_id: input.moduleId,
-      area_id: input.areaId ?? '',
-      content_type: input.contentType,
-      sector: input.sector ?? null,
-      generated_at: new Date().toISOString(),
-      model: input.generationModel ?? 'unknown',
-      body: parsed,
-    };
-    return {
-      status: 'extracted', payload, hash, cached: false,
-      tokens_used: (chat.inputTokens ?? 0) + (chat.outputTokens ?? 0),
-    };
+    return { status: 'failed', payload: null, hash, cached: false, error: lastError };
   }
 
   /**

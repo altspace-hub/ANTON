@@ -2,6 +2,19 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { PERSISTABLE_ENV_KEYS, persistEnvKey } from '../services/env-keys-store.js';
 import { resetClient as resetAnthropicClient } from '../services/claude-client.js';
+import {
+  initDefaultModelStore,
+  getPersistedDefaultModelSync,
+  setPersistedDefaultModel,
+} from '../services/default-model-store.js';
+import { getCustomModelConfigs } from '../services/model-adapter.js';
+
+// Model-id prefixes accepted as a server-side default. Anything else must
+// match a configured custom-model slot (checked against the DB below).
+const KNOWN_MODEL_PREFIXES = [
+  'claude-', 'gpt-', 'gemini-', 'mistral-', 'magistral-',
+  'codestral', 'devstral', 'azure:', 'ollama:', 'compat:',
+];
 
 export interface CustomModelConfig {
   enabled: boolean;
@@ -26,6 +39,56 @@ const ALLOWED_KEYS = PERSISTABLE_ENV_KEYS;
 
 export async function createSettingsRoutes(db: DatabaseAdapter) {
   const router = Router();
+
+  // Prime the server-side default-model cache at boot so the sync
+  // resolvers in provider-router never miss on first call.
+  initDefaultModelStore(db);
+
+  // GET /api/settings/default-model — the server-side default model and
+  // where it comes from (Settings persistence vs .env vs unset).
+  router.get('/settings/default-model', async (_req, res) => {
+    const persisted = getPersistedDefaultModelSync();
+    const model = persisted ?? process.env.DEFAULT_MODEL ?? null;
+    res.json({
+      model,
+      source: persisted ? 'settings' : (process.env.DEFAULT_MODEL ? 'env' : null),
+    });
+  });
+
+  // POST /api/settings/default-model — persist the Settings default-model
+  // choice server-side (app_settings 'default_model'; plain value, not a
+  // secret). This is what makes the Settings picker govern missions /
+  // agents / renderers / extractor — not just module runs. Empty/null
+  // clears the row (env DEFAULT_MODEL applies again).
+  router.post('/settings/default-model', async (req, res) => {
+    const { model } = req.body as { model?: string | null };
+
+    if (model === null || model === undefined || model === '') {
+      await setPersistedDefaultModel(db, null);
+      console.log('[settings] Cleared server-side default model');
+      res.json({ ok: true, model: null });
+      return;
+    }
+
+    if (typeof model !== 'string' || model.length > 200) {
+      res.status(400).json({ error: 'model must be a string of at most 200 characters' });
+      return;
+    }
+
+    const known = KNOWN_MODEL_PREFIXES.some((p) => model.startsWith(p));
+    if (!known) {
+      // Allow custom-slot model ids (arbitrary ids with a configured provider)
+      const customModels = await getCustomModelConfigs(db);
+      if (!customModels.some((m) => m.modelId === model)) {
+        res.status(400).json({ error: `Unrecognised model id '${model}' — expected a known provider prefix or a configured custom model` });
+        return;
+      }
+    }
+
+    await setPersistedDefaultModel(db, model);
+    console.log(`[settings] Set server-side default model: ${model}`);
+    res.json({ ok: true, model });
+  });
 
   // POST /api/settings/set-env — set a provider API key. Applies immediately
   // (process.env + cached-client invalidation) AND persists to app_settings

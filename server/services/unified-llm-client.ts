@@ -34,6 +34,10 @@ interface UnifiedStreamConfig {
   maxTokens?: number;
   nativeReasoningEnabled?: boolean;
   seed?: number;
+  /** Request native JSON mode where the provider supports it (M7 —
+   *  Mistral/compat response_format, Ollama format:'json', OpenAI/Gemini
+   *  schema mode). Claude callers keep using prompt instructions. */
+  structuredOutput?: UnifiedLLMRequest['structuredOutput'];
   db?: DatabaseAdapter;
 }
 
@@ -84,6 +88,28 @@ async function resolveAzureConfig(modelId: string, db?: DatabaseAdapter): Promis
     apiVersion: config.api_version,
     deployment: deployment.deployment_name,
     isReasoningModel: deployment.is_reasoning_model,
+  };
+}
+
+// ── OpenAI-Compatible Endpoint Resolution ──────────────────
+// Resolve the custom endpoint config (DeepSeek / OpenRouter / Together / Groq /
+// vLLM / …) for compat:<slug>:<model> ids. Shared by all three entry points
+// (streamToResponse, sendRequest, streamToHandler) so each passes the same
+// 4th arg to createModelAdapter.
+async function resolveCompatConfig(modelId: string, db?: DatabaseAdapter): Promise<OpenAICompatibleConfig> {
+  if (!db) {
+    throw new Error('Database required to resolve custom OpenAI-compatible endpoint');
+  }
+  const slug = modelId.split(':')[1];
+  if (!slug) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
+  const endpoint = await resolveCustomEndpoint(db, slug);
+  if (!endpoint) {
+    throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
+  }
+  return {
+    baseUrl: endpoint.baseUrl,
+    apiKey: endpoint.apiKey,
+    extraHeaders: endpoint.extraHeaders,
   };
 }
 
@@ -177,20 +203,7 @@ export async function streamToResponse(
   // Resolve OpenAI-compatible custom endpoint (DeepSeek / OpenRouter / Together / Groq / vLLM / …)
   let compatConfig: OpenAICompatibleConfig | undefined;
   if (provider === 'openai_compatible') {
-    if (!config.db) {
-      throw new Error('Database required to resolve custom OpenAI-compatible endpoint');
-    }
-    const slug = config.model.split(':')[1];
-    if (!slug) throw new Error(`Invalid compat model id: ${config.model} (expected compat:<slug>:<model>)`);
-    const endpoint = await resolveCustomEndpoint(config.db, slug);
-    if (!endpoint) {
-      throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
-    }
-    compatConfig = {
-      baseUrl: endpoint.baseUrl,
-      apiKey: endpoint.apiKey,
-      extraHeaders: endpoint.extraHeaders,
-    };
+    compatConfig = await resolveCompatConfig(config.model, config.db);
   }
 
   const apiKey = provider === 'azure_openai' || provider === 'openai_compatible'
@@ -261,6 +274,7 @@ export async function streamToResponse(
       maxTokens: config.maxTokens,
       seed: config.seed,
       tools: config.tools,
+      structuredOutput: config.structuredOutput,
       stream: true,
     };
 
@@ -339,13 +353,21 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
     }
   }
 
-  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
+  // Resolve OpenAI-compatible custom endpoint (DeepSeek / OpenRouter / Together / Groq / vLLM / …)
+  let compatConfigNonStream: OpenAICompatibleConfig | undefined;
+  if (provider === 'openai_compatible') {
+    compatConfigNonStream = await resolveCompatConfig(config.model, config.db);
+  }
 
-  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
+  const apiKey = provider === 'azure_openai' || provider === 'openai_compatible'
+    ? undefined
+    : getApiKeyForModel(config.model, config.db);
+
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai' && provider !== 'openai_compatible') {
     throw new Error(`API key not configured for provider: ${provider}`);
   }
 
-  const adapter = createModelAdapter(provider, apiKey, azureConfigNonStream ?? undefined);
+  const adapter = createModelAdapter(provider, apiKey, azureConfigNonStream ?? undefined, compatConfigNonStream);
 
   const unifiedReq: UnifiedLLMRequest = {
     model: config.model,
@@ -361,6 +383,7 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
     maxTokens: config.maxTokens,
     seed: config.seed,
     tools: config.tools,
+    structuredOutput: config.structuredOutput,
     stream: false,
   };
 
@@ -459,12 +482,20 @@ export async function streamToHandler(
     if (!azureConfig) throw new Error('Azure OpenAI deployment not configured or inactive');
   }
 
-  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
-  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
+  // Resolve OpenAI-compatible custom endpoint (DeepSeek / OpenRouter / Together / Groq / vLLM / …)
+  let compatConfig: OpenAICompatibleConfig | undefined;
+  if (provider === 'openai_compatible') {
+    compatConfig = await resolveCompatConfig(config.model, config.db);
+  }
+
+  const apiKey = provider === 'azure_openai' || provider === 'openai_compatible'
+    ? undefined
+    : getApiKeyForModel(config.model, config.db);
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai' && provider !== 'openai_compatible') {
     throw new Error(`API key not configured for provider: ${provider}`);
   }
 
-  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined);
+  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined, compatConfig);
 
   const unifiedReq: UnifiedLLMRequest = {
     model: config.model,
@@ -480,6 +511,7 @@ export async function streamToHandler(
     maxTokens: config.maxTokens,
     seed: config.seed,
     tools: config.tools,
+    structuredOutput: config.structuredOutput,
     stream: true,
   };
 
