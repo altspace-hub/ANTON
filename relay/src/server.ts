@@ -85,6 +85,7 @@ import { createRegistryDb, type RegistryDb } from './registry/db.js';
 import { dispatch as dispatchRegistry } from './registry/routes.js';
 import { CommPush, loadCommPushConfig } from './comm-push.js';
 import { ADMIN_UI_HTML } from './admin-ui.js';
+import { handleLegalRequest } from './legal-pages.js';
 import { pino, type Logger } from 'pino';
 
 // ── Configuration ────────────────────────────────────────────────────
@@ -326,6 +327,9 @@ export class RelayServer {
           });
           return;
         }
+        // /terms, /privacy, /legal/* → static legal pages (also served at
+        // the site root when the Host is the dedicated terms.* hostname).
+        if (handleLegalRequest(req, res, url)) return;
         // Anything else is 404. Don't leak internals.
         res.writeHead(404, { 'content-type': 'text/plain' });
         res.end('not found\n');

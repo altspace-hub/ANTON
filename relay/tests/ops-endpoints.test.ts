@@ -9,6 +9,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Writable } from 'node:stream';
+import http from 'node:http';
 import WebSocket from 'ws';
 import { RelayServer } from '../src/server.js';
 import { createAuditLogger } from '../src/audit.js';
@@ -255,6 +256,48 @@ describe('RELAY_DRAINING graceful shutdown', () => {
     await new Promise((r) => setTimeout(r, 100));
     const elapsed = Date.now() - t0;
     expect(elapsed).toBeLessThan(200);
+  });
+});
+
+// ── /terms, /privacy, /legal — static legal pages ───────────────────
+
+describe('legal pages', () => {
+  it.each(['/terms', '/privacy', '/legal', '/legal/terms', '/legal/privacy'])(
+    'GET %s returns 200 HTML with the draft banner',
+    async (path) => {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+      const html = await res.text();
+      expect(html).toContain('DRAFT — pending legal counsel review');
+    },
+  );
+
+  it('serves the index at / only for a terms.* Host', async () => {
+    // fetch()/undici forbids overriding the Host header — use raw http.
+    const withHost = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const req = http.request(
+        { host: '127.0.0.1', port, path: '/', method: 'GET', headers: { host: 'terms.futurechain.eu' } },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => { body += c; });
+          res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+        },
+      );
+      req.on('error', reject);
+      req.end();
+    });
+    expect(withHost.status).toBe(200);
+    expect(withHost.body).toContain('FutureChain — Legal');
+
+    // Relay root without the legal hostname stays a 404 (no internals leak).
+    const without = await fetch(`http://127.0.0.1:${port}/`);
+    expect(without.status).toBe(404);
+  });
+
+  it('non-GET methods fall through to 404', async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/terms`, { method: 'POST' });
+    expect(res.status).toBe(404);
   });
 });
 
