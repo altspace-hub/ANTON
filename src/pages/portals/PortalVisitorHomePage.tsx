@@ -74,7 +74,7 @@ export default function PortalVisitorHomePage() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!query.trim()) return;
-            navigate(`/pathfinder?q=${encodeURIComponent(query.trim())}`);
+            navigate(`/pathfinder/discover?q=${encodeURIComponent(query.trim())}`);
           }}
           className="flex gap-2"
         >

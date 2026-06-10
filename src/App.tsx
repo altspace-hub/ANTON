@@ -181,8 +181,6 @@ const PathfinderPage = lazy(() => import('./pages/PathfinderPage'));
 const PathfinderHistoryPage = lazy(() => import('./pages/PathfinderHistoryPage'));
 // Pathfinder Visitor UI (Visitor Layer v0.8)
 const PathfinderVisitorPage = lazy(() => import('./pages/pathfinder/PathfinderVisitorPage'));
-const PathfinderActionsPage = lazy(() => import('./pages/pathfinder/PathfinderActionsPage'));
-const PathfinderCalibrationPage = lazy(() => import('./pages/pathfinder/PathfinderCalibrationPage'));
 // Jobs — candidate side (Visitor Layer v0.8)
 const JobsHomePage = lazy(() => import('./pages/jobs/JobsHomePage'));
 const JobDetailPage = lazy(() => import('./pages/jobs/JobDetailPage'));
@@ -338,10 +336,7 @@ const CivicSubmissionsPage = lazy(() => import('./pages/civic/CivicSubmissionsPa
 
 // Specialized Agents
 const AgentHubPage = lazy(() => import('./pages/agents/AgentHubPage'));
-const AgentDirectoryPage = lazy(() => import('./pages/agents/AgentDirectoryPage'));
-const AgentEscalationsPage = lazy(() => import('./pages/agents/AgentEscalationsPage'));
-const AgentTelemetryPage = lazy(() => import('./pages/agents/AgentTelemetryPage'));
-const AgentKnowledgePage = lazy(() => import('./pages/agents/AgentKnowledgePage'));
+const AgentDetailPage = lazy(() => import('./pages/agents/AgentDetailPage'));
 
 // Talent Discovery & Recruitment pages
 const TalentPage = lazy(() => import('./pages/talent/TalentPage'));
@@ -711,10 +706,13 @@ export default function App() {
           <Route path="/regulatory-feed" element={<RegulatoryFeedPage />} />
           <Route path="/lore-ledger" element={<LoreLedgerPage />} />
           {/* Pathfinder — AI-Powered Multi-Model Search */}
-          {/* Visitor Layer v0.8: /pathfinder is the visitor-facing search;
-              power-user layout moved to /pathfinder/classic */}
-          <Route path="/pathfinder" element={<PathfinderVisitorPage />} />
-          <Route path="/pathfinder/classic" element={<PathfinderPage />} />
+          {/* The real search engine is the default at /pathfinder. The
+              visitor-facing portal-directory browser (Visitor Layer v0.8)
+              lives at /pathfinder/discover; /pathfinder/classic redirects
+              for old bookmarks. */}
+          <Route path="/pathfinder" element={<PathfinderPage />} />
+          <Route path="/pathfinder/discover" element={<PathfinderVisitorPage />} />
+          <Route path="/pathfinder/classic" element={<Navigate to="/pathfinder" replace />} />
           {/* Jobs — candidate side (Visitor Layer v0.8) */}
           <Route path="/jobs" element={<JobsHomePage />} />
           <Route path="/jobs/profile" element={<CareerProfilePage />} />
@@ -735,8 +733,6 @@ export default function App() {
           <Route path="/video/playlists" element={<VideoPlaylistsPage />} />
           <Route path="/video/:id" element={<VideoPlayerPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
-          <Route path="/pathfinder/actions" element={<PathfinderActionsPage />} />
-          <Route path="/pathfinder/calibration" element={<PathfinderCalibrationPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />
           {/* App Gateway admin */}
@@ -784,10 +780,7 @@ export default function App() {
 
           {/* Specialized Agents */}
           <Route path="/agents" element={<AgentHubPage />} />
-          <Route path="/agents/directory" element={<AgentDirectoryPage />} />
-          <Route path="/agents/escalations" element={<AgentEscalationsPage />} />
-          <Route path="/agents/telemetry" element={<AgentTelemetryPage />} />
-          <Route path="/agents/knowledge" element={<AgentKnowledgePage />} />
+          <Route path="/agents/:id" element={<AgentDetailPage />} />
 
           {/* Talent Discovery & Recruitment */}
           <Route path="/talent" element={<TalentPage />} />

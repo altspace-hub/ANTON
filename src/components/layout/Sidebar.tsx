@@ -577,6 +577,15 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </NavLink>
 
             <NavLink
+              to="/pathfinder/discover"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Discover' : undefined}
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Discover'}
+            </NavLink>
+
+            <NavLink
               to="/pathfinder/history"
               className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
               title={sidebarCollapsed ? 'History' : undefined}
@@ -1447,6 +1456,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'pathfinder': { to: '/pathfinder', icon: Compass, label: 'Pathfinder' },
                 'pathfinder-history': { to: '/pathfinder/history', icon: Search, label: 'Search History' },
                 'task-agent': { to: '/task-agent', icon: Bot, label: 'ANTON Task Agent' },
+                'agents': { to: '/agents', icon: Bot, label: 'Specialized Agents' },
                 'orchestrator': { to: '/orchestrator', icon: Brain, label: 'ANTON Orchestrator' },
                 'counsels-desk': { to: '/counsels-desk', icon: Scale, label: "Counsel's Desk" },
                 'gap-assessment': { to: '/gap-assessment', icon: ClipboardCheck, label: 'Gap Assessor' },
@@ -1668,6 +1678,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <Bot className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && 'Task Agent'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/agents"
+          navId="agents"
+          title={sidebarCollapsed ? 'Specialized Agents' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('agents')}
+          isHidden={hiddenNavItems.has('agents')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Bot className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Specialized Agents'}
         </NavLinkWithStar>
 
         <NavLinkWithStar

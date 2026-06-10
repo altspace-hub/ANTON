@@ -106,7 +106,7 @@ export default function CategoryPage({ categoryId, configOverride }: Props) {
             e.preventDefault();
             if (!query.trim()) return;
             const params = new URLSearchParams({ q: query.trim(), mode: pathfinderScope });
-            window.location.href = `/pathfinder?${params.toString()}`;
+            window.location.href = `/pathfinder/discover?${params.toString()}`;
           }}
           className="flex gap-2"
         >

@@ -53,6 +53,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   // Tools
   { id: 'task-agent', label: 'ANTON Task Agent', category: 'intelligence' },
+  { id: 'agents', label: 'Specialized Agents', category: 'intelligence' },
   { id: 'orchestrator', label: 'ANTON Orchestrator', category: 'intelligence' },
   { id: 'counsels-desk', label: "Counsel's Desk", category: 'tools' },
   { id: 'gap-assessment', label: 'Gap Assessor', category: 'tools' },

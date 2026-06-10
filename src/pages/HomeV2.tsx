@@ -37,8 +37,9 @@ import {
   fetchSessions, fetchSessionStats, fetchCustomModules,
   type CustomModuleData,
 } from '@/lib/api';
+import { fetchSearchHistory } from '@/lib/pathfinder-api';
 import type { Session } from '@/lib/types';
-import { Pill, Section, Dot, Btn } from '@/components/web-ui';
+import { Section, Btn } from '@/components/web-ui';
 
 type RightMode = 'digest' | 'agent';
 type FeedTone = 'accent' | 'gold' | 'red' | 'green' | 'blue';
@@ -116,30 +117,34 @@ function daysUntil(iso: string): number {
   return Math.max(0, Math.ceil((d - now) / 86400000));
 }
 
-// ── Mock activity / agent feeds (TODO: wire to real services) ───────────
+// ── Activity feed — real data: recent sessions + Pathfinder searches ─────
 interface FeedItem {
-  when: string; icon: LucideIcon; tone: FeedTone; title: string; sub: string;
+  key: string;
+  when: string; // ISO timestamp
+  icon: LucideIcon;
+  tone: FeedTone;
+  title: string;
+  sub: string;
+  route: string;
 }
-const ACTIVITY_FEED: FeedItem[] = [
-  { when: '14:02', icon: Shield,      tone: 'gold',   title: 'Sanctions policy v4 ready for review', sub: 'Board submission · 3,523 words · Think Hard' },
-  { when: '13:40', icon: Compass,    tone: 'accent', title: 'Pathfinder thread refreshed',          sub: 'AMLR RTS from AMLA · 25 sources · 2 new' },
-  { when: '12:15', icon: Users,      tone: 'blue',   title: 'Sara commented on Orion policy',       sub: '"Can we cite the AMLR final text here?"' },
-  { when: '11:30', icon: RadarIcon,  tone: 'red',    title: 'Radar: 2 new consultations',           sub: 'AMLA CDD RTS · EBA screening guidelines' },
-  { when: '09:12', icon: Sparkles,   tone: 'accent', title: 'Your 5-minute brief is ready',         sub: 'Overnight regulatory updates · 4 items' },
-  { when: '08:58', icon: CheckSquare,tone: 'green',  title: 'Phase 2A · Client Intelligence done',  sub: 'ICA Eng 2 · moved to Expert Config' },
-  { when: 'Yst',   icon: BookOpen,   tone: 'blue',   title: 'KB updated: Sanctions training v3',    sub: '12 pages revised · regenerate downstream?' },
-];
-interface AgentTask {
-  title: string; module: string; progress: number; eta: string; state: 'running' | 'monitoring' | 'waiting';
+interface RecentSearchRecord {
+  id: string;
+  query: string;
+  depth: string;
+  created_at: string;
 }
-const AGENT_TASKS: AgentTask[] = [
-  { title: 'Refreshing AMLR RTS research',     module: 'Pathfinder',         progress: 72,  eta: '~1 min',  state: 'running' },
-  { title: 'Drafting Q1 evidence pack',        module: 'Doc Creation',       progress: 40,  eta: '~4 min',  state: 'running' },
-  { title: 'Monitoring Horizon Radar sources', module: 'Radar',              progress: 100, eta: 'hourly',  state: 'monitoring' },
-  { title: 'Watching EBA + FATF feeds',        module: 'Reg Monitor',        progress: 100, eta: 'live',    state: 'monitoring' },
-  { title: 'Awaiting your review',             module: 'Sanctions Advisory', progress: 100, eta: 'board ready', state: 'waiting' },
-];
-const FILTER_TABS = ['All', 'Mentions', 'Reviews', 'Radar'] as const;
+function formatFeedTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yst';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 const FEED_BG: Record<FeedTone, string> = {
   accent: 'var(--color-accent-soft)',
@@ -181,22 +186,62 @@ export default function HomeV2(): JSX.Element {
   } | null>(null);
   const [continueWork, setContinueWork] = useState<Session[]>([]);
   const [customModules, setCustomModules] = useState<CustomModuleData[]>([]);
+  const [feedSessions, setFeedSessions] = useState<Array<{ id: string; title: string; module_id: string; created_at: string }>>([]);
+  const [recentSearches, setRecentSearches] = useState<RecentSearchRecord[]>([]);
   const deadlines = useMemo(() => loadDeadlines(), []);
 
   useEffect(() => {
-    fetchSessionStats().then((s) => setStats({
-      totalSessions: s.totalSessions, totalMessages: s.totalMessages,
-      totalOutputTokens: s.totalOutputTokens,
-      thisWeekSessions: s.thisWeekSessions, thisMonthSessions: s.thisMonthSessions,
-    })).catch(() => { /* silent */ });
+    fetchSessionStats().then((s) => {
+      setStats({
+        totalSessions: s.totalSessions, totalMessages: s.totalMessages,
+        totalOutputTokens: s.totalOutputTokens,
+        thisWeekSessions: s.thisWeekSessions, thisMonthSessions: s.thisMonthSessions,
+      });
+      setFeedSessions(Array.isArray(s.recentSessions) ? s.recentSessions : []);
+    }).catch(() => { /* silent */ });
     fetchSessions(undefined, { hasOutput: true, limit: 4 })
       .then(setContinueWork).catch(() => { /* silent */ });
     fetchCustomModules().then(setCustomModules).catch(() => { /* silent */ });
+    fetchSearchHistory(8)
+      .then((r) => setRecentSearches(
+        (Array.isArray(r.searches) ? r.searches : [])
+          .filter((s): s is RecentSearchRecord & Record<string, unknown> =>
+            typeof s.id === 'string' && typeof s.query === 'string' && typeof s.created_at === 'string')
+          .map((s) => ({ id: s.id, query: s.query, depth: typeof s.depth === 'string' ? s.depth : 'quick', created_at: s.created_at })),
+      ))
+      .catch(() => { /* silent */ });
   }, []);
+
+  // Real activity feed — recent module sessions + Pathfinder searches,
+  // newest first. No fabricated entries: empty state when there's nothing.
+  const activityFeed = useMemo<FeedItem[]>(() => {
+    const items: FeedItem[] = [
+      ...feedSessions.map((s): FeedItem => ({
+        key: `session-${s.id}`,
+        when: s.created_at,
+        icon: MessageSquare,
+        tone: 'accent',
+        title: s.title || '(untitled session)',
+        sub: (s.module_id || 'session').replace(/-/g, ' '),
+        route: `/module/${s.module_id}?session=${s.id}`,
+      })),
+      ...recentSearches.map((s): FeedItem => ({
+        key: `search-${s.id}`,
+        when: s.created_at,
+        icon: Compass,
+        tone: 'blue',
+        title: s.query,
+        sub: `Pathfinder search · ${s.depth}`,
+        route: `/pathfinder?searchId=${s.id}`,
+      })),
+    ];
+    return items
+      .sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime())
+      .slice(0, 8);
+  }, [feedSessions, recentSearches]);
 
   // ── UI state ────────────────────────────────────────────────
   const [rightMode, setRightMode] = useState<RightMode>('digest');
-  const [activeFilter, setActiveFilter] = useState<typeof FILTER_TABS[number]>('All');
   const [pathQuery, setPathQuery] = useState('');
   const [moduleQuery, setModuleQuery] = useState('');
   const [findText, setFindText] = useState('');
@@ -329,8 +374,7 @@ export default function HomeV2(): JSX.Element {
               <div className="text-[13px] font-semibold text-[var(--color-adv-teal)]">ROI This Month</div>
               <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-text-body)]">
                 openEXPERT has saved you an estimated <b>{(stats.thisMonthSessions * 1.5).toFixed(1)} hours</b> this month
-                {' '}(est. value: <b>€{(stats.thisMonthSessions * 1.5 * 100).toLocaleString()}</b> at €100/hr).
-                ROI: <b>~8.7h saved per €1 spent.</b>
+                {' '}(est. value: <b>€{(stats.thisMonthSessions * 1.5 * 100).toLocaleString()}</b>, assuming ~1.5h saved per session at €100/hr).
               </p>
             </div>
           </div>
@@ -345,15 +389,17 @@ export default function HomeV2(): JSX.Element {
             className="text-[var(--color-text)]"
             style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.4px', lineHeight: 1.25, maxWidth: 720, marginBottom: 10 }}
           >
-            Two things need your attention before lunch — and the AMLR RTS is finalised.
+            {continueWork.length > 0
+              ? 'Pick up where you left off — your recent work is one click away.'
+              : 'Start your first session — pick a module below or ask Pathfinder.'}
           </h2>
           <p
             className="text-[var(--color-text-body)]"
             style={{ fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}
           >
-            The Sanctions policy v4 board submission is ready for sign-off (Trust 87, Think Hard).
-            Pathfinder picked up the AMLA-published RTS overnight and refreshed your live thread —
-            25 sources, 2 net new. Three of the morning's regulator items are below the threshold and have been auto-archived.
+            {MODULES.length} expert modules across {AREAS.length} areas are ready to run, and
+            Pathfinder answers research questions with sourced, multi-phase reasoning.
+            Your recent sessions and searches appear in the Activity rail on the right.
           </p>
         </div>
 
@@ -714,7 +760,7 @@ export default function HomeV2(): JSX.Element {
 
             <div className="flex-1 overflow-y-auto px-3.5 pb-12 pt-3.5">
               {rightMode === 'digest' ? (
-                <DigestList activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+                <DigestList items={activityFeed} onOpen={(route) => navigate(route)} />
               ) : (
                 <AgentList />
               )}
@@ -880,39 +926,28 @@ function ModuleGrid({
   );
 }
 
-function DigestList({ activeFilter, setActiveFilter }: {
-  activeFilter: typeof FILTER_TABS[number];
-  setActiveFilter: (f: typeof FILTER_TABS[number]) => void;
+function DigestList({ items, onOpen }: {
+  items: FeedItem[];
+  onOpen: (route: string) => void;
 }) {
+  if (items.length === 0) {
+    return (
+      <div className="px-1 py-3 text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+        Your recent activity will appear here — module sessions and Pathfinder
+        searches show up as you work.
+      </div>
+    );
+  }
   return (
     <>
-      <div className="mb-2.5 flex gap-1">
-        {FILTER_TABS.map(t => {
-          const active = t === activeFilter;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setActiveFilter(t)}
-              className="rounded text-[11px]"
-              style={{
-                padding: '3px 9px',
-                background: active ? 'var(--color-adv-teal)' : 'var(--color-surface)',
-                color:      active ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
-                border: `1px solid ${active ? 'var(--color-adv-teal)' : 'var(--color-border-soft)'}`,
-              }}
-            >
-              {t}
-            </button>
-          );
-        })}
-      </div>
-      {ACTIVITY_FEED.map((f, i) => {
+      {items.map((f, i) => {
         const Icon = f.icon;
         return (
-          <div
-            key={i}
-            className="flex gap-2.5 py-2.5"
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => onOpen(f.route)}
+            className="flex w-full gap-2.5 py-2.5 text-left"
             style={{ borderTop: i === 0 ? 'none' : '1px solid var(--color-border-soft)' }}
           >
             <div
@@ -929,16 +964,16 @@ function DigestList({ activeFilter, setActiveFilter }: {
             <div className="min-w-0 flex-1">
               <div className="mb-0.5 flex items-baseline justify-between gap-2">
                 <div
-                  className="text-[var(--color-text)]"
+                  className="truncate text-[var(--color-text)]"
                   style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.3 }}
                 >
                   {f.title}
                 </div>
-                <span className="font-mono text-[10px] text-[var(--color-text-faint)]">{f.when}</span>
+                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-faint)]">{formatFeedTime(f.when)}</span>
               </div>
-              <div className="text-[11px] leading-snug text-[var(--color-text-muted)]">{f.sub}</div>
+              <div className="truncate text-[11px] leading-snug capitalize text-[var(--color-text-muted)]">{f.sub}</div>
             </div>
-          </div>
+          </button>
         );
       })}
     </>
@@ -946,77 +981,28 @@ function DigestList({ activeFilter, setActiveFilter }: {
 }
 
 function AgentList() {
+  const navigate = useNavigate();
   return (
-    <>
-      <div className="mb-2.5 flex items-center gap-2">
-        <div className="relative" style={{ width: 10, height: 10 }}>
-          <span className="absolute inset-0 rounded-full" style={{ background: 'var(--color-adv-teal)' }} />
-          <span className="absolute -inset-1 rounded-full" style={{ background: 'var(--color-adv-teal)', opacity: 0.2 }} />
-        </div>
-        <span
-          className="font-mono uppercase text-[var(--color-adv-teal)]"
-          style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.4px' }}
-        >
-          Live · 2 running · 2 watching · 1 waiting
-        </span>
+    <div
+      className="px-3 py-3"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-r2)',
+      }}
+    >
+      <div className="mb-1 flex items-center gap-1.5">
+        <Sparkles size={13} strokeWidth={1.5} className="text-[var(--color-adv-teal)]" />
+        <span className="text-[12.5px] font-semibold text-[var(--color-text)]">No agents running</span>
       </div>
-      {AGENT_TASKS.map((t, i) => {
-        const stateColor = t.state === 'running' ? 'var(--color-adv-teal)' : t.state === 'waiting' ? 'var(--color-gold)' : 'var(--color-blue)';
-        const tone = t.state === 'running' ? 'accent' : t.state === 'waiting' ? 'gold' : 'blue';
-        return (
-          <div
-            key={i}
-            className="mb-2 px-3 py-2.5"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-r2)',
-            }}
-          >
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <div
-                className="text-[var(--color-text)]"
-                style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.3 }}
-              >
-                {t.title}
-              </div>
-              <Pill tone={tone}>{t.state}</Pill>
-            </div>
-            <div className="mb-1.5 flex justify-between font-mono text-[10.5px] text-[var(--color-text-muted)]">
-              <span>{t.module}</span>
-              <span>{t.eta}</span>
-            </div>
-            <div className="overflow-hidden rounded" style={{ height: 3, background: 'var(--color-surface-muted)' }}>
-              <div className="h-full rounded" style={{ width: `${t.progress}%`, background: stateColor }} />
-            </div>
-          </div>
-        );
-      })}
-      <div
-        className="mt-2 px-3 py-2.5"
-        style={{
-          background: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-r2)',
-        }}
-      >
-        <Section className="mb-2 inline-flex items-center gap-1.5">
-          <Dot tone="green" pulse /> Session resources
-        </Section>
-        <div className="grid grid-cols-2 gap-2.5">
-          {[
-            ['API spend',   '€0.41'],
-            ['Tokens out',  '12,850'],
-            ['Time saved',  '2h 40m'],
-            ['Active since','08:02'],
-          ].map(([l, v]) => (
-            <div key={l}>
-              <div className="font-mono text-[10px] text-[var(--color-text-muted)]">{l}</div>
-              <div className="text-[13.5px] font-medium tracking-[-0.2px] text-[var(--color-text)]">{v}</div>
-            </div>
-          ))}
-        </div>
+      <p className="text-[11.5px] leading-relaxed text-[var(--color-text-muted)]">
+        Background agent activity will appear here. Queue work for the Task Agent
+        or set up a specialized agent to get started.
+      </p>
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <Btn variant="primary" size="sm" onClick={() => navigate('/task-agent')}>Task Agent</Btn>
+        <Btn variant="primary" size="sm" onClick={() => navigate('/agents')}>Specialized Agents</Btn>
       </div>
-    </>
+    </div>
   );
 }

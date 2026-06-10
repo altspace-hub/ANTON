@@ -1,9 +1,8 @@
 // ── PathfinderVisitorPage.tsx ──────────────────────────────────────────────
-// The visitor-focused Pathfinder surface. Sits at /pathfinder (new default)
-// with the existing PathfinderPage moved to /pathfinder/classic. Design
-// principle: "Search that tells you why." Every result carries its ranking
-// rationale, every click is a bookmark target, every response is federatable
-// back to the engine via feedback buttons.
+// The visitor-focused Pathfinder discovery surface at /pathfinder/discover
+// (the search engine itself owns /pathfinder). Browses the local portal
+// directory; every click is a bookmark target and every result carries
+// feedback buttons that federate back to the engine.
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -23,14 +22,12 @@ const MODES: { id: Mode; label: string; hint: string }[] = [
   { id: 'content',      label: 'Content',     hint: 'Videos, articles, lessons. Creator-owned.' },
 ];
 
-interface RankingSignal { signal: string; weight: number; contribution: number }
 interface VisitorResult {
   id: string;
   ref: string;                  // portal address / bundle id / job id / etc.
   label: string;
   description: string;
   primary_action?: { label: string; route: string };
-  ranking_breakdown: RankingSignal[];
 }
 
 const RECENT_KEY = 'pathfinder_visitor_recents';
@@ -89,10 +86,7 @@ export default function PathfinderVisitorPage() {
     setSearchId(null);
     setFeedbackSent({});
     try {
-      // Stub v1: until the full visitor search pipeline lands, we derive
-      // visitor results from /api/pathfinder/visitor-search record + a
-      // placeholder response. Full implementation wires to the existing
-      // engine dispatcher in a follow-up sprint.
+      // Record the search (feeds the trending aggregate + feedback wiring).
       const res = await fetchWithAuth('/api/pathfinder/visitor-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,7 +97,7 @@ export default function PathfinderVisitorPage() {
         if (json.search_id) setSearchId(json.search_id);
       }
 
-      // Pull portals matching text query as an illustrative result set.
+      // Pull portals matching the text query from the local public directory.
       const portalsRes = await fetchWithAuth(`/api/portals/public-directory?limit=20`);
       const portalsJson = portalsRes.ok
         ? await portalsRes.json() as { entries: Array<{ portal_address: string; display_title: string | null; category: string }> }
@@ -113,17 +107,12 @@ export default function PathfinderVisitorPage() {
           (p.display_title ?? '').toLowerCase().includes(q.toLowerCase()) ||
           p.portal_address.toLowerCase().includes(q.toLowerCase()))
         .slice(0, 10);
-      const mapped: VisitorResult[] = hits.map((p, i) => ({
+      const mapped: VisitorResult[] = hits.map(p => ({
         id: p.portal_address,
         ref: p.portal_address,
         label: p.display_title ?? p.portal_address,
         description: `${p.portal_address} · ${p.category}`,
         primary_action: { label: 'Visit', route: `/portals/p/${encodeURIComponent(p.portal_address)}` },
-        ranking_breakdown: [
-          { signal: 'name match',   weight: 0.4, contribution: 1 - i * 0.05 },
-          { signal: 'category fit', weight: 0.3, contribution: 1 - i * 0.05 },
-          { signal: 'recency',      weight: 0.3, contribution: 1 - i * 0.1 },
-        ],
       }));
       setResults(mapped);
       pushRecent(q);
@@ -170,8 +159,11 @@ export default function PathfinderVisitorPage() {
         <header className="flex items-center gap-3">
           <Sparkles size={22} className="text-adv-teal" />
           <div>
-            <h1 className="text-2xl font-semibold">Pathfinder</h1>
-            <p className="text-xs text-adv-gray">Search that tells you why.</p>
+            <h1 className="text-2xl font-semibold">Discover</h1>
+            <p className="text-xs text-adv-gray">
+              Browse the ANTON network directory.{' '}
+              <Link to="/pathfinder" className="text-adv-teal hover:underline">Open Pathfinder search</Link>
+            </p>
           </div>
         </header>
 
@@ -272,22 +264,6 @@ export default function PathfinderVisitorPage() {
                       <Bookmark size={16} fill={bookmarkedFlag ? 'currentColor' : 'none'} />
                     </button>
                   </div>
-
-                  {/* Ranking transparency — mandatory per design principle */}
-                  <details className="text-xs text-adv-gray">
-                    <summary className="cursor-pointer hover:text-adv-off-white">
-                      Why ranked here
-                    </summary>
-                    <ul className="mt-1 space-y-0.5 pl-4">
-                      {r.ranking_breakdown.map((s, idx) => (
-                        <li key={idx}>
-                          <span className="text-adv-off-white">{s.signal}</span>
-                          {' · weight '}{s.weight.toFixed(2)}
-                          {' · contribution '}{s.contribution.toFixed(2)}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
 
                   <div className="flex items-center gap-2 pt-2">
                     {r.primary_action && (
