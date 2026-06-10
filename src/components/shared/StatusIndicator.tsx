@@ -33,8 +33,8 @@ function estimateCost(
 
 // MODEL-03: compute what the same tokens would cost on a cheaper model
 function modelSavingsComparison(input: number, output: number, currentModel: string): { label: string; saving: string } | null {
-  // Only show if current model is Opus
-  if (!currentModel.includes('opus')) return null;
+  // Only show if current model is Opus or Fable (the premium tiers)
+  if (!currentModel.includes('opus') && !currentModel.includes('fable')) return null;
   const current = getModelPricing(currentModel);
   const sonnet = getModelPricing('claude-sonnet-4-6');
   const currentCost = (input * current.input + output * current.output) / 1_000_000;

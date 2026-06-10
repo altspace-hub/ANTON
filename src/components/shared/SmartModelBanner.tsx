@@ -22,17 +22,17 @@ export function detectOptimalModel(
     !userInput.includes('gap');
   const isMedium = words < 100;
 
-  if (currentModel === 'claude-opus-4-8') {
+  if (currentModel === 'claude-opus-4-8' || currentModel === 'claude-fable-5') {
     if (isSimple) {
       return {
         suggest: 'claude-haiku-4-5-20251001',
-        reason: 'This looks like a quick question — Haiku is ~20× cheaper and fast.',
+        reason: 'This looks like a quick question — Haiku is far cheaper and fast.',
       };
     }
     if (isMedium) {
       return {
         suggest: 'claude-sonnet-4-6',
-        reason: 'Standard query — Sonnet 4.6 delivers great results at ~5× lower cost.',
+        reason: 'Standard query — Sonnet 4.6 delivers great results at a fraction of the cost.',
       };
     }
   }
@@ -50,6 +50,7 @@ const MODEL_LABELS: Record<string, string> = {
   'claude-sonnet-4-6': 'Sonnet 4.6',
   'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
   'claude-opus-4-8': 'Opus',
+  'claude-fable-5': 'Fable 5',
 };
 
 export default function SmartModelBanner({

@@ -11,6 +11,9 @@
  *     at Medium 3.5 (v26.04); mistral-small-latest at Small 4 (v26.03).
  *   - Added Codestral + Devstral 2 (code specialists).
  *
+ * Fable 5: 1M context, 128k output, adaptive thinking only — new tier above Opus
+ *   ($10/$50). Added 2026-06-10 as selectable; Opus 4.8 remains the default.
+ *   API gotcha: explicit thinking {type:'disabled'} 400s on Fable — omit instead.
  * Opus 4.8: 1M context, 128k output, adaptive thinking only (effort defaults to high).
  * Opus 4.7: 1M context, 128k output, adaptive only.
  * Opus 4.6: 1M context, 128k output, supports BOTH adaptive + extended thinking.
@@ -82,6 +85,24 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 // can't import server config; would need a frontend snapshot/endpoint).
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
+  'claude-fable-5': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,   // Adaptive only (budget_tokens unsupported)
+    pricing: {
+      inputPerMillion: 10,
+      outputPerMillion: 50,
+      cachedInputPerMillion: 1.00,     // 90% discount
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
+
   'claude-opus-4-8': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
@@ -593,11 +614,12 @@ export function getThinkingConfig(
     return { thinkingType: 'none', maxTokens: 4096, requiresInterleavedThinkingBeta: false };
   }
 
-  // ─── Opus 4.8: Adaptive thinking (effort parameter) ────────
+  // ─── Fable 5 + Opus 4.8: Adaptive thinking (effort parameter) ──
   // Same effort mapping as 4.7 for consistency with users' learned
-  // baseline. Per Anthropic docs, 4.8's API default for `effort` is `high`
+  // baseline. Per Anthropic docs, the API default for `effort` is `high`
   // when unset — we set it explicitly per ANTON thinking level below.
-  if (modelId === 'claude-opus-4-8') {
+  // Fable 5 shares Opus 4.8's request surface (adaptive only).
+  if (modelId === 'claude-fable-5' || modelId === 'claude-opus-4-8') {
     const mapping: Record<string, ThinkingConfig> = {
       'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
       'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },

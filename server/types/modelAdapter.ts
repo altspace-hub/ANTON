@@ -51,6 +51,7 @@ interface RegistrySupplement {
 }
 
 const REGISTRY_SUPPLEMENT: Record<string, RegistrySupplement> = {
+  'claude-fable-5':             { displayName: 'Claude Fable 5',    costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-opus-4-8':            { displayName: 'Claude Opus 4.8',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-opus-4-7':            { displayName: 'Claude Opus 4.7',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-opus-4-6':            { displayName: 'Claude Opus 4.6',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
@@ -135,7 +136,8 @@ export const TEMPERATURE_MAP: Record<ModelProvider, Record<PrecisionLevel, numbe
   openai:        { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
   azure_openai:  { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
   google:        { strict: 0.5, precise: 0.7, balanced: 1.0, creative: 1.0, exploratory: 1.2 },
-  mistral:       { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
+  // Mistral API rejects temperature > 1.0 (422), so creative/exploratory are clamped to the max.
+  mistral:       { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.0, exploratory: 1.0 },
 };
 
 export function getTemperature(modelId: string, precision: PrecisionLevel): number {

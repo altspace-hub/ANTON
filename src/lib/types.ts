@@ -6,6 +6,7 @@
 
 export type ModelId =
   // Anthropic Claude — latest first
+  | 'claude-fable-5'               // 2026-06-10 — top tier above Opus, adaptive only
   | 'claude-opus-4-8'              // 2026-05-30 — current default
   | 'claude-opus-4-7'              // 2026-04-16 — legacy
   | 'claude-opus-4-6'              // legacy — adaptive + extended thinking
