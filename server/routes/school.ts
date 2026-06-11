@@ -53,7 +53,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import AdmZip from 'adm-zip';
 import { extractTextFromFile } from '../services/text-extractor.js';
-import { buildSpecManifest } from '../services/anton-bundler.js';
+import { buildSpecManifest, attachPayloadChecksum } from '../services/anton-bundler.js';
 
 // ── Tier C — Ollama local model streaming ──────────────────────────────────
 
@@ -2847,6 +2847,9 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         contentCount = questions.length;
       }
 
+      // F1: self-describing payload checksum (security.checksum +
+      // checksum_files) so the dispatching validator can attest the payload.
+      attachPayloadChecksum(zip);
       const buf = zip.toBuffer();
       const filename = `${bundleType}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/zip');

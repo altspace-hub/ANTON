@@ -54,8 +54,18 @@ export interface ValidationResult {
    * `{ signed: false }` for unsigned bundles (which import exactly as before),
    * verified + TOFU-checked when a signature block exists. An INVALID
    * signature is a critical error — the bundle may have been modified.
+   * For SIGNED bundles, `payload_attested` reports whether the signature
+   * covers the payload transitively via a verified content checksum (F1).
    */
   provenance?: BundleProvenance;
+  /**
+   * F1 — content-checksum verdict over the payload files:
+   *   'verified'     manifest security.checksum recomputed and matched
+   *   'mismatch'     recomputed and DIFFERENT → critical error (tamper)
+   *   'absent'       no checksum declared (older bundles — import as before)
+   *   'unverifiable' checksum declared but this ANTON has no recipe for it
+   */
+  checksum_state?: 'verified' | 'mismatch' | 'absent' | 'unverifiable';
   /** Human-readable notes, e.g. where deep validation for this type lives */
   notes?: string[];
   errors: ValidationError[];
@@ -234,6 +244,25 @@ export async function validateAntonFile(
 
   result.bundle_type = bundleType;
   if (governance) result.governance = governance;
+
+  // ── F1: bind the signature verdict to payload attestation, honestly ──────
+  // A signature only ever covers manifest.json. The payload is attested
+  // transitively ONLY when the manifest carries a content checksum that was
+  // actually recomputed and matched. Signed-but-checksum-less bundles keep
+  // importing (READ-OLD), but the user is told exactly what the signature
+  // does and does not prove.
+  if (provenance.signed) {
+    provenance.payload_attested = provenance.valid && result.checksum_state === 'verified';
+    if (provenance.valid && result.checksum_state !== 'verified' && result.checksum_state !== 'mismatch') {
+      warnings.push({
+        step: 2,
+        severity: 'medium',
+        message: 'Signature covers the manifest only — payload integrity is NOT attested',
+        details: 'The signed manifest carries no verifiable content checksum over the payload files, so the signature proves who exported the manifest — not that the payload files are unmodified. Ask the author to re-export from a current ANTON, which embeds a payload checksum the signature then covers.',
+      });
+    }
+  }
+
   result.provenance = provenance;
   return result;
 }
@@ -291,7 +320,7 @@ async function checkProvenance(
     step: 2,
     severity: 'low',
     message: `Signed by ${block.signer_name ?? 'unnamed signer'} (${tofu.known ? 'known signer — seen before on this instance' : 'first time seeing this signer'})`,
-    details: 'A valid signature proves the manifest (incl. its content checksum where present) is untouched since signing by this key. It does not vouch for content quality or real-world identity.',
+    details: 'A valid signature proves the manifest is untouched since signing by this key. The payload files are covered only when the manifest carries a content checksum that this validator verified (see payload attestation). It does not vouch for content quality or real-world identity.',
   });
 
   return {
@@ -355,9 +384,10 @@ async function validateModuleDeep(
     errors.push(...step2.errors);
     warnings.push(...step2.warnings);
     manifest = step2.manifest;
+    const checksumState = step2.checksumState;
 
     if (step2.errors.length > 0) {
-      return { valid: false, validated_depth: 'full', errors, warnings, manifest };
+      return { valid: false, validated_depth: 'full', checksum_state: checksumState, errors, warnings, manifest };
     }
 
     // STEP 3: Content Sanitization
@@ -382,7 +412,7 @@ async function validateModuleDeep(
     // Final verdict
     const valid = errors.length === 0;
 
-    return { valid, validated_depth: 'full', errors, warnings, manifest, files };
+    return { valid, validated_depth: 'full', checksum_state: checksumState, errors, warnings, manifest, files };
   } catch (error) {
     errors.push({
       step: 0,
@@ -413,6 +443,12 @@ function validateStructural(
 
   // 2. Format-version tolerance (Wave 2.1.3) — accept 1.x with a warning.
   checkFormatVersionTolerance(manifest, errors, warnings);
+
+  // 2b. Content checksum (F1) — verify `security.checksum` over the payload
+  //     files when declared. Mismatch is a CRITICAL error (tamper). Absence
+  //     is a low-severity note only: every checksum-less bundle ever shipped
+  //     keeps importing (READ-OLD is sacred).
+  const checksumState = verifyDeclaredChecksum(entries, manifest, bundleType, errors, warnings, notes);
 
   // 3. <script>-strip scan over Markdown payloads (no mutation — report only)
   for (const entry of entries) {
@@ -483,11 +519,221 @@ function validateStructural(
   return {
     valid: errors.length === 0,
     validated_depth: 'structural',
+    checksum_state: checksumState,
     notes,
     errors,
     warnings,
     manifest,
   };
+}
+
+// ── Content-checksum verification (F1) ─────────────────────────
+
+type ChecksumState = NonNullable<ValidationResult['checksum_state']>;
+
+function findEntry(entries: AdmZip.IZipEntry[], name: string): AdmZip.IZipEntry | undefined {
+  return entries.find((e) => e.entryName === name && !e.isDirectory);
+}
+
+function readEntryText(entries: AdmZip.IZipEntry[], name: string): string | null {
+  const entry = findEntry(entries, name);
+  if (!entry) return null;
+  try {
+    return entry.getData().toString('utf-8');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verify `manifest.security.checksum` against the payload files.
+ *
+ * Two checksum conventions exist in the wild — both are verified:
+ *
+ *  1. SELF-DESCRIBING (write-new, attachPayloadChecksum in anton-bundler):
+ *     `security.checksum_files` lists the covered entry names in hashed
+ *     order; the checksum is sha256 over their concatenated bytes.
+ *  2. LEGACY FIXED RECIPES (module-run / gap-assessment /
+ *     legal-research-session bundles shipped before checksum_files existed):
+ *     the exact per-type file order their bundlers hash — kept bit-for-bit
+ *     in sync with anton-bundler.ts (and anton-run-importer.ts for
+ *     module-run, which re-verifies at import).
+ *
+ * Verdicts: match → 'verified' note; mismatch → CRITICAL error (tamper);
+ * no checksum → low-severity note, never an error (READ-OLD); declared but
+ * no known recipe → 'unverifiable' warning (foreign/future writer).
+ */
+function verifyDeclaredChecksum(
+  entries: AdmZip.IZipEntry[],
+  manifest: any,
+  bundleType: string,
+  errors: ValidationError[],
+  warnings: ValidationWarning[],
+  notes: string[]
+): ChecksumState {
+  const declared = manifest?.security?.checksum;
+  if (typeof declared !== 'string' || !declared.trim()) {
+    warnings.push({
+      step: 2,
+      severity: 'low',
+      message: 'No content checksum — payload integrity not attested',
+      details: 'The manifest declares no security.checksum, so the payload files cannot be verified against it. Bundles exported by current ANTON versions carry one; older bundles import exactly as before.',
+    });
+    return 'absent';
+  }
+  const expected = declared.replace(/^sha256:/i, '').trim().toLowerCase();
+
+  const declaredFiles = manifest?.security?.checksum_files;
+  let actual: string | null = null;
+
+  if (Array.isArray(declaredFiles) && declaredFiles.every((f: unknown) => typeof f === 'string')) {
+    // Convention 1: self-describing file list, hashed in listed order.
+    // The writer (attachPayloadChecksum) covers EVERY payload entry, so an
+    // archive entry absent from the list means a file was smuggled in after
+    // export (e.g. an earlier-sorting contents/*.json an importer would pick
+    // up) — flag it, don't just hash around it.
+    const covered = new Set(declaredFiles as string[]);
+    const uncovered = entries
+      .filter((e) => !e.isDirectory && e.entryName !== 'manifest.json' && !covered.has(e.entryName))
+      .map((e) => e.entryName);
+    if (uncovered.length > 0) {
+      errors.push({
+        step: 2,
+        severity: 'critical',
+        message: 'Checksum mismatch — payload files were modified after export',
+        details: `Archive contains file(s) not covered by security.checksum_files: ${uncovered.slice(0, 5).join(', ')}${uncovered.length > 5 ? ` (+${uncovered.length - 5} more)` : ''}. They were added after the checksum was computed — the bundle may have been tampered with.`,
+      });
+      return 'mismatch';
+    }
+    const hash = crypto.createHash('sha256');
+    for (const name of declaredFiles as string[]) {
+      const entry = findEntry(entries, name);
+      if (!entry) {
+        errors.push({
+          step: 2,
+          severity: 'critical',
+          message: 'Checksum mismatch — payload files were modified after export',
+          details: `"${name}" is listed in security.checksum_files but missing from the archive. The bundle may be corrupted or tampered with — do not trust it; ask the author to re-export.`,
+        });
+        return 'mismatch';
+      }
+      try {
+        hash.update(entry.getData());
+      } catch {
+        errors.push({
+          step: 2,
+          severity: 'critical',
+          message: 'Checksum mismatch — payload files were modified after export',
+          details: `"${name}" is listed in security.checksum_files but could not be read from the archive.`,
+        });
+        return 'mismatch';
+      }
+    }
+    actual = hash.digest('hex');
+  } else if (bundleType === 'module-run') {
+    actual = computeModuleRunChecksum(entries);
+  } else if (bundleType === 'gap-assessment') {
+    actual = computeGapAssessmentChecksum(entries);
+  } else if (bundleType === 'legal-research-session') {
+    actual = computeLegalResearchChecksum(entries);
+  }
+
+  if (actual === null) {
+    warnings.push({
+      step: 2,
+      severity: 'medium',
+      message: 'Content checksum declared but not verifiable by this ANTON',
+      details: `The manifest declares security.checksum without checksum_files, and this ANTON has no fixed recipe for "${bundleType}" bundles — payload integrity was NOT verified.`,
+    });
+    return 'unverifiable';
+  }
+
+  if (actual !== expected) {
+    errors.push({
+      step: 2,
+      severity: 'critical',
+      message: 'Checksum mismatch — payload files were modified after export',
+      details: 'The payload files do not match the manifest\'s security.checksum. The bundle may be corrupted or tampered with — do not trust it; ask the author to re-export.',
+    });
+    return 'mismatch';
+  }
+
+  notes.push('Content checksum verified — the payload files match the manifest.');
+  return 'verified';
+}
+
+/**
+ * Legacy module-run recipe — the exact fixed order bundleModuleRunToAnton
+ * hashes (and anton-run-importer re-verifies): run.json, config-snapshot.json,
+ * input.md, output.md, composed-prompt.md ('' when absent),
+ * source-manifest.json, structured-payload.json (only when present).
+ */
+function computeModuleRunChecksum(entries: AdmZip.IZipEntry[]): string | null {
+  const runJson = readEntryText(entries, 'run.json');
+  const outputMd = readEntryText(entries, 'output.md');
+  if (runJson === null || outputMd === null) return null;
+  const hash = crypto.createHash('sha256');
+  hash.update(runJson);
+  hash.update(readEntryText(entries, 'config-snapshot.json') ?? '');
+  hash.update(readEntryText(entries, 'input.md') ?? '');
+  hash.update(outputMd);
+  hash.update(readEntryText(entries, 'composed-prompt.md') ?? '');
+  hash.update(readEntryText(entries, 'source-manifest.json') ?? '');
+  const structured = readEntryText(entries, 'structured-payload.json');
+  if (structured) hash.update(structured);
+  return hash.digest('hex');
+}
+
+/**
+ * Legacy gap-assessment recipe (bundleGapAssessmentToAnton): assessment.json,
+ * findings.json, evidence-manifest.json, iterations.json, the second-opinions
+ * JSON ('[]' when the file was omitted because no opinions existed), then the
+ * TEXT of every evidence/<docId>.md in archive order — the bundler hashes the
+ * raw evidence text and prepends a 3-line HTML-comment header (+ blank line)
+ * when writing the file, so the header is stripped before hashing.
+ */
+function computeGapAssessmentChecksum(entries: AdmZip.IZipEntry[]): string | null {
+  const assessment = readEntryText(entries, 'assessment.json');
+  const findings = readEntryText(entries, 'findings.json');
+  const evidenceManifest = readEntryText(entries, 'evidence-manifest.json');
+  const iterations = readEntryText(entries, 'iterations.json');
+  if (assessment === null || findings === null || evidenceManifest === null || iterations === null) {
+    return null;
+  }
+  const hash = crypto.createHash('sha256');
+  hash.update(assessment);
+  hash.update(findings);
+  hash.update(evidenceManifest);
+  hash.update(iterations);
+  hash.update(readEntryText(entries, 'second-opinions.json') ?? '[]');
+  for (const entry of entries) {
+    if (entry.isDirectory) continue;
+    if (!entry.entryName.startsWith('evidence/') || !entry.entryName.endsWith('.md')) continue;
+    let content: string;
+    try {
+      content = entry.getData().toString('utf-8');
+    } catch {
+      return null;
+    }
+    hash.update(content.replace(/^(?:<!--[^\n]*-->\n){3}\n/, ''));
+  }
+  return hash.digest('hex');
+}
+
+/**
+ * Legacy legal-research-session recipe (bundleLegalResearchSessionToAnton):
+ * session.json, transcript.json, pinned-findings.json, citations.json.
+ * (transcript.md and README.md were never covered.)
+ */
+function computeLegalResearchChecksum(entries: AdmZip.IZipEntry[]): string | null {
+  const parts = ['session.json', 'transcript.json', 'pinned-findings.json', 'citations.json'];
+  const hash = crypto.createHash('sha256');
+  for (const name of parts) {
+    const text = readEntryText(entries, name);
+    if (text === null) return null;
+    hash.update(text);
+  }
+  return hash.digest('hex');
 }
 
 // ── Format-version tolerance (Wave 2.1.3) ──────────────────────
@@ -677,10 +923,13 @@ function validateModuleSchema(
   errors: ValidationError[];
   warnings: ValidationWarning[];
   manifest: any;
+  /** F1: checksum verdict for ValidationResult.checksum_state */
+  checksumState: ChecksumState;
 } {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
   let manifest: any = parsedManifest;
+  let checksumState: ChecksumState = 'absent';
 
   // ── Legacy flat dialect (pre-v0.7.5 built-in module exports) ──────────
   // Old built-in exports (antonExport.ts, since removed) wrote a flat
@@ -695,7 +944,7 @@ function validateModuleSchema(
         message: 'Missing required metadata fields',
         details: 'Legacy manifest must declare id and name',
       });
-      return { errors, warnings, manifest };
+      return { errors, warnings, manifest, checksumState };
     }
     warnings.push({
       step: 2,
@@ -706,7 +955,7 @@ function validateModuleSchema(
     manifest = upgradeLegacyFlatManifest(manifest);
     // Mapped manifest is well-formed by construction; skip the hybrid
     // checks below (there is no checksum to verify in this dialect).
-    return { errors, warnings, manifest };
+    return { errors, warnings, manifest, checksumState };
   }
 
   // Validate required fields — 1.x minor versions are tolerated (Wave 2.1.3),
@@ -771,17 +1020,22 @@ function validateModuleSchema(
       const actualChecksum = hash.digest('hex');
 
       if (actualChecksum !== expectedChecksum) {
+        checksumState = 'mismatch';
         errors.push({
           step: 2,
           severity: 'high',
           message: 'Checksum mismatch',
           details: 'File contents do not match the declared checksum. File may be corrupted or tampered.',
         });
+      } else {
+        checksumState = 'verified';
       }
+    } else {
+      checksumState = 'unverifiable';
     }
   }
 
-  return { errors, warnings, manifest };
+  return { errors, warnings, manifest, checksumState };
 }
 
 /**

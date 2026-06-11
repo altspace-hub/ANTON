@@ -27,6 +27,8 @@ interface BundleProvenance {
   signed_at?: string;
   known: boolean;
   first_seen_name?: string;
+  /** F1: true only when the signed manifest's content checksum was verified over the payload files. */
+  payload_attested?: boolean;
 }
 
 interface SigningIdentity {
@@ -367,9 +369,9 @@ function ExportTab() {
                 )}
               </span>
               <span className="mt-0.5 block text-[11px] text-adv-gray">
-                Embeds an Ed25519 signature proving the bundle's manifest (including its content
-                checksum) is untouched since this instance signed it. It does not vouch for content
-                quality or your real-world identity.
+                Embeds an Ed25519 signature proving the bundle's manifest — including the payload
+                checksum it carries — is untouched since this instance signed it. It does not vouch
+                for content quality or your real-world identity.
               </span>
             </span>
           </label>
@@ -603,9 +605,17 @@ function ProvenanceBadge({ provenance }: { provenance: BundleProvenance }) {
           This key was first seen as "{provenance.first_seen_name}".
         </p>
       )}
+      {provenance.payload_attested === false && (
+        <p className="mt-1 flex items-start gap-1.5 text-xs text-adv-gold">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          Signature covers the manifest only; payload integrity is NOT attested (no verifiable
+          content checksum in this bundle).
+        </p>
+      )}
       <p className="mt-1 text-[11px] text-adv-gray">
-        A valid signature proves the manifest (incl. its content checksum) is untouched since
-        signing by this key. It does not vouch for content quality or real-world identity.
+        {provenance.payload_attested
+          ? 'A valid signature proves the manifest — and, via its verified content checksum, the payload files — are untouched since signing by this key. It does not vouch for content quality or real-world identity.'
+          : 'A valid signature proves the manifest is untouched since signing by this key. It does not vouch for content quality or real-world identity.'}
         {provenance.signer_pubkey ? ` Key: ${provenance.signer_pubkey.slice(0, 16)}…` : ''}
       </p>
     </div>

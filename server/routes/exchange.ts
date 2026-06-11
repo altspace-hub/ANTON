@@ -411,6 +411,26 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   ) {
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
     try {
+      // F1: market bundles previously went straight to JSON.parse with no
+      // validation at all — run the dispatching validator first, exactly like
+      // the module import path. This rejects invalid signatures, content
+      // checksum tampering, forbidden files and malformed manifests, and
+      // surfaces provenance to the importer. Unsigned / checksum-less bundles
+      // still import (READ-OLD) — those only produce warnings, never errors.
+      const validation = await validateAntonFile(req.file.buffer, db);
+      if (!validation.valid) {
+        res.status(400).json({
+          success: false,
+          error: 'Bundle failed validation',
+          bundle_type: validation.bundle_type,
+          validated_depth: validation.validated_depth,
+          provenance: validation.provenance,
+          errors: validation.errors.map((e) => e.details ? `${e.message} — ${e.details}` : e.message),
+          warnings: validation.warnings.map((w) => w.message),
+        });
+        return;
+      }
+
       const AdmZip = (await import('adm-zip')).default;
       const zip = new AdmZip(req.file.buffer);
       const entries = zip.getEntries();
@@ -419,7 +439,16 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       if (!contentEntry) { res.status(400).json({ error: 'Invalid .anton bundle — no content JSON found' }); return; }
       const payload = JSON.parse(contentEntry.getData().toString('utf-8'));
       const result = await importFn(db, payload);
-      res.json(result);
+      // Surface provenance like the module import path does.
+      res.json({
+        ...result,
+        bundle_type: validation.bundle_type,
+        validated_depth: validation.validated_depth,
+        governance: validation.governance,
+        provenance: validation.provenance,
+        notes: validation.notes,
+        warnings: validation.warnings.map((w) => w.message),
+      });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }

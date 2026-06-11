@@ -401,6 +401,54 @@ export function buildSpecManifest(params: {
 }
 
 /**
+ * Attach a SELF-DESCRIBING payload checksum to a finished bundle ZIP (F1):
+ *
+ *   security.checksum       = 'sha256:<hex>' over the concatenated bytes of
+ *                             every non-directory entry EXCEPT manifest.json,
+ *                             hashed in `checksum_files` order
+ *   security.checksum_files = the covered entry names, lexicographically
+ *                             sorted (deterministic across rebuilds)
+ *
+ * Same convention family as the module bundler (sha256 over concatenated
+ * payload bytes, `sha256:` prefix) — but generic: the file list travels in
+ * the manifest, so anton-validator can recompute it for ANY bundle type
+ * without per-type knowledge. Because the checksum lives in manifest.json,
+ * an (optional) Ed25519 manifest signature covers the payload transitively.
+ *
+ * Must be called AFTER every payload file is added and BEFORE signing.
+ * READ-OLD: bundles without this block keep importing — the validator only
+ * notes that payload integrity is not attested.
+ */
+export function attachPayloadChecksum(zip: AdmZip): void {
+  const manifestEntry = zip.getEntry('manifest.json');
+  if (!manifestEntry) return;
+  let manifest: Record<string, unknown>;
+  try {
+    manifest = JSON.parse(manifestEntry.getData().toString('utf-8')) as Record<string, unknown>;
+  } catch {
+    return; // never break an export over checksum bookkeeping
+  }
+  const files = zip
+    .getEntries()
+    .filter((e) => !e.isDirectory && e.entryName !== 'manifest.json')
+    .map((e) => e.entryName)
+    .sort();
+  const hash = crypto.createHash('sha256');
+  for (const name of files) {
+    hash.update(zip.getEntry(name)!.getData());
+  }
+  const security = (manifest.security && typeof manifest.security === 'object' && !Array.isArray(manifest.security))
+    ? (manifest.security as Record<string, unknown>)
+    : {};
+  manifest.security = {
+    ...security,
+    checksum: `sha256:${hash.digest('hex')}`,
+    checksum_files: files,
+  };
+  zip.updateFile(manifestEntry, Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
+}
+
+/**
  * Drop empty/undefined governance fields; return undefined when nothing is
  * known so the manifest never carries a fabricated/empty governance block.
  */
@@ -728,6 +776,7 @@ and security framework settings.
 `;
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created review profile bundle for session "${sessionId}" (${buffer.length} bytes)`);
   return buffer;
@@ -822,6 +871,7 @@ Always review generated scripts before executing them in a production environmen
 `;
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created script-lite bundle for session "${sessionId}" (${buffer.length} bytes)`);
   return buffer;
@@ -934,6 +984,7 @@ Always review generated code before deploying to production.
 `;
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created script-medium bundle for session "${sessionId}" (${buffer.length} bytes)`);
   return buffer;
@@ -1081,6 +1132,7 @@ ${releases.map((r: any) => `- **Release ${r.release_number}:** ${r.name} (${r.st
 `;
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created coding-large blueprint for project "${project.name}" (${buffer.length} bytes)`);
   return buffer;
@@ -1193,6 +1245,7 @@ ${project.description || 'No description available.'}
 `;
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created instruction-builder bundle for project "${project.name}" (${buffer.length} bytes)`);
   return buffer;
@@ -1272,6 +1325,7 @@ export async function bundleComplianceRuleset(
     )
   );
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created compliance-ruleset bundle "${rulesetName}" (${rules.length} rules, ${buffer.length} bytes)`);
   return buffer;
@@ -1348,6 +1402,7 @@ export async function bundleReviewPanel(params: {
     )
   );
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created review-panel bundle "${params.name}" (${params.reviewers.length} reviewers, ${buffer.length} bytes)`);
   return buffer;
@@ -1428,6 +1483,7 @@ export async function bundleQualityBaseline(
     )
   );
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created quality-baseline bundle "${baselineName}" (${baselines.length} modules, ${buffer.length} bytes)`);
   return buffer;
@@ -1492,6 +1548,7 @@ export async function bundleAudienceProfile(params: {
     )
   );
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created audience-profile bundle "${params.name}" (${buffer.length} bytes)`);
   return buffer;
@@ -1544,6 +1601,7 @@ export async function bundleMarketIndex(
     `\n\n## NAV History: ${navHistory.length} data points\n## Rebalances: ${rebalances.length}\n\n---\n**Exported via ANTON**\n`, 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-index bundle "${index.name}" (${holdings.length} holdings, ${buffer.length} bytes)`);
   return buffer;
@@ -1617,6 +1675,7 @@ export async function bundleMarketThesis(
     '\n\n---\n**Exported via ANTON**\n', 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-thesis bundle "${thesis.title}" (${thesisAtoms.length} atoms, ${predictions.length} predictions, ${buffer.length} bytes)`);
   return buffer;
@@ -1658,6 +1717,7 @@ export async function bundleMarketIntelligenceModel(
     `# ${bundleName}\n\n## Signal Weights (${signalWeights.length})\n## Calibration Buckets (${calibration.length})\n## Consul Performance (${consulPerf.length})\n## Regime History (${regimeHistory.length})\n## Meta Learning (${metaLearning.length})\n\n---\n**Exported via ANTON**\n`, 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-intelligence-model bundle "${bundleName}" (${signalWeights.length} weights, ${buffer.length} bytes)`);
   return buffer;
@@ -1720,6 +1780,7 @@ export async function bundleMarketInvestigation(
     '\n\n---\n**Exported via ANTON**\n', 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-investigation bundle "${investigation.title}" (${whyChains.length} why chains, ${buffer.length} bytes)`);
   return buffer;
@@ -1774,6 +1835,7 @@ export async function bundleMarketDataSourceConfig(
     '\n\n> **Note:** API keys and secrets have been stripped from all configurations.\n\n---\n**Exported via ANTON**\n', 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-data-source-config bundle "${bundleName}" (${sanitizedSources.length} sources, ${buffer.length} bytes)`);
   return buffer;
@@ -1842,6 +1904,7 @@ export async function bundleMarketAtomCollection(
     '\n\n---\n**Exported via ANTON**\n', 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-atom-collection bundle "${bundleName}" (${atoms.length} atoms, ${relationships.length} relationships, ${buffer.length} bytes)`);
   return buffer;
@@ -1903,6 +1966,7 @@ export async function bundleMarketStrategyPack(
     `\n\n## Signal Weights (${signalWeights.length})\n## Narratives (${narratives.length})\n\n---\n**Exported via ANTON**\n`, 'utf-8'
   ));
 
+  attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created market-strategy-pack bundle "${bundleName}" (${indexes.length} indexes, ${theses.length} theses, ${buffer.length} bytes)`);
   return buffer;
@@ -2753,13 +2817,21 @@ export async function bundleGapAssessmentToAnton(
   const scopeConfig = parseJsonish(assessment.scope_config, {}) as Record<string, unknown>;
   const frameworks = parseJsonish(assessment.frameworks, []) as string[];
 
-  // Evidence: the stored manifest (Wave 1.5) when present, else recomputed
-  // from context_config with the same engine helpers — identical hashes.
+  // Evidence: the SHIPPED manifest must describe the evidence/*.md files we
+  // actually write below (both derived from the current evidenceItems), so a
+  // recipient can verify the files against the manifest as the README says.
+  // The frozen run-time manifest (what the findings were scored against) is
+  // shipped separately as evidence-manifest-at-assessment.json when it diverges,
+  // so the audit provenance is never lost. (Fixes the stale-manifest bug where
+  // the shipped manifest was the frozen copy while the files were current.)
   const evidenceItems = extractEvidenceItems(contextConfig);
-  const storedManifest = parseJsonish(assessment.evidence_manifest, null);
-  const evidenceManifest = Array.isArray(storedManifest) && storedManifest.length > 0
-    ? storedManifest
-    : buildEvidenceManifest(evidenceItems);
+  const evidenceManifest = buildEvidenceManifest(evidenceItems);
+  const runTimeManifest = parseJsonish(assessment.evidence_manifest, null);
+  const runTimeManifestJson = Array.isArray(runTimeManifest) && runTimeManifest.length > 0
+    ? JSON.stringify(runTimeManifest, null, 2)
+    : null;
+  const evidenceDiverged = runTimeManifestJson !== null
+    && runTimeManifestJson !== JSON.stringify(evidenceManifest, null, 2);
 
   // Iteration summaries (full snapshots stay home — they duplicate findings).
   let iterations: Array<Record<string, unknown>> = [];
@@ -2863,6 +2935,11 @@ export async function bundleGapAssessmentToAnton(
   zip.addFile('assessment.json', Buffer.from(assessmentJson, 'utf-8'));
   zip.addFile('findings.json', Buffer.from(findingsJson, 'utf-8'));
   zip.addFile('evidence-manifest.json', Buffer.from(evidenceManifestJson, 'utf-8'));
+  if (evidenceDiverged && runTimeManifestJson !== null) {
+    // The findings were scored against this frozen manifest; the current evidence
+    // (and evidence-manifest.json + evidence/*.md above) has changed since.
+    zip.addFile('evidence-manifest-at-assessment.json', Buffer.from(runTimeManifestJson, 'utf-8'));
+  }
   zip.addFile('iterations.json', Buffer.from(iterationsJson, 'utf-8'));
   if (secondOpinions.length > 0) {
     zip.addFile('second-opinions.json', Buffer.from(opinionsJson, 'utf-8'));
@@ -2894,8 +2971,8 @@ share it as a deliverable/archive, not as a re-runnable template).
 
 ## Evidence — what travels vs what doesn't
 
-- \`evidence-manifest.json\` lists every addressable evidence item with its sha256.
-- \`evidence/\` contains the ${evidenceItems.length} text evidence item(s) that were stored in the assessment itself.
+- \`evidence-manifest.json\` lists every addressable evidence item with its sha256 — it matches the \`evidence/*.md\` files in this bundle, so you can verify the files against it.
+- \`evidence/\` contains the ${evidenceItems.length} text evidence item(s) that were stored in the assessment itself.${evidenceDiverged ? '\n- ⚠ The evidence changed since the findings were last scored. `evidence-manifest-at-assessment.json` is the frozen manifest the findings were actually scored against; `evidence-manifest.json` + `evidence/` reflect the current evidence.' : ''}
 - Documents referenced through knowledge sources (folders / uploads / URLs) were
   never stored in the assessment record — they are NOT in this bundle. Verify
   them against the manifest hashes if the recipient is given them separately.

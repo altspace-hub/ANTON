@@ -156,6 +156,15 @@ export const ClaudeMessageSchema = z.object({
   atomInjectionEnabled: z.boolean().optional(),
   atomCollectionEnabled: z.boolean().optional(),
 
+  // Rerun marker (F2) — set ONLY by the internal rerun dispatcher
+  // (rehydrateClaudeBody) to the original assistant message id. Reruns still
+  // GET the atom layer like the original run, but are never assigned an A/B
+  // experiment arm: a rerun in the same session would straddle arms (the
+  // session gets EXCLUDED from the experiment stats) or double-count a
+  // different model's quality into the original arm. Must live in this schema
+  // or zod parsing strips it before it reaches the claude route.
+  rerunOf: z.string().max(100).optional(),
+
   // File uploads
   uploadedFileIds: z.array(z.string().max(500)).max(50).optional(),
 });

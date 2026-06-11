@@ -121,6 +121,10 @@ export async function createMarketplaceRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
       res.setHeader('Content-Length', String(listing.data.length));
       // Client-side verification info: sha256 of the exact bytes served.
+      // F4: ALWAYS bare lowercase hex (64 chars, no `sha256:` prefix) — the
+      // service normalizes at publish AND at read, so rows stored before
+      // normalization still emit the documented form. Clients compare it
+      // against `sha256sum <file>` output directly.
       res.setHeader('X-Bundle-Sha256', listing.bundle_hash);
       res.setHeader('X-Bundle-Type', listing.bundle_type);
       res.send(listing.data);

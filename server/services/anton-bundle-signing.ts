@@ -19,10 +19,15 @@
  * than maintaining a parallel keystore.
  *
  * What a valid signature proves — exactly this, no more:
- *   the manifest (every field of it, including the sha256 content checksum
- *   where the type carries one) has not been modified since it was signed by
- *   the holder of `signer_pubkey`. It does NOT vouch for content quality,
- *   safety, or the real-world identity behind the key.
+ *   the MANIFEST (every field of it) has not been modified since it was
+ *   signed by the holder of `signer_pubkey`. The PAYLOAD files are attested
+ *   only transitively — and only when the manifest carries a
+ *   `security.checksum` AND the validator recomputes it (F1: the dispatching
+ *   validator now does this for every type it knows the recipe for; the
+ *   verdict rides in `BundleProvenance.payload_attested`). A signed but
+ *   checksum-less manifest does NOT attest payload integrity. A signature
+ *   never vouches for content quality, safety, or the real-world identity
+ *   behind the key.
  *
  * Canonicalisation: RFC 8785 (JCS) via registry-protocol/canonical-json.ts.
  * The signed payload is the WHOLE manifest with `signature.sig_base64` set to
@@ -70,6 +75,16 @@ export interface BundleProvenance {
   known: boolean;
   /** TOFU: the name pinned the first time this pubkey was seen (when it differs). */
   first_seen_name?: string;
+  /**
+   * F1 — payload binding verdict, set only for SIGNED bundles:
+   * true  = the signature is valid AND the manifest's content checksum was
+   *         recomputed over the payload files and matched — the signature
+   *         covers the payload transitively.
+   * false = the signature covers the MANIFEST ONLY (no content checksum, or
+   *         this ANTON could not recompute it) — payload integrity is NOT
+   *         attested by the signature.
+   */
+  payload_attested?: boolean;
 }
 
 export interface SignBundleResult {

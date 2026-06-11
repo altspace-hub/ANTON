@@ -171,7 +171,11 @@ export async function createMarketplaceService(db: DatabaseAdapter) {
     `, id, params.bundleType, params.title, params.description,
        params.authorHash, params.authorName, params.version ?? '1.0.0',
        JSON.stringify(params.tags ?? []), JSON.stringify(params.targetAreas ?? []),
-       params.bundleHash, sizeBytes, storedData,
+       // F4: bundle_hash is stored NORMALIZED (bare lowercase hex, no
+       // `sha256:` prefix) — the same form the upload verification compares
+       // and the download path emits. Pre-fix rows may still carry a prefix;
+       // getListingBundle normalizes at read.
+       normalizeSha256(params.bundleHash), sizeBytes, storedData,
        storedData ? new Date().toISOString() : null);
     return id;
   }
@@ -197,7 +201,10 @@ export async function createMarketplaceService(db: DatabaseAdapter) {
     if (!row) return { found: false };
     const meta = {
       id: row.id, title: row.title, version: row.version,
-      bundle_type: row.bundle_type, bundle_hash: row.bundle_hash,
+      bundle_type: row.bundle_type,
+      // F4: emit bare lowercase hex regardless of how the row was stored —
+      // listings published before normalization may carry a `sha256:` prefix.
+      bundle_hash: normalizeSha256(row.bundle_hash),
     };
     if (!row.bundle_data || row.bundle_data.length === 0) {
       return { found: true, hasData: false, listing: meta };
