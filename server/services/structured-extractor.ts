@@ -326,6 +326,16 @@ function contentHash(markdown: string, contentType: ContentType): string {
     .digest('hex');
 }
 
+/**
+ * Public helper (Wave 2.2 module-run bundles): the exact cache key the
+ * extractor writes into sessions.structured_hash. Exported so the run
+ * bundler can verify the cached payload belongs to the exported message's
+ * content before shipping it — never a stale extraction from another turn.
+ */
+export function structuredContentHash(markdown: string, contentType: ContentType): string {
+  return contentHash(markdown, contentType);
+}
+
 function coercePayload(v: unknown): StructuredOutput | null {
   if (typeof v === 'string') {
     try { return JSON.parse(v) as StructuredOutput; }

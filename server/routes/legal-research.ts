@@ -18,6 +18,8 @@ import { buildOrgContextLayer } from '../services/prompt-builder.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
+import { bundleLegalResearchSessionToAnton } from '../services/anton-bundler.js';
+import { signAntonBundle } from '../services/anton-bundle-signing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -205,6 +207,38 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
     } catch (err) {
       console.error('[legal-research] update error:', err);
       res.status(500).json({ error: 'Failed to update session' });
+    }
+  });
+
+  // ── Export as .anton bundle (Wave 2.5 — export-only record) ────────────────
+  // POST /api/legal-research/:id/export-bundle { sign?, author? }
+  // Q&A transcript, pinned findings, the verified-citation ledger WITH statuses,
+  // and the mode/expert-role config. Signed with the instance key unless
+  // sign === false (same opt-in as exchange exports).
+  router.post('/legal-research/:id/export-bundle', async (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const session = await db.get(
+        'SELECT id FROM legal_research_sessions WHERE id = ? AND user_id = ?',
+        req.params.id, uid,
+      );
+      if (!session) return res.status(404).json({ error: 'Session not found' });
+
+      const { sign, author } = (req.body ?? {}) as { sign?: unknown; author?: unknown };
+      let buffer = await bundleLegalResearchSessionToAnton(db, req.params.id as string, {
+        author: typeof author === 'string' && author ? author : undefined,
+      });
+      if (sign !== false && sign !== 'false') {
+        buffer = (await signAntonBundle(db, buffer)).buffer;
+      }
+
+      const filename = `legal-research-${(req.params.id as string).slice(0, 8)}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (err) {
+      console.error('[legal-research] export-bundle error:', err);
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
