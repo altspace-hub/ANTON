@@ -1,0 +1,370 @@
+[
+  {
+    "ref_id": "INST-CBN",
+    "entity_type": "institution",
+    "entity_id": "NG-CBN",
+    "canonical_name": "Central Bank of Nigeria (CBN)",
+    "description": "Nigeria's central bank — licenses and supervises deposit money banks, microfinance banks, mobile money operators, payment service banks, and agent banking. Its Consumer Protection Department (CPD) receives escalated complaints AFTER the financial institution has failed to resolve them: the standard rule is complain to your bank/provider first in writing, and if unresolved within two weeks, escalate to CBN CPD (historically via cpd@cbn.gov.ng and the CBN online complaint channels — verify the current channel on cbn.gov.ng). CBN publishes the lists of licensed institutions used to verify any bank, MFB, or mobile money operator.",
+    "metadata": { "country": "Nigeria", "website": "https://www.cbn.gov.ng", "escalation_rule": "provider first; escalate to CBN CPD if unresolved in 2 weeks (verify)" }
+  },
+  {
+    "ref_id": "INST-NDIC",
+    "entity_type": "institution",
+    "entity_id": "NG-NDIC",
+    "canonical_name": "Nigeria Deposit Insurance Corporation (NDIC)",
+    "description": "Insures deposits in Nigerian banks. Coverage was raised in May 2024 to (verify current figures on ndic.gov.ng): ₦5,000,000 per depositor for deposit money banks, ₦2,000,000 for microfinance banks and primary mortgage banks, and ₦5,000,000 per subscriber pass-through coverage for mobile money operators. When a bank or MFB licence is revoked, NDIC pays insured depositors and liquidates the institution — depositors of failed MFBs claim from NDIC with proof of account (BVN, statements). Money in unregistered schemes (esusu collectors, Ponzi platforms) has NO NDIC protection.",
+    "metadata": { "country": "Nigeria", "coverage": "DMB ₦5m / MFB+PMB ₦2m / MMO pass-through ₦5m (May 2024 — verify)", "website": "https://ndic.gov.ng" }
+  },
+  {
+    "ref_id": "INST-EFCC",
+    "entity_type": "institution",
+    "entity_id": "NG-EFCC",
+    "canonical_name": "Economic and Financial Crimes Commission (EFCC)",
+    "description": "Nigeria's financial-crimes law-enforcement agency — the main destination for reporting investment fraud, Ponzi schemes, advance-fee (419) fraud, and large-scale account fraud. Reports can be filed at any EFCC zonal command, via the EFCC Eagle Eye app, or through its published phone/email channels (verify current channels on efcc.gov.ng). For bank-account fraud, also report to your bank immediately so accounts can be flagged and funds traced before dissipation.",
+    "metadata": { "country": "Nigeria", "website": "https://www.efcc.gov.ng" }
+  },
+  {
+    "ref_id": "INST-FCCPC",
+    "entity_type": "institution",
+    "entity_id": "NG-FCCPC",
+    "canonical_name": "Federal Competition and Consumer Protection Commission (FCCPC)",
+    "description": "Nigeria's general consumer-protection authority under the FCCPA 2018. In BoP finance it is best known for regulating DIGITAL MONEY LENDERS: since 2022 loan apps must register with FCCPC under its Limited Interim Regulatory Framework, and the FCCPC publishes the approved-lender list. It has sanctioned and delisted apps for harassment, contact-scraping, and defamatory 'debt-shaming' messages. Complaints about loan-app harassment or unfair terms go to FCCPC (verify current channels on fccpc.gov.ng).",
+    "metadata": { "country": "Nigeria", "website": "https://fccpc.gov.ng", "verify": "approved digital lender list — check current version" }
+  },
+  {
+    "ref_id": "INST-NIBSS",
+    "entity_type": "institution",
+    "entity_id": "NG-NIBSS",
+    "canonical_name": "Nigeria Inter-Bank Settlement System (NIBSS)",
+    "description": "The shared payments infrastructure owned by Nigerian banks and the CBN. Runs NIP (NIBSS Instant Payment — the rail behind instant interbank transfers and most POS/USSD payments) and operates the BVN database. Relevant to users because failed or misdirected NIP transfers are traced through NIBSS records via your bank — the bank, not NIBSS directly, is your complaint channel.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "INST-NCC",
+    "entity_type": "institution",
+    "entity_id": "NG-NCC",
+    "canonical_name": "Nigerian Communications Commission (NCC)",
+    "description": "The telecoms regulator. Relevant to BoP finance through SIM registration/NIN-linkage rules (a registered SIM is the anchor for USSD banking and mobile money) and through its toll-free consumer line 622 for complaints against mobile operators, including unresolved SIM-swap and unauthorized-airtime-deduction cases.",
+    "metadata": { "country": "Nigeria", "consumer_line": "622 (toll-free — verify)" }
+  },
+  {
+    "ref_id": "INST-NFIU",
+    "entity_type": "institution",
+    "entity_id": "NG-NFIU",
+    "canonical_name": "Nigerian Financial Intelligence Unit (NFIU)",
+    "description": "Nigeria's financial intelligence unit — receives suspicious-transaction reports from banks and other reporting institutions. Relevant to ordinary users mainly as the reason banks ask source-of-funds questions and may restrict accounts pending review; an unexplained account restriction ('PND — post no debit') often traces to a fraud or AML flag and is resolved through the bank with documentation.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "INST-SEC-NG",
+    "entity_type": "institution",
+    "entity_id": "NG-SEC",
+    "canonical_name": "Securities and Exchange Commission Nigeria (SEC)",
+    "description": "Regulates investment products and publishes warnings against unregistered investment schemes — its 'list of illegal/unregistered operators' is a quick check before putting money into any 'investment platform' promising fixed returns. Ponzi losses (MMM Nigeria 2016 being the canonical example) are also reportable to SEC alongside EFCC.",
+    "metadata": { "country": "Nigeria", "website": "https://sec.gov.ng" }
+  },
+  {
+    "ref_id": "INST-STATE-COOP",
+    "entity_type": "institution",
+    "entity_id": "NG-STATE-COOP-REGISTRARS",
+    "canonical_name": "State cooperative registrars (Nigeria)",
+    "description": "Cooperative societies in Nigeria — including thrift and credit cooperatives that formalize esusu-style saving — register with the cooperative-development office of their STATE government (not the CBN). A registered cooperative has legal personality, by-laws, and an audit obligation; members of an unregistered group depend purely on trust. Moneylending outside cooperatives is licensed under state Money Lenders Laws, also state-administered.",
+    "metadata": { "country": "Nigeria", "level": "state government" }
+  },
+  {
+    "ref_id": "REG-BOFIA-2020",
+    "entity_type": "regulation",
+    "entity_id": "NG-BOFIA-2020",
+    "canonical_name": "Banks and Other Financial Institutions Act 2020 (BOFIA)",
+    "description": "The principal Nigerian banking statute — the licensing foundation for banks and 'other financial institutions' including microfinance banks. Practical BoP relevance: any entity taking deposits from the public must hold a CBN licence under BOFIA; unlicensed deposit-taking ('wonder banks') is illegal and is the legal hook used against Ponzi-style deposit schemes.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "REG-CPF-2016",
+    "entity_type": "regulation",
+    "entity_id": "NG-CBN-CPF-2016",
+    "canonical_name": "CBN Consumer Protection Framework 2016 + Consumer Protection Regulations 2019",
+    "description": "The CBN's consumer-protection regime for licensed institutions. Core consumer rights: clear disclosure of all charges before a product is sold, fair treatment, privacy of customer data, free complaint channels with defined resolution timelines, and prohibition of unfair contract terms. Institutions must acknowledge complaints promptly and resolve them within set timeframes (around 2 weeks for most issues — verify), after which the customer may escalate to the CBN Consumer Protection Department.",
+    "metadata": { "country": "Nigeria", "supervisor": "CBN" }
+  },
+  {
+    "ref_id": "REG-MMO-2021",
+    "entity_type": "regulation",
+    "entity_id": "NG-MMO-GUIDELINES-2021",
+    "canonical_name": "CBN Guidelines for Mobile Money Services 2021",
+    "description": "Governs mobile money operators (MMOs) in Nigeria under bank-led and non-bank-led models. MMOs must safeguard customer e-money in settlement accounts, are barred from lending off customer floats, and customers get NDIC pass-through deposit insurance. Unlike Kenya, Nigerian mobile money is multi-operator: licensed MMOs (e.g. Paga, OPay, PalmPay, Moniepoint wallets) plus telecom-backed Payment Service Banks compete — verify any wallet's licence on the CBN list.",
+    "metadata": { "country": "Nigeria", "supervisor": "CBN" }
+  },
+  {
+    "ref_id": "REG-PSB",
+    "entity_type": "regulation",
+    "entity_id": "NG-PSB-FRAMEWORK",
+    "canonical_name": "Payment Service Banks (PSB) framework",
+    "description": "CBN framework allowing telecom subsidiaries and others to run narrow banks for financial inclusion: PSBs (notably MoMo PSB by MTN, SmartCash PSB by Airtel, 9PSB, Hope PSB) can take deposits, issue debit cards, and do payments/remittances, with a rural-presence requirement — but canNOT lend or deal in foreign exchange. For an unbanked user, a PSB account opened with a phone and minimal KYC is a regulated, NDIC-insured entry point into formal finance.",
+    "metadata": { "country": "Nigeria", "examples": "MoMo PSB, SmartCash PSB, 9PSB, Hope PSB" }
+  },
+  {
+    "ref_id": "REG-MFB-2020",
+    "entity_type": "regulation",
+    "entity_id": "NG-MFB-GUIDELINES-2020",
+    "canonical_name": "CBN Revised Microfinance Bank Guidelines 2020 (MFB categories)",
+    "description": "Defines Nigeria's microfinance bank categories and minimum capital (verify current figures): Tier 1 Unit MFB (urban, single location + limited branches) ₦200 million; Tier 2 Unit MFB (rural/unbanked areas) ₦50 million; State MFB (one state/FCT) ₦1 billion; National MFB (nationwide) ₦5 billion. MFBs serve micro-clients with loans that are mostly small, short-term, and cash-flow-based; they may take deposits (NDIC-insured to the MFB limit). Checking which category an MFB holds tells you where it may legally operate.",
+    "metadata": { "country": "Nigeria", "supervisor": "CBN", "verify": "capital requirements and category rules — confirm current guidelines" }
+  },
+  {
+    "ref_id": "REG-AGENT-2013",
+    "entity_type": "regulation",
+    "entity_id": "NG-AGENT-BANKING",
+    "canonical_name": "CBN Agent Banking Guidelines + SANEF",
+    "description": "The regime under which banks, MMOs, and super-agents deploy agents — the POS operators ubiquitous in Nigerian markets and motor parks. Agents act in the principal institution's name: they must display the principal's signage and agent ID, may not charge beyond disclosed fees, and complaints about an agent go to the principal institution. SANEF (Shared Agent Network Expansion Facility) is the industry programme that scaled the agent network for financial inclusion.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "REG-TIERED-KYC",
+    "entity_type": "regulation",
+    "entity_id": "NG-TIERED-KYC-2013",
+    "canonical_name": "CBN Three-Tiered KYC Requirements",
+    "description": "Lets low-income Nigerians open accounts with minimal documentation (figures from the 2013 circular — verify current limits): Tier 1 accounts need only basic information and a passport photograph (no address verification), capped around ₦50,000 per single deposit and ₦300,000 maximum balance; Tier 2 requires BVN with limits around ₦100,000/₦500,000; Tier 3 is full KYC with no caps. Practical use: a market trader without utility bills can still open a Tier 1 account or wallet legally — being told 'no account without full documents' is wrong for Tier 1.",
+    "metadata": { "country": "Nigeria", "verify": "tier limits — confirm current CBN circular" }
+  },
+  {
+    "ref_id": "REG-GSI-2020",
+    "entity_type": "regulation",
+    "entity_id": "NG-GSI-2020",
+    "canonical_name": "Global Standing Instruction (GSI) 2020",
+    "description": "CBN mechanism (live since August 2020) under which a borrower signs a GSI mandate at loan origination; if the borrower defaults, the lender can trigger direct recovery of the outstanding amount from the borrower's OTHER bank accounts and wallets across Nigeria (individual accounts, linked by BVN). BoP relevance: defaulting on one digital or bank loan can lead to money being taken from a different bank account you hold — and conversely, a GSI debit you believe is wrong is disputable through your bank and CBN CPD.",
+    "metadata": { "country": "Nigeria", "since": "2020-08" }
+  },
+  {
+    "ref_id": "REG-FCCPA-2018",
+    "entity_type": "regulation",
+    "entity_id": "NG-FCCPA-2018",
+    "canonical_name": "Federal Competition and Consumer Protection Act 2018 (FCCPA)",
+    "description": "Nigeria's umbrella consumer-protection statute establishing the FCCPC. Grants consumers rights to information in plain language, fair dealing, safe products, and redress; prohibits unconscionable conduct. In finance it underpins FCCPC's jurisdiction over digital lenders and over unfair conduct that sector regulators miss.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "REG-DIGITAL-LENDING-2022",
+    "entity_type": "regulation",
+    "entity_id": "NG-FCCPC-DIGITAL-LENDING-2022",
+    "canonical_name": "FCCPC Limited Interim Regulatory Framework for Digital Lending 2022",
+    "description": "Requires digital money lenders (loan apps) to register with and be approved by the FCCPC; the approved list is public. Approved lenders must not harvest borrowers' phone contacts for collection, send defamatory or threatening messages, or misrepresent loan costs. Unregistered loan apps are illegal; Google Play policy in Nigeria ties app listing to FCCPC approval. Harassment by any loan app — registered or not — is reportable to FCCPC.",
+    "metadata": { "country": "Nigeria", "enforcer": "FCCPC" }
+  },
+  {
+    "ref_id": "REG-MONEYLENDERS",
+    "entity_type": "regulation",
+    "entity_id": "NG-MONEY-LENDERS-LAWS",
+    "canonical_name": "State Money Lenders Laws (Nigeria)",
+    "description": "Moneylending to the public outside a banking licence is regulated at STATE level under each state's Money Lenders Law (many dating to the colonial-era Money Lenders Act, re-enacted per state) — lenders need a state moneylender's licence, and several states cap enforceable interest. Practical point: an informal lender with no state licence has weak legal standing to enforce abusive terms, and licence status can be checked with the state ministry of home affairs/justice (varies by state — verify locally).",
+    "metadata": { "country": "Nigeria", "level": "state", "verify": "requirements vary per state" }
+  },
+  {
+    "ref_id": "PROC-BANK-COMPLAINT",
+    "entity_type": "process",
+    "entity_id": "NG-BANK-COMPLAINT-FIRST",
+    "canonical_name": "Complain to your bank/provider first (Nigeria 2-week rule)",
+    "description": "The standard Nigerian complaint sequence for any bank, MFB, MMO, or PSB issue (failed transfer, wrong debit, unauthorized charge): (1) complain to the institution through its official channel — branch, app, email, or call centre — and obtain a complaint TRACKING NUMBER; (2) keep evidence: SMS alerts, transaction receipts, dates, names; (3) if the institution does not resolve the complaint within two weeks (the timeframe in CBN guidance — verify), escalate to the CBN Consumer Protection Department quoting the tracking number. Skipping step 1 usually gets the CBN complaint bounced back.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-CBN-ESCALATION",
+    "entity_type": "process",
+    "entity_id": "NG-CBN-CPD-ESCALATION",
+    "canonical_name": "Escalating to the CBN Consumer Protection Department",
+    "description": "How to escalate a complaint to the Central Bank of Nigeria after the bank or provider fails to resolve it within the timeframe: write to the CBN Consumer Protection Department with your name and contact, the institution's name and branch, your account/wallet details (never your PIN or full card number), the provider's complaint tracking number, a chronology of events, and the resolution sought. Channels have included cpd@cbn.gov.ng and CBN's online consumer-complaint portal — verify the current channel on cbn.gov.ng. CBN can direct refunds and sanction institutions.",
+    "metadata": { "country": "Nigeria", "verify": "current channel on cbn.gov.ng" }
+  },
+  {
+    "ref_id": "PROC-NDIC-CLAIM",
+    "entity_type": "process",
+    "entity_id": "NG-NDIC-CLAIM",
+    "canonical_name": "Claiming insured deposits from NDIC after a bank/MFB failure",
+    "description": "When CBN revokes an institution's licence, NDIC announces verification/payment arrangements. Depositors present proof: BVN, account name/number, ID, and any statements or passbooks; payment of the insured amount goes to an alternate account the depositor names. Amounts ABOVE the insured limit are paid later (possibly partially) as liquidation dividends from asset recoveries. Lesson often given at the BoP: keep balances at any single MFB within the insured limit and keep your passbook/SMS records.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-EFCC-REPORT",
+    "entity_type": "process",
+    "entity_id": "NG-EFCC-REPORT",
+    "canonical_name": "Reporting financial fraud to EFCC",
+    "description": "For investment scams, Ponzi collapses, 419/advance-fee fraud, or organized account fraud: gather evidence (payment receipts, account numbers paid into, chat screenshots, the platform's details), then report to the nearest EFCC zonal command in person or via the Eagle Eye app / published email channels. Parallel steps that improve recovery odds: instruct your own bank immediately to flag the beneficiary account, and report to the police for a case file. Manage expectations honestly — recovery from collapsed Ponzi schemes is rare.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-FCCPC-LOANAPP",
+    "entity_type": "process",
+    "entity_id": "NG-FCCPC-LOANAPP-COMPLAINT",
+    "canonical_name": "Reporting loan-app harassment to FCCPC",
+    "description": "If a loan app sends threatening or defamatory messages, contacts your family/colleagues, or misstates your debt: screenshot the messages (including sender IDs and dates), note the app name and your loan records, and complain to the FCCPC through its published complaint channels (web form/email — verify on fccpc.gov.ng). FCCPC has fined and delisted offending lenders. You still owe legitimately borrowed principal — the complaint targets unlawful conduct, not the debt itself.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-BVN-ENROLL",
+    "entity_type": "process",
+    "entity_id": "NG-BVN-ENROLMENT",
+    "canonical_name": "BVN enrolment and what a BVN can and cannot do",
+    "description": "The Bank Verification Number is a biometric identity (fingerprints + photo) issued once per person at any bank branch or approved enrolment point, then linked to all the person's bank accounts. Crucial anti-scam fact: knowing your BVN alone does NOT let anyone withdraw your money — but fraudsters use 'your BVN will be blocked' calls to harvest the OTPs and card details that DO move money. Never read an OTP to anyone; banks and CBN never call to 'validate' a BVN.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-NIP-DISPUTE",
+    "entity_type": "process",
+    "entity_id": "NG-NIP-DISPUTE",
+    "canonical_name": "Failed or wrong NIP transfer recourse",
+    "description": "For 'debited but not credited' or wrong-account instant transfers: report to YOUR bank with the transaction reference (session ID) from the alert/receipt. Failed NIP transfers must be auto-reversed within set timelines (CBN has mandated same-day to 24-hour reversal windows — verify current rules); if not, your bank raises a dispute through NIBSS. For transfers to a WRONG account, your bank contacts the beneficiary bank to place a lien and request consent-based reversal — the recipient's consent or a court order is generally needed once funds are spent, so report fast.",
+    "metadata": { "country": "Nigeria", "time_critical": true }
+  },
+  {
+    "ref_id": "PROC-POS-AGENT",
+    "entity_type": "process",
+    "entity_id": "NG-POS-AGENT-NORMS",
+    "canonical_name": "POS agent cash-in/cash-out norms (Nigeria)",
+    "description": "Norms at Nigerian POS agent points: fees must be DISCLOSED before the transaction — the market norm has been roughly ₦100-200 per ₦5,000-10,000 withdrawal, varying with location and cash scarcity (verify locally; fees spike when cash is scarce); the agent must issue a receipt or you must receive a debit alert matching the amount; never disclose your PIN aloud — shield the keypad; count cash before leaving. Disputes (debited but no cash given) go first to the agent's principal institution shown on the signage, with the receipt/alert as evidence.",
+    "metadata": { "country": "Nigeria", "fee_norm": "₦100-200 per ₦5,000-10,000 withdrawal (market norm — varies, verify)" }
+  },
+  {
+    "ref_id": "PROC-ESUSU-OPERATION",
+    "entity_type": "process",
+    "entity_id": "NG-ESUSU-OPERATION",
+    "canonical_name": "How esusu/ajo rounds are run well",
+    "description": "Norms of a well-run Nigerian rotating-savings group: fixed contribution and schedule agreed in writing; the rotation order drawn by lot or negotiated openly BEFORE the cycle starts; a record book signed at every collection; the collector or coordinator known personally to members with a fixed address; payouts in front of witnesses; and member replacement rules agreed in advance (what happens if someone defaults after collecting early). Digital esusu platforms exist but require the same scrutiny as any fintech — check FCCPC/CBN status before trusting an app with pooled funds.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "PROC-VERIFY-LICENSE",
+    "entity_type": "process",
+    "entity_id": "NG-VERIFY-LICENCE",
+    "canonical_name": "Verifying a Nigerian financial institution's licence",
+    "description": "Before depositing or borrowing: banks, MFBs, MMOs, and PSBs are verified against the CBN's published lists of licensed institutions (cbn.gov.ng); loan apps against the FCCPC approved digital lender list (fccpc.gov.ng); investment platforms against SEC Nigeria's registered operators (sec.gov.ng); deposit insurance status with NDIC. An institution that appears on none of these lists and still solicits deposits is operating illegally — the practical definition of a 'wonder bank'.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "NORM-USSD-BANKING",
+    "entity_type": "norm",
+    "entity_id": "NG-USSD-BANKING",
+    "canonical_name": "USSD banking norms (Nigeria)",
+    "description": "Most Nigerian banks offer USSD banking on basic phones via bank-specific codes (e.g. GTBank *737#, others have their own — verify each bank's code from official sources, fraudsters circulate fake codes). A USSD session fee of about ₦6.98 charged via airtime was the negotiated industry norm (verify current pricing). Safety norms: dial codes yourself rather than tapping links, set and never share the USSD PIN, and unlink USSD banking immediately if the SIM is lost since USSD rides on SIM possession.",
+    "metadata": { "country": "Nigeria", "session_fee": "₦6.98 norm (verify current)" }
+  },
+  {
+    "ref_id": "NORM-PIN-OTP",
+    "entity_type": "norm",
+    "entity_id": "NG-PIN-OTP-SECRECY",
+    "canonical_name": "PIN/OTP/card secrecy rule (Nigeria)",
+    "description": "No Nigerian bank, the CBN, NDIC, or NIBSS ever calls, texts, or emails asking for a PIN, OTP, full card number, CVV, or 'BVN validation'. Every such request is fraud, full stop. OTPs read out to a caller move real money instantly via NIP; banks treat disclosed-PIN losses as customer negligence, which usually defeats refund claims. The defensive norm taught at the BoP: hang up, dial your bank's official number yourself, and never act on threats that an account or BVN 'will be blocked today'.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "NORM-MFB-LOAN-TERMS",
+    "entity_type": "norm",
+    "entity_id": "NG-MFB-LOAN-TERMS",
+    "canonical_name": "Typical Nigerian MFB loan terms",
+    "description": "Market norms (vary widely — always read the offer letter): microfinance bank loans are mostly ₦20,000-₦500,000 for 3-12 months, priced as MONTHLY interest commonly in the 2.5-6% per month range plus fees, repaid weekly or monthly, often requiring a guarantor, savings history with the MFB, or group membership rather than physical collateral. Monthly rates compound into large annual costs (4% per month ≈ over 60% per year effective) — comparing the TOTAL amount repayable, not the quoted monthly rate, is the honest comparison method.",
+    "metadata": { "country": "Nigeria", "rate_norm": "2.5-6%/month typical (market norm — verify per institution)" }
+  },
+  {
+    "ref_id": "NORM-COOP",
+    "entity_type": "norm",
+    "entity_id": "NG-COOPERATIVE-NORMS",
+    "canonical_name": "Cooperative society savings/loan norms (Nigeria)",
+    "description": "Registered thrift and credit cooperatives — common in workplaces, markets, and churches — collect monthly savings and lend to members, typically at 1-2.5% per month, far below loan apps and moneylenders, with loan ceilings tied to a multiple of the member's savings (often 2x) and one or two member guarantors. Governance norms: registered by-laws, elected executives, annual general meetings with audited accounts, and dividends on savings. Risks are governance failure and illiquidity, not regulation: state registrars rarely supervise actively, so members' scrutiny of the books is the real control.",
+    "metadata": { "country": "Nigeria", "rate_norm": "1-2.5%/month member lending (norm — varies)" }
+  },
+  {
+    "ref_id": "TERM-ESUSU",
+    "entity_type": "term",
+    "entity_id": "NG-ESUSU-AJO-ADASHE",
+    "canonical_name": "Esusu / Ajo / Adashe (rotating savings, Nigeria)",
+    "description": "Nigeria's traditional rotating savings and credit associations (ROSCAs), called esusu (Yoruba/general), ajo (Yoruba), adashe (Hausa), or etoto/isusu (Igbo variants): a fixed group contributes a fixed amount each day/week/month and the whole pot goes to one member in rotation until everyone has collected once. There is no interest and no profit — the value is forced savings discipline and early access to a lump sum for those early in the rotation. Main risks: a member defaulting after collecting early, and collector theft — mitigated by the group norms in 'How esusu/ajo rounds are run well'.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "TERM-AJO-COLLECTOR",
+    "entity_type": "term",
+    "entity_id": "NG-AJO-COLLECTOR",
+    "canonical_name": "Ajo/esusu collector (alajo) — daily savings collector",
+    "description": "A mobile-savings variant: the alajo (daily contribution collector) visits traders daily to collect small fixed deposits and returns the accumulated month's savings on request, conventionally keeping ONE day's contribution per month as the fee — meaning savers effectively pay roughly 3-4% monthly (negative interest) for the discipline and convenience. Honest comparison taught in financial-literacy work: a Tier 1 bank/PSB wallet provides the same daily-deposit discipline at near-zero cost with deposit insurance — the alajo's edge is trust, habit, and doorstep service.",
+    "metadata": { "country": "Nigeria", "fee_norm": "one day's contribution per month (traditional norm)" }
+  },
+  {
+    "ref_id": "TERM-POS-AGENT",
+    "entity_type": "term",
+    "entity_id": "NG-POS-AGENT",
+    "canonical_name": "POS agent (agent banking point, Nigeria)",
+    "description": "The street-level cash-in/cash-out points of Nigerian finance: individuals with POS terminals acting as agents of banks, MMOs, or super-agents (Moniepoint, OPay, Paga networks and others), doing withdrawals, deposits, transfers, and bill payments where bank branches are absent. They are often the ONLY financial access point in rural and market settings. They operate under the CBN agent-banking regime: principal's branding displayed, disclosed fees, disputes via the principal institution.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "TERM-BVN-NIN",
+    "entity_type": "term",
+    "entity_id": "NG-BVN-NIN",
+    "canonical_name": "BVN and NIN (Nigerian identity numbers for finance)",
+    "description": "Two distinct identifiers BoP users routinely confuse: the BVN (Bank Verification Number, biometric, issued by the banking industry via NIBSS) anchors all bank accounts; the NIN (National Identification Number, issued by NIMC) is the national ID number required for SIM registration and increasingly for account opening. Accounts and wallets must generally be linked to BVN and/or NIN under CBN circulars (Tier 1 accounts have lighter requirements). Neither number alone lets anyone take your money — OTPs, PINs, and cards do.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "TERM-NIP",
+    "entity_type": "term",
+    "entity_id": "NG-NIP",
+    "canonical_name": "NIP — NIBSS Instant Payment",
+    "description": "Nigeria's instant interbank transfer rail, behind app, USSD, and POS transfers — credits are typically instant and IRREVERSIBLE without the beneficiary's consent once completed. BoP implications: a transfer to the wrong account is hard to recover (report to your bank immediately for a lien request), 'transfer reversal' promises from strangers are scams, and merchants should confirm credit ALERTS from their own bank app/SMS rather than a customer's screen, which can be faked.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "TERM-WONDER-BANK",
+    "entity_type": "term",
+    "entity_id": "NG-WONDER-BANK",
+    "canonical_name": "'Wonder bank' (illegal deposit-taking scheme, Nigeria)",
+    "description": "Nigerian term for unlicensed institutions soliciting deposits with above-market guaranteed returns — historically collapsing with depositors' funds. They are illegal under BOFIA (only CBN-licensed institutions may take public deposits) and have no NDIC insurance. Identification heuristic: promises of fixed monthly returns well above bank rates + not on any CBN list + payouts dependent on continued inflows = wonder bank/Ponzi, regardless of how it brands itself (cooperative, club, fintech, agro-investment).",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "RISK-FAKE-ALERT",
+    "entity_type": "risk",
+    "entity_id": "NG-FAKE-CREDIT-ALERT",
+    "canonical_name": "Fake bank credit alert scam (Nigeria)",
+    "description": "A 'buyer' shows the trader a forged credit-alert SMS or a doctored banking-app screen and leaves with goods; the money never arrives. Defence norms for merchants: only trust an alert received on YOUR OWN phone/app, check the actual account balance (not just the SMS), beware alerts arriving from ordinary phone numbers rather than the bank's sender ID, and for large sales wait for balance confirmation before releasing goods. POS receipt or transfer 'pending' screenshots prove nothing.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "RISK-BVN-SCAM",
+    "entity_type": "risk",
+    "entity_id": "NG-BVN-PHISHING",
+    "canonical_name": "'Your BVN/account will be blocked' phishing calls",
+    "description": "Mass phishing pattern: a caller or SMS claims to be from your bank, CBN, or NIBSS, says your BVN/account will be blocked 'today', and walks you through 'verification' that actually harvests your card number, PIN, and the OTP that authorizes a transfer. Variants use fake bank SMS sender IDs and links to fake BVN-validation websites. Defence: banks never block BVNs by phone-deadline; hang up and call the bank's official number; never enter card details on a link from SMS/WhatsApp; report the number to your bank and NCC 622.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "RISK-PONZI",
+    "entity_type": "risk",
+    "entity_id": "NG-PONZI-SCHEMES",
+    "canonical_name": "Ponzi schemes (MMM-pattern, Nigeria)",
+    "description": "Recurring Nigerian pattern since MMM Nigeria's 2016 collapse (millions of participants): platforms promising fixed returns like '30% in 30 days', framed as peer-to-peer 'donation exchanges', forex/crypto bots, or agro-investments. Mechanics: early withdrawals are paid from new deposits to build word-of-mouth, then withdrawals are frozen ('system maintenance', 'reverification fees') before collapse. Red flags: guaranteed returns, recruitment bonuses, pressure to 'reinvest', no SEC registration. Report to EFCC and SEC; recovery is rare — prevention via the licence-verification process is the real protection.",
+    "metadata": { "country": "Nigeria", "canonical_case": "MMM Nigeria, 2016" }
+  },
+  {
+    "ref_id": "RISK-LOANAPP-HARASS",
+    "entity_type": "risk",
+    "entity_id": "NG-LOANAPP-HARASSMENT",
+    "canonical_name": "Loan-app harassment and debt-shaming (Nigeria)",
+    "description": "Predatory loan apps harvest the borrower's contact list at install, then on (or even before) default send defamatory broadcasts to family, employers, and colleagues — 'X is a criminal debtor, beware' — plus threats and inflated balances. This conduct violates the FCCPC digital-lending framework and data-protection rules and has led to fines and delistings. Borrower playbook: screenshot everything, complain to FCCPC, deny contact permissions at install, prefer FCCPC-approved lenders, and know that harassment does not change the legitimately owed principal.",
+    "metadata": { "country": "Nigeria" }
+  },
+  {
+    "ref_id": "RISK-SIM-SWAP-NG",
+    "entity_type": "risk",
+    "entity_id": "NG-SIM-SWAP",
+    "canonical_name": "SIM-swap fraud (Nigeria pattern)",
+    "description": "Fraudsters obtain a replacement SIM for the victim's registered number (social-engineering agent points or using harvested NIN/ID details), then receive bank OTPs and run USSD banking to drain accounts. Warning sign: sudden loss of network service. Immediate response: block the SIM via the operator from another phone, call the bank's official line to freeze accounts and unlink USSD banking, change app passwords, then report to the operator, bank, police, and NCC. Prevention: protect NIN/ID details, use app-based transaction approvals where available, and set a SIM-lock PIN.",
+    "metadata": { "country": "Nigeria", "time_critical": true }
+  },
+  {
+    "ref_id": "RISK-UPFRONT-FEE",
+    "entity_type": "risk",
+    "entity_id": "NG-UPFRONT-FEE-FRAUD",
+    "canonical_name": "Advance-fee loan and grant scams (Nigeria)",
+    "description": "The 419-family pattern applied to credit: fake lenders, 'CBN/Federal Government empowerment grants', or 'foreign NGO funds' require an upfront 'processing/insurance/clearance fee' before releasing money that never comes — often escalating with additional fees as long as the victim pays. Iron rule: no legitimate lender or grant program collects fees BEFORE disbursement through personal accounts or POS transfers. Government empowerment schemes are announced through official channels, never via WhatsApp broadcasts requiring registration fees. Report to EFCC.",
+    "metadata": { "country": "Nigeria", "red_flag": "any fee payable before disbursement" }
+  }
+]

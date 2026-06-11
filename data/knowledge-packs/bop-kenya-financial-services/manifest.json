@@ -1,0 +1,26 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "bop-kenya-financial-services",
+  "display_name": "Kenya BoP Financial Services — M-Pesa, SACCOs, Chamas, Consumer Protection",
+  "version": "1.0.0",
+  "description": "AI-DRAFTED REFERENCE CONTENT (2026-06) — NOT INDEPENDENTLY VALIDATED. Verify every fee, limit, phone number, and legal detail against current local sources (CBK, SASRA, Safaricom, the statutes themselves) before relying on it. Designed as offline grounding for small/local models serving Kenya bottom-of-pyramid financial-services modules: M-Pesa and mobile-money norms (limits, charges, reversal, Hakikisha), complaint and fraud-reporting channels (Safaricom 100/200/333, CBK escalation, DCI), SACCO basics and SASRA oversight, chama/table-banking group-savings norms, the Microfinance Act 2006, CBK Digital Credit Providers Regulations 2022, CRB listing rules, KDIC deposit insurance, and common fraud patterns with reporting paths. An NGO partner or local expert should review and correct this pack (set validated_by + content_confirmed) before field deployment.",
+  "author": "ANTON (AI-drafted, unvalidated)",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "Kenya",
+  "regulatory_area": "BoP Financial Inclusion & Consumer Protection",
+  "regulation_ids": [
+    "Microfinance Act 2006 (Kenya)",
+    "National Payment System Act 2011 (Kenya)",
+    "SACCO Societies Act 2008 (Kenya)",
+    "CBK Digital Credit Providers Regulations 2022",
+    "Consumer Protection Act 2012 (Kenya)",
+    "Data Protection Act 2019 (Kenya)",
+    "Proceeds of Crime and Anti-Money Laundering Act 2009 (Kenya)",
+    "CRB Regulations 2020 (Kenya)"
+  ],
+  "tier": 2,
+  "content_confirmed": false,
+  "entity_count": 48,
+  "relationship_count": 32,
+  "alias_entry_count": 26
+}

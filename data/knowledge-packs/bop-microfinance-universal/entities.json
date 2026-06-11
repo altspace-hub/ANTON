@@ -1,0 +1,282 @@
+[
+  {
+    "ref_id": "PROC-JLG",
+    "entity_type": "process",
+    "entity_id": "UNI-JOINT-LIABILITY-GROUP",
+    "canonical_name": "Joint liability group lending (Grameen-style)",
+    "description": "The classic microfinance mechanic: borrowers form small groups (conventionally 5 members, federated into centres of 4-8 groups) that meet weekly or monthly; each member's loan is guaranteed by the others — if one defaults, the group must cover the instalment or all members lose access to future loans. The group substitutes for collateral: peer selection screens out bad risks, peer pressure and peer support sustain repayment. Norms: members choose each other (staff must not assemble groups), no two members from one household, loans disbursed publicly at meetings, and repayment recorded in each member's passbook in front of the group.",
+    "metadata": { "scope": "universal", "origin": "Grameen Bank model" }
+  },
+  {
+    "ref_id": "PROC-GRADUATED-LENDING",
+    "entity_type": "process",
+    "entity_id": "UNI-GRADUATED-LENDING",
+    "canonical_name": "Graduated (progressive) lending",
+    "description": "Loan sizes start deliberately small — often around 50-150% of a client's monthly income for the first cycle — and increase step-by-step with each successfully repaid cycle (typical step-ups of 25-100% per cycle, capped by repayment capacity). The first loan tests reliability cheaply for both sides; the growing loan ladder is the client's incentive to repay. Warning the model carries: incentive-driven automatic step-ups without re-assessing capacity are a known driver of over-indebtedness — good practice re-verifies cash flow at every cycle, and clients may refuse a step-up.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-SAVINGS-FIRST",
+    "entity_type": "process",
+    "entity_id": "UNI-SAVINGS-FIRST",
+    "canonical_name": "Savings-first and compulsory savings",
+    "description": "Many MFIs and virtually all SACCOs/cooperatives require saving BEFORE borrowing: a savings record (e.g. 3-6 months of regular deposits) demonstrates discipline and builds the equity against which loans are sized (loan = 2-3x savings is a common rule). Compulsory savings held against a loan (often 5-20% of the loan, sometimes called 'cash collateral') reduce the lender's risk but raise the borrower's TRUE cost — money you must deposit and cannot touch is effectively part of the price. Clients should ask: can I withdraw my savings if I have no loan, and what interest do my savings earn?",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-ROSCA",
+    "entity_type": "process",
+    "entity_id": "UNI-ROSCA",
+    "canonical_name": "ROSCA — rotating savings and credit association",
+    "description": "The world's most common informal financial device (chama merry-go-round in Kenya, esusu/ajo in Nigeria, tanda in Mexico, committee in Pakistan, tontine in Francophone Africa, arisan in Indonesia): N members contribute a fixed amount per period, and each period one member takes the entire pot, rotating until all have collected. No interest, no profit, no money held idle — the early collectors effectively get an interest-free loan, the late collectors a forced savings plan. Failure modes: early collectors defaulting on later contributions, and pot-holder theft; mitigations: small trusted groups, written rotation order, public payouts, and replacement rules agreed in advance.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-ASCA",
+    "entity_type": "process",
+    "entity_id": "UNI-ASCA",
+    "canonical_name": "ASCA — accumulating savings and credit association",
+    "description": "Unlike a ROSCA (where the pot rotates), an ASCA accumulates: members save into a common fund every meeting and the fund is LENT OUT to members (sometimes outsiders) at interest set by the group — commonly 5-10% per month for short loans. Interest earned grows the fund, which is divided among members in proportion to savings at the end of a cycle (typically 9-12 months). ASCAs need more bookkeeping than ROSCAs (loan ledger, interest tracking) and stronger governance, because money sits in the box between meetings. Kenya's table banking and the VSLA methodology are structured ASCAs.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-VSLA",
+    "entity_type": "process",
+    "entity_id": "UNI-VSLA",
+    "canonical_name": "VSLA methodology — village savings and loan association",
+    "description": "The NGO-standardized ASCA (popularized by CARE since 1991, now also CRS' SILC and similar): 15-30 self-selected members buy 1-5 SHARES per meeting at a fixed share price (flexible saving), loans up to 3x a member's savings for up to 3 months at a group-set service charge (typically 5-10% per month), plus a separate small SOCIAL FUND for emergencies (grants, not loans). Discipline hardware: a cash box with THREE locks whose keys are held by three different members, money counted publicly, all transactions in front of the group, and a time-bound cycle (usually ~12 months) ending in a SHARE-OUT where the whole fund plus earnings is distributed in proportion to each member's shares — a built-in audit that resets the group.",
+    "metadata": { "scope": "universal", "origin": "CARE VSLA, 1991, Niger" }
+  },
+  {
+    "ref_id": "PROC-GROUP-FORMATION",
+    "entity_type": "process",
+    "entity_id": "UNI-GROUP-FORMATION",
+    "canonical_name": "Savings-group formation and governance",
+    "description": "Formation norms that predict group survival: members SELF-SELECT (trust cannot be assigned by an NGO or loan officer); a written constitution agreed at the start covering contribution size, meeting schedule, loan rules, interest, fines, and exit/death provisions; elected officers — chairperson, record-keeper/secretary, treasurer/box-keeper — rotated periodically; fines for lateness and absence agreed in advance and applied without exception; and a register/ledger updated at every meeting in front of all members. Groups fail predictably from: dominant founders handling money alone, unwritten rules, irregular meetings, and lending to non-members without provision for it.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-LOAN-APPRAISAL",
+    "entity_type": "process",
+    "entity_id": "UNI-LOAN-APPRAISAL",
+    "canonical_name": "Cash-flow-based microloan appraisal",
+    "description": "Sound micro-lending sizes loans to REPAYMENT CAPACITY, not collateral: the loan officer reconstructs the household's full cash flow — business income, other income, household expenses, existing debt service — and sizes the instalment so that total debt service stays within a prudent share of net disposable income (a common rule of thumb: instalments ≤ 50-70% of net business surplus, or total debt service ≤ ~30-40% of net household income; thresholds vary by institution). Red flags in appraisal: using one good week's sales as 'income', ignoring school-fee seasons, and counting the borrower's hoped-for new business revenue as if it already existed.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-DELINQUENCY",
+    "entity_type": "process",
+    "entity_id": "UNI-DELINQUENCY-MANAGEMENT",
+    "canonical_name": "Delinquency management — rescheduling vs refinancing",
+    "description": "When a borrower genuinely cannot pay (illness, disaster, business shock), the honest toolkit is: RESCHEDULING — extending the term / reducing the instalment of the SAME loan, used for temporary capacity loss; REFINANCING — a new loan repaying the old, legitimate only with restored capacity and dangerous as a way to hide bad loans. Practice to challenge: 'forced refinancing' or lending a client more money solely so they can pay the old instalment — this manufactures repayment statistics while deepening over-indebtedness. Clients in distress should ask explicitly for a rescheduling and get the new schedule IN WRITING; collection pressure to silently re-borrow is a client-protection violation.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "PROC-GRIEVANCE",
+    "entity_type": "process",
+    "entity_id": "UNI-GRIEVANCE-MECHANISM",
+    "canonical_name": "Grievance-mechanism design for financial services",
+    "description": "An effective client complaint mechanism has: multiple FREE channels (in-branch, phone/SMS, through the group, anonymous box) so a client never has to complain to the very loan officer they are complaining ABOUT; published response timelines (acknowledge within days, resolve within weeks); a complaint log/register reviewed by management with root-cause analysis; explicit non-retaliation (complaining must not affect future loan access); and an external escalation route (regulator, ombudsman, or association) printed on loan documents. For NGOs designing one: track complaint volume per branch — zero complaints means a broken channel, not a happy clientele.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "TERM-FLAT-RATE",
+    "entity_type": "term",
+    "entity_id": "UNI-FLAT-INTEREST",
+    "canonical_name": "Flat interest rate — with worked example",
+    "description": "Flat-rate interest is charged on the ORIGINAL loan amount for the whole term, ignoring that the balance falls as you repay. Worked example: borrow 10,000 for 12 months at '2% per month flat' → interest = 10,000 × 2% × 12 = 2,400; you repay (10,000 + 2,400) / 12 ≈ 1,033 per month. But your average outstanding balance is only about half the original loan (it falls from 10,000 toward 0), so the TRUE annual cost is roughly 41-45% effective — about DOUBLE the '24% per year' it sounds like. Rule of thumb every borrower should know: a flat rate costs roughly twice the same number quoted on declining balance.",
+    "metadata": { "scope": "universal", "rule_of_thumb": "flat ≈ 2x equivalent declining-balance rate" }
+  },
+  {
+    "ref_id": "TERM-DECLINING-BALANCE",
+    "entity_type": "term",
+    "entity_id": "UNI-DECLINING-BALANCE",
+    "canonical_name": "Declining-balance interest — with worked example",
+    "description": "Declining-balance (reducing-balance) interest is charged only on what you still OWE each period — the honest standard for quoting loan prices. Worked example matching the flat-rate one: borrow 10,000 for 12 months at 2% per month declining → equal instalments of about 946 per month, total interest about 1,350 — versus 2,400 interest for the SAME '2% per month' quoted flat. Comparison method that always works regardless of how the rate is quoted: ask for the TOTAL amount you will repay (all instalments + all fees + compulsory deposits you cannot use), subtract the cash you actually receive, and compare that cost across lenders for the same amount and term.",
+    "metadata": { "scope": "universal", "example": "10,000 @ 2%/mo, 12mo: declining ≈ 1,350 interest vs flat 2,400" }
+  },
+  {
+    "ref_id": "TERM-EIR-APR",
+    "entity_type": "term",
+    "entity_id": "UNI-EFFECTIVE-RATE",
+    "canonical_name": "Effective interest rate (EIR/APR) and why quoted rates mislead",
+    "description": "The effective rate converts any loan's full cost — interest however calculated, plus fees, plus compulsory savings effects — into one comparable annual percentage. Why it matters at the BoP: '10% flat for 10 weeks', '2% per month', and '7.5% facility fee for 30 days' sound similar but annualize to wildly different costs (a 7.5% 30-day fee rolled monthly exceeds 90% per year). Most BoP borrowers cannot compute EIR — so the practical teaching substitute is the total-cost-of-credit method: total to repay minus cash received, over the actual term, compared lender to lender. Transparent lenders state the total repayment amount before signing; refusal to state it is itself a red flag.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "TERM-TOTAL-COST",
+    "entity_type": "term",
+    "entity_id": "UNI-TOTAL-COST-OF-CREDIT",
+    "canonical_name": "Total cost of credit — fees that hide the real price",
+    "description": "Charges beyond interest that commonly raise a microloan's real cost: upfront processing/application fees (often 1-3% of the loan, deducted from disbursement), compulsory insurance (credit-life, sometimes priced above market), compulsory savings or 'cash collateral' (5-20% you deposit but cannot use), group fund contributions, passbook and form fees, and late penalties. Honest accounting: if you sign for 10,000 but receive 9,500 after deductions and must park 1,000 in blocked savings, your usable loan is 8,500 — compute the cost against THAT. Disclosure of every charge before signing is a core client-protection requirement.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "TERM-PAR",
+    "entity_type": "term",
+    "entity_id": "UNI-PORTFOLIO-AT-RISK",
+    "canonical_name": "PAR30 — portfolio at risk (institutional health indicator)",
+    "description": "PAR30 = the share of an MFI's loan portfolio with any payment more than 30 days late. Sector convention: PAR30 under ~5% is considered healthy; sustained PAR30 above 10% signals institutional distress. Why a SAVER or group should care: an MFI or SACCO with exploding delinquency may freeze withdrawals or collapse — asking to see, or asking an NGO partner to check, an institution's reported PAR and audited accounts is legitimate due diligence before trusting it with savings.",
+    "metadata": { "scope": "universal", "benchmark": "PAR30 <5% healthy; >10% distress (sector convention)" }
+  },
+  {
+    "ref_id": "TERM-GUARANTOR",
+    "entity_type": "term",
+    "entity_id": "UNI-GUARANTOR",
+    "canonical_name": "Guarantor obligations in micro-lending",
+    "description": "A guarantor legally promises to pay if the borrower does not — in SACCO/cooperative practice the guarantor's own savings are BLOCKED up to the guaranteed amount until the loan is repaid. Norms a guarantor should insist on: see the borrower's loan terms and capacity before signing, know exactly the amount guaranteed, get notified at the FIRST missed payment (not after the debt has ballooned), and understand that guaranteeing many loans simultaneously freezes their own borrowing ability. Cultural pressure to guarantee relatives' loans is a leading cause of savings loss among BoP savers — 'never guarantee what you could not afford to simply give away' is the standard teaching.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "TERM-CREDIT-LIFE",
+    "entity_type": "term",
+    "entity_id": "UNI-CREDIT-LIFE-INSURANCE",
+    "canonical_name": "Credit-life insurance (micro-insurance basics)",
+    "description": "The most common BoP insurance: a small premium (often ~0.5-1.5% of the loan, bundled into fees) that pays off the outstanding loan if the borrower dies — protecting the family from inheriting debt and sometimes paying a small funeral benefit. What clients should know: whether cover is compulsory and what it costs, whether it covers death only or also disability/hospitalization, the claim process and documents (death certificate, ID), and the claim window. A recurring abuse worth checking: premiums collected but no underlying policy issued — the family discovers there is no cover at claim time; asking for the insurer's name and policy evidence is reasonable.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "TERM-GRACE-PERIOD",
+    "entity_type": "term",
+    "entity_id": "UNI-GRACE-PERIOD",
+    "canonical_name": "Grace period and repayment-schedule design",
+    "description": "A grace period delays the first instalment (or the principal part of it) — vital when the loan funds something that takes time to produce income (a crop cycle, livestock fattening, a machine). Mismatch between repayment schedule and cash-flow timing is a classic cause of 'good borrower, bad schedule' default: weekly instalments against a harvest paid quarterly force distress borrowing. Norms: agricultural microloans should offer bullet or seasonal repayment; clients should ask whether interest accrues during grace (it usually does) and what the schedule assumes about when their income arrives.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-CPP",
+    "entity_type": "norm",
+    "entity_id": "UNI-CLIENT-PROTECTION-PRINCIPLES",
+    "canonical_name": "Client Protection Principles (Smart Campaign legacy, CERISE+SPTF)",
+    "description": "The microfinance sector's consumer-protection canon, developed by the Smart Campaign (2009-2020) and stewarded since by CERISE+SPTF as the Client Protection Standards/Pathway with certification available. The classic seven principles: (1) appropriate product design and delivery, (2) prevention of over-indebtedness, (3) transparency, (4) responsible pricing, (5) fair and respectful treatment of clients, (6) privacy of client data, (7) mechanisms for complaint resolution. They are voluntary commitments, not law — but they define what 'responsible' means in microfinance worldwide and give NGOs a recognized vocabulary for challenging bad practice.",
+    "metadata": { "scope": "universal", "steward": "CERISE+SPTF (post-2020)", "count": 7 }
+  },
+  {
+    "ref_id": "NORM-CPP-OVERINDEBT",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-OVERINDEBTEDNESS",
+    "canonical_name": "Prevention of over-indebtedness (lender-side duties)",
+    "description": "Client Protection Principle 2 in practice: the lender must assess repayment capacity from real cash flow before EVERY loan (not just the first), check existing debts (via credit bureau where one exists, via group knowledge where not), avoid loan sizes driven by staff incentives or competition, monitor market saturation (multiple lenders chasing the same clients is the classic over-indebtedness crisis pattern — Andhra Pradesh 2010 being the canonical case), and train staff that rejecting an unaffordable loan is doing the job, not failing it.",
+    "metadata": { "scope": "universal", "canonical_case": "Andhra Pradesh crisis, 2010" }
+  },
+  {
+    "ref_id": "NORM-CPP-TRANSPARENCY",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-TRANSPARENCY",
+    "canonical_name": "Transparency (pricing and terms disclosure)",
+    "description": "Client Protection Principle 3: clients must receive — BEFORE signing — the full price and terms in language and format they understand: total amount to repay, every fee, compulsory savings/insurance, the repayment schedule with dates and amounts, penalties, and guarantor obligations. Good-practice mechanics: verbal explanation in the local language for low-literacy clients, a repayment schedule the client keeps, the same total-cost statement for every competing product, and 'no signing on the spot' time to consider. A lender who cannot or will not state the total repayment amount fails this principle by definition.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-CPP-PRICING",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-RESPONSIBLE-PRICING",
+    "canonical_name": "Responsible pricing (what 'fair' means when microcredit is expensive)",
+    "description": "Honest context for Client Protection Principle 4: microcredit interest rates are legitimately higher than bank rates because administering thousands of tiny weekly-collected loans costs far more per unit lent — sustainable microlenders commonly charge 20-50% effective per year, and that alone is not abuse. Responsible pricing means: prices cover real costs plus reasonable (not exploitative) margins, are in line with peers serving similar clients, and are not propped up by hidden fees. Red-line contrast: informal moneylenders at 20-50% per MONTH and loan apps above 100-200% effective per year are in a different category from sustainable MFI pricing.",
+    "metadata": { "scope": "universal", "context": "20-50%/yr effective is normal sustainable microcredit; %/month pricing is the danger zone" }
+  },
+  {
+    "ref_id": "NORM-CPP-TREATMENT",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-FAIR-TREATMENT",
+    "canonical_name": "Fair and respectful treatment — collections conduct line",
+    "description": "Client Protection Principle 5, where abuse is most visible: acceptable collection = reminders, group discussion, renegotiation, lawful recovery of pledged collateral with due process. UNACCEPTABLE regardless of arrears: threats and intimidation, public humiliation (announcing debtors in markets/churches), seizing household essentials or ID documents, sexual pressure, collecting at unreasonable hours, and shaming via the client's contacts or social media. Institutions should have a written collections code of conduct, sanction staff who breach it, and never pay collectors purely on amounts recovered.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-CPP-PRIVACY",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-DATA-PRIVACY",
+    "canonical_name": "Privacy of client data (microfinance practice)",
+    "description": "Client Protection Principle 6: client data — balances, repayment history, phone contacts, photos, ID copies — may be used only for the purposes the client consented to, and clients must know what is collected and shared (e.g. with credit bureaus). BoP-specific violations to watch: loan apps scraping contact lists for collection shaming, group registers with full balances left publicly visible, staff discussing clients' debts in the community, and ID copies reused to register SIMs or accounts. Consent for low-literacy clients must be explained verbally, not buried in a thumbprinted form.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-CPP-COMPLAINTS",
+    "entity_type": "norm",
+    "entity_id": "UNI-CPP-COMPLAINTS",
+    "canonical_name": "Complaint-resolution mechanisms (client right)",
+    "description": "Client Protection Principle 7: clients must have — and KNOW they have — a free, accessible way to complain that is independent of the staff member complained about, with defined timelines and no retaliation. Field reality this principle targets: most BoP clients believe complaining will cost them their next loan, so silence is the norm and abuse goes unrecorded. NGO-checkable indicators: is a complaints channel printed on the loan documents, can clients name it when asked, does the institution publish complaint volumes, and is there an external escalation route (regulator/ombudsman/association).",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-OVERINDEBT-SIGNS",
+    "entity_type": "norm",
+    "entity_id": "UNI-OVERINDEBTEDNESS-WARNING-SIGNS",
+    "canonical_name": "Over-indebtedness warning signs (borrower-side)",
+    "description": "Recognized early-warning signs that a household is over-indebted: borrowing from one lender to repay another (the single strongest signal); total debt instalments exceeding roughly 30-40% of net household income; taking new loans within days of repaying old ones ('back-to-back' cycling); selling productive assets (tools, livestock, stock) or harvest-at-discount to meet instalments; cutting meals, school fees, or medicine to pay debts; hiding loans from the household; and holding loans from 3+ lenders simultaneously. The honest counsel at this stage is debt triage — list every debt, stop new borrowing, negotiate rescheduling — not consolidation borrowing from a more expensive source.",
+    "metadata": { "scope": "universal", "strongest_signal": "borrowing to repay borrowing" }
+  },
+  {
+    "ref_id": "NORM-PREDATORY-SIGNS",
+    "entity_type": "norm",
+    "entity_id": "UNI-PREDATORY-LENDING-SIGNS",
+    "canonical_name": "Predatory lending red flags (universal checklist)",
+    "description": "Cross-country red flags that a lender should be avoided: refuses to state the total amount repayable; charges any fee BEFORE disbursement (advance-fee fraud signature); holds the borrower's ID card, ATM card, or title documents 'as security'; no written contract, or a contract in a language the borrower cannot read with no explanation; pressure to sign immediately ('offer expires today'); interest quoted per WEEK; collection threats made already at sales stage; no physical address or licence verifiable with any authority; and requiring the borrower's phone-contact list or wallet PIN. Any TWO of these justify walking away regardless of how urgent the need is.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-PRODUCTIVE-LOAN",
+    "entity_type": "norm",
+    "entity_id": "UNI-PRODUCTIVE-VS-CONSUMPTION",
+    "canonical_name": "Productive vs consumption borrowing",
+    "description": "The core credit-literacy distinction: a PRODUCTIVE loan finances something that generates the money for its own repayment (stock for resale, a sewing machine, seed and fertilizer); a CONSUMPTION loan (food, ceremonies, rent arrears) must be repaid from already-strained income — making expensive consumption credit a poverty accelerant. Honest nuance: emergency consumption borrowing (medical) is sometimes rational, and school fees are an investment with long payback; the teaching point is to match the loan to a repayment SOURCE before borrowing, and to build emergency savings precisely so that consumption shocks do not force expensive debt.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-BUDGETING",
+    "entity_type": "norm",
+    "entity_id": "UNI-BUDGETING-BASICS",
+    "canonical_name": "Household budgeting basics (BoP financial literacy)",
+    "description": "The teachable core: separate money into MUST pay (food, rent, debt instalments), SHOULD pay (school, inputs), and CAN WAIT; track money in/out for even one ordinary week to surface leaks (transport, airtime, small daily purchases compound); for irregular incomes, budget on the LOWEST recent month, not the best; pay savings 'first like a debt to yourself' on income days rather than saving leftovers (there are never leftovers); and separate business money from household money physically — two pockets, two boxes, or two wallets — because mixed money silently consumes working capital.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-EMERGENCY-FUND",
+    "entity_type": "norm",
+    "entity_id": "UNI-EMERGENCY-FUND",
+    "canonical_name": "Emergency savings buffer (BoP version)",
+    "description": "The realistic BoP emergency-fund teaching: even 2-4 weeks of basic household expenses kept liquid (mobile wallet, savings group social fund, hidden cash split across places) changes outcomes, because the most common BoP financial disaster is a small shock (illness, transport breakdown, funeral contribution) forcing a high-cost instant loan. Savings ladder norms: start with tiny fixed amounts on every income day; use commitment devices (lock-savings accounts, group social funds) against household pressure to spend; and treat the buffer as insurance — replenishing after use is part of the discipline.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "NORM-REPAYMENT-CAPACITY",
+    "entity_type": "norm",
+    "entity_id": "UNI-REPAYMENT-CAPACITY-RULE",
+    "canonical_name": "Debt-service rule of thumb (how much loan is safe)",
+    "description": "Practical borrower-side sizing rule used across financial-literacy curricula: total loan instalments (ALL loans together) should stay within roughly 30-40% of reliable net income for household borrowers, and within about half of the net SURPLUS (income minus all expenses) for business borrowers — leaving room for bad weeks. Applied example: a trader clearing 8,000/month surplus after household costs can safely service instalments around 3,000-4,000/month, NOT 8,000 — committing the whole surplus assumes a perfect month every month. The number is a convention, not law; its function is to force the question 'what happens in a bad month?' before signing.",
+    "metadata": { "scope": "universal", "rule": "instalments ≤ ~30-40% of net income (convention)" }
+  },
+  {
+    "ref_id": "NORM-WRITTEN-RECORDS",
+    "entity_type": "norm",
+    "entity_id": "UNI-WRITTEN-RECORDS",
+    "canonical_name": "Written contracts, receipts, and passbooks",
+    "description": "The paper-trail discipline that protects BoP clients: never repay cash without a signed/stamped receipt or passbook entry made on the spot; keep the loan contract and repayment schedule at home and check the balance the lender claims against your own record; in groups, the member's passbook entry made in front of the group is the protection against treasurer manipulation; and photograph documents with a phone where possible as backup. Most repayment disputes at the BoP are not fraud but lost records — and the party without records loses.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "INST-MFI-TYPES",
+    "entity_type": "institution",
+    "entity_id": "UNI-MFI-PROVIDER-TYPES",
+    "canonical_name": "Types of microfinance providers (universal taxonomy)",
+    "description": "The provider landscape an adviser should distinguish: regulated MICROFINANCE BANKS / deposit-taking MFIs (central-bank licensed, deposits usually insured); CREDIT-ONLY MFIs and NGO-MFIs (often lighter or no prudential supervision — fine to borrow from, riskier to save with); SACCOs / financial COOPERATIVES (member-owned, regulated by a SACCO authority or cooperative registrar; one-member-one-vote); DIGITAL LENDERS / loan apps (regulated recently or not at all, depending on country); informal GROUPS (ROSCAs/ASCAs/VSLAs — trust-based, no insurance); and informal MONEYLENDERS (fast, expensive, sometimes predatory). The universal safety question is always WHERE SAVINGS SIT: savings belong in licensed, insured institutions or well-governed groups — never with credit-only lenders or collectors without a verifiable licence.",
+    "metadata": { "scope": "universal" }
+  },
+  {
+    "ref_id": "INST-CGAP-SPTF",
+    "entity_type": "institution",
+    "entity_id": "UNI-CGAP-CERISE-SPTF",
+    "canonical_name": "CGAP and CERISE+SPTF (sector reference bodies)",
+    "description": "The two reference points an NGO can cite without local knowledge: CGAP (Consultative Group to Assist the Poor, housed at the World Bank) publishes the sector's research and good-practice guidance on inclusive finance; CERISE+SPTF stewards the Universal Standards for Social and Environmental Performance Management and the Client Protection Standards (successor to the Smart Campaign), including client-protection certification of financial providers. Checking whether a provider holds client-protection certification, and benchmarking local practice against CGAP guidance, are legitimate due-diligence steps anywhere in the world.",
+    "metadata": { "scope": "universal", "websites": "cgap.org, cerise-sptf.org" }
+  },
+  {
+    "ref_id": "PROC-SHARE-OUT",
+    "entity_type": "process",
+    "entity_id": "UNI-SHARE-OUT",
+    "canonical_name": "Savings-group share-out (cycle-end distribution)",
+    "description": "The cycle-end settlement of an ASCA/VSLA, with a worked example: a 20-member group whose members bought shares at 100 each saves 240 shares' worth (24,000) over the cycle and earns 6,000 in loan service charges → fund = 30,000; each share is now worth 30,000 / 240 = 125, so a member holding 15 shares receives 1,875 — a 25% return on savings for the cycle. Norms: all loans must be repaid (or deducted from the borrower's share-out) before distribution; the count happens publicly; and the share-out doubles as the annual audit — discrepancies between the ledger and the box surface here, which is why skipping share-out 'to keep the fund growing' quietly removes the group's main control.",
+    "metadata": { "scope": "universal", "example": "fund 30,000 / 240 shares = 125 per share" }
+  }
+]

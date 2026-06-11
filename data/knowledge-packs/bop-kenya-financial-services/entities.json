@@ -1,0 +1,386 @@
+[
+  {
+    "ref_id": "INST-CBK",
+    "entity_type": "institution",
+    "entity_id": "KE-CBK",
+    "canonical_name": "Central Bank of Kenya (CBK)",
+    "description": "Kenya's central bank and the licensing authority for commercial banks, microfinance banks, payment service providers (including M-Pesa's operator), and — since 2022 — digital credit providers. Its Bank Supervision and consumer-protection functions receive escalated complaints that a bank, microfinance bank, or licensed digital lender has failed to resolve. CBK publishes the official lists of licensed institutions on cbk.go.ke — checking a lender against these lists is the standard way to verify it is legitimate.",
+    "metadata": { "country": "Kenya", "website": "https://www.cbk.go.ke", "verify": "complaint channel details change — confirm on cbk.go.ke" }
+  },
+  {
+    "ref_id": "INST-SAFARICOM",
+    "entity_type": "institution",
+    "entity_id": "KE-SAFARICOM",
+    "canonical_name": "Safaricom PLC (M-Pesa operator)",
+    "description": "Kenya's largest mobile network operator and the operator of M-Pesa, the dominant mobile-money service. Customer care: dial 100 (PrePay) or 200 (PostPay) from a Safaricom line, use the M-PESA or MySafaricom app, or visit a Safaricom shop. Fraudulent SMS or calls can be reported free by forwarding them to 333. Safaricom staff NEVER ask for a customer's M-Pesa PIN — any caller who does is a fraudster.",
+    "metadata": { "country": "Kenya", "customer_care": "100 / 200", "fraud_report_sms": "333", "verify": "phone channels current as of 2026-06 — confirm with Safaricom" }
+  },
+  {
+    "ref_id": "INST-SASRA",
+    "entity_type": "institution",
+    "entity_id": "KE-SASRA",
+    "canonical_name": "SACCO Societies Regulatory Authority (SASRA)",
+    "description": "The regulator of Kenya's savings and credit co-operatives (SACCOs) under the SACCO Societies Act 2008. SASRA licenses and supervises deposit-taking SACCOs (those running FOSA front-office services), and since January 2021 also regulates larger non-withdrawable-deposit-taking SACCOs (non-withdrawable deposits of roughly KES 100 million or more). Members can check whether a SACCO is licensed on sasra.go.ke and complain to SASRA about a regulated SACCO. Smaller SACCOs outside SASRA's scope fall under the Commissioner for Co-operative Development.",
+    "metadata": { "country": "Kenya", "website": "https://www.sasra.go.ke", "verify": "scope thresholds may change — confirm with SASRA" }
+  },
+  {
+    "ref_id": "INST-KDIC",
+    "entity_type": "institution",
+    "entity_id": "KE-KDIC",
+    "canonical_name": "Kenya Deposit Insurance Corporation (KDIC)",
+    "description": "Statutory deposit insurer for Kenyan banks and deposit-taking microfinance banks. Insures deposits up to KES 500,000 per depositor per institution (limit in effect since July 2020 — verify the current figure). If a bank or microfinance bank fails, depositors claim through KDIC. Money held in a chama or unlicensed scheme is NOT deposit-insured; SACCO deposits are covered by a separate SACCO-sector arrangement, not KDIC.",
+    "metadata": { "country": "Kenya", "coverage_limit": "KES 500,000 (as of 2026-06 — verify)", "website": "https://kdic.go.ke" }
+  },
+  {
+    "ref_id": "INST-CAK",
+    "entity_type": "institution",
+    "entity_id": "KE-CAK",
+    "canonical_name": "Competition Authority of Kenya (CAK)",
+    "description": "Enforces the Competition Act including its consumer-welfare provisions across markets, and has intervened in mobile-money and digital-credit pricing transparency (for example requiring clear disclosure of transaction charges before completion). A consumer-protection complaint about misleading pricing or unfair terms in financial services can be lodged with CAK as an alternative or escalation path alongside CBK.",
+    "metadata": { "country": "Kenya", "website": "https://www.cak.go.ke" }
+  },
+  {
+    "ref_id": "INST-CA-KENYA",
+    "entity_type": "institution",
+    "entity_id": "KE-CA",
+    "canonical_name": "Communications Authority of Kenya (CA)",
+    "description": "The telecommunications regulator. Relevant to BoP finance because it oversees SIM registration rules (a registered SIM with national ID is a prerequisite for mobile money) and handles complaints about mobile operators that the operator itself fails to resolve, including SIM-swap handling failures.",
+    "metadata": { "country": "Kenya", "website": "https://www.ca.go.ke" }
+  },
+  {
+    "ref_id": "INST-ODPC",
+    "entity_type": "institution",
+    "entity_id": "KE-ODPC",
+    "canonical_name": "Office of the Data Protection Commissioner (ODPC)",
+    "description": "Enforces Kenya's Data Protection Act 2019. Relevant to borrowers because digital lenders that scrape phone contacts or shame defaulters to their contacts violate data-protection law; such conduct can be reported to ODPC in addition to CBK. ODPC has issued penalty notices against digital lenders for misusing personal data.",
+    "metadata": { "country": "Kenya", "website": "https://www.odpc.go.ke" }
+  },
+  {
+    "ref_id": "INST-DCI",
+    "entity_type": "institution",
+    "entity_id": "KE-DCI",
+    "canonical_name": "Directorate of Criminal Investigations (DCI) — Banking Fraud Investigation Unit",
+    "description": "Kenya's criminal investigation agency. Its Banking Fraud Investigation Unit handles bank, mobile-money, and SIM-swap fraud cases. Victims of mobile-money fraud should report to their provider first (to attempt freezing funds), then file a police report at any station or with DCI — a police OB (occurrence book) number is usually needed for the provider or bank to pursue recovery.",
+    "metadata": { "country": "Kenya", "verify": "reporting channels — confirm locally" }
+  },
+  {
+    "ref_id": "INST-FRC",
+    "entity_type": "institution",
+    "entity_id": "KE-FRC",
+    "canonical_name": "Financial Reporting Centre (FRC)",
+    "description": "Kenya's financial intelligence unit under the Proceeds of Crime and Anti-Money Laundering Act. Receives suspicious-transaction reports from banks, mobile-money providers, and other reporting institutions. Relevant to ordinary users mainly as the reason providers ask KYC questions and may freeze suspicious transactions.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "INST-CRB",
+    "entity_type": "institution",
+    "entity_id": "KE-CRB",
+    "canonical_name": "Credit Reference Bureaus (TransUnion, Metropol, Creditinfo)",
+    "description": "Kenya's three licensed credit reference bureaus: TransUnion Kenya, Metropol CRB, and Creditinfo CRB. Lenders report repayment histories to them; a negative listing makes future borrowing harder. Under the CRB Regulations 2020: debts below KES 1,000 may not be negatively listed, the lender must notify the borrower at least 30 days before a negative listing, and a person's first credit report / clearance certificate each year is free. Borrowers can dispute incorrect listings directly with the bureau.",
+    "metadata": { "country": "Kenya", "min_negative_listing": "KES 1,000 (CRB Regulations 2020 — verify)", "verify": "thresholds and free-report rules — confirm current regulations" }
+  },
+  {
+    "ref_id": "INST-AMFI",
+    "entity_type": "institution",
+    "entity_id": "KE-AMFI",
+    "canonical_name": "Association for Microfinance Institutions Kenya (AMFI-K)",
+    "description": "The industry association of Kenyan microfinance institutions (deposit-taking microfinance banks and credit-only MFIs). Useful as a directory of established MFIs and as a soft-escalation channel for member-institution conduct concerns; it is not a regulator.",
+    "metadata": { "country": "Kenya", "website": "https://amfikenya.com" }
+  },
+  {
+    "ref_id": "REG-MFA-2006",
+    "entity_type": "regulation",
+    "entity_id": "KE-MICROFINANCE-ACT-2006",
+    "canonical_name": "Microfinance Act 2006 (Kenya)",
+    "description": "The statute governing deposit-taking microfinance in Kenya. Deposit-taking microfinance banks (MFBs) must be licensed and are prudentially supervised by the Central Bank of Kenya; their deposits are KDIC-insured. Credit-only microfinance institutions historically fell outside CBK prudential supervision (a gap partly closed for digital lenders by the 2022 Digital Credit Providers Regulations). Practical test for a client: an institution that takes savings deposits must hold a CBK microfinance-bank licence — if it takes deposits without one, that is a red flag.",
+    "metadata": { "country": "Kenya", "supervisor": "Central Bank of Kenya" }
+  },
+  {
+    "ref_id": "REG-NPSA-2011",
+    "entity_type": "regulation",
+    "entity_id": "KE-NPS-ACT-2011",
+    "canonical_name": "National Payment System Act 2011 + NPS Regulations 2014 (Kenya)",
+    "description": "The legal framework for payment service providers and e-money issuers, under which M-Pesa and other mobile-money services are authorised by CBK. Requires e-money issuers to hold customer funds in trust accounts at commercial banks separate from the operator's own money — so M-Pesa balances are customer funds held in trust, not Safaricom's working capital.",
+    "metadata": { "country": "Kenya", "supervisor": "Central Bank of Kenya" }
+  },
+  {
+    "ref_id": "REG-SACCO-ACT-2008",
+    "entity_type": "regulation",
+    "entity_id": "KE-SACCO-ACT-2008",
+    "canonical_name": "SACCO Societies Act 2008 (Kenya)",
+    "description": "Establishes SASRA and the licensing regime for deposit-taking SACCOs. A deposit-taking SACCO (running FOSA services — quasi-banking front office) needs a SASRA licence and faces capital, liquidity, and reporting requirements. Members' rights include access to audited accounts at the AGM and one-member-one-vote governance regardless of shareholding.",
+    "metadata": { "country": "Kenya", "supervisor": "SASRA" }
+  },
+  {
+    "ref_id": "REG-DCP-2022",
+    "entity_type": "regulation",
+    "entity_id": "KE-DCP-REGS-2022",
+    "canonical_name": "CBK Digital Credit Providers Regulations 2022",
+    "description": "Brought previously unregulated mobile-loan apps under Central Bank of Kenya licensing (regulations issued March 2022). Licensed digital credit providers must disclose total loan cost before disbursement, get CBK approval for pricing, and are prohibited from debt-shaming practices — contacting a borrower's phone contacts, threats, or abusive collection. Unlicensed loan apps are illegal; the CBK website lists licensed DCPs. Complaints about a licensed DCP go to the provider, then CBK; data misuse can also go to the ODPC.",
+    "metadata": { "country": "Kenya", "issued": "2022-03", "supervisor": "Central Bank of Kenya", "verify": "check the current licensed-DCP list on cbk.go.ke" }
+  },
+  {
+    "ref_id": "REG-CPA-2012",
+    "entity_type": "regulation",
+    "entity_id": "KE-CONSUMER-PROTECTION-2012",
+    "canonical_name": "Consumer Protection Act 2012 (Kenya)",
+    "description": "Kenya's general consumer-protection statute. Gives consumers of financial services rights to clear pre-contract information, protection from unconscionable terms and false representations, and cooling-off rights for some contract types. Often invoked alongside sector rules (CBK prudential guidelines, CAK consumer provisions) when challenging hidden fees or mis-sold products.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "REG-DPA-2019",
+    "entity_type": "regulation",
+    "entity_id": "KE-DPA-2019",
+    "canonical_name": "Data Protection Act 2019 (Kenya)",
+    "description": "Kenya's data-protection law, enforced by the ODPC. For BoP users the key practical points: a lender needs a lawful basis to process your contacts or call logs, you can demand deletion of unlawfully scraped data, and debt-collection messages sent to your family or employer to shame you are a reportable violation.",
+    "metadata": { "country": "Kenya", "enforcer": "ODPC" }
+  },
+  {
+    "ref_id": "REG-POCAMLA",
+    "entity_type": "regulation",
+    "entity_id": "KE-POCAMLA-2009",
+    "canonical_name": "Proceeds of Crime and Anti-Money Laundering Act 2009 (Kenya)",
+    "description": "Kenya's AML statute. Practical effects at the BoP: mobile-money and bank account opening requires a national ID (KYC), providers monitor and may question or freeze unusual transactions, and large cash transactions attract reporting. Being asked for ID and source-of-funds at a bank is a legal requirement, not discrimination.",
+    "metadata": { "country": "Kenya", "fiu": "Financial Reporting Centre" }
+  },
+  {
+    "ref_id": "REG-RATE-CAP-HISTORY",
+    "entity_type": "regulation",
+    "entity_id": "KE-RATE-CAP-2016-2019",
+    "canonical_name": "Interest-rate cap 2016-2019 (repealed) — Banking (Amendment) Act 2016",
+    "description": "Kenya capped bank lending rates at 4 percentage points above the Central Bank Rate from September 2016 until the cap's repeal in November 2019. Today there is NO general interest-rate cap on Kenyan bank lending — claims that 'the law limits interest to X%' usually refer to this repealed cap. Digital credit provider pricing requires CBK approval but is not subject to a fixed statutory cap.",
+    "metadata": { "country": "Kenya", "status": "repealed 2019-11" }
+  },
+  {
+    "ref_id": "PROC-MPESA-REVERSAL",
+    "entity_type": "process",
+    "entity_id": "KE-MPESA-REVERSAL",
+    "canonical_name": "M-Pesa wrong-recipient reversal",
+    "description": "If money is sent to the wrong M-Pesa number, act immediately: forward the M-Pesa confirmation SMS to 456 (Safaricom's self-service reversal shortcode) or call 100/200, or use the reversal option in the M-PESA/MySafaricom app. If reported quickly, Safaricom can hold the funds in the recipient's account pending reversal; once the wrong recipient withdraws the money, recovery usually requires their cooperation or a police process. Reversal of a payment to an agent or business (Paybill/Till) goes through the business's own refund process.",
+    "metadata": { "country": "Kenya", "shortcode": "456 (verify — channel may change)", "time_critical": true }
+  },
+  {
+    "ref_id": "PROC-MPESA-COMPLAINT",
+    "entity_type": "process",
+    "entity_id": "KE-MPESA-COMPLAINT",
+    "canonical_name": "M-Pesa / Safaricom complaint channel",
+    "description": "First-line complaints about M-Pesa (failed transactions, wrong charges, agent misconduct) go to Safaricom: dial 100 (PrePay) or 200 (PostPay), use the in-app support, or visit a Safaricom shop with your ID and transaction details. Record the ticket/reference number and the date — these are needed if you later escalate to the Central Bank of Kenya. Keep the original M-Pesa confirmation SMS as evidence; each transaction has a unique code (e.g. 'QXA12B34CD').",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "PROC-CBK-ESCALATION",
+    "entity_type": "process",
+    "entity_id": "KE-CBK-ESCALATION",
+    "canonical_name": "Escalating a financial complaint to CBK",
+    "description": "If a CBK-licensed institution (bank, microfinance bank, payment provider, digital credit provider) does not resolve a complaint within a reasonable period (give it the provider's stated complaint SLA, typically days to a few weeks), escalate in writing to the Central Bank of Kenya's consumer-protection function with: your details, the institution's name, the complaint reference number from the provider, what happened, and what resolution you want. CBK expects you to have complained to the provider first. Current submission channels (web form, email, post) are listed on cbk.go.ke.",
+    "metadata": { "country": "Kenya", "precondition": "complain to the provider first", "verify": "submission channel on cbk.go.ke" }
+  },
+  {
+    "ref_id": "PROC-FRAUD-REPORT-333",
+    "entity_type": "process",
+    "entity_id": "KE-FRAUD-REPORT-333",
+    "canonical_name": "Reporting fraud SMS and scam calls to 333",
+    "description": "Safaricom subscribers can forward any suspected fraud SMS, or report a scam caller's number, to 333 free of charge. Safaricom investigates and can block the fraudster's line. This complements — does not replace — reporting actual money loss to customer care (100/200) and the police/DCI. Common reportable messages: fake 'you have won a promotion' texts, fake reversal requests, and M-Pesa impersonation.",
+    "metadata": { "country": "Kenya", "shortcode": "333", "cost": "free" }
+  },
+  {
+    "ref_id": "PROC-SIM-SWAP-RESPONSE",
+    "entity_type": "process",
+    "entity_id": "KE-SIM-SWAP-RESPONSE",
+    "canonical_name": "SIM-swap incident response (Kenya)",
+    "description": "If your phone suddenly loses network for no reason, assume possible SIM-swap fraud: from another phone immediately call Safaricom 100/200 to suspend the line and lock M-Pesa, then change banking app PINs/passwords and notify your bank, then report to police/DCI with timelines. Fraudsters use a swapped SIM to receive OTPs and drain M-Pesa and bank accounts within minutes — speed matters more than anything. Prevention: never share ID details or the Safaricom PIN/PUK, and activate the operator's SIM-lock features where offered.",
+    "metadata": { "country": "Kenya", "time_critical": true }
+  },
+  {
+    "ref_id": "PROC-CRB-CLEARANCE",
+    "entity_type": "process",
+    "entity_id": "KE-CRB-CLEARANCE",
+    "canonical_name": "Checking your CRB status and getting a clearance certificate",
+    "description": "Any Kenyan can query their credit status with a licensed CRB (TransUnion via SMS/USSD/app, Metropol via *433# and app, Creditinfo online — channels change, verify). One credit report per year is free by law; clearance certificates needed for jobs or tenders are issued after clearing listed defaults. To fix a wrong listing: dispute with the bureau, which must investigate with the lender (typically within set timelines); persistent errors can be escalated to CBK.",
+    "metadata": { "country": "Kenya", "verify": "USSD codes and fees change — confirm with each bureau" }
+  },
+  {
+    "ref_id": "PROC-AGENT-CASHINOUT",
+    "entity_type": "process",
+    "entity_id": "KE-AGENT-CASHINOUT",
+    "canonical_name": "M-Pesa agent deposit and withdrawal norms",
+    "description": "At an M-Pesa agent: deposits (cash-in) are FREE to the customer — an agent demanding a deposit fee is violating Safaricom rules and can be reported with the agent number displayed at the kiosk. Withdrawals (cash-out) carry a tariff-based fee deducted automatically from your balance — the agent should never take extra cash for a withdrawal. You enter your own PIN on your own phone; never hand your phone with PIN to the agent, and never let an agent 'do the transaction for you' on their device. The agent's till number and name board must match the confirmation SMS.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "PROC-SACCO-MEMBERSHIP",
+    "entity_type": "process",
+    "entity_id": "KE-SACCO-MEMBERSHIP",
+    "canonical_name": "Joining a SACCO — shares, deposits, and loan multiples",
+    "description": "Typical Kenyan SACCO membership: pay a one-off entrance fee, buy a minimum number of non-withdrawable SHARES (your equity — refundable only by transfer or on exit per by-laws), then save monthly DEPOSITS. Loan eligibility is conventionally a multiple of your deposits — commonly up to 3x deposits, repayable over up to 36-72 months, with 1-3 guarantors who are fellow members and whose deposits secure your loan. Before joining, check: SASRA licence (if deposit-taking), latest audited accounts, dividend/interest history, and how long share refunds take on exit (60 days to 2+ years in practice).",
+    "metadata": { "country": "Kenya", "typical_loan_multiple": "3x deposits (norm, varies by SACCO)" }
+  },
+  {
+    "ref_id": "PROC-CHAMA-GOVERNANCE",
+    "entity_type": "process",
+    "entity_id": "KE-CHAMA-GOVERNANCE",
+    "canonical_name": "Chama governance and record-keeping norms",
+    "description": "Well-run Kenyan chamas (informal savings groups) follow these norms: a written constitution signed by all members; elected chairperson, treasurer, and secretary; a fixed meeting schedule with attendance register; a contributions ledger updated at every meeting in front of members; money banked in an account requiring 2-3 signatories (many banks offer chama accounts) rather than held by one person; fines for lateness/default agreed in advance; and an annual reconciliation/share-out review. Chamas can register as self-help groups with the Department of Social Development or as investment companies/partnerships for legal personality.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "NORM-MPESA-LIMITS",
+    "entity_type": "norm",
+    "entity_id": "KE-MPESA-LIMITS",
+    "canonical_name": "M-Pesa transaction and balance limits",
+    "description": "As of the 2022 increase (verify current figures with Safaricom): maximum per transaction KES 250,000; maximum daily transacted KES 500,000; maximum account (wallet) balance KES 500,000. The minimum transfer is KES 1 (P2P) and small transfers up to KES 100 are free. Limits are per registered line; exceeding them requires a bank channel instead.",
+    "metadata": { "country": "Kenya", "as_of": "2026-06", "verify": "limits change — confirm on safaricom.co.ke" }
+  },
+  {
+    "ref_id": "NORM-MPESA-CHARGES",
+    "entity_type": "norm",
+    "entity_id": "KE-MPESA-CHARGES",
+    "canonical_name": "M-Pesa charges structure",
+    "description": "M-Pesa pricing norms (tariff amounts change — always verify the current tariff table): cash DEPOSITS at agents are free; person-to-person transfers up to KES 100 are free, larger transfers carry a tiered fee that rises with amount; agent WITHDRAWALS carry a tiered fee higher than the transfer fee; paying a business via Buy Goods (Till) is typically free to the customer while Paybill payments may carry a customer fee depending on the business's tariff choice. Balance checks via app are free; the full official tariff is published by Safaricom and the total charge must be disclosed before you confirm.",
+    "metadata": { "country": "Kenya", "verify": "tariff amounts — check the current Safaricom tariff table" }
+  },
+  {
+    "ref_id": "NORM-HAKIKISHA",
+    "entity_type": "norm",
+    "entity_id": "KE-HAKIKISHA",
+    "canonical_name": "Hakikisha — recipient name confirmation before sending",
+    "description": "M-Pesa's Hakikisha feature displays the registered name of the recipient before you confirm a transfer or withdrawal, giving roughly 25 seconds to cancel if the name is wrong. Always read the name aloud and compare with who you intend to pay — this is the single most effective protection against wrong-number transfers and several scam types. If the displayed name does not match the person the caller claims to be, stop.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "NORM-PIN-SECRECY",
+    "entity_type": "norm",
+    "entity_id": "KE-PIN-SECRECY",
+    "canonical_name": "M-Pesa PIN secrecy rule",
+    "description": "The M-Pesa PIN must never be shared with anyone — not agents, not 'Safaricom staff' on the phone, not family asked to 'help'. Safaricom never calls to ask for a PIN, and no genuine promotion, reversal, or registration update requires it. A PIN given to a fraudster is treated by providers as customer negligence, which usually defeats refund claims — making PIN secrecy the cheapest fraud protection available.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "NORM-KYC-ID",
+    "entity_type": "norm",
+    "entity_id": "KE-KYC-ID",
+    "canonical_name": "National ID requirement for mobile money (Kenya KYC)",
+    "description": "Registering a SIM and an M-Pesa account requires an original Kenyan national ID (or passport/alien card); the SIM must be registered in the user's real name under SIM-registration rules. Practical consequences: a lost ID blocks account recovery, accounts registered in someone else's name (e.g. a spouse's) legally belong to that person, and unregistered or mismatched SIMs face deactivation in periodic CA enforcement drives.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "TERM-CHAMA",
+    "entity_type": "term",
+    "entity_id": "KE-CHAMA",
+    "canonical_name": "Chama (Kenyan savings group)",
+    "description": "A chama is an informal Kenyan savings/investment group of typically 10-30 members — friends, colleagues, market traders, or church members — contributing a fixed amount weekly or monthly. Variants: merry-go-round (rotating payout — each meeting one member takes the whole pot, a ROSCA), table banking (the pot is lent to members at interest and shared out with profits at cycle end), and investment chamas (the pool buys land, shares, or businesses). Chamas are trust-based with no deposit insurance; their main protections are good records, multiple signatories, and member discipline.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "TERM-TABLE-BANKING",
+    "entity_type": "term",
+    "entity_id": "KE-TABLE-BANKING",
+    "canonical_name": "Table banking",
+    "description": "A Kenyan group-lending practice (an ASCA — accumulating savings and credit association): members save into a common pool at each meeting and immediately lend the money 'on the table' to members at an agreed interest rate, commonly around 5-10% per month on short loans (norm, varies by group). Interest earned belongs to the group and is shared out with savings at the end of the cycle (often 12 months), so disciplined groups effectively earn a return on their savings. Loans are usually capped at a multiple of the member's savings (e.g. 2-3x) and guaranteed by other members.",
+    "metadata": { "country": "Kenya", "typical_rate": "5-10%/month within groups (norm — set by each group)" }
+  },
+  {
+    "ref_id": "TERM-FULIZA",
+    "entity_type": "term",
+    "entity_id": "KE-FULIZA",
+    "canonical_name": "Fuliza (M-Pesa overdraft)",
+    "description": "Fuliza is M-Pesa's continuous overdraft: if a payment exceeds your balance, Fuliza tops up the difference up to your limit, and is repaid AUTOMATICALLY from the next money entering your M-Pesa. It charges an access fee plus a DAILY maintenance fee that accrues until cleared — making it one of the most expensive forms of credit per shilling if held for weeks. Norms for clients: use it for hours/days not weeks, know that unpaid Fuliza reduces incoming money silently, and check your Fuliza limit and charges in the M-Pesa app before relying on it.",
+    "metadata": { "country": "Kenya", "cost_structure": "access fee + daily fee (verify current rates)", "operator": "Safaricom with partner banks" }
+  },
+  {
+    "ref_id": "TERM-MSHWARI",
+    "entity_type": "term",
+    "entity_id": "KE-MSHWARI-KCB-MPESA",
+    "canonical_name": "M-Shwari and KCB M-Pesa (mobile savings + 30-day loans)",
+    "description": "Bank accounts inside M-Pesa: M-Shwari (NCBA Bank) and KCB M-Pesa (KCB Bank) offer interest-bearing mobile savings plus 30-day micro-loans. The loan 'facility fee' is conventionally around 7.5-9% for 30 days — equivalent to over 90% per year if rolled monthly, which borrowers often underestimate because it is framed as a one-off fee. Repayment behaviour is reported to CRBs; defaults block future limits. Both also offer lock-savings accounts paying higher interest for fixed terms.",
+    "metadata": { "country": "Kenya", "verify": "facility fees change — check in-app terms", "fee_norm": "~7.5-9% per 30 days (as of 2026-06 — verify)" }
+  },
+  {
+    "ref_id": "TERM-POCHI",
+    "entity_type": "term",
+    "entity_id": "KE-POCHI-LA-BIASHARA",
+    "canonical_name": "Pochi la Biashara (M-Pesa business wallet)",
+    "description": "A Safaricom wallet for small traders (mama mboga, boda boda, kiosks) that separates business money from the personal M-Pesa balance on the same line. Customers pay the trader's phone number but funds land in the business pocket — protecting working capital from personal spending and from family pressure ('it is the shop's money, not mine'). Funds can be moved to personal M-Pesa when needed.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "TERM-LIPA",
+    "entity_type": "term",
+    "entity_id": "KE-LIPA-NA-MPESA",
+    "canonical_name": "Lipa na M-Pesa (Till and Paybill merchant payments)",
+    "description": "M-Pesa's merchant payment rails: Buy Goods (Till number) for shop payments — typically free to the customer — and Paybill (business number + account reference) for bills, school fees, and institutional payments. For a micro-business, getting a Till number provides a payment record useful for loan applications, keeps cash off-premises (robbery protection), and signals formality. Always confirm the business name shown by Hakikisha matches the shop before paying.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "TERM-FOSA-BOSA",
+    "entity_type": "term",
+    "entity_id": "KE-FOSA-BOSA",
+    "canonical_name": "FOSA and BOSA (SACCO service types)",
+    "description": "Kenyan SACCO jargon: BOSA (Back Office Service Activity) is the traditional side — non-withdrawable deposits and long-term loans against them; FOSA (Front Office Service Activity) is the quasi-banking side — withdrawable savings accounts, salary processing, ATM cards. Only SACCOs licensed by SASRA as deposit-taking may run FOSA. Members should know which side their money sits on: BOSA deposits are locked as loan security; FOSA balances are withdrawable.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "TERM-SHYLOCK",
+    "entity_type": "term",
+    "entity_id": "KE-SHYLOCK",
+    "canonical_name": "Shylock (informal moneylender, Kenya)",
+    "description": "Kenyan slang for an informal, usually unlicensed moneylender offering instant cash against collateral (often the borrower's ID, ATM card, logbook, or household goods) at very high rates — commonly 20-50% per month. Risks: confiscation of held collateral, ballooning debt, and no legal complaint channel since the lending is itself informal. Holding a borrower's ID or ATM card as security is abusive and a strong red flag; regulated alternatives (SACCO advances, M-Shwari, licensed DCPs) are nearly always cheaper.",
+    "metadata": { "country": "Kenya", "typical_rate": "20-50%/month (informal norm — predatory)" }
+  },
+  {
+    "ref_id": "TERM-MFB",
+    "entity_type": "term",
+    "entity_id": "KE-MICROFINANCE-BANK",
+    "canonical_name": "Microfinance bank (MFB) vs credit-only MFI (Kenya)",
+    "description": "A microfinance BANK is CBK-licensed under the Microfinance Act 2006, may take deposits, and its deposits are KDIC-insured — examples historically include Faulu, Kenya Women (KWFT), Rafiki, SMEP, Caritas (verify current licensee list on cbk.go.ke). A credit-only MFI lends but cannot take deposits and is not prudentially supervised. Client rule of thumb: before saving with any 'microfinance' institution, confirm it appears on CBK's licensed microfinance-bank list.",
+    "metadata": { "country": "Kenya", "verify": "licensee list on cbk.go.ke" }
+  },
+  {
+    "ref_id": "RISK-REVERSAL-SCAM",
+    "entity_type": "risk",
+    "entity_id": "KE-REVERSAL-SCAM",
+    "canonical_name": "Fake 'money sent in error' reversal scam",
+    "description": "A fraudster sends a fake M-Pesa-style SMS (or a real small transfer), then calls pleading that money was 'sent to you by mistake' and pressures you to 'send it back'. The fake-SMS variant leaves your balance unchanged — always check your actual M-Pesa balance and the official transaction code before returning anything; the real-transfer variant is often stolen money being laundered through you. Correct response: do not send anything; tell the caller to use Safaricom's official reversal (456); report the number to 333. Genuine reversals never require the recipient to initiate a new transfer.",
+    "metadata": { "country": "Kenya", "reporting": "333 / Safaricom 100" }
+  },
+  {
+    "ref_id": "RISK-FAKE-PROMO",
+    "entity_type": "risk",
+    "entity_id": "KE-FAKE-PROMOTION",
+    "canonical_name": "Fake promotion / lottery call scam ('you have won')",
+    "description": "Calls or SMS claiming you have won a Safaricom/M-Pesa promotion, asking you to pay a 'release fee', share your PIN, or follow USSD steps that actually transfer money or swap your SIM. Genuine Safaricom promotions never require fees, PINs, or USSD confirmation codes to claim. Verify any promotion by independently calling 100 — not numbers given by the caller — and report scam numbers to 333. This scam family is colloquially associated with prison-based call rings ('Kamiti calls').",
+    "metadata": { "country": "Kenya", "reporting": "333" }
+  },
+  {
+    "ref_id": "RISK-FAKE-LOAN-APPS",
+    "entity_type": "risk",
+    "entity_id": "KE-FAKE-LOAN-APPS",
+    "canonical_name": "Fake and predatory mobile loan apps (Kenya)",
+    "description": "Two patterns: (1) FAKE loan apps that collect an upfront 'processing/insurance fee' and never disburse — no legitimate licensed lender in Kenya charges a fee before disbursement; (2) PREDATORY unlicensed apps that disburse but then scrape your contacts and shame you to family and employers over inflated balances. Checks before borrowing: app appears on CBK's licensed digital-credit-provider list, total repayment amount shown before acceptance, physical address and complaint channel exist. Report harassment to ODPC (data misuse) and CBK; report fee-fraud to DCI.",
+    "metadata": { "country": "Kenya", "red_flag": "any fee payable before disbursement" }
+  },
+  {
+    "ref_id": "RISK-PYRAMID",
+    "entity_type": "risk",
+    "entity_id": "KE-PYRAMID-SCHEMES",
+    "canonical_name": "Pyramid and Ponzi savings schemes (Kenya)",
+    "description": "Recurring Kenyan fraud pattern: schemes promising fixed high returns (e.g. '10% per week', 'double in 3 months') on deposits, dressed as investment clubs, forex/crypto trading, agribusiness, or 'digital chamas'. Red flags: returns paid from new members' money, recruitment commissions, pressure to reinvest, no CBK/CMA/SACCO licence, payouts via personal M-Pesa numbers. Kenya's pyramid-scheme collapses of 2006-07 and repeated crypto-era repeats show recovery after collapse is rare — verification against CBK, CMA (Capital Markets Authority), and SASRA licence lists BEFORE depositing is the only effective protection.",
+    "metadata": { "country": "Kenya", "red_flag": "guaranteed high fixed returns + recruitment rewards" }
+  },
+  {
+    "ref_id": "RISK-AGENT-FRAUD",
+    "entity_type": "risk",
+    "entity_id": "KE-AGENT-FRAUD",
+    "canonical_name": "Mobile-money agent fraud patterns",
+    "description": "Known agent-side frauds in Kenya: fake 'deposit received' confirmations (agent shows a forged SMS — always wait for the official M-Pesa SMS on YOUR phone before leaving); shoulder-surfing PINs then later stealing the phone; 'system is down, leave the cash' deposits never recorded; and charging illegal fees for deposits. Protections: transact only at branded kiosks with a displayed agent number, never hand over your phone, count the official SMS as the only proof, and report rogue agents to Safaricom 100 with the agent number.",
+    "metadata": { "country": "Kenya" }
+  },
+  {
+    "ref_id": "RISK-SIM-SWAP",
+    "entity_type": "risk",
+    "entity_id": "KE-SIM-SWAP-FRAUD",
+    "canonical_name": "SIM-swap fraud (Kenya pattern)",
+    "description": "Fraudsters socially engineer or bribe their way to a replacement SIM for your number, then receive your OTPs and drain M-Pesa, Fuliza, M-Shwari, and linked bank accounts — often within an hour, typically at night. Warning sign: your phone shows 'no service' unexpectedly. They frequently first phish your ID number and date of birth via fake 'registration update' calls. Defences: never give ID details to callers, set up Safaricom's SIM-swap protections, and treat sudden network loss as an emergency (see SIM-swap incident response).",
+    "metadata": { "country": "Kenya", "time_critical": true }
+  }
+]

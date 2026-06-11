@@ -1,0 +1,28 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "bop-nigeria-financial-services",
+  "display_name": "Nigeria BoP Financial Services — CBN Consumer Protection, Agent Banking, Esusu/Ajo, Microfinance Banks",
+  "version": "1.0.0",
+  "description": "AI-DRAFTED REFERENCE CONTENT (2026-06) — NOT INDEPENDENTLY VALIDATED. Verify every fee, limit, naira amount, and legal detail against current local sources (CBN, NDIC, FCCPC, the statutes themselves) before relying on it. Designed as offline grounding for small/local models serving Nigeria bottom-of-pyramid financial-services modules: CBN consumer protection and the complain-to-your-bank-first escalation path, mobile money and agent/POS banking norms, esusu/ajo/adashe rotating-savings norms, CBN microfinance bank categories, tiered KYC and BVN, NDIC deposit insurance, the Global Standing Instruction, FCCPC digital-lender registration, and common fraud patterns (fake alerts, BVN scams, Ponzi schemes) with reporting paths including EFCC. An NGO partner or local expert should review and correct this pack (set validated_by + content_confirmed) before field deployment.",
+  "author": "ANTON (AI-drafted, unvalidated)",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "Nigeria",
+  "regulatory_area": "BoP Financial Inclusion & Consumer Protection",
+  "regulation_ids": [
+    "Banks and Other Financial Institutions Act 2020 (Nigeria)",
+    "CBN Consumer Protection Framework 2016",
+    "CBN Consumer Protection Regulations 2019",
+    "CBN Guidelines for Mobile Money Services 2021",
+    "CBN Payment Service Banks Framework",
+    "CBN Revised Microfinance Bank Guidelines 2020",
+    "CBN Three-Tiered KYC Requirements 2013",
+    "CBN Global Standing Instruction Guidelines 2020",
+    "Federal Competition and Consumer Protection Act 2018",
+    "FCCPC Limited Interim Regulatory Framework for Digital Lending 2022"
+  ],
+  "tier": 2,
+  "content_confirmed": false,
+  "entity_count": 46,
+  "relationship_count": 30,
+  "alias_entry_count": 26
+}

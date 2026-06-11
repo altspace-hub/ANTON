@@ -1,0 +1,20 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "bop-microfinance-universal",
+  "display_name": "Microfinance Universal — Group Lending, Interest Comprehension, Client Protection (country-agnostic)",
+  "version": "1.0.0",
+  "description": "AI-DRAFTED REFERENCE CONTENT (2026-06) — NOT INDEPENDENTLY VALIDATED. Verify against current local sources and sector references (CGAP, CERISE+SPTF Client Protection Standards) before relying on it; rates and norms given are illustrative sector conventions, not local facts. Designed as offline grounding for small/local models serving microfinance and BoP financial modules in ANY country when no country-specific pack matches: group-lending mechanics (joint liability, graduated lending, savings-first), ROSCA/ASCA/VSLA methodologies, interest-rate comprehension with worked numeric examples (flat vs declining balance), over-indebtedness warning signs, the Client Protection Principles (Smart Campaign legacy, now stewarded by CERISE+SPTF), grievance-mechanism design, and financial-literacy primitives. An NGO partner or sector expert should review and correct this pack (set validated_by + content_confirmed) before field deployment.",
+  "author": "ANTON (AI-drafted, unvalidated)",
+  "publisher": "ANTON by openEXPERT",
+  "jurisdiction": "Universal (country-agnostic)",
+  "regulatory_area": "BoP Microfinance & Client Protection",
+  "regulation_ids": [
+    "Client Protection Principles (Smart Campaign legacy / CERISE+SPTF)",
+    "Universal Standards for Social and Environmental Performance Management (CERISE+SPTF)"
+  ],
+  "tier": 2,
+  "content_confirmed": false,
+  "entity_count": 35,
+  "relationship_count": 28,
+  "alias_entry_count": 22
+}
