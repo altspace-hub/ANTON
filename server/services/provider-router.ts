@@ -103,7 +103,7 @@ export interface ChatResult {
 // ── Model Tier Resolution ──────────────────────────────────────
 
 /** Default tier-to-model mapping per provider */
-const TIER_MAP: Record<string, Record<ModelTier, string>> = {
+export const TIER_MAP: Record<string, Record<ModelTier, string>> = {
   anthropic: {
     large: 'claude-opus-4-8',
     medium: 'claude-sonnet-4-6',
@@ -130,7 +130,7 @@ const TIER_MAP: Record<string, Record<ModelTier, string>> = {
  * Detect which provider is currently configured (has API key).
  * Priority: Anthropic > Mistral > OpenAI > Google > Ollama
  */
-function getConfiguredProvider(): string {
+export function getConfiguredProvider(): string {
   // Honor an explicit non-Claude default model first (persisted Settings
   // choice, then env DEFAULT_MODEL), so a user who picks
   // mistral-large-latest / ollama:qwen / compat:<slug>:<model> gets the

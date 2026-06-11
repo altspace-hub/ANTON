@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, CheckCheck, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, ExternalLink, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getAuthHeader as getApiAuthHeader } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -10,6 +11,107 @@ interface Notification {
   link?: string;
   read_at: string | null;
   created_at: string;
+}
+
+interface BriefingProposal {
+  id: string;
+  proposed_action: string;
+  signal_source: string;
+  human_rating: string | null;
+}
+
+/** Extract the briefing id from an orchestrator notification link, if any. */
+function briefingIdFromLink(link?: string): string | null {
+  if (!link) return null;
+  const m = link.match(/\/orchestrator\?briefing=([0-9a-fA-F-]+)/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Wave 3.6b — 1-click rating INSIDE the briefing notification card.
+ * Fetches the briefing's proposals on expand and writes ratings through the
+ * canonical path: PATCH /api/orchestrator/proposals/:id { human_rating } —
+ * the same write the trust ladder (orchestrator_stage) reads. Rating also
+ * re-opens the spend gate automatically.
+ */
+function InlineProposalRating({ briefingId }: { briefingId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [proposals, setProposals] = useState<BriefingProposal[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadProposals = async () => {
+    if (proposals || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/orchestrator/briefings/${briefingId}`, { headers: getApiAuthHeader() });
+      if (res.ok) {
+        const data = await res.json() as { proposals?: BriefingProposal[] };
+        setProposals((data.proposals ?? []).slice(0, 3));
+      } else {
+        setProposals([]);
+      }
+    } catch {
+      setProposals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rate = async (proposalId: string, rating: 'relevant' | 'irrelevant') => {
+    try {
+      await fetch(`/api/orchestrator/proposals/${proposalId}`, {
+        method: 'PATCH',
+        headers: { ...getApiAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ human_rating: rating }),
+      });
+      setProposals(prev => prev ? prev.map(p => p.id === proposalId ? { ...p, human_rating: rating } : p) : prev);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => { setExpanded(v => !v); if (!expanded) loadProposals(); }}
+        className="flex items-center gap-1 text-[11px] text-adv-teal hover:underline"
+      >
+        <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        Rate proposals
+      </button>
+      {expanded && (
+        <div className="mt-1.5 space-y-1.5">
+          {loading && <p className="text-[11px] text-adv-gray animate-pulse">Loading proposals…</p>}
+          {proposals && proposals.length === 0 && !loading && (
+            <p className="text-[11px] text-adv-gray">No proposals in this briefing</p>
+          )}
+          {proposals?.map(p => (
+            <div key={p.id} className="rounded-lg bg-adv-dark-2 px-2 py-1.5">
+              <p className="text-[11px] text-adv-off-white line-clamp-2">{p.proposed_action}</p>
+              {p.human_rating ? (
+                <p className="mt-1 text-[11px] text-adv-teal capitalize flex items-center gap-1">
+                  <Check className="h-3 w-3" /> Rated: {p.human_rating.replace(/_/g, ' ')}
+                </p>
+              ) : (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <button
+                    onClick={() => rate(p.id, 'relevant')}
+                    className="flex items-center gap-1 rounded border border-adv-teal/30 bg-adv-teal/10 px-1.5 py-0.5 text-[11px] text-adv-teal hover:bg-adv-teal/20 transition-colors"
+                  >
+                    <ThumbsUp className="h-3 w-3" /> Relevant
+                  </button>
+                  <button
+                    onClick={() => rate(p.id, 'irrelevant')}
+                    className="flex items-center gap-1 rounded border border-red-400/20 bg-adv-red/10 px-1.5 py-0.5 text-[11px] text-red-400 hover:bg-adv-red/20 transition-colors"
+                  >
+                    <ThumbsDown className="h-3 w-3" /> Irrelevant
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function getAuthHeader(): Record<string, string> {
@@ -177,6 +279,9 @@ export function NotificationDropdown() {
                       <span className="text-[11px] text-adv-gray">{formatRelativeTime(notification.created_at)}</span>
                       {notification.link && <ExternalLink className="h-3 w-3 text-adv-gray" />}
                     </div>
+                    {briefingIdFromLink(notification.link) && (
+                      <InlineProposalRating briefingId={briefingIdFromLink(notification.link)!} />
+                    )}
                   </div>
                 </div>
               ))

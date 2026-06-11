@@ -1,28 +1,40 @@
 /**
  * ModelRecommendationBadge.tsx
  *
- * Wave 2.1 — Model Auto-Routing
+ * Wave 3.7 — provider-aware model recommendation in the module run bar.
  *
- * Shows ANTON's recommended model for the current task configuration.
- * Fetches from POST /api/model-router/recommend on mount (and when props change).
- * Displays a badge with the recommendation and a dropdown of alternatives on hover.
+ * Fetches from POST /api/model-router/recommend (registry-derived tiers for
+ * the user's configured default provider). Compact badge: "Suggested: X
+ * (~cost)" with apply-on-click, an alternatives dropdown, and a dismiss (×).
+ * Accept/dismiss are logged to POST /api/model-router/feedback so the
+ * recommender's acceptance rate is measurable.
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, ChevronDown } from 'lucide-react';
+import { Sparkles, ChevronDown, X } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────
 
+interface ModelPricing {
+  inputPer1M: number;
+  outputPer1M: number;
+}
+
 interface ModelAlternative {
   model: string;
+  displayName?: string;
   estimatedCostMultiplier: number;
   qualityEstimate: 'excellent' | 'good' | 'adequate';
   reason: string;
+  pricing?: ModelPricing;
 }
 
 interface ModelRecommendation {
   recommended: string;
+  displayName?: string;
+  provider?: string;
   reason: string;
+  pricing?: ModelPricing;
   alternatives: ModelAlternative[];
 }
 
@@ -33,10 +45,14 @@ interface ModelRecommendationBadgeProps {
   thinkingLevel?: string;
   outputFormats?: string[];
   areaId?: string;
+  /** The model currently selected in the run bar — badge hides when it already matches. */
+  currentModel?: string;
   onModelSelect?: (model: string) => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────
+
+const DISMISS_KEY = 'openexpert-model-reco-dismissed';
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('openexpert-token');
@@ -51,8 +67,8 @@ const MODEL_SHORT_LABELS: Record<string, string> = {
   'claude-haiku-4-5-20251001': 'Haiku',
 };
 
-function shortLabel(model: string): string {
-  return MODEL_SHORT_LABELS[model] ?? model;
+function shortLabel(model: string, displayName?: string): string {
+  return MODEL_SHORT_LABELS[model] ?? displayName ?? model;
 }
 
 const QUALITY_LABELS: Record<string, string> = {
@@ -74,6 +90,29 @@ function formatCostMultiplier(x: number): string {
   return `${cheaper}× cheaper`;
 }
 
+/** Honest registry pricing, compact: "~$1/$5 per 1M" or "free (local)". */
+function formatPricing(p?: ModelPricing): string {
+  if (!p) return '';
+  if (p.inputPer1M === 0 && p.outputPer1M === 0) return 'free (local)';
+  const fmt = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n}`);
+  return `~${fmt(p.inputPer1M)}/${fmt(p.outputPer1M)} per 1M`;
+}
+
+function sendFeedback(payload: {
+  event: 'accepted' | 'dismissed';
+  recommendedModel: string;
+  selectedModel?: string;
+  provider?: string;
+  moduleId?: string;
+  thinkingLevel?: string;
+}): void {
+  fetch('/api/model-router/feedback', {
+    method: 'POST',
+    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => { /* logging is best-effort */ });
+}
+
 // ── Component ─────────────────────────────────────────────────
 
 export default function ModelRecommendationBadge({
@@ -81,15 +120,20 @@ export default function ModelRecommendationBadge({
   thinkingLevel,
   outputFormats,
   areaId,
+  currentModel,
   onModelSelect,
 }: ModelRecommendationBadgeProps) {
   const [recommendation, setRecommendation] = useState<ModelRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch recommendation whenever relevant props change
   useEffect(() => {
+    if (dismissed) return;
     let cancelled = false;
     setLoading(true);
     setRecommendation(null);
@@ -113,7 +157,8 @@ export default function ModelRecommendationBadge({
     return () => {
       cancelled = true;
     };
-  }, [moduleId, thinkingLevel, JSON.stringify(outputFormats), areaId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleId, thinkingLevel, JSON.stringify(outputFormats), areaId, dismissed]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -126,6 +171,8 @@ export default function ModelRecommendationBadge({
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
+  if (dismissed) return null;
+
   if (loading) {
     return (
       <div className="flex items-center gap-1.5 text-xs text-adv-gray animate-pulse">
@@ -137,23 +184,56 @@ export default function ModelRecommendationBadge({
 
   if (!recommendation) return null;
 
+  // Already on the suggested model — nothing to suggest.
+  if (currentModel && recommendation.recommended === currentModel) return null;
+
+  const applyModel = (model: string) => {
+    if (!onModelSelect) return;
+    onModelSelect(model);
+    sendFeedback({
+      event: 'accepted',
+      recommendedModel: recommendation.recommended,
+      selectedModel: model,
+      provider: recommendation.provider,
+      moduleId,
+      thinkingLevel,
+    });
+  };
+
+  const dismiss = () => {
+    setDismissed(true);
+    try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch { /* ignore */ }
+    sendFeedback({
+      event: 'dismissed',
+      recommendedModel: recommendation.recommended,
+      provider: recommendation.provider,
+      moduleId,
+      thinkingLevel,
+    });
+  };
+
+  const pricingText = formatPricing(recommendation.pricing);
+
   return (
     <div className="relative inline-block" ref={containerRef}>
-      {/* ── Badge ─────────────────────────────────────────── */}
+      {/* ── Compact badge ───────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg border border-adv-teal/30 bg-adv-teal-soft px-2.5 py-1.5">
         <Sparkles className="h-3 w-3 shrink-0 text-adv-teal" />
-        <span className="text-xs text-adv-teal font-medium">ANTON recommends:</span>
-        <span className="text-xs text-adv-white font-semibold">
-          {shortLabel(recommendation.recommended)}
-        </span>
-        <span className="hidden sm:inline text-xs text-adv-gray">
-          — {recommendation.reason}
-        </span>
+        <span className="text-xs text-adv-teal font-medium">Suggested:</span>
+        <button
+          onClick={() => applyModel(recommendation.recommended)}
+          disabled={!onModelSelect}
+          title={`${recommendation.reason}${onModelSelect ? ' — click to apply' : ''}`}
+          className="text-xs text-adv-white font-semibold hover:text-adv-teal transition-colors disabled:cursor-default"
+        >
+          {shortLabel(recommendation.recommended, recommendation.displayName)}
+          {pricingText && <span className="ml-1 font-normal text-adv-gray">({pricingText})</span>}
+        </button>
 
-        {/* Accept button */}
+        {/* Apply button */}
         {onModelSelect && (
           <button
-            onClick={() => onModelSelect(recommendation.recommended)}
+            onClick={() => applyModel(recommendation.recommended)}
             className="ml-1 rounded bg-adv-teal/20 px-1.5 py-0.5 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/30 transition-colors"
           >
             Use
@@ -172,6 +252,16 @@ export default function ModelRecommendationBadge({
             />
           </button>
         )}
+
+        {/* Dismiss */}
+        <button
+          onClick={dismiss}
+          className="ml-0.5 rounded p-0.5 text-adv-gray hover:text-adv-off-white transition-colors"
+          title="Hide model suggestions for this session"
+          aria-label="Dismiss model suggestion"
+        >
+          <X className="h-3 w-3" />
+        </button>
       </div>
 
       {/* ── Alternatives dropdown ──────────────────────────── */}
@@ -192,7 +282,7 @@ export default function ModelRecommendationBadge({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-adv-off-white">
-                      {shortLabel(alt.model)}
+                      {shortLabel(alt.model, alt.displayName)}
                     </span>
                     <span
                       className={`text-xs font-medium ${QUALITY_COLORS[alt.qualityEstimate]}`}
@@ -205,12 +295,13 @@ export default function ModelRecommendationBadge({
                   </div>
                   <p className="mt-0.5 text-xs text-adv-gray leading-relaxed">
                     {alt.reason}
+                    {alt.pricing && <span className="ml-1 text-adv-gray">· {formatPricing(alt.pricing)}</span>}
                   </p>
                 </div>
                 {onModelSelect && (
                   <button
                     onClick={() => {
-                      onModelSelect(alt.model);
+                      applyModel(alt.model);
                       setDropdownOpen(false);
                     }}
                     className="shrink-0 self-center rounded bg-adv-dark px-2 py-1 text-[11px] text-adv-gray border border-border hover:border-adv-teal hover:text-adv-teal transition-colors"

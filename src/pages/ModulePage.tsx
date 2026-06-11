@@ -16,6 +16,7 @@ import DeliberationPanel from '@/components/shared/DeliberationPanel';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import { PrecisionSelector } from '@/components/shared/PrecisionSelector';
 import ModelSelector from '@/components/shared/ModelSelector';
+import ModelRecommendationBadge from '@/components/shared/ModelRecommendationBadge';
 import PromptEditor from '@/components/shared/PromptEditor';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
 import OutputFormatSelector from '@/components/shared/OutputFormatSelector';
@@ -710,6 +711,16 @@ export default function ModulePage() {
           {/* AI Controls */}
           <ThinkingControls value={thinking} onChange={setThinking} />
           <ModelSelector value={model} onChange={setModel} />
+
+          {/* Model recommendation (Wave 3.7) — provider-aware suggestion with apply-on-click */}
+          <ModelRecommendationBadge
+            moduleId={moduleId}
+            thinkingLevel={thinking}
+            outputFormats={selectedOutputFormats}
+            areaId={areaId ?? undefined}
+            currentModel={model}
+            onModelSelect={(m) => setModel(m as Parameters<typeof setModel>[0])}
+          />
 
           {/* Precision (temperature control across providers) */}
           <PrecisionSelector value={precision} onChange={setPrecision} />

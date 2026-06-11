@@ -15,6 +15,7 @@ import NavItemConfig from '@/components/layout/NavItemConfig';
 import { KnowledgeLibraryManager } from '@/features/knowledge/KnowledgeLibraryManager';
 import { OrgContextPanel } from '@/components/shared/OrgContextPanel';
 import LocalModelsSettingsPanel from '@/components/settings/LocalModelsSettingsPanel';
+import { useIntelligenceHealth, type FeatureHealth } from '@/components/shared/IntelligenceHealthBanner';
 
 interface BrandTemplate {
   id: string;
@@ -423,6 +424,13 @@ export default function Settings() {
   const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
   const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
 
+  // Wave 3.8: utility model for background tasks (extraction, scoring,
+  // naming). Server-persisted only (app_settings 'utility_model').
+  const [utilityModel, setUtilityModel] = useState<string>('claude-haiku-4-5-20251001');
+
+  // Wave 3.9: honest background-intelligence status (red/amber/green strip)
+  const intelHealth = useIntelligenceHealth();
+
   // Custom models state
   interface CustomModelSlot {
     enabled: boolean;
@@ -576,6 +584,7 @@ export default function Settings() {
     loadTemplates();
     loadBrandConfig();
     loadCustomModels();
+    loadUtilityModel();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
 
@@ -599,6 +608,29 @@ export default function Settings() {
 
   function handleSetModel(model: ModelId) {
     setDefaultModel(model);
+    flash();
+  }
+
+  // Wave 3.8 — utility model (background tasks)
+  async function loadUtilityModel() {
+    try {
+      const res = await fetchWithAuth('/api/settings/utility-model');
+      if (res.ok) {
+        const data = await res.json() as { model?: string };
+        if (data.model) setUtilityModel(data.model);
+      }
+    } catch { /* default (Haiku) stands */ }
+  }
+
+  function handleSetUtilityModel(model: string) {
+    setUtilityModel(model);
+    fetchWithAuth('/api/settings/utility-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => {
+      // Non-fatal — server keeps its previous value; UI refetches on next visit
+    });
     flash();
   }
 
@@ -1599,6 +1631,46 @@ export default function Settings() {
             )}
           </div>
 
+          {/* Utility Model (Wave 3.8) — background tasks: extraction, scoring, naming */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-adv-gray">{t('settings.utilityModel', 'Utility model')}</span>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.utilityModelDesc', 'Used for background tasks: extraction, scoring, naming. Smaller models are cheaper; quality of background intelligence may vary.')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', disabled: false },
+                { value: 'gpt-4o-mini', label: 'GPT-4o Mini', disabled: !providerStatus.OPENAI_API_KEY },
+                { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', disabled: !providerStatus.GOOGLE_API_KEY },
+                { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                ...(ecoOllama.available && ecoOllama.models.length > 0
+                  ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
+                  : []),
+                ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
+                  value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
+                })),
+                ...(customSlot1.enabled && customSlot1.modelId
+                  ? [{ value: customSlot1.modelId, label: customSlot1.displayName || 'Custom 1', disabled: false }]
+                  : []),
+                ...(customSlot2.enabled && customSlot2.modelId
+                  ? [{ value: customSlot2.modelId, label: customSlot2.displayName || 'Custom 2', disabled: false }]
+                  : []),
+              ] as { value: string; label: string; disabled: boolean }[]).map(({ value, label, disabled }) => (
+                <button
+                  key={value}
+                  onClick={() => { if (!disabled) handleSetUtilityModel(value); }}
+                  disabled={disabled}
+                  title={disabled ? t('settings.notConfigured') : undefined}
+                  className={`${CHIP_BASE} ${utilityModel === value ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Default Thinking */}
           <div>
             <div className="mb-2 flex items-center justify-between">
@@ -1691,6 +1763,33 @@ export default function Settings() {
           IRE deep reasoning stay Claude-only; Pathfinder has basic non-Claude support —
           Claude recommended for deep research.
         </p>
+
+        {/* Wave 3.9: live background-intelligence status — real probes, no fake green */}
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-xs font-medium text-adv-off-white">Background intelligence status</p>
+          {!intelHealth ? (
+            <p className="mt-1.5 text-xs text-adv-gray animate-pulse">Checking embeddings, atom capture and pack RAG…</p>
+          ) : (
+            <div className="mt-2 space-y-1.5">
+              {([
+                ['Embeddings', intelHealth.features.embeddings],
+                ['Atom capture', intelHealth.features.atom_extraction],
+                ['Pack RAG', intelHealth.features.pack_rag],
+                ['Utility AI', intelHealth.features.utility_llm],
+              ] as Array<[string, FeatureHealth | undefined]>).map(([label, f]) => f && (
+                <div key={label} className="flex items-start gap-2 text-xs">
+                  <span
+                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                      f.status === 'ok' ? 'bg-adv-green' : f.status === 'degraded' ? 'bg-adv-gold' : 'bg-adv-red'
+                    }`}
+                  />
+                  <span className="font-medium text-adv-off-white shrink-0">{label}</span>
+                  <span className="text-adv-gray min-w-0">{f.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Context Compaction */}

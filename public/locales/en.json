@@ -327,6 +327,8 @@
     "defaultSettings": "Default Settings",
     "defaultSettingsDesc": "These defaults are applied when opening a new module session.",
     "defaultModel": "Default Model",
+    "utilityModel": "Utility model",
+    "utilityModelDesc": "Used for background tasks: extraction, scoring, naming. Smaller models are cheaper; quality of background intelligence may vary.",
     "defaultThinking": "Default Thinking",
     "defaultCreativity": "Default Creativity",
     "language": "Language",

@@ -37,6 +37,7 @@ import {
   type CustomModuleData,
 } from '@/lib/api';
 import { fetchSearchHistory } from '@/lib/pathfinder-api';
+import IntelligenceHealthBanner from '@/components/shared/IntelligenceHealthBanner';
 import type { Session } from '@/lib/types';
 import { Section, Btn } from '@/components/web-ui';
 import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
@@ -279,6 +280,10 @@ export default function HomeV2(): JSX.Element {
     >
       {/* ════════════ Main column ════════════ */}
       <div className="overflow-y-auto px-9 py-7">
+
+        {/* Wave 3.9: honest degradation banner — renders ONLY when background
+            intelligence (embeddings / atom capture / pack RAG) is degraded */}
+        <IntelligenceHealthBanner />
 
         {/* ── Top: Anton title + APCI tagline + 5-Minute Brief ── */}
         <div className="mb-4 flex items-start justify-between gap-4">

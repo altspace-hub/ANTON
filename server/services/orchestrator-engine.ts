@@ -26,6 +26,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { checkAndRecordSpendGate } from './orchestrator-spend-gate.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1421,6 +1422,7 @@ export async function runHeartbeatCycle(
   let briefingId: string | undefined;
   let heartbeatId: string | undefined;
   let error: string | undefined;
+  let spendGatePaused = false;
 
   try {
     // Step 1: Aggregate signals
@@ -1440,6 +1442,26 @@ export async function runHeartbeatCycle(
       },
     });
 
+    // Spend gate (Wave 3.6): when the last N proposals are all unrated, pause
+    // every scheduled LLM step (significance assessment + briefing generation).
+    // Deterministic work (signal aggregation above, pattern detection + stage
+    // checks below) keeps running. On-demand generation is never gated — it is
+    // an explicit user request and itself a rating opportunity.
+    if (period !== 'on_demand') {
+      const gate = await checkAndRecordSpendGate(db);
+      spendGatePaused = gate.paused;
+      if (gate.paused) {
+        console.log(`[orchestrator] Spend gate active — skipping LLM briefing generation (${gate.reason})`);
+        await addTrailEntry(db, trailId, {
+          entry_type: 'signal_assessment',
+          title: 'Spend gate active — LLM briefing generation paused',
+          content: `${gate.reason}. ${signals.length} signals were aggregated deterministically but no LLM call was made. Rate any recent proposal on the Orchestrator dashboard to resume.`,
+          metadata: { spend_gate: true, unrated_streak: gate.unratedStreak, threshold: gate.threshold },
+        });
+      }
+    }
+
+    if (!spendGatePaused) {
     // Step 2: Assess significance
     const assessStart = Date.now();
     const significant = forceBriefing || (await assessSignificance(signals, anthropic));
@@ -1486,6 +1508,7 @@ export async function runHeartbeatCycle(
       });
       action = 'briefing_generated';
     }
+    } // end !spendGatePaused (LLM steps)
   } catch (err) {
     error = String(err);
     console.error('[orchestrator] Heartbeat cycle error:', err);
@@ -1507,7 +1530,7 @@ export async function runHeartbeatCycle(
     heartbeatId,
     signals.length,
     signals.filter(s => s.urgency >= 0.6).length,
-    action,
+    spendGatePaused ? 'spend_gate_paused' : action,
     Date.now() - start,
     error ?? null,
     error ? 'error' : 'ok'

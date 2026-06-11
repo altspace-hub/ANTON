@@ -67,6 +67,13 @@ interface Heartbeat {
   status: string;
 }
 
+interface SpendGateState {
+  paused: boolean;
+  unratedStreak: number;
+  threshold: number;
+  reason: string;
+}
+
 interface BriefingSummary {
   id: string;
   period: string;
@@ -380,6 +387,7 @@ export default function OrchestratorDashboard() {
   const [activeTrail, setActiveTrail] = useState<{ trail: ReasoningTrail; entries: ReasoningEntry[] } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [apiConfigured, setApiConfigured] = useState(false);
+  const [spendGate, setSpendGate] = useState<SpendGateState | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -404,6 +412,7 @@ export default function OrchestratorDashboard() {
       setLastHeartbeat(data.lastHeartbeat);
       setUnreadCount(data.unreadBriefings ?? 0);
       setApiConfigured(data.apiConfigured ?? false);
+      setSpendGate(data.spendGate ?? null);
     } catch { /* ignore */ }
   }, []);
 
@@ -724,6 +733,20 @@ export default function OrchestratorDashboard() {
       {statusMsg && (
         <div className="mb-4 bg-adv-card border border-adv-teal/20 text-adv-teal text-sm px-4 py-2 rounded-lg">
           {statusMsg}
+        </div>
+      )}
+
+      {/* ── Spend gate banner (Wave 3.6) ─────────────────────────────────── */}
+      {spendGate?.paused && (
+        <div className="mb-4 bg-adv-gold/10 border border-adv-gold/30 rounded-xl px-4 py-3 flex items-start gap-3">
+          <Pause className="w-4 h-4 text-adv-gold shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <span className="font-medium text-adv-gold">Paused: rate recent proposals to resume.</span>{' '}
+            <span className="text-adv-gray">
+              The last {spendGate.threshold} proposals are unrated, so automatic briefing generation is on hold
+              (signal monitoring keeps running). Rate any proposal below — generation resumes automatically.
+            </span>
+          </div>
         </div>
       )}
 

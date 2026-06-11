@@ -35,6 +35,7 @@ import {
   getDemoState, activateDemoMode, deactivateDemoMode, advanceSimulationDay,
   getMeridianPersonaContext,
 } from '../services/orchestrator-demo.js';
+import { checkSpendGate, checkAndRecordSpendGate } from '../services/orchestrator-spend-gate.js';
 
 export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Promise<Router> {
   const router = Router();
@@ -51,12 +52,15 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         "SELECT COUNT(*) as c FROM orchestrator_briefings WHERE status = 'unread'"
       ) as { c: number }).c;
 
+      const spendGate = await checkSpendGate(db);
+
       res.json({
         stage,
         config,
         lastHeartbeat,
         unreadBriefings,
         apiConfigured: !!anthropic,
+        spendGate,
       });
     } catch (err) {
       console.error('[orchestrator] status error:', err);
@@ -191,8 +195,14 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         `, isPositive ? 1 : 0, isNegative ? 1 : 0);
       }
 
+      // Spend gate (Wave 3.6): a new rating may re-open the gate — record the
+      // transition immediately so the dashboard banner clears without waiting
+      // for the next heartbeat. Non-fatal.
+      let spendGate;
+      try { spendGate = await checkAndRecordSpendGate(db); } catch { /* non-fatal */ }
+
       const updated = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id);
-      res.json({ proposal: updated });
+      res.json({ proposal: updated, spendGate });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }

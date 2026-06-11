@@ -13,6 +13,7 @@ import type { DatabaseAdapter } from './db/database.js';
 import { listTablesQuery, tableExistsQuery } from './db/dialect-helpers.js';
 import { authLimiter, userLimiter, claudeLimiter, webhookLimiter, p2pLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
+import { createIntelligenceHealthRoutes } from './routes/intelligence-health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import { createRerunRoutes } from './routes/rerun.js';
 import filesRouter from './routes/files.js';
@@ -523,6 +524,7 @@ app.use('/api', csrfProtection);
 app.use('/api', userLimiter);
 
 app.use('/api', await createHealthRouter(db));
+app.use('/api', createIntelligenceHealthRoutes(db)); // Wave 3.9: honest background-intelligence status
 app.use('/', await createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
 
 // OBS-03: request + error counters
@@ -810,7 +812,7 @@ app.use('/api', await createInstructionBuilderRoutes(db));
 app.use('/api', await createAlignmentReviewerRoutes(db));
 app.use('/api/batch', await createBatchRoutes(anthropic, db));
 app.use('/api', await createSkillPacksRoutes(db));
-app.use('/api', await createModelRouterRoutes());
+app.use('/api', await createModelRouterRoutes(db));
 app.use('/api', await createAudienceAdapterRoutes());
 app.use('/api', await createSuggestionsRoutes(db));
 app.use('/api', await createBenchmarkRoutes(db));
