@@ -24,6 +24,7 @@ import { mergeDatasets, deduplicateDataset, MergeConfig } from '../services/data
 import {
   persistExecution, loadExecution, listExecutionSummaries,
   listPendingApprovals, recordClientRun,
+  decideExecutionAccess, decideRunAccess, reconcileOrphanedRunning,
   type WorkflowExecution, type ExecutionMode, type StepResult,
 } from '../services/workflow-execution-store.js';
 import { resumeApprovedRun, rejectRun } from '../services/workflow-executor.js';
@@ -1020,8 +1021,24 @@ DESIGN PRINCIPLES:
 - Add api_call only if the user explicitly wants to connect to an external system
 - NEVER generate "notification" or "email_send" steps — they are not yet implemented and would silently do nothing at runtime`;
 
+// ── Request user helpers ──────────────────────────────────────────
+interface ReqUser { id?: string; role?: string }
+function reqUser(req: { user?: ReqUser }): { userId?: string; isAdmin: boolean } {
+  const user = (req as { user?: ReqUser }).user;
+  // Solo mode (no auth) has no req.user → treat as admin (sees/acts on all),
+  // matching the timeline + council ownership conventions.
+  const isAdmin = !user || user.role === 'admin';
+  return { userId: user?.id, isAdmin };
+}
+
 export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anthropic): Promise<Router> {
   const router = Router();
+
+  // One-shot startup sweep: mark executions left 'running' by a prior process
+  // (fire-and-forget loop lost on restart) as 'failed' so they stop showing as
+  // eternal-running in the timeline + approvals card. Fire-and-forget; never
+  // blocks route construction.
+  void reconcileOrphanedRunning(db);
 
   // ── POST /api/workflows/executions — start a new execution
   router.post('/executions', async (req, res) => {
@@ -1035,6 +1052,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       return res.status(400).json({ error: 'Invalid workflow definition' });
     }
 
+    const { userId } = reqUser(req);
     const executionId = randomUUID();
     const execution: WorkflowExecution = {
       id: executionId,
@@ -1046,6 +1064,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       context: { input, workflow: { label: workflow.label, id: workflow.id } },
       stepResults: [],
       startedAt: new Date().toISOString(),
+      userId,
+      createdBy: userId,
     };
     executions.set(executionId, execution);
     await persistExecution(db, execution);
@@ -1063,6 +1083,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── GET /api/workflows/executions/:id/status
   router.get('/executions/:id/status', async (req, res) => {
+    const access = await decideExecutionAccess(db, req.params.id, reqUser(req));
+    if (access !== 'allow') return res.status(404).json({ error: 'Execution not found' });
     const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
@@ -1090,6 +1112,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   // ── POST /api/workflows/executions/:id/continue — approve current paused step
   // Rehydrates from PostgreSQL when not in the hot cache (restart survival).
   router.post('/executions/:id/continue', async (req, res) => {
+    const access = await decideExecutionAccess(db, req.params.id, reqUser(req));
+    if (access !== 'allow') return res.status(404).json({ error: 'Execution not found' });
     const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
@@ -1131,6 +1155,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── POST /api/workflows/executions/:id/modify-step — modify output before continuing
   router.post('/executions/:id/modify-step', async (req, res) => {
+    const access = await decideExecutionAccess(db, req.params.id, reqUser(req));
+    if (access !== 'allow') return res.status(404).json({ error: 'Execution not found' });
     const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
@@ -1155,6 +1181,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── POST /api/workflows/executions/:id/skip-step
   router.post('/executions/:id/skip-step', async (req, res) => {
+    const access = await decideExecutionAccess(db, req.params.id, reqUser(req));
+    if (access !== 'allow') return res.status(404).json({ error: 'Execution not found' });
     const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
@@ -1183,6 +1211,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── POST /api/workflows/executions/:id/abort
   router.post('/executions/:id/abort', async (req, res) => {
+    const access = await decideExecutionAccess(db, req.params.id, reqUser(req));
+    if (access !== 'allow') return res.status(404).json({ error: 'Execution not found' });
     const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
@@ -1246,6 +1276,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       sessionId,
       startedAt,
       completedAt,
+      userId: reqUser(req).userId,
     });
     res.json({ success: true, id });
   });
@@ -1253,9 +1284,9 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   // ── GET /api/workflows/approvals/pending — parked runs across BOTH engines
   // (paused interactive executions + scheduled runs awaiting approval).
   // Backs the HomeV2 pending-approvals card.
-  router.get('/approvals/pending', async (_req, res) => {
+  router.get('/approvals/pending', async (req, res) => {
     try {
-      const items = await listPendingApprovals(db);
+      const items = await listPendingApprovals(db, reqUser(req));
       res.json({ items, count: items.length });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -1267,6 +1298,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   // with the stored context — migration 230 columns).
   router.post('/runs/:id/approve', async (req, res) => {
     try {
+      const access = await decideRunAccess(db, req.params.id, reqUser(req));
+      if (access !== 'allow') return res.status(404).json({ error: `Run not found: ${req.params.id}` });
       const result = await resumeApprovedRun(db, req.params.id);
       res.json({
         runId: result.runId,
@@ -1288,6 +1321,8 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   router.post('/runs/:id/reject', async (req, res) => {
     const { reason } = req.body as { reason?: string };
     try {
+      const access = await decideRunAccess(db, req.params.id, reqUser(req));
+      if (access !== 'allow') return res.status(404).json({ error: `Run not found: ${req.params.id}` });
       await rejectRun(db, req.params.id, reason);
       res.json({ runId: req.params.id, status: 'rejected' });
     } catch (err) {

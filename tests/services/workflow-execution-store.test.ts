@@ -12,6 +12,7 @@ import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
 import {
   executionToRow, rowToExecution, persistExecution, loadExecution,
   recordClientRun, listPendingApprovals,
+  decideExecutionAccess, decideRunAccess,
   type WorkflowExecution, type WorkflowExecutionRow,
 } from '../../server/services/workflow-execution-store.js';
 import type { WorkflowDefinition } from '../../src/lib/workflow-definitions.js';
@@ -64,6 +65,11 @@ interface FakeStore {
   runs: Array<Record<string, unknown>>;
 }
 
+/** Mirror of the store's per-non-admin ownership filter for execution rows. */
+function ownsExec(r: WorkflowExecutionRow, uid: string | null): boolean {
+  return uid !== null && (r.user_id === uid || r.created_by === uid);
+}
+
 function makeFakeDb(store: FakeStore): DatabaseAdapter {
   const db: DatabaseAdapter = {
     dialect: 'postgresql' as DatabaseAdapter['dialect'],
@@ -71,15 +77,28 @@ function makeFakeDb(store: FakeStore): DatabaseAdapter {
       if (sql.includes('FROM workflow_executions')) {
         return store.executions.get(String(params[0])) as T | undefined;
       }
+      if (sql.includes('FROM workflow_runs')) {
+        return store.runs.find((r) => r.id === String(params[0])) as T | undefined;
+      }
       return undefined;
     },
-    async all<T>(sql: string): Promise<T[]> {
+    async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
       if (sql.includes('FROM workflow_executions') && sql.includes("status = 'paused'")) {
-        return Array.from(store.executions.values())
-          .filter((r) => r.status === 'paused' && r.workflow_definition !== null) as T[];
+        let rows = Array.from(store.executions.values())
+          .filter((r) => r.status === 'paused' && r.workflow_definition !== null);
+        if (sql.includes('user_id = ?')) {
+          const uid = (params[0] ?? null) as string | null;
+          rows = rows.filter((r) => ownsExec(r, uid));
+        }
+        return rows as T[];
       }
       if (sql.includes('FROM workflow_runs') && sql.includes("status = 'awaiting_approval'")) {
-        return store.runs.filter((r) => r.status === 'awaiting_approval') as T[];
+        let rows = store.runs.filter((r) => r.status === 'awaiting_approval');
+        if (sql.includes('user_id = ?')) {
+          const uid = (params[0] ?? null) as string | null;
+          rows = rows.filter((r) => r.user_id === uid);
+        }
+        return rows as T[];
       }
       return [];
     },
@@ -88,7 +107,7 @@ function makeFakeDb(store: FakeStore): DatabaseAdapter {
         // Column order from the store's UPSERT_SQL
         const [id, workflow_id, workflow_name, status, mode, current_step,
           step_states, context, workflow_definition, error_message, session_id,
-          started_at, completed_at] = params;
+          user_id, created_by, started_at, completed_at] = params;
         store.executions.set(String(id), {
           id: String(id),
           workflow_id: String(workflow_id),
@@ -104,6 +123,8 @@ function makeFakeDb(store: FakeStore): DatabaseAdapter {
             : JSON.parse(String(workflow_definition)),
           error_message: error_message as string | null,
           session_id: session_id as string | null,
+          user_id: (user_id ?? null) as string | null,
+          created_by: (created_by ?? null) as string | null,
           started_at: String(started_at),
           completed_at: completed_at as string | null,
         });
@@ -189,7 +210,8 @@ describe('workflow-execution-store (Wave 4.1)', () => {
     });
     store.runs.push({ id: 'run-ok', workflow_id: 'wf-sched', status: 'completed' });
 
-    const items = await listPendingApprovals(db);
+    // Admin/solo sees every parked item (the route passes isAdmin for solo mode).
+    const items = await listPendingApprovals(db, { isAdmin: true });
     expect(items).toHaveLength(2);
 
     const exec = items.find((i) => i.kind === 'execution');
@@ -201,6 +223,60 @@ describe('workflow-execution-store (Wave 4.1)', () => {
     expect(run?.id).toBe('run-77');
     expect(run?.stepLabel).toBe('Approve report');
     expect(run?.mode).toBe('scheduled');
+  });
+
+  it('listPendingApprovals scopes a non-admin to executions they own + own runs', async () => {
+    const store: FakeStore = { executions: new Map(), runs: [] };
+    const db = makeFakeDb(store);
+
+    // alice owns exec-123; bob owns exec-bob; a scheduled run is system-owned.
+    await persistExecution(db, makeExecution({ userId: 'alice', createdBy: 'alice' }));
+    await persistExecution(db, makeExecution({ id: 'exec-bob', userId: 'bob', createdBy: 'bob' }));
+    store.runs.push({
+      id: 'run-sys', workflow_id: 'wf-sched', status: 'awaiting_approval',
+      awaiting_step: 1, awaiting_step_label: 'Approve', started_at: '2026-06-11T08:00:00.000Z',
+      user_id: 'scheduler',
+    });
+
+    // Admin sees everything (2 execs + 1 run).
+    const adminItems = await listPendingApprovals(db, { isAdmin: true });
+    expect(adminItems).toHaveLength(3);
+
+    // alice (non-admin) sees only her execution, not bob's, not the system run.
+    const aliceItems = await listPendingApprovals(db, { userId: 'alice', isAdmin: false });
+    expect(aliceItems.map((i) => i.id)).toEqual(['exec-123']);
+
+    // bob sees only his.
+    const bobItems = await listPendingApprovals(db, { userId: 'bob', isAdmin: false });
+    expect(bobItems.map((i) => i.id)).toEqual(['exec-bob']);
+  });
+
+  it('decideExecutionAccess: owner allowed, non-owner forbidden, admin always, unknown not_found', async () => {
+    const store: FakeStore = { executions: new Map(), runs: [] };
+    const db = makeFakeDb(store);
+    await persistExecution(db, makeExecution({ userId: 'alice', createdBy: 'alice' }));
+
+    expect(await decideExecutionAccess(db, 'exec-123', { userId: 'alice', isAdmin: false })).toBe('allow');
+    expect(await decideExecutionAccess(db, 'exec-123', { userId: 'bob', isAdmin: false })).toBe('forbidden');
+    expect(await decideExecutionAccess(db, 'exec-123', { userId: 'bob', isAdmin: true })).toBe('allow');
+    expect(await decideExecutionAccess(db, 'nope', { userId: 'alice', isAdmin: false })).toBe('not_found');
+
+    // Legacy NULL-owner row → forbidden for non-admin, allowed for admin.
+    await persistExecution(db, makeExecution({ id: 'exec-legacy' }));
+    expect(await decideExecutionAccess(db, 'exec-legacy', { userId: 'alice', isAdmin: false })).toBe('forbidden');
+    expect(await decideExecutionAccess(db, 'exec-legacy', { isAdmin: true })).toBe('allow');
+  });
+
+  it('decideRunAccess: admin always, owner allowed, others forbidden, unknown not_found', async () => {
+    const store: FakeStore = { executions: new Map(), runs: [] };
+    const db = makeFakeDb(store);
+    store.runs.push({ id: 'run-1', status: 'awaiting_approval', user_id: 'scheduler' });
+    store.runs.push({ id: 'run-2', status: 'awaiting_approval', user_id: 'alice' });
+
+    expect(await decideRunAccess(db, 'run-1', { isAdmin: true })).toBe('allow');
+    expect(await decideRunAccess(db, 'run-1', { userId: 'alice', isAdmin: false })).toBe('forbidden');
+    expect(await decideRunAccess(db, 'run-2', { userId: 'alice', isAdmin: false })).toBe('allow');
+    expect(await decideRunAccess(db, 'missing', { isAdmin: true })).toBe('not_found');
   });
 
   it('recordClientRun stores a summary row that is listed but never rehydrated', async () => {

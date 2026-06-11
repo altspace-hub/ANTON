@@ -31,7 +31,7 @@
 
 import { execFile as nodeExecFile, type ExecFileException } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile, copyFile, stat } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, copyFile, stat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { computeDiff, computeStats, type DiffChunk, type DiffStats } from './version-diff.js';
 
@@ -242,6 +242,58 @@ export function resolveTargetPath(workspaceAbs: string, normalizedRel: string): 
   return abs.startsWith(base + path.sep) ? abs : null;
 }
 
+/**
+ * Symlink-aware escape check (defense in depth on top of the lexical
+ * resolveTargetPath). A pre-existing symlink anywhere in the workspace could
+ * make a lexically-inside path resolve, physically, OUTSIDE the allowlist.
+ *
+ * We realpath the deepest EXISTING ancestor of the target (the target itself
+ * and intermediate dirs may not exist yet — ENOENT walks up) and the workspace
+ * root, then require the realpathed ancestor to stay within the realpathed
+ * workspace. Returns true when the write is safe.
+ *
+ * Exported for tests.
+ */
+export async function isWriteWithinWorkspaceReal(workspaceAbs: string, targetAbs: string): Promise<boolean> {
+  let realBase: string;
+  try {
+    realBase = await realpath(workspaceAbs);
+  } catch {
+    // Workspace root must resolve — validateWorkspacePath already proved it
+    // exists, so a failure here is an unexpected race; fail closed.
+    return false;
+  }
+
+  // Walk up from the target's parent to the nearest existing ancestor.
+  let probe = path.dirname(targetAbs);
+  // Guard against an unbounded loop; the loop terminates at the filesystem root.
+  for (let i = 0; i < 4096; i++) {
+    try {
+      const realProbe = await realpath(probe);
+      // The realpathed nearest-existing ancestor must be the workspace root or
+      // strictly inside it.
+      if (realProbe === realBase || realProbe.startsWith(realBase + path.sep)) {
+        // Also verify the not-yet-created tail (probe→target) carries no `..`
+        // that would climb back out lexically — resolveTargetPath already did,
+        // but recompute defensively against realProbe.
+        const rel = path.relative(probe, targetAbs);
+        const realTarget = path.resolve(realProbe, rel);
+        return realTarget === realBase || realTarget.startsWith(realBase + path.sep);
+      }
+      return false;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        const parent = path.dirname(probe);
+        if (parent === probe) return false; // reached root without resolving
+        probe = parent;
+        continue;
+      }
+      return false; // any other error (EACCES, ELOOP…) → fail closed
+    }
+  }
+  return false;
+}
+
 // ── Workspace (ALLOWED_FOLDER_PATHS) validation ─────────────────────────────
 
 export interface WorkspaceValidation {
@@ -406,6 +458,13 @@ export async function applyFilesToWorkspace(params: {
     if (!validated.ok) throw new Error(`refusing to write ${file.path}: ${validated.reason}`);
     const target = resolveTargetPath(workspaceAbs, validated.normalized);
     if (!target) throw new Error(`refusing to write ${file.path}: escapes the workspace`);
+
+    // Defense in depth: a pre-existing symlink in the workspace could make a
+    // lexically-inside path resolve physically outside the allowlist. Verify
+    // the realpathed nearest-existing ancestor stays inside the workspace.
+    if (!(await isWriteWithinWorkspaceReal(workspaceAbs, target))) {
+      throw new Error(`refusing to write ${file.path}: resolves outside the workspace via a symlink`);
+    }
 
     let before: string | null = null;
     try {

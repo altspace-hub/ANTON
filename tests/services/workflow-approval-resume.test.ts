@@ -79,6 +79,10 @@ const WORKFLOW_DEFINITION = {
 
 type RunRow = Record<string, unknown>;
 
+// The schedule's stored definition. A test mutates this mid-run to prove the
+// parked snapshot (not a fresh reload) governs resume.
+let scheduleDefinition: typeof WORKFLOW_DEFINITION = WORKFLOW_DEFINITION;
+
 function makeFakeDb(runs: Map<string, RunRow>): DatabaseAdapter {
   const db: DatabaseAdapter = {
     dialect: 'postgresql' as DatabaseAdapter['dialect'],
@@ -86,7 +90,7 @@ function makeFakeDb(runs: Map<string, RunRow>): DatabaseAdapter {
       if (sql.includes('FROM workflow_schedules')) {
         // schedule 1 carries the definition (stored at creation time)
         if (params[0] === 1) {
-          return { workflow_definition: JSON.stringify(WORKFLOW_DEFINITION) } as T;
+          return { workflow_definition: JSON.stringify(scheduleDefinition) } as T;
         }
         return undefined;
       }
@@ -153,6 +157,7 @@ describe('workflow approval gate park + resume (Wave 4.1, engine 3)', () => {
   beforeEach(() => {
     runs = new Map();
     db = makeFakeDb(runs);
+    scheduleDefinition = WORKFLOW_DEFINITION;
   });
 
   it('parks at the approval gate with real columns (status, awaiting_step, context)', async () => {
@@ -188,6 +193,30 @@ describe('workflow approval gate park + resume (Wave 4.1, engine 3)', () => {
     const row = runs.get(parked.runId);
     expect(row?.status).toBe('completed');
     expect(row?.approval_decision).toBe('approved');
+  });
+
+  it('resumes against the definition snapshot captured at park time, not a fresh reload', async () => {
+    // Park the run (snapshot of WORKFLOW_DEFINITION captured into context).
+    const parked = await executeScheduledWorkflow(db, 'wf-approval-test', 1);
+
+    // Simulate editing the schedule's stored definition WHILE the run is parked:
+    // a corrupt/empty replacement. A fresh reload would resume against this and
+    // produce a different (broken) result; the snapshot must win.
+    scheduleDefinition = {
+      ...WORKFLOW_DEFINITION,
+      steps: [{ id: 'gone', label: 'Replaced', description: '', type: 'transform', config: {} }],
+    };
+
+    const resumed = await resumeApprovedRun(db, parked.runId);
+    expect(resumed.success).toBe(true);
+    // Snapshot has 5 steps: pre-park(1) + gate + check + extra + final.
+    // Resume runs gate→check(TRUE)→extra→final = 3 more completed = 4 total.
+    // Had it reloaded the 1-step replacement, stepsCompleted would be 1.
+    expect(resumed.stepsCompleted).toBe(4);
+    expect(resumed.stepsSkipped).toBe(0);
+
+    // Reset for the other tests.
+    scheduleDefinition = WORKFLOW_DEFINITION;
   });
 
   it('reject is terminal: status=rejected and the run cannot be resumed', async () => {

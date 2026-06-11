@@ -47,6 +47,11 @@ export interface WorkflowExecution {
   error?: string;
   /** Module session that claude-step outputs were persisted under (client runs). */
   sessionId?: string;
+  /** Owning user (request user at creation). NULL on legacy/system rows. */
+  userId?: string;
+  /** Same as userId at creation — kept distinct so an admin acting on behalf
+   *  of someone can be told apart later if needed. */
+  createdBy?: string;
 }
 
 // ── Row shape (workflow_executions, post-migration 230) ─────────────
@@ -63,6 +68,8 @@ export interface WorkflowExecutionRow {
   workflow_definition: unknown;
   error_message: string | null;
   session_id: string | null;
+  user_id: string | null;
+  created_by: string | null;
   started_at: string | Date;
   completed_at: string | Date | null;
 }
@@ -97,6 +104,8 @@ export function executionToRow(execution: WorkflowExecution): WorkflowExecutionR
     workflow_definition: JSON.stringify(execution.workflowDefinition ?? null),
     error_message: execution.error ?? null,
     session_id: execution.sessionId ?? null,
+    user_id: execution.userId ?? null,
+    created_by: execution.createdBy ?? null,
     started_at: execution.startedAt,
     completed_at: execution.completedAt ?? null,
   };
@@ -124,6 +133,8 @@ export function rowToExecution(row: WorkflowExecutionRow): WorkflowExecution | u
     completedAt: toIso(row.completed_at),
     error: row.error_message ?? undefined,
     sessionId: row.session_id ?? undefined,
+    userId: row.user_id ?? undefined,
+    createdBy: row.created_by ?? undefined,
   };
 }
 
@@ -133,8 +144,8 @@ const UPSERT_SQL = `
   INSERT INTO workflow_executions
     (id, workflow_id, workflow_name, status, mode, current_step,
      step_states, context, workflow_definition, error_message, session_id,
-     started_at, completed_at, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+     user_id, created_by, started_at, completed_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
   ON CONFLICT (id) DO UPDATE SET
     status = EXCLUDED.status,
     mode = EXCLUDED.mode,
@@ -144,6 +155,9 @@ const UPSERT_SQL = `
     workflow_definition = COALESCE(EXCLUDED.workflow_definition, workflow_executions.workflow_definition),
     error_message = EXCLUDED.error_message,
     session_id = COALESCE(EXCLUDED.session_id, workflow_executions.session_id),
+    -- Owner is set once (at creation) and never reassigned by later state writes.
+    user_id = COALESCE(workflow_executions.user_id, EXCLUDED.user_id),
+    created_by = COALESCE(workflow_executions.created_by, EXCLUDED.created_by),
     completed_at = EXCLUDED.completed_at,
     updated_at = NOW()
 `;
@@ -160,12 +174,94 @@ export async function persistExecution(db: DatabaseAdapter, execution: WorkflowE
       UPSERT_SQL,
       row.id, row.workflow_id, row.workflow_name, row.status, row.mode,
       row.current_step, row.step_states, row.context, row.workflow_definition,
-      row.error_message, row.session_id, row.started_at, row.completed_at
+      row.error_message, row.session_id, row.user_id, row.created_by,
+      row.started_at, row.completed_at
     );
   } catch (err) {
     console.warn(`[workflow-execution-store] Could not persist execution ${execution.id}:`,
       err instanceof Error ? err.message : err);
   }
+}
+
+// ── Startup reconciliation (orphaned 'running' executions) ──────────
+
+/**
+ * After a restart, the in-memory runExecution loop is gone but rows it left
+ * with status='running' persist forever as eternal-running ghosts (the
+ * interactive engine is fire-and-forget — there is no live loop to resume a
+ * plain 'running' row; only 'paused' rows are designed to be re-entered).
+ *
+ * Sweep them to a terminal 'failed' state with an honest note exactly once at
+ * startup. Paused / completed / failed rows are untouched. Returns the number
+ * of rows reconciled. Never throws — a pre-migration deploy just logs + skips.
+ */
+export async function reconcileOrphanedRunning(db: DatabaseAdapter): Promise<number> {
+  try {
+    const res = await db.run(
+      `UPDATE workflow_executions
+       SET status = 'failed',
+           error_message = COALESCE(error_message,
+             'Interrupted by a server restart — the in-memory execution loop did not survive. Re-run the workflow.'),
+           completed_at = COALESCE(completed_at, NOW()),
+           updated_at = NOW()
+       WHERE status = 'running'`
+    );
+    if (res.changes) {
+      console.log(`[workflow-execution-store] Reconciled ${res.changes} orphaned 'running' execution(s) → 'failed' (restart sweep).`);
+    }
+    return res.changes ?? 0;
+  } catch (err) {
+    console.warn('[workflow-execution-store] Orphaned-running reconciliation skipped:',
+      err instanceof Error ? err.message : err);
+    return 0;
+  }
+}
+
+// ── Ownership gates (team-mode IDOR fix) ────────────────────────────
+
+export type AccessDecision = 'allow' | 'not_found' | 'forbidden';
+
+/**
+ * Decide whether the requesting user may act on an interactive execution
+ * (continue/abort). Admin/solo always allowed. A non-admin is allowed only
+ * when they own the row (user_id OR created_by). Legacy rows with a NULL
+ * owner are treated as forbidden for non-admins (they cannot prove ownership)
+ * — admins can still act on them. 'not_found' when the row does not exist.
+ */
+export async function decideExecutionAccess(
+  db: DatabaseAdapter,
+  id: string,
+  opts: { userId?: string; isAdmin?: boolean },
+): Promise<AccessDecision> {
+  const row = await db.get<{ user_id: string | null; created_by: string | null }>(
+    'SELECT user_id, created_by FROM workflow_executions WHERE id = ?', id
+  );
+  if (!row) return 'not_found';
+  if (opts.isAdmin) return 'allow';
+  const uid = opts.userId ?? null;
+  if (uid && (row.user_id === uid || row.created_by === uid)) return 'allow';
+  return 'forbidden';
+}
+
+/**
+ * Decide whether the requesting user may approve/reject a scheduled run.
+ * Admin/solo always allowed. Scheduled runs are system-owned, so a non-admin
+ * is allowed only when workflow_runs.user_id matches their id (rare — e.g. an
+ * event-triggered run attributed to a user). 'not_found' when absent.
+ */
+export async function decideRunAccess(
+  db: DatabaseAdapter,
+  id: string,
+  opts: { userId?: string; isAdmin?: boolean },
+): Promise<AccessDecision> {
+  const row = await db.get<{ user_id: string | null }>(
+    'SELECT user_id FROM workflow_runs WHERE id = ?', id
+  );
+  if (!row) return 'not_found';
+  if (opts.isAdmin) return 'allow';
+  const uid = opts.userId ?? null;
+  if (uid && row.user_id === uid) return 'allow';
+  return 'forbidden';
 }
 
 /** Load + rehydrate one execution from PostgreSQL (restart survival). */
@@ -232,6 +328,8 @@ export interface ClientRunRecord {
   sessionId?: string;
   startedAt?: string;
   completedAt?: string;
+  /** Owning user (request user). NULL when unauthenticated/solo. */
+  userId?: string;
 }
 
 /**
@@ -245,7 +343,7 @@ export async function recordClientRun(db: DatabaseAdapter, record: ClientRunReco
       UPSERT_SQL,
       record.id, record.workflowId, record.workflowLabel, record.status, 'client',
       record.currentStepIndex, JSON.stringify(record.stepStates ?? []), '{}', null,
-      null, record.sessionId ?? null,
+      null, record.sessionId ?? null, record.userId ?? null, record.userId ?? null,
       record.startedAt ?? new Date().toISOString(), record.completedAt ?? null
     );
   } catch (err) {
@@ -272,16 +370,37 @@ export interface PendingApprovalItem {
  * Parked runs awaiting a human:
  *  - interactive executions with status='paused' (guided pauses + checkpoints)
  *  - scheduled workflow_runs with status='awaiting_approval'
+ *
+ * Per-user scoping (team mode IDOR fix). Admin/solo (`isAdmin`) sees every
+ * parked item. A non-admin sees:
+ *  - interactive executions they own (user_id OR created_by = their id), and
+ *  - scheduled runs they own (workflow_runs.user_id = their id). Scheduled
+ *    runs are created system-owned (user_id 'scheduler'/'system'), so in
+ *    practice a non-admin never sees scheduled-run approvals — that is by
+ *    design: only admins can approve/reject scheduled runs.
  */
-export async function listPendingApprovals(db: DatabaseAdapter): Promise<PendingApprovalItem[]> {
+export async function listPendingApprovals(
+  db: DatabaseAdapter,
+  opts: { userId?: string; isAdmin?: boolean } = {},
+): Promise<PendingApprovalItem[]> {
   const items: PendingApprovalItem[] = [];
+  const isAdmin = !!opts.isAdmin;
+  const userId = opts.userId ?? null;
 
   try {
-    const execRows = await db.all<WorkflowExecutionRow>(
-      `SELECT * FROM workflow_executions
-       WHERE status = 'paused' AND workflow_definition IS NOT NULL
-       ORDER BY started_at DESC LIMIT 20`
-    );
+    const execRows = isAdmin
+      ? await db.all<WorkflowExecutionRow>(
+          `SELECT * FROM workflow_executions
+           WHERE status = 'paused' AND workflow_definition IS NOT NULL
+           ORDER BY started_at DESC LIMIT 20`
+        )
+      : await db.all<WorkflowExecutionRow>(
+          `SELECT * FROM workflow_executions
+           WHERE status = 'paused' AND workflow_definition IS NOT NULL
+             AND (user_id = ? OR created_by = ?)
+           ORDER BY started_at DESC LIMIT 20`,
+          userId, userId
+        );
     for (const row of execRows) {
       const definition = parseJsonish<WorkflowDefinition>(row.workflow_definition);
       const stepIndex = row.current_step ?? 0;
@@ -303,15 +422,24 @@ export async function listPendingApprovals(db: DatabaseAdapter): Promise<Pending
   }
 
   try {
-    const runRows = await db.all<{
+    type RunApprovalRow = {
       id: string; workflow_id: string; awaiting_step: number | null;
       awaiting_step_label: string | null; started_at: string | Date;
-    }>(
-      `SELECT id, workflow_id, awaiting_step, awaiting_step_label, started_at
-       FROM workflow_runs
-       WHERE status = 'awaiting_approval'
-       ORDER BY started_at DESC LIMIT 20`
-    );
+    };
+    const runRows = isAdmin
+      ? await db.all<RunApprovalRow>(
+          `SELECT id, workflow_id, awaiting_step, awaiting_step_label, started_at
+           FROM workflow_runs
+           WHERE status = 'awaiting_approval'
+           ORDER BY started_at DESC LIMIT 20`
+        )
+      : await db.all<RunApprovalRow>(
+          `SELECT id, workflow_id, awaiting_step, awaiting_step_label, started_at
+           FROM workflow_runs
+           WHERE status = 'awaiting_approval' AND user_id = ?
+           ORDER BY started_at DESC LIMIT 20`,
+          userId
+        );
     for (const row of runRows) {
       items.push({
         kind: 'run',

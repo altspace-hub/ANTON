@@ -142,10 +142,12 @@ async function runStepsFromIndex(
 
       // Approval gate: park the run and wait for POST /runs/:id/approve.
       // Resume state lives in real columns (awaiting_step + context), not in
-      // error_message JSON (the old B7 park-forever trap).
+      // error_message JSON (the old B7 park-forever trap). The definition the
+      // run was parked against is snapshotted into the context so an edit to
+      // the schedule while parked can't shift the step indices on resume.
       if (stepType === 'approval') {
         console.log(`[workflow-executor] Pausing at approval step ${stepIndex}: ${step.label}`);
-        await parkRunForApproval(db, runId, stepIndex, step.label || stepType, context, { stepsCompleted, stepsSkipped });
+        await parkRunForApproval(db, runId, stepIndex, step.label || stepType, context, { stepsCompleted, stepsSkipped }, workflow);
         return { success: true, runId, stepsCompleted, stepsSkipped, awaitingApproval: true };
       }
 
@@ -257,15 +259,25 @@ interface ParkedRunRow {
   steps_skipped: number | null;
 }
 
+/** Reserved key under which the parked definition snapshot is stored in the
+ *  run's context JSONB. Stripped back out of the live context on resume. */
+const PARKED_DEFINITION_KEY = '_parkedDefinition';
+
 async function parkRunForApproval(
   db: DatabaseAdapter,
   runId: string,
   stepIndex: number,
   stepLabel: string,
   context: Record<string, unknown>,
-  counters: StepCounters
+  counters: StepCounters,
+  workflow: WorkflowDefinition,
 ): Promise<void> {
   try {
+    // Snapshot the definition alongside the context so resume re-enters the
+    // SAME workflow shape, even if the schedule's stored definition was edited
+    // while the run sat parked. Reuses migration 230's context JSONB column —
+    // no schema change.
+    const contextWithSnapshot = { ...context, [PARKED_DEFINITION_KEY]: workflow };
     await db.run(
       `UPDATE workflow_runs
        SET status = 'awaiting_approval',
@@ -278,7 +290,7 @@ async function parkRunForApproval(
        WHERE id = ?`,
       stepIndex,
       stepLabel,
-      JSON.stringify(context),
+      JSON.stringify(contextWithSnapshot),
       counters.stepsCompleted,
       counters.stepsSkipped,
       `Paused at step ${stepIndex} (${stepLabel}) — awaiting approval`,
@@ -326,8 +338,18 @@ export async function resumeApprovedRun(db: DatabaseAdapter, runId: string): Pro
     throw new Error(`Run ${runId} has no stored awaiting_step — cannot resume`);
   }
 
-  const scheduleId = parseScheduleId(run.trigger_source);
-  const workflow = await loadWorkflowDefinitionForRun(db, run.workflow_id, scheduleId);
+  const storedContext = parseStoredContext(run.context);
+
+  // Prefer the definition snapshot captured at park time (drift-safe) over a
+  // fresh reload of the schedule (which may have been edited while parked).
+  const parkedDefinition = storedContext[PARKED_DEFINITION_KEY] as WorkflowDefinition | undefined;
+  let workflow: WorkflowDefinition | undefined;
+  if (parkedDefinition && Array.isArray(parkedDefinition.steps)) {
+    workflow = parkedDefinition;
+  } else {
+    const scheduleId = parseScheduleId(run.trigger_source);
+    workflow = await loadWorkflowDefinitionForRun(db, run.workflow_id, scheduleId);
+  }
   if (!workflow) {
     throw new Error(`Workflow definition not found for run ${runId} (workflow ${run.workflow_id})`);
   }
@@ -341,7 +363,9 @@ export async function resumeApprovedRun(db: DatabaseAdapter, runId: string): Pro
      WHERE id = ?`, runId
   );
 
-  const context = parseStoredContext(run.context);
+  // Strip the reserved snapshot key so it never leaks into step templates.
+  const context = { ...storedContext };
+  delete context[PARKED_DEFINITION_KEY];
   // The approval gate itself is satisfied by the approval — re-enter the loop
   // at the step after it.
   return runStepsFromIndex(db, workflow, runId, context, run.awaiting_step + 1, {

@@ -1012,7 +1012,24 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         priority: compiled.mission.priority,
       }, userId);
 
-      // Linkage (migration 231) — both directions.
+      // Atomic claim (create-then-claim): two concurrent callers both passed the
+      // pre-check above and may both have created a mission. Only the one whose
+      // conditional UPDATE actually flips linked_mission_id (still NULL) wins;
+      // the loser aborts its now-orphaned mission and 409s. This closes the
+      // check-then-act race the pre-check alone left open.
+      const claim = await db.run(
+        'UPDATE anton_tasks SET linked_mission_id=?, status=?, updated_at=NOW() WHERE id=? AND linked_mission_id IS NULL',
+        mission.id, 'executing', task.id,
+      );
+      if (!claim.changes) {
+        // Lost the race (or task got linked/changed concurrently) — undo our mission.
+        try { await getMissionController().abortMission(mission.id, `Task ${task.id} was already linked to another mission`); }
+        catch (abortErr) { console.warn('[task-agent] could not abort orphaned mission:', abortErr); }
+        const fresh = await db.get('SELECT linked_mission_id FROM anton_tasks WHERE id=?', task.id) as { linked_mission_id: string | null } | undefined;
+        return res.status(409).json({ error: 'Task is already linked to a mission', mission_id: fresh?.linked_mission_id ?? null });
+      }
+
+      // Linkage (migration 231) — reverse direction.
       await db.run('UPDATE missions.missions SET source_task_id=? WHERE id=?', task.id, mission.id);
 
       const reasoning = [
@@ -1035,16 +1052,17 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         });
       }
 
-      // Update the Task Agent side: link + status + conversation trail.
+      // Conversation trail. (linked_mission_id + status were already set
+      // atomically by the claim above; this only appends the trail entry.)
       const conversation = parseJson<Array<{ role: string; content: string }>>(task.conversation, []);
       conversation.push({
         role: 'assistant',
         content: `Task handed to Mission Control. ${compiled.graph.tasks.length} mission tasks created from the "${approach.name}" approach — the mission runner will execute them with human checkpoints between steps. Track progress here or open the mission for full detail.`,
       });
       await db.run(`
-        UPDATE anton_tasks SET linked_mission_id=?, status='executing', conversation=?, updated_at=NOW()
+        UPDATE anton_tasks SET conversation=?, updated_at=NOW()
         WHERE id=?
-      `, mission.id, JSON.stringify(conversation), task.id);
+      `, JSON.stringify(conversation), task.id);
 
       res.status(201).json({
         success: true,
@@ -1132,15 +1150,25 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       const conversation = parseJson<Array<{ role: string; content: string }>>(task.conversation, []);
       conversation.push({ role: 'assistant', content: `Mission complete — ${summaryLine}` });
 
-      await db.run(`
+      // Idempotent claim: only the first concurrent sync that flips the task
+      // out of a non-terminal state proceeds to bump approach stats + emit
+      // atoms. A second caller's UPDATE affects 0 rows → it returns the
+      // already-synced state without double-counting (the WHERE guard is the
+      // single source of truth for "did this call do the delivery").
+      const delivered = await db.run(`
         UPDATE anton_tasks
         SET status='completed', execution_results=?, execution_summary=?,
             conversation=?, completed_at=NOW(), updated_at=NOW()
-        WHERE id=?
+        WHERE id=? AND status NOT IN ('completed','failed')
       `, JSON.stringify(mergedResults), summaryLine, JSON.stringify(conversation), task.id);
 
+      if (!delivered.changes) {
+        // Another concurrent sync already delivered — report idempotently.
+        return res.json({ success: true, synced: false, task_status: 'completed', linked_mission: summary });
+      }
+
       // Approach learning stats — same rolling-average pattern as classic
-      // step execution.
+      // step execution. (Guarded behind the claim above — runs exactly once.)
       if (task.chosen_approach_id) {
         await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', task.chosen_approach_id);
         if (gate) {

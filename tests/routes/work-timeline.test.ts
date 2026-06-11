@@ -236,12 +236,50 @@ describeOrSkip('GET /api/work-timeline (4.3)', () => {
     expect(olderIds.has(sessionId)).toBe(true);
   });
 
-  it('reports an honest nextBefore cursor only when the page is full', async () => {
+  it('reports an honest keyset nextBefore cursor only when the page is full', async () => {
     const page = await getTimeline('?limit=2');
     expect(page.items.length).toBe(2);
-    expect(page.nextBefore).toBe(page.items[1].updated_at);
+    // Keyset cursor = "<updated_at>|<id>" of the last row on the page.
+    expect(page.nextBefore).toBe(`${page.items[1].updated_at}|${page.items[1].id}`);
 
     const all = await getTimeline('?limit=100');
     expect(all.nextBefore).toBeNull();
+  });
+
+  it('keyset cursor does not drop rows that share a boundary timestamp', async () => {
+    // Two workflow_runs with the SAME started_at (→ same updated_at). A plain
+    // "updated_at < cursor" would drop the second; the (updated_at, id) keyset
+    // returns both across pages.
+    const ts = t(70);
+    const runA = randomUUID();
+    const runB = randomUUID();
+    // Insert lower-id first so DESC ordering is deterministic regardless of order.
+    const [lo, hi] = [runA, runB].sort();
+    await db.run(`INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
+                  VALUES (?, 'wf-tie', 'manual', 'running', ?, ?)`, lo, userId, ts);
+    await db.run(`INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
+                  VALUES (?, 'wf-tie', 'manual', 'running', ?, ?)`, hi, userId, ts);
+    try {
+      // Page 1: only the tie pair (filter types so other rows don't interfere),
+      // limit 1 forces a page boundary right between the two equal-timestamp rows.
+      const p1 = await getTimeline('?limit=1&types=workflow_run');
+      expect(p1.items.length).toBe(1);
+      expect(p1.nextBefore).not.toBeNull();
+
+      // Walk pages until both tie rows have been seen — neither may be skipped.
+      const seen = new Set<string>([p1.items[0].id]);
+      let cursor = p1.nextBefore;
+      for (let i = 0; i < 20 && cursor; i++) {
+        const pg = await getTimeline(`?limit=1&types=workflow_run&before=${encodeURIComponent(cursor)}`);
+        if (pg.items.length === 0) break;
+        seen.add(pg.items[0].id);
+        cursor = pg.nextBefore;
+        if (seen.has(hi) && seen.has(lo)) break;
+      }
+      expect(seen.has(hi)).toBe(true);
+      expect(seen.has(lo)).toBe(true);
+    } finally {
+      await db.run('DELETE FROM workflow_runs WHERE id IN (?, ?)', lo, hi);
+    }
   });
 });

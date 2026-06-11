@@ -53,7 +53,7 @@ interface TimelineRow {
   subtitle: string | null;
   status: string | null;
   cost: number | string | null;
-  updated_at: string;
+  updated_at: string | Date;
   ref: string | null;
 }
 
@@ -86,8 +86,24 @@ export function createWorkTimelineRoutes(db: DatabaseAdapter): Router {
       const userId = req.user?.id;
       const isAdmin = req.user?.role === 'admin';
       const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 30, 1), 100);
-      const before = typeof req.query.before === 'string' && req.query.before.trim()
+      // Keyset cursor: "<updated_at ISO>|<id>" so rows that share a boundary
+      // timestamp are not dropped between pages. Older single-value cursors
+      // (just a timestamp) are still accepted — the id half defaults to the
+      // max sentinel so the first page after such a cursor is inclusive-safe.
+      const rawBefore = typeof req.query.before === 'string' && req.query.before.trim()
         ? req.query.before.trim() : null;
+      let beforeTs: string | null = null;
+      let beforeId: string | null = null;
+      if (rawBefore) {
+        const sep = rawBefore.lastIndexOf('|');
+        if (sep > 0) {
+          beforeTs = rawBefore.slice(0, sep);
+          beforeId = rawBefore.slice(sep + 1);
+        } else {
+          beforeTs = rawBefore;
+          beforeId = null;
+        }
+      }
 
       // ?types=session,engagement or repeated ?types[]=…
       const rawTypes = ([] as string[]).concat(
@@ -125,7 +141,13 @@ export function createWorkTimelineRoutes(db: DatabaseAdapter): Router {
         arms.push(`
           SELECT 'engagement' AS type, e.id, e.title,
                  e.client_name AS subtitle, e.status,
-                 NULL::double precision AS cost,
+                 -- Real cost: sum the bridged-session message costs across all
+                 -- of this engagement's iterations (item 4.4 bridge writes
+                 -- messages.cost). No bridged sessions → NULL, honest.
+                 (SELECT SUM(m.cost)
+                    FROM messages m
+                    JOIN engagement_iterations it2 ON it2.session_id = m.session_id
+                   WHERE it2.engagement_id = e.id) AS cost,
                  COALESCE(
                    (SELECT MAX(it.created_at) FROM engagement_iterations it WHERE it.engagement_id = e.id),
                    e.updated_at
@@ -190,9 +212,14 @@ export function createWorkTimelineRoutes(db: DatabaseAdapter): Router {
       }
 
       let outerWhere = '';
-      if (before) {
+      if (beforeTs && beforeId !== null) {
+        // Strict keyset: (updated_at, id) tuple strictly before the cursor.
+        outerWhere = 'WHERE (t.updated_at < ?::timestamptz OR (t.updated_at = ?::timestamptz AND t.id < ?))';
+        params.push(beforeTs, beforeTs, beforeId);
+      } else if (beforeTs) {
+        // Legacy timestamp-only cursor — exclusive on the timestamp.
         outerWhere = 'WHERE t.updated_at < ?::timestamptz';
-        params.push(before);
+        params.push(beforeTs);
       }
       params.push(limit);
 
@@ -201,7 +228,7 @@ export function createWorkTimelineRoutes(db: DatabaseAdapter): Router {
           ${arms.join('\n UNION ALL \n')}
         ) t
         ${outerWhere}
-        ORDER BY t.updated_at DESC
+        ORDER BY t.updated_at DESC, t.id DESC
         LIMIT ?
       `;
 
@@ -213,13 +240,20 @@ export function createWorkTimelineRoutes(db: DatabaseAdapter): Router {
         subtitle: r.subtitle || null,
         status: r.status || null,
         cost: r.cost === null || r.cost === undefined ? null : Number(r.cost),
-        updated_at: r.updated_at,
+        // Normalize to a stable ISO string so the keyset cursor we emit below
+        // round-trips byte-for-byte (PG returns timestamptz as a Date object;
+        // JSON-serializing it would also give ISO, but the cursor is built in
+        // JS — keep both halves identical).
+        updated_at: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
         resumeUrl: resumeUrl(r),
       }));
 
+      const last = items.length === limit ? items[items.length - 1] : null;
       res.json({
         items,
-        nextBefore: items.length === limit ? items[items.length - 1].updated_at : null,
+        // Keyset cursor encodes both halves so the next page resumes exactly
+        // after the last row even when timestamps collide.
+        nextBefore: last ? `${last.updated_at}|${last.id}` : null,
       });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

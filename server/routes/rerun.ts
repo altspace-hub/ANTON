@@ -223,6 +223,8 @@ export function rehydrateClaudeBody(input: {
   userMessage: string;
   history: Array<{ role: 'user' | 'assistant'; content: string }>;
   moduleInputs?: Record<string, unknown> | null;
+  /** Original assistant message id — marks the dispatch as a rerun (F2). */
+  rerunOf?: string | null;
 }): Record<string, unknown> {
   const { snapshot: snap } = input;
   const outputFormats = Array.isArray(snap.selectedOutputFormats)
@@ -269,8 +271,18 @@ export function rehydrateClaudeBody(input: {
     // Reruns are single-model by definition — never multi-agent.
     multiAgentEnabled: false,
     // A rerun must not double-teach the learning layer (the original run
-    // already extracted atoms from this input); injection stays default.
+    // already extracted atoms from this input).
     atomCollectionEnabled: false,
+    // F2: atom INJECTION follows the original run (snapshot value when
+    // captured, default-on otherwise — exactly what the original got)…
+    atomInjectionEnabled: typeof snap.atomInjectionEnabled === 'boolean'
+      ? snap.atomInjectionEnabled : undefined,
+    // …but the rerun marker makes claude.ts skip A/B ARM ASSIGNMENT + arm
+    // tagging: an arm from the rerun's fresh message id would straddle arms
+    // within the session (excluding it from the experiment stats) or
+    // double-count a different model's quality into the original arm.
+    // Reruns are not experiment subjects.
+    rerunOf: input.rerunOf ?? undefined,
   };
 
   // Drop undefined keys so Zod validation sees a clean body.
@@ -381,6 +393,23 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
         'SELECT id, module_id, config FROM sessions WHERE id = ?', sessionId);
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
+      // Bridged engagement sessions (module_id 'engagement') cannot be rerun in
+      // isolation. They are projections of an engagement iteration (item 4.4
+      // bridge): their assistant message DOES carry a config_snapshot, but it is
+      // the engagement bridge's minimal config (model/thinking/engagementId) —
+      // it lacks the claude pipeline fields (knowledge sources, output formats,
+      // scope, client intelligence, quality blueprint) the real run used, and
+      // 'engagement' is not a registered module, so a re-dispatch would run a
+      // generic prompt and present degraded output as a faithful comparison.
+      // (Council 'ai-council' and workflow client sessions don't hit this guard:
+      // their assistant messages have no config_snapshot at all, so they are
+      // already refused by the snapshot check below.)
+      if (session.module_id === 'engagement') {
+        return res.status(400).json({
+          error: "This engagement output can't be rerun in isolation — re-run it from the engagement workspace.",
+        });
+      }
+
       // 1) Resolve the original assistant message (explicit id, or the latest
       //    non-rerun assistant message in the session).
       const original = typeof messageId === 'string' && messageId
@@ -448,6 +477,7 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
         userMessage: userMsg.content,
         history,
         moduleInputs,
+        rerunOf: original.id,
       });
 
       // 4) Execute through the live pipeline (internal dispatch — see header).

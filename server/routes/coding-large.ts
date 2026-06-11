@@ -2767,35 +2767,62 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
         return res.status(409).json({ error: 'Application has no reviewable content to write (already consumed?).' });
       }
 
-      let result;
+      // Serialize concurrent approves for the SAME project so two applications
+      // touching overlapping files don't interleave writes/backups. A
+      // transaction-scoped advisory lock (pg_advisory_xact_lock, auto-released
+      // at commit, pinned to one pooled client) keyed on the project id, plus
+      // an atomic status claim inside the lock (proposed→applied via a
+      // conditional UPDATE) so a second concurrent approve is rejected rather
+      // than double-applying.
+      let result: Awaited<ReturnType<typeof applyFilesToWorkspace>>;
+      let conflict = false;
+      let writeError: string | null = null;
       try {
-        result = await applyFilesToWorkspace({
-          workspaceAbs: validation.resolved,
-          files: writable.map((f) => ({ path: f.path, content: f.content as string })),
-          applicationId: app.id,
+        await db.transaction(async (tx) => {
+          await tx.run('SELECT pg_advisory_xact_lock(hashtext(?))', `coding-apply:${req.params.id}`);
+
+          // Atomic claim: only the first approve flips proposed→applied.
+          const claim = await tx.run(
+            "UPDATE coding_workspace_applications SET status = 'applied', applied_at = NOW() WHERE id = ? AND status = 'proposed'",
+            app.id,
+          );
+          if (!claim.changes) { conflict = true; return; }
+
+          // Write under the lock (real FS apply).
+          result = await applyFilesToWorkspace({
+            workspaceAbs: validation.resolved!,
+            files: writable.map((f) => ({ path: f.path, content: f.content as string })),
+            applicationId: app.id,
+          });
+
+          // Persist outcome; clear content now that it has been consumed.
+          const written = files.map((f) => {
+            const r = result.files.find((x) => x.path === f.path);
+            return {
+              path: f.path, action: r?.action ?? f.action, bytes: f.bytes,
+              hash_new: f.hash_new, hash_before: r?.hash_before ?? f.hash_before, hash_after: r?.hash_after,
+            };
+          });
+          await tx.run(
+            'UPDATE coding_workspace_applications SET files = ?, backup_dir = ? WHERE id = ?',
+            JSON.stringify(written), result.backupDir || null, app.id,
+          );
         });
       } catch (writeErr) {
-        const msg = writeErr instanceof Error ? writeErr.message : 'write failed';
-        await db.run("UPDATE coding_workspace_applications SET status = 'failed', error_message = ? WHERE id = ?", msg, app.id);
+        writeError = writeErr instanceof Error ? writeErr.message : 'write failed';
+      }
+
+      if (conflict) {
+        return res.status(409).json({ error: "Application is no longer 'proposed' (a concurrent approve won) — nothing was written by this request." });
+      }
+      if (writeError) {
+        await db.run("UPDATE coding_workspace_applications SET status = 'failed', error_message = ? WHERE id = ?", writeError, app.id);
         return res.status(500).json({
-          error: `Apply failed: ${msg}`,
+          error: `Apply failed: ${writeError}`,
           verification: 'Application marked failed. Some files may have been written before the failure — check the backup manifest in .anton-coding-backup/.',
         });
       }
-
-      // Persist outcome; clear content now that it has been consumed.
-      const finalFiles = files.map((f) => {
-        const r = result.files.find((x) => x.path === f.path);
-        return {
-          path: f.path, action: r?.action ?? f.action, bytes: f.bytes,
-          hash_new: f.hash_new, hash_before: r?.hash_before ?? f.hash_before, hash_after: r?.hash_after,
-        };
-      });
-      await db.run(`
-        UPDATE coding_workspace_applications
-        SET status = 'applied', files = ?, backup_dir = ?, applied_at = NOW()
-        WHERE id = ?
-      `, JSON.stringify(finalFiles), result.backupDir || null, app.id);
+      result = result!;
 
       // Honest progress entry on the task.
       if (app.coding_task_id) {
@@ -2978,12 +3005,18 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
         return res.status(400).json({ error: 'That test run passed — nothing to revise.' });
       }
 
-      // ONE round per failure: refuse if a revision for this run already exists.
-      const existing = await db.get(`
-        SELECT id FROM coding_workspace_applications
-        WHERE coding_task_id = ? AND kind = 'revision' AND revision_of_test_run_id = ?
-      `, req.params.tid, test_run_id) as any;
-      if (existing) {
+      // ONE round per failure — claimed atomically on the test run itself
+      // (migration 233). Two concurrent /revise calls race on this conditional
+      // UPDATE; only the one that flips revision_requested 0→1 proceeds. The
+      // old check (a coding_workspace_applications row) was insufficient because
+      // that row isn't created until apply-preview runs much later, so both
+      // callers saw "no existing revision" and both seeded a round.
+      const claim = await db.run(`
+        UPDATE coding_test_runs
+        SET revision_requested = 1
+        WHERE id = ? AND coding_project_id = ? AND COALESCE(revision_requested, 0) = 0
+      `, test_run_id, req.params.id);
+      if (!claim.changes) {
         return res.status(409).json({
           error: 'The single revision round for this test failure was already used. Re-run the tests (or revise manually) before another AI round.',
         });
