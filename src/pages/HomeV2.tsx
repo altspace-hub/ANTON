@@ -7,13 +7,12 @@
  *
  *   • Anton title + APCI tagline + 5-Minute Brief CTA
  *   • Regulatory deadlines pill strip
- *   • 5 KPI stat cards + ROI banner
+ *   • 5 KPI stat cards
  *   • Editorial brief
  *   • Continue Your Work (recent sessions)
  *   • Pathfinder quick search
- *   • My Workflow Tasks (placeholder collapsible)
  *   • My Custom Modules
- *   • FIND THE RIGHT MODULE (NL search with intent chips)
+ *   • FIND THE RIGHT MODULE (SmartModuleSearch — server-side AI ranking)
  *   • Modules grouped by area (tonal icon tiles)
  *   • Right rail toggles Activity ↔ Agent — collapse button at the
  *     BOTTOM (matches the left-nav convention)
@@ -24,8 +23,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Inbox, Sparkles, Shield, Compass, Users, Radar as RadarIcon,
   CheckSquare, BookOpen, Search, Star, ChevronLeft, ChevronRight,
-  ChevronDown, Briefcase, Zap, Clock, TrendingUp, MessageSquare,
-  LayoutGrid, Plus, Send, Sparkle,
+  Briefcase, Zap, Clock, TrendingUp, MessageSquare,
+  LayoutGrid, Plus, Sparkle,
   // Module icons (subset — fallback to Briefcase otherwise)
   SearchCheck, FileText, GraduationCap, Database, BarChart3,
   Handshake, Rocket, Presentation, FlaskConical, Scale,
@@ -40,6 +39,7 @@ import {
 import { fetchSearchHistory } from '@/lib/pathfinder-api';
 import type { Session } from '@/lib/types';
 import { Section, Btn } from '@/components/web-ui';
+import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
 
 type RightMode = 'digest' | 'agent';
 type FeedTone = 'accent' | 'gold' | 'red' | 'green' | 'blue';
@@ -168,14 +168,6 @@ const FEED_BORDER: Record<FeedTone, string> = {
   blue:   'var(--color-blue-dim)',
 };
 
-const INTENT_CHIPS = [
-  'Review a contract for hidden risks',
-  'Identify gaps in our AML policy',
-  'Create a training deck for new staff',
-  'Analyse ESG risks in our supply chain',
-  'Build a cash flow forecast',
-];
-
 export default function HomeV2(): JSX.Element {
   const navigate = useNavigate();
 
@@ -244,12 +236,10 @@ export default function HomeV2(): JSX.Element {
   const [rightMode, setRightMode] = useState<RightMode>('digest');
   const [pathQuery, setPathQuery] = useState('');
   const [moduleQuery, setModuleQuery] = useState('');
-  const [findText, setFindText] = useState('');
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]') as string[]); }
     catch { return new Set(); }
   });
-  const [tasksOpen, setTasksOpen] = useState(false);
 
   // Right-rail collapse — persisted
   const [railCollapsed, setRailCollapsed] = useState<boolean>(() => {
@@ -360,26 +350,6 @@ export default function HomeV2(): JSX.Element {
           <KpiCard label="This month"    value={stats?.thisMonthSessions ?? '—'}  icon={TrendingUp} tone="accent" />
         </div>
 
-        {/* ── ROI banner ─────────────────────────────────────── */}
-        {stats && stats.totalSessions > 0 && (
-          <div
-            className="mb-6 flex items-start gap-3 rounded-[var(--radius-r2)] p-3.5"
-            style={{
-              background: 'var(--color-accent-soft)',
-              border: '1px solid var(--color-accent-dim)',
-            }}
-          >
-            <TrendingUp size={16} strokeWidth={1.5} className="mt-0.5 text-[var(--color-adv-teal)]" />
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[var(--color-adv-teal)]">ROI This Month</div>
-              <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-text-body)]">
-                openEXPERT has saved you an estimated <b>{(stats.thisMonthSessions * 1.5).toFixed(1)} hours</b> this month
-                {' '}(est. value: <b>€{(stats.thisMonthSessions * 1.5 * 100).toLocaleString()}</b>, assuming ~1.5h saved per session at €100/hr).
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* ── Editorial brief ────────────────────────────────── */}
         <div className="mb-6">
           <Section className="mb-3">
@@ -411,7 +381,7 @@ export default function HomeV2(): JSX.Element {
                 <Clock size={12} strokeWidth={1.5} /> Continue Your Work
               </Section>
               <button
-                onClick={() => navigate('/sessions')}
+                onClick={() => navigate('/my-work')}
                 className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
               >
                 View All →
@@ -488,36 +458,6 @@ export default function HomeV2(): JSX.Element {
           </p>
         </div>
 
-        {/* ── My Workflow Tasks (collapsible) ────────────────── */}
-        <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => setTasksOpen(o => !o)}
-            className="flex w-full items-center gap-2 px-3.5 py-2.5"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-r2)',
-            }}
-          >
-            {tasksOpen
-              ? <ChevronDown  size={14} strokeWidth={1.5} className="text-[var(--color-text-muted)]" />
-              : <ChevronRight size={14} strokeWidth={1.5} className="text-[var(--color-text-muted)]" />}
-            <Users size={14} strokeWidth={1.5} className="text-[var(--color-adv-teal)]" />
-            <span className="text-[13px] font-semibold text-[var(--color-text)]">My Workflow Tasks</span>
-          </button>
-          {tasksOpen && (
-            <div className="mt-2 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]"
-                 style={{
-                   background: 'var(--color-surface)',
-                   border: '1px solid var(--color-border)',
-                   borderRadius: 'var(--radius-r2)',
-                 }}>
-              No open workflow tasks. Workflows you assign to yourself will appear here.
-            </div>
-          )}
-        </div>
-
         {/* ── My Custom Modules ──────────────────────────────── */}
         {customModules.length > 0 && (
           <div className="mb-6">
@@ -570,77 +510,9 @@ export default function HomeV2(): JSX.Element {
           </div>
         )}
 
-        {/* ── FIND THE RIGHT MODULE ──────────────────────────── */}
-        <div
-          className="mb-5 rounded-[var(--radius-r2)] p-4"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-          }}
-        >
-          <div className="mb-3 flex items-center gap-1.5">
-            <Sparkles size={13} strokeWidth={1.5} className="text-[var(--color-adv-teal)]" />
-            <span
-              className="font-mono font-bold uppercase"
-              style={{ fontSize: 11, color: 'var(--color-adv-teal)', letterSpacing: '0.5px' }}
-            >
-              Find the right module
-            </span>
-          </div>
-          <p className="text-[12.5px] text-[var(--color-text-body)]">
-            Describe what you need help with in plain language — Claude will find the right modules for you.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {INTENT_CHIPS.map(chip => (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => setFindText(chip)}
-                className="rounded-full border px-2.5 py-1 text-[11.5px] hover:bg-[var(--color-surface-alt)]"
-                style={{
-                  background: 'var(--color-surface-alt)',
-                  color: 'var(--color-text-body)',
-                  borderColor: 'var(--color-border)',
-                }}
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-          <div
-            className="mt-3 flex items-center gap-2 px-3 py-2"
-            style={{
-              background: 'var(--color-surface-alt)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-r1)',
-            }}
-          >
-            <input
-              value={findText}
-              onChange={(e) => setFindText(e.target.value)}
-              placeholder="e.g. I need to do a gap analysis against the new AML regulation…"
-              className="flex-1 bg-transparent text-[13px] text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
-            />
-            <Btn
-              variant="accent"
-              size="sm"
-              icon={<Send size={11} strokeWidth={1.5} />}
-              disabled={!findText.trim()}
-              onClick={() => navigate(`/pathfinder?q=${encodeURIComponent('What module should I use to: ' + findText.trim())}`)}
-            >
-              Find
-            </Btn>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--color-text-faint)]">
-            <span>Powered by Claude Haiku · results in ~2 seconds</span>
-            <button
-              onClick={() => navigate('/discovery')}
-              className="font-semibold text-[var(--color-adv-teal)] hover:underline"
-            >
-              Full AI Discovery session →
-            </button>
-          </div>
-        </div>
+        {/* ── FIND THE RIGHT MODULE — real AI search (server-side
+               full-catalog ranking via /api/modules/smart-search) ── */}
+        <SmartModuleSearch />
 
         {/* ── Module catalog (search or grouped by area) ─────── */}
         <div className="mb-6">

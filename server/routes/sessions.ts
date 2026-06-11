@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { ilike } from '../db/dialect-helpers.js';
 
 export async function createSessionRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -28,9 +29,20 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
         params.push(moduleId);
       }
       if (search?.trim()) {
-        conditions.push('(s.title LIKE ? OR s.note LIKE ?)');
-        const searchParam = `%${search.trim()}%`;
+        const term = search.trim();
+        const searchParam = `%${term}%`;
+        // Case-insensitive on both dialects (PG LIKE is case-sensitive; use ILIKE there)
+        const searchClauses = [ilike(db.dialect, 's.title'), ilike(db.dialect, 's.note')];
         params.push(searchParam, searchParam);
+        // Also match message content — guarded to terms ≥ 3 chars so short
+        // queries don't scan the (much larger) messages table needlessly.
+        if (term.length >= 3) {
+          searchClauses.push(
+            `EXISTS (SELECT 1 FROM messages ms WHERE ms.session_id = s.id AND ${ilike(db.dialect, 'ms.content')})`
+          );
+          params.push(searchParam);
+        }
+        conditions.push(`(${searchClauses.join(' OR ')})`);
       }
 
       const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

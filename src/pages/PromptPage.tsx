@@ -27,25 +27,25 @@ import type { Message } from '@/lib/types';
 
 const DEFAULT_SYSTEM_PROMPT = `You are Anton, a knowledgeable AI assistant. You provide thorough, well-structured analysis across any topic. You are professional, precise, and helpful. You can assist with questions, analysis, document review, brainstorming, and more. When working with specialised domains, you adapt your depth and terminology accordingly.`;
 
-const IMPROVE_ANALYZE_PROMPT = `You are a prompt engineering expert helping Financial Crime Prevention consultants write better prompts for an AI assistant.
+const IMPROVE_ANALYZE_PROMPT = `You are a prompt engineering expert helping professionals across many domains write better prompts for an AI assistant.
 
 Analyze the user's draft prompt and ask exactly 5 concise clarifying questions to help create a more effective, detailed prompt. Your questions should help understand:
 
-1. What expert role or persona the AI should adopt (e.g., senior AML advisor, sanctions specialist, regulatory analyst)
+1. What expert role or persona the AI should adopt (e.g., senior legal advisor, financial analyst, clinical specialist, strategy consultant — whatever fits the topic)
 2. What specific aspects, details, or focus areas are most important for this task
-3. What the desired end goal or deliverable looks like (format, depth, structure)
-4. What context is relevant — jurisdiction, entity type, regulatory framework, timeline
+3. What the desired end goal or deliverable looks like (format, depth, structure, intended audience)
+4. What context is relevant — domain, organisation or entity type, jurisdiction or market if applicable, timeframe
 5. Any constraints, quality criteria, or specific requirements to follow
 
 Format your response as numbered questions. Be concise and specific to the user's topic. Do NOT rewrite the prompt — only ask questions.`;
 
-const IMPROVE_BUILD_PROMPT = `You are a prompt engineering expert for Financial Crime Prevention consultants. Based on the original draft prompt and the user's answers to clarifying questions, create a comprehensive, detailed prompt that will produce excellent results from an AI assistant.
+const IMPROVE_BUILD_PROMPT = `You are a prompt engineering expert helping professionals across many domains. Based on the original draft prompt and the user's answers to clarifying questions, create a comprehensive, detailed prompt that will produce excellent results from an AI assistant.
 
 The improved prompt should include:
-- A clear role/persona definition
+- A clear role/persona definition appropriate to the topic
 - Detailed task description with specific requirements
-- Context, jurisdiction, and constraints
-- Output format and structure requirements
+- Relevant context, scope, and constraints
+- Output format and structure requirements (including intended audience)
 - Quality criteria and what to include/avoid
 
 Output ONLY the improved prompt text, ready to be used directly. Do not include any preamble, explanations, or meta-commentary about the prompt. Start directly with the prompt content.`;
@@ -323,36 +323,39 @@ export default function PromptPage() {
     }
   };
 
-  // Analyse prompt text and suggest relevant personas + skills
+  // Analyse prompt text and suggest relevant personas + skills.
+  // Domain-neutral heuristics — Open Chat serves 55+ professional domains,
+  // so cues map to broad professional lenses (legal, finance, data, strategy,
+  // audience, format) rather than any single domain's terminology.
   const handleGetSuggestions = () => {
     if (!improveAnswers.trim() || improveState !== 'questions') return;
 
     const combined = `${improveDraft} ${improveAnswers}`.toLowerCase();
 
-    // Persona suggestions — keyword matching
+    // Persona suggestions — generic professional-discipline cues
     const personaSuggestions: string[] = [];
-    if (combined.match(/\baml|anti.money|financial crime|kyc|cdd|beneficial owner/)) personaSuggestions.push('fcp-expert');
-    if (combined.match(/\blegal|law|regulation|directive|article|transpos/)) personaSuggestions.push('legal-expert');
-    if (combined.match(/\baudit|control test|findings|deficiencies|three.line/)) personaSuggestions.push('auditor');
-    if (combined.match(/\bsanctions|ofac|asset freeze|eu restrictive|designated/)) personaSuggestions.push('sanctions-expert');
-    if (combined.match(/\bboard|governance|non.exec|risk committee|strategic/)) personaSuggestions.push('board-member');
-    if (combined.match(/\bregulat|supervisor|inspection|on.site|compliance test/)) personaSuggestions.push('regulator');
-    if (combined.match(/\bdata|model|analytics|transaction monitoring|ml |machine learning/)) personaSuggestions.push('data-scientist');
-    if (combined.match(/\brisk|risk.based|inherent|residual|risk appetite/)) personaSuggestions.push('risk-specialist');
-    if (combined.match(/\bcco|chief compliance|governance framework|risk appetite statement/)) personaSuggestions.push('cco');
+    if (combined.match(/\blegal|law|contract|regulation|liabilit|clause|agreement|statut/)) personaSuggestions.push('legal-expert');
+    if (combined.match(/\baudit|control test|findings|assurance|deficienc/)) personaSuggestions.push('auditor');
+    if (combined.match(/\bdata|model|analytics|statistic|machine learning|\bml\b|dataset/)) personaSuggestions.push('data-scientist');
+    if (combined.match(/\brisk|inherent|residual|risk appetite|mitigat|threat/)) personaSuggestions.push('risk-specialist');
+    if (combined.match(/\bboard|governance|non.exec|executive committee|c.suite/)) personaSuggestions.push('board-member');
+    if (combined.match(/\bfinance|budget|forecast|cash flow|valuation|p&l|balance sheet/)) personaSuggestions.push('finance-expert');
+    if (combined.match(/\bstrategy|strategic|market entry|competitive|positioning|business plan/)) personaSuggestions.push('strategy-expert');
+    if (combined.match(/\bhr|hiring|recruit|onboarding|performance review|employee relations/)) personaSuggestions.push('hr-expert');
+    if (combined.match(/\bsoftware|architecture|api|infrastructure|cloud|devops/)) personaSuggestions.push('tech-expert');
+    if (combined.match(/\bsecurity|cyber|breach|vulnerabilit|phishing|ransomware/)) personaSuggestions.push('cyber-expert');
+    if (combined.match(/\bstartup|founder|mvp|fundrais|seed|venture/)) personaSuggestions.push('startup-advisor');
 
-    // Skill suggestions — keyword matching
+    // Skill suggestions — missing audience / format / rigour cues
     const skillSuggestions: string[] = [];
-    if (combined.match(/\bamlr|regulation 2024|2024.1624/)) skillSuggestions.push('amlr-article-reference');
-    if (combined.match(/\bnordic|sweden|norway|denmark|finland|fi \(|finanstilsynet|fin.fsa/)) skillSuggestions.push('nordic-regulatory-navigator');
-    if (combined.match(/\bboard|executive summary|c.suite|one.pager|concise/)) skillSuggestions.push('board-communication');
-    if (combined.match(/\beu regulation|eu directive|eba|esma|eiopa|level 2|rts|its/)) skillSuggestions.push('eu-regulatory-navigator');
-    if (combined.match(/\bevidence|academic|research|methodology|confidence|empirical/)) skillSuggestions.push('academic-rigour');
-    if (combined.match(/\brisk.based approach|risk appetite|inherent risk|residual risk/)) skillSuggestions.push('risk-based-thinking');
-    if (combined.match(/\bsupervisor|inspection|on.site|examination|enforcement/)) skillSuggestions.push('regulatory-examiner');
-    if (combined.match(/\bswedish|svenska|finansinspektionen|^se |sweden/)) skillSuggestions.push('swedish-regulatory');
-    if (combined.match(/\bdata story|chart|graph|visuali|number|statistic/)) skillSuggestions.push('data-storytelling');
-    if (combined.match(/\binvestment|roi|return|budget|cost.benefit|capex/)) skillSuggestions.push('investor-lens');
+    if (combined.match(/\bboard|executive summary|c.suite|one.pager|senior management|concise/)) skillSuggestions.push('board-communication');
+    if (combined.match(/\bevidence|academic|research|methodology|confidence|empirical|citation/)) skillSuggestions.push('academic-rigour');
+    if (combined.match(/\bdata story|chart|graph|visuali|dashboard|statistic/)) skillSuggestions.push('data-storytelling');
+    if (combined.match(/\bslide|deck|presentation|powerpoint|pptx/)) skillSuggestions.push('pptx-generation');
+    if (combined.match(/\binvestment|roi|return|budget|cost.benefit|capex|business case/)) skillSuggestions.push('investor-lens');
+    if (combined.match(/\btrain|teach|learn|workshop|course|explain to|onboard/)) skillSuggestions.push('socratic-method');
+    if (combined.match(/\bstartup|lean|mvp|iterate|prototype/)) skillSuggestions.push('startup-mode');
+    if (combined.match(/\brisk.based|risk appetite|inherent risk|residual risk|prioriti[sz]e by risk/)) skillSuggestions.push('risk-based-thinking');
 
     setSuggestedPersonas(personaSuggestions.slice(0, 4));
     setSuggestedSkills(skillSuggestions.slice(0, 4));
@@ -550,15 +553,15 @@ export default function PromptPage() {
             <div>
               <p className="text-sm font-medium text-adv-off-white">Ask anything</p>
               <p className="mt-1 max-w-md text-xs text-adv-gray">
-                Questions, document analysis, assessments, advice, sanctions logic, or any other topic. Upload documents for context.
+                Questions, document analysis, assessments, advice, drafting, or any other topic. Upload documents for context.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
               {[
-                'What are the key changes in AMLR 2024/1624?',
-                'Draft a CDD procedure outline',
-                'Explain EBA guidelines on de-risking',
-                'Compare FATF vs EU approach to beneficial ownership',
+                'Review this contract clause for hidden risks',
+                'Draft a project kickoff agenda',
+                'Summarise this report for senior management',
+                'Compare two strategic options with pros and cons',
               ].map((suggestion) => (
                 <button
                   key={suggestion}
