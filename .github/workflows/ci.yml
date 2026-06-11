@@ -107,9 +107,20 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # OSS-02: Audit for known vulnerabilities — fail on high/critical severity
-      - name: Security audit
-        run: pnpm audit --audit-level=high || true
+      # OSS-02: Audit for known vulnerabilities.
+      #
+      # Scope: runtime deps only (`--prod`). The full-tree audit is dominated by
+      # dev-tooling CVEs (vitest/rollup/protobufjs(build)/shell-quote/xlsx/electron)
+      # that never reach a shipped runtime, so a full-tree gate is pure noise.
+      #
+      # TODO (security cleanup): this gate is still SOFT (`|| true`) because the
+      # PRODUCTION dependency tree currently carries unpatched high/critical
+      # advisories (transitively: protobufjs<7.5.5 via @opentelemetry, hono,
+      # @hono/node-server, express-rate-limit, fast-uri, path-to-regexp,
+      # socket.io, tmp, xmldom). Patch/override those, then drop the `|| true`
+      # to make `pnpm audit --prod --audit-level=high` a hard merge gate.
+      - name: Security audit (runtime deps)
+        run: pnpm audit --prod --audit-level=high || true
       # OSS-02: License check — block GPL and other copyleft licenses
       - name: License check
         run: |

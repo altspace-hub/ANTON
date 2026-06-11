@@ -1,5 +1,10 @@
 // ── Unified Database Initialization ──────────────────────────────────────────
-// Detects DATABASE_URL → PostgreSQL, otherwise → SQLite (default).
+// ANTON runs on PostgreSQL ONLY. DATABASE_URL is REQUIRED.
+//
+// The legacy SQLite boot path (init.ts + adapters/sqlite-*) is intentionally
+// left in the tree for now but is UNREACHABLE from the real server boot: this
+// function throws if DATABASE_URL is absent rather than falling back to SQLite.
+// Full removal of the SQLite code is a recommended separate cleanup pass.
 
 import type { DatabaseAdapter } from './database.js';
 import { logger } from '../lib/logger.js';
@@ -13,10 +18,10 @@ export async function initDatabaseAdapter(): Promise<DatabaseAdapter> {
     return initPostgresDatabase(databaseUrl);
   }
 
-  // Default: SQLite
-  logger.info('[db] Using SQLite (default) — set DATABASE_URL for PostgreSQL');
-  const { initDatabase } = await import('./init.js');
-  const { SqliteAdapter } = await import('./adapters/sqlite-adapter.js');
-  const rawDb = initDatabase();
-  return new SqliteAdapter(rawDb);
+  // No silent SQLite fallback: ANTON is PostgreSQL-only.
+  throw new Error(
+    'DATABASE_URL is required — ANTON runs on PostgreSQL only; SQLite is not ' +
+      'supported. Set DATABASE_URL=postgresql://anton:anton@localhost:5432/anton ' +
+      '(see CLAUDE.md Quick Start) and run `pnpm run db:init` before starting the server.'
+  );
 }

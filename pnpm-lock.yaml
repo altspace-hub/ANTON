@@ -172,7 +172,7 @@ importers:
         version: 0.13.0(@capacitor/core@8.3.1)
       chromadb:
         specifier: ^1.8.1
-        version: 1.10.5(@google/generative-ai@0.24.1)(encoding@0.1.13)(openai@4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@4.3.6))
+        version: 1.10.5(@google/generative-ai@0.24.1)(encoding@0.1.13)(openai@4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6))
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -262,7 +262,7 @@ importers:
         version: 8.0.1
       openai:
         specifier: ^4.28.0
-        version: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@4.3.6)
+        version: 4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6)
       openid-client:
         specifier: ^6.8.2
         version: 6.8.2
@@ -336,8 +336,8 @@ importers:
         specifier: ^3.6.7
         version: 3.6.7
       ws:
-        specifier: ^8.18.0
-        version: 8.19.0
+        specifier: ^8.20.1
+        version: 8.21.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -8574,8 +8574,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.19.0:
-    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -10389,7 +10389,7 @@ snapshots:
 
   '@mistralai/mistralai@1.14.1':
     dependencies:
-      ws: 8.19.0
+      ws: 8.21.0
       zod: 4.3.6
       zod-to-json-schema: 3.25.1(zod@4.3.6)
     transitivePeerDependencies:
@@ -12762,13 +12762,13 @@ snapshots:
 
   chownr@3.0.0: {}
 
-  chromadb@1.10.5(@google/generative-ai@0.24.1)(encoding@0.1.13)(openai@4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@4.3.6)):
+  chromadb@1.10.5(@google/generative-ai@0.24.1)(encoding@0.1.13)(openai@4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6)):
     dependencies:
       cliui: 8.0.1
       isomorphic-fetch: 3.0.0(encoding@0.1.13)
     optionalDependencies:
       '@google/generative-ai': 0.24.1
-      openai: 4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@4.3.6)
+      openai: 4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6)
     transitivePeerDependencies:
       - encoding
 
@@ -16046,7 +16046,7 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@4.104.0(encoding@0.1.13)(ws@8.19.0)(zod@4.3.6):
+  openai@4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6):
     dependencies:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
@@ -16056,7 +16056,7 @@ snapshots:
       formdata-node: 4.4.1
       node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
-      ws: 8.19.0
+      ws: 8.21.0
       zod: 4.3.6
     transitivePeerDependencies:
       - encoding
@@ -18349,7 +18349,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  ws@8.19.0: {}
+  ws@8.21.0: {}
 
   wsl-utils@0.1.0:
     dependencies:

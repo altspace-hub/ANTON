@@ -24,7 +24,7 @@
     "@truestamp/canonify": "^2.1.0",
     "pg": "^8.13.1",
     "pino": "^9.5.0",
-    "ws": "^8.18.0"
+    "ws": "^8.20.1"
   },
   "devDependencies": {
     "@noble/ciphers": "^1.3.0",

@@ -23,6 +23,26 @@ jobs:
       fail-fast: false
       matrix:
         project: [chromium, firefox, webkit]
+    # ANTON is PostgreSQL-ONLY. Without DATABASE_URL the server now refuses to
+    # boot (it used to silently fall back to legacy SQLite and crash on the
+    # first query — `no such table: entity_nodes`). Provide a real Postgres so
+    # E2E runs against the same engine production uses.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: anton
+          POSTGRES_PASSWORD: anton
+          POSTGRES_DB: anton
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U anton -d anton"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://anton:anton@localhost:5432/anton
     steps:
       - uses: actions/checkout@v5
 
@@ -46,9 +66,16 @@ jobs:
         env:
           ANTHROPIC_API_KEY: sk-ant-placeholder-for-build
 
+      - name: Initialize PostgreSQL schema
+        run: pnpm run db:init
+
+      - name: Run PostgreSQL migrations
+        run: pnpm run db:migrate:pg
+
       - name: Start server and run E2E tests
         run: |
-          # Start the production server in background (tsx runs TypeScript directly)
+          # Start the production server in background (tsx runs TypeScript directly).
+          # DATABASE_URL is inherited from the job env → real PostgreSQL.
           ANTHROPIC_API_KEY=sk-ant-placeholder PORT=5173 DEPLOYMENT_MODE=solo JWT_SECRET=ci-test-secret-not-real pnpm tsx server/index.ts &
           SERVER_PID=$!
           # Wait for server to be ready
