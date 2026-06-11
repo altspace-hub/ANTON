@@ -19,14 +19,20 @@ import {
   synthesiseCapabilityView,
   generateBoardSummary,
   generateRoadmap,
+  extractEvidenceItems,
+  buildEvidenceManifest,
+  mapFindingRow,
   type FrameworkArticle,
   type GapModelTier,
+  type GapFindingRow,
+  type BaselineFinding,
+  type OverrideRequestBody,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { compareIterations } from '../services/gap-comparison.js';
+import { compareIterations, buildSinceLastAssessmentSection } from '../services/gap-comparison.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { fileURLToPath } from 'url';
 
@@ -237,15 +243,10 @@ Generate the complete framework JSON now.`;
       const uid = getUserId(req);
       const assessment = await db.get('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?', req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
-      const findings = await db.all('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
-      // Map snake_case DB columns to camelCase for frontend
-      const mappedFindings = (findings as Record<string, unknown>[]).map(f => ({
-        ...f,
-        articleId: f.article_id,
-        articleTitle: f.article_title,
-        currentState: f.current_state,
-        numericScore: f.numeric_score ?? 0,
-      }));
+      const findings = await db.all<GapFindingRow>('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
+      // Map snake_case DB columns to camelCase for frontend (incl. criterion facts,
+      // evidence refs, override + carry-forward metadata — Wave 1.1/1.2/1.5/1.7)
+      const mappedFindings = findings.map(mapFindingRow);
       res.json({ assessment, findings: mappedFindings });
     } catch (err) {
       console.error('[gap-assessments] get error:', err);
@@ -274,6 +275,36 @@ Generate the complete framework JSON now.`;
     } catch (err) {
       console.error('[gap-assessments] patch error:', err);
       res.status(500).json({ error: 'Failed to update assessment' });
+    }
+  });
+
+  // ── Assessor override on a single finding (Wave 1.2) ───────────────────────
+  // PATCH /api/gap-assessments/:id/findings/:findingId
+  // Body: { criteria, reason }          → facts edited, score recomputed by rubric
+  //       { manualScore: {numericScore, priority?}, reason } → explicit manual score
+  //       { revert: true }              → restore computed values
+  // Computed values are preserved alongside — never destroyed.
+  router.patch('/gap-assessments/:id/findings/:findingId', async (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const findingId = Number(req.params.findingId);
+      if (!Number.isInteger(findingId) || findingId <= 0) {
+        return res.status(400).json({ error: 'Invalid finding id' });
+      }
+
+      const result = await engine.applyFindingOverride(
+        req.params.id as string,
+        findingId,
+        uid,
+        (req.body ?? {}) as OverrideRequestBody,
+      );
+      res.status(result.status).json(result.body);
+    } catch (err) {
+      console.error('[gap-assessments] finding override error:', err);
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -306,6 +337,36 @@ Generate the complete framework JSON now.`;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
       await db.run("UPDATE gap_assessments SET status = 'assessing', current_step = 4, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
+
+      // ── Evidence manifest (Wave 1.5): id + sha256 per evidence item ───────
+      const evidenceItems = extractEvidenceItems(contextConfig);
+      const manifest = buildEvidenceManifest(evidenceItems);
+      await db.run('UPDATE gap_assessments SET evidence_manifest = ? WHERE id = ?',
+        JSON.stringify(manifest), req.params.id as string);
+      if (manifest.length > 0) {
+        sendEvent({ type: 'info', message: `Evidence manifest: ${manifest.length} addressable item(s) (${manifest.map(m => m.docId).join(', ')})` });
+      }
+
+      // ── Re-assessment mode (Wave 1.7): carry-forward baseline ─────────────
+      const runMode = (req.body as { mode?: string } | undefined)?.mode;
+      let baselineByKey: Map<string, BaselineFinding> | null = null;
+      if (runMode === 'reassess') {
+        const lastIter = await db.get<{ findings_snapshot: string | null; iteration_number: number }>(
+          'SELECT findings_snapshot, iteration_number FROM gap_iterations WHERE assessment_id = ? ORDER BY iteration_number DESC LIMIT 1',
+          req.params.id as string
+        );
+        if (lastIter?.findings_snapshot) {
+          try {
+            const snapshot = JSON.parse(lastIter.findings_snapshot) as Array<BaselineFinding & { framework: string }>;
+            baselineByKey = new Map(snapshot.map(s => [`${s.framework}::${s.articleId}`, s]));
+            sendEvent({ type: 'info', message: `Re-assessment mode: baseline = iteration ${lastIter.iteration_number} (${snapshot.length} findings). Only changes given new evidence will move scores; unchanged articles carry forward.` });
+          } catch {
+            sendEvent({ type: 'warning', message: 'Could not parse prior iteration snapshot — running a full assessment instead' });
+          }
+        } else {
+          sendEvent({ type: 'warning', message: 'Re-assessment requested but no prior iteration snapshot exists — running a full assessment instead' });
+        }
+      }
 
       // Build org context + knowledge pack layers to enrich every Claude batch call
       const orgContextLayer = await buildOrgContextLayer(db, uid);
@@ -382,6 +443,17 @@ Generate the complete framework JSON now.`;
           });
 
           try {
+            // Baseline subset for this batch (re-assessment mode)
+            let batchBaseline: Record<string, BaselineFinding> | undefined;
+            if (baselineByKey) {
+              batchBaseline = {};
+              for (const a of batch) {
+                const b = baselineByKey.get(`${frameworkId}::${a.id}`);
+                if (b) batchBaseline[a.id] = b;
+              }
+              if (Object.keys(batchBaseline).length === 0) batchBaseline = undefined;
+            }
+
             const result = await runAssessmentBatch(
               anthropic,
               frameworkId,
@@ -391,12 +463,13 @@ Generate the complete framework JSON now.`;
               batches.length,
               extraSystemContext || undefined,
               modelTier,
-              db
+              db,
+              batchBaseline ? { baseline: batchBaseline } : undefined
             );
 
             // Save findings to DB
-            engine.saveFindings(req.params.id as string, frameworkId, result.findings);
-            engine.updateArticleScores(req.params.id as string, frameworkId, result.findings);
+            await engine.saveFindings(req.params.id as string, frameworkId, result.findings);
+            await engine.updateArticleScores(req.params.id as string, frameworkId, result.findings);
 
             // Append batch reasoning
             if (result.thinking) {
@@ -495,9 +568,31 @@ Generate the complete framework JSON now.`;
       const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
       const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
-      await db.run('UPDATE gap_assessments SET board_summary = ?, board_reasoning = ?, current_step = 7, updated_at = ? WHERE id = ?', result.summary, result.reasoning || null, new Date().toISOString(), req.params.id as string);
+      // ── "Since last assessment" — deterministic, appended after the LLM text
+      // (Wave 1.7): computed from the latest iteration snapshot vs current
+      // findings, so the board numbers are exactly the database numbers.
+      let summary = result.summary;
+      try {
+        const lastIter = await db.get<{ findings_snapshot: string | null }>(
+          'SELECT findings_snapshot FROM gap_iterations WHERE assessment_id = ? ORDER BY iteration_number DESC LIMIT 1',
+          req.params.id as string
+        );
+        if (lastIter?.findings_snapshot) {
+          const before = JSON.parse(lastIter.findings_snapshot);
+          const currentRows = await db.all<GapFindingRow>('SELECT * FROM gap_findings WHERE assessment_id = ?', req.params.id as string);
+          const current = currentRows.map(mapFindingRow) as unknown as Parameters<typeof compareIterations>[1];
+          if (Array.isArray(before) && currentRows.length > 0) {
+            const cmp = compareIterations(before, current);
+            summary = `${summary}\n\n${buildSinceLastAssessmentSection(cmp)}`;
+          }
+        }
+      } catch (cmpErr) {
+        console.error('[gap-assessments] since-last section error (board summary kept):', cmpErr);
+      }
 
-      res.json({ boardSummary: result.summary, reasoning: result.reasoning });
+      await db.run('UPDATE gap_assessments SET board_summary = ?, board_reasoning = ?, current_step = 7, updated_at = ? WHERE id = ?', summary, result.reasoning || null, new Date().toISOString(), req.params.id as string);
+
+      res.json({ boardSummary: summary, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] board-summary error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -537,20 +632,32 @@ Generate the complete framework JSON now.`;
       const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
-      const findings = await db.all('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string) as Record<string, unknown>[];
+      const findings = await db.all<GapFindingRow>('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
 
-      // Build score summary
-      const mapped = findings.map(f => ({
-        articleId: f.article_id as string,
-        articleTitle: f.article_title as string,
-        framework: f.framework as string,
-        score: f.score as string,
-        numericScore: (f.numeric_score as number) || 0,
-        priority: f.priority as string,
-        notes: f.notes as string,
-        currentState: f.current_state as string,
-        requirement: f.requirement as string,
-      }));
+      // Build score summary. The snapshot carries criterion facts, evidence
+      // refs and override/carry-forward metadata so later re-assessments can
+      // use it as the baseline (Wave 1.7) and comparisons can attribute deltas.
+      const mapped = findings.map(f => {
+        const m = mapFindingRow(f);
+        return {
+          articleId: m.articleId as string,
+          articleTitle: m.articleTitle as string,
+          framework: m.framework as string,
+          score: m.score as string,
+          numericScore: (m.numericScore as number) || 0,
+          priority: m.priority as string,
+          notes: m.notes as string,
+          currentState: m.currentState as string,
+          requirement: m.requirement as string,
+          criteria: m.criteria,
+          evidenceRefs: m.evidenceRefs,
+          rubricVersion: m.rubricVersion,
+          carriedForward: m.carriedForward,
+          changeReason: m.changeReason,
+          overrideKind: m.overrideKind,
+          overrideReason: m.overrideReason,
+        };
+      });
       const avg = mapped.length > 0 ? Math.round(mapped.reduce((s, f) => s + f.numericScore, 0) / mapped.length) : 0;
       const scoreSummary = {
         red: mapped.filter(f => f.score === 'red').length,

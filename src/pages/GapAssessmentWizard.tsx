@@ -23,7 +23,31 @@ import { useExport } from '@/hooks/useExport';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+type CriterionAnswer = 'yes' | 'partial' | 'no' | 'unknown';
+
+interface CriterionFacts {
+  documented: CriterionAnswer;
+  implemented: CriterionAnswer;
+  tested: CriterionAnswer | 'n_a';
+  evidenced: 'yes' | 'no';
+  ownerAssigned: 'yes' | 'no' | 'unknown';
+}
+
+interface EvidenceRef {
+  docId: string;
+  quote: string;
+}
+
+interface EvidenceManifestEntry {
+  docId: string;
+  name: string;
+  kind: 'document' | 'interview';
+  sha256: string;
+  chars: number;
+}
+
 interface ArticleFinding {
+  id?: number; // gap_findings row id (needed for assessor override PATCH)
   articleId: string;
   articleTitle: string;
   requirement: string;
@@ -32,6 +56,21 @@ interface ArticleFinding {
   numericScore: number; // 0-100, 100 = fully compliant
   priority: 'critical' | 'high' | 'medium' | 'low';
   notes: string;
+  // Deterministic scoring core (rubric v1) — absent on legacy findings
+  criteria?: CriterionFacts | null;
+  evidenceRefs?: EvidenceRef[];
+  warnings?: string[];
+  overrideCriteria?: CriterionFacts | null;
+  rubricVersion?: number | null;
+  computedScore?: string | null;
+  computedNumericScore?: number | null;
+  computedPriority?: string | null;
+  overriddenBy?: string | null;
+  overrideReason?: string | null;
+  overriddenAt?: string | null;
+  overrideKind?: 'facts' | 'manual' | null;
+  carriedForward?: boolean;
+  changeReason?: string | null;
 }
 
 interface Assessment {
@@ -46,6 +85,7 @@ interface Assessment {
   capability_view: string | null;
   board_summary: string | null;
   roadmap: string | null;
+  evidence_manifest?: EvidenceManifestEntry[] | string | null;
 }
 
 interface Framework {
@@ -250,6 +290,41 @@ function PriorityBadge({ priority }: { priority: 'critical' | 'high' | 'medium' 
   );
 }
 
+// ── Criterion fact chips (deterministic rubric inputs) ───────────────────────
+
+const FACT_LABELS: Array<{ key: keyof CriterionFacts; label: string }> = [
+  { key: 'documented', label: 'Documented' },
+  { key: 'implemented', label: 'Implemented' },
+  { key: 'tested', label: 'Tested' },
+  { key: 'evidenced', label: 'Evidenced' },
+  { key: 'ownerAssigned', label: 'Owner' },
+];
+
+function factChipColor(value: string): string {
+  if (value === 'yes') return 'bg-adv-green/10 text-adv-green border-adv-green/30';
+  if (value === 'partial') return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
+  if (value === 'n_a') return 'bg-adv-dark text-adv-gray border-border';
+  if (value === 'unknown') return 'bg-adv-dark text-adv-gray border-border';
+  return 'bg-red-500/15 text-red-400 border-red-500/30'; // 'no'
+}
+
+function factValueLabel(value: string): string {
+  if (value === 'n_a') return 'N/A';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function CriteriaChips({ criteria }: { criteria: CriterionFacts }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {FACT_LABELS.map(({ key, label }) => (
+        <span key={key} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${factChipColor(String(criteria[key]))}`}>
+          <span className="text-adv-gray font-normal">{label}:</span> {factValueLabel(String(criteria[key]))}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function StepIndicator({ step, current, maxReached }: { step: typeof STEPS[0]; current: number; maxReached: number }) {
   const Icon = step.icon;
   const done = maxReached > step.id && current !== step.id;
@@ -372,6 +447,17 @@ function GapAssessmentWizardInner() {
   const [isDragging, setIsDragging] = useState(false);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedCap, setExpandedCap] = useState<string | null>(null);
+  // Wave 1.5 — addressable evidence manifest (docId → name lookup for refs)
+  const [evidenceManifest, setEvidenceManifest] = useState<EvidenceManifestEntry[]>([]);
+  // Wave 1.7 — re-assessment mode toggle (only meaningful when iterations exist)
+  const [reassessMode, setReassessMode] = useState(false);
+  // Wave 1.2 — assessor override editor
+  const [overrideEditorKey, setOverrideEditorKey] = useState<string | null>(null);
+  const [overrideMode, setOverrideMode] = useState<'facts' | 'manual'>('facts');
+  const [overrideCriteria, setOverrideCriteria] = useState<CriterionFacts>({ documented: 'unknown', implemented: 'unknown', tested: 'unknown', evidenced: 'no', ownerAssigned: 'unknown' });
+  const [overrideManualScore, setOverrideManualScore] = useState(50);
+  const [overrideReasonText, setOverrideReasonText] = useState('');
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
   const [capViewMode, setCapViewMode] = useState<'cards' | 'text'>('text');
   const [maxStepReached, setMaxStepReached] = useState(1);
 
@@ -422,6 +508,12 @@ function GapAssessmentWizardInner() {
         try { const parsed = JSON.parse(a.scope_config); setScopeConfig({ selectedThemes: Array.isArray(parsed.selectedThemes) ? parsed.selectedThemes : [] }); } catch { /* ignore */ }
       }
       if (f) setFindings(f);
+      // Evidence manifest (Wave 1.5) — pg returns JSONB parsed, but be tolerant
+      try {
+        const rawManifest = a.evidence_manifest;
+        const parsedManifest = typeof rawManifest === 'string' ? JSON.parse(rawManifest) : rawManifest;
+        setEvidenceManifest(Array.isArray(parsedManifest) ? parsedManifest : []);
+      } catch { setEvidenceManifest([]); }
       if (a.capability_view) {
         try { setCapabilities(JSON.parse(a.capability_view)); } catch { /* ignore */ }
       }
@@ -536,9 +628,16 @@ function GapAssessmentWizardInner() {
     const interviewTexts = interviews
       .filter(i => i.notes.trim())
       .map(i => `### INTERVIEW: ${i.role || 'Unknown role'}\n${i.notes}`);
+    // Addressable evidence items (Wave 1.5) — the server assigns stable docIds
+    // (doc-1.., int-1..) in this order and stores a sha256 manifest at run time.
+    const evidenceItems = [
+      ...evidenceDocs.filter(d => d.status === 'done' && d.text).map(d => ({ name: d.name, kind: 'document' as const, text: d.text || '' })),
+      ...interviews.filter(i => i.notes.trim()).map(i => ({ name: i.role || 'Unknown role', kind: 'interview' as const, text: i.notes })),
+    ];
     const enrichedContext = {
       ...contextConfig,
       documents: [...docTexts, ...interviewTexts].join('\n\n---\n\n'),
+      evidenceItems,
       documentFileIds: evidenceDocs.filter(d => d.status === 'done').map(d => d.id),
       interviewCount: interviews.filter(i => i.notes.trim()).length,
       knowledgeSources,
@@ -563,6 +662,7 @@ function GapAssessmentWizardInner() {
       const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
       });
 
       if (!response.ok || !response.body) throw new Error('Stream failed');
@@ -610,6 +710,45 @@ function GapAssessmentWizardInner() {
       setProgressEvents(prev => [...prev, { type: 'error', error: String(err), message: 'Assessment failed' }]);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  // ── Assessor override (Wave 1.2) ───────────────────────────────────────────
+  const openOverrideEditor = (f: ArticleFinding, rowKey: string) => {
+    setOverrideEditorKey(rowKey);
+    setOverrideMode('facts');
+    setOverrideCriteria(f.overrideCriteria ?? f.criteria ?? { documented: 'unknown', implemented: 'unknown', tested: 'unknown', evidenced: 'no', ownerAssigned: 'unknown' });
+    setOverrideManualScore(f.numericScore ?? 50);
+    setOverrideReasonText('');
+  };
+
+  const submitOverride = async (f: ArticleFinding, revert = false) => {
+    if (!id || !f.id) return;
+    if (!revert && !overrideReasonText.trim()) { setActionError('An override reason is required.'); return; }
+    setOverrideSubmitting(true);
+    setActionError('');
+    try {
+      const body = revert
+        ? { revert: true }
+        : overrideMode === 'facts'
+          ? { criteria: overrideCriteria, reason: overrideReasonText.trim() }
+          : { manualScore: { numericScore: overrideManualScore }, reason: overrideReasonText.trim() };
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/findings/${f.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      if (!r.ok) { setActionError(String(data?.error || 'Override failed')); return; }
+      if (data.finding) {
+        setFindings(prev => prev.map(p => (p.id === f.id ? { ...p, ...data.finding } : p)));
+      }
+      setOverrideEditorKey(null);
+      setOverrideReasonText('');
+    } catch (err) {
+      setActionError(`Override error: ${String(err)}`);
+    } finally {
+      setOverrideSubmitting(false);
     }
   };
 
@@ -707,9 +846,43 @@ function GapAssessmentWizardInner() {
     }
 
     md += `\n\n## Detailed Findings\n\n`;
+    const docName = (docId: string) => evidenceManifest.find(m => m.docId === docId)?.name || docId;
     for (const f of findings) {
       md += `### ${f.articleId} — ${f.articleTitle || 'Untitled'}\n\n`;
       md += `**Framework:** ${f.framework} | **Score:** ${f.score} (${f.numericScore || 0}%) | **Priority:** ${f.priority}\n\n`;
+      if (f.overrideKind) {
+        md += `> **Assessor override (${f.overrideKind === 'manual' ? 'manual score' : 'facts edited, rubric-recomputed'})** — reason: ${f.overrideReason || '—'}\n`;
+        md += `> Computed (pre-override): ${f.computedScore ?? '—'} (${f.computedNumericScore ?? '—'}%) / ${f.computedPriority ?? '—'}\n\n`;
+      }
+      if (f.rubricVersion === null || f.rubricVersion === undefined) {
+        md += `> Scored by legacy model assessment (pre-rubric — score was LLM-decided).\n\n`;
+      }
+      if (f.carriedForward) {
+        md += `> Carried forward unchanged from the prior iteration.\n\n`;
+      }
+      if (f.changeReason) {
+        md += `> Change since last assessment: ${f.changeReason}\n\n`;
+      }
+      if (f.criteria) {
+        const c = f.criteria;
+        md += `#### Criterion Facts (rubric v${f.rubricVersion})\n\n`;
+        md += `| Documented | Implemented | Tested | Evidenced | Owner assigned |\n|---|---|---|---|---|\n`;
+        md += `| ${c.documented} | ${c.implemented} | ${c.tested} | ${c.evidenced} | ${c.ownerAssigned} |\n\n`;
+        if (f.overrideCriteria) {
+          const oc = f.overrideCriteria;
+          md += `Assessor-overridden facts: documented=${oc.documented}, implemented=${oc.implemented}, tested=${oc.tested}, evidenced=${oc.evidenced}, ownerAssigned=${oc.ownerAssigned}\n\n`;
+        }
+      }
+      if (f.evidenceRefs && f.evidenceRefs.length > 0) {
+        md += `#### Evidence References\n\n`;
+        for (const ref of f.evidenceRefs) {
+          md += `- **${docName(ref.docId)}** (${ref.docId}): "${ref.quote}"\n`;
+        }
+        md += `\n`;
+      }
+      if (f.warnings && f.warnings.length > 0) {
+        md += `*Validation warnings: ${f.warnings.join(', ')}*\n\n`;
+      }
       if (f.requirement) {
         md += `#### Requirement\n\n${f.requirement}\n\n`;
       }
@@ -722,7 +895,7 @@ function GapAssessmentWizardInner() {
       md += `---\n\n`;
     }
     return md;
-  }, [findings, assessment]);
+  }, [findings, assessment, evidenceManifest]);
 
   const buildCapabilityMarkdown = useCallback(() => {
     let md = `# Capability Assessment Report — ${assessment?.title || 'Gap Assessment'}\n\n`;
@@ -1327,8 +1500,24 @@ function GapAssessmentWizardInner() {
                   Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)<br />
                   Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.8 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
                 </p>
+                {iterations.length > 0 && (
+                  <label className="mb-4 flex max-w-md items-start gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-3 py-2.5 text-left cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 rounded border-border bg-adv-dark accent-adv-teal"
+                      checked={reassessMode}
+                      onChange={e => setReassessMode(e.target.checked)}
+                    />
+                    <span className="text-xs text-adv-off-white">
+                      <span className="font-medium text-adv-teal">Re-assess against iteration {iterations[iterations.length - 1].iterationNumber} baseline</span>
+                      <span className="block mt-0.5 text-adv-gray">
+                        Only changes supported by new evidence move scores — every moved score requires a stated reason; unchanged articles carry forward.
+                      </span>
+                    </span>
+                  </label>
+                )}
                 <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
-                  <Play className="h-4 w-4" /> Start Assessment
+                  <Play className="h-4 w-4" /> {reassessMode && iterations.length > 0 ? 'Start Re-assessment' : 'Start Assessment'}
                 </button>
               </div>
             )}
@@ -1478,7 +1667,17 @@ function GapAssessmentWizardInner() {
                           <td className="px-3 py-2 text-adv-gray max-w-[200px]">
                             <span className={isExpanded ? '' : 'line-clamp-2'}>{f.currentState}</span>
                           </td>
-                          <td className="px-3 py-2"><ScoreBadge score={f.score} /></td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1.5">
+                              <ScoreBadge score={f.score} />
+                              {f.overrideKind && (
+                                <span title={`Assessor override (${f.overrideKind}): ${f.overrideReason || ''}`} className="inline-flex items-center rounded-full border border-adv-gold/40 bg-adv-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-gold">Override</span>
+                              )}
+                              {f.carriedForward && (
+                                <span title="Carried forward unchanged from the prior iteration" className="inline-flex items-center rounded-full border border-border bg-adv-dark px-1.5 py-0.5 text-[10px] text-adv-gray">↻</span>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-3 py-2">
                             <span className={`font-bold ${scoreColor}`}>{numScore}</span>
                           </td>
@@ -1516,7 +1715,72 @@ function GapAssessmentWizardInner() {
                                     </div>
                                     <ScoreBadge score={f.score} />
                                   </div>
+                                  <p className="mt-1 text-[11px] text-adv-gray">
+                                    {f.rubricVersion !== null && f.rubricVersion !== undefined
+                                      ? <>Computed deterministically from criterion facts (rubric v{f.rubricVersion}) — the AI answers facts, the rubric decides the score.</>
+                                      : <>Scored by legacy model assessment (pre-rubric) — score was AI-decided, not rubric-computed.</>}
+                                  </p>
                                 </div>
+
+                                {/* Provenance chips: override / carry-forward */}
+                                {(f.overrideKind || f.carriedForward || f.changeReason) && (
+                                  <div className="sm:col-span-2 space-y-1.5">
+                                    {f.overrideKind && (
+                                      <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2 text-xs">
+                                        <span className="font-medium text-adv-gold">Assessor override ({f.overrideKind === 'manual' ? 'manual score' : 'facts edited — score recomputed by rubric'})</span>
+                                        <span className="text-adv-off-white"> — {f.overrideReason}</span>
+                                        <span className="block mt-0.5 text-adv-gray">Computed value preserved: {f.computedScore} ({f.computedNumericScore}%) / {f.computedPriority}{f.overriddenAt ? ` · overridden ${String(f.overriddenAt).slice(0, 10)}` : ''}</span>
+                                      </div>
+                                    )}
+                                    {f.carriedForward && (
+                                      <div className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-gray">
+                                        ↻ Carried forward unchanged from the prior iteration (no evidence of change).
+                                      </div>
+                                    )}
+                                    {f.changeReason && (
+                                      <div className="rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-3 py-2 text-xs">
+                                        <span className="font-medium text-adv-teal">Changed since last assessment:</span>
+                                        <span className="text-adv-off-white"> {f.changeReason}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Criterion facts (rubric inputs) */}
+                                {(f.overrideCriteria ?? f.criteria) && (
+                                  <div className="sm:col-span-2">
+                                    <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Criterion Facts{f.overrideCriteria ? ' (assessor-overridden)' : ''}</h4>
+                                    <CriteriaChips criteria={(f.overrideCriteria ?? f.criteria)!} />
+                                  </div>
+                                )}
+
+                                {/* Evidence references (Wave 1.5) */}
+                                {f.evidenceRefs && f.evidenceRefs.length > 0 && (
+                                  <div className="sm:col-span-2">
+                                    <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Evidence References</h4>
+                                    <div className="space-y-1.5">
+                                      {f.evidenceRefs.map((ref, ri) => (
+                                        <div key={ri} className="rounded-lg border border-border bg-adv-dark px-3 py-2">
+                                          <div className="flex items-center gap-1.5 text-[11px] text-adv-teal font-medium">
+                                            <FileText className="h-3 w-3" />
+                                            {evidenceManifest.find(m => m.docId === ref.docId)?.name || ref.docId}
+                                            <span className="text-adv-gray font-normal">({ref.docId})</span>
+                                          </div>
+                                          <p className="mt-0.5 text-xs text-adv-off-white italic leading-relaxed">&ldquo;{ref.quote}&rdquo;</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Validation warnings */}
+                                {f.warnings && f.warnings.length > 0 && (
+                                  <div className="sm:col-span-2 flex items-start gap-1.5 text-[11px] text-adv-gold">
+                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-px" />
+                                    <span>Validation: {f.warnings.join(', ')}</span>
+                                  </div>
+                                )}
+
                                 <div className="sm:col-span-2">
                                   <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Current State</h4>
                                   <p className="text-xs text-adv-off-white leading-relaxed">{f.currentState}</p>
@@ -1525,6 +1789,101 @@ function GapAssessmentWizardInner() {
                                   <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Gaps & Recommendations</h4>
                                   <p className="text-xs text-adv-off-white leading-relaxed">{f.notes}</p>
                                 </div>
+
+                                {/* Assessor override editor (Wave 1.2) */}
+                                {f.id !== undefined && (
+                                  <div className="sm:col-span-2 border-t border-border pt-3">
+                                    {overrideEditorKey !== rowKey ? (
+                                      <div className="flex items-center gap-3">
+                                        <button
+                                          onClick={e => { e.stopPropagation(); openOverrideEditor(f, rowKey); }}
+                                          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-teal hover:border-adv-teal/40 transition-colors"
+                                        >
+                                          ✎ Override score
+                                        </button>
+                                        {f.overrideKind && (
+                                          <button
+                                            onClick={e => { e.stopPropagation(); submitOverride(f, true); }}
+                                            disabled={overrideSubmitting}
+                                            className="text-[11px] text-adv-gray hover:text-adv-off-white transition-colors disabled:opacity-50"
+                                          >
+                                            Revert to computed value
+                                          </button>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="rounded-lg border border-adv-gold/30 bg-adv-dark p-3 space-y-3" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="text-xs font-semibold text-adv-gold">Assessor Override</h4>
+                                          <div className="flex rounded-lg border border-border overflow-hidden">
+                                            <button onClick={() => setOverrideMode('facts')} className={`px-2.5 py-1 text-[11px] ${overrideMode === 'facts' ? 'bg-adv-teal text-adv-dark font-medium' : 'text-adv-gray hover:text-adv-off-white'}`}>Edit facts (recomputed)</button>
+                                            <button onClick={() => setOverrideMode('manual')} className={`px-2.5 py-1 text-[11px] ${overrideMode === 'manual' ? 'bg-adv-teal text-adv-dark font-medium' : 'text-adv-gray hover:text-adv-off-white'}`}>Manual score</button>
+                                          </div>
+                                        </div>
+
+                                        {overrideMode === 'facts' ? (
+                                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                                            {FACT_LABELS.map(({ key, label }) => (
+                                              <div key={key}>
+                                                <label className="mb-1 block text-[10px] font-medium text-adv-gray">{label}</label>
+                                                <select
+                                                  className="w-full rounded border border-border bg-adv-card px-1.5 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                                                  value={String(overrideCriteria[key])}
+                                                  onChange={e => setOverrideCriteria(prev => ({ ...prev, [key]: e.target.value }))}
+                                                >
+                                                  {(key === 'evidenced' ? ['yes', 'no']
+                                                    : key === 'ownerAssigned' ? ['yes', 'no', 'unknown']
+                                                    : key === 'tested' ? ['yes', 'partial', 'no', 'n_a', 'unknown']
+                                                    : ['yes', 'partial', 'no', 'unknown']).map(v => (
+                                                    <option key={v} value={v}>{factValueLabel(v)}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-3">
+                                            <label className="text-[11px] text-adv-gray">Manual score (0-100):</label>
+                                            <input
+                                              type="number" min={0} max={100}
+                                              className="w-20 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                                              value={overrideManualScore}
+                                              onChange={e => setOverrideManualScore(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                                            />
+                                            <span className="text-[11px] text-adv-gray">Band and priority derive from the rubric thresholds; the finding is labelled &ldquo;manual&rdquo;.</span>
+                                          </div>
+                                        )}
+
+                                        <div>
+                                          <label className="mb-1 block text-[10px] font-medium text-adv-gray">Override reason (required — recorded in exports and the audit trail)</label>
+                                          <textarea
+                                            rows={2}
+                                            className="w-full resize-none rounded border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                                            placeholder="e.g. On-site walkthrough on 2026-06-02 confirmed the screening control operates despite missing documentation..."
+                                            value={overrideReasonText}
+                                            onChange={e => setOverrideReasonText(e.target.value)}
+                                          />
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            onClick={() => submitOverride(f)}
+                                            disabled={overrideSubmitting || !overrideReasonText.trim()}
+                                            className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 transition-colors"
+                                          >
+                                            {overrideSubmitting ? 'Saving…' : 'Apply override'}
+                                          </button>
+                                          <button
+                                            onClick={() => { setOverrideEditorKey(null); setOverrideReasonText(''); }}
+                                            className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </td>
                           </tr>
