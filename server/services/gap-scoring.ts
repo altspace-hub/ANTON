@@ -83,6 +83,53 @@ export interface CriterionFacts {
 export interface EvidenceRef {
   docId: string;
   quote: string;
+  /**
+   * Verification downgrade flag (Wave 3 hardening). Absent = the ref passed
+   * every check that was possible at validation time.
+   *  - 'quote_not_found': the quote does not appear (whitespace-normalized)
+   *    in the cited document's text as shown to the model.
+   *  - 'doc_not_shown': the cited document exists in the manifest but was
+   *    truncated out of the prompt — the model never saw it.
+   * Flagged refs are KEPT (never hard-fail the finding) and rendered with a
+   * warning in the UI and exports.
+   */
+  check?: 'quote_not_found' | 'doc_not_shown';
+}
+
+/**
+ * Truncation-aware evidence index for ref validation (Wave 3 hardening).
+ * `known` = every docId in the manifest. `shownTextByDocId` = the portion of
+ * each document's text that actually made it into the prompt (after the
+ * context cap). When `shownTextByDocId` is provided, quotes are verified
+ * against the shown text and refs to truncated-out docs are flagged.
+ */
+export interface EvidenceRefIndex {
+  known: ReadonlySet<string>;
+  shownTextByDocId?: ReadonlyMap<string, string>;
+}
+
+/** Whitespace/punctuation-normalized form used for quote-in-document matching. */
+function normalizeForQuoteMatch(s: string): string {
+  return s
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, '-')
+    .replace(/…/g, '...')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * True when the quote appears in the document text under whitespace
+ * normalization. Elided quotes ("start ... end") match if every segment
+ * around the ellipsis appears.
+ */
+export function quoteAppearsIn(quote: string, docText: string): boolean {
+  const haystack = normalizeForQuoteMatch(docText);
+  const segments = normalizeForQuoteMatch(quote).split('...').map(seg => seg.trim()).filter(Boolean);
+  if (segments.length === 0) return false;
+  return segments.every(seg => haystack.includes(seg));
 }
 
 export interface ComputedScoring {
@@ -261,11 +308,24 @@ export function normalizeFacts(raw: unknown): NormalizedFacts | null {
  * Validate evidence refs against the known evidence manifest (Wave 1.5).
  * Refs citing unknown docIds are DROPPED with a warning — the run never fails.
  * Quotes are clipped to 300 chars (verbatim spans, not essays).
+ *
+ * Wave 3 hardening: when an EvidenceRefIndex with `shownTextByDocId` is
+ * supplied, each surviving ref is additionally verified:
+ *  - cited doc truncated out of the prompt → kept, flagged 'doc_not_shown'
+ *    + warning `doc_not_shown:<docId>` ("cited document was not shown to the model")
+ *  - quote not found in the shown text   → kept, flagged 'quote_not_found'
+ *    + warning `quote_not_found:<docId>`
+ * Passing a plain ReadonlySet keeps the original membership-only behaviour
+ * (back-compat for callers/tests without document texts).
  */
 export function validateEvidenceRefs(
   raw: unknown,
-  knownDocIds: ReadonlySet<string>,
+  knownDocIds: ReadonlySet<string> | EvidenceRefIndex,
 ): { refs: EvidenceRef[]; warnings: string[] } {
+  const index: EvidenceRefIndex =
+    typeof (knownDocIds as EvidenceRefIndex).known === 'object' && (knownDocIds as EvidenceRefIndex).known !== null
+      ? (knownDocIds as EvidenceRefIndex)
+      : { known: knownDocIds as ReadonlySet<string> };
   const warnings: string[] = [];
   if (!Array.isArray(raw)) return { refs: [], warnings };
   const refs: EvidenceRef[] = [];
@@ -274,11 +334,23 @@ export function validateEvidenceRefs(
     const docId = String((item as Record<string, unknown>).docId ?? '').trim();
     const quote = String((item as Record<string, unknown>).quote ?? '').trim().slice(0, 300);
     if (!docId || !quote) continue;
-    if (!knownDocIds.has(docId)) {
+    if (!index.known.has(docId)) {
       warnings.push(`unknown_doc_ref:${docId}`);
       continue;
     }
-    refs.push({ docId, quote });
+    const ref: EvidenceRef = { docId, quote };
+    if (index.shownTextByDocId) {
+      const shown = index.shownTextByDocId.get(docId);
+      if (shown === undefined || !shown.trim()) {
+        // The doc is in the manifest but never reached the model (truncation).
+        ref.check = 'doc_not_shown';
+        warnings.push(`doc_not_shown:${docId}`);
+      } else if (!quoteAppearsIn(quote, shown)) {
+        ref.check = 'quote_not_found';
+        warnings.push(`quote_not_found:${docId}`);
+      }
+    }
+    refs.push(ref);
   }
   return { refs, warnings };
 }

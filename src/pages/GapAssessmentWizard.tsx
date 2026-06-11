@@ -36,7 +36,14 @@ interface CriterionFacts {
 interface EvidenceRef {
   docId: string;
   quote: string;
+  /** Verification downgrade: 'quote_not_found' | 'doc_not_shown' (absent = OK). */
+  check?: 'quote_not_found' | 'doc_not_shown' | string;
 }
+
+const REF_CHECK_LABELS: Record<string, string> = {
+  quote_not_found: 'Quote not found in this document — verify before relying on it',
+  doc_not_shown: 'Cited document was not shown to the model (truncated out of the prompt)',
+};
 
 interface EvidenceManifestEntry {
   docId: string;
@@ -532,8 +539,36 @@ function GapAssessmentWizardInner() {
         try {
           const parsed = JSON.parse(a.context_config);
           setContextConfig(prev => ({ ...prev, ...parsed }));
-          // Restore evidence doc metadata (text not re-loaded — already saved in context_config.documents)
-          if (Array.isArray(parsed.documentFileIds)) {
+          // Restore evidence documents + interviews WITH their text from the
+          // server's context_config.evidenceItems (#3: a Step-3 re-save after
+          // reload must not wipe the evidence). Falls back to the legacy
+          // metadata-only restore for assessments saved before evidenceItems.
+          if (Array.isArray(parsed.evidenceItems) && parsed.evidenceItems.length > 0) {
+            const fileIds: string[] = Array.isArray(parsed.documentFileIds) ? parsed.documentFileIds : [];
+            const docs: EvidenceDocument[] = [];
+            const ivs: InterviewNote[] = [];
+            let docIdx = 0;
+            for (const item of parsed.evidenceItems as Array<Record<string, unknown>>) {
+              if (!item || typeof item !== 'object') continue;
+              const text = typeof item.text === 'string' ? item.text : '';
+              if (!text.trim()) continue;
+              if (item.kind === 'interview') {
+                ivs.push({ id: crypto.randomUUID(), role: String(item.name ?? ''), notes: text });
+              } else {
+                docs.push({
+                  id: typeof fileIds[docIdx] === 'string' ? fileIds[docIdx] : crypto.randomUUID(),
+                  name: String(item.name ?? `Document ${docIdx + 1}`),
+                  size: text.length,
+                  status: 'done' as const,
+                  text,
+                });
+                docIdx++;
+              }
+            }
+            setEvidenceDocs(docs);
+            setInterviews(ivs);
+          } else if (Array.isArray(parsed.documentFileIds)) {
+            // Legacy: metadata only (text lives in context_config.documents)
             setEvidenceDocs(parsed.documentFileIds.map((fid: string) => ({ id: fid, name: fid, size: 0, status: 'done' as const })));
           }
           // Restore knowledge sources config
@@ -657,29 +692,36 @@ function GapAssessmentWizardInner() {
   }, []);
 
   // ── Save context ───────────────────────────────────────────────────────────
-  const saveContext = async () => {
-    if (!id) return;
+  // Single builder for the persisted context (used by Step-3 save AND the
+  // iteration-snapshot evidence merge, #2) — content stays consistent.
+  const buildEnrichedContext = useCallback((docs: EvidenceDocument[], ivs: InterviewNote[]) => {
     // Build enriched context with document text + interview notes
-    const docTexts = evidenceDocs
+    const docTexts = docs
       .filter(d => d.status === 'done' && d.text)
       .map(d => `### DOCUMENT: ${d.name}\n${d.text}`);
-    const interviewTexts = interviews
+    const interviewTexts = ivs
       .filter(i => i.notes.trim())
       .map(i => `### INTERVIEW: ${i.role || 'Unknown role'}\n${i.notes}`);
-    // Addressable evidence items (Wave 1.5) — the server assigns stable docIds
-    // (doc-1.., int-1..) in this order and stores a sha256 manifest at run time.
+    // Addressable evidence items (Wave 1.5) — the server derives stable
+    // CONTENT-BASED docIds (doc-<sha8>.., int-<sha8>..) from the text and
+    // stores a sha256 manifest at run time.
     const evidenceItems = [
-      ...evidenceDocs.filter(d => d.status === 'done' && d.text).map(d => ({ name: d.name, kind: 'document' as const, text: d.text || '' })),
-      ...interviews.filter(i => i.notes.trim()).map(i => ({ name: i.role || 'Unknown role', kind: 'interview' as const, text: i.notes })),
+      ...docs.filter(d => d.status === 'done' && d.text).map(d => ({ name: d.name, kind: 'document' as const, text: d.text || '' })),
+      ...ivs.filter(i => i.notes.trim()).map(i => ({ name: i.role || 'Unknown role', kind: 'interview' as const, text: i.notes })),
     ];
-    const enrichedContext = {
+    return {
       ...contextConfig,
       documents: [...docTexts, ...interviewTexts].join('\n\n---\n\n'),
       evidenceItems,
-      documentFileIds: evidenceDocs.filter(d => d.status === 'done').map(d => d.id),
-      interviewCount: interviews.filter(i => i.notes.trim()).length,
+      documentFileIds: docs.filter(d => d.status === 'done').map(d => d.id),
+      interviewCount: ivs.filter(i => i.notes.trim()).length,
       knowledgeSources,
     };
+  }, [contextConfig, knowledgeSources]);
+
+  const saveContext = async () => {
+    if (!id) return;
+    const enrichedContext = buildEnrichedContext(evidenceDocs, interviews);
     // Only advance to step 4 if we haven't already passed it
     const nextStep = Math.max(currentStep, 4);
     await fetchWithAuth(`/api/gap-assessments/${id}`, {
@@ -983,7 +1025,8 @@ function GapAssessmentWizardInner() {
       if (f.evidenceRefs && f.evidenceRefs.length > 0) {
         md += `#### Evidence References\n\n`;
         for (const ref of f.evidenceRefs) {
-          md += `- **${docName(ref.docId)}** (${ref.docId}): "${ref.quote}"\n`;
+          const flag = ref.check ? ` — ⚠ ${REF_CHECK_LABELS[ref.check] || ref.check}` : '';
+          md += `- **${docName(ref.docId)}** (${ref.docId}): "${ref.quote}"${flag}\n`;
         }
         md += `\n`;
       }
@@ -1088,7 +1131,8 @@ function GapAssessmentWizardInner() {
       if (newDocs.length > 0) {
         setEvidenceDocs(prev => [...prev, ...newDocs]);
       }
-      const allDocNames = [...evidenceDocs, ...newDocs].filter(d => d.status === 'done').map(d => d.name).join(', ');
+      const mergedDocs = [...evidenceDocs, ...newDocs];
+      const allDocNames = mergedDocs.filter(d => d.status === 'done').map(d => d.name).join(', ');
       const iterDocNames = newDocs.map(d => d.name).join(', ');
       const r = await fetchWithAuth(`/api/gap-assessments/${id}/snapshot`, {
         method: 'POST',
@@ -1100,6 +1144,17 @@ function GapAssessmentWizardInner() {
         }),
       });
       if (r.ok) {
+        // Persist the merged evidence to context_config (#2): the re-assess
+        // run rebuilds evidence from the DB, so new iteration docs must be
+        // saved server-side — React state alone never reaches the model.
+        // Done AFTER the snapshot so the snapshot captures the PRIOR context.
+        if (newDocs.length > 0) {
+          await fetchWithAuth(`/api/gap-assessments/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context_config: buildEnrichedContext(mergedDocs, interviews) }),
+          });
+        }
         await loadIterations();
         setIterationNotes('');
         setIterationDocs([]);
@@ -1867,13 +1922,19 @@ function GapAssessmentWizardInner() {
                                     <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Evidence References</h4>
                                     <div className="space-y-1.5">
                                       {f.evidenceRefs.map((ref, ri) => (
-                                        <div key={ri} className="rounded-lg border border-border bg-adv-dark px-3 py-2">
+                                        <div key={ri} className={`rounded-lg border px-3 py-2 ${ref.check ? 'border-adv-gold/40 bg-adv-gold/5' : 'border-border bg-adv-dark'}`}>
                                           <div className="flex items-center gap-1.5 text-[11px] text-adv-teal font-medium">
                                             <FileText className="h-3 w-3" />
                                             {evidenceManifest.find(m => m.docId === ref.docId)?.name || ref.docId}
                                             <span className="text-adv-gray font-normal">({ref.docId})</span>
                                           </div>
                                           <p className="mt-0.5 text-xs text-adv-off-white italic leading-relaxed">&ldquo;{ref.quote}&rdquo;</p>
+                                          {ref.check && (
+                                            <p className="mt-1 flex items-start gap-1 text-[11px] text-adv-gold">
+                                              <AlertTriangle className="h-3 w-3 shrink-0 mt-px" />
+                                              {REF_CHECK_LABELS[ref.check] || ref.check}
+                                            </p>
+                                          )}
                                         </div>
                                       ))}
                                     </div>
@@ -2011,9 +2072,18 @@ function GapAssessmentWizardInner() {
                 <div className="flex items-center gap-2">
                   <GitCompare className="h-4 w-4 text-adv-teal" />
                   <h3 className="text-sm font-semibold text-adv-off-white">Second Opinion</h3>
-                  {soAgreement && soAgreement.agreementPct !== null && (
+                  {soAgreement && soAgreement.comparedCount === 0 ? (
+                    <span className="rounded-full border border-border bg-adv-dark px-2 py-0.5 text-[11px] font-medium text-adv-gray">
+                      No comparable articles
+                    </span>
+                  ) : soAgreement && soAgreement.agreementPct !== null && (
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${soAgreement.agreementPct >= 90 ? 'bg-adv-green/15 text-adv-green' : soAgreement.agreementPct >= 70 ? 'bg-yellow-500/15 text-yellow-400' : 'bg-red-500/15 text-red-400'}`}>
-                      {soAgreement.agreementPct}% agreement
+                      {soAgreement.agreementPct}% agreement ({soAgreement.agreeCount}/{soAgreement.comparedCount})
+                    </span>
+                  )}
+                  {soAgreement && soAgreement.uncoveredArticleIds.length > 0 && (
+                    <span className="rounded-full border border-adv-gold/30 bg-adv-gold/5 px-2 py-0.5 text-[11px] font-medium text-adv-gold">
+                      {soAgreement.uncoveredArticleIds.length} not covered
                     </span>
                   )}
                 </div>
@@ -2062,8 +2132,17 @@ function GapAssessmentWizardInner() {
                   {/* Summary tiles */}
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <div className="rounded-lg border border-border bg-adv-dark p-2 text-center">
-                      <div className={`text-lg font-bold ${(soAgreement.agreementPct ?? 0) >= 90 ? 'text-adv-green' : (soAgreement.agreementPct ?? 0) >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>{soAgreement.agreementPct ?? 0}%</div>
-                      <div className="text-[11px] text-adv-gray">Agreement</div>
+                      {soAgreement.comparedCount === 0 ? (
+                        <>
+                          <div className="text-lg font-bold text-adv-gray">—</div>
+                          <div className="text-[11px] text-adv-gray">No comparable articles</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className={`text-lg font-bold ${(soAgreement.agreementPct ?? 0) >= 90 ? 'text-adv-green' : (soAgreement.agreementPct ?? 0) >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>{soAgreement.agreementPct ?? 0}%</div>
+                          <div className="text-[11px] text-adv-gray">Agreement</div>
+                        </>
+                      )}
                     </div>
                     <div className="rounded-lg border border-border bg-adv-dark p-2 text-center">
                       <div className="text-lg font-bold text-adv-off-white">{soAgreement.comparedCount}</div>

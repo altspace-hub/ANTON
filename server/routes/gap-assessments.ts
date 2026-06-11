@@ -673,7 +673,15 @@ Generate the complete framework JSON now.`;
         req.params.id as string, opinionModelId);
       const agreement = computeOpinionAgreement(primaries, opinionRows.map(mapOpinionRow) as OpinionLite[], opinionModelId);
 
-      sendEvent({ type: 'complete', message: `Second opinion complete — ${agreement.agreementPct ?? 0}% agreement, ${agreement.divergent.length} divergent article(s) flagged for review.`, agreement });
+      // #7 honesty: comparedCount 0 is "nothing comparable", never "0% agreement";
+      // uncovered articles (failed batches / missing answers) surface alongside.
+      const pctLabel = agreement.comparedCount === 0
+        ? 'no comparable articles'
+        : `${agreement.agreementPct}% agreement (${agreement.agreeCount}/${agreement.comparedCount})`;
+      const uncoveredNote = agreement.uncoveredArticleIds.length > 0
+        ? `, ${agreement.uncoveredArticleIds.length} article(s) not covered by the second model`
+        : '';
+      sendEvent({ type: 'complete', message: `Second opinion complete — ${pctLabel}, ${agreement.divergent.length} divergent article(s) flagged for review${uncoveredNote}.`, agreement });
       res.end();
     } catch (err) {
       console.error('[gap-assessments] second-opinion error:', err);
@@ -841,8 +849,10 @@ Generate the complete framework JSON now.`;
       const findings = await db.all<GapFindingRow>('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
 
       // Build score summary. The snapshot carries criterion facts, evidence
-      // refs and override/carry-forward metadata so later re-assessments can
-      // use it as the baseline (Wave 1.7) and comparisons can attribute deltas.
+      // refs and FULL override/carry-forward metadata — including the TRUE
+      // rubric-computed values — so later re-assessments can use it as the
+      // baseline (Wave 1.7) without laundering an assessor override into the
+      // computed columns (#1), and comparisons can attribute deltas.
       const mapped = findings.map(f => {
         const m = mapFindingRow(f);
         return {
@@ -862,6 +872,12 @@ Generate the complete framework JSON now.`;
           changeReason: m.changeReason,
           overrideKind: m.overrideKind,
           overrideReason: m.overrideReason,
+          overriddenBy: m.overriddenBy,
+          overriddenAt: m.overriddenAt,
+          overrideCriteria: m.overrideCriteria,
+          computedScore: m.computedScore,
+          computedNumericScore: m.computedNumericScore,
+          computedPriority: m.computedPriority,
         };
       });
       const avg = mapped.length > 0 ? Math.round(mapped.reduce((s, f) => s + f.numericScore, 0) / mapped.length) : 0;

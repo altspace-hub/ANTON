@@ -22,6 +22,7 @@ import {
   isRagBand,
   type CriterionFacts,
   type EvidenceRef,
+  type EvidenceRefIndex,
   type RagBand,
   type Priority,
 } from './gap-scoring.js';
@@ -99,21 +100,47 @@ export interface ArticleFinding {
   carriedForward?: boolean;
   /** Re-assessment: required explanation when facts moved vs the baseline. */
   changeReason?: string | null;
+  // ── Override + true-computed provenance (carried through re-assessment, #1) ──
+  /** TRUE rubric-computed values (never the overridden effective values). */
+  computedScore?: string | null;
+  computedNumericScore?: number | null;
+  computedPriority?: string | null;
+  /** Assessor-override metadata — preserved when an article is carried forward
+   *  unchanged; cleared (correctly) when the article is genuinely re-assessed. */
+  overrideKind?: string | null;
+  overrideReason?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideCriteria?: CriterionFacts | null;
 }
 
-/** Prior-iteration baseline injected in re-assessment mode (Wave 1.7). */
+/** Prior-iteration baseline injected in re-assessment mode (Wave 1.7).
+ *  Carries override metadata + the TRUE computed values so a carry-forward
+ *  can never launder an assessor override into the rubric-computed columns (#1). */
 export interface BaselineFinding {
   articleId: string;
   articleTitle?: string;
   requirement?: string;
   currentState?: string;
+  /** EFFECTIVE score (includes any assessor override). */
   score: string;
   numericScore: number;
   priority: string;
   notes?: string;
+  /** ORIGINAL (LLM-answered) criteria — never the assessor-edited ones. */
   criteria?: CriterionFacts | null;
   evidenceRefs?: EvidenceRef[];
   rubricVersion?: number | null;
+  /** TRUE rubric-computed values preserved by the override machinery. */
+  computedScore?: string | null;
+  computedNumericScore?: number | null;
+  computedPriority?: string | null;
+  /** Assessor-override metadata (Wave 1.2). */
+  overrideKind?: string | null;
+  overrideReason?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideCriteria?: CriterionFacts | null;
 }
 
 // ── Addressable evidence (Wave 1.5) ─────────────────────────────────────────
@@ -136,7 +163,16 @@ export interface EvidenceManifestEntry {
 /**
  * Extract addressable evidence items from context_config.
  * New wizard versions send `evidenceItems: [{name, text, kind}]`; docIds are
- * assigned deterministically (doc-1.., int-1..) so refs stay stable per run.
+ * CONTENT-DERIVED — `doc-<8-hex sha256 of text>` / `int-<…>` — so a re-save
+ * that reorders, removes or adds documents can never reassign an existing id
+ * to a DIFFERENT document (stored findings' evidenceRefs stay truthful).
+ * Entries that already carry an explicit `docId` (bundle imports, legacy
+ * fixtures) keep it verbatim. Duplicate texts get a `-2`, `-3`… suffix so ids
+ * remain unique. This is the ONE place docIds are generated server-side —
+ * the prompt, the manifest and ref validation all consume these items.
+ * Old positional ids (doc-1…) in previously stored findings still resolve via
+ * the manifest persisted at their run time; unknown ids keep the existing
+ * warning/fallback path.
  * Legacy assessments only have the concatenated `documents` string — those
  * yield no addressable items (refs not required there).
  */
@@ -144,15 +180,19 @@ export function extractEvidenceItems(contextConfig: Record<string, unknown>): Ev
   const raw = contextConfig.evidenceItems;
   if (!Array.isArray(raw)) return [];
   const items: EvidenceItem[] = [];
-  let docN = 0;
-  let intN = 0;
+  const usedIds = new Set<string>();
   for (const entry of raw) {
     if (entry === null || typeof entry !== 'object') continue;
     const e = entry as Record<string, unknown>;
     const text = typeof e.text === 'string' ? e.text : '';
     if (!text.trim()) continue;
     const kind: 'document' | 'interview' = e.kind === 'interview' ? 'interview' : 'document';
-    const docId = kind === 'interview' ? `int-${++intN}` : `doc-${++docN}`;
+    const explicit = typeof e.docId === 'string' && e.docId.trim() ? e.docId.trim() : null;
+    const base = explicit
+      ?? `${kind === 'interview' ? 'int' : 'doc'}-${createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 8)}`;
+    let docId = base;
+    for (let n = 2; usedIds.has(docId); n++) docId = `${base}-${n}`;
+    usedIds.add(docId);
     items.push({
       docId,
       name: String(e.name ?? docId).slice(0, 200),
@@ -517,22 +557,51 @@ interface RawBatchFinding {
   priority?: unknown;
 }
 
+/** Context cap for the evidence blob (~120k chars). */
+const EVIDENCE_CHAR_CAP = 120_000;
+
 /** Build the addressable evidence blob ("### DOCUMENT [doc-1]: name") from items,
- *  falling back to the legacy pre-concatenated `documents` string. */
-function buildEvidenceText(contextConfig: Record<string, unknown>, items: EvidenceItem[]): string {
+ *  falling back to the legacy pre-concatenated `documents` string.
+ *  Returns, alongside the (possibly truncated) prompt text, the portion of each
+ *  item's text that actually SURVIVED the cap — so ref validation can flag
+ *  citations of documents the model never saw (#5: truncation honesty). */
+export function buildEvidencePromptContext(
+  contextConfig: Record<string, unknown>,
+  items: EvidenceItem[],
+): { text: string; shownTextByDocId: Map<string, string> } {
+  const shownTextByDocId = new Map<string, string>();
   if (items.length > 0) {
-    const blob = items.map(i =>
-      `### ${i.kind === 'interview' ? 'INTERVIEW' : 'DOCUMENT'} [${i.docId}]: ${i.name}\n${i.text}`
-    ).join('\n\n---\n\n');
-    return blob.slice(0, 120_000); // Cap at ~120k chars to stay within context
+    const SEP = '\n\n---\n\n';
+    const parts: string[] = [];
+    let offset = 0;
+    for (let idx = 0; idx < items.length; idx++) {
+      const i = items[idx];
+      const prefix = `${idx > 0 ? SEP : ''}### ${i.kind === 'interview' ? 'INTERVIEW' : 'DOCUMENT'} [${i.docId}]: ${i.name}\n`;
+      const textStart = offset + prefix.length;
+      // Portion of this item's text that fits under the cap once sliced.
+      const shownLen = Math.max(0, Math.min(i.text.length, EVIDENCE_CHAR_CAP - textStart));
+      shownTextByDocId.set(i.docId, i.text.slice(0, shownLen));
+      const section = prefix + i.text;
+      parts.push(section);
+      offset += section.length;
+    }
+    return { text: parts.join('').slice(0, EVIDENCE_CHAR_CAP), shownTextByDocId };
   }
-  return typeof contextConfig.documents === 'string' && contextConfig.documents.trim()
-    ? contextConfig.documents.slice(0, 120_000)
+  const legacy = typeof contextConfig.documents === 'string' && contextConfig.documents.trim()
+    ? contextConfig.documents.slice(0, EVIDENCE_CHAR_CAP)
     : '';
+  return { text: legacy, shownTextByDocId };
 }
 
-/** Construct a carried-forward finding from the prior-iteration baseline (Wave 1.7). */
-function findingFromBaseline(article: FrameworkArticle, b: BaselineFinding, warnings: string[] = []): ArticleFinding {
+/** Construct a carried-forward finding from the prior-iteration baseline (Wave 1.7).
+ *
+ *  Override rule (#1): an article that carries forward UNCHANGED keeps its
+ *  assessor override (kind/reason/by/at/overrideCriteria) AND the true
+ *  computed values — the human judgement still stands because the facts did
+ *  not move. A genuinely RE-ASSESSED (changed) article goes through
+ *  buildFinding instead, which emits no override metadata: the old override
+ *  was a judgement about the old facts and no longer applies. */
+export function findingFromBaseline(article: FrameworkArticle, b: BaselineFinding, warnings: string[] = []): ArticleFinding {
   return {
     articleId: article.id,
     articleTitle: b.articleTitle || article.title,
@@ -548,6 +617,15 @@ function findingFromBaseline(article: FrameworkArticle, b: BaselineFinding, warn
     rubricVersion: b.rubricVersion ?? null,
     carriedForward: true,
     changeReason: null,
+    // True computed values + override metadata travel with the carry-forward.
+    computedScore: b.computedScore ?? null,
+    computedNumericScore: b.computedNumericScore ?? null,
+    computedPriority: b.computedPriority ?? null,
+    overrideKind: b.overrideKind ?? null,
+    overrideReason: b.overrideReason ?? null,
+    overriddenBy: b.overriddenBy ?? null,
+    overriddenAt: b.overriddenAt ?? null,
+    overrideCriteria: b.overrideCriteria ?? null,
   };
 }
 
@@ -560,7 +638,7 @@ function findingFromBaseline(article: FrameworkArticle, b: BaselineFinding, warn
 function buildFinding(
   article: FrameworkArticle,
   raw: RawBatchFinding,
-  knownDocIds: ReadonlySet<string>,
+  evidenceIndex: EvidenceRefIndex,
   baseline?: BaselineFinding,
 ): ArticleFinding {
   const warnings: string[] = [];
@@ -618,7 +696,7 @@ function buildFinding(
 
   warnings.push(...normalized.warnings);
 
-  const refResult = validateEvidenceRefs(raw.evidenceRefs, knownDocIds);
+  const refResult = validateEvidenceRefs(raw.evidenceRefs, evidenceIndex);
   warnings.push(...refResult.warnings);
 
   const consistency = enforceEvidenceConsistency(normalized.facts, refResult.refs);
@@ -691,8 +769,12 @@ export async function runAssessmentBatch(
 
   // Addressable evidence items (Wave 1.5) with legacy concatenated-blob fallback
   const evidenceItems = extractEvidenceItems(contextConfig);
-  const knownDocIds: ReadonlySet<string> = new Set(evidenceItems.map(i => i.docId));
-  const evidenceText = buildEvidenceText(contextConfig, evidenceItems);
+  const { text: evidenceText, shownTextByDocId } = buildEvidencePromptContext(contextConfig, evidenceItems);
+  // Truncation-aware index (#5): refs are verified against what the model SAW.
+  const evidenceIndex: EvidenceRefIndex = {
+    known: new Set(evidenceItems.map(i => i.docId)),
+    shownTextByDocId,
+  };
 
   const baseline = opts?.baseline && Object.keys(opts.baseline).length > 0 ? opts.baseline : undefined;
 
@@ -735,7 +817,7 @@ export async function runAssessmentBatch(
       if (b) findings.push(findingFromBaseline(article, b, ['missing_from_response']));
       continue;
     }
-    findings.push(buildFinding(article, raw, knownDocIds, b));
+    findings.push(buildFinding(article, raw, evidenceIndex, b));
   }
 
   return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: result.thinking || '' };
@@ -1121,18 +1203,61 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
     return await db.get('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?', id, userId) as AssessmentRow | undefined;
   }
 
+  /**
+   * Persist findings (#1 anti-laundering rules):
+   *  - computed_* always come from the RUBRIC over the original criteria
+   *    (computeScoring(f.criteria)) — or from the baseline's preserved
+   *    computed values on a carry-forward — NEVER from the effective score,
+   *    which may contain an assessor override.
+   *  - Override columns are PRESERVED for carried-forward articles (the facts
+   *    did not move, so the human judgement still stands) and cleared for
+   *    genuinely re-assessed / freshly assessed articles (a changed article's
+   *    old override was about the old facts and no longer applies).
+   */
   async function saveFindings(assessmentId: string, framework: string, findings: ArticleFinding[]) {
     await db.transaction(async (txDb) => {
       for (const f of findings) {
         const isRubricScored = f.rubricVersion !== null && f.rubricVersion !== undefined;
-        const factsJson = (f.criteria !== undefined || (f.evidenceRefs?.length ?? 0) > 0 || (f.warnings?.length ?? 0) > 0)
-          ? JSON.stringify({ criteria: f.criteria ?? null, evidenceRefs: f.evidenceRefs ?? [], warnings: f.warnings ?? [] } satisfies FactsColumn)
+        const factsJson = (f.criteria !== undefined || f.overrideCriteria || (f.evidenceRefs?.length ?? 0) > 0 || (f.warnings?.length ?? 0) > 0)
+          ? JSON.stringify({
+              criteria: f.criteria ?? null,
+              evidenceRefs: f.evidenceRefs ?? [],
+              warnings: f.warnings ?? [],
+              ...(f.overrideCriteria ? { overrideCriteria: f.overrideCriteria } : {}),
+            } satisfies FactsColumn)
           : null;
+
+        // TRUE computed values — never derived from the (possibly overridden)
+        // effective score. Carry-forwards bring the baseline's preserved
+        // computed_*; otherwise recompute from the original criteria.
+        let computedScore: string | null = null;
+        let computedNumeric: number | null = null;
+        let computedPriority: string | null = null;
+        if (f.computedScore != null && f.computedNumericScore != null && f.computedPriority != null) {
+          computedScore = f.computedScore;
+          computedNumeric = f.computedNumericScore;
+          computedPriority = f.computedPriority;
+        } else if (isRubricScored && f.criteria) {
+          const c = computeScoring(f.criteria);
+          computedScore = c.score;
+          computedNumeric = c.numericScore;
+          computedPriority = c.priority;
+        }
+
+        // Override metadata: present only on carried-forward findings
+        // (findingFromBaseline); buildFinding never sets it → NULLs clear the
+        // override for re-assessed articles, exactly as intended.
+        const overriddenBy = f.overriddenBy ?? null;
+        const overrideReason = f.overrideReason ?? null;
+        const overriddenAt = f.overriddenAt ?? null;
+        const overrideKind = f.overrideKind ?? null;
+
         await txDb.run(
       `INSERT INTO gap_findings
        (assessment_id, framework, article_id, article_title, requirement, current_state, score, numeric_score, priority, notes,
-        facts, rubric_version, computed_score, computed_numeric_score, computed_priority, carried_forward, change_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        facts, rubric_version, computed_score, computed_numeric_score, computed_priority, carried_forward, change_reason,
+        overridden_by, override_reason, overridden_at, override_kind)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (assessment_id, framework, article_id) DO UPDATE SET
          article_title = EXCLUDED.article_title,
          requirement = EXCLUDED.requirement,
@@ -1148,19 +1273,19 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
          computed_priority = EXCLUDED.computed_priority,
          carried_forward = EXCLUDED.carried_forward,
          change_reason = EXCLUDED.change_reason,
-         overridden_by = NULL,
-         override_reason = NULL,
-         overridden_at = NULL,
-         override_kind = NULL`
+         overridden_by = EXCLUDED.overridden_by,
+         override_reason = EXCLUDED.override_reason,
+         overridden_at = EXCLUDED.overridden_at,
+         override_kind = EXCLUDED.override_kind`
     , assessmentId, framework, f.articleId, f.articleTitle, f.requirement, f.currentState, f.score, f.numericScore ?? 0, f.priority, f.notes,
       factsJson,
       isRubricScored ? f.rubricVersion : null,
-      // computed_* preserve the rubric output; legacy (LLM-decided) findings leave them NULL
-      isRubricScored ? f.score : null,
-      isRubricScored ? (f.numericScore ?? 0) : null,
-      isRubricScored ? f.priority : null,
+      computedScore,
+      computedNumeric,
+      computedPriority,
       f.carriedForward === true,
-      f.changeReason ?? null);
+      f.changeReason ?? null,
+      overriddenBy, overrideReason, overriddenAt, overrideKind);
       }
     });
   }
@@ -1192,6 +1317,11 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
     let overrideReason: string | null;
     let overriddenBy: string | null;
     let overriddenAt: string | null;
+    // rubric_version labels the EFFECTIVE score's provenance (#8): a 'facts'
+    // override is rubric-recomputed, so it must carry the rubric version even
+    // on a previously legacy (pre-rubric) finding. Manual overrides leave it
+    // unchanged; revert restores it from the original criteria's presence.
+    let rubricVersion: number | null = row.rubric_version ?? null;
 
     if (body.revert === true) {
       if (row.computed_score === null || row.computed_numeric_score === null || row.computed_priority === null) {
@@ -1203,6 +1333,9 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
       overriddenBy = null;
       overriddenAt = null;
       delete facts.overrideCriteria;
+      // Reverting a legacy finding (no original criteria) restores LLM-decided
+      // values → back to pre-rubric labelling. Rubric findings keep their version.
+      if (!facts.criteria) rubricVersion = null;
     } else {
       const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
       if (!reason) return { status: 400, body: { error: 'override reason is required' } };
@@ -1219,6 +1352,9 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
         effective = { score: computed.score, numericScore: computed.numericScore, priority: computed.priority };
         overrideKind = 'facts';
         facts.overrideCriteria = normalized.facts;
+        // #8: the effective score is now rubric-computed — label it as such
+        // even when the underlying finding was legacy (rubric_version NULL).
+        rubricVersion = computed.rubricVersion;
       } else if (body.manualScore && typeof body.manualScore === 'object') {
         const n = Number(body.manualScore.numericScore);
         if (!Number.isFinite(n)) {
@@ -1243,10 +1379,12 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
         `UPDATE gap_findings SET
            score = ?, numeric_score = ?, priority = ?, facts = ?,
            computed_score = ?, computed_numeric_score = ?, computed_priority = ?,
+           rubric_version = ?,
            overridden_by = ?, override_reason = ?, overridden_at = ?, override_kind = ?
          WHERE id = ? AND assessment_id = ?`,
         effective.score, effective.numericScore, effective.priority, JSON.stringify(facts),
         computedScore, computedNumeric, computedPriority,
+        rubricVersion,
         overriddenBy, overrideReason, overriddenAt, overrideKind,
         findingId, assessmentId
       );

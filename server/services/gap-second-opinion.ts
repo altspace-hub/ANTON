@@ -119,14 +119,35 @@ function primaryComparisonScore(f: PrimaryFindingLite): { numeric: number | null
   return { numeric: Number.isFinite(f.numericScore) ? f.numericScore : null, band: f.score ?? null, priority: f.priority ?? null };
 }
 
-/** Coerce stored JSONB facts (object or JSON string) into CriterionFacts. */
-export function coerceFacts(raw: unknown): CriterionFacts | null {
+/**
+ * Coerce stored JSONB facts (object or JSON string) into CriterionFacts.
+ *
+ * #6 fix: an object with ZERO recognized criterion keys (e.g. `{}` or
+ * `{foo: 1}`) is NOT facts — returning fabricated all-unknown facts here used
+ * to make garbage rows look rubric-comparable. Such input now returns null,
+ * which sends the comparison down the honest band-fallback (legacy) path.
+ * Normalization warnings are surfaced via `warningsSink` instead of discarded.
+ */
+export function coerceFacts(raw: unknown, warningsSink?: string[]): CriterionFacts | null {
   let value = raw;
   if (typeof value === 'string') {
-    try { value = JSON.parse(value); } catch { return null; }
+    try { value = JSON.parse(value); } catch {
+      warningsSink?.push('facts_unparseable');
+      return null;
+    }
   }
   const normalized = normalizeFacts(value);
-  return normalized ? normalized.facts : null;
+  if (!normalized) return null;
+  const perKeyWarnings = normalized.warnings.filter(
+    w => w.startsWith('missing_criterion:') || w.startsWith('invalid_criterion_value:'),
+  );
+  if (perKeyWarnings.length >= CRITERION_KEYS.length) {
+    // Not a single criterion key carried a valid value — this is not facts.
+    warningsSink?.push('facts_unrecognized', ...normalized.warnings);
+    return null;
+  }
+  warningsSink?.push(...normalized.warnings);
+  return normalized.facts;
 }
 
 /**
@@ -240,12 +261,19 @@ export function mapOpinionRow(row: OpinionRow): OpinionLite & { createdAt: unkno
     if (typeof v !== 'string') return v;
     try { return JSON.parse(v); } catch { return v; }
   };
+  // Surface facts-normalization warnings alongside the stored ones (#6).
+  const factWarnings: string[] = [];
+  const facts = coerceFacts(row.facts, factWarnings);
+  const storedWarnings = parseMaybe(row.warnings);
+  const warnings = factWarnings.length === 0
+    ? storedWarnings
+    : [...(Array.isArray(storedWarnings) ? storedWarnings : []), ...factWarnings];
   return {
     framework: row.framework,
     articleId: row.article_id,
     articleTitle: row.article_title,
     modelId: row.model_id,
-    facts: coerceFacts(row.facts),
+    facts,
     computedScore: row.computed_score,
     computedNumericScore: row.computed_numeric_score,
     computedPriority: row.computed_priority,
@@ -253,7 +281,7 @@ export function mapOpinionRow(row: OpinionRow): OpinionLite & { createdAt: unkno
     currentState: row.current_state,
     rubricVersion: row.rubric_version,
     evidenceRefs: parseMaybe(row.evidence_refs),
-    warnings: parseMaybe(row.warnings),
+    warnings,
     createdAt: row.created_at,
   };
 }
