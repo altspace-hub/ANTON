@@ -27,6 +27,14 @@ import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
+import {
+  compileTaskToMission,
+  summarizeLinkedMission,
+  buildMissionDeliverable,
+  type ApproachExecutionStep,
+} from '../services/task-agent-mission-compiler.js';
+import { createMissionController } from '../services/missions/mission-controller.js';
+import type { SharedStepRecord } from '../types/step-record.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __routeDir = dirname(__filename);
@@ -62,6 +70,8 @@ interface TaskRow {
   // Migration 027b
   task_files: string | null;
   active_knowledge_packs: string | null;
+  // Migration 231 — Task Agent ↔ Missions bridge (Wave 5.1)
+  linked_mission_id: string | null;
 }
 
 interface TaskFile {
@@ -72,12 +82,9 @@ interface TaskFile {
   uploaded_at: string;
 }
 
-interface ExecutionStep {
-  step: number;
-  name: string;
-  capability_id?: string;
-  description?: string;
-}
+// Shared with the mission compiler (Wave 5.1) — includes the optional
+// action_type / action_config fields future approaches can declare.
+type ExecutionStep = ApproachExecutionStep;
 
 interface IntakeTaskContext {
   status: string;
@@ -281,6 +288,14 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
+  // Lazy mission controller — the Task Agent → Missions bridge (Wave 5.1).
+  // Only constructed when a task is actually executed as a mission.
+  let _missionController: ReturnType<typeof createMissionController> | null = null;
+  function getMissionController() {
+    if (!_missionController) _missionController = createMissionController(db);
+    return _missionController;
+  }
+
   // Lazy atom extractor — creates workflow_output + extracts knowledge atoms on task completion
   let _atomExtractor: ReturnType<typeof createAtomExtractor> | null = null;
   function getAtomExtractor() {
@@ -397,6 +412,21 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       if (approach) executionSteps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
     }
 
+    // Wave 5.1 — linked mission status round-trip. Cheap reads only; the
+    // delivery sync (completed mission → task deliverable) is an explicit
+    // POST /tasks/:id/sync-mission so a GET never runs the quality gate.
+    let linkedMission: ReturnType<typeof summarizeLinkedMission> | null = null;
+    if (task.linked_mission_id) {
+      try {
+        const ctl = getMissionController();
+        const mission = await ctl.state.getMission(task.linked_mission_id);
+        if (mission) {
+          const missionTasks = await ctl.state.listTasks(mission.id);
+          linkedMission = summarizeLinkedMission(mission, missionTasks);
+        }
+      } catch { /* missions schema unavailable — degrade to no summary */ }
+    }
+
     res.json({
       ...task,
       conversation: parseJson(task.conversation, []),
@@ -412,6 +442,8 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       task_files: parseJson<TaskFile[]>(task.task_files ?? '[]', []).map((f) => ({ id: f.id, name: f.name, size: f.size, uploaded_at: f.uploaded_at })),
       active_knowledge_packs: parseJson<string[]>(task.active_knowledge_packs ?? '[]', []),
       execution_steps: executionSteps,
+      linked_mission_id: task.linked_mission_id ?? null,
+      linked_mission: linkedMission,
     });
   });
 
@@ -825,13 +857,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
       // Save result + advance step. The critique + rubric dimensions are stored
       // alongside the score inside the execution_results JSON (no schema change
-      // needed — the column is a JSON document).
-      const existingResults = parseJson<Array<{
-        step: number; name: string; step_name?: string; output: string; at: string;
-        quality_score?: number | null; retry_count?: number; thinking_level?: string;
-        thinking?: string; description?: string;
-        quality_critique?: string; quality_dimensions?: Record<string, number>;
-      }>>(task.execution_results ?? '[]', []);
+      // needed — the column is a JSON document). Entries use the shared
+      // step-record shape (server/types/step-record.ts) — the same type the
+      // mission sync bridge appends (Wave 5.1 convergence seam).
+      const existingResults = parseJson<Array<SharedStepRecord & { step_name?: string }>>(
+        task.execution_results ?? '[]', []);
 
       existingResults.push({
         step: currentStepIdx,
@@ -845,6 +875,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         description: step.description || undefined,
         quality_critique: gate?.critique || undefined,
         quality_dimensions: gate ? { ...gate.dimensions } : undefined,
+        source: 'task_agent',
       });
 
       const nextStepIdx = currentStepIdx + 1;
@@ -913,6 +944,235 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       console.error('[task-agent] execute-step failed:', err);
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
+    }
+  });
+
+  // ── POST /api/task-agent/tasks/:id/execute-as-mission ───────────────────
+  // Wave 5.1 (Task Agent ↔ Missions convergence): compile the completed
+  // intake (chosen approach + intake answers + attached docs + framework
+  // grounding) into a mission and start it. The mission's background runner
+  // then executes the steps — llm tasks for prose steps, real action tasks
+  // where the approach declares them — with the standard mission
+  // checkpoint/autonomy behavior (check_in). Status flows back via
+  // GET /tasks/:id (linked_mission) and POST /tasks/:id/sync-mission.
+  router.post('/tasks/:id/execute-as-mission', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (task.linked_mission_id) return res.status(409).json({ error: 'Task is already linked to a mission', mission_id: task.linked_mission_id });
+    if (task.status === 'completed') return res.status(400).json({ error: 'Task is already completed' });
+    if (!task.chosen_approach_id) return res.status(400).json({ error: 'No approach selected' });
+    if (!(task.intake_ready ?? 0)) return res.status(400).json({ error: 'Intake not complete — ANTON still needs more information' });
+    if ((task.current_step ?? 0) > 0 || parseJson<unknown[]>(task.execution_results ?? '[]', []).length > 0) {
+      return res.status(400).json({ error: 'Steps already executed in classic mode — execute-as-mission is only available before Step 1 runs' });
+    }
+
+    const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
+    if (!approach) return res.status(404).json({ error: 'Approach not found' });
+
+    try {
+      const steps = parseJson<ApproachExecutionStep[]>(approach.execution_steps, []);
+      const intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
+      const taskFiles = parseJson<TaskFile[]>(task.task_files ?? '[]', []);
+      const activePackIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);
+
+      // Same real-grounding layer execute-step uses (item 1.3) — fetched
+      // once at compile time and carried in mission.context.
+      let groundingText: string | null = null;
+      try {
+        const grounding = await retrieveGroundingText({
+          query: `${task.title}\n${task.description}\n${steps.map((s) => `${s.name} ${s.description ?? ''}`).join('\n')}`,
+          packIds: activePackIds,
+          db,
+          tokenBudget: 3000,
+        });
+        groundingText = grounding?.text ?? null;
+      } catch { /* non-fatal — compile without grounding */ }
+
+      const compiled = compileTaskToMission({
+        task: { id: task.id, title: task.title, description: task.description, priority: task.priority },
+        approach: {
+          id: approach.id,
+          name: approach.name,
+          outcome: approach.outcome,
+          execution_steps: steps,
+        },
+        intakeAnswers,
+        attachedFiles: taskFiles.map((f) => ({ name: f.name, text: f.text })),
+        groundingText,
+      });
+
+      const ctl = getMissionController();
+      const mission = await ctl.createMission({
+        title: compiled.mission.title,
+        objective: compiled.mission.objective,
+        success_criteria: compiled.mission.success_criteria,
+        context: compiled.mission.context || undefined,
+        autonomy_level: compiled.mission.autonomy_level,
+        priority: compiled.mission.priority,
+      }, userId);
+
+      // Linkage (migration 231) — both directions.
+      await db.run('UPDATE missions.missions SET source_task_id=? WHERE id=?', task.id, mission.id);
+
+      const reasoning = [
+        `Compiled from Task Agent task ${task.id} ("${task.title}") using approach "${approach.name}".`,
+        ...compiled.notes.map((n) => `[${n.level}] ${n.message}`),
+      ].join('\n');
+      await ctl.briefMissionWithGraph(mission.id, compiled.graph, reasoning);
+
+      // The human already confirmed the approach AND clicked "Execute as
+      // Mission" after intake — that IS the plan approval. Start it; the
+      // background runner picks it up, and check_in autonomy still gates
+      // every action task + inter-step checkpoint.
+      await ctl.approvePlanAndStart(mission.id);
+
+      if (compiled.notes.length > 0) {
+        await ctl.state.logActivity(mission.id, {
+          activityType: 'compile_notes',
+          description: `Task Agent compile produced ${compiled.notes.length} note(s)`,
+          details: { notes: compiled.notes },
+        });
+      }
+
+      // Update the Task Agent side: link + status + conversation trail.
+      const conversation = parseJson<Array<{ role: string; content: string }>>(task.conversation, []);
+      conversation.push({
+        role: 'assistant',
+        content: `Task handed to Mission Control. ${compiled.graph.tasks.length} mission tasks created from the "${approach.name}" approach — the mission runner will execute them with human checkpoints between steps. Track progress here or open the mission for full detail.`,
+      });
+      await db.run(`
+        UPDATE anton_tasks SET linked_mission_id=?, status='executing', conversation=?, updated_at=NOW()
+        WHERE id=?
+      `, mission.id, JSON.stringify(conversation), task.id);
+
+      res.status(201).json({
+        success: true,
+        mission_id: mission.id,
+        notes: compiled.notes,
+        task_count: compiled.graph.tasks.length,
+      });
+    } catch (err) {
+      console.error('[task-agent] execute-as-mission failed:', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/task-agent/tasks/:id/sync-mission ─────────────────────────
+  // Wave 5.1 — pull-based delivery sync. Idempotent: when the linked
+  // mission has completed, fold its deliverable-producing task outputs into
+  // execution_results (as SharedStepRecords), run the task quality gate on
+  // the combined deliverable (never blocking), and mark the task completed.
+  // An aborted mission marks the task failed. Called by the Task Agent UI
+  // when it observes linked_mission.status === 'completed'.
+  router.post('/tasks/:id/sync-mission', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!task.linked_mission_id) return res.status(400).json({ error: 'Task has no linked mission' });
+
+    try {
+      const ctl = getMissionController();
+      const mission = await ctl.state.getMission(task.linked_mission_id);
+      if (!mission) {
+        return res.status(410).json({ error: 'Linked mission no longer exists', mission_id: task.linked_mission_id });
+      }
+      const missionTasks = await ctl.state.listTasks(mission.id);
+      const summary = summarizeLinkedMission(mission, missionTasks);
+
+      // Already terminal on the task side — return current state (idempotent).
+      if (task.status === 'completed' || task.status === 'failed') {
+        return res.json({ success: true, synced: false, task_status: task.status, linked_mission: summary });
+      }
+
+      if (mission.status === 'aborted') {
+        await db.run(`
+          UPDATE anton_tasks SET status='failed', execution_summary=?, updated_at=NOW() WHERE id=?
+        `, `Linked mission ${mission.id} was aborted before completion.`, task.id);
+        return res.json({ success: true, synced: true, task_status: 'failed', linked_mission: summary });
+      }
+
+      if (mission.status !== 'completed') {
+        // Nothing to deliver yet — report live status.
+        return res.json({ success: true, synced: false, task_status: task.status, linked_mission: summary });
+      }
+
+      // ── Mission completed → deliver ────────────────────────────────────
+      const { deliverableText, stepRecords } = buildMissionDeliverable(missionTasks);
+
+      // Quality gate on the FINAL deliverable — same gate as classic
+      // execution (item 1.8). Never blocks delivery; null = unavailable.
+      let gate: GateResult | null = null;
+      if (deliverableText.trim()) {
+        gate = await scoreWithGate(async (prompt) => {
+          const response = await callChat({
+            model: await getRoutedUtilityModel(db),
+            system: '',
+            messages: [{ role: 'user', content: prompt }],
+            maxTokens: 500,
+            jsonMode: true,
+          });
+          return response.text;
+        }, deliverableText, task.title, 'Mission deliverable (all steps)');
+      }
+      if (gate && stepRecords.length > 0) {
+        // Attach the whole-deliverable verdict to the final record so the
+        // existing UI surfaces it; the critique says what it scored.
+        const last = stepRecords[stepRecords.length - 1];
+        last.quality_score = gate.overall;
+        last.quality_critique = `(whole-deliverable score) ${gate.critique}`;
+        last.quality_dimensions = { ...gate.dimensions };
+      }
+
+      const existingResults = parseJson<SharedStepRecord[]>(task.execution_results ?? '[]', []);
+      const mergedResults = [...existingResults, ...stepRecords];
+      const summaryLine = `Delivered by mission ${mission.id}: ${stepRecords.length} step output(s).`
+        + (gate ? ` Quality score ${gate.overall.toFixed(1)}/10.` : '');
+
+      const conversation = parseJson<Array<{ role: string; content: string }>>(task.conversation, []);
+      conversation.push({ role: 'assistant', content: `Mission complete — ${summaryLine}` });
+
+      await db.run(`
+        UPDATE anton_tasks
+        SET status='completed', execution_results=?, execution_summary=?,
+            conversation=?, completed_at=NOW(), updated_at=NOW()
+        WHERE id=?
+      `, JSON.stringify(mergedResults), summaryLine, JSON.stringify(conversation), task.id);
+
+      // Approach learning stats — same rolling-average pattern as classic
+      // step execution.
+      if (task.chosen_approach_id) {
+        await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', task.chosen_approach_id);
+        if (gate) {
+          const approachRow = await db.get(
+            'SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?'
+          , task.chosen_approach_id) as { avg_quality_score: number | null; times_completed: number } | undefined;
+          if (approachRow) {
+            const prevAvg = approachRow.avg_quality_score ?? gate.overall;
+            const n = approachRow.times_completed;
+            const newAvg = n > 0 ? (prevAvg * (n - 1) + gate.overall) / n : gate.overall;
+            await db.run('UPDATE anton_approaches SET avg_quality_score=? WHERE id=?', newAvg, task.chosen_approach_id);
+          }
+        }
+      }
+
+      // Knowledge atoms from the mission deliverable (same as classic path).
+      if (deliverableText.trim()) {
+        emitTaskAtoms(task, deliverableText, `Mission ${mission.id} delivered ${stepRecords.length} steps`, stepRecords.length);
+      }
+
+      res.json({
+        success: true,
+        synced: true,
+        task_status: 'completed',
+        linked_mission: summary,
+        quality_score: gate?.overall ?? null,
+        quality_critique: gate?.critique ?? null,
+        step_count: stepRecords.length,
+      });
+    } catch (err) {
+      console.error('[task-agent] sync-mission failed:', err);
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

@@ -57,6 +57,19 @@ interface ExecutionResult {
   description?: string;
 }
 
+/** Wave 5.1 — compact status of the mission executing this task. */
+interface LinkedMissionSummary {
+  id: string;
+  status: string;
+  title: string;
+  total_tasks: number;
+  completed_tasks: number;
+  failed_tasks: number;
+  current_task_title: string | null;
+  awaiting_human: boolean;
+  progress_pct: number;
+}
+
 interface TaskDetail extends Task {
   conversation: ConversationMessage[];
   proposals: Proposal[];
@@ -71,6 +84,8 @@ interface TaskDetail extends Task {
   task_files: Array<{ id: string; name: string; size: number; uploaded_at: string }>;
   active_knowledge_packs: string[];
   execution_steps: ExecutionStep[];
+  linked_mission_id?: string | null;
+  linked_mission?: LinkedMissionSummary | null;
 }
 
 interface ConversationMessage {
@@ -464,6 +479,84 @@ function ExecutionResultPanel({
   );
 }
 
+// ─── Linked Mission Panel (Wave 5.1 — Task Agent ↔ Missions bridge) ──────────
+
+const MISSION_STATUS_STYLE: Record<string, string> = {
+  active:    'text-adv-teal bg-adv-teal-dim border-adv-teal/30',
+  review:    'text-adv-gold bg-adv-gold/10 border-adv-gold/30',
+  paused:    'text-adv-gold bg-adv-gold/10 border-adv-gold/30',
+  briefed:   'text-adv-blue bg-adv-blue/10 border-adv-blue/30',
+  completed: 'text-adv-green bg-adv-green/10 border-adv-green/30',
+  aborted:   'text-adv-red bg-adv-red/10 border-adv-red/30',
+};
+
+function LinkedMissionPanel({
+  mission,
+  syncing,
+  onOpenMission,
+}: {
+  mission: LinkedMissionSummary;
+  syncing: boolean;
+  onOpenMission: () => void;
+}) {
+  const style = MISSION_STATUS_STYLE[mission.status] ?? 'text-adv-gray bg-adv-dark-2 border-adv-gray/30';
+  const isRunning = mission.status === 'active';
+  return (
+    <div className="mx-1 rounded-xl border border-adv-blue/30 bg-adv-blue/5 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          {isRunning
+            ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-adv-blue" />
+            : mission.status === 'completed'
+              ? <CheckCircle2 className="h-4 w-4 shrink-0 text-adv-green" />
+              : <Zap className="h-4 w-4 shrink-0 text-adv-blue" />}
+          <span className="text-sm font-semibold text-adv-white truncate">Executing as Mission</span>
+          <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium capitalize ${style}`}>
+            {mission.status}
+          </span>
+          {syncing && <span className="text-xs text-adv-gray">syncing…</span>}
+        </div>
+        <button
+          onClick={onOpenMission}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-adv-blue/40 px-3 py-1.5 text-xs font-medium text-adv-blue hover:bg-adv-blue/10 transition-colors"
+        >
+          Open mission
+          <ExternalLink className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs text-adv-gray">
+          <span>
+            {mission.completed_tasks}/{mission.total_tasks} mission tasks
+            {mission.failed_tasks > 0 && <span className="text-adv-red"> · {mission.failed_tasks} failed</span>}
+          </span>
+          <span>{mission.progress_pct}%</span>
+        </div>
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-adv-dark-2">
+          <div
+            className={`h-full rounded-full transition-all ${mission.status === 'aborted' ? 'bg-adv-red' : 'bg-adv-teal'}`}
+            style={{ width: `${mission.progress_pct}%` }}
+          />
+        </div>
+      </div>
+
+      {mission.current_task_title && mission.status !== 'completed' && (
+        <p className="mt-2 text-xs text-adv-gray truncate">
+          <span className="font-medium text-adv-off-white">Current:</span> {mission.current_task_title}
+        </p>
+      )}
+      {mission.awaiting_human && mission.status !== 'completed' && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-adv-gold">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          Waiting for your review — open the mission to approve the checkpoint.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── New Task Modal ────────────────────────────────────────────────────────────
 
 function NewTaskModal({
@@ -639,6 +732,10 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [executingStepName, setExecutingStepName] = useState('');
   const [executingStepText, setExecutingStepText] = useState('');
   const [executingStepThinking, setExecutingStepThinking] = useState('');
+  // Mission bridge state (Wave 5.1)
+  const [launchingMission, setLaunchingMission] = useState(false);
+  const [syncingMission, setSyncingMission] = useState(false);
+  const missionSyncRequested = useRef(false);
   const { doExport, isExporting } = useExport();
   // Attachment state
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -903,6 +1000,67 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     }
   }
 
+  // ── Mission bridge (Wave 5.1) ──────────────────────────────────────────
+  // "Run as Mission": compiles the confirmed approach + intake into a
+  // mission run. The mission's background runner executes; we poll status.
+  async function runAsMission() {
+    if (!task || launchingMission || executingStep) return;
+    setLaunchingMission(true);
+    setSendError(null);
+    try {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-as-mission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSendError((data as { error?: string }).error ?? 'Failed to start mission');
+        return;
+      }
+      await loadTask();
+      onStatusChange();
+    } catch {
+      setSendError('Failed to start mission. Please try again.');
+    } finally {
+      setLaunchingMission(false);
+    }
+  }
+
+  const syncMission = useCallback(async () => {
+    if (missionSyncRequested.current) return;
+    missionSyncRequested.current = true;
+    setSyncingMission(true);
+    try {
+      await fetchWithAuth(`/api/task-agent/tasks/${taskId}/sync-mission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      await loadTask();
+      onStatusChange();
+    } catch { /* next poll retries via loadTask */ }
+    finally {
+      setSyncingMission(false);
+      missionSyncRequested.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, loadTask]);
+
+  // Poll the linked mission while it runs; sync the deliverable when done.
+  useEffect(() => {
+    if (!task?.linked_mission_id) return;
+    if (task.status === 'completed' || task.status === 'failed') return;
+    const lm = task.linked_mission;
+    if (lm && (lm.status === 'completed' || lm.status === 'aborted')) {
+      void syncMission();
+      return;
+    }
+    const interval = setInterval(() => { void loadTask(); }, 5000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.linked_mission_id, task?.linked_mission?.status, task?.status]);
+
   // Load knowledge packs when pack selector is opened
   async function openPackSelector() {
     setShowPackSelector(true);
@@ -1034,7 +1192,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         )}
 
         {/* Intake complete — ready to run first step */}
-        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) === 0 && !executingStep && (
+        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) === 0 && !executingStep && !task.linked_mission_id && (
           <div className="mx-1 rounded-xl border border-adv-teal/30 bg-adv-teal-soft px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -1045,17 +1203,41 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               </div>
               <button
                 onClick={runStep}
-                className="flex items-center gap-2 rounded-xl bg-adv-teal px-4 py-2 text-sm font-bold text-adv-dark hover:bg-adv-teal-dark"
+                disabled={launchingMission}
+                className="flex items-center gap-2 rounded-xl bg-adv-teal px-4 py-2 text-sm font-bold text-adv-dark hover:bg-adv-teal-dark disabled:opacity-60"
               >
                 <Play className="h-4 w-4" />
                 Run Step 1
               </button>
             </div>
+            {/* Wave 5.1 — alternative execution path: compile into a mission */}
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-adv-teal/15 pt-3">
+              <p className="text-xs text-adv-gray">
+                Or hand all {task.execution_steps?.length ?? 0} steps to Mission Control — runs in the background with review checkpoints between steps.
+              </p>
+              <button
+                onClick={runAsMission}
+                disabled={launchingMission}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-adv-blue/40 px-3 py-1.5 text-xs font-medium text-adv-blue hover:bg-adv-blue/10 transition-colors disabled:opacity-60"
+              >
+                {launchingMission ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                Run as Mission
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Linked mission status (Wave 5.1) */}
+        {task.linked_mission_id && task.linked_mission && (
+          <LinkedMissionPanel
+            mission={task.linked_mission}
+            syncing={syncingMission}
+            onOpenMission={() => navigate(`/missions/${task.linked_mission_id}`)}
+          />
+        )}
+
         {/* Intake complete — ready to run next step (after some steps done) */}
-        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) > 0 && !executingStep && (
+        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) > 0 && !executingStep && !task.linked_mission_id && (
           <div className="mx-1 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -1140,8 +1322,19 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         />
       )}
 
+      {/* Composer hidden while a mission executes — the mission detail page
+          (checkpoint approve/reject feedback) is the steering surface. */}
+      {!['completed', 'cancelled', 'failed'].includes(task.status) && task.linked_mission_id && (
+        <div className="border-t border-border bg-adv-dark-2 px-5 py-3 text-center text-xs text-adv-gray">
+          This task is executing as a mission. Review and steer it from the{' '}
+          <button onClick={() => navigate(`/missions/${task.linked_mission_id}`)} className="text-adv-blue underline hover:text-adv-teal">
+            mission page
+          </button>.
+        </div>
+      )}
+
       {/* Input */}
-      {!['completed', 'cancelled', 'failed'].includes(task.status) && (
+      {!['completed', 'cancelled', 'failed'].includes(task.status) && !task.linked_mission_id && (
         <div className="border-t border-border px-4 py-3">
           {sendError && (
             <div className="mb-2 flex items-center justify-between rounded-lg bg-adv-red/10 px-3 py-2 text-xs text-adv-red">

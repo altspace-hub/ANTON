@@ -173,6 +173,53 @@ export function createMissionController(db: DatabaseAdapter) {
   }
 
   /**
+   * Persist a PRE-COMPILED task graph (no LLM decomposition) and move the
+   * mission to `briefed`. Used by the Task Agent → Missions bridge (Wave
+   * 5.1): the Task Agent's intake conversation already produced the plan,
+   * so decomposeMission would be redundant LLM spend — the compiled graph
+   * is deterministic. Same persistence + decision-trail semantics as
+   * briefMission.
+   */
+  async function briefMissionWithGraph(
+    missionId: string,
+    graph: TaskGraphTemplate,
+    reasoning: string,
+  ): Promise<{ mission: Mission; tasks: MissionTask[] }> {
+    const mission = await state.getMission(missionId);
+    if (!mission) throw new Error('Mission not found');
+    if (mission.status !== 'draft' && mission.status !== 'briefed') {
+      throw new Error(`Cannot brief a mission in status '${mission.status}'`);
+    }
+    if (!graph.tasks || graph.tasks.length === 0) {
+      throw new Error('Pre-compiled graph has no tasks');
+    }
+    await persistTaskGraph(missionId, graph);
+    await state.recordDecision({
+      id: newDecisionId(),
+      mission_id: missionId,
+      task_id: null,
+      timestamp: nowIso(),
+      decision_type: 'plan_decomposition',
+      description: `Persisted pre-compiled task graph (${graph.tasks.length} tasks) — no LLM decomposition.`,
+      options_considered: [{ option: 'Pre-compiled graph', reasoning: reasoning.slice(0, 600) }],
+      selected_option: 'Pre-compiled graph',
+      confidence: 0.9,
+      reasoning,
+      overridden_by_human: false,
+      override_reasoning: null,
+      compliance_check_passed: true,
+    });
+    await state.updateMissionStatus(missionId, 'briefed');
+    await state.logActivity(missionId, {
+      activityType: 'plan_decomposed',
+      description: `Pre-compiled task graph persisted (${graph.tasks.length} tasks, 0 tokens)`,
+    });
+    const updated = await state.getMission(missionId);
+    const tasks = await state.listTasks(missionId);
+    return { mission: updated!, tasks };
+  }
+
+  /**
    * Approve the proposed plan (briefed → active) and begin execution.
    * Called explicitly even at higher autonomy levels in Phase 1.
    */
@@ -608,6 +655,7 @@ export function createMissionController(db: DatabaseAdapter) {
     // lifecycle
     createMission,
     briefMission,
+    briefMissionWithGraph,
     approvePlanAndStart,
     pauseMission,
     resumeMission,
