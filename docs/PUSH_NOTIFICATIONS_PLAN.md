@@ -47,10 +47,13 @@ channels, permissions, tap handlers for scheduled-payments + event-reminders). W
   a **pure-Kotlin WorkManager worker** (OkHttp fetch + cursor in SharedPreferences + native
   `NotificationManager`), not a JS-in-background runner.
 - The server already has `server/services/app-push-service.ts` (FCM/APNs/web-push) + `app_push_tokens`
-  — but it's **bound to the desktop Companion app** (`app_devices` FK). Comm needs its **own**
-  token registry keyed by **routing_id** (16-byte hash of the Ed25519 pubkey), because the Comm app
-  is anonymous/standalone (no instance pairing). FCM dispatch is still a stub there
-  (`sendViaFcm()` throws "FCM dispatch not implemented").
+  — bound to the desktop Companion app (`app_devices` FK). **Its FCM dispatch is now CODE-COMPLETE**
+  (2026-06-11): `sendViaFcm()` mints an OAuth2 token from `FCM_SERVICE_ACCOUNT_JSON` (RS256, Node
+  crypto, no firebase-admin — ported from `relay/src/comm-push.ts`) and POSTs a content-free HTTP-v1
+  message; absent creds → graceful no-op (not a throw); APNs is an iOS fast-follow no-op. See
+  `docs/FCM_OPERATOR_RUNBOOK.md` §8. Comm is a **separate** path: it needs its **own** token registry
+  keyed by **routing_id** (16-byte hash of the Ed25519 pubkey), because the Comm app is
+  anonymous/standalone (no instance pairing) — that path lives on the RELAY (Phase 3 below).
 
 ## Phases (each independently commit-able; verify on-device before moving on)
 

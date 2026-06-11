@@ -112,3 +112,58 @@ FCM, and (b) its **registry Postgres** enabled to store device tokens.
 - **Pay / Business background-payment push** — those use the on-device WorkManager poll
   (Phase 2), not server push, so they need no Firebase. (Their manifests already carry the
   FCM icon meta-data in case that changes.)
+
+---
+
+## 8. Desktop Companion App push (separate path) — CODE-COMPLETE
+
+> This is a **distinct** push path from the Comm app above. The **Companion App**
+> (the paired-to-your-ANTON-instance phone app, `com.futurechain.anton.companion`)
+> sends **approval / checkpoint** wake pushes from the local **`server/`** gateway
+> (`server/services/app-push-service.ts`), NOT from the relay. As of 2026-06-11 its
+> FCM dispatch is **code-complete and gated** — launch needs only Firebase config,
+> not a code change. It reuses the relay's dependency-free FCM HTTP v1 dispatcher
+> (RS256 JWT → OAuth2 → `messages:send`, via Node crypto, **no firebase-admin**).
+
+**Privacy invariant (same as Comm):** the payload is content-free — only an opaque
+`event_id` + `severity` + a localised `title` + optional `deep_link`. Never any
+confidential content. The app fetches the detail over its authenticated channel.
+
+**Operator steps (mirror of §1–§4, for the Companion gateway):**
+
+1. **Firebase project → Add app → Android.** Package name
+   **`com.futurechain.anton.companion`** (exact — from `android/app/build.gradle`).
+   Download its **own** `google-services.json`. Enable the **FCM API (V1)**.
+   Generate a **service-account** private key (keep it secret, off the repo).
+2. **Companion app build (this repo):**
+   - Drop the file at **`android/app/google-services.json`** (the conditional
+     google-services block in `android/app/build.gradle` activates only when present;
+     without it the app still builds — the release build was verified green).
+   - Build with **`VITE_FIREBASE_ENABLED=true`** (load-bearing — double-gate, mirrors
+     Comm's `VITE_COMM_FCM_ENABLED`). Without this flag the client **never** calls
+     `PushNotifications.register()`, because that throws a FATAL native exception on a
+     build lacking `google-services.json` that a JS try/catch cannot catch (see
+     `src/app/services/push.ts` `registerNative`). So default builds skip FCM entirely
+     (no crash, no token); set the flag ONLY together with shipping `google-services.json`.
+   - `@capacitor/push-notifications` is already registered in the Companion
+     `capacitor.plugins.json`; no native code change is needed.
+3. **Gateway (the local `server/`):** set on the host running the ANTON instance:
+   ```
+   APP_GATEWAY_PUSH=true                                   # enables real dispatch
+   FCM_SERVICE_ACCOUNT_JSON=/path/to/service-account.json  # path OR inline JSON
+   # FCM_PROJECT_ID=your-project-id                        # optional; defaults to the key's project_id
+   ```
+   On first dispatch the gateway logs one of:
+   - `[push] FCM not configured (set FCM_SERVICE_ACCOUNT_JSON) — wake pushes are a no-op`
+     (env unset/unreadable), or
+   - (silent on success — it now dispatches via FCM HTTP v1).
+4. **Verify:** trigger an approval/checkpoint with a paired Companion device that has
+   granted notifications; the device shows the content-free wake. The gateway
+   auto-disables (`enabled = FALSE`) any token FCM reports as `404 UNREGISTERED` / `400`.
+
+**Graceful degradation (already true):**
+- No `google-services.json` / `VITE_FIREBASE_ENABLED` unset → app builds + runs;
+  `registerNative` returns `{ ok:false, reason:'unsupported' }` (no crash, no token).
+- No `FCM_SERVICE_ACCOUNT_JSON` → gateway dispatch is a one-time-warned no-op.
+- **APNs (iOS)** is an iOS fast-follow no-op on this gateway too (logs once, never
+  throws) so a mixed Companion token set never fails the dispatch.
