@@ -669,10 +669,25 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               precision: req.body.precision || null,
               channel: req.body.channel || null,
             };
+            // CACHE-03: include cache read/write tokens and compute cache-adjusted cost.
+            // Computed BEFORE the message INSERT so the real per-call cost is persisted
+            // on the assistant message row — the global budget cap (SUM(messages.cost))
+            // and the analytics readers depend on it. (B1 fix: messages.cost was never
+            // written, so the cap could never trip and analytics totalCost was always 0.)
+            const cacheReadTokens = data.cacheReadTokens || 0;
+            const cacheCreationTokens = data.cacheCreationTokens || 0;
+            // Cache read is ~10% of input rate; cache write is ~125% of input rate
+            const billableInputTokens = (data.inputTokens || 0) - cacheReadTokens - cacheCreationTokens;
+            const estimatedCostUsd = (
+              Math.max(0, billableInputTokens) * costIn +
+              cacheReadTokens * (costIn * 0.10) +
+              cacheCreationTokens * (costIn * 1.25) +
+              (data.outputTokens || 0) * costOut
+            ) / 1_000_000;
             try {
-              await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, model_id, config_snapshot, created_at)
-                 VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`
-              , 
+              await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, cost, model_id, config_snapshot, created_at)
+                 VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?, ?)`
+              ,
                 crypto.randomUUID(),
                 sessionId,
                 data.text,
@@ -680,6 +695,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 // Persist full content blocks (with thinking signatures) for multi-turn replay
                 data.rawContentBlocks ? JSON.stringify(data.rawContentBlocks) : null,
                 data.outputTokens,
+                estimatedCostUsd,
                 selectedModel,
                 JSON.stringify(configSnapshot),
                 new Date().toISOString()
@@ -696,17 +712,6 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 systemPromptVersionId = spRow?.id;
               } catch { /* non-fatal */ }
             }
-            // CACHE-03: include cache read/write tokens and compute cache-adjusted cost
-            const cacheReadTokens = data.cacheReadTokens || 0;
-            const cacheCreationTokens = data.cacheCreationTokens || 0;
-            // Cache read is ~10% of input rate; cache write is ~125% of input rate
-            const billableInputTokens = (data.inputTokens || 0) - cacheReadTokens - cacheCreationTokens;
-            const estimatedCostUsd = (
-              Math.max(0, billableInputTokens) * costIn +
-              cacheReadTokens * (costIn * 0.10) +
-              cacheCreationTokens * (costIn * 1.25) +
-              (data.outputTokens || 0) * costOut
-            ) / 1_000_000;
             // RATE-04: use async audit queue instead of synchronous write
             enqueueAudit({
               sessionId,
@@ -745,11 +750,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 // Non-fatal
               }
             }
-            // Quality auto-scoring (non-fatal fire-and-forget) — always run; fall back to 'open-chat' module
-            if (data.text && data.text.length > 200) {
-              ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
-                .catch(() => {});
-            }
+            // Quality auto-scoring (non-fatal) — always run; fall back to 'open-chat' module.
+            // The promise is kept (instead of pure fire-and-forget) so the apprentice
+            // progression block below can fold the overall score into quality_avg
+            // (B2 fix: nothing ever wrote quality_avg, so promotion past 'guided'
+            // was arithmetically impossible). Resolves to null when scoring is
+            // skipped (short output) or failed — null means "do not fold".
+            const qualityScorePromise: Promise<number | null> =
+              data.text && data.text.length > 200
+                ? ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
+                    .then((r) => (typeof r?.score?.overall === 'number' && Number.isFinite(r.score.overall) ? r.score.overall : null))
+                    .catch(() => null)
+                : Promise.resolve(null);
             // Output Transformation — structured extraction (fire-and-forget)
             // Uses a bounded-concurrency queue so a burst of session completions
             // doesn't spawn N parallel Haiku calls. Deduplicates per-session.
@@ -780,7 +792,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             if (moduleId) {
               try {
                 const uid = req.user?.id || 'default';
-                const p = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as any;
+                type ApprenticeRow = { id: string; stage: string; sessions_completed: number; quality_avg: number | null; quality_n: number | null };
+                const p = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as ApprenticeRow | undefined;
                 if (!p) {
                   await db.run('INSERT INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?) ON CONFLICT DO NOTHING', uid, moduleId, areaId || null, new Date().toISOString());
                 } else {
@@ -794,6 +807,28 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                   else if (s === 'supervised' && newCount >= 20 && (p.quality_avg ?? 0) >= 8.0)
                     await db.run("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?", new Date().toISOString(), p.id);
                 }
+                // B2: when the quality score for this run resolves, fold it into the
+                // running average. quality_n counts only the runs that actually got
+                // a score, so a skipped/failed scoring never poisons the average
+                // (overall === null → no fold, no quality_n increment). The fold is
+                // a single atomic UPDATE, so concurrent sessions cannot lose updates.
+                void qualityScorePromise.then(async (overall) => {
+                  if (overall === null) return;
+                  await db.run(
+                    `UPDATE apprentice_profiles
+                     SET quality_avg = (COALESCE(quality_avg, 0) * COALESCE(quality_n, 0) + ?) / (COALESCE(quality_n, 0) + 1),
+                         quality_n = COALESCE(quality_n, 0) + 1
+                     WHERE user_id = ? AND module_id = ?`,
+                    overall, uid, moduleId);
+                  // Re-check quality-gated promotions with the updated average — the
+                  // inline check above ran before this run's score landed.
+                  const fresh = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as ApprenticeRow | undefined;
+                  if (!fresh) return;
+                  if (fresh.stage === 'guided' && fresh.sessions_completed >= 8 && (fresh.quality_avg ?? 0) >= 7.0)
+                    await db.run("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?", new Date().toISOString(), fresh.id);
+                  else if (fresh.stage === 'supervised' && fresh.sessions_completed >= 20 && (fresh.quality_avg ?? 0) >= 8.0)
+                    await db.run("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?", new Date().toISOString(), fresh.id);
+                }).catch(() => { /* non-fatal */ });
               } catch { /* non-fatal */ }
             }
             // Auto-extract knowledge atoms from this session output (non-blocking fire-and-forget)

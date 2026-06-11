@@ -10,6 +10,8 @@ export interface ApprenticeProfile {
   stage: ApprenticeStage;
   sessions_completed: number;
   quality_avg: number | null;
+  /** Number of sessions that actually received a quality score (denominator of quality_avg). */
+  quality_n: number | null;
   last_session: string;
   promoted_to_guided: string | null;
   promoted_to_supervised: string | null;
@@ -54,23 +56,33 @@ export async function createApprentice(db: DatabaseAdapter) {
   }) {
     const existing = await getProfile(params.userId, params.moduleId);
     const now = new Date().toISOString();
+    // A score of 0 is a valid (terrible) score — test for presence, not truthiness.
+    const hasScore = typeof params.qualityScore === 'number' && Number.isFinite(params.qualityScore);
 
     if (!existing) {
       const id = `ap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`
-        INSERT INTO apprentice_profiles (id, user_id, module_id, area_id, sessions_completed, quality_avg, last_session)
-        VALUES (?, ?, ?, ?, 1, ?, ?)
-      `, id, params.userId, params.moduleId, params.areaId ?? null, params.qualityScore ?? null, now);
+        INSERT INTO apprentice_profiles (id, user_id, module_id, area_id, sessions_completed, quality_avg, quality_n, last_session)
+        VALUES (?, ?, ?, ?, 1, ?, ?, ?)
+      `, id, params.userId, params.moduleId, params.areaId ?? null, hasScore ? params.qualityScore : null, hasScore ? 1 : 0, now);
     } else {
       const newSessions = existing.sessions_completed + 1;
-      const newQualityAvg = params.qualityScore
-        ? ((existing.quality_avg ?? 7) * (existing.sessions_completed) + params.qualityScore) / newSessions
-        : existing.quality_avg;
       await db.run(`
         UPDATE apprentice_profiles
-        SET sessions_completed = ?, quality_avg = ?, last_session = ?
+        SET sessions_completed = ?, last_session = ?
         WHERE user_id = ? AND module_id = ?
-      `, newSessions, newQualityAvg, now, params.userId, params.moduleId);
+      `, newSessions, now, params.userId, params.moduleId);
+      if (hasScore) {
+        // Fold the score into the running mean. quality_n counts only the
+        // sessions that actually received a score, so unscored sessions never
+        // dilute or poison the average.
+        await db.run(`
+          UPDATE apprentice_profiles
+          SET quality_avg = (COALESCE(quality_avg, 0) * COALESCE(quality_n, 0) + ?) / (COALESCE(quality_n, 0) + 1),
+              quality_n = COALESCE(quality_n, 0) + 1
+          WHERE user_id = ? AND module_id = ?
+        `, params.qualityScore, params.userId, params.moduleId);
+      }
     }
 
     return checkAndPromote(params.userId, params.moduleId);

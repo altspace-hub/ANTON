@@ -174,15 +174,16 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       const userId = getUserId(req);
       const now = new Date();
       const month = now.toISOString().slice(0, 7); // YYYY-MM
-
-      const monthStart = `${month}-01`;
+      // B1: read from messages.cost — the same source the global budget cap
+      // enforcement sums (server/routes/claude.ts) — so the displayed "spent"
+      // always matches what the cap actually trips on. messages.cost carries
+      // the real cache-adjusted per-call cost; user-role rows have NULL cost
+      // and SUM ignores them.
       const spentRow = await db.get<{ total: number }>(
-        `SELECT COALESCE(SUM(
-          COALESCE(input_token_count, 0) * 0.000003 + COALESCE(output_token_count, 0) * 0.000015
-        ), 0) as total
-        FROM audit_log
-        WHERE created_at >= $1::TIMESTAMPTZ`,
-        monthStart
+        `SELECT COALESCE(SUM(cost), 0) as total
+         FROM messages
+         WHERE TO_CHAR(created_at, 'YYYY-MM') = ?`,
+        month
       );
       const spent = parseFloat(String(spentRow?.total ?? 0)) || 0;
 
