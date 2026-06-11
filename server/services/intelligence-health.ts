@@ -4,7 +4,8 @@
  * Cheap/local installs silently lose background intelligence:
  *   - embeddings: embedding-adapter returns ZERO VECTORS on failure (silent)
  *   - atom capture: the extractor needs an LLM provider with credentials
- *   - pack RAG: ChromaDB wants OPENAI_API_KEY
+ *   - pack RAG: needs a reachable ChromaDB (embeddings via the local
+ *     embedding adapter since Wave 4.12 — OPENAI_API_KEY no longer required)
  *
  * This module composes REAL checks into one honest per-feature status:
  * { status: 'ok' | 'degraded' | 'off', reason }. No fake green — the
@@ -55,7 +56,7 @@ export interface EmbedProbeResult {
 export interface HealthProbes {
   /** Embed a test string with the configured adapter and inspect the vector. */
   embedProbe: () => Promise<EmbedProbeResult>;
-  /** ChromaDB heartbeat (false also when no OPENAI_API_KEY → no embedder). */
+  /** ChromaDB heartbeat (embeddings via the local adapter — Wave 4.12). */
   chromaProbe: () => Promise<boolean>;
   /** Newest knowledge_atoms.created_at, or null when none/table missing. */
   lastAtomAt: () => Promise<string | null>;
@@ -269,16 +270,17 @@ export async function computeIntelligenceHealth(
     } catch { /* telemetry must never break the health check */ }
   }
 
-  // ── Pack RAG: ChromaDB reachability (needs OPENAI_API_KEY embedder) ───────
+  // ── Pack RAG: ChromaDB reachability (embeddings via the local adapter —
+  //    Wave 4.12 dropped the OPENAI_API_KEY requirement) ─────────────────────
   let packRag: FeatureHealth;
   try {
     const chromaOk = await p.chromaProbe();
     if (chromaOk) {
-      packRag = { status: 'ok', reason: 'Pack RAG (ChromaDB) reachable' };
+      packRag = { status: 'ok', reason: 'Pack RAG (ChromaDB) reachable — embeddings via the local embedding adapter' };
     } else if (!p.env.OPENAI_API_KEY) {
       packRag = {
         status: 'off',
-        reason: 'pack RAG off (ChromaDB requires OPENAI_API_KEY for embeddings) — pack search falls back to keyword',
+        reason: 'pack RAG off (ChromaDB unreachable; embeddings use the local adapter — OPENAI_API_KEY no longer required) — pack search falls back to keyword',
       };
     } else {
       packRag = {

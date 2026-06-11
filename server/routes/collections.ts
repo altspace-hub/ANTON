@@ -186,22 +186,47 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
   });
 
   /**
-   * Check ChromaDB health
+   * Re-embed a collection with the CURRENT embedding adapter (Wave 4.12).
+   * Use after switching embedding providers/models — rebuilds the Chroma
+   * index from the chunk text stored in PostgreSQL.
+   */
+  router.post('/knowledge/reembed', async (req, res) => {
+    try {
+      const { collectionId } = req.body as { collectionId?: string };
+      if (!collectionId || typeof collectionId !== 'string') {
+        return res.status(400).json({ error: 'collectionId is required' });
+      }
+      const collection = await collectionManager.getCollection(db, collectionId);
+      if (!collection) {
+        return res.status(404).json({ error: 'Collection not found' });
+      }
+      const result = await chromaClient.reembedCollection(db, collectionId);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error('Error re-embedding collection:', error);
+      res.status(500).json({ error: safeError(error) });
+    }
+  });
+
+  /**
+   * Check ChromaDB health. Embeddings go through the local embedding adapter
+   * (Ollama / OpenAI / Voyage) — OPENAI_API_KEY is no longer required.
    */
   router.get('/collections/health/check', async (req, res) => {
     try {
       const isAvailable = await chromaClient.isChromaAvailable();
+      const adapter = (await import('../services/embedding-adapter.js')).getEmbeddingAdapter();
       res.json({
         available: isAvailable,
-        openaiConfigured: !!process.env.OPENAI_API_KEY,
+        embeddingProvider: adapter.provider,
+        embeddingModel: adapter.model,
         message: isAvailable
-          ? 'ChromaDB is ready'
-          : 'ChromaDB unavailable. Check OPENAI_API_KEY in .env'
+          ? `ChromaDB is ready (embeddings via ${adapter.provider}/${adapter.model})`
+          : 'ChromaDB unavailable — vector search falls back to keyword. Embeddings use the local adapter; no OpenAI key required.'
       });
     } catch (error) {
       res.status(500).json({
         available: false,
-        openaiConfigured: !!process.env.OPENAI_API_KEY,
         error: safeError(error)
       });
     }

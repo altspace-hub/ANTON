@@ -388,10 +388,11 @@ export default function ScriptLitePage() {
     URL.revokeObjectURL(url);
   }, [generatedScript, streamingScript, description]);
 
-  // ── Run Preview (stub) ───────────────────────────────────────────────────
+  // ── Run Preview — real sandbox execution (Wave 4.11) ─────────────────────
   const handleRunPreview = useCallback(async () => {
     const scriptToPreview = generatedScript || streamingScript;
     if (!scriptToPreview) return;
+    setPreviewResult('Running preview…');
     try {
       const token = localStorage.getItem('openexpert-token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -403,7 +404,20 @@ export default function ScriptLitePage() {
         body: JSON.stringify({ script: scriptToPreview, data_sample: dataSample }),
       });
       const data = await res.json();
-      setPreviewResult(data.message || data.status || 'Preview complete');
+      if (!res.ok) {
+        setPreviewResult(data.error || `Preview failed (HTTP ${res.status})`);
+        return;
+      }
+      // New honest shape: { status, badge, message, attempts: [{stdout, stderr, exitCode}, …] }
+      const last = Array.isArray(data.attempts) && data.attempts.length > 0
+        ? data.attempts[data.attempts.length - 1]
+        : null;
+      const detail = last
+        ? (last.exitCode === 0
+            ? (last.stdout ? ` — output: ${String(last.stdout).slice(0, 400)}` : '')
+            : (last.stderr ? ` — ${String(last.stderr).slice(0, 400)}` : ''))
+        : '';
+      setPreviewResult(`${data.message || data.status || 'Preview complete'}${detail}`);
     } catch {
       setPreviewResult('Preview endpoint unavailable');
     }

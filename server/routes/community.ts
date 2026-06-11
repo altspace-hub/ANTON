@@ -1213,16 +1213,22 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
 
   // ── C2: Bundle Push/Pull ──────────────────────────────────────────────
 
+  // Wave 4.9: the push now carries the REAL .anton file (base64 in
+  // `bundleBase64`) — export the bundle first, then push the bytes.
   router.post('/community/share/bundle', async (req, res) => {
     try {
-      const { bundleType, contactHash, name } = req.body;
+      const { bundleType, contactHash, name, bundleBase64 } = req.body;
       if (!bundleType || !contactHash) return res.status(400).json({ error: 'bundleType and contactHash required' });
       const { createBundleSharingService } = await import('../services/bundle-sharing-service.js');
       const service = await createBundleSharingService(db);
-      const result = await service.pushBundle(bundleType, contactHash, { name });
+      const result = await service.pushBundle(bundleType, contactHash, { name, bundleBase64 });
       res.json(result);
     } catch (err) {
       console.error('[community] Bundle push error:', err);
+      const msg = err instanceof Error ? err.message : '';
+      if (/bundleBase64|capped at|No active connection|decode/.test(msg)) {
+        return res.status(400).json({ error: msg });
+      }
       res.status(500).json({ error: 'Failed to push bundle' });
     }
   });
@@ -1236,6 +1242,36 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[community] Bundle preview error:', err);
       res.status(500).json({ error: 'Failed to preview bundle' });
+    }
+  });
+
+  // Wave 4.9: accept = sha256-verify + dispatching validator (provenance
+  // surfaces automatically) + module auto-install / managed-dir storage.
+  router.post('/community/share/bundle/:mailId/accept', async (req, res) => {
+    try {
+      const { createBundleSharingService } = await import('../services/bundle-sharing-service.js');
+      const service = await createBundleSharingService(db);
+      const result = await service.acceptPushedBundle(req.params.mailId);
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Bundle accept error:', err);
+      const msg = err instanceof Error ? err.message : '';
+      if (/integrity check failed|not found/.test(msg)) {
+        return res.status(400).json({ error: msg });
+      }
+      res.status(500).json({ error: 'Failed to accept bundle' });
+    }
+  });
+
+  router.post('/community/share/bundle/:mailId/reject', async (req, res) => {
+    try {
+      const { createBundleSharingService } = await import('../services/bundle-sharing-service.js');
+      const service = await createBundleSharingService(db);
+      await service.rejectPushedBundle(req.params.mailId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[community] Bundle reject error:', err);
+      res.status(500).json({ error: 'Failed to reject bundle' });
     }
   });
 

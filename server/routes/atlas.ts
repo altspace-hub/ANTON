@@ -59,9 +59,11 @@
 // routes/renderers.ts.
 
 import { Router } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createAtlasService } from '../services/risk-atlas/atlas-service.js';
+import { importAtlasBundle } from '../services/risk-atlas/atlas-importer.js';
 import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logger.js';
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
@@ -684,6 +686,42 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       res.setHeader('Content-Disposition', `inline; filename="atlas-heatmap-${encodeURIComponent(id)}.svg"`);
       res.send(svg);
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // ── Import — the promised "successor handover" (Wave 4.10) ──────
+  // Accepts the flat-JSON .anton.json produced by GET /atlas/:id/export/bundle,
+  // either as a multipart file upload (`file`) or as `{ bundle: {...} }` JSON.
+  // Recreates the Atlas under the importer's ownership and runs the
+  // deterministic recomputation check (mismatch = imported with a flag).
+  const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+  router.post('/atlas/import-bundle', importUpload.single('file'), async (req, res) => {
+    try {
+      const userId = (req as AuthedRequest).user?.id;
+      if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
+      let payload: unknown;
+      if (req.file) {
+        try {
+          payload = JSON.parse(req.file.buffer.toString('utf-8'));
+        } catch {
+          res.status(400).json({ error: 'Uploaded file is not valid JSON — expected a risk-atlas-export .anton.json bundle' });
+          return;
+        }
+      } else if (req.body && typeof req.body === 'object' && 'bundle' in req.body) {
+        payload = (req.body as { bundle: unknown }).bundle;
+      } else {
+        res.status(400).json({ error: 'Provide the bundle as a multipart `file` upload or as a `bundle` JSON field' });
+        return;
+      }
+      const result = await importAtlasBundle(db, payload, userId);
+      res.status(201).json({ success: true, ...result });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (/Not a valid risk-atlas-export bundle/.test(msg)) {
+        res.status(400).json({ error: msg });
+        return;
+      }
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.get('/atlas/:id/export/bundle', async (req, res) => {

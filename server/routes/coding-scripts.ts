@@ -79,17 +79,53 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
     }
   });
 
-  // POST /api/coding/script-lite/preview — Run preview in sandbox
-  // TODO: Implement sandbox execution using connection-manager.ts when available.
-  //       Should accept { script, data_sample }, execute in a sandboxed environment,
-  //       and return { stdout, stderr, exitCode, executionTime }.
+  // POST /api/coding/script-lite/preview — REAL sandbox execution (Wave 4.11).
+  // Executes the generated script in a throwaway temp dir via execFile
+  // (args array, minimal env, 10 s timeout, output cap, dir deleted after).
+  // On failure: ONE auto-fix round through the configured utility model,
+  // then one re-run. Both attempts come back honestly; `badge` drives the
+  // "ran against sample data ✓ / failed ✗" UI. See SANDBOX_LIMITS in the
+  // response for the documented limits (network is NOT blocked — local
+  // process, not a container).
   router.post('/coding/script-lite/preview', async (req, res) => {
     try {
-      const { script, data_sample } = req.body;
-      if (!script) return res.status(400).json({ error: 'script is required' });
+      const { script, data_sample, language } = req.body as { script?: string; data_sample?: string; language?: string };
+      if (!script || typeof script !== 'string') return res.status(400).json({ error: 'script is required' });
+      if (script.length > 200_000) return res.status(400).json({ error: 'script too large for preview (200 KB cap)' });
 
-      // Sandbox execution not yet implemented
-      res.json({ status: 'preview_not_configured', message: 'Script preview requires sandbox configuration' });
+      const { runPreviewWithAutofix, extractCodeBlock } = await import('../services/script-sandbox.js');
+
+      // One auto-fix round via the configured utility model (same model that
+      // powers other background fixes). Fixer failures degrade to an honest
+      // "failed, no usable correction" — never a fake pass.
+      const fixScript = async (failingScript: string, errorOutput: string): Promise<string | null> => {
+        const { callChat } = await import('../services/provider-router.js');
+        const { getRoutedUtilityModel } = await import('../services/utility-model.js');
+        const model = await getRoutedUtilityModel(db);
+        const chat = await callChat({
+          model,
+          system:
+            'You fix broken data-analysis scripts. You receive a script and the error it produced when run. ' +
+            'Return ONLY the corrected, complete script in a single fenced code block — no prose. ' +
+            'Do not add network calls or new dependencies; keep the script\'s intent unchanged.',
+          messages: [{
+            role: 'user',
+            content: `The following script failed.\n\nSCRIPT:\n\`\`\`\n${failingScript.slice(0, 30_000)}\n\`\`\`\n\nERROR OUTPUT:\n\`\`\`\n${errorOutput}\n\`\`\`\n\nReturn the corrected script.`,
+          }],
+          maxTokens: 8_000,
+          temperature: 0,
+          db,
+        });
+        return extractCodeBlock(chat.text ?? '');
+      };
+
+      const result = await runPreviewWithAutofix({
+        script,
+        dataSample: typeof data_sample === 'string' ? data_sample : undefined,
+        languageHint: typeof language === 'string' ? language : undefined,
+        fixScript,
+      });
+      res.json(result);
     } catch (error) {
       console.error('[coding-scripts] Preview error:', error);
       res.status(500).json({ error: 'Failed to preview script' });

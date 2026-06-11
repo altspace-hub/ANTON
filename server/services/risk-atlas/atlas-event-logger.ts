@@ -10,6 +10,8 @@ import type { DatabaseAdapter } from '../../db/database.js';
 
 export type AtlasEventType =
   | 'atlas_created' | 'atlas_status_changed' | 'atlas_archived'
+  // Wave 4.10 — successor handover via POST /api/atlas/import-bundle
+  | 'atlas_imported'
   | 'pack_installed' | 'pack_applied' | 'pack_updated'
   | 'exposure_added' | 'exposure_updated' | 'exposure_removed'
   | 'path_added' | 'path_updated' | 'path_removed'

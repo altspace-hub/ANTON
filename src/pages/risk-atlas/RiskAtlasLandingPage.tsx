@@ -1,9 +1,9 @@
 // RiskAtlasLandingPage — list of atlases + create-new entry.
 // Mirrors the MissionsPage pattern: cards on a grid, status badges, click → workspace.
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, ShieldAlert, Target, AlertCircle, RefreshCcw, Archive, Wrench } from 'lucide-react';
+import { Plus, ShieldAlert, Target, AlertCircle, RefreshCcw, Archive, Wrench, Upload } from 'lucide-react';
 import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 type AtlasStatus = 'draft' | 'active' | 'review' | 'archived';
@@ -32,6 +32,9 @@ export default function RiskAtlasLandingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('active');
+  const [importing, setImporting] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const load = useCallback(async () => {
@@ -56,6 +59,35 @@ export default function RiskAtlasLandingPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Wave 4.10 — import a risk-atlas-export .anton.json (successor handover).
+  const handleImportFile = useCallback(async (file: File) => {
+    setImporting(true);
+    setError(null);
+    setImportNote(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/atlas/import-bundle', {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const warn = !data.recompute?.ok
+        ? ` — recompute check flagged ${data.recompute.mismatches.length} score difference(s); the recomputed values are authoritative`
+        : '';
+      setImportNote(`Imported "${data.atlasName}" (${data.stats.paths} paths, ${data.stats.controls} controls)${warn}.`);
+      await load();
+      if (data.atlasId) navigate(`/atlas/${data.atlasId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [load, navigate]);
+
   return (
     <div className="mx-auto max-w-6xl p-6 space-y-6">
       <header className="flex items-start justify-between gap-3 flex-wrap">
@@ -76,6 +108,22 @@ export default function RiskAtlasLandingPage() {
           >
             Small business view
           </Link>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.anton,application/json"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white inline-flex items-center gap-1.5 disabled:opacity-50"
+            title="Import a risk-atlas-export bundle (.anton.json) — successor handover"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            {importing ? 'Importing…' : 'Import'}
+          </button>
           <Link
             to="/atlas/new"
             className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark inline-flex items-center gap-1.5"
@@ -114,6 +162,13 @@ export default function RiskAtlasLandingPage() {
         <div className="rounded border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-[12px] text-adv-red flex items-center gap-2">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           {error}
+        </div>
+      )}
+
+      {importNote && (
+        <div className="rounded border border-adv-teal/30 bg-adv-teal/10 px-3 py-2 text-[12px] text-adv-teal flex items-center gap-2">
+          <Upload className="h-3.5 w-3.5 shrink-0" />
+          {importNote}
         </div>
       )}
 
