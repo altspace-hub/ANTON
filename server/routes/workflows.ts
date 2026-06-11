@@ -21,42 +21,38 @@ import sql from 'mssql';
 import { importData, exportData } from '../services/data-importer.js';
 import { applyTransformations, TransformOperation } from '../services/data-transformer.js';
 import { mergeDatasets, deduplicateDataset, MergeConfig } from '../services/data-merger.js';
+import {
+  persistExecution, loadExecution, listExecutionSummaries,
+  listPendingApprovals, recordClientRun,
+  type WorkflowExecution, type ExecutionMode, type StepResult,
+} from '../services/workflow-execution-store.js';
+import { resumeApprovedRun, rejectRun } from '../services/workflow-executor.js';
 
 // ── Types ────────────────────────────────────────────────────────
+// Execution types live in workflow-execution-store.ts (single source of
+// truth — they are persisted to PostgreSQL); re-exported here for
+// backwards compatibility.
 
-export type ExecutionMode = 'guided' | 'automatic' | 'scheduled';
-export type ExecutionStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'aborted';
-export type StepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type {
+  ExecutionMode, ExecutionStatus, StepStatus, StepResult, WorkflowExecution,
+} from '../services/workflow-execution-store.js';
 
-export interface StepResult {
-  stepId: string;
-  stepIndex: number;
-  status: StepStatus;
-  startedAt: string;
-  completedAt?: string;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  error?: string;
-}
-
-export interface WorkflowExecution {
-  id: string;
-  workflowId: string;
-  workflowDefinition: WorkflowDefinition;
-  mode: ExecutionMode;
-  status: ExecutionStatus;
-  currentStepIndex: number;
-  context: Record<string, unknown>;
-  stepResults: StepResult[];
-  startedAt: string;
-  completedAt?: string;
-  error?: string;
-}
-
-// ── In-memory execution store ────────────────────────────────────
-// Live executions are held in memory; durable run history is recorded in the
-// PostgreSQL workflow_runs table (see workflow-executor.ts recordRun/updateRun).
+// ── In-memory execution store (hot cache) ────────────────────────
+// Live executions are held in memory for speed, but every state change is
+// serialized to the PostgreSQL workflow_executions table (migration 230) and
+// rehydrated on demand — paused runs survive a server restart (B7 fix).
+// Durable scheduled-run history additionally lives in workflow_runs
+// (see workflow-executor.ts recordRun/updateRun).
 const executions = new Map<string, WorkflowExecution>();
+
+/** Map lookup with PostgreSQL rehydration fallback (restart survival). */
+async function getExecution(db: DatabaseAdapter, id: string): Promise<WorkflowExecution | undefined> {
+  const hot = executions.get(id);
+  if (hot) return hot;
+  const rehydrated = await loadExecution(db, id);
+  if (rehydrated) executions.set(id, rehydrated);
+  return rehydrated;
+}
 
 // ── Template resolver ────────────────────────────────────────────
 
@@ -797,6 +793,7 @@ async function executeStep(
 async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): Promise<void> {
   const steps = execution.workflowDefinition.steps;
   execution.status = 'running';
+  await persistExecution(db, execution);
 
   while (execution.currentStepIndex < steps.length) {
     // Re-read status each iteration — can be mutated externally (e.g., abort route)
@@ -815,6 +812,7 @@ async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): 
     // In guided mode: pause BEFORE each step (except on initial start)
     if (execution.mode === 'guided' && execution.currentStepIndex > 0) {
       execution.status = 'paused';
+      await persistExecution(db, execution);
       return; // Return and wait for /continue
     }
 
@@ -824,6 +822,7 @@ async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): 
       stepResult.status = 'running';
       execution.stepResults.push(stepResult);
       // Will be resumed by /continue
+      await persistExecution(db, execution);
       return;
     }
 
@@ -865,18 +864,21 @@ async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): 
       }
 
       execution.currentStepIndex++;
+      await persistExecution(db, execution);
     } catch (err) {
       stepResult.status = 'failed';
       stepResult.completedAt = new Date().toISOString();
       stepResult.error = (err as Error).message;
       execution.status = 'failed';
       execution.error = (err as Error).message;
+      await persistExecution(db, execution);
       return;
     }
 
     // In guided mode: pause AFTER each step (user reviews output, then continues)
     if (execution.mode === 'guided' && execution.currentStepIndex < steps.length) {
       execution.status = 'paused';
+      await persistExecution(db, execution);
       return;
     }
   }
@@ -887,6 +889,7 @@ async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): 
     execution.status = 'completed';
     execution.completedAt = new Date().toISOString();
   }
+  await persistExecution(db, execution);
 }
 
 // ── Route factory ────────────────────────────────────────────────
@@ -1045,12 +1048,14 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       startedAt: new Date().toISOString(),
     };
     executions.set(executionId, execution);
+    await persistExecution(db, execution);
 
     // Start execution asynchronously
     runExecution(execution, db).catch((err) => {
       execution.status = 'failed';
       execution.error = err.message;
       console.error('[workflow-engine] Execution error:', err);
+      void persistExecution(db, execution);
     });
 
     res.json({ executionId, status: execution.status });
@@ -1058,7 +1063,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── GET /api/workflows/executions/:id/status
   router.get('/executions/:id/status', async (req, res) => {
-    const execution = executions.get(req.params.id);
+    const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
     const steps = execution.workflowDefinition.steps;
@@ -1083,8 +1088,9 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   });
 
   // ── POST /api/workflows/executions/:id/continue — approve current paused step
+  // Rehydrates from PostgreSQL when not in the hot cache (restart survival).
   router.post('/executions/:id/continue', async (req, res) => {
-    const execution = executions.get(req.params.id);
+    const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
       return res.status(400).json({ error: `Execution is not paused (status: ${execution.status})` });
@@ -1117,6 +1123,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
     runExecution(execution, db).catch((err) => {
       execution.status = 'failed';
       execution.error = err.message;
+      void persistExecution(db, execution);
     });
 
     res.json({ executionId: execution.id, status: execution.status });
@@ -1124,7 +1131,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── POST /api/workflows/executions/:id/modify-step — modify output before continuing
   router.post('/executions/:id/modify-step', async (req, res) => {
-    const execution = executions.get(req.params.id);
+    const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
       return res.status(400).json({ error: 'Execution is not paused' });
@@ -1142,12 +1149,13 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       lastResult.output = { ...lastResult.output, ...modifications, _modified: true };
     }
 
+    await persistExecution(db, execution);
     res.json({ success: true, context: execution.context });
   });
 
   // ── POST /api/workflows/executions/:id/skip-step
   router.post('/executions/:id/skip-step', async (req, res) => {
-    const execution = executions.get(req.params.id);
+    const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
       return res.status(400).json({ error: 'Execution is not paused' });
@@ -1162,10 +1170,12 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
     execution.currentStepIndex++;
     execution.status = 'running';
+    await persistExecution(db, execution);
 
     runExecution(execution, db).catch((err) => {
       execution.status = 'failed';
       execution.error = err.message;
+      void persistExecution(db, execution);
     });
 
     res.json({ executionId: execution.id, status: execution.status });
@@ -1173,32 +1183,119 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
 
   // ── POST /api/workflows/executions/:id/abort
   router.post('/executions/:id/abort', async (req, res) => {
-    const execution = executions.get(req.params.id);
+    const execution = await getExecution(db, req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
     execution.status = 'aborted';
     execution.completedAt = new Date().toISOString();
+    await persistExecution(db, execution);
 
     res.json({ executionId: execution.id, status: 'aborted' });
   });
 
   // ── GET /api/workflows/executions — list recent executions
+  // Reads the durable PostgreSQL store (survives restarts); falls back to the
+  // in-memory map if the table/columns are unavailable (pre-migration deploy).
   router.get('/executions', async (_req, res) => {
-    const list = Array.from(executions.values())
-      .map((e) => ({
-        id: e.id,
-        workflowId: e.workflowId,
-        workflowLabel: e.workflowDefinition.label,
-        mode: e.mode,
-        status: e.status,
-        currentStepIndex: e.currentStepIndex,
-        totalSteps: e.workflowDefinition.steps.length,
-        startedAt: e.startedAt,
-        completedAt: e.completedAt,
-      }))
-      .sort((a, b) => (b.startedAt > a.startedAt ? 1 : -1))
-      .slice(0, 50);
-    res.json(list);
+    try {
+      const list = await listExecutionSummaries(db, 50);
+      res.json(list);
+    } catch {
+      const list = Array.from(executions.values())
+        .map((e) => ({
+          id: e.id,
+          workflowId: e.workflowId,
+          workflowLabel: e.workflowDefinition.label,
+          mode: e.mode,
+          status: e.status,
+          currentStepIndex: e.currentStepIndex,
+          totalSteps: e.workflowDefinition.steps.length,
+          startedAt: e.startedAt,
+          completedAt: e.completedAt,
+        }))
+        .sort((a, b) => (b.startedAt > a.startedAt ? 1 : -1))
+        .slice(0, 50);
+      res.json(list);
+    }
+  });
+
+  // ── POST /api/workflows/executions/record — client-loop run summary
+  // The WorkflowsPage step loop runs claude steps client-side; it posts its
+  // run summary here so navigating away no longer orphans the run (4.1.4).
+  router.post('/executions/record', async (req, res) => {
+    const { id, workflowId, workflowLabel, status, currentStepIndex, stepStates, sessionId, startedAt, completedAt } =
+      req.body as {
+        id?: string; workflowId?: string; workflowLabel?: string; status?: string;
+        currentStepIndex?: number; stepStates?: unknown; sessionId?: string;
+        startedAt?: string; completedAt?: string;
+      };
+    if (!id || !workflowId) {
+      return res.status(400).json({ error: 'id and workflowId are required' });
+    }
+    const validStatuses = ['pending', 'running', 'paused', 'completed', 'failed', 'aborted'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${validStatuses.join(', ')}` });
+    }
+    await recordClientRun(db, {
+      id,
+      workflowId,
+      workflowLabel: workflowLabel || workflowId,
+      status: status as WorkflowExecution['status'],
+      currentStepIndex: currentStepIndex ?? 0,
+      stepStates: stepStates ?? [],
+      sessionId,
+      startedAt,
+      completedAt,
+    });
+    res.json({ success: true, id });
+  });
+
+  // ── GET /api/workflows/approvals/pending — parked runs across BOTH engines
+  // (paused interactive executions + scheduled runs awaiting approval).
+  // Backs the HomeV2 pending-approvals card.
+  router.get('/approvals/pending', async (_req, res) => {
+    try {
+      const items = await listPendingApprovals(db);
+      res.json({ items, count: items.length });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/workflows/runs/:id/approve — resume a scheduled run parked
+  // at an approval gate (re-enters the executor loop at the stored step index
+  // with the stored context — migration 230 columns).
+  router.post('/runs/:id/approve', async (req, res) => {
+    try {
+      const result = await resumeApprovedRun(db, req.params.id);
+      res.json({
+        runId: result.runId,
+        success: result.success,
+        stepsCompleted: result.stepsCompleted,
+        stepsSkipped: result.stepsSkipped,
+        awaitingApproval: result.awaitingApproval ?? false,
+        error: result.error,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('not found')) return res.status(404).json({ error: msg });
+      if (msg.includes('not awaiting approval')) return res.status(409).json({ error: msg });
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/workflows/runs/:id/reject — terminally reject a parked run
+  router.post('/runs/:id/reject', async (req, res) => {
+    const { reason } = req.body as { reason?: string };
+    try {
+      await rejectRun(db, req.params.id, reason);
+      res.json({ runId: req.params.id, status: 'rejected' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('not found')) return res.status(404).json({ error: msg });
+      if (msg.includes('not awaiting approval')) return res.status(409).json({ error: msg });
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── POST /api/workflows/execute-step — run a single step ad-hoc

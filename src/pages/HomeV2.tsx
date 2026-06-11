@@ -18,7 +18,7 @@
  *     BOTTOM (matches the left-nav convention)
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Inbox, Sparkles, Shield, Compass, Users, Radar as RadarIcon,
@@ -284,6 +284,10 @@ export default function HomeV2(): JSX.Element {
         {/* Wave 3.9: honest degradation banner — renders ONLY when background
             intelligence (embeddings / atom capture / pack RAG) is degraded */}
         <IntelligenceHealthBanner />
+
+        {/* Wave 4.1: workflow approvals pending — renders ONLY when at least
+            one run is parked at a pause/approval gate (no fake UI) */}
+        <WorkflowApprovalsCard />
 
         {/* ── Top: Anton title + APCI tagline + 5-Minute Brief ── */}
         <div className="mb-4 flex items-start justify-between gap-4">
@@ -694,6 +698,140 @@ export default function HomeV2(): JSX.Element {
 }
 
 // ── Sub-components ─────────────────────────────────────────────
+
+// ── Wave 4.1: pending workflow approvals (both engines) ────────────────
+interface PendingApprovalItem {
+  kind: 'execution' | 'run';
+  id: string;
+  workflowId: string;
+  workflowLabel: string;
+  stepIndex: number;
+  stepLabel: string;
+  mode: string;
+  pausedAt: string;
+}
+
+/**
+ * Compact card listing workflow runs parked at a pause/approval gate —
+ * interactive executions (status=paused) and scheduled runs
+ * (status=awaiting_approval). Renders NOTHING when there are none.
+ * Approve = continue/resume the run; Reject = abort (interactive) or
+ * terminally reject (scheduled).
+ */
+function WorkflowApprovalsCard(): JSX.Element | null {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<PendingApprovalItem[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/workflows/approvals/pending');
+      if (!res.ok) return;
+      const data = await res.json() as { items?: PendingApprovalItem[] };
+      setItems(Array.isArray(data.items) ? data.items : []);
+    } catch { /* silent — card simply doesn't render */ }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const act = async (item: PendingApprovalItem, action: 'approve' | 'reject') => {
+    setBusyId(item.id);
+    setActionError(null);
+    try {
+      // Scheduled runs: real approve/reject resume endpoints.
+      // Interactive executions: approve = /continue, reject = /abort.
+      const url = item.kind === 'run'
+        ? `/api/workflows/runs/${encodeURIComponent(item.id)}/${action}`
+        : `/api/workflows/executions/${encodeURIComponent(item.id)}/${action === 'approve' ? 'continue' : 'abort'}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setActionError(data.error ?? `Could not ${action} (HTTP ${res.status})`);
+      }
+    } catch {
+      setActionError(`Network error — could not ${action}`);
+    } finally {
+      setBusyId(null);
+      void refresh();
+    }
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <div
+      className="mb-4 px-4 py-3"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-gold-dim)',
+        borderRadius: 'var(--radius-r2)',
+      }}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <CheckSquare size={13} strokeWidth={1.5} style={{ color: 'var(--color-gold)' }} />
+          <span className="text-[12.5px] font-semibold text-[var(--color-text)]">
+            Workflow approvals pending ({items.length})
+          </span>
+        </div>
+        <button
+          onClick={() => navigate('/workflows')}
+          className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+        >
+          Open workflows →
+        </button>
+      </div>
+      {actionError && (
+        <p className="mb-2 text-[11px]" style={{ color: 'var(--color-red)' }}>{actionError}</p>
+      )}
+      <div>
+        {items.slice(0, 4).map((item, i) => (
+          <div
+            key={`${item.kind}-${item.id}`}
+            className="flex items-center gap-2 py-1.5"
+            style={{ borderTop: i === 0 ? 'none' : '1px solid var(--color-border-soft)' }}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[12px] font-medium text-[var(--color-text)]">
+                {item.workflowLabel}
+              </div>
+              <div className="truncate text-[11px] text-[var(--color-text-muted)]">
+                {item.mode === 'scheduled' ? 'Scheduled run' : `${item.mode} run`} · paused at "{item.stepLabel}"
+                {item.pausedAt ? ` · ${new Date(item.pausedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}
+              </div>
+            </div>
+            <Btn
+              variant="primary"
+              size="sm"
+              disabled={busyId !== null}
+              onClick={() => { void act(item, 'approve'); }}
+            >
+              {busyId === item.id ? '…' : 'Approve'}
+            </Btn>
+            <Btn
+              variant="ghost"
+              size="sm"
+              disabled={busyId !== null}
+              onClick={() => { void act(item, 'reject'); }}
+            >
+              Reject
+            </Btn>
+          </div>
+        ))}
+        {items.length > 4 && (
+          <p className="pt-1.5 text-[11px] text-[var(--color-text-muted)]">
+            +{items.length - 4} more in Workflows
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function KpiCard({ label, value, icon: Icon, tone }: {
   label: string; value: string | number; icon: LucideIcon; tone: AreaTone;

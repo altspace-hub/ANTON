@@ -27,12 +27,54 @@ import {
   resolveExplicitDbDriver,
 } from './workflow-step-registry.js';
 
-interface ExecutionResult {
+export interface ExecutionResult {
   success: boolean;
   runId: string;
   stepsCompleted: number;
   stepsSkipped: number;
   error?: string;
+  /** True when the run parked at an approval gate (status=awaiting_approval). */
+  awaitingApproval?: boolean;
+}
+
+interface StepCounters {
+  stepsCompleted: number;
+  stepsSkipped: number;
+}
+
+/**
+ * Load the workflow definition for a run — from the schedule record when
+ * available (stored at creation time), else the workflow_definitions table.
+ * Shared by the initial scheduled execution and approval-gate resume.
+ */
+async function loadWorkflowDefinitionForRun(
+  db: DatabaseAdapter,
+  workflowId: string,
+  scheduleId: number | null
+): Promise<WorkflowDefinition | undefined> {
+  if (scheduleId !== null) {
+    try {
+      const scheduleRow = await db.get(
+        "SELECT workflow_definition FROM workflow_schedules WHERE id = ? AND workflow_id = ?"
+      , scheduleId, workflowId) as { workflow_definition: string | null } | undefined;
+      if (scheduleRow?.workflow_definition) {
+        return JSON.parse(scheduleRow.workflow_definition) as WorkflowDefinition;
+      }
+    } catch { /* fall through to workflow_definitions */ }
+  }
+
+  // Also try workflow_definitions table (from schema_enhanced.sql)
+  try {
+    const defRow = await db.get(
+      "SELECT steps, config FROM workflow_definitions WHERE id = ?"
+    , workflowId) as { steps: string; config: string } | undefined;
+    if (defRow) {
+      const steps = JSON.parse(defRow.steps || '[]') as WorkflowStep[];
+      const config = JSON.parse(defRow.config || '{}') as { label?: string };
+      return { id: workflowId, label: config.label || workflowId, shortLabel: '', icon: 'ClipboardList', description: '', category: 'custom', estimatedTime: '', steps, tags: [] };
+    }
+  } catch { /* not found */ }
+  return undefined;
 }
 
 /**
@@ -45,39 +87,15 @@ export async function executeScheduledWorkflow(
   scheduleId: number
 ): Promise<ExecutionResult> {
   const runId = randomUUID();
-  let stepsCompleted = 0;
-  let stepsSkipped = 0;
 
-  // Fetch the workflow definition from the schedule record (stored at creation time)
-  const scheduleRow = await db.get(
-    "SELECT workflow_definition FROM workflow_schedules WHERE id = ? AND workflow_id = ?"
-  , scheduleId, workflowId) as { workflow_definition: string | null } | undefined;
-
-  let workflow: WorkflowDefinition;
-  if (scheduleRow?.workflow_definition) {
-    workflow = JSON.parse(scheduleRow.workflow_definition) as WorkflowDefinition;
-  } else {
-    // Also try workflow_definitions table (from schema_enhanced.sql)
-    try {
-      const defRow = await db.get(
-        "SELECT steps, config FROM workflow_definitions WHERE id = ?"
-      , workflowId) as { steps: string; config: string } | undefined;
-      if (defRow) {
-        const steps = JSON.parse(defRow.steps || '[]');
-        const config = JSON.parse(defRow.config || '{}');
-        workflow = { id: workflowId, label: config.label || workflowId, shortLabel: '', icon: 'ClipboardList', description: '', category: 'custom', estimatedTime: '', steps, tags: [] };
-      } else {
-        recordRun(db, runId, workflowId, scheduleId, 'failed', 'Workflow definition not found');
-        return { success: false, runId, stepsCompleted: 0, stepsSkipped: 0, error: 'Workflow definition not found — attach definition when creating schedule' };
-      }
-    } catch {
-      recordRun(db, runId, workflowId, scheduleId, 'failed', 'Workflow definition not found');
-      return { success: false, runId, stepsCompleted: 0, stepsSkipped: 0, error: 'Workflow definition not found' };
-    }
+  const workflow = await loadWorkflowDefinitionForRun(db, workflowId, scheduleId);
+  if (!workflow) {
+    await recordRun(db, runId, workflowId, scheduleId, 'failed', 'Workflow definition not found');
+    return { success: false, runId, stepsCompleted: 0, stepsSkipped: 0, error: 'Workflow definition not found — attach definition when creating schedule' };
   }
 
   // Record the run as started
-  recordRun(db, runId, workflowId, scheduleId, 'running');
+  await recordRun(db, runId, workflowId, scheduleId, 'running');
 
   const context: Record<string, unknown> = {
     workflow: { id: workflow.id, label: workflow.label },
@@ -86,9 +104,29 @@ export async function executeScheduledWorkflow(
     _startedAt: new Date().toISOString(),
   };
 
+  return runStepsFromIndex(db, workflow, runId, context, 0, { stepsCompleted: 0, stepsSkipped: 0 });
+}
+
+/**
+ * The shared step loop — runs steps from startIndex to the end, parking at
+ * approval gates (status=awaiting_approval with the resume state stored in
+ * real workflow_runs columns — migration 230). Used by both the initial
+ * scheduled execution and POST /api/workflows/runs/:id/approve resume.
+ */
+async function runStepsFromIndex(
+  db: DatabaseAdapter,
+  workflow: WorkflowDefinition,
+  runId: string,
+  context: Record<string, unknown>,
+  startIndex: number,
+  counters: StepCounters
+): Promise<ExecutionResult> {
+  let stepsCompleted = counters.stepsCompleted;
+  let stepsSkipped = counters.stepsSkipped;
+
   try {
     const steps = workflow.steps || [];
-    let stepIndex = 0;
+    let stepIndex = startIndex;
 
     while (stepIndex < steps.length) {
       const step = steps[stepIndex];
@@ -102,19 +140,13 @@ export async function executeScheduledWorkflow(
         continue;
       }
 
-      // Approval gate: pause execution and wait for external approval
+      // Approval gate: park the run and wait for POST /runs/:id/approve.
+      // Resume state lives in real columns (awaiting_step + context), not in
+      // error_message JSON (the old B7 park-forever trap).
       if (stepType === 'approval') {
         console.log(`[workflow-executor] Pausing at approval step ${stepIndex}: ${step.label}`);
-        updateRun(db, runId, 'awaiting_approval', `Paused at step ${stepIndex} (${step.label}) — awaiting approval`);
-        // Store step index so we can resume from here
-        try {
-          await db.run(
-            "UPDATE workflow_runs SET error_message = ? WHERE id = ?",
-            JSON.stringify({ awaitingStep: stepIndex, stepLabel: step.label }),
-            runId
-          );
-        } catch { /* non-fatal */ }
-        return { success: true, runId, stepsCompleted, stepsSkipped };
+        await parkRunForApproval(db, runId, stepIndex, step.label || stepType, context, { stepsCompleted, stepsSkipped });
+        return { success: true, runId, stepsCompleted, stepsSkipped, awaitingApproval: true };
       }
 
       try {
@@ -196,19 +228,154 @@ export async function executeScheduledWorkflow(
       } catch (stepErr) {
         const msg = stepErr instanceof Error ? stepErr.message : String(stepErr);
         console.error(`[workflow-executor] Step ${stepIndex} failed: ${msg}`);
-        updateRun(db, runId, 'failed', `Step ${stepIndex} (${step.label || stepType}) failed: ${msg}`);
+        await updateRun(db, runId, 'failed', `Step ${stepIndex} (${step.label || stepType}) failed: ${msg}`);
         return { success: false, runId, stepsCompleted, stepsSkipped, error: msg };
       }
     }
 
     // All steps completed
-    updateRun(db, runId, 'completed');
+    await updateRun(db, runId, 'completed');
     return { success: true, runId, stepsCompleted, stepsSkipped };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    updateRun(db, runId, 'failed', msg);
+    await updateRun(db, runId, 'failed', msg);
     return { success: false, runId, stepsCompleted, stepsSkipped, error: msg };
   }
+}
+
+// ── Approval gate: park / approve / reject (Wave 4.1) ───────────────
+
+interface ParkedRunRow {
+  id: string;
+  workflow_id: string;
+  trigger_source: string | null;
+  status: string;
+  awaiting_step: number | null;
+  awaiting_step_label: string | null;
+  context: unknown;
+  steps_completed: number | null;
+  steps_skipped: number | null;
+}
+
+async function parkRunForApproval(
+  db: DatabaseAdapter,
+  runId: string,
+  stepIndex: number,
+  stepLabel: string,
+  context: Record<string, unknown>,
+  counters: StepCounters
+): Promise<void> {
+  try {
+    await db.run(
+      `UPDATE workflow_runs
+       SET status = 'awaiting_approval',
+           awaiting_step = ?,
+           awaiting_step_label = ?,
+           context = ?,
+           steps_completed = ?,
+           steps_skipped = ?,
+           error_message = ?
+       WHERE id = ?`,
+      stepIndex,
+      stepLabel,
+      JSON.stringify(context),
+      counters.stepsCompleted,
+      counters.stepsSkipped,
+      `Paused at step ${stepIndex} (${stepLabel}) — awaiting approval`,
+      runId
+    );
+  } catch (err) {
+    console.warn(`[workflow-executor] Could not park run ${runId} for approval:`,
+      err instanceof Error ? err.message : err);
+  }
+}
+
+function parseScheduleId(triggerSource: string | null): number | null {
+  const match = /^schedule:(\d+)$/.exec(triggerSource ?? '');
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function parseStoredContext(value: unknown): Record<string, unknown> {
+  if (value === null || value === undefined) return {};
+  if (typeof value === 'string') {
+    try { return JSON.parse(value) as Record<string, unknown>; } catch { return {}; }
+  }
+  if (typeof value === 'object') return value as Record<string, unknown>;
+  return {};
+}
+
+/**
+ * Approve a run parked at an approval gate and resume the step loop from the
+ * step AFTER the gate, with the stored context. Returns the final result of
+ * the resumed run (it may park again at a later approval gate).
+ *
+ * Throws on unknown run / wrong state / missing definition so the route can
+ * answer 404 / 409 honestly.
+ */
+export async function resumeApprovedRun(db: DatabaseAdapter, runId: string): Promise<ExecutionResult> {
+  const run = await db.get<ParkedRunRow>(
+    `SELECT id, workflow_id, trigger_source, status, awaiting_step,
+            awaiting_step_label, context, steps_completed, steps_skipped
+     FROM workflow_runs WHERE id = ?`, runId
+  );
+  if (!run) throw new Error(`Run not found: ${runId}`);
+  if (run.status !== 'awaiting_approval') {
+    throw new Error(`Run ${runId} is not awaiting approval (status: ${run.status})`);
+  }
+  if (run.awaiting_step === null || run.awaiting_step === undefined) {
+    throw new Error(`Run ${runId} has no stored awaiting_step — cannot resume`);
+  }
+
+  const scheduleId = parseScheduleId(run.trigger_source);
+  const workflow = await loadWorkflowDefinitionForRun(db, run.workflow_id, scheduleId);
+  if (!workflow) {
+    throw new Error(`Workflow definition not found for run ${runId} (workflow ${run.workflow_id})`);
+  }
+
+  await db.run(
+    `UPDATE workflow_runs
+     SET status = 'running',
+         approval_decision = 'approved',
+         approval_decided_at = NOW(),
+         error_message = NULL
+     WHERE id = ?`, runId
+  );
+
+  const context = parseStoredContext(run.context);
+  // The approval gate itself is satisfied by the approval — re-enter the loop
+  // at the step after it.
+  return runStepsFromIndex(db, workflow, runId, context, run.awaiting_step + 1, {
+    stepsCompleted: run.steps_completed ?? 0,
+    stepsSkipped: run.steps_skipped ?? 0,
+  });
+}
+
+/**
+ * Reject a run parked at an approval gate — terminal state 'rejected'.
+ * Throws on unknown run / wrong state.
+ */
+export async function rejectRun(db: DatabaseAdapter, runId: string, reason?: string): Promise<void> {
+  const run = await db.get<{ id: string; status: string; awaiting_step: number | null; awaiting_step_label: string | null }>(
+    'SELECT id, status, awaiting_step, awaiting_step_label FROM workflow_runs WHERE id = ?', runId
+  );
+  if (!run) throw new Error(`Run not found: ${runId}`);
+  if (run.status !== 'awaiting_approval') {
+    throw new Error(`Run ${runId} is not awaiting approval (status: ${run.status})`);
+  }
+
+  const note = reason?.trim()
+    ? `Rejected at approval step ${run.awaiting_step ?? '?'} (${run.awaiting_step_label ?? ''}): ${reason.trim()}`
+    : `Rejected at approval step ${run.awaiting_step ?? '?'} (${run.awaiting_step_label ?? ''})`;
+
+  await db.run(
+    `UPDATE workflow_runs
+     SET status = 'rejected',
+         approval_decision = 'rejected',
+         approval_decided_at = NOW(),
+         completed_at = NOW(),
+         error_message = ?
+     WHERE id = ?`, note, runId
+  );
 }
 
 // ── Headless step executor ─────────────────────────────────

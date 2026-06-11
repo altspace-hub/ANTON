@@ -10,10 +10,12 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useWorkflowStore, createBlankStep, createBlankWorkflow } from '@/stores/useWorkflowStore';
+import { useSessionStore } from '@/stores/useSessionStore';
 import { streamMessage } from '@/lib/api';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '@/lib/workflow-definitions';
-import type { ThinkingLevel, CreativityLevel, StreamEvent } from '@/lib/types';
-import { MODULES, AREAS } from '@/lib/constants';
+import type { ThinkingLevel, CreativityLevel, StreamEvent, ModelId } from '@/lib/types';
+import { MODULES, AREAS, MODELS } from '@/lib/constants';
+import { estimateWorkflowCost, formatCostEstimate } from '@/lib/workflow-cost';
 import {
   ApiCallStep, DatabaseStep, FileReadStep, FileWriteStep, ScriptStep,
   EmailSendStep, DecisionStep, TransformStep, LoopStep, ParallelStep,
@@ -90,6 +92,8 @@ export default function WorkflowBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { saveWorkflow, getWorkflow, customWorkflows } = useWorkflowStore();
+  // Session/global model — the default for claude steps without a per-step override (4.5)
+  const { model: sessionModel } = useSessionStore();
 
   const [workflow, setWorkflow] = useState<WorkflowDefinition>(createBlankWorkflow());
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
@@ -235,7 +239,8 @@ export default function WorkflowBuilder() {
       try {
         const stream = streamMessage(
           {
-            model: 'claude-opus-4-8',
+            // Per-step model override (4.5); falls back to the session/global model
+            model: ((step.config.model || '').trim() || sessionModel) as ModelId,
             thinking: (step.config.thinking || 'think_hard') as ThinkingLevel,
             creativity: (step.config.creativity || 'balanced') as CreativityLevel,
             systemPrompt,
@@ -302,6 +307,10 @@ export default function WorkflowBuilder() {
 
   const hasOutputs = Object.keys(stepOutputs).length > 0;
   const showRunAll = claudeSteps.length >= 2;
+
+  // Pre-run cost estimate (4.5) — rough heuristic, same approach as Open Chat's
+  // pre-send estimate. Honors per-step model overrides.
+  const costEstimate = estimateWorkflowCost(workflow.steps, sessionModel);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -383,7 +392,20 @@ export default function WorkflowBuilder() {
 
       {/* Steps header + Run All button */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-adv-white">Steps ({workflow.steps.length})</h2>
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-sm font-semibold text-adv-white">Steps ({workflow.steps.length})</h2>
+          {costEstimate.aiStepCount > 0 && (
+            <span
+              className="text-xs text-adv-gray"
+              title={`Rough estimate before you run — actual cost depends on input size, carried context, and response length.\n${costEstimate.perStep
+                .map((s) => `${s.label}: ${formatCostEstimate(s.usd)} (${s.model})`)
+                .join('\n')}`}
+            >
+              Est. AI cost: <span className="text-adv-off-white">{formatCostEstimate(costEstimate.totalUsd)}</span>
+              {' '}· {costEstimate.aiStepCount} AI step{costEstimate.aiStepCount === 1 ? '' : 's'} · rough estimate
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {showRunAll && (
             <>
@@ -664,6 +686,27 @@ export default function WorkflowBuilder() {
                             {MODULES.find((m) => m.id === step.config.moduleId)?.description}
                           </p>
                         )}
+                      </div>
+                      {/* Per-step model override (4.5) — headless executor already honors cfg.model */}
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-adv-gray">
+                          Model
+                          <span className="ml-1 text-adv-gray font-normal">— leave on default to use your session model</span>
+                        </label>
+                        <select
+                          value={step.config.model || ''}
+                          onChange={(e) => updateStepConfig(step.id, { model: e.target.value || undefined })}
+                          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                        >
+                          <option value="">
+                            Session default — {MODELS.find((m) => m.id === sessionModel)?.label ?? sessionModel}
+                          </option>
+                          {MODELS.filter((m) => !m.legacy).map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.label} · ${m.inputCostPer1M}/${m.outputCostPer1M} per 1M tok
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>

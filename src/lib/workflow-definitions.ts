@@ -63,6 +63,8 @@ export interface WorkflowStep {
   config: {
     // ── Original fields ──────────────────────────────────────
     promptTemplate?: string;
+    /** Per-step model override (claude / llm steps). Empty = session/global default. */
+    model?: string;
     thinking?: string;
     creativity?: string;
     outputFormat?: string;

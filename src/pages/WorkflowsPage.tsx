@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, RefreshCcw, FileScan, Gavel, GitCompareArrows, Rss,
@@ -11,7 +11,14 @@ import { WORKFLOWS, WORKFLOW_CATEGORY_LABELS, getWorkflowsByCategory } from '@/l
 import type { WorkflowDefinition, WorkflowStep } from '@/lib/workflow-definitions';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useWorkflowStore } from '@/stores/useWorkflowStore';
-import { streamMessage } from '@/lib/api';
+import { streamMessage, createSession } from '@/lib/api';
+import type { ModelId } from '@/lib/types';
+import { MODELS } from '@/lib/constants';
+import { estimateWorkflowCost, formatCostEstimate } from '@/lib/workflow-cost';
+
+/** module_id under which page-loop workflow runs are persisted as sessions
+ *  (claude-step outputs land in My Work — Wave 4.1.4, same pattern as Council). */
+const WORKFLOW_MODULE_ID = 'workflow';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Bell, RefreshCcw, FileScan, Gavel, GitCompareArrows, Rss,
@@ -323,6 +330,48 @@ export default function WorkflowsPage() {
   const { model, thinking, systemPrompt } = useSessionStore();
   const { customWorkflows, deleteWorkflow } = useWorkflowStore();
 
+  // ── Run persistence (Wave 4.1.4) ─────────────────────────
+  // The page loop keeps run state in React state (lost on navigate). Minimal
+  // honest fix: (a) claude-step outputs stream into a real session
+  // (module_id 'workflow' → My Work), (b) a run summary is upserted into
+  // workflow_executions after every step so navigation doesn't orphan it.
+  const runMetaRef = useRef<{ runId: string; sessionId: string | null; startedAt: string; recorded: boolean } | null>(null);
+  // Mutable mirror of stepStates so recording reads current values without
+  // waiting on a React state flush.
+  const stepStatesRef = useRef<Record<string, StepState>>({});
+
+  const recordRunState = (wf: WorkflowDefinition, status: 'running' | 'completed' | 'failed') => {
+    const meta = runMetaRef.current;
+    if (!meta) return;
+    meta.recorded = true;
+    const states = wf.steps.map((s, i) => {
+      const st = stepStatesRef.current[s.id];
+      return {
+        stepId: s.id,
+        stepIndex: i,
+        status: st?.status ?? 'pending',
+        // Cap stored output so the summary row stays light
+        output: (st?.output ?? '').slice(0, 20_000),
+      };
+    });
+    const done = status === 'completed' || status === 'failed';
+    void fetch('/api/workflows/executions/record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: meta.runId,
+        workflowId: wf.id,
+        workflowLabel: wf.label,
+        status,
+        currentStepIndex: states.filter((s) => s.status === 'done').length,
+        stepStates: states,
+        sessionId: meta.sessionId ?? undefined,
+        startedAt: meta.startedAt,
+        completedAt: done ? new Date().toISOString() : undefined,
+      }),
+    }).catch(() => { /* best-effort — the run still works without persistence */ });
+  };
+
   const grouped = getWorkflowsByCategory();
   const categoryOrder = ['monitoring', 'assessment', 'advisory', 'reporting', 'comparison'];
 
@@ -336,6 +385,13 @@ export default function WorkflowsPage() {
       initial[s.id] = { status: 'pending', output: '', inputValues: {} };
     });
     setStepStates(initial);
+    stepStatesRef.current = initial;
+    runMetaRef.current = {
+      runId: crypto.randomUUID(),
+      sessionId: null,
+      startedAt: new Date().toISOString(),
+      recorded: false,
+    };
   };
 
   if (!selectedWorkflow) {
@@ -506,8 +562,14 @@ export default function WorkflowsPage() {
   const currentStep = selectedWorkflow.steps[currentStepIdx];
   const currentState = stepStates[currentStep?.id];
   const allDone = selectedWorkflow.steps.every(s => stepStates[s.id]?.status === 'done');
+  // Pre-run cost estimate (4.5) — rough heuristic, honors per-step model overrides
+  const costEstimate = estimateWorkflowCost(selectedWorkflow.steps, model);
 
   const updateStepState = (stepId: string, updates: Partial<StepState>) => {
+    stepStatesRef.current = {
+      ...stepStatesRef.current,
+      [stepId]: { ...stepStatesRef.current[stepId], ...updates },
+    };
     setStepStates(prev => ({
       ...prev,
       [stepId]: { ...prev[stepId], ...updates },
@@ -555,10 +617,34 @@ export default function WorkflowsPage() {
       ? `Context from previous analysis steps:\n\n${previousOutputs}\n\n---\n\nNow, for this step:\n\n${prompt}`
       : prompt;
 
+    // Persist claude-step outputs under a real session (My Work visibility).
+    // Best-effort, created once per run — same pattern as AI Council.
+    const meta = runMetaRef.current;
+    if (meta && !meta.sessionId) {
+      try {
+        const created = await createSession({
+          moduleId: WORKFLOW_MODULE_ID,
+          title: `Workflow: ${selectedWorkflow.label}`.slice(0, 120),
+          config: {
+            workflowId: selectedWorkflow.id,
+            workflowLabel: selectedWorkflow.label,
+            steps: selectedWorkflow.steps.map((s) => ({ id: s.id, label: s.label, type: s.type })),
+          },
+        }) as { id?: string };
+        meta.sessionId = created?.id ?? null;
+      } catch {
+        // Run continues without session persistence
+      }
+    }
+
+    // Per-step model override (4.5); falls back to the session/global model
+    const stepModel = ((step.config.model || '').trim() || model) as ModelId;
+
     try {
       let output = '';
       const stream = streamMessage({
-        model,
+        model: stepModel,
+        sessionId: meta?.sessionId ?? undefined,
         thinking: (step.config.thinking as 'think' | 'think_hard' | 'investigate') || thinking,
         creativity: (step.config.creativity as 'strict' | 'balanced' | 'creative') || 'balanced',
         systemPrompt: systemPrompt || 'You are Anton, an expert AI assistant for Financial Crime Prevention consultants.',
@@ -581,12 +667,14 @@ export default function WorkflowsPage() {
           updateStepState(step.id, { output, status: 'running' });
         } else if (event.type === 'error') {
           updateStepState(step.id, { status: 'error', output: `Error: ${event.message}` });
+          recordRunState(selectedWorkflow, 'failed');
           setIsRunning(false);
           return;
         }
       }
 
       updateStepState(step.id, { status: 'done', output });
+      recordRunState(selectedWorkflow, allStepsDoneInRef(selectedWorkflow) ? 'completed' : 'running');
       // Auto-advance to next step
       if (currentStepIdx < selectedWorkflow.steps.length - 1) {
         setCurrentStepIdx(currentStepIdx + 1);
@@ -594,12 +682,17 @@ export default function WorkflowsPage() {
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
         updateStepState(step.id, { status: 'error', output: `Error: ${(error as Error).message}` });
+        recordRunState(selectedWorkflow, 'failed');
       }
     } finally {
       setIsRunning(false);
       setAbortController(null);
     }
   };
+
+  // All steps done according to the mutable mirror (safe to call right after updateStepState)
+  const allStepsDoneInRef = (wf: WorkflowDefinition): boolean =>
+    wf.steps.every((s) => stepStatesRef.current[s.id]?.status === 'done');
 
   // Run any non-Claude step via the backend execute-step endpoint
   const runServerStep = async (step: WorkflowStep) => {
@@ -624,6 +717,7 @@ export default function WorkflowsPage() {
       if (!res.ok) {
         const err = await res.json() as { error?: string };
         updateStepState(step.id, { status: 'error', output: `Error: ${err.error ?? 'Unknown error'}` });
+        recordRunState(selectedWorkflow, 'failed');
         return;
       }
       const result = await res.json() as { summary: string; output: Record<string, unknown> };
@@ -631,11 +725,13 @@ export default function WorkflowsPage() {
         status: 'done',
         output: result.summary || JSON.stringify(result.output, null, 2),
       });
+      recordRunState(selectedWorkflow, allStepsDoneInRef(selectedWorkflow) ? 'completed' : 'running');
       if (currentStepIdx < selectedWorkflow.steps.length - 1) {
         setCurrentStepIdx(currentStepIdx + 1);
       }
     } catch (error) {
       updateStepState(step.id, { status: 'error', output: `Error: ${(error as Error).message}` });
+      recordRunState(selectedWorkflow, 'failed');
     } finally {
       setIsRunning(false);
     }
@@ -645,6 +741,7 @@ export default function WorkflowsPage() {
     if (!currentStep) return;
     if (currentStep.type === 'input') {
       updateStepState(currentStep.id, { status: 'done' });
+      recordRunState(selectedWorkflow, allStepsDoneInRef(selectedWorkflow) ? 'completed' : 'running');
       if (currentStepIdx < selectedWorkflow.steps.length - 1) {
         setCurrentStepIdx(currentStepIdx + 1);
       }
@@ -652,6 +749,7 @@ export default function WorkflowsPage() {
       runClaudeStep(currentStep);
     } else if (currentStep.type === 'export') {
       updateStepState(currentStep.id, { status: 'done', output: 'Export ready. Use the export buttons on each step output.' });
+      recordRunState(selectedWorkflow, allStepsDoneInRef(selectedWorkflow) ? 'completed' : 'running');
       if (currentStepIdx < selectedWorkflow.steps.length - 1) {
         setCurrentStepIdx(currentStepIdx + 1);
       }
@@ -686,6 +784,16 @@ export default function WorkflowsPage() {
           <div>
             <h2 className="text-sm font-semibold text-adv-white">{selectedWorkflow.label}</h2>
             <p className="mt-0.5 text-[11px] text-adv-gray">{selectedWorkflow.estimatedTime}</p>
+            {costEstimate.aiStepCount > 0 && (
+              <p
+                className="mt-0.5 text-[11px] text-adv-gray"
+                title={`Rough estimate before you run — actual cost depends on input size, carried context, and response length.\n${costEstimate.perStep
+                  .map((s) => `${s.label}: ${formatCostEstimate(s.usd)} (${s.model})`)
+                  .join('\n')}`}
+              >
+                Est. AI cost: {formatCostEstimate(costEstimate.totalUsd)} · rough estimate
+              </p>
+            )}
           </div>
         </div>
 
@@ -853,6 +961,13 @@ export default function WorkflowsPage() {
                       {currentStep.config.thinking && (
                         <p className="mt-1 text-[11px] text-adv-gray">
                           Thinking level: {currentStep.config.thinking}
+                        </p>
+                      )}
+                      {currentStep.type === 'claude' && (
+                        <p className="mt-1 text-[11px] text-adv-gray">
+                          Model: {currentStep.config.model
+                            ? (MODELS.find((m) => m.id === currentStep.config.model)?.label ?? currentStep.config.model)
+                            : `${MODELS.find((m) => m.id === model)?.label ?? model} (session default)`}
                         </p>
                       )}
                     </div>

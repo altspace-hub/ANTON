@@ -45,10 +45,14 @@ export async function scheduleWorkflow(db: DatabaseAdapter, schedule: ScheduleRo
       createNotification(db, {
         userId: 'solo',
         type: 'scheduled_workflow',
-        title: `Scheduled workflow completed`,
-        message: result.success
-          ? `Completed successfully (${result.stepsCompleted} steps, ${result.stepsSkipped} skipped)`
-          : `Failed: ${result.error}`,
+        title: result.awaitingApproval
+          ? `Scheduled workflow awaiting your approval`
+          : `Scheduled workflow completed`,
+        message: result.awaitingApproval
+          ? `Paused at an approval gate (${result.stepsCompleted} steps done) — approve or reject from Home or Workflows`
+          : result.success
+            ? `Completed successfully (${result.stepsCompleted} steps, ${result.stepsSkipped} skipped)`
+            : `Failed: ${result.error}`,
         link: `/workflows`,
       });
     } catch (err: unknown) {
