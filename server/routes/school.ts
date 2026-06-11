@@ -52,6 +52,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import AdmZip from 'adm-zip';
 import { extractTextFromFile } from '../services/text-extractor.js';
+import { buildSpecManifest } from '../services/anton-bundler.js';
 
 // ── Tier C — Ollama local model streaming ──────────────────────────────────
 
@@ -2755,22 +2756,18 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         const lesson = await db.get('SELECT * FROM teacher_lessons WHERE id = ?', lessonId as string) as Record<string, unknown> | null;
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
-        const manifest = {
-          format_version: '1.0.0',
-          bundle_type: 'lesson-plan',
-          package: {
-            id: `com.openexpert.lesson.${lessonId}`,
-            name: lesson.title as string,
-            version: '1.0.0',
-            author: { name: (lesson.teacher_user_id as string) ?? userId },
-            created_at: now,
-            tags: ['school', 'lesson-plan'],
-            target_areas: ['school'],
-            languages: ['en'],
-            min_platform_version: '2.0.0',
-          },
-          contents: { lesson_plans: 1 },
-        };
+        // Spec envelope from the unified writer (Wave 2.1) — same shape the
+        // school importer reads (format_version, bundle_type, package.name, contents).
+        const manifest = buildSpecManifest({
+          bundleType: 'lesson-plan',
+          id: lessonId,
+          name: lesson.title as string,
+          author: (lesson.teacher_user_id as string) ?? userId,
+          tags: ['school', 'lesson-plan'],
+          targetAreas: ['school'],
+          contentsCount: { lesson_plans: 1 },
+          createdAt: now,
+        });
         zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
         zip.addFile('contents/lesson-plans/lesson.json', Buffer.from(JSON.stringify({
           bundle_type: 'lesson-plan',
@@ -2792,22 +2789,17 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
           `SELECT * FROM review_cards WHERE student_user_id = ?${subjectId ? ' AND subject_id = ?' : ''} ORDER BY created_at ASC`
         , ...[userId, ...(subjectId ? [subjectId] : [])]) as Record<string, unknown>[];
 
-        const manifest = {
-          format_version: '1.0.0',
-          bundle_type: 'study-pack',
-          package: {
-            id: `com.openexpert.studypack.${userId}.${Date.now()}`,
-            name: subjectId ? `Study Pack — ${subjectId}` : 'My Study Pack',
-            version: '1.0.0',
-            author: { name: userId },
-            created_at: now,
-            tags: ['school', 'study-pack', 'review-cards'],
-            target_areas: ['school'],
-            languages: ['en'],
-            min_platform_version: '2.0.0',
-          },
-          contents: { study_packs: 1, review_cards: cards.length },
-        };
+        // Spec envelope from the unified writer (Wave 2.1)
+        const manifest = buildSpecManifest({
+          bundleType: 'study-pack',
+          id: `${userId}.${Date.now()}`,
+          name: subjectId ? `Study Pack — ${subjectId}` : 'My Study Pack',
+          author: userId,
+          tags: ['school', 'study-pack', 'review-cards'],
+          targetAreas: ['school'],
+          contentsCount: { study_packs: 1, review_cards: cards.length },
+          createdAt: now,
+        });
         zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
         zip.addFile('contents/study-packs/review-cards.json', Buffer.from(JSON.stringify({
           bundle_type: 'study-pack',
@@ -2835,22 +2827,17 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
           }
         }
 
-        const manifest = {
-          format_version: '1.0.0',
-          bundle_type: 'assessment-bank',
-          package: {
-            id: `com.openexpert.assessmentbank.${userId}.${Date.now()}`,
-            name: 'Assessment Question Bank',
-            version: '1.0.0',
-            author: { name: userId },
-            created_at: now,
-            tags: ['school', 'assessment-bank', 'questions'],
-            target_areas: ['school'],
-            languages: ['en'],
-            min_platform_version: '2.0.0',
-          },
-          contents: { assessment_banks: 1, questions: questions.length },
-        };
+        // Spec envelope from the unified writer (Wave 2.1)
+        const manifest = buildSpecManifest({
+          bundleType: 'assessment-bank',
+          id: `${userId}.${Date.now()}`,
+          name: 'Assessment Question Bank',
+          author: userId,
+          tags: ['school', 'assessment-bank', 'questions'],
+          targetAreas: ['school'],
+          contentsCount: { assessment_banks: 1, questions: questions.length },
+          createdAt: now,
+        });
         zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
         zip.addFile('contents/assessment-banks/questions.json', Buffer.from(JSON.stringify({
           bundle_type: 'assessment-bank',

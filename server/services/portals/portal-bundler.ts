@@ -28,6 +28,7 @@ import type { DatabaseAdapter } from '../../db/database.js';
 
 import { verifyDescriptor, type SignedDescriptorEnvelope } from '../capability-descriptor/signer.ts';
 import { descriptorHash } from '../capability-descriptor/hash.ts';
+import { ANTON_GENERATOR } from '../anton-bundler.js';
 
 // ── Manifest schema (Spec v0.2 §D.2) ────────────────────────────────────────
 
@@ -38,6 +39,16 @@ export interface PortalBundleManifest {
   bundleType: 'portal';
   bundleVersion: typeof PORTAL_BUNDLE_FORMAT_VERSION;
   schemaVersion: typeof PORTAL_BUNDLE_SCHEMA_VERSION;
+  /**
+   * Standard spec-envelope fields (Wave 2.6, docs/anton-format/README.md) —
+   * written alongside the domain-native fields so generic tooling (e.g. the
+   * dispatching /api/exchange/validate) can identify the bundle. Optional so
+   * every portal bundle shipped before they existed still imports.
+   */
+  format_version?: string;
+  bundle_type?: 'portal';
+  created_at?: string;
+  generator?: string;
   /**
    * 'template' bundles are shareable starting points without a real signing
    * key; their descriptor signature is intentionally not verified at import
@@ -198,6 +209,11 @@ export async function bundlePortal(
     bundleType: 'portal',
     bundleVersion: PORTAL_BUNDLE_FORMAT_VERSION,
     schemaVersion: PORTAL_BUNDLE_SCHEMA_VERSION,
+    // Standard spec-envelope fields (Wave 2.6) alongside the domain manifest
+    format_version: PORTAL_BUNDLE_FORMAT_VERSION,
+    bundle_type: 'portal',
+    created_at: new Date().toISOString(),
+    generator: ANTON_GENERATOR,
     bundleKind: options.redactToTemplate ? 'template' : 'concrete',
     name: portal.name,
     namespace: portal.namespace,

@@ -16,9 +16,12 @@ import {
   bundleMarketDataSourceConfig,
   bundleMarketAtomCollection,
   bundleMarketStrategyPack,
+  bundleModuleRunToAnton,
 } from '../services/anton-bundler.js';
 import { validateAntonFile } from '../services/anton-validator.js';
 import { importAntonFile } from '../services/anton-importer.js';
+import { importModuleRunBundle } from '../services/anton-run-importer.js';
+import { signAntonBundle, getSigningIdentityStatus } from '../services/anton-bundle-signing.js';
 import {
   importMarketIndex,
   importMarketThesis,
@@ -34,6 +37,27 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 
 export async function createExchangeRoutes(db: DatabaseAdapter) {
   const router = Router();
 
+  /**
+   * Opt-in Ed25519 provenance (Wave 2.4): sign the finished bundle's manifest
+   * with the instance identity key unless the exporter said `sign: false`.
+   * Signing failures degrade to an unsigned export — never block the download.
+   */
+  async function maybeSign(buffer: Buffer, sign: unknown): Promise<Buffer> {
+    if (sign === false || sign === 'false') return buffer;
+    const result = await signAntonBundle(db, buffer);
+    return result.buffer;
+  }
+
+  // Whether this instance can sign bundles, and as whom (drives the
+  // "Sign this bundle" toggle in the export UI).
+  router.get('/exchange/signing-identity', async (_req, res) => {
+    try {
+      res.json(await getSigningIdentityStatus(db));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
   // Export a module as .anton
   // Query param: ?type=builtin (for file system modules) or ?type=custom (for database modules)
   router.post('/exchange/export/:moduleId', async (req, res) => {
@@ -43,9 +67,19 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     try {
       let buffer: Buffer;
 
+      // Optional KP-03 governance metadata (Wave 2.6) — only written when the
+      // exporter actually filled the fields, never fabricated.
+      const { sourceUrl, validatedBy, effectiveDate, contentConfirmed } = req.body ?? {};
+      const governance = {
+        source_url: typeof sourceUrl === 'string' ? sourceUrl : undefined,
+        validated_by: typeof validatedBy === 'string' ? validatedBy : undefined,
+        effective_date: typeof effectiveDate === 'string' ? effectiveDate : undefined,
+        content_confirmed: typeof contentConfirmed === 'boolean' ? contentConfirmed : undefined,
+      };
+
       if (type === 'custom') {
         // Export custom module from database (works in both solo and authenticated mode)
-        buffer = await bundleModuleToAnton(db, moduleId);
+        buffer = await bundleModuleToAnton(db, moduleId, { governance });
       } else {
         // Export built-in module from file system — uses the same hybrid-dialect
         // bundler as custom modules so the result round-trips through
@@ -57,8 +91,11 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
           tags = [],
           license = 'CC-BY-4.0',
         } = req.body;
-        buffer = await bundleBuiltinModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license });
+        buffer = await bundleBuiltinModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license, governance });
       }
+
+      // Opt-in Ed25519 provenance (Wave 2.4) — on unless sign === false
+      buffer = await maybeSign(buffer, (req.body ?? {}).sign);
 
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${moduleId}.anton"`);
@@ -68,7 +105,9 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // Validate a .anton file without installing
+  // Validate a .anton file without installing.
+  // Dispatching validator (Wave 2.1): response carries
+  //   { bundle_type, validated_depth: 'full' | 'structural', governance?, notes? }
   router.post('/exchange/validate', upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
@@ -77,7 +116,9 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
 
     try {
       const result = await validateAntonFile(req.file.buffer, db);
-      res.json(result);
+      // Map is not JSON-serializable — surface file names only.
+      const { files, ...rest } = result;
+      res.json({ ...rest, files: files ? [...files.keys()] : undefined });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -91,7 +132,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const { name, description, categories, author } = req.body as {
         name?: string; description?: string; categories?: string[]; author?: string;
       };
-      const buffer = await bundleComplianceRuleset(db, { name, description, categories, author });
+      const buffer = await maybeSign(await bundleComplianceRuleset(db, { name, description, categories, author }), (req.body ?? {}).sign);
       const filename = `compliance-ruleset-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -107,7 +148,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const { name, description, moduleIds, author } = req.body as {
         name?: string; description?: string; moduleIds?: string[]; author?: string;
       };
-      const buffer = await bundleQualityBaseline(db, { name, description, moduleIds, author });
+      const buffer = await maybeSign(await bundleQualityBaseline(db, { name, description, moduleIds, author }), (req.body ?? {}).sign);
       const filename = `quality-baseline-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -125,7 +166,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: 'name and reviewers are required' });
         return;
       }
-      const buffer = await bundleReviewPanel({ name, description, applicableAreas, reviewers, panelSettings, author });
+      const buffer = await maybeSign(await bundleReviewPanel({ name, description, applicableAreas, reviewers, panelSettings, author }), (req.body as { sign?: unknown } | undefined)?.sign);
       const filename = `review-panel-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -143,7 +184,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: 'name and systemPrompt are required' });
         return;
       }
-      const buffer = await bundleAudienceProfile(params);
+      const buffer = await maybeSign(await bundleAudienceProfile(params), (req.body as { sign?: unknown } | undefined)?.sign);
       const filename = `audience-profile-${params.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -160,7 +201,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     try {
       const { indexId, author } = req.body as { indexId: string; author?: string };
       if (!indexId) { res.status(400).json({ error: 'indexId is required' }); return; }
-      const buffer = await bundleMarketIndex(db, indexId, { author });
+      const buffer = await maybeSign(await bundleMarketIndex(db, indexId, { author }), (req.body ?? {}).sign);
       const filename = `market-index-${indexId}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -175,7 +216,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     try {
       const { thesisId, author } = req.body as { thesisId: string; author?: string };
       if (!thesisId) { res.status(400).json({ error: 'thesisId is required' }); return; }
-      const buffer = await bundleMarketThesis(db, thesisId, { author });
+      const buffer = await maybeSign(await bundleMarketThesis(db, thesisId, { author }), (req.body ?? {}).sign);
       const filename = `market-thesis-${thesisId}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -189,7 +230,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   router.post('/exchange/export-bundle/market-intelligence-model', async (req, res) => {
     try {
       const { name, author } = req.body as { name?: string; author?: string };
-      const buffer = await bundleMarketIntelligenceModel(db, { name, author });
+      const buffer = await maybeSign(await bundleMarketIntelligenceModel(db, { name, author }), (req.body ?? {}).sign);
       const filename = `market-intelligence-model-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -204,7 +245,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     try {
       const { investigationId, author } = req.body as { investigationId: string; author?: string };
       if (!investigationId) { res.status(400).json({ error: 'investigationId is required' }); return; }
-      const buffer = await bundleMarketInvestigation(db, investigationId, { author });
+      const buffer = await maybeSign(await bundleMarketInvestigation(db, investigationId, { author }), (req.body ?? {}).sign);
       const filename = `market-investigation-${investigationId}-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -218,7 +259,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   router.post('/exchange/export-bundle/market-data-source-config', async (req, res) => {
     try {
       const { name, sourceIds, author } = req.body as { name?: string; sourceIds?: string[]; author?: string };
-      const buffer = await bundleMarketDataSourceConfig(db, { name, sourceIds, author });
+      const buffer = await maybeSign(await bundleMarketDataSourceConfig(db, { name, sourceIds, author }), (req.body ?? {}).sign);
       const filename = `market-data-source-config-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -232,7 +273,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   router.post('/exchange/export-bundle/market-atom-collection', async (req, res) => {
     try {
       const { name, atomIds, category, author } = req.body as { name?: string; atomIds?: string[]; category?: string; author?: string };
-      const buffer = await bundleMarketAtomCollection(db, { name, atomIds, category, author });
+      const buffer = await maybeSign(await bundleMarketAtomCollection(db, { name, atomIds, category, author }), (req.body ?? {}).sign);
       const filename = `market-atom-collection-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -246,7 +287,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   router.post('/exchange/export-bundle/market-strategy-pack', async (req, res) => {
     try {
       const { name, indexIds, thesisIds, author } = req.body as { name?: string; indexIds?: string[]; thesisIds?: string[]; author?: string };
-      const buffer = await bundleMarketStrategyPack(db, { name, indexIds, thesisIds, author });
+      const buffer = await maybeSign(await bundleMarketStrategyPack(db, { name, indexIds, thesisIds, author }), (req.body ?? {}).sign);
       const filename = `market-strategy-pack-${Date.now()}.anton`;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -256,7 +297,83 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // Import a .anton file to user's custom modules (works in solo and authenticated mode)
+  // ── Module-run export + import (Wave 2.2 — the heart-of-vision item) ───────
+
+  // POST /api/exchange/export-run { sessionId, messageId?, sign? }
+  // Packages ONE module run (composed prompt + config snapshot + pinned source
+  // hashes + input/output + cached structured payload/quality) as a .anton a
+  // coworker can inspect and reproduce. messageId optional → latest assistant
+  // message in the session. Signed via the standard maybeSign path.
+  router.post('/exchange/export-run', async (req, res) => {
+    try {
+      const { sessionId, messageId, author } = (req.body ?? {}) as {
+        sessionId?: unknown; messageId?: unknown; author?: unknown;
+      };
+      if (typeof sessionId !== 'string' || !sessionId) {
+        res.status(400).json({ error: 'sessionId is required' });
+        return;
+      }
+      const buffer = await maybeSign(
+        await bundleModuleRunToAnton(
+          db,
+          sessionId,
+          typeof messageId === 'string' && messageId ? messageId : null,
+          { author: typeof author === 'string' && author ? author : undefined },
+        ),
+        (req.body ?? {}).sign,
+      );
+      const filename = `module-run-${sessionId.slice(0, 8)}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('not found')) {
+        res.status(404).json({ error: msg });
+        return;
+      }
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // POST /api/exchange/import-run — read-only RUN VIEWER import.
+  // Creates a new session in the importer's My Work with the run's input +
+  // output as messages and config_snapshot preserved; the EXISTING /api/rerun
+  // endpoint then reproduces the run (it rehydrates from config_snapshot).
+  // Response carries `reproducible: { locally, missingModule?, notes }` — the
+  // honest fidelity report (sources travel as hashes, not content).
+  router.post('/exchange/import-run', upload.single('file'), async (req, res) => {
+    if (!req.file) {
+      res.status(400).json({ error: 'No file uploaded' });
+      return;
+    }
+    try {
+      const userId = (req as import('express').Request & { user?: { id?: string } }).user?.id;
+      const result = await importModuleRunBundle(req.file.buffer, db, userId ?? null);
+      res.json({
+        success: result.success,
+        sessionId: result.sessionId,
+        userMessageId: result.userMessageId,
+        assistantMessageId: result.assistantMessageId,
+        moduleExists: result.moduleExists,
+        localModuleId: result.localModuleId,
+        reproducible: result.reproducible,
+        sourcesNotIncluded: result.sourcesNotIncluded,
+        bundle_type: result.validation.bundle_type,
+        validated_depth: result.validation.validated_depth,
+        governance: result.validation.governance,
+        provenance: result.validation.provenance,
+        notes: result.validation.notes,
+        errors: result.validation.errors.map((e) => e.details ? `${e.message} — ${e.details}` : e.message),
+        warnings: result.validation.warnings.map((w) => w.message),
+      });
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // Import a .anton file to user's custom modules (works in solo and authenticated mode).
+  // Optional multipart field keepId=true keeps the original module id when free (Wave 2.8).
   router.post('/exchange/import', upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
@@ -264,8 +381,22 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
 
     try {
-      const result = await importAntonFile(req.file.buffer, db);
-      res.json(result);
+      const keepId = req.body?.keepId === 'true' || req.body?.keepId === true;
+      const result = await importAntonFile(req.file.buffer, db, undefined, { keepId });
+      // Flattened report for the UI (the validation Map doesn't serialize) +
+      // governance display at import time (Wave 2.6).
+      res.json({
+        success: result.success,
+        moduleId: result.moduleId,
+        keptOriginalId: result.keptOriginalId,
+        bundle_type: result.validation.bundle_type,
+        validated_depth: result.validation.validated_depth,
+        governance: result.validation.governance,
+        provenance: result.validation.provenance,
+        notes: result.validation.notes,
+        errors: result.validation.errors.map((e) => e.details ? `${e.message} — ${e.details}` : e.message),
+        warnings: result.validation.warnings.map((w) => w.message),
+      });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }

@@ -20,6 +20,18 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { DatabaseAdapter } from '../db/database.js';
+// Wave 2.5 (gap-assessment bundles): reuse the engine's row mapper + evidence
+// helpers so the exported findings shape is EXACTLY what the UI and snapshots
+// read — no parallel mapping to drift.
+import {
+  mapFindingRow,
+  extractEvidenceItems,
+  buildEvidenceManifest,
+  type GapFindingRow,
+} from './gap-assessment-engine.js';
+// Wave 2.2 (module-run bundles): the extractor's exact cache key, so a cached
+// structured payload only ships when it provably belongs to THIS message.
+import { structuredContentHash, safeContentType } from './structured-extractor.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Built-in module definitions live on disk under server/areas/<area>/modules/<id>/ */
@@ -92,7 +104,16 @@ export type AntonBundleType =
   // BEEHIVE (server/services/beehive/beehive-bundle.ts)
   // — concluded multi-party deliberation. Export-only in v1 (no importer);
   //   produced for sharing/archival of the synthesis + reasoning trail.
-  | 'hive-collaborative-output';
+  | 'hive-collaborative-output'
+  // Reproducibility records (CORE_EXPERIENCE_REVIEW 2026-06, Wave 2.2 + 2.5)
+  // — module-run is THE heart-of-vision item: a single module run a coworker
+  //   can inspect (prompt, config, hashes, output) and reproduce via the
+  //   rerun pipeline. Importable via POST /api/exchange/import-run.
+  | 'module-run'
+  // — gap-assessment + legal-research-session are RECORDS, export-only in
+  //   this wave (no importer): findings/transcripts for sharing + archival.
+  | 'gap-assessment'
+  | 'legal-research-session';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -158,6 +179,12 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   // files (hive.json, participants.json, rounds.json, …) directly under
   // contents/ — hence the empty primaryContentDir.
   'hive-collaborative-output':     { label: 'Hive Collaborative Output',    description: 'Concluded BEEHIVE deliberation: final synthesis, full reasoning trail, rounds, dissents, approvals, and convergence path',                contentsKey: 'hive_collaborative_outputs', primaryContentDir: '' },
+  // ── Reproducibility records (Wave 2.2 + 2.5) ────────────────────────────
+  // Like the beehive bundle, these write their payload files at the archive
+  // root (run.json, output.md, …) — hence the empty primaryContentDir.
+  'module-run':                    { label: 'Module Run',                   description: 'One module run, reproducibly packaged: composed prompt + config snapshot + pinned source hashes + input/output (+ structured payload and quality score when cached). Importable as a read-only session via POST /api/exchange/import-run; reproducible there with the Rerun pipeline. Source CONTENTS (files/URLs) do not travel — only their names and sha256 hashes.', contentsKey: 'module_runs', primaryContentDir: '' },
+  'gap-assessment':                { label: 'Gap Assessment',               description: 'Compliance gap assessment record: context, per-article findings (criterion facts, rubric version, computed + overridden scores with reasons, evidence refs), evidence manifest with hashes, iteration summaries, second opinions. Export-only in this wave — a shareable/archival record, not yet an importable template.', contentsKey: 'gap_assessments', primaryContentDir: '' },
+  'legal-research-session':        { label: 'Legal Research Session',       description: "Counsel's Desk session record: Q&A transcript, pinned findings, the verified-citation ledger with statuses, mode/expert-role config. Export-only in this wave — a shareable/archival record, not yet importable.", contentsKey: 'legal_research_sessions', primaryContentDir: '' },
 };
 
 interface ModuleExportData {
@@ -177,12 +204,78 @@ interface ModuleExportData {
   license?: string;
   createdAt?: string;
   updatedAt?: string;
+  governance?: GovernanceMetadata;
 }
 
-/** Spec-compliant manifest for any .anton bundle */
-interface SpecManifest {
+/**
+ * Optional trust metadata — the KP-03 pattern from knowledge packs
+ * (knowledge-pack-service.ts) generalized to every bundle type (Wave 2.6).
+ * Every field is optional; the writer NEVER fabricates values — when nothing
+ * is known the whole block is omitted from the manifest.
+ */
+export interface GovernanceMetadata {
+  /** ISO date when the underlying content takes effect (e.g. a regulation's application date) */
+  effective_date?: string;
+  /** Canonical URL of the source material (e.g. EUR-Lex permalink) */
+  source_url?: string;
+  /** Name/email of the person who verified the bundle content */
+  validated_by?: string;
+  /** Author confirmed accuracy at time of build */
+  content_confirmed?: boolean;
+}
+
+/**
+ * The honest universal provider list: a module bundle is a prompt + config,
+ * runnable against any provider ANTON supports. Used when a module carries
+ * no provider-specific configuration (previously hardcoded ['anthropic']).
+ */
+export const ALL_LLM_PROVIDERS: readonly string[] = [
+  'anthropic', 'openai', 'azure-openai', 'google', 'mistral', 'ollama', 'openai-compatible',
+];
+
+/** "openexpert/<version>" — written into every spec manifest as `generator`. */
+export const ANTON_GENERATOR: string = (() => {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8')
+    ) as { name?: string; version?: string };
+    return `${pkg.name ?? 'openexpert'}/${pkg.version ?? '0.0.0'}`;
+  } catch {
+    return 'openexpert/0.0.0';
+  }
+})();
+
+/**
+ * Derive the compatible LLM providers from a module's actual config.
+ * Ground truth: module config blobs carry at most a `model` (custom modules)
+ * or `defaults.model` (built-in module.json) string — nothing else in module
+ * config is provider-specific. A configured model pins the default provider;
+ * no model means the module is provider-agnostic.
+ */
+export function deriveLlmProviders(config: Record<string, unknown> | null | undefined): string[] {
+  const defaults = config?.defaults as Record<string, unknown> | undefined;
+  const model = [config?.model, defaults?.model].find(
+    (m): m is string => typeof m === 'string' && m.length > 0
+  );
+  if (model) {
+    const m = model.toLowerCase();
+    if (m.startsWith('compat:')) return ['openai-compatible'];
+    if (m.startsWith('ollama:')) return ['ollama'];
+    if (m.startsWith('azure:')) return ['azure-openai'];
+    if (m.startsWith('claude')) return ['anthropic'];
+    if (m.startsWith('gpt') || /^o\d/.test(m)) return ['openai'];
+    if (m.startsWith('gemini')) return ['google'];
+    if (m.startsWith('mistral') || m.startsWith('codestral') || m.startsWith('devstral')) return ['mistral'];
+  }
+  return [...ALL_LLM_PROVIDERS];
+}
+
+/** Spec-compliant manifest envelope for any .anton bundle — THE contract. */
+export interface SpecManifest {
   format_version: '1.0.0';
   bundle_type: AntonBundleType;
+  created_at: string;
+  generator: string;
   package: {
     id: string;
     name: string;
@@ -200,6 +293,8 @@ interface SpecManifest {
   };
   contents: Record<string, number>;
   compatibility: { llm_providers: string[] };
+  /** Optional KP-03 trust metadata (Wave 2.6). Omitted when unknown. */
+  governance?: GovernanceMetadata;
 }
 
 /** Legacy manifest kept for backward compat with anton-importer.ts */
@@ -217,6 +312,9 @@ interface AntonManifest extends SpecManifest {
     tags: string[];
     category: string;
     description: string;
+    /** Module fidelity (Wave 2.8): icon + color survive export → import. */
+    icon?: string;
+    color?: string;
   };
   dependencies: {
     requiredSkills: string[];
@@ -237,10 +335,11 @@ interface AntonManifest extends SpecManifest {
 // ── Spec Manifest Builder ───────────────────────────────────────
 
 /**
- * Build the spec-compliant portion of an .anton manifest.
- * Used by all new bundle type functions.
+ * Build the spec-compliant envelope of an .anton manifest — the ONLY manifest
+ * writer for everything the generic bundler produces (Wave 2.1). Per-type
+ * bespoke fields may be spread alongside the envelope, never instead of it.
  */
-function buildSpecManifest(params: {
+export function buildSpecManifest(params: {
   bundleType: AntonBundleType;
   id: string;
   name: string;
@@ -253,6 +352,11 @@ function buildSpecManifest(params: {
   contentsCount?: Record<string, number>;
   createdAt?: string;
   updatedAt?: string;
+  targetAreas?: string[];
+  /** Compatible providers; defaults to the honest universal list (Wave 2.8). */
+  llmProviders?: string[];
+  /** Optional KP-03 trust metadata; only written when at least one field is set. */
+  governance?: GovernanceMetadata;
 }): SpecManifest {
   const now = new Date().toISOString();
   const registry = BUNDLE_TYPE_REGISTRY[params.bundleType];
@@ -263,9 +367,11 @@ function buildSpecManifest(params: {
     ...params.contentsCount,
     [registry.contentsKey]: (params.contentsCount?.[registry.contentsKey] ?? 1),
   };
-  return {
+  const manifest: SpecManifest = {
     format_version: '1.0.0',
     bundle_type: params.bundleType,
+    created_at: params.createdAt || now,
+    generator: ANTON_GENERATOR,
     package: {
       id: `com.openexpert.${params.bundleType}.${params.id}`,
       name: params.name,
@@ -280,22 +386,40 @@ function buildSpecManifest(params: {
       created_at: params.createdAt || now,
       updated_at: params.updatedAt || now,
       tags: params.tags || [],
-      target_areas: [],
+      target_areas: params.targetAreas || [],
       target_roles: [],
       min_platform_version: '2.0.0',
       languages: ['en'],
       description: params.description || '',
     },
     contents,
-    compatibility: { llm_providers: ['anthropic'] },
+    compatibility: { llm_providers: params.llmProviders ?? [...ALL_LLM_PROVIDERS] },
   };
+  const governance = normalizeGovernance(params.governance);
+  if (governance) manifest.governance = governance;
+  return manifest;
+}
+
+/**
+ * Drop empty/undefined governance fields; return undefined when nothing is
+ * known so the manifest never carries a fabricated/empty governance block.
+ */
+export function normalizeGovernance(g: GovernanceMetadata | undefined): GovernanceMetadata | undefined {
+  if (!g) return undefined;
+  const out: GovernanceMetadata = {};
+  if (typeof g.effective_date === 'string' && g.effective_date.trim()) out.effective_date = g.effective_date.trim();
+  if (typeof g.source_url === 'string' && g.source_url.trim()) out.source_url = g.source_url.trim();
+  if (typeof g.validated_by === 'string' && g.validated_by.trim()) out.validated_by = g.validated_by.trim();
+  if (typeof g.content_confirmed === 'boolean') out.content_confirmed = g.content_confirmed;
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 // ── Bundle Module to .anton File ───────────────────────────────
 
 export async function bundleModuleToAnton(
   db: DatabaseAdapter,
-  moduleId: string
+  moduleId: string,
+  metadata: { governance?: GovernanceMetadata } = {}
 ): Promise<Buffer> {
   // Fetch module from database using actual custom_modules schema
   const module = await db.get(
@@ -322,7 +446,7 @@ export async function bundleModuleToAnton(
     name: module.name as string,
     description: (module.description as string) || '',
     icon: (module.icon as string) || '📦',
-    color: '#2DD4A8',
+    color: (typeof configBlob.color === 'string' && configBlob.color) || '#2DD4A8',
     systemPrompt: (module.system_prompt as string) || '',
     guidedInputs: (configBlob.guidedInputs as unknown[]) || [],
     // The full config blob (personas, outputFormats, skills, model, thinking, etc.) goes into defaultConfig
@@ -333,6 +457,7 @@ export async function bundleModuleToAnton(
     category: (module.area as string) || 'custom',
     createdAt: module.created_at as string,
     updatedAt: module.updated_at as string,
+    governance: metadata.governance,
   };
 
   return buildModuleAntonArchive(exportData);
@@ -356,6 +481,7 @@ export async function bundleBuiltinModuleToAnton(
     tags?: string[];
     license?: string;
     version?: string;
+    governance?: GovernanceMetadata;
   } = {}
 ): Promise<Buffer> {
   // Find which area contains this module by scanning area directories
@@ -393,7 +519,7 @@ export async function bundleBuiltinModuleToAnton(
     name: (moduleConfig.label as string) || moduleId,
     description: metadata.description || (moduleConfig.description as string) || '',
     icon: typeof moduleConfig.icon === 'string' ? moduleConfig.icon : '📦',
-    color: '#2DD4A8',
+    color: (typeof moduleConfig.color === 'string' && moduleConfig.color) || '#2DD4A8',
     systemPrompt,
     guidedInputs: Array.isArray(moduleConfig.guidedInputs) ? (moduleConfig.guidedInputs as unknown[]) : [],
     // The full module.json IS the default config — mirrors the custom path
@@ -409,6 +535,7 @@ export async function bundleBuiltinModuleToAnton(
     license: metadata.license || 'CC-BY-4.0',
     createdAt: now,
     updatedAt: now,
+    governance: metadata.governance,
   };
 
   return buildModuleAntonArchive(exportData);
@@ -456,6 +583,11 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
     contentsCount: { modules: 1 },
     createdAt: exportData.createdAt,
     updatedAt: exportData.updatedAt,
+    // Wave 2.8: derive providers from the module's actual config instead of
+    // hardcoding ['anthropic'] — a configured model pins the provider, no
+    // model means the honest universal list.
+    llmProviders: deriveLlmProviders(exportData.defaultConfig as Record<string, unknown> | undefined),
+    governance: exportData.governance,
   });
   const manifest: AntonManifest = {
     ...specPart,
@@ -472,6 +604,9 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
       tags: exportData.tags || [],
       category: exportData.category || 'custom',
       description: exportData.description || '',
+      // Wave 2.8 fidelity: icon/color travel with the bundle
+      icon: exportData.icon || '📦',
+      color: exportData.color || '#2DD4A8',
     },
     dependencies: {
       requiredSkills: extractSkillDependencies(exportData.systemPrompt),
@@ -527,12 +662,22 @@ export async function bundleCodingReviewProfile(
 
   const zip = new AdmZip();
 
-  // manifest.json
+  // manifest.json — spec envelope from the unified writer (Wave 2.1) with the
+  // original ad-hoc fields preserved alongside (read-old/write-new: older
+  // readers of these manifests keep working).
+  const specPart = buildSpecManifest({
+    bundleType: 'coding-review-profile',
+    id: sessionId,
+    name: `Code Review Profile — ${session.source_type ?? 'code'}`,
+    description: `Review lenses: ${reviewLenses.join(', ') || 'default'}; explanation level: ${session.explanation_level || 'medium'}`,
+    contentsCount: { coding_review_profiles: 1 },
+    createdAt: (session.created_at as string) || undefined,
+  });
   const manifest = {
-    bundle_type: 'coding-review-profile' as AntonBundleType,
+    ...specPart,
     type: 'coding-review-profile',
     version: '1.0.0',
-    created: session.created_at || new Date().toISOString(),
+    created: session.created_at || specPart.created_at,
     review_lenses: reviewLenses,
     explanation_level: session.explanation_level || 'medium',
     security_mode: session.security_mode || null,
@@ -628,13 +773,21 @@ export async function bundleScriptLiteTemplate(
     }
   }
 
-  // manifest.json
+  // manifest.json — spec envelope (unified writer) + preserved ad-hoc fields
+  const specPart = buildSpecManifest({
+    bundleType: 'script-lite-template',
+    id: sessionId,
+    name: typeof description === 'string' && description ? description.slice(0, 120) : 'Script Lite Template',
+    description,
+    contentsCount: { script_lite_templates: 1 },
+    createdAt: (session.created_at as string) || undefined,
+  });
   const manifest = {
-    bundle_type: 'script-lite-template' as AntonBundleType,
+    ...specPart,
     type: 'script-lite-template',
     version: '1.0.0',
     description,
-    created: session.created_at || new Date().toISOString(),
+    created: session.created_at || specPart.created_at,
     session_id: sessionId,
   };
   zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
@@ -723,15 +876,23 @@ export async function bundleScriptMediumTemplate(
 
   fileCount = extractedFiles.length;
 
-  // manifest.json
+  // manifest.json — spec envelope (unified writer) + preserved ad-hoc fields
+  const specPart = buildSpecManifest({
+    bundleType: 'script-medium-template',
+    id: sessionId,
+    name: typeof description === 'string' && description ? description.slice(0, 120) : 'Script Medium Template',
+    description,
+    contentsCount: { script_medium_templates: 1, source_files: fileCount },
+    createdAt: (session.created_at as string) || undefined,
+  });
   const manifest = {
-    bundle_type: 'script-medium-template' as AntonBundleType,
+    ...specPart,
     type: 'script-medium-template',
     version: '1.0.0',
     description,
     app_type: appType,
     file_count: fileCount,
-    created: session.created_at || new Date().toISOString(),
+    created: session.created_at || specPart.created_at,
     session_id: sessionId,
   };
   zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
@@ -804,9 +965,18 @@ export async function bundleCodingLargeBlueprint(
 
   const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC', projectId) as any[];
 
-  // manifest.json
+  // manifest.json — spec envelope (unified writer) + preserved ad-hoc fields
+  const specPart = buildSpecManifest({
+    bundleType: 'coding-blueprint',
+    id: projectId,
+    name: (project.name as string) || 'Coding Project Blueprint',
+    description: (project.description as string) || '',
+    contentsCount: { coding_blueprints: 1, releases: releases.length, tasks: tasks.length },
+    createdAt: (project.created_at as string) || undefined,
+    updatedAt: (project.updated_at as string) || undefined,
+  });
   const manifest = {
-    bundle_type: 'coding-blueprint' as AntonBundleType,
+    ...specPart,
     type: 'coding-large-blueprint',
     version: '1.0.0',
     project_id: project.id,
@@ -944,9 +1114,18 @@ export async function bundleInstructionBuilderProject(
   // Fetch reviews
   const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC', project.coding_project_id || project.id) as any[];
 
-  // manifest.json
+  // manifest.json — spec envelope (unified writer) + preserved ad-hoc fields
+  const specPart = buildSpecManifest({
+    bundleType: 'instruction-builder-project',
+    id: projectId,
+    name: (project.name as string) || 'Instruction Builder Project',
+    description: (project.description as string) || '',
+    contentsCount: { instruction_builder_projects: 1, instruction_files: instructionFiles.length },
+    createdAt: (project.created_at as string) || undefined,
+    updatedAt: (project.updated_at as string) || undefined,
+  });
   const manifest = {
-    bundle_type: 'instruction-builder-project' as AntonBundleType,
+    ...specPart,
     type: 'instruction-builder-project',
     version: '1.0.0',
     project_id: project.id,
@@ -1959,8 +2138,18 @@ export async function bundleHumanitarianDeploymentKit(
   const zip = new AdmZip();
   const generatedAt = new Date().toISOString();
 
-  // Manifest
+  // Manifest — spec envelope (unified writer, Wave 2.1) + the original
+  // camelCase fields preserved so existing field tooling keeps working.
+  const specEnvelope = buildSpecManifest({
+    bundleType: 'humanitarian-deployment-kit',
+    id: projectId,
+    name: (project.title as string) || 'Humanitarian Deployment Kit',
+    description: `Deployment kit for ${project.title} (${project.region ?? 'unspecified region'})`,
+    contentsCount: { humanitarian_deployment_kits: 1 },
+    createdAt: generatedAt,
+  });
   const manifest = {
+    ...specEnvelope,
     bundleType: 'humanitarian-deployment-kit',
     bundleSchemaVersion: '1.0',
     generatedAt,
@@ -2139,6 +2328,15 @@ export async function bundleHardwareTemplate(
   const generatedAt = new Date().toISOString();
 
   zip.addFile('manifest.json', Buffer.from(JSON.stringify({
+    // Spec envelope (unified writer, Wave 2.1) + original camelCase fields.
+    ...buildSpecManifest({
+      bundleType: 'hardware-template',
+      id: templateId,
+      name: (tpl.title as string) || 'Hardware Template',
+      description: (tpl.short_description as string) || '',
+      contentsCount: { hardware_templates: 1 },
+      createdAt: generatedAt,
+    }),
     bundleType: 'hardware-template',
     bundleSchemaVersion: '1.0',
     generatedAt,
@@ -2198,5 +2396,664 @@ ${tpl.source_project_id ? `Captured from project: ${tpl.source_project_id}` : ''
   zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
 
   return zip.toBuffer();
+}
+
+// ── Module Run Bundle (Wave 2.2 — the heart-of-vision item) ──────────────────
+
+/** Normalize a DB timestamp (PG Date object or TEXT) to an ISO string. */
+function toIso(v: unknown): string | null {
+  if (v instanceof Date) return v.toISOString();
+  if (typeof v === 'string' && v) return v;
+  return null;
+}
+
+/** Parse a JSONB column that may arrive as object (PG) or string (SQLite/tests). */
+function parseJsonish(v: unknown, fallback: unknown): unknown {
+  if (v === null || v === undefined) return fallback;
+  if (typeof v === 'string') {
+    try { return JSON.parse(v); } catch { return fallback; }
+  }
+  return v;
+}
+
+interface ResolvedModuleRef {
+  id: string;
+  /** 'custom' (DB row), 'builtin' (areas dir), or 'unknown' (neither found here) */
+  kind: 'custom' | 'builtin' | 'unknown';
+  name: string;
+  version: string | null;
+}
+
+/**
+ * Resolve what a session's module_id refers to ON THIS INSTANCE: a custom
+ * module row, a built-in module directory, or neither (e.g. 'open-chat',
+ * 'imported-run', or a module that was deleted after the run).
+ */
+export async function resolveModuleRef(db: DatabaseAdapter, moduleId: string): Promise<ResolvedModuleRef> {
+  const custom = await db.get(
+    'SELECT id, name, config FROM custom_modules WHERE id = ?', moduleId,
+  ) as { id: string; name: string; config: string | null } | undefined;
+  if (custom) {
+    const cfg = parseJsonish(custom.config, {}) as Record<string, unknown>;
+    return {
+      id: moduleId,
+      kind: 'custom',
+      name: custom.name || moduleId,
+      version: typeof cfg.version === 'string' ? cfg.version : null,
+    };
+  }
+  try {
+    for (const entry of readdirSync(AREAS_DIR, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const dir = join(AREAS_DIR, entry.name, 'modules', moduleId);
+      if (!existsSync(dir)) continue;
+      let label = moduleId;
+      const configPath = join(dir, 'module.json');
+      if (existsSync(configPath)) {
+        try {
+          const cfg = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+          if (typeof cfg.label === 'string' && cfg.label) label = cfg.label;
+        } catch { /* unreadable module.json — keep the id as the name */ }
+      }
+      return { id: moduleId, kind: 'builtin', name: label, version: null };
+    }
+  } catch { /* areas dir unreadable (e.g. minimal test env) */ }
+  return { id: moduleId, kind: 'unknown', name: moduleId, version: null };
+}
+
+/** sha-256 of the first 5,000 chars, 16 hex chars — quality_scores.content_hash. */
+function qualityScoreContentHash(content: string): string {
+  return crypto.createHash('sha256').update(content.slice(0, 5000)).digest('hex').slice(0, 16);
+}
+
+/**
+ * Bundle ONE module run as a .anton file a coworker can inspect and reproduce
+ * (CORE_EXPERIENCE_REVIEW 2026-06, item 2.2 — the heart-of-vision item).
+ *
+ * What travels (the honesty contract — mirrored in the README + docs page):
+ *   ✓ the composed system prompt as sent to the LLM (run_artifacts, item 1.6;
+ *     the `truncated` flag is carried honestly — prompt_sha256 always covers
+ *     the FULL prompt even when the stored text was capped at 2 MB)
+ *   ✓ the per-message config_snapshot, verbatim
+ *   ✓ the pinned source manifest: name + type + sha256 + char count per source
+ *   ✓ the user input and assistant output text
+ *   ✓ the cached structured payload — ONLY when sessions.structured_hash
+ *     proves the cache belongs to this exact output
+ *   ✓ cost / token counts / quality score (when scored)
+ * What does NOT travel:
+ *   ✗ source CONTENTS (uploaded files, local folders, fetched URLs) — only
+ *     their hashes; the importer surfaces "source not included" per entry
+ *   ✗ the model's parametric knowledge and any web-search results
+ *   ✗ a seed — ANTON's providers don't expose deterministic seeds, so
+ *     reproduction means "same prompt + config", not "bit-identical output"
+ */
+export async function bundleModuleRunToAnton(
+  db: DatabaseAdapter,
+  sessionId: string,
+  messageId?: string | null,
+  options: { author?: string; governance?: GovernanceMetadata } = {},
+): Promise<Buffer> {
+  const session = await db.get(
+    'SELECT * FROM sessions WHERE id = ?', sessionId,
+  ) as Record<string, unknown> | undefined;
+  if (!session) throw new Error('Session not found');
+
+  // The run = one assistant message (explicit id, or the latest in the session
+  // — i.e. the output currently on screen, reruns included).
+  const message = messageId
+    ? await db.get(
+        `SELECT * FROM messages WHERE id = ? AND session_id = ? AND role = 'assistant'`,
+        messageId, sessionId,
+      ) as Record<string, unknown> | undefined
+    : await db.get(
+        `SELECT * FROM messages WHERE session_id = ? AND role = 'assistant'
+         ORDER BY created_at DESC LIMIT 1`,
+        sessionId,
+      ) as Record<string, unknown> | undefined;
+  if (!message) throw new Error('Assistant message not found in this session');
+
+  // The input: the user message that immediately precedes the output.
+  const userMsg = await db.get(
+    `SELECT * FROM messages
+     WHERE session_id = ? AND role = 'user' AND created_at <= ?
+     ORDER BY created_at DESC LIMIT 1`,
+    sessionId, message.created_at,
+  ) as Record<string, unknown> | undefined;
+
+  // Pinned prompt + source manifest (item 1.6). Absent for messages that
+  // predate run-artifact capture — declared honestly, never fabricated.
+  const artifact = await db.get(
+    'SELECT * FROM run_artifacts WHERE message_id = ?', message.id as string,
+  ) as Record<string, unknown> | undefined;
+
+  const snapshot = parseJsonish(message.config_snapshot, null) as Record<string, unknown> | null;
+  const moduleRef = await resolveModuleRef(db, String(session.module_id ?? ''));
+  const modelId = typeof message.model_id === 'string' && message.model_id
+    ? message.model_id
+    : (snapshot && typeof snapshot.model === 'string' ? snapshot.model : null);
+
+  // Quality score for this exact content (quality_scores is content-hash keyed).
+  const outputContent = String(message.content ?? '');
+  let quality: Record<string, unknown> | undefined;
+  try {
+    quality = await db.get(
+      `SELECT score_overall, score_completeness, score_accuracy, score_structure,
+              score_actionability, score_citations, scored_at, model_used
+       FROM quality_scores
+       WHERE content_hash = ? AND (session_id = ? OR session_id IS NULL)
+       ORDER BY scored_at DESC LIMIT 1`,
+      qualityScoreContentHash(outputContent), sessionId,
+    ) as Record<string, unknown> | undefined;
+  } catch { /* quality_scores missing (un-migrated install) — omit */ }
+
+  // Structured payload — ground truth: sessions.output_structured is cached
+  // per SESSION keyed by structured_hash over (schema|content_type|markdown).
+  // Only include it when the hash matches THIS message's content; otherwise
+  // the cache belongs to a different turn and shipping it would lie.
+  let structuredPayload: unknown;
+  const structuredStatus = session.structured_status;
+  const structuredHash = session.structured_hash;
+  if (
+    structuredStatus === 'extracted' &&
+    typeof structuredHash === 'string' && structuredHash &&
+    session.output_structured != null &&
+    structuredContentHash(outputContent, safeContentType(session.content_type)) === structuredHash
+  ) {
+    structuredPayload = parseJsonish(session.output_structured, undefined);
+  }
+
+  const snapshotJson = JSON.stringify(snapshot ?? {}, null, 2);
+  const inputMd = String(userMsg?.content ?? '');
+  const sourceManifest = artifact ? parseJsonish(artifact.source_manifest, []) : [];
+  const sourceManifestJson = JSON.stringify(sourceManifest, null, 2);
+  const promptTruncated = artifact ? !!artifact.truncated : false;
+  const composedPrompt = artifact && typeof artifact.composed_prompt === 'string'
+    ? artifact.composed_prompt
+    : null;
+  const composedPromptMd = composedPrompt !== null
+    ? (promptTruncated
+        ? `<!-- TRUNCATED: the stored prompt was capped at 2 MB by the artifact writer. -->\n` +
+          `<!-- prompt_sha256 in run.json covers the FULL untruncated prompt (${String(artifact!.prompt_chars ?? '?')} chars). -->\n\n` +
+          composedPrompt
+        : composedPrompt)
+    : null;
+
+  const runRecord = {
+    bundle_type: 'module-run',
+    run: {
+      session_id: sessionId,
+      message_id: message.id,
+      session_title: typeof session.title === 'string' ? session.title : null,
+      module: moduleRef,
+      model_id: modelId,
+      thinking: snapshot && typeof snapshot.thinking === 'string' ? snapshot.thinking : null,
+      // Honesty: ANTON's provider calls carry no deterministic seed today.
+      // The field exists so future seeded runs travel; null means "not seeded".
+      seed: snapshot && (typeof snapshot.seed === 'number' || typeof snapshot.seed === 'string')
+        ? snapshot.seed : null,
+      cost: typeof message.cost === 'number' ? message.cost : null,
+      output_tokens: typeof message.token_count === 'number' ? message.token_count : null,
+      rerun_of: typeof message.rerun_of === 'string' ? message.rerun_of : null,
+      created_at: toIso(message.created_at),
+      anton_version: ANTON_GENERATOR,
+      prompt: artifact
+        ? {
+            included: composedPrompt !== null,
+            sha256: typeof artifact.prompt_sha256 === 'string' ? artifact.prompt_sha256 : null,
+            chars: typeof artifact.prompt_chars === 'number' ? artifact.prompt_chars : null,
+            truncated: promptTruncated,
+            layer_summary: parseJsonish(artifact.layer_summary, []),
+          }
+        : {
+            included: false,
+            reason: 'No run artifact was recorded for this message — it predates per-run prompt capture (migration 223). The config snapshot still travels.',
+          },
+      source_manifest_entries: Array.isArray(sourceManifest) ? sourceManifest.length : 0,
+      quality: quality
+        ? { overall: Number(quality.score_overall), scored_at: toIso(quality.scored_at) }
+        : null,
+      structured_payload_included: structuredPayload !== undefined,
+      input_included: !!userMsg,
+    },
+  };
+  const runJson = JSON.stringify(runRecord, null, 2);
+  const structuredJson = structuredPayload !== undefined
+    ? JSON.stringify(structuredPayload, null, 2)
+    : null;
+
+  // Content checksum over the payload files in fixed order — covered by the
+  // (optional) manifest signature transitively, like the module bundler.
+  const hash = crypto.createHash('sha256');
+  hash.update(runJson);
+  hash.update(snapshotJson);
+  hash.update(inputMd);
+  hash.update(outputContent);
+  hash.update(composedPromptMd ?? '');
+  hash.update(sourceManifestJson);
+  if (structuredJson) hash.update(structuredJson);
+  const checksum = hash.digest('hex');
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'module-run',
+    id: String(message.id),
+    name: `Run — ${moduleRef.name}${session.title ? ` — ${String(session.title)}` : ''}`.slice(0, 160),
+    description: `One ${moduleRef.name} run (${modelId ?? 'unknown model'}) packaged for inspection and reproduction`,
+    author: options.author,
+    contentsCount: { module_runs: 1 },
+    createdAt: toIso(message.created_at) ?? undefined,
+    llmProviders: deriveLlmProviders(modelId ? { model: modelId } : undefined),
+    governance: options.governance,
+  });
+  const manifest = {
+    ...specManifest,
+    run: runRecord.run,
+    security: { checksum: `sha256:${checksum}` },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
+  zip.addFile('run.json', Buffer.from(runJson, 'utf-8'));
+  zip.addFile('config-snapshot.json', Buffer.from(snapshotJson, 'utf-8'));
+  zip.addFile('input.md', Buffer.from(inputMd, 'utf-8'));
+  zip.addFile('output.md', Buffer.from(outputContent, 'utf-8'));
+  if (composedPromptMd !== null) {
+    zip.addFile('composed-prompt.md', Buffer.from(composedPromptMd, 'utf-8'));
+  }
+  zip.addFile('source-manifest.json', Buffer.from(sourceManifestJson, 'utf-8'));
+  if (structuredJson) {
+    zip.addFile('structured-payload.json', Buffer.from(structuredJson, 'utf-8'));
+  }
+  if (quality) {
+    zip.addFile('quality.json', Buffer.from(JSON.stringify({
+      overall: Number(quality.score_overall),
+      completeness: quality.score_completeness !== null ? Number(quality.score_completeness) : null,
+      accuracy: quality.score_accuracy !== null ? Number(quality.score_accuracy) : null,
+      structure: quality.score_structure !== null ? Number(quality.score_structure) : null,
+      actionability: quality.score_actionability !== null ? Number(quality.score_actionability) : null,
+      citations: quality.score_citations !== null ? Number(quality.score_citations) : null,
+      scored_at: toIso(quality.scored_at),
+      model_used: quality.model_used ?? null,
+    }, null, 2), 'utf-8'));
+  }
+
+  const sourceLines = Array.isArray(sourceManifest) && sourceManifest.length > 0
+    ? (sourceManifest as Array<Record<string, unknown>>).map((s) =>
+        `- [${String(s.type ?? 'source')}] ${String(s.name ?? '?')}${s.contentHashed && s.sha256 ? ` — sha256 ${String(s.sha256).slice(0, 12)}… (content NOT included)` : ' — content never hashed (built-in knowledge / native web search)'}`,
+      ).join('\n')
+    : '- (no resolved knowledge sources recorded for this run)';
+  const readme = `# Module Run — ${moduleRef.name}
+
+One ANTON module run, packaged for a coworker to inspect and reproduce.
+
+- **Module:** ${moduleRef.name} (\`${moduleRef.id}\`, ${moduleRef.kind})
+- **Model:** ${modelId ?? 'unknown'}
+- **Run at:** ${toIso(message.created_at) ?? 'unknown'}
+- **Exported by:** ${ANTON_GENERATOR}
+
+## What travels in this bundle
+
+| File | What it is |
+|---|---|
+| \`run.json\` | Run metadata: module ref, model, thinking level, cost, tokens, prompt hash |
+| \`config-snapshot.json\` | The per-message configuration, verbatim — what the Rerun pipeline rehydrates |
+| ${composedPromptMd !== null ? '`composed-prompt.md` | The full system prompt as sent to the LLM' + (promptTruncated ? ' (stored copy truncated at 2 MB; `run.json` prompt sha256 covers the full prompt)' : '') : '*(no composed prompt — this run predates prompt capture)* | '} |
+| \`source-manifest.json\` | Names + sha256 hashes of every resolved knowledge source |
+| \`input.md\` / \`output.md\` | The user input and the assistant output |
+${structuredJson ? '| `structured-payload.json` | The cached structured extraction of the output |\n' : ''}${quality ? '| `quality.json` | The Haiku quality score for this output |\n' : ''}
+## What does NOT travel (be honest with your recipient)
+
+- **Source contents.** Uploaded files, local folders and fetched URLs are listed with hashes only:
+${sourceLines}
+- **Parametric knowledge.** The model's built-in knowledge and any web-search results are not reproducible from this bundle.
+- **Determinism.** No seed — reproduction means "same prompt + same config", not a bit-identical output.
+
+## How to reproduce
+
+1. Import on any ANTON: \`POST /api/exchange/import-run\` (or the Exchange page). This creates a read-only session in My Work.
+2. Open the session and use **Rerun with…** — the config snapshot rehydrates through the live pipeline.
+3. If a listed source is not available on the importing instance, the rerun's source-drift report will show it as *removed* — re-provide the file/folder to close the gap.
+
+---
+**Exported via ANTON**
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created module-run bundle for message "${String(message.id)}" (${buffer.length} bytes)`);
+  return buffer;
+}
+
+// ── Gap Assessment Bundle (Wave 2.5) ─────────────────────────────────────────
+
+/**
+ * Bundle a Compliance Gap Assessment as an export-only .anton record.
+ *
+ * Ground truth on evidence: small text evidence items live IN the database
+ * (gap_assessments.context_config.evidenceItems — pasted/typed text) and DO
+ * travel under evidence/. Documents referenced via knowledge sources
+ * (folders/uploads/URLs) were never stored in the assessment row — they appear
+ * in the evidence MANIFEST (names + sha256) and in context.json metadata only.
+ */
+export async function bundleGapAssessmentToAnton(
+  db: DatabaseAdapter,
+  assessmentId: string,
+  options: { author?: string; governance?: GovernanceMetadata } = {},
+): Promise<Buffer> {
+  const assessment = await db.get(
+    'SELECT * FROM gap_assessments WHERE id = ?', assessmentId,
+  ) as Record<string, unknown> | undefined;
+  if (!assessment) throw new Error('Gap assessment not found');
+
+  const findingRows = await db.all(
+    'SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', assessmentId,
+  ) as GapFindingRow[];
+  const findings = findingRows.map(mapFindingRow);
+
+  const contextConfig = parseJsonish(assessment.context_config, {}) as Record<string, unknown>;
+  const scopeConfig = parseJsonish(assessment.scope_config, {}) as Record<string, unknown>;
+  const frameworks = parseJsonish(assessment.frameworks, []) as string[];
+
+  // Evidence: the stored manifest (Wave 1.5) when present, else recomputed
+  // from context_config with the same engine helpers — identical hashes.
+  const evidenceItems = extractEvidenceItems(contextConfig);
+  const storedManifest = parseJsonish(assessment.evidence_manifest, null);
+  const evidenceManifest = Array.isArray(storedManifest) && storedManifest.length > 0
+    ? storedManifest
+    : buildEvidenceManifest(evidenceItems);
+
+  // Iteration summaries (full snapshots stay home — they duplicate findings).
+  let iterations: Array<Record<string, unknown>> = [];
+  try {
+    const rows = await db.all(
+      `SELECT iteration_number, status, evidence_summary, score_summary, notes, created_at
+       FROM gap_iterations WHERE assessment_id = ? ORDER BY iteration_number ASC`,
+      assessmentId,
+    ) as Array<Record<string, unknown>>;
+    iterations = rows.map((r) => ({
+      iterationNumber: r.iteration_number,
+      status: r.status,
+      evidenceSummary: r.evidence_summary ?? null,
+      scoreSummary: parseJsonish(r.score_summary, null),
+      notes: r.notes ?? null,
+      createdAt: toIso(r.created_at),
+    }));
+  } catch { /* gap_iterations missing — older install */ }
+
+  // Second opinions (Wave 2.7) when the comparison slot has rows.
+  let secondOpinions: Array<Record<string, unknown>> = [];
+  try {
+    const rows = await db.all(
+      'SELECT * FROM gap_finding_opinions WHERE assessment_id = ? ORDER BY model_id, framework, article_id',
+      assessmentId,
+    ) as Array<Record<string, unknown>>;
+    secondOpinions = rows.map((r) => ({
+      framework: r.framework,
+      articleId: r.article_id,
+      articleTitle: r.article_title ?? null,
+      modelId: r.model_id,
+      facts: parseJsonish(r.facts, null),
+      computedScore: r.computed_score ?? null,
+      computedNumericScore: r.computed_numeric_score ?? null,
+      computedPriority: r.computed_priority ?? null,
+      rubricVersion: r.rubric_version ?? null,
+      rationale: r.rationale ?? null,
+      currentState: r.current_state ?? null,
+      evidenceRefs: parseJsonish(r.evidence_refs, []),
+      warnings: parseJsonish(r.warnings, []),
+      createdAt: toIso(r.created_at),
+    }));
+  } catch { /* gap_finding_opinions missing — pre-224 install */ }
+
+  // context.json carries the assessment context VERBATIM minus the evidence
+  // item texts (those live under evidence/ to avoid double-shipping).
+  const { evidenceItems: _evidenceTexts, ...contextSansEvidence } = contextConfig;
+  const assessmentRecord = {
+    bundle_type: 'gap-assessment',
+    assessment: {
+      id: assessmentId,
+      title: assessment.title,
+      frameworks,
+      status: assessment.status,
+      scope_config: scopeConfig,
+      context_config: contextSansEvidence,
+      created_at: toIso(assessment.created_at),
+      updated_at: toIso(assessment.updated_at),
+      anton_version: ANTON_GENERATOR,
+      finding_count: findings.length,
+      iteration_count: iterations.length,
+      second_opinion_count: secondOpinions.length,
+      evidence_items_included: evidenceItems.length,
+    },
+  };
+
+  const findingsJson = JSON.stringify(findings, null, 2);
+  const assessmentJson = JSON.stringify(assessmentRecord, null, 2);
+  const evidenceManifestJson = JSON.stringify(evidenceManifest, null, 2);
+  const iterationsJson = JSON.stringify(iterations, null, 2);
+  const opinionsJson = JSON.stringify(secondOpinions, null, 2);
+
+  const hash = crypto.createHash('sha256');
+  hash.update(assessmentJson);
+  hash.update(findingsJson);
+  hash.update(evidenceManifestJson);
+  hash.update(iterationsJson);
+  hash.update(opinionsJson);
+  for (const item of evidenceItems) hash.update(item.text);
+  const checksum = hash.digest('hex');
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'gap-assessment',
+    id: assessmentId,
+    name: String(assessment.title || 'Gap Assessment'),
+    description: `Gap assessment record: ${findings.length} findings across ${frameworks.join(', ') || 'no frameworks'}`,
+    author: options.author,
+    contentsCount: { gap_assessments: 1, findings: findings.length },
+    createdAt: toIso(assessment.created_at) ?? undefined,
+    updatedAt: toIso(assessment.updated_at) ?? undefined,
+    governance: options.governance,
+  });
+  const manifest = {
+    ...specManifest,
+    assessment: assessmentRecord.assessment,
+    security: { checksum: `sha256:${checksum}` },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
+  zip.addFile('assessment.json', Buffer.from(assessmentJson, 'utf-8'));
+  zip.addFile('findings.json', Buffer.from(findingsJson, 'utf-8'));
+  zip.addFile('evidence-manifest.json', Buffer.from(evidenceManifestJson, 'utf-8'));
+  zip.addFile('iterations.json', Buffer.from(iterationsJson, 'utf-8'));
+  if (secondOpinions.length > 0) {
+    zip.addFile('second-opinions.json', Buffer.from(opinionsJson, 'utf-8'));
+  }
+  // Small text evidence items ARE stored in the DB — they travel.
+  for (const item of evidenceItems) {
+    const header = `<!-- docId: ${item.docId} -->\n<!-- name: ${item.name} -->\n<!-- kind: ${item.kind} -->\n\n`;
+    zip.addFile(`evidence/${item.docId}.md`, Buffer.from(header + item.text, 'utf-8'));
+  }
+  if (typeof assessment.board_summary === 'string' && assessment.board_summary) {
+    zip.addFile('board-summary.md', Buffer.from(assessment.board_summary, 'utf-8'));
+  }
+  if (typeof assessment.capability_view === 'string' && assessment.capability_view) {
+    zip.addFile('capability-view.json', Buffer.from(assessment.capability_view, 'utf-8'));
+  }
+  if (typeof assessment.roadmap === 'string' && assessment.roadmap) {
+    zip.addFile('roadmap.json', Buffer.from(assessment.roadmap, 'utf-8'));
+  }
+
+  const readme = `# Gap Assessment — ${String(assessment.title || assessmentId)}
+
+Export-only record of a Compliance Gap Assessment (no importer in this wave —
+share it as a deliverable/archive, not as a re-runnable template).
+
+- **Frameworks:** ${frameworks.join(', ') || '(none)'}
+- **Findings:** ${findings.length} (criterion facts + deterministic rubric scores; overrides preserved with reasons)
+- **Iterations:** ${iterations.length} summary entr${iterations.length === 1 ? 'y' : 'ies'}
+- **Second opinions:** ${secondOpinions.length > 0 ? `${secondOpinions.length} article-opinions (different model, comparison slot)` : 'none recorded'}
+
+## Evidence — what travels vs what doesn't
+
+- \`evidence-manifest.json\` lists every addressable evidence item with its sha256.
+- \`evidence/\` contains the ${evidenceItems.length} text evidence item(s) that were stored in the assessment itself.
+- Documents referenced through knowledge sources (folders / uploads / URLs) were
+  never stored in the assessment record — they are NOT in this bundle. Verify
+  them against the manifest hashes if the recipient is given them separately.
+
+## Scoring provenance
+
+Scores were computed by a versioned deterministic rubric from structured
+criterion facts (see \`rubricVersion\` per finding); the LLM only wrote the
+rationale. Overridden findings keep both the computed and the effective values,
+with \`overrideReason\` / \`overriddenBy\`.
+
+---
+**Exported via ANTON**
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created gap-assessment bundle "${String(assessment.title)}" (${findings.length} findings, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+// ── Legal Research Session Bundle (Wave 2.5) ─────────────────────────────────
+
+/**
+ * Bundle a Counsel's Desk legal research session as an export-only .anton
+ * record: the Q&A transcript (research_questions holds the full message
+ * history per question), pinned findings, the verified-citation ledger WITH
+ * statuses, and the mode/expert-role configuration.
+ */
+export async function bundleLegalResearchSessionToAnton(
+  db: DatabaseAdapter,
+  sessionId: string,
+  options: { author?: string; governance?: GovernanceMetadata } = {},
+): Promise<Buffer> {
+  const session = await db.get(
+    'SELECT * FROM legal_research_sessions WHERE id = ?', sessionId,
+  ) as Record<string, unknown> | undefined;
+  if (!session) throw new Error('Legal research session not found');
+
+  interface TranscriptQuestion {
+    id?: string;
+    title?: string;
+    messages?: Array<{ role?: string; content?: string; thinking?: string }>;
+    status?: string;
+  }
+  const questions = (parseJsonish(session.research_questions, []) as TranscriptQuestion[])
+    .filter((q): q is TranscriptQuestion => q !== null && typeof q === 'object');
+  const pinnedFindings = parseJsonish(session.pinned_findings, []) as Array<Record<string, unknown>>;
+  const citations = parseJsonish(session.citations, []) as Array<Record<string, unknown>>;
+  const activePacks = parseJsonish(session.active_knowledge_packs, []) as string[];
+
+  const verifiedCount = citations.filter((c) => {
+    const v = c.verification as Record<string, unknown> | undefined;
+    return v && (v.status === 'verified_local' || v.status === 'verified_remote');
+  }).length;
+  const unverifiedCount = citations.length - verifiedCount;
+
+  const sessionRecord = {
+    bundle_type: 'legal-research-session',
+    session: {
+      id: sessionId,
+      title: session.title,
+      mode: session.mode,
+      expert_role: session.expert_role,
+      active_knowledge_packs: activePacks,
+      created_at: toIso(session.created_at),
+      updated_at: toIso(session.updated_at),
+      anton_version: ANTON_GENERATOR,
+      question_count: questions.length,
+      pinned_finding_count: pinnedFindings.length,
+      citation_count: citations.length,
+      citations_verified: verifiedCount,
+      citations_unverified_or_unresolved: unverifiedCount,
+    },
+  };
+
+  // Human-readable transcript alongside the JSON.
+  const transcriptLines: string[] = [`# Transcript — ${String(session.title || sessionId)}\n`];
+  for (const q of questions) {
+    transcriptLines.push(`## ${q.title || 'Untitled question'}\n`);
+    for (const m of q.messages ?? []) {
+      const role = m.role === 'assistant' ? 'Counsel (AI)' : 'You';
+      transcriptLines.push(`### ${role}\n`);
+      transcriptLines.push(`${m.content ?? ''}\n`);
+    }
+  }
+  const transcriptMd = transcriptLines.join('\n');
+
+  const sessionJson = JSON.stringify(sessionRecord, null, 2);
+  const transcriptJson = JSON.stringify(questions, null, 2);
+  const pinnedJson = JSON.stringify(pinnedFindings, null, 2);
+  const citationsJson = JSON.stringify(citations, null, 2);
+
+  const hash = crypto.createHash('sha256');
+  hash.update(sessionJson);
+  hash.update(transcriptJson);
+  hash.update(pinnedJson);
+  hash.update(citationsJson);
+  const checksum = hash.digest('hex');
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'legal-research-session',
+    id: sessionId,
+    name: String(session.title || 'Legal Research Session'),
+    description: `Counsel's Desk record: ${questions.length} research question(s), ${citations.length} citation(s) (${verifiedCount} verified)`,
+    author: options.author,
+    contentsCount: { legal_research_sessions: 1, research_questions: questions.length, citations: citations.length },
+    createdAt: toIso(session.created_at) ?? undefined,
+    updatedAt: toIso(session.updated_at) ?? undefined,
+    governance: options.governance,
+  });
+  const manifest = {
+    ...specManifest,
+    session: sessionRecord.session,
+    security: { checksum: `sha256:${checksum}` },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
+  zip.addFile('session.json', Buffer.from(sessionJson, 'utf-8'));
+  zip.addFile('transcript.json', Buffer.from(transcriptJson, 'utf-8'));
+  zip.addFile('transcript.md', Buffer.from(transcriptMd, 'utf-8'));
+  zip.addFile('pinned-findings.json', Buffer.from(pinnedJson, 'utf-8'));
+  zip.addFile('citations.json', Buffer.from(citationsJson, 'utf-8'));
+
+  const readme = `# Legal Research Session — ${String(session.title || sessionId)}
+
+Export-only record of a Counsel's Desk session (no importer in this wave —
+share it as a research record/archive).
+
+- **Mode:** ${String(session.mode ?? 'deep-dive')}
+- **Expert role:** ${String(session.expert_role ?? 'eu-regulatory-lawyer')}
+- **Research questions:** ${questions.length}
+- **Pinned findings:** ${pinnedFindings.length}
+- **Citations:** ${citations.length} — ${verifiedCount} verified against ground truth (local frameworks / EUR-Lex existence), ${unverifiedCount} unresolved/unverified
+
+## Contents
+
+| File | What it is |
+|---|---|
+| \`session.json\` | Mode, expert role, active knowledge packs, counts |
+| \`transcript.json\` / \`transcript.md\` | The full Q&A history per research question |
+| \`pinned-findings.json\` | Findings the researcher pinned, with sources |
+| \`citations.json\` | The citation ledger INCLUDING per-citation verification status |
+
+## Honesty notes
+
+- Citation verification proves a reference RESOLVES (locally or on EUR-Lex) —
+  not that the AI's reading of it is correct. Statuses travel verbatim.
+- Knowledge pack contents are not included; \`active_knowledge_packs\` lists ids only.
+
+---
+**Exported via ANTON**
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created legal-research-session bundle "${String(session.title)}" (${questions.length} questions, ${buffer.length} bytes)`);
+  return buffer;
 }
 

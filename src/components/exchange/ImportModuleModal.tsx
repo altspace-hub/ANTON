@@ -23,12 +23,23 @@ interface ValidationWarning {
   details?: string;
 }
 
+interface GovernanceMetadata {
+  effective_date?: string;
+  source_url?: string;
+  validated_by?: string;
+  content_confirmed?: boolean;
+}
+
 interface ValidationResult {
   valid: boolean;
+  bundle_type?: string;
+  validated_depth?: 'full' | 'structural';
+  governance?: GovernanceMetadata;
+  notes?: string[];
   errors: ValidationError[];
   warnings: ValidationWarning[];
   manifest?: {
-    meta: {
+    meta?: {
       id: string;
       name: string;
       version: string;
@@ -107,9 +118,10 @@ export function ImportModuleModal({ onClose, onSuccess }: ImportModuleModalProps
         body: formData,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Import failed');
+      const data = await response.json();
+      if (!response.ok || data.success === false) {
+        const firstError = Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0] : undefined;
+        throw new Error(data.error || firstError || 'Import failed');
       }
 
       // Close first, then notify parent — prevents state updates on unmounted component
@@ -208,8 +220,20 @@ export function ImportModuleModal({ onClose, onSuccess }: ImportModuleModalProps
           {/* Validation Results */}
           {validation && (
             <div className="space-y-4">
+              {/* Bundle type + validation depth */}
+              {validation.bundle_type && (
+                <div className="flex items-center gap-2 text-xs text-adv-gray">
+                  <span className="px-2 py-1 bg-adv-teal/20 text-adv-teal rounded-full">{validation.bundle_type}</span>
+                  {validation.validated_depth && (
+                    <span>
+                      {validation.validated_depth === 'full' ? 'Full deep validation' : 'Structural validation'}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Module Preview */}
-              {validation.manifest && (
+              {validation.manifest?.meta && (
                 <div className="bg-adv-dark-2 border border-adv-teal/20 rounded-lg px-4 py-3">
                   <h3 className="text-sm font-semibold text-adv-teal mb-2">Module Details</h3>
                   <div className="space-y-1 text-sm">
@@ -234,6 +258,37 @@ export function ImportModuleModal({ onClose, onSuccess }: ImportModuleModalProps
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Governance (KP-03 trust metadata) */}
+              {validation.governance && (
+                <div className="bg-adv-dark-2 border border-adv-teal/20 rounded-lg px-4 py-3 text-sm">
+                  <h3 className="text-sm font-semibold text-adv-teal mb-1">Governance</h3>
+                  {validation.governance.validated_by && (
+                    <p className="text-adv-gray"><strong>Validated by:</strong> {validation.governance.validated_by}</p>
+                  )}
+                  {validation.governance.source_url && (
+                    <p className="text-adv-gray break-all"><strong>Source:</strong> {validation.governance.source_url}</p>
+                  )}
+                  {validation.governance.effective_date && (
+                    <p className="text-adv-gray"><strong>Effective:</strong> {validation.governance.effective_date}</p>
+                  )}
+                  {validation.governance.content_confirmed !== undefined && (
+                    <p className="text-adv-gray">
+                      <strong>Content confirmed:</strong> {validation.governance.content_confirmed ? 'yes' : 'no'}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-adv-gray">Declared by the bundle author — not independently verified.</p>
+                </div>
+              )}
+
+              {/* Notes (e.g. where deep validation for this type happens) */}
+              {validation.notes && validation.notes.length > 0 && (
+                <div className="bg-adv-dark-2 border border-adv-teal/20 rounded-lg px-4 py-3 space-y-1">
+                  {validation.notes.map((note, i) => (
+                    <p key={i} className="text-xs text-adv-gray">{note}</p>
+                  ))}
                 </div>
               )}
 
@@ -308,7 +363,7 @@ export function ImportModuleModal({ onClose, onSuccess }: ImportModuleModalProps
           >
             Cancel
           </button>
-          {validation && validation.valid && (
+          {validation && validation.valid && (validation.bundle_type === undefined || validation.bundle_type === 'module') && (
             <button
               onClick={handleImport}
               disabled={isImporting}

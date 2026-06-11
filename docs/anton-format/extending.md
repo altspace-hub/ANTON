@@ -45,6 +45,31 @@ export const BUNDLE_REGISTRY: Record<BundleType, BundleMeta> = {
 };
 ```
 
+### 2b. Write the manifest through `buildSpecManifest()` — non-negotiable
+
+The manifest envelope is the contract (`docs/anton-format/README.md`). Your
+bundler MUST call `buildSpecManifest({ bundleType, id, name, … })` from
+`server/services/anton-bundler.ts` and may spread bespoke fields **alongside**
+the returned envelope — never replace it:
+
+```ts
+const manifest = {
+  ...buildSpecManifest({
+    bundleType: 'my-new-bundle-type',
+    id: thingId,
+    name: thing.title,
+    contentsCount: { my_new_things: 1 },
+    governance,            // optional KP-03 trust metadata — never fabricate
+  }),
+  // bespoke per-type fields here
+};
+```
+
+This guarantees `format_version`, `bundle_type`, `created_at`, `generator`,
+`package`, `contents`, `compatibility` and (optionally) `governance` are
+present, which is what lets the dispatching validator
+(`/api/exchange/validate`) structurally accept your type with zero extra work.
+
 ### 3. Implement the apply path
 
 `server/services/anton-importer.ts` (or a new `*-importer.ts` if the bundle is large):

@@ -10,6 +10,7 @@ import { createAtlasService } from './atlas-service.js';
 import { generateDocx } from '../export-docx.js';
 import { generatePdf } from '../export-pdf.js';
 import { appetitePositionFor } from './atlas-residual-calculator.js';
+import { ANTON_GENERATOR } from '../anton-bundler.js';
 import type {
   RiskAtlasRow, ThreatPathFull, AtlasDashboard, AppetitePosition, Score1to5,
 } from './types.js';
@@ -95,6 +96,11 @@ export function createAtlasExport(db: DatabaseAdapter) {
     const bundle = {
       bundle_type: 'risk-atlas-export',
       version: '1.0.0',
+      // Standard spec-envelope fields (Wave 2.6) alongside the domain-native
+      // payload. Export-only type (no importer yet) — purely additive.
+      format_version: '1.0.0',
+      created_at: snap.exported_at,
+      generator: ANTON_GENERATOR,
       exported_at: snap.exported_at,
       exported_by: snap.exported_by,
       atlas: {

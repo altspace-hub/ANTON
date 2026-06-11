@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info, Loader2 } from 'lucide-react';
+import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info, Loader2, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { fetchCustomModules, getAuthHeader, type CustomModuleData } from '@/lib/api';
 
@@ -12,11 +12,39 @@ const LICENSE_OPTIONS = [
   { value: 'Proprietary', label: 'Proprietary' },
 ];
 
+interface GovernanceMetadata {
+  effective_date?: string;
+  source_url?: string;
+  validated_by?: string;
+  content_confirmed?: boolean;
+}
+
+interface BundleProvenance {
+  signed: boolean;
+  valid: boolean;
+  signer_pubkey?: string;
+  signer_name?: string;
+  signed_at?: string;
+  known: boolean;
+  first_seen_name?: string;
+}
+
+interface SigningIdentity {
+  available: boolean;
+  signer_pubkey?: string;
+  signer_name?: string;
+}
+
 interface ImportResult {
   success: boolean;
   moduleId?: string;
+  keptOriginalId?: boolean;
+  bundle_type?: string;
+  validated_depth?: 'full' | 'structural';
+  governance?: GovernanceMetadata;
+  provenance?: BundleProvenance;
+  notes?: string[];
   warnings: string[];
-  missingDeps: string[];
   errors: string[];
 }
 
@@ -71,10 +99,15 @@ function ExportTab() {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [license, setLicense] = useState('CC-BY-4.0');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [validatedBy, setValidatedBy] = useState('');
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [customModules, setCustomModules] = useState<CustomModuleData[]>([]);
   const [loadingCustom, setLoadingCustom] = useState(true);
+  // Ed25519 provenance (Wave 2.4): default ON when the instance can sign
+  const [signingIdentity, setSigningIdentity] = useState<SigningIdentity | null>(null);
+  const [signBundle, setSignBundle] = useState(true);
 
   // Load custom modules on mount and keep list fresh
   useEffect(() => {
@@ -83,6 +116,16 @@ function ExportTab() {
     fetchCustomModules()
       .then((mods) => { if (!cancelled) setCustomModules(mods); })
       .finally(() => { if (!cancelled) setLoadingCustom(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Probe the instance signing identity (drives the "Sign this bundle" toggle)
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/exchange/signing-identity`, { headers: getAuthHeader() })
+      .then((res) => (res.ok ? res.json() : { available: false }))
+      .then((data: SigningIdentity) => { if (!cancelled) setSigningIdentity(data); })
+      .catch(() => { if (!cancelled) setSigningIdentity({ available: false }); });
     return () => { cancelled = true; };
   }, []);
 
@@ -131,6 +174,12 @@ function ExportTab() {
             .map((t) => t.trim())
             .filter(Boolean),
           license,
+          // Optional KP-03 governance metadata — only sent when filled in
+          ...(sourceUrl.trim() ? { sourceUrl: sourceUrl.trim() } : {}),
+          ...(validatedBy.trim() ? { validatedBy: validatedBy.trim() } : {}),
+          // Ed25519 provenance: opt-out — server signs unless told not to
+          // (when no signing identity exists the server degrades to unsigned)
+          sign: signBundle,
         }),
       });
 
@@ -254,6 +303,36 @@ function ExportTab() {
           />
         </div>
 
+        {/* Governance (optional trust metadata, Wave 2.6) */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
+              Source URL <span className="text-adv-gray font-normal">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://eur-lex.europa.eu/..."
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+            />
+            <p className="mt-1 text-[11px] text-adv-gray">Canonical source of the module's reference material</p>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
+              Validated by <span className="text-adv-gray font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={validatedBy}
+              onChange={(e) => setValidatedBy(e.target.value)}
+              placeholder="Name or email of the reviewer"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+            />
+            <p className="mt-1 text-[11px] text-adv-gray">Who verified this module's content</p>
+          </div>
+        </div>
+
         {/* License */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-adv-off-white">License</label>
@@ -269,6 +348,32 @@ function ExportTab() {
             ))}
           </select>
         </div>
+
+        {/* Ed25519 provenance (Wave 2.4) — only shown when this instance can sign */}
+        {signingIdentity?.available && (
+          <label className="flex items-start gap-3 rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={signBundle}
+              onChange={(e) => setSignBundle(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-[#2DD4A8]"
+            />
+            <span className="flex-1">
+              <span className="flex items-center gap-1.5 text-sm font-medium text-adv-off-white">
+                <ShieldCheck className="h-4 w-4 text-adv-teal" />
+                Sign this bundle
+                {signingIdentity.signer_name && (
+                  <span className="font-normal text-adv-gray">as {signingIdentity.signer_name}</span>
+                )}
+              </span>
+              <span className="mt-0.5 block text-[11px] text-adv-gray">
+                Embeds an Ed25519 signature proving the bundle's manifest (including its content
+                checksum) is untouched since this instance signed it. It does not vouch for content
+                quality or your real-world identity.
+              </span>
+            </span>
+          </label>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-adv-red/10 px-3 py-2 text-sm text-adv-red">
@@ -317,10 +422,21 @@ function ImportTab() {
         method: 'POST',
         body: formData,
       });
-      const data: ImportResult = await res.json();
-      setResult(data);
+      const data = (await res.json()) as Partial<ImportResult> & { error?: string };
+      setResult({
+        success: data.success === true,
+        moduleId: data.moduleId,
+        keptOriginalId: data.keptOriginalId,
+        bundle_type: data.bundle_type,
+        validated_depth: data.validated_depth,
+        governance: data.governance,
+        provenance: data.provenance,
+        notes: data.notes,
+        warnings: Array.isArray(data.warnings) ? data.warnings : [],
+        errors: Array.isArray(data.errors) ? data.errors : data.error ? [data.error] : [],
+      });
     } catch {
-      setResult({ success: false, warnings: [], missingDeps: [], errors: ['Network error during import'] });
+      setResult({ success: false, warnings: [], errors: ['Network error during import'] });
     } finally {
       setImporting(false);
     }
@@ -384,6 +500,25 @@ function ImportTab() {
             <div className="flex items-center gap-2 rounded-lg bg-adv-green/10 px-3 py-2 text-sm text-adv-green">
               <CheckCircle className="h-4 w-4 shrink-0" />
               Module installed successfully: <strong>{result.moduleId}</strong>
+              {result.keptOriginalId && <span className="text-xs">(original id kept)</span>}
+            </div>
+          )}
+
+          {/* Provenance (Ed25519 signature, Wave 2.4) */}
+          {result.provenance && <ProvenanceBadge provenance={result.provenance} />}
+
+          {/* Governance (KP-03 trust metadata, Wave 2.6) */}
+          {result.governance && (
+            <div className="rounded-lg bg-adv-dark-2 px-3 py-2 text-sm text-adv-gray">
+              <span className="font-medium text-adv-off-white">Governance: </span>
+              {[
+                result.governance.validated_by && `Validated by ${result.governance.validated_by}`,
+                result.governance.source_url && `Source: ${result.governance.source_url}`,
+                result.governance.effective_date && `Effective: ${result.governance.effective_date}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              <p className="mt-0.5 text-[11px]">Declared by the bundle author — not independently verified.</p>
             </div>
           )}
 
@@ -422,6 +557,57 @@ function ImportTab() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Provenance badge (Wave 2.4). Honest claims only: a valid signature proves
+ * the manifest is untouched since signing by that key — nothing more.
+ */
+function ProvenanceBadge({ provenance }: { provenance: BundleProvenance }) {
+  if (!provenance.signed) {
+    return (
+      <div className="flex items-start gap-2 rounded-lg bg-adv-dark-2 px-3 py-2 text-sm text-adv-gray">
+        <Shield className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>Unsigned (no provenance) — this bundle carries no signature; that is normal for older exports.</span>
+      </div>
+    );
+  }
+
+  if (!provenance.valid) {
+    return (
+      <div className="flex items-start gap-2 rounded-lg bg-adv-red/10 px-3 py-2 text-sm text-adv-red">
+        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          <strong>Signature INVALID</strong> — the bundle may have been modified after signing
+          {provenance.signer_name ? ` (claimed signer: ${provenance.signer_name})` : ''}. Import is blocked.
+        </span>
+      </div>
+    );
+  }
+
+  const signer = provenance.signer_name || 'unnamed signer';
+  return (
+    <div className="rounded-lg bg-adv-green/10 px-3 py-2 text-sm text-adv-green">
+      <span className="flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 shrink-0" />
+        <span>
+          Signed by <strong>{signer}</strong> (✓ verified
+          {provenance.known ? ', known signer' : ', first time seeing this signer'})
+        </span>
+      </span>
+      {provenance.first_seen_name && (
+        <p className="mt-1 flex items-start gap-1.5 text-xs text-adv-gold">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          This key was first seen as "{provenance.first_seen_name}".
+        </p>
+      )}
+      <p className="mt-1 text-[11px] text-adv-gray">
+        A valid signature proves the manifest (incl. its content checksum) is untouched since
+        signing by this key. It does not vouch for content quality or real-world identity.
+        {provenance.signer_pubkey ? ` Key: ${provenance.signer_pubkey.slice(0, 16)}…` : ''}
+      </p>
     </div>
   );
 }

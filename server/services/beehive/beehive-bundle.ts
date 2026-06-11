@@ -18,7 +18,7 @@
 // sharing/archival, not re-import.
 
 import AdmZip from 'adm-zip';
-import type { AntonBundleType } from '../anton-bundler.js';
+import { ANTON_GENERATOR, type AntonBundleType } from '../anton-bundler.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createBeehiveState } from './beehive-state.js';
 import { createBeehiveDeliberation } from './beehive-deliberation.js';
@@ -133,6 +133,9 @@ function buildManifest(
   return {
     format_version: '1.0.0',
     bundle_type: 'hive-collaborative-output' satisfies AntonBundleType,
+    // Standard spec-envelope fields (Wave 2.6). Export-only type — additive.
+    created_at: hive.concluded_at ?? now,
+    generator: ANTON_GENERATOR,
     package: {
       id: `com.openexpert.hive-collaborative-output.${hive.id}`,
       name: hive.name,

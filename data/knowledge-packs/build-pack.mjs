@@ -20,7 +20,28 @@ let found = 0;
 for (const file of files) {
   const filePath = path.join(packDir, file);
   if (fs.existsSync(filePath)) {
-    zip.addLocalFile(filePath);
+    if (file === 'manifest.json') {
+      // Inject the standard spec-envelope fields (format_version, created_at,
+      // generator — see docs/anton-format/README.md) alongside the authored
+      // pack manifest. The knowledge-pack importer reads named fields only,
+      // so this is purely additive; the authored source file is untouched.
+      const authored = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const generator = (() => {
+        try {
+          const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+          return `${pkg.name ?? 'openexpert'}/${pkg.version ?? '0.0.0'}`;
+        } catch { return 'openexpert/0.0.0'; }
+      })();
+      const enveloped = {
+        format_version: '1.0.0',
+        created_at: new Date().toISOString(),
+        generator,
+        ...authored,
+      };
+      zip.addFile('manifest.json', Buffer.from(JSON.stringify(enveloped, null, 2), 'utf-8'));
+    } else {
+      zip.addLocalFile(filePath);
+    }
     found++;
     console.log(`  + ${file}`);
   } else {
