@@ -30,6 +30,69 @@ export interface RelayConfig {
 const ROW_KEY = 'singleton';
 
 /**
+ * Canonicalize a relay URL per spec §4.2.1 — the SAME rules the relay
+ * applies to its own RELAY_URL (relay/src/canonical-url.ts) and the phone
+ * applies to the QR's relay_endpoints (src/app/services/mesh-validate.ts).
+ *
+ * This MUST run here, because this list feeds three byte-for-byte-sensitive
+ * sites:
+ *   1. the dialer's HELLO_INSTANCE `relay_url` (the relay rejects the HELLO
+ *      with INVALID_PROOF/BAD_HELLO unless it equals the relay's own
+ *      canonical URL — relay/src/hello.ts step 3),
+ *   2. the Noise prologue (`buildPrologue(relayUrl, …)` — a mismatch makes
+ *      Noise msg2 fail to verify),
+ *   3. the enrollment QR (so the phone pins the identical string).
+ *
+ * If the operator's ANTON_MESH_RELAYS (or DB override) carries a trailing
+ * slash, an uppercase host, an explicit `:443`, etc., the raw string differs
+ * from the relay's canonical form → HELLO is rejected → the instance never
+ * registers (relay /healthz shows active_instances: 0 while ws_connections > 0)
+ * → phones report "mesh: all relays unreachable" even though the instance's
+ * own dialer logged "reachability: CONNECTED" (that fires on WS-open, before
+ * the relay's HELLO rejection). Canonicalizing here closes that asymmetry.
+ *
+ * On any rule violation we fall back to the trimmed input rather than dropping
+ * the endpoint — keeping behaviour permissive for ws:// dev relays and odd
+ * inputs, while still normalizing the common production cases.
+ */
+function canonicalizeRelayUrl(input: string): string {
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return input;
+  }
+  // Only normalize the wss/ws schemes the mesh uses; leave anything else as-is.
+  if (url.protocol !== 'wss:' && url.protocol !== 'ws:') return input;
+  // Reject-by-passthrough: userinfo/query/fragment/path are not part of a
+  // canonical relay URL. setRelayEndpoints + mesh-validate already refuse
+  // these on the write/pair paths, so here we simply strip what we safely can
+  // (path '/' ) and leave anything stranger untouched for the caller's logs.
+  if (url.username !== '' || url.password !== '' || url.search !== '' || url.hash !== '') {
+    return input;
+  }
+  if (url.pathname !== '' && url.pathname !== '/') return input;
+
+  let hostname = url.hostname;
+  if (hostname === '') return input;
+  let isIPv6 = false;
+  if (hostname.startsWith('[') && hostname.endsWith(']')) {
+    hostname = hostname.slice(1, -1);
+    isIPv6 = true;
+  } else if (hostname.includes(':')) {
+    isIPv6 = true;
+  }
+  // WHATWG URL already ASCII-lowercases domain hosts; lowercase defensively.
+  hostname = hostname.toLowerCase();
+
+  const defaultPort = url.protocol === 'ws:' ? '80' : '443';
+  const port = url.port === '' || url.port === defaultPort ? '' : `:${url.port}`;
+  const hostPart = isIPv6 ? `[${hostname}]` : hostname;
+  const scheme = url.protocol.replace(':', '');
+  return `${scheme}://${hostPart}${port}`;
+}
+
+/**
  * Read the canonical relay list. DB override wins over env; env is the
  * legacy fallback so existing deployments keep working unchanged.
  */
@@ -50,7 +113,8 @@ export async function getRelayEndpoints(db: DatabaseAdapter): Promise<RelayConfi
         dbList = parsed
           .filter((u): u is string => typeof u === 'string')
           .map(u => u.trim())
-          .filter(u => u.length > 0);
+          .filter(u => u.length > 0)
+          .map(canonicalizeRelayUrl);
       }
     }
   } catch {
@@ -68,7 +132,8 @@ export async function getRelayEndpoints(db: DatabaseAdapter): Promise<RelayConfi
     const envList = envRaw
       .split(',')
       .map(s => s.trim())
-      .filter(s => s.length > 0);
+      .filter(s => s.length > 0)
+      .map(canonicalizeRelayUrl);
     if (envList.length > 0) {
       return { endpoints: envList, source: 'env' };
     }
