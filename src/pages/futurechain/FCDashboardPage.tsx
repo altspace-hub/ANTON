@@ -55,7 +55,10 @@ export default function FCDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-adv-off-white flex items-center gap-3">
-            <Wallet className="h-6 w-6 text-adv-teal" /> FutureChain Payments
+            {/* FutureChain network mark (blue circle primary) — see docs/BRANDING_FUTURECHAIN.md */}
+            <img src="/branding/futurechain/fc_blue_circle_96.png" alt="" aria-hidden
+                 className="h-8 w-8 rounded-full shrink-0" />
+            FutureChain Payments
           </h1>
           <p className="text-sm text-adv-gray mt-0.5">Decentralised payment rails for the ANTON economy</p>
         </div>
