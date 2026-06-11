@@ -1,5 +1,11 @@
 # ANTON Local — Core Experience Review & Improvement Plan (June 2026)
 
+> **STATUS UPDATE (2026-06-11, same day): Waves 0–4 ALL IMPLEMENTED, verified and pushed**
+> (commits `a3550cca..a5001e84`, 14 feature commits, migrations 221–230, test suite grew
+> 1,009 → 1,400). All ten bugs fixed. Wave 5 big bets (Task Agent↔Missions convergence,
+> coding apply-to-workspace, BoP knowledge packs, SQLite legacy removal) remain PARKED
+> pending a separate owner decision. The sections below are the original review snapshot.
+
 **Produced 2026-06-11** from four parallel expert deep-dives (reuse/portability backbone ·
 daily work surfaces · expert workspaces · intelligence/learning layer), every claim
 ground-truthed against code (file:line) and, for the learning layer, against the **live
