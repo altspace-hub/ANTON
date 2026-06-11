@@ -1,7 +1,24 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
+import { readFile } from 'node:fs/promises';
 import { createCodingIntegration } from '../services/coding-integration.js';
+import {
+  FILE_BLOCK_FORMAT_VERSION,
+  TEST_RUN_LIMITS,
+  applyFilesToWorkspace,
+  buildApplicationRecord,
+  buildFileDiff,
+  compactChunks,
+  parseFileBlocks,
+  parseTestSummary,
+  resolveTargetPath,
+  runProjectTests,
+  validateTestArgv,
+  validateWorkspacePath,
+  type ApplicationFileEntry,
+  type FileDiff,
+} from '../services/coding-workspace.js';
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
 
@@ -823,8 +840,14 @@ You are implementing the task according to the approved execution plan. Follow t
 7. **Handle errors** — Include proper error handling, input validation, and edge case coverage.
 8. **Add documentation** — Include JSDoc/docstrings for public APIs, and inline comments for complex logic.
 
-## CODE OUTPUT FORMAT
-For each file, output the complete file content in a fenced code block with the file path as a comment on the first line:
+## CODE OUTPUT FORMAT (anton-coding-file-blocks/v1 — machine-parsed)
+Your file blocks are parsed by ANTON and, after the user reviews a diff and explicitly approves, written into their workspace. Follow this format EXACTLY.
+
+For each file, output the COMPLETE file content in its own fenced code block. The FIRST line inside the block MUST be a file header comment carrying the workspace-relative path:
+- \`// FILE: relative/path/to/file.ts\` — for JS/TS/C-style languages
+- \`# FILE: relative/path/to/file.py\` — for Python, YAML, shell, TOML
+- \`<!-- FILE: relative/path/to/file.html -->\` — for HTML, Markdown, XML
+- \`-- FILE: relative/path/to/file.sql\` — for SQL
 
 \`\`\`typescript
 // FILE: relative/path/to/file.ts
@@ -834,6 +857,12 @@ export function myFunction(): void {
   // implementation
 }
 \`\`\`
+
+Format rules (violations make the block unappliable):
+1. Workspace-relative paths with forward slashes only — never absolute paths, never drive letters, never \`..\`
+2. One file per code block; the header line is the FIRST line of the block
+3. When modifying an existing file, re-emit the FULL file — never elide with "rest unchanged" comments
+4. Code blocks without a FILE header are treated as illustration and ignored
 
 ## COMPLETION RECORD
 After all code has been generated, you MUST output a CompletionRecord as a JSON object in a \`\`\`json code block. This record summarizes everything that was done:
@@ -939,6 +968,51 @@ After generating all code and tests, output a CompletionRecord JSON summarizing 
 
 Do NOT skip any files from the plan. Do NOT use placeholder code. Generate real, working implementations.`;
 
+  return message;
+}
+
+// ── Phase 4b: Revision Round (real test failures fed back — ONE round) ──────
+
+function buildTaskReviseSystemPrompt(projectName: string, taskTitle: string): string {
+  return `You are a senior software engineer fixing a REAL test failure for the task "${taskTitle}" in the project "${projectName}".
+
+## CONTEXT
+The code you previously generated was applied to the user's workspace and their test command was actually executed. It failed. You will receive the real test output. Produce corrected files.
+
+## RULES
+1. Fix the failure — change only the files that need to change.
+2. Re-emit every changed file IN FULL using the anton-coding-file-blocks/v1 format below. Do not emit unchanged files.
+3. This is the single revision round for this failure: the user will review your diff, approve the write, and re-run the tests. There is no further automatic iteration — be thorough.
+4. If the failure is in the test command/configuration rather than the code, say so plainly in prose and emit no file blocks.
+
+## CODE OUTPUT FORMAT (anton-coding-file-blocks/v1 — machine-parsed)
+For each corrected file, output the COMPLETE file content in its own fenced code block. The FIRST line inside the block MUST be a file header comment with the workspace-relative path:
+- \`// FILE: relative/path/to/file.ts\` (JS/TS/C-style) · \`# FILE: path\` (Python/YAML/shell) · \`<!-- FILE: path -->\` (HTML/MD/XML) · \`-- FILE: path\` (SQL)
+Workspace-relative paths with forward slashes only — never absolute, never \`..\`. Re-emit full files, never elide.
+
+After the file blocks, add a short "## What I changed and why" section in prose.`;
+}
+
+function buildTaskReviseUserMessage(params: {
+  taskTitle: string;
+  testCommand: string[];
+  exitCode: number | null;
+  timedOut: boolean;
+  outputTail: string;
+  appliedFiles: Array<{ path: string; action: string }>;
+}): string {
+  let message = `# Revision Request — real test failure\n\n`;
+  message += `## Task\n${params.taskTitle}\n\n`;
+  message += `## Files previously applied to the workspace\n`;
+  if (params.appliedFiles.length > 0) {
+    for (const f of params.appliedFiles) message += `- ${f.path} (${f.action})\n`;
+  } else {
+    message += `(no application record — the workspace already contained the code)\n`;
+  }
+  message += `\n## Test command (executed for real via execFile, no shell)\n\`${params.testCommand.join(' ')}\`\n\n`;
+  message += `## Result\n${params.timedOut ? `TIMED OUT after ${TEST_RUN_LIMITS.timeout_ms} ms` : `Exit code: ${params.exitCode ?? 'unknown'}`}\n\n`;
+  message += `## Real test output (tail)\n\`\`\`\n${params.outputTail}\n\`\`\`\n\n`;
+  message += `## Instructions\nDiagnose the failure from the real output above and emit corrected files in the anton-coding-file-blocks/v1 format. Re-emit each changed file in full. This is the single revision round for this failure — the user reviews your diff, approves the write, and re-runs the tests.`;
   return message;
 }
 
@@ -1747,6 +1821,14 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
       const { name, description, tier = 'large', project_id, directory_path } = req.body;
       if (!name) return res.status(400).json({ error: 'name is required' });
 
+      // Workspace binding is security-gated: validate against ALLOWED_FOLDER_PATHS at bind time.
+      if (directory_path) {
+        const validation = await validateWorkspacePath(directory_path);
+        if (!validation.ok) {
+          return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, workspace: validation });
+        }
+      }
+
       // Create parent project if not provided
       let parentProjectId = project_id;
       if (!parentProjectId) {
@@ -1837,6 +1919,14 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
   // PATCH /api/coding/projects/:id — Update project
   router.patch('/coding/projects/:id', async (req, res) => {
     try {
+      // Workspace binding is security-gated: validate against ALLOWED_FOLDER_PATHS at bind time.
+      if (req.body.directory_path) {
+        const validation = await validateWorkspacePath(req.body.directory_path);
+        if (!validation.ok) {
+          return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, workspace: validation });
+        }
+      }
+
       const updates: string[] = [];
       const params: any[] = [];
       const allowed = ['name', 'description', 'status', 'directory_path', 'discovery_summary',
@@ -2451,12 +2541,502 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
     }
   });
 
+  // ── Workspace binding (Wave 5.2 — validated against ALLOWED_FOLDER_PATHS) ─
+
+  // GET /api/coding/projects/:id/workspace — bind + test-command status
+  router.get('/coding/projects/:id/workspace', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const validation = await validateWorkspacePath(project.directory_path);
+      res.json({
+        directory_path: project.directory_path || null,
+        bound: !!project.directory_path,
+        validation,
+        test_command: parseTestCommand(project),
+        limits: TEST_RUN_LIMITS,
+        format_version: FILE_BLOCK_FORMAT_VERSION,
+      });
+    } catch (error) {
+      console.error('[coding-large] Workspace status error:', error);
+      res.status(500).json({ error: 'Failed to get workspace status' });
+    }
+  });
+
+  // PUT /api/coding/projects/:id/workspace — bind (or unbind with null)
+  router.put('/coding/projects/:id/workspace', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const { directory_path } = req.body;
+      if (directory_path === null || directory_path === '') {
+        await db.run('UPDATE coding_projects SET directory_path = NULL, updated_at = NOW() WHERE id = ?', req.params.id);
+        return res.json({ bound: false, directory_path: null });
+      }
+      if (typeof directory_path !== 'string') {
+        return res.status(400).json({ error: 'directory_path must be a string (or null to unbind)' });
+      }
+      const validation = await validateWorkspacePath(directory_path);
+      if (!validation.ok) {
+        return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, validation });
+      }
+      await db.run('UPDATE coding_projects SET directory_path = ?, updated_at = NOW() WHERE id = ?', validation.resolved, req.params.id);
+      res.json({ bound: true, directory_path: validation.resolved, validation });
+    } catch (error) {
+      console.error('[coding-large] Workspace bind error:', error);
+      res.status(500).json({ error: 'Failed to bind workspace' });
+    }
+  });
+
+  // PUT /api/coding/projects/:id/test-command — argv ARRAY, never a shell string
+  router.put('/coding/projects/:id/test-command', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const { argv } = req.body;
+      if (argv === null) {
+        await db.run('UPDATE coding_projects SET test_command = NULL, updated_at = NOW() WHERE id = ?', req.params.id);
+        return res.json({ test_command: null });
+      }
+      const validated = validateTestArgv(argv);
+      if (!validated.ok) return res.status(400).json({ error: validated.reason });
+      await db.run('UPDATE coding_projects SET test_command = ?, updated_at = NOW() WHERE id = ?', JSON.stringify(validated.argv), req.params.id);
+      res.json({ test_command: validated.argv, limits: TEST_RUN_LIMITS });
+    } catch (error) {
+      console.error('[coding-large] Test command error:', error);
+      res.status(500).json({ error: 'Failed to save test command' });
+    }
+  });
+
+  // ── Apply-to-workspace (Wave 5.2 — parse → diff → review → approve) ───────
+
+  // POST /api/coding/projects/:id/tasks/:tid/apply/preview
+  // Parses anton-coding-file-blocks/v1 blocks out of the LLM response and
+  // returns a deterministic per-file diff. NOTHING is written here.
+  router.post('/coding/projects/:id/tasks/:tid/apply/preview', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const task = await db.get('SELECT id FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+
+      const { response_text, kind = 'initial', revision_of_test_run_id = null } = req.body;
+      if (!response_text || typeof response_text !== 'string') {
+        return res.status(400).json({ error: 'response_text is required' });
+      }
+      if (kind !== 'initial' && kind !== 'revision') {
+        return res.status(400).json({ error: "kind must be 'initial' or 'revision'" });
+      }
+
+      // Workspace must be bound + valid at every use (not just bind time).
+      const validation = await validateWorkspacePath(project.directory_path);
+      if (!validation.ok || !validation.resolved) {
+        return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
+      }
+      const workspaceAbs = validation.resolved;
+
+      const parsed = parseFileBlocks(response_text);
+      if (parsed.files.length === 0) {
+        return res.status(422).json({
+          error: 'No applicable file blocks found in the response.',
+          format_version: parsed.formatVersion,
+          rejected_blocks: parsed.rejected,
+          ignored_blocks: parsed.ignoredBlocks,
+          verification: 'Nothing was parsed and nothing was written.',
+        });
+      }
+
+      // Deterministic diff per file against the current workspace content.
+      const oldContents = new Map<string, string | null>();
+      const diffs: FileDiff[] = [];
+      for (const file of parsed.files) {
+        const target = resolveTargetPath(workspaceAbs, file.path);
+        if (!target) {
+          // validateRelativePath passed but resolve escaped — refuse hard.
+          parsed.rejected.push({ reason: 'resolved path escapes the workspace', path: file.path });
+          continue;
+        }
+        let old: string | null = null;
+        try { old = await readFile(target, 'utf8'); } catch { /* new file */ }
+        oldContents.set(file.path, old);
+        diffs.push(buildFileDiff(file.path, old, file.content));
+      }
+      const applicableFiles = parsed.files.filter((f) => oldContents.has(f.path));
+      if (applicableFiles.length === 0) {
+        return res.status(422).json({
+          error: 'Every parsed file block was rejected.',
+          format_version: parsed.formatVersion,
+          rejected_blocks: parsed.rejected,
+          verification: 'Nothing was written.',
+        });
+      }
+
+      const record = buildApplicationRecord(applicableFiles, diffs, oldContents);
+
+      const applicationId = randomUUID();
+      await db.run(`
+        INSERT INTO coding_workspace_applications
+          (id, coding_project_id, coding_task_id, status, kind, revision_of_test_run_id,
+           format_version, workspace_path, files, rejected_blocks, diff_summary, created_by)
+        VALUES (?, ?, ?, 'proposed', ?, ?, ?, ?, ?, ?, ?, ?)
+      `, applicationId, req.params.id, req.params.tid, kind, revision_of_test_run_id,
+        parsed.formatVersion, workspaceAbs, JSON.stringify(record.files),
+        JSON.stringify(parsed.rejected), JSON.stringify(record.diff_summary),
+        (req as any).userId || 'system');
+
+      res.json({
+        applicationId,
+        format_version: parsed.formatVersion,
+        workspace: workspaceAbs,
+        kind,
+        files: diffs.map((d) => ({
+          path: d.path,
+          action: d.action,
+          stats: d.stats,
+          chunks: compactChunks(d.chunks),
+        })),
+        rejected_blocks: parsed.rejected,
+        duplicates: parsed.duplicates,
+        ignored_blocks: parsed.ignoredBlocks,
+        totals: record.diff_summary.totals,
+        verification: `Parsed ${applicableFiles.length} file block(s); ${parsed.rejected.length} rejected. No files written — review the diff and approve to apply.`,
+      });
+    } catch (error) {
+      console.error('[coding-large] Apply preview error:', error);
+      res.status(500).json({ error: 'Failed to build apply preview' });
+    }
+  });
+
+  // GET /api/coding/projects/:id/applications — list (content stripped)
+  router.get('/coding/projects/:id/applications', async (req, res) => {
+    try {
+      const taskId = req.query.task_id as string | undefined;
+      let sql = 'SELECT * FROM coding_workspace_applications WHERE coding_project_id = ?';
+      const params: any[] = [req.params.id];
+      if (taskId) { sql += ' AND coding_task_id = ?'; params.push(taskId); }
+      sql += ' ORDER BY created_at DESC LIMIT 100';
+      const rows = await db.all(sql, ...params);
+      res.json(rows.map(parseApplication));
+    } catch (error) {
+      console.error('[coding-large] List applications error:', error);
+      res.status(500).json({ error: 'Failed to list applications' });
+    }
+  });
+
+  // GET /api/coding/projects/:id/applications/:aid
+  router.get('/coding/projects/:id/applications/:aid', async (req, res) => {
+    try {
+      const row = await db.get('SELECT * FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id);
+      if (!row) return res.status(404).json({ error: 'Application not found' });
+      res.json(parseApplication(row));
+    } catch (error) {
+      console.error('[coding-large] Get application error:', error);
+      res.status(500).json({ error: 'Failed to get application' });
+    }
+  });
+
+  // POST /api/coding/projects/:id/applications/:aid/approve — THE write gate.
+  // Explicit user approval; re-validates the workspace and every path;
+  // backs originals up to .anton-coding-backup/<timestamp>/ before writing.
+  router.post('/coding/projects/:id/applications/:aid/approve', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const app = await db.get('SELECT * FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id) as any;
+      if (!app) return res.status(404).json({ error: 'Application not found' });
+      if (app.status !== 'proposed') {
+        return res.status(409).json({ error: `Application is '${app.status}' — only proposed applications can be approved.` });
+      }
+
+      // Re-validate at use time (allowlist or binding may have changed).
+      const validation = await validateWorkspacePath(project.directory_path);
+      if (!validation.ok || !validation.resolved) {
+        return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
+      }
+      if (validation.resolved !== app.workspace_path) {
+        return res.status(409).json({
+          error: 'The project workspace changed since this preview was computed. Re-run the preview against the current workspace.',
+        });
+      }
+
+      const files = JSON.parse(app.files || '[]') as ApplicationFileEntry[];
+      const writable = files.filter((f) => typeof f.content === 'string');
+      if (writable.length === 0) {
+        return res.status(409).json({ error: 'Application has no reviewable content to write (already consumed?).' });
+      }
+
+      let result;
+      try {
+        result = await applyFilesToWorkspace({
+          workspaceAbs: validation.resolved,
+          files: writable.map((f) => ({ path: f.path, content: f.content as string })),
+          applicationId: app.id,
+        });
+      } catch (writeErr) {
+        const msg = writeErr instanceof Error ? writeErr.message : 'write failed';
+        await db.run("UPDATE coding_workspace_applications SET status = 'failed', error_message = ? WHERE id = ?", msg, app.id);
+        return res.status(500).json({
+          error: `Apply failed: ${msg}`,
+          verification: 'Application marked failed. Some files may have been written before the failure — check the backup manifest in .anton-coding-backup/.',
+        });
+      }
+
+      // Persist outcome; clear content now that it has been consumed.
+      const finalFiles = files.map((f) => {
+        const r = result.files.find((x) => x.path === f.path);
+        return {
+          path: f.path, action: r?.action ?? f.action, bytes: f.bytes,
+          hash_new: f.hash_new, hash_before: r?.hash_before ?? f.hash_before, hash_after: r?.hash_after,
+        };
+      });
+      await db.run(`
+        UPDATE coding_workspace_applications
+        SET status = 'applied', files = ?, backup_dir = ?, applied_at = NOW()
+        WHERE id = ?
+      `, JSON.stringify(finalFiles), result.backupDir || null, app.id);
+
+      // Honest progress entry on the task.
+      if (app.coding_task_id) {
+        const task = await db.get('SELECT progress_log FROM coding_tasks WHERE id = ?', app.coding_task_id) as any;
+        if (task) {
+          const log = JSON.parse(task.progress_log || '[]');
+          log.push({
+            timestamp: new Date().toISOString(),
+            step: `Applied to workspace: ${result.written} file(s) written, ${result.unchanged} unchanged (backup: ${result.backupDir || 'none needed'})`,
+            status: 'completed',
+          });
+          await db.run('UPDATE coding_tasks SET progress_log = ?, updated_at = NOW() WHERE id = ?', JSON.stringify(log), app.coding_task_id);
+        }
+      }
+
+      res.json({
+        applicationId: app.id,
+        status: 'applied',
+        written: result.written,
+        unchanged: result.unchanged,
+        backup_dir: result.backupDir || null,
+        files: result.files,
+        verification: `Files written: ${result.written} (${result.unchanged} unchanged). Originals backed up to ${result.backupDir || 'n/a (only new files)'}. Tests: not run yet.`,
+      });
+    } catch (error) {
+      console.error('[coding-large] Apply approve error:', error);
+      res.status(500).json({ error: 'Failed to apply files' });
+    }
+  });
+
+  // POST /api/coding/projects/:id/applications/:aid/reject
+  router.post('/coding/projects/:id/applications/:aid/reject', async (req, res) => {
+    try {
+      const app = await db.get('SELECT id, status FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id) as any;
+      if (!app) return res.status(404).json({ error: 'Application not found' });
+      if (app.status !== 'proposed') {
+        return res.status(409).json({ error: `Application is '${app.status}' — only proposed applications can be rejected.` });
+      }
+      // Drop the staged content too — a rejected proposal is not writable later.
+      const row = await db.get('SELECT files FROM coding_workspace_applications WHERE id = ?', req.params.aid) as any;
+      const files = (JSON.parse(row?.files || '[]') as ApplicationFileEntry[]).map((f) => ({
+        path: f.path, action: f.action, bytes: f.bytes, hash_new: f.hash_new, hash_before: f.hash_before,
+      }));
+      await db.run("UPDATE coding_workspace_applications SET status = 'rejected', files = ? WHERE id = ?", JSON.stringify(files), req.params.aid);
+      res.json({ applicationId: req.params.aid, status: 'rejected', verification: 'No files were written.' });
+    } catch (error) {
+      console.error('[coding-large] Apply reject error:', error);
+      res.status(500).json({ error: 'Failed to reject application' });
+    }
+  });
+
+  // ── Real test execution (Wave 5.2 — approval-gated, execFile, no shell) ───
+
+  // POST /api/coding/projects/:id/tests/run
+  // Runs the user-configured test command (argv array) in the workspace.
+  // This is arbitrary code execution BY DESIGN (the user configured the
+  // command), so every run requires approved:true from an explicit UI action.
+  router.post('/coding/projects/:id/tests/run', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const { approved, coding_task_id = null, coding_release_id = null, test_type = 'unit' } = req.body;
+      if (approved !== true) {
+        return res.status(400).json({
+          error: 'Explicit approval required: this executes your configured test command in the workspace (arbitrary code execution by design). Send approved: true from the confirmation UI.',
+        });
+      }
+      const VALID_TEST_TYPES = ['unit', 'integration', 'regression', 'acceptance', 'security', 'performance'];
+      if (!VALID_TEST_TYPES.includes(test_type)) {
+        return res.status(400).json({ error: `test_type must be one of: ${VALID_TEST_TYPES.join(', ')}` });
+      }
+
+      const argvRaw = parseTestCommand(project);
+      if (!argvRaw) {
+        return res.status(400).json({
+          error: 'No test command configured for this project. Set one (as an argv array) in the workspace settings first.',
+          verification: 'Tests: not configured.',
+        });
+      }
+      const validated = validateTestArgv(argvRaw);
+      if (!validated.ok) return res.status(400).json({ error: `Stored test command is invalid: ${validated.reason}` });
+
+      const validation = await validateWorkspacePath(project.directory_path);
+      if (!validation.ok || !validation.resolved) {
+        return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
+      }
+
+      const result = await runProjectTests({ argv: validated.argv, cwd: validation.resolved });
+      const combinedTail = [result.stdoutTail, result.stderrTail].filter(Boolean).join('\n');
+      const summary = parseTestSummary(combinedTail);
+      const passed = result.ran && result.exitCode === 0 && !result.timedOut;
+
+      const id = randomUUID();
+      await db.run(`
+        INSERT INTO coding_test_runs
+          (id, coding_project_id, coding_release_id, coding_task_id, test_type, test_suite_name,
+           results, pass_count, fail_count, skip_count, total_count, duration_ms,
+           executed, command, exit_code, timed_out, output_tail, run_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+      `, id, req.params.id, coding_release_id, coding_task_id, test_type, validated.argv.join(' '),
+        JSON.stringify({
+          executed: true,
+          argv: validated.argv,
+          cwd: validation.resolved,
+          exit_code: result.exitCode,
+          timed_out: result.timedOut,
+          spawn_error: result.spawnError ?? null,
+          output_truncated: result.outputTruncated,
+          summary_recognized: summary.recognized,
+          limits: TEST_RUN_LIMITS,
+        }),
+        summary.pass_count, summary.fail_count, summary.skip_count,
+        summary.pass_count + summary.fail_count + summary.skip_count,
+        result.durationMs, JSON.stringify(validated.argv), result.exitCode,
+        result.timedOut ? 1 : 0, combinedTail, (req as any).userId || 'system');
+
+      // Reflect the real result on the task.
+      if (coding_task_id) {
+        await db.run('UPDATE coding_tasks SET test_results = ?, updated_at = NOW() WHERE id = ? AND coding_project_id = ?',
+          JSON.stringify({ test_run_id: id, executed: true, passed, exit_code: result.exitCode, timed_out: result.timedOut, pass_count: summary.pass_count, fail_count: summary.fail_count, run_at: new Date().toISOString() }),
+          coding_task_id, req.params.id);
+      }
+
+      const honest = !result.ran
+        ? `Test command could not be started (${result.spawnError ?? 'spawn error'}). Nothing was verified.`
+        : result.timedOut
+          ? `Tests TIMED OUT after ${TEST_RUN_LIMITS.timeout_ms} ms — treated as failed.`
+          : passed
+            ? (summary.recognized
+              ? `Tests PASSED — ${summary.pass_count} passed${summary.fail_count ? `, ${summary.fail_count} failed` : ''}${summary.skip_count ? `, ${summary.skip_count} skipped` : ''} (exit 0, ${result.durationMs} ms).`
+              : `Tests PASSED (exit 0, ${result.durationMs} ms) — counts not parseable from output.`)
+            : (summary.recognized
+              ? `Tests FAILED — ${summary.fail_count} failed, ${summary.pass_count} passed (exit ${result.exitCode}, ${result.durationMs} ms).`
+              : `Tests FAILED (exit ${result.exitCode ?? '?'}, ${result.durationMs} ms) — counts not parseable from output.`);
+
+      res.json({
+        testRunId: id,
+        executed: true,
+        passed,
+        ran: result.ran,
+        exit_code: result.exitCode,
+        timed_out: result.timedOut,
+        duration_ms: result.durationMs,
+        pass_count: summary.pass_count,
+        fail_count: summary.fail_count,
+        skip_count: summary.skip_count,
+        summary_recognized: summary.recognized,
+        output_tail: combinedTail,
+        spawn_error: result.spawnError ?? null,
+        hint: result.hint ?? null,
+        verification: honest,
+      });
+    } catch (error) {
+      console.error('[coding-large] Test run error:', error);
+      res.status(500).json({ error: 'Failed to run tests' });
+    }
+  });
+
+  // POST /api/coding/projects/:id/tasks/:tid/revise — feed REAL failures back.
+  // ONE revise round per failed test run; the user reviews + approves the
+  // resulting diff like any other application. No unattended iteration.
+  router.post('/coding/projects/:id/tasks/:tid/revise', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const task = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+
+      const { test_run_id } = req.body;
+      if (!test_run_id) return res.status(400).json({ error: 'test_run_id is required' });
+
+      const run = await db.get('SELECT * FROM coding_test_runs WHERE id = ? AND coding_project_id = ?', test_run_id, req.params.id) as any;
+      if (!run) return res.status(404).json({ error: 'Test run not found' });
+      if (!run.executed) {
+        return res.status(400).json({ error: 'That test run was never actually executed — only real failures can seed a revision.' });
+      }
+      const runTimedOut = run.timed_out === 1 || run.timed_out === true;
+      if (run.exit_code === 0 && !runTimedOut) {
+        return res.status(400).json({ error: 'That test run passed — nothing to revise.' });
+      }
+
+      // ONE round per failure: refuse if a revision for this run already exists.
+      const existing = await db.get(`
+        SELECT id FROM coding_workspace_applications
+        WHERE coding_task_id = ? AND kind = 'revision' AND revision_of_test_run_id = ?
+      `, req.params.tid, test_run_id) as any;
+      if (existing) {
+        return res.status(409).json({
+          error: 'The single revision round for this test failure was already used. Re-run the tests (or revise manually) before another AI round.',
+        });
+      }
+
+      // Context: what the last applied application wrote.
+      const lastApplied = await db.get(`
+        SELECT files FROM coding_workspace_applications
+        WHERE coding_task_id = ? AND status = 'applied'
+        ORDER BY applied_at DESC LIMIT 1
+      `, req.params.tid) as any;
+      const appliedFiles = lastApplied
+        ? (JSON.parse(lastApplied.files || '[]') as ApplicationFileEntry[]).map((f) => ({ path: f.path, action: f.action }))
+        : [];
+
+      const argv = (JSON.parse(run.command || '[]') as string[]);
+      const systemPromptOverride = buildTaskReviseSystemPrompt(project.name, task.title);
+      const revisePrompt = buildTaskReviseUserMessage({
+        taskTitle: task.title,
+        testCommand: argv.length ? argv : ['(unknown command)'],
+        exitCode: run.exit_code ?? null,
+        timedOut: runTimedOut,
+        outputTail: (run.output_tail || '(no output captured)').slice(-12_000),
+        appliedFiles,
+      });
+
+      res.json({
+        revisePrompt,
+        systemPromptOverride,
+        moduleId: 'coding-large-implementation',
+        areaId: 'coding',
+        taskId: req.params.tid,
+        revision_of_test_run_id: test_run_id,
+        verification: 'Single revision round: the response must go through apply-preview → your approval → another approved test run. Nothing runs unattended.',
+      });
+    } catch (error) {
+      console.error('[coding-large] Revise error:', error);
+      res.status(500).json({ error: 'Failed to build revision prompt' });
+    }
+  });
+
   // ── Test Runs ────────────────────────────────────────────────────────────
 
   router.get('/coding/projects/:id/tests', async (req, res) => {
     try {
       const tests = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);
-      res.json(tests.map((t: any) => ({ ...t, results: JSON.parse(t.results || '{}') })));
+      res.json(tests.map((t: any) => ({
+        ...t,
+        results: JSON.parse(t.results || '{}'),
+        command: t.command ? JSON.parse(t.command) : null,
+        executed: !!t.executed,
+        timed_out: !!t.timed_out,
+      })));
     } catch (error) {
       console.error('[coding-large] List tests error:', error);
       res.status(500).json({ error: 'Failed to list tests' });
@@ -2474,7 +3054,11 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, id, req.params.id, coding_release_id || null, coding_task_id || null, test_type, test_suite_name || null, JSON.stringify(results), pass_count, fail_count, skip_count, pass_count + fail_count + skip_count, duration_ms || null);
 
-      res.json({ id, test_type, pass_count, fail_count });
+      res.json({
+        id, test_type, pass_count, fail_count,
+        executed: false,
+        verification: 'Self-reported record only — ANTON did not execute these tests. Use POST /tests/run for a real, verified run.',
+      });
     } catch (error) {
       console.error('[coding-large] Create test run error:', error);
       res.status(500).json({ error: 'Failed to create test run' });
@@ -2767,10 +3351,35 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
 
 // ── Parsers ──────────────────────────────────────────────────────────────────
 
+/** test_command column → argv array or null (tolerates bad JSON). */
+function parseTestCommand(project: any): string[] | null {
+  if (!project?.test_command) return null;
+  try {
+    const parsed = JSON.parse(project.test_command);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Workspace-application row → API shape. Staged file content is never echoed back in lists. */
+function parseApplication(row: any) {
+  const files = (() => {
+    try { return JSON.parse(row.files || '[]'); } catch { return []; }
+  })();
+  return {
+    ...row,
+    files: (files as ApplicationFileEntry[]).map(({ content: _content, ...rest }) => rest),
+    rejected_blocks: JSON.parse(row.rejected_blocks || '[]'),
+    diff_summary: JSON.parse(row.diff_summary || '{}'),
+  };
+}
+
 function parseProject(row: any) {
   return {
     ...row,
     git_initialized: !!row.git_initialized,
+    test_command: parseTestCommand(row),
     tech_stack: JSON.parse(row.tech_stack || '[]'),
     expert_panels: JSON.parse(row.expert_panels || '[]'),
     cost_estimate: JSON.parse(row.cost_estimate || '{}'),

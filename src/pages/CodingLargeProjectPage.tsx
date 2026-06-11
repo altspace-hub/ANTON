@@ -10,6 +10,7 @@ import CodingBreadcrumb from '@/components/coding/CodingBreadcrumb';
 import ExecutionPlanPanel from '@/components/coding/ExecutionPlanPanel';
 import CompletionRecord from '@/components/coding/CompletionRecord';
 import ExportAntonButton from '@/components/coding/ExportAntonButton';
+import WorkspaceSettingsCard from '@/components/coding/WorkspaceSettingsCard';
 import QualityScore from '@/components/coding/QualityScore';
 import VersionHistory from '@/components/coding/VersionHistory';
 import ConversationThread from '@/components/shared/ConversationThread';
@@ -698,6 +699,9 @@ export default function CodingLargeProjectPage() {
               </div>
             </div>
           </div>
+
+          {/* Workspace binding + test command (Wave 5.2 — the verifiable loop) */}
+          {projectId && <WorkspaceSettingsCard projectId={projectId} />}
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

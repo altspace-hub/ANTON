@@ -58,6 +58,8 @@ export interface CodingProject {
   current_phase: number;
   current_release_id?: string;
   created_by?: string;
+  /** User-configured test command as an argv ARRAY (never a shell string). */
+  test_command?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -138,6 +140,87 @@ export interface CodingTestRun {
   total_count: number;
   duration_ms?: number;
   run_at: string;
+  /** true = ANTON actually executed the command and observed the exit code; false = LLM-claimed numbers. */
+  executed?: boolean;
+  command?: string[] | null;
+  exit_code?: number | null;
+  timed_out?: boolean;
+  output_tail?: string;
+}
+
+// ── Workspace apply-to-disk (Wave 5.2) ──────────────────────────────────────
+
+export interface WorkspaceDiffStats {
+  linesAdded: number;
+  linesRemoved: number;
+  linesModified: number;
+  linesUnchanged: number;
+  similarity: number;
+  sectionsChanged: string[];
+}
+
+export interface WorkspaceDiffChunk {
+  type: 'unchanged' | 'added' | 'removed' | 'modified';
+  oldLines?: string[];
+  newLines?: string[];
+  lines?: string[];
+  sectionTitle?: string;
+}
+
+export interface WorkspaceFilePreview {
+  path: string;
+  action: 'create' | 'modify' | 'unchanged';
+  stats: WorkspaceDiffStats;
+  chunks: WorkspaceDiffChunk[];
+}
+
+export interface WorkspaceApplyPreview {
+  applicationId: string;
+  format_version: string;
+  workspace: string;
+  kind: 'initial' | 'revision';
+  files: WorkspaceFilePreview[];
+  rejected_blocks: Array<{ reason: string; path?: string }>;
+  duplicates: string[];
+  ignored_blocks: number;
+  totals: { files: number; create: number; modify: number; unchanged: number; lines_added: number; lines_removed: number; lines_modified: number };
+  verification: string;
+}
+
+export interface WorkspaceApplyResult {
+  applicationId: string;
+  status: 'applied';
+  written: number;
+  unchanged: number;
+  backup_dir: string | null;
+  files: Array<{ path: string; action: string; hash_before: string | null; hash_after: string; backed_up: boolean }>;
+  verification: string;
+}
+
+export interface WorkspaceTestRunResult {
+  testRunId: string;
+  executed: boolean;
+  passed: boolean;
+  ran: boolean;
+  exit_code: number | null;
+  timed_out: boolean;
+  duration_ms: number;
+  pass_count: number;
+  fail_count: number;
+  skip_count: number;
+  summary_recognized: boolean;
+  output_tail: string;
+  spawn_error: string | null;
+  hint: string | null;
+  verification: string;
+}
+
+export interface WorkspaceStatus {
+  directory_path: string | null;
+  bound: boolean;
+  validation: { ok: boolean; resolved?: string; error?: string; allowedBases: string[]; exists?: boolean };
+  test_command: string[] | null;
+  format_version: string;
 }
 
 export interface CodeReviewSession {

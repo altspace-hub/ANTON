@@ -8,12 +8,15 @@ import CodingBreadcrumb from '@/components/coding/CodingBreadcrumb';
 import ExecutionPlanPanel from '@/components/coding/ExecutionPlanPanel';
 import CompletionRecord from '@/components/coding/CompletionRecord';
 import ProgressView from '@/components/coding/ProgressView';
+import WorkspaceApplyPanel from '@/components/coding/WorkspaceApplyPanel';
+import WorkspaceTestPanel from '@/components/coding/WorkspaceTestPanel';
 import ConversationThread from '@/components/shared/ConversationThread';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useClaude } from '@/hooks/useClaude';
 import type {
-  CodingRelease, CodingTask, ExecutionPlan,
+  CodingRelease, CodingTask, CodingProject, ExecutionPlan,
   CompletionRecord as CompletionRecordType, ComplexityBand, CodingTaskStatus,
+  WorkspaceApplyPreview, WorkspaceApplyResult, WorkspaceTestRunResult,
 } from '@/lib/coding-types';
 
 // ── Auth helper ─────────────────────────────────────────────────
@@ -65,7 +68,7 @@ function complexityBadgeClass(band: ComplexityBand): string {
 
 // ── Types ────────────────────────────────────────────────────────
 type Tab = 'planning' | 'tasks' | 'progress' | 'completion';
-type ActiveMode = 'plan' | 'execute' | null;
+type ActiveMode = 'plan' | 'execute' | 'revise' | null;
 
 interface EditReleaseForm {
   name: string;
@@ -115,6 +118,15 @@ export default function CodingLargeReleasePage() {
   const [planLoading, setPlanLoading] = useState(false);
   const [executeLoading, setExecuteLoading] = useState(false);
 
+  // ── Workspace loop state (Wave 5.2) ───────────────────────────
+  const [project, setProject] = useState<CodingProject | null>(null);
+  const [applyPreviews, setApplyPreviews] = useState<Record<string, WorkspaceApplyPreview>>({});
+  const [applyErrors, setApplyErrors] = useState<Record<string, string>>({});
+  const [applyResults, setApplyResults] = useState<Record<string, WorkspaceApplyResult>>({});
+  const [testResults, setTestResults] = useState<Record<string, WorkspaceTestRunResult>>({});
+  const [reviseLoadingTaskId, setReviseLoadingTaskId] = useState<string | null>(null);
+  const [pendingRevisionRunId, setPendingRevisionRunId] = useState<string | null>(null);
+
   // ── Session store integration ─────────────────────────────────
   const {
     messages, setModule, setAreaId, setSystemPrompt, clearSession,
@@ -151,6 +163,7 @@ export default function CodingLargeReleasePage() {
       if (!res.ok) return;
       const data = await res.json();
       setProjectName(data.name);
+      setProject(data as CodingProject);
     } catch {
       // Silently handle
     }
@@ -181,6 +194,11 @@ export default function CodingLargeReleasePage() {
         // Save the completion record via POST complete
         saveCompletionToTask(activeTaskId, record);
       }
+      // Wave 5.2: parse file blocks server-side → deterministic diff → review gate.
+      requestApplyPreview(activeTaskId, lastMsg.content, 'initial', null);
+    } else if (activeMode === 'revise') {
+      requestApplyPreview(activeTaskId, lastMsg.content, 'revision', pendingRevisionRunId);
+      setPendingRevisionRunId(null);
     }
 
     // Reset active state
@@ -188,6 +206,64 @@ export default function CodingLargeReleasePage() {
     setActiveMode(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreaming]);
+
+  // ── Apply-to-workspace preview (no writes — review gate) ──────
+  const requestApplyPreview = useCallback(async (
+    taskId: string,
+    responseText: string,
+    kind: 'initial' | 'revision',
+    revisionOfTestRunId: string | null,
+  ) => {
+    if (!projectId) return;
+    setApplyErrors((prev) => { const next = { ...prev }; delete next[taskId]; return next; });
+    try {
+      const res = await fetch(`/api/coding/projects/${projectId}/tasks/${taskId}/apply/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ response_text: responseText, kind, revision_of_test_run_id: revisionOfTestRunId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setApplyErrors((prev) => ({ ...prev, [taskId]: data.error || 'Could not build the apply preview.' }));
+        return;
+      }
+      setApplyPreviews((prev) => ({ ...prev, [taskId]: data as WorkspaceApplyPreview }));
+      setApplyResults((prev) => { const next = { ...prev }; delete next[taskId]; return next; });
+    } catch {
+      setApplyErrors((prev) => ({ ...prev, [taskId]: 'Could not reach the server for the apply preview.' }));
+    }
+  }, [projectId]);
+
+  // ── One revision round from a real test failure ───────────────
+  const handleRevise = useCallback(async (taskId: string, testRunId: string) => {
+    if (!projectId || isStreaming) return;
+    setReviseLoadingTaskId(taskId);
+    try {
+      clearSession();
+      const res = await fetch(`/api/coding/projects/${projectId}/tasks/${taskId}/revise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ test_run_id: testRunId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setApplyErrors((prev) => ({ ...prev, [taskId]: data.error || 'Failed to start the revision round' }));
+        return;
+      }
+      if (data.moduleId) setModule(data.moduleId);
+      if (data.areaId) setAreaId(data.areaId);
+      if (data.systemPromptOverride) setSystemPrompt(data.systemPromptOverride);
+      setActiveTaskId(taskId);
+      setActiveMode('revise');
+      setPendingRevisionRunId(data.revision_of_test_run_id || testRunId);
+      setExpandedTasks((prev) => new Set(prev).add(taskId));
+      runMessage(data.revisePrompt);
+    } catch (err) {
+      console.error('Failed to start revision:', err);
+    } finally {
+      setReviseLoadingTaskId(null);
+    }
+  }, [projectId, isStreaming, clearSession, setModule, setAreaId, setSystemPrompt, runMessage]);
 
   // ── Save plan to task ─────────────────────────────────────────
   const savePlanToTask = useCallback(async (taskId: string, plan: ExecutionPlan) => {
@@ -907,6 +983,82 @@ export default function CodingLargeReleasePage() {
                     {task.status === 'completed' && task.completion_record && (
                       <div className="pt-2">
                         <CompletionRecord record={task.completion_record} />
+                      </div>
+                    )}
+
+                    {/* ── Wave 5.2: apply-to-workspace → real tests → one revise round ── */}
+                    {applyErrors[task.id] && (
+                      <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2 text-xs text-adv-gold">
+                        Apply to workspace: {applyErrors[task.id]}
+                        {!project?.directory_path && (
+                          <span className="block mt-0.5 text-adv-gray">
+                            Bind a workspace directory on the project page (Workspace card) to enable file writes.
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {applyPreviews[task.id] && (
+                      <div className="pt-2">
+                        <WorkspaceApplyPanel
+                          projectId={projectId!}
+                          preview={applyPreviews[task.id]}
+                          onApplied={(result) => setApplyResults((prev) => ({ ...prev, [task.id]: result }))}
+                        />
+                      </div>
+                    )}
+
+                    {/* Real test execution — shown once files were applied (or task is done) and a workspace is bound */}
+                    {project?.directory_path && (applyResults[task.id] || task.status === 'completed') && (
+                      <div className="pt-2">
+                        <WorkspaceTestPanel
+                          projectId={projectId!}
+                          taskId={task.id}
+                          releaseId={releaseId}
+                          testCommand={project?.test_command || null}
+                          workspacePath={project?.directory_path || null}
+                          onResult={(result) => setTestResults((prev) => ({ ...prev, [task.id]: result }))}
+                        />
+                      </div>
+                    )}
+
+                    {/* One revise round from a real failure — user stays in the loop */}
+                    {testResults[task.id] && !testResults[task.id].passed && !isStreaming && (
+                      <div className="pt-1">
+                        <button
+                          onClick={() => handleRevise(task.id, testResults[task.id].testRunId)}
+                          disabled={reviseLoadingTaskId === task.id}
+                          className="flex items-center gap-1.5 rounded-lg border border-adv-gold px-4 py-2 text-xs font-medium text-adv-gold hover:bg-adv-gold/10 transition-colors disabled:opacity-50"
+                        >
+                          {reviseLoadingTaskId === task.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Play className="h-3.5 w-3.5" />}
+                          Revise from test failures (one AI round — you review the diff again)
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Revision streaming */}
+                    {isStreamingThisTask && activeMode === 'revise' && (
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-adv-gold" />
+                          <span className="text-xs font-medium text-adv-gold">Revising from real test failures...</span>
+                          <button
+                            onClick={stopStreaming}
+                            className="ml-auto rounded-lg border border-border px-3 py-1 text-xs text-adv-gray hover:text-adv-red hover:border-adv-red transition-colors"
+                          >
+                            Stop
+                          </button>
+                        </div>
+                        <div className="max-h-[400px] overflow-auto rounded-lg border border-border bg-adv-dark p-3">
+                          <ConversationThread
+                            messages={messages}
+                            streamingText={streamingText}
+                            streamingThinking={streamingThinking}
+                            isStreaming={isStreaming}
+                          />
+                        </div>
                       </div>
                     )}
 
