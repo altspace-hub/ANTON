@@ -1994,7 +1994,7 @@ CREATE TABLE IF NOT EXISTS orchestrator_heartbeats (
   ran_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   signals_checked INTEGER NOT NULL DEFAULT 0,
   signals_significant INTEGER NOT NULL DEFAULT 0,
-  action_taken TEXT NOT NULL DEFAULT 'none' CHECK(action_taken IN ('none','briefing_generated','alert_sent')),
+  action_taken TEXT NOT NULL DEFAULT 'none' CHECK(action_taken IN ('none','briefing_generated','alert_sent','spend_gate_paused')),
   duration_ms INTEGER,
   error_message TEXT,
   status TEXT NOT NULL DEFAULT 'ok' CHECK(status IN ('ok','error'))
