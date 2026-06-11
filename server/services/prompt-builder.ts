@@ -371,12 +371,31 @@ export async function buildResumeContextLayer(
 }
 
 /**
- * Layer 2b: Inject active regulatory knowledge pack summary.
- * Surfaces structured regulatory entity knowledge from installed + active packs.
+ * Layer 2b: Inject active regulatory knowledge pack content (item 1.3).
+ *
+ * Previously this layer injected pack NAMES + entity counts only — a
+ * "grounding" placebo. It now injects the actual entity text, budgeted at
+ * ~3,500 tokens (same scale as buildAtomLayer), with per-entity attribution
+ * (pack name + entity ref):
+ *
+ *   1. Semantic path — hybridSearch over 'knowledge_pack_entity' embeddings
+ *      (written at pack import; content_text = canonical_name — description),
+ *      filtered to ACTIVE packs, when a userMessage is available.
+ *   2. Deterministic fallback — embeddings rows by pack-id prefix (these
+ *      retain the entity DESCRIPTION text; entity_nodes does not store it),
+ *      active packs first ordered by tier, area-matched packs boosted.
+ *   3. Last resort — entity_nodes canonical names + metadata for active packs
+ *      (honest limitation: descriptions are only persisted in the embeddings
+ *      table, so without embeddings — e.g. no OPENAI_API_KEY at import time —
+ *      only names + structured metadata are available as text).
+ *
  * Short-circuits if no packs are active (common case — zero cost).
+ * The signature is backward compatible: callers without context still get the
+ * pack summary + deterministic content.
  */
 export async function buildKnowledgePackLayer(
   db: DatabaseAdapter,
+  context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
 ): Promise<string> {
   try {
     // Lightweight check: any active packs at all?
@@ -386,9 +405,9 @@ export async function buildKnowledgePackLayer(
     if (!count || count.c === 0) return '';
 
     const rows = await db.all(
-      `SELECT display_name, regulatory_area, regulation_ids, entity_count
+      `SELECT id, display_name, regulatory_area, regulation_ids, entity_count
        FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
-    ) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+    ) as Array<{ id: string; display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
 
     if (rows.length === 0) return '';
 
@@ -399,10 +418,142 @@ export async function buildKnowledgePackLayer(
       try { regs = JSON.parse(r.regulation_ids || '[]'); } catch { /* ignore */ }
       lines.push(`- **${r.display_name}** (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs.length ? `, covers: ${regs.join(', ')}` : ''})`);
     }
+
+    // ── Inject actual pack entity TEXT (budgeted) ─────────────────────────
+    const entityLines = await retrievePackEntityContent(db, rows, context);
+    if (entityLines.length > 0) {
+      lines.push('');
+      lines.push('### Relevant pack content');
+      lines.push('The following entries are drawn from the packs above. Cite the pack and entity reference when you rely on one:');
+      lines.push(...entityLines);
+    }
+
     return lines.join('\n');
   } catch {
     return '';
   }
+}
+
+/** Token budget for injected pack entity text (~same scale as buildAtomLayer). */
+const PACK_LAYER_TOKEN_BUDGET = 3500;
+const PACK_LAYER_MAX_ENTITIES = 60;
+
+/**
+ * Retrieve the most relevant pack entity text for the current session,
+ * restricted to ACTIVE packs. See buildKnowledgePackLayer doc-comment for the
+ * three-tier strategy. Never throws — returns [] on any failure.
+ */
+async function retrievePackEntityContent(
+  db: DatabaseAdapter,
+  activePacks: Array<{ id: string; display_name: string; regulatory_area: string | null }>,
+  context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
+): Promise<string[]> {
+  const activeIds = new Set(activePacks.map(p => p.id));
+  const packNameById = new Map(activePacks.map(p => [p.id, p.display_name]));
+  const charBudget = PACK_LAYER_TOKEN_BUDGET * 4; // ~4 chars/token
+
+  const formatLine = (packName: string, refId: string, text: string): string =>
+    `- [${packName} · ${refId}] ${text.replace(/\s+/g, ' ').trim()}`;
+
+  // content_id convention from knowledge-pack-service embedAndStore: `${packId}::${refId}`
+  const splitContentId = (contentId: string): { packId: string; refId: string } => {
+    const idx = contentId.indexOf('::');
+    return idx === -1
+      ? { packId: '', refId: contentId }
+      : { packId: contentId.slice(0, idx), refId: contentId.slice(idx + 2) };
+  };
+
+  // ── Tier 1: semantic retrieval over pack-entity embeddings ──────────────
+  const query = context?.userMessage?.trim();
+  if (query && query.length > 5) {
+    try {
+      const results = await hybridSearch(db, {
+        query,
+        contentTypes: ['knowledge_pack_entity'],
+        topK: PACK_LAYER_MAX_ENTITIES,
+        minSimilarity: 0.25,
+        includeDocumentChunks: false,
+      });
+      const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
+      const capped = applyTokenBudget(fromActivePacks, PACK_LAYER_TOKEN_BUDGET);
+      if (capped.length > 0) {
+        return capped.map(r => {
+          const { packId, refId } = splitContentId(r.content_id);
+          const meta = (r.metadata ?? {}) as Record<string, unknown>;
+          const packName = (typeof meta.packName === 'string' && meta.packName) || packNameById.get(packId) || 'Knowledge pack';
+          return formatLine(packName, String(meta.refId ?? refId), r.content_text);
+        });
+      }
+    } catch {
+      // Embeddings/vector search unavailable — fall through to deterministic path
+    }
+  }
+
+  // ── Tier 2: deterministic — embedding rows by pack prefix (retain descriptions) ──
+  // Area-matched packs first (substring match on regulatory_area/name is the
+  // best available join between areaIds like 'fcp' and pack areas like 'AML/CFT').
+  const area = (context?.areaId ?? '').toLowerCase();
+  const orderedPacks = [...activePacks].sort((a, b) => {
+    const am = area && `${a.regulatory_area ?? ''} ${a.display_name}`.toLowerCase().includes(area) ? 0 : 1;
+    const bm = area && `${b.regulatory_area ?? ''} ${b.display_name}`.toLowerCase().includes(area) ? 0 : 1;
+    return am - bm;
+  });
+
+  const lines: string[] = [];
+  let usedChars = 0;
+  try {
+    for (const pack of orderedPacks) {
+      if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars >= charBudget) break;
+      const embRows = await db.all(
+        `SELECT content_id, content_text FROM embeddings
+         WHERE content_type = 'knowledge_pack_entity' AND content_id LIKE ?
+         ORDER BY content_id ASC LIMIT ?`,
+        `${pack.id}::%`, PACK_LAYER_MAX_ENTITIES,
+      ) as Array<{ content_id: string; content_text: string }>;
+      for (const row of embRows) {
+        if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars + row.content_text.length > charBudget) break;
+        const { refId } = splitContentId(row.content_id);
+        lines.push(formatLine(pack.display_name, refId, row.content_text));
+        usedChars += row.content_text.length;
+      }
+    }
+  } catch {
+    // embeddings table may be missing — fall through
+  }
+  if (lines.length > 0) return lines;
+
+  // ── Tier 3: entity_nodes names + metadata (no descriptions persisted there) ──
+  try {
+    for (const pack of orderedPacks) {
+      if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars >= charBudget) break;
+      const nodes = await db.all(
+        `SELECT entity_type, entity_id, canonical_name, metadata
+         FROM entity_nodes WHERE pack_id = ?
+         ORDER BY entity_type ASC, canonical_name ASC LIMIT ?`,
+        pack.id, PACK_LAYER_MAX_ENTITIES,
+      ) as Array<{ entity_type: string; entity_id: string; canonical_name: string; metadata: string | Record<string, unknown> | null }>;
+      for (const n of nodes) {
+        if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars >= charBudget) break;
+        let metaText = '';
+        try {
+          const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+          if (meta && typeof meta === 'object') {
+            const parts = Object.entries(meta as Record<string, unknown>)
+              .filter(([, v]) => v !== null && typeof v !== 'object')
+              .slice(0, 6)
+              .map(([k, v]) => `${k}: ${String(v)}`);
+            if (parts.length > 0) metaText = ` (${parts.join('; ')})`;
+          }
+        } catch { /* ignore malformed metadata */ }
+        const text = `${n.canonical_name} [${n.entity_type}]${metaText}`;
+        lines.push(formatLine(pack.display_name, n.entity_id, text));
+        usedChars += text.length;
+      }
+    }
+  } catch {
+    // entity_nodes missing — give up quietly; the pack summary above still stands
+  }
+  return lines;
 }
 
 /**

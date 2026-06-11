@@ -162,12 +162,37 @@ export interface RagDocument {
   uploaded_at: string;
 }
 
+/**
+ * One resolved knowledge source with content provenance (Core Experience
+ * Review 2026-06, item 1.6). When the resolver had the actual source text in
+ * hand, `sha256`/`charCount` pin that content and `contentHashed` is true.
+ * Sources whose content never passes through the resolver (Claude built-in
+ * knowledge, the native web_search tool) are listed with
+ * `contentHashed: false` — their content cannot be hashed pre-call.
+ */
+export interface ResolvedSourceDetail {
+  /** Source kind: 'builtin' | 'web_search_tool' | 'url' | 'local_file' | 'uploaded_file' | 'rag_chunk' | 'bm25_chunk' | 'summary' */
+  type: string;
+  name: string;
+  url?: string;
+  path?: string;
+  /** sha256 (hex) of the extracted source content — present only when contentHashed */
+  sha256?: string;
+  charCount?: number;
+  retrievedAt?: string;
+  contentHashed: boolean;
+  /** Populated when the source was skipped or failed to fetch */
+  note?: string;
+}
+
 export interface ResolvedKnowledge {
   systemPromptAdditions: string;
   contextDocuments: string;
   tools: Array<{ type: string; name: string }>;
   tokenEstimate: number;
   sourceManifest: string[];
+  /** Per-source provenance with content hashes (item 1.6). Optional so legacy literal constructions stay valid. */
+  sourceDetails?: ResolvedSourceDetail[];
 }
 
 // ── Output Formats ─────────────────────────────────────────

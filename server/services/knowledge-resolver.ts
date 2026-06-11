@@ -12,6 +12,7 @@
  */
 
 import path from 'path';
+import crypto from 'crypto';
 import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -19,8 +20,13 @@ import { extractTextFromFile } from './text-extractor.js';
 import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
 import { semanticSearch } from './semantic-search.js';
-import type { KnowledgeSourceConfig, ResolvedKnowledge } from '../../src/lib/types.js';
+import type { KnowledgeSourceConfig, ResolvedKnowledge, ResolvedSourceDetail } from '../../src/lib/types.js';
 import { estimateTokens } from './token-estimator.js';
+
+/** sha256 (hex) of source content — used to pin sources in run artifacts (item 1.6). */
+function contentSha256(text: string): string {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
@@ -95,7 +101,10 @@ export async function resolveKnowledgeSources(
     tools: [],
     tokenEstimate: 0,
     sourceManifest: [],
+    sourceDetails: [],
   };
+  const sourceDetails = result.sourceDetails!;
+  const resolvedAt = () => new Date().toISOString();
 
   // Guard: ensure config.modes exists
   if (!config.modes) config.modes = {} as typeof config.modes;
@@ -115,6 +124,13 @@ export async function resolveKnowledgeSources(
       systemParts.push(
         `## WEB SEARCH ENABLED\nUse the web_search tool to find the latest regulatory publications, guidance, and official sources. Always cite the URL and date of any web-sourced information. Focus on: ${config.modes.claudeKnowledge.description || 'relevant regulatory and compliance sources'}.`
       );
+      // Tool results happen inside the API call — content not capturable pre-call.
+      sourceDetails.push({
+        type: 'web_search_tool',
+        name: 'Anthropic web_search tool',
+        contentHashed: false,
+        note: 'results are fetched by the model during the call; not hashable at resolve time',
+      });
     }
     if (config.modes.claudeKnowledge.description) {
       systemParts.push(
@@ -122,6 +138,12 @@ export async function resolveKnowledgeSources(
       );
     }
     result.sourceManifest.push('Claude built-in knowledge');
+    sourceDetails.push({
+      type: 'builtin',
+      name: 'Claude built-in knowledge',
+      contentHashed: false,
+      note: 'model parametric knowledge — no retrievable content to hash',
+    });
   }
 
   // ── MODE 2: Online Reference URLs ────────────────────────────────────────────
@@ -132,6 +154,7 @@ export async function resolveKnowledgeSources(
     for (const url of config.modes.onlineReference.urls) {
       if (usedTokens >= effectiveBudget) {
         contextParts.push(`\n### ONLINE REFERENCE (SKIPPED — context budget reached): ${url}`);
+        sourceDetails.push({ type: 'url', name: url, url, contentHashed: false, note: 'skipped — context budget reached' });
         continue;
       }
 
@@ -141,6 +164,7 @@ export async function resolveKnowledgeSources(
         contextParts.push(
           `\n### ONLINE REFERENCE (FETCH FAILED): ${url}\nError: ${fetchResult.error}\nNote: Use web search or built-in knowledge as a fallback for this source.`
         );
+        sourceDetails.push({ type: 'url', name: url, url, contentHashed: false, note: `fetch failed: ${fetchResult.error}` });
         continue;
       }
 
@@ -149,6 +173,15 @@ export async function resolveKnowledgeSources(
         `\n### ONLINE REFERENCE: ${url}${titleLine}\n${fetchResult.text}`
       );
       usedTokens += fetchResult.tokenEstimate;
+      sourceDetails.push({
+        type: 'url',
+        name: fetchResult.title || url,
+        url,
+        sha256: contentSha256(fetchResult.text),
+        charCount: fetchResult.text.length,
+        retrievedAt: resolvedAt(),
+        contentHashed: true,
+      });
     }
   }
 
@@ -182,6 +215,7 @@ export async function resolveKnowledgeSources(
       for (const filePath of filePaths) {
         if (usedTokens >= effectiveBudget) {
           contextParts.push(`\n### LOCAL DOCUMENT (SKIPPED — context budget): ${path.basename(filePath)}`);
+          sourceDetails.push({ type: 'local_file', name: path.basename(filePath), path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
           continue;
         }
 
@@ -194,6 +228,15 @@ export async function resolveKnowledgeSources(
         );
         usedTokens += tokens;
         result.sourceManifest.push(`${path.basename(filePath)} (local)`);
+        sourceDetails.push({
+          type: 'local_file',
+          name: path.basename(filePath),
+          path: filePath,
+          sha256: contentSha256(text),
+          charCount: text.length,
+          retrievedAt: resolvedAt(),
+          contentHashed: true,
+        });
       }
     }
   }
@@ -205,6 +248,7 @@ export async function resolveKnowledgeSources(
       if (usedTokens >= effectiveBudget) {
         console.warn(`[resolver] SKIPPING ${path.basename(filePath)} — budget exhausted (${usedTokens}/${effectiveBudget})`);
         contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${path.basename(filePath)}`);
+        sourceDetails.push({ type: 'uploaded_file', name: path.basename(filePath), path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
         continue;
       }
 
@@ -217,6 +261,15 @@ export async function resolveKnowledgeSources(
       );
       usedTokens += tokens;
       result.sourceManifest.push(`${path.basename(filePath)} (uploaded)`);
+      sourceDetails.push({
+        type: 'uploaded_file',
+        name: path.basename(filePath),
+        path: filePath,
+        sha256: contentSha256(text),
+        charCount: text.length,
+        retrievedAt: resolvedAt(),
+        contentHashed: true,
+      });
     }
   }
 
@@ -269,6 +322,14 @@ export async function resolveKnowledgeSources(
             ragParts.push(result.content);
             ragParts.push('');
             usedTokens += estimateTokens(result.content);
+            sourceDetails.push({
+              type: 'rag_chunk',
+              name: result.citation,
+              sha256: contentSha256(result.content),
+              charCount: result.content.length,
+              retrievedAt: resolvedAt(),
+              contentHashed: true,
+            });
 
             // Stop if we exceed context budget
             if (usedTokens >= effectiveBudget) break;
@@ -294,6 +355,14 @@ export async function resolveKnowledgeSources(
           ragParts.push(chunk.text);
           ragParts.push('');
           usedTokens += chunk.tokenCount;
+          sourceDetails.push({
+            type: 'bm25_chunk',
+            name: `${chunk.documentName}#${chunk.chunkIndex + 1}`,
+            sha256: contentSha256(chunk.text),
+            charCount: chunk.text.length,
+            retrievedAt: resolvedAt(),
+            contentHashed: true,
+          });
         }
         contextParts.unshift(ragParts.join('\n'));
         result.sourceManifest.push(`${retrieved.length} BM25 passages from ${folderPaths.length} indexed folder(s)`);

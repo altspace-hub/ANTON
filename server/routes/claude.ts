@@ -10,6 +10,7 @@ import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
+import type { ResolvedKnowledge } from '../../src/lib/types.js';
 import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
@@ -38,6 +39,7 @@ import { isCircuitOpen, recordSuccess, recordFailure } from '../services/circuit
 import { enqueueAudit } from '../services/audit-queue.js';
 import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
+import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -354,9 +356,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
-      const resolved = knowledgeSources
+      const resolved: ResolvedKnowledge = knowledgeSources
         ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
-        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
         sendProgress({ type: 'context_assembly_complete', tokenEstimate: resolved.tokenEstimate });
@@ -402,6 +404,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             resolved.contextDocuments += ragContext;
             resolved.tokenEstimate += ragTokenEstimate;
             resolved.sourceManifest.push(`RAG: ${results.length} chunks from ${collections.length} collection(s)`);
+            // Item 1.6: pin each retrieved chunk in the run artifact source manifest
+            const ragRetrievedAt = new Date().toISOString();
+            (resolved.sourceDetails ??= []).push(...results.map((r) => ({
+              type: 'rag_chunk',
+              name: String(r.citation ?? r.collectionName ?? 'rag chunk'),
+              sha256: sha256Hex(String(r.content ?? '')),
+              charCount: String(r.content ?? '').length,
+              retrievedAt: ragRetrievedAt,
+              contentHashed: true,
+            })));
           }
         } catch (error) {
           console.error('[RAG] Search failed:', error);
@@ -565,7 +577,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
-      const knowledgePackPrompt = await buildKnowledgePackLayer(db);
+      const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
       const atomLayerPrompt = atomInjectionEnabled !== false ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null) : '';
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
@@ -684,11 +696,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               cacheCreationTokens * (costIn * 1.25) +
               (data.outputTokens || 0) * costOut
             ) / 1_000_000;
+            // Item 1.6: the assistant message id is captured so the run artifact
+            // (composed prompt + pinned source manifest) can FK to this exact row.
+            const assistantMessageId = crypto.randomUUID();
+            let messagePersisted = false;
             try {
               await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, cost, model_id, config_snapshot, created_at)
                  VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?, ?)`
               ,
-                crypto.randomUUID(),
+                assistantMessageId,
                 sessionId,
                 data.text,
                 data.thinking || null,
@@ -700,8 +716,41 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 JSON.stringify(configSnapshot),
                 new Date().toISOString()
               );
+              messagePersisted = true;
             } catch {
               // Non-fatal — message was already streamed to user
+            }
+            // Item 1.6: persist the run artifact — the final composed system
+            // prompt exactly as passed to the LLM (closure values reflect any
+            // post-composition mutation, e.g. web-search strip / Bing append on
+            // non-Anthropic providers) + per-layer summary + pinned sources.
+            // Fire-and-forget: writeRunArtifact never throws; failures are logged.
+            if (messagePersisted) {
+              const fullComposedPrompt = staticSystemPrompt
+                ? `${staticSystemPrompt}\n\n${composedPrompt}`
+                : composedPrompt;
+              const layerSummary = buildLayerSummary({
+                'composed_static_layers_1_3_cached': staticSystemPrompt ?? '',
+                [staticSystemPrompt ? 'composed_dynamic' : 'composed_full']: composedPrompt,
+                'layer2a_org_context': orgContextPrompt,
+                'layer2b_knowledge_pack': knowledgePackPrompt,
+                'layer4a_resume_context': resumeContextPrompt,
+                'layer6_atoms': atomLayerPrompt,
+                'goals_values': goalsValuesPrompt,
+                'business_context': businessContext ?? '',
+                'layer6_knowledge_system_additions': resolved.systemPromptAdditions,
+                'layer6_reference_documents': resolved.contextDocuments,
+              });
+              const sourceManifest = resolved.sourceDetails && resolved.sourceDetails.length > 0
+                ? resolved.sourceDetails
+                : resolved.sourceManifest.map((name) => ({ type: 'summary', name, contentHashed: false }));
+              void writeRunArtifact(db, {
+                messageId: assistantMessageId,
+                sessionId,
+                composedPrompt: fullComposedPrompt,
+                layerSummary,
+                sourceManifest,
+              });
             }
             // GOV-02: look up current system_prompt version for this module
             let systemPromptVersionId: string | undefined;
@@ -1806,6 +1855,48 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
       res.json(matches.slice(0, 3));
+    } catch (error) {
+      res.status(500).json({ error: safeError(error) });
+    }
+  });
+
+  // GET /api/sessions/:sessionId/messages/:messageId/artifacts — item 1.6 read API.
+  // Returns the persisted run artifact (composed prompt + layer summary +
+  // pinned source manifest) for one assistant message. Ownership check mirrors
+  // GET /api/sessions/:id (admins see all; others only their own sessions).
+  router.get('/sessions/:sessionId/messages/:messageId/artifacts', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+      const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
+      const params = userRole === 'admin' ? [req.params.sessionId] : [req.params.sessionId, userId!];
+      const session = await db.get(`SELECT id FROM sessions ${whereClause}`, ...params);
+      if (!session) {
+        res.status(404).json({ error: 'Session not found or access denied' });
+        return;
+      }
+
+      const row = await db.get(
+        `SELECT id, message_id, session_id, composed_prompt, prompt_sha256, prompt_chars,
+                truncated, layer_summary, source_manifest, created_at
+         FROM run_artifacts WHERE message_id = ? AND session_id = ?`,
+        req.params.messageId, req.params.sessionId
+      ) as Record<string, unknown> | undefined;
+      if (!row) {
+        res.status(404).json({ error: 'No run artifact recorded for this message' });
+        return;
+      }
+
+      // JSONB columns come back as objects from pg; normalise if a driver returns strings
+      const parseMaybe = (v: unknown): unknown => {
+        if (typeof v !== 'string') return v;
+        try { return JSON.parse(v); } catch { return v; }
+      };
+      res.json({
+        ...row,
+        layer_summary: parseMaybe(row.layer_summary),
+        source_manifest: parseMaybe(row.source_manifest),
+      });
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
     }
