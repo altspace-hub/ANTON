@@ -1,10 +1,76 @@
 # ANTON Go-Live Checklist — Early July 2026 Launch
 
-**Status as of 2026-06-09.** Owners: `[ENG]` coding/in-repo · `[OPS]` operator/infra ·
+**Status as of 2026-06-09 · re-verified 2026-06-11.** Owners: `[ENG]` coding/in-repo · `[OPS]` operator/infra ·
 `[LEGAL]` counsel/compliance · `[iOS]` needs a Mac + Apple account.
 
 This is the single source of truth for the launch. It was produced from a 6-surface readiness
 audit (see *Appendix C*) and the in-repo fixes that followed. Tick boxes as items complete.
+
+---
+
+## ⏱ 2026-06-11 re-verification (HEAD `eb0b9074`, ~3.5 weeks to launch)
+
+**63 commits landed since the 06-09 snapshot** — most of two large improvement plans
+(`docs/APP_SECURITY_AND_UX_ROADMAP_2026-06.md` + `docs/ANTON_LOCAL_UPDATE_PLAN_2026-06.md`)
+plus device-verified payment fixes. Everything below was ground-truthed against code/env/CI,
+not taken from the doc's checkboxes.
+
+**At-a-glance verdict:** the scoped launch (Android + ANTON Local, self-custody) is **on track
+from the engineering side**. Launch is gated almost entirely on **operator + legal**.
+
+**GREEN (verified):** all 4 keystores present + gitignored + never committed; EdDSA R8
+`-dontwarn` in all 4 proguard files; `versionName` standardized `1.0.0`/`versionCode 1`;
+typecheck clean; GitHub CI green + substantive; risk-disclosure gate now in ALL THREE money apps
+(not just Pay); `stub_mode` auto-cutover wired; both 06-10 plans largely executed (Business
+refund UI + address-poisoning guard, Companion real voice + relabeled wallet, Pay reset/haptics/
+deep-link, Comm safety-number + avatar editor; ANTON Local: 33 modules surfaced, real Pathfinder,
+autonomous Missions, Agents detail page + mesh fix, Markets loop repair, in-app Anthropic key,
+cheap-model spine, A2A demo ladder; remittance i18n 2,830 keys). Test counts: server 1070, relay
+219, Pay 246/Comm 629/Business 164/Companion 11.
+
+> **Release-build re-verification (the #1 gate): ✅ 4/4 PASS from HEAD (2026-06-11).** All four
+> apps produce signed release APKs; R8 + resource-shrink ran clean (the new @capacitor/haptics,
+> @capacitor-community/speech-recognition, avatar, and refund code all shrank with the existing
+> EdDSA `-dontwarn` rules — no proguard changes). Distinct signers verified:
+> `CN=ANTON Communication` 24.2 MB · `CN=ANTON Pay` 2.9 MB · `CN=ANTON Business` 2.5 MB ·
+> `CN=ANTON Companion` 24.2 MB. All versionCode 1 / versionName 1.0.0. (Companion's
+> `android/capacitor.settings.gradle` was regenerated to hoisted paths by `cap sync` and committed
+> so future builds don't depend on sync running first.) Remaining: bump versionCode per Play upload.
+
+**OPEN — engineering (small):**
+1. **E2E Cross-Browser CI workflow is RED** every run — the job starts the server with no
+   `DATABASE_URL`, falls back to SQLite, crashes (`no such table: entity_nodes`,
+   `server/db/init.ts:45`), `wait-on` times out. **CI-config issue (needs a Postgres service
+   container), not an app regression** — but it's the one red signal on main.
+2. **Companion APNs/FCM push dispatch still stubs** (`app-push-service.ts:193-203` throws); no
+   `google-services.json` in any android project. Web-push works once VAPID keys set. → push
+   scope is a **decision**, not done.
+3. Minor residuals: mDNS endpoints default port 3011 (moot — `.env` PORT=3001 — wrong for fresh
+   installs); `loggingBehavior:"production"` synced only in Business's `assets/capacitor.config.json`
+   (debug-only gap); `APPS_SECURITY_AUDIT.md` §5 "no deep-link on money apps" now stale for Pay
+   (the futurechain: intent filter landed); `dist-installer/win-unpacked/` + `builder-*.yml` still
+   present (exclude from shipped tree); 14 untracked scratch files to delete; `pnpm audit` still
+   `|| true`, no gitleaks/CodeQL; `ws` moderate advisory not yet bumped.
+
+**OPERATOR ACTION LIST (ordered by lead-time):**
+1. `[LEGAL]` **#1 risk, start now** — counsel-approved disclosure copy (bump `DISCLOSURE_VERSION`
+   from 1 when it lands), real ToS/Privacy (drafts bannered at terms.futurechain.eu), MiCA/CASP
+   classification, DPO/DPA. Brief: `docs/LEGAL_ACTION_BRIEF.md`.
+2. `[OPS]` 🔑 **back up the 4 keystores + `.env`** — local-only on this machine (verified
+   gitignored). Highest-risk single item; recipe in `SESSION_HANDOVER_2026-06-10.md §0`.
+3. `[OPS]` **set `INSTANCE_KEY_ENCRYPTION_KEY` in `.env`** — still ABSENT (verified name-only);
+   without it the instance Ed25519 privkey sits plaintext in Postgres. (`ENCRYPTION_KEY` present.)
+4. `[OPS]` **mainnet node + `stub_mode→false` cutover + small live payments** on Pay/Business/Comm.
+5. `[OPS]` **terms.futurechain.eu DNS + Caddy + relay redeploy** (`docs/LEGAL_PAGES_DEPLOY.md`) —
+   prod relay is a flat-file copy drifted since ~06-01 (missing the FCM wake-push commit + legal
+   pages); full `relay/src` re-sync recommended.
+6. `[OPS]` **real `google_cloud_project_number`** (Pay strings.xml still `0` → Play Integrity is a
+   prod no-op); Play Console accounts + 4 listings + data-safety + screenshots; rotate dev API
+   keys; clean-machine portable-bundle test.
+
+**Open product decisions:** Pay brand colour (orange `#C97220` is current; the design brief
+assumed blue) · dark-mode scope for July · Companion push in/out of launch. (Companion-wallet
+decision already taken + executed = relabel/hide.)
 
 ---
 
