@@ -30,10 +30,19 @@ import {
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
+import {
+  computeOpinionAgreement,
+  mapOpinionRow,
+  type OpinionRow,
+  type OpinionLite,
+  type PrimaryFindingLite,
+} from '../services/gap-second-opinion.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { compareIterations, buildSinceLastAssessmentSection } from '../services/gap-comparison.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
+import { bundleGapAssessmentToAnton } from '../services/anton-bundler.js';
+import { signAntonBundle } from '../services/anton-bundle-signing.js';
 import { fileURLToPath } from 'url';
 
 const __filename_local = fileURLToPath(import.meta.url);
@@ -518,6 +527,203 @@ Generate the complete framework JSON now.`;
     }
   });
 
+  // ── Second-opinion lane (Wave 2.7) ──────────────────────────────────────────
+  // POST /api/gap-assessments/:id/second-opinion  { modelTier }
+  // Re-runs the assessment batches with a DIFFERENT model into a comparison
+  // slot (gap_finding_opinions) — gap_findings is never touched. Streams SSE
+  // progress like /run and finishes with the deterministic agreement summary.
+  const tierToModelId = (tier: GapModelTier): string =>
+    tier === 'opus' ? 'claude-opus-4-8' : tier === 'sonnet' ? 'claude-sonnet-4-6' : tier;
+
+  router.post('/gap-assessments/:id/second-opinion', async (req: Request, res: Response) => {
+    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+
+    const uid = getUserId(req);
+    const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    const requestedTier = String((req.body as { modelTier?: unknown } | undefined)?.modelTier ?? '').trim();
+    if (!requestedTier || requestedTier.length > 100) {
+      return res.status(400).json({ error: 'modelTier is required (opus, sonnet, or a custom model id)' });
+    }
+
+    const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
+    const primaryTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
+    const opinionModelId = tierToModelId(requestedTier);
+    if (opinionModelId === tierToModelId(primaryTier)) {
+      return res.status(400).json({ error: `Second opinion must use a DIFFERENT model — the assessment was scored by ${tierToModelId(primaryTier)}.` });
+    }
+
+    // Primary findings define the comparison scope — a second opinion on an
+    // assessment that has not been run yet has nothing to compare against.
+    const findingRows = await db.all<GapFindingRow>(
+      'SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
+    if (findingRows.length === 0) {
+      return res.status(400).json({ error: 'Run the assessment first — there are no findings to compare against.' });
+    }
+    const primaryByFramework = new Map<string, Set<string>>();
+    for (const row of findingRows) {
+      if (!primaryByFramework.has(row.framework)) primaryByFramework.set(row.framework, new Set());
+      primaryByFramework.get(row.framework)!.add(row.article_id);
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    function sendEvent(data: Record<string, unknown>): void {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    }
+
+    try {
+      // Same enrichment layers as the primary run — the only variable is the model.
+      const orgContextLayer = await buildOrgContextLayer(db, uid);
+      const knowledgePackLayer = await buildKnowledgePackLayer(db);
+      let knowledgeContext = '';
+      if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
+        try {
+          const resolved = await resolveKnowledgeSources(
+            contextConfig.knowledgeSources as Parameters<typeof resolveKnowledgeSources>[0],
+            [],
+            { db, userQuery: String(contextConfig.concerns || 'AML compliance gap assessment'), contextBudget: 100_000 }
+          );
+          knowledgeContext = [resolved.systemPromptAdditions, resolved.contextDocuments].filter(Boolean).join('\n\n');
+        } catch (err) {
+          console.error('[gap-assessments] second-opinion knowledge resolution error:', err);
+          sendEvent({ type: 'warning', message: 'Could not resolve some knowledge sources — continuing with available context' });
+        }
+      }
+      const extraSystemContext = [orgContextLayer, knowledgePackLayer, knowledgeContext].filter(Boolean).join('\n\n');
+
+      // Fresh comparison slot for this model.
+      await db.run('DELETE FROM gap_finding_opinions WHERE assessment_id = ? AND model_id = ?',
+        req.params.id as string, opinionModelId);
+
+      sendEvent({ type: 'status', status: 'second_opinion', message: `Second opinion with ${opinionModelId} — primary findings stay untouched.` });
+
+      const BATCH_SIZE = 12;
+      for (const [frameworkId, articleIds] of primaryByFramework) {
+        const fw = getFramework(frameworkId);
+        if (!fw) {
+          sendEvent({ type: 'warning', message: `Framework ${frameworkId} not found, skipping` });
+          continue;
+        }
+        // Comparison slot scope = exactly the articles the primary run scored.
+        const articles = fw.articles.filter(a => articleIds.has(a.id));
+        const batches: FrameworkArticle[][] = [];
+        for (let i = 0; i < articles.length; i += BATCH_SIZE) batches.push(articles.slice(i, i + BATCH_SIZE));
+
+        sendEvent({ type: 'framework_start', framework: frameworkId, frameworkName: fw.name, articleCount: articles.length, batchCount: batches.length });
+
+        for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+          const batch = batches[batchIdx];
+          sendEvent({
+            type: 'batch_start', framework: frameworkId, batchIndex: batchIdx, totalBatches: batches.length,
+            articles: batch.map(a => a.id),
+            message: `Second opinion ${fw.shortName} batch ${batchIdx + 1}/${batches.length} (${batch[0].id}–${batch[batch.length - 1].id})`,
+          });
+          try {
+            // REUSE the Wave-1A engine — same prompts, same deterministic
+            // rubric, different model. No baseline: this is an independent read.
+            const result = await runAssessmentBatch(
+              anthropic, frameworkId, batch, contextConfig, batchIdx, batches.length,
+              extraSystemContext || undefined, requestedTier, db
+            );
+            for (const f of result.findings) {
+              await db.run(
+                `INSERT INTO gap_finding_opinions
+                   (assessment_id, framework, article_id, article_title, model_id, facts,
+                    computed_score, computed_numeric_score, computed_priority, rubric_version,
+                    rationale, current_state, evidence_refs, warnings, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON CONFLICT (assessment_id, framework, article_id, model_id) DO UPDATE SET
+                   facts = EXCLUDED.facts,
+                   computed_score = EXCLUDED.computed_score,
+                   computed_numeric_score = EXCLUDED.computed_numeric_score,
+                   computed_priority = EXCLUDED.computed_priority,
+                   rubric_version = EXCLUDED.rubric_version,
+                   rationale = EXCLUDED.rationale,
+                   current_state = EXCLUDED.current_state,
+                   evidence_refs = EXCLUDED.evidence_refs,
+                   warnings = EXCLUDED.warnings,
+                   created_at = EXCLUDED.created_at`,
+                req.params.id as string, frameworkId, f.articleId, f.articleTitle, opinionModelId,
+                f.criteria ? JSON.stringify(f.criteria) : null,
+                f.score, f.numericScore, f.priority, f.rubricVersion ?? null,
+                f.notes || null, f.currentState || null,
+                JSON.stringify(f.evidenceRefs ?? []), JSON.stringify(f.warnings ?? []),
+                new Date().toISOString()
+              );
+            }
+            sendEvent({ type: 'batch_complete', framework: frameworkId, batchIndex: batchIdx, totalBatches: batches.length, message: `Batch ${batchIdx + 1}/${batches.length} complete` });
+          } catch (batchErr) {
+            const errMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
+            console.error(`[gap-assessments] second-opinion batch ${batchIdx + 1} error:`, errMsg);
+            sendEvent({ type: 'batch_error', framework: frameworkId, batchIndex: batchIdx, error: errMsg, message: `Batch ${batchIdx + 1} failed: ${errMsg.slice(0, 200)}` });
+          }
+        }
+        sendEvent({ type: 'framework_complete', framework: frameworkId });
+      }
+
+      // Deterministic agreement summary (shared rubric — no judge model).
+      const primaries = findingRows.map(mapFindingRow) as unknown as PrimaryFindingLite[];
+      const opinionRows = await db.all<OpinionRow>(
+        'SELECT * FROM gap_finding_opinions WHERE assessment_id = ? AND model_id = ?',
+        req.params.id as string, opinionModelId);
+      const agreement = computeOpinionAgreement(primaries, opinionRows.map(mapOpinionRow) as OpinionLite[], opinionModelId);
+
+      sendEvent({ type: 'complete', message: `Second opinion complete — ${agreement.agreementPct ?? 0}% agreement, ${agreement.divergent.length} divergent article(s) flagged for review.`, agreement });
+      res.end();
+    } catch (err) {
+      console.error('[gap-assessments] second-opinion error:', err);
+      sendEvent({ type: 'error', error: safeError(err) });
+      res.end();
+    }
+  });
+
+  // GET /api/gap-assessments/:id/second-opinion[?model=…]
+  // Returns the stored comparison slot(s) + the agreement view per article.
+  router.get('/gap-assessments/:id/second-opinion', async (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const allOpinions = await db.all<OpinionRow>(
+        'SELECT * FROM gap_finding_opinions WHERE assessment_id = ? ORDER BY created_at DESC',
+        req.params.id as string);
+      if (allOpinions.length === 0) {
+        return res.json({ models: [], agreement: null });
+      }
+
+      // Distinct models, most recent first (row order is created_at DESC).
+      const models: Array<{ modelId: string; createdAt: unknown; articleCount: number }> = [];
+      for (const row of allOpinions) {
+        const existing = models.find(m => m.modelId === row.model_id);
+        if (existing) existing.articleCount += 1;
+        else models.push({ modelId: row.model_id, createdAt: row.created_at, articleCount: 1 });
+      }
+
+      const requested = typeof req.query.model === 'string' && req.query.model ? req.query.model : models[0].modelId;
+      const findingRows = await db.all<GapFindingRow>(
+        'SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id', req.params.id as string);
+      const primaries = findingRows.map(mapFindingRow) as unknown as PrimaryFindingLite[];
+      const mapped = allOpinions.map(mapOpinionRow) as OpinionLite[];
+      const agreement = computeOpinionAgreement(primaries, mapped, requested);
+
+      res.json({ models, primaryModelTier: (() => {
+        try {
+          const cc = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as { modelTier?: string };
+          return tierToModelId((cc.modelTier as GapModelTier | undefined) || 'sonnet');
+        } catch { return tierToModelId('sonnet'); }
+      })(), agreement });
+    } catch (err) {
+      console.error('[gap-assessments] second-opinion get error:', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── Synthesise capability view (Step 6) ────────────────────────────────────
   router.post('/gap-assessments/:id/synthesise', async (req: Request, res: Response) => {
     if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
@@ -776,6 +982,35 @@ Generate the complete framework JSON now.`;
       res.json(comparison);
     } catch (err) {
       console.error('[gap-assessments] compare error:', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Export as .anton bundle (Wave 2.5 — export-only record) ────────────────
+  // POST /api/gap-assessments/:id/export-bundle { sign?, author? }
+  // Findings (facts + rubric + overrides + evidenceRefs), evidence manifest with
+  // hashes, DB-stored text evidence items, iteration summaries, second opinions.
+  // Signed with the instance key unless sign === false (same opt-in as exchange).
+  router.post('/gap-assessments/:id/export-bundle', async (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const { sign, author } = (req.body ?? {}) as { sign?: unknown; author?: unknown };
+      let buffer = await bundleGapAssessmentToAnton(db, req.params.id as string, {
+        author: typeof author === 'string' && author ? author : undefined,
+      });
+      if (sign !== false && sign !== 'false') {
+        buffer = (await signAntonBundle(db, buffer)).buffer;
+      }
+
+      const filename = `gap-assessment-${(req.params.id as string).slice(0, 8)}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (err) {
+      console.error('[gap-assessments] export-bundle error:', err);
       res.status(500).json({ error: safeError(err) });
     }
   });

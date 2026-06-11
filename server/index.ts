@@ -14,6 +14,7 @@ import { listTablesQuery, tableExistsQuery } from './db/dialect-helpers.js';
 import { authLimiter, userLimiter, claudeLimiter, webhookLimiter, p2pLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
 import { createClaudeRoutes } from './routes/claude.js';
+import { createRerunRoutes } from './routes/rerun.js';
 import filesRouter from './routes/files.js';
 import { createSessionRoutes } from './routes/sessions.js';
 import { createFolderRoutes } from './routes/folders.js';
@@ -531,7 +532,11 @@ app.use((_err: unknown, _req: import('express').Request, res: import('express').
   next(_err);
 });
 
-app.use('/api', await createClaudeRoutes(db, anthropic));
+const claudeRouter = await createClaudeRoutes(db, anthropic);
+app.use('/api', claudeRouter);
+// "Rerun with…" (Wave 2.3) — dispatches internally INTO claudeRouter so a rerun
+// goes through the exact live pipeline (composition, adapters, persistence).
+app.use('/api', createRerunRoutes(db, claudeRouter));
 app.use('/api', filesRouter);
 app.use('/api', await createSessionRoutes(db));
 app.use('/api', await createFolderRoutes(db));

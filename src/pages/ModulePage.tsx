@@ -402,6 +402,7 @@ export default function ModulePage() {
           tokenCount: (m.token_count as number | null) ?? undefined,
           createdAt: m.created_at as string,
           configSnapshot: ((m as Record<string, unknown>).config_snapshot as Record<string, unknown> | null) ?? null,
+          rerunOf: ((m as Record<string, unknown>).rerun_of as string | null) ?? null,
         }));
 
         restoreSession(data.id as string, restored);
@@ -1345,6 +1346,7 @@ export default function ModulePage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            rerunOf={lastAssistantMessage?.rerunOf ?? null}
           />
         )}
         {/* Revelation Trail — shown after IRE completes */}

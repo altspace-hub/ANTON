@@ -270,6 +270,8 @@ export interface Message {
   cost?: number;
   createdAt: string;
   configSnapshot?: Record<string, unknown> | null;
+  /** Wave 2.3: set when this assistant message is a "Rerun with…" of another message */
+  rerunOf?: string | null;
 }
 
 export interface ContentBlock {

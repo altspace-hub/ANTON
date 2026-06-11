@@ -46,6 +46,35 @@ interface EvidenceManifestEntry {
   chars: number;
 }
 
+// Wave 2.7 — second-opinion agreement view (mirrors server gap-second-opinion.ts)
+interface OpinionCriterionCell {
+  key: string;
+  primary: string | null;
+  opinion: string | null;
+  match: boolean;
+}
+
+interface OpinionArticle {
+  framework: string;
+  articleId: string;
+  articleTitle: string;
+  agree: boolean;
+  criteria: OpinionCriterionCell[];
+  primary: { numericScore: number | null; score: string | null; priority: string | null; rationale: string | null };
+  opinion: { modelId: string; numericScore: number | null; score: string | null; priority: string | null; rationale: string | null };
+  legacyComparison: boolean;
+}
+
+interface OpinionAgreement {
+  modelId: string;
+  comparedCount: number;
+  agreeCount: number;
+  agreementPct: number | null;
+  divergent: OpinionArticle[];
+  articles: OpinionArticle[];
+  uncoveredArticleIds: string[];
+}
+
 interface ArticleFinding {
   id?: number; // gap_findings row id (needed for assessor override PATCH)
   articleId: string;
@@ -451,6 +480,15 @@ function GapAssessmentWizardInner() {
   const [evidenceManifest, setEvidenceManifest] = useState<EvidenceManifestEntry[]>([]);
   // Wave 1.7 — re-assessment mode toggle (only meaningful when iterations exist)
   const [reassessMode, setReassessMode] = useState(false);
+  // Wave 2.7 — second-opinion lane (comparison slot, never overwrites findings)
+  const [soTier, setSoTier] = useState('');
+  const [soRunning, setSoRunning] = useState(false);
+  const [soStatus, setSoStatus] = useState('');
+  const [soError, setSoError] = useState('');
+  const [soAgreement, setSoAgreement] = useState<OpinionAgreement | null>(null);
+  const [soPrimaryModel, setSoPrimaryModel] = useState('');
+  const [soExpandedArticle, setSoExpandedArticle] = useState<string | null>(null);
+  const [soShowAll, setSoShowAll] = useState(false);
   // Wave 1.2 — assessor override editor
   const [overrideEditorKey, setOverrideEditorKey] = useState<string | null>(null);
   const [overrideMode, setOverrideMode] = useState<'facts' | 'manual'>('facts');
@@ -710,6 +748,75 @@ function GapAssessmentWizardInner() {
       setProgressEvents(prev => [...prev, { type: 'error', error: String(err), message: 'Assessment failed' }]);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  // ── Second opinion (Wave 2.7) ──────────────────────────────────────────────
+  const loadSecondOpinion = useCallback(async () => {
+    if (!id) return;
+    try {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/second-opinion`);
+      if (!r.ok) return;
+      const data = await r.json() as { models: Array<{ modelId: string }>; primaryModelTier?: string; agreement: OpinionAgreement | null };
+      setSoAgreement(data.agreement);
+      if (data.primaryModelTier) setSoPrimaryModel(data.primaryModelTier);
+    } catch { /* non-fatal — section just stays empty */ }
+  }, [id]);
+
+  useEffect(() => {
+    if (currentStep === 5) void loadSecondOpinion();
+  }, [currentStep, loadSecondOpinion]);
+
+  // Default the second-opinion model to the opposite Claude tier of the primary run
+  useEffect(() => {
+    if (currentStep === 5 && !soTier) {
+      setSoTier(contextConfig.modelTier === 'opus' ? 'sonnet' : 'opus');
+    }
+  }, [currentStep, contextConfig.modelTier, soTier]);
+
+  const runSecondOpinion = async () => {
+    if (!id || soRunning || !soTier) return;
+    setSoRunning(true);
+    setSoError('');
+    setSoStatus('Starting second opinion…');
+    try {
+      const response = await fetchWithAuth(`/api/gap-assessments/${id}/second-opinion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelTier: soTier }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error || 'Second opinion failed to start');
+      }
+      if (!response.body) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let gotAgreement = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6)) as { type: string; message?: string; error?: string; agreement?: OpinionAgreement };
+            if (event.message) setSoStatus(event.message);
+            if (event.type === 'error') setSoError(event.error || event.message || 'Second opinion failed');
+            if (event.type === 'complete' && event.agreement) {
+              setSoAgreement(event.agreement);
+              gotAgreement = true;
+            }
+          } catch { /* ignore parse errors */ }
+        }
+      }
+      if (!gotAgreement) await loadSecondOpinion();
+    } catch (err) {
+      setSoError(String(err instanceof Error ? err.message : err));
+    } finally {
+      setSoRunning(false);
+      setSoStatus('');
     }
   };
 
@@ -1895,6 +2002,158 @@ function GapAssessmentWizardInner() {
               </table>
               {displayFindings.length === 0 && (
                 <div className="py-8 text-center text-sm text-adv-gray">No findings match the filter.</div>
+              )}
+            </div>
+
+            {/* ── Second opinion (Wave 2.7) — comparison slot, never overwrites findings ── */}
+            <div className="rounded-xl border border-border bg-adv-card p-4 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <GitCompare className="h-4 w-4 text-adv-teal" />
+                  <h3 className="text-sm font-semibold text-adv-off-white">Second Opinion</h3>
+                  {soAgreement && soAgreement.agreementPct !== null && (
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${soAgreement.agreementPct >= 90 ? 'bg-adv-green/15 text-adv-green' : soAgreement.agreementPct >= 70 ? 'bg-yellow-500/15 text-yellow-400' : 'bg-red-500/15 text-red-400'}`}>
+                      {soAgreement.agreementPct}% agreement
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={soTier}
+                    onChange={e => setSoTier(e.target.value)}
+                    disabled={soRunning}
+                    className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  >
+                    {contextConfig.modelTier !== 'opus' && <option value="opus">Claude Opus 4.8</option>}
+                    {contextConfig.modelTier !== 'sonnet' && <option value="sonnet">Claude Sonnet 4.6</option>}
+                    {extraModels.filter(m => m.id !== contextConfig.modelTier).map(m => (
+                      <option key={m.id} value={m.id}>{m.label} ({m.provider})</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={runSecondOpinion}
+                    disabled={soRunning || !soTier || findings.length === 0}
+                    className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 transition-colors"
+                  >
+                    {soRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
+                    {soRunning ? 'Running…' : soAgreement ? 'Re-run second opinion' : 'Run second opinion'}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-adv-gray leading-relaxed">
+                Re-assesses the same articles, evidence and context with a different model into a separate comparison slot — your findings above are never changed.
+                Because the scoring rubric is deterministic and shared, agreement means both models&apos; criterion facts produce the same computed score; divergent articles are flagged for your review.
+                {soPrimaryModel && <> Primary assessment model: <span className="text-adv-off-white font-medium">{soPrimaryModel}</span>.</>}
+              </p>
+
+              {soRunning && soStatus && (
+                <div className="flex items-center gap-2 rounded-lg bg-adv-dark px-3 py-2 text-xs text-adv-gray">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal" /> {soStatus}
+                </div>
+              )}
+              {soError && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-px" /> {soError}
+                </div>
+              )}
+
+              {soAgreement && (
+                <div className="space-y-3">
+                  {/* Summary tiles */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-lg border border-border bg-adv-dark p-2 text-center">
+                      <div className={`text-lg font-bold ${(soAgreement.agreementPct ?? 0) >= 90 ? 'text-adv-green' : (soAgreement.agreementPct ?? 0) >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>{soAgreement.agreementPct ?? 0}%</div>
+                      <div className="text-[11px] text-adv-gray">Agreement</div>
+                    </div>
+                    <div className="rounded-lg border border-border bg-adv-dark p-2 text-center">
+                      <div className="text-lg font-bold text-adv-off-white">{soAgreement.comparedCount}</div>
+                      <div className="text-[11px] text-adv-gray">Articles compared</div>
+                    </div>
+                    <div className="rounded-lg border border-border bg-adv-dark p-2 text-center">
+                      <div className="text-lg font-bold text-adv-green">{soAgreement.agreeCount}</div>
+                      <div className="text-[11px] text-adv-gray">Agree</div>
+                    </div>
+                    <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 p-2 text-center">
+                      <div className="text-lg font-bold text-adv-gold">{soAgreement.divergent.length}</div>
+                      <div className="text-[11px] text-adv-gray">Divergent — review</div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-adv-gray">
+                    Second opinion by <span className="text-adv-off-white font-medium">{soAgreement.modelId}</span>
+                    {soAgreement.uncoveredArticleIds.length > 0 && <> · {soAgreement.uncoveredArticleIds.length} article(s) not covered by the second model</>}
+                  </p>
+
+                  {/* Divergent articles (agreeing ones behind a toggle) */}
+                  {(soShowAll ? soAgreement.articles : soAgreement.divergent).map(a => {
+                    const rowKey = `so-${a.framework}-${a.articleId}`;
+                    const isOpen = soExpandedArticle === rowKey;
+                    return (
+                      <div key={rowKey} className={`rounded-lg border ${a.agree ? 'border-border bg-adv-dark' : 'border-adv-gold/30 bg-adv-gold/5'}`}>
+                        <button
+                          onClick={() => setSoExpandedArticle(isOpen ? null : rowKey)}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {a.agree
+                              ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-adv-green" />
+                              : <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-adv-gold" />}
+                            <span className="font-mono text-xs font-medium text-adv-teal">{a.articleId}</span>
+                            <span className="truncate text-xs text-adv-off-white">{a.articleTitle}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 text-xs">
+                            <span className="text-adv-gray">{a.primary.numericScore ?? '—'}</span>
+                            <span className="text-adv-gray">vs</span>
+                            <span className={a.agree ? 'text-adv-green font-medium' : 'text-adv-gold font-medium'}>{a.opinion.numericScore ?? '—'}</span>
+                            <ChevronDown className={`h-3.5 w-3.5 text-adv-gray transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                          </div>
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-border px-3 py-3 space-y-3">
+                            {/* Facts agreement matrix */}
+                            <div>
+                              <h4 className="mb-1.5 text-[11px] font-semibold text-adv-teal">Criterion facts — primary / second opinion</h4>
+                              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+                                {a.criteria.map(c => (
+                                  <div key={c.key} className={`rounded border px-1.5 py-1 text-center ${c.match ? 'border-border bg-adv-dark' : 'border-adv-gold/40 bg-adv-gold/10'}`}>
+                                    <div className="text-[10px] text-adv-gray">{c.key === 'ownerAssigned' ? 'Owner' : c.key.charAt(0).toUpperCase() + c.key.slice(1)}</div>
+                                    <div className={`text-[11px] font-medium ${c.match ? 'text-adv-off-white' : 'text-adv-gold'}`}>
+                                      {factValueLabel(String(c.primary ?? '—'))} / {factValueLabel(String(c.opinion ?? '—'))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              {a.legacyComparison && (
+                                <p className="mt-1 text-[10px] text-adv-gray">One side lacks rubric facts (legacy scoring) — compared on score band only.</p>
+                              )}
+                            </div>
+                            {/* Both rationales */}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div className="rounded-lg bg-adv-dark px-3 py-2">
+                                <p className="mb-1 text-[11px] font-semibold text-adv-gray">Primary {soPrimaryModel && `(${soPrimaryModel})`} — {a.primary.score ?? '?'} · {a.primary.numericScore ?? '—'} · {a.primary.priority ?? '—'}</p>
+                                <p className="text-xs text-adv-off-white leading-relaxed">{a.primary.rationale || 'No rationale recorded.'}</p>
+                              </div>
+                              <div className="rounded-lg bg-adv-dark px-3 py-2">
+                                <p className="mb-1 text-[11px] font-semibold text-adv-gray">Second opinion ({a.opinion.modelId}) — {a.opinion.score ?? '?'} · {a.opinion.numericScore ?? '—'} · {a.opinion.priority ?? '—'}</p>
+                                <p className="text-xs text-adv-off-white leading-relaxed">{a.opinion.rationale || 'No rationale recorded.'}</p>
+                              </div>
+                            </div>
+                            {!a.agree && (
+                              <p className="text-[11px] text-adv-gold">⚑ The models disagree on this article — review both rationales and use “Override score” on the finding above if warranted.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {soAgreement.divergent.length === 0 && !soShowAll && (
+                    <p className="rounded-lg bg-adv-dark px-3 py-2 text-xs text-adv-green">Both models computed identical scores on every compared article.</p>
+                  )}
+                  {soAgreement.articles.length > soAgreement.divergent.length && (
+                    <button onClick={() => setSoShowAll(v => !v)} className="text-[11px] text-adv-gray hover:text-adv-teal transition-colors">
+                      {soShowAll ? 'Show divergent only' : `Show all ${soAgreement.articles.length} compared articles`}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

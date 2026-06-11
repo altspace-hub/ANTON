@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History } from 'lucide-react';
+import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
-import { fetchPromptPreview, createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, exportTrustCertificate } from '@/lib/api';
+import ModelSelector from '@/components/shared/ModelSelector';
+import RerunComparison, { type RerunComparisonData } from '@/components/shared/RerunComparison';
+import { fetchPromptPreview, createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
+import type { ModelId } from '@/lib/types';
 
 // ── Types ────────────────────────────────────────────────────
 
-type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | 'history' | null;
+type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | 'history' | 'rerun' | 'exportRun' | null;
 
 interface OutputToolbarProps {
   /** The last assistant output text (for citations & review) */
@@ -62,6 +65,8 @@ interface OutputToolbarProps {
   configSnapshot?: Record<string, unknown> | null;
   /** ATTR-04: Source manifest from last request — passed to CitationVerifier for cross-checking */
   sourceManifest?: string[];
+  /** Wave 2.3: when the displayed output is itself a rerun, the original message id */
+  rerunOf?: string | null;
 }
 
 // ── Chip config ──────────────────────────────────────────────
@@ -73,6 +78,8 @@ const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentT
   { id: 'review', label: 'Review', icon: Sparkles },
   { id: 'thinking', label: 'Thinking', icon: Brain, streamingOnly: false },
   { id: 'history', label: 'History', icon: History },
+  { id: 'rerun', label: 'Rerun with…', icon: GitCompare },
+  { id: 'exportRun', label: 'Export run', icon: FileDown },
   { id: 'prompt', label: 'Full Prompt', icon: ClipboardList },
   { id: 'feedback', label: 'Feedback', icon: ThumbsUp },
   { id: 'save', label: 'Save', icon: Puzzle },
@@ -91,7 +98,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
-    configSnapshot, sourceManifest,
+    configSnapshot, sourceManifest, rerunOf,
   } = props;
 
   // Derive trail display values — prefer per-message configSnapshot over live store state
@@ -138,6 +145,20 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const [versionList, setVersionList] = useState<VersionSummary[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [latestDiff, setLatestDiff] = useState<string | null>(null);
+
+  // Wave 2.2 "Export run (.anton)" state
+  const [exportSign, setExportSign] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportDone, setExportDone] = useState(false);
+
+  // Wave 2.3 "Rerun with…" state
+  const lastRunModel = ((configSnapshot?.model as string) ?? model) as ModelId;
+  const [rerunModel, setRerunModel] = useState<ModelId>(lastRunModel);
+  const [rerunLoading, setRerunLoading] = useState(false);
+  const [rerunError, setRerunError] = useState<string | null>(null);
+  const [rerunData, setRerunData] = useState<RerunComparisonData | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Completeness breakdown state — fetched from /api/benchmark on demand
   interface BenchmarkResult { score: number; found: string[]; missing: string[]; suggestions: string[] }
@@ -268,6 +289,68 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     setTimeout(() => setPromptCopied(false), 2000);
   };
 
+  // ── Rerun with… (Wave 2.3) ─────────────────────────────────
+
+  const handleRerun = async () => {
+    if (!sessionId || rerunLoading) return;
+    if (rerunModel === lastRunModel) {
+      setRerunError('Pick a different model — this output was already produced by that model.');
+      return;
+    }
+    setRerunLoading(true);
+    setRerunError(null);
+    try {
+      const res = await fetchWithAuth('/api/rerun', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, newModelId: rerunModel, areaId }),
+      });
+      const data = (await res.json()) as RerunComparisonData & { error?: string };
+      if (!res.ok) {
+        setRerunError(String(data.error ?? 'Rerun failed'));
+        return;
+      }
+      setRerunData(data);
+      setShowComparison(true);
+    } catch (err) {
+      setRerunError(err instanceof Error ? err.message : 'Rerun failed');
+    } finally {
+      setRerunLoading(false);
+    }
+  };
+
+  // ── Export run as .anton (Wave 2.2) ────────────────────────
+
+  const handleExportRun = async () => {
+    if (!sessionId || exportLoading) return;
+    setExportLoading(true);
+    setExportError(null);
+    try {
+      const res = await fetchWithAuth('/api/exchange/export-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, sign: exportSign }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? 'Export failed');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `module-run-${sessionId.slice(0, 8)}.anton`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportDone(true);
+      setTimeout(() => setExportDone(false), 2500);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   // ── Save as module ─────────────────────────────────────────
 
   const handleSaveAsModule = async () => {
@@ -312,7 +395,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           const isThinkingChip = chip.id === 'thinking';
           const isFeedbackChip = chip.id === 'feedback';
           const isFeedbackDone = isFeedbackChip && feedbackDone;
-          const disabled = isStreaming && !isThinkingChip;
+          const disabled = (isStreaming && !isThinkingChip) || ((chip.id === 'rerun' || chip.id === 'exportRun') && !sessionId);
 
           return (
             <button
@@ -336,6 +419,15 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </button>
           );
         })}
+        {rerunOf && (
+          <span
+            title={`This output is a rerun of message ${rerunOf} with a different model`}
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-[10px] font-medium text-adv-teal"
+          >
+            <GitCompare className="h-2.5 w-2.5" />
+            Rerun of earlier output
+          </span>
+        )}
       </div>
 
       {/* Active panel content */}
@@ -439,6 +531,94 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Rerun with… Panel (Wave 2.3) ──────────────── */}
+          {activePanel === 'rerun' && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <GitCompare className="h-4 w-4 text-adv-teal" />
+                <span className="text-xs font-medium text-adv-off-white">Rerun with another model</span>
+              </div>
+              <p className="mb-3 text-xs leading-relaxed text-adv-gray">
+                Re-executes this output with the exact same configuration (thinking, formats, personas, skills, knowledge sources)
+                but a different model, then shows both outputs side by side with a paragraph-level diff.
+                The original was produced by <span className="font-medium text-adv-off-white">{lastRunModel}</span>.
+                Both runs stay in this session&apos;s history.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <ModelSelector value={rerunModel} onChange={setRerunModel} variant="dropdown" />
+                <button
+                  onClick={handleRerun}
+                  disabled={rerunLoading || !sessionId || rerunModel === lastRunModel}
+                  className="flex h-[42px] items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 text-xs font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
+                >
+                  {rerunLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
+                  {rerunLoading ? 'Running…' : 'Run comparison'}
+                </button>
+              </div>
+              {rerunModel === lastRunModel && !rerunLoading && (
+                <p className="mt-2 text-[11px] text-adv-gray">Pick a different model than the one that produced this output.</p>
+              )}
+              {rerunLoading && (
+                <p className="mt-2 text-[11px] text-adv-gray">
+                  The rerun goes through the full pipeline (knowledge resolution, prompt assembly, model call) — this can take a few minutes for deep-thinking runs.
+                </p>
+              )}
+              {rerunError && (
+                <p className="mt-2 text-xs text-adv-red">{rerunError}</p>
+              )}
+              {rerunData && !showComparison && (
+                <button
+                  onClick={() => setShowComparison(true)}
+                  className="mt-3 flex items-center gap-1.5 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
+                >
+                  <GitCompare className="h-3.5 w-3.5" />
+                  Reopen last comparison ({rerunData.rerun.modelId})
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Export run Panel (Wave 2.2) ────────────────── */}
+          {activePanel === 'exportRun' && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <FileDown className="h-4 w-4 text-adv-teal" />
+                <span className="text-xs font-medium text-adv-off-white">Export run (.anton)</span>
+              </div>
+              <p className="mb-2 text-xs leading-relaxed text-adv-gray">
+                Packages this run for a coworker: the composed system prompt, the exact configuration,
+                the input and output, and a hash manifest of every knowledge source. They can import it
+                on any ANTON as a read-only session and reproduce it with &quot;Rerun with…&quot;.
+              </p>
+              <p className="mb-3 text-[11px] leading-relaxed text-adv-gray">
+                Honest limits: source <span className="font-medium text-adv-off-white">contents</span> (files, folders, URLs)
+                do not travel — only their names and hashes. No seed either; reproduction means same prompt + config,
+                not a bit-identical output.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-adv-gray">
+                  <input
+                    type="checkbox"
+                    checked={exportSign}
+                    onChange={(e) => setExportSign(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-[#2DD4A8]"
+                  />
+                  Sign with this instance&apos;s key (Ed25519 provenance)
+                </label>
+                <button
+                  onClick={handleExportRun}
+                  disabled={exportLoading || !sessionId}
+                  className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-1.5 text-xs font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
+                >
+                  {exportLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+                  {exportLoading ? 'Packaging…' : 'Download .anton'}
+                </button>
+                {exportDone && <span className="text-xs text-adv-green">Exported.</span>}
+              </div>
+              {exportError && <p className="mt-2 text-xs text-adv-red">{exportError}</p>}
             </div>
           )}
 
@@ -775,6 +955,11 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Rerun comparison modal (Wave 2.3) ── */}
+      {showComparison && rerunData && (
+        <RerunComparison data={rerunData} onClose={() => setShowComparison(false)} />
       )}
 
       {/* ── Go Deeper prompt ── show when output exists and not at max thinking */}
