@@ -8,11 +8,12 @@
  */
 
 import { useState, useRef } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   CheckCircle, AlertTriangle, Loader2, ChevronDown, ChevronUp,
   Search, FileText, RotateCcw, ThumbsUp, List, Zap, AlertCircle,
   Download, BarChart2, Plus, Upload, Link, MessageSquare, ArrowRight,
-  Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square
+  Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square, ExternalLink
 } from 'lucide-react';
 import { fetchWithAuth, streamMessage } from '@/lib/api';
 import type { ModelId, StreamEvent } from '@/lib/types';
@@ -642,6 +643,18 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
             {iteration.thinking_content && <span className="ml-2 text-adv-teal/60">· reasoning recorded</span>}
           </p>
         </div>
+        {/* 4.4: bridged session — version history / share / follow-up live there */}
+        {iteration.session_id && (
+          <RouterLink
+            to={`/prompt?session=${iteration.session_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-xs text-adv-teal hover:text-adv-teal-dark transition-colors shrink-0"
+            title="Open this iteration as a session (version history, share, follow-up questions)"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Open in session view
+          </RouterLink>
+        )}
         <span className={`text-xs font-medium border rounded-full px-2 py-0.5 ${sc}`}>{iteration.status}</span>
         {expanded ? <ChevronUp className="h-4 w-4 text-adv-gray" /> : <ChevronDown className="h-4 w-4 text-adv-gray" />}
       </div>

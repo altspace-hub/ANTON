@@ -19,6 +19,27 @@ import { MODULES, MODELS } from '@/lib/constants';
 import { fetchSessions, deleteSession, updateSessionTitle, updateSessionNote, fetchProjects, assignSessionToProject, fetchWithAuth } from '@/lib/api';
 import type { Session } from '@/lib/types';
 
+// Wave 4.3 — one row of the unified work timeline (GET /api/work-timeline)
+interface TimelineItem {
+  type: 'session' | 'engagement' | 'workflow_run' | 'workflow_execution' | 'discovery';
+  id: string;
+  title: string | null;
+  subtitle: string | null;
+  status: string | null;
+  cost: number | null;
+  updated_at: string;
+  resumeUrl: string;
+}
+
+type TimelineChip = 'all' | 'session' | 'engagement' | 'workflow' | 'discovery';
+
+const TIMELINE_CHIP_TYPES: Record<Exclude<TimelineChip, 'all'>, string> = {
+  session: 'session',
+  engagement: 'engagement',
+  workflow: 'workflow_run,workflow_execution',
+  discovery: 'discovery',
+};
+
 // Wave 3.2 "Search past work" — a hybrid-search hit inside a past output
 interface PastWorkHit {
   content_id: string;
@@ -34,7 +55,10 @@ interface PastWorkHit {
 
 function sessionLink(moduleId: string | null | undefined, sessionId: string, messageId?: string): string {
   const base =
-    moduleId === 'open-chat' || !moduleId
+    // 'engagement' = 4.4 bridged sessions — no module page exists for them;
+    // the generic session surface (PromptPage restores any session id) is the
+    // right viewer.
+    moduleId === 'open-chat' || moduleId === 'engagement' || !moduleId
       ? `/prompt?session=${sessionId}`
       : moduleId === 'ai-council'
       ? `/council?session=${sessionId}`
@@ -108,6 +132,9 @@ type SortMode = 'recent' | 'most-used';
 export default function MyWorkPage() {
   const { t } = useTranslation();
   const formatRelativeTime = useFormatRelativeTime();
+  // Wave 4.3: Timeline (all work types, one feed) is the default view;
+  // the original session list stays available under "Sessions".
+  const [view, setView] = useState<'timeline' | 'sessions'>('timeline');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -304,11 +331,31 @@ export default function MyWorkPage() {
   return (
     <div className="mx-auto max-w-4xl">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-adv-white">{t('myWork.title')}</h1>
         <p className="mt-1 text-sm text-adv-gray">{t('myWork.subtitle')}</p>
       </div>
 
+      {/* View toggle: Timeline (4.3 unified feed) ⇄ Sessions (original list) */}
+      <div className="mb-5 inline-flex rounded-lg border border-border bg-adv-card overflow-hidden">
+        {([['timeline', 'Timeline'], ['sessions', 'Sessions']] as const).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`px-4 py-1.5 text-xs transition-colors ${
+              view === v
+                ? 'bg-adv-teal-dim text-adv-teal font-medium'
+                : 'text-adv-gray hover:text-adv-off-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'timeline' && <TimelineFeed formatRelativeTime={formatRelativeTime} />}
+
+      {view === 'sessions' && (<>
       {/* Search */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray pointer-events-none" />
@@ -461,13 +508,7 @@ export default function MyWorkPage() {
             return (
               <Link
                 key={session.id}
-                to={
-                  session.module_id === 'open-chat'
-                    ? `/prompt?session=${session.id}`
-                    : session.module_id === 'ai-council'
-                    ? `/council?session=${session.id}`
-                    : `/module/${session.module_id}?session=${session.id}`
-                }
+                to={sessionLink(session.module_id, session.id)}
                 className={`group relative flex items-start gap-4 rounded-xl border border-border border-l-2 ${accentClass} bg-adv-card p-4 transition-all hover:border-adv-teal/30 hover:shadow-lg`}
               >
                 {/* Icon */}
@@ -660,6 +701,166 @@ export default function MyWorkPage() {
 
       {loading && sessions.length === 0 && (
         <div className="mt-8 text-center text-sm text-adv-gray">{t('myWork.loadingSessions')}</div>
+      )}
+      </>)}
+    </div>
+  );
+}
+
+// ── Wave 4.3: unified work timeline ──────────────────────────────────────────
+
+const TIMELINE_TYPE_META: Record<TimelineItem['type'], { label: string; icon: React.ComponentType<{ className?: string }>; chipClass: string }> = {
+  session:            { label: 'Session',    icon: MessageSquare, chipClass: 'bg-adv-teal/10 text-adv-teal' },
+  engagement:         { label: 'Engagement', icon: Briefcase,     chipClass: 'bg-adv-blue/10 text-adv-blue' },
+  workflow_run:       { label: 'Workflow',   icon: GitBranch,     chipClass: 'bg-adv-gold/10 text-adv-gold' },
+  workflow_execution: { label: 'Workflow',   icon: GitBranch,     chipClass: 'bg-adv-gold/10 text-adv-gold' },
+  discovery:          { label: 'Discovery',  icon: Compass,       chipClass: 'bg-adv-green/10 text-adv-green' },
+};
+
+function timelineStatusClass(status: string): string {
+  if (status === 'awaiting_approval') return 'bg-adv-gold/15 text-adv-gold border border-adv-gold/40 font-semibold';
+  if (['running', 'executing', 'pending', 'active'].includes(status)) return 'bg-adv-blue/10 text-adv-blue border border-adv-blue/20';
+  if (status === 'paused') return 'bg-adv-gold/10 text-adv-gold border border-adv-gold/20';
+  if (['failed', 'aborted', 'cancelled', 'abandoned'].includes(status)) return 'bg-adv-red/10 text-adv-red border border-adv-red/20';
+  if (['completed', 'approved', 'reviewed'].includes(status)) return 'bg-adv-green/10 text-adv-green border border-adv-green/20';
+  return 'bg-adv-dark text-adv-gray border border-border';
+}
+
+function TimelineFeed({ formatRelativeTime }: { formatRelativeTime: (d: string) => string }) {
+  const [items, setItems] = useState<TimelineItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [nextBefore, setNextBefore] = useState<string | null>(null);
+  const [chip, setChip] = useState<TimelineChip>('all');
+
+  const load = useCallback(async (before: string | null, replace: boolean) => {
+    setLoading(true);
+    setError(false);
+    try {
+      const params = new URLSearchParams({ limit: '30' });
+      if (before) params.set('before', before);
+      if (chip !== 'all') params.set('types', TIMELINE_CHIP_TYPES[chip]);
+      const r = await fetchWithAuth(`/api/work-timeline?${params.toString()}`);
+      if (!r.ok) throw new Error('timeline fetch failed');
+      const data: { items: TimelineItem[]; nextBefore: string | null } = await r.json();
+      setItems((prev) => (replace ? data.items : [...prev, ...data.items]));
+      setNextBefore(data.nextBefore);
+    } catch {
+      setError(true);
+      if (replace) setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [chip]);
+
+  useEffect(() => {
+    load(null, true);
+  }, [load]);
+
+  const chips: { value: TimelineChip; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'session', label: 'Sessions' },
+    { value: 'engagement', label: 'Engagements' },
+    { value: 'workflow', label: 'Workflows' },
+    { value: 'discovery', label: 'Discovery' },
+  ];
+
+  return (
+    <div>
+      {/* Type chips */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setChip(c.value)}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              chip === c.value
+                ? 'border-adv-teal bg-adv-teal-dim text-adv-teal font-medium'
+                : 'border-border text-adv-gray hover:text-adv-off-white hover:border-adv-teal/30'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Feed */}
+      {items.length === 0 && !loading ? (
+        <div className="rounded-xl border border-border bg-adv-card p-12 text-center">
+          <Clock className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">
+            {error
+              ? 'Could not load the timeline. Try again later.'
+              : chip === 'all'
+              ? 'No work yet. Module runs, engagements, workflows and discovery sessions will appear here as you work.'
+              : 'Nothing of this type yet.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => {
+            const meta = TIMELINE_TYPE_META[item.type];
+            const Icon = meta.icon;
+            // Sessions carry the module id as subtitle — show its short label.
+            const subtitle =
+              item.type === 'session' && item.subtitle
+                ? MODULES.find((m) => m.id === item.subtitle)?.shortLabel || item.subtitle
+                : item.subtitle;
+            const costStr =
+              item.cost && item.cost > 0
+                ? item.cost < 0.01 ? '<$0.01' : `~$${item.cost.toFixed(2)}`
+                : null;
+            return (
+              <Link
+                key={`${item.type}-${item.id}`}
+                to={item.resumeUrl}
+                className="group flex items-start gap-4 rounded-xl border border-border bg-adv-card p-4 transition-all hover:border-adv-teal/30 hover:shadow-lg"
+              >
+                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.chipClass}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="truncate text-sm font-semibold text-adv-off-white group-hover:text-adv-teal transition-colors">
+                      {item.title || 'Untitled'}
+                    </h3>
+                    <span className="shrink-0 text-xs text-adv-gray">{formatRelativeTime(item.updated_at)}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.chipClass}`}>{meta.label}</span>
+                    {item.status && (
+                      <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${timelineStatusClass(item.status)}`}>
+                        {item.status === 'awaiting_approval' && <AlertTriangle className="h-3 w-3" />}
+                        {item.status === 'awaiting_approval' ? 'Awaiting approval' : item.status.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    {subtitle && <span className="truncate text-xs text-adv-gray">{subtitle}</span>}
+                    {costStr && <span className="text-xs text-adv-gray">· {costStr}</span>}
+                  </div>
+                </div>
+                <ArrowRight className="mt-2 h-3.5 w-3.5 shrink-0 text-adv-gray opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Load more */}
+      {nextBefore && items.length > 0 && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => load(nextBefore, false)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-adv-card px-4 py-2 text-sm text-adv-gray hover:text-adv-teal hover:border-adv-teal/30 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Loading…' : 'Load more'}
+            {!loading && <ArrowRight className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+      )}
+
+      {loading && items.length === 0 && (
+        <div className="mt-8 text-center text-sm text-adv-gray">Loading…</div>
       )}
     </div>
   );

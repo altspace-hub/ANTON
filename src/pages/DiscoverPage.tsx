@@ -207,6 +207,11 @@ export default function DiscoverPage() {
       .then(r => r.ok ? r.json() : [])
       .then(packs => setAvailablePacks(packs))
       .catch(() => {});
+
+    // Deep-link resume (Wave 4.3 work timeline): /discover?session=<id>
+    const deepLinkSession = new URLSearchParams(window.location.search).get('session');
+    if (deepLinkSession) resumeSession(deepLinkSession);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-scroll conversation

@@ -7,10 +7,16 @@
 import { useState } from 'react';
 import {
   Brain, Users, Eye, ChevronRight, CheckCircle, Loader2, Info,
-  Zap, Lightbulb, Search, Microscope, BarChart2, ListChecks, Flame
+  Zap, Lightbulb, Search, Microscope, BarChart2, ListChecks, Flame,
+  Cpu, Check
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import ModelSelector from '@/components/shared/ModelSelector';
+import type { ModelId } from '@/lib/types';
 import type { EngagementData } from '@/pages/EngagementWorkspacePage';
+
+// Shown when switching Auto → Specific before a model is picked.
+const FALLBACK_MODEL: ModelId = 'claude-opus-4-8';
 
 interface Props {
   engagement: EngagementData;
@@ -34,16 +40,16 @@ const THINKING_OPTIONS: ThinkingOption[] = [
   {
     id: 'quick',
     label: 'Quick',
-    description: 'Fast responses using Claude Haiku. Best for simple reviews and quick checks.',
+    description: 'Fast responses with minimal reasoning. Best for simple reviews and quick checks.',
     icon: Zap,
-    model: 'Haiku',
+    model: 'fast tier',
   },
   {
     id: 'think',
     label: 'Think',
-    description: 'Standard deep reasoning with Opus. Good for most engagement types.',
+    description: 'Standard deep reasoning. Good for most engagement types.',
     icon: Lightbulb,
-    model: 'Opus 4.8',
+    model: 'deep tier',
     badge: 'Default',
   },
   {
@@ -112,6 +118,8 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
     (engagement.thinking_level as ThinkingLevel) || 'investigate'
   );
+  // 4.4: per-engagement model choice. null = Auto (product default model).
+  const [execModel, setExecModel] = useState<string | null>(engagement.exec_model || null);
   const [expertPanel, setExpertPanel] = useState<string[]>(
     parseJson(engagement.expert_panel, [])
   );
@@ -137,11 +145,12 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           thinking_level: thinkingLevel,
+          exec_model: execModel,
           expert_panel: expertPanel,
           review_modes: reviewLenses,
         }),
       });
-      onUpdate({ thinking_level: thinkingLevel, expert_panel: JSON.stringify(expertPanel) });
+      onUpdate({ thinking_level: thinkingLevel, exec_model: execModel, expert_panel: JSON.stringify(expertPanel) });
       setSaved(true);
     } finally {
       setSaving(false);
@@ -171,7 +180,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           <h3 className="text-sm font-semibold text-adv-off-white">Reasoning Depth</h3>
           <span className="ml-auto text-xs text-adv-gray flex items-center gap-1">
             <Info className="h-3 w-3" />
-            Controls Claude model &amp; thinking budget
+            Controls thinking budget — model is chosen below
           </span>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -197,12 +206,51 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
                 <div>
                   <p className={`text-sm font-medium ${isSelected ? 'text-adv-teal' : 'text-adv-off-white'}`}>{opt.label}</p>
                   <p className="text-[11px] text-adv-gray mt-0.5 leading-snug">{opt.description}</p>
-                  <p className="text-xs text-adv-gray mt-1">Model: {opt.model}</p>
                 </div>
               </button>
             );
           })}
         </div>
+      </div>
+
+      {/* Model choice (4.4) — Auto (product default) ⇄ explicit ModelSelector */}
+      <div className="bg-adv-card border border-border rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Cpu className="h-4 w-4 text-adv-teal" />
+          <h3 className="text-sm font-semibold text-adv-off-white">Model</h3>
+          <span className="text-xs text-adv-gray ml-1">— which model executes this engagement?</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setExecModel(null); setSaved(false); }}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+              execModel === null
+                ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                : 'border-border text-adv-gray hover:text-adv-off-white'
+            }`}
+          >
+            <Zap className="h-4 w-4" /> Auto (product default)
+            {execModel === null && <Check className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => { if (execModel === null) { setExecModel(FALLBACK_MODEL); setSaved(false); } }}
+            className={`rounded-lg border px-3 py-2 text-sm transition ${
+              execModel !== null
+                ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                : 'border-border text-adv-gray hover:text-adv-off-white'
+            }`}
+          >
+            Specific model
+          </button>
+        </div>
+        {execModel !== null && (
+          <ModelSelector value={execModel as ModelId} onChange={(m) => { setExecModel(m); setSaved(false); }} variant="dropdown" />
+        )}
+        <p className="text-xs text-adv-gray">
+          Auto follows the product-wide default model (Settings → Default model). A specific model pins this
+          engagement's execution regardless of product settings; either way the choice routes through your
+          configured provider.
+        </p>
       </div>
 
       {/* Expert panel */}
@@ -272,7 +320,8 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           <p className="text-sm font-medium text-adv-teal">Configuration Summary</p>
         </div>
         <div className="text-xs text-adv-gray space-y-1">
-          <p>Reasoning: <span className="text-adv-off-white">{THINKING_OPTIONS.find(o => o.id === thinkingLevel)?.label}</span> — {THINKING_OPTIONS.find(o => o.id === thinkingLevel)?.model}</p>
+          <p>Reasoning: <span className="text-adv-off-white">{THINKING_OPTIONS.find(o => o.id === thinkingLevel)?.label}</span></p>
+          <p>Model: <span className="text-adv-off-white">{execModel ?? 'Auto (product default)'}</span></p>
           <p>Expert panel: <span className="text-adv-off-white">{expertPanel.length > 0 ? expertPanel.map(id => EXPERT_PERSONAS.find(e => e.id === id)?.label).join(', ') : 'General compliance'}</span></p>
           <p>Review lenses: <span className="text-adv-off-white">{reviewLenses.length > 0 ? reviewLenses.map(id => REVIEW_LENSES.find(l => l.id === id)?.label).join(', ') : 'None selected'}</span></p>
         </div>

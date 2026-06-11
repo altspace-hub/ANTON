@@ -17,6 +17,9 @@ import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
+import { getEffectiveDefaultModel } from '../services/default-model-store.js';
+import { resolveEngagementModelChoice } from '../services/engagement-exec-model.js';
+import { bridgeIterationToSession } from '../services/engagement-session-bridge.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
@@ -210,7 +213,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   router.patch('/:id', async (req: Request, res: Response) => {
     try {
       const { status, your_organisation, client_name, domain_areas, engagement_brief, quality_blueprint,
-        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title } = req.body;
+        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model } = req.body;
       const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
@@ -227,6 +230,8 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       if (engagement_brief !== undefined) { updates.push('engagement_brief = ?'); values.push(JSON.stringify(engagement_brief)); }
       if (quality_blueprint !== undefined) { updates.push('quality_blueprint = ?'); values.push(JSON.stringify(quality_blueprint)); }
       if (thinking_level !== undefined) { updates.push('thinking_level = ?'); values.push(thinking_level); }
+      // 4.4: per-engagement model choice (null/empty = Auto → product default)
+      if (exec_model !== undefined) { updates.push('exec_model = ?'); values.push(typeof exec_model === 'string' && exec_model.trim() ? exec_model.trim() : null); }
       if (expert_panel !== undefined) { updates.push('expert_panel = ?'); values.push(JSON.stringify(expert_panel)); }
       if (review_modes !== undefined) { updates.push('review_modes = ?'); values.push(JSON.stringify(review_modes)); }
       if (knowledge_config !== undefined) { updates.push('knowledge_config = ?'); values.push(JSON.stringify(knowledge_config)); }
@@ -909,21 +914,29 @@ Format your output as professional consulting deliverables. Use clear headings, 
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      // Map thinking level to model + thinking config
+      // 4.4: model resolution — per-engagement choice (Expert Config) >
+      // product default (default-model-store) > legacy thinking-level
+      // mapping — then through the standard provider routing.
       const thinkingLevel = String(engagement.thinking_level || 'think_hard');
       const isQuick = thinkingLevel === 'quick';
-      const execModel = mapModelToProvider(isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-8');
+      const execModel = mapModelToProvider(resolveEngagementModelChoice(
+        engagement.exec_model as string | null | undefined,
+        thinkingLevel,
+        getEffectiveDefaultModel() ?? null,
+      ));
 
       // Plan First mode: prepend planning instructions
       const planFirstInstr = thinkingLevel === 'plan_first'
         ? '\n\nBEFORE WRITING: Create an explicit plan (sections, order, depth, assumptions, gaps). Present your plan first as a brief outline, then execute it systematically.\n'
         : '';
 
+      const userTurnContent = `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}`;
+
       const streamResult = await streamChat({
         model: execModel,
         maxTokens: isQuick ? 32_000 : 128_000,
         system: systemPrompt + planFirstInstr,
-        messages: [{ role: 'user', content: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}` }],
+        messages: [{ role: 'user', content: userTurnContent }],
         thinkingLevel: isQuick ? undefined : thinkingLevel,
         tools: tools.length > 0 ? tools : undefined,
       }, res);
@@ -944,7 +957,35 @@ Format your output as professional consulting deliverables. Use clear headings, 
         await db.run("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ?", workstream_id);
       }
       logChange(String(req.params.id), 'execution', 'iteration_created', `Iteration ${iterationNumber + 1} created for ${workstream ? workstream.title : 'engagement'}`);
-      res.write(`data: ${JSON.stringify({ type: 'done', iterationId })}\n\n`);
+
+      // 4.4 part 2: bridge the iteration into the session world (direct
+      // insert — see engagement-session-bridge.ts for why not a synthetic
+      // dispatch into claude.ts). Non-fatal: the iteration is already saved.
+      let bridgedSessionId: string | null = null;
+      try {
+        const bridged = await bridgeIterationToSession(db, {
+          engagementId: String(req.params.id),
+          engagementTitle: String(engagement.title || 'Engagement'),
+          workstreamId: workstream_id || null,
+          workstreamTitle: workstream ? String(workstream.title || '') || null : null,
+          iterationId,
+          iterationNumber: iterationNumber + 1,
+          projectId: (engagement.project_id as string | null) || null,
+          userId: getUserId(req),
+          model: execModel,
+          thinkingLevel,
+          userContent: userTurnContent,
+          outputContent: fullContent,
+          thinkingContent: fullThinking || null,
+          inputTokens: streamResult.inputTokens,
+          outputTokens: streamResult.outputTokens,
+        });
+        bridgedSessionId = bridged.sessionId;
+      } catch (bridgeErr) {
+        console.warn('[engagements] session bridge failed (non-fatal):', bridgeErr instanceof Error ? bridgeErr.message : bridgeErr);
+      }
+
+      res.write(`data: ${JSON.stringify({ type: 'done', iterationId, sessionId: bridgedSessionId })}\n\n`);
       res.end();
     } catch (e) {
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);

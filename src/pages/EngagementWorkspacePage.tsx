@@ -35,6 +35,8 @@ export interface EngagementData {
   engagement_brief: string;
   quality_blueprint: string;
   thinking_level: string;
+  /** 4.4: explicit per-engagement model id; null = Auto (product default). */
+  exec_model: string | null;
   expert_panel: string;
   review_modes: string;
   knowledge_config: string;
@@ -142,6 +144,8 @@ export interface Iteration {
   confidence_assessment: string;
   status: 'draft' | 'reviewed' | 'approved' | 'superseded';
   expert_reviews?: string | null;
+  /** 4.4: bridged session id — the iteration also lives in the session world. */
+  session_id?: string | null;
   created_at: string;
 }
 
